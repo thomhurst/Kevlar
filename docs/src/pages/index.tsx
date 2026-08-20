@@ -23,6 +23,28 @@ const kevlarSample = `var shield = Shield
     .CircuitBreaker(5,
         breakDuration: TimeSpan.FromSeconds(30));`;
 
+const advancedSample = `var search = Shield.For<HttpResponseMessage>()
+    .When<HttpRequestException>()
+    .OrResult(r => (int)r.StatusCode is >= 500 or 429)
+    .Fallback((outcome, ct) => cache.GetCachedAsync(ct))
+    .Retry(o =>
+    {
+        o.MaxRetries = 4;
+        o.DelayGenerator = e =>
+            e.Outcome.Result?.Headers.RetryAfter?.Delta;
+        o.OnRetry = e => logger.LogWarning(
+            "retry {Attempt} in {Delay}", e.Attempt, e.Delay);
+    })
+    .CircuitBreaker(o =>
+    {
+        o.FailureRatio = 0.5;
+        o.SamplingWindow = TimeSpan.FromSeconds(30);
+        o.Monitor = monitor;
+    })
+    .Hedge(maxAttempts: 2, delay: TimeSpan.FromMilliseconds(150))
+    .Timeout(TimeSpan.FromSeconds(2))
+    .WithName("search");`;
+
 const strategies = [
   'Retry',
   'Circuit breaker',
@@ -288,12 +310,23 @@ function PipelineShowcase() {
           <article className={styles.pipelineCard}>
             <div className={styles.pipelineTitle}>
               <span>Kevlar</span>
-              <span>Complete pipeline</span>
+              <span>Sensible defaults</span>
             </div>
             <CodeBlock language="csharp">{kevlarSample}</CodeBlock>
             <div className={styles.pipelineResult}>
               <span>Timeout · Retry · Circuit breaker</span>
               <strong>One fluent API</strong>
+            </div>
+          </article>
+          <article className={styles.pipelineCard}>
+            <div className={styles.pipelineTitle}>
+              <span>Kevlar</span>
+              <span>Full control</span>
+            </div>
+            <CodeBlock language="csharp">{advancedSample}</CodeBlock>
+            <div className={styles.pipelineResult}>
+              <span>Typed results · Retry-After · Hedging · Fallback</span>
+              <strong>Same fluent API</strong>
             </div>
           </article>
         </div>

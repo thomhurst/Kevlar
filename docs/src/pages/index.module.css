@@ -106,7 +106,7 @@
 .proofLink:hover { color: var(--kevlar-gold); text-decoration: none; }
 
 .pipelineShowcase { background: var(--kevlar-section-alt); }
-.pipelineGrid { max-width: 56rem; margin: 0 auto; }
+.pipelineGrid { display: grid; gap: 2rem; max-width: 56rem; margin: 0 auto; }
 .pipelineCard { overflow: hidden; border: 1px solid var(--kevlar-gold-border); border-radius: 4px; background: var(--kevlar-card-bg); box-shadow: 0 20px 60px var(--kevlar-shadow); }
 .pipelineTitle { display: flex; min-height: 4rem; align-items: center; justify-content: space-between; padding: 0 1.5rem; border-bottom: 1px solid var(--kevlar-gold-border); color: var(--kevlar-gold-dark); font-family: var(--kevlar-mono); font-size: .75rem; font-weight: 700; }
 .pipelineTitle span:last-child { color: var(--kevlar-faint); font-size: .64rem; letter-spacing: .12em; text-transform: uppercase; }

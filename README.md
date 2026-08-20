@@ -15,6 +15,38 @@ var user = await shield.ExecuteAsync(ct => LoadUserAsync(id, ct), cancellationTo
 
 Build a shield once, reuse it everywhere. Shields are **immutable and thread-safe**, and ordinary `Task`-returning methods flow straight in — no `ValueTask` wrapping.
 
+And when the scenario stops being simple, the API doesn't change shape — it deepens. Typed handling clauses, options overloads and delegate hooks carry the same fluent chain all the way up:
+
+```csharp
+var monitor = new CircuitBreakerMonitor();
+
+var search = Shield.For<HttpResponseMessage>()
+    .When<HttpRequestException>()
+    .Or<TimeoutExceededException>()
+    .OrResult(r => (int)r.StatusCode is >= 500 or 429)               // results are failures too
+    .Fallback((outcome, ct) => cache.GetCachedResultsAsync(ct))      // last resort — sees exactly what failed
+    .Retry(o =>
+    {
+        o.MaxRetries = 4;
+        o.Backoff = Backoff.Exponential(TimeSpan.FromMilliseconds(200), maxDelay: TimeSpan.FromSeconds(5));
+        o.DelayGenerator = e => e.Outcome.Result?.Headers.RetryAfter?.Delta;   // server knows best…
+        o.MaxDelay = TimeSpan.FromSeconds(10);                                 // …within reason
+        o.OnRetry = e => logger.LogWarning("search retry {Attempt} in {Delay}", e.Attempt, e.Delay);
+    })
+    .CircuitBreaker(o =>
+    {
+        o.FailureRatio = 0.5;                            // open at ≥50% failures…
+        o.MinimumThroughput = 20;                        // …across ≥20 calls…
+        o.SamplingWindow = TimeSpan.FromSeconds(30);     // …in a rolling 30s window
+        o.Monitor = monitor;                             // ops handle: monitor.Isolate() / monitor.Reset()
+    })
+    .Hedge(maxAttempts: 2, delay: TimeSpan.FromMilliseconds(150))    // race a second attempt on slow p99s
+    .Timeout(TimeSpan.FromSeconds(2))                                // per-attempt budget
+    .WithName("search");                                             // tags metrics and ToString()
+```
+
+One clause up top decides what "failure" means for every strategy below it — exceptions and result values alike. The result is still just a `Shield<HttpResponseMessage>`: immutable, reusable, and it prints its own pipeline when you log it.
+
 ## Why Kevlar?
 
 - **Intuitive first.** `Shield.When<TimeoutException>().Retry(3)` reads like what it does. No context pooling ceremony, no predicate-builder classes, no options objects for the simple cases — and full options objects when you want them.
