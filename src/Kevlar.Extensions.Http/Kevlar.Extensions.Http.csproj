@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+    <RootNamespace>Kevlar.Extensions.Http</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IsPackable>true</IsPackable>
+    <Description>HttpClientFactory integration for Kevlar: resilient HTTP handlers with transient-fault handling, Retry-After aware retries and a production-ready standard pipeline.</Description>
+    <PackageTags>resilience;http;httpclient;httpclientfactory;kevlar</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Kevlar\Kevlar.csproj" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+  </ItemGroup>
+
+</Project>

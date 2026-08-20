@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build
+        run: dotnet build Kevlar.slnx -c Release
+
+      - name: Test
+        run: dotnet run --project tests/Kevlar.Tests -c Release --no-build -- --timeout 5m
+
+      - name: Integration test
+        run: dotnet run --project tests/Kevlar.IntegrationTests -c Release --no-build -- --timeout 5m
+
+      - name: Pack
+        if: matrix.os == 'ubuntu-latest'
+        run: dotnet pack Kevlar.slnx -c Release --no-build
+
+      - name: Upload packages
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages
+          path: artifacts/package/release/*.nupkg

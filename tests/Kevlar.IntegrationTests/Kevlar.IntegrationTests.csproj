@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="TUnit" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Kevlar\Kevlar.csproj" />
+    <ProjectReference Include="..\..\src\Kevlar.Extensions.DependencyInjection\Kevlar.Extensions.DependencyInjection.csproj" />
+    <ProjectReference Include="..\..\src\Kevlar.Extensions.Http\Kevlar.Extensions.Http.csproj" />
+  </ItemGroup>
+
+</Project>

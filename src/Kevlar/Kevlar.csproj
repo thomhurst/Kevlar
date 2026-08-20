@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+    <RootNamespace>Kevlar</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IsPackable>true</IsPackable>
+    <Description>Kevlar is a fast, zero-dependency resilience library for .NET: retries, circuit breakers, timeouts, rate limiting, bulkheads, hedging and fallbacks, composed through one fluent, allocation-conscious policy API.</Description>
+    <PackageTags>resilience;transient-fault-handling;retry;circuit-breaker;timeout;rate-limit;bulkhead;hedging;fallback;polly-alternative</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="System.Threading.Tasks.Extensions" />
+    <PackageReference Include="Microsoft.Bcl.TimeProvider" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Kevlar.Tests" />
+  </ItemGroup>
+
+</Project>

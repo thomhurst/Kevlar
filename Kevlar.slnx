@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/benchmarks/">
+    <Project Path="benchmarks/Kevlar.Benchmarks/Kevlar.Benchmarks.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Kevlar.Extensions.DependencyInjection/Kevlar.Extensions.DependencyInjection.csproj" />
+    <Project Path="src/Kevlar.Extensions.Http/Kevlar.Extensions.Http.csproj" />
+    <Project Path="src/Kevlar/Kevlar.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Kevlar.IntegrationTests/Kevlar.IntegrationTests.csproj" />
+    <Project Path="tests/Kevlar.Tests/Kevlar.Tests.csproj" />
+  </Folder>
+</Solution>

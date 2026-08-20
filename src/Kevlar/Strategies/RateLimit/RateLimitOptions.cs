@@ -1,0 +1,23 @@
+namespace Kevlar;
+
+/// <summary>
+/// Configuration for a token-bucket rate limit strategy: <see cref="Permits"/> executions per
+/// <see cref="Window"/>, with bursts up to <see cref="Burst"/> and optional queueing.
+/// </summary>
+public sealed class RateLimitOptions
+{
+    /// <summary>Sustained number of executions allowed per <see cref="Window"/>. Default 100.</summary>
+    public int Permits { get; set; } = 100;
+
+    /// <summary>The time window over which <see cref="Permits"/> are replenished. Default 1 second.</summary>
+    public TimeSpan Window { get; set; } = TimeSpan.FromSeconds(1);
+
+    /// <summary>Maximum permits that can accumulate for bursting. Defaults to <see cref="Permits"/>.</summary>
+    public int? Burst { get; set; }
+
+    /// <summary>
+    /// How many executions may wait for a permit instead of being rejected immediately.
+    /// Waiting executions are delayed until their reserved permit is replenished. Default 0.
+    /// </summary>
+    public int QueueLimit { get; set; }
+}
