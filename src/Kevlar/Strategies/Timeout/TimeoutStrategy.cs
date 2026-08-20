@@ -25,36 +25,38 @@ internal sealed class TimeoutStrategy : Strategy
     public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
         var priorToken = context.CancellationToken;
-        var timeoutSource = CancellationTokenSourcePool.Shared.RentLinked(priorToken);
+        var usesSystemTime = ReferenceEquals(context.TimeProvider, TimeProvider.System);
+        var timeoutSource = usesSystemTime
+            ? CancellationTokenSourcePool.Shared.RentLinked(priorToken)
+            : CancellationTokenSource.CreateLinkedTokenSource(priorToken);
         ITimer? timer = null;
-
-        if (ReferenceEquals(context.TimeProvider, TimeProvider.System))
-        {
-            timeoutSource.CancelAfter(_timeout);
-        }
-        else
-        {
-            timer = context.TimeProvider.CreateTimer(
-                static state =>
-                {
-                    try
-                    {
-                        ((CancellationTokenSource)state!).Cancel();
-                    }
-                    catch (ObjectDisposedException)
-                    {
-                        // The execution completed and disposed the source while the timer was firing.
-                    }
-                },
-                timeoutSource,
-                _timeout,
-                System.Threading.Timeout.InfiniteTimeSpan);
-        }
-
         ValueTask<Outcome<T>> execution;
 
         try
         {
+            if (usesSystemTime)
+            {
+                timeoutSource.CancelAfter(_timeout);
+            }
+            else
+            {
+                timer = context.TimeProvider.CreateTimer(
+                    static state =>
+                    {
+                        try
+                        {
+                            ((CancellationTokenSource)state!).Cancel();
+                        }
+                        catch (ObjectDisposedException)
+                        {
+                            // A queued callback may outlive disposal of a custom provider's timer.
+                        }
+                    },
+                    timeoutSource,
+                    _timeout,
+                    System.Threading.Timeout.InfiniteTimeSpan);
+            }
+
             context.CancellationToken = timeoutSource.Token;
             execution = next.InvokeAsync(context);
         }

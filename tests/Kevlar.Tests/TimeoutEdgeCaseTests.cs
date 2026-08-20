@@ -182,4 +182,79 @@ public class TimeoutEdgeCaseTests
         await Assert.That(async () => await task).Throws<TimeoutExceededException>();
         await Assert.That(seenShieldName).IsEqualTo("timeout-shield");
     }
+
+    [Test]
+    public async Task A_Queued_Custom_Timer_Callback_Cannot_Cancel_A_Later_Execution()
+    {
+        var timeProvider = new QueuedCallbackTimeProvider();
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var shield = Shield
+            .Timeout(TimeSpan.FromMinutes(1))
+            .WithTimeProvider(timeProvider);
+
+        await shield.ExecuteAsync(_ => new ValueTask<int>(1));
+
+        var task = shield.ExecuteAsync(async token =>
+        {
+            await release.Task;
+            token.ThrowIfCancellationRequested();
+            return 2;
+        }).AsTask();
+
+        timeProvider.Fire(timerIndex: 0);
+        release.SetResult();
+
+        await Assert.That(await task).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task A_Setup_Failure_Disposes_The_Linked_Source()
+    {
+        var timeProvider = new ThrowingTimeProvider();
+        var shield = Shield
+            .Timeout(TimeSpan.FromMinutes(1))
+            .WithTimeProvider(timeProvider);
+
+        await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(1)))
+            .Throws<InvalidOperationException>();
+        await Assert.That(() => timeProvider.Source!.Token).Throws<ObjectDisposedException>();
+    }
+
+    private sealed class QueuedCallbackTimeProvider : TimeProvider
+    {
+        private readonly List<QueuedTimer> _timers = [];
+
+        public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
+        {
+            var timer = new QueuedTimer(callback, state);
+            _timers.Add(timer);
+            return timer;
+        }
+
+        public void Fire(int timerIndex) => _timers[timerIndex].Fire();
+
+        private sealed class QueuedTimer(TimerCallback callback, object? state) : ITimer
+        {
+            public bool Change(TimeSpan dueTime, TimeSpan period) => true;
+
+            public void Dispose()
+            {
+            }
+
+            public ValueTask DisposeAsync() => default;
+
+            public void Fire() => callback(state);
+        }
+    }
+
+    private sealed class ThrowingTimeProvider : TimeProvider
+    {
+        public CancellationTokenSource? Source { get; private set; }
+
+        public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
+        {
+            Source = (CancellationTokenSource)state!;
+            throw new InvalidOperationException("Timer setup failed.");
+        }
+    }
 }
