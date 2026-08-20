@@ -72,13 +72,31 @@ public readonly struct Continuation<T, TState>
         return InvokeStrategyAsync(_next, context);
     }
 
-    private async ValueTask<Outcome<T>> InvokeStrategyAsync(StrategyNode node, KevlarContext context)
+    private ValueTask<Outcome<T>> InvokeStrategyAsync(StrategyNode node, KevlarContext context)
+    {
+        ValueTask<Outcome<T>> execution;
+
+        try
+        {
+            execution = node.Strategy.ExecuteAsync(
+                new Continuation<T, TState>(node.Next, _callback, _state),
+                context);
+        }
+        catch (Exception exception)
+        {
+            return new ValueTask<Outcome<T>>(Outcome<T>.FromException(exception));
+        }
+
+        return execution.IsCompletedSuccessfully
+            ? execution
+            : AwaitStrategyAsync(execution);
+    }
+
+    private static async ValueTask<Outcome<T>> AwaitStrategyAsync(ValueTask<Outcome<T>> execution)
     {
         try
         {
-            return await node.Strategy
-                .ExecuteAsync(new Continuation<T, TState>(node.Next, _callback, _state), context)
-                .ConfigureAwait(false);
+            return await execution.ConfigureAwait(false);
         }
         catch (Exception exception)
         {

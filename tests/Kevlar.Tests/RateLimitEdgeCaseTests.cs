@@ -51,6 +51,21 @@ public class RateLimitEdgeCaseTests
     }
 
     [Test]
+    public async Task Partially_Used_Burst_Cannot_Accumulate_Beyond_The_Burst()
+    {
+        var fakeTime = new FakeTimeProvider();
+        var shield = Shield.RateLimit(2, TimeSpan.FromSeconds(10)).WithTimeProvider(fakeTime);
+
+        await shield.ExecuteAsync(_ => new ValueTask<int>(1));
+        fakeTime.Advance(TimeSpan.FromMinutes(10));
+
+        await shield.ExecuteAsync(_ => new ValueTask<int>(2));
+        await shield.ExecuteAsync(_ => new ValueTask<int>(3));
+        await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(4)))
+            .Throws<RateLimitExceededException>();
+    }
+
+    [Test]
     public async Task Burst_Can_Exceed_The_Sustained_Rate()
     {
         var fakeTime = new FakeTimeProvider();
