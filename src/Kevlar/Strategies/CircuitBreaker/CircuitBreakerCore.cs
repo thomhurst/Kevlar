@@ -10,7 +10,7 @@ internal sealed class CircuitBreakerCore
 {
     private const int BucketCount = 10;
 
-    private readonly object _gate = new();
+    private readonly Lock _gate = new();
     private readonly int? _consecutiveFailureLimit;
     private readonly double? _failureRatio;
     private readonly int _minimumThroughput;
