@@ -173,6 +173,30 @@ public class RateLimitEdgeCaseTests
     }
 
     [Test]
+    public async Task Contended_Acquire_Refreshes_Its_Timestamp()
+    {
+        using var timeProvider = new ContendedTimestampTimeProvider();
+        var shield = Shield
+            .RateLimit(1, TimeSpan.FromSeconds(1))
+            .WithTimeProvider(timeProvider);
+        var delayedExecution = Task.Run(async () =>
+            await shield.ExecuteAsync(_ => new ValueTask<int>(1)));
+
+        try
+        {
+            await Assert.That(timeProvider.WaitForBlockedSample(TimeSpan.FromSeconds(5))).IsTrue();
+            await Assert.That(await shield.ExecuteAsync(_ => new ValueTask<int>(2))).IsEqualTo(2);
+            timeProvider.Advance(TimeSpan.FromSeconds(1));
+        }
+        finally
+        {
+            timeProvider.ReleaseBlockedSample();
+        }
+
+        await Assert.That(await delayedExecution).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Failures_Do_Not_Refund_Tokens()
     {
         var fakeTime = new FakeTimeProvider();
@@ -281,5 +305,39 @@ public class RateLimitEdgeCaseTests
         public override long TimestampFrequency => _timestampFrequency;
 
         public override long GetTimestamp() => _timestamp;
+    }
+
+    private sealed class ContendedTimestampTimeProvider : TimeProvider, IDisposable
+    {
+        private readonly ManualResetEventSlim _sampleCaptured = new();
+        private readonly ManualResetEventSlim _releaseSample = new();
+        private long _timestamp;
+        private int _getTimestampCalls;
+
+        public override long TimestampFrequency => TimeSpan.TicksPerSecond;
+
+        public override long GetTimestamp()
+        {
+            var timestamp = Volatile.Read(ref _timestamp);
+            if (Interlocked.Increment(ref _getTimestampCalls) == 2)
+            {
+                _sampleCaptured.Set();
+                _releaseSample.Wait();
+            }
+
+            return timestamp;
+        }
+
+        public void Advance(TimeSpan elapsed) => Interlocked.Add(ref _timestamp, elapsed.Ticks);
+
+        public bool WaitForBlockedSample(TimeSpan timeout) => _sampleCaptured.Wait(timeout);
+
+        public void ReleaseBlockedSample() => _releaseSample.Set();
+
+        public void Dispose()
+        {
+            _sampleCaptured.Dispose();
+            _releaseSample.Dispose();
+        }
     }
 }

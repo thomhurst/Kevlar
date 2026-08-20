@@ -82,13 +82,10 @@ internal sealed class RateLimitStrategy : Strategy
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private bool TryAcquire(TimeProvider timeProvider, out TimeSpan wait, out TimeSpan? retryAfter)
     {
-        var now = ReferenceEquals(timeProvider, TimeProvider.System)
-            ? Stopwatch.GetTimestamp() - _systemTimestampOrigin
-            : GetCustomTimestamp(timeProvider);
-
         while (true)
         {
             var theoreticalArrival = Volatile.Read(ref _theoreticalArrival);
+            var now = GetCurrentTimestamp(timeProvider);
             var delayTimestampUnits = theoreticalArrival - _burstTolerance - now;
 
             if (delayTimestampUnits > _queueTolerance)
@@ -109,6 +106,12 @@ internal sealed class RateLimitStrategy : Strategy
             }
         }
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private double GetCurrentTimestamp(TimeProvider timeProvider) =>
+        ReferenceEquals(timeProvider, TimeProvider.System)
+            ? Stopwatch.GetTimestamp() - _systemTimestampOrigin
+            : GetCustomTimestamp(timeProvider);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private double GetCustomTimestamp(TimeProvider timeProvider)
