@@ -12,6 +12,9 @@ namespace Kevlar.Strategies;
 /// </summary>
 internal sealed class RateLimitStrategy : Strategy
 {
+    private const int TimestampOriginInitializing = 1;
+    private const int TimestampOriginInitialized = 2;
+
     private static readonly double SecondsPerSystemTimestamp = 1d / Stopwatch.Frequency;
 
     private readonly int _permits;
@@ -23,6 +26,8 @@ internal sealed class RateLimitStrategy : Strategy
     private readonly double _queueTolerance;
 
     private double _theoreticalArrival = double.NegativeInfinity;
+    private long _customTimestampOrigin;
+    private int _customTimestampOriginState;
 
     public RateLimitStrategy(RateLimitOptions options)
     {
@@ -82,7 +87,7 @@ internal sealed class RateLimitStrategy : Strategy
     {
         var now = ReferenceEquals(timeProvider, TimeProvider.System)
             ? Stopwatch.GetTimestamp()
-            : timeProvider.GetTimestamp() * (Stopwatch.Frequency / (double)timeProvider.TimestampFrequency);
+            : GetCustomTimestamp(timeProvider);
 
         while (true)
         {
@@ -105,6 +110,35 @@ internal sealed class RateLimitStrategy : Strategy
                 retryAfter = null;
                 return true;
             }
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private double GetCustomTimestamp(TimeProvider timeProvider)
+    {
+        var timestamp = timeProvider.GetTimestamp();
+        if (Volatile.Read(ref _customTimestampOriginState) != TimestampOriginInitialized)
+        {
+            InitializeCustomTimestampOrigin(timestamp);
+        }
+
+        return (timestamp - _customTimestampOrigin)
+            * (Stopwatch.Frequency / (double)timeProvider.TimestampFrequency);
+    }
+
+    private void InitializeCustomTimestampOrigin(long timestamp)
+    {
+        if (Interlocked.CompareExchange(ref _customTimestampOriginState, TimestampOriginInitializing, 0) == 0)
+        {
+            _customTimestampOrigin = timestamp;
+            Volatile.Write(ref _customTimestampOriginState, TimestampOriginInitialized);
+            return;
+        }
+
+        var spinner = new SpinWait();
+        while (Volatile.Read(ref _customTimestampOriginState) != TimestampOriginInitialized)
+        {
+            spinner.SpinOnce();
         }
     }
 }

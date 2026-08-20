@@ -210,7 +210,7 @@ public class RateLimitEdgeCaseTests
     {
         var shield = Shield
             .RateLimit(1, TimeSpan.FromSeconds(1))
-            .WithTimeProvider(new NegativeTimestampTimeProvider());
+            .WithTimeProvider(new FixedTimestampTimeProvider(-TimeSpan.TicksPerSecond));
 
         var result = await shield.ExecuteAsync(_ => new ValueTask<int>(1));
         await Assert.That(result).IsEqualTo(1);
@@ -219,10 +219,36 @@ public class RateLimitEdgeCaseTests
             .Throws<RateLimitExceededException>();
     }
 
-    private sealed class NegativeTimestampTimeProvider : TimeProvider
+    [Test]
+    public async Task Large_Timestamp_Epoch_Preserves_High_Rate_Intervals()
     {
+        var shield = Shield
+            .RateLimit(options =>
+            {
+                options.Permits = 1_000_000;
+                options.Window = TimeSpan.FromSeconds(1);
+                options.Burst = 1;
+            })
+            .WithTimeProvider(new FixedTimestampTimeProvider(long.MaxValue / 2));
+
+        var result = await shield.ExecuteAsync(_ => new ValueTask<int>(1));
+        await Assert.That(result).IsEqualTo(1);
+
+        await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(2)))
+            .Throws<RateLimitExceededException>();
+    }
+
+    private sealed class FixedTimestampTimeProvider : TimeProvider
+    {
+        private readonly long _timestamp;
+
+        public FixedTimestampTimeProvider(long timestamp)
+        {
+            _timestamp = timestamp;
+        }
+
         public override long TimestampFrequency => TimeSpan.TicksPerSecond;
 
-        public override long GetTimestamp() => -TimeSpan.TicksPerSecond;
+        public override long GetTimestamp() => _timestamp;
     }
 }
