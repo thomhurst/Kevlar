@@ -251,16 +251,34 @@ public class RateLimitEdgeCaseTests
         await Assert.That(rejection!.RetryAfter!.Value <= TimeSpan.FromSeconds(1)).IsTrue();
     }
 
+    [Test]
+    public async Task Distinct_Custom_Provider_Copies_Share_A_Timeline()
+    {
+        var shield = Shield
+            .RateLimit(1, TimeSpan.FromSeconds(1))
+            .WithTimeProvider(new FixedTimestampTimeProvider(0, 1));
+        var secondProviderCopy = shield.WithTimeProvider(
+            new FixedTimestampTimeProvider(long.MaxValue / 2, TimeSpan.TicksPerSecond));
+
+        await shield.ExecuteAsync(_ => new ValueTask<int>(1));
+
+        var rejection = await Assert.That(async () => await secondProviderCopy.ExecuteAsync(_ => new ValueTask<int>(2)))
+            .Throws<RateLimitExceededException>();
+        await Assert.That(rejection!.RetryAfter!.Value <= TimeSpan.FromSeconds(1)).IsTrue();
+    }
+
     private sealed class FixedTimestampTimeProvider : TimeProvider
     {
         private readonly long _timestamp;
+        private readonly long _timestampFrequency;
 
-        public FixedTimestampTimeProvider(long timestamp)
+        public FixedTimestampTimeProvider(long timestamp, long timestampFrequency = TimeSpan.TicksPerSecond)
         {
             _timestamp = timestamp;
+            _timestampFrequency = timestampFrequency;
         }
 
-        public override long TimestampFrequency => TimeSpan.TicksPerSecond;
+        public override long TimestampFrequency => _timestampFrequency;
 
         public override long GetTimestamp() => _timestamp;
     }
