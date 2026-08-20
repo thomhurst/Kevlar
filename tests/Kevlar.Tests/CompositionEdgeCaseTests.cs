@@ -5,7 +5,7 @@ public class CompositionEdgeCaseTests
     [Test]
     public async Task Compose_With_No_Policies_Passes_Through()
     {
-        var composed = Policy.Compose();
+        var composed = Shield.Compose();
         var result = await composed.ExecuteAsync(_ => new ValueTask<int>(7));
         await Assert.That(result).IsEqualTo(7);
     }
@@ -13,9 +13,9 @@ public class CompositionEdgeCaseTests
     [Test]
     public async Task Compose_Shares_Stateful_Strategies()
     {
-        var breaker = Policy.CircuitBreaker(1, TimeSpan.FromMinutes(1));
-        var composedA = Policy.Compose(Policy.Retry(0, Backoff.None), breaker);
-        var composedB = Policy.Compose(Policy.Timeout(TimeSpan.FromMinutes(1)), breaker);
+        var breaker = Shield.CircuitBreaker(1, TimeSpan.FromMinutes(1));
+        var composedA = Shield.Compose(Shield.Retry(0, Backoff.None), breaker);
+        var composedB = Shield.Compose(Shield.Timeout(TimeSpan.FromMinutes(1)), breaker);
 
         await Assert.That(async () => await composedA.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
             .Throws<InvalidOperationException>();
@@ -31,11 +31,11 @@ public class CompositionEdgeCaseTests
 
         // Classic Polly composition: the breaker trips mid-retry-loop; subsequent retries hit
         // the open circuit instead of the delegate, and the final failure is the rejection.
-        var policy = Policy
+        var shield = Shield
             .Retry(4, Backoff.None)
             .CircuitBreaker(2, TimeSpan.FromMinutes(1));
 
-        await Assert.That(async () => await policy.ExecuteAsync<int>(_ =>
+        await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
         {
             attempts++;
             throw new InvalidOperationException();
@@ -49,16 +49,16 @@ public class CompositionEdgeCaseTests
     public async Task A_New_Handling_Clause_Replaces_The_Ambient_One()
     {
         var calls = new List<string>();
-        var policy = Policy
-            .Handle<ArgumentException>()
+        var shield = Shield
+            .When<ArgumentException>()
             .Retry(5, Backoff.None)
-            .Handle<InvalidOperationException>()
+            .When<InvalidOperationException>()
             .Retry(1, Backoff.None);
 
         // Call sequence: ArgumentException (only the outer retry handles it),
         // then InvalidOperationException twice (only the inner retry handles those,
         // and it exhausts after one retry), surfacing the final failure.
-        await Assert.That(async () => await policy.ExecuteAsync<int>(_ =>
+        await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
         {
             calls.Add("attempt");
             throw calls.Count == 1 ? new ArgumentException() : new InvalidOperationException("final");
@@ -70,29 +70,31 @@ public class CompositionEdgeCaseTests
     [Test]
     public async Task Wrapping_A_Typed_Policy_Keeps_Its_Result_Handling_For_Later_Strategies()
     {
-        var typed = Policy.For<int>().HandleResult(value => value < 0).Retry(0, Backoff.None);
-        var combined = Policy.Retry(0, Backoff.None).Wrap(typed).Fallback(99);
+        var typed = Shield.For<int>().WhenResult(value => value < 0).Timeout(TimeSpan.FromMinutes(1));
+        var combined = Shield.Retry(0, Backoff.None).Wrap(typed).Fallback(99);
 
-        // The fallback appended after the wrap inherits the typed policy's result clause.
+        // The fallback appended after the wrap inherits the typed shield's result clause.
         var result = await combined.ExecuteAsync(_ => new ValueTask<int>(-5));
 
         await Assert.That(result).IsEqualTo(99);
     }
 
     [Test]
-    public async Task Lifting_With_For_Resets_The_Ambient_Clauses_To_The_Default()
+    public async Task Lifting_With_For_Carries_The_Ambient_Clause()
     {
-        var policy = Policy
-            .Handle<ArgumentException>()
-            .Retry(0, Backoff.None)
+        var shield = Shield
+            .When<ArgumentException>()
+            .Timeout(TimeSpan.FromMinutes(1))
             .For<string>()
             .Fallback("recovered");
 
-        // The ArgumentException clause does not carry across For<T>(): the fallback uses the
-        // default handling and recovers from any non-cancellation exception.
-        var result = await policy.ExecuteAsync(_ => throw new InvalidOperationException());
+        // The ArgumentException clause carries across For<T>(): the fallback recovers matching
+        // exceptions and lets everything else surface untouched.
+        var recovered = await shield.ExecuteAsync(_ => throw new ArgumentException());
+        await Assert.That(recovered).IsEqualTo("recovered");
 
-        await Assert.That(result).IsEqualTo("recovered");
+        await Assert.That(async () => await shield.ExecuteAsync<string>(_ => throw new InvalidOperationException()))
+            .Throws<InvalidOperationException>();
     }
 
     [Test]
@@ -100,11 +102,11 @@ public class CompositionEdgeCaseTests
     {
         var strategyCalls = 0;
         var delegateCalls = 0;
-        var policy = Policy
+        var shield = Shield
             .Retry(2, Backoff.None)
             .Use(new ThrowingStrategy(() => strategyCalls++));
 
-        await Assert.That(async () => await policy.ExecuteAsync(_ =>
+        await Assert.That(async () => await shield.ExecuteAsync(_ =>
         {
             delegateCalls++;
             return new ValueTask<int>(1);
@@ -119,7 +121,7 @@ public class CompositionEdgeCaseTests
     [Test]
     public async Task WithName_Returns_A_Copy_And_Leaves_The_Original_Unnamed()
     {
-        var original = Policy.Retry(1, Backoff.None);
+        var original = Shield.Retry(1, Backoff.None);
         var named = original.WithName("named");
 
         await Assert.That(original.Name).IsNull();
@@ -129,7 +131,7 @@ public class CompositionEdgeCaseTests
     [Test]
     public async Task WithName_Copies_Share_Stateful_Strategies()
     {
-        var original = Policy.CircuitBreaker(1, TimeSpan.FromMinutes(1));
+        var original = Shield.CircuitBreaker(1, TimeSpan.FromMinutes(1));
         var named = original.WithName("named");
 
         await Assert.That(async () => await named.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
@@ -143,13 +145,13 @@ public class CompositionEdgeCaseTests
     [Test]
     public async Task Typed_Policies_Support_ExecuteOutcome()
     {
-        var policy = Policy.For<int>().HandleResult(-1).Retry(0, Backoff.None);
+        var shield = Shield.For<int>().WhenResult(-1).Retry(0, Backoff.None);
 
-        var failure = await policy.ExecuteOutcomeAsync(_ => throw new InvalidOperationException("boom"));
+        var failure = await shield.ExecuteOutcomeAsync(_ => throw new InvalidOperationException("boom"));
         await Assert.That(failure.IsSuccess).IsFalse();
         await Assert.That(failure.Exception!.Message).IsEqualTo("boom");
 
-        var success = await policy.ExecuteOutcomeAsync(_ => new ValueTask<int>(3));
+        var success = await shield.ExecuteOutcomeAsync(_ => new ValueTask<int>(3));
         await Assert.That(success.IsSuccess).IsTrue();
         await Assert.That(success.Result).IsEqualTo(3);
     }
@@ -158,9 +160,9 @@ public class CompositionEdgeCaseTests
     public async Task Void_Executions_Flow_Through_The_Pipeline()
     {
         var attempts = 0;
-        var policy = Policy.Retry(2, Backoff.None);
+        var shield = Shield.Retry(2, Backoff.None);
 
-        await policy.ExecuteAsync(_ =>
+        await shield.ExecuteAsync(_ =>
         {
             attempts++;
             if (attempts < 2)
@@ -174,7 +176,7 @@ public class CompositionEdgeCaseTests
         await Assert.That(attempts).IsEqualTo(2);
 
         var stateSeen = 0;
-        await policy.ExecuteAsync(41, (state, _) =>
+        await shield.ExecuteAsync(41, (state, _) =>
         {
             stateSeen = state + 1;
             return default;
@@ -186,37 +188,37 @@ public class CompositionEdgeCaseTests
     [Test]
     public async Task A_Full_Pipeline_Composes_All_Strategy_Types()
     {
-        var policy = Policy.For<int>()
-            .Handle<InvalidOperationException>()
+        var shield = Shield.For<int>()
+            .When<InvalidOperationException>()
+            .Fallback(-1)
             .Retry(2, Backoff.None)
             .CircuitBreaker(10, TimeSpan.FromMinutes(1))
             .Timeout(TimeSpan.FromMinutes(1))
-            .Bulkhead(4, 4)
-            .RateLimit(100, TimeSpan.FromSeconds(1))
-            .Fallback(-1);
+            .ConcurrencyLimit(4, 4)
+            .RateLimit(100, TimeSpan.FromSeconds(1));
 
-        var success = await policy.ExecuteAsync(_ => new ValueTask<int>(42));
+        var success = await shield.ExecuteAsync(_ => new ValueTask<int>(42));
         await Assert.That(success).IsEqualTo(42);
 
         var attempts = 0;
-        var recovered = await policy.ExecuteAsync(_ =>
+        var recovered = await shield.ExecuteAsync(_ =>
         {
             attempts++;
             throw new InvalidOperationException();
         });
 
-        // The innermost fallback recovers before any retry happens.
+        // The outermost fallback recovers only after the retries inside it are exhausted.
         await Assert.That(recovered).IsEqualTo(-1);
-        await Assert.That(attempts).IsEqualTo(1);
+        await Assert.That(attempts).IsEqualTo(3);
     }
 
     [Test]
     public async Task Nested_Wraps_Preserve_Strategy_Order()
     {
         var log = new List<string>();
-        var a = Policy.Use(new MarkerStrategy(log, "a"));
-        var b = Policy.Use(new MarkerStrategy(log, "b"));
-        var c = Policy.Use(new MarkerStrategy(log, "c"));
+        var a = Shield.Use(new MarkerStrategy(log, "a"));
+        var b = Shield.Use(new MarkerStrategy(log, "b"));
+        var c = Shield.Use(new MarkerStrategy(log, "c"));
 
         await a.Wrap(b.Wrap(c)).ExecuteAsync(_ =>
         {

@@ -5,9 +5,9 @@ public class FallbackTests
     [Test]
     public async Task Fallback_Value_Replaces_Exceptions()
     {
-        var policy = Policy.For<string>().Handle<InvalidOperationException>().Fallback("fallback");
+        var shield = Shield.For<string>().When<InvalidOperationException>().Fallback("fallback");
 
-        var result = await policy.ExecuteAsync(_ => throw new InvalidOperationException());
+        var result = await shield.ExecuteAsync(_ => throw new InvalidOperationException());
 
         await Assert.That(result).IsEqualTo("fallback");
     }
@@ -16,15 +16,15 @@ public class FallbackTests
     public async Task Fallback_Factory_Receives_The_Handled_Outcome()
     {
         Exception? seen = null;
-        var policy = Policy.For<string>()
-            .Handle<InvalidOperationException>()
+        var shield = Shield.For<string>()
+            .When<InvalidOperationException>()
             .Fallback((outcome, _) =>
             {
                 seen = outcome.Exception;
                 return new ValueTask<string>("recovered");
             });
 
-        var result = await policy.ExecuteAsync(_ => throw new InvalidOperationException("original"));
+        var result = await shield.ExecuteAsync(_ => throw new InvalidOperationException("original"));
 
         await Assert.That(result).IsEqualTo("recovered");
         await Assert.That(seen!.Message).IsEqualTo("original");
@@ -33,9 +33,9 @@ public class FallbackTests
     [Test]
     public async Task Fallback_Applies_To_Handled_Results()
     {
-        var policy = Policy.For<int>().HandleResult(-1).Fallback(0);
+        var shield = Shield.For<int>().WhenResult(-1).Fallback(0);
 
-        var result = await policy.ExecuteAsync(_ => new ValueTask<int>(-1));
+        var result = await shield.ExecuteAsync(_ => new ValueTask<int>(-1));
 
         await Assert.That(result).IsEqualTo(0);
     }
@@ -43,9 +43,9 @@ public class FallbackTests
     [Test]
     public async Task Fallback_Is_Not_Used_On_Success()
     {
-        var policy = Policy.For<int>().HandleResult(-1).Fallback(0);
+        var shield = Shield.For<int>().WhenResult(-1).Fallback(0);
 
-        var result = await policy.ExecuteAsync(_ => new ValueTask<int>(42));
+        var result = await shield.ExecuteAsync(_ => new ValueTask<int>(42));
 
         await Assert.That(result).IsEqualTo(42);
     }
@@ -53,9 +53,9 @@ public class FallbackTests
     [Test]
     public async Task Unhandled_Exceptions_Bypass_The_Fallback()
     {
-        var policy = Policy.For<string>().Handle<InvalidOperationException>().Fallback("fallback");
+        var shield = Shield.For<string>().When<InvalidOperationException>().Fallback("fallback");
 
-        await Assert.That(async () => await policy.ExecuteAsync(_ => throw new ArgumentException()))
+        await Assert.That(async () => await shield.ExecuteAsync(_ => throw new ArgumentException()))
             .Throws<ArgumentException>();
     }
 
@@ -63,11 +63,11 @@ public class FallbackTests
     public async Task OnFallback_Fires()
     {
         var fired = false;
-        var policy = Policy.For<int>()
-            .HandleResult(-1)
+        var shield = Shield.For<int>()
+            .WhenResult(-1)
             .Fallback(0, onFallback: _ => fired = true);
 
-        await policy.ExecuteAsync(_ => new ValueTask<int>(-1));
+        await shield.ExecuteAsync(_ => new ValueTask<int>(-1));
 
         await Assert.That(fired).IsTrue();
     }
@@ -76,12 +76,12 @@ public class FallbackTests
     public async Task Retry_Then_Fallback_Composition()
     {
         var attempts = 0;
-        var policy = Policy.For<string>()
-            .Handle<InvalidOperationException>()
+        var shield = Shield.For<string>()
+            .When<InvalidOperationException>()
             .Fallback("gave up")
             .Retry(2, Backoff.None);
 
-        var result = await policy.ExecuteAsync(_ =>
+        var result = await shield.ExecuteAsync(_ =>
         {
             attempts++;
             throw new InvalidOperationException();

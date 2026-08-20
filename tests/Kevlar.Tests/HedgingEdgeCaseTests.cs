@@ -6,14 +6,14 @@ public class HedgingEdgeCaseTests
     public async Task OnHedge_Fires_For_Each_Extra_Attempt()
     {
         var hedges = new List<int>();
-        var policy = Policy.Hedge(options =>
+        var shield = Shield.Hedge(options =>
         {
             options.MaxAttempts = 3;
             options.Delay = System.Threading.Timeout.InfiniteTimeSpan;
             options.OnHedge = hedge => hedges.Add(hedge.Attempt);
         });
 
-        await Assert.That(async () => await policy.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
+        await Assert.That(async () => await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
             .Throws<InvalidOperationException>();
 
         await Assert.That(hedges).IsEquivalentTo([2, 3]);
@@ -24,9 +24,9 @@ public class HedgingEdgeCaseTests
     {
         var loserCancelled = new TaskCompletionSource();
         var attempts = 0;
-        var policy = Policy.Hedge(2, TimeSpan.Zero);
+        var shield = Shield.Hedge(2, TimeSpan.Zero);
 
-        var result = await policy.ExecuteAsync(async token =>
+        var result = await shield.ExecuteAsync(async token =>
         {
             var attempt = Interlocked.Increment(ref attempts);
             if (attempt == 1)
@@ -46,15 +46,15 @@ public class HedgingEdgeCaseTests
     public async Task Result_Handling_Hedges_On_Bad_Results()
     {
         var attempts = 0;
-        var policy = Policy.For<int>()
-            .HandleResult(value => value < 0)
+        var shield = Shield.For<int>()
+            .WhenResult(value => value < 0)
             .Hedge(options =>
             {
                 options.MaxAttempts = 2;
                 options.Delay = System.Threading.Timeout.InfiniteTimeSpan;
             });
 
-        var result = await policy.ExecuteAsync(_ =>
+        var result = await shield.ExecuteAsync(_ =>
         {
             var attempt = Interlocked.Increment(ref attempts);
             return new ValueTask<int>(attempt == 1 ? -1 : 42);
@@ -68,15 +68,15 @@ public class HedgingEdgeCaseTests
     public async Task When_Every_Attempt_Produces_A_Handled_Result_The_Last_One_Is_Returned()
     {
         var attempts = 0;
-        var policy = Policy.For<int>()
-            .HandleResult(value => value < 0)
+        var shield = Shield.For<int>()
+            .WhenResult(value => value < 0)
             .Hedge(options =>
             {
                 options.MaxAttempts = 2;
                 options.Delay = System.Threading.Timeout.InfiniteTimeSpan;
             });
 
-        var result = await policy.ExecuteAsync(_ =>
+        var result = await shield.ExecuteAsync(_ =>
         {
             var attempt = Interlocked.Increment(ref attempts);
             return new ValueTask<int>(-attempt);
@@ -91,9 +91,9 @@ public class HedgingEdgeCaseTests
     {
         using var cancellation = new CancellationTokenSource();
         var started = 0;
-        var policy = Policy.Hedge(2, TimeSpan.Zero);
+        var shield = Shield.Hedge(2, TimeSpan.Zero);
 
-        var task = policy.ExecuteAsync(async token =>
+        var task = shield.ExecuteAsync(async token =>
         {
             Interlocked.Increment(ref started);
             await Task.Delay(System.Threading.Timeout.InfiniteTimeSpan, token);
@@ -110,7 +110,7 @@ public class HedgingEdgeCaseTests
     public async Task A_Single_Attempt_Hedge_Runs_Synchronously()
     {
         // MaxAttempts of 1 means no hedging at all, so the synchronous path is allowed.
-        var result = Policy.Hedge(1, TimeSpan.FromSeconds(1)).Execute(_ => 5);
+        var result = Shield.Hedge(1, TimeSpan.FromSeconds(1)).Execute(_ => 5);
         await Assert.That(result).IsEqualTo(5);
     }
 
@@ -118,8 +118,8 @@ public class HedgingEdgeCaseTests
     public async Task An_Unhandled_Exception_Wins_Immediately()
     {
         var attempts = 0;
-        var policy = Policy
-            .Handle<InvalidOperationException>()
+        var shield = Shield
+            .When<InvalidOperationException>()
             .Hedge(options =>
             {
                 options.MaxAttempts = 3;
@@ -128,7 +128,7 @@ public class HedgingEdgeCaseTests
 
         // ArgumentException is not in the handling clause, so hedging stops with it
         // rather than launching further attempts.
-        await Assert.That(async () => await policy.ExecuteAsync<int>(_ =>
+        await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
         {
             Interlocked.Increment(ref attempts);
             throw new ArgumentException("not hedged");
@@ -143,7 +143,7 @@ public class HedgingEdgeCaseTests
         var key = new KevlarKey<string>("request-id");
         string? seenOnHedge = null;
 
-        var policy = Policy
+        var shield = Shield
             .Use(new PropertySeedingStrategy(key, "abc-123"))
             .Hedge(options =>
             {
@@ -153,7 +153,7 @@ public class HedgingEdgeCaseTests
             });
 
         var attempts = 0;
-        var result = await policy.ExecuteAsync(_ =>
+        var result = await shield.ExecuteAsync(_ =>
         {
             var attempt = Interlocked.Increment(ref attempts);
             if (attempt == 1)

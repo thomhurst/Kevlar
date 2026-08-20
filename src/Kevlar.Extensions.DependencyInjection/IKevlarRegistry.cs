@@ -2,18 +2,18 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Kevlar.Extensions.DependencyInjection;
 
-/// <summary>Resolves named policies registered via <c>AddKevlarPolicy</c>.</summary>
+/// <summary>Resolves named shields registered via <c>AddShield</c>.</summary>
 public interface IKevlarRegistry
 {
-    /// <summary>Returns the named policy, or throws <see cref="KeyNotFoundException"/>.</summary>
-    Policy GetPolicy(string name);
+    /// <summary>Returns the named shield, or throws <see cref="KeyNotFoundException"/>.</summary>
+    Shield GetShield(string name);
 
-    /// <summary>Returns the named result-aware policy, or throws <see cref="KeyNotFoundException"/>.</summary>
-    Policy<TResult> GetPolicy<TResult>(string name);
+    /// <summary>Returns the named result-aware shield, or throws <see cref="KeyNotFoundException"/>.</summary>
+    Shield<TResult> GetShield<TResult>(string name);
 
-    /// <summary>Attempts to resolve the named policy.</summary>
-    bool TryGetPolicy(string name, [NotNullWhen(true)] out Policy? policy);
+    /// <summary>Attempts to resolve the named shield.</summary>
+    bool TryGetShield(string name, [NotNullWhen(true)] out Shield? shield);
 
-    /// <summary>Attempts to resolve the named result-aware policy.</summary>
-    bool TryGetPolicy<TResult>(string name, [NotNullWhen(true)] out Policy<TResult>? policy);
+    /// <summary>Attempts to resolve the named result-aware shield.</summary>
+    bool TryGetShield<TResult>(string name, [NotNullWhen(true)] out Shield<TResult>? shield);
 }

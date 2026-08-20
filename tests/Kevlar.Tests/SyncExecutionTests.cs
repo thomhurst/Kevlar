@@ -8,9 +8,9 @@ public class SyncExecutionTests
     public async Task Sync_Exhausted_Retries_Rethrow_The_Last_Exception()
     {
         var attempts = 0;
-        var policy = Policy.Retry(2, Backoff.None);
+        var shield = Shield.Retry(2, Backoff.None);
 
-        await Assert.That(() => policy.Execute<int>(_ =>
+        await Assert.That(() => shield.Execute<int>(_ =>
         {
             attempts++;
             throw new InvalidOperationException($"attempt {attempts}");
@@ -21,9 +21,9 @@ public class SyncExecutionTests
     public async Task Sync_Retry_Delays_Block_And_Then_Complete()
     {
         var attempts = 0;
-        var policy = Policy.Retry(2, Backoff.Constant(TimeSpan.FromMilliseconds(10)));
+        var shield = Shield.Retry(2, Backoff.Constant(TimeSpan.FromMilliseconds(10)));
 
-        var result = policy.Execute(_ =>
+        var result = shield.Execute(_ =>
         {
             attempts++;
             if (attempts < 3)
@@ -40,37 +40,37 @@ public class SyncExecutionTests
     [Test]
     public async Task Sync_CircuitBreaker_Trips_And_Rejects()
     {
-        var policy = Policy.CircuitBreaker(2, TimeSpan.FromMinutes(1));
+        var shield = Shield.CircuitBreaker(2, TimeSpan.FromMinutes(1));
 
         for (var i = 0; i < 2; i++)
         {
-            await Assert.That(() => policy.Execute<int>(_ => throw new InvalidOperationException()))
+            await Assert.That(() => shield.Execute<int>(_ => throw new InvalidOperationException()))
                 .Throws<InvalidOperationException>();
         }
 
-        await Assert.That(() => policy.Execute(_ => 1)).Throws<CircuitOpenException>();
+        await Assert.That(() => shield.Execute(_ => 1)).Throws<CircuitOpenException>();
     }
 
     [Test]
     public async Task Sync_RateLimit_Rejects_When_Drained()
     {
         var fakeTime = new FakeTimeProvider();
-        var policy = Policy.RateLimit(2, TimeSpan.FromSeconds(10)).WithTimeProvider(fakeTime);
+        var shield = Shield.RateLimit(2, TimeSpan.FromSeconds(10)).WithTimeProvider(fakeTime);
 
-        await Assert.That(policy.Execute(_ => 1)).IsEqualTo(1);
-        await Assert.That(policy.Execute(_ => 2)).IsEqualTo(2);
+        await Assert.That(shield.Execute(_ => 1)).IsEqualTo(1);
+        await Assert.That(shield.Execute(_ => 2)).IsEqualTo(2);
 
-        await Assert.That(() => policy.Execute(_ => 3)).Throws<RateLimitExceededException>();
+        await Assert.That(() => shield.Execute(_ => 3)).Throws<RateLimitExceededException>();
     }
 
     [Test]
     public async Task Sync_Bulkhead_Rejects_When_Full()
     {
-        var policy = Policy.Bulkhead(maxConcurrency: 1);
+        var shield = Shield.ConcurrencyLimit(maxConcurrency: 1);
         var gate = new TaskCompletionSource();
         var started = new TaskCompletionSource();
 
-        var occupier = policy.ExecuteAsync(async _ =>
+        var occupier = shield.ExecuteAsync(async _ =>
         {
             started.SetResult();
             await gate.Task;
@@ -79,19 +79,19 @@ public class SyncExecutionTests
 
         await started.Task;
 
-        await Assert.That(() => policy.Execute(_ => 2)).Throws<BulkheadRejectedException>();
+        await Assert.That(() => shield.Execute(_ => 2)).Throws<ConcurrencyLimitExceededException>();
 
         gate.SetResult();
         await Assert.That(await occupier).IsEqualTo(1);
     }
 
     [Test]
-    public async Task Sync_HandleResult_Retries()
+    public async Task Sync_WhenResult_Retries()
     {
         var attempts = 0;
-        var policy = Policy.For<int>().HandleResult(value => value < 0).Retry(3, Backoff.None);
+        var shield = Shield.For<int>().WhenResult(value => value < 0).Retry(3, Backoff.None);
 
-        var result = policy.Execute(_ =>
+        var result = shield.Execute(_ =>
         {
             attempts++;
             return attempts < 3 ? -1 : attempts;
@@ -103,20 +103,20 @@ public class SyncExecutionTests
     [Test]
     public async Task Sync_State_Passing_Overloads_Thread_State()
     {
-        var policy = Policy.Retry(1, Backoff.None);
+        var shield = Shield.Retry(1, Backoff.None);
 
-        var result = policy.Execute(21, static (state, _) => state * 2);
+        var result = shield.Execute(21, static (state, _) => state * 2);
         await Assert.That(result).IsEqualTo(42);
 
         var sideEffect = 0;
-        policy.Execute(7, (state, _) => sideEffect = state);
+        shield.Execute(7, (state, _) => sideEffect = state);
         await Assert.That(sideEffect).IsEqualTo(7);
     }
 
     [Test]
     public async Task Sync_Empty_Policy_Passes_Through()
     {
-        var result = Policy.Empty.Execute(_ => 99);
+        var result = Shield.Empty.Execute(_ => 99);
         await Assert.That(result).IsEqualTo(99);
     }
 
@@ -126,12 +126,12 @@ public class SyncExecutionTests
         var attempts = 0;
         // Fallback first (outermost), retry inside it: the retries exhaust before the
         // fallback replaces the final failure.
-        var policy = Policy.For<string>()
-            .Handle<InvalidOperationException>()
+        var shield = Shield.For<string>()
+            .When<InvalidOperationException>()
             .Fallback("fallback")
             .Retry(2, Backoff.None);
 
-        var result = policy.Execute(_ =>
+        var result = shield.Execute(_ =>
         {
             attempts++;
             throw new InvalidOperationException();
@@ -145,11 +145,11 @@ public class SyncExecutionTests
     [Test]
     public async Task Sync_Exceptions_Keep_Their_Original_Stack_Trace()
     {
-        var policy = Policy.Retry(0, Backoff.None);
+        var shield = Shield.Retry(0, Backoff.None);
 
         try
         {
-            policy.Execute<int>(_ => ThrowDeep());
+            shield.Execute<int>(_ => ThrowDeep());
             throw new Exception("should not be reached");
         }
         catch (InvalidOperationException exception)

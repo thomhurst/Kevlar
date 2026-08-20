@@ -26,6 +26,16 @@ internal sealed class RetryStrategy : Strategy
         _delayGenerator = options.DelayGenerator;
     }
 
+    internal override OutcomeJudge? ReactiveJudge => _judge;
+
+    public override string Describe()
+    {
+        var cap = _maxDelay is { } max ? $", ≤{DescribeHelper.Time(max)}" : string.Empty;
+        return _maxRetries == int.MaxValue
+            ? $"RetryForever({_backoff}{cap})"
+            : $"Retry({_maxRetries}, {_backoff}{cap})";
+    }
+
     public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
         for (var retriesUsed = 0; ; retriesUsed++)
@@ -40,6 +50,7 @@ internal sealed class RetryStrategy : Strategy
             }
 
             var attempt = retriesUsed + 1;
+            KevlarMetrics.Retry(context.ShieldName);
             var delay = _backoff.GetDelay(attempt);
 
             if (_maxDelay is { } cap && delay > cap)
@@ -55,7 +66,9 @@ internal sealed class RetryStrategy : Strategy
                     && _delayGenerator(new RetryEvent(attempt, delay, outcome.Exception, result, context)) is { } custom
                     && custom >= TimeSpan.Zero)
                 {
-                    delay = custom;
+                    // MaxDelay is an absolute bound: it also caps generator-supplied delays
+                    // such as a server's Retry-After suggestion.
+                    delay = _maxDelay is { } absolute && custom > absolute ? absolute : custom;
                 }
 
                 if (_onRetry is not null || _onRetryAsync is not null)

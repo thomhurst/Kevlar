@@ -8,9 +8,9 @@ Race parallel attempts against tail latency: if the first attempt hasn't answere
 
 ```csharp
 // Fire a second attempt if the first hasn't answered within 100ms.
-Policy.Hedge(maxAttempts: 2, delay: TimeSpan.FromMilliseconds(100));
+Shield.Hedge(maxAttempts: 2, delay: TimeSpan.FromMilliseconds(100));
 
-Policy.Hedge(o =>
+Shield.Hedge(o =>
 {
     o.MaxAttempts = 2;                        // default 2 (total attempts, incl. the first)
     o.Delay = TimeSpan.FromSeconds(1);        // default 1s
@@ -52,7 +52,7 @@ Hedging trades extra load for lower tail latency. It shines for:
 Avoid it for writes that aren't idempotent (you may execute them twice!) and for dependencies that are slow because they're *overloaded* — hedging feeds the overload. Pair it with a [circuit breaker](circuit-breaker.md) or [rate limit](rate-limit.md) when in doubt:
 
 ```csharp
-var policy = Policy
+var shield = Shield
     .Timeout(TimeSpan.FromSeconds(2))
     .Hedge(maxAttempts: 2, delay: TimeSpan.FromMilliseconds(100))
     .CircuitBreaker(o => o.FailureRatio = 0.5);

@@ -20,6 +20,10 @@ internal sealed class HedgingStrategy : Strategy
         _onHedge = options.OnHedge;
     }
 
+    internal override OutcomeJudge? ReactiveJudge => _judge;
+
+    public override string Describe() => $"Hedge({_maxAttempts} attempts, delay {DescribeHelper.Time(_delay)})";
+
     public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
         if (_maxAttempts == 1)
@@ -106,6 +110,7 @@ internal sealed class HedgingStrategy : Strategy
 
         if (attemptNumber > 1)
         {
+            KevlarMetrics.Hedge(context.ShieldName);
             _onHedge?.Invoke(new HedgeEvent(attemptNumber, context));
         }
 

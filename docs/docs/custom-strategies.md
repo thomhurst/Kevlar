@@ -16,16 +16,22 @@ public sealed class LoggingStrategy(ILogger logger) : Strategy
     {
         var start = context.TimeProvider.GetTimestamp();
         var outcome = await next.InvokeAsync(context);
-        logger.LogInformation("{Policy} took {Elapsed}", context.PolicyName,
+        logger.LogInformation("{Shield} took {Elapsed}", context.ShieldName,
             context.TimeProvider.GetElapsedTime(start));
         return outcome;
     }
 }
 
-var policy = Policy.Use(new LoggingStrategy(logger)).Retry(3);
+var shield = Shield.Use(new LoggingStrategy(logger)).Retry(3);
 ```
 
 `Use` slots your strategy into the chain at that position — here, outside the retries, so it logs total elapsed time across all attempts. Put it after `Retry` to log each attempt instead.
+
+Override `Describe()` so `shield.ToString()` names your strategy meaningfully in [pipeline descriptions](observability.md#pipeline-descriptions):
+
+```csharp
+public override string Describe() => "Logging";
+```
 
 ## The contract
 
@@ -40,7 +46,7 @@ The power is in how many times you call `next`:
 
 | Calls to `next` | You've built a | Examples in the box |
 |---|---|---|
-| zero | short-circuit | circuit breaker (open), rate limit, bulkhead rejection |
+| zero | short-circuit | circuit breaker (open), rate limit, concurrency limit rejection |
 | one | decorator | timeout, fallback, logging, metrics |
 | many | repeater | retry, hedging |
 
@@ -70,7 +76,7 @@ The exception is only thrown once — at the pipeline boundary, back in the call
 
 The context flows through the whole pipeline:
 
-- `context.PolicyName` — set via `WithName`, for logs and metrics.
+- `context.ShieldName` — set via `WithName`, for logs and metrics.
 - `context.TimeProvider` — **always use this instead of `DateTime`/`Stopwatch`/`Task.Delay`**, so your strategy stays [testable with `FakeTimeProvider`](testing.md) like the built-ins.
 - `context.CancellationToken` — the current token. Strategies such as timeouts *replace* this for the layers beneath them — which is why delegates must use the token they're handed rather than a captured one.
 - `context.IsSynchronous` — `true` under `Execute`; branch on it if your strategy would otherwise block or break a sync caller (hedging throws for sync callers this way).
@@ -87,4 +93,4 @@ Contexts are pooled and recycled by the engine — never store one beyond the ex
 
 ## Thread safety
 
-One strategy instance is shared by every execution of the policy containing it — and by every policy it's composed into. That's the [state-sharing rule](composition.md#the-state-sharing-rule) working in your favour, but it means your strategy must be thread-safe, like the built-in breakers and limiters.
+One strategy instance is shared by every execution of the shield containing it — and by every shield it's composed into. That's the [state-sharing rule](composition.md#the-state-sharing-rule) working in your favour, but it means your strategy must be thread-safe, like the built-in breakers and limiters.

@@ -1,11 +1,11 @@
 namespace Kevlar;
 
 /// <summary>
-/// Configuration for a bulkhead (concurrency limiter) strategy: at most
+/// Configuration for a concurrency limit (concurrency limiter) strategy: at most
 /// <see cref="MaxConcurrency"/> executions run at once, with up to <see cref="MaxQueue"/>
 /// more waiting; anything beyond that is rejected immediately.
 /// </summary>
-public sealed class BulkheadOptions
+public sealed class ConcurrencyLimitOptions
 {
     /// <summary>Maximum concurrent executions. Default 10.</summary>
     public int MaxConcurrency { get; set; } = 10;

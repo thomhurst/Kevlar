@@ -5,30 +5,31 @@ namespace Kevlar;
 
 /// <summary>
 /// An immutable, thread-safe, result-aware resilience pipeline for executions returning
-/// <typeparamref name="TResult"/>. Unlike <see cref="Policy"/>, its handling clauses can react to
-/// result values (<c>HandleResult</c>) as well as exceptions. The first strategy in a chain is the
+/// <typeparamref name="TResult"/>. Unlike <see cref="Shield"/>, its handling clauses can react to
+/// result values (<c>WhenResult</c>) as well as exceptions. The first strategy in a chain is the
 /// outermost.
 /// </summary>
-public sealed class Policy<TResult>
+public sealed class Shield<TResult>
 {
     internal readonly Strategy[] Strategies;
     internal readonly StrategyNode? Head;
     internal readonly OutcomeJudge? Ambient;
     internal readonly TimeProvider? Time;
 
-    internal Policy(Strategy[] strategies, OutcomeJudge? ambient, string? name, TimeProvider? timeProvider)
+    internal Shield(Strategy[] strategies, OutcomeJudge? ambient, string? name, TimeProvider? timeProvider)
     {
+        Shield.ValidateChain(strategies);
         Strategies = strategies;
-        Head = Policy.BuildChain(strategies);
+        Head = Shield.BuildChain(strategies);
         Ambient = ambient;
         Name = name;
         Time = timeProvider;
     }
 
-    /// <summary>The policy's diagnostic name, if assigned via <see cref="WithName"/>.</summary>
+    /// <summary>The shield's diagnostic name, if assigned via <see cref="WithName"/>.</summary>
     public string? Name { get; }
 
-    internal static Policy<TResult> Empty { get; } = new([], null, null, null);
+    internal static Shield<TResult> Empty { get; } = new([], null, null, null);
 
     internal OutcomeJudge JudgeOrDefault => Ambient ?? OutcomeJudge.Default;
 
@@ -37,57 +38,64 @@ public sealed class Policy<TResult>
     // ── Handling clauses ────────────────────────────────────────────────────────────────
 
     /// <summary>Starts a handling clause: subsequent reactive strategies act on exceptions of type <typeparamref name="TException"/>.</summary>
-    public PolicyBuilder<TResult> Handle<TException>()
+    public ShieldBuilder<TResult> When<TException>()
         where TException : Exception
-        => new PolicyBuilder<TResult>(this).Handle<TException>();
+        => new ShieldBuilder<TResult>(this).When<TException>();
 
     /// <summary>Starts a handling clause for exceptions of type <typeparamref name="TException"/> matching <paramref name="predicate"/>.</summary>
-    public PolicyBuilder<TResult> Handle<TException>(Func<TException, bool> predicate)
+    public ShieldBuilder<TResult> When<TException>(Func<TException, bool> predicate)
         where TException : Exception
-        => new PolicyBuilder<TResult>(this).Handle(predicate);
+        => new ShieldBuilder<TResult>(this).When(predicate);
 
     /// <summary>Starts a handling clause for exceptions matching <paramref name="predicate"/>.</summary>
-    public PolicyBuilder<TResult> HandleWhen(Func<Exception, bool> predicate) => new PolicyBuilder<TResult>(this).HandleWhen(predicate);
+    public ShieldBuilder<TResult> When(Func<Exception, bool> predicate) => new ShieldBuilder<TResult>(this).When(predicate);
 
     /// <summary>Starts a handling clause for results matching <paramref name="predicate"/>.</summary>
-    public PolicyBuilder<TResult> HandleResult(Func<TResult, bool> predicate) => new PolicyBuilder<TResult>(this).HandleResult(predicate);
+    public ShieldBuilder<TResult> WhenResult(Func<TResult, bool> predicate) => new ShieldBuilder<TResult>(this).WhenResult(predicate);
 
     /// <summary>Starts a handling clause for results equal to <paramref name="result"/>.</summary>
-    public PolicyBuilder<TResult> HandleResult(TResult result) => new PolicyBuilder<TResult>(this).HandleResult(result);
+    public ShieldBuilder<TResult> WhenResult(TResult result) => new ShieldBuilder<TResult>(this).WhenResult(result);
+
+    /// <summary>Starts a handling clause for results equal to <c>default</c> — <see langword="null"/> for reference types.</summary>
+    public ShieldBuilder<TResult> WhenDefault() => new ShieldBuilder<TResult>(this).WhenDefault();
 
     // ── Strategy chaining ───────────────────────────────────────────────────────────────
 
     /// <summary>Retries handled outcomes up to <paramref name="maxRetries"/> times with the default exponential jittered backoff.</summary>
-    public Policy<TResult> Retry(int maxRetries = 3) => Retry(options => options.MaxRetries = maxRetries);
+    public Shield<TResult> Retry(int maxRetries = 3) => Retry(options => options.MaxRetries = maxRetries);
 
     /// <summary>Retries handled outcomes up to <paramref name="maxRetries"/> times with the given backoff.</summary>
-    public Policy<TResult> Retry(int maxRetries, Backoff backoff) => Retry(options =>
+    public Shield<TResult> Retry(int maxRetries, Backoff backoff) => Retry(options =>
     {
         options.MaxRetries = maxRetries;
         options.Backoff = backoff;
     });
 
-    /// <summary>Adds a retry strategy configured via <paramref name="configure"/>.</summary>
-    public Policy<TResult> Retry(Action<RetryOptions> configure)
+    /// <summary>
+    /// Adds a retry strategy configured via <paramref name="configure"/>. The options expose
+    /// result-typed events: <c>OnRetry</c>, <c>OnRetryAsync</c> and <c>DelayGenerator</c> receive
+    /// a <see cref="RetryEvent{TResult}"/> carrying the handled <see cref="Outcome{TResult}"/>.
+    /// </summary>
+    public Shield<TResult> Retry(Action<RetryOptions<TResult>> configure)
     {
         Throw.IfNull(configure, nameof(configure));
-        var options = new RetryOptions();
+        var options = new RetryOptions<TResult>();
         configure(options);
         return Append(new RetryStrategy(options, JudgeOrDefault));
     }
 
     /// <summary>Retries handled outcomes indefinitely.</summary>
-    public Policy<TResult> RetryForever(Backoff? backoff = null) => Retry(options =>
+    public Shield<TResult> RetryForever(Backoff? backoff = null) => Retry(options =>
     {
         options.MaxRetries = int.MaxValue;
         options.Backoff = backoff ?? Backoff.Default;
     });
 
     /// <summary>Cancels executions that exceed <paramref name="timeout"/>, surfacing <see cref="TimeoutExceededException"/>.</summary>
-    public Policy<TResult> Timeout(TimeSpan timeout) => Timeout(options => options.Timeout = timeout);
+    public Shield<TResult> Timeout(TimeSpan timeout) => Timeout(options => options.Timeout = timeout);
 
     /// <summary>Adds a timeout strategy configured via <paramref name="configure"/>.</summary>
-    public Policy<TResult> Timeout(Action<TimeoutOptions> configure)
+    public Shield<TResult> Timeout(Action<TimeoutOptions> configure)
     {
         Throw.IfNull(configure, nameof(configure));
         var options = new TimeoutOptions();
@@ -96,14 +104,14 @@ public sealed class Policy<TResult>
     }
 
     /// <summary>Breaks the circuit for <paramref name="breakDuration"/> after <paramref name="consecutiveFailures"/> consecutive handled outcomes.</summary>
-    public Policy<TResult> CircuitBreaker(int consecutiveFailures, TimeSpan breakDuration) => CircuitBreaker(options =>
+    public Shield<TResult> CircuitBreaker(int consecutiveFailures, TimeSpan breakDuration) => CircuitBreaker(options =>
     {
         options.ConsecutiveFailures = consecutiveFailures;
         options.BreakDuration = breakDuration;
     });
 
     /// <summary>Adds a circuit breaker strategy configured via <paramref name="configure"/>.</summary>
-    public Policy<TResult> CircuitBreaker(Action<CircuitBreakerOptions> configure)
+    public Shield<TResult> CircuitBreaker(Action<CircuitBreakerOptions> configure)
     {
         Throw.IfNull(configure, nameof(configure));
         var options = new CircuitBreakerOptions();
@@ -112,14 +120,14 @@ public sealed class Policy<TResult>
     }
 
     /// <summary>Limits throughput to <paramref name="permits"/> executions per <paramref name="perWindow"/> (token bucket).</summary>
-    public Policy<TResult> RateLimit(int permits, TimeSpan perWindow) => RateLimit(options =>
+    public Shield<TResult> RateLimit(int permits, TimeSpan perWindow) => RateLimit(options =>
     {
         options.Permits = permits;
         options.Window = perWindow;
     });
 
     /// <summary>Adds a rate limit strategy configured via <paramref name="configure"/>.</summary>
-    public Policy<TResult> RateLimit(Action<RateLimitOptions> configure)
+    public Shield<TResult> RateLimit(Action<RateLimitOptions> configure)
     {
         Throw.IfNull(configure, nameof(configure));
         var options = new RateLimitOptions();
@@ -128,30 +136,30 @@ public sealed class Policy<TResult>
     }
 
     /// <summary>Caps concurrent executions at <paramref name="maxConcurrency"/> with an optional wait queue.</summary>
-    public Policy<TResult> Bulkhead(int maxConcurrency, int maxQueue = 0) => Bulkhead(options =>
+    public Shield<TResult> ConcurrencyLimit(int maxConcurrency, int maxQueue = 0) => ConcurrencyLimit(options =>
     {
         options.MaxConcurrency = maxConcurrency;
         options.MaxQueue = maxQueue;
     });
 
-    /// <summary>Adds a bulkhead strategy configured via <paramref name="configure"/>.</summary>
-    public Policy<TResult> Bulkhead(Action<BulkheadOptions> configure)
+    /// <summary>Adds a concurrency limit strategy configured via <paramref name="configure"/>.</summary>
+    public Shield<TResult> ConcurrencyLimit(Action<ConcurrencyLimitOptions> configure)
     {
         Throw.IfNull(configure, nameof(configure));
-        var options = new BulkheadOptions();
+        var options = new ConcurrencyLimitOptions();
         configure(options);
-        return Append(new BulkheadStrategy(options));
+        return Append(new ConcurrencyLimitStrategy(options));
     }
 
     /// <summary>Races up to <paramref name="maxAttempts"/> concurrent attempts staggered by <paramref name="delay"/>; first acceptable outcome wins.</summary>
-    public Policy<TResult> Hedge(int maxAttempts, TimeSpan delay) => Hedge(options =>
+    public Shield<TResult> Hedge(int maxAttempts, TimeSpan delay) => Hedge(options =>
     {
         options.MaxAttempts = maxAttempts;
         options.Delay = delay;
     });
 
     /// <summary>Adds a hedging strategy configured via <paramref name="configure"/>.</summary>
-    public Policy<TResult> Hedge(Action<HedgingOptions> configure)
+    public Shield<TResult> Hedge(Action<HedgingOptions> configure)
     {
         Throw.IfNull(configure, nameof(configure));
         var options = new HedgingOptions();
@@ -160,25 +168,25 @@ public sealed class Policy<TResult>
     }
 
     /// <summary>Replaces handled outcomes with <paramref name="fallbackValue"/>.</summary>
-    public Policy<TResult> Fallback(TResult fallbackValue, Action<FallbackEvent>? onFallback = null) =>
+    public Shield<TResult> Fallback(TResult fallbackValue, Action<FallbackEvent<TResult>>? onFallback = null) =>
         Append(new FallbackStrategy<TResult>((_, _) => new ValueTask<TResult>(fallbackValue), JudgeOrDefault, onFallback));
 
     /// <summary>Replaces handled outcomes with the result of <paramref name="fallback"/>.</summary>
-    public Policy<TResult> Fallback(Func<CancellationToken, ValueTask<TResult>> fallback, Action<FallbackEvent>? onFallback = null)
+    public Shield<TResult> Fallback(Func<CancellationToken, ValueTask<TResult>> fallback, Action<FallbackEvent<TResult>>? onFallback = null)
     {
         Throw.IfNull(fallback, nameof(fallback));
         return Append(new FallbackStrategy<TResult>((_, context) => fallback(context.CancellationToken), JudgeOrDefault, onFallback));
     }
 
     /// <summary>Replaces handled outcomes with the result of <paramref name="fallback"/>, which receives the handled outcome.</summary>
-    public Policy<TResult> Fallback(Func<Outcome<TResult>, CancellationToken, ValueTask<TResult>> fallback, Action<FallbackEvent>? onFallback = null)
+    public Shield<TResult> Fallback(Func<Outcome<TResult>, CancellationToken, ValueTask<TResult>> fallback, Action<FallbackEvent<TResult>>? onFallback = null)
     {
         Throw.IfNull(fallback, nameof(fallback));
         return Append(new FallbackStrategy<TResult>((outcome, context) => fallback(outcome, context.CancellationToken), JudgeOrDefault, onFallback));
     }
 
     /// <summary>Appends a custom <see cref="Strategy"/> implementation to the pipeline.</summary>
-    public Policy<TResult> Use(Strategy strategy)
+    public Shield<TResult> Use(Strategy strategy)
     {
         Throw.IfNull(strategy, nameof(strategy));
         return Append(strategy);
@@ -186,32 +194,32 @@ public sealed class Policy<TResult>
 
     // ── Composition ─────────────────────────────────────────────────────────────────────
 
-    /// <summary>Wraps <paramref name="inner"/> inside this policy: this policy's strategies run outermost.</summary>
-    public Policy<TResult> Wrap(Policy inner)
+    /// <summary>Wraps <paramref name="inner"/> inside this shield: this shield's strategies run outermost.</summary>
+    public Shield<TResult> Wrap(Shield inner)
     {
         Throw.IfNull(inner, nameof(inner));
-        return new Policy<TResult>(Policy.Concat(Strategies, inner.Strategies), Ambient, Name, Time);
+        return new Shield<TResult>(Shield.Concat(Strategies, inner.Strategies), Ambient, Name, Time);
     }
 
-    /// <summary>Wraps <paramref name="inner"/> inside this policy: this policy's strategies run outermost.</summary>
-    public Policy<TResult> Wrap(Policy<TResult> inner)
+    /// <summary>Wraps <paramref name="inner"/> inside this shield: this shield's strategies run outermost.</summary>
+    public Shield<TResult> Wrap(Shield<TResult> inner)
     {
         Throw.IfNull(inner, nameof(inner));
-        return new Policy<TResult>(Policy.Concat(Strategies, inner.Strategies), Ambient ?? inner.Ambient, Name, Time);
+        return new Shield<TResult>(Shield.Concat(Strategies, inner.Strategies), Ambient ?? inner.Ambient, Name, Time);
     }
 
-    /// <summary>Returns a copy of this policy with a diagnostic name (surfaced as <see cref="KevlarContext.PolicyName"/>).</summary>
-    public Policy<TResult> WithName(string name)
+    /// <summary>Returns a copy of this shield with a diagnostic name (surfaced as <see cref="KevlarContext.ShieldName"/>).</summary>
+    public Shield<TResult> WithName(string name)
     {
         Throw.IfNull(name, nameof(name));
-        return new Policy<TResult>(Strategies, Ambient, name, Time);
+        return new Shield<TResult>(Strategies, Ambient, name, Time);
     }
 
-    /// <summary>Returns a copy of this policy using the given <see cref="TimeProvider"/> for delays, timeouts and time windows.</summary>
-    public Policy<TResult> WithTimeProvider(TimeProvider timeProvider)
+    /// <summary>Returns a copy of this shield using the given <see cref="TimeProvider"/> for delays, timeouts and time windows.</summary>
+    public Shield<TResult> WithTimeProvider(TimeProvider timeProvider)
     {
         Throw.IfNull(timeProvider, nameof(timeProvider));
-        return new Policy<TResult>(Strategies, Ambient, Name, timeProvider);
+        return new Shield<TResult>(Strategies, Ambient, Name, timeProvider);
     }
 
     // ── Execution ───────────────────────────────────────────────────────────────────────
@@ -220,21 +228,21 @@ public sealed class Policy<TResult>
     public ValueTask<TResult> ExecuteAsync(Func<CancellationToken, ValueTask<TResult>> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
-        return PolicyEngine.ExecuteAsync(Head, TimeOrSystem, Name, action, static (a, token) => a(token), cancellationToken);
+        return ShieldEngine.ExecuteAsync(Head, TimeOrSystem, Name, action, static (a, token) => a(token), cancellationToken);
     }
 
     /// <summary>Executes the delegate through the pipeline, threading <paramref name="state"/> to avoid closure allocations.</summary>
     public ValueTask<TResult> ExecuteAsync<TState>(TState state, Func<TState, CancellationToken, ValueTask<TResult>> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
-        return PolicyEngine.ExecuteAsync(Head, TimeOrSystem, Name, state, action, cancellationToken);
+        return ShieldEngine.ExecuteAsync(Head, TimeOrSystem, Name, state, action, cancellationToken);
     }
 
     /// <summary>Executes the delegate through the pipeline and returns the outcome instead of throwing.</summary>
     public ValueTask<Outcome<TResult>> ExecuteOutcomeAsync(Func<CancellationToken, ValueTask<TResult>> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
-        return PolicyEngine.ExecuteOutcomeAsync(Head, TimeOrSystem, Name, action, static (a, token) => a(token), cancellationToken);
+        return ShieldEngine.ExecuteOutcomeAsync(Head, TimeOrSystem, Name, action, static (a, token) => a(token), cancellationToken);
     }
 
     /// <summary>
@@ -244,23 +252,26 @@ public sealed class Policy<TResult>
     public TResult Execute(Func<CancellationToken, TResult> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
-        return PolicyEngine.ExecuteSync(Head, TimeOrSystem, Name, action, static (a, token) => a(token), cancellationToken);
+        return ShieldEngine.ExecuteSync(Head, TimeOrSystem, Name, action, static (a, token) => a(token), cancellationToken);
     }
 
     /// <summary>Executes the delegate synchronously, threading <paramref name="state"/> to avoid closure allocations.</summary>
     public TResult Execute<TState>(TState state, Func<TState, CancellationToken, TResult> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
-        return PolicyEngine.ExecuteSync(Head, TimeOrSystem, Name, state, action, cancellationToken);
+        return ShieldEngine.ExecuteSync(Head, TimeOrSystem, Name, state, action, cancellationToken);
     }
+
+    /// <summary>Describes the pipeline, outermost strategy first, like <see cref="Shield.ToString"/>.</summary>
+    public override string ToString() => Shield.Describe(Name, Strategies);
 
     // ── Internals ───────────────────────────────────────────────────────────────────────
 
-    internal Policy<TResult> Append(Strategy strategy, OutcomeJudge? ambient = null)
+    internal Shield<TResult> Append(Strategy strategy, OutcomeJudge? ambient = null)
     {
         var strategies = new Strategy[Strategies.Length + 1];
         Array.Copy(Strategies, strategies, Strategies.Length);
         strategies[Strategies.Length] = strategy;
-        return new Policy<TResult>(strategies, ambient ?? Ambient, Name, Time);
+        return new Shield<TResult>(strategies, ambient ?? Ambient, Name, Time);
     }
 }

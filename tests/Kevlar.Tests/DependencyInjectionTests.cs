@@ -11,13 +11,13 @@ public class DependencyInjectionTests
     public async Task Registry_Resolves_Named_Policies()
     {
         var services = new ServiceCollection()
-            .AddKevlarPolicy("basic", Policy.Retry(2, Backoff.None))
+            .AddShield("basic", Shield.Retry(2, Backoff.None))
             .BuildServiceProvider();
 
         var registry = services.GetRequiredService<IKevlarRegistry>();
-        var policy = registry.GetPolicy("basic");
+        var shield = registry.GetShield("basic");
 
-        var result = await policy.ExecuteAsync(_ => new ValueTask<int>(1));
+        var result = await shield.ExecuteAsync(_ => new ValueTask<int>(1));
         await Assert.That(result).IsEqualTo(1);
     }
 
@@ -25,14 +25,14 @@ public class DependencyInjectionTests
     public async Task Typed_And_Untyped_Policies_With_The_Same_Name_Coexist()
     {
         var services = new ServiceCollection()
-            .AddKevlarPolicy("shared", Policy.Retry(1, Backoff.None))
-            .AddKevlarPolicy("shared", Policy.For<int>().HandleResult(-1).Fallback(0))
+            .AddShield("shared", Shield.Retry(1, Backoff.None))
+            .AddShield("shared", Shield.For<int>().WhenResult(-1).Fallback(0))
             .BuildServiceProvider();
 
         var registry = services.GetRequiredService<IKevlarRegistry>();
 
-        var untyped = registry.GetPolicy("shared");
-        var typed = registry.GetPolicy<int>("shared");
+        var untyped = registry.GetShield("shared");
+        var typed = registry.GetShield<int>("shared");
 
         await Assert.That(untyped).IsNotNull();
         var result = await typed.ExecuteAsync(_ => new ValueTask<int>(-1));
@@ -43,12 +43,12 @@ public class DependencyInjectionTests
     public async Task Policies_Resolve_As_Keyed_Services()
     {
         var services = new ServiceCollection()
-            .AddKevlarPolicy("keyed", Policy.Timeout(TimeSpan.FromSeconds(5)))
+            .AddShield("keyed", Shield.Timeout(TimeSpan.FromSeconds(5)))
             .BuildServiceProvider();
 
-        var policy = services.GetRequiredKeyedService<Policy>("keyed");
+        var shield = services.GetRequiredKeyedService<Shield>("keyed");
 
-        var result = await policy.ExecuteAsync(_ => new ValueTask<string>("via-key"));
+        var result = await shield.ExecuteAsync(_ => new ValueTask<string>("via-key"));
         await Assert.That(result).IsEqualTo("via-key");
     }
 
@@ -58,8 +58,8 @@ public class DependencyInjectionTests
         var services = new ServiceCollection().AddKevlar().BuildServiceProvider();
         var registry = services.GetRequiredService<IKevlarRegistry>();
 
-        await Assert.That(() => registry.GetPolicy("missing")).Throws<KeyNotFoundException>();
-        await Assert.That(registry.TryGetPolicy("missing", out _)).IsFalse();
+        await Assert.That(() => registry.GetShield("missing")).Throws<KeyNotFoundException>();
+        await Assert.That(registry.TryGetShield("missing", out _)).IsFalse();
     }
 
     [Test]
@@ -67,11 +67,11 @@ public class DependencyInjectionTests
     {
         var services = new ServiceCollection();
         services.AddSingleton(new TimeoutSetting(TimeSpan.FromSeconds(9)));
-        services.AddKevlarPolicy("factory", sp => Policy.Timeout(sp.GetRequiredService<TimeoutSetting>().Value));
+        services.AddShield("factory", sp => Shield.Timeout(sp.GetRequiredService<TimeoutSetting>().Value));
 
         var registry = services.BuildServiceProvider().GetRequiredService<IKevlarRegistry>();
-        var policy = registry.GetPolicy("factory");
+        var shield = registry.GetShield("factory");
 
-        await Assert.That(policy).IsNotNull();
+        await Assert.That(shield).IsNotNull();
     }
 }

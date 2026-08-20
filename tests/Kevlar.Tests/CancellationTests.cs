@@ -8,9 +8,9 @@ public class CancellationTests
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
         var invoked = false;
-        var policy = Policy.Retry(3, Backoff.None);
+        var shield = Shield.Retry(3, Backoff.None);
 
-        await Assert.That(async () => await policy.ExecuteAsync(_ =>
+        await Assert.That(async () => await shield.ExecuteAsync(_ =>
         {
             invoked = true;
             return new ValueTask<int>(1);
@@ -26,7 +26,7 @@ public class CancellationTests
         cancellation.Cancel();
         var invoked = false;
 
-        await Assert.That(async () => await Policy.Empty.ExecuteAsync(_ =>
+        await Assert.That(async () => await Shield.Empty.ExecuteAsync(_ =>
         {
             invoked = true;
             return new ValueTask<int>(1);
@@ -41,9 +41,9 @@ public class CancellationTests
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
         var invoked = false;
-        var policy = Policy.Retry(3, Backoff.None);
+        var shield = Shield.Retry(3, Backoff.None);
 
-        await Assert.That(() => policy.Execute(_ =>
+        await Assert.That(() => shield.Execute(_ =>
         {
             invoked = true;
             return 1;
@@ -57,9 +57,9 @@ public class CancellationTests
     {
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
-        var policy = Policy.Retry(3, Backoff.None);
+        var shield = Shield.Retry(3, Backoff.None);
 
-        var outcome = await policy.ExecuteOutcomeAsync(_ => new ValueTask<int>(1), cancellation.Token);
+        var outcome = await shield.ExecuteOutcomeAsync(_ => new ValueTask<int>(1), cancellation.Token);
 
         await Assert.That(outcome.IsSuccess).IsFalse();
         await Assert.That(outcome.Exception is OperationCanceledException).IsTrue();
@@ -70,9 +70,9 @@ public class CancellationTests
     {
         using var cancellation = new CancellationTokenSource();
         CancellationToken seenToken = default;
-        var policy = Policy.Retry(1, Backoff.None);
+        var shield = Shield.Retry(1, Backoff.None);
 
-        await policy.ExecuteAsync(token =>
+        await shield.ExecuteAsync(token =>
         {
             seenToken = token;
             return new ValueTask<int>(1);
@@ -86,9 +86,9 @@ public class CancellationTests
     {
         using var cancellation = new CancellationTokenSource();
         CancellationToken seenToken = default;
-        var policy = Policy.Timeout(TimeSpan.FromMinutes(10));
+        var shield = Shield.Timeout(TimeSpan.FromMinutes(10));
 
-        await policy.ExecuteAsync(token =>
+        await shield.ExecuteAsync(token =>
         {
             seenToken = token;
             return new ValueTask<int>(1);
@@ -103,9 +103,9 @@ public class CancellationTests
     {
         using var cancellation = new CancellationTokenSource();
         var attempts = 0;
-        var policy = Policy.Retry(5, Backoff.None);
+        var shield = Shield.Retry(5, Backoff.None);
 
-        await Assert.That(async () => await policy.ExecuteAsync<int>(async token =>
+        await Assert.That(async () => await shield.ExecuteAsync<int>(async token =>
         {
             Interlocked.Increment(ref attempts);
             cancellation.Cancel();
@@ -120,11 +120,11 @@ public class CancellationTests
     public async Task Explicitly_Handling_OperationCanceled_Enables_Retrying_It()
     {
         var attempts = 0;
-        var policy = Policy.Handle<OperationCanceledException>().Retry(2, Backoff.None);
+        var shield = Shield.When<OperationCanceledException>().Retry(2, Backoff.None);
 
         // The delegate throws OperationCanceledException spontaneously (no token is cancelled),
         // and the explicit clause opts in to retrying it.
-        var result = await policy.ExecuteAsync(_ =>
+        var result = await shield.ExecuteAsync(_ =>
         {
             attempts++;
             if (attempts < 3)
@@ -144,7 +144,7 @@ public class CancellationTests
         using var cancellation = new CancellationTokenSource();
         var started = new TaskCompletionSource();
 
-        var task = Policy.Retry(3, Backoff.None).ExecuteAsync(async token =>
+        var task = Shield.Retry(3, Backoff.None).ExecuteAsync(async token =>
         {
             started.SetResult();
             await Task.Delay(System.Threading.Timeout.InfiniteTimeSpan, token);
@@ -161,9 +161,9 @@ public class CancellationTests
     {
         using var cancellation = new CancellationTokenSource();
         var attempts = 0;
-        var policy = Policy.Retry(5, Backoff.None);
+        var shield = Shield.Retry(5, Backoff.None);
 
-        await Assert.That(() => policy.Execute<int>(token =>
+        await Assert.That(() => shield.Execute<int>(token =>
         {
             attempts++;
             cancellation.Cancel();

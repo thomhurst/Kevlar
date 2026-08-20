@@ -1,12 +1,12 @@
 namespace Kevlar.Internal;
 
-/// <summary>Boundary plumbing shared by <see cref="Policy"/> and <see cref="Policy{TResult}"/>.</summary>
-internal static class PolicyEngine
+/// <summary>Boundary plumbing shared by <see cref="Shield"/> and <see cref="Shield{TResult}"/>.</summary>
+internal static class ShieldEngine
 {
     public static ValueTask<T> ExecuteAsync<T, TState>(
         StrategyNode? head,
         TimeProvider timeProvider,
-        string? policyName,
+        string? shieldName,
         TState state,
         Func<TState, CancellationToken, ValueTask<T>> action,
         CancellationToken cancellationToken)
@@ -22,13 +22,14 @@ internal static class PolicyEngine
             return action(state, cancellationToken);
         }
 
-        var context = KevlarContext.Rent(cancellationToken, isSynchronous: false, timeProvider, policyName);
+        var context = KevlarContext.Rent(cancellationToken, isSynchronous: false, timeProvider, shieldName);
         var pipeline = RunAsync(head, state, action, context);
 
         if (pipeline.IsCompletedSuccessfully)
         {
             var outcome = pipeline.Result;
             KevlarContext.Return(context);
+            KevlarMetrics.Execution(shieldName, outcome.IsSuccess);
             return outcome.IsSuccess ? new ValueTask<T>(outcome.Result!) : Rethrow(outcome);
         }
 
@@ -38,7 +39,7 @@ internal static class PolicyEngine
     public static ValueTask<Outcome<T>> ExecuteOutcomeAsync<T, TState>(
         StrategyNode? head,
         TimeProvider timeProvider,
-        string? policyName,
+        string? shieldName,
         TState state,
         Func<TState, CancellationToken, ValueTask<T>> action,
         CancellationToken cancellationToken)
@@ -48,13 +49,14 @@ internal static class PolicyEngine
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(new OperationCanceledException(cancellationToken)));
         }
 
-        var context = KevlarContext.Rent(cancellationToken, isSynchronous: false, timeProvider, policyName);
+        var context = KevlarContext.Rent(cancellationToken, isSynchronous: false, timeProvider, shieldName);
         var pipeline = RunAsync(head, state, action, context);
 
         if (pipeline.IsCompletedSuccessfully)
         {
             var outcome = pipeline.Result;
             KevlarContext.Return(context);
+            KevlarMetrics.Execution(shieldName, outcome.IsSuccess);
             return new ValueTask<Outcome<T>>(outcome);
         }
 
@@ -64,7 +66,7 @@ internal static class PolicyEngine
     public static T ExecuteSync<T, TState>(
         StrategyNode? head,
         TimeProvider timeProvider,
-        string? policyName,
+        string? shieldName,
         TState state,
         Func<TState, CancellationToken, T> action,
         CancellationToken cancellationToken)
@@ -76,7 +78,7 @@ internal static class PolicyEngine
             return action(state, cancellationToken);
         }
 
-        var context = KevlarContext.Rent(cancellationToken, isSynchronous: true, timeProvider, policyName);
+        var context = KevlarContext.Rent(cancellationToken, isSynchronous: true, timeProvider, shieldName);
 
         try
         {
@@ -85,6 +87,7 @@ internal static class PolicyEngine
                 ? pipeline.Result
                 : pipeline.AsTask().GetAwaiter().GetResult();
 
+            KevlarMetrics.Execution(shieldName, outcome.IsSuccess);
             return outcome.GetResultOrRethrow();
         }
         finally
@@ -148,6 +151,7 @@ internal static class PolicyEngine
         try
         {
             var outcome = await pipeline.ConfigureAwait(false);
+            KevlarMetrics.Execution(context.ShieldName, outcome.IsSuccess);
             return outcome.GetResultOrRethrow();
         }
         finally
@@ -160,7 +164,9 @@ internal static class PolicyEngine
     {
         try
         {
-            return await pipeline.ConfigureAwait(false);
+            var outcome = await pipeline.ConfigureAwait(false);
+            KevlarMetrics.Execution(context.ShieldName, outcome.IsSuccess);
+            return outcome;
         }
         finally
         {

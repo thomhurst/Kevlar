@@ -1,7 +1,7 @@
 namespace Kevlar.Extensions.Http;
 
-/// <summary>Building blocks for HTTP resilience policies.</summary>
-public static class HttpKevlar
+/// <summary>Building blocks for HTTP resilience shields.</summary>
+public static class HttpShield
 {
     /// <summary>
     /// Returns <see langword="true"/> for responses worth retrying: 5xx, 408 Request Timeout
@@ -14,15 +14,15 @@ public static class HttpKevlar
             || (int)response.StatusCode == 429);
 
     /// <summary>
-    /// Starts a policy that handles the usual transient HTTP failures:
+    /// Starts a shield that handles the usual transient HTTP failures:
     /// <see cref="HttpRequestException"/>, Kevlar attempt timeouts, 5xx, 408 and 429.
     /// Chain your strategies onto the returned builder.
     /// </summary>
-    public static PolicyBuilder<HttpResponseMessage> HandleTransient() =>
-        Policy.For<HttpResponseMessage>()
-            .Handle<HttpRequestException>()
-            .Handle<TimeoutExceededException>()
-            .HandleResult(IsTransient);
+    public static ShieldBuilder<HttpResponseMessage> WhenTransient() =>
+        Shield.For<HttpResponseMessage>()
+            .When<HttpRequestException>()
+            .When<TimeoutExceededException>()
+            .WhenResult(IsTransient);
 
     /// <summary>
     /// A production-ready pipeline, outermost first: 30s total timeout → 3 retries with
@@ -30,17 +30,17 @@ public static class HttpKevlar
     /// disposed) → circuit breaker (50% failure ratio over 30s, minimum 10 calls, 15s break) →
     /// 10s per-attempt timeout.
     /// </summary>
-    public static Policy<HttpResponseMessage> StandardPolicy() =>
-        Policy.Timeout(TimeSpan.FromSeconds(30))
+    public static Shield<HttpResponseMessage> Standard() =>
+        Shield.Timeout(TimeSpan.FromSeconds(30))
             .For<HttpResponseMessage>()
-            .Handle<HttpRequestException>()
-            .Handle<TimeoutExceededException>()
-            .HandleResult(IsTransient)
+            .When<HttpRequestException>()
+            .When<TimeoutExceededException>()
+            .WhenResult(IsTransient)
             .Retry(options =>
             {
                 options.MaxRetries = 3;
                 options.DelayGenerator = RetryAfter;
-                options.OnRetry = static retry => (retry.Result as HttpResponseMessage)?.Dispose();
+                options.OnRetry = static retry => retry.Outcome.Result?.Dispose();
             })
             .CircuitBreaker(options =>
             {
@@ -52,12 +52,12 @@ public static class HttpKevlar
             .Timeout(TimeSpan.FromSeconds(10));
 
     /// <summary>
-    /// A <see cref="RetryOptions.DelayGenerator"/> honouring the response's <c>Retry-After</c>
-    /// header when present and longer than the computed backoff.
+    /// A <see cref="RetryOptions{TResult}.DelayGenerator"/> honouring the response's
+    /// <c>Retry-After</c> header when present and longer than the computed backoff.
     /// </summary>
-    public static TimeSpan? RetryAfter(RetryEvent retry)
+    public static TimeSpan? RetryAfter(RetryEvent<HttpResponseMessage> retry)
     {
-        if (retry.Result is not HttpResponseMessage response)
+        if (retry.Outcome.Result is not { } response)
         {
             return null;
         }

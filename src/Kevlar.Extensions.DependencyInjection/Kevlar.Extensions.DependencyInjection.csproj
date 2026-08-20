@@ -5,13 +5,14 @@
     <RootNamespace>Kevlar.Extensions.DependencyInjection</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IsPackable>true</IsPackable>
-    <Description>Microsoft.Extensions.DependencyInjection integration for Kevlar: named policy registration and the IKevlarRegistry.</Description>
+    <Description>Microsoft.Extensions.DependencyInjection integration for Kevlar: named shield registration and the IKevlarRegistry.</Description>
     <PackageTags>resilience;dependency-injection;kevlar</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Kevlar\Kevlar.csproj" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
   </ItemGroup>
 
 </Project>

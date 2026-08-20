@@ -10,6 +10,8 @@ namespace Kevlar.Strategies;
 internal sealed class RateLimitStrategy : Strategy
 {
     private readonly object _gate = new();
+    private readonly int _permits;
+    private readonly TimeSpan _window;
     private readonly double _permitsPerSecond;
     private readonly double _burst;
     private readonly int _queueLimit;
@@ -24,16 +26,26 @@ internal sealed class RateLimitStrategy : Strategy
         Throw.IfOutOfRange(options.Burst is <= 0, nameof(options), "Burst must be positive.");
         Throw.IfOutOfRange(options.QueueLimit < 0, nameof(options), "QueueLimit must not be negative.");
 
+        _permits = options.Permits;
+        _window = options.Window;
         _permitsPerSecond = options.Permits / options.Window.TotalSeconds;
         _burst = options.Burst ?? options.Permits;
         _queueLimit = options.QueueLimit;
         _tokens = _burst;
     }
 
+    public override string Describe()
+    {
+        var queue = _queueLimit > 0 ? $", queue {_queueLimit}" : string.Empty;
+        var burst = (int)_burst != _permits ? $", burst {(int)_burst}" : string.Empty;
+        return $"RateLimit({_permits}/{DescribeHelper.Time(_window)}{burst}{queue})";
+    }
+
     public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
         if (!TryAcquire(context.TimeProvider, out var wait, out var retryAfter))
         {
+            KevlarMetrics.Rejection(context.ShieldName, "rate_limit");
             return Outcome<T>.FromException(new RateLimitExceededException(retryAfter));
         }
 

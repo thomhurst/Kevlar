@@ -58,7 +58,7 @@ internal sealed class TypedJudge<TResult> : OutcomeJudge
             return false;
         }
 
-        Debug.Assert(typeof(T) == typeof(TResult), "Typed strategies only execute inside a matching Policy<TResult>.");
+        Debug.Assert(typeof(T) == typeof(TResult), "Typed strategies only execute inside a matching Shield<TResult>.");
         var predicate = (Func<T, bool>)(object)_resultPredicate;
         return predicate(outcome.Result!);
     }

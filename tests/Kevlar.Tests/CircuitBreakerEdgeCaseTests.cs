@@ -8,7 +8,7 @@ public class CircuitBreakerEdgeCaseTests
     public async Task A_Success_Resets_The_Consecutive_Failure_Count()
     {
         var monitor = new CircuitBreakerMonitor();
-        var policy = Policy.CircuitBreaker(options =>
+        var shield = Shield.CircuitBreaker(options =>
         {
             options.ConsecutiveFailures = 3;
             options.BreakDuration = TimeSpan.FromMinutes(1);
@@ -17,17 +17,17 @@ public class CircuitBreakerEdgeCaseTests
 
         for (var round = 0; round < 3; round++)
         {
-            await policy.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
-            await policy.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
-            await policy.ExecuteAsync(_ => new ValueTask<int>(1));
+            await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+            await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+            await shield.ExecuteAsync(_ => new ValueTask<int>(1));
         }
 
         await Assert.That(monitor.State).IsEqualTo(CircuitState.Closed);
 
         // Without the interleaved successes, three failures in a row now trip it.
-        await policy.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
-        await policy.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
-        await policy.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
 
         await Assert.That(monitor.State).IsEqualTo(CircuitState.Open);
     }
@@ -37,12 +37,12 @@ public class CircuitBreakerEdgeCaseTests
     {
         var fakeTime = new FakeTimeProvider();
         var rootCause = new InvalidOperationException("root cause");
-        var policy = Policy.CircuitBreaker(1, TimeSpan.FromSeconds(30)).WithTimeProvider(fakeTime);
+        var shield = Shield.CircuitBreaker(1, TimeSpan.FromSeconds(30)).WithTimeProvider(fakeTime);
 
-        await Assert.That(async () => await policy.ExecuteAsync<int>(_ => throw rootCause))
+        await Assert.That(async () => await shield.ExecuteAsync<int>(_ => throw rootCause))
             .Throws<InvalidOperationException>();
 
-        var rejection = await Assert.That(async () => await policy.ExecuteAsync(_ => new ValueTask<int>(1)))
+        var rejection = await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(1)))
             .Throws<CircuitOpenException>();
 
         await Assert.That(rejection!.RetryAfter).IsEqualTo(TimeSpan.FromSeconds(30));
@@ -51,7 +51,7 @@ public class CircuitBreakerEdgeCaseTests
 
         fakeTime.Advance(TimeSpan.FromSeconds(10));
 
-        var laterRejection = await Assert.That(async () => await policy.ExecuteAsync(_ => new ValueTask<int>(1)))
+        var laterRejection = await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(1)))
             .Throws<CircuitOpenException>();
 
         await Assert.That(laterRejection!.RetryAfter).IsEqualTo(TimeSpan.FromSeconds(20));
@@ -61,7 +61,7 @@ public class CircuitBreakerEdgeCaseTests
     public async Task Isolated_Rejections_Are_Flagged_As_Isolated()
     {
         var monitor = new CircuitBreakerMonitor();
-        var policy = Policy.CircuitBreaker(options =>
+        var shield = Shield.CircuitBreaker(options =>
         {
             options.ConsecutiveFailures = 5;
             options.BreakDuration = TimeSpan.FromMinutes(1);
@@ -70,7 +70,7 @@ public class CircuitBreakerEdgeCaseTests
 
         monitor.Isolate();
 
-        var rejection = await Assert.That(async () => await policy.ExecuteAsync(_ => new ValueTask<int>(1)))
+        var rejection = await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(1)))
             .Throws<CircuitOpenException>();
 
         await Assert.That(rejection!.IsIsolated).IsTrue();
@@ -81,19 +81,19 @@ public class CircuitBreakerEdgeCaseTests
     public async Task The_Circuit_Stays_Open_Until_The_Break_Duration_Fully_Elapses()
     {
         var fakeTime = new FakeTimeProvider();
-        var policy = Policy.CircuitBreaker(1, TimeSpan.FromSeconds(30)).WithTimeProvider(fakeTime);
+        var shield = Shield.CircuitBreaker(1, TimeSpan.FromSeconds(30)).WithTimeProvider(fakeTime);
 
-        await Assert.That(async () => await policy.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
+        await Assert.That(async () => await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
             .Throws<InvalidOperationException>();
 
         fakeTime.Advance(TimeSpan.FromSeconds(30) - TimeSpan.FromMilliseconds(1));
 
-        await Assert.That(async () => await policy.ExecuteAsync(_ => new ValueTask<int>(1)))
+        await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(1)))
             .Throws<CircuitOpenException>();
 
         fakeTime.Advance(TimeSpan.FromMilliseconds(1));
 
-        var result = await policy.ExecuteAsync(_ => new ValueTask<int>(7));
+        var result = await shield.ExecuteAsync(_ => new ValueTask<int>(7));
         await Assert.That(result).IsEqualTo(7);
     }
 
@@ -102,7 +102,7 @@ public class CircuitBreakerEdgeCaseTests
     {
         var fakeTime = new FakeTimeProvider();
         var monitor = new CircuitBreakerMonitor();
-        var policy = Policy
+        var shield = Shield
             .CircuitBreaker(options =>
             {
                 options.ConsecutiveFailures = 1;
@@ -111,7 +111,7 @@ public class CircuitBreakerEdgeCaseTests
             })
             .WithTimeProvider(fakeTime);
 
-        await Assert.That(async () => await policy.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
+        await Assert.That(async () => await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
             .Throws<InvalidOperationException>();
 
         fakeTime.Advance(TimeSpan.FromSeconds(1));
@@ -119,7 +119,7 @@ public class CircuitBreakerEdgeCaseTests
         var gate = new TaskCompletionSource();
         var probeStarted = new TaskCompletionSource();
 
-        var probe = policy.ExecuteAsync(async _ =>
+        var probe = shield.ExecuteAsync(async _ =>
         {
             probeStarted.SetResult();
             await gate.Task;
@@ -130,7 +130,7 @@ public class CircuitBreakerEdgeCaseTests
         await Assert.That(monitor.State).IsEqualTo(CircuitState.HalfOpen);
 
         // A concurrent execution during the probe is rejected, not run.
-        await Assert.That(async () => await policy.ExecuteAsync(_ => new ValueTask<int>(2)))
+        await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(2)))
             .Throws<CircuitOpenException>();
 
         gate.SetResult();
@@ -144,7 +144,7 @@ public class CircuitBreakerEdgeCaseTests
         var fakeTime = new FakeTimeProvider();
         var monitor = new CircuitBreakerMonitor();
         using var cancellation = new CancellationTokenSource();
-        var policy = Policy
+        var shield = Shield
             .CircuitBreaker(options =>
             {
                 options.ConsecutiveFailures = 1;
@@ -153,13 +153,13 @@ public class CircuitBreakerEdgeCaseTests
             })
             .WithTimeProvider(fakeTime);
 
-        await Assert.That(async () => await policy.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
+        await Assert.That(async () => await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
             .Throws<InvalidOperationException>();
 
         fakeTime.Advance(TimeSpan.FromSeconds(1));
 
         var probeStarted = new TaskCompletionSource();
-        var probe = policy.ExecuteAsync(async token =>
+        var probe = shield.ExecuteAsync(async token =>
         {
             probeStarted.SetResult();
             await Task.Delay(System.Threading.Timeout.InfiniteTimeSpan, token);
@@ -175,7 +175,7 @@ public class CircuitBreakerEdgeCaseTests
         // and the probe slot is free for the next execution, which closes the circuit.
         await Assert.That(monitor.State).IsEqualTo(CircuitState.HalfOpen);
 
-        var result = await policy.ExecuteAsync(_ => new ValueTask<int>(9));
+        var result = await shield.ExecuteAsync(_ => new ValueTask<int>(9));
         await Assert.That(result).IsEqualTo(9);
         await Assert.That(monitor.State).IsEqualTo(CircuitState.Closed);
     }
@@ -184,8 +184,8 @@ public class CircuitBreakerEdgeCaseTests
     public async Task Unhandled_Exceptions_Count_As_Successes_For_The_Circuit()
     {
         var monitor = new CircuitBreakerMonitor();
-        var policy = Policy
-            .Handle<InvalidOperationException>()
+        var shield = Shield
+            .When<InvalidOperationException>()
             .CircuitBreaker(options =>
             {
                 options.ConsecutiveFailures = 2;
@@ -197,14 +197,14 @@ public class CircuitBreakerEdgeCaseTests
         // the consecutive count each time, so the circuit never opens.
         for (var i = 0; i < 3; i++)
         {
-            await policy.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
-            await policy.ExecuteOutcomeAsync<int>(_ => throw new ArgumentException());
+            await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+            await shield.ExecuteOutcomeAsync<int>(_ => throw new ArgumentException());
         }
 
         await Assert.That(monitor.State).IsEqualTo(CircuitState.Closed);
 
-        await policy.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
-        await policy.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
 
         await Assert.That(monitor.State).IsEqualTo(CircuitState.Open);
     }
@@ -214,7 +214,7 @@ public class CircuitBreakerEdgeCaseTests
     {
         var fakeTime = new FakeTimeProvider();
         var monitor = new CircuitBreakerMonitor();
-        var policy = Policy
+        var shield = Shield
             .CircuitBreaker(options =>
             {
                 options.FailureRatio = 1.0;
@@ -227,12 +227,12 @@ public class CircuitBreakerEdgeCaseTests
 
         for (var i = 0; i < 3; i++)
         {
-            await policy.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+            await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
         }
 
         await Assert.That(monitor.State).IsEqualTo(CircuitState.Closed);
 
-        await policy.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
 
         await Assert.That(monitor.State).IsEqualTo(CircuitState.Open);
     }
@@ -242,7 +242,7 @@ public class CircuitBreakerEdgeCaseTests
     {
         var fakeTime = new FakeTimeProvider();
         var monitor = new CircuitBreakerMonitor();
-        var policy = Policy
+        var shield = Shield
             .CircuitBreaker(options =>
             {
                 options.FailureRatio = 0.5;
@@ -255,7 +255,7 @@ public class CircuitBreakerEdgeCaseTests
 
         for (var i = 0; i < 3; i++)
         {
-            await policy.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+            await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
         }
 
         // Let the whole sampling window pass; the three failures above expire.
@@ -263,7 +263,7 @@ public class CircuitBreakerEdgeCaseTests
 
         // If the old failures still counted, this fourth failure would reach the minimum
         // throughput with a 100% failure rate and trip the circuit.
-        await policy.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
 
         await Assert.That(monitor.State).IsEqualTo(CircuitState.Closed);
     }
@@ -273,7 +273,7 @@ public class CircuitBreakerEdgeCaseTests
     {
         var fakeTime = new FakeTimeProvider();
         var monitor = new CircuitBreakerMonitor();
-        var policy = Policy
+        var shield = Shield
             .CircuitBreaker(options =>
             {
                 options.FailureRatio = 0.75;
@@ -285,17 +285,17 @@ public class CircuitBreakerEdgeCaseTests
             .WithTimeProvider(fakeTime);
 
         // 2 failures + 2 successes = 50% failure rate: below the 75% threshold.
-        await policy.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
-        await policy.ExecuteAsync(_ => new ValueTask<int>(1));
-        await policy.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
-        await policy.ExecuteAsync(_ => new ValueTask<int>(1));
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+        await shield.ExecuteAsync(_ => new ValueTask<int>(1));
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+        await shield.ExecuteAsync(_ => new ValueTask<int>(1));
 
         await Assert.That(monitor.State).IsEqualTo(CircuitState.Closed);
 
         // Four more failures push the rate to 6/8 = 75%: trips.
         for (var i = 0; i < 4; i++)
         {
-            await policy.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+            await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
         }
 
         await Assert.That(monitor.State).IsEqualTo(CircuitState.Open);
@@ -305,25 +305,25 @@ public class CircuitBreakerEdgeCaseTests
     public async Task Reset_Closes_The_Circuit_And_Clears_Failure_History()
     {
         var monitor = new CircuitBreakerMonitor();
-        var policy = Policy.CircuitBreaker(options =>
+        var shield = Shield.CircuitBreaker(options =>
         {
             options.ConsecutiveFailures = 2;
             options.BreakDuration = TimeSpan.FromMinutes(1);
             options.Monitor = monitor;
         });
 
-        await policy.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
-        await policy.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
         await Assert.That(monitor.State).IsEqualTo(CircuitState.Open);
 
         monitor.Reset();
         await Assert.That(monitor.State).IsEqualTo(CircuitState.Closed);
 
         // History was cleared: one failure is not enough to trip again.
-        await policy.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
         await Assert.That(monitor.State).IsEqualTo(CircuitState.Closed);
 
-        var result = await policy.ExecuteAsync(_ => new ValueTask<int>(5));
+        var result = await shield.ExecuteAsync(_ => new ValueTask<int>(5));
         await Assert.That(result).IsEqualTo(5);
     }
 
@@ -335,7 +335,7 @@ public class CircuitBreakerEdgeCaseTests
         var transitions = new List<(CircuitState From, CircuitState To)>();
         monitor.StateChanged += change => transitions.Add((change.From, change.To));
 
-        var policy = Policy
+        var shield = Shield
             .CircuitBreaker(options =>
             {
                 options.ConsecutiveFailures = 1;
@@ -344,9 +344,9 @@ public class CircuitBreakerEdgeCaseTests
             })
             .WithTimeProvider(fakeTime);
 
-        await policy.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
         fakeTime.Advance(TimeSpan.FromSeconds(1));
-        await policy.ExecuteAsync(_ => new ValueTask<int>(1));
+        await shield.ExecuteAsync(_ => new ValueTask<int>(1));
 
         await Assert.That(transitions).IsEquivalentTo(
         [
@@ -361,14 +361,14 @@ public class CircuitBreakerEdgeCaseTests
     {
         var cause = new InvalidOperationException("cause");
         CircuitStateChangedEvent? opened = null;
-        var policy = Policy.CircuitBreaker(options =>
+        var shield = Shield.CircuitBreaker(options =>
         {
             options.ConsecutiveFailures = 1;
             options.BreakDuration = TimeSpan.FromMinutes(1);
             options.OnStateChanged = change => opened ??= change;
         });
 
-        await policy.ExecuteOutcomeAsync<int>(_ => throw cause);
+        await shield.ExecuteOutcomeAsync<int>(_ => throw cause);
 
         await Assert.That(opened).IsNotNull();
         await Assert.That(opened!.Value.To).IsEqualTo(CircuitState.Open);
@@ -379,8 +379,8 @@ public class CircuitBreakerEdgeCaseTests
     public async Task Result_Handling_Clauses_Can_Trip_The_Circuit()
     {
         var monitor = new CircuitBreakerMonitor();
-        var policy = Policy.For<int>()
-            .HandleResult(value => value < 0)
+        var shield = Shield.For<int>()
+            .WhenResult(value => value < 0)
             .CircuitBreaker(options =>
             {
                 options.ConsecutiveFailures = 2;
@@ -388,11 +388,11 @@ public class CircuitBreakerEdgeCaseTests
                 options.Monitor = monitor;
             });
 
-        await policy.ExecuteAsync(_ => new ValueTask<int>(-1));
-        await policy.ExecuteAsync(_ => new ValueTask<int>(-1));
+        await shield.ExecuteAsync(_ => new ValueTask<int>(-1));
+        await shield.ExecuteAsync(_ => new ValueTask<int>(-1));
 
         await Assert.That(monitor.State).IsEqualTo(CircuitState.Open);
-        await Assert.That(async () => await policy.ExecuteAsync(_ => new ValueTask<int>(1)))
+        await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(1)))
             .Throws<CircuitOpenException>();
     }
 }

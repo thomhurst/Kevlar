@@ -1,56 +1,74 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Kevlar.Extensions.DependencyInjection;
 
-/// <summary>Registers Kevlar policies with the service collection.</summary>
+/// <summary>Registers Kevlar shields with the service collection.</summary>
 public static class KevlarServiceCollectionExtensions
 {
-    /// <summary>Registers the <see cref="IKevlarRegistry"/>. Called automatically by the <c>AddKevlarPolicy</c> overloads.</summary>
+    /// <summary>Registers the <see cref="IKevlarRegistry"/>. Called automatically by the <c>AddShield</c> overloads.</summary>
     public static IServiceCollection AddKevlar(this IServiceCollection services)
     {
         if (services is null) { throw new ArgumentNullException(nameof(services)); }
-        services.TryAddSingleton<IKevlarRegistry>(sp => new KevlarRegistry(sp, sp.GetServices<KevlarPolicyRegistration>()));
+        services.TryAddSingleton<IKevlarRegistry>(sp => new KevlarRegistry(sp, sp.GetServices<ShieldRegistration>()));
         return services;
     }
 
-    /// <summary>Registers a named policy, resolvable via <see cref="IKevlarRegistry.GetPolicy(string)"/> or as a keyed <see cref="Policy"/> service.</summary>
-    public static IServiceCollection AddKevlarPolicy(this IServiceCollection services, string name, Policy policy)
+    /// <summary>Registers a named shield, resolvable via <see cref="IKevlarRegistry.GetShield(string)"/> or as a keyed <see cref="Shield"/> service.</summary>
+    public static IServiceCollection AddShield(this IServiceCollection services, string name, Shield shield)
     {
-        if (policy is null) { throw new ArgumentNullException(nameof(policy)); }
-        return services.AddKevlarPolicy(name, _ => policy);
+        if (shield is null) { throw new ArgumentNullException(nameof(shield)); }
+        return services.AddShield(name, _ => shield);
     }
 
-    /// <summary>Registers a named policy built from the service provider.</summary>
-    public static IServiceCollection AddKevlarPolicy(this IServiceCollection services, string name, Func<IServiceProvider, Policy> factory)
+    /// <summary>Registers a named shield built from the service provider.</summary>
+    public static IServiceCollection AddShield(this IServiceCollection services, string name, Func<IServiceProvider, Shield> factory)
     {
         if (services is null) { throw new ArgumentNullException(nameof(services)); }
         if (name is null) { throw new ArgumentNullException(nameof(name)); }
         if (factory is null) { throw new ArgumentNullException(nameof(factory)); }
 
         services.AddKevlar();
-        services.AddSingleton(new KevlarPolicyRegistration(name, null, factory));
-        services.AddKeyedSingleton(name, (sp, _) => sp.GetRequiredService<IKevlarRegistry>().GetPolicy(name));
+        services.AddSingleton(new ShieldRegistration(name, null, factory));
+        services.AddKeyedSingleton(name, (sp, _) => sp.GetRequiredService<IKevlarRegistry>().GetShield(name));
         return services;
     }
 
-    /// <summary>Registers a named result-aware policy, resolvable via <see cref="IKevlarRegistry.GetPolicy{TResult}(string)"/> or as a keyed <see cref="Policy{TResult}"/> service.</summary>
-    public static IServiceCollection AddKevlarPolicy<TResult>(this IServiceCollection services, string name, Policy<TResult> policy)
+    /// <summary>
+    /// Registers a named shield bound from <paramref name="configuration"/> (see
+    /// <see cref="ShieldDefinition"/> for the schema), so its retry counts, timeouts and breaker
+    /// thresholds are tunable without a redeploy. The shield carries <paramref name="name"/> as
+    /// its diagnostic name.
+    /// </summary>
+    public static IServiceCollection AddShield(this IServiceCollection services, string name, IConfiguration configuration)
     {
-        if (policy is null) { throw new ArgumentNullException(nameof(policy)); }
-        return services.AddKevlarPolicy(name, _ => policy);
+        if (configuration is null) { throw new ArgumentNullException(nameof(configuration)); }
+
+        return services.AddShield(name, _ =>
+        {
+            var definition = configuration.Get<ShieldDefinition>() ?? new ShieldDefinition();
+            return definition.Build().WithName(name);
+        });
     }
 
-    /// <summary>Registers a named result-aware policy built from the service provider.</summary>
-    public static IServiceCollection AddKevlarPolicy<TResult>(this IServiceCollection services, string name, Func<IServiceProvider, Policy<TResult>> factory)
+    /// <summary>Registers a named result-aware shield, resolvable via <see cref="IKevlarRegistry.GetShield{TResult}(string)"/> or as a keyed <see cref="Shield{TResult}"/> service.</summary>
+    public static IServiceCollection AddShield<TResult>(this IServiceCollection services, string name, Shield<TResult> shield)
+    {
+        if (shield is null) { throw new ArgumentNullException(nameof(shield)); }
+        return services.AddShield(name, _ => shield);
+    }
+
+    /// <summary>Registers a named result-aware shield built from the service provider.</summary>
+    public static IServiceCollection AddShield<TResult>(this IServiceCollection services, string name, Func<IServiceProvider, Shield<TResult>> factory)
     {
         if (services is null) { throw new ArgumentNullException(nameof(services)); }
         if (name is null) { throw new ArgumentNullException(nameof(name)); }
         if (factory is null) { throw new ArgumentNullException(nameof(factory)); }
 
         services.AddKevlar();
-        services.AddSingleton(new KevlarPolicyRegistration(name, typeof(TResult), factory));
-        services.AddKeyedSingleton(name, (sp, _) => sp.GetRequiredService<IKevlarRegistry>().GetPolicy<TResult>(name));
+        services.AddSingleton(new ShieldRegistration(name, typeof(TResult), factory));
+        services.AddKeyedSingleton(name, (sp, _) => sp.GetRequiredService<IKevlarRegistry>().GetShield<TResult>(name));
         return services;
     }
 }

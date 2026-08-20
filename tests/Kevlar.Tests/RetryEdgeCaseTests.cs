@@ -8,9 +8,9 @@ public class RetryEdgeCaseTests
     public async Task RetryForever_Keeps_Retrying_Until_Success()
     {
         var attempts = 0;
-        var policy = Policy.RetryForever(Backoff.None);
+        var shield = Shield.RetryForever(Backoff.None);
 
-        var result = await policy.ExecuteAsync(_ =>
+        var result = await shield.ExecuteAsync(_ =>
         {
             attempts++;
             if (attempts < 25)
@@ -28,11 +28,11 @@ public class RetryEdgeCaseTests
     public async Task Predicate_Handling_Retries_Only_Matching_Exceptions()
     {
         var attempts = 0;
-        var policy = Policy
-            .Handle<InvalidOperationException>(exception => exception.Message == "transient")
+        var shield = Shield
+            .When<InvalidOperationException>(exception => exception.Message == "transient")
             .Retry(5, Backoff.None);
 
-        await Assert.That(async () => await policy.ExecuteAsync<int>(_ =>
+        await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
         {
             attempts++;
             throw new InvalidOperationException(attempts < 3 ? "transient" : "fatal");
@@ -42,14 +42,14 @@ public class RetryEdgeCaseTests
     }
 
     [Test]
-    public async Task HandleWhen_Retries_On_Arbitrary_Predicates()
+    public async Task When_Retries_On_Arbitrary_Predicates()
     {
         var attempts = 0;
-        var policy = Policy
-            .HandleWhen(exception => exception.InnerException is not null)
+        var shield = Shield
+            .When(exception => exception.InnerException is not null)
             .Retry(3, Backoff.None);
 
-        var result = await policy.ExecuteAsync(_ =>
+        var result = await shield.ExecuteAsync(_ =>
         {
             attempts++;
             if (attempts == 1)
@@ -67,9 +67,9 @@ public class RetryEdgeCaseTests
     public async Task Derived_Exceptions_Match_A_Base_Type_Clause()
     {
         var attempts = 0;
-        var policy = Policy.Handle<ArgumentException>().Retry(1, Backoff.None);
+        var shield = Shield.When<ArgumentException>().Retry(1, Backoff.None);
 
-        var result = await policy.ExecuteAsync(_ =>
+        var result = await shield.ExecuteAsync(_ =>
         {
             attempts++;
             if (attempts == 1)
@@ -90,9 +90,9 @@ public class RetryEdgeCaseTests
 
         // The first Retry is outermost. Each of its 3 tries runs the inner retry's full
         // 3-attempt cycle: 9 delegate invocations in total.
-        var policy = Policy.Retry(2, Backoff.None).Retry(2, Backoff.None);
+        var shield = Shield.Retry(2, Backoff.None).Retry(2, Backoff.None);
 
-        await Assert.That(async () => await policy.ExecuteAsync<int>(_ =>
+        await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
         {
             attempts++;
             throw new InvalidOperationException();
@@ -107,7 +107,7 @@ public class RetryEdgeCaseTests
         var fakeTime = new FakeTimeProvider();
         var attempts = 0;
         var seenDelays = new List<TimeSpan>();
-        var policy = Policy
+        var shield = Shield
             .Retry(options =>
             {
                 options.MaxRetries = 1;
@@ -117,7 +117,7 @@ public class RetryEdgeCaseTests
             })
             .WithTimeProvider(fakeTime);
 
-        var task = policy.ExecuteAsync<int>(_ =>
+        var task = shield.ExecuteAsync<int>(_ =>
         {
             Interlocked.Increment(ref attempts);
             throw new InvalidOperationException();
@@ -135,7 +135,7 @@ public class RetryEdgeCaseTests
     public async Task Negative_DelayGenerator_Values_Are_Ignored()
     {
         var seenDelays = new List<TimeSpan>();
-        var policy = Policy.Retry(options =>
+        var shield = Shield.Retry(options =>
         {
             options.MaxRetries = 1;
             options.Backoff = Backoff.None;
@@ -143,7 +143,7 @@ public class RetryEdgeCaseTests
             options.OnRetry = retry => seenDelays.Add(retry.Delay);
         });
 
-        await Assert.That(async () => await policy.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
+        await Assert.That(async () => await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
             .Throws<InvalidOperationException>();
 
         // The negative value is discarded, so the backoff-computed delay (zero) is kept.
@@ -154,7 +154,7 @@ public class RetryEdgeCaseTests
     public async Task Null_DelayGenerator_Result_Keeps_The_Backoff_Delay()
     {
         var seenDelays = new List<TimeSpan>();
-        var policy = Policy.Retry(options =>
+        var shield = Shield.Retry(options =>
         {
             options.MaxRetries = 1;
             options.Backoff = Backoff.None;
@@ -162,7 +162,7 @@ public class RetryEdgeCaseTests
             options.OnRetry = retry => seenDelays.Add(retry.Delay);
         });
 
-        await Assert.That(async () => await policy.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
+        await Assert.That(async () => await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
             .Throws<InvalidOperationException>();
 
         await Assert.That(seenDelays).IsEquivalentTo([TimeSpan.Zero]);
@@ -172,7 +172,7 @@ public class RetryEdgeCaseTests
     public async Task OnRetryAsync_Is_Awaited_Before_The_Next_Attempt()
     {
         var order = new List<string>();
-        var policy = Policy.Retry(options =>
+        var shield = Shield.Retry(options =>
         {
             options.MaxRetries = 1;
             options.Backoff = Backoff.None;
@@ -185,7 +185,7 @@ public class RetryEdgeCaseTests
             };
         });
 
-        await Assert.That(async () => await policy.ExecuteAsync<int>(_ =>
+        await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
         {
             order.Add("attempt");
             throw new InvalidOperationException();
@@ -198,14 +198,14 @@ public class RetryEdgeCaseTests
     public async Task An_OnRetry_Callback_That_Throws_Surfaces_Its_Exception()
     {
         var attempts = 0;
-        var policy = Policy.Retry(options =>
+        var shield = Shield.Retry(options =>
         {
             options.MaxRetries = 3;
             options.Backoff = Backoff.None;
             options.OnRetry = _ => throw new DataMisalignedException("callback blew up");
         });
 
-        await Assert.That(async () => await policy.ExecuteAsync<int>(_ =>
+        await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
         {
             attempts++;
             throw new InvalidOperationException();
@@ -218,17 +218,17 @@ public class RetryEdgeCaseTests
     public async Task Result_Handling_Retry_Events_Carry_The_Result()
     {
         var events = new List<(object? Result, Exception? Exception)>();
-        var policy = Policy.For<int>()
-            .HandleResult(0)
+        var shield = Shield.For<int>()
+            .WhenResult(0)
             .Retry(options =>
             {
                 options.MaxRetries = 1;
                 options.Backoff = Backoff.None;
-                options.OnRetry = retry => events.Add((retry.Result, retry.Exception));
+                options.OnRetry = retry => events.Add((retry.Outcome.IsSuccess ? (object?)retry.Outcome.Result : null, retry.Outcome.Exception));
             });
 
         var attempts = 0;
-        var result = await policy.ExecuteAsync(_ => new ValueTask<int>(attempts++ == 0 ? 0 : 5));
+        var result = await shield.ExecuteAsync(_ => new ValueTask<int>(attempts++ == 0 ? 0 : 5));
 
         await Assert.That(result).IsEqualTo(5);
         await Assert.That(events.Count).IsEqualTo(1);
@@ -237,12 +237,12 @@ public class RetryEdgeCaseTests
     }
 
     [Test]
-    public async Task HandleResult_Value_Overload_Uses_Equality()
+    public async Task WhenResult_Value_Overload_Uses_Equality()
     {
         var attempts = 0;
-        var policy = Policy.For<string>().HandleResult("retry-me").Retry(3, Backoff.None);
+        var shield = Shield.For<string>().WhenResult("retry-me").Retry(3, Backoff.None);
 
-        var result = await policy.ExecuteAsync(_ =>
+        var result = await shield.ExecuteAsync(_ =>
         {
             attempts++;
             return new ValueTask<string>(attempts < 3 ? "retry-me" : "done");
@@ -256,12 +256,12 @@ public class RetryEdgeCaseTests
     public async Task Mixed_Exception_And_Result_Clauses_Both_Retry()
     {
         var attempts = 0;
-        var policy = Policy.For<int>()
-            .Handle<InvalidOperationException>()
-            .HandleResult(-1)
+        var shield = Shield.For<int>()
+            .When<InvalidOperationException>()
+            .WhenResult(-1)
             .Retry(3, Backoff.None);
 
-        var result = await policy.ExecuteAsync(_ =>
+        var result = await shield.ExecuteAsync(_ =>
         {
             attempts++;
             return attempts switch
@@ -280,11 +280,11 @@ public class RetryEdgeCaseTests
     {
         using var cancellation = new CancellationTokenSource();
         var attempts = 0;
-        var policy = Policy.Retry(5, Backoff.None);
+        var shield = Shield.Retry(5, Backoff.None);
 
         // The attempt fails with a handled exception, but the token is already cancelled
         // by then, so the retry loop returns the original failure instead of retrying.
-        await Assert.That(async () => await policy.ExecuteAsync<int>(_ =>
+        await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
         {
             attempts++;
             cancellation.Cancel();
@@ -298,9 +298,9 @@ public class RetryEdgeCaseTests
     public async Task The_Last_Failures_Exception_Is_Thrown_Not_The_First()
     {
         var attempts = 0;
-        var policy = Policy.Retry(2, Backoff.None);
+        var shield = Shield.Retry(2, Backoff.None);
 
-        await Assert.That(async () => await policy.ExecuteAsync<int>(_ =>
+        await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
         {
             attempts++;
             throw attempts < 3

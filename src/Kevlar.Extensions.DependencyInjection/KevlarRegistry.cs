@@ -3,9 +3,9 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Kevlar.Extensions.DependencyInjection;
 
-internal sealed class KevlarPolicyRegistration
+internal sealed class ShieldRegistration
 {
-    public KevlarPolicyRegistration(string name, Type? resultType, Func<IServiceProvider, object> factory)
+    public ShieldRegistration(string name, Type? resultType, Func<IServiceProvider, object> factory)
     {
         Name = name;
         ResultType = resultType;
@@ -14,7 +14,7 @@ internal sealed class KevlarPolicyRegistration
 
     public string Name { get; }
 
-    /// <summary><see langword="null"/> for non-generic policies; the result type for <see cref="Policy{TResult}"/>.</summary>
+    /// <summary><see langword="null"/> for non-generic shields; the result type for <see cref="Shield{TResult}"/>.</summary>
     public Type? ResultType { get; }
 
     public Func<IServiceProvider, object> Factory { get; }
@@ -23,10 +23,10 @@ internal sealed class KevlarPolicyRegistration
 internal sealed class KevlarRegistry : IKevlarRegistry
 {
     private readonly IServiceProvider _serviceProvider;
-    private readonly Dictionary<(string Name, Type? ResultType), KevlarPolicyRegistration> _registrations;
+    private readonly Dictionary<(string Name, Type? ResultType), ShieldRegistration> _registrations;
     private readonly ConcurrentDictionary<(string Name, Type? ResultType), object> _resolved = new();
 
-    public KevlarRegistry(IServiceProvider serviceProvider, IEnumerable<KevlarPolicyRegistration> registrations)
+    public KevlarRegistry(IServiceProvider serviceProvider, IEnumerable<ShieldRegistration> registrations)
     {
         _serviceProvider = serviceProvider;
         _registrations = [];
@@ -38,37 +38,37 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         }
     }
 
-    public Policy GetPolicy(string name) =>
-        TryGetPolicy(name, out var policy)
-            ? policy
-            : throw new KeyNotFoundException($"No Kevlar policy named '{name}' has been registered. Register one with AddKevlarPolicy(\"{name}\", ...).");
+    public Shield GetShield(string name) =>
+        TryGetShield(name, out var shield)
+            ? shield
+            : throw new KeyNotFoundException($"No Kevlar shield named '{name}' has been registered. Register one with AddShield(\"{name}\", ...).");
 
-    public Policy<TResult> GetPolicy<TResult>(string name) =>
-        TryGetPolicy<TResult>(name, out var policy)
-            ? policy
-            : throw new KeyNotFoundException($"No Kevlar policy named '{name}' for result type {typeof(TResult).Name} has been registered. Register one with AddKevlarPolicy<{typeof(TResult).Name}>(\"{name}\", ...).");
+    public Shield<TResult> GetShield<TResult>(string name) =>
+        TryGetShield<TResult>(name, out var shield)
+            ? shield
+            : throw new KeyNotFoundException($"No Kevlar shield named '{name}' for result type {typeof(TResult).Name} has been registered. Register one with AddShield<{typeof(TResult).Name}>(\"{name}\", ...).");
 
-    public bool TryGetPolicy(string name, [NotNullWhen(true)] out Policy? policy)
+    public bool TryGetShield(string name, [NotNullWhen(true)] out Shield? shield)
     {
-        if (Resolve(name, null) is Policy resolved)
+        if (Resolve(name, null) is Shield resolved)
         {
-            policy = resolved;
+            shield = resolved;
             return true;
         }
 
-        policy = null;
+        shield = null;
         return false;
     }
 
-    public bool TryGetPolicy<TResult>(string name, [NotNullWhen(true)] out Policy<TResult>? policy)
+    public bool TryGetShield<TResult>(string name, [NotNullWhen(true)] out Shield<TResult>? shield)
     {
-        if (Resolve(name, typeof(TResult)) is Policy<TResult> resolved)
+        if (Resolve(name, typeof(TResult)) is Shield<TResult> resolved)
         {
-            policy = resolved;
+            shield = resolved;
             return true;
         }
 
-        policy = null;
+        shield = null;
         return false;
     }
 

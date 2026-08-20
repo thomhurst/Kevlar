@@ -29,12 +29,12 @@ public class DatabaseResilienceTests
 
         await Assert.That(failures > 0).IsTrue();
 
-        // Same load through a bulkhead sized to the pool: everything succeeds.
+        // Same load through a concurrency limit sized to the pool: everything succeeds.
         var guarded = new FlakyDatabase { MaxConnections = 5, Latency = TimeSpan.FromMilliseconds(50) };
-        var policy = Policy.Bulkhead(maxConcurrency: 5, maxQueue: 15);
+        var shield = Shield.ConcurrencyLimit(maxConcurrency: 5, maxQueue: 15);
 
         var results = await Task.WhenAll(Enumerable.Range(0, 20)
-            .Select(_ => policy.ExecuteAsync(ct => new ValueTask<string>(guarded.QueryAsync("select 1", ct))).AsTask()));
+            .Select(_ => shield.ExecuteAsync(ct => new ValueTask<string>(guarded.QueryAsync("select 1", ct))).AsTask()));
 
         await Assert.That(results.Length).IsEqualTo(20);
         await Assert.That(results.All(r => r.StartsWith("rows"))).IsTrue();
@@ -47,18 +47,18 @@ public class DatabaseResilienceTests
         var database = new FlakyDatabase();
         database.FailNextQueries(2);
 
-        var policy = Policy
-            .Handle<TransientDatabaseException>()
+        var shield = Shield
+            .When<TransientDatabaseException>()
             .Retry(3, Backoff.Constant(TimeSpan.FromMilliseconds(5)));
 
-        var result = await policy.ExecuteAsync(ct => new ValueTask<string>(database.QueryAsync("select o from orders", ct)));
+        var result = await shield.ExecuteAsync(ct => new ValueTask<string>(database.QueryAsync("select o from orders", ct)));
 
         await Assert.That(result).IsEqualTo("rows(select o from orders)");
         await Assert.That(database.QueryCount).IsEqualTo(3);
 
-        // A non-transient fault must not be retried by the same policy.
+        // A non-transient fault must not be retried by the same shield.
         database.SetOffline(true);
-        await Assert.That(async () => await policy.ExecuteAsync(ct => new ValueTask<string>(database.QueryAsync("select 1", ct))))
+        await Assert.That(async () => await shield.ExecuteAsync(ct => new ValueTask<string>(database.QueryAsync("select 1", ct))))
             .Throws<DatabaseUnavailableException>();
         await Assert.That(database.QueryCount).IsEqualTo(4);
     }
@@ -69,12 +69,12 @@ public class DatabaseResilienceTests
         var database = new FlakyDatabase();
         database.SetOffline(true);
 
-        var breaker = Policy
-            .Handle<DatabaseUnavailableException>()
+        var breaker = Shield
+            .When<DatabaseUnavailableException>()
             .CircuitBreaker(consecutiveFailures: 2, breakDuration: TimeSpan.FromMinutes(1));
 
-        var ordersPolicy = Policy.Handle<DatabaseUnavailableException>().Retry(1, Backoff.None).Wrap(breaker);
-        var usersPolicy = Policy.Timeout(TimeSpan.FromSeconds(5)).Wrap(breaker);
+        var ordersPolicy = Shield.When<DatabaseUnavailableException>().Retry(1, Backoff.None).Wrap(breaker);
+        var usersPolicy = Shield.Timeout(TimeSpan.FromSeconds(5)).Wrap(breaker);
 
         // Two failed attempts through the orders repository trip the shared circuit;
         // the exhausted retry surfaces the underlying fault.
@@ -96,14 +96,14 @@ public class DatabaseResilienceTests
         var database = new FlakyDatabase { Latency = TimeSpan.FromMilliseconds(10) };
         database.FailNextQueries(2);
 
-        var policy = Policy
+        var shield = Shield
             .Timeout(TimeSpan.FromSeconds(10))
-            .Handle<TransientDatabaseException>()
+            .When<TransientDatabaseException>()
             .Retry(3, Backoff.Constant(TimeSpan.FromMilliseconds(5)))
             .CircuitBreaker(10, TimeSpan.FromSeconds(30))
-            .Bulkhead(maxConcurrency: 5, maxQueue: 20);
+            .ConcurrencyLimit(maxConcurrency: 5, maxQueue: 20);
 
-        var result = await policy.ExecuteAsync(ct => new ValueTask<string>(database.QueryAsync("insert order", ct)));
+        var result = await shield.ExecuteAsync(ct => new ValueTask<string>(database.QueryAsync("insert order", ct)));
 
         await Assert.That(result).IsEqualTo("rows(insert order)");
         await Assert.That(database.QueryCount).IsEqualTo(3);
@@ -116,11 +116,11 @@ public class DatabaseResilienceTests
         var slowStarted = new TaskCompletionSource();
         var attemptIndex = 0;
 
-        var policy = Policy
+        var shield = Shield
             .Timeout(TimeSpan.FromSeconds(10))
             .Hedge(maxAttempts: 2, delay: TimeSpan.FromMilliseconds(50));
 
-        var result = await policy.ExecuteAsync(async ct =>
+        var result = await shield.ExecuteAsync(async ct =>
         {
             var replica = Interlocked.Increment(ref attemptIndex);
 

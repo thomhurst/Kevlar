@@ -31,8 +31,8 @@ public class HttpTests
             () => new HttpResponseMessage(HttpStatusCode.ServiceUnavailable),
             () => new HttpResponseMessage(HttpStatusCode.OK));
 
-        var policy = HttpKevlar.HandleTransient().Retry(3, Backoff.None);
-        using var client = new HttpClient(new KevlarDelegatingHandler(policy) { InnerHandler = inner });
+        var shield = HttpShield.WhenTransient().Retry(3, Backoff.None);
+        using var client = new HttpClient(new ShieldDelegatingHandler(shield) { InnerHandler = inner });
 
         var response = await client.GetAsync("http://localhost/test");
 
@@ -45,8 +45,8 @@ public class HttpTests
     {
         var inner = new ScriptedHandler(() => new HttpResponseMessage(HttpStatusCode.NotFound));
 
-        var policy = HttpKevlar.HandleTransient().Retry(3, Backoff.None);
-        using var client = new HttpClient(new KevlarDelegatingHandler(policy) { InnerHandler = inner });
+        var shield = HttpShield.WhenTransient().Retry(3, Backoff.None);
+        using var client = new HttpClient(new ShieldDelegatingHandler(shield) { InnerHandler = inner });
 
         var response = await client.GetAsync("http://localhost/test");
 
@@ -68,16 +68,16 @@ public class HttpTests
 
         var inner = new ScriptedHandler(tooMany, () => new HttpResponseMessage(HttpStatusCode.OK));
 
-        var policy = HttpKevlar.HandleTransient()
+        var shield = HttpShield.WhenTransient()
             .Retry(options =>
             {
                 options.MaxRetries = 1;
                 options.Backoff = Backoff.None;
-                options.DelayGenerator = HttpKevlar.RetryAfter;
+                options.DelayGenerator = HttpShield.RetryAfter;
             })
             .WithTimeProvider(fakeTime);
 
-        using var client = new HttpClient(new KevlarDelegatingHandler(policy) { InnerHandler = inner });
+        using var client = new HttpClient(new ShieldDelegatingHandler(shield) { InnerHandler = inner });
 
         var task = client.GetAsync("http://localhost/test");
 
@@ -100,7 +100,7 @@ public class HttpTests
         var services = new ServiceCollection();
         services.AddHttpClient("resilient")
             .ConfigurePrimaryHttpMessageHandler(() => inner)
-            .AddKevlar(HttpKevlar.HandleTransient().Retry(2, Backoff.None));
+            .AddShield(HttpShield.WhenTransient().Retry(2, Backoff.None));
 
         var factory = services.BuildServiceProvider().GetRequiredService<IHttpClientFactory>();
         var client = factory.CreateClient("resilient");
@@ -112,14 +112,14 @@ public class HttpTests
     }
 
     [Test]
-    public async Task StandardPolicy_Handles_Success_Immediately()
+    public async Task Standard_Handles_Success_Immediately()
     {
         var inner = new ScriptedHandler(() => new HttpResponseMessage(HttpStatusCode.OK));
 
         var services = new ServiceCollection();
         services.AddHttpClient("standard")
             .ConfigurePrimaryHttpMessageHandler(() => inner)
-            .AddStandardKevlar();
+            .AddStandardShield();
 
         var factory = services.BuildServiceProvider().GetRequiredService<IHttpClientFactory>();
         var client = factory.CreateClient("standard");

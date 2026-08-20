@@ -119,18 +119,18 @@ public class OutcomeAndContextTests
         // The context is pooled; whatever instance an execution rents must start with
         // empty properties even if a previous execution stored values in it.
         var key = new KevlarKey<string>("leak-check");
-        var policy = Policy.Retry(options =>
+        var shield = Shield.Retry(options =>
         {
             options.MaxRetries = 1;
             options.Backoff = Backoff.None;
             options.OnRetry = retry => retry.Context.Properties.Set(key, "left-behind");
         });
 
-        await Assert.That(async () => await policy.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
+        await Assert.That(async () => await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
             .Throws<InvalidOperationException>();
 
         var leaked = false;
-        var probePolicy = Policy.Retry(options =>
+        var probePolicy = Shield.Retry(options =>
         {
             options.MaxRetries = 1;
             options.Backoff = Backoff.None;
@@ -147,19 +147,19 @@ public class OutcomeAndContextTests
     public async Task Context_Reports_Synchronous_And_Asynchronous_Executions()
     {
         bool? sawSynchronous = null;
-        var policy = Policy.Retry(options =>
+        var shield = Shield.Retry(options =>
         {
             options.MaxRetries = 1;
             options.Backoff = Backoff.None;
             options.OnRetry = retry => sawSynchronous = retry.Context.IsSynchronous;
         });
 
-        await Assert.That(() => policy.Execute<int>(_ => throw new InvalidOperationException()))
+        await Assert.That(() => shield.Execute<int>(_ => throw new InvalidOperationException()))
             .Throws<InvalidOperationException>();
         await Assert.That(sawSynchronous!.Value).IsTrue();
 
         sawSynchronous = null;
-        await Assert.That(async () => await policy.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
+        await Assert.That(async () => await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
             .Throws<InvalidOperationException>();
         await Assert.That(sawSynchronous!.Value).IsFalse();
     }

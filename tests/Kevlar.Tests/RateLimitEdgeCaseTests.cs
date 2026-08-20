@@ -8,22 +8,22 @@ public class RateLimitEdgeCaseTests
     public async Task Tokens_Refill_Gradually_Not_All_At_Once()
     {
         var fakeTime = new FakeTimeProvider();
-        var policy = Policy.RateLimit(10, TimeSpan.FromSeconds(10)).WithTimeProvider(fakeTime);
+        var shield = Shield.RateLimit(10, TimeSpan.FromSeconds(10)).WithTimeProvider(fakeTime);
 
         // Drain the full burst.
         for (var i = 0; i < 10; i++)
         {
-            await policy.ExecuteAsync(_ => new ValueTask<int>(i));
+            await shield.ExecuteAsync(_ => new ValueTask<int>(i));
         }
 
-        await Assert.That(async () => await policy.ExecuteAsync(_ => new ValueTask<int>(0)))
+        await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(0)))
             .Throws<RateLimitExceededException>();
 
         // One second refills exactly one token (10 permits / 10 seconds).
         fakeTime.Advance(TimeSpan.FromSeconds(1));
 
-        await policy.ExecuteAsync(_ => new ValueTask<int>(1));
-        await Assert.That(async () => await policy.ExecuteAsync(_ => new ValueTask<int>(2)))
+        await shield.ExecuteAsync(_ => new ValueTask<int>(1));
+        await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(2)))
             .Throws<RateLimitExceededException>();
     }
 
@@ -31,7 +31,7 @@ public class RateLimitEdgeCaseTests
     public async Task Idle_Time_Cannot_Accumulate_More_Than_The_Burst()
     {
         var fakeTime = new FakeTimeProvider();
-        var policy = Policy
+        var shield = Shield
             .RateLimit(options =>
             {
                 options.Permits = 2;
@@ -43,10 +43,10 @@ public class RateLimitEdgeCaseTests
         // A long idle period must not bank more than Burst tokens.
         fakeTime.Advance(TimeSpan.FromMinutes(10));
 
-        await policy.ExecuteAsync(_ => new ValueTask<int>(1));
-        await policy.ExecuteAsync(_ => new ValueTask<int>(2));
+        await shield.ExecuteAsync(_ => new ValueTask<int>(1));
+        await shield.ExecuteAsync(_ => new ValueTask<int>(2));
 
-        await Assert.That(async () => await policy.ExecuteAsync(_ => new ValueTask<int>(3)))
+        await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(3)))
             .Throws<RateLimitExceededException>();
     }
 
@@ -54,7 +54,7 @@ public class RateLimitEdgeCaseTests
     public async Task Burst_Can_Exceed_The_Sustained_Rate()
     {
         var fakeTime = new FakeTimeProvider();
-        var policy = Policy
+        var shield = Shield
             .RateLimit(options =>
             {
                 options.Permits = 1;
@@ -66,10 +66,10 @@ public class RateLimitEdgeCaseTests
         // The bucket starts full at Burst, so five immediate executions pass.
         for (var i = 0; i < 5; i++)
         {
-            await policy.ExecuteAsync(_ => new ValueTask<int>(i));
+            await shield.ExecuteAsync(_ => new ValueTask<int>(i));
         }
 
-        await Assert.That(async () => await policy.ExecuteAsync(_ => new ValueTask<int>(9)))
+        await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(9)))
             .Throws<RateLimitExceededException>();
     }
 
@@ -77,7 +77,7 @@ public class RateLimitEdgeCaseTests
     public async Task Queued_Reservations_Are_Scheduled_In_Order()
     {
         var fakeTime = new FakeTimeProvider();
-        var policy = Policy
+        var shield = Shield
             .RateLimit(options =>
             {
                 options.Permits = 1;
@@ -86,17 +86,17 @@ public class RateLimitEdgeCaseTests
             })
             .WithTimeProvider(fakeTime);
 
-        var immediate = await policy.ExecuteAsync(_ => new ValueTask<int>(1));
+        var immediate = await shield.ExecuteAsync(_ => new ValueTask<int>(1));
         await Assert.That(immediate).IsEqualTo(1);
 
         // Two executions reserve the next two replenished tokens.
-        var second = policy.ExecuteAsync(_ => new ValueTask<int>(2)).AsTask();
-        var third = policy.ExecuteAsync(_ => new ValueTask<int>(3)).AsTask();
+        var second = shield.ExecuteAsync(_ => new ValueTask<int>(2)).AsTask();
+        var third = shield.ExecuteAsync(_ => new ValueTask<int>(3)).AsTask();
         await Assert.That(second.IsCompleted).IsFalse();
         await Assert.That(third.IsCompleted).IsFalse();
 
         // The queue is exhausted; the next execution is rejected with an estimate.
-        var rejection = await Assert.That(async () => await policy.ExecuteAsync(_ => new ValueTask<int>(4)))
+        var rejection = await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(4)))
             .Throws<RateLimitExceededException>();
         await Assert.That(rejection!.RetryAfter).IsEqualTo(TimeSpan.FromSeconds(3));
 
@@ -114,7 +114,7 @@ public class RateLimitEdgeCaseTests
         var fakeTime = new FakeTimeProvider();
         using var cancellation = new CancellationTokenSource();
         var invoked = false;
-        var policy = Policy
+        var shield = Shield
             .RateLimit(options =>
             {
                 options.Permits = 1;
@@ -123,9 +123,9 @@ public class RateLimitEdgeCaseTests
             })
             .WithTimeProvider(fakeTime);
 
-        await policy.ExecuteAsync(_ => new ValueTask<int>(1));
+        await shield.ExecuteAsync(_ => new ValueTask<int>(1));
 
-        var queued = policy.ExecuteAsync(_ =>
+        var queued = shield.ExecuteAsync(_ =>
         {
             invoked = true;
             return new ValueTask<int>(2);
@@ -141,12 +141,12 @@ public class RateLimitEdgeCaseTests
     public async Task Exactly_The_Available_Permits_Win_Under_Concurrent_Load()
     {
         var fakeTime = new FakeTimeProvider();
-        var policy = Policy.RateLimit(5, TimeSpan.FromSeconds(1)).WithTimeProvider(fakeTime);
+        var shield = Shield.RateLimit(5, TimeSpan.FromSeconds(1)).WithTimeProvider(fakeTime);
 
         // Time is frozen, so no refill happens: exactly the 5 burst tokens may be taken,
         // no matter how the 25 concurrent executions race.
         var outcomes = await Task.WhenAll(Enumerable.Range(0, 25).Select(_ =>
-            policy.ExecuteOutcomeAsync(_ => new ValueTask<int>(1)).AsTask()));
+            shield.ExecuteOutcomeAsync(_ => new ValueTask<int>(1)).AsTask()));
 
         var successes = outcomes.Count(outcome => outcome.IsSuccess);
         var rejections = outcomes.Count(outcome => outcome.Exception is RateLimitExceededException);
@@ -159,15 +159,15 @@ public class RateLimitEdgeCaseTests
     public async Task Failures_Do_Not_Refund_Tokens()
     {
         var fakeTime = new FakeTimeProvider();
-        var policy = Policy.RateLimit(2, TimeSpan.FromSeconds(10)).WithTimeProvider(fakeTime);
+        var shield = Shield.RateLimit(2, TimeSpan.FromSeconds(10)).WithTimeProvider(fakeTime);
 
-        await Assert.That(async () => await policy.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
+        await Assert.That(async () => await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
             .Throws<InvalidOperationException>();
-        await Assert.That(async () => await policy.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
+        await Assert.That(async () => await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
             .Throws<InvalidOperationException>();
 
         // Both permits were consumed even though the executions failed.
-        await Assert.That(async () => await policy.ExecuteAsync(_ => new ValueTask<int>(1)))
+        await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(1)))
             .Throws<RateLimitExceededException>();
     }
 
@@ -175,11 +175,11 @@ public class RateLimitEdgeCaseTests
     public async Task Rejections_Report_A_Positive_RetryAfter_Estimate()
     {
         var fakeTime = new FakeTimeProvider();
-        var policy = Policy.RateLimit(1, TimeSpan.FromSeconds(10)).WithTimeProvider(fakeTime);
+        var shield = Shield.RateLimit(1, TimeSpan.FromSeconds(10)).WithTimeProvider(fakeTime);
 
-        await policy.ExecuteAsync(_ => new ValueTask<int>(1));
+        await shield.ExecuteAsync(_ => new ValueTask<int>(1));
 
-        var rejection = await Assert.That(async () => await policy.ExecuteAsync(_ => new ValueTask<int>(2)))
+        var rejection = await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(2)))
             .Throws<RateLimitExceededException>();
 
         // The bucket is empty; one token takes a full window to replenish.

@@ -16,8 +16,8 @@ public class MessagingResilienceTests
         var broker = new InMemoryBroker();
         broker.FailNextPublishes(2);
 
-        var publisher = Policy
-            .Handle<BrokerUnavailableException>()
+        var publisher = Shield
+            .When<BrokerUnavailableException>()
             .Retry(5, Backoff.Constant(TimeSpan.FromMilliseconds(10)));
 
         await publisher.ExecuteAsync(ct => broker.PublishAsync(new BrokerMessage("m1", "payload"), ct));
@@ -33,7 +33,7 @@ public class MessagingResilienceTests
 
         // 10 permits per 200ms with room to queue the rest: a burst of 20 all succeed,
         // but the second half is paced instead of hammering the broker.
-        var publisher = Policy.RateLimit(options =>
+        var publisher = Shield.RateLimit(options =>
         {
             options.Permits = 10;
             options.Window = TimeSpan.FromMilliseconds(200);
@@ -65,8 +65,8 @@ public class MessagingResilienceTests
         var deadLetters = new ConcurrentBag<string>();
 
         // Real-world consumer mix: fallback (dead-letter) outermost, then bounded retries.
-        var consumer = Policy.For<bool>()
-            .Handle<MessageProcessingException>()
+        var consumer = Shield.For<bool>()
+            .When<MessageProcessingException>()
             .Fallback((outcome, _) =>
             {
                 deadLetters.Add(((MessageProcessingException)outcome.Exception!).FailedMessage.Id);
@@ -110,7 +110,7 @@ public class MessagingResilienceTests
         var maxObserved = 0;
         var handled = 0;
 
-        var consumer = Policy.Bulkhead(maxConcurrency: 4, maxQueue: 16);
+        var consumer = Shield.ConcurrencyLimit(maxConcurrency: 4, maxQueue: 16);
 
         var workers = new List<Task>();
         while (broker.TryConsume(out _))
@@ -137,8 +137,8 @@ public class MessagingResilienceTests
         var broker = new InMemoryBroker();
         broker.FailNextPublishes(3);
 
-        var publisher = Policy
-            .Handle<BrokerUnavailableException>()
+        var publisher = Shield
+            .When<BrokerUnavailableException>()
             .Retry(5, Backoff.Constant(TimeSpan.FromMilliseconds(5)))
             .RateLimit(options =>
             {
@@ -160,8 +160,8 @@ public class MessagingResilienceTests
         var processed = new ConcurrentBag<string>();
         var deadLetters = new ConcurrentBag<string>();
 
-        var consumer = Policy.For<bool>()
-            .Handle<MessageProcessingException>()
+        var consumer = Shield.For<bool>()
+            .When<MessageProcessingException>()
             .Fallback((outcome, _) =>
             {
                 deadLetters.Add(((MessageProcessingException)outcome.Exception!).FailedMessage.Id);

@@ -13,23 +13,23 @@ dotnet add package Kevlar
 Optional satellites:
 
 ```bash
-dotnet add package Kevlar.Extensions.DependencyInjection   # named policies + IKevlarRegistry
+dotnet add package Kevlar.Extensions.DependencyInjection   # named shields + IKevlarRegistry
 dotnet add package Kevlar.Extensions.Http                  # HttpClientFactory integration
 ```
 
 The core targets `netstandard2.0` (so .NET Framework 4.6.2+ works) and `net8.0`, with zero third-party dependencies.
 
-## Your first policy
+## Your first shield
 
 ```csharp
 using Kevlar;
 
-var policy = Policy
+var shield = Shield
     .Timeout(TimeSpan.FromSeconds(30))   // total budget for the whole operation
     .Retry(3)                            // exponential backoff + jitter, out of the box
     .CircuitBreaker(5, breakDuration: TimeSpan.FromSeconds(30));
 
-var user = await policy.ExecuteAsync(ct => LoadUserAsync(id, ct), cancellationToken);
+var user = await shield.ExecuteAsync(ct => LoadUserAsync(id, ct), cancellationToken);
 ```
 
 Three things to notice:
@@ -40,37 +40,37 @@ Three things to notice:
 
 ## Reuse it everywhere
 
-Policies are immutable and thread-safe. Build one, store it in a `static readonly` field or register it in [DI](dependency-injection.md), and use it for every call to that dependency:
+Shields are immutable and thread-safe. Build one, store it in a `static readonly` field or register it in [DI](dependency-injection.md), and use it for every call to that dependency:
 
 ```csharp
-private static readonly Policy GitHubPolicy = Policy
+private static readonly Shield GitHubShield = Shield
     .Timeout(TimeSpan.FromSeconds(10))
     .Retry(3);
 
 // Any result type, sync or async, through the same instance:
-var repos = await GitHubPolicy.ExecuteAsync(ct => GetReposAsync(ct), ct);
-var user  = await GitHubPolicy.ExecuteAsync(ct => GetUserAsync(ct), ct);
+var repos = await GitHubShield.ExecuteAsync(ct => GetReposAsync(ct), ct);
+var user  = await GitHubShield.ExecuteAsync(ct => GetUserAsync(ct), ct);
 ```
 
-This matters for stateful strategies: a circuit breaker's state lives with the policy instance that created it. Reuse the instance and every call site shares one circuit; build a new instance and you get fresh state. See [Composition](composition.md).
+This matters for stateful strategies: a circuit breaker's state lives with the shield instance that created it. Reuse the instance and every call site shares one circuit; build a new instance and you get fresh state. See [Composition](composition.md).
 
 ## Deciding what counts as a failure
 
 Reactive strategies (retry, circuit breaker, hedging, fallback) act on failures. By default that's **any exception except `OperationCanceledException`**. Narrow it with a handling clause:
 
 ```csharp
-var policy = Policy
-    .Handle<HttpRequestException>()
+var shield = Shield
+    .When<HttpRequestException>()
     .Or<TimeoutExceededException>()
     .Retry(5);
 ```
 
-Want to treat certain *results* as failures too (HTTP 500s, say)? Lift into a typed policy with `For<T>`:
+Want to treat certain *results* as failures too (HTTP 500s, say)? Lift into a typed shield with `For<T>`:
 
 ```csharp
-var http = Policy.For<HttpResponseMessage>()
-    .Handle<HttpRequestException>()
-    .HandleResult(r => (int)r.StatusCode >= 500)
+var http = Shield.For<HttpResponseMessage>()
+    .When<HttpRequestException>()
+    .WhenResult(r => (int)r.StatusCode >= 500)
     .Retry(3);
 ```
 
@@ -79,5 +79,5 @@ Full details in [Handling failures](handling-failures.md).
 ## Next steps
 
 - Browse the [strategy reference](/docs/category/strategies) — each strategy's options, defaults and semantics.
-- Wire policies into [dependency injection](dependency-injection.md) or [HttpClient](http.md).
-- [Test your policies](testing.md) without real waiting, using `TimeProvider`.
+- Wire shields into [dependency injection](dependency-injection.md) or [HttpClient](http.md).
+- [Test your shields](testing.md) without real waiting, using `TimeProvider`.

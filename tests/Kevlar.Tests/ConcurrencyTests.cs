@@ -9,7 +9,7 @@ public class ConcurrencyTests
     {
         var transitions = new List<CircuitStateChangedEvent>();
         var gate = new object();
-        var policy = Policy.CircuitBreaker(options =>
+        var shield = Shield.CircuitBreaker(options =>
         {
             options.ConsecutiveFailures = 3;
             options.BreakDuration = TimeSpan.FromMinutes(1);
@@ -23,7 +23,7 @@ public class ConcurrencyTests
         });
 
         await Task.WhenAll(Enumerable.Range(0, 32).Select(_ =>
-            policy.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException()).AsTask()));
+            shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException()).AsTask()));
 
         List<CircuitStateChangedEvent> snapshot;
         lock (gate)
@@ -38,11 +38,11 @@ public class ConcurrencyTests
     [Test]
     public async Task A_Shared_Retry_Strategy_Is_Safe_Across_Parallel_Executions()
     {
-        var policy = Policy.Retry(1, Backoff.None);
+        var shield = Shield.Retry(1, Backoff.None);
         var failFirst = new bool[64];
 
         var results = await Task.WhenAll(Enumerable.Range(0, 64).Select(i =>
-            policy.ExecuteAsync(i, (index, _) =>
+            shield.ExecuteAsync(i, (index, _) =>
             {
                 if (!failFirst[index])
                 {
@@ -66,8 +66,8 @@ public class ConcurrencyTests
         var key = new KevlarKey<int>("execution-id");
         var mismatches = 0;
 
-        var typed = Policy.For<int>()
-            .HandleResult(value => value >= 0)
+        var typed = Shield.For<int>()
+            .WhenResult(value => value >= 0)
             .Retry(options =>
             {
                 options.MaxRetries = 2;
@@ -76,9 +76,9 @@ public class ConcurrencyTests
                 {
                     if (retry.Attempt == 1)
                     {
-                        retry.Context.Properties.Set(key, (int)retry.Result!);
+                        retry.Context.Properties.Set(key, retry.Outcome.Result);
                     }
-                    else if (retry.Context.Properties.GetOrDefault(key, -1) != (int)retry.Result!)
+                    else if (retry.Context.Properties.GetOrDefault(key, -1) != retry.Outcome.Result)
                     {
                         Interlocked.Increment(ref mismatches);
                     }
@@ -98,13 +98,13 @@ public class ConcurrencyTests
     [Test]
     public async Task Concurrent_Executions_Through_An_Open_Circuit_All_Reject()
     {
-        var policy = Policy.CircuitBreaker(1, TimeSpan.FromMinutes(1));
+        var shield = Shield.CircuitBreaker(1, TimeSpan.FromMinutes(1));
 
-        await policy.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
 
         var invoked = 0;
         var outcomes = await Task.WhenAll(Enumerable.Range(0, 32).Select(_ =>
-            policy.ExecuteOutcomeAsync(_ =>
+            shield.ExecuteOutcomeAsync(_ =>
             {
                 Interlocked.Increment(ref invoked);
                 return new ValueTask<int>(1);
@@ -118,16 +118,16 @@ public class ConcurrencyTests
     public async Task Parallel_HalfOpen_Races_Admit_Exactly_One_Probe()
     {
         var fakeTime = new FakeTimeProvider();
-        var policy = Policy.CircuitBreaker(1, TimeSpan.FromSeconds(1)).WithTimeProvider(fakeTime);
+        var shield = Shield.CircuitBreaker(1, TimeSpan.FromSeconds(1)).WithTimeProvider(fakeTime);
 
-        await policy.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
         fakeTime.Advance(TimeSpan.FromSeconds(1));
 
         var probeGate = new TaskCompletionSource();
         var probes = 0;
 
         var outcomes = Enumerable.Range(0, 16).Select(_ =>
-            policy.ExecuteOutcomeAsync(async _ =>
+            shield.ExecuteOutcomeAsync(async _ =>
             {
                 Interlocked.Increment(ref probes);
                 await probeGate.Task;
@@ -147,12 +147,12 @@ public class ConcurrencyTests
     [Test]
     public async Task Sync_And_Async_Executions_Can_Share_One_Policy()
     {
-        var policy = Policy.Retry(1, Backoff.None);
+        var shield = Shield.Retry(1, Backoff.None);
         var asyncResults = Task.WhenAll(Enumerable.Range(0, 8).Select(i =>
-            policy.ExecuteAsync(i, static (index, _) => new ValueTask<int>(index)).AsTask()));
+            shield.ExecuteAsync(i, static (index, _) => new ValueTask<int>(index)).AsTask()));
 
         var syncResults = new int[8];
-        Parallel.For(0, 8, i => syncResults[i] = policy.Execute(i, static (index, _) => index));
+        Parallel.For(0, 8, i => syncResults[i] = shield.Execute(i, static (index, _) => index));
 
         var fromAsync = await asyncResults;
         for (var i = 0; i < 8; i++)
@@ -165,11 +165,11 @@ public class ConcurrencyTests
     [Test]
     public async Task Immutable_Policies_Can_Be_Extended_Concurrently_With_Executions()
     {
-        var basePolicy = Policy.Retry(1, Backoff.None);
+        var basePolicy = Shield.Retry(1, Backoff.None);
 
         var tasks = Enumerable.Range(0, 16).Select(i => Task.Run(async () =>
         {
-            // Deriving new policies from a shared base must never disturb in-flight executions.
+            // Deriving new shields from a shared base must never disturb in-flight executions.
             var derived = basePolicy.Timeout(TimeSpan.FromMinutes(1)).WithName($"derived-{i}");
             return await derived.ExecuteAsync(i, static (index, _) => new ValueTask<int>(index));
         })).ToArray();

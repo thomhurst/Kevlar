@@ -13,50 +13,57 @@ With no handling clause, the default is: **any exception except `OperationCancel
 ## Exception clauses
 
 ```csharp
-var policy = Policy
-    .Handle<HttpRequestException>()                     // this exception type (and subtypes)
+var shield = Shield
+    .When<HttpRequestException>()                     // this exception type (and subtypes)
     .Or<TimeoutExceededException>()                     // or this one
     .OrWhen(ex => ex is IOException { Message: var m } && m.Contains("pipe"))  // or any predicate
     .Retry(5);
 ```
 
-- `Handle<TException>()` starts a clause matching `TException` and anything derived from it. `Handle<TException>(predicate)` narrows it further, and `HandleWhen(predicate)` matches on any exception.
+- `When<TException>()` starts a clause matching `TException` and anything derived from it. `When<TException>(predicate)` narrows it further, and `When(predicate)` matches on any exception.
 - `Or<TException>()` / `Or<TException>(predicate)` / `OrWhen(predicate)` add alternatives to the clause. All alternatives OR together.
 
-On **typed** builders (`Policy.For<T>()...`) the spelling differs slightly: `Handle` is repeatable instead of switching to `Or` — `Handle<A>().Handle<B>().HandleResult(...)` accumulates the same way.
+Both builders speak the same grammar. `When…` and `Or…` are interchangeable — the convention is `When` for the first clause and `Or` for each addition: `When<A>().Or<B>().OrWhen(...)`.
 
 ## Result clauses
 
-Sometimes failure isn't an exception — it's a well-formed response you don't like (an HTTP 500, an empty payload, a `Status = "Retry"` field). Lift into a typed policy with `For<T>` and add `HandleResult`:
+Sometimes failure isn't an exception — it's a well-formed response you don't like (an HTTP 500, an empty payload, a `Status = "Retry"` field). Lift into a typed shield with `For<T>` and add `WhenResult`:
 
 ```csharp
-var http = Policy.For<HttpResponseMessage>()
-    .Handle<HttpRequestException>()
-    .HandleResult(r => (int)r.StatusCode >= 500)
+var http = Shield.For<HttpResponseMessage>()
+    .When<HttpRequestException>()
+    .WhenResult(r => (int)r.StatusCode >= 500)
     .Retry(3);
 ```
 
 Now a 503 response triggers a retry exactly as a thrown `HttpRequestException` would. The delegate's return value is inspected — nothing is thrown internally, the outcome just counts as a failure.
+
+Typed builders add result alternatives with `OrResult(predicate)` / `OrResult(value)`, and two shorthands for the most common check of all:
+
+```csharp
+Shield.For<User?>().WhenDefault().Retry(2);   // retry when the result is null / default
+// mid-chain: .OrDefault() adds the same check to an existing clause
+```
 
 ## Clauses are ambient
 
 A clause applies to the strategy it creates *and* to every reactive strategy chained after it, until you write a new clause:
 
 ```csharp
-Policy
-    .Handle<HttpRequestException>()      // clause #1
+Shield
+    .When<HttpRequestException>()      // clause #1
     .Retry(3)                            //   ← uses clause #1
     .CircuitBreaker(5, breakDuration)    //   ← also clause #1
-    .Handle<TimeoutExceededException>()  // clause #2 replaces #1 from here on
+    .When<TimeoutExceededException>()  // clause #2 replaces #1 from here on
     .Fallback(...);                      //   ← uses clause #2
 ```
 
 This is why most chains only need one clause, written once at the top — and why you never repeat a `ShouldHandle` predicate per strategy like in Polly v8.
 
 :::info Proactive strategies don't consult clauses
-Timeouts, rate limits and bulkheads don't care why something failed — they act on time and concurrency, not outcomes. Clauses only drive the reactive strategies.
+Timeouts, rate limits and concurrency limits don't care why something failed — they act on time and concurrency, not outcomes. Clauses only drive the reactive strategies.
 :::
 
-:::warning Two things reset the clause
-`policy.For<T>()` (lifting an existing untyped policy to a typed one) and `Policy.Compose(...)` both discard the ambient clause — re-declare `Handle`/`HandleResult` afterwards if you chain more reactive strategies.
+:::info Clauses survive lifting and composing
+`shield.For<T>()` carries an ambient exception clause into the typed shield, and `Shield.Compose(...)` keeps the last input's clause ambient — so strategies chained afterwards keep handling what you declared. Write a new clause any time you want different handling.
 :::

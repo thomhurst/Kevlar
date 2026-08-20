@@ -1,3 +1,5 @@
+using Kevlar.Internal;
+
 namespace Kevlar;
 
 /// <summary>
@@ -8,8 +10,8 @@ namespace Kevlar;
 /// <remarks>
 /// <para>
 /// Implementations must be thread-safe: a single strategy instance is shared by every execution
-/// of the policy that contains it, and by every policy it is composed into. Strategy-local state
-/// (circuit breaker counters, rate limiter tokens, bulkhead slots) is intentionally shared this way.
+/// of the shield that contains it, and by every shield it is composed into. Strategy-local state
+/// (circuit breaker counters, rate limiter tokens, concurrency limit slots) is intentionally shared this way.
 /// </para>
 /// <para>
 /// Strategies should communicate failures by returning <see cref="Outcome{T}.FromException"/>
@@ -27,10 +29,22 @@ public abstract class Strategy
     /// <param name="next">The remainder of the pipeline, ending in the user's delegate.</param>
     /// <param name="context">The ambient execution context.</param>
     public abstract ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context);
+
+    /// <summary>
+    /// A one-line human-readable summary of this strategy and its configuration, used by
+    /// <see cref="Shield.ToString"/> to describe a whole pipeline. Defaults to the type name.
+    /// </summary>
+    public virtual string Describe() => GetType().Name;
+
+    /// <summary>The handling clause this reactive strategy acts on; null for proactive strategies.</summary>
+    internal virtual OutcomeJudge? ReactiveJudge => null;
+
+    /// <summary>Marks fallback strategies for chain-order validation.</summary>
+    internal virtual bool IsFallback => false;
 }
 
 /// <summary>
-/// The rest of a policy pipeline, from a strategy's point of view. Invoking it runs every
+/// The rest of a shield pipeline, from a strategy's point of view. Invoking it runs every
 /// remaining strategy and finally the user's delegate. It may be invoked multiple times
 /// (retries, hedging) and with a forked context (hedging).
 /// </summary>
@@ -73,7 +87,7 @@ public readonly struct Continuation<T, TState>
     }
 }
 
-/// <summary>A node in a policy's immutable strategy chain.</summary>
+/// <summary>A node in a shield's immutable strategy chain.</summary>
 public sealed class StrategyNode
 {
     internal StrategyNode(Strategy strategy, StrategyNode? next)

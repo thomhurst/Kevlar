@@ -75,6 +75,9 @@ public abstract class Backoff
         public ConstantBackoff(TimeSpan delay) => _delay = delay;
 
         public override TimeSpan GetDelay(int attempt) => _delay;
+
+        public override string ToString() =>
+            _delay == TimeSpan.Zero ? "no delay" : $"constant {DescribeHelper.Time(_delay)}";
     }
 
     private sealed class LinearBackoff : Backoff
@@ -90,6 +93,12 @@ public abstract class Backoff
 
         public override TimeSpan GetDelay(int attempt) =>
             FromTicksClamped((double)_step.Ticks * attempt, _maxDelay);
+
+        public override string ToString()
+        {
+            var cap = _maxDelay is { } max ? $" ≤{DescribeHelper.Time(max)}" : string.Empty;
+            return $"linear {DescribeHelper.Time(_step)} steps{cap}";
+        }
     }
 
     private sealed class ExponentialBackoff : Backoff
@@ -118,6 +127,13 @@ public abstract class Backoff
 
             return FromTicksClamped(ticks, _maxDelay);
         }
+
+        public override string ToString()
+        {
+            var jitter = _jitter ? " +jitter" : string.Empty;
+            var cap = _maxDelay is { } max ? $" ≤{DescribeHelper.Time(max)}" : string.Empty;
+            return FormattableString.Invariant($"exponential {DescribeHelper.Time(_initialDelay)} ×{_factor:0.#}{jitter}{cap}");
+        }
     }
 
     private sealed class CustomBackoff : Backoff
@@ -131,5 +147,7 @@ public abstract class Backoff
             var delay = _delayFactory(attempt);
             return delay < TimeSpan.Zero ? TimeSpan.Zero : delay;
         }
+
+        public override string ToString() => "custom backoff";
     }
 }

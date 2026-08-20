@@ -13,10 +13,15 @@ internal sealed class CircuitBreakerStrategy : Strategy
         _judge = judge;
     }
 
+    internal override OutcomeJudge? ReactiveJudge => _judge;
+
+    public override string Describe() => _core.Describe();
+
     public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
         if (!_core.TryEnter(context.TimeProvider, out var rejection))
         {
+            KevlarMetrics.Rejection(context.ShieldName, "circuit_open");
             return Outcome<T>.FromException(rejection!);
         }
 

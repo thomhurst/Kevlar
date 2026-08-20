@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 namespace Kevlar;
 
 /// <summary>
-/// Ambient state for a single execution flowing through a policy pipeline.
+/// Ambient state for a single execution flowing through a shield pipeline.
 /// Contexts are created and pooled by Kevlar automatically; user code observes them
 /// in strategy callbacks and never needs to construct or return them.
 /// </summary>
@@ -28,8 +28,8 @@ public sealed class KevlarContext
     /// <summary><see langword="true"/> when the execution was started through a synchronous <c>Execute</c> call.</summary>
     public bool IsSynchronous { get; internal set; }
 
-    /// <summary>The name of the executing policy, if one was assigned via <c>WithName</c>.</summary>
-    public string? PolicyName { get; internal set; }
+    /// <summary>The name of the executing shield, if one was assigned via <c>WithName</c>.</summary>
+    public string? ShieldName { get; internal set; }
 
     /// <summary>The time provider used for delays, timeouts and time-window calculations.</summary>
     public TimeProvider TimeProvider { get; internal set; } = TimeProvider.System;
@@ -37,7 +37,7 @@ public sealed class KevlarContext
     /// <summary>Custom properties carried through the execution.</summary>
     public KevlarProperties Properties { get; } = new();
 
-    internal static KevlarContext Rent(CancellationToken cancellationToken, bool isSynchronous, TimeProvider timeProvider, string? policyName)
+    internal static KevlarContext Rent(CancellationToken cancellationToken, bool isSynchronous, TimeProvider timeProvider, string? shieldName)
     {
         if (Pool.TryDequeue(out var context))
         {
@@ -51,7 +51,7 @@ public sealed class KevlarContext
         context.CancellationToken = cancellationToken;
         context.IsSynchronous = isSynchronous;
         context.TimeProvider = timeProvider;
-        context.PolicyName = policyName;
+        context.ShieldName = shieldName;
         return context;
     }
 
@@ -63,7 +63,7 @@ public sealed class KevlarContext
         }
 
         context.CancellationToken = default;
-        context.PolicyName = null;
+        context.ShieldName = null;
         context.TimeProvider = TimeProvider.System;
         context.Properties.Clear();
 
@@ -87,7 +87,7 @@ public sealed class KevlarContext
         {
             CancellationToken = cancellationToken,
             IsSynchronous = IsSynchronous,
-            PolicyName = PolicyName,
+            ShieldName = ShieldName,
             TimeProvider = TimeProvider,
         };
 

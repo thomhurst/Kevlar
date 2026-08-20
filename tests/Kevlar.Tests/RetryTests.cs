@@ -8,9 +8,9 @@ public class RetryTests
     public async Task Retries_Until_Success()
     {
         var attempts = 0;
-        var policy = Policy.Retry(3, Backoff.None);
+        var shield = Shield.Retry(3, Backoff.None);
 
-        var result = await policy.ExecuteAsync(_ =>
+        var result = await shield.ExecuteAsync(_ =>
         {
             attempts++;
             if (attempts < 3)
@@ -29,9 +29,9 @@ public class RetryTests
     public async Task Exhausted_Retries_Rethrow_Last_Exception()
     {
         var attempts = 0;
-        var policy = Policy.Retry(2, Backoff.None);
+        var shield = Shield.Retry(2, Backoff.None);
 
-        await Assert.That(async () => await policy.ExecuteAsync<int>(_ =>
+        await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
         {
             attempts++;
             throw new InvalidOperationException($"attempt {attempts}");
@@ -44,9 +44,9 @@ public class RetryTests
     public async Task Unhandled_Exception_Is_Not_Retried()
     {
         var attempts = 0;
-        var policy = Policy.Handle<ArgumentException>().Retry(3, Backoff.None);
+        var shield = Shield.When<ArgumentException>().Retry(3, Backoff.None);
 
-        await Assert.That(async () => await policy.ExecuteAsync<int>(_ =>
+        await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
         {
             attempts++;
             throw new InvalidOperationException("not handled");
@@ -59,9 +59,9 @@ public class RetryTests
     public async Task OperationCanceled_Is_Not_Retried_By_Default()
     {
         var attempts = 0;
-        var policy = Policy.Retry(3, Backoff.None);
+        var shield = Shield.Retry(3, Backoff.None);
 
-        await Assert.That(async () => await policy.ExecuteAsync<int>(_ =>
+        await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
         {
             attempts++;
             throw new OperationCanceledException();
@@ -71,12 +71,12 @@ public class RetryTests
     }
 
     [Test]
-    public async Task HandleResult_Retries_On_Bad_Result()
+    public async Task WhenResult_Retries_On_Bad_Result()
     {
         var attempts = 0;
-        var policy = Policy.For<int>().HandleResult(value => value < 0).Retry(3, Backoff.None);
+        var shield = Shield.For<int>().WhenResult(value => value < 0).Retry(3, Backoff.None);
 
-        var result = await policy.ExecuteAsync(_ =>
+        var result = await shield.ExecuteAsync(_ =>
         {
             attempts++;
             return new ValueTask<int>(attempts < 3 ? -1 : 7);
@@ -90,9 +90,9 @@ public class RetryTests
     public async Task Result_Only_Handling_Does_Not_Retry_Exceptions()
     {
         var attempts = 0;
-        var policy = Policy.For<int>().HandleResult(value => value < 0).Retry(3, Backoff.None);
+        var shield = Shield.For<int>().WhenResult(value => value < 0).Retry(3, Backoff.None);
 
-        await Assert.That(async () => await policy.ExecuteAsync(_ =>
+        await Assert.That(async () => await shield.ExecuteAsync(_ =>
         {
             attempts++;
             throw new InvalidOperationException();
@@ -106,9 +106,9 @@ public class RetryTests
     {
         var fakeTime = new FakeTimeProvider();
         var attempts = 0;
-        var policy = Policy.Retry(2, Backoff.Constant(TimeSpan.FromSeconds(1))).WithTimeProvider(fakeTime);
+        var shield = Shield.Retry(2, Backoff.Constant(TimeSpan.FromSeconds(1))).WithTimeProvider(fakeTime);
 
-        var task = policy.ExecuteAsync<int>(_ =>
+        var task = shield.ExecuteAsync<int>(_ =>
         {
             attempts++;
             throw new InvalidOperationException();
@@ -129,14 +129,14 @@ public class RetryTests
     public async Task OnRetry_Receives_Event_Data()
     {
         var events = new List<(int Attempt, TimeSpan Delay, Exception? Exception)>();
-        var policy = Policy.Retry(options =>
+        var shield = Shield.Retry(options =>
         {
             options.MaxRetries = 2;
             options.Backoff = Backoff.None;
             options.OnRetry = retry => events.Add((retry.Attempt, retry.Delay, retry.Exception));
         });
 
-        await Assert.That(async () => await policy.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
+        await Assert.That(async () => await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
             .Throws<InvalidOperationException>();
 
         await Assert.That(events.Count).IsEqualTo(2);
@@ -151,7 +151,7 @@ public class RetryTests
     {
         var attempts = 0;
         var seenDelays = new List<TimeSpan>();
-        var policy = Policy.Retry(options =>
+        var shield = Shield.Retry(options =>
         {
             options.MaxRetries = 2;
             options.Backoff = Backoff.Constant(TimeSpan.FromHours(1));
@@ -159,7 +159,7 @@ public class RetryTests
             options.OnRetry = retry => seenDelays.Add(retry.Delay);
         });
 
-        await Assert.That(async () => await policy.ExecuteAsync<int>(_ =>
+        await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
         {
             attempts++;
             throw new InvalidOperationException();
@@ -175,9 +175,9 @@ public class RetryTests
         var fakeTime = new FakeTimeProvider();
         using var cancellation = new CancellationTokenSource();
         var attempts = 0;
-        var policy = Policy.Retry(5, Backoff.Constant(TimeSpan.FromSeconds(10))).WithTimeProvider(fakeTime);
+        var shield = Shield.Retry(5, Backoff.Constant(TimeSpan.FromSeconds(10))).WithTimeProvider(fakeTime);
 
-        var task = policy.ExecuteAsync<int>(_ =>
+        var task = shield.ExecuteAsync<int>(_ =>
         {
             attempts++;
             throw new InvalidOperationException();
@@ -194,9 +194,9 @@ public class RetryTests
     public async Task Sync_Execute_Retries()
     {
         var attempts = 0;
-        var policy = Policy.Retry(3, Backoff.None);
+        var shield = Shield.Retry(3, Backoff.None);
 
-        var result = policy.Execute(_ =>
+        var result = shield.Execute(_ =>
         {
             attempts++;
             if (attempts < 2)

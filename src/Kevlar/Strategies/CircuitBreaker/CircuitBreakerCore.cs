@@ -14,6 +14,7 @@ internal sealed class CircuitBreakerCore
     private readonly int? _consecutiveFailureLimit;
     private readonly double? _failureRatio;
     private readonly int _minimumThroughput;
+    private readonly TimeSpan _samplingWindow;
     private readonly TimeSpan _bucketDuration;
     private readonly TimeSpan _breakDuration;
     private readonly Action<CircuitStateChangedEvent>? _onStateChanged;
@@ -40,6 +41,7 @@ internal sealed class CircuitBreakerCore
 
         _failureRatio = options.FailureRatio;
         _consecutiveFailureLimit = options.FailureRatio is null ? options.ConsecutiveFailures ?? 5 : null;
+        _samplingWindow = options.SamplingWindow;
         _minimumThroughput = options.MinimumThroughput;
         _bucketDuration = TimeSpan.FromTicks(Math.Max(1, options.SamplingWindow.Ticks / BucketCount));
         _breakDuration = options.BreakDuration;
@@ -47,6 +49,12 @@ internal sealed class CircuitBreakerCore
         _monitor = options.Monitor;
         _monitor?.Bind(this);
     }
+
+    public string Describe() =>
+        _consecutiveFailureLimit is { } limit
+            ? $"CircuitBreaker({limit} consecutive, break {DescribeHelper.Time(_breakDuration)})"
+            : FormattableString.Invariant(
+                $"CircuitBreaker({_failureRatio!.Value * 100:0.#}% over {DescribeHelper.Time(_samplingWindow)}, min {_minimumThroughput}, break {DescribeHelper.Time(_breakDuration)})");
 
     public CircuitState State
     {
@@ -270,6 +278,7 @@ internal sealed class CircuitBreakerCore
     {
         if (transition is { } stateChange)
         {
+            KevlarMetrics.CircuitTransition(stateChange.From, stateChange.To);
             _onStateChanged?.Invoke(stateChange);
             _monitor?.Raise(in stateChange);
         }

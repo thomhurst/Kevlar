@@ -7,9 +7,9 @@ sidebar_position: 3
 Bound how long an execution may take.
 
 ```csharp
-Policy.Timeout(TimeSpan.FromSeconds(10));
+Shield.Timeout(TimeSpan.FromSeconds(10));
 
-Policy.Timeout(o =>
+Shield.Timeout(o =>
 {
     o.Timeout = TimeSpan.FromSeconds(10);          // default 30s
     o.OnTimeout = e => logger.LogWarning("Timed out after {Timeout}", e.Timeout);
@@ -23,7 +23,7 @@ Exceeding the budget surfaces `TimeoutExceededException` (with a `Timeout` prope
 The timeout doesn't kill your code — it cancels a token and expects your delegate to honour it:
 
 ```csharp
-await policy.ExecuteAsync(ct => httpClient.GetAsync(url, ct), cancellationToken);
+await shield.ExecuteAsync(ct => httpClient.GetAsync(url, ct), cancellationToken);
 //                         ^^ always use the token you're handed
 ```
 
@@ -39,7 +39,7 @@ Two behaviours worth knowing:
 The classic pattern — position determines meaning:
 
 ```csharp
-Policy
+Shield
     .Timeout(TimeSpan.FromSeconds(30))   // TOTAL budget: all retries must fit inside
     .Retry(3)
     .Timeout(TimeSpan.FromSeconds(5));   // PER-ATTEMPT budget: each try gets 5s
@@ -48,5 +48,5 @@ Policy
 The inner timeout's `TimeoutExceededException` is a handleable failure, so the retry sees it and tries again:
 
 ```csharp
-Policy.Handle<TimeoutExceededException>().Retry(2).Timeout(TimeSpan.FromSeconds(5));
+Shield.When<TimeoutExceededException>().Retry(2).Timeout(TimeSpan.FromSeconds(5));
 ```

@@ -19,6 +19,8 @@ internal sealed class TimeoutStrategy : Strategy
         _onTimeout = options.OnTimeout;
     }
 
+    public override string Describe() => $"Timeout({DescribeHelper.Time(_timeout)})";
+
     public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
         var priorToken = context.CancellationToken;
@@ -57,6 +59,7 @@ internal sealed class TimeoutStrategy : Strategy
 
         if (timedOut && outcome.Exception is OperationCanceledException)
         {
+            KevlarMetrics.Timeout(context.ShieldName);
             _onTimeout?.Invoke(new TimeoutEvent(_timeout, context));
             return Outcome<T>.FromException(new TimeoutExceededException(_timeout));
         }

@@ -1,20 +1,20 @@
 namespace Kevlar.Extensions.Http;
 
 /// <summary>
-/// A <see cref="DelegatingHandler"/> that sends requests through a Kevlar policy.
+/// A <see cref="DelegatingHandler"/> that sends requests through a Kevlar shield.
 /// </summary>
 /// <remarks>
 /// Retried and hedged requests resend the same <see cref="HttpRequestMessage"/>. This is safe for
 /// requests without content and for rewindable content (for example <see cref="StringContent"/> or
 /// <see cref="ByteArrayContent"/>), but streamed one-shot content cannot be resent.
 /// </remarks>
-public sealed class KevlarDelegatingHandler : DelegatingHandler
+public sealed class ShieldDelegatingHandler : DelegatingHandler
 {
-    private readonly Policy<HttpResponseMessage> _policy;
+    private readonly Shield<HttpResponseMessage> _policy;
 
-    /// <summary>Creates the handler with the policy every request flows through.</summary>
-    public KevlarDelegatingHandler(Policy<HttpResponseMessage> policy)
-        => _policy = policy ?? throw new ArgumentNullException(nameof(policy));
+    /// <summary>Creates the handler with the shield every request flows through.</summary>
+    public ShieldDelegatingHandler(Shield<HttpResponseMessage> shield)
+        => _policy = shield ?? throw new ArgumentNullException(nameof(shield));
 
     /// <inheritdoc />
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>

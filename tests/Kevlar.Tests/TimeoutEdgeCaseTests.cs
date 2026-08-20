@@ -8,7 +8,7 @@ public class TimeoutEdgeCaseTests
     public async Task A_Result_Produced_After_The_Timer_Fired_Is_Still_Delivered()
     {
         var timedOut = false;
-        var policy = Policy.Timeout(options =>
+        var shield = Shield.Timeout(options =>
         {
             options.Timeout = TimeSpan.FromMilliseconds(50);
             options.OnTimeout = _ => timedOut = true;
@@ -16,7 +16,7 @@ public class TimeoutEdgeCaseTests
 
         // The delegate ignores its token and completes anyway; the timeout is cooperative,
         // so the successful result wins and no timeout is reported.
-        var result = await policy.ExecuteAsync(async _ =>
+        var result = await shield.ExecuteAsync(async _ =>
         {
             await Task.Delay(300);
             return 7;
@@ -29,9 +29,9 @@ public class TimeoutEdgeCaseTests
     [Test]
     public async Task A_NonCancellation_Failure_After_The_Timer_Fired_Is_Not_Rewritten()
     {
-        var policy = Policy.Timeout(TimeSpan.FromMilliseconds(50));
+        var shield = Shield.Timeout(TimeSpan.FromMilliseconds(50));
 
-        await Assert.That(async () => await policy.ExecuteAsync<int>(async _ =>
+        await Assert.That(async () => await shield.ExecuteAsync<int>(async _ =>
         {
             await Task.Delay(300);
             throw new InvalidOperationException("real failure");
@@ -42,12 +42,12 @@ public class TimeoutEdgeCaseTests
     public async Task Nested_Timeouts_The_Outer_One_Fires_First()
     {
         var fakeTime = new FakeTimeProvider();
-        var policy = Policy
+        var shield = Shield
             .Timeout(TimeSpan.FromSeconds(1))
             .Timeout(TimeSpan.FromHours(1))
             .WithTimeProvider(fakeTime);
 
-        var task = policy.ExecuteAsync(async token =>
+        var task = shield.ExecuteAsync(async token =>
         {
             await Task.Delay(System.Threading.Timeout.InfiniteTimeSpan, token);
             return 1;
@@ -63,12 +63,12 @@ public class TimeoutEdgeCaseTests
     public async Task Nested_Timeouts_The_Inner_One_Fires_First()
     {
         var fakeTime = new FakeTimeProvider();
-        var policy = Policy
+        var shield = Shield
             .Timeout(TimeSpan.FromHours(1))
             .Timeout(TimeSpan.FromSeconds(1))
             .WithTimeProvider(fakeTime);
 
-        var task = policy.ExecuteAsync(async token =>
+        var task = shield.ExecuteAsync(async token =>
         {
             await Task.Delay(System.Threading.Timeout.InfiniteTimeSpan, token);
             return 1;
@@ -86,13 +86,13 @@ public class TimeoutEdgeCaseTests
         using var cancellation = new CancellationTokenSource();
         var timedOut = false;
         var started = new TaskCompletionSource();
-        var policy = Policy.Timeout(options =>
+        var shield = Shield.Timeout(options =>
         {
             options.Timeout = TimeSpan.FromMinutes(10);
             options.OnTimeout = _ => timedOut = true;
         });
 
-        var task = policy.ExecuteAsync(async token =>
+        var task = shield.ExecuteAsync(async token =>
         {
             started.SetResult();
             await Task.Delay(System.Threading.Timeout.InfiniteTimeSpan, token);
@@ -113,12 +113,12 @@ public class TimeoutEdgeCaseTests
         var attempts = 0;
 
         // Retry is outermost, so the inner timeout budget restarts per attempt.
-        var policy = Policy
+        var shield = Shield
             .Retry(2, Backoff.None)
             .Timeout(TimeSpan.FromSeconds(1))
             .WithTimeProvider(fakeTime);
 
-        var task = policy.ExecuteAsync(async token =>
+        var task = shield.ExecuteAsync(async token =>
         {
             var attempt = Interlocked.Increment(ref attempts);
             if (attempt < 3)
@@ -143,9 +143,9 @@ public class TimeoutEdgeCaseTests
     public async Task The_Exception_Reports_The_Configured_Timeout()
     {
         var fakeTime = new FakeTimeProvider();
-        var policy = Policy.Timeout(TimeSpan.FromSeconds(2.5)).WithTimeProvider(fakeTime);
+        var shield = Shield.Timeout(TimeSpan.FromSeconds(2.5)).WithTimeProvider(fakeTime);
 
-        var task = policy.ExecuteAsync(async token =>
+        var task = shield.ExecuteAsync(async token =>
         {
             await Task.Delay(System.Threading.Timeout.InfiniteTimeSpan, token);
             return 1;
@@ -161,17 +161,17 @@ public class TimeoutEdgeCaseTests
     public async Task OnTimeout_Receives_The_Context()
     {
         var fakeTime = new FakeTimeProvider();
-        string? seenPolicyName = null;
-        var policy = Policy
+        string? seenShieldName = null;
+        var shield = Shield
             .Timeout(options =>
             {
                 options.Timeout = TimeSpan.FromSeconds(1);
-                options.OnTimeout = timeout => seenPolicyName = timeout.Context.PolicyName;
+                options.OnTimeout = timeout => seenShieldName = timeout.Context.ShieldName;
             })
-            .WithName("timeout-policy")
+            .WithName("timeout-shield")
             .WithTimeProvider(fakeTime);
 
-        var task = policy.ExecuteAsync(async token =>
+        var task = shield.ExecuteAsync(async token =>
         {
             await Task.Delay(System.Threading.Timeout.InfiniteTimeSpan, token);
             return 1;
@@ -180,6 +180,6 @@ public class TimeoutEdgeCaseTests
         fakeTime.Advance(TimeSpan.FromSeconds(1));
 
         await Assert.That(async () => await task).Throws<TimeoutExceededException>();
-        await Assert.That(seenPolicyName).IsEqualTo("timeout-policy");
+        await Assert.That(seenShieldName).IsEqualTo("timeout-shield");
     }
 }

@@ -8,9 +8,9 @@ public class TimeoutTests
     public async Task Exceeding_The_Timeout_Throws_TimeoutExceeded()
     {
         var fakeTime = new FakeTimeProvider();
-        var policy = Policy.Timeout(TimeSpan.FromSeconds(5)).WithTimeProvider(fakeTime);
+        var shield = Shield.Timeout(TimeSpan.FromSeconds(5)).WithTimeProvider(fakeTime);
 
-        var task = policy.ExecuteAsync(async token =>
+        var task = shield.ExecuteAsync(async token =>
         {
             await Task.Delay(System.Threading.Timeout.InfiniteTimeSpan, token);
             return 1;
@@ -25,9 +25,9 @@ public class TimeoutTests
     [Test]
     public async Task Fast_Executions_Pass_Through()
     {
-        var policy = Policy.Timeout(TimeSpan.FromSeconds(30));
+        var shield = Shield.Timeout(TimeSpan.FromSeconds(30));
 
-        var result = await policy.ExecuteAsync(_ => new ValueTask<string>("done"));
+        var result = await shield.ExecuteAsync(_ => new ValueTask<string>("done"));
 
         await Assert.That(result).IsEqualTo("done");
     }
@@ -37,9 +37,9 @@ public class TimeoutTests
     {
         var fakeTime = new FakeTimeProvider();
         using var cancellation = new CancellationTokenSource();
-        var policy = Policy.Timeout(TimeSpan.FromMinutes(5)).WithTimeProvider(fakeTime);
+        var shield = Shield.Timeout(TimeSpan.FromMinutes(5)).WithTimeProvider(fakeTime);
 
-        var task = policy.ExecuteAsync(async token =>
+        var task = shield.ExecuteAsync(async token =>
         {
             await Task.Delay(System.Threading.Timeout.InfiniteTimeSpan, token);
             return 1;
@@ -55,7 +55,7 @@ public class TimeoutTests
     {
         var fakeTime = new FakeTimeProvider();
         var observed = TimeSpan.Zero;
-        var policy = Policy
+        var shield = Shield
             .Timeout(options =>
             {
                 options.Timeout = TimeSpan.FromSeconds(2);
@@ -63,7 +63,7 @@ public class TimeoutTests
             })
             .WithTimeProvider(fakeTime);
 
-        var task = policy.ExecuteAsync(async token =>
+        var task = shield.ExecuteAsync(async token =>
         {
             await Task.Delay(System.Threading.Timeout.InfiniteTimeSpan, token);
             return 1;
@@ -80,13 +80,13 @@ public class TimeoutTests
     {
         var fakeTime = new FakeTimeProvider();
         var attempts = 0;
-        var policy = Policy
-            .Handle<TimeoutExceededException>()
+        var shield = Shield
+            .When<TimeoutExceededException>()
             .Retry(1, Backoff.None)
             .Timeout(TimeSpan.FromSeconds(1))
             .WithTimeProvider(fakeTime);
 
-        var task = policy.ExecuteAsync(async token =>
+        var task = shield.ExecuteAsync(async token =>
         {
             Interlocked.Increment(ref attempts);
             await Task.Delay(System.Threading.Timeout.InfiniteTimeSpan, token);
@@ -104,9 +104,9 @@ public class TimeoutTests
     [Test]
     public async Task Sync_Execution_Times_Out_When_Token_Is_Observed()
     {
-        var policy = Policy.Timeout(TimeSpan.FromMilliseconds(100));
+        var shield = Shield.Timeout(TimeSpan.FromMilliseconds(100));
 
-        await Assert.That(() => policy.Execute(token =>
+        await Assert.That(() => shield.Execute(token =>
         {
             while (true)
             {

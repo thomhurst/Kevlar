@@ -7,9 +7,9 @@ sidebar_position: 4
 A token-bucket limiter: `Permits` executions per `Window`, with bursts and optional queueing.
 
 ```csharp
-Policy.RateLimit(100, perWindow: TimeSpan.FromSeconds(1));   // 100/s, burst = 100
+Shield.RateLimit(100, perWindow: TimeSpan.FromSeconds(1));   // 100/s, burst = 100
 
-Policy.RateLimit(o =>
+Shield.RateLimit(o =>
 {
     o.Permits = 100;                       // default 100
     o.Window = TimeSpan.FromSeconds(1);    // default 1s
@@ -41,12 +41,12 @@ Queued executions each sleep until their reserved permit replenishes; there's no
 
 Rate limiting is proactive — it doesn't consult [handling clauses](../handling-failures.md); it acts on every execution that reaches it.
 
-The bucket lives with the policy instance. Reuse one instance for everything hitting the limited dependency, or you'll have several independent buckets each allowing the full rate ([state-sharing rule](../composition.md#the-state-sharing-rule)).
+The bucket lives with the shield instance. Reuse one instance for everything hitting the limited dependency, or you'll have several independent buckets each allowing the full rate ([state-sharing rule](../composition.md#the-state-sharing-rule)).
 
 ```csharp
 // Retry politely around the limiter: waits what the limiter suggests
-var polite = Policy
-    .Handle<RateLimitExceededException>()
+var polite = Shield
+    .When<RateLimitExceededException>()
     .Retry(o =>
     {
         o.MaxRetries = 3;

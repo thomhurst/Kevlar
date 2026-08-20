@@ -7,7 +7,7 @@ namespace Kevlar.IntegrationTests;
 
 /// <summary>
 /// End-to-end HTTP tests over real loopback sockets: genuine requests, cancellation,
-/// headers and connection behaviour, driven through production-style policy mixes.
+/// headers and connection behaviour, driven through production-style shield mixes.
 /// </summary>
 public class HttpResilienceTests
 {
@@ -24,20 +24,20 @@ public class HttpResilienceTests
             _ => FlakyHttpServer.Respond(context, 200, "hello"),
         });
 
-        var policy = Policy.Timeout(TimeSpan.FromSeconds(30))
+        var shield = Shield.Timeout(TimeSpan.FromSeconds(30))
             .For<HttpResponseMessage>()
-            .Handle<HttpRequestException>()
-            .Handle<TimeoutExceededException>()
-            .HandleResult(HttpKevlar.IsTransient)
+            .When<HttpRequestException>()
+            .When<TimeoutExceededException>()
+            .WhenResult(HttpShield.IsTransient)
             .Retry(options =>
             {
                 options.MaxRetries = 3;
                 options.Backoff = Backoff.None;
-                options.OnRetry = retry => (retry.Result as HttpResponseMessage)?.Dispose();
+                options.OnRetry = retry => retry.Outcome.Result?.Dispose();
             })
             .Timeout(TimeSpan.FromSeconds(5));
 
-        using var response = await policy.ExecuteAsync(ct => new ValueTask<HttpResponseMessage>(Client.GetAsync(server.Url, ct)));
+        using var response = await shield.ExecuteAsync(ct => new ValueTask<HttpResponseMessage>(Client.GetAsync(server.Url, ct)));
 
         await Assert.That(response.IsSuccessStatusCode).IsTrue();
         await Assert.That(await response.Content.ReadAsStringAsync()).IsEqualTo("hello");
@@ -61,13 +61,13 @@ public class HttpResilienceTests
             }
         });
 
-        var policy = Policy.For<HttpResponseMessage>()
-            .Handle<TimeoutExceededException>()
+        var shield = Shield.For<HttpResponseMessage>()
+            .When<TimeoutExceededException>()
             .Retry(2, Backoff.None)
             .Timeout(TimeSpan.FromMilliseconds(300));
 
         var stopwatch = Stopwatch.StartNew();
-        using var response = await policy.ExecuteAsync(ct => new ValueTask<HttpResponseMessage>(Client.GetAsync(server.Url, ct)));
+        using var response = await shield.ExecuteAsync(ct => new ValueTask<HttpResponseMessage>(Client.GetAsync(server.Url, ct)));
         stopwatch.Stop();
 
         await Assert.That(await response.Content.ReadAsStringAsync()).IsEqualTo("recovered");
@@ -80,16 +80,16 @@ public class HttpResilienceTests
     {
         await using var server = FlakyHttpServer.Start((_, context) => FlakyHttpServer.Respond(context, 500));
 
-        var policy = HttpKevlar.HandleTransient().CircuitBreaker(consecutiveFailures: 3, breakDuration: TimeSpan.FromMinutes(1));
+        var shield = HttpShield.WhenTransient().CircuitBreaker(consecutiveFailures: 3, breakDuration: TimeSpan.FromMinutes(1));
 
         for (var i = 0; i < 3; i++)
         {
-            using var response = await policy.ExecuteAsync(ct => new ValueTask<HttpResponseMessage>(Client.GetAsync(server.Url, ct)));
+            using var response = await shield.ExecuteAsync(ct => new ValueTask<HttpResponseMessage>(Client.GetAsync(server.Url, ct)));
             await Assert.That((int)response.StatusCode).IsEqualTo(500);
         }
 
         var stopwatch = Stopwatch.StartNew();
-        await Assert.That(async () => await policy.ExecuteAsync(ct => new ValueTask<HttpResponseMessage>(Client.GetAsync(server.Url, ct))))
+        await Assert.That(async () => await shield.ExecuteAsync(ct => new ValueTask<HttpResponseMessage>(Client.GetAsync(server.Url, ct))))
             .Throws<CircuitOpenException>();
         stopwatch.Stop();
 
@@ -105,16 +105,16 @@ public class HttpResilienceTests
             ? FlakyHttpServer.Respond(context, 429, retryAfterSeconds: "1")
             : FlakyHttpServer.Respond(context, 200, "after backpressure"));
 
-        var policy = HttpKevlar.HandleTransient().Retry(options =>
+        var shield = HttpShield.WhenTransient().Retry(options =>
         {
             options.MaxRetries = 2;
             options.Backoff = Backoff.None;
-            options.DelayGenerator = HttpKevlar.RetryAfter;
-            options.OnRetry = retry => (retry.Result as HttpResponseMessage)?.Dispose();
+            options.DelayGenerator = HttpShield.RetryAfter;
+            options.OnRetry = retry => retry.Outcome.Result?.Dispose();
         });
 
         var stopwatch = Stopwatch.StartNew();
-        using var response = await policy.ExecuteAsync(ct => new ValueTask<HttpResponseMessage>(Client.GetAsync(server.Url, ct)));
+        using var response = await shield.ExecuteAsync(ct => new ValueTask<HttpResponseMessage>(Client.GetAsync(server.Url, ct)));
         stopwatch.Stop();
 
         await Assert.That(await response.Content.ReadAsStringAsync()).IsEqualTo("after backpressure");
@@ -138,13 +138,13 @@ public class HttpResilienceTests
             }
         });
 
-        var policy = Policy.For<HttpResponseMessage>()
-            .Handle<HttpRequestException>()
-            .HandleResult(HttpKevlar.IsTransient)
+        var shield = Shield.For<HttpResponseMessage>()
+            .When<HttpRequestException>()
+            .WhenResult(HttpShield.IsTransient)
             .Hedge(maxAttempts: 2, delay: TimeSpan.FromMilliseconds(100));
 
         var stopwatch = Stopwatch.StartNew();
-        using var response = await policy.ExecuteAsync(ct => new ValueTask<HttpResponseMessage>(Client.GetAsync(server.Url, ct)));
+        using var response = await shield.ExecuteAsync(ct => new ValueTask<HttpResponseMessage>(Client.GetAsync(server.Url, ct)));
         stopwatch.Stop();
 
         await Assert.That(await response.Content.ReadAsStringAsync()).IsEqualTo("fast");
@@ -163,11 +163,11 @@ public class HttpResilienceTests
 
         var services = new ServiceCollection();
         services.AddHttpClient("backend")
-            .AddKevlar(HttpKevlar.HandleTransient().Retry(options =>
+            .AddShield(HttpShield.WhenTransient().Retry(options =>
             {
                 options.MaxRetries = 2;
                 options.Backoff = Backoff.None;
-                options.OnRetry = retry => (retry.Result as HttpResponseMessage)?.Dispose();
+                options.OnRetry = retry => retry.Outcome.Result?.Dispose();
             }));
 
         var factory = services.BuildServiceProvider().GetRequiredService<IHttpClientFactory>();

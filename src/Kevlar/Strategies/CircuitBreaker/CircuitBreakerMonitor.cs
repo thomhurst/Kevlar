@@ -34,5 +34,5 @@ public sealed class CircuitBreakerMonitor
 
     private CircuitBreakerCore BoundCore() =>
         _core ?? throw new InvalidOperationException(
-            "This CircuitBreakerMonitor has not been bound. Assign it to CircuitBreakerOptions.Monitor when building the policy.");
+            "This CircuitBreakerMonitor has not been bound. Assign it to CircuitBreakerOptions.Monitor when building the shield.");
 }

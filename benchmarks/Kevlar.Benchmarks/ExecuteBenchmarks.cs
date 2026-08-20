@@ -4,7 +4,7 @@ using Polly;
 using Polly.CircuitBreaker;
 using Polly.Retry;
 using Polly.Timeout;
-using KevlarPolicy = Kevlar.Policy;
+using KevlarPolicy = Kevlar.Shield;
 
 namespace Kevlar.Benchmarks;
 

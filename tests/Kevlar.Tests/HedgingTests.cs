@@ -8,13 +8,13 @@ public class HedgingTests
     public async Task Handled_Failure_Launches_The_Next_Attempt_Immediately()
     {
         var attempts = 0;
-        var policy = Policy.Hedge(options =>
+        var shield = Shield.Hedge(options =>
         {
             options.MaxAttempts = 2;
             options.Delay = System.Threading.Timeout.InfiniteTimeSpan;
         });
 
-        var result = await policy.ExecuteAsync(_ =>
+        var result = await shield.ExecuteAsync(_ =>
         {
             var attempt = Interlocked.Increment(ref attempts);
             if (attempt == 1)
@@ -33,13 +33,13 @@ public class HedgingTests
     public async Task All_Attempts_Failing_Surfaces_The_Last_Failure()
     {
         var attempts = 0;
-        var policy = Policy.Hedge(options =>
+        var shield = Shield.Hedge(options =>
         {
             options.MaxAttempts = 3;
             options.Delay = System.Threading.Timeout.InfiniteTimeSpan;
         });
 
-        await Assert.That(async () => await policy.ExecuteAsync<string>(_ =>
+        await Assert.That(async () => await shield.ExecuteAsync<string>(_ =>
         {
             var attempt = Interlocked.Increment(ref attempts);
             throw new InvalidOperationException($"attempt {attempt}");
@@ -53,13 +53,13 @@ public class HedgingTests
     {
         var attempts = 0;
         var slowGate = new TaskCompletionSource();
-        var policy = Policy.Hedge(options =>
+        var shield = Shield.Hedge(options =>
         {
             options.MaxAttempts = 2;
             options.Delay = TimeSpan.Zero;
         });
 
-        var result = await policy.ExecuteAsync(async token =>
+        var result = await shield.ExecuteAsync(async token =>
         {
             var attempt = Interlocked.Increment(ref attempts);
             if (attempt == 1)
@@ -83,7 +83,7 @@ public class HedgingTests
         var fakeTime = new FakeTimeProvider();
         var attempts = 0;
         var hedges = new List<int>();
-        var policy = Policy
+        var shield = Shield
             .Hedge(options =>
             {
                 options.MaxAttempts = 2;
@@ -92,7 +92,7 @@ public class HedgingTests
             })
             .WithTimeProvider(fakeTime);
 
-        var task = policy.ExecuteAsync(async token =>
+        var task = shield.ExecuteAsync(async token =>
         {
             var attempt = Interlocked.Increment(ref attempts);
             if (attempt == 1)
@@ -115,8 +115,8 @@ public class HedgingTests
     [Test]
     public async Task Synchronous_Execution_Is_Not_Supported()
     {
-        var policy = Policy.Hedge(2, TimeSpan.Zero);
+        var shield = Shield.Hedge(2, TimeSpan.Zero);
 
-        await Assert.That(() => policy.Execute(_ => 1)).Throws<NotSupportedException>();
+        await Assert.That(() => shield.Execute(_ => 1)).Throws<NotSupportedException>();
     }
 }

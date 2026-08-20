@@ -6,23 +6,24 @@ namespace Kevlar;
 /// <summary>
 /// An immutable, thread-safe resilience pipeline. Build one once — with the static factories and
 /// fluent chaining — and reuse it for every execution. The first strategy in a chain is the
-/// outermost, exactly like ASP.NET middleware: <c>Policy.Timeout(t).Retry(3)</c> applies a total
+/// outermost, exactly like ASP.NET middleware: <c>Shield.Timeout(t).Retry(3)</c> applies a total
 /// timeout around all retries.
 /// </summary>
 /// <remarks>
-/// Stateful strategies (circuit breakers, rate limiters, bulkheads) live with the policy instance
-/// they were created in. Composing that policy into others (via <c>Wrap</c> or <c>Compose</c>)
-/// intentionally shares the state; creating a new policy creates fresh state.
+/// Stateful strategies (circuit breakers, rate limiters, bulkheads) live with the shield instance
+/// they were created in. Composing that shield into others (via <c>Wrap</c> or <c>Compose</c>)
+/// intentionally shares the state; creating a new shield creates fresh state.
 /// </remarks>
-public sealed class Policy
+public sealed class Shield
 {
     internal readonly Strategy[] Strategies;
     internal readonly StrategyNode? Head;
     internal readonly OutcomeJudge? Ambient;
     internal readonly TimeProvider? Time;
 
-    internal Policy(Strategy[] strategies, OutcomeJudge? ambient, string? name, TimeProvider? timeProvider)
+    internal Shield(Strategy[] strategies, OutcomeJudge? ambient, string? name, TimeProvider? timeProvider)
     {
+        ValidateChain(strategies);
         Strategies = strategies;
         Head = BuildChain(strategies);
         Ambient = ambient;
@@ -30,11 +31,11 @@ public sealed class Policy
         Time = timeProvider;
     }
 
-    /// <summary>The policy's diagnostic name, if assigned via <c>WithName</c>.</summary>
+    /// <summary>The shield's diagnostic name, if assigned via <c>WithName</c>.</summary>
     public string? Name { get; }
 
-    /// <summary>A policy with no strategies: executions pass straight through.</summary>
-    public static Policy Empty { get; } = new([], null, null, null);
+    /// <summary>A shield with no strategies: executions pass straight through.</summary>
+    public static Shield Empty { get; } = new([], null, null, null);
 
     internal OutcomeJudge JudgeOrDefault => Ambient ?? OutcomeJudge.Default;
 
@@ -43,91 +44,100 @@ public sealed class Policy
     // ── Static factories ────────────────────────────────────────────────────────────────
 
     /// <summary>Retries failed executions up to <paramref name="maxRetries"/> times with the default exponential jittered backoff.</summary>
-    public static Policy Retry(int maxRetries = 3) => PolicyExtensions.Retry(Empty, maxRetries);
+    public static Shield Retry(int maxRetries = 3) => ShieldExtensions.Retry(Empty, maxRetries);
 
     /// <summary>Retries failed executions up to <paramref name="maxRetries"/> times with the given backoff.</summary>
-    public static Policy Retry(int maxRetries, Backoff backoff) => PolicyExtensions.Retry(Empty, maxRetries, backoff);
+    public static Shield Retry(int maxRetries, Backoff backoff) => ShieldExtensions.Retry(Empty, maxRetries, backoff);
 
     /// <summary>Adds a retry strategy configured via <paramref name="configure"/>.</summary>
-    public static Policy Retry(Action<RetryOptions> configure) => PolicyExtensions.Retry(Empty, configure);
+    public static Shield Retry(Action<RetryOptions> configure) => ShieldExtensions.Retry(Empty, configure);
 
     /// <summary>Retries failed executions indefinitely.</summary>
-    public static Policy RetryForever(Backoff? backoff = null) => PolicyExtensions.RetryForever(Empty, backoff);
+    public static Shield RetryForever(Backoff? backoff = null) => ShieldExtensions.RetryForever(Empty, backoff);
 
     /// <summary>Cancels executions that exceed <paramref name="timeout"/>, surfacing <see cref="TimeoutExceededException"/>.</summary>
-    public static Policy Timeout(TimeSpan timeout) => PolicyExtensions.Timeout(Empty, timeout);
+    public static Shield Timeout(TimeSpan timeout) => ShieldExtensions.Timeout(Empty, timeout);
 
     /// <summary>Adds a timeout strategy configured via <paramref name="configure"/>.</summary>
-    public static Policy Timeout(Action<TimeoutOptions> configure) => PolicyExtensions.Timeout(Empty, configure);
+    public static Shield Timeout(Action<TimeoutOptions> configure) => ShieldExtensions.Timeout(Empty, configure);
 
     /// <summary>Breaks the circuit for <paramref name="breakDuration"/> after <paramref name="consecutiveFailures"/> consecutive failures.</summary>
-    public static Policy CircuitBreaker(int consecutiveFailures, TimeSpan breakDuration) =>
-        PolicyExtensions.CircuitBreaker(Empty, consecutiveFailures, breakDuration);
+    public static Shield CircuitBreaker(int consecutiveFailures, TimeSpan breakDuration) =>
+        ShieldExtensions.CircuitBreaker(Empty, consecutiveFailures, breakDuration);
 
     /// <summary>Adds a circuit breaker strategy configured via <paramref name="configure"/>.</summary>
-    public static Policy CircuitBreaker(Action<CircuitBreakerOptions> configure) => PolicyExtensions.CircuitBreaker(Empty, configure);
+    public static Shield CircuitBreaker(Action<CircuitBreakerOptions> configure) => ShieldExtensions.CircuitBreaker(Empty, configure);
 
     /// <summary>Limits throughput to <paramref name="permits"/> executions per <paramref name="perWindow"/> (token bucket).</summary>
-    public static Policy RateLimit(int permits, TimeSpan perWindow) => PolicyExtensions.RateLimit(Empty, permits, perWindow);
+    public static Shield RateLimit(int permits, TimeSpan perWindow) => ShieldExtensions.RateLimit(Empty, permits, perWindow);
 
     /// <summary>Adds a rate limit strategy configured via <paramref name="configure"/>.</summary>
-    public static Policy RateLimit(Action<RateLimitOptions> configure) => PolicyExtensions.RateLimit(Empty, configure);
+    public static Shield RateLimit(Action<RateLimitOptions> configure) => ShieldExtensions.RateLimit(Empty, configure);
 
     /// <summary>Caps concurrent executions at <paramref name="maxConcurrency"/> with an optional wait queue.</summary>
-    public static Policy Bulkhead(int maxConcurrency, int maxQueue = 0) => PolicyExtensions.Bulkhead(Empty, maxConcurrency, maxQueue);
+    public static Shield ConcurrencyLimit(int maxConcurrency, int maxQueue = 0) => ShieldExtensions.ConcurrencyLimit(Empty, maxConcurrency, maxQueue);
 
-    /// <summary>Adds a bulkhead strategy configured via <paramref name="configure"/>.</summary>
-    public static Policy Bulkhead(Action<BulkheadOptions> configure) => PolicyExtensions.Bulkhead(Empty, configure);
+    /// <summary>Adds a concurrency limit strategy configured via <paramref name="configure"/>.</summary>
+    public static Shield ConcurrencyLimit(Action<ConcurrencyLimitOptions> configure) => ShieldExtensions.ConcurrencyLimit(Empty, configure);
 
     /// <summary>Races up to <paramref name="maxAttempts"/> concurrent attempts staggered by <paramref name="delay"/>; first acceptable outcome wins.</summary>
-    public static Policy Hedge(int maxAttempts, TimeSpan delay) => PolicyExtensions.Hedge(Empty, maxAttempts, delay);
+    public static Shield Hedge(int maxAttempts, TimeSpan delay) => ShieldExtensions.Hedge(Empty, maxAttempts, delay);
 
     /// <summary>Adds a hedging strategy configured via <paramref name="configure"/>.</summary>
-    public static Policy Hedge(Action<HedgingOptions> configure) => PolicyExtensions.Hedge(Empty, configure);
+    public static Shield Hedge(Action<HedgingOptions> configure) => ShieldExtensions.Hedge(Empty, configure);
 
     /// <summary>Starts a pipeline with a custom <see cref="Strategy"/> implementation.</summary>
-    public static Policy Use(Strategy strategy) => PolicyExtensions.Use(Empty, strategy);
+    public static Shield Use(Strategy strategy) => ShieldExtensions.Use(Empty, strategy);
 
     /// <summary>Starts a handling clause: subsequent reactive strategies act on exceptions of type <typeparamref name="TException"/>.</summary>
-    public static PolicyBuilder Handle<TException>()
+    public static ShieldBuilder When<TException>()
         where TException : Exception
-        => PolicyExtensions.Handle<TException>(Empty);
+        => ShieldExtensions.When<TException>(Empty);
 
     /// <summary>Starts a handling clause for exceptions of type <typeparamref name="TException"/> matching <paramref name="predicate"/>.</summary>
-    public static PolicyBuilder Handle<TException>(Func<TException, bool> predicate)
+    public static ShieldBuilder When<TException>(Func<TException, bool> predicate)
         where TException : Exception
-        => PolicyExtensions.Handle(Empty, predicate);
+        => ShieldExtensions.When(Empty, predicate);
 
     /// <summary>Starts a handling clause for exceptions matching <paramref name="predicate"/>.</summary>
-    public static PolicyBuilder HandleWhen(Func<Exception, bool> predicate) => PolicyExtensions.HandleWhen(Empty, predicate);
+    public static ShieldBuilder When(Func<Exception, bool> predicate) => ShieldExtensions.When(Empty, predicate);
 
-    /// <summary>Starts building a result-aware policy for executions returning <typeparamref name="TResult"/>.</summary>
-    public static PolicyBuilder<TResult> For<TResult>() => new(Policy<TResult>.Empty);
+    /// <summary>Starts building a result-aware shield for executions returning <typeparamref name="TResult"/>.</summary>
+    public static ShieldBuilder<TResult> For<TResult>() => new(Shield<TResult>.Empty);
 
     /// <summary>
-    /// Merges policies into one pipeline. The first policy is the outermost. Stateful strategies
-    /// keep their identity, so a shared circuit breaker policy shares its circuit here.
+    /// Merges shields into one pipeline. The first shield is the outermost. Stateful strategies
+    /// keep their identity, so a shared circuit breaker shield shares its circuit here.
+    /// The result keeps the first non-null <see cref="Name"/> and <see cref="TimeProvider"/>
+    /// among the inputs, and the last shield's handling clause stays ambient for further chaining.
     /// </summary>
-    public static Policy Compose(params Policy[] policies)
+    public static Shield Compose(params Shield[] shields)
     {
-        Throw.IfNull(policies, nameof(policies));
+        Throw.IfNull(shields, nameof(shields));
 
         var total = 0;
-        foreach (var policy in policies)
+        string? name = null;
+        TimeProvider? time = null;
+        OutcomeJudge? ambient = null;
+
+        foreach (var shield in shields)
         {
-            Throw.IfNull(policy, nameof(policies));
-            total += policy.Strategies.Length;
+            Throw.IfNull(shield, nameof(shields));
+            total += shield.Strategies.Length;
+            name ??= shield.Name;
+            time ??= shield.Time;
+            ambient = shield.Ambient ?? ambient;
         }
 
         var strategies = new Strategy[total];
         var offset = 0;
-        foreach (var policy in policies)
+        foreach (var shield in shields)
         {
-            Array.Copy(policy.Strategies, 0, strategies, offset, policy.Strategies.Length);
-            offset += policy.Strategies.Length;
+            Array.Copy(shield.Strategies, 0, strategies, offset, shield.Strategies.Length);
+            offset += shield.Strategies.Length;
         }
 
-        return new Policy(strategies, null, null, null);
+        return new Shield(strategies, ambient, name, time);
     }
 
     // ── Execution ───────────────────────────────────────────────────────────────────────
@@ -136,21 +146,21 @@ public sealed class Policy
     public ValueTask<T> ExecuteAsync<T>(Func<CancellationToken, ValueTask<T>> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
-        return PolicyEngine.ExecuteAsync(Head, TimeOrSystem, Name, action, static (a, token) => a(token), cancellationToken);
+        return ShieldEngine.ExecuteAsync(Head, TimeOrSystem, Name, action, static (a, token) => a(token), cancellationToken);
     }
 
     /// <summary>Executes the delegate through the pipeline, threading <paramref name="state"/> to avoid closure allocations.</summary>
     public ValueTask<T> ExecuteAsync<T, TState>(TState state, Func<TState, CancellationToken, ValueTask<T>> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
-        return PolicyEngine.ExecuteAsync(Head, TimeOrSystem, Name, state, action, cancellationToken);
+        return ShieldEngine.ExecuteAsync(Head, TimeOrSystem, Name, state, action, cancellationToken);
     }
 
     /// <summary>Executes the void delegate through the pipeline.</summary>
     public ValueTask ExecuteAsync(Func<CancellationToken, ValueTask> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
-        return StripResult(PolicyEngine.ExecuteAsync(
+        return StripResult(ShieldEngine.ExecuteAsync(
             Head,
             TimeOrSystem,
             Name,
@@ -167,7 +177,7 @@ public sealed class Policy
     public ValueTask ExecuteAsync<TState>(TState state, Func<TState, CancellationToken, ValueTask> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
-        return StripResult(PolicyEngine.ExecuteAsync(
+        return StripResult(ShieldEngine.ExecuteAsync(
             Head,
             TimeOrSystem,
             Name,
@@ -186,7 +196,7 @@ public sealed class Policy
     public ValueTask<Outcome<T>> ExecuteOutcomeAsync<T>(Func<CancellationToken, ValueTask<T>> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
-        return PolicyEngine.ExecuteOutcomeAsync(Head, TimeOrSystem, Name, action, static (a, token) => a(token), cancellationToken);
+        return ShieldEngine.ExecuteOutcomeAsync(Head, TimeOrSystem, Name, action, static (a, token) => a(token), cancellationToken);
     }
 
     /// <summary>
@@ -196,21 +206,21 @@ public sealed class Policy
     public T Execute<T>(Func<CancellationToken, T> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
-        return PolicyEngine.ExecuteSync(Head, TimeOrSystem, Name, action, static (a, token) => a(token), cancellationToken);
+        return ShieldEngine.ExecuteSync(Head, TimeOrSystem, Name, action, static (a, token) => a(token), cancellationToken);
     }
 
     /// <summary>Executes the delegate synchronously, threading <paramref name="state"/> to avoid closure allocations.</summary>
     public T Execute<T, TState>(TState state, Func<TState, CancellationToken, T> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
-        return PolicyEngine.ExecuteSync(Head, TimeOrSystem, Name, state, action, cancellationToken);
+        return ShieldEngine.ExecuteSync(Head, TimeOrSystem, Name, state, action, cancellationToken);
     }
 
     /// <summary>Executes the void delegate synchronously through the pipeline.</summary>
     public void Execute(Action<CancellationToken> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
-        PolicyEngine.ExecuteSync(Head, TimeOrSystem, Name, action, static (a, token) =>
+        ShieldEngine.ExecuteSync(Head, TimeOrSystem, Name, action, static (a, token) =>
         {
             a(token);
             return Nothing.Value;
@@ -221,21 +231,62 @@ public sealed class Policy
     public void Execute<TState>(TState state, Action<TState, CancellationToken> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
-        PolicyEngine.ExecuteSync(Head, TimeOrSystem, Name, (state, action), static (s, token) =>
+        ShieldEngine.ExecuteSync(Head, TimeOrSystem, Name, (state, action), static (s, token) =>
         {
             s.action(s.state, token);
             return Nothing.Value;
         }, cancellationToken);
     }
 
+    /// <summary>
+    /// Describes the pipeline, outermost strategy first, e.g.
+    /// <c>Timeout(30s) → Retry(3, exponential 250ms ×2 +jitter ≤30s) → CircuitBreaker(5 consecutive, break 30s)</c>.
+    /// </summary>
+    public override string ToString() => Describe(Name, Strategies);
+
     // ── Internals ───────────────────────────────────────────────────────────────────────
 
-    internal Policy Append(Strategy strategy, OutcomeJudge? ambient = null)
+    internal static string Describe(string? name, Strategy[] strategies)
+    {
+        var pipeline = strategies.Length == 0
+            ? "(empty)"
+            : string.Join(" → ", strategies.Select(static strategy => strategy.Describe()));
+
+        return name is null ? pipeline : $"{name}: {pipeline}";
+    }
+
+    internal static void ValidateChain(Strategy[] strategies)
+    {
+        // A fallback that shares its handling clause with an outer retry, hedge or breaker
+        // swallows the failures that strategy exists to see, making it unreachable.
+        for (var i = 1; i < strategies.Length; i++)
+        {
+            if (!strategies[i].IsFallback || strategies[i].ReactiveJudge is not { } fallbackJudge)
+            {
+                continue;
+            }
+
+            for (var j = 0; j < i; j++)
+            {
+                var outer = strategies[j];
+                if (!outer.IsFallback && ReferenceEquals(outer.ReactiveJudge, fallbackJudge))
+                {
+                    throw new InvalidOperationException(
+                        $"This chain places Fallback inside {outer.Describe()} with the same handling clause, " +
+                        $"so the fallback recovers every failure before {outer.Describe()} can see one — " +
+                        "making it unreachable. Chain the Fallback first (the first strategy is the outermost), " +
+                        "or give the fallback its own narrower handling clause.");
+                }
+            }
+        }
+    }
+
+    internal Shield Append(Strategy strategy, OutcomeJudge? ambient = null)
     {
         var strategies = new Strategy[Strategies.Length + 1];
         Array.Copy(Strategies, strategies, Strategies.Length);
         strategies[Strategies.Length] = strategy;
-        return new Policy(strategies, ambient ?? Ambient, Name, Time);
+        return new Shield(strategies, ambient ?? Ambient, Name, Time);
     }
 
     internal static StrategyNode? BuildChain(Strategy[] strategies)
