@@ -238,6 +238,19 @@ public class RateLimitEdgeCaseTests
             .Throws<RateLimitExceededException>();
     }
 
+    [Test]
+    public async Task System_And_Custom_Provider_Copies_Share_A_Timeline()
+    {
+        var shield = Shield.RateLimit(1, TimeSpan.FromSeconds(1));
+        var customTimeCopy = shield.WithTimeProvider(new FixedTimestampTimeProvider(0));
+
+        await shield.ExecuteAsync(_ => new ValueTask<int>(1));
+
+        var rejection = await Assert.That(async () => await customTimeCopy.ExecuteAsync(_ => new ValueTask<int>(2)))
+            .Throws<RateLimitExceededException>();
+        await Assert.That(rejection!.RetryAfter!.Value <= TimeSpan.FromSeconds(1)).IsTrue();
+    }
+
     private sealed class FixedTimestampTimeProvider : TimeProvider
     {
         private readonly long _timestamp;

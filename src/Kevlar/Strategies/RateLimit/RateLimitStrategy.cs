@@ -17,6 +17,7 @@ internal sealed class RateLimitStrategy : Strategy
 
     private static readonly double SecondsPerSystemTimestamp = 1d / Stopwatch.Frequency;
 
+    private readonly long _systemTimestampOrigin = Stopwatch.GetTimestamp();
     private readonly int _permits;
     private readonly TimeSpan _window;
     private readonly int _burst;
@@ -27,6 +28,7 @@ internal sealed class RateLimitStrategy : Strategy
 
     private double _theoreticalArrival = double.NegativeInfinity;
     private long _customTimestampOrigin;
+    private long _customTimelineOrigin;
     private int _customTimestampOriginState;
 
     public RateLimitStrategy(RateLimitOptions options)
@@ -86,7 +88,7 @@ internal sealed class RateLimitStrategy : Strategy
     private bool TryAcquire(TimeProvider timeProvider, out TimeSpan wait, out TimeSpan? retryAfter)
     {
         var now = ReferenceEquals(timeProvider, TimeProvider.System)
-            ? Stopwatch.GetTimestamp()
+            ? Stopwatch.GetTimestamp() - _systemTimestampOrigin
             : GetCustomTimestamp(timeProvider);
 
         while (true)
@@ -122,8 +124,9 @@ internal sealed class RateLimitStrategy : Strategy
             InitializeCustomTimestampOrigin(timestamp);
         }
 
-        return (timestamp - _customTimestampOrigin)
-            * (Stopwatch.Frequency / (double)timeProvider.TimestampFrequency);
+        return _customTimelineOrigin
+            + ((timestamp - _customTimestampOrigin)
+                * (Stopwatch.Frequency / (double)timeProvider.TimestampFrequency));
     }
 
     private void InitializeCustomTimestampOrigin(long timestamp)
@@ -131,6 +134,7 @@ internal sealed class RateLimitStrategy : Strategy
         if (Interlocked.CompareExchange(ref _customTimestampOriginState, TimestampOriginInitializing, 0) == 0)
         {
             _customTimestampOrigin = timestamp;
+            _customTimelineOrigin = Stopwatch.GetTimestamp() - _systemTimestampOrigin;
             Volatile.Write(ref _customTimestampOriginState, TimestampOriginInitialized);
             return;
         }
