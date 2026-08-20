@@ -51,6 +51,21 @@ public class RateLimitEdgeCaseTests
     }
 
     [Test]
+    public async Task Partially_Used_Burst_Cannot_Accumulate_Beyond_The_Burst()
+    {
+        var fakeTime = new FakeTimeProvider();
+        var shield = Shield.RateLimit(2, TimeSpan.FromSeconds(10)).WithTimeProvider(fakeTime);
+
+        await shield.ExecuteAsync(_ => new ValueTask<int>(1));
+        fakeTime.Advance(TimeSpan.FromMinutes(10));
+
+        await shield.ExecuteAsync(_ => new ValueTask<int>(2));
+        await shield.ExecuteAsync(_ => new ValueTask<int>(3));
+        await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(4)))
+            .Throws<RateLimitExceededException>();
+    }
+
+    [Test]
     public async Task Burst_Can_Exceed_The_Sustained_Rate()
     {
         var fakeTime = new FakeTimeProvider();
@@ -98,7 +113,9 @@ public class RateLimitEdgeCaseTests
         // The queue is exhausted; the next execution is rejected with an estimate.
         var rejection = await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(4)))
             .Throws<RateLimitExceededException>();
-        await Assert.That(rejection!.RetryAfter).IsEqualTo(TimeSpan.FromSeconds(3));
+        await Assert.That(rejection!.RetryAfter!.Value)
+            .IsEqualTo(TimeSpan.FromSeconds(3))
+            .Within(TimeSpan.FromMilliseconds(1));
 
         fakeTime.Advance(TimeSpan.FromSeconds(1));
         await Assert.That(await second).IsEqualTo(2);
@@ -156,6 +173,30 @@ public class RateLimitEdgeCaseTests
     }
 
     [Test]
+    public async Task Contended_Acquire_Refreshes_Its_Timestamp()
+    {
+        using var timeProvider = new ContendedTimestampTimeProvider();
+        var shield = Shield
+            .RateLimit(1, TimeSpan.FromSeconds(1))
+            .WithTimeProvider(timeProvider);
+        var delayedExecution = Task.Run(async () =>
+            await shield.ExecuteAsync(_ => new ValueTask<int>(1)));
+
+        try
+        {
+            await Assert.That(timeProvider.WaitForBlockedSample(TimeSpan.FromSeconds(5))).IsTrue();
+            await Assert.That(await shield.ExecuteAsync(_ => new ValueTask<int>(2))).IsEqualTo(2);
+            timeProvider.Advance(TimeSpan.FromSeconds(1));
+        }
+        finally
+        {
+            timeProvider.ReleaseBlockedSample();
+        }
+
+        await Assert.That(await delayedExecution).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Failures_Do_Not_Refund_Tokens()
     {
         var fakeTime = new FakeTimeProvider();
@@ -183,6 +224,143 @@ public class RateLimitEdgeCaseTests
             .Throws<RateLimitExceededException>();
 
         // The bucket is empty; one token takes a full window to replenish.
-        await Assert.That(rejection!.RetryAfter).IsEqualTo(TimeSpan.FromSeconds(10));
+        await Assert.That(rejection!.RetryAfter!.Value)
+            .IsEqualTo(TimeSpan.FromSeconds(10))
+            .Within(TimeSpan.FromMilliseconds(1));
+    }
+
+    [Test]
+    public async Task Negative_Timestamp_Epoch_Allows_The_Initial_Burst()
+    {
+        var shield = Shield
+            .RateLimit(1, TimeSpan.FromSeconds(1))
+            .WithTimeProvider(new FixedTimestampTimeProvider(-TimeSpan.TicksPerSecond));
+
+        var result = await shield.ExecuteAsync(_ => new ValueTask<int>(1));
+        await Assert.That(result).IsEqualTo(1);
+
+        await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(2)))
+            .Throws<RateLimitExceededException>();
+    }
+
+    [Test]
+    public async Task Large_Timestamp_Epoch_Preserves_High_Rate_Intervals()
+    {
+        var shield = Shield
+            .RateLimit(options =>
+            {
+                options.Permits = 1_000_000;
+                options.Window = TimeSpan.FromSeconds(1);
+                options.Burst = 1;
+            })
+            .WithTimeProvider(new FixedTimestampTimeProvider(long.MaxValue / 2));
+
+        var result = await shield.ExecuteAsync(_ => new ValueTask<int>(1));
+        await Assert.That(result).IsEqualTo(1);
+
+        await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(2)))
+            .Throws<RateLimitExceededException>();
+    }
+
+    [Test]
+    public async Task Large_Elapsed_Timestamp_Preserves_High_Rate_Intervals()
+    {
+        var timeProvider = new FixedTimestampTimeProvider(0);
+        var shield = Shield
+            .RateLimit(options =>
+            {
+                options.Permits = 1_000_000;
+                options.Window = TimeSpan.FromSeconds(1);
+                options.Burst = 1;
+            })
+            .WithTimeProvider(timeProvider);
+
+        await shield.ExecuteAsync(_ => new ValueTask<int>(1));
+        timeProvider.AdvanceTimestamp(long.MaxValue / 2);
+        await shield.ExecuteAsync(_ => new ValueTask<int>(2));
+
+        await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(3)))
+            .Throws<RateLimitExceededException>();
+    }
+
+    [Test]
+    public async Task System_And_Custom_Provider_Copies_Share_A_Timeline()
+    {
+        var shield = Shield.RateLimit(1, TimeSpan.FromSeconds(1));
+        var customTimeCopy = shield.WithTimeProvider(new FixedTimestampTimeProvider(0));
+
+        await shield.ExecuteAsync(_ => new ValueTask<int>(1));
+
+        var rejection = await Assert.That(async () => await customTimeCopy.ExecuteAsync(_ => new ValueTask<int>(2)))
+            .Throws<RateLimitExceededException>();
+        await Assert.That(rejection!.RetryAfter!.Value <= TimeSpan.FromSeconds(1)).IsTrue();
+    }
+
+    [Test]
+    public async Task Distinct_Custom_Provider_Copies_Share_A_Timeline()
+    {
+        var shield = Shield
+            .RateLimit(1, TimeSpan.FromSeconds(1))
+            .WithTimeProvider(new FixedTimestampTimeProvider(0, 1));
+        var secondProviderCopy = shield.WithTimeProvider(
+            new FixedTimestampTimeProvider(long.MaxValue / 2, TimeSpan.TicksPerSecond));
+
+        await shield.ExecuteAsync(_ => new ValueTask<int>(1));
+
+        var rejection = await Assert.That(async () => await secondProviderCopy.ExecuteAsync(_ => new ValueTask<int>(2)))
+            .Throws<RateLimitExceededException>();
+        await Assert.That(rejection!.RetryAfter!.Value <= TimeSpan.FromSeconds(1)).IsTrue();
+    }
+
+    private sealed class FixedTimestampTimeProvider : TimeProvider
+    {
+        private long _timestamp;
+        private readonly long _timestampFrequency;
+
+        public FixedTimestampTimeProvider(long timestamp, long timestampFrequency = TimeSpan.TicksPerSecond)
+        {
+            _timestamp = timestamp;
+            _timestampFrequency = timestampFrequency;
+        }
+
+        public override long TimestampFrequency => _timestampFrequency;
+
+        public override long GetTimestamp() => Volatile.Read(ref _timestamp);
+
+        public void AdvanceTimestamp(long delta) => Interlocked.Add(ref _timestamp, delta);
+    }
+
+    private sealed class ContendedTimestampTimeProvider : TimeProvider, IDisposable
+    {
+        private readonly ManualResetEventSlim _sampleCaptured = new();
+        private readonly ManualResetEventSlim _releaseSample = new();
+        private long _timestamp;
+        private int _getTimestampCalls;
+
+        public override long TimestampFrequency => TimeSpan.TicksPerSecond;
+
+        public override long GetTimestamp()
+        {
+            var timestamp = Volatile.Read(ref _timestamp);
+            if (Interlocked.Increment(ref _getTimestampCalls) == 2)
+            {
+                _sampleCaptured.Set();
+                _releaseSample.Wait();
+            }
+
+            return timestamp;
+        }
+
+        public void Advance(TimeSpan elapsed) => Interlocked.Add(ref _timestamp, elapsed.Ticks);
+
+        public bool WaitForBlockedSample(TimeSpan timeout) => _sampleCaptured.Wait(timeout);
+
+        public void ReleaseBlockedSample() => _releaseSample.Set();
+
+        public void Dispose()
+        {
+            _sampleCaptured.Dispose();
+            _releaseSample.Dispose();
+        }
     }
 }

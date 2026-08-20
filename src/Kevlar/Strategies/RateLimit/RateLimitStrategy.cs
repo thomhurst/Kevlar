@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Kevlar.Internal;
 
 namespace Kevlar.Strategies;
@@ -6,18 +8,23 @@ namespace Kevlar.Strategies;
 /// Token bucket with reservations: the bucket refills continuously at Permits/Window. When empty,
 /// up to QueueLimit executions may reserve future tokens (driving the balance negative) and wait
 /// for their replenishment time; beyond that, executions are rejected immediately.
+/// Uses GCRA's atomic theoretical-arrival schedule, which is equivalent to a token bucket.
 /// </summary>
 internal sealed class RateLimitStrategy : Strategy
 {
-    private readonly object _gate = new();
+    private static readonly double SecondsPerSystemTimestamp = 1d / Stopwatch.Frequency;
+
+    private readonly long _systemTimestampOrigin = Stopwatch.GetTimestamp();
+    private readonly ConditionalWeakTable<TimeProvider, CustomTimestampOrigin> _customTimestampOrigins = new();
     private readonly int _permits;
     private readonly TimeSpan _window;
-    private readonly double _permitsPerSecond;
-    private readonly double _burst;
+    private readonly int _burst;
     private readonly int _queueLimit;
+    private readonly double _timestampUnitsPerPermit;
+    private readonly double _burstTolerance;
+    private readonly double _queueTolerance;
 
-    private double _tokens;
-    private long _lastRefillTimestamp = -1;
+    private double _theoreticalArrival = double.NegativeInfinity;
 
     public RateLimitStrategy(RateLimitOptions options)
     {
@@ -28,80 +35,121 @@ internal sealed class RateLimitStrategy : Strategy
 
         _permits = options.Permits;
         _window = options.Window;
-        _permitsPerSecond = options.Permits / options.Window.TotalSeconds;
         _burst = options.Burst ?? options.Permits;
         _queueLimit = options.QueueLimit;
-        _tokens = _burst;
+        _timestampUnitsPerPermit = options.Window.TotalSeconds * Stopwatch.Frequency / options.Permits;
+        _burstTolerance = (_burst - 1) * _timestampUnitsPerPermit;
+        _queueTolerance = _queueLimit * _timestampUnitsPerPermit;
     }
 
     public override string Describe()
     {
         var queue = _queueLimit > 0 ? $", queue {_queueLimit}" : string.Empty;
-        var burst = (int)_burst != _permits ? $", burst {(int)_burst}" : string.Empty;
+        var burst = _burst != _permits ? $", burst {_burst}" : string.Empty;
         return $"RateLimit({_permits}/{DescribeHelper.Time(_window)}{burst}{queue})";
     }
 
-    public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
+    public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
         if (!TryAcquire(context.TimeProvider, out var wait, out var retryAfter))
         {
             KevlarMetrics.Rejection(context.ShieldName, "rate_limit");
-            return Outcome<T>.FromException(new RateLimitExceededException(retryAfter));
+            return new ValueTask<Outcome<T>>(Outcome<T>.FromException(new RateLimitExceededException(retryAfter)));
         }
 
-        if (wait > TimeSpan.Zero)
+        return wait > TimeSpan.Zero
+            ? ExecuteAfterDelayAsync(next, context, wait)
+            : next.InvokeAsync(context);
+    }
+
+    private static async ValueTask<Outcome<T>> ExecuteAfterDelayAsync<T, TState>(
+        Continuation<T, TState> next,
+        KevlarContext context,
+        TimeSpan wait)
+    {
+        try
         {
-            try
-            {
-                await DelayHelper.DelayAsync(context, wait).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException cancelled)
-            {
-                return Outcome<T>.FromException(cancelled);
-            }
+            await DelayHelper.DelayAsync(context, wait).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException cancelled)
+        {
+            return Outcome<T>.FromException(cancelled);
         }
 
         return await next.InvokeAsync(context).ConfigureAwait(false);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private bool TryAcquire(TimeProvider timeProvider, out TimeSpan wait, out TimeSpan? retryAfter)
     {
-        lock (_gate)
+        while (true)
         {
-            var now = timeProvider.GetTimestamp();
+            var theoreticalArrival = Volatile.Read(ref _theoreticalArrival);
+            var now = GetCurrentTimestamp(timeProvider);
+            var delayTimestampUnits = theoreticalArrival - now - _burstTolerance;
 
-            if (_lastRefillTimestamp >= 0)
+            if (delayTimestampUnits > _queueTolerance)
             {
-                var elapsed = timeProvider.GetElapsedTime(_lastRefillTimestamp, now).TotalSeconds;
-                if (elapsed > 0)
-                {
-                    _tokens = Math.Min(_burst, _tokens + (elapsed * _permitsPerSecond));
-                }
-            }
-
-            _lastRefillTimestamp = now;
-
-            var balanceAfterTake = _tokens - 1;
-
-            if (balanceAfterTake >= 0)
-            {
-                _tokens = balanceAfterTake;
                 wait = TimeSpan.Zero;
-                retryAfter = null;
-                return true;
+                retryAfter = TimeSpan.FromSeconds(delayTimestampUnits * SecondsPerSystemTimestamp);
+                return false;
             }
 
-            if (-balanceAfterTake <= _queueLimit)
+            var arrival = Math.Max(now, theoreticalArrival);
+            var nextArrival = arrival + _timestampUnitsPerPermit;
+            if (nextArrival == arrival)
             {
-                _tokens = balanceAfterTake;
-                wait = TimeSpan.FromSeconds(-balanceAfterTake / _permitsPerSecond);
+                nextArrival = GetNextRepresentableTimestamp(arrival);
+            }
+
+            if (Interlocked.CompareExchange(ref _theoreticalArrival, nextArrival, theoreticalArrival) == theoreticalArrival)
+            {
+                wait = delayTimestampUnits > 0
+                    ? TimeSpan.FromSeconds(delayTimestampUnits * SecondsPerSystemTimestamp)
+                    : TimeSpan.Zero;
                 retryAfter = null;
                 return true;
             }
-
-            wait = TimeSpan.Zero;
-            retryAfter = TimeSpan.FromSeconds((1 - _tokens) / _permitsPerSecond);
-            return false;
         }
+    }
+
+    private static double GetNextRepresentableTimestamp(double timestamp)
+    {
+        var bits = BitConverter.DoubleToInt64Bits(timestamp);
+        return BitConverter.Int64BitsToDouble(timestamp < 0 ? bits - 1 : bits + 1);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private double GetCurrentTimestamp(TimeProvider timeProvider) =>
+        ReferenceEquals(timeProvider, TimeProvider.System)
+            ? Stopwatch.GetTimestamp() - _systemTimestampOrigin
+            : GetCustomTimestamp(timeProvider);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private double GetCustomTimestamp(TimeProvider timeProvider)
+    {
+        var origin = _customTimestampOrigins.GetValue(
+            timeProvider,
+            static provider => new CustomTimestampOrigin(provider));
+        var timestamp = timeProvider.GetTimestamp();
+
+        return origin.SystemTimestamp - _systemTimestampOrigin
+            + ((timestamp - origin.ProviderTimestamp) * origin.TimestampScale);
+    }
+
+    private sealed class CustomTimestampOrigin
+    {
+        public CustomTimestampOrigin(TimeProvider timeProvider)
+        {
+            SystemTimestamp = Stopwatch.GetTimestamp();
+            ProviderTimestamp = timeProvider.GetTimestamp();
+            TimestampScale = Stopwatch.Frequency / (double)timeProvider.TimestampFrequency;
+        }
+
+        public long SystemTimestamp { get; }
+
+        public long ProviderTimestamp { get; }
+
+        public double TimestampScale { get; }
     }
 }
