@@ -17,7 +17,7 @@ dotnet add package Kevlar.Extensions.DependencyInjection   # named shields + IKe
 dotnet add package Kevlar.Extensions.Http                  # HttpClientFactory integration
 ```
 
-The core targets `netstandard2.0` (so .NET Framework 4.6.2+ works) and `net8.0`.
+The core targets `netstandard2.0` (so .NET Framework 4.6.2+ works) and `net10.0`.
 
 ## Your first shield
 

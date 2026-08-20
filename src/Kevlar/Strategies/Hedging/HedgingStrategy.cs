@@ -108,7 +108,11 @@ internal sealed class HedgingStrategy : Strategy
                 }
                 else
                 {
-                    completed = await WhenAnyAttempt(pending).ConfigureAwait(false);
+                    // A single pending attempt needs no WhenAny machinery; awaiting it directly
+                    // is equivalent and skips the Task[] allocation.
+                    completed = pending.Count == 1
+                        ? pending[0].Task
+                        : await WhenAnyAttempt(pending).ConfigureAwait(false);
                 }
 
                 var outcome = await completed.ConfigureAwait(false);
@@ -164,6 +168,13 @@ internal sealed class HedgingStrategy : Strategy
 
     private static Task<Task> WhenAnyAttemptOr<T>(List<HedgeAttempt<T>> pending, Task delayTask)
     {
+        if (pending.Count == 1)
+        {
+            // Common case (one in-flight attempt racing the hedge delay): the two-task
+            // overload avoids the Task[] allocation.
+            return Task.WhenAny(pending[0].Task, delayTask);
+        }
+
         var tasks = new Task[pending.Count + 1];
         for (var i = 0; i < pending.Count; i++)
         {
