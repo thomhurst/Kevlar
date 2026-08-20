@@ -55,7 +55,7 @@ One clause up top decides what "failure" means for every strategy below it — e
 - **Hard to hold wrong.** Impossible chain orders throw at build time with the fix in the message, and the `Kevlar.Analyzers` package flags delegates that ignore their `CancellationToken` at compile time.
 - **Observable out of the box.** `shield.ToString()` prints the whole pipeline; every shield publishes metrics through a built-in `Meter` — no telemetry package, no setup.
 - **Composable.** Shields merge with `Wrap` and `Compose`, chain fluently, and stateful strategies (breakers, limiters) intentionally share their state wherever the same shield instance is reused.
-- **Broad reach.** `netstandard2.0` (covers .NET Framework 4.6.2+) and `net8.0` targets. The core has zero third-party dependencies.
+- **Broad reach.** `netstandard2.0` (covers .NET Framework 4.6.2+) and `net8.0` targets.
 
 ## Packages
 

@@ -28,7 +28,7 @@ Build a shield once, reuse it everywhere. Shields are **immutable and thread-saf
 - **Hard to hold wrong.** `Task` and `ValueTask` delegates both flow straight in; impossible chain orders throw at build time with a fix in the message; the `Kevlar.Analyzers` package flags delegates that ignore their `CancellationToken` at compile time.
 - **Observable out of the box.** Every shield describes itself (`shield.ToString()` prints the whole pipeline) and publishes metrics through a built-in `Meter` — no telemetry package, no setup.
 - **Composable.** Shields merge with `Wrap` and `Compose`, chain fluently, and stateful strategies (breakers, limiters) intentionally share their state wherever the same shield instance is reused.
-- **Broad reach.** `netstandard2.0` (covers .NET Framework 4.6.2+) and `net8.0` targets. The core has zero third-party dependencies.
+- **Broad reach.** `netstandard2.0` (covers .NET Framework 4.6.2+) and `net8.0` targets.
 
 ## Packages
 
