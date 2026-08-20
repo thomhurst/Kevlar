@@ -1,0 +1,200 @@
+name: Benchmarks
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'benchmarks/**'
+      - '.github/workflows/benchmarks.yml'
+      - '.github/scripts/benchmark_docs.py'
+  schedule:
+    - cron: '0 5 * * 1'  # Weekly refresh even without code changes
+  workflow_dispatch:
+    inputs:
+      benchmark_filter:
+        description: 'Benchmark filter (e.g. *Retry*, *Pipeline*)'
+        required: false
+        default: '*'
+
+permissions:
+  contents: read
+
+# Queue-jump stale runs: a newer push supersedes an in-flight run's results anyway.
+# Manual workflow_dispatch runs are never cancelled.
+concurrency:
+  group: benchmarks-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
+
+jobs:
+  run-benchmarks:
+    name: Run Benchmarks
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build
+        run: dotnet build benchmarks/Kevlar.Benchmarks/Kevlar.Benchmarks.csproj -c Release
+
+      - name: Run Benchmarks
+        working-directory: benchmarks/Kevlar.Benchmarks
+        run: >-
+          dotnet run -c Release --no-build --
+          --filter '${{ inputs.benchmark_filter || '*' }}'
+          --exporters json
+          --artifacts ./BenchmarkResults
+
+      - name: Write Run Summary
+        run: |
+          {
+            echo "# Benchmark Results"
+            echo
+            for md in benchmarks/Kevlar.Benchmarks/BenchmarkResults/results/*-report-github.md; do
+              cat "$md"
+              echo
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: benchmarks/Kevlar.Benchmarks/BenchmarkResults/results/**
+          retention-days: 30
+
+  benchmark-history:
+    name: Store Benchmark History
+    runs-on: ubuntu-latest
+    needs: run-benchmarks
+    if: github.ref == 'refs/heads/main'
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # github-action-benchmark cannot create its data branch itself; seed an
+      # orphan branch on the very first run.
+      - name: Ensure benchmark-data branch exists
+        run: |
+          if ! git ls-remote --exit-code --heads origin benchmark-data > /dev/null; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git switch --orphan benchmark-data
+            git commit --allow-empty -m "chore: initialize benchmark data branch"
+            git push origin benchmark-data
+            git switch --detach ${{ github.sha }}
+          fi
+
+      - name: Download Results
+        uses: actions/download-artifact@v4
+        with:
+          name: benchmark-results
+          path: benchmark-results
+
+      - name: Combine Results
+        run: |
+          python3 << 'EOF'
+          import glob
+          import json
+
+          combined = {"Benchmarks": []}
+          for path in sorted(glob.glob("benchmark-results/**/*-report-full-compressed.json", recursive=True)):
+              print(f"Processing: {path}")
+              with open(path) as fp:
+                  data = json.load(fp)
+              for bench in data.get("Benchmarks", []):
+                  stats = bench.get("Statistics")
+                  if stats is None or stats.get("Mean") is None:
+                      continue
+                  # github-action-benchmark reads Statistics.Mean; publish the median
+                  # instead, which is a far more stable signal on shared runners.
+                  if stats.get("Median") is not None:
+                      stats["Mean"] = stats["Median"]
+                  combined["Benchmarks"].append(bench)
+
+          with open("combined.json", "w") as fp:
+              json.dump(combined, fp)
+          print(f"Combined {len(combined['Benchmarks'])} benchmarks")
+          EOF
+
+      - name: Store Results
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: Kevlar Benchmarks
+          tool: 'benchmarkdotnet'
+          output-file-path: combined.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          gh-pages-branch: benchmark-data
+          benchmark-data-dir-path: dev/bench
+          auto-push: true
+          alert-threshold: '150%'
+          comment-on-alert: true
+          fail-on-alert: false
+          alert-comment-cc-users: '@thomhurst'
+
+  publish-docs:
+    name: Publish Benchmarks to Docs
+    runs-on: ubuntu-latest
+    needs: [run-benchmarks, benchmark-history]
+    # A filtered manual run only measures a subset, which would strip sections
+    # from the generated page — publish only from full runs.
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (github.event_name != 'workflow_dispatch' ||
+       inputs.benchmark_filter == '*' ||
+       inputs.benchmark_filter == '')
+
+    permissions:
+      contents: write
+      actions: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Results
+        uses: actions/download-artifact@v4
+        with:
+          name: benchmark-results
+          path: benchmark-results
+
+      - name: Fetch Benchmark History
+        run: |
+          git fetch origin benchmark-data --depth=1
+          git show FETCH_HEAD:dev/bench/data.js > "$RUNNER_TEMP/benchmark-data.js"
+
+      - name: Generate Benchmarks Page
+        run: >-
+          python3 .github/scripts/benchmark_docs.py
+          --results-dir benchmark-results
+          --history "$RUNNER_TEMP/benchmark-data.js"
+          --window 10
+          --commit "${GITHUB_SHA::7}"
+          --output docs/docs/benchmarks.md
+
+      # A push made with GITHUB_TOKEN does not trigger the docs workflow's own
+      # push event, so dispatch it explicitly after committing.
+      - name: Commit and Deploy
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if git diff --quiet docs/docs/benchmarks.md; then
+            echo "Benchmarks page unchanged; nothing to publish."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/docs/benchmarks.md
+          git commit -m "docs: update benchmark results [skip ci]"
+          git pull --rebase origin main
+          git push origin HEAD:main
+          gh workflow run docs.yml --ref main

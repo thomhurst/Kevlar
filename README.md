@@ -323,3 +323,7 @@ time.Advance(TimeSpan.FromSeconds(10));                  // no real waiting in t
 | Delegates must return `ValueTask` | `Task`-returning methods flow straight in |
 | Retry default: constant 2s, no jitter | exponential + jitter, 30s cap |
 | First strategy added is outermost | same rule — pipelines translate 1:1 |
+
+## Performance
+
+Kevlar is benchmarked against Polly v8 across every strategy on every merge to `main` — happy paths, failure paths, and composed pipelines. The results are published automatically to the [Benchmarks page](https://thomhurst.github.io/Kevlar/docs/benchmarks) in the docs.

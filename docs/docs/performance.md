@@ -14,21 +14,12 @@ Kevlar's design keeps the happy path cheap:
 
 ## Benchmarks
 
-Early numbers against Polly 8.7 (.NET 10, x64, happy path):
+The [Benchmarks](benchmarks.md) page compares Kevlar against Polly v8 across every strategy — happy paths, failure paths, and composed pipelines. It is regenerated automatically from CI runs, so the numbers there always reflect the current code.
 
-| Scenario | Kevlar | Polly v8 |
-|---|---|---|
-| Retry(3), success | **100 ns, 0 B** | 154 ns, 24 B |
-| Timeout → Retry → Breaker, success | **272 ns** | 393 ns |
-
-A successful call through a three-strategy pipeline costs roughly a quarter of a microsecond and allocates nothing.
-
-## Reproduce
-
-The benchmark suite lives in [`benchmarks/`](https://github.com/thomhurst/Kevlar/tree/main/benchmarks) and uses BenchmarkDotNet:
+The suite lives in [`benchmarks/`](https://github.com/thomhurst/Kevlar/tree/main/benchmarks) and uses BenchmarkDotNet:
 
 ```bash
 dotnet run -c Release --project benchmarks/Kevlar.Benchmarks -- --filter '*'
 ```
 
-As always with microbenchmarks: measure your own workload before optimizing around these numbers. The differences above matter in tight loops and high-throughput services; they don't matter around a 50ms network call.
+As always with microbenchmarks: measure your own workload before optimizing around these numbers. The differences matter in tight loops and high-throughput services; they don't matter around a 50ms network call.
