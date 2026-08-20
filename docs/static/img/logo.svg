@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="kv-gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fcd34d"/>
+      <stop offset="1" stop-color="#d97706"/>
+    </linearGradient>
+  </defs>
+  <!-- Shield -->
+  <path d="M32 3 L56 11 V30 C56 45 46 55.5 32 61 C18 55.5 8 45 8 30 V11 Z"
+        fill="url(#kv-gold)" stroke="#7c4a03" stroke-width="2" stroke-linejoin="round"/>
+  <!-- Weave pattern -->
+  <g stroke="#7c4a03" stroke-width="2" stroke-linecap="round" opacity="0.55">
+    <path d="M16 18 L48 18" />
+    <path d="M14 27 L50 27" />
+    <path d="M15 36 L49 36" />
+    <path d="M19 45 L45 45" />
+    <path d="M24 52 L40 52" />
+    <path d="M22 12 L22 49" />
+    <path d="M32 10 L32 57" />
+    <path d="M42 12 L42 49" />
+  </g>
+</svg>

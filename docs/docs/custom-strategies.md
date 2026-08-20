@@ -1,0 +1,90 @@
+---
+sidebar_position: 9
+---
+
+# Custom Strategies
+
+Everything in Kevlar is a `Strategy` — middleware over an `Outcome<T>` pipeline. Retry, circuit breaker, timeout: all of them are implemented on the same surface you extend.
+
+## A logging strategy
+
+```csharp
+public sealed class LoggingStrategy(ILogger logger) : Strategy
+{
+    public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+        Continuation<T, TState> next, KevlarContext context)
+    {
+        var start = context.TimeProvider.GetTimestamp();
+        var outcome = await next.InvokeAsync(context);
+        logger.LogInformation("{Policy} took {Elapsed}", context.PolicyName,
+            context.TimeProvider.GetElapsedTime(start));
+        return outcome;
+    }
+}
+
+var policy = Policy.Use(new LoggingStrategy(logger)).Retry(3);
+```
+
+`Use` slots your strategy into the chain at that position — here, outside the retries, so it logs total elapsed time across all attempts. Put it after `Retry` to log each attempt instead.
+
+## The contract
+
+Your strategy receives:
+
+- **`next`** — the rest of the pipeline (inner strategies, then the user's delegate). Invoke it with `next.InvokeAsync(context)`.
+- **`context`** — the [`KevlarContext`](#kevlarcontext) for this execution.
+
+And returns an `Outcome<T>`: success-with-result or failure-with-exception, as a struct.
+
+The power is in how many times you call `next`:
+
+| Calls to `next` | You've built a | Examples in the box |
+|---|---|---|
+| zero | short-circuit | circuit breaker (open), rate limit, bulkhead rejection |
+| one | decorator | timeout, fallback, logging, metrics |
+| many | repeater | retry, hedging |
+
+## Failures are outcomes, not throws
+
+Strategies return failures as `Outcome<T>` values rather than throwing, so outer strategies can react to them cheaply:
+
+```csharp
+public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+    Continuation<T, TState> next, KevlarContext context)
+{
+    var outcome = await next.InvokeAsync(context);
+
+    if (!outcome.IsSuccess)
+    {
+        // inspect outcome.Exception, decide what to do:
+        // return outcome unchanged, replace it, or try next again
+    }
+
+    return outcome;
+}
+```
+
+The exception is only thrown once — at the pipeline boundary, back in the caller's frame, with its original stack trace intact.
+
+## KevlarContext
+
+The context flows through the whole pipeline:
+
+- `context.PolicyName` — set via `WithName`, for logs and metrics.
+- `context.TimeProvider` — **always use this instead of `DateTime`/`Stopwatch`/`Task.Delay`**, so your strategy stays [testable with `FakeTimeProvider`](testing.md) like the built-ins.
+- `context.CancellationToken` — the current token. Strategies such as timeouts *replace* this for the layers beneath them — which is why delegates must use the token they're handed rather than a captured one.
+- `context.IsSynchronous` — `true` under `Execute`; branch on it if your strategy would otherwise block or break a sync caller (hedging throws for sync callers this way).
+- `context.Properties` — a typed property bag: `Set(key, value)`, `TryGet(key, out value)`, `GetOrDefault(key)`, keyed by `KevlarKey<T>`:
+
+```csharp
+static readonly KevlarKey<string> TenantId = new("tenant-id");
+
+context.Properties.Set(TenantId, "acme");
+if (context.Properties.TryGet(TenantId, out var tenant)) { /* ... */ }
+```
+
+Contexts are pooled and recycled by the engine — never store one beyond the execution.
+
+## Thread safety
+
+One strategy instance is shared by every execution of the policy containing it — and by every policy it's composed into. That's the [state-sharing rule](composition.md#the-state-sharing-rule) working in your favour, but it means your strategy must be thread-safe, like the built-in breakers and limiters.

@@ -1,0 +1,107 @@
+.hero {
+  padding: 4rem 0;
+  background: var(--kevlar-hero-bg);
+  color: #e6e9ef;
+}
+
+.heroInner {
+  display: flex;
+  align-items: center;
+  gap: 3rem;
+  flex-wrap: wrap;
+}
+
+.heroText {
+  flex: 1 1 320px;
+}
+
+.heroCode {
+  flex: 1 1 420px;
+  min-width: 0;
+  text-align: left;
+}
+
+.heroCode :global(.theme-code-block) {
+  margin-bottom: 0;
+}
+
+.heroLogo {
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.heroTitle {
+  font-size: 3.5rem;
+  margin-bottom: 0.5rem;
+  color: #fff;
+}
+
+.heroTagline {
+  font-size: 1.25rem;
+  max-width: 34rem;
+  color: #b8c0cc;
+}
+
+.buttons {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* The hero is always dark — keep the outline button legible in light mode too. */
+.buttons :global(.button--outline) {
+  color: #e6e9ef;
+  border-color: #e6e9ef;
+}
+
+.buttons :global(.button--outline):hover {
+  color: #0e1117;
+  background: #e6e9ef;
+}
+
+.features {
+  padding: 3rem 0 1rem;
+}
+
+.featureCard {
+  height: calc(100% - 2rem);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 2rem;
+  border-radius: 12px;
+  background: var(--ifm-background-surface-color);
+  border: 1px solid var(--ifm-color-emphasis-200);
+}
+
+.featureCard h3 {
+  color: var(--ifm-color-primary);
+}
+
+.comparison {
+  padding: 2rem 0 4rem;
+}
+
+.comparison > div > p {
+  margin-bottom: 2rem;
+  color: var(--ifm-color-emphasis-700);
+}
+
+.benchCallout {
+  padding: 0.75rem 1.25rem;
+  border-left: 4px solid var(--ifm-color-primary);
+  border-radius: 6px;
+  background: var(--ifm-background-surface-color);
+}
+
+.benchCallout p {
+  margin: 0;
+}
+
+@media (max-width: 996px) {
+  .hero {
+    padding: 2.5rem 0;
+  }
+
+  .heroTitle {
+    font-size: 2.5rem;
+  }
+}

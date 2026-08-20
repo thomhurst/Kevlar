@@ -1,0 +1,53 @@
+/**
+ * Kevlar docs global styles. Dark-first, amber accent (kevlar fibre gold).
+ */
+
+:root {
+  --ifm-color-primary: #9a6700;
+  --ifm-color-primary-dark: #8a5c00;
+  --ifm-color-primary-darker: #825700;
+  --ifm-color-primary-darkest: #6b4700;
+  --ifm-color-primary-light: #aa7200;
+  --ifm-color-primary-lighter: #b27700;
+  --ifm-color-primary-lightest: #c98700;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+  --ifm-font-family-base: 'Inter', system-ui, -apple-system, 'Segoe UI',
+    Roboto, Helvetica, Arial, sans-serif;
+  --kevlar-hero-bg: linear-gradient(180deg, #14181f 0%, #0b0e14 100%);
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #fbbf24;
+  --ifm-color-primary-dark: #f5b40c;
+  --ifm-color-primary-darker: #e8aa09;
+  --ifm-color-primary-darkest: #bf8c08;
+  --ifm-color-primary-light: #fcc93e;
+  --ifm-color-primary-lighter: #fcce4b;
+  --ifm-color-primary-lightest: #fdda72;
+  --ifm-background-color: #0e1117;
+  --ifm-background-surface-color: #161b24;
+  --docusaurus-highlighted-code-line-bg: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme='dark'] .navbar {
+  background: rgba(14, 17, 23, 0.85);
+  backdrop-filter: blur(8px);
+}
+
+/* Code blocks: match the dracula-based prism theme edge to edge. */
+.theme-code-block {
+  --prism-background-color: #14181f !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+
+/* Inline code should stay quiet. */
+code {
+  border: none;
+}
+
+/* Tables in docs — full width, tighter. */
+table {
+  display: table;
+  width: 100%;
+}
