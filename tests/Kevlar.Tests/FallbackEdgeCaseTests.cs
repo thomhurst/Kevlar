@@ -13,6 +13,53 @@ public class FallbackEdgeCaseTests
     }
 
     [Test]
+    public async Task An_Asynchronous_Fallback_Is_Awaited()
+    {
+        var shield = Shield.For<int>().Fallback(static async _ =>
+        {
+            await Task.Yield();
+            return 42;
+        });
+
+        var result = await shield.ExecuteAsync(_ => throw new InvalidOperationException());
+
+        await Assert.That(result).IsEqualTo(42);
+    }
+
+    [Test]
+    public async Task An_Asynchronous_Fallback_Exception_Is_Surfaced()
+    {
+        var shield = Shield.For<int>().Fallback(static async _ =>
+        {
+            await Task.Yield();
+            throw new ApplicationException("fallback failed");
+        });
+
+        await Assert.That(async () => await shield.ExecuteAsync(_ => throw new InvalidOperationException()))
+            .Throws<ApplicationException>().WithMessage("fallback failed");
+    }
+
+    [Test]
+    public async Task An_Asynchronous_Success_Bypasses_The_Fallback()
+    {
+        var fallbackRan = false;
+        var shield = Shield.For<int>().Fallback(_ =>
+        {
+            fallbackRan = true;
+            return new ValueTask<int>(0);
+        });
+
+        var result = await shield.ExecuteAsync(static async _ =>
+        {
+            await Task.Yield();
+            return 42;
+        });
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(fallbackRan).IsFalse();
+    }
+
+    [Test]
     public async Task Cancellation_Is_Not_Replaced_By_The_Fallback()
     {
         var shield = Shield.For<int>().Fallback(99);
