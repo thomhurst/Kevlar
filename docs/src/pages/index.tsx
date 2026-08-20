@@ -17,22 +17,6 @@ const heroSample = `var shield = Shield
 var user = await shield.ExecuteAsync(
     ct => LoadUserAsync(id, ct), cancellationToken);`;
 
-const pollySample = `var pipeline = new ResiliencePipelineBuilder()
-    .AddTimeout(TimeSpan.FromSeconds(30))
-    .AddRetry(new RetryStrategyOptions
-    {
-        MaxRetryAttempts = 3,
-        BackoffType = DelayBackoffType.Exponential,
-        UseJitter = true,
-    })
-    .AddCircuitBreaker(new CircuitBreakerStrategyOptions
-    {
-        FailureRatio = 1.0,
-        MinimumThroughput = 5,
-        BreakDuration = TimeSpan.FromSeconds(30),
-    })
-    .Build();`;
-
 const kevlarSample = `var shield = Shield
     .Timeout(TimeSpan.FromSeconds(30))
     .Retry(3)
@@ -285,37 +269,31 @@ function ProofBand() {
   );
 }
 
-function Comparison() {
+function PipelineShowcase() {
   return (
-    <section className={styles.comparison}>
+    <section className={styles.pipelineShowcase}>
       <div className="container">
-        <div className={styles.comparisonHeader}>
+        <div className={styles.pipelineHeader}>
           <div>
-            <span className={styles.kicker}>The fluent difference</span>
-            <Heading as="h2">Same pipeline.<br />Less ceremony.</Heading>
+            <span className={styles.kicker}>Designed for intent</span>
+            <Heading as="h2">Protection that<br />reads like code.</Heading>
           </div>
           <p>
-            Express the resilience pipeline directly. Sensible defaults stay
-            concise; full configuration remains one options object away.
+            Build complete resilience pipelines from focused strategies.
+            Sensible defaults keep common cases concise; options objects give
+            you full control when you need it.
           </p>
         </div>
-        <div className={styles.comparisonGrid}>
-          <article className={styles.compareCard}>
-            <div className={styles.compareTitle}>
-              <span>Polly v8</span>
-              <span>Configuration</span>
-            </div>
-            <CodeBlock language="csharp">{pollySample}</CodeBlock>
-          </article>
-          <article className={`${styles.compareCard} ${styles.kevlarCard}`}>
-            <div className={styles.compareTitle}>
+        <div className={styles.pipelineGrid}>
+          <article className={styles.pipelineCard}>
+            <div className={styles.pipelineTitle}>
               <span>Kevlar</span>
-              <span>Intent</span>
+              <span>Complete pipeline</span>
             </div>
             <CodeBlock language="csharp">{kevlarSample}</CodeBlock>
-            <div className={styles.compareResult}>
-              <span>Same behavior</span>
-              <strong>10 fewer lines</strong>
+            <div className={styles.pipelineResult}>
+              <span>Timeout · Retry · Circuit breaker</span>
+              <strong>One fluent API</strong>
             </div>
           </article>
         </div>
@@ -355,7 +333,7 @@ export default function Home(): ReactNode {
         <StrategyRail />
         <Features />
         <ProofBand />
-        <Comparison />
+        <PipelineShowcase />
         <FinalCta />
       </main>
     </Layout>

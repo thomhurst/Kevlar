@@ -77,10 +77,10 @@
 .strategyList span { display: flex; align-items: center; gap: .75rem; font-size: .79rem; font-weight: 650; }
 .strategyList span::before { width: 3px; height: 3px; border-radius: 50%; background: #666a66; content: ''; }
 
-.features, .comparison, .finalCta { padding: 8rem 0; }
-.sectionIntro, .comparisonHeader { display: grid; grid-template-columns: 1.2fr .8fr; align-items: end; gap: 5rem; margin-bottom: 4rem; }
-.sectionIntro h2, .comparisonHeader h2, .proofLead h2, .ctaPanel h2 { margin: 0; color: var(--kevlar-heading); font-family: var(--kevlar-display); font-size: clamp(2.8rem,5vw,5rem); font-weight: 800; letter-spacing: -.035em; line-height: 1; }
-.sectionIntro > p, .comparisonHeader > p { max-width: 31rem; margin: 0 0 .4rem; color: var(--kevlar-muted); font-size: 1.05rem; line-height: 1.75; }
+.features, .pipelineShowcase, .finalCta { padding: 8rem 0; }
+.sectionIntro, .pipelineHeader { display: grid; grid-template-columns: 1.2fr .8fr; align-items: end; gap: 5rem; margin-bottom: 4rem; }
+.sectionIntro h2, .pipelineHeader h2, .proofLead h2, .ctaPanel h2 { margin: 0; color: var(--kevlar-heading); font-family: var(--kevlar-display); font-size: clamp(2.8rem,5vw,5rem); font-weight: 800; letter-spacing: -.035em; line-height: 1; }
+.sectionIntro > p, .pipelineHeader > p { max-width: 31rem; margin: 0 0 .4rem; color: var(--kevlar-muted); font-size: 1.05rem; line-height: 1.75; }
 
 .featureGrid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); border-top: 1px solid var(--kevlar-line); border-left: 1px solid var(--kevlar-line); }
 .featureCard { position: relative; overflow: hidden; min-height: 21rem; padding: 2rem; border-right: 1px solid var(--kevlar-line); border-bottom: 1px solid var(--kevlar-line); background: var(--kevlar-card-bg); transition: background 180ms ease, transform 180ms ease; }
@@ -105,17 +105,15 @@
 .proofLink { display: inline-flex; align-items: center; gap: .7rem; margin-top: 1rem; color: #b6b9b2; font-size: .78rem; font-weight: 700; text-decoration: none; }
 .proofLink:hover { color: var(--kevlar-gold); text-decoration: none; }
 
-.comparison { background: var(--kevlar-section-alt); }
-.comparisonGrid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
-.compareCard { overflow: hidden; border: 1px solid var(--kevlar-line); border-radius: 4px; background: var(--kevlar-card-bg); }
-.compareTitle { display: flex; min-height: 4rem; align-items: center; justify-content: space-between; padding: 0 1.5rem; border-bottom: 1px solid var(--kevlar-line); color: var(--kevlar-heading); font-family: var(--kevlar-mono); font-size: .75rem; font-weight: 700; }
-.compareTitle span:last-child { color: var(--kevlar-faint); font-size: .64rem; letter-spacing: .12em; text-transform: uppercase; }
-.kevlarCard { border-color: var(--kevlar-gold-border); box-shadow: 0 20px 60px var(--kevlar-shadow); }
-.kevlarCard .compareTitle { color: var(--kevlar-gold-dark); border-bottom-color: var(--kevlar-gold-border); }
-.compareCard :global(.theme-code-block) { margin: 0; border-radius: 0; box-shadow: none; }
-.compareCard :global(pre) { min-height: 25rem; padding: 1.7rem 1.5rem !important; font-size: .79rem; line-height: 1.7; }
-.compareResult { display: flex; align-items: center; justify-content: space-between; min-height: 4rem; padding: 0 1.5rem; border-top: 1px solid var(--kevlar-gold-border); color: var(--kevlar-muted); font-family: var(--kevlar-mono); font-size: .66rem; letter-spacing: .06em; text-transform: uppercase; }
-.compareResult strong { color: var(--kevlar-gold-dark); }
+.pipelineShowcase { background: var(--kevlar-section-alt); }
+.pipelineGrid { max-width: 56rem; margin: 0 auto; }
+.pipelineCard { overflow: hidden; border: 1px solid var(--kevlar-gold-border); border-radius: 4px; background: var(--kevlar-card-bg); box-shadow: 0 20px 60px var(--kevlar-shadow); }
+.pipelineTitle { display: flex; min-height: 4rem; align-items: center; justify-content: space-between; padding: 0 1.5rem; border-bottom: 1px solid var(--kevlar-gold-border); color: var(--kevlar-gold-dark); font-family: var(--kevlar-mono); font-size: .75rem; font-weight: 700; }
+.pipelineTitle span:last-child { color: var(--kevlar-faint); font-size: .64rem; letter-spacing: .12em; text-transform: uppercase; }
+.pipelineCard :global(.theme-code-block) { margin: 0; border-radius: 0; box-shadow: none; }
+.pipelineCard :global(pre) { min-height: 14rem; padding: 1.7rem 1.5rem !important; font-size: .79rem; line-height: 1.7; }
+.pipelineResult { display: flex; align-items: center; justify-content: space-between; min-height: 4rem; padding: 0 1.5rem; border-top: 1px solid var(--kevlar-gold-border); color: var(--kevlar-muted); font-family: var(--kevlar-mono); font-size: .66rem; letter-spacing: .06em; text-transform: uppercase; }
+.pipelineResult strong { color: var(--kevlar-gold-dark); }
 
 .finalCta { padding-top: 0; background: var(--kevlar-section-alt); }
 .ctaPanel { position: relative; display: grid; overflow: hidden; grid-template-columns: auto 1fr auto; align-items: center; gap: 3rem; min-height: 19rem; padding: 3.5rem; border: 1px solid #30332f; color: #f4f1e9; background: #111310; }
@@ -152,15 +150,14 @@
   .codeWindow { transform: none; }
   .codeWindow :global(pre) { min-height: auto; font-size: .7rem; }
   .liveLabel, .codeFooter span:last-child { display: none; }
-  .features, .comparison, .finalCta { padding: 5rem 0; }
-  .sectionIntro, .comparisonHeader { grid-template-columns: 1fr; gap: 1.5rem; margin-bottom: 2.5rem; }
-  .featureGrid, .comparisonGrid, .proofGrid { grid-template-columns: 1fr; }
+  .features, .pipelineShowcase, .finalCta { padding: 5rem 0; }
+  .sectionIntro, .pipelineHeader { grid-template-columns: 1fr; gap: 1.5rem; margin-bottom: 2.5rem; }
+  .featureGrid, .proofGrid { grid-template-columns: 1fr; }
   .featureCard { min-height: 18rem; }
   .featureMeta { margin-bottom: 3rem; }
   .metric, .proofLead { grid-column: auto; }
   .metric { min-height: auto; padding-bottom: 1.5rem; }
-  .comparisonGrid { gap: 1rem; }
-  .compareCard :global(pre) { min-height: auto; font-size: .65rem; }
+  .pipelineCard :global(pre) { min-height: auto; font-size: .65rem; }
   .ctaPanel { grid-template-columns: 1fr; gap: 2rem; padding: 2rem; }
   .ctaPanel .primaryButton { grid-column: auto; }
   .ctaMark { width: 4.5rem; height: 4.5rem; }
