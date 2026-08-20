@@ -25,13 +25,25 @@ internal sealed class FallbackStrategy<TResult> : Strategy
 
     public override string Describe() => "Fallback";
 
-    public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
+    public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
-        var outcome = await next.InvokeAsync(context).ConfigureAwait(false);
+        var execution = next.InvokeAsync(context);
+        return execution.IsCompletedSuccessfully
+            ? HandleOutcome(execution.Result, context)
+            : AwaitOutcomeAsync(execution, context);
+    }
 
+    private async ValueTask<Outcome<T>> AwaitOutcomeAsync<T>(ValueTask<Outcome<T>> execution, KevlarContext context)
+    {
+        var outcome = await execution.ConfigureAwait(false);
+        return await HandleOutcome(outcome, context).ConfigureAwait(false);
+    }
+
+    private ValueTask<Outcome<T>> HandleOutcome<T>(Outcome<T> outcome, KevlarContext context)
+    {
         if (!_judge.ShouldHandle(in outcome))
         {
-            return outcome;
+            return new ValueTask<Outcome<T>>(outcome);
         }
 
         Debug.Assert(typeof(T) == typeof(TResult), "Fallback strategies only execute inside a matching Shield<TResult>.");
@@ -44,7 +56,22 @@ internal sealed class FallbackStrategy<TResult> : Strategy
 
         try
         {
-            return Outcome<T>.FromResult(await fallback(outcome, context).ConfigureAwait(false));
+            var execution = fallback(outcome, context);
+            return execution.IsCompletedSuccessfully
+                ? new ValueTask<Outcome<T>>(Outcome<T>.FromResult(execution.Result))
+                : AwaitFallbackAsync(execution);
+        }
+        catch (Exception exception)
+        {
+            return new ValueTask<Outcome<T>>(Outcome<T>.FromException(exception));
+        }
+    }
+
+    private static async ValueTask<Outcome<T>> AwaitFallbackAsync<T>(ValueTask<T> execution)
+    {
+        try
+        {
+            return Outcome<T>.FromResult(await execution.ConfigureAwait(false));
         }
         catch (Exception exception)
         {
