@@ -8,8 +8,8 @@ namespace Kevlar.Internal;
 
 /// <summary>
 /// Kevlar's built-in instruments. Real counters on .NET 8+ (where
-/// <c>System.Diagnostics.Metrics</c> is in-box); no-ops on <c>netstandard2.0</c> so the core
-/// keeps its zero-dependency promise. Every recording checks <c>Enabled</c> first, so the
+/// <c>System.Diagnostics.Metrics</c> is in-box); no-ops on <c>netstandard2.0</c>.
+/// Every recording checks <c>Enabled</c> first, so the
 /// cost without a listener is a branch.
 /// </summary>
 internal static class KevlarMetrics

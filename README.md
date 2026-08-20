@@ -1,6 +1,6 @@
 # Kevlar
 
-**Fast, zero-dependency resilience for .NET.** Retries, circuit breakers, timeouts, rate limiting, concurrency limiting, hedging and fallbacks — composed through one fluent, allocation-conscious Shield API.
+**Fast, allocation-conscious resilience for .NET.** Retries, circuit breakers, timeouts, rate limiting, concurrency limiting, hedging and fallbacks — composed through one fluent Shield API.
 
 ```csharp
 using Kevlar;
@@ -61,7 +61,7 @@ One clause up top decides what "failure" means for every strategy below it — e
 
 | Package | Purpose |
 |---|---|
-| `Kevlar` | The core: all strategies, zero dependencies |
+| `Kevlar` | The core: all strategies |
 | `Kevlar.Extensions.DependencyInjection` | Named shields, config-bound shields + `IKevlarRegistry` for Microsoft DI |
 | `Kevlar.Extensions.Http` | `HttpClientFactory` integration, transient-fault handling, `Retry-After` support |
 | `Kevlar.Analyzers` | Roslyn analyzers that catch resilience mistakes at compile time |

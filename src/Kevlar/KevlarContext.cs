@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+using Reservoir;
 
 namespace Kevlar;
 
@@ -9,14 +9,11 @@ namespace Kevlar;
 /// </summary>
 public sealed class KevlarContext
 {
-    private const int MaxPooled = 128;
+    private static readonly ObjectPool<KevlarContext, PoolPolicy> Pool = new(maxCapacity: 128);
 
-    private static readonly ConcurrentQueue<KevlarContext> Pool = new();
-    private static int _pooledCount;
-
-    private readonly bool _poolable;
-
-    private KevlarContext(bool poolable) => _poolable = poolable;
+    private KevlarContext()
+    {
+    }
 
     /// <summary>
     /// The cancellation token for the current scope. Strategies such as timeouts replace this
@@ -39,14 +36,7 @@ public sealed class KevlarContext
 
     internal static KevlarContext Rent(CancellationToken cancellationToken, bool isSynchronous, TimeProvider timeProvider, string? shieldName)
     {
-        if (Pool.TryDequeue(out var context))
-        {
-            Interlocked.Decrement(ref _pooledCount);
-        }
-        else
-        {
-            context = new KevlarContext(poolable: true);
-        }
+        var context = Pool.Rent();
 
         context.CancellationToken = cancellationToken;
         context.IsSynchronous = isSynchronous;
@@ -55,27 +45,7 @@ public sealed class KevlarContext
         return context;
     }
 
-    internal static void Return(KevlarContext context)
-    {
-        if (!context._poolable)
-        {
-            return;
-        }
-
-        context.CancellationToken = default;
-        context.ShieldName = null;
-        context.TimeProvider = TimeProvider.System;
-        context.Properties.Clear();
-
-        if (Interlocked.Increment(ref _pooledCount) <= MaxPooled)
-        {
-            Pool.Enqueue(context);
-        }
-        else
-        {
-            Interlocked.Decrement(ref _pooledCount);
-        }
-    }
+    internal static void Return(KevlarContext context) => Pool.Return(context);
 
     /// <summary>
     /// Creates a detached copy of this context for a concurrent attempt (used by hedging).
@@ -83,15 +53,24 @@ public sealed class KevlarContext
     /// </summary>
     internal KevlarContext Fork(CancellationToken cancellationToken)
     {
-        var fork = new KevlarContext(poolable: false)
-        {
-            CancellationToken = cancellationToken,
-            IsSynchronous = IsSynchronous,
-            ShieldName = ShieldName,
-            TimeProvider = TimeProvider,
-        };
+        var fork = Rent(cancellationToken, IsSynchronous, TimeProvider, ShieldName);
 
         Properties.CopyTo(fork.Properties);
         return fork;
+    }
+
+    private readonly struct PoolPolicy : IPooledObjectPolicy<KevlarContext>
+    {
+        public KevlarContext Create() => new();
+
+        public bool TryReset(KevlarContext context)
+        {
+            context.CancellationToken = default;
+            context.IsSynchronous = false;
+            context.ShieldName = null;
+            context.TimeProvider = TimeProvider.System;
+            context.Properties.Clear();
+            return true;
+        }
     }
 }

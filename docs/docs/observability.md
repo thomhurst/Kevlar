@@ -41,7 +41,7 @@ services.AddOpenTelemetry().WithMetrics(metrics => metrics.AddMeter(KevlarDiagno
 | `kevlar.rejections` | fail-fast rejections | `shield.name`, `kind` (`circuit_open`/`rate_limit`/`concurrency_limit`) |
 | `kevlar.circuit_breaker.transitions` | circuit state changes | `from`, `to` |
 
-The `shield.name` tag appears only for shields named via `WithName` — name the shields you dashboard. On `netstandard2.0` targets the instruments are inert (the metrics API isn't in-box there), keeping the core dependency-free.
+The `shield.name` tag appears only for shields named via `WithName` — name the shields you dashboard. On `netstandard2.0` targets the instruments are inert because the metrics API isn't in-box there.
 
 ## Compile-time checks
 

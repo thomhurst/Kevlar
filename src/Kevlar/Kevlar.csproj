@@ -5,13 +5,17 @@
     <RootNamespace>Kevlar</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IsPackable>true</IsPackable>
-    <Description>Kevlar is a fast, zero-dependency resilience library for .NET: retries, circuit breakers, timeouts, rate limiting, concurrency limiting, hedging and fallbacks, composed through one fluent, allocation-conscious Shield API.</Description>
+    <Description>Kevlar is a fast, allocation-conscious resilience library for .NET: retries, circuit breakers, timeouts, rate limiting, concurrency limiting, hedging and fallbacks, composed through one fluent Shield API.</Description>
     <PackageTags>resilience;transient-fault-handling;retry;circuit-breaker;timeout;rate-limit;concurrency-limit;hedging;fallback;polly-alternative</PackageTags>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="System.Threading.Tasks.Extensions" />
     <PackageReference Include="Microsoft.Bcl.TimeProvider" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Reservoir" />
   </ItemGroup>
 
   <ItemGroup>

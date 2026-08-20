@@ -5,7 +5,7 @@ slug: /intro
 
 # Introduction
 
-**Kevlar is fast, zero-dependency resilience for .NET.** Retries, circuit breakers, timeouts, rate limiting, concurrency limits, hedging and fallbacks — composed through one fluent, allocation-conscious shield API.
+**Kevlar is fast, allocation-conscious resilience for .NET.** Retries, circuit breakers, timeouts, rate limiting, concurrency limits, hedging and fallbacks — composed through one fluent shield API.
 
 ```csharp
 using Kevlar;
@@ -34,7 +34,7 @@ Build a shield once, reuse it everywhere. Shields are **immutable and thread-saf
 
 | Package | Purpose |
 |---|---|
-| `Kevlar` | The core: all strategies, zero dependencies |
+| `Kevlar` | The core: all strategies |
 | `Kevlar.Extensions.DependencyInjection` | Named shields + `IKevlarRegistry` for Microsoft DI |
 | `Kevlar.Extensions.Http` | `HttpClientFactory` integration, transient-fault handling, `Retry-After` support |
 | `Kevlar.Analyzers` | Roslyn analyzers that catch resilience mistakes at compile time |

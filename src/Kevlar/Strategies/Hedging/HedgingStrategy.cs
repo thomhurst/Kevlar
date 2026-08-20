@@ -1,4 +1,5 @@
 using Kevlar.Internal;
+using Reservoir;
 
 namespace Kevlar.Strategies;
 
@@ -24,11 +25,11 @@ internal sealed class HedgingStrategy : Strategy
 
     public override string Describe() => $"Hedge({_maxAttempts} attempts, delay {DescribeHelper.Time(_delay)})";
 
-    public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
+    public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
         if (_maxAttempts == 1)
         {
-            return await next.InvokeAsync(context).ConfigureAwait(false);
+            return next.InvokeAsync(context);
         }
 
         if (context.IsSynchronous)
@@ -36,13 +37,49 @@ internal sealed class HedgingStrategy : Strategy
             throw new NotSupportedException("Hedging requires asynchronous execution. Use ExecuteAsync instead of Execute.");
         }
 
-        var pending = new List<HedgeAttempt<T>>(_maxAttempts);
-        var launched = 0;
-        var lastOutcome = default(Outcome<T>);
+        var primary = StartAttempt(next, context, attemptNumber: 1);
+        if (_delay == TimeSpan.Zero || !primary.Execution.IsCompletedSuccessfully)
+        {
+            return ExecuteCoreAsync(next, context, primary.AsPending(), launched: 1, default);
+        }
+
+        Outcome<T> outcome;
+        try
+        {
+            outcome = primary.Execution.Result;
+        }
+        finally
+        {
+            primary.Dispose();
+        }
+
+        if (!_judge.ShouldHandle(in outcome))
+        {
+            return new ValueTask<Outcome<T>>(outcome);
+        }
+
+        return ExecuteCoreAsync(next, context, initial: null, launched: 1, outcome);
+    }
+
+    private async ValueTask<Outcome<T>> ExecuteCoreAsync<T, TState>(
+        Continuation<T, TState> next,
+        KevlarContext context,
+        HedgeAttempt<T>? initial,
+        int launched,
+        Outcome<T> lastOutcome)
+    {
+        var pending = ListPool<HedgeAttempt<T>>.Shared.Rent();
 
         try
         {
-            Launch(pending, next, context, ref launched);
+            if (initial is { } primary)
+            {
+                pending.Add(primary);
+            }
+            else
+            {
+                Launch(pending, next, context, ref launched);
+            }
 
             while (true)
             {
@@ -56,7 +93,7 @@ internal sealed class HedgingStrategy : Strategy
 
                 if (launched < _maxAttempts && _delay != System.Threading.Timeout.InfiniteTimeSpan)
                 {
-                    using var delayCancellation = CancellationTokenSource.CreateLinkedTokenSource(context.CancellationToken);
+                    using var delayCancellation = CancellationTokenSourcePool.Shared.RentLinked(context.CancellationToken);
                     var delayTask = DelayHelper.CreateDelayTask(context.TimeProvider, _delay, delayCancellation.Token);
                     var winner = await WhenAnyAttemptOr(pending, delayTask).ConfigureAwait(false);
 
@@ -101,22 +138,28 @@ internal sealed class HedgingStrategy : Strategy
                 attempt.Cancellation.Cancel();
                 Cleanup(attempt);
             }
+
+            ListPool<HedgeAttempt<T>>.Shared.Return(pending);
         }
     }
 
     private void Launch<T, TState>(List<HedgeAttempt<T>> pending, Continuation<T, TState> next, KevlarContext context, ref int launched)
     {
         var attemptNumber = ++launched;
+        pending.Add(StartAttempt(next, context, attemptNumber).AsPending());
+    }
 
+    private StartedAttempt<T> StartAttempt<T, TState>(Continuation<T, TState> next, KevlarContext context, int attemptNumber)
+    {
         if (attemptNumber > 1)
         {
             KevlarMetrics.Hedge(context.ShieldName);
             _onHedge?.Invoke(new HedgeEvent(attemptNumber, context));
         }
 
-        var cancellation = CancellationTokenSource.CreateLinkedTokenSource(context.CancellationToken);
+        var cancellation = CancellationTokenSourcePool.Shared.RentLinked(context.CancellationToken);
         var fork = context.Fork(cancellation.Token);
-        pending.Add(new HedgeAttempt<T>(next.InvokeAsync(fork).AsTask(), cancellation));
+        return new StartedAttempt<T>(next.InvokeAsync(fork), cancellation, fork);
     }
 
     private static Task<Task> WhenAnyAttemptOr<T>(List<HedgeAttempt<T>> pending, Task delayTask)
@@ -148,7 +191,7 @@ internal sealed class HedgingStrategy : Strategy
         {
             if (ReferenceEquals(pending[i].Task, task))
             {
-                pending[i].Cancellation.Dispose();
+                pending[i].Dispose();
                 pending.RemoveAt(i);
                 return;
             }
@@ -159,13 +202,13 @@ internal sealed class HedgingStrategy : Strategy
     {
         if (attempt.Task.IsCompleted)
         {
-            attempt.Cancellation.Dispose();
+            attempt.Dispose();
             return;
         }
 
         _ = attempt.Task.ContinueWith(
-            static (_, state) => ((CancellationTokenSource)state!).Dispose(),
-            attempt.Cancellation,
+            static (_, state) => ((HedgeAttempt<T>)state!).Dispose(),
+            attempt,
             CancellationToken.None,
             TaskContinuationOptions.ExecuteSynchronously,
             TaskScheduler.Default);
@@ -173,14 +216,47 @@ internal sealed class HedgingStrategy : Strategy
 
     private readonly struct HedgeAttempt<T>
     {
-        public HedgeAttempt(Task<Outcome<T>> task, CancellationTokenSource cancellation)
+        public HedgeAttempt(Task<Outcome<T>> task, CancellationTokenSource cancellation, KevlarContext context)
         {
             Task = task;
             Cancellation = cancellation;
+            Context = context;
         }
 
         public Task<Outcome<T>> Task { get; }
 
         public CancellationTokenSource Cancellation { get; }
+
+        public KevlarContext Context { get; }
+
+        public void Dispose()
+        {
+            KevlarContext.Return(Context);
+            Cancellation.Dispose();
+        }
+    }
+
+    private readonly struct StartedAttempt<T>
+    {
+        public StartedAttempt(ValueTask<Outcome<T>> execution, CancellationTokenSource cancellation, KevlarContext context)
+        {
+            Execution = execution;
+            Cancellation = cancellation;
+            Context = context;
+        }
+
+        public ValueTask<Outcome<T>> Execution { get; }
+
+        private CancellationTokenSource Cancellation { get; }
+
+        private KevlarContext Context { get; }
+
+        public HedgeAttempt<T> AsPending() => new(Execution.AsTask(), Cancellation, Context);
+
+        public void Dispose()
+        {
+            KevlarContext.Return(Context);
+            Cancellation.Dispose();
+        }
     }
 }
