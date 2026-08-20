@@ -8,6 +8,7 @@
     <!-- Core (netstandard2.0 only) -->
     <PackageVersion Include="System.Threading.Tasks.Extensions" Version="4.6.3" />
     <PackageVersion Include="Microsoft.Bcl.TimeProvider" Version="10.0.11" />
+    <PackageVersion Include="Reservoir" Version="1.4.0" />
 
     <!-- Satellites -->
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.11" />

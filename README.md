@@ -1,6 +1,6 @@
 # Kevlar
 
-**Fast, zero-dependency resilience for .NET.** Retries, circuit breakers, timeouts, rate limiting, concurrency limiting, hedging and fallbacks — composed through one fluent, allocation-conscious Shield API.
+**Fast, allocation-conscious resilience for .NET.** Retries, circuit breakers, timeouts, rate limiting, concurrency limiting, hedging and fallbacks — composed through one fluent Shield API.
 
 ```csharp
 using Kevlar;
@@ -55,13 +55,13 @@ One clause up top decides what "failure" means for every strategy below it — e
 - **Hard to hold wrong.** Impossible chain orders throw at build time with the fix in the message, and the `Kevlar.Analyzers` package flags delegates that ignore their `CancellationToken` at compile time.
 - **Observable out of the box.** `shield.ToString()` prints the whole pipeline; every shield publishes metrics through a built-in `Meter` — no telemetry package, no setup.
 - **Composable.** Shields merge with `Wrap` and `Compose`, chain fluently, and stateful strategies (breakers, limiters) intentionally share their state wherever the same shield instance is reused.
-- **Broad reach.** `netstandard2.0` (covers .NET Framework 4.6.2+) and `net8.0` targets. The core has zero third-party dependencies.
+- **Broad reach.** `netstandard2.0` (covers .NET Framework 4.6.2+) and `net8.0` targets.
 
 ## Packages
 
 | Package | Purpose |
 |---|---|
-| `Kevlar` | The core: all strategies, zero dependencies |
+| `Kevlar` | The core: all strategies |
 | `Kevlar.Extensions.DependencyInjection` | Named shields, config-bound shields + `IKevlarRegistry` for Microsoft DI |
 | `Kevlar.Extensions.Http` | `HttpClientFactory` integration, transient-fault handling, `Retry-After` support |
 | `Kevlar.Analyzers` | Roslyn analyzers that catch resilience mistakes at compile time |

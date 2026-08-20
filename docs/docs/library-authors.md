@@ -42,7 +42,7 @@ The instinct to expose `IShield` comes from the "many implementations behind one
 
 This is the same conclusion Polly v8 reached: v7's `IAsyncPolicy` interfaces were dropped in favour of the concrete `ResiliencePipeline`, because no meaningful second implementation ever existed and the interface only bought virtual dispatch on the hot path.
 
-For the same reason there is no `Kevlar.Abstractions` package. Abstractions packages exist to spare library consumers a heavy dependency graph — but Kevlar has no dependencies to spare anyone from. Referencing `Kevlar` *is* referencing the abstraction.
+For the same reason there is no `Kevlar.Abstractions` package. Kevlar keeps its dependency graph small, and `Shield` is already the abstraction consumed by library code.
 
 And for testing, you don't need a mock: `Shield.Empty` is the no-op, and fault injection works better through a real shield with a [custom strategy](custom-strategies.md) — it exercises the actual engine. See [Testing Your Shields](testing.md).
 
