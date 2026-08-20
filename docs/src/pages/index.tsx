@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import clsx from 'clsx';
 import Link from '@docusaurus/Link';
 import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
 import Layout from '@theme/Layout';
@@ -9,9 +8,11 @@ import Heading from '@theme/Heading';
 import styles from './index.module.css';
 
 const heroSample = `var shield = Shield
-    .Timeout(TimeSpan.FromSeconds(30))   // total budget
-    .Retry(3)                            // backoff + jitter built in
-    .CircuitBreaker(5, breakDuration: TimeSpan.FromSeconds(30));
+    .Timeout(TimeSpan.FromSeconds(30))
+    .Retry(3)
+    .CircuitBreaker(
+        5,
+        breakDuration: TimeSpan.FromSeconds(30));
 
 var user = await shield.ExecuteAsync(
     ct => LoadUserAsync(id, ct), cancellationToken);`;
@@ -35,123 +36,177 @@ const pollySample = `var pipeline = new ResiliencePipelineBuilder()
 const kevlarSample = `var shield = Shield
     .Timeout(TimeSpan.FromSeconds(30))
     .Retry(3)
-    .CircuitBreaker(5, breakDuration: TimeSpan.FromSeconds(30));`;
+    .CircuitBreaker(5,
+        breakDuration: TimeSpan.FromSeconds(30));`;
+
+const strategies = [
+  'Retry',
+  'Circuit breaker',
+  'Timeout',
+  'Rate limit',
+  'Concurrency limit',
+  'Hedging',
+  'Fallback',
+];
 
 type FeatureItem = {
+  number: string;
   title: string;
   description: ReactNode;
+  accent: string;
 };
 
 const features: FeatureItem[] = [
   {
-    title: 'Intuitive first',
+    number: '01',
+    title: 'Readable by design',
+    accent: 'API',
     description: (
       <>
         <code>Shield.When&lt;TimeoutException&gt;().Retry(3)</code> reads like
-        what it does. No context pooling ceremony, no predicate-builder classes —
-        and full options objects when you want them.
+        intent, not infrastructure. Use concise defaults or take full control
+        with options objects.
       </>
     ),
   },
   {
-    title: 'Fast',
+    number: '02',
+    title: 'Built for the hot path',
+    accent: '100 ns',
     description: (
       <>
-        Outcomes flow between pipeline layers as structs instead of thrown
-        exceptions; contexts are pooled internally; state-passing overloads
-        eliminate closures; <code>ValueTask</code> end to end.
+        Struct outcomes, pooled contexts, state-passing overloads and{' '}
+        <code>ValueTask</code> end to end keep successful calls fast and
+        allocation-free.
       </>
     ),
   },
   {
-    title: 'Production defaults',
+    number: '03',
+    title: 'Defaults you can ship',
+    accent: 'SAFE',
     description: (
       <>
-        <code>Shield.Retry(3)</code> gives you exponential backoff{' '}
-        <em>with jitter</em> capped at 30s — the thing you'd have configured
-        anyway.
+        <code>Shield.Retry(3)</code> includes exponential backoff with jitter,
+        capped at 30 seconds—the production setting you wanted anyway.
       </>
     ),
   },
   {
-    title: 'Composable',
+    number: '04',
+    title: 'Composition, not ceremony',
+    accent: 'FLUENT',
     description: (
       <>
-        Shields merge with <code>Wrap</code> and <code>Compose</code>, chain
-        fluently, and stateful strategies intentionally share their state
-        wherever the same shield instance is reused.
+        Chain strategies fluently. Merge shields with <code>Wrap</code> and{' '}
+        <code>Compose</code>. Reuse one instance when state should be shared.
       </>
     ),
   },
   {
-    title: 'Zero dependencies',
+    number: '05',
+    title: 'Nothing hiding underneath',
+    accent: '0 DEPS',
     description: (
       <>
-        The core package depends on nothing but the BCL. No transitive baggage
-        in your dependency tree.
+        Core Kevlar depends on nothing but the BCL. No surprise transitive
+        packages, version conflicts or dependency-tree baggage.
       </>
     ),
   },
   {
-    title: 'Broad reach',
+    number: '06',
+    title: 'Old apps. New apps.',
+    accent: '.NET',
     description: (
       <>
-        <code>netstandard2.0</code> (covers .NET Framework 4.6.2+) and{' '}
-        <code>net8.0</code> targets, with satellites for Microsoft DI and{' '}
-        <code>HttpClientFactory</code>.
+        Targets <code>netstandard2.0</code> and <code>net8.0</code>, with
+        integrations for Microsoft DI and <code>HttpClientFactory</code>.
       </>
     ),
   },
 ];
 
-function Feature({ title, description }: FeatureItem) {
+function ArrowIcon() {
   return (
-    <div className={clsx('col col--4')}>
-      <div className={styles.featureCard}>
-        <Heading as="h3">{title}</Heading>
-        <p>{description}</p>
+    <svg viewBox="0 0 20 20" aria-hidden="true">
+      <path d="M4 10h11M11 6l4 4-4 4" />
+    </svg>
+  );
+}
+
+function Feature({ number, title, description, accent }: FeatureItem) {
+  return (
+    <article className={styles.featureCard}>
+      <div className={styles.featureMeta}>
+        <span>{number}</span>
+        <span>{accent}</span>
       </div>
-    </div>
+      <Heading as="h3">{title}</Heading>
+      <p>{description}</p>
+      <div className={styles.featureWeave} aria-hidden="true" />
+    </article>
   );
 }
 
 function HomepageHeader() {
-  const { siteConfig } = useDocusaurusContext();
   return (
     <header className={styles.hero}>
+      <div className={styles.heroGrid} aria-hidden="true" />
       <div className="container">
         <div className={styles.heroInner}>
           <div className={styles.heroText}>
-            <img
-              src="img/logo.svg"
-              alt=""
-              className={styles.heroLogo}
-              width={96}
-              height={96}
-            />
+            <div className={styles.eyebrow}>
+              <span className={styles.statusDot} />
+              Resilience engineering, refined
+            </div>
             <Heading as="h1" className={styles.heroTitle}>
-              {siteConfig.title}
+              Code that stays
+              <span> standing.</span>
             </Heading>
             <p className={styles.heroTagline}>
-              Retries, circuit breakers, timeouts, rate limiting, concurrency limits,
-              hedging and fallbacks — composed through one fluent,
-              allocation-conscious shield API.
+              Fast, zero-dependency resilience for .NET. Every strategy you
+              need, composed through one fluent shield API.
             </p>
             <div className={styles.buttons}>
-              <Link
-                className="button button--primary button--lg"
-                to="/docs/getting-started">
-                Get Started
+              <Link className={styles.primaryButton} to="/docs/getting-started">
+                Build your first shield
+                <ArrowIcon />
               </Link>
               <Link
-                className="button button--secondary button--outline button--lg"
+                className={styles.secondaryButton}
                 href="https://github.com/thomhurst/Kevlar">
-                GitHub
+                View on GitHub
               </Link>
             </div>
+            <div className={styles.installLine}>
+              <span>INSTALL</span>
+              <code>dotnet add package Kevlar</code>
+            </div>
           </div>
-          <div className={styles.heroCode}>
-            <CodeBlock language="csharp">{heroSample}</CodeBlock>
+
+          <div className={styles.heroVisual}>
+            <div className={styles.codeGlow} aria-hidden="true" />
+            <div className={styles.codeWindow}>
+              <div className={styles.codeBar}>
+                <div className={styles.windowDots} aria-hidden="true">
+                  <span />
+                  <span />
+                  <span />
+                </div>
+                <span>ResilientUserService.cs</span>
+                <span className={styles.liveLabel}>SHIELD ACTIVE</span>
+              </div>
+              <CodeBlock language="csharp">{heroSample}</CodeBlock>
+              <div className={styles.codeFooter}>
+                <span><i /> Request protected</span>
+                <span>0 B allocated</span>
+              </div>
+            </div>
+            <div className={styles.floatingBadge} aria-hidden="true">
+              <span>7</span>
+              strategies
+            </div>
           </div>
         </div>
       </div>
@@ -159,32 +214,130 @@ function HomepageHeader() {
   );
 }
 
+function StrategyRail() {
+  return (
+    <section className={styles.strategyRail} aria-label="Available strategies">
+      <div className="container">
+        <div className={styles.strategyInner}>
+          <span className={styles.strategyLabel}>One shield. Every failure mode.</span>
+          <div className={styles.strategyList}>
+            {strategies.map((strategy) => (
+              <span key={strategy}>{strategy}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Features() {
+  return (
+    <section className={styles.features}>
+      <div className="container">
+        <div className={styles.sectionIntro}>
+          <div>
+            <span className={styles.kicker}>Engineered differently</span>
+            <Heading as="h2">Less framework.<br />More resilience.</Heading>
+          </div>
+          <p>
+            Kevlar strips away accidental complexity without giving up the
+            control, performance or observability production systems need.
+          </p>
+        </div>
+        <div className={styles.featureGrid}>
+          {features.map((feature) => (
+            <Feature key={feature.number} {...feature} />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ProofBand() {
+  return (
+    <section className={styles.proofBand} aria-label="Kevlar performance summary">
+      <div className="container">
+        <div className={styles.proofGrid}>
+          <div className={styles.proofLead}>
+            <span className={styles.kicker}>Measured, not marketed</span>
+            <Heading as="h2">Tiny overhead.<br />Serious protection.</Heading>
+          </div>
+          <div className={styles.metric}>
+            <strong>100<span> ns</span></strong>
+            <p>Successful Retry(3) execution</p>
+          </div>
+          <div className={styles.metric}>
+            <strong>0<span> B</span></strong>
+            <p>Allocated on the happy path</p>
+          </div>
+          <div className={styles.metric}>
+            <strong>0<span> deps</span></strong>
+            <p>In the core package</p>
+          </div>
+        </div>
+        <Link className={styles.proofLink} to="/docs/performance">
+          Explore the benchmarks <ArrowIcon />
+        </Link>
+      </div>
+    </section>
+  );
+}
+
 function Comparison() {
   return (
     <section className={styles.comparison}>
       <div className="container">
-        <Heading as="h2" className="text--center">
-          Same pipeline, less ceremony
-        </Heading>
-        <p className="text--center">
-          Everything Polly v8 can express, without the options-object tax.
-        </p>
-        <div className="row">
-          <div className="col col--6">
-            <h3 className="text--center">Polly v8</h3>
-            <CodeBlock language="csharp">{pollySample}</CodeBlock>
+        <div className={styles.comparisonHeader}>
+          <div>
+            <span className={styles.kicker}>The fluent difference</span>
+            <Heading as="h2">Same pipeline.<br />Less ceremony.</Heading>
           </div>
-          <div className="col col--6">
-            <h3 className="text--center">Kevlar</h3>
-            <CodeBlock language="csharp">{kevlarSample}</CodeBlock>
-            <div className={styles.benchCallout}>
-              <p>
-                And it's quicker, too — <strong>100 ns / 0 B</strong> for a
-                successful <code>Retry(3)</code> call vs 154 ns / 24 B for Polly
-                v8. <Link to="/docs/performance">See the benchmarks →</Link>
-              </p>
+          <p>
+            Express the resilience pipeline directly. Sensible defaults stay
+            concise; full configuration remains one options object away.
+          </p>
+        </div>
+        <div className={styles.comparisonGrid}>
+          <article className={styles.compareCard}>
+            <div className={styles.compareTitle}>
+              <span>Polly v8</span>
+              <span>Configuration</span>
             </div>
+            <CodeBlock language="csharp">{pollySample}</CodeBlock>
+          </article>
+          <article className={`${styles.compareCard} ${styles.kevlarCard}`}>
+            <div className={styles.compareTitle}>
+              <span>Kevlar</span>
+              <span>Intent</span>
+            </div>
+            <CodeBlock language="csharp">{kevlarSample}</CodeBlock>
+            <div className={styles.compareResult}>
+              <span>Same behavior</span>
+              <strong>10 fewer lines</strong>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function FinalCta() {
+  return (
+    <section className={styles.finalCta}>
+      <div className="container">
+        <div className={styles.ctaPanel}>
+          <div className={styles.ctaMark} aria-hidden="true">K</div>
+          <div>
+            <span className={styles.kicker}>Ready for impact</span>
+            <Heading as="h2">Wrap your first call in minutes.</Heading>
           </div>
+          <Link className={styles.primaryButton} to="/docs/getting-started">
+            Get started
+            <ArrowIcon />
+          </Link>
         </div>
       </div>
     </section>
@@ -198,17 +351,12 @@ export default function Home(): ReactNode {
       title={siteConfig.title}
       description="Fast, zero-dependency resilience for .NET — retries, circuit breakers, timeouts, rate limiting, concurrency limits, hedging and fallbacks through one fluent shield API.">
       <HomepageHeader />
-      <main>
-        <section className={styles.features}>
-          <div className="container">
-            <div className="row">
-              {features.map((props, idx) => (
-                <Feature key={idx} {...props} />
-              ))}
-            </div>
-          </div>
-        </section>
+      <main className={styles.main}>
+        <StrategyRail />
+        <Features />
+        <ProofBand />
         <Comparison />
+        <FinalCta />
       </main>
     </Layout>
   );

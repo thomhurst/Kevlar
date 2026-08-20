@@ -14,7 +14,23 @@
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
   --ifm-font-family-base: 'Inter', system-ui, -apple-system, 'Segoe UI',
     Roboto, Helvetica, Arial, sans-serif;
-  --kevlar-hero-bg: linear-gradient(180deg, #14181f 0%, #0b0e14 100%);
+  --ifm-heading-font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --kevlar-display: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --kevlar-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+  --kevlar-gold: #f0ae28;
+  --kevlar-gold-dark: #9a6700;
+  --kevlar-gold-border: rgba(154, 103, 0, 0.35);
+  --kevlar-page-bg: #faf8f2;
+  --kevlar-section-alt: #f2efe7;
+  --kevlar-card-bg: #fffdf8;
+  --kevlar-card-hover: #fffaf0;
+  --kevlar-heading: #171914;
+  --kevlar-muted: #62675f;
+  --kevlar-faint: #969b92;
+  --kevlar-line: #dedbd2;
+  --kevlar-inline-code: #7c5504;
+  --kevlar-weave: rgba(154, 103, 0, 0.22);
+  --kevlar-shadow: rgba(80, 58, 12, 0.09);
 }
 
 [data-theme='dark'] {
@@ -28,17 +44,58 @@
   --ifm-background-color: #0e1117;
   --ifm-background-surface-color: #161b24;
   --docusaurus-highlighted-code-line-bg: rgba(255, 255, 255, 0.08);
+  --kevlar-gold-dark: #f0ae28;
+  --kevlar-gold-border: rgba(240, 174, 40, 0.28);
+  --kevlar-page-bg: #0d0f0e;
+  --kevlar-section-alt: #111310;
+  --kevlar-card-bg: #131613;
+  --kevlar-card-hover: #181b17;
+  --kevlar-heading: #f0eee7;
+  --kevlar-muted: #999e97;
+  --kevlar-faint: #666b65;
+  --kevlar-line: #292c28;
+  --kevlar-inline-code: #dcb55f;
+  --kevlar-weave: rgba(240, 174, 40, 0.22);
+  --kevlar-shadow: rgba(0, 0, 0, 0.3);
 }
 
-[data-theme='dark'] .navbar {
-  background: rgba(14, 17, 23, 0.85);
-  backdrop-filter: blur(8px);
+.navbar {
+  border-bottom: 1px solid var(--kevlar-line);
+  box-shadow: none;
+  background: color-mix(in srgb, var(--kevlar-page-bg) 88%, transparent);
+  backdrop-filter: blur(14px);
+}
+
+.navbar__title {
+  font-family: var(--kevlar-display);
+  font-size: 1.15rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.navbar__link {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.footer--dark {
+  --ifm-footer-background-color: #090b0a;
+  border-top: 1px solid #252824;
 }
 
 /* Code blocks: match the dracula-based prism theme edge to edge. */
 .theme-code-block {
   --prism-background-color: #14181f !important;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+
+.button {
+  border-radius: 2px;
+}
+
+::selection {
+  color: #17130b;
+  background: #f0ae28;
 }
 
 /* Inline code should stay quiet. */
