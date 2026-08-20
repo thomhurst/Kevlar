@@ -1,4 +1,5 @@
 using Kevlar.Internal;
+using Reservoir;
 
 namespace Kevlar.Strategies;
 
@@ -21,42 +22,95 @@ internal sealed class TimeoutStrategy : Strategy
 
     public override string Describe() => $"Timeout({DescribeHelper.Time(_timeout)})";
 
-    public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
+    public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
         var priorToken = context.CancellationToken;
-        var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(priorToken);
-        var timer = context.TimeProvider.CreateTimer(
-            static state =>
-            {
-                try
-                {
-                    ((CancellationTokenSource)state!).Cancel();
-                }
-                catch (ObjectDisposedException)
-                {
-                    // The execution completed and disposed the source while the timer was firing.
-                }
-            },
-            timeoutSource,
-            _timeout,
-            System.Threading.Timeout.InfiniteTimeSpan);
+        var timeoutSource = CancellationTokenSourcePool.Shared.RentLinked(priorToken);
+        ITimer? timer = null;
 
+        if (ReferenceEquals(context.TimeProvider, TimeProvider.System))
+        {
+            timeoutSource.CancelAfter(_timeout);
+        }
+        else
+        {
+            timer = context.TimeProvider.CreateTimer(
+                static state =>
+                {
+                    try
+                    {
+                        ((CancellationTokenSource)state!).Cancel();
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        // The execution completed and disposed the source while the timer was firing.
+                    }
+                },
+                timeoutSource,
+                _timeout,
+                System.Threading.Timeout.InfiniteTimeSpan);
+        }
+
+        ValueTask<Outcome<T>> execution;
+
+        try
+        {
+            context.CancellationToken = timeoutSource.Token;
+            execution = next.InvokeAsync(context);
+        }
+        catch
+        {
+            Cleanup(context, priorToken, timeoutSource, timer);
+            throw;
+        }
+
+        if (!execution.IsCompletedSuccessfully)
+        {
+            return AwaitAsync(execution, context, priorToken, timeoutSource, timer);
+        }
+
+        var outcome = execution.Result;
+        var timedOut = Cleanup(context, priorToken, timeoutSource, timer);
+        return new ValueTask<Outcome<T>>(HandleOutcome(outcome, timedOut, context));
+    }
+
+    private async ValueTask<Outcome<T>> AwaitAsync<T>(
+        ValueTask<Outcome<T>> execution,
+        KevlarContext context,
+        CancellationToken priorToken,
+        CancellationTokenSource timeoutSource,
+        ITimer? timer)
+    {
         Outcome<T> outcome;
         bool timedOut;
 
         try
         {
-            context.CancellationToken = timeoutSource.Token;
-            outcome = await next.InvokeAsync(context).ConfigureAwait(false);
+            outcome = await execution.ConfigureAwait(false);
         }
         finally
         {
-            context.CancellationToken = priorToken;
-            timer.Dispose();
-            timedOut = timeoutSource.IsCancellationRequested && !priorToken.IsCancellationRequested;
-            timeoutSource.Dispose();
+            timedOut = Cleanup(context, priorToken, timeoutSource, timer);
         }
 
+        return HandleOutcome(outcome, timedOut, context);
+    }
+
+    private static bool Cleanup(
+        KevlarContext context,
+        CancellationToken priorToken,
+        CancellationTokenSource timeoutSource,
+        ITimer? timer)
+    {
+        context.CancellationToken = priorToken;
+        timer?.Dispose();
+        var timedOut = timeoutSource.IsCancellationRequested && !priorToken.IsCancellationRequested;
+        timeoutSource.Dispose();
+        return timedOut;
+    }
+
+    private Outcome<T> HandleOutcome<T>(Outcome<T> outcome, bool timedOut, KevlarContext context)
+    {
         if (timedOut && outcome.Exception is OperationCanceledException)
         {
             KevlarMetrics.Timeout(context.ShieldName);
