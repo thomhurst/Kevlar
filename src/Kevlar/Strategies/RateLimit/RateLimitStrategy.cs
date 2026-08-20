@@ -86,7 +86,7 @@ internal sealed class RateLimitStrategy : Strategy
         {
             var theoreticalArrival = Volatile.Read(ref _theoreticalArrival);
             var now = GetCurrentTimestamp(timeProvider);
-            var delayTimestampUnits = theoreticalArrival - _burstTolerance - now;
+            var delayTimestampUnits = theoreticalArrival - now - _burstTolerance;
 
             if (delayTimestampUnits > _queueTolerance)
             {
@@ -95,7 +95,13 @@ internal sealed class RateLimitStrategy : Strategy
                 return false;
             }
 
-            var nextArrival = Math.Max(now, theoreticalArrival) + _timestampUnitsPerPermit;
+            var arrival = Math.Max(now, theoreticalArrival);
+            var nextArrival = arrival + _timestampUnitsPerPermit;
+            if (nextArrival == arrival)
+            {
+                nextArrival = GetNextRepresentableTimestamp(arrival);
+            }
+
             if (Interlocked.CompareExchange(ref _theoreticalArrival, nextArrival, theoreticalArrival) == theoreticalArrival)
             {
                 wait = delayTimestampUnits > 0
@@ -105,6 +111,12 @@ internal sealed class RateLimitStrategy : Strategy
                 return true;
             }
         }
+    }
+
+    private static double GetNextRepresentableTimestamp(double timestamp)
+    {
+        var bits = BitConverter.DoubleToInt64Bits(timestamp);
+        return BitConverter.Int64BitsToDouble(timestamp < 0 ? bits - 1 : bits + 1);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -263,6 +263,27 @@ public class RateLimitEdgeCaseTests
     }
 
     [Test]
+    public async Task Large_Elapsed_Timestamp_Preserves_High_Rate_Intervals()
+    {
+        var timeProvider = new FixedTimestampTimeProvider(0);
+        var shield = Shield
+            .RateLimit(options =>
+            {
+                options.Permits = 1_000_000;
+                options.Window = TimeSpan.FromSeconds(1);
+                options.Burst = 1;
+            })
+            .WithTimeProvider(timeProvider);
+
+        await shield.ExecuteAsync(_ => new ValueTask<int>(1));
+        timeProvider.AdvanceTimestamp(long.MaxValue / 2);
+        await shield.ExecuteAsync(_ => new ValueTask<int>(2));
+
+        await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(3)))
+            .Throws<RateLimitExceededException>();
+    }
+
+    [Test]
     public async Task System_And_Custom_Provider_Copies_Share_A_Timeline()
     {
         var shield = Shield.RateLimit(1, TimeSpan.FromSeconds(1));
@@ -293,7 +314,7 @@ public class RateLimitEdgeCaseTests
 
     private sealed class FixedTimestampTimeProvider : TimeProvider
     {
-        private readonly long _timestamp;
+        private long _timestamp;
         private readonly long _timestampFrequency;
 
         public FixedTimestampTimeProvider(long timestamp, long timestampFrequency = TimeSpan.TicksPerSecond)
@@ -304,7 +325,9 @@ public class RateLimitEdgeCaseTests
 
         public override long TimestampFrequency => _timestampFrequency;
 
-        public override long GetTimestamp() => _timestamp;
+        public override long GetTimestamp() => Volatile.Read(ref _timestamp);
+
+        public void AdvanceTimestamp(long delta) => Interlocked.Add(ref _timestamp, delta);
     }
 
     private sealed class ContendedTimestampTimeProvider : TimeProvider, IDisposable
