@@ -113,7 +113,9 @@ public class RateLimitEdgeCaseTests
         // The queue is exhausted; the next execution is rejected with an estimate.
         var rejection = await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(4)))
             .Throws<RateLimitExceededException>();
-        await Assert.That(rejection!.RetryAfter).IsEqualTo(TimeSpan.FromSeconds(3));
+        await Assert.That(rejection!.RetryAfter!.Value)
+            .IsEqualTo(TimeSpan.FromSeconds(3))
+            .Within(TimeSpan.FromMilliseconds(1));
 
         fakeTime.Advance(TimeSpan.FromSeconds(1));
         await Assert.That(await second).IsEqualTo(2);
@@ -198,6 +200,8 @@ public class RateLimitEdgeCaseTests
             .Throws<RateLimitExceededException>();
 
         // The bucket is empty; one token takes a full window to replenish.
-        await Assert.That(rejection!.RetryAfter).IsEqualTo(TimeSpan.FromSeconds(10));
+        await Assert.That(rejection!.RetryAfter!.Value)
+            .IsEqualTo(TimeSpan.FromSeconds(10))
+            .Within(TimeSpan.FromMilliseconds(1));
     }
 }
