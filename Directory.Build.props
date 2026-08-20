@@ -16,7 +16,7 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/thomhurst/Kevlar</RepositoryUrl>
     <PackageProjectUrl>https://github.com/thomhurst/Kevlar</PackageProjectUrl>
-    <Version>0.1.0</Version>
+    <!-- Version comes from GitVersion in CI (-p:Version=...); local builds use the SDK default. -->
   </PropertyGroup>
 
 </Project>
