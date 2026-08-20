@@ -30,6 +30,7 @@ const sidebars: SidebarsConfig = {
     'dependency-injection',
     'http',
     'custom-strategies',
+    'library-authors',
     'observability',
     'testing',
     'performance',

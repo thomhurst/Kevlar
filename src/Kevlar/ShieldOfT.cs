@@ -29,7 +29,8 @@ public sealed class Shield<TResult>
     /// <summary>The shield's diagnostic name, if assigned via <see cref="WithName"/>.</summary>
     public string? Name { get; }
 
-    internal static Shield<TResult> Empty { get; } = new([], null, null, null);
+    /// <summary>A shield with no strategies: executions pass straight through.</summary>
+    public static Shield<TResult> Empty { get; } = new([], null, null, null);
 
     internal OutcomeJudge JudgeOrDefault => Ambient ?? OutcomeJudge.Default;
 
