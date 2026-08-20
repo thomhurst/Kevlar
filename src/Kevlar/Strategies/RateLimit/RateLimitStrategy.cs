@@ -22,7 +22,7 @@ internal sealed class RateLimitStrategy : Strategy
     private readonly double _burstTolerance;
     private readonly double _queueTolerance;
 
-    private double _theoreticalArrival;
+    private double _theoreticalArrival = double.NegativeInfinity;
 
     public RateLimitStrategy(RateLimitOptions options)
     {

@@ -204,4 +204,25 @@ public class RateLimitEdgeCaseTests
             .IsEqualTo(TimeSpan.FromSeconds(10))
             .Within(TimeSpan.FromMilliseconds(1));
     }
+
+    [Test]
+    public async Task Negative_Timestamp_Epoch_Allows_The_Initial_Burst()
+    {
+        var shield = Shield
+            .RateLimit(1, TimeSpan.FromSeconds(1))
+            .WithTimeProvider(new NegativeTimestampTimeProvider());
+
+        var result = await shield.ExecuteAsync(_ => new ValueTask<int>(1));
+        await Assert.That(result).IsEqualTo(1);
+
+        await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(2)))
+            .Throws<RateLimitExceededException>();
+    }
+
+    private sealed class NegativeTimestampTimeProvider : TimeProvider
+    {
+        public override long TimestampFrequency => TimeSpan.TicksPerSecond;
+
+        public override long GetTimestamp() => -TimeSpan.TicksPerSecond;
+    }
 }
