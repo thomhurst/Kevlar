@@ -10,6 +10,7 @@
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" />
     <PackageReference Include="Polly" />
+    <PackageReference Include="Polly.RateLimiting" />
   </ItemGroup>
 
   <ItemGroup>
