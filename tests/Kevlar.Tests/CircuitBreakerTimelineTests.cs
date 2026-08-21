@@ -24,7 +24,7 @@ public class CircuitBreakerTimelineTests
     }
 
     [Test]
-    public async Task Timestamp_Crossing_Signed_Boundary_Does_Not_Expire_Circuit()
+    public async Task Timestamp_Rollover_Preserves_Elapsed_Break_Duration()
     {
         var timeProvider = new ManualTimeProvider(DateTimeOffset.UtcNow, long.MaxValue - 5);
         var shield = Shield.CircuitBreaker(1, TimeSpan.FromTicks(10)).WithTimeProvider(timeProvider);
@@ -32,11 +32,9 @@ public class CircuitBreakerTimelineTests
         await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
         timeProvider.SetTimestamp(long.MinValue + 5);
 
-        var rejection = await Assert.That(async () =>
-                await shield.ExecuteAsync(_ => new ValueTask<int>(1)))
-            .Throws<CircuitOpenException>();
+        var result = await shield.ExecuteAsync(_ => new ValueTask<int>(42));
 
-        await Assert.That(rejection!.RetryAfter).IsEqualTo(TimeSpan.FromTicks(10));
+        await Assert.That(result).IsEqualTo(42);
     }
 
     [Test]

@@ -317,9 +317,10 @@ internal sealed class CircuitBreakerCore
             return _latestTimestamp;
         }
 
+        var elapsedTimestamp = unchecked(timestamp - origin.ProviderTimestamp);
         return UpdateTimeline(
             origin.TimelineTimestamp
-            + ((double)((decimal)timestamp - origin.ProviderTimestamp) * origin.TimestampScale));
+            + (elapsedTimestamp * origin.TimestampScale));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
