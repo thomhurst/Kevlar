@@ -345,6 +345,37 @@ public class IgnoredCancellationTokenTests
     }
 
     [Test]
+    public async Task Latest_Context_Assignment_Restores_Alias_State()
+    {
+        var diagnostics = await AnalyzeAsync("""
+            KevlarContext state = null!;
+            await Shield.Empty.ExecuteWithContextAsync(
+                state,
+                static (_, _) => { },
+                static (other, context) =>
+                {
+                    KevlarContext active = other;
+                    active = context;
+                    return new ValueTask<int>(active.CancellationToken.GetHashCode());
+                });
+            """);
+
+        await Assert.That(diagnostics.Length).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Delegate_Valued_State_Is_Not_Analyzed_As_The_Action()
+    {
+        var diagnostics = await AnalyzeAsync("""
+            var result = Shield.Empty.Execute<int, Func<CancellationToken, int>>(
+                ignored => 1,
+                static (state, cancellationToken) => state(cancellationToken) + cancellationToken.GetHashCode());
+            """);
+
+        await Assert.That(diagnostics.Length).IsEqualTo(0);
+    }
+
+    [Test]
     public async Task CancellationToken_State_Does_Not_Suppress_The_Execution_Token()
     {
         var diagnostics = await AnalyzeAsync("""

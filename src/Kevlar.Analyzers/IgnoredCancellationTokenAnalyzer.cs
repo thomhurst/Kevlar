@@ -47,12 +47,8 @@ public sealed class IgnoredCancellationTokenAnalyzer : DiagnosticAnalyzer
 
         foreach (var argument in invocation.Arguments)
         {
-            if (argument.Value is not IDelegateCreationOperation { Target: IAnonymousFunctionOperation lambda })
-            {
-                continue;
-            }
-
-            if (argument.Parameter?.Name == "initializeProperties")
+            if (argument.Parameter?.Name != "action"
+                || argument.Value is not IDelegateCreationOperation { Target: IAnonymousFunctionOperation lambda })
             {
                 continue;
             }
@@ -169,7 +165,7 @@ public sealed class IgnoredCancellationTokenAnalyzer : DiagnosticAnalyzer
                 && SymbolEqualityComparer.Default.Equals(containingType, contextType)
                 && ReferencesAlias(
                     instance,
-                    FindLocalAliases(root, contextParameter, operation.Syntax.SpanStart)))
+                    FindLocalAliases(root, contextParameter, operation)))
             {
                 return true;
             }
@@ -178,7 +174,7 @@ public sealed class IgnoredCancellationTokenAnalyzer : DiagnosticAnalyzer
                 && IsDirectArgumentValue(operation)
                 && IsAliasReference(
                     operation,
-                    FindLocalAliases(root, contextParameter, operation.Syntax.SpanStart)))
+                    FindLocalAliases(root, contextParameter, operation)))
             {
                 return true;
             }
@@ -190,8 +186,10 @@ public sealed class IgnoredCancellationTokenAnalyzer : DiagnosticAnalyzer
     private static HashSet<ISymbol> FindLocalAliases(
         IOperation root,
         IParameterSymbol contextParameter,
-        int beforePosition)
+        IOperation beforeOperation)
     {
+        var beforePosition = beforeOperation.Syntax.SpanStart;
+        var containingBlock = FindContainingBlock(beforeOperation);
         var aliases = new HashSet<ISymbol>(SymbolEqualityComparer.Default) { contextParameter };
         var definitions = Descendants(root)
             .Select(operation => operation switch
@@ -200,27 +198,44 @@ public sealed class IgnoredCancellationTokenAnalyzer : DiagnosticAnalyzer
                 {
                     Initializer.Value: { } value,
                     Symbol: { } local,
-                } when value.Syntax.SpanStart < beforePosition => (Local: local, Value: value),
+                } when value.Syntax.SpanStart < beforePosition =>
+                    (Local: local, Value: value, Definition: operation),
                 ISimpleAssignmentOperation
                 {
                     Target: { } target,
                     Value: { } value,
                 } when value.Syntax.SpanStart < beforePosition
-                    && Unwrap(target) is ILocalReferenceOperation local => (Local: local.Local, Value: value),
+                    && Unwrap(target) is ILocalReferenceOperation local =>
+                    (Local: local.Local, Value: value, Definition: operation),
                 _ => default,
             })
             .Where(definition => definition.Local is not null)
             .GroupBy(definition => definition.Local, SymbolEqualityComparer.Default)
+            .Select(definitionsForLocal =>
+            {
+                var orderedDefinitions = definitionsForLocal
+                    .OrderBy(definition => definition.Definition.Syntax.SpanStart)
+                    .ToArray();
+                var latestDefinitionInBlock = Array.FindLastIndex(
+                    orderedDefinitions,
+                    definition => ReferenceEquals(
+                        FindContainingBlock(definition.Definition),
+                        containingBlock));
+                var reachingDefinitions = latestDefinitionInBlock < 0
+                    ? orderedDefinitions
+                    : orderedDefinitions.Skip(latestDefinitionInBlock).ToArray();
+                return (Local: definitionsForLocal.Key!, Reaching: reachingDefinitions);
+            })
             .ToArray();
 
         bool foundAlias;
         do
         {
             foundAlias = false;
-            foreach (var definitionsForLocal in definitions)
+            foreach (var definition in definitions)
             {
-                if (definitionsForLocal.All(definition => ReferencesAlias(definition.Value, aliases))
-                    && aliases.Add(definitionsForLocal.Key!))
+                if (definition.Reaching.All(candidate => ReferencesAlias(candidate.Value, aliases))
+                    && aliases.Add(definition.Local))
                 {
                     foundAlias = true;
                 }
@@ -229,6 +244,19 @@ public sealed class IgnoredCancellationTokenAnalyzer : DiagnosticAnalyzer
         while (foundAlias);
 
         return aliases;
+    }
+
+    private static IBlockOperation? FindContainingBlock(IOperation operation)
+    {
+        for (var current = operation.Parent; current is not null; current = current.Parent)
+        {
+            if (current is IBlockOperation block)
+            {
+                return block;
+            }
+        }
+
+        return null;
     }
 
     private static bool ReferencesAlias(IOperation operation, HashSet<ISymbol> aliases)
