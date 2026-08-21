@@ -549,6 +549,164 @@ public class GrpcResilienceTests
         await Assert.That(response.Attempt).IsEqualTo(2);
     }
 
+    [Test]
+    public async Task Named_DI_Shield_Configures_Streaming_Operations()
+    {
+        await using var server = await GrpcTestServer.StartAsync();
+        var services = new ServiceCollection();
+        services.AddShield("grpc-stream", Shield.Timeout(TimeSpan.FromSeconds(5)));
+        services.AddGrpcClient<Resilience.ResilienceClient>(options =>
+            options.Address = new Uri("http://localhost"))
+            .ConfigurePrimaryHttpMessageHandler(server.CreateHandler)
+            .AddShieldStreamingInterceptor("grpc-stream");
+        await using var provider = services.BuildServiceProvider();
+        using var call = provider.GetRequiredService<Resilience.ResilienceClient>().ClientStream();
+
+        await call.RequestStream.WriteAsync(new TestRequest());
+        await call.RequestStream.CompleteAsync();
+        var response = await call.ResponseAsync;
+
+        await Assert.That(response.Attempt).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Server_Streaming_Retries_The_Loopback_Call_Before_Progress()
+    {
+        await using var server = await GrpcTestServer.StartAsync();
+        using var call = server.StreamingClient(
+                GrpcShield.WhenTransient().Retry(1, Backoff.None))
+            .ServerStream(new TestRequest { Scenario = "stream-transient" });
+
+        var hasNext = await call.ResponseStream.MoveNext(CancellationToken.None);
+
+        await Assert.That(hasNext).IsTrue();
+        await Assert.That(call.ResponseStream.Current.Attempt).IsEqualTo(2);
+        await Assert.That((await call.ResponseHeadersAsync).GetValue("attempt")).IsEqualTo("2");
+        await Assert.That(await call.ResponseStream.MoveNext(CancellationToken.None)).IsFalse();
+        await Assert.That(call.GetStatus().StatusCode).IsEqualTo(StatusCode.OK);
+        await Assert.That(call.GetTrailers().GetValue("completed")).IsEqualTo("true");
+        await Assert.That(server.State.Attempts("stream-transient")).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task Client_Streaming_Loopback_Writes_Each_Message_Once()
+    {
+        await using var server = await GrpcTestServer.StartAsync();
+        using var call = server.StreamingClient(Shield.Empty).ClientStream();
+
+        await call.RequestStream.WriteAsync(new TestRequest { Scenario = "first" });
+        await call.RequestStream.WriteAsync(new TestRequest { Scenario = "second" });
+        await call.RequestStream.CompleteAsync();
+        var response = await call.ResponseAsync;
+
+        await Assert.That(response.Attempt).IsEqualTo(2);
+        await Assert.That((await call.ResponseHeadersAsync).GetValue("shape")).IsEqualTo("client");
+        await Assert.That(call.GetTrailers().GetValue("completed")).IsEqualTo("true");
+    }
+
+    [Test]
+    public async Task Duplex_Streaming_Loopback_Does_Not_Buffer_Or_Duplicate_Messages()
+    {
+        await using var server = await GrpcTestServer.StartAsync();
+        using var call = server.StreamingClient(Shield.Empty).DuplexStream();
+
+        await call.RequestStream.WriteAsync(new TestRequest { Scenario = "first" });
+        await Assert.That(await call.ResponseStream.MoveNext(CancellationToken.None)).IsTrue();
+        await Assert.That(call.ResponseStream.Current.Attempt).IsEqualTo(1);
+        await call.RequestStream.WriteAsync(new TestRequest { Scenario = "second" });
+        await Assert.That(await call.ResponseStream.MoveNext(CancellationToken.None)).IsTrue();
+        await Assert.That(call.ResponseStream.Current.Attempt).IsEqualTo(2);
+        await call.RequestStream.CompleteAsync();
+        await Assert.That(await call.ResponseStream.MoveNext(CancellationToken.None)).IsFalse();
+    }
+
+    [Test]
+    public async Task Server_Streaming_Loopback_Does_Not_Retry_After_Partial_Progress()
+    {
+        await using var server = await GrpcTestServer.StartAsync();
+        using var call = server.StreamingClient(
+                GrpcShield.WhenTransient().Retry(2, Backoff.None))
+            .ServerStream(new TestRequest { Scenario = "stream-mid-failure" });
+
+        await Assert.That(await call.ResponseStream.MoveNext(CancellationToken.None)).IsTrue();
+        var exception = await Assert.That(async () =>
+                await call.ResponseStream.MoveNext(CancellationToken.None))
+            .Throws<RpcException>();
+
+        await Assert.That(exception!.StatusCode).IsEqualTo(StatusCode.Unavailable);
+        await Assert.That(server.State.Attempts("stream-mid-failure")).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Server_Streaming_Loopback_Caller_Cancellation_Preserves_The_Token()
+    {
+        await using var server = await GrpcTestServer.StartAsync();
+        using var cancellation = new CancellationTokenSource();
+        using var call = server.StreamingClient(Shield.Empty).ServerStream(
+            new TestRequest { Scenario = "stream-wait" },
+            cancellationToken: cancellation.Token);
+        var move = call.ResponseStream.MoveNext(CancellationToken.None);
+        await server.State.WaitForEntryAsync().WaitAsync(TimeSpan.FromSeconds(5));
+
+        cancellation.Cancel();
+        var exception = await Assert.That(async () => await move)
+            .Throws<OperationCanceledException>();
+
+        await Assert.That(exception!.CancellationToken).IsEqualTo(cancellation.Token);
+        await server.State.WaitForCancellationAsync().WaitAsync(TimeSpan.FromSeconds(5));
+    }
+
+    [Test]
+    public async Task Server_Streaming_Loopback_Deadline_Owns_The_Total_Lifetime()
+    {
+        await using var server = await GrpcTestServer.StartAsync();
+        using var call = server.StreamingClient(
+                GrpcShield.WhenTransient().RetryForever(Backoff.None))
+            .ServerStream(
+                new TestRequest { Scenario = "stream-wait" },
+                deadline: DateTime.UtcNow.AddMilliseconds(250));
+
+        var exception = await Assert.That(async () =>
+                await call.ResponseStream.MoveNext(CancellationToken.None)
+                    .WaitAsync(TimeSpan.FromSeconds(5)))
+            .Throws<RpcException>();
+
+        await Assert.That(exception!.StatusCode).IsEqualTo(StatusCode.DeadlineExceeded);
+        await Assert.That(server.State.Attempts("stream-wait")).IsEqualTo(1);
+        await server.State.WaitForCancellationAsync().WaitAsync(TimeSpan.FromSeconds(5));
+    }
+
+    [Test]
+    public async Task Server_Streaming_Loopback_Timeout_Cancels_The_Active_Read()
+    {
+        await using var server = await GrpcTestServer.StartAsync();
+        using var call = server.StreamingClient(
+                Shield.Timeout(TimeSpan.FromMilliseconds(100)))
+            .ServerStream(new TestRequest { Scenario = "stream-wait" });
+
+        _ = await Assert.That(async () =>
+                await call.ResponseStream.MoveNext(CancellationToken.None))
+            .Throws<TimeoutExceededException>();
+
+        await server.State.WaitForCancellationAsync().WaitAsync(TimeSpan.FromSeconds(5));
+        await Assert.That(server.State.Attempts("stream-wait")).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Disposing_Partially_Consumed_Loopback_Stream_Cancels_The_Server()
+    {
+        await using var server = await GrpcTestServer.StartAsync();
+        var call = server.StreamingClient(Shield.Empty)
+            .ServerStream(new TestRequest { Scenario = "stream-partial" });
+        await Assert.That(await call.ResponseStream.MoveNext(CancellationToken.None)).IsTrue();
+        await server.State.WaitForEntryAsync().WaitAsync(TimeSpan.FromSeconds(5));
+
+        call.Dispose();
+
+        await server.State.WaitForCancellationAsync().WaitAsync(TimeSpan.FromSeconds(5));
+        await Assert.That(server.State.Attempts("stream-partial")).IsEqualTo(1);
+    }
+
     private static AsyncUnaryCall<TestReply> Call(
         Task<TestReply> response,
         Action? dispose = null,
@@ -670,6 +828,9 @@ public class GrpcResilienceTests
         public Resilience.ResilienceClient Client(Shield shield) =>
             new(Channel.Intercept(new ShieldUnaryClientInterceptor(shield)));
 
+        public Resilience.ResilienceClient StreamingClient(Shield shield) =>
+            new(Channel.Intercept(new ShieldStreamingClientInterceptor(shield)));
+
         public HttpMessageHandler CreateHandler() => _application.GetTestServer().CreateHandler();
 
         public async ValueTask DisposeAsync()
@@ -752,6 +913,81 @@ public class GrpcResilienceTests
             }
 
             return new TestReply { Attempt = attempt };
+        }
+
+        public override async Task ServerStream(
+            TestRequest request,
+            IServerStreamWriter<TestReply> responseStream,
+            ServerCallContext context)
+        {
+            var attempt = state.Record(request.Scenario);
+            if (request.Scenario == "stream-transient" && attempt == 1)
+            {
+                throw new RpcException(new Status(StatusCode.Unavailable, "transient"));
+            }
+
+            await context.WriteResponseHeadersAsync(
+                new Metadata { { "attempt", attempt.ToString() } });
+            context.ResponseTrailers.Add("completed", "true");
+            if (request.Scenario is "stream-mid-failure" or "stream-partial")
+            {
+                await responseStream.WriteAsync(
+                    new TestReply { Attempt = attempt },
+                    context.CancellationToken);
+                if (request.Scenario == "stream-mid-failure")
+                {
+                    throw new RpcException(new Status(StatusCode.Unavailable, "mid-stream"));
+                }
+            }
+
+            if (request.Scenario is "stream-wait" or "stream-partial")
+            {
+                state.Entered();
+                try
+                {
+                    await Task.Delay(Timeout.InfiniteTimeSpan, context.CancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    state.Cancelled();
+                    throw;
+                }
+
+                return;
+            }
+
+            await responseStream.WriteAsync(
+                new TestReply { Attempt = attempt },
+                context.CancellationToken);
+        }
+
+        public override async Task<TestReply> ClientStream(
+            IAsyncStreamReader<TestRequest> requestStream,
+            ServerCallContext context)
+        {
+            await context.WriteResponseHeadersAsync(new Metadata { { "shape", "client" } });
+            context.ResponseTrailers.Add("completed", "true");
+            var count = 0;
+            while (await requestStream.MoveNext(context.CancellationToken))
+            {
+                count++;
+            }
+
+            return new TestReply { Attempt = count };
+        }
+
+        public override async Task DuplexStream(
+            IAsyncStreamReader<TestRequest> requestStream,
+            IServerStreamWriter<TestReply> responseStream,
+            ServerCallContext context)
+        {
+            var count = 0;
+            while (await requestStream.MoveNext(context.CancellationToken))
+            {
+                await responseStream.WriteAsync(
+                    new TestReply { Attempt = ++count },
+                    context.CancellationToken);
+            }
         }
     }
 }

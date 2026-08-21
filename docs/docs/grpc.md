@@ -4,7 +4,7 @@ sidebar_position: 9
 
 # gRPC Integration
 
-`Kevlar.Extensions.Grpc` sends asynchronous unary gRPC client calls through a shared shield. It leaves blocking unary, streaming, and server calls unchanged.
+`Kevlar.Extensions.Grpc` supplies separate interceptors for asynchronous unary and streaming gRPC client calls. Blocking unary and server calls remain unchanged.
 
 ```bash
 dotnet add package Kevlar.Extensions.Grpc
@@ -36,6 +36,46 @@ var client = new Orders.OrdersClient(
 
 The final response or `RpcException` remains the caller's result. Superseded retry calls and losing hedge calls are disposed. Response headers, status, and trailers come from the selected final attempt.
 
+## Streaming calls
+
+Use `ShieldStreamingClientInterceptor` for server-streaming, client-streaming, and duplex calls:
+
+<!-- doc-test-ignore: requires an application-generated gRPC client and channel -->
+```csharp
+var streamingShield = Shield.Timeout(TimeSpan.FromSeconds(5));
+var client = new Orders.OrdersClient(
+    channel.Intercept(new ShieldStreamingClientInterceptor(streamingShield)));
+```
+
+The interceptor uses explicit progress boundaries:
+
+- Server streaming may retry or hedge establishment only until response headers or the first item becomes observable. After that point, it never repeats `MoveNext`, so an item cannot be skipped or duplicated. With an at-most-once shield, each later `MoveNext` remains protected by that shield.
+- Client streaming and duplex never buffer or replay request messages. Their shield must be at-most-once; constructing either call with retry, hedging, or another repeating strategy throws `NotSupportedException` before the RPC starts.
+- Client-streaming response completion, request writes, duplex reads, and duplex writes run through the shield. Disposing the wrapper cancels and disposes the underlying call. Status and trailers remain available after normal completion until disposal.
+
+When server-stream establishment needs retry or hedging and later reads still need a timeout, supply separate shields:
+
+<!-- doc-test-ignore: requires an application-generated gRPC client and channel -->
+```csharp
+var establishment = GrpcShield.WhenTransient().Retry(2, Backoff.None);
+var operations = Shield.Timeout(TimeSpan.FromSeconds(3));
+var interceptor = new ShieldStreamingClientInterceptor(establishment, operations);
+var client = new Orders.OrdersClient(channel.Intercept(interceptor));
+```
+
+The operation shield must be at-most-once. The two-shield constructor rejects retry, hedging, or any custom strategy that may repeat its continuation. With the one-shield constructor, a repeating shield protects only pre-progress server establishment; later reads run directly, and client/duplex calls reject that shield.
+
+| Boundary | Owner |
+|---|---|
+| Server-stream establishment through headers or first item | establishment shield |
+| Individual request writes and post-progress response reads | at-most-once operation shield |
+| Client-streaming response completion | at-most-once operation shield, started when the call is created |
+| Total lifetime, including time when no read/write is active | gRPC deadline, caller cancellation token, or call disposal |
+
+A Kevlar operation timeout is not an idle-stream timer. Use the gRPC deadline when the entire stream needs one absolute budget; its timestamp is preserved across server-establishment attempts.
+
+`WriteAsync(message, cancellationToken)` uses the operation token on modern gRPC APIs. On the `netstandard2.0` compatibility target, where gRPC exposes only `WriteAsync(message)`, cancellation is checked before and after the write and wrapper disposal still cancels the call lifetime. A gRPC deadline remains in the original `CallOptions` for every server-streaming establishment attempt.
+
 ## Dependency injection and named shields
 
 The package integrates with `Grpc.Net.ClientFactory` and the existing Kevlar registry:
@@ -54,10 +94,11 @@ services.AddShield(
 
 services.AddGrpcClient<Orders.OrdersClient>(options =>
         options.Address = new Uri("https://orders.example"))
-    .AddShieldUnaryInterceptor("orders-grpc");
+    .AddShieldUnaryInterceptor("orders-grpc")
+    .AddShieldStreamingInterceptor("orders-grpc");
 ```
 
-`AddShieldUnaryInterceptor` also accepts a `Shield` instance or an `IServiceProvider` factory. Reuse one shield when calls should share circuit-breaker or limiter state.
+Both registration methods accept a `Shield` instance, an `IServiceProvider` factory, or a named shield. Reuse one shield when calls should share circuit-breaker or limiter state. Register both interceptors when a generated client exposes unary and streaming methods; each interceptor handles only its own call shapes.
 
 ## Cancellation, deadlines, and timeouts
 
@@ -78,7 +119,7 @@ Whichever expires first wins. An expired gRPC deadline remains an `RpcException`
 
 Every retry or hedge starts a new RPC with the same request object and call options. Use multiple attempts only for idempotent methods, or when the server provides an idempotency key/deduplication contract. Do not retry or hedge a mutation merely because its transport result is unknown.
 
-The initial package intentionally excludes streaming. Stream lifetime, partial messages, and ownership require a different API and cleanup contract; calls pass through the interceptor unchanged.
+For server streaming, retry and hedge only operations that are safe to repeat before progress. Client and duplex streaming reject repeating strategies because Kevlar deliberately provides no implicit replay buffer. If an application needs replay, implement an explicit bounded message store and a protocol-level idempotency/deduplication contract outside the interceptor.
 
 ## Trimming and NativeAOT
 
