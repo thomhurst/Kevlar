@@ -21,6 +21,7 @@ internal sealed class CircuitBreakerStrategy : Strategy
 
     public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
+        _core.SetMetricsShieldName(context.ShieldName);
         if (!_core.TryEnter(context.TimeProvider, out var rejection))
         {
             RecordState(context.ShieldName);

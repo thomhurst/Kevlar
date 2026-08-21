@@ -35,17 +35,25 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
             return Outcome<T>.FromException(new ConcurrencyLimitExceededException());
         }
 
-        RecordState(context.ShieldName);
-
         try
         {
             if (context.IsSynchronous)
             {
-                _semaphore.Wait(context.CancellationToken);
+                if (!_semaphore.Wait(0, context.CancellationToken))
+                {
+                    RecordState(context.ShieldName);
+                    _semaphore.Wait(context.CancellationToken);
+                }
             }
             else
             {
-                await _semaphore.WaitAsync(context.CancellationToken).ConfigureAwait(false);
+                var wait = _semaphore.WaitAsync(context.CancellationToken);
+                if (!wait.IsCompleted)
+                {
+                    RecordState(context.ShieldName);
+                }
+
+                await wait.ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException cancelled)

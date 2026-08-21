@@ -43,6 +43,7 @@ internal sealed class CircuitBreakerCore
     private bool _isPublishing;
     private int _publishingThreadId;
     private TransitionPublication? _activePublication;
+    private string? _metricsShieldName;
 
     public CircuitBreakerCore(CircuitBreakerOptions options)
     {
@@ -84,6 +85,9 @@ internal sealed class CircuitBreakerCore
             }
         }
     }
+
+    public void SetMetricsShieldName(string? shieldName) =>
+        Volatile.Write(ref _metricsShieldName, shieldName);
 
     /// <summary>
     /// Gates an execution. Returns <see langword="false"/> with a rejection when the circuit
@@ -541,6 +545,17 @@ internal sealed class CircuitBreakerCore
         try
         {
             KevlarMetrics.CircuitTransition(stateChange.From, stateChange.To);
+        }
+        catch (Exception exception)
+        {
+            AddFailure(ref failure, exception);
+        }
+
+        try
+        {
+            KevlarMetrics.RecordCircuitState(
+                Volatile.Read(ref _metricsShieldName),
+                stateChange.To);
         }
         catch (Exception exception)
         {

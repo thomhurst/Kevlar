@@ -549,6 +549,47 @@ public class MetricsTests
     }
 
     [Test]
+    public async Task Manual_Circuit_Transitions_Update_State_Gauge()
+    {
+        using var listener = new KevlarMeterListener();
+        var monitor = new CircuitBreakerMonitor();
+        var shield = Shield.CircuitBreaker(options => options.Monitor = monitor)
+            .WithName("metrics-manual-circuit-state");
+
+        await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
+        var closedMeasurements = listener.Values(
+            "kevlar.circuit_breaker.state",
+            "metrics-manual-circuit-state").Count(value => value == 0);
+
+        monitor.Isolate();
+        await Assert.That(listener.Values(
+                "kevlar.circuit_breaker.state",
+                "metrics-manual-circuit-state"))
+            .Contains(3);
+
+        monitor.Reset();
+        await Assert.That(listener.Values(
+                "kevlar.circuit_breaker.state",
+                "metrics-manual-circuit-state").Count(value => value == 0))
+            .IsEqualTo(closedMeasurements + 1);
+    }
+
+    [Test]
+    public async Task Immediately_Admitted_Execution_Is_Not_Reported_As_Queued()
+    {
+        using var listener = new KevlarMeterListener();
+        var shield = Shield.ConcurrencyLimit(1).WithName("metrics-immediate-concurrency");
+
+        await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
+
+        var queued = listener.Values(
+            "kevlar.concurrency_limit.queued",
+            "metrics-immediate-concurrency");
+        await Assert.That(queued.Count).IsGreaterThan(0);
+        await Assert.That(queued.All(value => value == 0)).IsTrue();
+    }
+
+    [Test]
     public async Task Concurrency_Gauges_Track_Inflight_Queue_And_Cancellation()
     {
         using var listener = new KevlarMeterListener();
