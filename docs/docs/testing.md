@@ -75,6 +75,37 @@ Dispose the recorder at the end of each test to detach its `MeterListener`. Metr
 available on .NET 8 and later, matching core telemetry; callback recording remains available on
 `netstandard2.0`. Construct with `captureMetrics: false` when a test needs callbacks only.
 
+## Probing live resilience state
+
+`GetStateSnapshot()` returns an immutable snapshot of circuit-breaker, rate-limiter, and
+concurrency-limiter state. The snapshot contract is explicitly versioned; `ContractVersion == 1`
+contains only stable state values and the original strategy index, never mutable strategy objects.
+Stateless strategies are omitted.
+
+<!-- doc-test-ignore: The executable documentation harness owns Main; this TUnit example is compiled by Kevlar.Testing.Tests. -->
+```csharp
+var shield = Shield.ConcurrencyLimit(1, maxQueue: 1);
+var probe = new ExecutionProbe();
+
+await shield.ExecuteAsync(probe.Wrap(static _ => ValueTask.CompletedTask));
+
+var state = shield.GetStateSnapshot();
+var limiter = state.Strategies.OfType<ConcurrencyLimitStateSnapshot>().Single();
+await TUnit.Assertions.Assert.That(state.ContractVersion).IsEqualTo(1);
+await TUnit.Assertions.Assert.That(limiter.AvailablePermits).IsEqualTo(1);
+await TUnit.Assertions.Assert.That(probe.AttemptCount).IsEqualTo(1);
+```
+
+`ExecutionProbe.Wrap` supports typed and untyped asynchronous delegates. It counts each delegate
+invocation as an attempt and records cancellation only while that attempt is active.
+`WaitForAttemptCountAsync` and `WaitForCancellationCountAsync` let concurrent tests synchronize
+without parsing diagnostics or adding hooks to production pipelines.
+
+Snapshots are observations, not reservations: another execution may change state immediately after
+capture. Composed shields that share a stateful strategy report that same underlying state. Rate
+limits use the shield's configured `TimeProvider`, so tests can advance `FakeTimeProvider` before
+capturing replenished availability.
+
 ## Repository quality gates
 
 Pull requests build on Windows and Linux, then run the unit, chaos, netstandard2.0 asset, integration, analyzer, and testing-package suites independently with a five-minute timeout. Every suite requires at least one discovered test, so a runner or discovery regression cannot pass as an empty run.

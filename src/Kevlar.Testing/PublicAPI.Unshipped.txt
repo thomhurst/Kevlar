@@ -73,6 +73,37 @@ static Kevlar.Testing.ShieldDescriptorAssertionExtensions.AssertStrategyCount(th
 static Kevlar.Testing.ShieldDescriptorAssertionExtensions.AssertStrategyOrder(this Kevlar.Testing.ShieldDescriptor! descriptor, params Kevlar.Testing.StrategyKind[]! expected) -> Kevlar.Testing.ShieldDescriptor!
 static Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor(this Kevlar.Shield! shield) -> Kevlar.Testing.ShieldDescriptor!
 static Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor<TResult>(this Kevlar.Shield<TResult>! shield) -> Kevlar.Testing.ShieldDescriptor!
+Kevlar.Testing.CircuitBreakerStateSnapshot
+Kevlar.Testing.CircuitBreakerStateSnapshot.State.get -> Kevlar.CircuitState
+Kevlar.Testing.ConcurrencyLimitStateSnapshot
+Kevlar.Testing.ConcurrencyLimitStateSnapshot.AvailablePermits.get -> int
+Kevlar.Testing.ConcurrencyLimitStateSnapshot.QueuedExecutions.get -> int
+Kevlar.Testing.ConcurrencyLimitStateSnapshot.RunningExecutions.get -> int
+Kevlar.Testing.ExecutionProbe
+Kevlar.Testing.ExecutionProbe.AttemptCount.get -> int
+Kevlar.Testing.ExecutionProbe.CancellationCount.get -> int
+Kevlar.Testing.ExecutionProbe.ExecutionProbe() -> void
+Kevlar.Testing.ExecutionProbe.GetSnapshot() -> Kevlar.Testing.ExecutionProbeSnapshot!
+Kevlar.Testing.ExecutionProbe.WaitForAttemptCountAsync(int count, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kevlar.Testing.ExecutionProbe.WaitForCancellationCountAsync(int count, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kevlar.Testing.ExecutionProbe.Wrap(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! action) -> System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>!
+Kevlar.Testing.ExecutionProbe.Wrap<TResult>(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! action) -> System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>!
+Kevlar.Testing.ExecutionProbeSnapshot
+Kevlar.Testing.ExecutionProbeSnapshot.AttemptCount.get -> int
+Kevlar.Testing.ExecutionProbeSnapshot.CancellationCount.get -> int
+Kevlar.Testing.ExecutionProbeSnapshot.ContractVersion.get -> int
+Kevlar.Testing.RateLimitStateSnapshot
+Kevlar.Testing.RateLimitStateSnapshot.AvailablePermits.get -> long
+Kevlar.Testing.RateLimitStateSnapshot.QueuedExecutions.get -> int
+Kevlar.Testing.ShieldStateSnapshot
+Kevlar.Testing.ShieldStateSnapshot.ContractVersion.get -> int
+Kevlar.Testing.ShieldStateSnapshot.Strategies.get -> System.Collections.Generic.IReadOnlyList<Kevlar.Testing.StrategyStateSnapshot!>!
+Kevlar.Testing.ShieldStateSnapshotExtensions
+Kevlar.Testing.StrategyStateSnapshot
+Kevlar.Testing.StrategyStateSnapshot.Kind.get -> Kevlar.Testing.StrategyKind
+Kevlar.Testing.StrategyStateSnapshot.StrategyIndex.get -> int
+static Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot(this Kevlar.Shield! shield) -> Kevlar.Testing.ShieldStateSnapshot!
+static Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot<TResult>(this Kevlar.Shield<TResult>! shield) -> Kevlar.Testing.ShieldStateSnapshot!
 Kevlar.Testing.CallbackKind
 Kevlar.Testing.CallbackKind.CircuitTransition = 4 -> Kevlar.Testing.CallbackKind
 Kevlar.Testing.CallbackKind.Fallback = 3 -> Kevlar.Testing.CallbackKind
