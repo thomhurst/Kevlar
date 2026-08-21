@@ -61,9 +61,10 @@ public class ConcurrencyLimitRaceTests
     }
 
     [Test]
-    [Arguments(false)]
-    [Arguments(true)]
-    public async Task Grant_And_Queued_Cancellation_Decrement_Accounting_Once(bool grantFirst)
+    [Arguments(GrantCancellationOrder.CancelFirst)]
+    [Arguments(GrantCancellationOrder.GrantFirst)]
+    [Arguments(GrantCancellationOrder.Concurrent)]
+    public async Task Grant_And_Queued_Cancellation_Decrement_Accounting_Once(GrantCancellationOrder order)
     {
         var shield = Shield.ConcurrencyLimit(maxConcurrency: 1, maxQueue: 1);
         var releaseRunning = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -88,7 +89,7 @@ public class ConcurrencyLimitRaceTests
             return 2;
         }, cancellation.Token).AsTask();
 
-        if (grantFirst)
+        if (order == GrantCancellationOrder.Concurrent)
         {
             using var race = new Barrier(3);
             var release = Task.Run(() =>
@@ -103,6 +104,13 @@ public class ConcurrencyLimitRaceTests
             });
             race.SignalAndWait();
             await Task.WhenAll(release, cancel);
+            continueQueued.SetResult();
+        }
+        else if (order == GrantCancellationOrder.GrantFirst)
+        {
+            releaseRunning.SetResult();
+            await queuedStarted.Task;
+            cancellation.Cancel();
             continueQueued.SetResult();
         }
         else
@@ -141,6 +149,13 @@ public class ConcurrencyLimitRaceTests
         releaseProbe.SetResult();
         await Assert.That(await probe).IsEqualTo(3);
         await Assert.That(await queuedProbe).IsEqualTo(4);
+    }
+
+    public enum GrantCancellationOrder
+    {
+        CancelFirst,
+        GrantFirst,
+        Concurrent,
     }
 
     [Test]
