@@ -101,20 +101,6 @@ jobs:
           git commit -m "docs: update stress results [skip ci]"
           git pull --rebase origin main
           git push origin HEAD:main
-          dispatch_ref="stress-docs-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          git push origin "HEAD:refs/heads/$dispatch_ref"
-          trap 'git push origin --delete "$dispatch_ref" || true' EXIT
-          gh workflow run docs.yml --ref "$dispatch_ref"
-          run_id=""
-          for attempt in {1..30}; do
-            run_id=$(gh run list --workflow docs.yml --branch "$dispatch_ref" --event workflow_dispatch --limit 1 --json databaseId --jq '.[0].databaseId // empty')
-            if [ -n "$run_id" ]; then
-              break
-            fi
-            sleep 2
-          done
-          if [ -z "$run_id" ]; then
-            echo "Timed out waiting for the dispatched docs workflow."
-            exit 1
-          fi
+          run_url=$(gh workflow run docs.yml --ref main)
+          run_id="${run_url##*/}"
           gh run watch "$run_id" --exit-status
