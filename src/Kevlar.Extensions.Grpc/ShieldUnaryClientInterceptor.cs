@@ -117,6 +117,7 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
 
         private async ValueTask<AttemptResult> InvokeAsync(CancellationToken cancellationToken)
         {
+            DisposeSupersededFailures();
             var options = _context.Options.WithCancellationToken(cancellationToken);
             var context = new ClientInterceptorContext<TRequest, TResponse>(
                 _context.Method,
@@ -146,6 +147,26 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
                 Record(call, exception);
                 throw;
             }
+        }
+
+        private void DisposeSupersededFailures()
+        {
+            List<AsyncUnaryCall<TResponse>>? superseded = null;
+            lock (_gate)
+            {
+                for (var index = _attempts.Count - 1; index >= 0; index--)
+                {
+                    if (_attempts[index].Exception is null)
+                    {
+                        continue;
+                    }
+
+                    (superseded ??= []).Add(_attempts[index].Call);
+                    _attempts.RemoveAt(index);
+                }
+            }
+
+            DisposeCalls(superseded);
         }
 
         private void Record(AsyncUnaryCall<TResponse> call, Exception? exception)
