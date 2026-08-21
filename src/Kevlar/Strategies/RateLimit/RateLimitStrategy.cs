@@ -22,9 +22,12 @@ internal sealed class RateLimitStrategy : Strategy
     private readonly int _queueLimit;
     private readonly double _timestampUnitsPerPermit;
     private readonly double _burstTolerance;
-    private readonly double _queueTolerance;
+    private readonly object _queueGate = new();
 
     private double _theoreticalArrival = double.NegativeInfinity;
+    private Reservation? _queueHead;
+    private Reservation? _queueTail;
+    private int _queuedReservations;
 
     public RateLimitStrategy(RateLimitOptions options)
     {
@@ -39,7 +42,6 @@ internal sealed class RateLimitStrategy : Strategy
         _queueLimit = options.QueueLimit;
         _timestampUnitsPerPermit = options.Window.TotalSeconds * Stopwatch.Frequency / options.Permits;
         _burstTolerance = (_burst - 1) * _timestampUnitsPerPermit;
-        _queueTolerance = _queueLimit * _timestampUnitsPerPermit;
     }
 
     public override string Describe()
@@ -51,36 +53,87 @@ internal sealed class RateLimitStrategy : Strategy
 
     public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
-        if (!TryAcquire(context.TimeProvider, out var wait, out var retryAfter))
+        if (!TryAcquire(context.TimeProvider, out var reservation, out var retryAfter))
         {
             KevlarMetrics.Rejection(context.ShieldName, "rate_limit");
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(new RateLimitExceededException(retryAfter)));
         }
 
-        return wait > TimeSpan.Zero
-            ? ExecuteAfterDelayAsync(next, context, wait)
-            : next.InvokeAsync(context);
+        return reservation is null
+            ? next.InvokeAsync(context)
+            : ExecuteReservedAsync(next, context, reservation);
     }
 
-    private static async ValueTask<Outcome<T>> ExecuteAfterDelayAsync<T, TState>(
+    private async ValueTask<Outcome<T>> ExecuteReservedAsync<T, TState>(
         Continuation<T, TState> next,
         KevlarContext context,
-        TimeSpan wait)
+        Reservation reservation)
     {
         try
         {
-            await DelayHelper.DelayAsync(context, wait).ConfigureAwait(false);
+            while (true)
+            {
+                if (TryConsumeReservation(reservation, context.TimeProvider, out var wait, out var nextTurn))
+                {
+                    nextTurn?.Cancel();
+                    break;
+                }
+
+                if (wait == Timeout.InfiniteTimeSpan)
+                {
+                    using var waitCancellation = CancellationTokenSource.CreateLinkedTokenSource(
+                        context.CancellationToken,
+                        reservation.Turn.Token);
+                    try
+                    {
+                        await Task.Delay(Timeout.Infinite, waitCancellation.Token).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException) when (!context.CancellationToken.IsCancellationRequested)
+                    {
+                        continue;
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        throw new OperationCanceledException(context.CancellationToken);
+                    }
+                }
+                else
+                {
+                    await DelayHelper.CreateDelayTask(
+                        context.TimeProvider,
+                        wait,
+                        context.CancellationToken).ConfigureAwait(false);
+                }
+            }
         }
         catch (OperationCanceledException cancelled)
         {
+            CancelReservation(reservation)?.Cancel();
+            reservation.Turn.Dispose();
             return Outcome<T>.FromException(cancelled);
         }
 
+        reservation.Turn.Dispose();
         return await next.InvokeAsync(context).ConfigureAwait(false);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private bool TryAcquire(TimeProvider timeProvider, out TimeSpan wait, out TimeSpan? retryAfter)
+    private bool TryAcquire(
+        TimeProvider timeProvider,
+        out Reservation? reservation,
+        out TimeSpan? retryAfter)
+    {
+        if (_queueLimit > 0)
+        {
+            return TryAcquireWithQueue(timeProvider, out reservation, out retryAfter);
+        }
+
+        reservation = null;
+        return TryAcquireWithoutQueue(timeProvider, out retryAfter);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private bool TryAcquireWithoutQueue(TimeProvider timeProvider, out TimeSpan? retryAfter)
     {
         while (true)
         {
@@ -88,9 +141,8 @@ internal sealed class RateLimitStrategy : Strategy
             var now = GetCurrentTimestamp(timeProvider);
             var delayTimestampUnits = theoreticalArrival - now - _burstTolerance;
 
-            if (delayTimestampUnits > _queueTolerance)
+            if (delayTimestampUnits > 0)
             {
-                wait = TimeSpan.Zero;
                 retryAfter = TimeSpan.FromSeconds(delayTimestampUnits * SecondsPerSystemTimestamp);
                 return false;
             }
@@ -104,13 +156,142 @@ internal sealed class RateLimitStrategy : Strategy
 
             if (Interlocked.CompareExchange(ref _theoreticalArrival, nextArrival, theoreticalArrival) == theoreticalArrival)
             {
-                wait = delayTimestampUnits > 0
-                    ? TimeSpan.FromSeconds(delayTimestampUnits * SecondsPerSystemTimestamp)
-                    : TimeSpan.Zero;
                 retryAfter = null;
                 return true;
             }
         }
+    }
+
+    private bool TryAcquireWithQueue(
+        TimeProvider timeProvider,
+        out Reservation? reservation,
+        out TimeSpan? retryAfter)
+    {
+        lock (_queueGate)
+        {
+            var now = GetCurrentTimestamp(timeProvider);
+            var theoreticalArrival = _theoreticalArrival;
+            var delayTimestampUnits = theoreticalArrival - now - _burstTolerance;
+
+            if (_queueHead is not null || delayTimestampUnits > 0)
+            {
+                if (_queuedReservations >= _queueLimit)
+                {
+                    reservation = null;
+                    retryAfter = TimeSpan.FromSeconds(
+                        Math.Max(0, delayTimestampUnits) * SecondsPerSystemTimestamp);
+                    return false;
+                }
+
+                var dueTimestamp = Math.Max(now, theoreticalArrival - _burstTolerance);
+                reservation = new Reservation(dueTimestamp);
+                EnqueueReservation(reservation);
+            }
+            else
+            {
+                reservation = null;
+            }
+
+            var arrival = Math.Max(now, theoreticalArrival);
+            var nextArrival = arrival + _timestampUnitsPerPermit;
+            _theoreticalArrival = nextArrival == arrival
+                ? GetNextRepresentableTimestamp(arrival)
+                : nextArrival;
+            retryAfter = null;
+            return true;
+        }
+    }
+
+    private bool TryConsumeReservation(
+        Reservation reservation,
+        TimeProvider timeProvider,
+        out TimeSpan wait,
+        out CancellationTokenSource? nextTurn)
+    {
+        lock (_queueGate)
+        {
+            if (!ReferenceEquals(_queueHead, reservation))
+            {
+                wait = Timeout.InfiniteTimeSpan;
+                nextTurn = null;
+                return false;
+            }
+
+            var delayTimestampUnits = reservation.DueTimestamp - GetCurrentTimestamp(timeProvider);
+            if (delayTimestampUnits > 0)
+            {
+                wait = TimeSpan.FromSeconds(delayTimestampUnits * SecondsPerSystemTimestamp);
+                nextTurn = null;
+                return false;
+            }
+
+            nextTurn = RemoveReservation(reservation);
+            wait = TimeSpan.Zero;
+            return true;
+        }
+    }
+
+    private CancellationTokenSource? CancelReservation(Reservation reservation)
+    {
+        lock (_queueGate)
+        {
+            if (!reservation.IsQueued)
+            {
+                return null;
+            }
+
+            for (var later = reservation.Next; later is not null; later = later.Next)
+            {
+                later.DueTimestamp -= _timestampUnitsPerPermit;
+            }
+
+            _theoreticalArrival -= _timestampUnitsPerPermit;
+            return RemoveReservation(reservation);
+        }
+    }
+
+    private void EnqueueReservation(Reservation reservation)
+    {
+        reservation.Previous = _queueTail;
+        if (_queueTail is null)
+        {
+            _queueHead = reservation;
+        }
+        else
+        {
+            _queueTail.Next = reservation;
+        }
+
+        _queueTail = reservation;
+        _queuedReservations++;
+    }
+
+    private CancellationTokenSource? RemoveReservation(Reservation reservation)
+    {
+        var wasHead = ReferenceEquals(_queueHead, reservation);
+        if (reservation.Previous is null)
+        {
+            _queueHead = reservation.Next;
+        }
+        else
+        {
+            reservation.Previous.Next = reservation.Next;
+        }
+
+        if (reservation.Next is null)
+        {
+            _queueTail = reservation.Previous;
+        }
+        else
+        {
+            reservation.Next.Previous = reservation.Previous;
+        }
+
+        reservation.IsQueued = false;
+        reservation.Previous = null;
+        reservation.Next = null;
+        _queuedReservations--;
+        return wasHead ? _queueHead?.Turn : null;
     }
 
     private static double GetNextRepresentableTimestamp(double timestamp)
@@ -151,5 +332,20 @@ internal sealed class RateLimitStrategy : Strategy
         public long ProviderTimestamp { get; }
 
         public double TimestampScale { get; }
+    }
+
+    private sealed class Reservation
+    {
+        public Reservation(double dueTimestamp) => DueTimestamp = dueTimestamp;
+
+        public double DueTimestamp { get; set; }
+
+        public Reservation? Previous { get; set; }
+
+        public Reservation? Next { get; set; }
+
+        public bool IsQueued { get; set; } = true;
+
+        public CancellationTokenSource Turn { get; } = new();
     }
 }
