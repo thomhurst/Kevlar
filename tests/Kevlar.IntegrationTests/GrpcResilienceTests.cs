@@ -214,14 +214,18 @@ public class GrpcResilienceTests
     {
         var disposed = 0;
         var attempts = 0;
+        var disposedBeforeAttempts = new List<int>();
         var expected = new RpcException(new Status(StatusCode.Unavailable, "final"));
         var interceptor = new ShieldUnaryClientInterceptor(
             GrpcShield.WhenTransient().Retry(1, Backoff.None));
         var invoker = new DelegateCallInvoker((_, _) =>
         {
-            Interlocked.Increment(ref attempts);
+            var attempt = Interlocked.Increment(ref attempts);
+            disposedBeforeAttempts.Add(disposed);
             return Call(
-                Task.FromException<TestReply>(expected),
+                Task.FromException<TestReply>(attempt == 2
+                    ? expected
+                    : new RpcException(new Status(StatusCode.Unavailable, "retry"))),
                 () => Interlocked.Increment(ref disposed),
                 new Status(StatusCode.Unavailable, "final"));
         }).Intercept(interceptor);
@@ -233,6 +237,7 @@ public class GrpcResilienceTests
         await Assert.That(ReferenceEquals(actual, expected)).IsTrue();
         await Assert.That(attempts).IsEqualTo(2);
         await Assert.That(disposed).IsEqualTo(1);
+        await Assert.That(disposedBeforeAttempts.SequenceEqual([0, 1])).IsTrue();
         await Assert.That(call.GetStatus().StatusCode).IsEqualTo(StatusCode.Unavailable);
     }
 
