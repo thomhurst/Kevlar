@@ -561,6 +561,43 @@ public class GrpcResilienceTests
     }
 
     [Test]
+    public async Task Direct_DI_Shield_Configures_The_Grpc_Client()
+    {
+        await using var server = await GrpcTestServer.StartAsync();
+        var services = new ServiceCollection();
+        services.AddGrpcClient<Resilience.ResilienceClient>(options =>
+            options.Address = new Uri("http://localhost"))
+            .ConfigurePrimaryHttpMessageHandler(server.CreateHandler)
+            .AddShieldUnaryInterceptor(GrpcShield.WhenTransient().Retry(1, Backoff.None));
+        await using var provider = services.BuildServiceProvider();
+
+        using var call = provider.GetRequiredService<Resilience.ResilienceClient>()
+            .UnaryAsync(new TestRequest { Scenario = "transient" });
+        var response = await call.ResponseAsync;
+
+        await Assert.That(response.Attempt).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task Factory_DI_Shield_Configures_The_Grpc_Client()
+    {
+        await using var server = await GrpcTestServer.StartAsync();
+        var services = new ServiceCollection();
+        services.AddSingleton(GrpcShield.WhenTransient().Retry(1, Backoff.None));
+        services.AddGrpcClient<Resilience.ResilienceClient>(options =>
+            options.Address = new Uri("http://localhost"))
+            .ConfigurePrimaryHttpMessageHandler(server.CreateHandler)
+            .AddShieldUnaryInterceptor(static provider => provider.GetRequiredService<Shield>());
+        await using var provider = services.BuildServiceProvider();
+
+        using var call = provider.GetRequiredService<Resilience.ResilienceClient>()
+            .UnaryAsync(new TestRequest { Scenario = "transient" });
+        var response = await call.ResponseAsync;
+
+        await Assert.That(response.Attempt).IsEqualTo(2);
+    }
+
+    [Test]
     public async Task Named_DI_Shield_Configures_The_Grpc_Client()
     {
         await using var server = await GrpcTestServer.StartAsync();
