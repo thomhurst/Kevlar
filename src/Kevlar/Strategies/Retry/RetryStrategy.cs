@@ -52,18 +52,40 @@ internal sealed class RetryStrategy : Strategy
             : $"Retry({_maxRetries}, {_backoff}{cap})";
     }
 
-    public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
+    public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
+    {
+        var execution = next.InvokeAsync(context);
+        var firstOutcomeShouldRetry = false;
+        if (execution.IsCompletedSuccessfully)
+        {
+            var outcome = execution.Result;
+            if (!ShouldRetry(in outcome, retriesUsed: 0, context))
+            {
+                return new ValueTask<Outcome<T>>(outcome);
+            }
+
+            firstOutcomeShouldRetry = true;
+        }
+
+        return ExecuteCoreAsync(next, context, execution, firstOutcomeShouldRetry);
+    }
+
+    private async ValueTask<Outcome<T>> ExecuteCoreAsync<T, TState>(
+        Continuation<T, TState> next,
+        KevlarContext context,
+        ValueTask<Outcome<T>> execution,
+        bool firstOutcomeShouldRetry)
     {
         for (var retriesUsed = 0; ; retriesUsed++)
         {
-            var outcome = await next.InvokeAsync(context).ConfigureAwait(false);
+            var outcome = await execution.ConfigureAwait(false);
 
-            if (retriesUsed >= _maxRetries
-                || !_judge.ShouldHandle(in outcome)
-                || context.CancellationToken.IsCancellationRequested)
+            if (!firstOutcomeShouldRetry && !ShouldRetry(in outcome, retriesUsed, context))
             {
                 return outcome;
             }
+
+            firstOutcomeShouldRetry = false;
 
             var attempt = retriesUsed + 1;
             KevlarMetrics.Retry(context.ShieldName);
@@ -119,8 +141,15 @@ internal sealed class RetryStrategy : Strategy
                     return Outcome<T>.FromException(cancelled);
                 }
             }
+
+            execution = next.InvokeAsync(context);
         }
     }
+
+    private bool ShouldRetry<T>(in Outcome<T> outcome, int retriesUsed, KevlarContext context) =>
+        retriesUsed < _maxRetries
+        && _judge.ShouldHandle(in outcome)
+        && !context.CancellationToken.IsCancellationRequested;
 
     private TimeSpan ApplyGeneratedDelay(TimeSpan current, TimeSpan? generated)
     {
