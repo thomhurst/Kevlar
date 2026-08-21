@@ -204,6 +204,27 @@ public class TimeControlTests
     }
 
     [Test]
+    public async Task Pending_Wait_Preserves_Cancellation_After_Final_Yield()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var pending = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        var wait = pending.Task.WaitForPendingAsync(
+            () =>
+            {
+                cancellation.Cancel();
+                return false;
+            },
+            "cancelled work",
+            maxYields: 1,
+            cancellationToken: cancellation.Token);
+        var exception = await Assert.That(async () => await wait)
+            .Throws<OperationCanceledException>();
+
+        await Assert.That(exception!.CancellationToken).IsEqualTo(cancellation.Token);
+    }
+
+    [Test]
     public async Task Bounds_Report_Execution_And_Condition_Details()
     {
         var completed = Task.CompletedTask;

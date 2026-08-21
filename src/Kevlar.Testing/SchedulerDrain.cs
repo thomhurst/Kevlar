@@ -18,6 +18,7 @@ internal static class SchedulerDrain
             await Task.Yield();
         }
 
+        cancellationToken.ThrowIfCancellationRequested();
         return condition();
     }
 }
