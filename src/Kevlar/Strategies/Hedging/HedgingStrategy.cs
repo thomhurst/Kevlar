@@ -270,11 +270,6 @@ internal sealed class HedgingStrategy : Strategy
         KevlarContext attemptContext,
         CancellationToken cancellationToken)
     {
-        if (cancellationToken == attemptContext.CancellationToken)
-        {
-            return GetOriginalResultAsync(next.InvokeAsync(attemptContext));
-        }
-
         var invocationContext = attemptContext.Fork(cancellationToken);
         ValueTask<Outcome<T>> execution;
         try

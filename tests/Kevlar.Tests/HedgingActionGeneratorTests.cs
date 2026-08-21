@@ -359,6 +359,7 @@ public class HedgingActionGeneratorTests
     public async Task Async_Hook_Context_Remains_Valid_Until_Completion()
     {
         var key = new KevlarKey<string>("request-id");
+        var hookStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         string? observed = null;
         var shield = Shield.Use(new PropertySeedingStrategy(key, "abc-123"))
@@ -368,6 +369,7 @@ public class HedgingActionGeneratorTests
                 options.Delay = Timeout.InfiniteTimeSpan;
                 options.OnHedgeAsync = async hedge =>
                 {
+                    hookStarted.TrySetResult();
                     await release.Task;
                     observed = hedge.Context.Properties.GetOrDefault(key, "missing");
                 };
@@ -375,6 +377,7 @@ public class HedgingActionGeneratorTests
 
         var execution = shield.ExecuteAsync<int>(_ =>
             ValueTask.FromException<int>(new InvalidOperationException("primary"))).AsTask();
+        await hookStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
         release.SetResult();
 
         _ = await Assert.That(async () => await execution).Throws<InvalidOperationException>();
@@ -600,6 +603,36 @@ public class HedgingActionGeneratorTests
     }
 
     [Test]
+    public async Task Concurrent_Original_Actions_With_The_Same_Token_Use_Distinct_Contexts()
+    {
+        var observer = new ContextIdentityObserver();
+        var attempts = 0;
+        var shield = Shield.For<int>().Hedge(options =>
+            {
+                options.MaxAttempts = 2;
+                options.Delay = Timeout.InfiniteTimeSpan;
+                options.ActionGenerator = HedgeActionGenerator.Create<int>(hedge => async token =>
+                {
+                    var first = hedge.OriginalAction(token).AsTask();
+                    var second = hedge.OriginalAction(token).AsTask();
+                    var results = await Task.WhenAll(first, second);
+                    return results.Sum();
+                });
+            })
+            .Use(observer);
+
+        var result = await shield.ExecuteAsync(_ =>
+            Interlocked.Increment(ref attempts) == 1
+                ? ValueTask.FromException<int>(new InvalidOperationException("primary"))
+                : new ValueTask<int>(21));
+
+        var contexts = observer.Contexts.ToArray();
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(contexts.Length).IsEqualTo(3);
+        await Assert.That(ReferenceEquals(contexts[1], contexts[2])).IsFalse();
+    }
+
+    [Test]
     public async Task Void_Generated_Action_Is_Awaited_To_Completion()
     {
         var actionCompleted = false;
@@ -648,6 +681,34 @@ public class HedgingActionGeneratorTests
             KevlarContext context)
         {
             Values.Add(context.Properties.GetOrDefault(key, -1));
+            return await next.InvokeAsync(context);
+        }
+    }
+
+    private sealed class ContextIdentityObserver : Strategy
+    {
+        private readonly TaskCompletionSource _concurrentInvocations = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        private int _invocations;
+
+        public ConcurrentQueue<KevlarContext> Contexts { get; } = new();
+
+        public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+            Continuation<T, TState> next,
+            KevlarContext context)
+        {
+            Contexts.Enqueue(context);
+            var invocation = Interlocked.Increment(ref _invocations);
+            if (invocation > 1)
+            {
+                if (invocation == 3)
+                {
+                    _concurrentInvocations.TrySetResult();
+                }
+
+                await _concurrentInvocations.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            }
+
             return await next.InvokeAsync(context);
         }
     }

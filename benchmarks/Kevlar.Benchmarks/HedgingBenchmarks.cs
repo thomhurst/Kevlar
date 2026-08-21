@@ -40,7 +40,7 @@ public class HedgingBenchmarks
         options.MaxAttempts = 2;
         options.Delay = TimeSpan.Zero;
         options.ActionGenerator = HedgeActionGenerator.Create<int>(
-            static _ => static _ => new ValueTask<int>(42));
+            static hedge => hedge.OriginalAction);
     });
 
     private static readonly ResiliencePipeline<int> PollyHedge = new ResiliencePipelineBuilder<int>()
@@ -50,27 +50,25 @@ public class HedgingBenchmarks
     private int _attempt;
 
     [BenchmarkCategory("PrimaryWins"), Benchmark(Baseline = true)]
-    public ValueTask<int> Kevlar_PrimaryWins() => KevlarHedge.ExecuteAsync(static _ => new ValueTask<int>(42));
+    public ValueTask<int> KevlarPrimaryWins() => KevlarHedge.ExecuteAsync(static _ => new ValueTask<int>(42));
 
     [BenchmarkCategory("PrimaryWins"), Benchmark]
-    public ValueTask<int> Polly_PrimaryWins() => PollyHedge.ExecuteAsync(static _ => new ValueTask<int>(42));
+    public ValueTask<int> PollyPrimaryWins() => PollyHedge.ExecuteAsync(static _ => new ValueTask<int>(42));
 
     [BenchmarkCategory("HedgeCallbacks"), Benchmark(Baseline = true)]
-    public ValueTask<int> Fixed_Hedge() => ExecuteFailureThenSuccess(FixedLaunch);
+    public ValueTask<int> FixedHedge() => ExecuteFailureThenSuccess(FixedLaunch);
 
     [BenchmarkCategory("HedgeCallbacks"), Benchmark]
-    public ValueTask<int> Sync_Hook() => ExecuteFailureThenSuccess(SyncHookLaunch);
+    public ValueTask<int> SyncHook() => ExecuteFailureThenSuccess(SyncHookLaunch);
 
     [BenchmarkCategory("HedgeCallbacks"), Benchmark]
-    public ValueTask<int> Completed_Async_Hook() => ExecuteFailureThenSuccess(CompletedAsyncHookLaunch);
+    public ValueTask<int> CompletedAsyncHook() => ExecuteFailureThenSuccess(CompletedAsyncHookLaunch);
 
     [BenchmarkCategory("HedgeCallbacks"), Benchmark]
-    public ValueTask<int> Yielding_Async_Hook() => ExecuteFailureThenSuccess(YieldingAsyncHookLaunch);
+    public ValueTask<int> YieldingAsyncHook() => ExecuteFailureThenSuccess(YieldingAsyncHookLaunch);
 
     [BenchmarkCategory("HedgeCallbacks"), Benchmark]
-    public ValueTask<int> Generated_Action() =>
-        GeneratedLaunch.ExecuteAsync(static _ =>
-            ValueTask.FromException<int>(new InvalidOperationException()));
+    public ValueTask<int> GeneratedAction() => ExecuteFailureThenSuccess(GeneratedLaunch);
 
     private ValueTask<int> ExecuteFailureThenSuccess(Shield<int> shield)
     {
