@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics.Metrics;
 using Microsoft.Extensions.Time.Testing;
 
 namespace Kevlar.Tests;
@@ -149,6 +150,50 @@ public class CircuitBreakerTransitionOrderingTests
         await Assert.That(ReferenceEquals(thrown.InnerExceptions[0], optionFailure)).IsTrue();
         await Assert.That(ReferenceEquals(thrown.InnerExceptions[1], monitorFailure)).IsTrue();
         await Assert.That(monitor.State).IsEqualTo(CircuitState.Open);
+    }
+
+    [Test]
+    [NotInParallel]
+    public async Task Throwing_Metrics_Listener_Does_Not_Stall_Later_Transitions()
+    {
+        var monitor = new CircuitBreakerMonitor();
+        var metricsFailure = new InvalidOperationException("metrics callback");
+        var observed = new List<CircuitState>();
+        _ = Shield.CircuitBreaker(options =>
+        {
+            options.Monitor = monitor;
+            options.OnStateChanged = change => observed.Add(change.To);
+        });
+
+        using (var listener = new MeterListener())
+        {
+            listener.InstrumentPublished = (instrument, meterListener) =>
+            {
+                if (instrument is Counter<long> { Name: "kevlar.circuit_breaker.transitions" })
+                {
+                    meterListener.EnableMeasurementEvents(instrument);
+                }
+            };
+            listener.SetMeasurementEventCallback<long>((_, _, tags, _) =>
+            {
+                foreach (var tag in tags)
+                {
+                    if (tag is { Key: "to", Value: "Isolated" })
+                    {
+                        throw metricsFailure;
+                    }
+                }
+            });
+            listener.Start();
+
+            var thrown = await Assert.That(() => monitor.Isolate()).Throws<InvalidOperationException>();
+            await Assert.That(ReferenceEquals(thrown, metricsFailure)).IsTrue();
+        }
+
+        await Task.Run(monitor.Reset).WaitAsync(TimeSpan.FromSeconds(5));
+
+        await Assert.That(observed.SequenceEqual([CircuitState.Isolated, CircuitState.Closed])).IsTrue();
+        await Assert.That(monitor.State).IsEqualTo(CircuitState.Closed);
     }
 
     [Test]

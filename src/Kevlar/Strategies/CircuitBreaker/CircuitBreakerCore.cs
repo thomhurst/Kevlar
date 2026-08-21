@@ -451,16 +451,23 @@ internal sealed class CircuitBreakerCore
 
     private Exception? PublishObservers(CircuitStateChangedEvent stateChange)
     {
-        KevlarMetrics.CircuitTransition(stateChange.From, stateChange.To);
+        Exception? failure = null;
+        try
+        {
+            KevlarMetrics.CircuitTransition(stateChange.From, stateChange.To);
+        }
+        catch (Exception exception)
+        {
+            AddFailure(ref failure, exception);
+        }
 
-        Exception? optionFailure = null;
         try
         {
             _onStateChanged?.Invoke(stateChange);
         }
         catch (Exception exception)
         {
-            optionFailure = exception;
+            AddFailure(ref failure, exception);
         }
 
         try
@@ -469,12 +476,20 @@ internal sealed class CircuitBreakerCore
         }
         catch (Exception monitorFailure)
         {
-            return optionFailure is null
-                ? monitorFailure
-                : new AggregateException(optionFailure, monitorFailure);
+            AddFailure(ref failure, monitorFailure);
         }
 
-        return optionFailure;
+        return failure;
+    }
+
+    private static void AddFailure(ref Exception? failure, Exception next)
+    {
+        failure = failure switch
+        {
+            null => next,
+            AggregateException aggregate => new AggregateException([.. aggregate.InnerExceptions, next]),
+            _ => new AggregateException(failure, next),
+        };
     }
 
     private sealed class TransitionPublication(CircuitStateChangedEvent stateChange)
