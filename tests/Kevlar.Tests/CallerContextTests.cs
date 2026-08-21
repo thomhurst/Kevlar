@@ -58,6 +58,7 @@ public class CallerContextTests
         await Assert.That(result).IsEqualTo(2);
         await Assert.That(contexts).Count().IsEqualTo(2);
         await Assert.That(ReferenceEquals(contexts[0].Context, contexts[1].Context)).IsTrue();
+        await Assert.That(contexts[0].Token).IsEqualTo(cancellation.Token);
         await Assert.That(contexts[1].Token).IsEqualTo(cancellation.Token);
         await Assert.That(callbackValue).IsEqualTo(1);
     }

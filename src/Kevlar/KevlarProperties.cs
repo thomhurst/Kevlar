@@ -53,7 +53,7 @@ public sealed class KevlarProperties
 
         if (_items.Count > RetainedSlotCapacity)
         {
-            _items.Clear();
+            _items = null;
             return;
         }
 

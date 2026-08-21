@@ -300,6 +300,26 @@ public class IgnoredCancellationTokenTests
     }
 
     [Test]
+    public async Task KevlarContext_State_Does_Not_Hide_The_Execution_Token()
+    {
+        var ignored = await AnalyzeAsync("""
+            KevlarContext state = null!;
+            await Shield.Empty.ExecuteAsync(
+                state,
+                static (contextState, ct) => new ValueTask<int>(contextState.CancellationToken.GetHashCode()));
+            """);
+        await Assert.That(ignored.Length).IsEqualTo(1);
+
+        var clean = await AnalyzeAsync("""
+            KevlarContext state = null!;
+            await Shield.Empty.ExecuteAsync(
+                state,
+                static (contextState, ct) => new ValueTask<int>(ct.GetHashCode()));
+            """);
+        await Assert.That(clean.Length).IsEqualTo(0);
+    }
+
+    [Test]
     public async Task Forwarded_Context_Is_Clean()
     {
         var diagnostics = await AnalyzeAsync("""

@@ -92,7 +92,7 @@ cancellation.
 `Shield<TResult>` support the context-aware shape; `Task` and `ValueTask` actions are accepted.
 Use static initializer and action delegates with the state parameter to avoid closures. The pooled
 context path itself allocates 0 B/op after warm-up when existing property storage can be reused;
-storing a value type in the object-backed property bag boxes that value.
+adding a new key allocates its reusable typed property slot, while value types are not boxed.
 
 Keep these three kinds of state distinct:
 

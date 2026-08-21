@@ -57,7 +57,10 @@ public sealed class IgnoredCancellationTokenAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            var contextParameter = FindExecutionContextParameter(lambda.Symbol, context.Compilation);
+            var contextParameter = FindExecutionContextParameter(
+                lambda.Symbol,
+                argument.Parameter,
+                context.Compilation);
             if (contextParameter is not null)
             {
                 if (contextParameter.Name != "_"
@@ -96,20 +99,25 @@ public sealed class IgnoredCancellationTokenAnalyzer : DiagnosticAnalyzer
     private static bool IsType(INamedTypeSymbol type, INamedTypeSymbol? expected) =>
         expected is not null && SymbolEqualityComparer.Default.Equals(type, expected);
 
-    private static IParameterSymbol? FindExecutionContextParameter(IMethodSymbol method, Compilation compilation)
+    private static IParameterSymbol? FindExecutionContextParameter(
+        IMethodSymbol lambda,
+        IParameterSymbol? callbackParameter,
+        Compilation compilation)
     {
         var contextType = compilation.GetTypeByMetadataName("Kevlar.KevlarContext");
-        if (contextType is null)
+        if (contextType is null
+            || callbackParameter?.OriginalDefinition.Type is not INamedTypeSymbol callbackType
+            || callbackType.DelegateInvokeMethod is not { } invokeMethod)
         {
             return null;
         }
 
-        for (var index = method.Parameters.Length - 1; index >= 0; index--)
+        for (var index = invokeMethod.Parameters.Length - 1; index >= 0; index--)
         {
-            var parameter = method.Parameters[index];
-            if (SymbolEqualityComparer.Default.Equals(parameter.Type, contextType))
+            if (SymbolEqualityComparer.Default.Equals(invokeMethod.Parameters[index].Type, contextType)
+                && index < lambda.Parameters.Length)
             {
-                return parameter;
+                return lambda.Parameters[index];
             }
         }
 
