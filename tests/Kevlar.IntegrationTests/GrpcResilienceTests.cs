@@ -172,6 +172,43 @@ public class GrpcResilienceTests
     }
 
     [Test]
+    public async Task Expired_Grpc_Deadline_Stops_Unconditional_Retry_Forever()
+    {
+        await using var server = await GrpcTestServer.StartAsync();
+        var shield = Shield.When(static _ => true).RetryForever(Backoff.None);
+        var client = server.Client(shield);
+
+        using var call = client.UnaryAsync(
+            new TestRequest { Scenario = "wait" },
+            deadline: DateTime.UtcNow.AddMilliseconds(250));
+        var exception = await Assert.That(async () =>
+                await call.ResponseAsync.WaitAsync(TimeSpan.FromSeconds(5)))
+            .Throws<RpcException>();
+
+        await Assert.That(exception!.StatusCode).IsEqualTo(StatusCode.DeadlineExceeded);
+        await Assert.That(server.State.Attempts("wait")).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Short_Circuit_Does_Not_Reuse_Earlier_Attempt_Metadata()
+    {
+        await using var server = await GrpcTestServer.StartAsync();
+        var shield = GrpcShield.WhenTransient()
+            .Retry(1, Backoff.None)
+            .CircuitBreaker(1, TimeSpan.FromMinutes(1));
+        using var call = server.Client(shield).UnaryAsync(
+            new TestRequest { Scenario = "unavailable" });
+
+        _ = await Assert.That(async () => await call.ResponseAsync)
+            .Throws<CircuitOpenException>();
+        _ = await Assert.That(async () => await call.ResponseHeadersAsync)
+            .Throws<CircuitOpenException>();
+        _ = await Assert.That(() => call.GetStatus()).Throws<InvalidOperationException>();
+        _ = await Assert.That(() => call.GetTrailers()).Throws<InvalidOperationException>();
+        await Assert.That(server.State.Attempts("unavailable")).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Kevlar_Timeout_Preserves_Underlying_Terminal_Metadata()
     {
         var response = new TaskCompletionSource<TestReply>(TaskCreationOptions.RunContinuationsAsynchronously);

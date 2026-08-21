@@ -136,6 +136,7 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
             if (_context.Options.Deadline is { } admissionDeadline
                 && admissionDeadline <= DateTime.UtcNow)
             {
+                CancelLifetime();
                 throw new ExpiredDeadlineRpcException(
                     Volatile.Read(ref _deadlineException)
                     ?? new RpcException(new Status(StatusCode.DeadlineExceeded, "Deadline exceeded.")));
@@ -352,7 +353,7 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
                     call = failure.Call;
                 }
 
-                if (call is null)
+                if (call is null && exception is TimeoutExceededException)
                 {
                     for (var index = _attempts.Count - 1; index >= 0; index--)
                     {
