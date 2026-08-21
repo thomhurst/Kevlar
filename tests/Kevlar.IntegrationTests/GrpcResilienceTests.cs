@@ -190,6 +190,45 @@ public class GrpcResilienceTests
     }
 
     [Test]
+    public async Task Deadline_Admission_Cutoff_Preserves_The_Failed_Attempt_Metadata()
+    {
+        var response = new TaskCompletionSource<TestReply>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var trailers = new Metadata { { "selected", "true" } };
+        var status = new Status(StatusCode.DeadlineExceeded, "deadline");
+        var expected = new RpcException(status, trailers);
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var attempts = 0;
+        var invoker = new DelegateCallInvoker((_, _) =>
+        {
+            Interlocked.Increment(ref attempts);
+            started.TrySetResult();
+            return Call(
+                response.Task,
+                status: status,
+                headers: new Metadata { { "attempt", "1" } },
+                trailers: trailers);
+        }).Intercept(new ShieldUnaryClientInterceptor(
+            Shield.When(static _ => true).RetryForever(Backoff.None)));
+        var client = new Resilience.ResilienceClient(invoker);
+        using var call = client.UnaryAsync(
+            new TestRequest(),
+            deadline: DateTime.UtcNow.AddMilliseconds(50));
+
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await Task.Delay(TimeSpan.FromMilliseconds(100));
+        response.TrySetException(expected);
+        var actual = await Assert.That(async () =>
+                await call.ResponseAsync.WaitAsync(TimeSpan.FromSeconds(5)))
+            .Throws<RpcException>();
+
+        await Assert.That(ReferenceEquals(actual, expected)).IsTrue();
+        await Assert.That(attempts).IsEqualTo(1);
+        await Assert.That((await call.ResponseHeadersAsync).GetValue("attempt")).IsEqualTo("1");
+        await Assert.That(call.GetStatus()).IsEqualTo(status);
+        await Assert.That(call.GetTrailers().GetValue("selected")).IsEqualTo("true");
+    }
+
+    [Test]
     public async Task Short_Circuit_Does_Not_Reuse_Earlier_Attempt_Metadata()
     {
         await using var server = await GrpcTestServer.StartAsync();
@@ -366,7 +405,7 @@ public class GrpcResilienceTests
         var bothStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var secondFailureObserved = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var attempts = 0;
-        var expected = new RpcException(new Status(StatusCode.Unavailable, "shared"));
+        var expected = new InvalidOperationException("shared");
         var invoker = new DelegateCallInvoker((_, _) =>
         {
             var attempt = Interlocked.Increment(ref attempts);
@@ -377,7 +416,11 @@ public class GrpcResilienceTests
 
             return Call(
                 responses[attempt - 1].Task,
-                headers: new Metadata { { "attempt", attempt.ToString() } });
+                status: new Status(
+                    attempt == 1 ? StatusCode.InvalidArgument : StatusCode.Unavailable,
+                    $"attempt {attempt}"),
+                headers: new Metadata { { "attempt", attempt.ToString() } },
+                trailers: new Metadata { { "selected", attempt.ToString() } });
         }).Intercept(new ShieldUnaryClientInterceptor(
             Shield.Use(new SelectFirstAfterSecondStrategy(secondFailureObserved))));
         var client = new Resilience.ResilienceClient(invoker);
@@ -387,10 +430,12 @@ public class GrpcResilienceTests
         responses[1].TrySetException(expected);
         await secondFailureObserved.Task.WaitAsync(TimeSpan.FromSeconds(5));
         responses[0].TrySetException(expected);
-        var actual = await Assert.That(async () => await call.ResponseAsync).Throws<RpcException>();
+        var actual = await Assert.That(async () => await call.ResponseAsync).Throws<InvalidOperationException>();
 
         await Assert.That(ReferenceEquals(actual, expected)).IsTrue();
         await Assert.That((await call.ResponseHeadersAsync).GetValue("attempt")).IsEqualTo("1");
+        await Assert.That(call.GetStatus().StatusCode).IsEqualTo(StatusCode.InvalidArgument);
+        await Assert.That(call.GetTrailers().GetValue("selected")).IsEqualTo("1");
     }
 
     [Test]
