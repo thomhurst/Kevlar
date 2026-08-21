@@ -34,6 +34,47 @@ await TUnit.Assertions.Assert.That(descriptor.Name).IsEqualTo("catalog");
 
 `AssertContains<TDescriptor>()` checks presence when repeats are valid. `AssertContainsSingle<TDescriptor>()` also rejects duplicates. All shape failures throw `ShieldAssertionException` with expected and actual pipeline details.
 
+## Recording telemetry and callbacks
+
+`TelemetryRecorder` is an opt-in test listener. It captures immutable snapshots of Kevlar meter
+measurements and exposes `Record` overloads that can be assigned directly to strategy callbacks.
+The recorder copies metric tags and callback values immediately; it never retains a pooled
+`KevlarContext`.
+
+<!-- doc-test-ignore: The executable documentation harness owns Main; this TUnit example is compiled by Kevlar.Testing.Tests. -->
+```csharp
+using var telemetry = new TelemetryRecorder();
+var shield = Shield.Retry(options =>
+{
+    options.MaxRetries = 1;
+    options.Backoff = Backoff.None;
+    options.OnRetry = telemetry.Record;
+}).WithName("catalog");
+
+await shield.ExecuteOutcomeAsync<int>(static _ =>
+    ValueTask.FromException<int>(new InvalidOperationException("offline")));
+await telemetry.WaitForCallbackCountAsync(1);
+
+var retry = telemetry.Callbacks.Single();
+await TUnit.Assertions.Assert.That(retry.Kind).IsEqualTo(CallbackKind.Retry);
+await TUnit.Assertions.Assert.That(retry.Attempt).IsEqualTo(1);
+await TUnit.Assertions.Assert.That(retry.ShieldName).IsEqualTo("catalog");
+
+var execution = telemetry.Metrics.Single(record =>
+    record.InstrumentName == "kevlar.executions");
+await TUnit.Assertions.Assert.That(
+    execution.Tags["kevlar.execution.outcome"]).IsEqualTo("failure");
+```
+
+The callback overloads cover typed and untyped retries and fallbacks, plus timeout, hedge, and
+circuit-transition notifications. `WaitForMetricCountAsync` and `WaitForCallbackCountAsync` are
+cancellation-aware, so tests can await concurrent pipelines without polling. Metric records retain
+the documented low-cardinality tags; unnamed shields simply omit `kevlar.shield.name`.
+
+Dispose the recorder at the end of each test to detach its `MeterListener`. Metric capture is
+available on .NET 8 and later, matching core telemetry; callback recording remains available on
+`netstandard2.0`. Construct with `captureMetrics: false` when a test needs callbacks only.
+
 ## Repository quality gates
 
 Pull requests build on Windows and Linux, then run the unit, chaos, netstandard2.0 asset, integration, analyzer, and testing-package suites independently with a five-minute timeout. Every suite requires at least one discovered test, so a runner or discovery regression cannot pass as an empty run.

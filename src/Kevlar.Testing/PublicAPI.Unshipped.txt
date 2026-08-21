@@ -73,3 +73,39 @@ static Kevlar.Testing.ShieldDescriptorAssertionExtensions.AssertStrategyCount(th
 static Kevlar.Testing.ShieldDescriptorAssertionExtensions.AssertStrategyOrder(this Kevlar.Testing.ShieldDescriptor! descriptor, params Kevlar.Testing.StrategyKind[]! expected) -> Kevlar.Testing.ShieldDescriptor!
 static Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor(this Kevlar.Shield! shield) -> Kevlar.Testing.ShieldDescriptor!
 static Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor<TResult>(this Kevlar.Shield<TResult>! shield) -> Kevlar.Testing.ShieldDescriptor!
+Kevlar.Testing.CallbackKind
+Kevlar.Testing.CallbackKind.CircuitTransition = 4 -> Kevlar.Testing.CallbackKind
+Kevlar.Testing.CallbackKind.Fallback = 3 -> Kevlar.Testing.CallbackKind
+Kevlar.Testing.CallbackKind.Hedge = 2 -> Kevlar.Testing.CallbackKind
+Kevlar.Testing.CallbackKind.Retry = 0 -> Kevlar.Testing.CallbackKind
+Kevlar.Testing.CallbackKind.Timeout = 1 -> Kevlar.Testing.CallbackKind
+Kevlar.Testing.CallbackRecord
+Kevlar.Testing.CallbackRecord.Attempt.get -> int?
+Kevlar.Testing.CallbackRecord.Delay.get -> System.TimeSpan?
+Kevlar.Testing.CallbackRecord.Exception.get -> System.Exception?
+Kevlar.Testing.CallbackRecord.From.get -> Kevlar.CircuitState?
+Kevlar.Testing.CallbackRecord.Kind.get -> Kevlar.Testing.CallbackKind
+Kevlar.Testing.CallbackRecord.Result.get -> object?
+Kevlar.Testing.CallbackRecord.Sequence.get -> long
+Kevlar.Testing.CallbackRecord.ShieldName.get -> string?
+Kevlar.Testing.CallbackRecord.Timeout.get -> System.TimeSpan?
+Kevlar.Testing.CallbackRecord.To.get -> Kevlar.CircuitState?
+Kevlar.Testing.MetricRecord
+Kevlar.Testing.MetricRecord.InstrumentName.get -> string!
+Kevlar.Testing.MetricRecord.Sequence.get -> long
+Kevlar.Testing.MetricRecord.Tags.get -> System.Collections.Generic.IReadOnlyDictionary<string!, object?>!
+Kevlar.Testing.MetricRecord.Value.get -> double
+Kevlar.Testing.TelemetryRecorder
+Kevlar.Testing.TelemetryRecorder.Callbacks.get -> System.Collections.Generic.IReadOnlyList<Kevlar.Testing.CallbackRecord!>!
+Kevlar.Testing.TelemetryRecorder.Dispose() -> void
+Kevlar.Testing.TelemetryRecorder.Metrics.get -> System.Collections.Generic.IReadOnlyList<Kevlar.Testing.MetricRecord!>!
+Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CircuitStateChangedEvent item) -> void
+Kevlar.Testing.TelemetryRecorder.Record(Kevlar.FallbackEvent item) -> void
+Kevlar.Testing.TelemetryRecorder.Record(Kevlar.HedgeEvent item) -> void
+Kevlar.Testing.TelemetryRecorder.Record(Kevlar.RetryEvent item) -> void
+Kevlar.Testing.TelemetryRecorder.Record(Kevlar.TimeoutEvent item) -> void
+Kevlar.Testing.TelemetryRecorder.Record<TResult>(Kevlar.FallbackEvent<TResult> item) -> void
+Kevlar.Testing.TelemetryRecorder.Record<TResult>(Kevlar.RetryEvent<TResult> item) -> void
+Kevlar.Testing.TelemetryRecorder.TelemetryRecorder(bool captureMetrics = true) -> void
+Kevlar.Testing.TelemetryRecorder.WaitForCallbackCountAsync(int count, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kevlar.Testing.TelemetryRecorder.WaitForMetricCountAsync(int count, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
