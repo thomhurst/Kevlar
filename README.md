@@ -66,6 +66,7 @@ One clause up top decides what "failure" means for every strategy below it — e
 | `Kevlar.Extensions.DependencyInjection` | Named shields, config-bound shields + `IKevlarRegistry` for Microsoft DI |
 | `Kevlar.Extensions.Http` | `HttpClientFactory` integration, transient-fault handling, `Retry-After` support |
 | `Kevlar.Extensions.Grpc` | Unary gRPC client interceptor, transient-status helpers, named-shield DI integration |
+| `Kevlar.Extensions.RateLimiting` | `System.Threading.RateLimiting` and custom lease-acquisition adapters |
 | `Kevlar.Analyzers` | Roslyn analyzers that catch resilience mistakes at compile time |
 | `Kevlar.Testing` | Pipeline descriptors, shape assertions, and deterministic fake-time helpers |
 

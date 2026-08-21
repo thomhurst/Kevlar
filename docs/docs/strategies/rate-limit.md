@@ -21,6 +21,58 @@ Shield.RateLimit(o =>
 });
 ```
 
+## System.Threading.RateLimiting adapters
+
+Install `Kevlar.Extensions.RateLimiting` to reuse a framework limiter without adding that dependency
+to Kevlar core:
+
+```shell
+dotnet add package Kevlar.Extensions.RateLimiting
+```
+
+```csharp
+using Kevlar.Extensions.RateLimiting;
+using System.Threading.RateLimiting;
+
+using var limiter = new FixedWindowRateLimiter(new FixedWindowRateLimiterOptions
+{
+    PermitLimit = 100,
+    Window = TimeSpan.FromSeconds(1),
+    QueueLimit = 20,
+    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+});
+
+var shield = Shield.Empty.RateLimit(limiter, options =>
+{
+    options.PermitCount = 1;
+    options.OnRejected = rejection =>
+        Console.WriteLine(rejection.RetryAfter);
+});
+
+await shield.ExecuteAsync(static _ => ValueTask.CompletedTask);
+```
+
+The caller owns the `RateLimiter`; the adapter never disposes it. Every returned `RateLimitLease`
+is held until the protected execution completes and is then disposed exactly once. Rejected lease
+metadata is copied before disposal. `MetadataName.RetryAfter` becomes
+`RateLimitExceededException.RetryAfter`, and the complete immutable snapshot is available from
+`RateLimiterRejectedEvent.Metadata`.
+
+Fixed-window, sliding-window, concurrency, chained, and custom limiters all use the same adapter.
+For a limiter owned behind another abstraction, supply asynchronous acquisition directly:
+
+<!-- doc-test-ignore: AcquireTenantLeaseAsync is supplied by the application's limiter abstraction. -->
+```csharp
+var shield = Shield.Empty.RateLimit(
+    static (permitCount, context) =>
+        AcquireTenantLeaseAsync(permitCount, context.CancellationToken));
+```
+
+The delegate must return a fresh acquired or rejected lease for each call. Rejection metrics and
+hooks follow the built-in contract: metric first, then `OnRejected`, then awaited
+`OnRejectedAsync`; a hook failure replaces `RateLimitExceededException`. Cancellation while
+queued is cancellation, not rejection, so hooks do not run.
+
 ## Options
 
 | Option | Default | What it does |

@@ -29,6 +29,7 @@ $requiredPackages = @(
     'Kevlar.Extensions.DependencyInjection'
     'Kevlar.Extensions.Grpc'
     'Kevlar.Extensions.Http'
+    'Kevlar.Extensions.RateLimiting'
     'Kevlar.Testing'
 )
 
@@ -186,10 +187,12 @@ $builder = [Text.StringBuilder]::new()
 [void]$builder.AppendLine('using Kevlar.Extensions.DependencyInjection;')
 [void]$builder.AppendLine('using Kevlar.Extensions.Grpc;')
 [void]$builder.AppendLine('using Kevlar.Extensions.Http;')
+[void]$builder.AppendLine('using Kevlar.Extensions.RateLimiting;')
 [void]$builder.AppendLine('using Kevlar.Testing;')
 [void]$builder.AppendLine('using Microsoft.Extensions.DependencyInjection;')
 [void]$builder.AppendLine('using Microsoft.Extensions.Time.Testing;')
 [void]$builder.AppendLine('using Microsoft.Extensions.Logging;')
+[void]$builder.AppendLine('using System.Threading.RateLimiting;')
 [void]$builder.AppendLine('using OpenTelemetry.Metrics;')
 [void]$builder.AppendLine('using Polly;')
 [void]$builder.AppendLine('using Polly.CircuitBreaker;')

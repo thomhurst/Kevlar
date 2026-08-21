@@ -13,6 +13,7 @@
     <PackageReference Include="Kevlar.Extensions.DependencyInjection" VersionOverride="$(KevlarPackageVersion)" />
     <PackageReference Include="Kevlar.Extensions.Grpc" VersionOverride="$(KevlarPackageVersion)" />
     <PackageReference Include="Kevlar.Extensions.Http" VersionOverride="$(KevlarPackageVersion)" />
+    <PackageReference Include="Kevlar.Extensions.RateLimiting" VersionOverride="$(KevlarPackageVersion)" />
     <PackageReference Include="Kevlar.Testing" VersionOverride="$(KevlarPackageVersion)" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />

@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net10.0</TargetFrameworks>
+    <RootNamespace>Kevlar.Extensions.RateLimiting</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IsPackable>true</IsPackable>
+    <Description>System.Threading.RateLimiting adapters for Kevlar shields, including custom asynchronous lease acquisition.</Description>
+    <PackageTags>resilience;rate-limiting;system-threading-ratelimiting;kevlar</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Kevlar\Kevlar.csproj" />
+    <PackageReference Include="System.Threading.RateLimiting" />
+  </ItemGroup>
+
+</Project>
