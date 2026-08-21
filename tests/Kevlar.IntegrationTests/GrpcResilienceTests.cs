@@ -177,6 +177,25 @@ public class GrpcResilienceTests
     }
 
     [Test]
+    public async Task Completed_Call_Detaches_The_Caller_Cancellation_Token()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var cancellationObserved = 0;
+        var invoker = new DelegateCallInvoker((_, options) =>
+        {
+            options.CancellationToken.Register(() => Interlocked.Increment(ref cancellationObserved));
+            return Call(Task.FromResult(new TestReply { Attempt = 1 }));
+        }).Intercept(new ShieldUnaryClientInterceptor(Shield.Empty));
+        var client = new Resilience.ResilienceClient(invoker);
+        using var call = client.UnaryAsync(new TestRequest(), cancellationToken: cancellation.Token);
+
+        _ = await call.ResponseAsync;
+        cancellation.Cancel();
+
+        await Assert.That(cancellationObserved).IsEqualTo(0);
+    }
+
+    [Test]
     public async Task Hedge_Cancels_The_Losing_Loopback_Rpc()
     {
         await using var server = await GrpcTestServer.StartAsync();
