@@ -78,6 +78,14 @@ public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
 
 The exception is only thrown once — at the pipeline boundary, back in the caller's frame, with its original stack trace intact.
 
+## Context properties
+
+`KevlarContext.Properties` is isolated per execution. A `KevlarKey<T>` is identified by both
+its case-sensitive name and `T`: keys with the same name and different value types do not
+collide, while new key instances with the same name and type address the same value. Empty names
+are valid. Stored `null` is present and distinct from a missing key, so `TryGet` returns `true`
+with a `null` value and `GetOrDefault` does not substitute its fallback.
+
 ## KevlarContext
 
 The context flows through the whole pipeline:

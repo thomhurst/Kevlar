@@ -9,7 +9,9 @@ namespace Kevlar;
 /// </summary>
 public sealed class KevlarContext
 {
-    private static readonly ObjectPool<KevlarContext, PoolPolicy> Pool = new(maxCapacity: 128);
+    internal const int PoolCapacity = 128;
+
+    private static readonly ObjectPool<KevlarContext, PoolPolicy> Pool = new(maxCapacity: PoolCapacity);
 
     private KevlarContext()
     {
