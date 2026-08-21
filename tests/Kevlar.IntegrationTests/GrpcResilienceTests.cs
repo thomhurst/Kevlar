@@ -74,9 +74,10 @@ public class GrpcResilienceTests
     public async Task Kevlar_Timeout_Cancels_The_Underlying_Call()
     {
         await using var server = await GrpcTestServer.StartAsync();
-        var client = server.Client(Shield.Timeout(TimeSpan.FromMilliseconds(100)));
+        var client = server.Client(Shield.Timeout(TimeSpan.FromSeconds(1)));
 
         using var call = client.UnaryAsync(new TestRequest { Scenario = "wait" });
+        await server.State.WaitForEntryAsync().WaitAsync(TimeSpan.FromSeconds(5));
         _ = await Assert.That(async () => await call.ResponseAsync)
             .Throws<TimeoutExceededException>();
 
@@ -109,7 +110,8 @@ public class GrpcResilienceTests
 
         using var call = client.UnaryAsync(
             new TestRequest { Scenario = "wait" },
-            deadline: DateTime.UtcNow.AddMilliseconds(100));
+            deadline: DateTime.UtcNow.AddSeconds(1));
+        await server.State.WaitForEntryAsync().WaitAsync(TimeSpan.FromSeconds(5));
         var exception = await Assert.That(async () => await call.ResponseAsync)
             .Throws<RpcException>();
 
@@ -169,9 +171,11 @@ public class GrpcResilienceTests
         var disposed = 0;
         var invoker = new DelegateCallInvoker((_, options) =>
         {
-            options.CancellationToken.Register(() =>
-                response.TrySetException(new RpcException(new Status(StatusCode.Cancelled, "cancelled"))));
-            return Call(response.Task, () => Interlocked.Increment(ref disposed));
+            return Call(response.Task, () =>
+            {
+                Interlocked.Increment(ref disposed);
+                response.TrySetException(new RpcException(new Status(StatusCode.Cancelled, "cancelled")));
+            });
         }).Intercept(new ShieldUnaryClientInterceptor(Shield.Empty));
         var client = new Resilience.ResilienceClient(invoker);
         var call = client.UnaryAsync(new TestRequest());
@@ -179,8 +183,49 @@ public class GrpcResilienceTests
         call.Dispose();
         call.Dispose();
 
-        _ = await Assert.That(async () => await call.ResponseAsync).Throws<OperationCanceledException>();
+        _ = await Assert.That(async () =>
+                await call.ResponseAsync.WaitAsync(TimeSpan.FromSeconds(5)))
+            .Throws<OperationCanceledException>();
         await Assert.That(disposed).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Hedge_Preserves_Metadata_For_Selected_Early_Failure()
+    {
+        var pending = new TaskCompletionSource<TestReply>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var losingCallDisposed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var attempts = 0;
+        var expected = new RpcException(
+            new Status(StatusCode.InvalidArgument, "invalid"),
+            new Metadata { { "selected", "true" } });
+        var invoker = new DelegateCallInvoker((_, _) =>
+        {
+            if (Interlocked.Increment(ref attempts) == 1)
+            {
+                return Call(
+                    Task.FromException<TestReply>(expected),
+                    status: expected.Status,
+                    headers: new Metadata { { "attempt", "1" } },
+                    trailers: new Metadata { { "selected", "true" } });
+            }
+
+            return Call(pending.Task, () =>
+            {
+                losingCallDisposed.TrySetResult();
+                pending.TrySetException(new RpcException(new Status(StatusCode.Cancelled, "cancelled")));
+            });
+        }).Intercept(new ShieldUnaryClientInterceptor(
+            GrpcShield.WhenTransient().Hedge(2, TimeSpan.Zero)));
+        var client = new Resilience.ResilienceClient(invoker);
+        using var call = client.UnaryAsync(new TestRequest());
+
+        var actual = await Assert.That(async () => await call.ResponseAsync).Throws<RpcException>();
+
+        await Assert.That(ReferenceEquals(actual, expected)).IsTrue();
+        await Assert.That((await call.ResponseHeadersAsync).GetValue("attempt")).IsEqualTo("1");
+        await Assert.That(call.GetStatus()).IsEqualTo(expected.Status);
+        await Assert.That(call.GetTrailers().GetValue("selected")).IsEqualTo("true");
+        await losingCallDisposed.Task.WaitAsync(TimeSpan.FromSeconds(5));
     }
 
     [Test]
@@ -270,12 +315,14 @@ public class GrpcResilienceTests
     private static AsyncUnaryCall<TestReply> Call(
         Task<TestReply> response,
         Action? dispose = null,
-        Status? status = null) =>
+        Status? status = null,
+        Metadata? headers = null,
+        Metadata? trailers = null) =>
         new(
             response,
-            Task.FromResult(new Metadata()),
+            Task.FromResult(headers ?? new Metadata()),
             () => status ?? Status.DefaultSuccess,
-            static () => new Metadata(),
+            () => trailers ?? new Metadata(),
             dispose ?? NoOp);
 
     private static void NoOp()
