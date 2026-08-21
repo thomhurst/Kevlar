@@ -90,9 +90,19 @@ public class ConcurrencyLimitRaceTests
 
         if (grantFirst)
         {
-            releaseRunning.SetResult();
-            await queuedStarted.Task;
-            cancellation.Cancel();
+            using var race = new Barrier(3);
+            var release = Task.Run(() =>
+            {
+                race.SignalAndWait();
+                releaseRunning.SetResult();
+            });
+            var cancel = Task.Run(() =>
+            {
+                race.SignalAndWait();
+                cancellation.Cancel();
+            });
+            race.SignalAndWait();
+            await Task.WhenAll(release, cancel);
             continueQueued.SetResult();
         }
         else
@@ -110,8 +120,27 @@ public class ConcurrencyLimitRaceTests
         await Assert.That(((OperationCanceledException)outcome.Exception!).CancellationToken == cancellation.Token)
             .IsTrue();
 
-        var probe = await shield.ExecuteAsync(_ => new ValueTask<int>(3));
-        await Assert.That(probe).IsEqualTo(3);
+        var releaseProbe = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var probeStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var probe = shield.ExecuteAsync(async _ =>
+        {
+            probeStarted.SetResult();
+            await releaseProbe.Task;
+            return 3;
+        }).AsTask();
+        await probeStarted.Task;
+        var queuedProbe = shield.ExecuteAsync(async _ =>
+        {
+            await releaseProbe.Task;
+            return 4;
+        }).AsTask();
+
+        await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(5)))
+            .Throws<ConcurrencyLimitExceededException>();
+
+        releaseProbe.SetResult();
+        await Assert.That(await probe).IsEqualTo(3);
+        await Assert.That(await queuedProbe).IsEqualTo(4);
     }
 
     [Test]
@@ -146,15 +175,19 @@ public class ConcurrencyLimitRaceTests
                 .ToArray();
             await started.WaitForAsync(MaxConcurrency);
 
-            var success = shield.ExecuteOutcomeAsync(_ => new ValueTask<int>(round)).AsTask();
-            var failure = shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException("expected")).AsTask();
+            var success = shield.ExecuteOutcomeAsync(_ =>
+                CompleteTracked(round, ref inFlight, ref peak, MaxConcurrency)).AsTask();
+            var failure = shield.ExecuteOutcomeAsync<int>(_ =>
+                FailTracked(ref inFlight, ref peak, MaxConcurrency)).AsTask();
             using var cancellation = new CancellationTokenSource();
-            var cancelled = shield.ExecuteOutcomeAsync(_ => new ValueTask<int>(-1), cancellation.Token).AsTask();
+            var cancelled = shield.ExecuteOutcomeAsync(_ =>
+                CompleteTracked(-1, ref inFlight, ref peak, MaxConcurrency), cancellation.Token).AsTask();
 
             cancellation.Cancel();
             await Assert.That((await cancelled).Exception).IsTypeOf<OperationCanceledException>();
 
-            var replacement = shield.ExecuteOutcomeAsync(_ => new ValueTask<int>(round)).AsTask();
+            var replacement = shield.ExecuteOutcomeAsync(_ =>
+                CompleteTracked(round, ref inFlight, ref peak, MaxConcurrency)).AsTask();
             release.SetResult();
 
             await Task.WhenAll(running);
@@ -234,5 +267,23 @@ public class ConcurrencyLimitRaceTests
         {
             throw new InvalidOperationException($"Concurrency limit exceeded: {current}.");
         }
+    }
+
+    private static ValueTask<int> CompleteTracked(
+        int result,
+        ref int inFlight,
+        ref int peak,
+        int maxConcurrency)
+    {
+        Enter(ref inFlight, ref peak, maxConcurrency);
+        Interlocked.Decrement(ref inFlight);
+        return new ValueTask<int>(result);
+    }
+
+    private static ValueTask<int> FailTracked(ref int inFlight, ref int peak, int maxConcurrency)
+    {
+        Enter(ref inFlight, ref peak, maxConcurrency);
+        Interlocked.Decrement(ref inFlight);
+        throw new InvalidOperationException("expected");
     }
 }
