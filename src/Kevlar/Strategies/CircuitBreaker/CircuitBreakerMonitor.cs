@@ -13,7 +13,14 @@ public sealed class CircuitBreakerMonitor
     /// <summary>The current state of the bound circuit.</summary>
     public CircuitState State => BoundCore().State;
 
-    /// <summary>Raised on every state transition of the bound circuit.</summary>
+    /// <summary>
+    /// Raised on every state transition of the bound circuit, after
+    /// <see cref="CircuitBreakerOptions.OnStateChanged"/>. Transitions are delivered serially
+    /// outside the circuit lock, so handlers may read state or call <see cref="Reset"/> or
+    /// <see cref="Isolate"/> without deadlocking. Handlers run synchronously and block later
+    /// transition publishers, so they should not perform I/O, wait on external work, or otherwise
+    /// run for a long time.
+    /// </summary>
     public event Action<CircuitStateChangedEvent>? StateChanged;
 
     /// <summary>Forces the circuit open. Executions are rejected until <see cref="Reset"/> is called.</summary>

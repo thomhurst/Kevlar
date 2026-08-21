@@ -71,7 +71,9 @@ monitor.Isolate();      // force open (maintenance switch)
 monitor.Reset();        // close and clear metrics
 ```
 
-A monitor binds to exactly **one** breaker: assign it to `CircuitBreakerOptions.Monitor` when building the shield, and keep your reference. Binding it twice throws, as does using it before binding. Both `OnStateChanged` and `monitor.StateChanged` fire for the same transition (callback first).
+A monitor binds to exactly **one** breaker: assign it to `CircuitBreakerOptions.Monitor` when building the shield, and keep your reference. Binding it twice throws, as does using it before binding.
+
+Transitions are delivered serially in state-change order, first to `OnStateChanged` and then to `monitor.StateChanged`. Callbacks run outside the circuit lock, so they can read `State` or call `Reset()` / `Isolate()`; a reentrant transition is queued behind the transition currently being delivered. If either observer throws, the other still runs and the circuit keeps its new, usable state. One callback failure is rethrown unchanged after delivery; failures from both observers are combined in an `AggregateException`.
 
 ## Share the circuit deliberately
 

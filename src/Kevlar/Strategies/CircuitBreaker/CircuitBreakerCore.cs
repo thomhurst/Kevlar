@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
 using Kevlar.Internal;
 
 namespace Kevlar.Strategies;
@@ -24,6 +25,7 @@ internal sealed class CircuitBreakerCore
     private readonly double _breakDurationTimestampUnits;
     private readonly Action<CircuitStateChangedEvent>? _onStateChanged;
     private readonly CircuitBreakerMonitor? _monitor;
+    private readonly Queue<TransitionPublication> _pendingTransitions = new();
 
     private readonly long[] _bucketFailures = new long[BucketCount];
     private readonly long[] _bucketSuccesses = new long[BucketCount];
@@ -35,7 +37,12 @@ internal sealed class CircuitBreakerCore
     private double _openUntilTimestamp;
     private int _consecutiveFailures;
     private bool _probeInFlight;
+    private long _probeGeneration;
+    private long _activeProbeGeneration;
     private Exception? _lastException;
+    private bool _isPublishing;
+    private int _publishingThreadId;
+    private TransitionPublication? _activePublication;
 
     public CircuitBreakerCore(CircuitBreakerOptions options)
     {
@@ -81,11 +88,12 @@ internal sealed class CircuitBreakerCore
     /// <summary>
     /// Gates an execution. Returns <see langword="false"/> with a rejection when the circuit
     /// refuses it; a <see langword="true"/> return during half-open marks a probe in flight,
-    /// so the caller must report back via Record* or <see cref="AbandonProbe"/>.
+    /// so the caller must report back via Record* or <see cref="AbandonProbe()"/>.
     /// </summary>
     public bool TryEnter(TimeProvider timeProvider, out CircuitOpenException? rejection)
     {
-        CircuitStateChangedEvent? transition = null;
+        TransitionPublication? transition = null;
+        long admittedProbeGeneration = 0;
         bool allowed;
         rejection = null;
 
@@ -109,6 +117,7 @@ internal sealed class CircuitBreakerCore
                     {
                         transition = ChangeState(CircuitState.HalfOpen);
                         _probeInFlight = true;
+                        admittedProbeGeneration = _activeProbeGeneration = ++_probeGeneration;
                         allowed = true;
                     }
                     else
@@ -131,6 +140,7 @@ internal sealed class CircuitBreakerCore
                     else
                     {
                         _probeInFlight = true;
+                        admittedProbeGeneration = _activeProbeGeneration = ++_probeGeneration;
                         allowed = true;
                     }
 
@@ -138,13 +148,26 @@ internal sealed class CircuitBreakerCore
             }
         }
 
-        Publish(transition);
+        try
+        {
+            Publish(transition);
+        }
+        catch
+        {
+            if (transition?.StateChange.To == CircuitState.HalfOpen)
+            {
+                AbandonProbe(admittedProbeGeneration);
+            }
+
+            throw;
+        }
+
         return allowed;
     }
 
     public void RecordSuccess(TimeProvider timeProvider)
     {
-        CircuitStateChangedEvent? transition = null;
+        TransitionPublication? transition = null;
 
         lock (_gate)
         {
@@ -169,7 +192,7 @@ internal sealed class CircuitBreakerCore
 
     public void RecordFailure(TimeProvider timeProvider, Exception? exception)
     {
-        CircuitStateChangedEvent? transition = null;
+        TransitionPublication? transition = null;
 
         lock (_gate)
         {
@@ -215,9 +238,20 @@ internal sealed class CircuitBreakerCore
         }
     }
 
+    private void AbandonProbe(long probeGeneration)
+    {
+        lock (_gate)
+        {
+            if (_state == CircuitState.HalfOpen && _activeProbeGeneration == probeGeneration)
+            {
+                _probeInFlight = false;
+            }
+        }
+    }
+
     public void Isolate()
     {
-        CircuitStateChangedEvent? transition = null;
+        TransitionPublication? transition = null;
 
         lock (_gate)
         {
@@ -232,7 +266,7 @@ internal sealed class CircuitBreakerCore
 
     public void Reset()
     {
-        CircuitStateChangedEvent? transition = null;
+        TransitionPublication? transition = null;
 
         lock (_gate)
         {
@@ -361,20 +395,212 @@ internal sealed class CircuitBreakerCore
         public double TimestampScale { get; }
     }
 
-    private CircuitStateChangedEvent ChangeState(CircuitState next)
+    private TransitionPublication ChangeState(CircuitState next)
     {
         var transition = new CircuitStateChangedEvent(_state, next, _lastException);
         _state = next;
-        return transition;
+        var publication = new TransitionPublication(transition);
+        _pendingTransitions.Enqueue(publication);
+        if (!_isPublishing)
+        {
+            _isPublishing = true;
+            publication.StartsDrain = true;
+        }
+
+        return publication;
     }
 
-    private void Publish(CircuitStateChangedEvent? transition)
+    private void Publish(TransitionPublication? publication)
     {
-        if (transition is { } stateChange)
+        if (publication is null)
+        {
+            return;
+        }
+
+        if (publication.StartsDrain)
+        {
+            DrainPublications();
+            publication.ThrowIfFailed();
+        }
+        else if (Volatile.Read(ref _publishingThreadId) == Environment.CurrentManagedThreadId)
+        {
+            publication.Parent = _activePublication;
+            _activePublication!.PendingChildren++;
+        }
+        else
+        {
+            publication.Completion.Task.GetAwaiter().GetResult();
+            publication.ThrowIfFailed();
+        }
+    }
+
+    private void DrainPublications()
+    {
+        lock (_gate)
+        {
+            Volatile.Write(ref _publishingThreadId, Environment.CurrentManagedThreadId);
+        }
+
+        TransitionPublication? activePublication = null;
+        Exception? drainFailure = null;
+        var completed = false;
+        try
+        {
+            while (true)
+            {
+                lock (_gate)
+                {
+                    if (_pendingTransitions.Count == 0)
+                    {
+                        Volatile.Write(ref _publishingThreadId, 0);
+                        _isPublishing = false;
+                        completed = true;
+                        return;
+                    }
+
+                    activePublication = _pendingTransitions.Dequeue();
+                }
+
+                _activePublication = activePublication;
+                activePublication.Failure = PublishObservers(activePublication.StateChange);
+                _activePublication = null;
+                activePublication.ObserversCompleted = true;
+                CompletePublication(activePublication);
+                activePublication = null;
+            }
+        }
+        catch (Exception exception)
+        {
+            drainFailure = exception;
+            throw;
+        }
+        finally
+        {
+            if (!completed)
+            {
+                lock (_gate)
+                {
+                    _activePublication = null;
+                    Volatile.Write(ref _publishingThreadId, 0);
+                    _isPublishing = false;
+                    FailPublication(activePublication, drainFailure);
+                    while (_pendingTransitions.TryDequeue(out var publication))
+                    {
+                        FailPublication(publication, drainFailure);
+                    }
+                }
+            }
+        }
+    }
+
+    private static void CompletePublication(TransitionPublication publication)
+    {
+        if (!publication.ObserversCompleted || publication.PendingChildren != 0)
+        {
+            return;
+        }
+
+        publication.Completion.TrySetResult(true);
+        if (publication.Parent is not { } parent)
+        {
+            return;
+        }
+
+        if (publication.Failure is { } failure)
+        {
+            var parentFailure = parent.Failure;
+            AddFailure(ref parentFailure, failure);
+            parent.Failure = parentFailure;
+        }
+
+        parent.PendingChildren--;
+        CompletePublication(parent);
+    }
+
+    private static void FailPublication(TransitionPublication? publication, Exception? failure)
+    {
+        if (publication is null)
+        {
+            return;
+        }
+
+        if (failure is not null)
+        {
+            var publicationFailure = publication.Failure;
+            AddFailure(ref publicationFailure, failure);
+            publication.Failure = publicationFailure;
+        }
+
+        publication.ObserversCompleted = true;
+        CompletePublication(publication);
+    }
+
+    private Exception? PublishObservers(CircuitStateChangedEvent stateChange)
+    {
+        Exception? failure = null;
+        try
         {
             KevlarMetrics.CircuitTransition(stateChange.From, stateChange.To);
+        }
+        catch (Exception exception)
+        {
+            AddFailure(ref failure, exception);
+        }
+
+        try
+        {
             _onStateChanged?.Invoke(stateChange);
+        }
+        catch (Exception exception)
+        {
+            AddFailure(ref failure, exception);
+        }
+
+        try
+        {
             _monitor?.Raise(in stateChange);
+        }
+        catch (Exception monitorFailure)
+        {
+            AddFailure(ref failure, monitorFailure);
+        }
+
+        return failure;
+    }
+
+    private static void AddFailure(ref Exception? failure, Exception next)
+    {
+        failure = failure switch
+        {
+            null => next,
+            AggregateException aggregate => new AggregateException([.. aggregate.InnerExceptions, next]),
+            _ => new AggregateException(failure, next),
+        };
+    }
+
+    private sealed class TransitionPublication(CircuitStateChangedEvent stateChange)
+    {
+        public CircuitStateChangedEvent StateChange { get; } = stateChange;
+
+        public TaskCompletionSource<bool> Completion { get; } =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public bool StartsDrain { get; set; }
+
+        public TransitionPublication? Parent { get; set; }
+
+        public int PendingChildren { get; set; }
+
+        public bool ObserversCompleted { get; set; }
+
+        public Exception? Failure { get; set; }
+
+        public void ThrowIfFailed()
+        {
+            if (Failure is { } failure)
+            {
+                ExceptionDispatchInfo.Capture(failure).Throw();
+            }
         }
     }
 }
