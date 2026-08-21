@@ -149,7 +149,7 @@ public class HttpContractTests
     [Test]
     public async Task Standard_Attempt_Timeout_Cancels_Inner_And_Retries()
     {
-        var timeProvider = new FakeTimeProvider();
+        var timeProvider = new ControlledTimeProvider();
         using var cancellation = new CancellationTokenSource();
         var firstStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var firstCancelled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -175,15 +175,13 @@ public class HttpContractTests
 
         var task = client.GetAsync("http://localhost/test", cancellation.Token);
         await firstStarted.Task;
-        timeProvider.Advance(TimeSpan.FromSeconds(10));
+        await timeProvider.WaitForTimersAsync(2);
+        timeProvider.FireTimer(1);
         await firstCancelled.Task;
-        for (var step = 0; step < 5 && !secondStarted.Task.IsCompleted; step++)
-        {
-            await Task.Delay(10);
-            timeProvider.Advance(TimeSpan.FromSeconds(1));
-        }
-
-        await secondStarted.Task.WaitAsync(TimeSpan.FromSeconds(1));
+        await timeProvider.WaitForTimersAsync(3);
+        timeProvider.FireTimer(2);
+        await timeProvider.WaitForTimersAsync(4);
+        await secondStarted.Task;
 
         cancellation.Cancel();
         await Assert.That(async () => await task).Throws<OperationCanceledException>();
