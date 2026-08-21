@@ -7,10 +7,13 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
 {
     private readonly Lock _metricsPublicationGate = new();
     private readonly HashSet<StrategyMetricAlias> _metricsAliases = [];
+    // Atomic permits serve the uncontended path; the semaphore carries permits only to registered waiters.
     private readonly SemaphoreSlim _semaphore;
     private readonly int _maxConcurrency;
     private readonly int _maxQueue;
     private readonly long _capacity;
+    private int _available;
+    private int _waiters;
     private StrategyMetricAlias[] _metricsAliasSnapshot = [];
     private long _pending;
     private long _metricsState;
@@ -21,10 +24,11 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
     {
         Throw.IfOutOfRange(options.MaxConcurrency <= 0, nameof(options), "MaxConcurrency must be positive.");
         Throw.IfOutOfRange(options.MaxQueue < 0, nameof(options), "MaxQueue must not be negative.");
-        _semaphore = new SemaphoreSlim(options.MaxConcurrency, options.MaxConcurrency);
+        _semaphore = new SemaphoreSlim(0, options.MaxConcurrency);
         _maxConcurrency = options.MaxConcurrency;
         _maxQueue = options.MaxQueue;
         _capacity = options.MaxConcurrency + (long)options.MaxQueue;
+        _available = options.MaxConcurrency;
     }
 
     public override string Describe() =>
@@ -44,47 +48,54 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
         var queued = false;
         try
         {
-            if (context.IsSynchronous)
+            context.CancellationToken.ThrowIfCancellationRequested();
+            if (!TryAcquirePermit())
             {
-                if (!_semaphore.Wait(0, context.CancellationToken))
+                queued = true;
+                UpdateMetricsState(inflightDelta: 0, queuedDelta: 1);
+                Interlocked.Increment(ref _waiters);
+                try
                 {
-                    queued = true;
-                    UpdateMetricsState(inflightDelta: 0, queuedDelta: 1);
-                    RecordState(alias);
-                    _semaphore.Wait(context.CancellationToken);
-                }
-            }
-            else
-            {
-                if (!_semaphore.Wait(0, context.CancellationToken))
-                {
-                    using var waitCancellation = context.CancellationToken.CanBeCanceled
-                        ? CancellationTokenSource.CreateLinkedTokenSource(context.CancellationToken)
-                        : new CancellationTokenSource();
-                    var wait = _semaphore.WaitAsync(waitCancellation.Token);
-                    queued = true;
-                    UpdateMetricsState(inflightDelta: 0, queuedDelta: 1);
-                    try
+                    if (!TryAcquirePermit())
                     {
-                        RecordState(alias);
-                    }
-                    catch (Exception publicationFailure)
-                    {
-                        waitCancellation.Cancel();
-                        try
+                        if (context.IsSynchronous)
                         {
+                            RecordState(alias);
+                            _semaphore.Wait(context.CancellationToken);
+                        }
+                        else
+                        {
+                            using var waitCancellation = context.CancellationToken.CanBeCanceled
+                                ? CancellationTokenSource.CreateLinkedTokenSource(context.CancellationToken)
+                                : new CancellationTokenSource();
+                            var wait = _semaphore.WaitAsync(waitCancellation.Token);
+                            try
+                            {
+                                RecordState(alias);
+                            }
+                            catch (Exception publicationFailure)
+                            {
+                                waitCancellation.Cancel();
+                                try
+                                {
+                                    await wait.ConfigureAwait(false);
+                                    ReleasePermit();
+                                }
+                                catch (OperationCanceledException)
+                                {
+                                    // Cancellation withdrew the wait before it took a permit.
+                                }
+
+                                ExceptionDispatchInfo.Capture(publicationFailure).Throw();
+                            }
+
                             await wait.ConfigureAwait(false);
-                            _semaphore.Release();
                         }
-                        catch (OperationCanceledException)
-                        {
-                            // Cancellation withdrew the wait before it took a permit.
-                        }
-
-                        ExceptionDispatchInfo.Capture(publicationFailure).Throw();
                     }
-
-                    await wait.ConfigureAwait(false);
+                }
+                finally
+                {
+                    Interlocked.Decrement(ref _waiters);
                 }
             }
         }
@@ -139,7 +150,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
         catch (Exception publicationFailure)
         {
             UpdateMetricsState(inflightDelta: -1, queuedDelta: 0);
-            _semaphore.Release();
+            ReleasePermit();
             Interlocked.Decrement(ref _pending);
             try
             {
@@ -163,10 +174,40 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
         finally
         {
             UpdateMetricsState(inflightDelta: -1, queuedDelta: 0);
-            _semaphore.Release();
+            ReleasePermit();
             Interlocked.Decrement(ref _pending);
             RecordState(alias);
         }
+    }
+
+    private bool TryAcquirePermit()
+    {
+        while (true)
+        {
+            var available = Volatile.Read(ref _available);
+            if (available == 0)
+            {
+                return false;
+            }
+
+            if (Interlocked.CompareExchange(ref _available, available - 1, available) == available)
+            {
+                return true;
+            }
+        }
+    }
+
+    private void ReleasePermit()
+    {
+        // A waiter registers before retrying the atomic pool, so a concurrent release either
+        // replenishes that pool for the retry or signals the semaphore after the retry fails.
+        if (Volatile.Read(ref _waiters) > 0)
+        {
+            _semaphore.Release();
+            return;
+        }
+
+        Interlocked.Increment(ref _available);
     }
 
     private void UpdateMetricsState(int inflightDelta, int queuedDelta)
