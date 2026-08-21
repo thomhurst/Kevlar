@@ -61,9 +61,18 @@ public readonly struct Continuation<T, TState>
         _state = state;
     }
 
-    /// <summary>Runs the remainder of the pipeline. Never throws; failures are returned as outcomes.</summary>
+    /// <summary>
+    /// Runs the remainder of the pipeline. Never throws; failures are returned as outcomes.
+    /// A default, uninitialized continuation returns an <see cref="InvalidOperationException"/> outcome.
+    /// </summary>
     public ValueTask<Outcome<T>> InvokeAsync(KevlarContext context)
     {
+        if (_callback is null)
+        {
+            return new ValueTask<Outcome<T>>(Outcome<T>.FromException(
+                new InvalidOperationException("The continuation is not initialized.")));
+        }
+
         if (_next is null)
         {
             return _callback(_state, context);
