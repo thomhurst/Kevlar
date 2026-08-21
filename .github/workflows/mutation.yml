@@ -1,22 +1,12 @@
 name: Mutation testing
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - '.config/dotnet-tools.json'
-      - '.github/workflows/mutation.yml'
-      - 'Directory.Build.props'
-      - 'Directory.Packages.props'
-      - 'src/Directory.Build.props'
-      - 'src/Kevlar/**'
-      - 'tests/Kevlar.Tests/**'
   schedule:
     - cron: '23 3 * * 1'
   workflow_dispatch:
 
 concurrency:
-  group: mutation-${{ github.event.pull_request.number || github.ref }}
+  group: mutation-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
