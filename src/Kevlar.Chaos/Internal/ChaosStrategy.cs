@@ -95,7 +95,6 @@ internal abstract class ChaosStrategy : Strategy
 
     protected void Notify(ChaosInjectionKind kind, KevlarContext context, ChaosDecision decision)
     {
-        ChaosMetrics.Injection(kind, context.ShieldName, decision.Operation, decision.Environment);
         _onInjected?.Invoke(new ChaosEvent(
             kind,
             context,
@@ -103,6 +102,7 @@ internal abstract class ChaosStrategy : Strategy
             decision.Environment,
             decision.Rate,
             decision.Sample));
+        ChaosMetrics.Injection(kind, context.ShieldName, decision.Operation, decision.Environment);
     }
 
     private double NextSample()

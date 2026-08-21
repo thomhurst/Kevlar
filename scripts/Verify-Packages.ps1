@@ -107,6 +107,7 @@ $expectedDependencies = @{
     }
     'Kevlar.Chaos' = @{
         'net10.0' = @('Kevlar')
+        'net8.0' = @('Kevlar')
         '.NETStandard2.0' = @('Kevlar', 'Microsoft.Bcl.TimeProvider', 'System.Threading.Tasks.Extensions')
     }
     'Kevlar.Analyzers' = @{
@@ -202,6 +203,13 @@ foreach ($packageId in $expectedDependencies.Keys)
                 "lib/netstandard2.0/$packageId.dll",
                 "lib/netstandard2.0/$packageId.xml"
             )
+            if ($packageId -eq 'Kevlar.Chaos')
+            {
+                $expectedAssets += @(
+                    "lib/net8.0/$packageId.dll",
+                    "lib/net8.0/$packageId.xml"
+                )
+            }
             Assert-Set "$packageId library assets" ($entries | Where-Object { $_ -like 'lib/*' }) $expectedAssets
             if ($entries | Where-Object { $_ -match '^(analyzers|build|buildTransitive|tools)/' })
             {
@@ -251,6 +259,7 @@ using Kevlar.Chaos;
 using Kevlar.Extensions.DependencyInjection;
 using Kevlar.Extensions.Http;
 using Microsoft.Extensions.DependencyInjection;
+using System.Diagnostics.Metrics;
 
 var shield = Shield.Empty;
 var value = await shield.ExecuteAsync(static cancellationToken =>
@@ -260,6 +269,19 @@ if (value != 42)
     throw new InvalidOperationException("Core package execution failed.");
 }
 
+var injections = 0;
+using var listener = new MeterListener();
+listener.InstrumentPublished = (instrument, activeListener) =>
+{
+    if (instrument.Meter.Name == ChaosDiagnostics.MeterName
+        && instrument.Name == "kevlar.chaos.injections")
+    {
+        activeListener.EnableMeasurementEvents(instrument);
+    }
+};
+listener.SetMeasurementEventCallback<long>((_, measurement, _, _) => injections += (int)measurement);
+listener.Start();
+
 var chaos = ChaosShield.Outcome<int>(options =>
 {
     options.Enabled = true;
@@ -268,6 +290,10 @@ var chaos = ChaosShield.Outcome<int>(options =>
 if (await chaos.ExecuteAsync(static _ => new ValueTask<int>(0)) != 42)
 {
     throw new InvalidOperationException("Chaos package execution failed.");
+}
+if (injections != 1)
+{
+    throw new InvalidOperationException($"Chaos package metrics failed: expected 1 injection, actual {injections}.");
 }
 
 IServiceCollection services = new ServiceCollection();

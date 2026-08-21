@@ -505,18 +505,44 @@ public class ChaosStrategyTests
     }
 
     [Test]
+    [NotInParallel]
     public async Task Injection_Callback_Failure_Is_Preserved()
     {
         var injected = new TestException("callback");
+        var shieldName = $"callback-failure-{Guid.NewGuid():N}";
+        var measurements = 0;
+        using var listener = new MeterListener();
+        listener.InstrumentPublished = (instrument, activeListener) =>
+        {
+            if (instrument.Meter.Name == ChaosDiagnostics.MeterName
+                && instrument.Name == "kevlar.chaos.injections")
+            {
+                activeListener.EnableMeasurementEvents(instrument);
+            }
+        };
+        listener.SetMeasurementEventCallback<long>((_, _, tags, _) =>
+        {
+            foreach (var tag in tags)
+            {
+                if (tag.Key == "kevlar.shield.name"
+                    && string.Equals(tag.Value?.ToString(), shieldName, StringComparison.Ordinal))
+                {
+                    measurements++;
+                }
+            }
+        });
+        listener.Start();
+
         var shield = ChaosShield.Latency(options =>
         {
             options.Enabled = true;
             options.OnInjected = _ => throw injected;
-        });
+        }).WithName(shieldName);
 
         var outcome = await shield.ExecuteOutcomeAsync(static _ => new ValueTask<int>(1));
 
         await Assert.That(ReferenceEquals(outcome.Exception, injected)).IsTrue();
+        await Assert.That(measurements).IsEqualTo(0);
     }
 
     [Test]
