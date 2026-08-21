@@ -1,6 +1,7 @@
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
 
 namespace Kevlar.Extensions.Grpc;
 
@@ -109,6 +110,11 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
                         _context.Options.CancellationToken);
                 }
 
+                if (exception is AttemptRpcException attemptException)
+                {
+                    ExceptionDispatchInfo.Capture(attemptException.Original).Throw();
+                }
+
                 throw;
             }
             finally
@@ -147,8 +153,13 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
             }
             catch (Exception exception)
             {
-                CompleteAttempt(call, exception);
-                throw;
+                var attemptException = CompleteAttempt(call, exception);
+                if (ReferenceEquals(attemptException, exception))
+                {
+                    throw;
+                }
+
+                throw attemptException ?? exception;
             }
         }
 
@@ -193,7 +204,7 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
             }
         }
 
-        private void CompleteAttempt(AsyncUnaryCall<TResponse> call, Exception? exception)
+        private Exception? CompleteAttempt(AsyncUnaryCall<TResponse> call, Exception? exception)
         {
             var failureCall = exception is null ? null : SnapshotFailure(call, exception);
             lock (_gate)
@@ -205,6 +216,13 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
                         continue;
                     }
 
+                    if (exception is RpcException rpcException
+                        && _failedCalls is not null
+                        && _failedCalls.TryGetValue(exception, out _))
+                    {
+                        exception = new AttemptRpcException(rpcException);
+                    }
+
                     _attempts[index] = new AttemptRecord(call, exception);
                     if (exception is not null)
                     {
@@ -212,9 +230,11 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
                             .GetValue(exception, static _ => new FailureSelection()).Call = failureCall;
                     }
 
-                    return;
+                    return exception;
                 }
             }
+
+            return exception;
         }
 
         private static AsyncUnaryCall<TResponse> SnapshotFailure(
@@ -400,6 +420,12 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
         private sealed class FailureSelection
         {
             public AsyncUnaryCall<TResponse>? Call { get; set; }
+        }
+
+        private sealed class AttemptRpcException(RpcException original)
+            : RpcException(original.Status, original.Trailers, original.Message)
+        {
+            public RpcException Original { get; } = original;
         }
 
         private readonly struct AttemptRecord(
