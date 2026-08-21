@@ -178,7 +178,7 @@ public class CircuitBreakerTransitionOrderingTests
             {
                 foreach (var tag in tags)
                 {
-                    if (tag is { Key: "to", Value: "Isolated" })
+                    if (tag is { Key: "kevlar.circuit_breaker.state.to", Value: "isolated" })
                     {
                         throw metricsFailure;
                     }
