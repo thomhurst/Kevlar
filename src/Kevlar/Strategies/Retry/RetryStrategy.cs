@@ -83,7 +83,7 @@ internal sealed class RetryStrategy : Strategy
                 }
             }
 
-            if (delay > TimeSpan.Zero)
+            if (delay > TimeSpan.Zero || context.CancellationToken.IsCancellationRequested)
             {
                 try
                 {
