@@ -15,8 +15,11 @@ public static class GrpcShield
             or StatusCode.DeadlineExceeded
             or StatusCode.ResourceExhausted;
 
-    /// <summary>Returns <see langword="true"/> when the exception has a commonly transient status.</summary>
-    public static bool IsTransient(RpcException exception) =>
+    /// <summary>
+    /// Returns <see langword="true"/> when the exception has a commonly transient status,
+    /// or <see langword="false"/> when <paramref name="exception"/> is <see langword="null"/>.
+    /// </summary>
+    public static bool IsTransient(RpcException? exception) =>
         exception is not null && IsTransient(exception.StatusCode);
 
     /// <summary>

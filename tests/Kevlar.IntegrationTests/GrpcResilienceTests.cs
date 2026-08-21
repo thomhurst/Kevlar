@@ -34,14 +34,15 @@ public class GrpcResilienceTests
         await using var server = await GrpcTestServer.StartAsync();
         var shield = GrpcShield.WhenTransient().Retry(1, Backoff.None);
 
-        var response = await server.Client(shield).UnaryAsync(
-            new TestRequest { Scenario = "transient" }).ResponseAsync;
+        using var successfulCall = server.Client(shield).UnaryAsync(
+            new TestRequest { Scenario = "transient" });
+        var response = await successfulCall.ResponseAsync;
 
         await Assert.That(response.Attempt).IsEqualTo(2);
 
-        var exception = await Assert.That(async () =>
-                await server.Client(shield).UnaryAsync(
-                    new TestRequest { Scenario = "invalid" }).ResponseAsync)
+        using var failedCall = server.Client(shield).UnaryAsync(
+            new TestRequest { Scenario = "invalid" });
+        var exception = await Assert.That(async () => await failedCall.ResponseAsync)
             .Throws<RpcException>();
         await Assert.That(exception!.StatusCode).IsEqualTo(StatusCode.InvalidArgument);
         await Assert.That(server.State.Attempts("invalid")).IsEqualTo(1);
@@ -55,8 +56,8 @@ public class GrpcResilienceTests
             .CircuitBreaker(1, TimeSpan.FromMinutes(1));
         var client = server.Client(shield);
 
-        _ = await Assert.That(async () =>
-                await client.UnaryAsync(new TestRequest { Scenario = "unavailable" }).ResponseAsync)
+        using var failedCall = client.UnaryAsync(new TestRequest { Scenario = "unavailable" });
+        _ = await Assert.That(async () => await failedCall.ResponseAsync)
             .Throws<RpcException>();
         using var rejectedCall = client.UnaryAsync(new TestRequest { Scenario = "unavailable" });
         _ = await Assert.That(async () => await rejectedCall.ResponseAsync)
@@ -75,8 +76,8 @@ public class GrpcResilienceTests
         await using var server = await GrpcTestServer.StartAsync();
         var client = server.Client(Shield.Timeout(TimeSpan.FromMilliseconds(100)));
 
-        _ = await Assert.That(async () =>
-                await client.UnaryAsync(new TestRequest { Scenario = "wait" }).ResponseAsync)
+        using var call = client.UnaryAsync(new TestRequest { Scenario = "wait" });
+        _ = await Assert.That(async () => await call.ResponseAsync)
             .Throws<TimeoutExceededException>();
 
         await server.State.WaitForCancellationAsync().WaitAsync(TimeSpan.FromSeconds(5));
@@ -87,7 +88,7 @@ public class GrpcResilienceTests
     {
         await using var server = await GrpcTestServer.StartAsync();
         using var cancellation = new CancellationTokenSource();
-        var call = server.Client(Shield.Empty).UnaryAsync(
+        using var call = server.Client(Shield.Empty).UnaryAsync(
             new TestRequest { Scenario = "wait" },
             cancellationToken: cancellation.Token);
         await server.State.WaitForEntryAsync().WaitAsync(TimeSpan.FromSeconds(5));
@@ -106,10 +107,10 @@ public class GrpcResilienceTests
         await using var server = await GrpcTestServer.StartAsync();
         var client = server.Client(Shield.Timeout(TimeSpan.FromSeconds(5)));
 
-        var exception = await Assert.That(async () =>
-                await client.UnaryAsync(
-                    new TestRequest { Scenario = "wait" },
-                    deadline: DateTime.UtcNow.AddMilliseconds(100)).ResponseAsync)
+        using var call = client.UnaryAsync(
+            new TestRequest { Scenario = "wait" },
+            deadline: DateTime.UtcNow.AddMilliseconds(100));
+        var exception = await Assert.That(async () => await call.ResponseAsync)
             .Throws<RpcException>();
 
         await Assert.That(exception!.StatusCode).IsEqualTo(StatusCode.DeadlineExceeded);
@@ -123,7 +124,12 @@ public class GrpcResilienceTests
         await Assert.That(GrpcShield.IsTransient(StatusCode.DeadlineExceeded)).IsTrue();
         await Assert.That(GrpcShield.IsTransient(StatusCode.ResourceExhausted)).IsTrue();
         await Assert.That(GrpcShield.IsTransient(StatusCode.InvalidArgument)).IsFalse();
-        await Assert.That(GrpcShield.IsTransient((RpcException)null!)).IsFalse();
+        await Assert.That(GrpcShield.IsTransient((RpcException?)null)).IsFalse();
+    }
+
+    [Test]
+    public async Task Interceptor_Rejects_Null_Shield()
+    {
         _ = await Assert.That(() => new ShieldUnaryClientInterceptor(null!))
             .Throws<ArgumentNullException>();
     }
@@ -149,7 +155,8 @@ public class GrpcResilienceTests
         }).Intercept(interceptor);
         var client = new Resilience.ResilienceClient(invoker);
 
-        var response = await client.UnaryAsync(new TestRequest()).ResponseAsync;
+        using var call = client.UnaryAsync(new TestRequest());
+        var response = await call.ResponseAsync;
 
         await Assert.That(response.Attempt).IsEqualTo(2);
         await firstDisposed.Task.WaitAsync(TimeSpan.FromSeconds(5));
@@ -201,8 +208,8 @@ public class GrpcResilienceTests
         await using var server = await GrpcTestServer.StartAsync();
         var client = server.Client(Shield.Hedge(2, TimeSpan.Zero));
 
-        var response = await client.UnaryAsync(
-            new TestRequest { Scenario = "hedge" }).ResponseAsync;
+        using var call = client.UnaryAsync(new TestRequest { Scenario = "hedge" });
+        var response = await call.ResponseAsync;
 
         await Assert.That(response.Attempt).IsEqualTo(2);
         await server.State.WaitForCancellationAsync().WaitAsync(TimeSpan.FromSeconds(5));
@@ -253,8 +260,9 @@ public class GrpcResilienceTests
             .AddShieldUnaryInterceptor("grpc");
         await using var provider = services.BuildServiceProvider();
 
-        var response = await provider.GetRequiredService<Resilience.ResilienceClient>()
-            .UnaryAsync(new TestRequest { Scenario = "transient" }).ResponseAsync;
+        using var call = provider.GetRequiredService<Resilience.ResilienceClient>()
+            .UnaryAsync(new TestRequest { Scenario = "transient" });
+        var response = await call.ResponseAsync;
 
         await Assert.That(response.Attempt).IsEqualTo(2);
     }
@@ -330,14 +338,22 @@ public class GrpcResilienceTests
             builder.Services.AddSingleton<GrpcServiceState>();
             var application = builder.Build();
             application.MapGrpcService<TestGrpcService>();
-            await application.StartAsync();
-            var channel = GrpcChannel.ForAddress(
-                "http://localhost",
-                new GrpcChannelOptions { HttpHandler = application.GetTestServer().CreateHandler() });
-            return new GrpcTestServer(
-                application,
-                application.Services.GetRequiredService<GrpcServiceState>(),
-                channel);
+            try
+            {
+                await application.StartAsync();
+                var channel = GrpcChannel.ForAddress(
+                    "http://localhost",
+                    new GrpcChannelOptions { HttpHandler = application.GetTestServer().CreateHandler() });
+                return new GrpcTestServer(
+                    application,
+                    application.Services.GetRequiredService<GrpcServiceState>(),
+                    channel);
+            }
+            catch
+            {
+                await application.DisposeAsync();
+                throw;
+            }
         }
 
         public Resilience.ResilienceClient Client(Shield shield) =>
