@@ -410,6 +410,7 @@ public class CircuitBreakerDynamicOptionsTests
 
             var execution = strategy.ExecuteAsync(continuation, context);
 
+            await Assert.That(execution.IsCompleted).IsTrue();
             await Assert.That(execution.IsCompletedSuccessfully).IsFalse();
             var thrown = await Assert.That(async () => await execution).Throws<InvalidOperationException>();
             await Assert.That(ReferenceEquals(thrown, predicateFailure)).IsTrue();
