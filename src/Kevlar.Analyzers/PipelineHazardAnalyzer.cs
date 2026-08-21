@@ -86,6 +86,15 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 invocation.Syntax.GetLocation(),
                 reactiveStrategy));
         }
+
+        if (IsCompositionBoundary(Normalize(invocation.TargetMethod), knownTypes)
+            && FindCompositionHazard(invocation, context, knownTypes, out reactiveStrategy))
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                UnreachableReactiveStrategyRule,
+                invocation.Syntax.GetLocation(),
+                reactiveStrategy));
+        }
     }
 
     private static bool FindInPipeline(
@@ -176,7 +185,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        if (operation?.Syntax is CollectionExpressionSyntax)
+        if (operation?.Syntax is CollectionExpressionSyntax or SpreadElementSyntax)
         {
             foreach (var child in operation.ChildOperations)
             {
@@ -265,6 +274,85 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             stopAtCompositionBoundary,
             visitedLocals,
             out matchedMethod);
+    }
+
+    private static bool FindCompositionHazard(
+        IInvocationOperation invocation,
+        OperationAnalysisContext context,
+        KnownTypes knownTypes,
+        out string? matchedMethod)
+    {
+        var operands = new List<IOperation>();
+        var method = Normalize(invocation.TargetMethod);
+        if (method.Name == "Wrap")
+        {
+            var outer = GetReceiver(invocation);
+            var inner = GetArgument(invocation, "inner");
+            if (outer is null || inner is null)
+            {
+                matchedMethod = null;
+                return false;
+            }
+
+            operands.Add(outer);
+            operands.Add(inner);
+        }
+        else
+        {
+            foreach (var argument in invocation.Arguments)
+            {
+                CollectCompositionOperands(argument.Value, context, operands, visitedLocals: null);
+            }
+        }
+
+        var ambientClauses = new SyntaxNode?[operands.Count];
+        for (var index = 0; index < operands.Count; index++)
+        {
+            if (!TryGetAmbientClause(
+                operands[index],
+                context,
+                knownTypes,
+                visitedLocals: null,
+                out ambientClauses[index]))
+            {
+                matchedMethod = null;
+                return false;
+            }
+        }
+
+        for (var fallbackIndex = 1; fallbackIndex < operands.Count; fallbackIndex++)
+        {
+            if (!FindInPipeline(
+                operands[fallbackIndex],
+                context,
+                candidate => IsKevlarFluentMethod(candidate.TargetMethod, knownTypes, "Fallback"),
+                knownTypes,
+                stopAtHandlingClause: true,
+                stopAtCompositionBoundary: true,
+                out _))
+            {
+                continue;
+            }
+
+            for (var reactiveIndex = 0; reactiveIndex < fallbackIndex; reactiveIndex++)
+            {
+                if (SameAmbient(ambientClauses[reactiveIndex], ambientClauses[fallbackIndex])
+                    && FindInPipeline(
+                        operands[reactiveIndex],
+                        context,
+                        candidate => IsReactiveStrategy(Normalize(candidate.TargetMethod), knownTypes),
+                        knownTypes,
+                        stopAtHandlingClause: true,
+                        stopAtCompositionBoundary: true,
+                        out matchedMethod))
+                {
+                    return true;
+                }
+            }
+        }
+
+        matchedMethod = null;
+        return false;
     }
 
     private static bool FindAtCompositionBoundary(
@@ -508,7 +596,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             return;
         }
 
-        if (operation?.Syntax is CollectionExpressionSyntax)
+        if (operation?.Syntax is CollectionExpressionSyntax or SpreadElementSyntax)
         {
             foreach (var child in operation.ChildOperations)
             {
@@ -601,6 +689,19 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
+        if (knownTypes.IsShieldBuilder(method.ContainingType)
+            && method.ReturnType is INamedTypeSymbol returnType
+            && knownTypes.IsShield(returnType)
+            && BuilderCreatesHandlingClause(
+                GetReceiver(invocation),
+                context,
+                knownTypes,
+                visitedLocals))
+        {
+            ambientClause = invocation.Syntax;
+            return true;
+        }
+
         if (method.Name == "Wrap")
         {
             var inner = GetArgument(invocation, "inner");
@@ -659,6 +760,46 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         ambientClause = null;
         return knownTypes.IsShield(method.ContainingType);
+    }
+
+    private static bool BuilderCreatesHandlingClause(
+        IOperation? operation,
+        OperationAnalysisContext context,
+        KnownTypes knownTypes,
+        HashSet<ISymbol>? visitedLocals)
+    {
+        operation = Unwrap(operation);
+        if (operation is ILocalReferenceOperation localReference)
+        {
+            visitedLocals ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+            if (!visitedLocals.Add(localReference.Local)
+                || !TryGetStableInitializer(localReference, context, out var initializer))
+            {
+                return false;
+            }
+
+            var createsClause = BuilderCreatesHandlingClause(
+                initializer,
+                context,
+                knownTypes,
+                visitedLocals);
+            visitedLocals.Remove(localReference.Local);
+            return createsClause;
+        }
+
+        if (operation is not IInvocationOperation invocation)
+        {
+            return false;
+        }
+
+        var method = Normalize(invocation.TargetMethod);
+        return StartsHandlingClause(method, knownTypes)
+            || knownTypes.IsShieldBuilder(method.ContainingType)
+                && BuilderCreatesHandlingClause(
+                    GetReceiver(invocation),
+                    context,
+                    knownTypes,
+                    visitedLocals);
     }
 
     private static bool SameAmbient(SyntaxNode? left, SyntaxNode? right)

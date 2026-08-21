@@ -22,6 +22,7 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.Empty.Wrap(Shield.Hedge(2, TimeSpan.Zero)).Execute(_ => 1);",
             "_ = Shield.Compose(Shield.Empty, Shield.Hedge(2, TimeSpan.Zero)).Execute(_ => 1);",
             "_ = Shield.Compose([Shield.Hedge(2, TimeSpan.Zero)]).Execute(_ => 1);",
+            "_ = Shield.Compose([.. new[] { Shield.Hedge(2, TimeSpan.Zero) }]).Execute(_ => 1);",
             "var parts = new[] { Shield.Hedge(2, TimeSpan.Zero) }; _ = Shield.Compose(parts).Execute(_ => 1);",
             "_ = Shield<int>.Empty.Wrap(Shield.Hedge(2, TimeSpan.Zero)).Execute(_ => 1);",
         };
@@ -110,6 +111,8 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.Compose(Shield.When<InvalidOperationException>().Retry(1), Shield.Empty).For<int>().Fallback(0);",
             "var clause = Shield.For<int>().When<InvalidOperationException>().Timeout(TimeSpan.Zero); var outer = clause.Retry(1); _ = outer.Wrap(clause).Fallback(0);",
             "var clause = Shield.When<InvalidOperationException>().Timeout(TimeSpan.Zero); var outer = clause.Retry(1); _ = Shield.Compose(outer, clause).For<int>().Fallback(0);",
+            "var retry = Shield.Retry(1); var fallback = Shield.For<int>().Fallback(0); _ = retry.Wrap(fallback);",
+            "var retry = Shield.Retry(1); var fallback = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask); _ = Shield.Compose(retry, fallback);",
         };
 
         await AssertEachAsync(cases, "KEV003");
@@ -151,6 +154,10 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.For<int>().When<InvalidOperationException>().Timeout(TimeSpan.FromSeconds(1)).Wrap(Shield.Retry(1)).Fallback(0);",
             "_ = Shield.Compose(Shield.When<InvalidOperationException>().Timeout(TimeSpan.FromSeconds(1)), Shield.Retry(1)).For<int>().Fallback(0);",
             "var parts = new[] { Shield.Retry(1) }; parts[0] = Shield.Empty; _ = Shield.Compose(parts).For<int>().Fallback(0);",
+            "var builder = Shield.For<int>().When<InvalidOperationException>(); var retry = builder.Retry(1); _ = retry.Wrap(builder.Timeout(TimeSpan.Zero)).Fallback(0);",
+            "var fallback = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask); var retry = Shield.Retry(1); _ = Shield.Compose(fallback, retry);",
+            "var retry = Shield.When<InvalidOperationException>().Retry(1); var fallback = Shield.For<int>().When<TimeoutException>().Fallback(0); _ = retry.Wrap(fallback);",
+            "var outer = Shield.Retry(1).When<InvalidOperationException>().Timeout(TimeSpan.Zero); var fallback = Shield.For<int>().When<InvalidOperationException>().Fallback(0); _ = outer.Wrap(fallback);",
         };
 
         foreach (var body in cases)
