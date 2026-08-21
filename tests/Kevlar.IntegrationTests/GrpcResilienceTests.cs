@@ -58,9 +58,13 @@ public class GrpcResilienceTests
         _ = await Assert.That(async () =>
                 await client.UnaryAsync(new TestRequest { Scenario = "unavailable" }).ResponseAsync)
             .Throws<RpcException>();
-        _ = await Assert.That(async () =>
-                await client.UnaryAsync(new TestRequest { Scenario = "unavailable" }).ResponseAsync)
+        using var rejectedCall = client.UnaryAsync(new TestRequest { Scenario = "unavailable" });
+        _ = await Assert.That(async () => await rejectedCall.ResponseAsync)
             .Throws<CircuitOpenException>();
+        _ = await Assert.That(async () => await rejectedCall.ResponseHeadersAsync)
+            .Throws<CircuitOpenException>();
+        _ = await Assert.That(() => rejectedCall.GetStatus()).Throws<InvalidOperationException>();
+        _ = await Assert.That(() => rejectedCall.GetTrailers()).Throws<InvalidOperationException>();
 
         await Assert.That(server.State.Attempts("unavailable")).IsEqualTo(1);
     }
@@ -117,6 +121,9 @@ public class GrpcResilienceTests
         await Assert.That(GrpcShield.IsTransient(StatusCode.DeadlineExceeded)).IsTrue();
         await Assert.That(GrpcShield.IsTransient(StatusCode.ResourceExhausted)).IsTrue();
         await Assert.That(GrpcShield.IsTransient(StatusCode.InvalidArgument)).IsFalse();
+        await Assert.That(GrpcShield.IsTransient((RpcException)null!)).IsFalse();
+        _ = await Assert.That(() => new ShieldUnaryClientInterceptor(null!))
+            .Throws<ArgumentNullException>();
     }
 
     [Test]
@@ -144,6 +151,41 @@ public class GrpcResilienceTests
 
         await Assert.That(response.Attempt).IsEqualTo(2);
         await firstDisposed.Task.WaitAsync(TimeSpan.FromSeconds(5));
+    }
+
+    [Test]
+    public async Task Disposing_The_Wrapper_Cancels_And_Disposes_The_Active_Call()
+    {
+        var response = new TaskCompletionSource<TestReply>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var disposed = 0;
+        var invoker = new DelegateCallInvoker((_, options) =>
+        {
+            options.CancellationToken.Register(() =>
+                response.TrySetException(new RpcException(new Status(StatusCode.Cancelled, "cancelled"))));
+            return Call(response.Task, () => Interlocked.Increment(ref disposed));
+        }).Intercept(new ShieldUnaryClientInterceptor(Shield.Empty));
+        var client = new Resilience.ResilienceClient(invoker);
+        var call = client.UnaryAsync(new TestRequest());
+
+        call.Dispose();
+        call.Dispose();
+
+        _ = await Assert.That(async () => await call.ResponseAsync).Throws<OperationCanceledException>();
+        await Assert.That(disposed).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Hedge_Cancels_The_Losing_Loopback_Rpc()
+    {
+        await using var server = await GrpcTestServer.StartAsync();
+        var client = server.Client(Shield.Hedge(2, TimeSpan.Zero));
+
+        var response = await client.UnaryAsync(
+            new TestRequest { Scenario = "hedge" }).ResponseAsync;
+
+        await Assert.That(response.Attempt).IsEqualTo(2);
+        await server.State.WaitForCancellationAsync().WaitAsync(TimeSpan.FromSeconds(5));
+        await Assert.That(server.State.Attempts("hedge")).IsEqualTo(2);
     }
 
     [Test]
@@ -333,6 +375,7 @@ public class GrpcResilienceTests
                 case "invalid":
                     throw new RpcException(new Status(StatusCode.InvalidArgument, "invalid"));
                 case "wait":
+                case "hedge" when attempt == 1:
                     state.Entered();
                     try
                     {
