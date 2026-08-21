@@ -21,6 +21,7 @@ public class PipelineHazardAnalyzerTests
             "var shield = ShieldExtensions.Hedge(Shield.Empty, 2, TimeSpan.Zero); _ = shield.Execute(_ => 1);",
             "_ = Shield.Empty.Wrap(Shield.Hedge(2, TimeSpan.Zero)).Execute(_ => 1);",
             "_ = Shield.Compose(Shield.Empty, Shield.Hedge(2, TimeSpan.Zero)).Execute(_ => 1);",
+            "_ = Shield.Compose([Shield.Hedge(2, TimeSpan.Zero)]).Execute(_ => 1);",
             "var parts = new[] { Shield.Hedge(2, TimeSpan.Zero) }; _ = Shield.Compose(parts).Execute(_ => 1);",
             "_ = Shield<int>.Empty.Wrap(Shield.Hedge(2, TimeSpan.Zero)).Execute(_ => 1);",
         };
@@ -99,6 +100,8 @@ public class PipelineHazardAnalyzerTests
             "var shield = Shield.For<int>().Retry(1); var alias = shield; _ = alias.Fallback(0);",
             "Shield<int>? shield = Shield.For<int>().Retry(1); _ = shield?.Fallback(0);",
             "_ = ShieldExtensions.Fallback(ShieldExtensions.Retry(Shield.Empty, 1), static _ => ValueTask.CompletedTask);",
+            "_ = Shield.For<int>().Retry(1).Wrap(Shield.Empty).Fallback(0);",
+            "_ = Shield.For<int>().Retry(1).Wrap(Shield.Timeout(TimeSpan.FromSeconds(1))).Fallback(0);",
         };
 
         await AssertEachAsync(cases, "KEV003");

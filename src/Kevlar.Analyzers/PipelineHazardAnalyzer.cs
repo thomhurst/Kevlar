@@ -176,6 +176,28 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
+        if (operation?.Syntax is CollectionExpressionSyntax)
+        {
+            foreach (var child in operation.ChildOperations)
+            {
+                if (FindInPipeline(
+                    child,
+                    context,
+                    predicate,
+                    knownTypes,
+                    stopAtHandlingClause,
+                    stopAtCompositionBoundary,
+                    visitedLocals,
+                    out matchedMethod))
+                {
+                    return true;
+                }
+            }
+
+            matchedMethod = null;
+            return false;
+        }
+
         if (operation is not IInvocationOperation invocation)
         {
             matchedMethod = null;
@@ -198,6 +220,20 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         var isCompositionBoundary = IsCompositionBoundary(method, knownTypes);
         if (stopAtCompositionBoundary && isCompositionBoundary)
         {
+            if (method.Name == "Wrap"
+                && WrapPreservesAmbient(invocation, context, knownTypes, visitedLocals))
+            {
+                return FindInPipeline(
+                    GetReceiver(invocation),
+                    context,
+                    predicate,
+                    knownTypes,
+                    stopAtHandlingClause,
+                    stopAtCompositionBoundary,
+                    visitedLocals,
+                    out matchedMethod);
+            }
+
             matchedMethod = null;
             return false;
         }
@@ -236,6 +272,79 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             stopAtCompositionBoundary,
             visitedLocals,
             out matchedMethod);
+    }
+
+    private static bool WrapPreservesAmbient(
+        IInvocationOperation invocation,
+        OperationAnalysisContext context,
+        KnownTypes knownTypes,
+        HashSet<ISymbol>? visitedLocals)
+    {
+        foreach (var argument in invocation.Arguments)
+        {
+            if (argument.Parameter?.Name == "inner")
+            {
+                return IsKnownClauseFree(argument.Value, context, knownTypes, visitedLocals);
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsKnownClauseFree(
+        IOperation? operation,
+        OperationAnalysisContext context,
+        KnownTypes knownTypes,
+        HashSet<ISymbol>? visitedLocals)
+    {
+        operation = Unwrap(operation);
+
+        if (operation is ILocalReferenceOperation localReference)
+        {
+            visitedLocals ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+            if (!visitedLocals.Add(localReference.Local)
+                || !TryGetStableInitializer(localReference, context, out var initializer))
+            {
+                return false;
+            }
+
+            var isClauseFree = IsKnownClauseFree(initializer, context, knownTypes, visitedLocals);
+            visitedLocals.Remove(localReference.Local);
+            return isClauseFree;
+        }
+
+        if (operation is IPropertyReferenceOperation propertyReference)
+        {
+            return propertyReference.Property.Name == "Empty"
+                && knownTypes.IsShield(propertyReference.Property.ContainingType);
+        }
+
+        if (operation is not IInvocationOperation invocation)
+        {
+            return false;
+        }
+
+        var method = Normalize(invocation.TargetMethod);
+        if (StartsHandlingClause(method, knownTypes) || !IsKevlarFluentMethod(method, knownTypes))
+        {
+            return false;
+        }
+
+        if (method.Name == "Wrap")
+        {
+            return IsKnownClauseFree(GetReceiver(invocation), context, knownTypes, visitedLocals)
+                && WrapPreservesAmbient(invocation, context, knownTypes, visitedLocals);
+        }
+
+        if (method.Name == "Compose")
+        {
+            return false;
+        }
+
+        var receiver = GetReceiver(invocation);
+        return receiver is null
+            ? knownTypes.IsShield(method.ContainingType)
+            : IsKnownClauseFree(receiver, context, knownTypes, visitedLocals);
     }
 
     private static bool TryGetStableInitializer(
@@ -428,7 +537,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
     private static bool StartsHandlingClause(IMethodSymbol method, KnownTypes knownTypes) =>
         (method.Name is "When" or "WhenResult" or "WhenDefault")
-        && (knownTypes.IsShield(method.ContainingType) || knownTypes.IsShieldExtensions(method.ContainingType));
+        && (knownTypes.IsShield(method.ContainingType)
+            || knownTypes.IsShieldBuilder(method.ContainingType)
+            || knownTypes.IsShieldExtensions(method.ContainingType));
 
     private static bool IsCompositionBoundary(IMethodSymbol method, KnownTypes knownTypes) =>
         (method.Name is "Wrap" or "Compose") && IsKevlarFluentMethod(method, knownTypes);
