@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Kevlar.Internal;
 
 namespace Kevlar.Strategies;
@@ -9,23 +11,29 @@ namespace Kevlar.Strategies;
 internal sealed class CircuitBreakerCore
 {
     private const int BucketCount = 10;
+    private static readonly double SecondsPerSystemTimestamp = 1d / Stopwatch.Frequency;
 
     private readonly Lock _gate = new();
+    private readonly long _systemTimestampOrigin = Stopwatch.GetTimestamp();
+    private readonly ConditionalWeakTable<TimeProvider, CustomTimestampOrigin> _customTimestampOrigins = new();
     private readonly int? _consecutiveFailureLimit;
     private readonly double? _failureRatio;
     private readonly int _minimumThroughput;
     private readonly TimeSpan _samplingWindow;
-    private readonly TimeSpan _bucketDuration;
+    private readonly double _bucketDurationTimestampUnits;
     private readonly TimeSpan _breakDuration;
+    private readonly double _breakDurationTimestampUnits;
     private readonly Action<CircuitStateChangedEvent>? _onStateChanged;
     private readonly CircuitBreakerMonitor? _monitor;
 
     private readonly int[] _bucketFailures = new int[BucketCount];
     private readonly int[] _bucketSuccesses = new int[BucketCount];
-    private long _currentBucket = -1;
+    private double _currentBucketStart = double.NaN;
+    private int _currentBucketIndex;
 
     private CircuitState _state = CircuitState.Closed;
-    private DateTimeOffset _openUntil;
+    private double _latestTimestamp;
+    private double _openUntilTimestamp;
     private int _consecutiveFailures;
     private bool _probeInFlight;
     private Exception? _lastException;
@@ -43,8 +51,9 @@ internal sealed class CircuitBreakerCore
         _consecutiveFailureLimit = options.FailureRatio is null ? options.ConsecutiveFailures ?? 5 : null;
         _samplingWindow = options.SamplingWindow;
         _minimumThroughput = options.MinimumThroughput;
-        _bucketDuration = TimeSpan.FromTicks(Math.Max(1, options.SamplingWindow.Ticks / BucketCount));
+        _bucketDurationTimestampUnits = options.SamplingWindow.TotalSeconds * Stopwatch.Frequency / BucketCount;
         _breakDuration = options.BreakDuration;
+        _breakDurationTimestampUnits = options.BreakDuration.TotalSeconds * Stopwatch.Frequency;
         _onStateChanged = options.OnStateChanged;
         _monitor = options.Monitor;
         _monitor?.Bind(this);
@@ -91,15 +100,23 @@ internal sealed class CircuitBreakerCore
                     allowed = false;
                     break;
 
-                case CircuitState.Open when timeProvider.GetUtcNow() >= _openUntil:
-                    transition = ChangeState(CircuitState.HalfOpen);
-                    _probeInFlight = true;
-                    allowed = true;
-                    break;
-
                 case CircuitState.Open:
-                    rejection = new CircuitOpenException(_openUntil - timeProvider.GetUtcNow(), isIsolated: false, _lastException);
-                    allowed = false;
+                    var timestamp = GetCurrentTimestamp(timeProvider);
+                    if (timestamp >= _openUntilTimestamp)
+                    {
+                        transition = ChangeState(CircuitState.HalfOpen);
+                        _probeInFlight = true;
+                        allowed = true;
+                    }
+                    else
+                    {
+                        rejection = new CircuitOpenException(
+                            GetElapsedTime(_openUntilTimestamp - timestamp),
+                            isIsolated: false,
+                            _lastException);
+                        allowed = false;
+                    }
+
                     break;
 
                 default: // HalfOpen
@@ -158,13 +175,25 @@ internal sealed class CircuitBreakerCore
             if (_state == CircuitState.HalfOpen)
             {
                 _probeInFlight = false;
-                _openUntil = timeProvider.GetUtcNow() + _breakDuration;
+                _openUntilTimestamp = GetCurrentTimestamp(timeProvider) + _breakDurationTimestampUnits;
                 transition = ChangeState(CircuitState.Open);
             }
-            else if (_state == CircuitState.Closed && IsTripped(timeProvider))
+            else if (_state == CircuitState.Closed)
             {
-                _openUntil = timeProvider.GetUtcNow() + _breakDuration;
-                transition = ChangeState(CircuitState.Open);
+                var timestamp = _failureRatio is null
+                    ? 0
+                    : GetCurrentTimestamp(timeProvider);
+
+                if (IsTripped(timestamp))
+                {
+                    if (_failureRatio is null)
+                    {
+                        timestamp = GetCurrentTimestamp(timeProvider);
+                    }
+
+                    _openUntilTimestamp = timestamp + _breakDurationTimestampUnits;
+                    transition = ChangeState(CircuitState.Open);
+                }
             }
         }
 
@@ -215,14 +244,14 @@ internal sealed class CircuitBreakerCore
         Publish(transition);
     }
 
-    private bool IsTripped(TimeProvider timeProvider)
+    private bool IsTripped(double timestamp)
     {
         if (_consecutiveFailureLimit is { } limit)
         {
             return ++_consecutiveFailures >= limit;
         }
 
-        var bucket = AdvanceBucket(timeProvider);
+        var bucket = AdvanceBucket(timestamp);
         _bucketFailures[bucket]++;
 
         int failures = 0, total = 0;
@@ -235,36 +264,99 @@ internal sealed class CircuitBreakerCore
         return total >= _minimumThroughput && (double)failures / total >= _failureRatio!.Value;
     }
 
-    private int AdvanceBucket(TimeProvider timeProvider)
+    private int AdvanceBucket(TimeProvider timeProvider) => AdvanceBucket(GetCurrentTimestamp(timeProvider));
+
+    private int AdvanceBucket(double timestamp)
     {
-        var absoluteBucket = timeProvider.GetUtcNow().UtcTicks / _bucketDuration.Ticks;
-
-        if (_currentBucket == -1)
+        if (double.IsNaN(_currentBucketStart))
         {
-            _currentBucket = absoluteBucket;
+            _currentBucketStart = timestamp;
         }
-        else if (absoluteBucket > _currentBucket)
+        else
         {
-            var advance = Math.Min(absoluteBucket - _currentBucket, BucketCount);
-            for (long i = 1; i <= advance; i++)
+            var elapsed = timestamp - _currentBucketStart;
+            if (elapsed >= _bucketDurationTimestampUnits)
             {
-                var index = (int)((_currentBucket + i) % BucketCount);
-                _bucketFailures[index] = 0;
-                _bucketSuccesses[index] = 0;
-            }
+                var advance = elapsed >= _bucketDurationTimestampUnits * BucketCount
+                    ? BucketCount
+                    : (int)(elapsed / _bucketDurationTimestampUnits);
 
-            _currentBucket = absoluteBucket;
+                for (var i = 1; i <= advance; i++)
+                {
+                    var index = (_currentBucketIndex + i) % BucketCount;
+                    _bucketFailures[index] = 0;
+                    _bucketSuccesses[index] = 0;
+                }
+
+                _currentBucketIndex = (_currentBucketIndex + advance) % BucketCount;
+                _currentBucketStart = advance == BucketCount
+                    ? timestamp
+                    : _currentBucketStart + (advance * _bucketDurationTimestampUnits);
+            }
         }
 
-        return (int)(_currentBucket % BucketCount);
+        return _currentBucketIndex;
     }
 
     private void ResetMetrics()
     {
         _consecutiveFailures = 0;
-        _currentBucket = -1;
+        _currentBucketStart = double.NaN;
+        _currentBucketIndex = 0;
         Array.Clear(_bucketFailures, 0, BucketCount);
         Array.Clear(_bucketSuccesses, 0, BucketCount);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private double GetCurrentTimestamp(TimeProvider timeProvider)
+    {
+        if (ReferenceEquals(timeProvider, TimeProvider.System))
+        {
+            return UpdateTimeline(Stopwatch.GetTimestamp() - _systemTimestampOrigin);
+        }
+
+        var timestamp = timeProvider.GetTimestamp();
+        if (!_customTimestampOrigins.TryGetValue(timeProvider, out var origin))
+        {
+            origin = new CustomTimestampOrigin(timeProvider, timestamp);
+            _customTimestampOrigins.Add(timeProvider, origin);
+            return UpdateTimeline(origin.SystemTimestamp - _systemTimestampOrigin);
+        }
+
+        return UpdateTimeline(
+            origin.SystemTimestamp - _systemTimestampOrigin
+            + ((timestamp - origin.ProviderTimestamp) * origin.TimestampScale));
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private double UpdateTimeline(double timestamp)
+    {
+        _latestTimestamp = Math.Max(_latestTimestamp, timestamp);
+        return _latestTimestamp;
+    }
+
+    private static TimeSpan GetElapsedTime(double timestampUnits)
+    {
+        var ticks = Math.Max(0, timestampUnits) * SecondsPerSystemTimestamp * TimeSpan.TicksPerSecond;
+        return ticks >= TimeSpan.MaxValue.Ticks
+            ? TimeSpan.MaxValue
+            : TimeSpan.FromTicks((long)ticks);
+    }
+
+    private sealed class CustomTimestampOrigin
+    {
+        public CustomTimestampOrigin(TimeProvider timeProvider, long providerTimestamp)
+        {
+            SystemTimestamp = Stopwatch.GetTimestamp();
+            ProviderTimestamp = providerTimestamp;
+            TimestampScale = Stopwatch.Frequency / (double)timeProvider.TimestampFrequency;
+        }
+
+        public long SystemTimestamp { get; }
+
+        public long ProviderTimestamp { get; }
+
+        public double TimestampScale { get; }
     }
 
     private CircuitStateChangedEvent ChangeState(CircuitState next)
