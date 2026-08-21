@@ -1,15 +1,19 @@
+using System.Runtime.ExceptionServices;
 using Kevlar.Internal;
 
 namespace Kevlar.Strategies;
 
 internal sealed class CircuitBreakerStrategy : Strategy
 {
+    private readonly Lock _metricsNamesGate = new();
+    private readonly HashSet<string?> _metricsShieldNames = [];
     private readonly CircuitBreakerCore _core;
     private readonly OutcomeJudge _judge;
+    private readonly long _metricsInstanceId = KevlarMetrics.CreateStrategyInstanceId();
 
     public CircuitBreakerStrategy(CircuitBreakerOptions options, OutcomeJudge judge)
     {
-        _core = new CircuitBreakerCore(options);
+        _core = new CircuitBreakerCore(options, RecordTransitionState);
         _judge = judge;
     }
 
@@ -21,7 +25,7 @@ internal sealed class CircuitBreakerStrategy : Strategy
 
     public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
-        _core.SetMetricsShieldName(context.ShieldName);
+        RegisterMetricsShieldName(context.ShieldName);
         if (!_core.TryEnter(context.TimeProvider, out var rejection))
         {
             RecordState(context.ShieldName);
@@ -56,7 +60,58 @@ internal sealed class CircuitBreakerStrategy : Strategy
     {
         if (KevlarMetrics.CircuitStateEnabled)
         {
-            KevlarMetrics.RecordCircuitState(shieldName, _core.State);
+            KevlarMetrics.RecordCircuitState(shieldName, _metricsInstanceId, _core.State);
+        }
+    }
+
+    private void RegisterMetricsShieldName(string? shieldName)
+    {
+        if (!KevlarMetrics.CircuitStateEnabled)
+        {
+            return;
+        }
+
+        lock (_metricsNamesGate)
+        {
+            _metricsShieldNames.Add(shieldName);
+        }
+    }
+
+    private void RecordTransitionState(CircuitState state)
+    {
+        string?[] shieldNames;
+        lock (_metricsNamesGate)
+        {
+            shieldNames = [.. _metricsShieldNames];
+        }
+
+        if (shieldNames.Length == 0)
+        {
+            KevlarMetrics.RecordCircuitState(null, _metricsInstanceId, state);
+            return;
+        }
+
+        List<Exception>? failures = null;
+        foreach (var shieldName in shieldNames)
+        {
+            try
+            {
+                KevlarMetrics.RecordCircuitState(shieldName, _metricsInstanceId, state);
+            }
+            catch (Exception exception)
+            {
+                (failures ??= []).Add(exception);
+            }
+        }
+
+        if (failures is [var failure])
+        {
+            ExceptionDispatchInfo.Capture(failure).Throw();
+        }
+
+        if (failures is { Count: > 1 })
+        {
+            throw new AggregateException(failures).Flatten();
         }
     }
 }

@@ -4,11 +4,14 @@ namespace Kevlar.Strategies;
 
 internal sealed class ConcurrencyLimitStrategy : Strategy
 {
+    private readonly Lock _metricsPublicationGate = new();
     private readonly SemaphoreSlim _semaphore;
     private readonly int _maxConcurrency;
     private readonly int _maxQueue;
     private readonly long _capacity;
+    private readonly long _metricsInstanceId = KevlarMetrics.CreateStrategyInstanceId();
     private long _pending;
+    private long _metricsState;
 
     protected internal override bool IsDuplicateReferenceUnsafe => true;
 
@@ -35,12 +38,15 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
             return Outcome<T>.FromException(new ConcurrencyLimitExceededException());
         }
 
+        var queued = false;
         try
         {
             if (context.IsSynchronous)
             {
                 if (!_semaphore.Wait(0, context.CancellationToken))
                 {
+                    queued = true;
+                    UpdateMetricsState(inflightDelta: 0, queuedDelta: 1);
                     RecordState(context.ShieldName);
                     _semaphore.Wait(context.CancellationToken);
                 }
@@ -50,6 +56,8 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
                 var wait = _semaphore.WaitAsync(context.CancellationToken);
                 if (!wait.IsCompleted)
                 {
+                    queued = true;
+                    UpdateMetricsState(inflightDelta: 0, queuedDelta: 1);
                     RecordState(context.ShieldName);
                 }
 
@@ -59,11 +67,37 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
         catch (OperationCanceledException cancelled)
         {
             Interlocked.Decrement(ref _pending);
+            if (queued)
+            {
+                UpdateMetricsState(inflightDelta: 0, queuedDelta: -1);
+            }
+
             RecordState(context.ShieldName);
             return Outcome<T>.FromException(cancelled);
         }
+        catch
+        {
+            Interlocked.Decrement(ref _pending);
+            if (queued)
+            {
+                UpdateMetricsState(inflightDelta: 0, queuedDelta: -1);
+            }
 
-        RecordState(context.ShieldName);
+            throw;
+        }
+
+        UpdateMetricsState(inflightDelta: 1, queuedDelta: queued ? -1 : 0);
+        try
+        {
+            RecordState(context.ShieldName);
+        }
+        catch
+        {
+            _semaphore.Release();
+            Interlocked.Decrement(ref _pending);
+            UpdateMetricsState(inflightDelta: -1, queuedDelta: 0);
+            throw;
+        }
 
         try
         {
@@ -73,7 +107,24 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
         {
             _semaphore.Release();
             Interlocked.Decrement(ref _pending);
+            UpdateMetricsState(inflightDelta: -1, queuedDelta: 0);
             RecordState(context.ShieldName);
+        }
+    }
+
+    private void UpdateMetricsState(int inflightDelta, int queuedDelta)
+    {
+        while (true)
+        {
+            var state = Volatile.Read(ref _metricsState);
+            var inflight = (int)(state >> 32);
+            var queued = (int)(state & uint.MaxValue);
+            var updated = ((long)(inflight + inflightDelta) << 32)
+                | (uint)(queued + queuedDelta);
+            if (Interlocked.CompareExchange(ref _metricsState, updated, state) == state)
+            {
+                return;
+            }
         }
     }
 
@@ -84,9 +135,26 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
             return;
         }
 
-        var pending = Volatile.Read(ref _pending);
-        var inflight = _maxConcurrency - _semaphore.CurrentCount;
-        var queued = Math.Max(0, pending - inflight);
-        KevlarMetrics.RecordConcurrencyState(shieldName, inflight, queued, _maxConcurrency);
+        lock (_metricsPublicationGate)
+        {
+            while (true)
+            {
+                var state = Volatile.Read(ref _metricsState);
+                var inflight = (int)(state >> 32);
+                var queued = (int)(state & uint.MaxValue);
+
+                KevlarMetrics.RecordConcurrencyState(
+                    shieldName,
+                    _metricsInstanceId,
+                    inflight,
+                    queued,
+                    _maxConcurrency);
+
+                if (state == Volatile.Read(ref _metricsState))
+                {
+                    return;
+                }
+            }
+        }
     }
 }

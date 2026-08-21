@@ -42,18 +42,18 @@ services.AddOpenTelemetry().WithMetrics(metrics => metrics.AddMeter(KevlarDiagno
 | `kevlar.rejections` | `{rejection}` | fail-fast rejections | `kevlar.shield.name`, `kevlar.rejection.type` (`circuit_open`/`rate_limit`/`concurrency_limit`) |
 | `kevlar.circuit_breaker.transitions` | `{transition}` | circuit state changes | `kevlar.circuit_breaker.state.from`, `kevlar.circuit_breaker.state.to` (`closed`/`open`/`half_open`/`isolated`) |
 | `kevlar.execution.duration` | `s` | histogram of completed public execution duration | `kevlar.shield.name`, `kevlar.execution.outcome` (`success`/`failure`) |
-| `kevlar.circuit_breaker.state` | `{state}` | last observed circuit state: closed `0`, open `1`, half-open `2`, isolated `3` | `kevlar.shield.name` |
-| `kevlar.concurrency_limit.inflight` | `{execution}` | executions holding a permit | `kevlar.shield.name` |
-| `kevlar.concurrency_limit.queued` | `{execution}` | executions waiting for a permit | `kevlar.shield.name` |
-| `kevlar.concurrency_limit.capacity` | `{execution}` | configured permit capacity | `kevlar.shield.name` |
-| `kevlar.rate_limit.available` | `{permit}` | immediately available burst permits at the last limiter operation | `kevlar.shield.name` |
-| `kevlar.rate_limit.queued` | `{execution}` | executions waiting for a rate-limit permit | `kevlar.shield.name` |
+| `kevlar.circuit_breaker.state` | `{state}` | last observed circuit state: closed `0`, open `1`, half-open `2`, isolated `3` | `kevlar.shield.name`, `kevlar.strategy.instance` |
+| `kevlar.concurrency_limit.inflight` | `{execution}` | executions holding a permit | `kevlar.shield.name`, `kevlar.strategy.instance` |
+| `kevlar.concurrency_limit.queued` | `{execution}` | executions waiting for a permit | `kevlar.shield.name`, `kevlar.strategy.instance` |
+| `kevlar.concurrency_limit.capacity` | `{execution}` | configured permit capacity | `kevlar.shield.name`, `kevlar.strategy.instance` |
+| `kevlar.rate_limit.available` | `{permit}` | immediately available burst permits at the last limiter operation | `kevlar.shield.name`, `kevlar.strategy.instance` |
+| `kevlar.rate_limit.queued` | `{execution}` | executions waiting for a rate-limit permit | `kevlar.shield.name`, `kevlar.strategy.instance` |
 
 Each public execution call records exactly one `kevlar.executions` measurement after its final outcome: recovery through fallback is `success`; exceptions, caller cancellation, timeout, and strategy rejection are `failure`. Retry and hedge attempts do not add execution measurements of their own.
 
 The `kevlar.shield.name` attribute appears only for shields named via `WithName` — name the shields you dashboard. `WithName("")` emits the attribute with an empty value; an unnamed shield omits it. Instrument and attribute names use the product-specific `kevlar` namespace; count units use singular UCUM annotations. On `netstandard2.0` targets the instruments are inert because the metrics API isn't in-box there.
 
-The gauges are synchronous last-value measurements emitted when strategy state changes. They do not use observable callbacks or global strategy registries, so telemetry never keeps an abandoned shield alive. A typical Prometheus export can query p95 latency and queue saturation with:
+The gauges are synchronous last-value measurements emitted when strategy state changes. Their process-local `kevlar.strategy.instance` value keeps independently created strategies in the same named pipeline as separate series; aliases created with `WithName` retain the shared strategy's identifier. The gauges do not use observable callbacks or global strategy registries, so telemetry never keeps an abandoned shield alive. A typical Prometheus export can query p95 latency and queue saturation with:
 
 ```promql
 histogram_quantile(0.95, sum by (le) (rate(kevlar_execution_duration_seconds_bucket[5m])))

@@ -22,6 +22,8 @@ internal sealed class RateLimitStrategy : Strategy
     private readonly int _queueLimit;
     private readonly double _timestampUnitsPerPermit;
     private readonly double _burstTolerance;
+    private readonly Lock _metricsPublicationGate = new();
+    private readonly long _metricsInstanceId = KevlarMetrics.CreateStrategyInstanceId();
     private readonly object _queueGate = new();
 
     private double _theoreticalArrival = double.NegativeInfinity;
@@ -314,6 +316,27 @@ internal sealed class RateLimitStrategy : Strategy
             return;
         }
 
+        lock (_metricsPublicationGate)
+        {
+            while (true)
+            {
+                var state = CaptureState(timeProvider);
+                KevlarMetrics.RecordRateState(
+                    shieldName,
+                    _metricsInstanceId,
+                    state.Available,
+                    state.Queued);
+
+                if (state == CaptureState(timeProvider))
+                {
+                    return;
+                }
+            }
+        }
+    }
+
+    private (long Available, int Queued) CaptureState(TimeProvider timeProvider)
+    {
         double theoreticalArrival;
         int queued;
         if (_queueLimit > 0)
@@ -346,7 +369,7 @@ internal sealed class RateLimitStrategy : Strategy
             available = consumed >= _burst ? 0 : _burst - (long)consumed;
         }
 
-        KevlarMetrics.RecordRateState(shieldName, available, queued);
+        return (available, queued);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

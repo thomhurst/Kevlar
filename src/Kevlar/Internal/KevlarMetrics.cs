@@ -14,6 +14,8 @@ namespace Kevlar.Internal;
 /// </summary>
 internal static class KevlarMetrics
 {
+    private static long _nextStrategyInstanceId;
+
 #if NET8_0_OR_GREATER
     private static readonly Meter Meter = new(KevlarDiagnostics.MeterName, "1.0");
     private static readonly Counter<long> Executions = Meter.CreateCounter<long>(
@@ -92,6 +94,9 @@ internal static class KevlarMetrics
     public static bool ConcurrencyStateEnabled => false;
     public static bool RateStateEnabled => false;
 #endif
+
+    public static long CreateStrategyInstanceId() =>
+        Interlocked.Increment(ref _nextStrategyInstanceId);
 
     public static void Execution(string? shieldName, bool success)
     {
@@ -190,20 +195,30 @@ internal static class KevlarMetrics
 #endif
     }
 
-    public static void RecordCircuitState(string? shieldName, CircuitState state)
+    public static void RecordCircuitState(
+        string? shieldName,
+        long strategyInstanceId,
+        CircuitState state)
     {
 #if NET8_0_OR_GREATER
         if (CircuitStateGauge.Enabled)
         {
-            CircuitStateGauge.Record(StateValue(state), NameTags(shieldName));
+            CircuitStateGauge.Record(
+                StateValue(state),
+                StrategyTags(shieldName, strategyInstanceId));
         }
 #endif
     }
 
-    public static void RecordConcurrencyState(string? shieldName, long inflight, long queued, long capacity)
+    public static void RecordConcurrencyState(
+        string? shieldName,
+        long strategyInstanceId,
+        long inflight,
+        long queued,
+        long capacity)
     {
 #if NET8_0_OR_GREATER
-        var tags = NameTags(shieldName);
+        var tags = StrategyTags(shieldName, strategyInstanceId);
         if (ConcurrencyInflight.Enabled)
         {
             ConcurrencyInflight.Record(inflight, tags);
@@ -221,10 +236,14 @@ internal static class KevlarMetrics
 #endif
     }
 
-    public static void RecordRateState(string? shieldName, long available, long queued)
+    public static void RecordRateState(
+        string? shieldName,
+        long strategyInstanceId,
+        long available,
+        long queued)
     {
 #if NET8_0_OR_GREATER
-        var tags = NameTags(shieldName);
+        var tags = StrategyTags(shieldName, strategyInstanceId);
         if (RateAvailable.Enabled)
         {
             RateAvailable.Record(available, tags);
@@ -246,6 +265,13 @@ internal static class KevlarMetrics
             tags.Add("kevlar.shield.name", shieldName);
         }
 
+        return tags;
+    }
+
+    private static TagList StrategyTags(string? shieldName, long strategyInstanceId)
+    {
+        var tags = NameTags(shieldName);
+        tags.Add("kevlar.strategy.instance", strategyInstanceId);
         return tags;
     }
 

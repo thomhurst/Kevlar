@@ -23,6 +23,7 @@ internal sealed class CircuitBreakerCore
     private readonly double _bucketDurationTimestampUnits;
     private readonly TimeSpan _breakDuration;
     private readonly double _breakDurationTimestampUnits;
+    private readonly Action<CircuitState> _recordState;
     private readonly Action<CircuitStateChangedEvent>? _onStateChanged;
     private readonly CircuitBreakerMonitor? _monitor;
     private readonly Queue<TransitionPublication> _pendingTransitions = new();
@@ -43,9 +44,8 @@ internal sealed class CircuitBreakerCore
     private bool _isPublishing;
     private int _publishingThreadId;
     private TransitionPublication? _activePublication;
-    private string? _metricsShieldName;
 
-    public CircuitBreakerCore(CircuitBreakerOptions options)
+    public CircuitBreakerCore(CircuitBreakerOptions options, Action<CircuitState> recordState)
     {
         Throw.IfOutOfRange(options.ConsecutiveFailures is <= 0, nameof(options), "ConsecutiveFailures must be positive.");
         Throw.IfOutOfRange(
@@ -64,6 +64,7 @@ internal sealed class CircuitBreakerCore
         _bucketDurationTimestampUnits = options.SamplingWindow.TotalSeconds * Stopwatch.Frequency / BucketCount;
         _breakDuration = options.BreakDuration;
         _breakDurationTimestampUnits = options.BreakDuration.TotalSeconds * Stopwatch.Frequency;
+        _recordState = recordState;
         _onStateChanged = options.OnStateChanged;
         _monitor = options.Monitor;
         _monitor?.Bind(this);
@@ -85,9 +86,6 @@ internal sealed class CircuitBreakerCore
             }
         }
     }
-
-    public void SetMetricsShieldName(string? shieldName) =>
-        Volatile.Write(ref _metricsShieldName, shieldName);
 
     /// <summary>
     /// Gates an execution. Returns <see langword="false"/> with a rejection when the circuit
@@ -553,9 +551,7 @@ internal sealed class CircuitBreakerCore
 
         try
         {
-            KevlarMetrics.RecordCircuitState(
-                Volatile.Read(ref _metricsShieldName),
-                stateChange.To);
+            _recordState(stateChange.To);
         }
         catch (Exception exception)
         {
