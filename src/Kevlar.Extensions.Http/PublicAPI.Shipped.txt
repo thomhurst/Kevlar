@@ -1,0 +1,12 @@
+#nullable enable
+Kevlar.Extensions.Http.HttpShield
+Kevlar.Extensions.Http.ShieldDelegatingHandler
+Kevlar.Extensions.Http.ShieldDelegatingHandler.ShieldDelegatingHandler(Kevlar.Shield<System.Net.Http.HttpResponseMessage!>! shield) -> void
+Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+static Kevlar.Extensions.Http.HttpShield.IsTransient(System.Net.Http.HttpResponseMessage! response) -> bool
+static Kevlar.Extensions.Http.HttpShield.RetryAfter(Kevlar.RetryEvent<System.Net.Http.HttpResponseMessage!> retry) -> System.TimeSpan?
+static Kevlar.Extensions.Http.HttpShield.Standard() -> Kevlar.Shield<System.Net.Http.HttpResponseMessage!>!
+static Kevlar.Extensions.Http.HttpShield.WhenTransient() -> Kevlar.ShieldBuilder<System.Net.Http.HttpResponseMessage!>!
+static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, Kevlar.Shield<System.Net.Http.HttpResponseMessage!>! shield) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
+static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, System.Func<System.IServiceProvider!, Kevlar.Shield<System.Net.Http.HttpResponseMessage!>!>! shieldFactory) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
+static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!

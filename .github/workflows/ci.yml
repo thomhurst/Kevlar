@@ -30,7 +30,9 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: |
+            8.0.x
+            10.0.x
 
       - name: Install GitVersion
         uses: gittools/actions/gitversion/setup@7417b1089e2c7de93510f1901d656ddf60bb024f # v4.7.0
@@ -67,6 +69,13 @@ jobs:
       - name: Pack
         if: matrix.os == 'ubuntu-latest'
         run: dotnet pack Kevlar.slnx -c Release --no-build -p:Version=${{ steps.gitversion.outputs.semVer }}
+
+      - name: Verify packages
+        if: matrix.os == 'ubuntu-latest'
+        shell: pwsh
+        env:
+          PACKAGE_VERSION: ${{ steps.gitversion.outputs.semVer }}
+        run: ./scripts/Verify-Packages.ps1 -PackagesPath artifacts/package/release -Version $env:PACKAGE_VERSION
 
       - name: Upload packages
         if: matrix.os == 'ubuntu-latest'
@@ -147,7 +156,9 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: |
+            8.0.x
+            10.0.x
 
       - name: Install GitVersion
         uses: gittools/actions/gitversion/setup@7417b1089e2c7de93510f1901d656ddf60bb024f # v4.7.0
