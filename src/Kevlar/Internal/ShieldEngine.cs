@@ -19,6 +19,11 @@ internal static class ShieldEngine
 
         if (head is null)
         {
+            if (!KevlarMetrics.ExecutionEnabled)
+            {
+                return action(state, cancellationToken);
+            }
+
             try
             {
                 var execution = action(state, cancellationToken);
