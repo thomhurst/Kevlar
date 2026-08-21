@@ -255,6 +255,7 @@ public class ConcurrencyLimitRaceTests
     [Test]
     [Arguments(int.MaxValue, 0)]
     [Arguments(int.MaxValue - 1, 1)]
+    [Arguments(int.MaxValue, 1)]
     public async Task Accepted_Capacity_Arithmetic_Near_Int_MaxValue_Remains_Usable(
         int maxConcurrency,
         int maxQueue)
