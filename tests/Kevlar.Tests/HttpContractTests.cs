@@ -94,7 +94,7 @@ public class HttpContractTests
     [Test]
     public async Task Standard_Disposes_Superseded_Responses_But_Not_The_Winner()
     {
-        var timeProvider = new FakeTimeProvider();
+        var timeProvider = new RetrySignalingFakeTimeProvider();
         var contents = Enumerable.Range(0, 3).Select(_ => new TrackingContent()).ToArray();
         var calls = 0;
         using var inner = new DelegateHandler((_, _) =>
@@ -108,8 +108,9 @@ public class HttpContractTests
         });
         using var client = CreateClient(inner, HttpShield.Standard().WithTimeProvider(timeProvider));
 
+        var nextRetryTimer = timeProvider.NextRetryTimer;
         var task = client.GetAsync("http://localhost/test");
-        await AdvanceUntilCompleted(task, timeProvider);
+        await AdvanceUntilCompleted(task, timeProvider, nextRetryTimer);
         var response = await task;
 
         await Assert.That(calls).IsEqualTo(3);
@@ -124,7 +125,7 @@ public class HttpContractTests
     [Test]
     public async Task Standard_Returns_And_Leaves_Final_Transient_Response_Caller_Owned()
     {
-        var timeProvider = new FakeTimeProvider();
+        var timeProvider = new RetrySignalingFakeTimeProvider();
         var contents = Enumerable.Range(0, 4).Select(_ => new TrackingContent()).ToArray();
         var calls = 0;
         using var inner = new DelegateHandler((_, _) =>
@@ -134,8 +135,9 @@ public class HttpContractTests
         });
         using var client = CreateClient(inner, HttpShield.Standard().WithTimeProvider(timeProvider));
 
+        var nextRetryTimer = timeProvider.NextRetryTimer;
         var task = client.GetAsync("http://localhost/test");
-        await AdvanceUntilCompleted(task, timeProvider);
+        await AdvanceUntilCompleted(task, timeProvider, nextRetryTimer);
         var response = await task;
 
         await Assert.That(calls).IsEqualTo(4);
@@ -191,7 +193,7 @@ public class HttpContractTests
     [Test]
     public async Task Standard_Opens_Breaker_After_Ten_Transient_Attempts()
     {
-        var timeProvider = new FakeTimeProvider();
+        var timeProvider = new RetrySignalingFakeTimeProvider();
         var calls = 0;
         using var inner = new DelegateHandler((_, _) =>
         {
@@ -202,13 +204,15 @@ public class HttpContractTests
 
         for (var request = 0; request < 2; request++)
         {
+            var nextRetryTimer = timeProvider.NextRetryTimer;
             var task = client.GetAsync($"http://localhost/{request}");
-            await AdvanceUntilCompleted(task, timeProvider);
+            await AdvanceUntilCompleted(task, timeProvider, nextRetryTimer);
             using var response = await task;
         }
 
+        var openingRetryTimer = timeProvider.NextRetryTimer;
         var openingRequest = client.GetAsync("http://localhost/open");
-        await AdvanceUntilCompleted(openingRequest, timeProvider);
+        await AdvanceUntilCompleted(openingRequest, timeProvider, openingRetryTimer);
         await Assert.That(async () => await openingRequest).Throws<CircuitOpenException>();
         await Assert.That(calls).IsEqualTo(10);
 
@@ -460,18 +464,50 @@ public class HttpContractTests
         return observed.Value;
     }
 
-    private static async Task AdvanceUntilCompleted(Task task, FakeTimeProvider timeProvider)
+    private static async Task AdvanceUntilCompleted(
+        Task task,
+        RetrySignalingFakeTimeProvider timeProvider,
+        int nextRetryTimer)
     {
         for (var step = 0; step < 5 && !task.IsCompleted; step++)
         {
+            var timerRegistered = timeProvider.WaitForRetryTimersAsync(nextRetryTimer++);
+            if (await Task.WhenAny(task, timerRegistered) == task)
+            {
+                break;
+            }
+
             timeProvider.Advance(TimeSpan.FromSeconds(3));
-            await Task.Yield();
         }
 
         if (!task.IsCompleted)
         {
             throw new TimeoutException("Fake-time execution did not complete.");
         }
+    }
+
+    private sealed class RetrySignalingFakeTimeProvider : FakeTimeProvider
+    {
+        private readonly AsyncCounter _retryTimers = new("HTTP retry timers");
+
+        public int NextRetryTimer => _retryTimers.Count + 1;
+
+        public override ITimer CreateTimer(
+            TimerCallback callback,
+            object? state,
+            TimeSpan dueTime,
+            TimeSpan period)
+        {
+            var timer = base.CreateTimer(callback, state, dueTime, period);
+            if (dueTime < TimeSpan.FromSeconds(5))
+            {
+                _retryTimers.Signal();
+            }
+
+            return timer;
+        }
+
+        public Task<int> WaitForRetryTimersAsync(int count) => _retryTimers.WaitForAsync(count);
     }
 
     private static async Task WaitUntilAsync(Func<bool> condition)
