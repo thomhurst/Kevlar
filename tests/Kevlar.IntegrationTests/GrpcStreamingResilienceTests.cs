@@ -386,6 +386,67 @@ public class GrpcStreamingResilienceTests
     }
 
     [Test]
+    public async Task Request_Stream_Headers_Do_Not_Occupy_Operation_Concurrency()
+    {
+        var clientHeaders = new TaskCompletionSource<Metadata>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var duplexHeaders = new TaskCompletionSource<Metadata>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var interceptor = new ShieldStreamingClientInterceptor(Shield.ConcurrencyLimit(1));
+        using var clientCall = interceptor.AsyncClientStreamingCall(
+            Context(ClientStreamingMethod),
+            _ => ClientCall(
+                new DelegateWriter(),
+                Task.FromResult(new StreamReply()),
+                responseHeaders: clientHeaders.Task));
+        using var duplexCall = interceptor.AsyncDuplexStreamingCall(
+            Context(DuplexStreamingMethod),
+            _ => DuplexCall(
+                new DelegateWriter(),
+                Reader((_, _) => Task.FromResult<(bool, StreamReply?)>((false, null))),
+                duplexHeaders.Task));
+
+        var clientHeaderWait = clientCall.ResponseHeadersAsync;
+        var duplexHeaderWait = duplexCall.ResponseHeadersAsync;
+        await clientCall.RequestStream.WriteAsync(new StreamRequest());
+        await duplexCall.RequestStream.WriteAsync(new StreamRequest());
+        clientHeaders.SetResult(new Metadata());
+        duplexHeaders.SetResult(new Metadata());
+
+        _ = await clientHeaderWait;
+        _ = await duplexHeaderWait;
+    }
+
+    [Test]
+    public async Task Client_Stream_Write_Cancellation_Preserves_Call_Token()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var writer = new DelegateWriter((_, token) =>
+        {
+            started.TrySetResult();
+            var completion = new TaskCompletionSource(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+            token.Register(() => completion.TrySetCanceled(token));
+            return completion.Task;
+        });
+        var interceptor = new ShieldStreamingClientInterceptor(Shield.Empty);
+        using var call = interceptor.AsyncClientStreamingCall(
+            Context(
+                ClientStreamingMethod,
+                new CallOptions(cancellationToken: cancellation.Token)),
+            _ => ClientCall(writer, Task.FromResult(new StreamReply())));
+        var write = call.RequestStream.WriteAsync(new StreamRequest());
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        cancellation.Cancel();
+        var exception = await Assert.That(async () => await write)
+            .Throws<OperationCanceledException>();
+
+        await Assert.That(exception!.CancellationToken).IsEqualTo(cancellation.Token);
+    }
+
+    [Test]
     public async Task Server_Stream_Retry_Preserves_Reused_Exception_Identity()
     {
         var expected = new InvalidOperationException("shared");
@@ -475,6 +536,67 @@ public class GrpcStreamingResilienceTests
         }
 
         await Assert.That(await move).IsTrue();
+    }
+
+    [Test]
+    public async Task Server_Headers_Prevent_Delayed_Hedge_Attempts()
+    {
+        var attempts = 0;
+        var readStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseRead = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var interceptor = new ShieldStreamingClientInterceptor(
+            Shield.Hedge(2, TimeSpan.FromMilliseconds(50)));
+        using var call = interceptor.AsyncServerStreamingCall(
+            new StreamRequest(),
+            Context(ServerStreamingMethod),
+            (_, _) =>
+            {
+                Interlocked.Increment(ref attempts);
+                return ServerCall(
+                    Reader(async (_, token) =>
+                    {
+                        readStarted.TrySetResult();
+                        await releaseRead.Task.WaitAsync(TimeSpan.FromSeconds(5), token);
+                        return (true, new StreamReply { Attempt = 1 });
+                    }),
+                    headers: new Metadata());
+            });
+        var move = call.ResponseStream.MoveNext(CancellationToken.None);
+        await readStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        _ = await call.ResponseHeadersAsync;
+        await Task.Delay(TimeSpan.FromMilliseconds(150));
+        releaseRead.SetResult();
+
+        await Assert.That(await move).IsTrue();
+        await Assert.That(attempts).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Initial_MoveNext_Cancellation_Preserves_Its_Token()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var interceptor = new ShieldStreamingClientInterceptor(Shield.Empty);
+        using var call = interceptor.AsyncServerStreamingCall(
+            new StreamRequest(),
+            Context(ServerStreamingMethod),
+            (_, _) => ServerCall(Reader((_, token) =>
+            {
+                started.TrySetResult();
+                var completion = new TaskCompletionSource<(bool, StreamReply?)>(
+                    TaskCreationOptions.RunContinuationsAsynchronously);
+                token.Register(() => completion.TrySetCanceled(token));
+                return completion.Task;
+            })));
+        var move = call.ResponseStream.MoveNext(cancellation.Token);
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        cancellation.Cancel();
+        var exception = await Assert.That(async () => await move)
+            .Throws<OperationCanceledException>();
+
+        await Assert.That(exception!.CancellationToken).IsEqualTo(cancellation.Token);
     }
 
     [Test]
@@ -707,20 +829,22 @@ public class GrpcStreamingResilienceTests
         IClientStreamWriter<StreamRequest> writer,
         Task<StreamReply> response,
         Action? dispose = null,
-        Metadata? trailers = null) => new(
+        Metadata? trailers = null,
+        Task<Metadata>? responseHeaders = null) => new(
         writer,
         response,
-        Task.FromResult(new Metadata()),
+        responseHeaders ?? Task.FromResult(new Metadata()),
         static () => Status.DefaultSuccess,
         () => trailers ?? new Metadata(),
         dispose ?? NoOp);
 
     private static AsyncDuplexStreamingCall<StreamRequest, StreamReply> DuplexCall(
         IClientStreamWriter<StreamRequest> writer,
-        IAsyncStreamReader<StreamReply> reader) => new(
+        IAsyncStreamReader<StreamReply> reader,
+        Task<Metadata>? responseHeaders = null) => new(
         writer,
         reader,
-        Task.FromResult(new Metadata()),
+        responseHeaders ?? Task.FromResult(new Metadata()),
         static () => Status.DefaultSuccess,
         static () => new Metadata(),
         NoOp);

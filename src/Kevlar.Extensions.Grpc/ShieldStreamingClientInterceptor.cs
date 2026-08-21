@@ -207,8 +207,8 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
                 catch (Exception exception)
                 {
                     SelectFailure(exception);
-                    SignalEstablishmentFailure(GetVisibleException(exception));
-                    RethrowNormalized(exception);
+                    SignalEstablishmentFailure(GetVisibleException(exception, cancellationToken));
+                    RethrowNormalized(exception, cancellationToken);
                     throw;
                 }
             }
@@ -394,12 +394,17 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
             && deadline <= DateTime.UtcNow
             && !_context.Options.CancellationToken.IsCancellationRequested;
 
-        private void RethrowNormalized(Exception exception)
+        private void RethrowNormalized(
+            Exception exception,
+            CancellationToken cancellationToken = default)
         {
-            ExceptionDispatchInfo.Capture(GetVisibleException(exception)).Throw();
+            ExceptionDispatchInfo.Capture(
+                GetVisibleException(exception, cancellationToken)).Throw();
         }
 
-        private Exception GetVisibleException(Exception exception)
+        private Exception GetVisibleException(
+            Exception exception,
+            CancellationToken cancellationToken = default)
         {
             if (exception is AttemptFailureException attemptFailure)
             {
@@ -407,12 +412,22 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
             }
 
             if (exception is OperationCanceledException cancellation
-                && _context.Options.CancellationToken.IsCancellationRequested
-                && cancellation.CancellationToken != _context.Options.CancellationToken)
+                && cancellationToken.IsCancellationRequested
+                && cancellation.CancellationToken != cancellationToken)
             {
                 return new OperationCanceledException(
                     cancellation.Message,
                     cancellation,
+                    cancellationToken);
+            }
+
+            if (exception is OperationCanceledException callCancellation
+                && _context.Options.CancellationToken.IsCancellationRequested
+                && callCancellation.CancellationToken != _context.Options.CancellationToken)
+            {
+                return new OperationCanceledException(
+                    callCancellation.Message,
+                    callCancellation,
                     _context.Options.CancellationToken);
             }
 
@@ -426,47 +441,37 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
 
         private Attempt CreateAttempt(CancellationToken cancellationToken)
         {
-            var cancellation = CancellationTokenSource.CreateLinkedTokenSource(
-                _lifetime.Token,
-                cancellationToken);
-            AsyncServerStreamingCall<TResponse> call;
-            try
-            {
-                var context = new ClientInterceptorContext<TRequest, TResponse>(
-                    _context.Method,
-                    _context.Host,
-                    _context.Options.WithCancellationToken(cancellation.Token));
-                call = _continuation(_request, context);
-            }
-            catch
-            {
-                cancellation.Dispose();
-                throw;
-            }
-
-            var dispose = false;
             lock (_gate)
             {
                 if (_disposed || _selected)
                 {
-                    dispose = true;
+                    throw new ObjectDisposedException(nameof(ShieldStreamingClientInterceptor));
                 }
-                else
+
+                var cancellation = CancellationTokenSource.CreateLinkedTokenSource(
+                    _lifetime.Token,
+                    cancellationToken);
+                AsyncServerStreamingCall<TResponse> call;
+                try
                 {
-                    var attempt = new Attempt(call, cancellation, Exception: null);
-                    _attempts.Add(attempt);
-                    _activeAttempt = attempt;
-                    _activeAttemptReady.TrySetResult(attempt);
+                    var context = new ClientInterceptorContext<TRequest, TResponse>(
+                        _context.Method,
+                        _context.Host,
+                        _context.Options.WithCancellationToken(cancellation.Token));
+                    call = _continuation(_request, context);
                 }
-            }
+                catch
+                {
+                    cancellation.Dispose();
+                    throw;
+                }
 
-            if (dispose)
-            {
-                DisposeAttempt(call, cancellation);
-                throw new ObjectDisposedException(nameof(ShieldStreamingClientInterceptor));
+                var attempt = new Attempt(call, cancellation, Exception: null);
+                _attempts.Add(attempt);
+                _activeAttempt = attempt;
+                _activeAttemptReady.TrySetResult(attempt);
+                return attempt;
             }
-
-            return new Attempt(call, cancellation, Exception: null);
         }
 
         private async ValueTask<Exception> CompleteFailureAsync(
@@ -875,7 +880,11 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
         }
 
         public AsyncClientStreamingCall<TRequest, TResponse> Start() => new(
-            new ShieldedClientStreamWriter<TRequest>(_call.RequestStream, _shield, _lifetime),
+            new ShieldedClientStreamWriter<TRequest>(
+                _call.RequestStream,
+                _shield,
+                _lifetime,
+                _callerToken),
             AwaitCallLifetimeAsync(_call.ResponseAsync, _lifetime, _callerToken),
             static state => ((ClientStreamingState<TRequest, TResponse>)state).ExecuteHeadersAsync(),
             static state => ((ClientStreamingState<TRequest, TResponse>)state)._call.GetStatus(),
@@ -883,13 +892,10 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
             static state => ((ClientStreamingState<TRequest, TResponse>)state).Dispose(),
             this);
 
-        private Task<Metadata> ExecuteHeadersAsync() => _shield.ExecuteAsync(
-            this,
-            static (state, token) => AwaitWithLifetimeAsync(
-                state._call.ResponseHeadersAsync,
-                state._lifetime,
-                token),
-            _lifetime.Token).AsTask();
+        private Task<Metadata> ExecuteHeadersAsync() => AwaitCallLifetimeAsync(
+            _call.ResponseHeadersAsync,
+            _lifetime,
+            _callerToken);
 
         private void Dispose()
         {
@@ -911,6 +917,7 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
         private readonly Shield _shield;
         private readonly CancellationTokenSource _lifetime;
         private readonly AsyncDuplexStreamingCall<TRequest, TResponse> _call;
+        private readonly CancellationToken _callerToken;
         private int _disposed;
 
         public DuplexStreamingState(
@@ -919,6 +926,7 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
             AsyncDuplexStreamingCallContinuation<TRequest, TResponse> continuation)
         {
             _shield = shield;
+            _callerToken = context.Options.CancellationToken;
             _lifetime = CreateLifetime(context.Options.CancellationToken);
             var attemptContext = new ClientInterceptorContext<TRequest, TResponse>(
                 context.Method,
@@ -936,7 +944,11 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
         }
 
         public AsyncDuplexStreamingCall<TRequest, TResponse> Start() => new(
-            new ShieldedClientStreamWriter<TRequest>(_call.RequestStream, _shield, _lifetime),
+            new ShieldedClientStreamWriter<TRequest>(
+                _call.RequestStream,
+                _shield,
+                _lifetime,
+                _callerToken),
             new ShieldedAsyncStreamReader<TResponse>(
                 _call.ResponseStream,
                 _shield,
@@ -947,13 +959,10 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
             static state => ((DuplexStreamingState<TRequest, TResponse>)state).Dispose(),
             this);
 
-        private Task<Metadata> ExecuteHeadersAsync() => _shield.ExecuteAsync(
-            this,
-            static (state, token) => AwaitWithLifetimeAsync(
-                state._call.ResponseHeadersAsync,
-                state._lifetime,
-                token),
-            _lifetime.Token).AsTask();
+        private Task<Metadata> ExecuteHeadersAsync() => AwaitCallLifetimeAsync(
+            _call.ResponseHeadersAsync,
+            _lifetime,
+            _callerToken);
 
         private void Dispose()
         {
@@ -971,7 +980,8 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
     private sealed class ShieldedClientStreamWriter<T>(
         IClientStreamWriter<T> writer,
         Shield shield,
-        CancellationTokenSource lifetime) : IClientStreamWriter<T>
+        CancellationTokenSource lifetime,
+        CancellationToken callerToken) : IClientStreamWriter<T>
     {
         public WriteOptions? WriteOptions
         {
@@ -979,7 +989,7 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
             set => writer.WriteOptions = value;
         }
 
-        public Task WriteAsync(T message) => ExecuteWriteAsync(message, lifetime.Token);
+        public Task WriteAsync(T message) => ExecuteWriteAsync(message, default);
 
         public Task WriteAsync(T message, CancellationToken cancellationToken) =>
             ExecuteWriteAsync(message, cancellationToken);
@@ -1006,13 +1016,22 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
                     operation.Token).ConfigureAwait(false);
             }
             catch (OperationCanceledException exception) when (
-                cancellationToken.IsCancellationRequested
-                && exception.CancellationToken != cancellationToken)
+                operation.IsCancellationRequested)
             {
+                var visibleToken = cancellationToken.IsCancellationRequested
+                    ? cancellationToken
+                    : callerToken.IsCancellationRequested
+                        ? callerToken
+                        : exception.CancellationToken;
+                if (exception.CancellationToken == visibleToken)
+                {
+                    throw;
+                }
+
                 throw new OperationCanceledException(
                     exception.Message,
                     exception,
-                    cancellationToken);
+                    visibleToken);
             }
         }
 
