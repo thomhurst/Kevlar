@@ -16,13 +16,34 @@ internal static class KevlarMetrics
 {
 #if NET8_0_OR_GREATER
     private static readonly Meter Meter = new(KevlarDiagnostics.MeterName, "1.0");
-    private static readonly Counter<long> Executions = Meter.CreateCounter<long>("kevlar.executions");
-    private static readonly Counter<long> Retries = Meter.CreateCounter<long>("kevlar.retries");
-    private static readonly Counter<long> Timeouts = Meter.CreateCounter<long>("kevlar.timeouts");
-    private static readonly Counter<long> Hedges = Meter.CreateCounter<long>("kevlar.hedges");
-    private static readonly Counter<long> Fallbacks = Meter.CreateCounter<long>("kevlar.fallbacks");
-    private static readonly Counter<long> Rejections = Meter.CreateCounter<long>("kevlar.rejections");
-    private static readonly Counter<long> CircuitTransitions = Meter.CreateCounter<long>("kevlar.circuit_breaker.transitions");
+    private static readonly Counter<long> Executions = Meter.CreateCounter<long>(
+        "kevlar.executions",
+        "{execution}",
+        "Completed public shield executions.");
+    private static readonly Counter<long> Retries = Meter.CreateCounter<long>(
+        "kevlar.retries",
+        "{retry}",
+        "Retry attempts started after the initial attempt.");
+    private static readonly Counter<long> Timeouts = Meter.CreateCounter<long>(
+        "kevlar.timeouts",
+        "{timeout}",
+        "Executions cancelled by a timeout strategy.");
+    private static readonly Counter<long> Hedges = Meter.CreateCounter<long>(
+        "kevlar.hedges",
+        "{hedge}",
+        "Additional hedged attempts started.");
+    private static readonly Counter<long> Fallbacks = Meter.CreateCounter<long>(
+        "kevlar.fallbacks",
+        "{fallback}",
+        "Outcomes replaced by a fallback.");
+    private static readonly Counter<long> Rejections = Meter.CreateCounter<long>(
+        "kevlar.rejections",
+        "{rejection}",
+        "Executions rejected before the user delegate starts.");
+    private static readonly Counter<long> CircuitTransitions = Meter.CreateCounter<long>(
+        "kevlar.circuit_breaker.transitions",
+        "{transition}",
+        "Circuit-breaker state transitions.");
 #endif
 
 #if NET8_0_OR_GREATER
@@ -37,7 +58,7 @@ internal static class KevlarMetrics
         if (Executions.Enabled)
         {
             var tags = NameTags(shieldName);
-            tags.Add("outcome", success ? "success" : "failure");
+            tags.Add("kevlar.execution.outcome", success ? "success" : "failure");
             Executions.Add(1, tags);
         }
 #endif
@@ -89,7 +110,7 @@ internal static class KevlarMetrics
         if (Rejections.Enabled)
         {
             var tags = NameTags(shieldName);
-            tags.Add("kind", kind);
+            tags.Add("kevlar.rejection.type", kind);
             Rejections.Add(1, tags);
         }
 #endif
@@ -102,8 +123,8 @@ internal static class KevlarMetrics
         {
             CircuitTransitions.Add(1, new TagList
             {
-                { "from", from.ToString() },
-                { "to", to.ToString() },
+                { "kevlar.circuit_breaker.state.from", StateName(from) },
+                { "kevlar.circuit_breaker.state.to", StateName(to) },
             });
         }
 #endif
@@ -115,10 +136,19 @@ internal static class KevlarMetrics
         var tags = default(TagList);
         if (shieldName is not null)
         {
-            tags.Add("shield.name", shieldName);
+            tags.Add("kevlar.shield.name", shieldName);
         }
 
         return tags;
     }
+
+    private static string StateName(CircuitState state) => state switch
+    {
+        CircuitState.Closed => "closed",
+        CircuitState.Open => "open",
+        CircuitState.HalfOpen => "half_open",
+        CircuitState.Isolated => "isolated",
+        _ => throw new ArgumentOutOfRangeException(nameof(state)),
+    };
 #endif
 }
