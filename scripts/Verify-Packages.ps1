@@ -102,8 +102,8 @@ $expectedDependencies = @{
         '.NETStandard2.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.DependencyInjection.Abstractions', 'Microsoft.Extensions.Primitives')
     }
     'Kevlar.Extensions.Http' = @{
-        'net10.0' = @('Kevlar', 'Microsoft.Extensions.Http')
-        '.NETStandard2.0' = @('Kevlar', 'Microsoft.Extensions.Http')
+        'net10.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.Http', 'Microsoft.Extensions.Primitives')
+        '.NETStandard2.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.Http', 'Microsoft.Extensions.Primitives')
     }
     'Kevlar.Extensions.RateLimiting' = @{
         'net10.0' = @('Kevlar', 'System.Threading.RateLimiting')
