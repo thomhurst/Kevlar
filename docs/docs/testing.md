@@ -151,6 +151,48 @@ Copies still share stateful strategies. Circuit breakers and rate limiters norma
 Start the execution first (note the `.AsTask()` without `await`), *then* advance time. If you advance before the shield has scheduled its delay, there's nothing to advance past and the pending task will hang waiting for a tick that already happened.
 :::
 
+### Bounded deterministic helpers
+
+On .NET 8 and later, `Kevlar.Testing` references `Microsoft.Extensions.TimeProvider.Testing` and adds bounded helpers for pending executions and fake-time advancement. Conditions read only state owned by your test; the helpers never expose or retain a pooled `KevlarContext` or mutable strategy object.
+
+<!-- doc-test-ignore: TUnit owns test discovery; this complete example is covered by Kevlar.Testing.Tests. -->
+```csharp
+using Kevlar.Testing;
+using Microsoft.Extensions.Time.Testing;
+using TUnit.Assertions;
+using TUnit.Core;
+
+[Test]
+public async Task Retries_Without_Sleeps()
+{
+    var time = new FakeTimeProvider();
+    var attempts = 0;
+    var shield = Shield
+        .Retry(2, Backoff.Constant(TimeSpan.FromSeconds(10)))
+        .WithTimeProvider(time);
+    var execution = shield.ExecuteAsync<int>(_ =>
+    {
+        var attempt = Interlocked.Increment(ref attempts);
+        return attempt < 3
+            ? ValueTask.FromException<int>(new InvalidOperationException())
+            : new ValueTask<int>(42);
+    }).AsTask();
+
+    await execution.WaitForPendingAsync(
+        () => Volatile.Read(ref attempts) == 1,
+        "the first retry delay");
+    await time.AdvanceUntilAsync(
+        TimeSpan.FromSeconds(10),
+        () => Volatile.Read(ref attempts) == 3,
+        "all retry attempts",
+        maxAdvances: 2);
+
+    await Assert.That(await execution).IsEqualTo(42);
+}
+```
+
+Both helpers use finite scheduler/advance counts and throw `ShieldAssertionException` with the condition, execution status, fake UTC time, and configured bounds when progress is not observed. Use a caller-owned counter, gate, callback flag, or fake-clock deadline as the condition; then await the execution normally to inspect its result or exception.
+
 ## Testing circuit breakers
 
 Drive the breaker through its state machine without real clocks:

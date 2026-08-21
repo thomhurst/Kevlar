@@ -115,7 +115,8 @@ $expectedDependencies = @{
             'System.Threading.Tasks.Extensions')
     }
     'Kevlar.Testing' = @{
-        'net10.0' = @('Kevlar')
+        'net10.0' = @('Kevlar', 'Microsoft.Extensions.TimeProvider.Testing')
+        'net8.0' = @('Kevlar', 'Microsoft.Extensions.TimeProvider.Testing')
         '.NETStandard2.0' = @('Kevlar')
     }
     'Kevlar.Analyzers' = @{
@@ -211,7 +212,7 @@ foreach ($packageId in $expectedDependencies.Keys)
                 "lib/netstandard2.0/$packageId.dll",
                 "lib/netstandard2.0/$packageId.xml"
             )
-            if ($packageId -eq 'Kevlar.Chaos')
+            if ($packageId -in @('Kevlar.Chaos', 'Kevlar.Testing'))
             {
                 $expectedAssets += @(
                     "lib/net8.0/$packageId.dll",
