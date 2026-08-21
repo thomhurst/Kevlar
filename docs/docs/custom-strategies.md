@@ -42,6 +42,12 @@ Your strategy receives:
 
 And returns an `Outcome<T>`: success-with-result or failure-with-exception, as a struct.
 
+`next.InvokeAsync(context)` preserves the caller-supplied state and the same context, including
+its current name, time provider, cancellation token, and properties. Synchronous throws and
+asynchronous faults from inner strategies or the user's delegate are normalized to failure
+outcomes, so a valid continuation does not throw. A default, uninitialized
+`Continuation<T, TState>` returns an `InvalidOperationException` outcome.
+
 The power is in how many times you call `next`:
 
 | Calls to `next` | You've built a | Examples in the box |
@@ -90,7 +96,12 @@ if (context.Properties.TryGet(TenantId, out var tenant)) { /* ... */ }
 ```
 
 Contexts are pooled and recycled by the engine — never store one beyond the execution.
+The continuation also belongs to that execution; invoke it only while `ExecuteAsync` is running.
 
 ## Thread safety
 
 One strategy instance is shared by every execution of the shield containing it — and by every shield it's composed into. That's the [state-sharing rule](composition.md#the-state-sharing-rule) working in your favour, but it means your strategy must be thread-safe, like the built-in breakers and limiters.
+
+Stateless strategies can be shared directly. Stateful strategies must synchronize their own
+mutable fields. Per-execution data belongs in local variables or `KevlarContext.Properties`, not
+in strategy instance fields.

@@ -51,7 +51,7 @@ public abstract class Strategy
 public readonly struct Continuation<T, TState>
 {
     private readonly StrategyNode? _next;
-    private readonly Func<TState, KevlarContext, ValueTask<Outcome<T>>> _callback;
+    private readonly Func<TState, KevlarContext, ValueTask<Outcome<T>>>? _callback;
     private readonly TState _state;
 
     internal Continuation(StrategyNode? next, Func<TState, KevlarContext, ValueTask<Outcome<T>>> callback, TState state)
@@ -61,9 +61,18 @@ public readonly struct Continuation<T, TState>
         _state = state;
     }
 
-    /// <summary>Runs the remainder of the pipeline. Never throws; failures are returned as outcomes.</summary>
+    /// <summary>
+    /// Runs the remainder of the pipeline. Never throws; failures are returned as outcomes.
+    /// A default, uninitialized continuation returns an <see cref="InvalidOperationException"/> outcome.
+    /// </summary>
     public ValueTask<Outcome<T>> InvokeAsync(KevlarContext context)
     {
+        if (_callback is null)
+        {
+            return new ValueTask<Outcome<T>>(Outcome<T>.FromException(
+                new InvalidOperationException("The continuation is not initialized.")));
+        }
+
         if (_next is null)
         {
             return _callback(_state, context);
@@ -79,7 +88,7 @@ public readonly struct Continuation<T, TState>
         try
         {
             execution = node.Strategy.ExecuteAsync(
-                new Continuation<T, TState>(node.Next, _callback, _state),
+                new Continuation<T, TState>(node.Next, _callback!, _state),
                 context);
         }
         catch (Exception exception)
