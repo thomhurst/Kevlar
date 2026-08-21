@@ -103,6 +103,7 @@ public class CompositionTests
     {
         var fakeTime = new Microsoft.Extensions.Time.Testing.FakeTimeProvider();
         var attempts = 0;
+        var attemptsStarted = new AsyncCounter("total-timeout attempts");
         var shield = Shield
             .Timeout(TimeSpan.FromSeconds(3))
             .When<InvalidOperationException>()
@@ -112,14 +113,15 @@ public class CompositionTests
         var task = shield.ExecuteAsync<int>(_ =>
         {
             attempts++;
+            attemptsStarted.Signal();
             throw new InvalidOperationException();
         }).AsTask();
 
         fakeTime.Advance(TimeSpan.FromSeconds(1));
-        await TestHelpers.WaitUntil(() => Volatile.Read(ref attempts) == 2);
+        await attemptsStarted.WaitForAsync(2);
 
         fakeTime.Advance(TimeSpan.FromSeconds(1));
-        await TestHelpers.WaitUntil(() => Volatile.Read(ref attempts) == 3);
+        await attemptsStarted.WaitForAsync(3);
 
         // The third second trips the outer total timeout while the retry is sleeping.
         fakeTime.Advance(TimeSpan.FromSeconds(1));

@@ -76,38 +76,39 @@ public class BulkheadEdgeCaseTests
         var shield = Shield.ConcurrencyLimit(MaxConcurrency, maxQueue: 50);
         var current = 0;
         var peak = 0;
+        var barrier = new AsyncBarrier("maximum concurrent executions", MaxConcurrency);
 
         var tasks = Enumerable.Range(0, 40).Select(_ => shield.ExecuteAsync(async _ =>
         {
             var now = Interlocked.Increment(ref current);
             InterlockedMax(ref peak, now);
-            await Task.Delay(10);
+            await barrier.SignalAndWaitAsync();
             Interlocked.Decrement(ref current);
             return 0;
         }).AsTask()).ToArray();
 
+        await barrier.WaitForAllAsync();
+        await Assert.That(Volatile.Read(ref peak)).IsEqualTo(MaxConcurrency);
+        barrier.Release();
         await Task.WhenAll(tasks);
 
         await Assert.That(Volatile.Read(ref peak) <= MaxConcurrency).IsTrue();
-        await Assert.That(Volatile.Read(ref peak) >= 1).IsTrue();
     }
 
     [Test]
     public async Task Overload_Beyond_Capacity_Rejects_Exactly_The_Overflow()
     {
         var shield = Shield.ConcurrencyLimit(maxConcurrency: 2, maxQueue: 3);
-        var gate = new TaskCompletionSource();
-        var startedCount = 0;
+        var barrier = new AsyncBarrier("both concurrency slots", 2);
 
         // Fill both concurrency slots.
         var running = Enumerable.Range(0, 2).Select(_ => shield.ExecuteAsync(async _ =>
         {
-            Interlocked.Increment(ref startedCount);
-            await gate.Task;
+            await barrier.SignalAndWaitAsync();
             return 1;
         }).AsTask()).ToArray();
 
-        await TestHelpers.WaitUntil(() => Volatile.Read(ref startedCount) == 2);
+        await barrier.WaitForAllAsync();
 
         // Fill the queue.
         var queued = Enumerable.Range(0, 3).Select(_ => shield.ExecuteAsync(_ => new ValueTask<int>(2)).AsTask()).ToArray();
@@ -125,7 +126,7 @@ public class BulkheadEdgeCaseTests
 
         await Assert.That(rejections).IsEqualTo(4);
 
-        gate.SetResult();
+        barrier.Release();
         await Task.WhenAll(running);
         await Task.WhenAll(queued);
     }

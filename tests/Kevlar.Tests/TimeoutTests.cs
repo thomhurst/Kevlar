@@ -80,6 +80,7 @@ public class TimeoutTests
     {
         var fakeTime = new FakeTimeProvider();
         var attempts = 0;
+        var attemptsStarted = new AsyncCounter("retry timeout attempts");
         var shield = Shield
             .When<TimeoutExceededException>()
             .Retry(1, Backoff.None)
@@ -89,12 +90,13 @@ public class TimeoutTests
         var task = shield.ExecuteAsync(async token =>
         {
             Interlocked.Increment(ref attempts);
+            attemptsStarted.Signal();
             await Task.Delay(System.Threading.Timeout.InfiniteTimeSpan, token);
             return 1;
         }).AsTask();
 
         fakeTime.Advance(TimeSpan.FromSeconds(1));
-        await TestHelpers.WaitUntil(() => Volatile.Read(ref attempts) == 2);
+        await attemptsStarted.WaitForAsync(2);
         fakeTime.Advance(TimeSpan.FromSeconds(1));
 
         await Assert.That(async () => await task).Throws<TimeoutExceededException>();

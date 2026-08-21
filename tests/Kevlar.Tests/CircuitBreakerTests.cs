@@ -156,8 +156,7 @@ public class CircuitBreakerTests
             .Throws<InvalidOperationException>();
 
         using var cancellation = new CancellationTokenSource();
-        cancellation.CancelAfter(0);
-        await Task.Delay(10);
+        cancellation.Cancel();
 
         await Assert.That(async () => await shield.ExecuteAsync<int>(
             async token =>

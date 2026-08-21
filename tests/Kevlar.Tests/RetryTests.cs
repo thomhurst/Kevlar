@@ -106,21 +106,23 @@ public class RetryTests
     {
         var fakeTime = new FakeTimeProvider();
         var attempts = 0;
+        var attemptsStarted = new AsyncCounter("backoff attempts");
         var shield = Shield.Retry(2, Backoff.Constant(TimeSpan.FromSeconds(1))).WithTimeProvider(fakeTime);
 
         var task = shield.ExecuteAsync<int>(_ =>
         {
             attempts++;
+            attemptsStarted.Signal();
             throw new InvalidOperationException();
         }).AsTask();
 
         await Assert.That(attempts).IsEqualTo(1);
 
         fakeTime.Advance(TimeSpan.FromSeconds(1));
-        await TestHelpers.WaitUntil(() => Volatile.Read(ref attempts) == 2);
+        await attemptsStarted.WaitForAsync(2);
 
         fakeTime.Advance(TimeSpan.FromSeconds(1));
-        await TestHelpers.WaitUntil(() => Volatile.Read(ref attempts) == 3);
+        await attemptsStarted.WaitForAsync(3);
 
         await Assert.That(async () => await task).Throws<InvalidOperationException>();
     }

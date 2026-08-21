@@ -106,6 +106,7 @@ public class RetryEdgeCaseTests
     {
         var fakeTime = new FakeTimeProvider();
         var attempts = 0;
+        var attemptsStarted = new AsyncCounter("max-delay attempts");
         var seenDelays = new List<TimeSpan>();
         var shield = Shield
             .Retry(options =>
@@ -120,12 +121,13 @@ public class RetryEdgeCaseTests
         var task = shield.ExecuteAsync<int>(_ =>
         {
             Interlocked.Increment(ref attempts);
+            attemptsStarted.Signal();
             throw new InvalidOperationException();
         }).AsTask();
 
-        await TestHelpers.WaitUntil(() => Volatile.Read(ref attempts) == 1);
+        await attemptsStarted.WaitForAsync(1);
         fakeTime.Advance(TimeSpan.FromSeconds(1));
-        await TestHelpers.WaitUntil(() => Volatile.Read(ref attempts) == 2);
+        await attemptsStarted.WaitForAsync(2);
 
         await Assert.That(async () => await task).Throws<InvalidOperationException>();
         await Assert.That(seenDelays).IsEquivalentTo([TimeSpan.FromSeconds(1)]);
@@ -172,6 +174,7 @@ public class RetryEdgeCaseTests
     public async Task OnRetryAsync_Is_Awaited_Before_The_Next_Attempt()
     {
         var order = new List<string>();
+        var callbackGate = new AsyncGate("OnRetryAsync callback");
         var shield = Shield.Retry(options =>
         {
             options.MaxRetries = 1;
@@ -180,18 +183,27 @@ public class RetryEdgeCaseTests
             options.OnRetryAsync = async _ =>
             {
                 order.Add("async-start");
-                await Task.Delay(20);
+                await callbackGate.EnterAsync();
                 order.Add("async-end");
             };
         });
 
-        await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
+        var execution = shield.ExecuteAsync<int>(_ =>
         {
             order.Add("attempt");
             throw new InvalidOperationException();
-        })).Throws<InvalidOperationException>();
+        }).AsTask();
 
-        await Assert.That(order).IsEquivalentTo(["attempt", "sync", "async-start", "async-end", "attempt"]);
+        await callbackGate.WaitForEntryAsync();
+        await Assert.That(order).IsEquivalentTo(
+            ["attempt", "sync", "async-start"],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
+        callbackGate.Release();
+
+        await Assert.That(async () => await execution).Throws<InvalidOperationException>();
+        await Assert.That(order).IsEquivalentTo(
+            ["attempt", "sync", "async-start", "async-end", "attempt"],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     [Test]
