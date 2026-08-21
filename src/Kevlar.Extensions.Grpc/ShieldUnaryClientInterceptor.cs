@@ -55,6 +55,7 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
             new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         private ConditionalWeakTable<Exception, FailureSelection>? _failedCalls;
+        private RpcException? _deadlineException;
         private Task<TResponse> _response = null!;
         private AsyncUnaryCall<TResponse>? _terminalCall;
         private int _lifetimeCompleted;
@@ -117,6 +118,11 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
                     ExceptionDispatchInfo.Capture(attemptException.Original).Throw();
                 }
 
+                if (exception is ExpiredDeadlineRpcException deadlineException)
+                {
+                    ExceptionDispatchInfo.Capture(deadlineException.Original).Throw();
+                }
+
                 throw;
             }
             finally
@@ -127,6 +133,14 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
 
         private async ValueTask<AttemptResult> InvokeAsync(CancellationToken cancellationToken)
         {
+            if (_context.Options.Deadline is { } admissionDeadline
+                && admissionDeadline <= DateTime.UtcNow)
+            {
+                throw new ExpiredDeadlineRpcException(
+                    Volatile.Read(ref _deadlineException)
+                    ?? new RpcException(new Status(StatusCode.DeadlineExceeded, "Deadline exceeded.")));
+            }
+
             DisposeSupersededFailures();
             var options = _context.Options.WithCancellationToken(cancellationToken);
             var context = new ClientInterceptorContext<TRequest, TResponse>(
@@ -155,6 +169,17 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
             }
             catch (Exception exception)
             {
+                if (exception is RpcException rpcException
+                    && rpcException.StatusCode == StatusCode.DeadlineExceeded)
+                {
+                    Volatile.Write(ref _deadlineException, rpcException);
+                    if (_context.Options.Deadline is { } deadline
+                        && deadline <= DateTime.UtcNow)
+                    {
+                        exception = new ExpiredDeadlineRpcException(rpcException);
+                    }
+                }
+
                 var attemptException = await CompleteFailureAsync(call, exception).ConfigureAwait(false);
                 if (ReferenceEquals(attemptException, exception))
                 {
@@ -326,6 +351,24 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
                 {
                     call = failure.Call;
                 }
+
+                if (call is null)
+                {
+                    for (var index = _attempts.Count - 1; index >= 0; index--)
+                    {
+                        var attemptException = _attempts[index].Exception;
+                        if (attemptException is null)
+                        {
+                            continue;
+                        }
+
+                        call = _failedCalls is not null
+                            && _failedCalls.TryGetValue(attemptException, out failure)
+                            ? failure.Call
+                            : _attempts[index].Call;
+                        break;
+                    }
+                }
             }
 
             SelectCore(call);
@@ -451,6 +494,12 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
 
         private sealed class AttemptRpcException(RpcException original)
             : RpcException(original.Status, original.Trailers, original.Message)
+        {
+            public RpcException Original { get; } = original;
+        }
+
+        private sealed class ExpiredDeadlineRpcException(RpcException original)
+            : Exception(original.Message, original)
         {
             public RpcException Original { get; } = original;
         }

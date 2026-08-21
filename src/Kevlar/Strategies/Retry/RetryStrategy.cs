@@ -32,6 +32,8 @@ internal sealed class RetryStrategy : Strategy
 
     internal override OutcomeJudge? ReactiveJudge => _judge;
 
+    internal override bool InvokesContinuationAtMostOnce => _maxRetries == 0;
+
     public override string Describe()
     {
         var cap = _maxDelay is { } max ? $", ≤{DescribeHelper.Time(max)}" : string.Empty;
