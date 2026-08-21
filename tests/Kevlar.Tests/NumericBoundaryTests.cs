@@ -4,7 +4,7 @@ namespace Kevlar.Tests;
 
 public class NumericBoundaryTests
 {
-    private static readonly TimeSpan MaximumRuntimeDelay = TimeSpan.FromMilliseconds(uint.MaxValue - 1d);
+    private static readonly TimeSpan MaximumRuntimeDelay = Kevlar.Internal.DelayHelper.MaximumDelay;
 
     [Test]
     public async Task Backoff_Factories_Reject_Invalid_Caps_And_Factors()
@@ -202,7 +202,18 @@ public class NumericBoundaryTests
         var rejection = await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(2)))
             .Throws<RateLimitExceededException>();
 
-        await Assert.That(rejection!.RetryAfter).IsEqualTo(MaximumRuntimeDelay);
+        await Assert.That(rejection!.RetryAfter).IsEqualTo(TimeSpan.MaxValue);
+
+        var longWindowShield = Shield
+            .RateLimit(1, TimeSpan.FromDays(100))
+            .WithTimeProvider(new FakeTimeProvider());
+
+        await longWindowShield.ExecuteAsync(_ => new ValueTask<int>(1));
+        var longWindowRejection = await Assert.That(
+                async () => await longWindowShield.ExecuteAsync(_ => new ValueTask<int>(2)))
+            .Throws<RateLimitExceededException>();
+
+        await Assert.That(longWindowRejection!.RetryAfter).IsEqualTo(TimeSpan.FromDays(100));
     }
 
     [Test]
@@ -229,6 +240,8 @@ public class NumericBoundaryTests
         var result = await shield.ExecuteAsync(_ => new ValueTask<int>(2));
 
         await Assert.That(result).IsEqualTo(2);
+        await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(3)))
+            .Throws<RateLimitExceededException>();
     }
 
     private static async Task AssertOutOfRangeAsync(Action action, string paramName)

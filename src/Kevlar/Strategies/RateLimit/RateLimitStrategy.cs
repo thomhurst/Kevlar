@@ -129,7 +129,7 @@ internal sealed class RateLimitStrategy : Strategy
 
             if (delayTimestampUnits > 0)
             {
-                retryAfter = DelayHelper.FromSecondsClamped(delayTimestampUnits * SecondsPerSystemTimestamp);
+                retryAfter = GetRetryAfter(delayTimestampUnits);
                 return false;
             }
 
@@ -164,8 +164,7 @@ internal sealed class RateLimitStrategy : Strategy
                 if (_queuedReservations >= _queueLimit)
                 {
                     reservation = null;
-                    retryAfter = DelayHelper.FromSecondsClamped(
-                        Math.Max(0, delayTimestampUnits) * SecondsPerSystemTimestamp);
+                    retryAfter = GetRetryAfter(Math.Max(0, delayTimestampUnits));
                     return false;
                 }
 
@@ -284,6 +283,19 @@ internal sealed class RateLimitStrategy : Strategy
     {
         var bits = BitConverter.DoubleToInt64Bits(timestamp);
         return BitConverter.Int64BitsToDouble(timestamp < 0 ? bits - 1 : bits + 1);
+    }
+
+    private static TimeSpan GetRetryAfter(double delayTimestampUnits)
+    {
+        var seconds = delayTimestampUnits * SecondsPerSystemTimestamp;
+        if (double.IsNaN(seconds) || seconds <= 0)
+        {
+            return TimeSpan.Zero;
+        }
+
+        return seconds >= TimeSpan.MaxValue.TotalSeconds
+            ? TimeSpan.MaxValue
+            : TimeSpan.FromSeconds(seconds);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
