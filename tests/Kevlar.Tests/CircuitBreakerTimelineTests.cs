@@ -3,6 +3,43 @@ namespace Kevlar.Tests;
 public class CircuitBreakerTimelineTests
 {
     [Test]
+    public async Task Newly_Observed_Provider_Advances_From_Current_Shared_Timeline()
+    {
+        var firstTime = new ManualTimeProvider(DateTimeOffset.UtcNow, 0);
+        var secondTime = new ManualTimeProvider(DateTimeOffset.UtcNow, 0);
+        var shield = Shield.CircuitBreaker(1, TimeSpan.FromSeconds(30)).WithTimeProvider(firstTime);
+        var secondCopy = shield.WithTimeProvider(secondTime);
+
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+        firstTime.AdvanceTimestamp(TimeSpan.FromSeconds(10));
+        await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(1)))
+            .Throws<CircuitOpenException>();
+        await Assert.That(async () => await secondCopy.ExecuteAsync(_ => new ValueTask<int>(1)))
+            .Throws<CircuitOpenException>();
+
+        secondTime.AdvanceTimestamp(TimeSpan.FromSeconds(20));
+        var result = await secondCopy.ExecuteAsync(_ => new ValueTask<int>(42));
+
+        await Assert.That(result).IsEqualTo(42);
+    }
+
+    [Test]
+    public async Task Timestamp_Crossing_Signed_Boundary_Does_Not_Expire_Circuit()
+    {
+        var timeProvider = new ManualTimeProvider(DateTimeOffset.UtcNow, long.MaxValue - 5);
+        var shield = Shield.CircuitBreaker(1, TimeSpan.FromTicks(10)).WithTimeProvider(timeProvider);
+
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+        timeProvider.SetTimestamp(long.MinValue + 5);
+
+        var rejection = await Assert.That(async () =>
+                await shield.ExecuteAsync(_ => new ValueTask<int>(1)))
+            .Throws<CircuitOpenException>();
+
+        await Assert.That(rejection!.RetryAfter).IsEqualTo(TimeSpan.FromTicks(10));
+    }
+
+    [Test]
     public async Task Far_Ahead_Utc_Epoch_Does_Not_Expire_A_Shared_Open_Circuit()
     {
         var firstTime = new ManualTimeProvider(DateTimeOffset.UnixEpoch, 0);
@@ -217,5 +254,7 @@ public class CircuitBreakerTimelineTests
             Volatile.Write(ref _advanceUtcAfterReadTicks, elapsed.Ticks);
 
         public void SetUtcNow(DateTimeOffset utcNow) => Volatile.Write(ref _utcTicks, utcNow.UtcTicks);
+
+        public void SetTimestamp(long timestamp) => Volatile.Write(ref _timestamp, timestamp);
     }
 }

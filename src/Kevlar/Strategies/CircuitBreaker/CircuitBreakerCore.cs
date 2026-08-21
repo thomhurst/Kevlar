@@ -14,8 +14,7 @@ internal sealed class CircuitBreakerCore
     private static readonly double SecondsPerSystemTimestamp = 1d / Stopwatch.Frequency;
 
     private readonly Lock _gate = new();
-    private readonly long _systemTimestampOrigin = Stopwatch.GetTimestamp();
-    private readonly ConditionalWeakTable<TimeProvider, CustomTimestampOrigin> _customTimestampOrigins = new();
+    private readonly ConditionalWeakTable<TimeProvider, TimestampOrigin> _timestampOrigins = new();
     private readonly int? _consecutiveFailureLimit;
     private readonly double? _failureRatio;
     private readonly int _minimumThroughput;
@@ -310,22 +309,17 @@ internal sealed class CircuitBreakerCore
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private double GetCurrentTimestamp(TimeProvider timeProvider)
     {
-        if (ReferenceEquals(timeProvider, TimeProvider.System))
-        {
-            return UpdateTimeline(Stopwatch.GetTimestamp() - _systemTimestampOrigin);
-        }
-
         var timestamp = timeProvider.GetTimestamp();
-        if (!_customTimestampOrigins.TryGetValue(timeProvider, out var origin))
+        if (!_timestampOrigins.TryGetValue(timeProvider, out var origin))
         {
-            origin = new CustomTimestampOrigin(timeProvider, timestamp);
-            _customTimestampOrigins.Add(timeProvider, origin);
-            return UpdateTimeline(origin.SystemTimestamp - _systemTimestampOrigin);
+            origin = new TimestampOrigin(timeProvider, timestamp, _latestTimestamp);
+            _timestampOrigins.Add(timeProvider, origin);
+            return _latestTimestamp;
         }
 
         return UpdateTimeline(
-            origin.SystemTimestamp - _systemTimestampOrigin
-            + ((timestamp - origin.ProviderTimestamp) * origin.TimestampScale));
+            origin.TimelineTimestamp
+            + ((double)((decimal)timestamp - origin.ProviderTimestamp) * origin.TimestampScale));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -343,18 +337,21 @@ internal sealed class CircuitBreakerCore
             : TimeSpan.FromTicks((long)ticks);
     }
 
-    private sealed class CustomTimestampOrigin
+    private sealed class TimestampOrigin
     {
-        public CustomTimestampOrigin(TimeProvider timeProvider, long providerTimestamp)
+        public TimestampOrigin(
+            TimeProvider timeProvider,
+            long providerTimestamp,
+            double timelineTimestamp)
         {
-            SystemTimestamp = Stopwatch.GetTimestamp();
             ProviderTimestamp = providerTimestamp;
+            TimelineTimestamp = timelineTimestamp;
             TimestampScale = Stopwatch.Frequency / (double)timeProvider.TimestampFrequency;
         }
 
-        public long SystemTimestamp { get; }
-
         public long ProviderTimestamp { get; }
+
+        public double TimelineTimestamp { get; }
 
         public double TimestampScale { get; }
     }
