@@ -1066,6 +1066,19 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         ILocalReferenceOperation localReference,
         OperationAnalysisContext context,
         out IOperation? initializer)
+        => TryGetInitializer(localReference, context, requireSingleUse: false, out initializer);
+
+    private static bool TryGetSingleUseInitializer(
+        ILocalReferenceOperation localReference,
+        OperationAnalysisContext context,
+        out IOperation? initializer)
+        => TryGetInitializer(localReference, context, requireSingleUse: true, out initializer);
+
+    private static bool TryGetInitializer(
+        ILocalReferenceOperation localReference,
+        OperationAnalysisContext context,
+        bool requireSingleUse,
+        out IOperation? initializer)
     {
         var local = localReference.Local;
         var declarations = local.DeclaringSyntaxReferences;
@@ -1086,50 +1099,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        var scope = (SyntaxNode?)declarator.FirstAncestorOrSelf<BlockSyntax>()
-            ?? declarator.SyntaxTree.GetRoot(context.CancellationToken);
-
-        foreach (var identifier in scope.DescendantNodes().OfType<IdentifierNameSyntax>())
-        {
-            if (identifier.Identifier.ValueText == local.Name
-                && SymbolEqualityComparer.Default.Equals(
-                    semanticModel.GetSymbolInfo(identifier, context.CancellationToken).Symbol,
-                    local)
-                && (IsWritten(identifier)
-                    || local.Type is IArrayTypeSymbol
-                        && IsEscapingArrayReference(identifier, localReference.Syntax)))
-            {
-                initializer = null;
-                return false;
-            }
-        }
-
-        initializer = semanticModel.GetOperation(initializerSyntax, context.CancellationToken);
-        return initializer is not null;
-    }
-
-    private static bool TryGetSingleUseInitializer(
-        ILocalReferenceOperation localReference,
-        OperationAnalysisContext context,
-        out IOperation? initializer)
-    {
-        if (!TryGetStableInitializer(localReference, context, out initializer))
-        {
-            return false;
-        }
-
-        var declaration = localReference.Local.DeclaringSyntaxReferences[0]
-            .GetSyntax(context.CancellationToken);
-        var declarationScope = GetExecutableScope(declaration, context.CancellationToken);
-        var referenceScope = GetExecutableScope(localReference.Syntax, context.CancellationToken);
-        if (!SameSyntax(declarationScope, referenceScope))
-        {
-            initializer = null;
-            return false;
-        }
-
-        var semanticModel = context.Operation.SemanticModel;
-        if (semanticModel is null)
+        var declarationScope = GetExecutableScope(declarator, context.CancellationToken);
+        if (requireSingleUse
+            && !SameSyntax(
+                declarationScope,
+                GetExecutableScope(localReference.Syntax, context.CancellationToken)))
         {
             initializer = null;
             return false;
@@ -1138,18 +1112,31 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         var referenceCount = 0;
         foreach (var identifier in declarationScope.DescendantNodes().OfType<IdentifierNameSyntax>())
         {
-            if (identifier.Identifier.ValueText == localReference.Local.Name
+            if (identifier.Identifier.ValueText == local.Name
                 && SymbolEqualityComparer.Default.Equals(
                     semanticModel.GetSymbolInfo(identifier, context.CancellationToken).Symbol,
-                    localReference.Local)
-                && ++referenceCount > 1)
+                    local))
             {
-                initializer = null;
-                return false;
+                referenceCount++;
+                if (IsWritten(identifier)
+                    || local.Type is IArrayTypeSymbol
+                        && IsEscapingArrayReference(identifier, localReference.Syntax)
+                    || requireSingleUse && referenceCount > 1)
+                {
+                    initializer = null;
+                    return false;
+                }
             }
         }
 
-        return referenceCount == 1;
+        if (requireSingleUse && referenceCount != 1)
+        {
+            initializer = null;
+            return false;
+        }
+
+        initializer = semanticModel.GetOperation(initializerSyntax, context.CancellationToken);
+        return initializer is not null;
     }
 
     private static SyntaxNode GetExecutableScope(SyntaxNode syntax, CancellationToken cancellationToken)
@@ -1159,7 +1146,10 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             if (current is AnonymousFunctionExpressionSyntax
                 or LocalFunctionStatementSyntax
                 or BaseMethodDeclarationSyntax
-                or AccessorDeclarationSyntax)
+                or AccessorDeclarationSyntax
+                or ArrowExpressionClauseSyntax
+                or PropertyDeclarationSyntax
+                or IndexerDeclarationSyntax)
             {
                 return current;
             }
@@ -1303,7 +1293,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 var attributeType = attribute.AttributeClass;
                 if (attributeType is not null
                     && attributeType.Name is "TestAttribute" or "FactAttribute" or "TheoryAttribute" or "TestMethodAttribute"
-                    && attributeType.ContainingNamespace.ToDisplayString() is "TUnit.Core"
+                    && attributeType.ContainingNamespace?.ToDisplayString() is "TUnit.Core"
                         or "Xunit"
                         or "NUnit.Framework"
                         or "Microsoft.VisualStudio.TestTools.UnitTesting")

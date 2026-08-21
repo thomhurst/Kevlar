@@ -161,10 +161,19 @@ public class PipelineHazardAnalyzerTests
                 }
             }
             """, allowCompilationErrors: true);
+        var malformedAttribute = await AnalyzeSourceAsync("""
+            public class TestSubject
+            {
+                [MissingTest]
+                public int Run() =>
+                    Shield.CircuitBreaker(2, TimeSpan.FromSeconds(1)).Execute(_ => 1);
+            }
+            """, allowCompilationErrors: true);
 
         await Assert.That(lookalike).IsEmpty();
         await Assert.That(generated).IsEmpty();
         await Assert.That(malformed.Any(diagnostic => diagnostic.Id == "AD0001")).IsFalse();
+        await Assert.That(malformedAttribute.Any(diagnostic => diagnostic.Id == "AD0001")).IsFalse();
     }
 
     [Test]
@@ -233,10 +242,7 @@ public class PipelineHazardAnalyzerTests
                 .Select(diagnostic => diagnostic.Location.SourceSpan)
                 .OrderBy(span => span.Start)
                 .ToArray();
-            if (!expected.SequenceEqual(actual))
-            {
-                throw new InvalidOperationException("Concurrent analyzer runs produced different KEV004 spans.");
-            }
+            await Assert.That(actual).IsEquivalentTo(expected);
         }
     }
 

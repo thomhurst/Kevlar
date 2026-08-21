@@ -85,13 +85,16 @@ and limiter capacity is not shared:
 ```csharp
 // KEV004: a new circuit exists for only this call.
 await Shield.CircuitBreaker(5, TimeSpan.FromSeconds(30))
-    .ExecuteAsync(ct => SendAsync(ct));
+    .ExecuteAsync(static _ => ValueTask.CompletedTask);
+```
 
+<!-- doc-test-declaration: split-before=await _dependencyShield -->
+```csharp
 // Clean: every call shares the same circuit.
-private readonly Shield _dependencyShield =
+private static readonly Shield _dependencyShield =
     Shield.CircuitBreaker(5, TimeSpan.FromSeconds(30));
 
-await _dependencyShield.ExecuteAsync(ct => SendAsync(ct));
+await _dependencyShield.ExecuteAsync(static _ => ValueTask.CompletedTask);
 ```
 
 Store stateful shields in a field, singleton or keyed dependency-injection registration, or registry.
