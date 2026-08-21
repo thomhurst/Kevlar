@@ -265,7 +265,14 @@ public class HttpContractTests
             return new HttpResponseMessage(
                 snapshots.Count == 1 ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.OK);
         });
-        using var client = CreateClient(inner, HttpShield.WhenTransient().Retry(1, Backoff.None));
+        using var client = CreateClient(
+            inner,
+            HttpShield.WhenTransient().Retry(1, Backoff.None),
+            new ShieldHttpHandlerOptions
+            {
+                ContentReplayPolicy = HttpContentReplayPolicy.Buffer,
+                AllowUnsafeMethodReplay = true,
+            });
         using var request = new HttpRequestMessage(HttpMethod.Patch, "http://localhost/items/42?mode=fast")
         {
             Content = new ByteArrayContent([1, 2, 3, 4]),
@@ -427,6 +434,12 @@ public class HttpContractTests
 
     private static HttpClient CreateClient(HttpMessageHandler inner, Shield<HttpResponseMessage> shield) =>
         new(new ShieldDelegatingHandler(shield) { InnerHandler = inner });
+
+    private static HttpClient CreateClient(
+        HttpMessageHandler inner,
+        Shield<HttpResponseMessage> shield,
+        ShieldHttpHandlerOptions options) =>
+        new(new ShieldDelegatingHandler(shield, options) { InnerHandler = inner });
 
     private static RetryConditionHeaderValue? CreateRetryAfter(RetryAfterKind kind, DateTimeOffset now) => kind switch
     {
