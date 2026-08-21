@@ -99,4 +99,19 @@ public class TestInfrastructureTests
         await Assert.That(exception.Message).Contains("seed 2468");
         await Assert.That(exception.Message).Contains("order");
     }
+
+    [Test]
+    public async Task Model_Runner_Reports_Seed_And_Minimized_Commands()
+    {
+        var exception = await Assert.That(async () => await ModelRunner.RunAsync(
+            "reproducible model",
+            commandCount: 4,
+            _ => "step",
+            commands => commands.Count >= 2
+                ? throw new InvalidOperationException("failure")
+                : Task.CompletedTask)).Throws<InvalidOperationException>();
+
+        await Assert.That(exception!.Message).Contains("Model 'reproducible model' failed with seed 0");
+        await Assert.That(exception.Message).Contains("Minimized commands: [step, step]");
+    }
 }
