@@ -110,6 +110,7 @@ try
   <ItemGroup>
     <PackageReference Include="Kevlar" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.DependencyInjection" Version="$Version" />
+    <PackageReference Include="Kevlar.Extensions.Grpc" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.Http" Version="$Version" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="$ConfigurationVersion" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="$DependencyInjectionVersion" />
@@ -121,6 +122,7 @@ try
 using System.Net;
 using Kevlar;
 using Kevlar.Extensions.DependencyInjection;
+using Kevlar.Extensions.Grpc;
 using Kevlar.Extensions.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -138,6 +140,12 @@ if (typed.Execute(static _ => 42) != 42
     || await typed.ExecuteAsync(static _ => new ValueTask<int>(42)) != 42)
 {
     throw new InvalidOperationException("Typed execution failed.");
+}
+
+_ = new ShieldUnaryClientInterceptor(GrpcShield.WhenTransient().Retry(1, Backoff.None));
+if (!GrpcShield.IsTransient(Grpc.Core.StatusCode.Unavailable))
+{
+    throw new InvalidOperationException("gRPC transient classification failed.");
 }
 
 var retryAttempts = 0;
