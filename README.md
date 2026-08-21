@@ -66,7 +66,7 @@ One clause up top decides what "failure" means for every strategy below it — e
 | `Kevlar.Extensions.DependencyInjection` | Named shields, config-bound shields + `IKevlarRegistry` for Microsoft DI |
 | `Kevlar.Extensions.Http` | `HttpClientFactory` integration, transient-fault handling, `Retry-After` support |
 | `Kevlar.Analyzers` | Roslyn analyzers that catch resilience mistakes at compile time |
-| `Kevlar.Testing` | Structured pipeline descriptors and framework-independent shape assertions |
+| `Kevlar.Testing` | Pipeline descriptors, shape assertions, and deterministic fake-time helpers |
 
 ## The five-minute tour
 

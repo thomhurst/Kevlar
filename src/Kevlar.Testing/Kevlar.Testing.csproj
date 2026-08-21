@@ -1,16 +1,21 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net10.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net8.0;net10.0</TargetFrameworks>
     <RootNamespace>Kevlar.Testing</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IsPackable>true</IsPackable>
-    <Description>Structured pipeline inspection and assertion helpers for testing Kevlar shields without parsing display strings.</Description>
-    <PackageTags>resilience;testing;assertions;pipeline-inspection;kevlar</PackageTags>
+    <Description>Pipeline inspection, assertions, and deterministic time helpers for testing Kevlar shields.</Description>
+    <PackageTags>resilience;testing;assertions;pipeline-inspection;fake-time;kevlar</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Kevlar\Kevlar.csproj" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' != 'netstandard2.0'">
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
+    <AdditionalFiles Include="PublicAPI.Unshipped.$(TargetFramework).txt" />
   </ItemGroup>
 
 </Project>

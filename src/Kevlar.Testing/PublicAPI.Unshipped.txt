@@ -45,6 +45,7 @@ Kevlar.Testing.RetryStrategyDescriptor.MaxRetries.get -> int
 Kevlar.Testing.ShieldAssertionException
 Kevlar.Testing.ShieldAssertionException.ShieldAssertionException(string! message) -> void
 Kevlar.Testing.ShieldDescriptor
+Kevlar.Testing.ShieldExecutionExtensions
 Kevlar.Testing.ShieldDescriptor.Name.get -> string?
 Kevlar.Testing.ShieldDescriptor.ResultType.get -> System.Type?
 Kevlar.Testing.ShieldDescriptor.Strategies.get -> System.Collections.Generic.IReadOnlyList<Kevlar.Testing.StrategyDescriptor!>!
@@ -140,3 +141,4 @@ Kevlar.Testing.TelemetryRecorder.Record<TResult>(Kevlar.RetryEvent<TResult> item
 Kevlar.Testing.TelemetryRecorder.TelemetryRecorder(bool captureMetrics = true) -> void
 Kevlar.Testing.TelemetryRecorder.WaitForCallbackCountAsync(int count, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Kevlar.Testing.TelemetryRecorder.WaitForMetricCountAsync(int count, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+static Kevlar.Testing.ShieldExecutionExtensions.WaitForPendingAsync(this System.Threading.Tasks.Task! execution, System.Func<bool>! workStarted, string! workDescription, int maxYields = 100, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
