@@ -199,15 +199,13 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
 
     private void ReleasePermit()
     {
-        // A waiter registers before retrying the atomic pool, so a concurrent release either
-        // replenishes that pool for the retry or signals the semaphore after the retry fails.
-        if (Volatile.Read(ref _waiters) > 0)
+        // Publish first. A waiter that registers concurrently either claims this permit on its
+        // atomic retry, or leaves it here for this release to transfer to the semaphore.
+        Interlocked.Increment(ref _available);
+        if (Volatile.Read(ref _waiters) > 0 && TryAcquirePermit())
         {
             _semaphore.Release();
-            return;
         }
-
-        Interlocked.Increment(ref _available);
     }
 
     private void UpdateMetricsState(int inflightDelta, int queuedDelta)
