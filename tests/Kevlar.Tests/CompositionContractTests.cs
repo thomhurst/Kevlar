@@ -22,7 +22,9 @@ public class CompositionContractTests
             Shield.Use(innerStrategy),
             Shield<int>.Empty.Use(innerStrategy));
 
-        await Assert.That(log).IsEquivalentTo(["outer", "inner"]);
+        await Assert.That(log).IsEquivalentTo(
+            ["outer", "inner"],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     [Test]
@@ -180,7 +182,9 @@ public class CompositionContractTests
         });
 
         await Assert.That(result).IsEqualTo(42);
-        await Assert.That(calls).IsEquivalentTo(["first", "second"]);
+        await Assert.That(calls).IsEquivalentTo(
+            ["first", "second"],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     [Test]
@@ -218,14 +222,24 @@ public class CompositionContractTests
     }
 
     [Test]
-    public async Task Reusing_One_Strategy_Instance_In_A_Chain_Is_Rejected()
+    [Arguments(StatefulStrategyKind.ConcurrencyLimit)]
+    [Arguments(StatefulStrategyKind.RateLimit)]
+    [Arguments(StatefulStrategyKind.CircuitBreaker)]
+    public async Task Reusing_One_Stateful_Strategy_Instance_In_A_Chain_Is_Rejected(
+        StatefulStrategyKind kind)
     {
-        var limiter = Shield.ConcurrencyLimit(1);
+        var stateful = kind switch
+        {
+            StatefulStrategyKind.ConcurrencyLimit => Shield.ConcurrencyLimit(1),
+            StatefulStrategyKind.RateLimit => Shield.RateLimit(1, TimeSpan.FromSeconds(1)),
+            StatefulStrategyKind.CircuitBreaker => Shield.CircuitBreaker(1, TimeSpan.FromSeconds(1)),
+            _ => throw new ArgumentOutOfRangeException(nameof(kind)),
+        };
         InvalidOperationException? error = null;
 
         try
         {
-            _ = limiter.Wrap(limiter);
+            _ = stateful.Wrap(stateful);
         }
         catch (InvalidOperationException caught)
         {
@@ -245,6 +259,20 @@ public class CompositionContractTests
         var result = await shield.ExecuteAsync(_ => new ValueTask<int>(42));
 
         await Assert.That(result).IsEqualTo(42);
+    }
+
+    [Test]
+    public async Task Reusing_A_Stateless_Strategy_Instance_In_A_Chain_Is_Allowed()
+    {
+        var calls = 0;
+        var strategy = new RecordingStrategy(_ => calls++);
+        var reusable = Shield.Use(strategy);
+        var shield = reusable.Wrap(reusable);
+
+        var result = await shield.ExecuteAsync(_ => new ValueTask<int>(42));
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(calls).IsEqualTo(2);
     }
 
     private static ValueTask<int> ExecuteWrappedAsync(
@@ -268,6 +296,13 @@ public class CompositionContractTests
         UntypedTyped,
         TypedUntyped,
         TypedTyped,
+    }
+
+    public enum StatefulStrategyKind
+    {
+        ConcurrencyLimit,
+        RateLimit,
+        CircuitBreaker,
     }
 
     private sealed class RecordingStrategy : Strategy

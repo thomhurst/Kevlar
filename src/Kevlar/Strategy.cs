@@ -41,6 +41,9 @@ public abstract class Strategy
 
     /// <summary>Marks fallback strategies for chain-order validation.</summary>
     internal virtual bool IsFallback => false;
+
+    /// <summary>Marks stateful built-in strategies that cannot safely appear twice in one chain.</summary>
+    internal virtual bool IsDuplicateReferenceUnsafe => false;
 }
 
 /// <summary>

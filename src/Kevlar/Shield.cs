@@ -261,7 +261,7 @@ public sealed class Shield
         {
             for (var j = 0; j < i; j++)
             {
-                if (ReferenceEquals(strategies[i], strategies[j]))
+                if (ReferenceEquals(strategies[i], strategies[j]) && strategies[i].IsDuplicateReferenceUnsafe)
                 {
                     throw new InvalidOperationException(
                         $"This chain contains the same strategy instance ({strategies[i].Describe()}) " +

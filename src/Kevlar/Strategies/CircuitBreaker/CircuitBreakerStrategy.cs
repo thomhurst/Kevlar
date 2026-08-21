@@ -15,6 +15,8 @@ internal sealed class CircuitBreakerStrategy : Strategy
 
     internal override OutcomeJudge? ReactiveJudge => _judge;
 
+    internal override bool IsDuplicateReferenceUnsafe => true;
+
     public override string Describe() => _core.Describe();
 
     public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
