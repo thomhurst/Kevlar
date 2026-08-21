@@ -59,6 +59,21 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV004_Flags_Stateful_Composition_Operands()
+    {
+        var cases = new[]
+        {
+            "_ = Shield.Empty.Wrap(Shield.CircuitBreaker(2, TimeSpan.FromSeconds(1))).Execute(_ => 1);",
+            "_ = Shield.Compose(Shield.Empty, Shield.RateLimit(10, TimeSpan.FromSeconds(1))).Execute(_ => 1);",
+            "_ = Shield.Compose([Shield.ConcurrencyLimit(2)]).Execute(_ => 1);",
+            "_ = Shield.Compose([.. new[] { Shield.CircuitBreaker(2, TimeSpan.FromSeconds(1)) }]).Execute(_ => 1);",
+            "var parts = new[] { Shield.RateLimit(10, TimeSpan.FromSeconds(1)) }; _ = Shield.Compose(parts).Execute(_ => 1);",
+        };
+
+        await AssertEachAsync(cases, "KEV004");
+    }
+
+    [Test]
     public async Task KEV004_Flags_Per_Execution_Partition_Providers()
     {
         var cases = new[]

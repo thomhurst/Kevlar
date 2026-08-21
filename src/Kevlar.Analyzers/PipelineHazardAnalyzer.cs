@@ -170,6 +170,48 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 out location);
         }
 
+        if (operation is IArrayCreationOperation { Initializer: { } arrayInitializer })
+        {
+            foreach (var element in arrayInitializer.ElementValues)
+            {
+                if (TryFindEphemeralStatefulConstruction(
+                    element,
+                    context,
+                    knownTypes,
+                    visitedLocals,
+                    out statefulComponent,
+                    out location))
+                {
+                    return true;
+                }
+            }
+
+            statefulComponent = null;
+            location = null;
+            return false;
+        }
+
+        if (operation?.Syntax is CollectionExpressionSyntax or SpreadElementSyntax)
+        {
+            foreach (var child in operation.ChildOperations)
+            {
+                if (TryFindEphemeralStatefulConstruction(
+                    child,
+                    context,
+                    knownTypes,
+                    visitedLocals,
+                    out statefulComponent,
+                    out location))
+                {
+                    return true;
+                }
+            }
+
+            statefulComponent = null;
+            location = null;
+            return false;
+        }
+
         if (operation is not IInvocationOperation invocation)
         {
             statefulComponent = null;
