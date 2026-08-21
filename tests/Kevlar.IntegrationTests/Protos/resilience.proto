@@ -6,6 +6,9 @@ package kevlar.tests;
 
 service Resilience {
   rpc Unary (TestRequest) returns (TestReply);
+  rpc ServerStream (TestRequest) returns (stream TestReply);
+  rpc ClientStream (stream TestRequest) returns (TestReply);
+  rpc DuplexStream (stream TestRequest) returns (stream TestReply);
 }
 
 message TestRequest {

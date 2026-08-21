@@ -5,7 +5,7 @@
     <RootNamespace>Kevlar.Extensions.Grpc</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IsPackable>true</IsPackable>
-    <Description>Unary gRPC client integration for Kevlar: transient status helpers, cancellation-safe interceptors, and named-shield DI registration.</Description>
+    <Description>gRPC client integration for Kevlar: unary and streaming interceptors, transient status helpers, cancellation safety, and named-shield DI registration.</Description>
     <PackageTags>resilience;grpc;client;interceptor;kevlar</PackageTags>
   </PropertyGroup>
 
