@@ -30,9 +30,12 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
         if (Interlocked.Increment(ref _pending) > _capacity)
         {
             Interlocked.Decrement(ref _pending);
+            RecordState(context.ShieldName);
             KevlarMetrics.Rejection(context.ShieldName, "concurrency_limit");
             return Outcome<T>.FromException(new ConcurrencyLimitExceededException());
         }
+
+        RecordState(context.ShieldName);
 
         try
         {
@@ -48,8 +51,11 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
         catch (OperationCanceledException cancelled)
         {
             Interlocked.Decrement(ref _pending);
+            RecordState(context.ShieldName);
             return Outcome<T>.FromException(cancelled);
         }
+
+        RecordState(context.ShieldName);
 
         try
         {
@@ -59,6 +65,20 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
         {
             _semaphore.Release();
             Interlocked.Decrement(ref _pending);
+            RecordState(context.ShieldName);
         }
+    }
+
+    private void RecordState(string? shieldName)
+    {
+        if (!KevlarMetrics.ConcurrencyStateEnabled)
+        {
+            return;
+        }
+
+        var pending = Volatile.Read(ref _pending);
+        var inflight = _maxConcurrency - _semaphore.CurrentCount;
+        var queued = Math.Max(0, pending - inflight);
+        KevlarMetrics.RecordConcurrencyState(shieldName, inflight, queued, _maxConcurrency);
     }
 }

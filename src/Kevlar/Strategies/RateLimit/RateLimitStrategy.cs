@@ -57,9 +57,12 @@ internal sealed class RateLimitStrategy : Strategy
     {
         if (!TryAcquire(context.TimeProvider, out var reservation, out var retryAfter))
         {
+            RecordState(context.ShieldName, context.TimeProvider);
             KevlarMetrics.Rejection(context.ShieldName, "rate_limit");
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(new RateLimitExceededException(retryAfter)));
         }
+
+        RecordState(context.ShieldName, context.TimeProvider);
 
         return reservation is null
             ? next.InvokeAsync(context)
@@ -78,6 +81,7 @@ internal sealed class RateLimitStrategy : Strategy
                 if (TryConsumeReservation(reservation, context.TimeProvider, out var wait, out var nextTurn))
                 {
                     nextTurn?.TrySetResult(true);
+                    RecordState(context.ShieldName, context.TimeProvider);
                     break;
                 }
 
@@ -97,6 +101,7 @@ internal sealed class RateLimitStrategy : Strategy
         catch (OperationCanceledException cancelled)
         {
             CancelReservation(reservation)?.TrySetResult(true);
+            RecordState(context.ShieldName, context.TimeProvider);
             return Outcome<T>.FromException(cancelled);
         }
 
@@ -300,6 +305,48 @@ internal sealed class RateLimitStrategy : Strategy
         return seconds >= maximumSeconds - maximumRoundingTolerance
             ? TimeSpan.MaxValue
             : TimeSpan.FromSeconds(seconds);
+    }
+
+    private void RecordState(string? shieldName, TimeProvider timeProvider)
+    {
+        if (!KevlarMetrics.RateStateEnabled)
+        {
+            return;
+        }
+
+        double theoreticalArrival;
+        int queued;
+        if (_queueLimit > 0)
+        {
+            lock (_queueGate)
+            {
+                theoreticalArrival = _theoreticalArrival;
+                queued = _queuedReservations;
+            }
+        }
+        else
+        {
+            theoreticalArrival = Volatile.Read(ref _theoreticalArrival);
+            queued = 0;
+        }
+
+        long available;
+        if (double.IsNegativeInfinity(theoreticalArrival))
+        {
+            available = _burst;
+        }
+        else if (double.IsInfinity(_timestampUnitsPerPermit))
+        {
+            available = 0;
+        }
+        else
+        {
+            var debt = Math.Max(0, theoreticalArrival - GetCurrentTimestamp(timeProvider));
+            var consumed = Math.Ceiling(debt / _timestampUnitsPerPermit);
+            available = consumed >= _burst ? 0 : _burst - (long)consumed;
+        }
+
+        KevlarMetrics.RecordRateState(shieldName, available, queued);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

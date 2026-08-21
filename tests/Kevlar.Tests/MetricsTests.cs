@@ -16,6 +16,7 @@ public class MetricsTests
         private readonly MeterListener _listener = new();
         private readonly ConcurrentDictionary<string, Instrument> _instruments = new(StringComparer.Ordinal);
         private readonly ConcurrentBag<(string Instrument, long Value, Dictionary<string, object?> Tags)> _measurements = [];
+        private readonly ConcurrentBag<(string Instrument, double Value, Dictionary<string, object?> Tags)> _doubleMeasurements = [];
 
         public KevlarMeterListener()
         {
@@ -29,13 +30,11 @@ public class MetricsTests
             };
             _listener.SetMeasurementEventCallback<long>((instrument, value, tags, _) =>
             {
-                var captured = new Dictionary<string, object?>();
-                foreach (var tag in tags)
-                {
-                    captured[tag.Key] = tag.Value;
-                }
-
-                _measurements.Add((instrument.Name, value, captured));
+                _measurements.Add((instrument.Name, value, CaptureTags(tags)));
+            });
+            _listener.SetMeasurementEventCallback<double>((instrument, value, tags, _) =>
+            {
+                _doubleMeasurements.Add((instrument.Name, value, CaptureTags(tags)));
             });
             _listener.Start();
         }
@@ -48,6 +47,30 @@ public class MetricsTests
                 .Sum(m => m.Value);
 
         public IReadOnlyCollection<Instrument> Instruments => _instruments.Values.ToArray();
+
+        public IReadOnlyCollection<long> Values(string instrument, string? shieldName, bool requireName = true) =>
+            _measurements
+                .Where(measurement => measurement.Instrument == instrument)
+                .Where(measurement => HasName(measurement.Tags, shieldName, requireName))
+                .Select(measurement => measurement.Value)
+                .ToArray();
+
+        public IReadOnlyCollection<double> DoubleValues(string instrument, string? shieldName, bool requireName = true) =>
+            _doubleMeasurements
+                .Where(measurement => measurement.Instrument == instrument)
+                .Where(measurement => HasName(measurement.Tags, shieldName, requireName))
+                .Select(measurement => measurement.Value)
+                .ToArray();
+
+        public IReadOnlyCollection<Dictionary<string, object?>> DoubleMeasurements(
+            string instrument,
+            string? shieldName,
+            bool requireName = true) =>
+            _doubleMeasurements
+                .Where(measurement => measurement.Instrument == instrument)
+                .Where(measurement => HasName(measurement.Tags, shieldName, requireName))
+                .Select(measurement => measurement.Tags)
+                .ToArray();
 
         public IReadOnlyCollection<Dictionary<string, object?>> Measurements(
             string instrument,
@@ -62,6 +85,22 @@ public class MetricsTests
                 .ToArray();
 
         public void Dispose() => _listener.Dispose();
+
+        private static Dictionary<string, object?> CaptureTags(ReadOnlySpan<KeyValuePair<string, object?>> tags)
+        {
+            var captured = new Dictionary<string, object?>();
+            foreach (var tag in tags)
+            {
+                captured[tag.Key] = tag.Value;
+            }
+
+            return captured;
+        }
+
+        private static bool HasName(Dictionary<string, object?> tags, string? shieldName, bool requireName) =>
+            requireName
+                ? tags.TryGetValue("kevlar.shield.name", out var name) && Equals(name, shieldName)
+                : !tags.ContainsKey("kevlar.shield.name");
     }
 
     [Test]
@@ -167,11 +206,22 @@ public class MetricsTests
             ["kevlar.fallbacks"] = "{fallback}",
             ["kevlar.rejections"] = "{rejection}",
             ["kevlar.circuit_breaker.transitions"] = "{transition}",
+            ["kevlar.execution.duration"] = "s",
+            ["kevlar.circuit_breaker.state"] = "{state}",
+            ["kevlar.concurrency_limit.inflight"] = "{execution}",
+            ["kevlar.concurrency_limit.queued"] = "{execution}",
+            ["kevlar.concurrency_limit.capacity"] = "{execution}",
+            ["kevlar.rate_limit.available"] = "{permit}",
+            ["kevlar.rate_limit.queued"] = "{execution}",
         };
 
         await Assert.That(listener.Instruments.Select(instrument => instrument.Name))
             .IsEquivalentTo(expectedInstruments.Keys);
-        await Assert.That(listener.Instruments.All(instrument => instrument is Counter<long>)).IsTrue();
+        await Assert.That(listener.Instruments.Single(instrument => instrument.Name == "kevlar.execution.duration"))
+            .IsTypeOf<Histogram<double>>();
+        await Assert.That(listener.Instruments
+            .Where(instrument => instrument.Name is not "kevlar.execution.duration")
+            .All(instrument => instrument is Counter<long> or Gauge<long>)).IsTrue();
         await Assert.That(listener.Instruments.All(instrument => instrument.Meter.Name == "Kevlar")).IsTrue();
         await Assert.That(listener.Instruments.All(instrument => instrument.Meter.Version == "1.0")).IsTrue();
         await Assert.That(listener.Instruments.All(instrument =>
@@ -448,6 +498,117 @@ public class MetricsTests
 
         await Assert.That(attempts).IsEqualTo(1);
         await Assert.That(listener.Total("kevlar.hedges", "metrics-suppressed-hedge")).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Execution_Duration_Covers_Named_Unnamed_And_Failed_Calls()
+    {
+        using var listener = new KevlarMeterListener();
+        var named = Shield.Empty.WithName("metrics-duration");
+
+        await named.ExecuteAsync(_ => new ValueTask<int>(1));
+        await Assert.That(async () => await named.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
+            .Throws<InvalidOperationException>();
+        await Shield.Empty.ExecuteAsync(_ => new ValueTask<int>(2));
+
+        var namedValues = listener.DoubleValues("kevlar.execution.duration", "metrics-duration");
+        var namedTags = listener.DoubleMeasurements("kevlar.execution.duration", "metrics-duration");
+        await Assert.That(namedValues.Count).IsEqualTo(2);
+        await Assert.That(namedValues.All(value => value >= 0)).IsTrue();
+        await Assert.That(namedTags.Select(tags => (string)tags["kevlar.execution.outcome"]!))
+            .IsEquivalentTo(["success", "failure"]);
+        await Assert.That(listener.DoubleValues("kevlar.execution.duration", null, requireName: false).Count >= 1)
+            .IsTrue();
+    }
+
+    [Test]
+    public async Task Circuit_State_Gauge_Reports_Every_State()
+    {
+        using var listener = new KevlarMeterListener();
+        var timeProvider = new FakeTimeProvider();
+        var monitor = new CircuitBreakerMonitor();
+        var shield = Shield.CircuitBreaker(options =>
+        {
+            options.ConsecutiveFailures = 1;
+            options.BreakDuration = TimeSpan.FromSeconds(1);
+            options.Monitor = monitor;
+        }).WithTimeProvider(timeProvider).WithName("metrics-circuit-state");
+
+        await shield.ExecuteAsync(_ => new ValueTask<int>(1));
+        _ = await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+        timeProvider.Advance(TimeSpan.FromSeconds(1));
+        await shield.ExecuteAsync(_ => new ValueTask<int>(2));
+        monitor.Isolate();
+        _ = await shield.ExecuteOutcomeAsync(_ => new ValueTask<int>(3));
+
+        await Assert.That(listener.Values("kevlar.circuit_breaker.state", "metrics-circuit-state"))
+            .Contains(0)
+            .And.Contains(1)
+            .And.Contains(2)
+            .And.Contains(3);
+    }
+
+    [Test]
+    public async Task Concurrency_Gauges_Track_Inflight_Queue_And_Cancellation()
+    {
+        using var listener = new KevlarMeterListener();
+        using var cancellation = new CancellationTokenSource();
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var shield = Shield.ConcurrencyLimit(1, 1).WithName("metrics-concurrency-state");
+        var occupying = shield.ExecuteAsync(async _ =>
+        {
+            entered.SetResult();
+            await release.Task;
+            return 1;
+        }).AsTask();
+        await entered.Task;
+        var queued = shield.ExecuteAsync(_ => new ValueTask<int>(2), cancellation.Token).AsTask();
+        cancellation.Cancel();
+        await Assert.That(async () => await queued).Throws<OperationCanceledException>();
+        release.SetResult();
+        _ = await occupying;
+
+        await Assert.That(listener.Values("kevlar.concurrency_limit.inflight", "metrics-concurrency-state"))
+            .Contains(1)
+            .And.Contains(0);
+        await Assert.That(listener.Values("kevlar.concurrency_limit.queued", "metrics-concurrency-state"))
+            .Contains(1)
+            .And.Contains(0);
+        await Assert.That(listener.Values("kevlar.concurrency_limit.capacity", "metrics-concurrency-state")
+            .All(value => value == 1)).IsTrue();
+
+        await Shield.ConcurrencyLimit(1).ExecuteAsync(_ => new ValueTask<int>(3));
+        await Assert.That(listener.Values("kevlar.concurrency_limit.inflight", null, requireName: false).Count > 0)
+            .IsTrue();
+    }
+
+    [Test]
+    public async Task Rate_Gauges_Track_Available_Permits_Queue_And_Cancellation()
+    {
+        using var listener = new KevlarMeterListener();
+        using var cancellation = new CancellationTokenSource();
+        var timeProvider = new FakeTimeProvider();
+        var shield = Shield.RateLimit(options =>
+        {
+            options.Permits = 2;
+            options.Burst = 2;
+            options.Window = TimeSpan.FromSeconds(1);
+            options.QueueLimit = 1;
+        }).WithTimeProvider(timeProvider).WithName("metrics-rate-state");
+
+        await shield.ExecuteAsync(_ => new ValueTask<int>(1));
+        await shield.ExecuteAsync(_ => new ValueTask<int>(2));
+        var queued = shield.ExecuteAsync(_ => new ValueTask<int>(3), cancellation.Token).AsTask();
+        cancellation.Cancel();
+        await Assert.That(async () => await queued).Throws<OperationCanceledException>();
+
+        await Assert.That(listener.Values("kevlar.rate_limit.available", "metrics-rate-state"))
+            .Contains(1)
+            .And.Contains(0);
+        await Assert.That(listener.Values("kevlar.rate_limit.queued", "metrics-rate-state"))
+            .Contains(1)
+            .And.Contains(0);
     }
 
     private static Dictionary<(CircuitState From, CircuitState To), long> CircuitTransitionTotals(

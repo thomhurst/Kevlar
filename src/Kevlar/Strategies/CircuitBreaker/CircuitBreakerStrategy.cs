@@ -23,9 +23,12 @@ internal sealed class CircuitBreakerStrategy : Strategy
     {
         if (!_core.TryEnter(context.TimeProvider, out var rejection))
         {
+            RecordState(context.ShieldName);
             KevlarMetrics.Rejection(context.ShieldName, "circuit_open");
             return Outcome<T>.FromException(rejection!);
         }
+
+        RecordState(context.ShieldName);
 
         var outcome = await next.InvokeAsync(context).ConfigureAwait(false);
 
@@ -43,6 +46,16 @@ internal sealed class CircuitBreakerStrategy : Strategy
             _core.RecordSuccess(context.TimeProvider);
         }
 
+        RecordState(context.ShieldName);
+
         return outcome;
+    }
+
+    private void RecordState(string? shieldName)
+    {
+        if (KevlarMetrics.CircuitStateEnabled)
+        {
+            KevlarMetrics.RecordCircuitState(shieldName, _core.State);
+        }
     }
 }
