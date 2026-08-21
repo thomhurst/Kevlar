@@ -29,6 +29,21 @@ public class GrpcResilienceTests
     }
 
     [Test]
+    public async Task Single_Attempt_Forwards_Headers_Before_Response_Completes()
+    {
+        await using var server = await GrpcTestServer.StartAsync();
+        using var call = server.Client(Shield.Empty).UnaryAsync(
+            new TestRequest { Scenario = "headers_wait" });
+
+        var headers = await call.ResponseHeadersAsync.WaitAsync(TimeSpan.FromSeconds(5));
+        await Assert.That(headers.GetValue("attempt")).IsEqualTo("1");
+
+        server.State.Release();
+        var response = await call.ResponseAsync.WaitAsync(TimeSpan.FromSeconds(5));
+        await Assert.That(response.Attempt).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Transient_Helper_Retries_Only_Opted_In_Statuses()
     {
         await using var server = await GrpcTestServer.StartAsync();
@@ -503,6 +518,7 @@ public class GrpcResilienceTests
         private readonly Dictionary<string, int> _attempts = [];
         private readonly TaskCompletionSource _entered = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly TaskCompletionSource _cancelled = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _release = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         public int Record(string scenario)
         {
@@ -528,6 +544,10 @@ public class GrpcResilienceTests
         public void Entered() => _entered.TrySetResult();
 
         public void Cancelled() => _cancelled.TrySetResult();
+
+        public void Release() => _release.TrySetResult();
+
+        public Task WaitForReleaseAsync() => _release.Task;
     }
 
     private sealed class TestGrpcService(GrpcServiceState state) : Resilience.ResilienceBase
@@ -558,6 +578,9 @@ public class GrpcResilienceTests
                         throw;
                     }
 
+                    break;
+                case "headers_wait":
+                    await state.WaitForReleaseAsync();
                     break;
             }
 

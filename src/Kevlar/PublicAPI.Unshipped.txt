@@ -36,6 +36,7 @@ Kevlar.PartitionedShieldOptions.MaximumPartitions.set -> void
 Kevlar.PartitionedShieldOptions.PartitionedShieldOptions() -> void
 Kevlar.PartitionedShieldOptions.TimeProvider.get -> System.TimeProvider!
 Kevlar.PartitionedShieldOptions.TimeProvider.set -> void
+Kevlar.Shield.InvokesContinuationAtMostOnce.get -> bool
 virtual Kevlar.Strategy.IsDuplicateReferenceUnsafe.get -> bool
 Kevlar.RetryOptions.DelayGeneratorAsync.get -> System.Func<Kevlar.RetryEvent, System.Threading.Tasks.ValueTask<System.TimeSpan?>>?
 Kevlar.RetryOptions.DelayGeneratorAsync.set -> void

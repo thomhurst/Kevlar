@@ -7,6 +7,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
 {
     private readonly Lock _metricsPublicationGate = new();
     private readonly HashSet<StrategyMetricAlias> _metricsAliases = [];
+    internal override bool InvokesContinuationAtMostOnce => true;
     private readonly SemaphoreSlim _semaphore;
     private readonly int _maxConcurrency;
     private readonly int _maxQueue;

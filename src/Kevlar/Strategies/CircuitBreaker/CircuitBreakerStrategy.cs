@@ -7,6 +7,7 @@ internal sealed class CircuitBreakerStrategy : Strategy
 {
     private readonly Lock _metricsNamesGate = new();
     private readonly HashSet<StrategyMetricAlias> _metricsAliases = [];
+    internal override bool InvokesContinuationAtMostOnce => true;
     private readonly CircuitBreakerCore _core;
     private readonly OutcomeJudge _judge;
 

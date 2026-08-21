@@ -21,6 +21,8 @@ namespace Kevlar;
 /// </remarks>
 public abstract class Strategy
 {
+    internal virtual bool InvokesContinuationAtMostOnce => false;
+
     /// <summary>
     /// Executes the strategy around the rest of the pipeline.
     /// </summary>

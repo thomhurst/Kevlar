@@ -41,6 +41,13 @@ public sealed class Shield
 
     internal TimeProvider TimeOrSystem => Time ?? TimeProvider.System;
 
+    /// <summary>
+    /// Gets whether every strategy guarantees invoking the execution continuation at most once.
+    /// Custom strategies are treated conservatively as potentially multi-attempt.
+    /// </summary>
+    public bool InvokesContinuationAtMostOnce =>
+        Strategies.All(static strategy => strategy.InvokesContinuationAtMostOnce);
+
     // ── Static factories ────────────────────────────────────────────────────────────────
 
     /// <summary>Retries failed executions up to <paramref name="maxRetries"/> times with the default exponential jittered backoff.</summary>

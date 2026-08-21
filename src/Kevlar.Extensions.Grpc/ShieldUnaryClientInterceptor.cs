@@ -48,9 +48,10 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
         private readonly TRequest _request;
         private readonly ClientInterceptorContext<TRequest, TResponse> _context;
         private readonly AsyncUnaryCallContinuation<TRequest, TResponse> _continuation;
+        private readonly bool _forwardHeadersEarly;
         private readonly CancellationTokenSource _lifetime;
         private readonly List<AttemptRecord> _attempts = [];
-        private readonly TaskCompletionSource<AsyncUnaryCall<TResponse>?> _selectedCall =
+        private readonly TaskCompletionSource<AsyncUnaryCall<TResponse>?> _responseHeadersCall =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         private ConditionalWeakTable<Exception, FailureSelection>? _failedCalls;
@@ -70,6 +71,7 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
             _request = request;
             _context = context;
             _continuation = continuation;
+            _forwardHeadersEarly = shield.InvokesContinuationAtMostOnce;
             _lifetime = context.Options.CancellationToken.CanBeCanceled
                 ? CancellationTokenSource.CreateLinkedTokenSource(context.Options.CancellationToken)
                 : new CancellationTokenSource();
@@ -195,6 +197,10 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
                 else
                 {
                     _attempts.Add(new AttemptRecord(call, exception: null));
+                    if (_forwardHeadersEarly)
+                    {
+                        _responseHeadersCall.TrySetResult(call);
+                    }
                 }
             }
 
@@ -349,7 +355,7 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
             }
 
             DisposeCalls(discarded);
-            _selectedCall.TrySetResult(terminalCall);
+            _responseHeadersCall.TrySetResult(terminalCall);
         }
 
         private static void DisposeCalls(List<AsyncUnaryCall<TResponse>>? calls)
@@ -367,7 +373,7 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
 
         private async Task<Metadata> GetResponseHeadersAsync()
         {
-            var call = await _selectedCall.Task.ConfigureAwait(false);
+            var call = await _responseHeadersCall.Task.ConfigureAwait(false);
             if (call is not null)
             {
                 return await call.ResponseHeadersAsync.ConfigureAwait(false);
