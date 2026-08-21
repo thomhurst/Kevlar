@@ -195,11 +195,15 @@ public class RetryEdgeCaseTests
         }).AsTask();
 
         await callbackGate.WaitForEntryAsync();
-        await Assert.That(order).IsEquivalentTo(["attempt", "sync", "async-start"]);
+        await Assert.That(order).IsEquivalentTo(
+            ["attempt", "sync", "async-start"],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
         callbackGate.Release();
 
         await Assert.That(async () => await execution).Throws<InvalidOperationException>();
-        await Assert.That(order).IsEquivalentTo(["attempt", "sync", "async-start", "async-end", "attempt"]);
+        await Assert.That(order).IsEquivalentTo(
+            ["attempt", "sync", "async-start", "async-end", "attempt"],
+            TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
     [Test]
