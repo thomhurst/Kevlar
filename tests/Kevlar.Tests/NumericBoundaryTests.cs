@@ -128,7 +128,7 @@ public class NumericBoundaryTests
     }
 
     [Test]
-    public async Task Circuit_Break_Duration_Saturates_At_Maximum_Date()
+    public async Task Circuit_Break_Duration_Remains_Usable_At_Maximum_Date()
     {
         var timeProvider = new FakeTimeProvider(DateTimeOffset.MaxValue - TimeSpan.FromTicks(1));
         var shield = Shield
@@ -140,7 +140,7 @@ public class NumericBoundaryTests
 
         var rejection = await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(42)))
             .Throws<CircuitOpenException>();
-        await Assert.That(rejection!.RetryAfter).IsNull();
+        await Assert.That(rejection!.RetryAfter).IsEqualTo(TimeSpan.MaxValue);
 
         timeProvider.Advance(TimeSpan.FromTicks(1));
         await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(42)))
