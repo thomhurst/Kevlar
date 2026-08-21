@@ -17,13 +17,14 @@ public class TypedResultBenchmarks
 {
     private static readonly Shield<int> KevlarResultRetry = Shield.For<int>()
         .WhenResult(-1)
-        .Retry(3);
+        .Retry(3, Backoff.None);
 
     private static readonly ResiliencePipeline<int> PollyResultRetry = new ResiliencePipelineBuilder<int>()
         .AddRetry(new RetryStrategyOptions<int>
         {
             ShouldHandle = new PredicateBuilder<int>().HandleResult(-1),
             MaxRetryAttempts = 3,
+            Delay = TimeSpan.Zero,
         })
         .Build();
 

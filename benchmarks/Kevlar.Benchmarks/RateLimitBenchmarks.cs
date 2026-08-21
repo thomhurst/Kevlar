@@ -25,21 +25,26 @@ public class RateLimitBenchmarks
     });
 
     private static readonly ResiliencePipeline PollyRateLimit = new ResiliencePipelineBuilder()
-        .AddRateLimiter(new FixedWindowRateLimiter(new FixedWindowRateLimiterOptions
+        .AddRateLimiter(new TokenBucketRateLimiter(new TokenBucketRateLimiterOptions
         {
-            PermitLimit = 1_000_000_000,
-            Window = TimeSpan.FromSeconds(1),
+            TokenLimit = 1_000_000_000,
+            TokensPerPeriod = 1_000_000_000,
+            ReplenishmentPeriod = TimeSpan.FromSeconds(1),
+            AutoReplenishment = true,
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
             QueueLimit = 0,
         }))
         .Build();
 
-    [BenchmarkCategory("Uncontended"), Benchmark(Baseline = true)]
-    public ValueTask<int> Kevlar_Uncontended() => KevlarRateLimit.ExecuteAsync(static _ => new ValueTask<int>(42));
+    [BenchmarkCategory("TokenBucketUncontended"), Benchmark(Baseline = true)]
+    public ValueTask<int> Kevlar_TokenBucketUncontended() =>
+        KevlarRateLimit.ExecuteAsync(static _ => new ValueTask<int>(42));
 
-    [BenchmarkCategory("Uncontended"), Benchmark]
-    public ValueTask<int> Polly_Uncontended() => PollyRateLimit.ExecuteAsync(static _ => new ValueTask<int>(42));
+    [BenchmarkCategory("TokenBucketUncontended"), Benchmark]
+    public ValueTask<int> Polly_TokenBucketUncontended() =>
+        PollyRateLimit.ExecuteAsync(static _ => new ValueTask<int>(42));
 
-    [BenchmarkCategory("Uncontended"), Benchmark]
+    [BenchmarkCategory("TokenBucketUncontended"), Benchmark]
     public ValueTask<int> Kevlar_WithHooks_Uncontended() =>
         KevlarRateLimitWithHooks.ExecuteAsync(static _ => new ValueTask<int>(42));
 }
