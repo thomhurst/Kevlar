@@ -74,6 +74,11 @@ public abstract class Backoff
 
     private static TimeSpan FromTicksClamped(double ticks, TimeSpan? maxDelay)
     {
+        if (double.IsNaN(ticks))
+        {
+            return TimeSpan.Zero;
+        }
+
         var max = maxDelay ?? TimeSpan.FromDays(1);
         if (ticks >= max.Ticks)
         {

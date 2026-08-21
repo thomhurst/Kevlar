@@ -69,6 +69,14 @@ public class NumericBoundaryTests
     }
 
     [Test]
+    public async Task Zero_Exponential_Backoff_Remains_Zero_When_The_Power_Overflows()
+    {
+        var backoff = Backoff.Exponential(TimeSpan.Zero, double.MaxValue, jitter: false);
+
+        await Assert.That(backoff.GetDelay(3)).IsEqualTo(TimeSpan.Zero);
+    }
+
+    [Test]
     public async Task Strategies_Reject_Unsupported_Delay_And_Capacity_Values_Early()
     {
         await AssertOutOfRangeAsync(
@@ -83,9 +91,32 @@ public class NumericBoundaryTests
         await AssertOutOfRangeAsync(
             () => Shield.Hedge(2, TimeSpan.MaxValue),
             "Delay");
-        await AssertOutOfRangeAsync(
-            () => Shield.ConcurrencyLimit(int.MaxValue, 1),
-            "MaxQueue");
+    }
+
+    [Test]
+    public async Task Concurrency_Capacity_Above_Int_MaxValue_Remains_Usable()
+    {
+        var shield = Shield.ConcurrencyLimit(int.MaxValue, 1);
+
+        var result = await shield.ExecuteAsync(_ => new ValueTask<int>(42));
+
+        await Assert.That(result).IsEqualTo(42);
+    }
+
+    [Test]
+    public async Task Concurrency_Pending_Count_Does_Not_Wrap_At_Int_MaxValue()
+    {
+        var shield = Shield.ConcurrencyLimit(int.MaxValue);
+        var strategy = shield.Strategies.Single();
+        var pending = strategy.GetType().GetField(
+            "_pending",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        pending.SetValue(strategy, (long)int.MaxValue);
+
+        var outcome = await shield.ExecuteOutcomeAsync(_ => new ValueTask<int>(42));
+
+        await Assert.That(outcome.Exception).IsTypeOf<ConcurrencyLimitExceededException>();
+        await Assert.That((long)pending.GetValue(strategy)!).IsEqualTo(int.MaxValue);
     }
 
     [Test]
