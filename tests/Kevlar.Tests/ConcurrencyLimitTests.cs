@@ -20,6 +20,18 @@ public class BulkheadTests
     }
 
     [Test]
+    public async Task Rejects_Invalid_Limits_With_Descriptive_Errors()
+    {
+        await Assert.That(() => Shield.ConcurrencyLimit(maxConcurrency: 0))
+            .Throws<ArgumentOutOfRangeException>()
+            .WithMessage("MaxConcurrency must be positive. (Parameter 'options')");
+
+        await Assert.That(() => Shield.ConcurrencyLimit(maxConcurrency: 1, maxQueue: -1))
+            .Throws<ArgumentOutOfRangeException>()
+            .WithMessage("MaxQueue must not be negative. (Parameter 'options')");
+    }
+
+    [Test]
     public async Task Rejects_When_Concurrency_And_Queue_Are_Full()
     {
         var shield = Shield.ConcurrencyLimit(maxConcurrency: 1);
