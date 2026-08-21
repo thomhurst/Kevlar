@@ -34,12 +34,12 @@ public class OverheadBenchmarks
         PollyEmpty.ExecuteAsync(static (s, _) => new ValueTask<int>(s), _state);
 
     /// <summary>Executes a state-passing no-throw call through an empty Kevlar pipeline.</summary>
-    [BenchmarkCategory("EmptyState"), Benchmark]
+    [BenchmarkCategory("EmptyOutcomeState"), Benchmark(Baseline = true)]
     public ValueTask<Outcome<int>> Kevlar_EmptyOutcomeState() =>
         KevlarEmpty.ExecuteOutcomeAsync(_state, static (s, _) => new ValueTask<int>(s));
 
     /// <summary>Executes a state-passing <see cref="Task{TResult}"/> no-throw call through an empty Kevlar pipeline.</summary>
-    [BenchmarkCategory("EmptyState"), Benchmark]
+    [BenchmarkCategory("EmptyOutcomeState"), Benchmark]
     public ValueTask<Outcome<int>> Kevlar_EmptyTaskOutcomeState() =>
         KevlarEmpty.ExecuteOutcomeAsync(_state, static (_, _) => CompletedStateTask);
 

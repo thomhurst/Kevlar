@@ -564,7 +564,7 @@ public class ExecutionOverloadContractTests
 
         public CancellationToken SeenToken { get; private set; }
 
-        public bool SawExactState { get; private set; }
+        public bool SawExactState { get; private set; } = true;
 
         public ValueTask<int> ValueTaskResult(CancellationToken token)
         {
@@ -721,7 +721,8 @@ public class ExecutionOverloadContractTests
             SeenToken = token;
         }
 
-        private void RecordState(ExecutionState state) => SawExactState = ReferenceEquals(state, State);
+        private void RecordState(ExecutionState state) =>
+            SawExactState &= ReferenceEquals(state, State);
 
         private void ThrowFailure() => ExceptionDispatchInfo.Capture(Failure).Throw();
 
