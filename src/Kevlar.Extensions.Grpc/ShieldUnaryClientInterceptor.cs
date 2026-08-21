@@ -175,15 +175,12 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
             }
             catch (Exception exception)
             {
-                var deadlineException = exception as RpcException;
-                var deadlineExceeded = deadlineException?.StatusCode == StatusCode.DeadlineExceeded;
-                if (deadlineExceeded)
+                var originalException = exception;
+                var deadlineException = NormalizeExpiredDeadline(exception as RpcException);
+                var deadlineExceeded = deadlineException is not null;
+                if (deadlineException is not null)
                 {
-                    if (_context.Options.Deadline is { } deadline
-                        && deadline <= DateTime.UtcNow)
-                    {
-                        exception = new ExpiredDeadlineRpcException(deadlineException!);
-                    }
+                    exception = new ExpiredDeadlineRpcException(deadlineException);
                 }
 
                 var attemptException = await CompleteFailureAsync(call, exception).ConfigureAwait(false);
@@ -194,11 +191,38 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
 
                 if (ReferenceEquals(attemptException, exception))
                 {
-                    throw;
+                    if (ReferenceEquals(exception, originalException))
+                    {
+                        throw;
+                    }
+
+                    ExceptionDispatchInfo.Capture(exception).Throw();
                 }
 
                 throw attemptException ?? exception;
             }
+        }
+
+        private RpcException? NormalizeExpiredDeadline(RpcException? exception)
+        {
+            if (exception is null
+                || _context.Options.Deadline is not { } deadline
+                || deadline > DateTime.UtcNow
+                || _context.Options.CancellationToken.IsCancellationRequested
+                || exception.StatusCode is not (
+                    StatusCode.DeadlineExceeded
+                    or StatusCode.Cancelled
+                    or StatusCode.Unknown))
+            {
+                return null;
+            }
+
+            return exception.StatusCode == StatusCode.DeadlineExceeded
+                ? exception
+                : new RpcException(
+                    new Status(StatusCode.DeadlineExceeded, exception.Status.Detail),
+                    exception.Trailers,
+                    exception.Message);
         }
 
         private void DisposeSupersededFailures()
