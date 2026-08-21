@@ -138,4 +138,28 @@ public class MetricsTests
 
         await Assert.That(listener.Total("kevlar.hedges", "metrics-hedge")).IsEqualTo(1);
     }
+
+    [Test]
+    public async Task Suppressed_Hedged_Attempts_Are_Not_Counted()
+    {
+        using var listener = new KevlarMeterListener();
+        using var cancellation = new CancellationTokenSource();
+        var attempts = 0;
+        var shield = Shield.Hedge(options =>
+        {
+            options.MaxAttempts = 2;
+            options.Delay = TimeSpan.Zero;
+            options.OnHedge = _ => cancellation.Cancel();
+        }).WithName("metrics-suppressed-hedge");
+
+        await shield.ExecuteOutcomeAsync<int>(async token =>
+        {
+            Interlocked.Increment(ref attempts);
+            await Task.Delay(Timeout.InfiniteTimeSpan, token);
+            return 1;
+        }, cancellation.Token);
+
+        await Assert.That(attempts).IsEqualTo(1);
+        await Assert.That(listener.Total("kevlar.hedges", "metrics-suppressed-hedge")).IsEqualTo(0);
+    }
 }
