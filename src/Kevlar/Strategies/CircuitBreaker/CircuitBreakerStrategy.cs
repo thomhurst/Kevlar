@@ -31,7 +31,7 @@ internal sealed class CircuitBreakerStrategy : Strategy
         var recordState = RegisterMetricsAlias(alias);
         if (_core.RequiresAsyncExecution)
         {
-            return await ExecuteConfiguredAsync(next, context, alias, recordState).ConfigureAwait(false);
+            return ExecuteConfiguredAsync(next, context, alias, recordState);
         }
 
         if (!_core.TryEnter(context.TimeProvider, out var rejection, out var admittedProbeGeneration))
