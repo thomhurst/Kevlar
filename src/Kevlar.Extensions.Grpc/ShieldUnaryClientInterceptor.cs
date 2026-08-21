@@ -49,10 +49,10 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
         private readonly AsyncUnaryCallContinuation<TRequest, TResponse> _continuation;
         private readonly CancellationTokenSource _lifetime;
         private readonly List<AttemptRecord> _attempts = [];
-        private readonly ConditionalWeakTable<Exception, FailureSelection> _failedCalls = new();
         private readonly TaskCompletionSource<AsyncUnaryCall<TResponse>?> _selectedCall =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
 
+        private ConditionalWeakTable<Exception, FailureSelection>? _failedCalls;
         private Task<TResponse> _response = null!;
         private AsyncUnaryCall<TResponse>? _terminalCall;
         private int _lifetimeCompleted;
@@ -208,7 +208,8 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
                     _attempts[index] = new AttemptRecord(call, exception);
                     if (exception is not null)
                     {
-                        _failedCalls.GetValue(exception, static _ => new FailureSelection()).Call = failureCall;
+                        (_failedCalls ??= new())
+                            .GetValue(exception, static _ => new FailureSelection()).Call = failureCall;
                     }
 
                     return;
@@ -272,7 +273,9 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
                     }
                 }
 
-                if (call is null && _failedCalls.TryGetValue(exception, out var failure))
+                if (call is null
+                    && _failedCalls is not null
+                    && _failedCalls.TryGetValue(exception, out var failure))
                 {
                     call = failure.Call;
                 }
