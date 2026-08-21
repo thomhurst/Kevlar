@@ -137,14 +137,13 @@ internal sealed class PartitionCache<TKey, TShield>
         {
             lock (_gate)
             {
+                creation.Fail(exception);
                 if (_creations.TryGetValue(key, out var current)
                     && ReferenceEquals(current, creation))
                 {
                     _creations.Remove(key);
                 }
             }
-
-            creation.Fail(exception);
             throw;
         }
 
@@ -172,6 +171,7 @@ internal sealed class PartitionCache<TKey, TShield>
                     _createdCount++;
                 }
 
+                creation.Succeed(shield);
                 _creations.Remove(key);
             }
         }
@@ -179,18 +179,15 @@ internal sealed class PartitionCache<TKey, TShield>
         {
             lock (_gate)
             {
+                creation.Fail(exception);
                 if (_creations.TryGetValue(key, out var current)
                     && ReferenceEquals(current, creation))
                 {
                     _creations.Remove(key);
                 }
             }
-
-            creation.Fail(exception);
             throw;
         }
-
-        creation.Succeed(shield);
         return shield;
     }
 
