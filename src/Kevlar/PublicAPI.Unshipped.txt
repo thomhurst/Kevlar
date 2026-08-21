@@ -1,0 +1,1 @@
+virtual Kevlar.Strategy.IsDuplicateReferenceUnsafe.get -> bool

@@ -257,6 +257,21 @@ public sealed class Shield
 
     internal static void ValidateChain(Strategy[] strategies)
     {
+        for (var i = 1; i < strategies.Length; i++)
+        {
+            for (var j = 0; j < i; j++)
+            {
+                if (ReferenceEquals(strategies[i], strategies[j]) && strategies[i].IsDuplicateReferenceUnsafe)
+                {
+                    throw new InvalidOperationException(
+                        $"This chain contains the same strategy instance ({strategies[i].Describe()}) " +
+                        $"at positions {j + 1} and {i + 1}. Reusing one stateful instance inside a " +
+                        "single chain can deadlock or double-count. Create independent strategy " +
+                        "instances, or share the instance across separate shields instead.");
+                }
+            }
+        }
+
         // A fallback that shares its handling clause with an outer retry, hedge or breaker
         // swallows the failures that strategy exists to see, making it unreachable.
         for (var i = 1; i < strategies.Length; i++)

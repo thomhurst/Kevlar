@@ -148,20 +148,35 @@ public static class ShieldExtensions
         return shield.Append(strategy);
     }
 
-    /// <summary>Wraps <paramref name="inner"/> inside <paramref name="outer"/>: the outer shield's strategies run first.</summary>
+    /// <summary>
+    /// Wraps <paramref name="inner"/> inside <paramref name="outer"/>: the outer shield's strategies
+    /// run first. The first non-null name and time provider win; the last handling clause stays ambient.
+    /// </summary>
     public static Shield Wrap(this Shield outer, Shield inner)
     {
         Throw.IfNull(outer, nameof(outer));
         Throw.IfNull(inner, nameof(inner));
-        return new Shield(Shield.Concat(outer.Strategies, inner.Strategies), outer.Ambient, outer.Name, outer.Time);
+        return new Shield(
+            Shield.Concat(outer.Strategies, inner.Strategies),
+            inner.Ambient ?? outer.Ambient,
+            outer.Name ?? inner.Name,
+            outer.Time ?? inner.Time);
     }
 
-    /// <summary>Wraps a result-aware <paramref name="inner"/> shield inside <paramref name="outer"/>, producing a result-aware shield.</summary>
+    /// <summary>
+    /// Wraps a result-aware <paramref name="inner"/> shield inside <paramref name="outer"/>, producing
+    /// a result-aware shield. The first non-null name and time provider win; the last handling clause
+    /// stays ambient.
+    /// </summary>
     public static Shield<TResult> Wrap<TResult>(this Shield outer, Shield<TResult> inner)
     {
         Throw.IfNull(outer, nameof(outer));
         Throw.IfNull(inner, nameof(inner));
-        return new Shield<TResult>(Shield.Concat(outer.Strategies, inner.Strategies), inner.Ambient, outer.Name ?? inner.Name, outer.Time ?? inner.Time);
+        return new Shield<TResult>(
+            Shield.Concat(outer.Strategies, inner.Strategies),
+            inner.Ambient ?? outer.Ambient,
+            outer.Name ?? inner.Name,
+            outer.Time ?? inner.Time);
     }
 
     /// <summary>

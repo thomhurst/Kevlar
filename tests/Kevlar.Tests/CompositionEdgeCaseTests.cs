@@ -11,6 +11,24 @@ public class CompositionEdgeCaseTests
     }
 
     [Test]
+    public async Task Compose_With_One_Shield_Preserves_Its_Strategy()
+    {
+        var calls = 0;
+        var composed = Shield.Compose(Shield.Retry(1, Backoff.None));
+
+        var result = await composed.ExecuteAsync(_ =>
+        {
+            calls++;
+            return calls == 1
+                ? ValueTask.FromException<int>(new InvalidOperationException())
+                : new ValueTask<int>(7);
+        });
+
+        await Assert.That(result).IsEqualTo(7);
+        await Assert.That(calls).IsEqualTo(2);
+    }
+
+    [Test]
     public async Task Compose_Shares_Stateful_Strategies()
     {
         var breaker = Shield.CircuitBreaker(1, TimeSpan.FromMinutes(1));

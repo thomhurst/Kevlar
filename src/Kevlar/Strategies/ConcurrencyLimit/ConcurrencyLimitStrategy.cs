@@ -10,6 +10,8 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
     private readonly int _capacity;
     private int _pending;
 
+    protected internal override bool IsDuplicateReferenceUnsafe => true;
+
     public ConcurrencyLimitStrategy(ConcurrencyLimitOptions options)
     {
         Throw.IfOutOfRange(options.MaxConcurrency <= 0, nameof(options), "MaxConcurrency must be positive.");

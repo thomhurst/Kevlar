@@ -29,6 +29,8 @@ internal sealed class RateLimitStrategy : Strategy
     private Reservation? _queueTail;
     private int _queuedReservations;
 
+    protected internal override bool IsDuplicateReferenceUnsafe => true;
+
     public RateLimitStrategy(RateLimitOptions options)
     {
         Throw.IfOutOfRange(options.Permits <= 0, nameof(options), "Permits must be positive.");
