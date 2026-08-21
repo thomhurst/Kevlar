@@ -598,6 +598,42 @@ public class GrpcStreamingResilienceTests
     }
 
     [Test]
+    public async Task Server_Headers_Stop_Retry_After_Selected_Attempt_Fails()
+    {
+        var failure = Transient();
+        var attempts = 0;
+        var readStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseRead = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var interceptor = new ShieldStreamingClientInterceptor(
+            GrpcShield.WhenTransient().Retry(2, Backoff.None));
+        using var call = interceptor.AsyncServerStreamingCall(
+            new StreamRequest(),
+            Context(ServerStreamingMethod),
+            (_, _) =>
+            {
+                Interlocked.Increment(ref attempts);
+                return ServerCall(
+                    Reader(async (_, _) =>
+                    {
+                        readStarted.TrySetResult();
+                        await releaseRead.Task.WaitAsync(TimeSpan.FromSeconds(5));
+                        throw failure;
+                    }),
+                    headers: new Metadata { { "attempt", "1" } });
+            });
+        var move = call.ResponseStream.MoveNext(CancellationToken.None);
+        await readStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        var headers = await call.ResponseHeadersAsync.WaitAsync(TimeSpan.FromSeconds(5));
+        releaseRead.TrySetResult();
+        var actual = await Assert.That(async () => await move).Throws<RpcException>();
+
+        await Assert.That(headers.GetValue("attempt")).IsEqualTo("1");
+        await Assert.That(ReferenceEquals(actual, failure)).IsTrue();
+        await Assert.That(attempts).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Server_Headers_Prevent_Delayed_Hedge_Attempts()
     {
         var attempts = 0;
@@ -686,6 +722,41 @@ public class GrpcStreamingResilienceTests
         await Assert.That(call.ResponseStream.Current.Attempt).IsEqualTo(7);
         await Assert.That(writes).IsEqualTo(1);
         await Assert.That(moves).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Duplex_Call_Cancellation_Preserves_Caller_Token_On_Read()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var interceptor = new ShieldStreamingClientInterceptor(Shield.Empty);
+        using var call = interceptor.AsyncDuplexStreamingCall(
+            Context(
+                DuplexStreamingMethod,
+                new CallOptions(cancellationToken: cancellation.Token)),
+            _ => DuplexCall(
+                new DelegateWriter(),
+                Reader(async (_, token) =>
+                {
+                    started.TrySetResult();
+                    try
+                    {
+                        await Task.Delay(Timeout.InfiniteTimeSpan, token);
+                        return (false, null);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        throw new RpcException(new Status(StatusCode.Cancelled, "cancelled"));
+                    }
+                })));
+        var move = call.ResponseStream.MoveNext(CancellationToken.None);
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        cancellation.Cancel();
+        var exception = await Assert.That(async () => await move)
+            .Throws<OperationCanceledException>();
+
+        await Assert.That(exception!.CancellationToken).IsEqualTo(cancellation.Token);
     }
 
     [Test]

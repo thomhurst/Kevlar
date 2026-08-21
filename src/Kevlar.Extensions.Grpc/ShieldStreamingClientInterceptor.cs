@@ -126,6 +126,7 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
         private AsyncServerStreamingCall<TResponse>? _terminalCall;
         private AsyncServerStreamingCall<TResponse>? _selectedAttemptCall;
         private CancellationTokenSource? _terminalCancellation;
+        private SelectedAttemptFailureException? _selectedFailure;
         private bool _selected;
         private bool _disposed;
 
@@ -299,6 +300,8 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
                     Volatile.Write(ref _deadlineFailure, exception);
                 }
 
+                exception = StopEstablishmentIfSelected(attempt.Call, exception);
+
                 ExceptionDispatchInfo.Capture(exception).Throw();
                 throw;
             }
@@ -410,6 +413,10 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
             {
                 exception = attemptFailure.OriginalException;
             }
+            else if (exception is SelectedAttemptFailureException selectedFailure)
+            {
+                exception = selectedFailure.OriginalException;
+            }
 
             if (exception is OperationCanceledException cancellation
                 && cancellationToken.IsCancellationRequested
@@ -443,6 +450,11 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
         {
             lock (_gate)
             {
+                if (_selectedFailure is { } selectedFailure)
+                {
+                    throw selectedFailure;
+                }
+
                 if (_disposed || _selected)
                 {
                     throw new ObjectDisposedException(nameof(ShieldStreamingClientInterceptor));
@@ -517,6 +529,34 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
             }
 
             return exception;
+        }
+
+        private Exception StopEstablishmentIfSelected(
+            AsyncServerStreamingCall<TResponse> call,
+            Exception exception)
+        {
+            lock (_gate)
+            {
+                if (!_selected)
+                {
+                    return exception;
+                }
+
+                if (_selectedFailure is not null)
+                {
+                    return _selectedFailure;
+                }
+
+                if (!ReferenceEquals(_selectedAttemptCall, call))
+                {
+                    return exception;
+                }
+
+                var original = exception is AttemptFailureException attemptFailure
+                    ? attemptFailure.OriginalException
+                    : exception;
+                return _selectedFailure = new SelectedAttemptFailureException(original);
+            }
         }
 
         private Task<Attempt> GetActiveAttemptAsync()
@@ -839,6 +879,12 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
             public Exception OriginalException { get; }
         }
 
+        private sealed class SelectedAttemptFailureException(Exception original)
+            : Exception(original.Message, original)
+        {
+            public Exception OriginalException { get; } = original;
+        }
+
         private sealed class ExpiredDeadlineRpcException(RpcException original)
             : Exception(original.Message, original)
         {
@@ -952,7 +998,8 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
             new ShieldedAsyncStreamReader<TResponse>(
                 _call.ResponseStream,
                 _shield,
-                _lifetime.Token),
+                _lifetime.Token,
+                _callerToken),
             static state => ((DuplexStreamingState<TRequest, TResponse>)state).ExecuteHeadersAsync(),
             static state => ((DuplexStreamingState<TRequest, TResponse>)state)._call.GetStatus(),
             static state => ((DuplexStreamingState<TRequest, TResponse>)state)._call.GetTrailers(),
@@ -1047,14 +1094,23 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
     private sealed class ShieldedAsyncStreamReader<T>(
         IAsyncStreamReader<T> reader,
         Shield shield,
-        CancellationToken lifetimeToken) : IAsyncStreamReader<T>
+        CancellationToken lifetimeToken,
+        CancellationToken callerToken) : IAsyncStreamReader<T>
     {
         public T Current => reader.Current;
 
-        public Task<bool> MoveNext(CancellationToken cancellationToken) => shield.ExecuteAsync(
-            reader,
-            static (state, token) => AwaitGrpcOperationAsync(state.MoveNext(token), token),
-            cancellationToken.CanBeCanceled ? cancellationToken : lifetimeToken).AsTask();
+        public Task<bool> MoveNext(CancellationToken cancellationToken)
+        {
+            var operationToken = cancellationToken.CanBeCanceled ? cancellationToken : lifetimeToken;
+            var visibleToken = cancellationToken.CanBeCanceled ? cancellationToken : callerToken;
+            return shield.ExecuteAsync(
+                (Reader: reader, VisibleToken: visibleToken),
+                static (state, token) => AwaitGrpcOperationAsync(
+                    state.Reader.MoveNext(token),
+                    token,
+                    state.VisibleToken),
+                operationToken).AsTask();
+        }
     }
 
     private static CancellationTokenSource CreateLifetime(CancellationToken cancellationToken) =>
@@ -1109,7 +1165,8 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
 
     private static async ValueTask<T> AwaitGrpcOperationAsync<T>(
         Task<T> task,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        CancellationToken visibleCancellationToken = default)
     {
         try
         {
@@ -1119,10 +1176,13 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
             exception.StatusCode == StatusCode.Cancelled
             && cancellationToken.IsCancellationRequested)
         {
+            var normalizedToken = visibleCancellationToken.IsCancellationRequested
+                ? visibleCancellationToken
+                : cancellationToken;
             throw new OperationCanceledException(
                 exception.Message,
                 exception,
-                cancellationToken);
+                normalizedToken);
         }
     }
 
