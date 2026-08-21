@@ -16,6 +16,8 @@ internal sealed class RetryStrategy : Strategy
     {
         Throw.IfOutOfRange(options.MaxRetries < 0, nameof(options), "MaxRetries must not be negative.");
         Throw.IfNull(options.Backoff, nameof(options));
+        Throw.IfOutOfRange(options.MaxDelay.HasValue && options.MaxDelay.Value < TimeSpan.Zero, nameof(options.MaxDelay), "MaxDelay must not be negative.");
+        Throw.IfOutOfRange(options.MaxDelay > DelayHelper.MaximumDelay, nameof(options.MaxDelay), "MaxDelay exceeds the runtime timer limit.");
 
         _judge = judge;
         _maxRetries = options.MaxRetries;
@@ -68,7 +70,9 @@ internal sealed class RetryStrategy : Strategy
                 {
                     // MaxDelay is an absolute bound: it also caps generator-supplied delays
                     // such as a server's Retry-After suggestion.
-                    delay = _maxDelay is { } absolute && custom > absolute ? absolute : custom;
+                    delay = _maxDelay is { } absolute && custom > absolute
+                        ? absolute
+                        : DelayHelper.Clamp(custom);
                 }
 
                 if (_onRetry is not null || _onRetryAsync is not null)

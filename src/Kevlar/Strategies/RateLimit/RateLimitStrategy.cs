@@ -129,7 +129,7 @@ internal sealed class RateLimitStrategy : Strategy
 
             if (delayTimestampUnits > 0)
             {
-                retryAfter = TimeSpan.FromSeconds(delayTimestampUnits * SecondsPerSystemTimestamp);
+                retryAfter = DelayHelper.FromSecondsClamped(delayTimestampUnits * SecondsPerSystemTimestamp);
                 return false;
             }
 
@@ -164,7 +164,7 @@ internal sealed class RateLimitStrategy : Strategy
                 if (_queuedReservations >= _queueLimit)
                 {
                     reservation = null;
-                    retryAfter = TimeSpan.FromSeconds(
+                    retryAfter = DelayHelper.FromSecondsClamped(
                         Math.Max(0, delayTimestampUnits) * SecondsPerSystemTimestamp);
                     return false;
                 }
@@ -206,7 +206,7 @@ internal sealed class RateLimitStrategy : Strategy
             var delayTimestampUnits = reservation.DueTimestamp - GetCurrentTimestamp(timeProvider);
             if (delayTimestampUnits > 0)
             {
-                wait = TimeSpan.FromSeconds(delayTimestampUnits * SecondsPerSystemTimestamp);
+                wait = DelayHelper.FromSecondsClamped(delayTimestampUnits * SecondsPerSystemTimestamp);
                 nextTurn = null;
                 return false;
             }
@@ -301,7 +301,7 @@ internal sealed class RateLimitStrategy : Strategy
         var timestamp = timeProvider.GetTimestamp();
 
         return origin.SystemTimestamp - _systemTimestampOrigin
-            + ((timestamp - origin.ProviderTimestamp) * origin.TimestampScale);
+            + (((double)timestamp - origin.ProviderTimestamp) * origin.TimestampScale);
     }
 
     private sealed class CustomTimestampOrigin

@@ -24,6 +24,7 @@ public abstract class Backoff
     public static Backoff Constant(TimeSpan delay)
     {
         Throw.IfOutOfRange(delay < TimeSpan.Zero, nameof(delay), "Delay must not be negative.");
+        Throw.IfOutOfRange(delay > DelayHelper.MaximumDelay, nameof(delay), "Delay exceeds the runtime timer limit.");
         return new ConstantBackoff(delay);
     }
 
@@ -31,6 +32,7 @@ public abstract class Backoff
     public static Backoff Linear(TimeSpan step, TimeSpan? maxDelay = null)
     {
         Throw.IfOutOfRange(step < TimeSpan.Zero, nameof(step), "Step must not be negative.");
+        ValidateMaxDelay(maxDelay);
         return new LinearBackoff(step, maxDelay);
     }
 
@@ -43,7 +45,11 @@ public abstract class Backoff
     public static Backoff Exponential(TimeSpan initialDelay, double factor = 2.0, TimeSpan? maxDelay = null, bool jitter = true)
     {
         Throw.IfOutOfRange(initialDelay < TimeSpan.Zero, nameof(initialDelay), "Initial delay must not be negative.");
-        Throw.IfOutOfRange(factor < 1.0, nameof(factor), "Factor must be at least 1.");
+        Throw.IfOutOfRange(
+            factor < 1.0 || double.IsNaN(factor) || double.IsInfinity(factor),
+            nameof(factor),
+            "Factor must be finite and at least 1.");
+        ValidateMaxDelay(maxDelay);
         return new ExponentialBackoff(initialDelay, factor, maxDelay, jitter);
     }
 
@@ -56,6 +62,15 @@ public abstract class Backoff
 
     /// <summary>Returns the delay before the given 1-based retry attempt.</summary>
     public abstract TimeSpan GetDelay(int attempt);
+
+    private protected static void ValidateAttempt(int attempt) =>
+        Throw.IfOutOfRange(attempt < 1, nameof(attempt), "Attempt must be at least 1.");
+
+    private static void ValidateMaxDelay(TimeSpan? maxDelay)
+    {
+        Throw.IfOutOfRange(maxDelay.HasValue && maxDelay.Value < TimeSpan.Zero, nameof(maxDelay), "Maximum delay must not be negative.");
+        Throw.IfOutOfRange(maxDelay > DelayHelper.MaximumDelay, nameof(maxDelay), "Maximum delay exceeds the runtime timer limit.");
+    }
 
     private static TimeSpan FromTicksClamped(double ticks, TimeSpan? maxDelay)
     {
@@ -74,7 +89,11 @@ public abstract class Backoff
 
         public ConstantBackoff(TimeSpan delay) => _delay = delay;
 
-        public override TimeSpan GetDelay(int attempt) => _delay;
+        public override TimeSpan GetDelay(int attempt)
+        {
+            ValidateAttempt(attempt);
+            return _delay;
+        }
 
         public override string ToString() =>
             _delay == TimeSpan.Zero ? "no delay" : $"constant {DescribeHelper.Time(_delay)}";
@@ -91,8 +110,11 @@ public abstract class Backoff
             _maxDelay = maxDelay;
         }
 
-        public override TimeSpan GetDelay(int attempt) =>
-            FromTicksClamped((double)_step.Ticks * attempt, _maxDelay);
+        public override TimeSpan GetDelay(int attempt)
+        {
+            ValidateAttempt(attempt);
+            return FromTicksClamped((double)_step.Ticks * attempt, _maxDelay);
+        }
 
         public override string ToString()
         {
@@ -118,6 +140,7 @@ public abstract class Backoff
 
         public override TimeSpan GetDelay(int attempt)
         {
+            ValidateAttempt(attempt);
             var ticks = _initialDelay.Ticks * Math.Pow(_factor, attempt - 1);
 
             if (_jitter)
@@ -144,8 +167,9 @@ public abstract class Backoff
 
         public override TimeSpan GetDelay(int attempt)
         {
+            ValidateAttempt(attempt);
             var delay = _delayFactory(attempt);
-            return delay < TimeSpan.Zero ? TimeSpan.Zero : delay;
+            return delay < TimeSpan.Zero ? TimeSpan.Zero : DelayHelper.Clamp(delay);
         }
 
         public override string ToString() => "custom backoff";

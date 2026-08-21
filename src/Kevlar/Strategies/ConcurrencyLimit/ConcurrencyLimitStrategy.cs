@@ -16,6 +16,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
     {
         Throw.IfOutOfRange(options.MaxConcurrency <= 0, nameof(options), "MaxConcurrency must be positive.");
         Throw.IfOutOfRange(options.MaxQueue < 0, nameof(options), "MaxQueue must not be negative.");
+        Throw.IfOutOfRange(options.MaxQueue > int.MaxValue - options.MaxConcurrency, nameof(options.MaxQueue), "MaxConcurrency plus MaxQueue must not exceed Int32.MaxValue.");
 
         _semaphore = new SemaphoreSlim(options.MaxConcurrency, options.MaxConcurrency);
         _maxConcurrency = options.MaxConcurrency;
