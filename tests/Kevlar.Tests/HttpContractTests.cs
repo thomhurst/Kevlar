@@ -92,6 +92,151 @@ public class HttpContractTests
             "Timeout(30s) → Retry(3, exponential 250ms ×2 +jitter ≤30s) → CircuitBreaker(50% over 30s, min 10, break 15s) → Timeout(10s)");
 
     [Test]
+    public async Task Configured_Standard_Has_Custom_Stages()
+    {
+        var options = new StandardHttpShieldOptions
+        {
+            TotalTimeout = new TimeoutOptions { Timeout = TimeSpan.FromSeconds(20) },
+            Retry = new RetryOptions<HttpResponseMessage>
+            {
+                MaxRetries = 1,
+                Backoff = Backoff.None,
+                DelayGenerator = HttpShield.RetryAfter,
+            },
+            CircuitBreaker = new CircuitBreakerOptions
+            {
+                ConsecutiveFailures = 8,
+                BreakDuration = TimeSpan.FromSeconds(5),
+            },
+            ConcurrencyLimit = new ConcurrencyLimitOptions
+            {
+                MaxConcurrency = 12,
+                MaxQueue = 4,
+            },
+            AttemptTimeout = new TimeoutOptions { Timeout = TimeSpan.FromSeconds(3) },
+        };
+
+        await Assert.That(HttpShield.Standard(options).ToString()).IsEqualTo(
+            "Timeout(20s) → Retry(1, no delay) → CircuitBreaker(8 consecutive, break 5s) → ConcurrencyLimit(12, queue 4) → Timeout(3s)");
+    }
+
+    [Test]
+    public async Task Configured_Standard_Replays_Buffered_Unsafe_Requests()
+    {
+        var calls = 0;
+        var bodies = new List<string>();
+        using var inner = new DelegateHandler(async (request, cancellationToken) =>
+        {
+            calls++;
+            bodies.Add(await request.Content!.ReadAsStringAsync(cancellationToken));
+            return new HttpResponseMessage(
+                calls == 1 ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.OK);
+        });
+        using var services = new ServiceCollection()
+            .AddHttpClient("configured-standard")
+            .ConfigurePrimaryHttpMessageHandler(() => inner)
+            .AddStandardShield(options =>
+            {
+                options.Retry.MaxRetries = 1;
+                options.Retry.Backoff = Backoff.None;
+                options.CircuitBreaker.ConsecutiveFailures = 100;
+                options.CircuitBreaker.FailureRatio = null;
+                options.Handler.ContentReplayPolicy = HttpContentReplayPolicy.Buffer;
+                options.Handler.AllowUnsafeMethodReplay = true;
+            })
+            .Services
+            .BuildServiceProvider();
+        using var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("configured-standard");
+        using var content = new StringContent("payload");
+        using var response = await client.PostAsync("http://localhost/test", content);
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(calls).IsEqualTo(2);
+        await Assert.That(bodies).IsEquivalentTo(["payload", "payload"]);
+    }
+
+    [Test]
+    public async Task Standard_ServiceProvider_Configuration_Runs_Once_Per_Handler_Lifetime()
+    {
+        var marker = new Marker();
+        var configureCalls = 0;
+        using var services = new ServiceCollection()
+            .AddSingleton(marker)
+            .AddHttpClient("configured-standard-factory")
+            .ConfigurePrimaryHttpMessageHandler(() => new DelegateHandler((_, _) =>
+                Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK))))
+            .AddStandardShield((provider, options) =>
+            {
+                configureCalls++;
+                if (!ReferenceEquals(provider.GetRequiredService<Marker>(), marker))
+                {
+                    throw new InvalidOperationException("Unexpected service provider.");
+                }
+
+                options.Retry.MaxRetries = 0;
+            })
+            .Services
+            .BuildServiceProvider();
+        var factory = services.GetRequiredService<IHttpClientFactory>();
+
+        using var firstClient = factory.CreateClient("configured-standard-factory");
+        using var secondClient = factory.CreateClient("configured-standard-factory");
+        using var first = await firstClient.GetAsync("http://localhost/first");
+        using var second = await secondClient.GetAsync("http://localhost/second");
+
+        await Assert.That(configureCalls).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Configured_Standard_Enforces_Optional_Concurrency_Limit()
+    {
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var services = new ServiceCollection()
+            .AddHttpClient("limited-standard")
+            .ConfigurePrimaryHttpMessageHandler(() => new DelegateHandler(async (_, _) =>
+            {
+                entered.TrySetResult();
+                await release.Task;
+                return new HttpResponseMessage(HttpStatusCode.OK);
+            }))
+            .AddStandardShield(options =>
+            {
+                options.Retry.MaxRetries = 0;
+                options.ConcurrencyLimit = new ConcurrencyLimitOptions
+                {
+                    MaxConcurrency = 1,
+                    MaxQueue = 0,
+                };
+            })
+            .Services
+            .BuildServiceProvider();
+        using var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("limited-standard");
+        var first = client.GetAsync("http://localhost/first");
+        await entered.Task;
+
+        await Assert.That(async () => await client.GetAsync("http://localhost/second"))
+            .Throws<ConcurrencyLimitExceededException>();
+
+        release.SetResult();
+        using var response = await first;
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+    }
+
+    [Test]
+    public async Task Standard_Configuration_Rejects_Invalid_Options_Immediately()
+    {
+        var builder = new ServiceCollection().AddHttpClient("invalid-standard");
+
+        var exception = await Assert.That(() => builder.AddStandardShield(options =>
+        {
+            options.AttemptTimeout.Timeout = TimeSpan.Zero;
+        })).Throws<ArgumentOutOfRangeException>();
+
+        await Assert.That(exception!.Message).Contains("AttemptTimeout.Timeout");
+    }
+
+    [Test]
     public async Task Standard_Disposes_Superseded_Responses_But_Not_The_Winner()
     {
         var timeProvider = new RetrySignalingFakeTimeProvider();
@@ -447,6 +592,7 @@ public class HttpContractTests
         var services = new ServiceCollection();
         var builder = services.AddHttpClient("guards");
 
+        await Assert.That(() => HttpShield.Standard(null!)).Throws<ArgumentNullException>();
         await Assert.That(() => new ShieldDelegatingHandler(null!)).Throws<ArgumentNullException>();
         await Assert.That(() => ShieldHttpClientBuilderExtensions.AddShield(nullBuilder!, Shield<HttpResponseMessage>.Empty))
             .Throws<ArgumentNullException>();
@@ -455,6 +601,11 @@ public class HttpContractTests
         await Assert.That(() => builder.AddShield((Func<IServiceProvider, Shield<HttpResponseMessage>>)null!))
             .Throws<ArgumentNullException>();
         await Assert.That(() => ShieldHttpClientBuilderExtensions.AddStandardShield(nullBuilder!))
+            .Throws<ArgumentNullException>();
+        await Assert.That(() => builder.AddStandardShield((Action<StandardHttpShieldOptions>)null!))
+            .Throws<ArgumentNullException>();
+        await Assert.That(() => builder.AddStandardShield(
+                (Action<IServiceProvider, StandardHttpShieldOptions>)null!))
             .Throws<ArgumentNullException>();
     }
 

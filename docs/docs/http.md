@@ -24,6 +24,51 @@ services.AddHttpClient("api")
 3. **Circuit breaker** — sampling mode: opens at a 50% failure ratio over a 30s window (minimum 10 calls), breaks for 15s
 4. **10s attempt timeout** per individual try
 
+Customize those stages without rebuilding the pipeline:
+
+```csharp
+services.AddHttpClient("api")
+    .AddStandardShield(options =>
+    {
+        options.TotalTimeout.Timeout = TimeSpan.FromSeconds(20);
+        options.Retry.MaxRetries = 2;
+        options.CircuitBreaker.FailureRatio = 0.25;
+        options.ConcurrencyLimit = new ConcurrencyLimitOptions
+        {
+            MaxConcurrency = 100,
+            MaxQueue = 20,
+        };
+        options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(5);
+        options.Handler.ContentReplayPolicy = HttpContentReplayPolicy.Buffer;
+        options.Handler.MaximumBufferSize = 256 * 1024;
+    });
+```
+
+`StandardHttpShieldOptions` exposes the total timeout, typed retry options, circuit breaker,
+optional concurrency limiter, attempt timeout, and handler replay/routing options. Invalid strategy
+values fail while the registration is built; handler replay/routing values fail when
+`HttpClientFactory` builds its handler pipeline, before a request is sent.
+
+For dependency-aware setup, use the service-provider overload:
+
+```csharp
+services.AddSingleton(new ConcurrencyLimitOptions
+{
+    MaxConcurrency = 100,
+    MaxQueue = 20,
+});
+services.AddHttpClient("api")
+    .AddStandardShield((serviceProvider, options) =>
+    {
+        options.ConcurrencyLimit =
+            serviceProvider.GetRequiredService<ConcurrencyLimitOptions>();
+    });
+```
+
+The one-argument callback runs during registration and its shield is shared across handler
+rotations, matching parameterless `AddStandardShield()`. The service-provider callback runs once
+per `HttpClientFactory` handler lifetime and creates fresh strategy state for that lifetime.
+
 ## Bring your own pipeline
 
 ```csharp
@@ -123,7 +168,7 @@ shield so every additional send goes through safe replay and routing.
 
 - **Superseded responses are handler-owned.** The handler disposes failed retry responses and losing hedge responses, including a loser that completes after the winner. A custom `OnRetry` response-disposal hook is unnecessary with `ShieldDelegatingHandler`; the hook that `HttpShield.Standard()` installs stays safe because `HttpResponseMessage.Dispose` is idempotent. The selected response remains caller-owned.
 - **Redirects remain transport-owned.** Each Kevlar attempt begins with the original absolute URI (or its routed authority). Normal `HttpClientHandler` redirect policy runs inside that attempt.
-- **State sharing applies per registration.** `AddStandardShield` and `AddShield(shield)` build/capture one shield for that named client — every request through `"api"` shares the same circuit breaker, which is what makes the breaker meaningful. The factory overload runs once when `HttpClientFactory` creates a handler pipeline, receives that pipeline's service provider, and runs again only when the handler lifetime expires; return a shared instance, e.g. from the registry, to keep one circuit across lifetimes.
+- **State sharing depends on registration form.** Parameterless `AddStandardShield()`, its one-argument options callback, and `AddShield(shield)` build/capture one shield for that named client, so state survives handler rotation. Service-provider callbacks run once per `HttpClientFactory` handler lifetime and create fresh state unless they resolve and return shared state from DI.
 - **Compose with other handlers normally.** The Kevlar handler is a regular `DelegatingHandler`; ordering relative to your own handlers follows the usual `AddHttpMessageHandler` rules.
 
 :::tip Handling clause already done

@@ -86,15 +86,89 @@ public static class ShieldHttpClientBuilderExtensions
             new ShieldDelegatingHandler(shieldFactory(services), optionsFactory(services)));
     }
 
-    /// <summary>Sends this client's requests through <see cref="HttpShield.Standard"/>.</summary>
+    /// <summary>Sends this client's requests through <see cref="HttpShield.Standard()"/>.</summary>
     public static IHttpClientBuilder AddStandardShield(this IHttpClientBuilder builder)
+        => AddStandardShield(builder, static _ => { });
+
+    /// <summary>Configures and adds one shared standard shield for this client registration.</summary>
+    public static IHttpClientBuilder AddStandardShield(
+        this IHttpClientBuilder builder,
+        Action<StandardHttpShieldOptions> configure)
     {
         if (builder is null)
         {
             throw new ArgumentNullException(nameof(builder));
         }
 
-        var shield = HttpShield.Standard();
-        return builder.AddHttpMessageHandler(() => new ShieldDelegatingHandler(shield));
+        if (configure is null)
+        {
+            throw new ArgumentNullException(nameof(configure));
+        }
+
+        var options = new StandardHttpShieldOptions();
+        configure(options);
+        var shield = HttpShield.Standard(options);
+        var handlerOptions = Snapshot(options.Handler);
+        return builder.AddHttpMessageHandler(() => new ShieldDelegatingHandler(shield, handlerOptions));
+    }
+
+    /// <summary>
+    /// Configures and adds a standard shield using the handler pipeline's service provider.
+    /// Configuration and shield creation run once per handler lifetime.
+    /// </summary>
+    public static IHttpClientBuilder AddStandardShield(
+        this IHttpClientBuilder builder,
+        Action<IServiceProvider, StandardHttpShieldOptions> configure)
+    {
+        if (builder is null)
+        {
+            throw new ArgumentNullException(nameof(builder));
+        }
+
+        if (configure is null)
+        {
+            throw new ArgumentNullException(nameof(configure));
+        }
+
+        return builder.AddHttpMessageHandler(services =>
+        {
+            var options = new StandardHttpShieldOptions();
+            configure(services, options);
+            return new ShieldDelegatingHandler(HttpShield.Standard(options), Snapshot(options.Handler));
+        });
+    }
+
+    private static ShieldHttpHandlerOptions Snapshot(ShieldHttpHandlerOptions source)
+    {
+        var snapshot = new ShieldHttpHandlerOptions
+        {
+            ContentReplayPolicy = source.ContentReplayPolicy,
+            MaximumBufferSize = source.MaximumBufferSize,
+            AllowUnsafeMethodReplay = source.AllowUnsafeMethodReplay,
+            RequestFactory = source.RequestFactory,
+            Routing = Snapshot(source.Routing),
+        };
+        return snapshot;
+    }
+
+    private static HttpEndpointRoutingOptions? Snapshot(HttpEndpointRoutingOptions? source)
+    {
+        if (source is null)
+        {
+            return null;
+        }
+
+        var snapshot = new HttpEndpointRoutingOptions
+        {
+            SelectionMode = source.SelectionMode,
+            Seed = source.Seed,
+            ShieldFactory = source.ShieldFactory,
+        };
+        foreach (var endpoint in source.Endpoints)
+        {
+            snapshot.Endpoints.Add(endpoint);
+        }
+
+        return snapshot;
     }
 }
