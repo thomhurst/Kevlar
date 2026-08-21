@@ -233,6 +233,59 @@ public class CircuitBreakerTransitionOrderingTests
     }
 
     [Test]
+    public async Task HalfOpen_Observer_Failure_Does_Not_Release_A_Newer_Probe()
+    {
+        var timeProvider = new FakeTimeProvider();
+        var monitor = new CircuitBreakerMonitor();
+        var callbackFailure = new InvalidOperationException("half-open callback");
+        var releaseNewProbe = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        Task<int>? newProbe = null;
+        var arrangeReentrantProbe = true;
+        Shield? shield = null;
+        shield = Shield.CircuitBreaker(options =>
+        {
+            options.ConsecutiveFailures = 1;
+            options.BreakDuration = TimeSpan.FromSeconds(1);
+            options.Monitor = monitor;
+            options.OnStateChanged = change =>
+            {
+                if (change.To != CircuitState.HalfOpen || !arrangeReentrantProbe)
+                {
+                    return;
+                }
+
+                arrangeReentrantProbe = false;
+                monitor.Reset();
+                shield!.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException("reopen"))
+                    .AsTask().GetAwaiter().GetResult();
+                timeProvider.Advance(TimeSpan.FromSeconds(1));
+                newProbe = shield.ExecuteAsync(async _ =>
+                {
+                    await releaseNewProbe.Task;
+                    return 42;
+                }).AsTask();
+                throw callbackFailure;
+            };
+        }).WithTimeProvider(timeProvider);
+
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException("open"));
+        timeProvider.Advance(TimeSpan.FromSeconds(1));
+
+        var thrown = await Assert.That(async () =>
+                await shield.ExecuteAsync(_ => new ValueTask<int>(1)))
+            .Throws<InvalidOperationException>();
+        await Assert.That(ReferenceEquals(thrown, callbackFailure)).IsTrue();
+        await Assert.That(monitor.State).IsEqualTo(CircuitState.HalfOpen);
+
+        var rejected = await shield.ExecuteOutcomeAsync(_ => new ValueTask<int>(2));
+        await Assert.That(rejected.Exception).IsTypeOf<CircuitOpenException>();
+
+        releaseNewProbe.TrySetResult();
+        await Assert.That(await newProbe!).IsEqualTo(42);
+        await Assert.That(monitor.State).IsEqualTo(CircuitState.Closed);
+    }
+
+    [Test]
     public async Task Reentrant_Control_Is_Queued_After_The_Current_Transition()
     {
         var monitor = new CircuitBreakerMonitor();

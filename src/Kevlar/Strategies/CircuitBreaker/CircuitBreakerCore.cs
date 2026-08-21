@@ -37,6 +37,8 @@ internal sealed class CircuitBreakerCore
     private double _openUntilTimestamp;
     private int _consecutiveFailures;
     private bool _probeInFlight;
+    private long _probeGeneration;
+    private long _activeProbeGeneration;
     private Exception? _lastException;
     private bool _isPublishing;
     private int _publishingThreadId;
@@ -85,11 +87,12 @@ internal sealed class CircuitBreakerCore
     /// <summary>
     /// Gates an execution. Returns <see langword="false"/> with a rejection when the circuit
     /// refuses it; a <see langword="true"/> return during half-open marks a probe in flight,
-    /// so the caller must report back via Record* or <see cref="AbandonProbe"/>.
+    /// so the caller must report back via Record* or <see cref="AbandonProbe()"/>.
     /// </summary>
     public bool TryEnter(TimeProvider timeProvider, out CircuitOpenException? rejection)
     {
         TransitionPublication? transition = null;
+        long admittedProbeGeneration = 0;
         bool allowed;
         rejection = null;
 
@@ -113,6 +116,7 @@ internal sealed class CircuitBreakerCore
                     {
                         transition = ChangeState(CircuitState.HalfOpen);
                         _probeInFlight = true;
+                        admittedProbeGeneration = _activeProbeGeneration = ++_probeGeneration;
                         allowed = true;
                     }
                     else
@@ -135,6 +139,7 @@ internal sealed class CircuitBreakerCore
                     else
                     {
                         _probeInFlight = true;
+                        admittedProbeGeneration = _activeProbeGeneration = ++_probeGeneration;
                         allowed = true;
                     }
 
@@ -150,7 +155,7 @@ internal sealed class CircuitBreakerCore
         {
             if (transition?.StateChange.To == CircuitState.HalfOpen)
             {
-                AbandonProbe();
+                AbandonProbe(admittedProbeGeneration);
             }
 
             throw;
@@ -226,6 +231,17 @@ internal sealed class CircuitBreakerCore
         lock (_gate)
         {
             if (_state == CircuitState.HalfOpen)
+            {
+                _probeInFlight = false;
+            }
+        }
+    }
+
+    private void AbandonProbe(long probeGeneration)
+    {
+        lock (_gate)
+        {
+            if (_state == CircuitState.HalfOpen && _activeProbeGeneration == probeGeneration)
             {
                 _probeInFlight = false;
             }
@@ -424,29 +440,74 @@ internal sealed class CircuitBreakerCore
         }
 
         List<Exception>? reentrantFailures = null;
-        while (true)
+        TransitionPublication? activePublication = null;
+        Exception? drainFailure = null;
+        var completed = false;
+        try
         {
-            TransitionPublication publication;
-            lock (_gate)
+            while (true)
             {
-                if (_pendingTransitions.Count == 0)
+                lock (_gate)
+                {
+                    if (_pendingTransitions.Count == 0)
+                    {
+                        Volatile.Write(ref _publishingThreadId, 0);
+                        _isPublishing = false;
+                        completed = true;
+                        return reentrantFailures;
+                    }
+
+                    activePublication = _pendingTransitions.Dequeue();
+                }
+
+                activePublication.Failure = PublishObservers(activePublication.StateChange);
+                if (activePublication.IsReentrant && activePublication.Failure is { } reentrantFailure)
+                {
+                    (reentrantFailures ??= []).Add(reentrantFailure);
+                }
+
+                activePublication.Completion.TrySetResult(true);
+                activePublication = null;
+            }
+        }
+        catch (Exception exception)
+        {
+            drainFailure = exception;
+            throw;
+        }
+        finally
+        {
+            if (!completed)
+            {
+                lock (_gate)
                 {
                     Volatile.Write(ref _publishingThreadId, 0);
                     _isPublishing = false;
-                    return reentrantFailures;
+                    FailPublication(activePublication, drainFailure);
+                    while (_pendingTransitions.TryDequeue(out var publication))
+                    {
+                        FailPublication(publication, drainFailure);
+                    }
                 }
-
-                publication = _pendingTransitions.Dequeue();
             }
-
-            publication.Failure = PublishObservers(publication.StateChange);
-            if (publication.IsReentrant && publication.Failure is { } reentrantFailure)
-            {
-                (reentrantFailures ??= []).Add(reentrantFailure);
-            }
-
-            publication.Completion.TrySetResult(true);
         }
+    }
+
+    private static void FailPublication(TransitionPublication? publication, Exception? failure)
+    {
+        if (publication is null)
+        {
+            return;
+        }
+
+        if (failure is not null)
+        {
+            var publicationFailure = publication.Failure;
+            AddFailure(ref publicationFailure, failure);
+            publication.Failure = publicationFailure;
+        }
+
+        publication.Completion.TrySetResult(true);
     }
 
     private Exception? PublishObservers(CircuitStateChangedEvent stateChange)

@@ -36,7 +36,9 @@ public sealed class CircuitBreakerOptions
     /// <summary>
     /// Invoked on every state transition, before <see cref="CircuitBreakerMonitor.StateChanged"/>.
     /// Transitions are delivered serially outside the circuit lock. Exceptions propagate after
-    /// the monitor observer is invoked; failures from both observers are aggregated.
+    /// the monitor observer is invoked; failures from both observers are aggregated. The handler
+    /// runs synchronously and blocks later transition publishers, so it should not perform I/O,
+    /// wait on external work, or otherwise run for a long time.
     /// </summary>
     public Action<CircuitStateChangedEvent>? OnStateChanged { get; set; }
 }
