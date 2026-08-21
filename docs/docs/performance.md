@@ -23,3 +23,15 @@ dotnet run -c Release --project benchmarks/Kevlar.Benchmarks -- --filter '*'
 ```
 
 As always with microbenchmarks: measure your own workload before optimizing around these numbers. The differences matter in tight loops and high-throughput services; they don't matter around a 50ms network call.
+
+## Allocation regression gates
+
+BenchmarkDotNet remains the trend and comparison tool. Pull requests also run a smaller deterministic allocation suite on Ubuntu with .NET 10. Each scenario is warmed up before measurement, then sampled five times over 10,000 operations with `GC.GetAllocatedBytesForCurrentThread()` so JIT, static initialization, pool seeding, test-runner work, and allocations on unrelated threads stay outside the per-operation count.
+
+Documented synchronous-completion hot paths have a strict `0 B/op` budget. Paths that inherently create failures or parallel hedge attempts have explicit bounded budgets; those gates catch meaningful recurring regressions without pretending the failure path can be allocation-free. The allocation project is intentionally separate from coverage collection, which instruments assemblies and would contaminate the counts.
+
+Run the same gates locally with:
+
+```bash
+dotnet run -c Release --project tests/Kevlar.AllocationTests -- --timeout 5m
+```
