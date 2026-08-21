@@ -119,11 +119,6 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
                     ExceptionDispatchInfo.Capture(attemptException.Original).Throw();
                 }
 
-                if (exception is AttemptFailureException attemptFailure)
-                {
-                    ExceptionDispatchInfo.Capture(attemptFailure.Original).Throw();
-                }
-
                 if (exception is ExpiredDeadlineRpcException deadlineException)
                 {
                     ExceptionDispatchInfo.Capture(deadlineException.Original).Throw();
@@ -275,11 +270,10 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
 
                     if (exception is not null
                         && _failedCalls is not null
-                        && _failedCalls.TryGetValue(exception, out _))
+                        && _failedCalls.TryGetValue(exception, out _)
+                        && exception is RpcException rpcException)
                     {
-                        exception = exception is RpcException rpcException
-                            ? new AttemptRpcException(rpcException)
-                            : new AttemptFailureException(exception);
+                        exception = new AttemptRpcException(rpcException);
                     }
 
                     _attempts[index] = new AttemptRecord(call, exception);
@@ -535,12 +529,6 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
             : RpcException(original.Status, original.Trailers, original.Message)
         {
             public RpcException Original { get; } = original;
-        }
-
-        private sealed class AttemptFailureException(Exception original)
-            : Exception(original.Message, original)
-        {
-            public Exception Original { get; } = original;
         }
 
         private sealed class ExpiredDeadlineRpcException(RpcException original)

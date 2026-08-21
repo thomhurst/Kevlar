@@ -439,6 +439,33 @@ public class GrpcResilienceTests
     }
 
     [Test]
+    public async Task Retry_Continues_When_Attempts_Reuse_A_NonRpc_Exception()
+    {
+        var expected = new InvalidOperationException("shared");
+        var attempts = 0;
+        var invoker = new DelegateCallInvoker((_, _) =>
+        {
+            var attempt = Interlocked.Increment(ref attempts);
+            return Call(
+                Task.FromException<TestReply>(expected),
+                status: new Status(StatusCode.InvalidArgument, $"attempt {attempt}"),
+                headers: new Metadata { { "attempt", attempt.ToString() } },
+                trailers: new Metadata { { "selected", attempt.ToString() } });
+        }).Intercept(new ShieldUnaryClientInterceptor(
+            Shield.When<InvalidOperationException>().Retry(3, Backoff.None)));
+        var client = new Resilience.ResilienceClient(invoker);
+        using var call = client.UnaryAsync(new TestRequest());
+
+        var actual = await Assert.That(async () => await call.ResponseAsync)
+            .Throws<InvalidOperationException>();
+
+        await Assert.That(ReferenceEquals(actual, expected)).IsTrue();
+        await Assert.That(attempts).IsEqualTo(4);
+        await Assert.That((await call.ResponseHeadersAsync).GetValue("attempt")).IsEqualTo("4");
+        await Assert.That(call.GetTrailers().GetValue("selected")).IsEqualTo("4");
+    }
+
+    [Test]
     public async Task Completed_Call_Detaches_The_Caller_Cancellation_Token()
     {
         using var cancellation = new CancellationTokenSource();
