@@ -34,6 +34,8 @@ internal sealed class HedgingStrategy : Strategy
 
     internal bool HasNotification => _onHedge is not null;
 
+    internal override bool InvokesContinuationAtMostOnce => _maxAttempts == 1;
+
     public override string Describe() => $"Hedge({_maxAttempts} attempts, delay {DescribeHelper.Time(_delay)})";
 
     public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)

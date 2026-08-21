@@ -44,6 +44,26 @@ public class GrpcResilienceTests
     }
 
     [Test]
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task Configured_Single_Attempt_Forwards_Headers_Before_Response_Completes(bool hedge)
+    {
+        await using var server = await GrpcTestServer.StartAsync();
+        var shield = hedge
+            ? GrpcShield.WhenTransient().Hedge(1, TimeSpan.Zero)
+            : GrpcShield.WhenTransient().Retry(0, Backoff.None);
+        using var call = server.Client(shield).UnaryAsync(
+            new TestRequest { Scenario = "headers_wait" });
+
+        var headers = await call.ResponseHeadersAsync.WaitAsync(TimeSpan.FromSeconds(5));
+        await Assert.That(headers.GetValue("attempt")).IsEqualTo("1");
+
+        server.State.Release();
+        var response = await call.ResponseAsync.WaitAsync(TimeSpan.FromSeconds(5));
+        await Assert.That(response.Attempt).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Transient_Helper_Retries_Only_Opted_In_Statuses()
     {
         await using var server = await GrpcTestServer.StartAsync();
@@ -132,6 +152,44 @@ public class GrpcResilienceTests
 
         await Assert.That(exception!.StatusCode).IsEqualTo(StatusCode.DeadlineExceeded);
         await server.State.WaitForCancellationAsync().WaitAsync(TimeSpan.FromSeconds(5));
+    }
+
+    [Test]
+    public async Task Expired_Grpc_Deadline_Stops_Retry_Forever()
+    {
+        await using var server = await GrpcTestServer.StartAsync();
+        var client = server.Client(GrpcShield.WhenTransient().RetryForever(Backoff.None));
+
+        using var call = client.UnaryAsync(
+            new TestRequest { Scenario = "wait" },
+            deadline: DateTime.UtcNow.AddMilliseconds(250));
+        var exception = await Assert.That(async () =>
+                await call.ResponseAsync.WaitAsync(TimeSpan.FromSeconds(5)))
+            .Throws<RpcException>();
+
+        await Assert.That(exception!.StatusCode).IsEqualTo(StatusCode.DeadlineExceeded);
+        await Assert.That(server.State.Attempts("wait")).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Kevlar_Timeout_Preserves_Underlying_Terminal_Metadata()
+    {
+        var response = new TaskCompletionSource<TestReply>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var status = new Status(StatusCode.Cancelled, "timed out");
+        var trailers = new Metadata { { "terminal", "true" } };
+        var invoker = new DelegateCallInvoker((_, options) =>
+        {
+            options.CancellationToken.Register(() =>
+                response.TrySetException(new RpcException(status, trailers)));
+            return Call(response.Task, status: status, trailers: trailers);
+        }).Intercept(new ShieldUnaryClientInterceptor(Shield.Timeout(TimeSpan.FromMilliseconds(50))));
+        var client = new Resilience.ResilienceClient(invoker);
+        using var call = client.UnaryAsync(new TestRequest());
+
+        _ = await Assert.That(async () => await call.ResponseAsync).Throws<TimeoutExceededException>();
+
+        await Assert.That(call.GetStatus()).IsEqualTo(status);
+        await Assert.That(call.GetTrailers().GetValue("terminal")).IsEqualTo("true");
     }
 
     [Test]
