@@ -53,6 +53,7 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
 
         private Task<TResponse> _response = null!;
         private AsyncUnaryCall<TResponse>? _terminalCall;
+        private int _lifetimeCompleted;
         private bool _selected;
         private bool _disposed;
 
@@ -107,6 +108,10 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
                 }
 
                 throw;
+            }
+            finally
+            {
+                CompleteLifetime();
             }
         }
 
@@ -271,8 +276,33 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
                 }
             }
 
-            _lifetime.Cancel();
+            CancelLifetime();
             DisposeCalls(calls);
+        }
+
+        private void CompleteLifetime()
+        {
+            if (Interlocked.Exchange(ref _lifetimeCompleted, 1) == 0)
+            {
+                _lifetime.Dispose();
+            }
+        }
+
+        private void CancelLifetime()
+        {
+            if (Interlocked.Exchange(ref _lifetimeCompleted, 1) != 0)
+            {
+                return;
+            }
+
+            try
+            {
+                _lifetime.Cancel();
+            }
+            finally
+            {
+                _lifetime.Dispose();
+            }
         }
 
         private readonly struct AttemptRecord(
