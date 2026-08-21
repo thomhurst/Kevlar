@@ -9,7 +9,7 @@ public static class HttpShield
     /// </summary>
     public static bool IsTransient(HttpResponseMessage response) =>
         response is not null
-        && ((int)response.StatusCode >= 500
+        && ((int)response.StatusCode is >= 500 and <= 599
             || response.StatusCode == System.Net.HttpStatusCode.RequestTimeout
             || (int)response.StatusCode == 429);
 

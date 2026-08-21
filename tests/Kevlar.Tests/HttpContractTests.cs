@@ -1,0 +1,556 @@
+using System.Collections.Concurrent;
+using System.Net;
+using System.Net.Http.Headers;
+using Kevlar.Extensions.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Time.Testing;
+
+namespace Kevlar.Tests;
+
+public class HttpContractTests
+{
+    [Test]
+    [Arguments(200, false)]
+    [Arguments(301, false)]
+    [Arguments(400, false)]
+    [Arguments(408, true)]
+    [Arguments(429, true)]
+    [Arguments(499, false)]
+    [Arguments(500, true)]
+    [Arguments(599, true)]
+    [Arguments(600, false)]
+    [Arguments(999, false)]
+    public async Task IsTransient_Recognizes_Only_Documented_Statuses(int statusCode, bool expected)
+    {
+        using var response = new HttpResponseMessage((HttpStatusCode)statusCode);
+        await Assert.That(HttpShield.IsTransient(response)).IsEqualTo(expected);
+    }
+
+    [Test]
+    public async Task IsTransient_Rejects_Null() =>
+        await Assert.That(HttpShield.IsTransient(null!)).IsFalse();
+
+    [Test]
+    [Arguments(typeof(HttpRequestException))]
+    [Arguments(typeof(TimeoutExceededException))]
+    public async Task WhenTransient_Retries_Documented_Exceptions(Type exceptionType)
+    {
+        var calls = 0;
+        using var inner = new DelegateHandler((_, _) =>
+        {
+            calls++;
+            if (calls == 1)
+            {
+                throw exceptionType == typeof(HttpRequestException)
+                    ? new HttpRequestException("transient")
+                    : new TimeoutExceededException(TimeSpan.FromSeconds(1));
+            }
+
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
+        });
+        using var client = CreateClient(inner, HttpShield.WhenTransient().Retry(1, Backoff.None));
+
+        using var response = await client.GetAsync("http://localhost/test");
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(calls).IsEqualTo(2);
+    }
+
+    [Test]
+    [Arguments(RetryAfterKind.Absent, 3)]
+    [Arguments(RetryAfterKind.ShorterDelta, 3)]
+    [Arguments(RetryAfterKind.EqualDelta, 3)]
+    [Arguments(RetryAfterKind.LongerDelta, 7)]
+    [Arguments(RetryAfterKind.PastDate, 3)]
+    [Arguments(RetryAfterKind.CurrentDate, 3)]
+    [Arguments(RetryAfterKind.LongerDate, 7)]
+    public async Task RetryAfter_Uses_Only_Longer_Server_Delays(RetryAfterKind kind, int expectedSeconds)
+    {
+        var now = new DateTimeOffset(2035, 4, 5, 6, 7, 8, TimeSpan.Zero);
+        var timeProvider = new FakeTimeProvider(now);
+        using var response = new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+        response.Headers.RetryAfter = CreateRetryAfter(kind, now);
+
+        var delay = await ObserveRetryDelay(timeProvider, () => response);
+
+        await Assert.That(delay).IsEqualTo(TimeSpan.FromSeconds(expectedSeconds));
+    }
+
+    [Test]
+    public async Task RetryAfter_Ignores_Exception_Outcomes()
+    {
+        var delay = await ObserveRetryDelay(
+            new FakeTimeProvider(),
+            () => throw new HttpRequestException("transient"));
+
+        await Assert.That(delay).IsEqualTo(TimeSpan.FromSeconds(3));
+    }
+
+    [Test]
+    public async Task Standard_Has_The_Documented_Pipeline() =>
+        await Assert.That(HttpShield.Standard().ToString()).IsEqualTo(
+            "Timeout(30s) → Retry(3, exponential 250ms ×2 +jitter ≤30s) → CircuitBreaker(50% over 30s, min 10, break 15s) → Timeout(10s)");
+
+    [Test]
+    public async Task Standard_Disposes_Superseded_Responses_But_Not_The_Winner()
+    {
+        var timeProvider = new FakeTimeProvider();
+        var contents = Enumerable.Range(0, 3).Select(_ => new TrackingContent()).ToArray();
+        var calls = 0;
+        using var inner = new DelegateHandler((_, _) =>
+        {
+            var index = calls++;
+            return Task.FromResult(new HttpResponseMessage(
+                index < 2 ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.OK)
+            {
+                Content = contents[index],
+            });
+        });
+        using var client = CreateClient(inner, HttpShield.Standard().WithTimeProvider(timeProvider));
+
+        var task = client.GetAsync("http://localhost/test");
+        await AdvanceUntilCompleted(task, timeProvider);
+        var response = await task;
+
+        await Assert.That(calls).IsEqualTo(3);
+        await Assert.That(contents[0].IsDisposed).IsTrue();
+        await Assert.That(contents[1].IsDisposed).IsTrue();
+        await Assert.That(contents[2].IsDisposed).IsFalse();
+
+        response.Dispose();
+        await Assert.That(contents[2].IsDisposed).IsTrue();
+    }
+
+    [Test]
+    public async Task Standard_Returns_And_Leaves_Final_Transient_Response_Caller_Owned()
+    {
+        var timeProvider = new FakeTimeProvider();
+        var contents = Enumerable.Range(0, 4).Select(_ => new TrackingContent()).ToArray();
+        var calls = 0;
+        using var inner = new DelegateHandler((_, _) =>
+        {
+            var content = contents[calls++];
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable) { Content = content });
+        });
+        using var client = CreateClient(inner, HttpShield.Standard().WithTimeProvider(timeProvider));
+
+        var task = client.GetAsync("http://localhost/test");
+        await AdvanceUntilCompleted(task, timeProvider);
+        var response = await task;
+
+        await Assert.That(calls).IsEqualTo(4);
+        await Assert.That(contents.Take(3).All(content => content.IsDisposed)).IsTrue();
+        await Assert.That(contents[3].IsDisposed).IsFalse();
+
+        response.Dispose();
+        await Assert.That(contents[3].IsDisposed).IsTrue();
+    }
+
+    [Test]
+    public async Task Standard_Attempt_Timeout_Cancels_Inner_And_Retries()
+    {
+        var timeProvider = new FakeTimeProvider();
+        using var cancellation = new CancellationTokenSource();
+        var firstStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var firstCancelled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var secondStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var calls = 0;
+        using var inner = new DelegateHandler(async (_, token) =>
+        {
+            var attempt = Interlocked.Increment(ref calls);
+            if (attempt == 1)
+            {
+                firstStarted.SetResult();
+                token.Register(static state => ((TaskCompletionSource)state!).TrySetResult(), firstCancelled);
+            }
+            else if (attempt == 2)
+            {
+                secondStarted.SetResult();
+            }
+
+            await Task.Delay(Timeout.InfiniteTimeSpan, token);
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        });
+        using var client = CreateClient(inner, HttpShield.Standard().WithTimeProvider(timeProvider));
+
+        var task = client.GetAsync("http://localhost/test", cancellation.Token);
+        await firstStarted.Task;
+        timeProvider.Advance(TimeSpan.FromSeconds(10));
+        await firstCancelled.Task;
+        for (var step = 0; step < 5 && !secondStarted.Task.IsCompleted; step++)
+        {
+            await Task.Delay(10);
+            timeProvider.Advance(TimeSpan.FromSeconds(1));
+        }
+
+        await secondStarted.Task.WaitAsync(TimeSpan.FromSeconds(1));
+
+        cancellation.Cancel();
+        await Assert.That(async () => await task).Throws<OperationCanceledException>();
+        await Assert.That(calls).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task Standard_Opens_Breaker_After_Ten_Transient_Attempts()
+    {
+        var timeProvider = new FakeTimeProvider();
+        var calls = 0;
+        using var inner = new DelegateHandler((_, _) =>
+        {
+            Interlocked.Increment(ref calls);
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+        });
+        using var client = CreateClient(inner, HttpShield.Standard().WithTimeProvider(timeProvider));
+
+        for (var request = 0; request < 2; request++)
+        {
+            var task = client.GetAsync($"http://localhost/{request}");
+            await AdvanceUntilCompleted(task, timeProvider);
+            using var response = await task;
+        }
+
+        var openingRequest = client.GetAsync("http://localhost/open");
+        await AdvanceUntilCompleted(openingRequest, timeProvider);
+        await Assert.That(async () => await openingRequest).Throws<CircuitOpenException>();
+        await Assert.That(calls).IsEqualTo(10);
+
+        await Assert.That(async () => await client.GetAsync("http://localhost/rejected"))
+            .Throws<CircuitOpenException>();
+        await Assert.That(calls).IsEqualTo(10);
+    }
+
+    [Test]
+    public async Task Caller_Cancellation_Reaches_Inner_And_Stops_Retries()
+    {
+        using var cancellation = new CancellationTokenSource();
+        CancellationToken observedToken = default;
+        var calls = 0;
+        using var inner = new DelegateHandler(async (_, token) =>
+        {
+            calls++;
+            observedToken = token;
+            await Task.Delay(Timeout.InfiniteTimeSpan, token);
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        });
+        using var client = CreateClient(inner, HttpShield.WhenTransient().Retry(3, Backoff.None));
+
+        var task = client.GetAsync("http://localhost/test", cancellation.Token);
+        cancellation.Cancel();
+
+        await Assert.That(async () => await task).Throws<OperationCanceledException>();
+        await Assert.That(observedToken.CanBeCanceled).IsTrue();
+        await Assert.That(observedToken.IsCancellationRequested).IsTrue();
+        await Assert.That(calls).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Retry_Preserves_Request_Metadata_And_Buffered_Content()
+    {
+        var snapshots = new List<RequestSnapshot>();
+        var optionKey = new HttpRequestOptionsKey<string>("contract-key");
+        using var inner = new DelegateHandler(async (request, token) =>
+        {
+            using var destination = new MemoryStream();
+            await request.Content!.CopyToAsync(destination, token);
+            _ = request.Options.TryGetValue(optionKey, out var option);
+            snapshots.Add(new RequestSnapshot(
+                request.Method,
+                request.RequestUri,
+                request.Headers.GetValues("X-Contract").Single(),
+                option!,
+                destination.ToArray()));
+
+            return new HttpResponseMessage(
+                snapshots.Count == 1 ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.OK);
+        });
+        using var client = CreateClient(inner, HttpShield.WhenTransient().Retry(1, Backoff.None));
+        using var request = new HttpRequestMessage(HttpMethod.Patch, "http://localhost/items/42?mode=fast")
+        {
+            Content = new ByteArrayContent([1, 2, 3, 4]),
+        };
+        request.Headers.Add("X-Contract", "preserved");
+        request.Options.Set(optionKey, "option-value");
+
+        using var response = await client.SendAsync(request);
+
+        await Assert.That(snapshots.Count).IsEqualTo(2);
+        await Assert.That(snapshots[1].Method).IsEqualTo(snapshots[0].Method);
+        await Assert.That(snapshots[1].Uri).IsEqualTo(snapshots[0].Uri);
+        await Assert.That(snapshots[1].Header).IsEqualTo(snapshots[0].Header);
+        await Assert.That(snapshots[1].Option).IsEqualTo(snapshots[0].Option);
+        await Assert.That(snapshots[1].Body).IsEquivalentTo(snapshots[0].Body);
+    }
+
+    [Test]
+    public async Task Retry_Does_Not_Rewind_OneShot_Stream_Content()
+    {
+        var bodies = new List<byte[]>();
+        using var inner = new DelegateHandler(async (request, token) =>
+        {
+            using var destination = new MemoryStream();
+            await request.Content!.CopyToAsync(destination, token);
+            bodies.Add(destination.ToArray());
+            return new HttpResponseMessage(
+                bodies.Count == 1 ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.OK);
+        });
+        using var client = CreateClient(inner, HttpShield.WhenTransient().Retry(1, Backoff.None));
+        using var source = new NonSeekableStream([1, 2, 3]);
+        using var request = new HttpRequestMessage(HttpMethod.Post, "http://localhost/upload")
+        {
+            Content = new StreamContent(source),
+        };
+
+        await Assert.That(async () => await client.SendAsync(request)).Throws<InvalidOperationException>();
+        await Assert.That(bodies[0]).IsEquivalentTo(new byte[] { 1, 2, 3 });
+        await Assert.That(bodies.Count).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Shared_Handler_Keeps_Parallel_Retries_Isolated()
+    {
+        var attempts = new ConcurrentDictionary<string, int>(StringComparer.Ordinal);
+        using var inner = new DelegateHandler((request, _) =>
+        {
+            var key = request.RequestUri!.AbsolutePath;
+            var attempt = attempts.AddOrUpdate(key, 1, static (_, current) => current + 1);
+            return Task.FromResult(new HttpResponseMessage(
+                attempt == 1 ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.OK));
+        });
+        using var client = CreateClient(inner, HttpShield.WhenTransient().Retry(1, Backoff.None));
+
+        var tasks = Enumerable.Range(0, 32)
+            .Select(index => client.GetAsync($"http://localhost/{index}"))
+            .ToArray();
+        var responses = await Task.WhenAll(tasks);
+
+        try
+        {
+            await Assert.That(responses.All(response => response.StatusCode == HttpStatusCode.OK)).IsTrue();
+            await Assert.That(attempts.Count).IsEqualTo(32);
+            await Assert.That(attempts.Values.All(attempt => attempt == 2)).IsTrue();
+        }
+        finally
+        {
+            foreach (var response in responses)
+            {
+                response.Dispose();
+            }
+        }
+    }
+
+    [Test]
+    public async Task AddShield_Instance_Uses_The_Given_Shield()
+    {
+        var calls = 0;
+        using var services = new ServiceCollection()
+            .AddHttpClient("fixed")
+            .ConfigurePrimaryHttpMessageHandler(() => new DelegateHandler((_, _) =>
+            {
+                calls++;
+                return Task.FromResult(new HttpResponseMessage(
+                    calls == 1 ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.OK));
+            }))
+            .AddShield(HttpShield.WhenTransient().Retry(1, Backoff.None))
+            .Services
+            .BuildServiceProvider();
+
+        using var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("fixed");
+        using var response = await client.GetAsync("http://localhost/test");
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(calls).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task AddShield_Factory_Runs_Once_Per_Handler_Lifetime_With_ServiceProvider()
+    {
+        var marker = new Marker();
+        var factoryCalls = 0;
+        using var services = new ServiceCollection()
+            .AddSingleton(marker)
+            .AddHttpClient("factory")
+            .ConfigurePrimaryHttpMessageHandler(() => new DelegateHandler((_, _) =>
+                Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK))))
+            .AddShield(provider =>
+            {
+                factoryCalls++;
+                if (!ReferenceEquals(provider.GetRequiredService<Marker>(), marker))
+                {
+                    throw new InvalidOperationException("Unexpected service provider.");
+                }
+
+                return HttpShield.WhenTransient().Retry(1, Backoff.None);
+            })
+            .Services
+            .BuildServiceProvider();
+        var factory = services.GetRequiredService<IHttpClientFactory>();
+
+        using var firstClient = factory.CreateClient("factory");
+        using var secondClient = factory.CreateClient("factory");
+        using var first = await firstClient.GetAsync("http://localhost/first");
+        using var second = await secondClient.GetAsync("http://localhost/second");
+
+        await Assert.That(factoryCalls).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Handler_Disposal_Disposes_Inner_Handler()
+    {
+        var inner = new DelegateHandler((_, _) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)));
+        var client = CreateClient(inner, Shield<HttpResponseMessage>.Empty);
+
+        client.Dispose();
+
+        await Assert.That(inner.IsDisposed).IsTrue();
+    }
+
+    [Test]
+    public async Task Http_Registration_Null_Guards_Are_Immediate()
+    {
+        IHttpClientBuilder? nullBuilder = null;
+        var services = new ServiceCollection();
+        var builder = services.AddHttpClient("guards");
+
+        await Assert.That(() => new ShieldDelegatingHandler(null!)).Throws<ArgumentNullException>();
+        await Assert.That(() => ShieldHttpClientBuilderExtensions.AddShield(nullBuilder!, Shield<HttpResponseMessage>.Empty))
+            .Throws<ArgumentNullException>();
+        await Assert.That(() => builder.AddShield((Shield<HttpResponseMessage>)null!))
+            .Throws<ArgumentNullException>();
+        await Assert.That(() => builder.AddShield((Func<IServiceProvider, Shield<HttpResponseMessage>>)null!))
+            .Throws<ArgumentNullException>();
+        await Assert.That(() => ShieldHttpClientBuilderExtensions.AddStandardShield(nullBuilder!))
+            .Throws<ArgumentNullException>();
+    }
+
+    private static HttpClient CreateClient(HttpMessageHandler inner, Shield<HttpResponseMessage> shield) =>
+        new(new ShieldDelegatingHandler(shield) { InnerHandler = inner });
+
+    private static RetryConditionHeaderValue? CreateRetryAfter(RetryAfterKind kind, DateTimeOffset now) => kind switch
+    {
+        RetryAfterKind.Absent => null,
+        RetryAfterKind.ShorterDelta => new RetryConditionHeaderValue(TimeSpan.FromSeconds(2)),
+        RetryAfterKind.EqualDelta => new RetryConditionHeaderValue(TimeSpan.FromSeconds(3)),
+        RetryAfterKind.LongerDelta => new RetryConditionHeaderValue(TimeSpan.FromSeconds(7)),
+        RetryAfterKind.PastDate => new RetryConditionHeaderValue(now - TimeSpan.FromSeconds(1)),
+        RetryAfterKind.CurrentDate => new RetryConditionHeaderValue(now),
+        RetryAfterKind.LongerDate => new RetryConditionHeaderValue(now + TimeSpan.FromSeconds(7)),
+        _ => throw new ArgumentOutOfRangeException(nameof(kind)),
+    };
+
+    private static async Task<TimeSpan> ObserveRetryDelay(
+        FakeTimeProvider timeProvider,
+        Func<HttpResponseMessage> firstAttempt)
+    {
+        TimeSpan? observed = null;
+        var calls = 0;
+        var shield = HttpShield.WhenTransient()
+            .Retry(options =>
+            {
+                options.MaxRetries = 1;
+                options.Backoff = Backoff.Constant(TimeSpan.FromSeconds(3));
+                options.DelayGenerator = HttpShield.RetryAfter;
+                options.OnRetry = retry => observed = retry.Delay;
+            })
+            .WithTimeProvider(timeProvider);
+
+        var task = shield.ExecuteAsync(_ => new ValueTask<HttpResponseMessage>(
+            ++calls == 1 ? firstAttempt() : new HttpResponseMessage(HttpStatusCode.OK))).AsTask();
+        await WaitUntilAsync(() => observed.HasValue);
+        timeProvider.Advance(observed!.Value);
+        using var response = await task;
+        return observed.Value;
+    }
+
+    private static async Task AdvanceUntilCompleted(Task task, FakeTimeProvider timeProvider)
+    {
+        for (var step = 0; step < 5 && !task.IsCompleted; step++)
+        {
+            timeProvider.Advance(TimeSpan.FromSeconds(3));
+            await Task.Yield();
+        }
+
+        if (!task.IsCompleted)
+        {
+            throw new TimeoutException("Fake-time execution did not complete.");
+        }
+    }
+
+    private static async Task WaitUntilAsync(Func<bool> condition)
+    {
+        for (var attempt = 0; attempt < 100 && !condition(); attempt++)
+        {
+            await Task.Yield();
+        }
+
+        if (!condition())
+        {
+            throw new TimeoutException("Condition was not reached.");
+        }
+    }
+
+    public enum RetryAfterKind
+    {
+        Absent,
+        ShorterDelta,
+        EqualDelta,
+        LongerDelta,
+        PastDate,
+        CurrentDate,
+        LongerDate,
+    }
+
+    private sealed class DelegateHandler(
+        Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> send) : HttpMessageHandler
+    {
+        public bool IsDisposed { get; private set; }
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken) => send(request, cancellationToken);
+
+        protected override void Dispose(bool disposing)
+        {
+            IsDisposed = true;
+            base.Dispose(disposing);
+        }
+    }
+
+    private sealed class TrackingContent : ByteArrayContent
+    {
+        public TrackingContent()
+            : base([])
+        {
+        }
+
+        public bool IsDisposed { get; private set; }
+
+        protected override void Dispose(bool disposing)
+        {
+            IsDisposed = true;
+            base.Dispose(disposing);
+        }
+    }
+
+    private sealed class NonSeekableStream(byte[] bytes) : MemoryStream(bytes)
+    {
+        public override bool CanSeek => false;
+
+        public override long Seek(long offset, SeekOrigin loc) => throw new NotSupportedException();
+
+        public override long Position
+        {
+            get => base.Position;
+            set => throw new NotSupportedException();
+        }
+    }
+
+    private sealed class Marker;
+
+    private sealed record RequestSnapshot(
+        HttpMethod Method,
+        Uri? Uri,
+        string Header,
+        string Option,
+        byte[] Body);
+}
