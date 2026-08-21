@@ -6,6 +6,14 @@ namespace Kevlar.Tests;
 public class CircuitBreakerDynamicOptionsTests
 {
     [Test]
+    public async Task Default_BreakDuration_Event_Rejects_Missing_Context()
+    {
+        var item = default(CircuitBreakerBreakDurationEvent);
+
+        await Assert.That(() => item.Context).Throws<InvalidOperationException>();
+    }
+
+    [Test]
     public async Task BreakDurationGenerator_Receives_Handled_Outcome_And_Context()
     {
         var timeProvider = new FakeTimeProvider();
@@ -225,6 +233,55 @@ public class CircuitBreakerDynamicOptionsTests
 
         releaseGenerator.SetResult();
         await Task.WhenAll(executions).WaitAsync(TimeSpan.FromSeconds(5));
+        await Assert.That(monitor.State).IsEqualTo(CircuitState.Open);
+    }
+
+    [Test]
+    public async Task Failure_During_Pending_Generator_Remains_In_Ratio_Window()
+    {
+        var timeProvider = new FakeTimeProvider();
+        var generatorEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseGenerator = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var generatorFailure = new InvalidOperationException("generator");
+        var generatorCalls = 0;
+        var monitor = new CircuitBreakerMonitor();
+        var shield = Shield.CircuitBreaker(options =>
+        {
+            options.FailureRatio = 0.5;
+            options.MinimumThroughput = 2;
+            options.SamplingWindow = TimeSpan.FromSeconds(10);
+            options.Monitor = monitor;
+            options.BreakDurationGenerator = async _ =>
+            {
+                if (Interlocked.Increment(ref generatorCalls) > 1)
+                {
+                    return TimeSpan.FromMinutes(1);
+                }
+
+                generatorEntered.SetResult();
+                await releaseGenerator.Task;
+                throw generatorFailure;
+            };
+        }).WithTimeProvider(timeProvider);
+
+        await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
+        var opening = shield.ExecuteOutcomeAsync<int>(
+            _ => ValueTask.FromException<int>(new ApplicationException("first"))).AsTask();
+        await generatorEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        timeProvider.Advance(TimeSpan.FromSeconds(9));
+        await shield.ExecuteOutcomeAsync<int>(
+            _ => ValueTask.FromException<int>(new ApplicationException("pending")));
+        releaseGenerator.SetResult();
+        var openingOutcome = await opening;
+        await Assert.That(ReferenceEquals(openingOutcome.Exception, generatorFailure)).IsTrue();
+
+        timeProvider.Advance(TimeSpan.FromSeconds(2));
+        await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
+        await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
+        await shield.ExecuteOutcomeAsync<int>(
+            _ => ValueTask.FromException<int>(new ApplicationException("latest")));
+
         await Assert.That(monitor.State).IsEqualTo(CircuitState.Open);
     }
 

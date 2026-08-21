@@ -378,8 +378,14 @@ internal sealed class CircuitBreakerCore
         lock (_gate)
         {
             reservation = default;
+            _lastException = exception;
             if (_openingPending)
             {
+                if (_state == CircuitState.Closed)
+                {
+                    _ = IsTripped(_failureRatio is null ? 0 : GetCurrentTimestamp(timeProvider));
+                }
+
                 return false;
             }
 
@@ -392,7 +398,6 @@ internal sealed class CircuitBreakerCore
             };
             if (!shouldOpen)
             {
-                _lastException = exception;
                 return false;
             }
 

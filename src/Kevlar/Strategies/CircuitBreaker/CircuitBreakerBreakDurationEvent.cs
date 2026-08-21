@@ -3,6 +3,8 @@ namespace Kevlar;
 /// <summary>Describes the handled outcome that is about to open a circuit.</summary>
 public readonly struct CircuitBreakerBreakDurationEvent
 {
+    private readonly KevlarContext? _context;
+
     internal CircuitBreakerBreakDurationEvent(
         Exception? exception,
         object? result,
@@ -10,7 +12,7 @@ public readonly struct CircuitBreakerBreakDurationEvent
     {
         Exception = exception;
         Result = result;
-        Context = context;
+        _context = context;
     }
 
     /// <summary>The handled exception, or <see langword="null"/> when a result was handled.</summary>
@@ -23,5 +25,6 @@ public readonly struct CircuitBreakerBreakDurationEvent
     /// The ambient execution context. It is pooled; do not retain it or its property bag after
     /// the callback completes.
     /// </summary>
-    public KevlarContext Context { get; }
+    public KevlarContext Context => _context
+        ?? throw new InvalidOperationException("A default break-duration event has no execution context.");
 }
