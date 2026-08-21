@@ -1,5 +1,6 @@
 namespace Kevlar.Testing.Tests;
 
+[NotInParallel]
 public class TelemetryRecorderTests
 {
     [Test]
