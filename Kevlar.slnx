@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/benchmarks/">
     <Project Path="benchmarks/Kevlar.Benchmarks/Kevlar.Benchmarks.csproj" />
+    <Project Path="benchmarks/Kevlar.StressTests/Kevlar.StressTests.csproj" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="src/Kevlar.Extensions.DependencyInjection/Kevlar.Extensions.DependencyInjection.csproj" />

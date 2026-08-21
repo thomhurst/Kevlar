@@ -35,6 +35,7 @@ const sidebars: SidebarsConfig = {
     'testing',
     'performance',
     'benchmarks',
+    'stress-tests',
     'polly-migration',
   ],
 };

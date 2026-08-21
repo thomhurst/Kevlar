@@ -16,6 +16,8 @@ Kevlar's design keeps the happy path cheap:
 
 The [Benchmarks](benchmarks.md) page compares Kevlar against Polly v8 across every strategy — happy paths, failure paths, and composed pipelines. It is regenerated automatically from CI runs, so the numbers there always reflect the current code.
 
+The [stress tests](stress-tests.md) complement those short measurements with a 15-minute, same-process Kevlar/Polly run that records sustained throughput, allocations, garbage collections, and process memory.
+
 The suite lives in [`benchmarks/`](https://github.com/thomhurst/Kevlar/tree/main/benchmarks) and uses BenchmarkDotNet:
 
 ```bash
