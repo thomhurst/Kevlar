@@ -1,0 +1,255 @@
+using Kevlar.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Kevlar.Tests;
+
+public class DependencyInjectionContractTests
+{
+    [Test]
+    public async Task Concurrent_First_Resolution_Invokes_Factory_Exactly_Once()
+    {
+        const int workerCount = 32;
+        var factoryCalls = 0;
+        var services = new ServiceCollection();
+        services.AddShield("shared", _ =>
+        {
+            Interlocked.Increment(ref factoryCalls);
+            Thread.SpinWait(500_000);
+            return Shield.Empty;
+        });
+        using var provider = services.BuildServiceProvider();
+        var registry = provider.GetRequiredService<IKevlarRegistry>();
+        using var ready = new CountdownEvent(workerCount);
+        using var start = new ManualResetEventSlim();
+
+        var resolutions = Enumerable.Range(0, workerCount)
+            .Select(_ => Task.Factory.StartNew(
+                () =>
+                {
+                    ready.Signal();
+                    start.Wait();
+                    return registry.GetShield("shared");
+                },
+                CancellationToken.None,
+                TaskCreationOptions.LongRunning,
+                TaskScheduler.Default))
+            .ToArray();
+
+        ready.Wait();
+        start.Set();
+        var resolved = await Task.WhenAll(resolutions);
+
+        await Assert.That(factoryCalls).IsEqualTo(1);
+        await Assert.That(resolved.All(shield => ReferenceEquals(shield, resolved[0]))).IsTrue();
+    }
+
+    [Test]
+    public async Task Registry_TryGet_And_Keyed_Paths_Return_The_Same_Singletons()
+    {
+        var untyped = Shield.Retry(0, Backoff.None);
+        var typed = Shield<int>.Empty;
+        var services = new ServiceCollection()
+            .AddShield("shared", _ => untyped)
+            .AddShield("shared", _ => typed)
+            .BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+
+        var directUntyped = registry.GetShield("shared");
+        var foundUntyped = registry.TryGetShield("shared", out var triedUntyped);
+        var keyedUntyped = services.GetRequiredKeyedService<Shield>("shared");
+        var directTyped = registry.GetShield<int>("shared");
+        var foundTyped = registry.TryGetShield<int>("shared", out var triedTyped);
+        var keyedTyped = services.GetRequiredKeyedService<Shield<int>>("shared");
+
+        await Assert.That(foundUntyped).IsTrue();
+        await Assert.That(foundTyped).IsTrue();
+        await Assert.That(ReferenceEquals(directUntyped, untyped)).IsTrue();
+        await Assert.That(ReferenceEquals(triedUntyped, untyped)).IsTrue();
+        await Assert.That(ReferenceEquals(keyedUntyped, untyped)).IsTrue();
+        await Assert.That(ReferenceEquals(directTyped, typed)).IsTrue();
+        await Assert.That(ReferenceEquals(triedTyped, typed)).IsTrue();
+        await Assert.That(ReferenceEquals(keyedTyped, typed)).IsTrue();
+    }
+
+    [Test]
+    public async Task Last_Duplicate_Registration_Wins_On_Every_Path()
+    {
+        var first = Shield.Retry(1, Backoff.None);
+        var last = Shield.Timeout(TimeSpan.FromSeconds(1));
+        using var provider = new ServiceCollection()
+            .AddShield("duplicate", first)
+            .AddShield("duplicate", last)
+            .BuildServiceProvider();
+
+        var registry = provider.GetRequiredService<IKevlarRegistry>();
+
+        await Assert.That(ReferenceEquals(registry.GetShield("duplicate"), last)).IsTrue();
+        await Assert.That(ReferenceEquals(provider.GetRequiredKeyedService<Shield>("duplicate"), last)).IsTrue();
+    }
+
+    [Test]
+    public async Task AddKevlar_Is_Idempotent()
+    {
+        var services = new ServiceCollection();
+        services.AddKevlar();
+        services.AddKevlar();
+        using var provider = services.BuildServiceProvider();
+
+        await Assert.That(provider.GetServices<IKevlarRegistry>().Count()).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Names_Are_Case_Sensitive_And_May_Be_Empty()
+    {
+        using var provider = new ServiceCollection()
+            .AddShield(string.Empty, Shield.Empty)
+            .AddShield("Case", Shield.Retry(0, Backoff.None))
+            .BuildServiceProvider();
+        var registry = provider.GetRequiredService<IKevlarRegistry>();
+
+        await Assert.That(registry.GetShield(string.Empty)).IsNotNull();
+        await Assert.That(registry.TryGetShield("case", out _)).IsFalse();
+    }
+
+    [Test]
+    public async Task Registry_Name_Null_Guards_Report_Exact_Parameter()
+    {
+        using var provider = new ServiceCollection().AddKevlar().BuildServiceProvider();
+        var registry = provider.GetRequiredService<IKevlarRegistry>();
+
+        await AssertNullNameAsync(() => registry.GetShield(null!));
+        await AssertNullNameAsync(() => registry.GetShield<int>(null!));
+        await AssertNullNameAsync(() => registry.TryGetShield(null!, out _));
+        await AssertNullNameAsync(() => registry.TryGetShield<int>(null!, out _));
+    }
+
+    [Test]
+    public async Task Missing_Typed_Registration_Reports_Name_And_Result_Type()
+    {
+        using var provider = new ServiceCollection().AddKevlar().BuildServiceProvider();
+        var registry = provider.GetRequiredService<IKevlarRegistry>();
+
+        var error = await Assert.That(() => registry.GetShield<int>("missing"))
+            .Throws<KeyNotFoundException>();
+
+        await Assert.That(error!.Message).Contains("missing");
+        await Assert.That(error.Message).Contains("Int32");
+    }
+
+    [Test]
+    public async Task Factory_Failure_Is_Cached_With_The_Original_Instance()
+    {
+        var factoryCalls = 0;
+        var failure = new InvalidOperationException("factory failed");
+        using var provider = new ServiceCollection()
+            .AddShield("failing", _ =>
+            {
+                factoryCalls++;
+                throw failure;
+            })
+            .BuildServiceProvider();
+        var registry = provider.GetRequiredService<IKevlarRegistry>();
+
+        var first = await Assert.That(() => registry.GetShield("failing")).Throws<InvalidOperationException>();
+        var second = await Assert.That(() => registry.GetShield("failing")).Throws<InvalidOperationException>();
+
+        await Assert.That(factoryCalls).IsEqualTo(1);
+        await Assert.That(ReferenceEquals(first, failure)).IsTrue();
+        await Assert.That(ReferenceEquals(second, failure)).IsTrue();
+    }
+
+    [Test]
+    public async Task Full_Definition_Uses_The_Documented_Order()
+    {
+        var definition = new ShieldDefinition
+        {
+            Timeout = TimeSpan.FromSeconds(30),
+            Retry = new RetryDefinition { MaxRetries = 2, Backoff = BackoffKind.None },
+            CircuitBreaker = new CircuitBreakerDefinition
+            {
+                ConsecutiveFailures = 3,
+                BreakDuration = TimeSpan.FromSeconds(4),
+            },
+            RateLimit = new RateLimitDefinition
+            {
+                Permits = 5,
+                Window = TimeSpan.FromSeconds(10),
+                Burst = 7,
+                QueueLimit = 2,
+            },
+            ConcurrencyLimit = new ConcurrencyLimitDefinition { MaxConcurrency = 3, MaxQueue = 4 },
+            AttemptTimeout = TimeSpan.FromSeconds(1),
+        };
+
+        await Assert.That(definition.Build().ToString()).IsEqualTo(
+            "Timeout(30s) → Retry(2, no delay) → CircuitBreaker(3 consecutive, break 4s) → " +
+            "RateLimit(5/10s, burst 7, queue 2) → ConcurrencyLimit(3, queue 4) → Timeout(1s)");
+    }
+
+    [Test]
+    [Arguments(BackoffKind.None, "no delay, ≤4s")]
+    [Arguments(BackoffKind.Constant, "constant 2s, ≤4s")]
+    [Arguments(BackoffKind.Linear, "linear 2s steps ≤4s")]
+    [Arguments(BackoffKind.Exponential, "exponential 2s ×3 ≤4s")]
+    public async Task Every_BackoffKind_Binds_All_Applicable_Knobs(BackoffKind kind, string expected)
+    {
+        var definition = new ShieldDefinition
+        {
+            Retry = new RetryDefinition
+            {
+                MaxRetries = 1,
+                Backoff = kind,
+                BaseDelay = TimeSpan.FromSeconds(2),
+                Factor = 3,
+                Jitter = false,
+                MaxDelay = TimeSpan.FromSeconds(4),
+            },
+        };
+
+        await Assert.That(definition.Build().ToString()).IsEqualTo($"Retry(1, {expected})");
+    }
+
+    [Test]
+    public async Task Invalid_BackoffKind_Fails_Actionably()
+    {
+        var definition = new ShieldDefinition
+        {
+            Retry = new RetryDefinition { Backoff = (BackoffKind)int.MaxValue },
+        };
+
+        var error = await Assert.That(() => definition.Build()).Throws<ArgumentOutOfRangeException>();
+        await Assert.That(error!.ParamName).IsEqualTo("Backoff");
+    }
+
+    [Test]
+    public async Task Configuration_Is_Read_On_First_Resolution_Then_Remains_Stable()
+    {
+        var values = new Dictionary<string, string?>
+        {
+            ["Retry:MaxRetries"] = "1",
+            ["Retry:Backoff"] = "None",
+        };
+        var configuration = new ConfigurationBuilder().AddInMemoryCollection(values).Build();
+        var services = new ServiceCollection();
+        services.AddShield("dynamic", configuration);
+        using var provider = services.BuildServiceProvider();
+        var registry = provider.GetRequiredService<IKevlarRegistry>();
+
+        configuration["Retry:MaxRetries"] = "4";
+        var first = registry.GetShield("dynamic");
+        configuration["Retry:MaxRetries"] = "2";
+        var second = registry.GetShield("dynamic");
+
+        await Assert.That(first.Name).IsEqualTo("dynamic");
+        await Assert.That(first.ToString()).IsEqualTo("dynamic: Retry(4, no delay)");
+        await Assert.That(ReferenceEquals(first, second)).IsTrue();
+        await Assert.That(second.ToString()).IsEqualTo("dynamic: Retry(4, no delay)");
+    }
+
+    private static async Task AssertNullNameAsync(Action action)
+    {
+        var error = await Assert.That(action).Throws<ArgumentNullException>();
+        await Assert.That(error!.ParamName).IsEqualTo("name");
+    }
+}

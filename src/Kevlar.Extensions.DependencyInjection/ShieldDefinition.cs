@@ -117,11 +117,12 @@ public sealed class RetryDefinition
         BackoffKind.None => Kevlar.Backoff.None,
         BackoffKind.Constant => Kevlar.Backoff.Constant(BaseDelay ?? TimeSpan.FromSeconds(1)),
         BackoffKind.Linear => Kevlar.Backoff.Linear(BaseDelay ?? TimeSpan.FromMilliseconds(500), MaxDelay),
-        _ => Kevlar.Backoff.Exponential(
+        BackoffKind.Exponential => Kevlar.Backoff.Exponential(
             BaseDelay ?? TimeSpan.FromMilliseconds(250),
             Factor,
             MaxDelay ?? TimeSpan.FromSeconds(30),
             Jitter),
+        _ => throw new ArgumentOutOfRangeException(nameof(Backoff), Backoff, "Unknown backoff kind."),
     };
 }
 

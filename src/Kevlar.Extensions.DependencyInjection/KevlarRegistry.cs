@@ -24,7 +24,7 @@ internal sealed class KevlarRegistry : IKevlarRegistry
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly Dictionary<(string Name, Type? ResultType), ShieldRegistration> _registrations;
-    private readonly ConcurrentDictionary<(string Name, Type? ResultType), object> _resolved = new();
+    private readonly ConcurrentDictionary<(string Name, Type? ResultType), Lazy<object>> _resolved = new();
 
     public KevlarRegistry(IServiceProvider serviceProvider, IEnumerable<ShieldRegistration> registrations)
     {
@@ -74,11 +74,13 @@ internal sealed class KevlarRegistry : IKevlarRegistry
 
     private object? Resolve(string name, Type? resultType)
     {
+        if (name is null) { throw new ArgumentNullException(nameof(name)); }
+
         var key = (name, resultType);
 
         if (_resolved.TryGetValue(key, out var existing))
         {
-            return existing;
+            return existing.Value;
         }
 
         if (!_registrations.TryGetValue(key, out var registration))
@@ -86,6 +88,10 @@ internal sealed class KevlarRegistry : IKevlarRegistry
             return null;
         }
 
-        return _resolved.GetOrAdd(key, _ => registration.Factory(_serviceProvider));
+        return _resolved.GetOrAdd(
+            key,
+            _ => new Lazy<object>(
+                () => registration.Factory(_serviceProvider),
+                LazyThreadSafetyMode.ExecutionAndPublication)).Value;
     }
 }
