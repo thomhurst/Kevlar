@@ -22,7 +22,8 @@ internal sealed class CircuitBreakerStrategy : Strategy
 
     public override string Describe() => _core.Describe();
 
-    public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
+    /// <inheritdoc />
+    public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
         var alias = new StrategyMetricAlias(context.ShieldName, context.StrategyIndex);
         var recordState = RegisterMetricsAlias(alias);
@@ -34,7 +35,7 @@ internal sealed class CircuitBreakerStrategy : Strategy
             }
 
             KevlarMetrics.Rejection(context.ShieldName, "circuit_open");
-            return Outcome<T>.FromException(rejection!);
+            return new ValueTask<Outcome<T>>(Outcome<T>.FromException(rejection!));
         }
 
         if (recordState)
@@ -50,8 +51,32 @@ internal sealed class CircuitBreakerStrategy : Strategy
             }
         }
 
-        var outcome = await next.InvokeAsync(context).ConfigureAwait(false);
+        var execution = next.InvokeAsync(context);
+        // Stryker disable once all: Route selection is performance-only; both branches call Complete.
+        return execution.IsCompletedSuccessfully
+            ? new ValueTask<Outcome<T>>(Complete(execution.Result, context, admittedProbeGeneration, alias, recordState))
+            : AwaitOutcomeAsync(execution, context, admittedProbeGeneration, alias, recordState);
+    }
 
+    private async ValueTask<Outcome<T>> AwaitOutcomeAsync<T>(
+        ValueTask<Outcome<T>> execution,
+        KevlarContext context,
+        long admittedProbeGeneration,
+        StrategyMetricAlias alias,
+        bool recordState)
+    {
+        // Stryker disable once all: ConfigureAwait is execution-context policy, not outcome behavior.
+        var outcome = await execution.ConfigureAwait(false);
+        return Complete(outcome, context, admittedProbeGeneration, alias, recordState);
+    }
+
+    private Outcome<T> Complete<T>(
+        Outcome<T> outcome,
+        KevlarContext context,
+        long admittedProbeGeneration,
+        StrategyMetricAlias alias,
+        bool recordState)
+    {
         if (_judge.ShouldHandle(in outcome))
         {
             _core.RecordFailure(context.TimeProvider, outcome.Exception);
