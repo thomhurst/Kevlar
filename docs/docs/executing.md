@@ -24,6 +24,20 @@ var user = await shield.ExecuteAsync(ct => LoadUserAsync(id, ct), cancellationTo
 
 (Async lambdas bind to the `ValueTask` overloads automatically, so the hot path stays allocation-free.)
 
+## Overload contract
+
+Every execution shape follows the same boundary contract: typed or untyped shield, result or
+void, synchronous or asynchronous, `Task` or `ValueTask`, and state-passing or capturing.
+
+- A pre-cancelled caller token skips the delegate. Throwing execution surfaces an
+  `OperationCanceledException` carrying that exact token; `ExecuteOutcomeAsync` captures it.
+- Boundary adapters invoke the delegate once. Strategies such as retry and hedging may
+  intentionally invoke it again according to their configuration.
+- State-passing overloads pass the original state unchanged to the static delegate.
+- Empty and non-empty pipelines use the same cancellation, result, and exception semantics.
+- Throwing execution preserves the original exception instance and stack;
+  `ExecuteOutcomeAsync` captures that same exception instead.
+
 :::tip Always use the token you're handed
 Your delegate receives a `CancellationToken` that combines your outer token with shield-driven cancellation (timeouts, hedging losers). Pass it to everything you await.
 :::
