@@ -4,12 +4,14 @@
     <Project Path="benchmarks/Kevlar.StressTests/Kevlar.StressTests.csproj" />
   </Folder>
   <Folder Name="/src/">
+    <Project Path="src/Kevlar.Chaos/Kevlar.Chaos.csproj" />
     <Project Path="src/Kevlar.Extensions.DependencyInjection/Kevlar.Extensions.DependencyInjection.csproj" />
     <Project Path="src/Kevlar.Extensions.Http/Kevlar.Extensions.Http.csproj" />
     <Project Path="src/Kevlar/Kevlar.csproj" />
     <Project Path="src/Kevlar.Analyzers/Kevlar.Analyzers.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Kevlar.Chaos.Tests/Kevlar.Chaos.Tests.csproj" />
     <Project Path="tests/Kevlar.AllocationTests/Kevlar.AllocationTests.csproj" />
     <Project Path="tests/Kevlar.IntegrationTests/Kevlar.IntegrationTests.csproj" />
     <Project Path="tests/Kevlar.NetStandard.Tests/Kevlar.NetStandard.Tests.csproj" />

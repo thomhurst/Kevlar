@@ -35,6 +35,7 @@ Build a shield once, reuse it everywhere. Shields are **immutable and thread-saf
 | Package | Purpose |
 |---|---|
 | `Kevlar` | The core: all strategies |
+| `Kevlar.Chaos` | Opt-in latency, fault, typed outcome and custom behavior injection |
 | `Kevlar.Extensions.DependencyInjection` | Named shields + `IKevlarRegistry` for Microsoft DI |
 | `Kevlar.Extensions.Http` | `HttpClientFactory` integration, transient-fault handling, `Retry-After` support |
 | `Kevlar.Analyzers` | Roslyn analyzers that catch resilience mistakes at compile time |

@@ -25,6 +25,7 @@ $documentPaths = @(
 $requiredPackages = @(
     'Kevlar'
     'Kevlar.Analyzers'
+    'Kevlar.Chaos'
     'Kevlar.Extensions.DependencyInjection'
     'Kevlar.Extensions.Http'
 )
@@ -179,6 +180,7 @@ $builder = [Text.StringBuilder]::new()
 [void]$builder.AppendLine('#pragma warning disable CS0162 // Harness appends a fallback return after documentation control flow.')
 [void]$builder.AppendLine('using System.Net;')
 [void]$builder.AppendLine('using Kevlar;')
+[void]$builder.AppendLine('using Kevlar.Chaos;')
 [void]$builder.AppendLine('using Kevlar.Extensions.DependencyInjection;')
 [void]$builder.AppendLine('using Kevlar.Extensions.Http;')
 [void]$builder.AppendLine('using Microsoft.Extensions.DependencyInjection;')

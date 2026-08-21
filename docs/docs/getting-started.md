@@ -13,6 +13,7 @@ dotnet add package Kevlar
 Optional satellites:
 
 ```bash
+dotnet add package Kevlar.Chaos                          # controlled fault injection
 dotnet add package Kevlar.Extensions.DependencyInjection   # named shields + IKevlarRegistry
 dotnet add package Kevlar.Extensions.Http                  # HttpClientFactory integration
 ```

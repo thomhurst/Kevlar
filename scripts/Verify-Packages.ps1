@@ -105,6 +105,10 @@ $expectedDependencies = @{
         'net10.0' = @('Kevlar', 'Microsoft.Extensions.Http')
         '.NETStandard2.0' = @('Kevlar', 'Microsoft.Extensions.Http')
     }
+    'Kevlar.Chaos' = @{
+        'net10.0' = @('Kevlar')
+        '.NETStandard2.0' = @('Kevlar', 'Microsoft.Bcl.TimeProvider', 'System.Threading.Tasks.Extensions')
+    }
     'Kevlar.Analyzers' = @{
         '.NETStandard2.0' = @()
     }
@@ -243,6 +247,7 @@ try
 
     $runtimeProgram = @'
 using Kevlar;
+using Kevlar.Chaos;
 using Kevlar.Extensions.DependencyInjection;
 using Kevlar.Extensions.Http;
 using Microsoft.Extensions.DependencyInjection;
@@ -253,6 +258,16 @@ var value = await shield.ExecuteAsync(static cancellationToken =>
 if (value != 42)
 {
     throw new InvalidOperationException("Core package execution failed.");
+}
+
+var chaos = ChaosShield.Outcome<int>(options =>
+{
+    options.Enabled = true;
+    options.Result = 42;
+});
+if (await chaos.ExecuteAsync(static _ => new ValueTask<int>(0)) != 42)
+{
+    throw new InvalidOperationException("Chaos package execution failed.");
 }
 
 IServiceCollection services = new ServiceCollection();
@@ -275,6 +290,7 @@ Console.WriteLine("Kevlar package consumer passed.");
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Kevlar" Version="$Version" />
+    <PackageReference Include="Kevlar.Chaos" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.DependencyInjection" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.Http" Version="$Version" />
   </ItemGroup>

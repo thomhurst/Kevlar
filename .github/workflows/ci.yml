@@ -72,6 +72,9 @@ jobs:
       - name: Unit tests
         run: dotnet run --project tests/Kevlar.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --report-trx --report-trx-filename unit.trx --results-directory artifacts/test-results/unit
 
+      - name: Chaos tests
+        run: dotnet run --project tests/Kevlar.Chaos.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --report-trx --report-trx-filename chaos.trx --results-directory artifacts/test-results/chaos
+
       - name: netstandard2.0 asset tests
         run: dotnet run --project tests/Kevlar.NetStandard.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --report-trx --report-trx-filename netstandard.trx --results-directory artifacts/test-results/netstandard
 
@@ -145,6 +148,9 @@ jobs:
 
       - name: Collect unit coverage
         run: dotnet run --project tests/Kevlar.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/unit.cobertura.xml --coverage-output-format cobertura
+
+      - name: Collect chaos coverage
+        run: dotnet run --project tests/Kevlar.Chaos.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/chaos.cobertura.xml --coverage-output-format cobertura
 
       - name: Collect netstandard2.0 asset coverage
         run: dotnet run --project tests/Kevlar.NetStandard.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/netstandard.cobertura.xml --coverage-output-format cobertura
