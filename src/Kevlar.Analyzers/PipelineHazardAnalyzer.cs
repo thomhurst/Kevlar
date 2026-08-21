@@ -8,8 +8,8 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Kevlar.Analyzers;
 
 /// <summary>
-/// Diagnoses statically provable Kevlar pipeline hazards: synchronous multi-attempt hedging and reactive
-/// strategies made unreachable by an inner fallback using the same handling clause.
+/// Diagnoses statically provable Kevlar pipeline hazards: synchronous multi-attempt hedging, reactive
+/// strategies made unreachable by an inner fallback, and per-execution construction of stateful shields.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
@@ -34,9 +34,22 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         isEnabledByDefault: true,
         description: "A fallback inside retry, hedging, or circuit breaker under the same handling clause recovers every handled failure before the outer strategy can observe it. Kevlar rejects this pipeline at construction time.");
 
+    /// <summary>The KEV004 rule.</summary>
+    public static readonly DiagnosticDescriptor EphemeralStatefulShieldRule = new(
+        id: "KEV004",
+        title: "Stateful shield is constructed per execution",
+        messageFormat: "'{0}' creates resilience state for one execution. Store and reuse the shield or partition provider as a field, singleton/keyed DI registration, or registry entry.",
+        category: "Reliability",
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "Circuit breakers, rate limiters, concurrency limiters, and partition providers must outlive individual executions so their resilience state is retained and shared.");
+
     /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-        ImmutableArray.Create(SynchronousHedgingRule, UnreachableReactiveStrategyRule);
+        ImmutableArray.Create(
+            SynchronousHedgingRule,
+            UnreachableReactiveStrategyRule,
+            EphemeralStatefulShieldRule);
 
     /// <inheritdoc />
     public override void Initialize(AnalysisContext context)
@@ -95,6 +108,212 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 invocation.Syntax.GetLocation(),
                 reactiveStrategy));
         }
+
+        if (!knownTypes.IsTestAssembly
+            && !IsTestContext(context.ContainingSymbol)
+            && IsExecution(invocation.TargetMethod, knownTypes)
+            && TryFindEphemeralStatefulConstruction(
+                GetReceiver(invocation),
+                context,
+                knownTypes,
+                visitedLocals: null,
+                out var statefulComponent,
+                out var location))
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                EphemeralStatefulShieldRule,
+                location,
+                statefulComponent));
+        }
+    }
+
+    private static bool TryFindEphemeralStatefulConstruction(
+        IOperation? operation,
+        OperationAnalysisContext context,
+        KnownTypes knownTypes,
+        HashSet<ISymbol>? visitedLocals,
+        out string? statefulComponent,
+        out Location? location)
+    {
+        operation = Unwrap(operation);
+
+        if (operation is ILocalReferenceOperation localReference)
+        {
+            visitedLocals ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+            if (!visitedLocals.Add(localReference.Local)
+                || !TryGetSingleUseInitializer(localReference, context, out var initializer))
+            {
+                statefulComponent = null;
+                location = null;
+                return false;
+            }
+
+            var found = TryFindEphemeralStatefulConstruction(
+                initializer,
+                context,
+                knownTypes,
+                visitedLocals,
+                out statefulComponent,
+                out location);
+            visitedLocals.Remove(localReference.Local);
+            return found;
+        }
+
+        if (operation is IConditionalAccessOperation conditionalAccess)
+        {
+            return TryFindEphemeralStatefulConstruction(
+                conditionalAccess.Operation,
+                context,
+                knownTypes,
+                visitedLocals,
+                out statefulComponent,
+                out location);
+        }
+
+        if (operation is IArrayCreationOperation { Initializer: { } arrayInitializer })
+        {
+            foreach (var element in arrayInitializer.ElementValues)
+            {
+                if (TryFindEphemeralStatefulConstruction(
+                    element,
+                    context,
+                    knownTypes,
+                    visitedLocals,
+                    out statefulComponent,
+                    out location))
+                {
+                    return true;
+                }
+            }
+
+            statefulComponent = null;
+            location = null;
+            return false;
+        }
+
+        if (operation?.Syntax is CollectionExpressionSyntax or SpreadElementSyntax)
+        {
+            foreach (var child in operation.ChildOperations)
+            {
+                if (TryFindEphemeralStatefulConstruction(
+                    child,
+                    context,
+                    knownTypes,
+                    visitedLocals,
+                    out statefulComponent,
+                    out location))
+                {
+                    return true;
+                }
+            }
+
+            statefulComponent = null;
+            location = null;
+            return false;
+        }
+
+        if (operation is not IInvocationOperation invocation)
+        {
+            statefulComponent = null;
+            location = null;
+            return false;
+        }
+
+        var method = Normalize(invocation.TargetMethod);
+        if (IsStatefulStrategy(method, knownTypes))
+        {
+            statefulComponent = method.Name;
+            location = invocation.Syntax.GetLocation();
+            return true;
+        }
+
+        if (method.Name == "GetShield" && knownTypes.IsPartitionedShield(method.ContainingType))
+        {
+            return TryFindEphemeralPartitionProvider(
+                GetReceiver(invocation),
+                context,
+                knownTypes,
+                visitedLocals,
+                out statefulComponent,
+                out location);
+        }
+
+        if (!IsKevlarFluentMethod(method, knownTypes))
+        {
+            statefulComponent = null;
+            location = null;
+            return false;
+        }
+
+        if (IsCompositionBoundary(method, knownTypes))
+        {
+            foreach (var argument in invocation.Arguments)
+            {
+                if (TryFindEphemeralStatefulConstruction(
+                    argument.Value,
+                    context,
+                    knownTypes,
+                    visitedLocals,
+                    out statefulComponent,
+                    out location))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return TryFindEphemeralStatefulConstruction(
+            GetReceiver(invocation),
+            context,
+            knownTypes,
+            visitedLocals,
+            out statefulComponent,
+            out location);
+    }
+
+    private static bool TryFindEphemeralPartitionProvider(
+        IOperation? operation,
+        OperationAnalysisContext context,
+        KnownTypes knownTypes,
+        HashSet<ISymbol>? visitedLocals,
+        out string? statefulComponent,
+        out Location? location)
+    {
+        operation = Unwrap(operation);
+        if (operation is ILocalReferenceOperation localReference)
+        {
+            visitedLocals ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+            if (!visitedLocals.Add(localReference.Local)
+                || !TryGetSingleUseInitializer(localReference, context, out var initializer))
+            {
+                statefulComponent = null;
+                location = null;
+                return false;
+            }
+
+            var found = TryFindEphemeralPartitionProvider(
+                initializer,
+                context,
+                knownTypes,
+                visitedLocals,
+                out statefulComponent,
+                out location);
+            visitedLocals.Remove(localReference.Local);
+            return found;
+        }
+
+        if (operation is IObjectCreationOperation creation
+            && creation.Type is INamedTypeSymbol type
+            && knownTypes.IsPartitionedShield(type))
+        {
+            statefulComponent = "PartitionedShield";
+            location = creation.Syntax.GetLocation();
+            return true;
+        }
+
+        statefulComponent = null;
+        location = null;
+        return false;
     }
 
     private static bool FindInPipeline(
@@ -889,6 +1108,19 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         ILocalReferenceOperation localReference,
         OperationAnalysisContext context,
         out IOperation? initializer)
+        => TryGetInitializer(localReference, context, requireSingleUse: false, out initializer);
+
+    private static bool TryGetSingleUseInitializer(
+        ILocalReferenceOperation localReference,
+        OperationAnalysisContext context,
+        out IOperation? initializer)
+        => TryGetInitializer(localReference, context, requireSingleUse: true, out initializer);
+
+    private static bool TryGetInitializer(
+        ILocalReferenceOperation localReference,
+        OperationAnalysisContext context,
+        bool requireSingleUse,
+        out IOperation? initializer)
     {
         var local = localReference.Local;
         var declarations = local.DeclaringSyntaxReferences;
@@ -909,27 +1141,67 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        var scope = (SyntaxNode?)declarator.FirstAncestorOrSelf<BlockSyntax>()
-            ?? declarator.SyntaxTree.GetRoot(context.CancellationToken);
+        var declarationScope = GetExecutableScope(declarator, context.CancellationToken);
+        if (requireSingleUse
+            && !SameSyntax(
+                declarationScope,
+                GetExecutableScope(localReference.Syntax, context.CancellationToken)))
+        {
+            initializer = null;
+            return false;
+        }
 
-        foreach (var identifier in scope.DescendantNodes().OfType<IdentifierNameSyntax>())
+        var referenceCount = 0;
+        foreach (var identifier in declarationScope.DescendantNodes().OfType<IdentifierNameSyntax>())
         {
             if (identifier.Identifier.ValueText == local.Name
                 && SymbolEqualityComparer.Default.Equals(
                     semanticModel.GetSymbolInfo(identifier, context.CancellationToken).Symbol,
-                    local)
-                && (IsWritten(identifier)
-                    || local.Type is IArrayTypeSymbol
-                        && IsEscapingArrayReference(identifier, localReference.Syntax)))
+                    local))
             {
-                initializer = null;
-                return false;
+                referenceCount++;
+                if (IsWritten(identifier)
+                    || local.Type is IArrayTypeSymbol
+                        && IsEscapingArrayReference(identifier, localReference.Syntax)
+                    || requireSingleUse && referenceCount > 1)
+                {
+                    initializer = null;
+                    return false;
+                }
             }
+        }
+
+        if (requireSingleUse && referenceCount != 1)
+        {
+            initializer = null;
+            return false;
         }
 
         initializer = semanticModel.GetOperation(initializerSyntax, context.CancellationToken);
         return initializer is not null;
     }
+
+    private static SyntaxNode GetExecutableScope(SyntaxNode syntax, CancellationToken cancellationToken)
+    {
+        for (SyntaxNode? current = syntax; current is not null; current = current.Parent)
+        {
+            if (current is AnonymousFunctionExpressionSyntax
+                or LocalFunctionStatementSyntax
+                or BaseMethodDeclarationSyntax
+                or AccessorDeclarationSyntax
+                or ArrowExpressionClauseSyntax
+                or PropertyDeclarationSyntax
+                or IndexerDeclarationSyntax)
+            {
+                return current;
+            }
+        }
+
+        return syntax.SyntaxTree.GetRoot(cancellationToken);
+    }
+
+    private static bool SameSyntax(SyntaxNode left, SyntaxNode right) =>
+        left.SyntaxTree == right.SyntaxTree && left.Span == right.Span;
 
     private static bool IsEscapingArrayReference(
         IdentifierNameSyntax identifier,
@@ -1042,6 +1314,40 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     private static IMethodSymbol Normalize(IMethodSymbol method) =>
         (method.ReducedFrom ?? method).OriginalDefinition;
 
+    private static bool IsExecution(IMethodSymbol method, KnownTypes knownTypes)
+    {
+        method = Normalize(method);
+        return method.Name is "Execute" or "ExecuteAsync" or "ExecuteOutcomeAsync"
+            && (knownTypes.IsShield(method.ContainingType)
+                || knownTypes.IsShieldTaskExtensions(method.ContainingType));
+    }
+
+    private static bool IsStatefulStrategy(IMethodSymbol method, KnownTypes knownTypes) =>
+        method.Name is "CircuitBreaker" or "RateLimit" or "ConcurrencyLimit"
+        && IsKevlarFluentMethod(method, knownTypes);
+
+    private static bool IsTestContext(ISymbol? symbol)
+    {
+        for (var current = symbol; current is not null; current = current.ContainingSymbol)
+        {
+            foreach (var attribute in current.GetAttributes())
+            {
+                var attributeType = attribute.AttributeClass;
+                if (attributeType is not null
+                    && attributeType.Name is "TestAttribute" or "FactAttribute" or "TheoryAttribute" or "TestMethodAttribute"
+                    && attributeType.ContainingNamespace?.ToDisplayString() is "TUnit.Core"
+                        or "Xunit"
+                        or "NUnit.Framework"
+                        or "Microsoft.VisualStudio.TestTools.UnitTesting")
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     private static bool IsSynchronousExecute(IMethodSymbol method, KnownTypes knownTypes)
     {
         method = Normalize(method);
@@ -1101,6 +1407,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         private readonly INamedTypeSymbol? _shieldBuilder;
         private readonly INamedTypeSymbol? _shieldBuilderOfT;
         private readonly INamedTypeSymbol? _shieldExtensions;
+        private readonly INamedTypeSymbol? _shieldTaskExtensions;
+        private readonly INamedTypeSymbol? _partitionedShield;
+        private readonly INamedTypeSymbol? _partitionedShieldOfT;
 
         internal KnownTypes(Compilation compilation)
         {
@@ -1109,7 +1418,16 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             _shieldBuilder = compilation.GetTypeByMetadataName("Kevlar.ShieldBuilder");
             _shieldBuilderOfT = compilation.GetTypeByMetadataName("Kevlar.ShieldBuilder`1");
             _shieldExtensions = compilation.GetTypeByMetadataName("Kevlar.ShieldExtensions");
+            _shieldTaskExtensions = compilation.GetTypeByMetadataName("Kevlar.ShieldTaskExtensions");
+            _partitionedShield = compilation.GetTypeByMetadataName("Kevlar.PartitionedShield`1");
+            _partitionedShieldOfT = compilation.GetTypeByMetadataName("Kevlar.PartitionedShield`2");
+            var assemblyName = compilation.AssemblyName;
+            IsTestAssembly = assemblyName is not null
+                && (assemblyName.EndsWith(".Test", StringComparison.OrdinalIgnoreCase)
+                    || assemblyName.EndsWith(".Tests", StringComparison.OrdinalIgnoreCase));
         }
+
+        internal bool IsTestAssembly { get; }
 
         internal bool IsShield(INamedTypeSymbol type) =>
             Is(type, _shield) || Is(type, _shieldOfT);
@@ -1118,6 +1436,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             Is(type, _shieldBuilder) || Is(type, _shieldBuilderOfT);
 
         internal bool IsShieldExtensions(INamedTypeSymbol type) => Is(type, _shieldExtensions);
+
+        internal bool IsShieldTaskExtensions(INamedTypeSymbol type) => Is(type, _shieldTaskExtensions);
+
+        internal bool IsPartitionedShield(INamedTypeSymbol type) =>
+            Is(type, _partitionedShield) || Is(type, _partitionedShieldOfT);
 
         private static bool Is(INamedTypeSymbol type, INamedTypeSymbol? expected) =>
             expected is not null

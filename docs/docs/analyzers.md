@@ -19,6 +19,7 @@ Generated code is ignored.
 | `KEV001` | Warning | execution delegate ignores its `CancellationToken` |
 | `KEV002` | Warning | known multi-attempt hedging pipeline is passed to synchronous `Execute` |
 | `KEV003` | Warning | inner fallback makes retry, hedging, or circuit breaker unreachable |
+| `KEV004` | Warning | stateful shield or partition provider is constructed for one execution |
 
 ## KEV001: ignored execution cancellation
 
@@ -74,21 +75,54 @@ var shield = Shield.For<int>()
 No automatic code fix is supplied for `KEV002` or `KEV003`: changing sync control flow or strategy
 order can change application semantics.
 
+## KEV004: per-execution stateful shields
+
+Circuit breakers, rate limiters, concurrency limiters, and partition providers retain state between
+executions. Constructing one immediately before `Execute`, `ExecuteAsync`, or
+`ExecuteOutcomeAsync` discards that state after one call, so a circuit never accumulates failures
+and limiter capacity is not shared:
+
+```csharp
+// KEV004: a new circuit exists for only this call.
+await Shield.CircuitBreaker(5, TimeSpan.FromSeconds(30))
+    .ExecuteAsync(static _ => ValueTask.CompletedTask);
+```
+
+<!-- doc-test-declaration: split-before=await _dependencyShield -->
+```csharp
+// Clean: every call shares the same circuit.
+private static readonly Shield _dependencyShield =
+    Shield.CircuitBreaker(5, TimeSpan.FromSeconds(30));
+
+await _dependencyShield.ExecuteAsync(static _ => ValueTask.CompletedTask);
+```
+
+Store stateful shields in a field, singleton or keyed dependency-injection registration, or registry.
+Store `PartitionedShield<TKey>` and `PartitionedShield<TKey, TResult>` providers for the same reason:
+their retained per-key shields disappear when the provider is constructed per call.
+
+The rule is deliberately conservative. It reports inline construction and a stable local or local
+alias that has exactly one use in the same method or lambda. Fields, parameters, opaque factory
+results, locals with multiple uses, locals captured by nested lambdas, stateless-only pipelines,
+generated code, and assemblies ending in `.Test` or `.Tests` remain clean. Custom `Strategy`
+instances are not assumed to be stateful because that cannot be proven from their public contract.
+Test methods marked with standard TUnit, xUnit, NUnit, or MSTest attributes are also ignored.
+
 ## Suppression
 
 Suppress one reviewed site with ordinary C# warning pragmas and record why the analyzer cannot see
 the wider invariant:
 
 ```csharp
-#pragma warning disable KEV002 // Execution is unreachable in the synchronous deployment mode.
-var value = shield.Execute(_ => 1);
-#pragma warning restore KEV002
+#pragma warning disable KEV004 // This isolated circuit is intentional in a one-shot diagnostic.
+var value = Shield.CircuitBreaker(1, TimeSpan.FromSeconds(1)).Execute(_ => 1);
+#pragma warning restore KEV004
 ```
 
 To suppress a rule project-wide, append its ID to `NoWarn`:
 
 ```xml
-<NoWarn>$(NoWarn);KEV002</NoWarn>
+<NoWarn>$(NoWarn);KEV004</NoWarn>
 ```
 
 Prefer a narrow pragma. Project-wide suppression can hide newly introduced unsafe call sites.
