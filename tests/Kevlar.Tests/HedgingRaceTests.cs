@@ -222,6 +222,35 @@ public class HedgingRaceTests
     }
 
     [Test]
+    public async Task OnHedge_Caller_Cancellation_Does_Not_Invoke_The_Next_Attempt()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var attempts = 0;
+        var hedgeEvents = 0;
+        var shield = Shield.Hedge(options =>
+        {
+            options.MaxAttempts = 2;
+            options.Delay = TimeSpan.Zero;
+            options.OnHedge = _ =>
+            {
+                hedgeEvents++;
+                cancellation.Cancel();
+            };
+        });
+
+        var outcome = await shield.ExecuteOutcomeAsync<int>(async token =>
+        {
+            Interlocked.Increment(ref attempts);
+            await Task.Delay(System.Threading.Timeout.InfiniteTimeSpan, token);
+            return 1;
+        }, cancellation.Token);
+
+        await Assert.That(outcome.Exception).IsTypeOf<OperationCanceledException>();
+        await Assert.That(attempts).IsEqualTo(1);
+        await Assert.That(hedgeEvents).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Repeated_Late_Loser_Failures_Do_Not_Contaminate_Pooled_State()
     {
         var shield = Shield.Hedge(2, TimeSpan.Zero);
