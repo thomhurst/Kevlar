@@ -200,6 +200,16 @@ public sealed class Shield
     }
 
     /// <summary>
+    /// Executes the delegate through the pipeline, threading <paramref name="state"/> to avoid closure allocations,
+    /// and returns the outcome instead of throwing.
+    /// </summary>
+    public ValueTask<Outcome<T>> ExecuteOutcomeAsync<T, TState>(TState state, Func<TState, CancellationToken, ValueTask<T>> action, CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(action, nameof(action));
+        return ShieldEngine.ExecuteOutcomeAsync(Head, TimeOrSystem, Name, state, action, cancellationToken);
+    }
+
+    /// <summary>
     /// Executes the delegate synchronously through the pipeline. Delays (retry backoff, rate limit
     /// waits) block the calling thread. Hedging is not supported synchronously.
     /// </summary>

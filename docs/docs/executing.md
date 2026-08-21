@@ -82,6 +82,19 @@ if (!outcome.IsSuccess)
 return outcome.Result;
 ```
 
+No-throw execution also supports state-passing `ValueTask` and `Task` delegates. Use a static
+delegate to keep caller data out of a closure:
+
+```csharp
+Outcome<User> outcome = await shield.ExecuteOutcomeAsync(
+    (client, id),
+    static (s, ct) => s.client.GetUserAsync(s.id, ct),
+    cancellationToken);
+```
+
+Retry attempts receive the same caller state. Hedged attempts also receive that state concurrently,
+so mutable state used by a hedged action must be thread-safe.
+
 This is also how failures travel *between* strategies internally — as `Outcome<T>` structs, not thrown exceptions — which is a big part of why the pipeline is cheap. `ExecuteOutcomeAsync` just hands you the same struct instead of unwrapping it.
 
 When an exception does surface from `ExecuteAsync`/`Execute`, the original stack trace is preserved (`ExceptionDispatchInfo`) — it's thrown once, at the boundary.

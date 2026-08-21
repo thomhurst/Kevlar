@@ -15,6 +15,7 @@ public class OverheadBenchmarks
 {
     private static readonly Shield KevlarEmpty = Shield.Empty;
     private static readonly ResiliencePipeline PollyEmpty = ResiliencePipeline.Empty;
+    private static readonly Task<int> CompletedStateTask = Task.FromResult(42);
 
     private readonly int _state = 42;
 
@@ -31,6 +32,16 @@ public class OverheadBenchmarks
     [BenchmarkCategory("EmptyState"), Benchmark]
     public ValueTask<int> Polly_EmptyState() =>
         PollyEmpty.ExecuteAsync(static (s, _) => new ValueTask<int>(s), _state);
+
+    /// <summary>Executes a state-passing no-throw call through an empty Kevlar pipeline.</summary>
+    [BenchmarkCategory("EmptyState"), Benchmark]
+    public ValueTask<Outcome<int>> Kevlar_EmptyOutcomeState() =>
+        KevlarEmpty.ExecuteOutcomeAsync(_state, static (s, _) => new ValueTask<int>(s));
+
+    /// <summary>Executes a state-passing <see cref="Task{TResult}"/> no-throw call through an empty Kevlar pipeline.</summary>
+    [BenchmarkCategory("EmptyState"), Benchmark]
+    public ValueTask<Outcome<int>> Kevlar_EmptyTaskOutcomeState() =>
+        KevlarEmpty.ExecuteOutcomeAsync(_state, static (_, _) => CompletedStateTask);
 
     [BenchmarkCategory("EmptySync"), Benchmark(Baseline = true)]
     public int Kevlar_EmptySync() => KevlarEmpty.Execute(static _ => 42);
