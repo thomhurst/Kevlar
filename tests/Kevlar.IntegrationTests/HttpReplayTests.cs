@@ -243,12 +243,23 @@ public class HttpReplayTests
     [Test]
     public async Task Hedge_Attempt_Timeout_Does_Not_Cancel_Shared_Buffering()
     {
-        var content = new DelayedContent("payload", TimeSpan.FromMilliseconds(110));
+        var content = new GatedContent("payload");
+        var hedgeLaunched = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var attemptTimedOut = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var transport = new RecordingHandler((_, _, _) =>
             Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)));
         var policy = HttpShield.WhenTransient()
-            .Hedge(2, TimeSpan.FromMilliseconds(70))
-            .Timeout(TimeSpan.FromMilliseconds(100));
+            .Hedge(options =>
+            {
+                options.MaxAttempts = 2;
+                options.Delay = TimeSpan.FromMilliseconds(250);
+                options.OnHedge = _ => hedgeLaunched.TrySetResult();
+            })
+            .Timeout(options =>
+            {
+                options.Timeout = TimeSpan.FromMilliseconds(500);
+                options.OnTimeout = _ => attemptTimedOut.TrySetResult();
+            });
         using var invoker = CreateInvoker(
             policy,
             new ShieldHttpHandlerOptions { ContentReplayPolicy = HttpContentReplayPolicy.Buffer },
@@ -258,8 +269,13 @@ public class HttpReplayTests
             Content = content,
         };
 
-        using var response = await invoker.SendAsync(request, CancellationToken.None)
-            .WaitAsync(TimeSpan.FromSeconds(5));
+        var send = invoker.SendAsync(request, CancellationToken.None);
+        await content.Started.WaitAsync(TimeSpan.FromSeconds(5));
+        await hedgeLaunched.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await attemptTimedOut.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        content.Release();
+
+        using var response = await send.WaitAsync(TimeSpan.FromSeconds(5));
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         await Assert.That(content.SerializationAttempts).IsEqualTo(1);
@@ -699,20 +715,31 @@ public class HttpReplayTests
         }
     }
 
-    private sealed class DelayedContent(string value, TimeSpan delay) : HttpContent
+    private sealed class GatedContent(string value) : HttpContent
     {
         private readonly byte[] _bytes = System.Text.Encoding.UTF8.GetBytes(value);
+        private readonly TaskCompletionSource _release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _started = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private int _serializationAttempts;
 
         public int SerializationAttempts => Volatile.Read(ref _serializationAttempts);
 
+        public Task Started => _started.Task;
+
+        public void Release() => _release.TrySetResult();
+
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context) =>
+            SerializeToStreamAsync(stream, context, CancellationToken.None);
+
         protected override async Task SerializeToStreamAsync(
             Stream stream,
-            TransportContext? context)
+            TransportContext? context,
+            CancellationToken cancellationToken)
         {
             Interlocked.Increment(ref _serializationAttempts);
-            await Task.Delay(delay);
-            await stream.WriteAsync(_bytes);
+            _started.TrySetResult();
+            await _release.Task.WaitAsync(cancellationToken);
+            await stream.WriteAsync(_bytes, cancellationToken);
         }
 
         protected override bool TryComputeLength(out long length)
