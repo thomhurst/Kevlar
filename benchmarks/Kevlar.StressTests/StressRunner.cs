@@ -12,12 +12,24 @@ internal static class StressRunner
     private static readonly Shield KevlarShield = Shield
         .Timeout(TimeSpan.FromSeconds(10))
         .Retry(3, Backoff.None)
-        .CircuitBreaker(5, TimeSpan.FromSeconds(30));
+        .CircuitBreaker(options =>
+        {
+            options.FailureRatio = 0.1;
+            options.MinimumThroughput = 100;
+            options.SamplingWindow = TimeSpan.FromSeconds(30);
+            options.BreakDuration = TimeSpan.FromSeconds(5);
+        });
 
     private static readonly ResiliencePipeline PollyPipeline = new ResiliencePipelineBuilder()
         .AddTimeout(new TimeoutStrategyOptions { Timeout = TimeSpan.FromSeconds(10) })
         .AddRetry(new RetryStrategyOptions { MaxRetryAttempts = 3, Delay = TimeSpan.Zero })
-        .AddCircuitBreaker(new CircuitBreakerStrategyOptions())
+        .AddCircuitBreaker(new CircuitBreakerStrategyOptions
+        {
+            FailureRatio = 0.1,
+            MinimumThroughput = 100,
+            SamplingDuration = TimeSpan.FromSeconds(30),
+            BreakDuration = TimeSpan.FromSeconds(5),
+        })
         .Build();
 
     public static async Task<StressRunResult> RunAsync(StressOptions options)

@@ -12,7 +12,7 @@ Results will appear here after the first 15-minute run on `main`.
 
 ## Method
 
-- Parallel workers execute successful operations through Timeout(10 s) → Retry(3, no delay) → CircuitBreaker.
+- Parallel workers execute successful operations through Timeout(10 s) → Retry(3, no delay) → CircuitBreaker(10% over 30 s, min 100, break 5 s).
 - The 15-minute measured duration is split equally between Polly and Kevlar after both pipelines warm up.
 - Process-wide allocation counters cover all worker threads; throughput, allocations, GC collections, managed memory, and peak working set are recorded.
 

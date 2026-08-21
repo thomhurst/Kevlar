@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import re
 from datetime import datetime
 from pathlib import Path
 
@@ -27,8 +28,14 @@ def fmt_bytes(value):
 
 
 def fmt_duration(value):
-    hours, minutes, seconds = value.split(":")
-    total_seconds = int(hours) * 3600 + int(minutes) * 60 + float(seconds)
+    match = re.fullmatch(r"(?:(\d+)\.)?(\d{2}):(\d{2}):(\d{2}(?:\.\d+)?)", value)
+    if match is None:
+        raise ValueError(f"Invalid TimeSpan value: {value}")
+
+    days, hours, minutes, seconds = match.groups(default="0")
+    total_seconds = (
+        int(days) * 86_400 + int(hours) * 3600 + int(minutes) * 60 + float(seconds)
+    )
     if total_seconds >= 60:
         return f"{total_seconds / 60:g} minutes"
     return f"{total_seconds:g} seconds"
@@ -65,8 +72,8 @@ def build_page(data, commit):
         "",
         "## Latest result",
         "",
-        "| Library | Throughput | Operations | Allocated | Allocated/op | GC collections (0 / 1 / 2) |",
-        "|---|---:|---:|---:|---:|---:|",
+        "| Library | Throughput | Operations | Allocated | Allocated/op | Managed heap (before / after) | GC collections (0 / 1 / 2) |",
+        "|---|---:|---:|---:|---:|---:|---:|",
     ]
 
     for library in ("Kevlar", "Polly"):
@@ -74,7 +81,9 @@ def build_page(data, commit):
         lines.append(
             f"| {library} | {fmt_count(result['operationsPerSecond'])} ops/s | "
             f"{fmt_count(result['operations'])} | {fmt_bytes(result['allocatedBytes'])} | "
-            f"{result['bytesPerOperation']:.2f} B | {result['gen0Collections']} / "
+            f"{result['bytesPerOperation']:.2f} B | "
+            f"{fmt_bytes(result['managedBytesBefore'])} / {fmt_bytes(result['managedBytesAfter'])} | "
+            f"{result['gen0Collections']} / "
             f"{result['gen1Collections']} / {result['gen2Collections']} |"
         )
 
@@ -86,7 +95,7 @@ def build_page(data, commit):
         "",
         f"- {data['workers']} parallel workers; {fmt_duration(data['totalDuration'])} total measured time, split equally between libraries.",
         f"- Each pipeline warmed for {fmt_duration(data['warmup'])} before measurement.",
-        "- Each operation returns `42` successfully through Timeout(10 s) → Retry(3, no delay) → CircuitBreaker.",
+        "- Each operation returns `42` successfully through Timeout(10 s) → Retry(3, no delay) → CircuitBreaker(10% over 30 s, min 100, break 5 s).",
         "- Process-wide allocation counters include all worker threads. GC counts are captured separately for each phase.",
         f"- Peak working set for the shared process: {fmt_bytes(data['peakWorkingSetBytes'])}.",
         "",
