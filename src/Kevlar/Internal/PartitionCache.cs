@@ -6,7 +6,7 @@ internal sealed class PartitionCache<TKey, TShield>
     where TKey : notnull
     where TShield : class
 {
-    private readonly object _gate = new();
+    private readonly Lock _gate = new();
     private readonly Dictionary<TKey, Entry> _entries;
     private readonly Dictionary<TKey, Creation> _creations;
     private readonly Func<TKey, TShield> _factory;
