@@ -1,0 +1,6 @@
+#nullable enable
+Kevlar.Analyzers.IgnoredCancellationTokenAnalyzer
+Kevlar.Analyzers.IgnoredCancellationTokenAnalyzer.IgnoredCancellationTokenAnalyzer() -> void
+override Kevlar.Analyzers.IgnoredCancellationTokenAnalyzer.Initialize(Microsoft.CodeAnalysis.Diagnostics.AnalysisContext! context) -> void
+override Kevlar.Analyzers.IgnoredCancellationTokenAnalyzer.SupportedDiagnostics.get -> System.Collections.Immutable.ImmutableArray<Microsoft.CodeAnalysis.DiagnosticDescriptor!>
+static readonly Kevlar.Analyzers.IgnoredCancellationTokenAnalyzer.Rule -> Microsoft.CodeAnalysis.DiagnosticDescriptor!

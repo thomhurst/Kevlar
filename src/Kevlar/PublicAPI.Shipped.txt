@@ -1,0 +1,318 @@
+#nullable enable
+abstract Kevlar.Backoff.GetDelay(int attempt) -> System.TimeSpan
+abstract Kevlar.Strategy.ExecuteAsync<T, TState>(Kevlar.Continuation<T, TState> next, Kevlar.KevlarContext! context) -> System.Threading.Tasks.ValueTask<Kevlar.Outcome<T>>
+const Kevlar.KevlarDiagnostics.MeterName = "Kevlar" -> string!
+Kevlar.Backoff
+Kevlar.CircuitBreakerMonitor
+Kevlar.CircuitBreakerMonitor.CircuitBreakerMonitor() -> void
+Kevlar.CircuitBreakerMonitor.Isolate() -> void
+Kevlar.CircuitBreakerMonitor.Reset() -> void
+Kevlar.CircuitBreakerMonitor.State.get -> Kevlar.CircuitState
+Kevlar.CircuitBreakerMonitor.StateChanged -> System.Action<Kevlar.CircuitStateChangedEvent>?
+Kevlar.CircuitBreakerOptions
+Kevlar.CircuitBreakerOptions.BreakDuration.get -> System.TimeSpan
+Kevlar.CircuitBreakerOptions.BreakDuration.set -> void
+Kevlar.CircuitBreakerOptions.CircuitBreakerOptions() -> void
+Kevlar.CircuitBreakerOptions.ConsecutiveFailures.get -> int?
+Kevlar.CircuitBreakerOptions.ConsecutiveFailures.set -> void
+Kevlar.CircuitBreakerOptions.FailureRatio.get -> double?
+Kevlar.CircuitBreakerOptions.FailureRatio.set -> void
+Kevlar.CircuitBreakerOptions.MinimumThroughput.get -> int
+Kevlar.CircuitBreakerOptions.MinimumThroughput.set -> void
+Kevlar.CircuitBreakerOptions.Monitor.get -> Kevlar.CircuitBreakerMonitor?
+Kevlar.CircuitBreakerOptions.Monitor.set -> void
+Kevlar.CircuitBreakerOptions.OnStateChanged.get -> System.Action<Kevlar.CircuitStateChangedEvent>?
+Kevlar.CircuitBreakerOptions.OnStateChanged.set -> void
+Kevlar.CircuitBreakerOptions.SamplingWindow.get -> System.TimeSpan
+Kevlar.CircuitBreakerOptions.SamplingWindow.set -> void
+Kevlar.CircuitOpenException
+Kevlar.CircuitOpenException.CircuitOpenException(System.TimeSpan? retryAfter, bool isIsolated, System.Exception? lastException) -> void
+Kevlar.CircuitOpenException.IsIsolated.get -> bool
+Kevlar.CircuitOpenException.RetryAfter.get -> System.TimeSpan?
+Kevlar.CircuitState
+Kevlar.CircuitState.Closed = 0 -> Kevlar.CircuitState
+Kevlar.CircuitState.HalfOpen = 2 -> Kevlar.CircuitState
+Kevlar.CircuitState.Isolated = 3 -> Kevlar.CircuitState
+Kevlar.CircuitState.Open = 1 -> Kevlar.CircuitState
+Kevlar.CircuitStateChangedEvent
+Kevlar.CircuitStateChangedEvent.CircuitStateChangedEvent() -> void
+Kevlar.CircuitStateChangedEvent.From.get -> Kevlar.CircuitState
+Kevlar.CircuitStateChangedEvent.LastException.get -> System.Exception?
+Kevlar.CircuitStateChangedEvent.To.get -> Kevlar.CircuitState
+Kevlar.ConcurrencyLimitExceededException
+Kevlar.ConcurrencyLimitExceededException.ConcurrencyLimitExceededException() -> void
+Kevlar.ConcurrencyLimitOptions
+Kevlar.ConcurrencyLimitOptions.ConcurrencyLimitOptions() -> void
+Kevlar.ConcurrencyLimitOptions.MaxConcurrency.get -> int
+Kevlar.ConcurrencyLimitOptions.MaxConcurrency.set -> void
+Kevlar.ConcurrencyLimitOptions.MaxQueue.get -> int
+Kevlar.ConcurrencyLimitOptions.MaxQueue.set -> void
+Kevlar.Continuation<T, TState>
+Kevlar.Continuation<T, TState>.Continuation() -> void
+Kevlar.Continuation<T, TState>.InvokeAsync(Kevlar.KevlarContext! context) -> System.Threading.Tasks.ValueTask<Kevlar.Outcome<T>>
+Kevlar.FallbackEvent<TResult>
+Kevlar.FallbackEvent<TResult>.Context.get -> Kevlar.KevlarContext!
+Kevlar.FallbackEvent<TResult>.FallbackEvent() -> void
+Kevlar.FallbackEvent<TResult>.Outcome.get -> Kevlar.Outcome<TResult>
+Kevlar.HedgeEvent
+Kevlar.HedgeEvent.Attempt.get -> int
+Kevlar.HedgeEvent.Context.get -> Kevlar.KevlarContext!
+Kevlar.HedgeEvent.HedgeEvent() -> void
+Kevlar.HedgingOptions
+Kevlar.HedgingOptions.Delay.get -> System.TimeSpan
+Kevlar.HedgingOptions.Delay.set -> void
+Kevlar.HedgingOptions.HedgingOptions() -> void
+Kevlar.HedgingOptions.MaxAttempts.get -> int
+Kevlar.HedgingOptions.MaxAttempts.set -> void
+Kevlar.HedgingOptions.OnHedge.get -> System.Action<Kevlar.HedgeEvent>?
+Kevlar.HedgingOptions.OnHedge.set -> void
+Kevlar.KevlarContext
+Kevlar.KevlarContext.CancellationToken.get -> System.Threading.CancellationToken
+Kevlar.KevlarContext.IsSynchronous.get -> bool
+Kevlar.KevlarContext.Properties.get -> Kevlar.KevlarProperties!
+Kevlar.KevlarContext.ShieldName.get -> string?
+Kevlar.KevlarContext.TimeProvider.get -> System.TimeProvider!
+Kevlar.KevlarDiagnostics
+Kevlar.KevlarException
+Kevlar.KevlarException.KevlarException(string! message) -> void
+Kevlar.KevlarException.KevlarException(string! message, System.Exception! innerException) -> void
+Kevlar.KevlarKey<T>
+Kevlar.KevlarKey<T>.KevlarKey() -> void
+Kevlar.KevlarKey<T>.KevlarKey(string! name) -> void
+Kevlar.KevlarKey<T>.Name.get -> string!
+Kevlar.KevlarProperties
+Kevlar.KevlarProperties.GetOrDefault<T>(Kevlar.KevlarKey<T> key, T defaultValue = default(T)) -> T
+Kevlar.KevlarProperties.Set<T>(Kevlar.KevlarKey<T> key, T value) -> void
+Kevlar.KevlarProperties.TryGet<T>(Kevlar.KevlarKey<T> key, out T value) -> bool
+Kevlar.Outcome<T>
+Kevlar.Outcome<T>.Exception.get -> System.Exception?
+Kevlar.Outcome<T>.GetResultOrRethrow() -> T
+Kevlar.Outcome<T>.IsSuccess.get -> bool
+Kevlar.Outcome<T>.Outcome() -> void
+Kevlar.Outcome<T>.Result.get -> T?
+Kevlar.RateLimitExceededException
+Kevlar.RateLimitExceededException.RateLimitExceededException(System.TimeSpan? retryAfter) -> void
+Kevlar.RateLimitExceededException.RetryAfter.get -> System.TimeSpan?
+Kevlar.RateLimitOptions
+Kevlar.RateLimitOptions.Burst.get -> int?
+Kevlar.RateLimitOptions.Burst.set -> void
+Kevlar.RateLimitOptions.Permits.get -> int
+Kevlar.RateLimitOptions.Permits.set -> void
+Kevlar.RateLimitOptions.QueueLimit.get -> int
+Kevlar.RateLimitOptions.QueueLimit.set -> void
+Kevlar.RateLimitOptions.RateLimitOptions() -> void
+Kevlar.RateLimitOptions.Window.get -> System.TimeSpan
+Kevlar.RateLimitOptions.Window.set -> void
+Kevlar.RetryEvent
+Kevlar.RetryEvent.Attempt.get -> int
+Kevlar.RetryEvent.Context.get -> Kevlar.KevlarContext!
+Kevlar.RetryEvent.Delay.get -> System.TimeSpan
+Kevlar.RetryEvent.Exception.get -> System.Exception?
+Kevlar.RetryEvent.Result.get -> object?
+Kevlar.RetryEvent.RetryEvent() -> void
+Kevlar.RetryEvent<TResult>
+Kevlar.RetryEvent<TResult>.Attempt.get -> int
+Kevlar.RetryEvent<TResult>.Context.get -> Kevlar.KevlarContext!
+Kevlar.RetryEvent<TResult>.Delay.get -> System.TimeSpan
+Kevlar.RetryEvent<TResult>.Outcome.get -> Kevlar.Outcome<TResult>
+Kevlar.RetryEvent<TResult>.RetryEvent() -> void
+Kevlar.RetryOptions
+Kevlar.RetryOptions.Backoff.get -> Kevlar.Backoff!
+Kevlar.RetryOptions.Backoff.set -> void
+Kevlar.RetryOptions.DelayGenerator.get -> System.Func<Kevlar.RetryEvent, System.TimeSpan?>?
+Kevlar.RetryOptions.DelayGenerator.set -> void
+Kevlar.RetryOptions.MaxDelay.get -> System.TimeSpan?
+Kevlar.RetryOptions.MaxDelay.set -> void
+Kevlar.RetryOptions.MaxRetries.get -> int
+Kevlar.RetryOptions.MaxRetries.set -> void
+Kevlar.RetryOptions.OnRetry.get -> System.Action<Kevlar.RetryEvent>?
+Kevlar.RetryOptions.OnRetry.set -> void
+Kevlar.RetryOptions.OnRetryAsync.get -> System.Func<Kevlar.RetryEvent, System.Threading.Tasks.ValueTask>?
+Kevlar.RetryOptions.OnRetryAsync.set -> void
+Kevlar.RetryOptions.RetryOptions() -> void
+Kevlar.RetryOptions<TResult>
+Kevlar.RetryOptions<TResult>.DelayGenerator.get -> System.Func<Kevlar.RetryEvent<TResult>, System.TimeSpan?>?
+Kevlar.RetryOptions<TResult>.DelayGenerator.set -> void
+Kevlar.RetryOptions<TResult>.OnRetry.get -> System.Action<Kevlar.RetryEvent<TResult>>?
+Kevlar.RetryOptions<TResult>.OnRetry.set -> void
+Kevlar.RetryOptions<TResult>.OnRetryAsync.get -> System.Func<Kevlar.RetryEvent<TResult>, System.Threading.Tasks.ValueTask>?
+Kevlar.RetryOptions<TResult>.OnRetryAsync.set -> void
+Kevlar.RetryOptions<TResult>.RetryOptions() -> void
+Kevlar.Shield
+Kevlar.Shield.Execute(System.Action<System.Threading.CancellationToken>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> void
+Kevlar.Shield.Execute<T, TState>(TState state, System.Func<TState, System.Threading.CancellationToken, T>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> T
+Kevlar.Shield.Execute<T>(System.Func<System.Threading.CancellationToken, T>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> T
+Kevlar.Shield.Execute<TState>(TState state, System.Action<TState, System.Threading.CancellationToken>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> void
+Kevlar.Shield.ExecuteAsync(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Kevlar.Shield.ExecuteAsync<T, TState>(TState state, System.Func<TState, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<T>>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T>
+Kevlar.Shield.ExecuteAsync<T>(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<T>>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T>
+Kevlar.Shield.ExecuteAsync<TState>(TState state, System.Func<TState, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Kevlar.Shield.ExecuteOutcomeAsync<T>(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<T>>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Kevlar.Outcome<T>>
+Kevlar.Shield.Name.get -> string?
+Kevlar.Shield<TResult>
+Kevlar.Shield<TResult>.CircuitBreaker(int consecutiveFailures, System.TimeSpan breakDuration) -> Kevlar.Shield<TResult>!
+Kevlar.Shield<TResult>.CircuitBreaker(System.Action<Kevlar.CircuitBreakerOptions!>! configure) -> Kevlar.Shield<TResult>!
+Kevlar.Shield<TResult>.ConcurrencyLimit(int maxConcurrency, int maxQueue = 0) -> Kevlar.Shield<TResult>!
+Kevlar.Shield<TResult>.ConcurrencyLimit(System.Action<Kevlar.ConcurrencyLimitOptions!>! configure) -> Kevlar.Shield<TResult>!
+Kevlar.Shield<TResult>.Execute(System.Func<System.Threading.CancellationToken, TResult>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> TResult
+Kevlar.Shield<TResult>.Execute<TState>(TState state, System.Func<TState, System.Threading.CancellationToken, TResult>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> TResult
+Kevlar.Shield<TResult>.ExecuteAsync(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<TResult>
+Kevlar.Shield<TResult>.ExecuteAsync<TState>(TState state, System.Func<TState, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<TResult>
+Kevlar.Shield<TResult>.ExecuteOutcomeAsync(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Kevlar.Outcome<TResult>>
+Kevlar.Shield<TResult>.Fallback(System.Func<Kevlar.Outcome<TResult>, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! fallback, System.Action<Kevlar.FallbackEvent<TResult>>? onFallback = null) -> Kevlar.Shield<TResult>!
+Kevlar.Shield<TResult>.Fallback(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! fallback, System.Action<Kevlar.FallbackEvent<TResult>>? onFallback = null) -> Kevlar.Shield<TResult>!
+Kevlar.Shield<TResult>.Fallback(TResult fallbackValue, System.Action<Kevlar.FallbackEvent<TResult>>? onFallback = null) -> Kevlar.Shield<TResult>!
+Kevlar.Shield<TResult>.Hedge(int maxAttempts, System.TimeSpan delay) -> Kevlar.Shield<TResult>!
+Kevlar.Shield<TResult>.Hedge(System.Action<Kevlar.HedgingOptions!>! configure) -> Kevlar.Shield<TResult>!
+Kevlar.Shield<TResult>.Name.get -> string?
+Kevlar.Shield<TResult>.RateLimit(int permits, System.TimeSpan perWindow) -> Kevlar.Shield<TResult>!
+Kevlar.Shield<TResult>.RateLimit(System.Action<Kevlar.RateLimitOptions!>! configure) -> Kevlar.Shield<TResult>!
+Kevlar.Shield<TResult>.Retry(int maxRetries = 3) -> Kevlar.Shield<TResult>!
+Kevlar.Shield<TResult>.Retry(int maxRetries, Kevlar.Backoff! backoff) -> Kevlar.Shield<TResult>!
+Kevlar.Shield<TResult>.Retry(System.Action<Kevlar.RetryOptions<TResult>!>! configure) -> Kevlar.Shield<TResult>!
+Kevlar.Shield<TResult>.RetryForever(Kevlar.Backoff? backoff = null) -> Kevlar.Shield<TResult>!
+Kevlar.Shield<TResult>.Timeout(System.Action<Kevlar.TimeoutOptions!>! configure) -> Kevlar.Shield<TResult>!
+Kevlar.Shield<TResult>.Timeout(System.TimeSpan timeout) -> Kevlar.Shield<TResult>!
+Kevlar.Shield<TResult>.Use(Kevlar.Strategy! strategy) -> Kevlar.Shield<TResult>!
+Kevlar.Shield<TResult>.When(System.Func<System.Exception!, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
+Kevlar.Shield<TResult>.When<TException>() -> Kevlar.ShieldBuilder<TResult>!
+Kevlar.Shield<TResult>.When<TException>(System.Func<TException!, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
+Kevlar.Shield<TResult>.WhenDefault() -> Kevlar.ShieldBuilder<TResult>!
+Kevlar.Shield<TResult>.WhenResult(System.Func<TResult, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
+Kevlar.Shield<TResult>.WhenResult(TResult result) -> Kevlar.ShieldBuilder<TResult>!
+Kevlar.Shield<TResult>.WithName(string! name) -> Kevlar.Shield<TResult>!
+Kevlar.Shield<TResult>.WithTimeProvider(System.TimeProvider! timeProvider) -> Kevlar.Shield<TResult>!
+Kevlar.Shield<TResult>.Wrap(Kevlar.Shield! inner) -> Kevlar.Shield<TResult>!
+Kevlar.Shield<TResult>.Wrap(Kevlar.Shield<TResult>! inner) -> Kevlar.Shield<TResult>!
+Kevlar.ShieldBuilder
+Kevlar.ShieldBuilder.CircuitBreaker(int consecutiveFailures, System.TimeSpan breakDuration) -> Kevlar.Shield!
+Kevlar.ShieldBuilder.CircuitBreaker(System.Action<Kevlar.CircuitBreakerOptions!>! configure) -> Kevlar.Shield!
+Kevlar.ShieldBuilder.ConcurrencyLimit(int maxConcurrency, int maxQueue = 0) -> Kevlar.Shield!
+Kevlar.ShieldBuilder.Fallback(System.Func<System.Exception!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback) -> Kevlar.Shield!
+Kevlar.ShieldBuilder.Hedge(int maxAttempts, System.TimeSpan delay) -> Kevlar.Shield!
+Kevlar.ShieldBuilder.Hedge(System.Action<Kevlar.HedgingOptions!>! configure) -> Kevlar.Shield!
+Kevlar.ShieldBuilder.Or<TException>() -> Kevlar.ShieldBuilder!
+Kevlar.ShieldBuilder.Or<TException>(System.Func<TException!, bool>! predicate) -> Kevlar.ShieldBuilder!
+Kevlar.ShieldBuilder.OrWhen(System.Func<System.Exception!, bool>! predicate) -> Kevlar.ShieldBuilder!
+Kevlar.ShieldBuilder.RateLimit(int permits, System.TimeSpan perWindow) -> Kevlar.Shield!
+Kevlar.ShieldBuilder.Retry(int maxRetries = 3) -> Kevlar.Shield!
+Kevlar.ShieldBuilder.Retry(int maxRetries, Kevlar.Backoff! backoff) -> Kevlar.Shield!
+Kevlar.ShieldBuilder.Retry(System.Action<Kevlar.RetryOptions!>! configure) -> Kevlar.Shield!
+Kevlar.ShieldBuilder.RetryForever(Kevlar.Backoff? backoff = null) -> Kevlar.Shield!
+Kevlar.ShieldBuilder.Timeout(System.TimeSpan timeout) -> Kevlar.Shield!
+Kevlar.ShieldBuilder.When(System.Func<System.Exception!, bool>! predicate) -> Kevlar.ShieldBuilder!
+Kevlar.ShieldBuilder.When<TException>() -> Kevlar.ShieldBuilder!
+Kevlar.ShieldBuilder.When<TException>(System.Func<TException!, bool>! predicate) -> Kevlar.ShieldBuilder!
+Kevlar.ShieldBuilder<TResult>
+Kevlar.ShieldBuilder<TResult>.CircuitBreaker(int consecutiveFailures, System.TimeSpan breakDuration) -> Kevlar.Shield<TResult>!
+Kevlar.ShieldBuilder<TResult>.CircuitBreaker(System.Action<Kevlar.CircuitBreakerOptions!>! configure) -> Kevlar.Shield<TResult>!
+Kevlar.ShieldBuilder<TResult>.ConcurrencyLimit(int maxConcurrency, int maxQueue = 0) -> Kevlar.Shield<TResult>!
+Kevlar.ShieldBuilder<TResult>.Fallback(System.Func<Kevlar.Outcome<TResult>, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! fallback, System.Action<Kevlar.FallbackEvent<TResult>>? onFallback = null) -> Kevlar.Shield<TResult>!
+Kevlar.ShieldBuilder<TResult>.Fallback(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! fallback, System.Action<Kevlar.FallbackEvent<TResult>>? onFallback = null) -> Kevlar.Shield<TResult>!
+Kevlar.ShieldBuilder<TResult>.Fallback(TResult fallbackValue, System.Action<Kevlar.FallbackEvent<TResult>>? onFallback = null) -> Kevlar.Shield<TResult>!
+Kevlar.ShieldBuilder<TResult>.Hedge(int maxAttempts, System.TimeSpan delay) -> Kevlar.Shield<TResult>!
+Kevlar.ShieldBuilder<TResult>.Hedge(System.Action<Kevlar.HedgingOptions!>! configure) -> Kevlar.Shield<TResult>!
+Kevlar.ShieldBuilder<TResult>.Or<TException>() -> Kevlar.ShieldBuilder<TResult>!
+Kevlar.ShieldBuilder<TResult>.Or<TException>(System.Func<TException!, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
+Kevlar.ShieldBuilder<TResult>.OrDefault() -> Kevlar.ShieldBuilder<TResult>!
+Kevlar.ShieldBuilder<TResult>.OrResult(System.Func<TResult, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
+Kevlar.ShieldBuilder<TResult>.OrResult(TResult result) -> Kevlar.ShieldBuilder<TResult>!
+Kevlar.ShieldBuilder<TResult>.OrWhen(System.Func<System.Exception!, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
+Kevlar.ShieldBuilder<TResult>.RateLimit(int permits, System.TimeSpan perWindow) -> Kevlar.Shield<TResult>!
+Kevlar.ShieldBuilder<TResult>.Retry(int maxRetries = 3) -> Kevlar.Shield<TResult>!
+Kevlar.ShieldBuilder<TResult>.Retry(int maxRetries, Kevlar.Backoff! backoff) -> Kevlar.Shield<TResult>!
+Kevlar.ShieldBuilder<TResult>.Retry(System.Action<Kevlar.RetryOptions<TResult>!>! configure) -> Kevlar.Shield<TResult>!
+Kevlar.ShieldBuilder<TResult>.RetryForever(Kevlar.Backoff? backoff = null) -> Kevlar.Shield<TResult>!
+Kevlar.ShieldBuilder<TResult>.Timeout(System.TimeSpan timeout) -> Kevlar.Shield<TResult>!
+Kevlar.ShieldBuilder<TResult>.When(System.Func<System.Exception!, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
+Kevlar.ShieldBuilder<TResult>.When<TException>() -> Kevlar.ShieldBuilder<TResult>!
+Kevlar.ShieldBuilder<TResult>.When<TException>(System.Func<TException!, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
+Kevlar.ShieldBuilder<TResult>.WhenDefault() -> Kevlar.ShieldBuilder<TResult>!
+Kevlar.ShieldBuilder<TResult>.WhenResult(System.Func<TResult, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
+Kevlar.ShieldBuilder<TResult>.WhenResult(TResult result) -> Kevlar.ShieldBuilder<TResult>!
+Kevlar.ShieldExtensions
+Kevlar.ShieldTaskExtensions
+Kevlar.Strategy
+Kevlar.Strategy.Strategy() -> void
+Kevlar.StrategyNode
+Kevlar.TimeoutEvent
+Kevlar.TimeoutEvent.Context.get -> Kevlar.KevlarContext!
+Kevlar.TimeoutEvent.Timeout.get -> System.TimeSpan
+Kevlar.TimeoutEvent.TimeoutEvent() -> void
+Kevlar.TimeoutExceededException
+Kevlar.TimeoutExceededException.Timeout.get -> System.TimeSpan
+Kevlar.TimeoutExceededException.TimeoutExceededException(System.TimeSpan timeout) -> void
+Kevlar.TimeoutOptions
+Kevlar.TimeoutOptions.OnTimeout.get -> System.Action<Kevlar.TimeoutEvent>?
+Kevlar.TimeoutOptions.OnTimeout.set -> void
+Kevlar.TimeoutOptions.Timeout.get -> System.TimeSpan
+Kevlar.TimeoutOptions.Timeout.set -> void
+Kevlar.TimeoutOptions.TimeoutOptions() -> void
+override Kevlar.KevlarKey<T>.ToString() -> string!
+override Kevlar.Outcome<T>.ToString() -> string!
+override Kevlar.Shield.ToString() -> string!
+override Kevlar.Shield<TResult>.ToString() -> string!
+static Kevlar.Backoff.Constant(System.TimeSpan delay) -> Kevlar.Backoff!
+static Kevlar.Backoff.Custom(System.Func<int, System.TimeSpan>! delayFactory) -> Kevlar.Backoff!
+static Kevlar.Backoff.Default.get -> Kevlar.Backoff!
+static Kevlar.Backoff.Exponential(System.TimeSpan initialDelay, double factor = 2, System.TimeSpan? maxDelay = null, bool jitter = true) -> Kevlar.Backoff!
+static Kevlar.Backoff.Linear(System.TimeSpan step, System.TimeSpan? maxDelay = null) -> Kevlar.Backoff!
+static Kevlar.Backoff.None.get -> Kevlar.Backoff!
+static Kevlar.Outcome<T>.FromException(System.Exception! exception) -> Kevlar.Outcome<T>
+static Kevlar.Outcome<T>.FromResult(T result) -> Kevlar.Outcome<T>
+static Kevlar.Shield.CircuitBreaker(int consecutiveFailures, System.TimeSpan breakDuration) -> Kevlar.Shield!
+static Kevlar.Shield.CircuitBreaker(System.Action<Kevlar.CircuitBreakerOptions!>! configure) -> Kevlar.Shield!
+static Kevlar.Shield.Compose(params Kevlar.Shield![]! shields) -> Kevlar.Shield!
+static Kevlar.Shield.ConcurrencyLimit(int maxConcurrency, int maxQueue = 0) -> Kevlar.Shield!
+static Kevlar.Shield.ConcurrencyLimit(System.Action<Kevlar.ConcurrencyLimitOptions!>! configure) -> Kevlar.Shield!
+static Kevlar.Shield.Empty.get -> Kevlar.Shield!
+static Kevlar.Shield.For<TResult>() -> Kevlar.ShieldBuilder<TResult>!
+static Kevlar.Shield.Hedge(int maxAttempts, System.TimeSpan delay) -> Kevlar.Shield!
+static Kevlar.Shield.Hedge(System.Action<Kevlar.HedgingOptions!>! configure) -> Kevlar.Shield!
+static Kevlar.Shield.RateLimit(int permits, System.TimeSpan perWindow) -> Kevlar.Shield!
+static Kevlar.Shield.RateLimit(System.Action<Kevlar.RateLimitOptions!>! configure) -> Kevlar.Shield!
+static Kevlar.Shield.Retry(int maxRetries = 3) -> Kevlar.Shield!
+static Kevlar.Shield.Retry(int maxRetries, Kevlar.Backoff! backoff) -> Kevlar.Shield!
+static Kevlar.Shield.Retry(System.Action<Kevlar.RetryOptions!>! configure) -> Kevlar.Shield!
+static Kevlar.Shield.RetryForever(Kevlar.Backoff? backoff = null) -> Kevlar.Shield!
+static Kevlar.Shield.Timeout(System.Action<Kevlar.TimeoutOptions!>! configure) -> Kevlar.Shield!
+static Kevlar.Shield.Timeout(System.TimeSpan timeout) -> Kevlar.Shield!
+static Kevlar.Shield.Use(Kevlar.Strategy! strategy) -> Kevlar.Shield!
+static Kevlar.Shield.When(System.Func<System.Exception!, bool>! predicate) -> Kevlar.ShieldBuilder!
+static Kevlar.Shield.When<TException>() -> Kevlar.ShieldBuilder!
+static Kevlar.Shield.When<TException>(System.Func<TException!, bool>! predicate) -> Kevlar.ShieldBuilder!
+static Kevlar.Shield<TResult>.Empty.get -> Kevlar.Shield<TResult>!
+static Kevlar.ShieldExtensions.CircuitBreaker(this Kevlar.Shield! shield, int consecutiveFailures, System.TimeSpan breakDuration) -> Kevlar.Shield!
+static Kevlar.ShieldExtensions.CircuitBreaker(this Kevlar.Shield! shield, System.Action<Kevlar.CircuitBreakerOptions!>! configure) -> Kevlar.Shield!
+static Kevlar.ShieldExtensions.ConcurrencyLimit(this Kevlar.Shield! shield, int maxConcurrency, int maxQueue = 0) -> Kevlar.Shield!
+static Kevlar.ShieldExtensions.ConcurrencyLimit(this Kevlar.Shield! shield, System.Action<Kevlar.ConcurrencyLimitOptions!>! configure) -> Kevlar.Shield!
+static Kevlar.ShieldExtensions.Fallback(this Kevlar.Shield! shield, System.Func<System.Exception!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback) -> Kevlar.Shield!
+static Kevlar.ShieldExtensions.Fallback(this Kevlar.Shield! shield, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback) -> Kevlar.Shield!
+static Kevlar.ShieldExtensions.For<TResult>(this Kevlar.Shield! shield) -> Kevlar.Shield<TResult>!
+static Kevlar.ShieldExtensions.Hedge(this Kevlar.Shield! shield, int maxAttempts, System.TimeSpan delay) -> Kevlar.Shield!
+static Kevlar.ShieldExtensions.Hedge(this Kevlar.Shield! shield, System.Action<Kevlar.HedgingOptions!>! configure) -> Kevlar.Shield!
+static Kevlar.ShieldExtensions.RateLimit(this Kevlar.Shield! shield, int permits, System.TimeSpan perWindow) -> Kevlar.Shield!
+static Kevlar.ShieldExtensions.RateLimit(this Kevlar.Shield! shield, System.Action<Kevlar.RateLimitOptions!>! configure) -> Kevlar.Shield!
+static Kevlar.ShieldExtensions.Retry(this Kevlar.Shield! shield, int maxRetries = 3) -> Kevlar.Shield!
+static Kevlar.ShieldExtensions.Retry(this Kevlar.Shield! shield, int maxRetries, Kevlar.Backoff! backoff) -> Kevlar.Shield!
+static Kevlar.ShieldExtensions.Retry(this Kevlar.Shield! shield, System.Action<Kevlar.RetryOptions!>! configure) -> Kevlar.Shield!
+static Kevlar.ShieldExtensions.RetryForever(this Kevlar.Shield! shield, Kevlar.Backoff? backoff = null) -> Kevlar.Shield!
+static Kevlar.ShieldExtensions.Timeout(this Kevlar.Shield! shield, System.Action<Kevlar.TimeoutOptions!>! configure) -> Kevlar.Shield!
+static Kevlar.ShieldExtensions.Timeout(this Kevlar.Shield! shield, System.TimeSpan timeout) -> Kevlar.Shield!
+static Kevlar.ShieldExtensions.Use(this Kevlar.Shield! shield, Kevlar.Strategy! strategy) -> Kevlar.Shield!
+static Kevlar.ShieldExtensions.When(this Kevlar.Shield! shield, System.Func<System.Exception!, bool>! predicate) -> Kevlar.ShieldBuilder!
+static Kevlar.ShieldExtensions.When<TException>(this Kevlar.Shield! shield) -> Kevlar.ShieldBuilder!
+static Kevlar.ShieldExtensions.When<TException>(this Kevlar.Shield! shield, System.Func<TException!, bool>! predicate) -> Kevlar.ShieldBuilder!
+static Kevlar.ShieldExtensions.WithName(this Kevlar.Shield! shield, string! name) -> Kevlar.Shield!
+static Kevlar.ShieldExtensions.WithTimeProvider(this Kevlar.Shield! shield, System.TimeProvider! timeProvider) -> Kevlar.Shield!
+static Kevlar.ShieldExtensions.Wrap(this Kevlar.Shield! outer, Kevlar.Shield! inner) -> Kevlar.Shield!
+static Kevlar.ShieldExtensions.Wrap<TResult>(this Kevlar.Shield! outer, Kevlar.Shield<TResult>! inner) -> Kevlar.Shield<TResult>!
+static Kevlar.ShieldTaskExtensions.ExecuteAsync(this Kevlar.Shield! shield, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+static Kevlar.ShieldTaskExtensions.ExecuteAsync<T, TState>(this Kevlar.Shield! shield, TState state, System.Func<TState, System.Threading.CancellationToken, System.Threading.Tasks.Task<T>!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T>
+static Kevlar.ShieldTaskExtensions.ExecuteAsync<T>(this Kevlar.Shield! shield, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<T>!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T>
+static Kevlar.ShieldTaskExtensions.ExecuteAsync<TResult, TState>(this Kevlar.Shield<TResult>! shield, TState state, System.Func<TState, System.Threading.CancellationToken, System.Threading.Tasks.Task<TResult>!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<TResult>
+static Kevlar.ShieldTaskExtensions.ExecuteAsync<TResult>(this Kevlar.Shield<TResult>! shield, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<TResult>!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<TResult>
+static Kevlar.ShieldTaskExtensions.ExecuteAsync<TState>(this Kevlar.Shield! shield, TState state, System.Func<TState, System.Threading.CancellationToken, System.Threading.Tasks.Task!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+static Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync<T>(this Kevlar.Shield! shield, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<T>!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Kevlar.Outcome<T>>
+static Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync<TResult>(this Kevlar.Shield<TResult>! shield, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task<TResult>!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Kevlar.Outcome<TResult>>
+virtual Kevlar.Strategy.Describe() -> string!

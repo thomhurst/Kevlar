@@ -1,0 +1,75 @@
+#nullable enable
+Kevlar.Extensions.DependencyInjection.BackoffKind
+Kevlar.Extensions.DependencyInjection.BackoffKind.Constant = 1 -> Kevlar.Extensions.DependencyInjection.BackoffKind
+Kevlar.Extensions.DependencyInjection.BackoffKind.Exponential = 3 -> Kevlar.Extensions.DependencyInjection.BackoffKind
+Kevlar.Extensions.DependencyInjection.BackoffKind.Linear = 2 -> Kevlar.Extensions.DependencyInjection.BackoffKind
+Kevlar.Extensions.DependencyInjection.BackoffKind.None = 0 -> Kevlar.Extensions.DependencyInjection.BackoffKind
+Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition
+Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.BreakDuration.get -> System.TimeSpan
+Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.BreakDuration.set -> void
+Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.CircuitBreakerDefinition() -> void
+Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.ConsecutiveFailures.get -> int?
+Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.ConsecutiveFailures.set -> void
+Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.FailureRatio.get -> double?
+Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.FailureRatio.set -> void
+Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.MinimumThroughput.get -> int
+Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.MinimumThroughput.set -> void
+Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.SamplingWindow.get -> System.TimeSpan
+Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.SamplingWindow.set -> void
+Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition
+Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.ConcurrencyLimitDefinition() -> void
+Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxConcurrency.get -> int
+Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxConcurrency.set -> void
+Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxQueue.get -> int
+Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxQueue.set -> void
+Kevlar.Extensions.DependencyInjection.IKevlarRegistry
+Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetShield(string! name) -> Kevlar.Shield!
+Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetShield<TResult>(string! name) -> Kevlar.Shield<TResult>!
+Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryGetShield(string! name, out Kevlar.Shield? shield) -> bool
+Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryGetShield<TResult>(string! name, out Kevlar.Shield<TResult>? shield) -> bool
+Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions
+Kevlar.Extensions.DependencyInjection.RateLimitDefinition
+Kevlar.Extensions.DependencyInjection.RateLimitDefinition.Burst.get -> int?
+Kevlar.Extensions.DependencyInjection.RateLimitDefinition.Burst.set -> void
+Kevlar.Extensions.DependencyInjection.RateLimitDefinition.Permits.get -> int
+Kevlar.Extensions.DependencyInjection.RateLimitDefinition.Permits.set -> void
+Kevlar.Extensions.DependencyInjection.RateLimitDefinition.QueueLimit.get -> int
+Kevlar.Extensions.DependencyInjection.RateLimitDefinition.QueueLimit.set -> void
+Kevlar.Extensions.DependencyInjection.RateLimitDefinition.RateLimitDefinition() -> void
+Kevlar.Extensions.DependencyInjection.RateLimitDefinition.Window.get -> System.TimeSpan
+Kevlar.Extensions.DependencyInjection.RateLimitDefinition.Window.set -> void
+Kevlar.Extensions.DependencyInjection.RetryDefinition
+Kevlar.Extensions.DependencyInjection.RetryDefinition.Backoff.get -> Kevlar.Extensions.DependencyInjection.BackoffKind
+Kevlar.Extensions.DependencyInjection.RetryDefinition.Backoff.set -> void
+Kevlar.Extensions.DependencyInjection.RetryDefinition.BaseDelay.get -> System.TimeSpan?
+Kevlar.Extensions.DependencyInjection.RetryDefinition.BaseDelay.set -> void
+Kevlar.Extensions.DependencyInjection.RetryDefinition.Factor.get -> double
+Kevlar.Extensions.DependencyInjection.RetryDefinition.Factor.set -> void
+Kevlar.Extensions.DependencyInjection.RetryDefinition.Jitter.get -> bool
+Kevlar.Extensions.DependencyInjection.RetryDefinition.Jitter.set -> void
+Kevlar.Extensions.DependencyInjection.RetryDefinition.MaxDelay.get -> System.TimeSpan?
+Kevlar.Extensions.DependencyInjection.RetryDefinition.MaxDelay.set -> void
+Kevlar.Extensions.DependencyInjection.RetryDefinition.MaxRetries.get -> int
+Kevlar.Extensions.DependencyInjection.RetryDefinition.MaxRetries.set -> void
+Kevlar.Extensions.DependencyInjection.RetryDefinition.RetryDefinition() -> void
+Kevlar.Extensions.DependencyInjection.ShieldDefinition
+Kevlar.Extensions.DependencyInjection.ShieldDefinition.AttemptTimeout.get -> System.TimeSpan?
+Kevlar.Extensions.DependencyInjection.ShieldDefinition.AttemptTimeout.set -> void
+Kevlar.Extensions.DependencyInjection.ShieldDefinition.Build() -> Kevlar.Shield!
+Kevlar.Extensions.DependencyInjection.ShieldDefinition.CircuitBreaker.get -> Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition?
+Kevlar.Extensions.DependencyInjection.ShieldDefinition.CircuitBreaker.set -> void
+Kevlar.Extensions.DependencyInjection.ShieldDefinition.ConcurrencyLimit.get -> Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition?
+Kevlar.Extensions.DependencyInjection.ShieldDefinition.ConcurrencyLimit.set -> void
+Kevlar.Extensions.DependencyInjection.ShieldDefinition.RateLimit.get -> Kevlar.Extensions.DependencyInjection.RateLimitDefinition?
+Kevlar.Extensions.DependencyInjection.ShieldDefinition.RateLimit.set -> void
+Kevlar.Extensions.DependencyInjection.ShieldDefinition.Retry.get -> Kevlar.Extensions.DependencyInjection.RetryDefinition?
+Kevlar.Extensions.DependencyInjection.ShieldDefinition.Retry.set -> void
+Kevlar.Extensions.DependencyInjection.ShieldDefinition.ShieldDefinition() -> void
+Kevlar.Extensions.DependencyInjection.ShieldDefinition.Timeout.get -> System.TimeSpan?
+Kevlar.Extensions.DependencyInjection.ShieldDefinition.Timeout.set -> void
+static Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddKevlar(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! name, Kevlar.Shield! shield) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! name, Microsoft.Extensions.Configuration.IConfiguration! configuration) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! name, System.Func<System.IServiceProvider!, Kevlar.Shield!>! factory) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield<TResult>(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! name, Kevlar.Shield<TResult>! shield) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield<TResult>(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! name, System.Func<System.IServiceProvider!, Kevlar.Shield<TResult>!>! factory) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
