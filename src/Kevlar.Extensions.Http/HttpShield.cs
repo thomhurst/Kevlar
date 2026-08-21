@@ -26,8 +26,8 @@ public static class HttpShield
 
     /// <summary>
     /// A production-ready pipeline, outermost first: 30s total timeout → 3 retries with
-    /// exponential jittered backoff honouring <c>Retry-After</c> headers → circuit breaker
-    /// (50% failure ratio over 30s, minimum 10 calls, 15s break) →
+    /// exponential jittered backoff honouring <c>Retry-After</c> headers (retried responses are
+    /// disposed) → circuit breaker (50% failure ratio over 30s, minimum 10 calls, 15s break) →
     /// 10s per-attempt timeout.
     /// </summary>
     public static Shield<HttpResponseMessage> Standard() =>
@@ -40,6 +40,7 @@ public static class HttpShield
             {
                 options.MaxRetries = 3;
                 options.DelayGenerator = RetryAfter;
+                options.OnRetry = static retry => retry.Outcome.Result?.Dispose();
             })
             .CircuitBreaker(options =>
             {

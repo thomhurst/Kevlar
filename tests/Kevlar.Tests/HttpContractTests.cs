@@ -123,6 +123,32 @@ public class HttpContractTests
     }
 
     [Test]
+    public async Task Standard_Direct_Execution_Disposes_Superseded_Responses()
+    {
+        var timeProvider = new RetrySignalingFakeTimeProvider();
+        var contents = Enumerable.Range(0, 3).Select(_ => new TrackingContent()).ToArray();
+        var calls = 0;
+        var shield = HttpShield.Standard().WithTimeProvider(timeProvider);
+
+        var nextRetryTimer = timeProvider.NextRetryTimer;
+        var task = shield.ExecuteAsync(_ =>
+        {
+            var index = calls++;
+            return new ValueTask<HttpResponseMessage>(new HttpResponseMessage(
+                index < 2 ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.OK)
+            {
+                Content = contents[index],
+            });
+        }).AsTask();
+        await AdvanceUntilCompleted(task, timeProvider, nextRetryTimer);
+        using var response = await task;
+
+        await Assert.That(contents[0].IsDisposed).IsTrue();
+        await Assert.That(contents[1].IsDisposed).IsTrue();
+        await Assert.That(contents[2].IsDisposed).IsFalse();
+    }
+
+    [Test]
     public async Task Standard_Returns_And_Leaves_Final_Transient_Response_Caller_Owned()
     {
         var timeProvider = new RetrySignalingFakeTimeProvider();

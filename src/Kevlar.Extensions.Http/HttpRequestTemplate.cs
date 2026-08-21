@@ -51,8 +51,13 @@ internal sealed class HttpRequestTemplate
             cancellationToken.ThrowIfCancellationRequested();
             try
             {
+#if NETSTANDARD2_0
                 await request.Content.LoadIntoBufferAsync(maximumBufferSize).ConfigureAwait(false);
                 content = await request.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+#else
+                await request.Content.LoadIntoBufferAsync(maximumBufferSize, cancellationToken).ConfigureAwait(false);
+                content = await request.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
+#endif
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {

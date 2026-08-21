@@ -50,6 +50,35 @@ public class HttpReplayTests
     }
 
     [Test]
+    public async Task Retry_Disposes_The_Superseded_Response_Before_The_Next_Send()
+    {
+        var supersededContent = new TrackingContent("superseded");
+        var transport = new RecordingHandler(async (attempt, _, _) =>
+        {
+            if (attempt == 1)
+            {
+                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)
+                {
+                    Content = supersededContent,
+                };
+            }
+
+            await supersededContent.WaitForDisposalAsync().WaitAsync(TimeSpan.FromSeconds(5));
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        });
+        using var invoker = CreateInvoker(
+            HttpShield.WhenTransient().Retry(1, Backoff.None),
+            new ShieldHttpHandlerOptions(),
+            transport);
+        using var request = new HttpRequestMessage(HttpMethod.Get, "https://origin.example/api");
+
+        using var response = await invoker.SendAsync(request, CancellationToken.None);
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(supersededContent.DisposeCount).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task NoBuffer_Rejects_A_OneShot_Content_Second_Send()
     {
         var transport = new RecordingHandler(async (_, request, _) =>
@@ -124,6 +153,54 @@ public class HttpReplayTests
                 await invoker.SendAsync(request, CancellationToken.None))
             .Throws<HttpRequestReplayException>();
 
+        await Assert.That(transport.Attempts).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Caller_Cancellation_Interrupts_Request_Buffering()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var content = new CancellationAwareContent();
+        var transport = new RecordingHandler((_, _, _) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)));
+        using var invoker = CreateInvoker(
+            Shield<HttpResponseMessage>.Empty,
+            new ShieldHttpHandlerOptions { ContentReplayPolicy = HttpContentReplayPolicy.Buffer },
+            transport);
+        using var request = new HttpRequestMessage(HttpMethod.Put, "https://origin.example/upload")
+        {
+            Content = content,
+        };
+
+        var send = invoker.SendAsync(request, cancellation.Token);
+        await content.Started.WaitAsync(TimeSpan.FromSeconds(5));
+        cancellation.Cancel();
+
+        var exception = await Assert.That(async () => await send).Throws<OperationCanceledException>();
+        await Assert.That(exception!.CancellationToken).IsEqualTo(cancellation.Token);
+        await content.Cancelled.WaitAsync(TimeSpan.FromSeconds(5));
+        await Assert.That(transport.Attempts).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Shield_Timeout_Includes_Request_Buffering()
+    {
+        var content = new CancellationAwareContent();
+        var transport = new RecordingHandler((_, _, _) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)));
+        using var invoker = CreateInvoker(
+            Shield.Timeout(TimeSpan.FromMilliseconds(20)).For<HttpResponseMessage>(),
+            new ShieldHttpHandlerOptions { ContentReplayPolicy = HttpContentReplayPolicy.Buffer },
+            transport);
+        using var request = new HttpRequestMessage(HttpMethod.Put, "https://origin.example/upload")
+        {
+            Content = content,
+        };
+
+        _ = await Assert.That(async () => await invoker.SendAsync(request, CancellationToken.None))
+            .Throws<TimeoutExceededException>();
+
+        await content.Cancelled.WaitAsync(TimeSpan.FromSeconds(5));
         await Assert.That(transport.Attempts).IsEqualTo(0);
     }
 
@@ -365,6 +442,42 @@ public class HttpReplayTests
         {
             await stream.WriteAsync(new byte[] { 1, 2, 3 });
             throw new IOException("serialization failed");
+        }
+
+        protected override bool TryComputeLength(out long length)
+        {
+            length = 0;
+            return false;
+        }
+    }
+
+    private sealed class CancellationAwareContent : HttpContent
+    {
+        private readonly TaskCompletionSource _started = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _cancelled = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task Started => _started.Task;
+
+        public Task Cancelled => _cancelled.Task;
+
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context) =>
+            SerializeToStreamAsync(stream, context, CancellationToken.None);
+
+        protected override async Task SerializeToStreamAsync(
+            Stream stream,
+            TransportContext? context,
+            CancellationToken cancellationToken)
+        {
+            _started.TrySetResult();
+            try
+            {
+                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                _cancelled.TrySetResult();
+                throw;
+            }
         }
 
         protected override bool TryComputeLength(out long length)

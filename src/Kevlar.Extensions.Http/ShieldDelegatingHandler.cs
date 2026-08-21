@@ -35,10 +35,9 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
     {
         if (request is null) { throw new ArgumentNullException(nameof(request)); }
 
-        var execution = new RequestExecution(this, request, _options, cancellationToken);
+        var execution = new RequestExecution(this, request, _options);
         try
         {
-            await execution.PrepareAsync().ConfigureAwait(false);
             var response = await _policy.ExecuteAsync(
                 execution,
                 static (state, token) => state.SendAttemptAsync(token),
@@ -138,7 +137,6 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         private readonly ShieldDelegatingHandler _handler;
         private readonly HttpRequestMessage _original;
         private readonly ShieldHttpHandlerOptions _options;
-        private readonly CancellationToken _callerToken;
         private readonly List<HttpResponseMessage> _responses = [];
         private readonly Uri[]? _endpointOrder;
 
@@ -150,31 +148,30 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         public RequestExecution(
             ShieldDelegatingHandler handler,
             HttpRequestMessage original,
-            ShieldHttpHandlerOptions options,
-            CancellationToken callerToken)
+            ShieldHttpHandlerOptions options)
         {
             _handler = handler;
             _original = original;
             _options = options;
-            _callerToken = callerToken;
             _endpointOrder = CreateEndpointOrder(options.Routing);
         }
 
-        public ValueTask PrepareAsync()
+        private ValueTask PrepareAsync(CancellationToken cancellationToken)
         {
             if (_options.RequestFactory is null
                 && (_endpointOrder is not null
                     || (_original.Content is not null
                         && _options.ContentReplayPolicy == HttpContentReplayPolicy.Buffer)))
             {
-                return new ValueTask(GetTemplateAsync());
+                return new ValueTask(GetTemplateAsync(cancellationToken));
             }
 
-            return ValueTask.CompletedTask;
+            return default;
         }
 
         public async ValueTask<HttpResponseMessage> SendAttemptAsync(CancellationToken cancellationToken)
         {
+            await PrepareAsync(cancellationToken).ConfigureAwait(false);
             var attempt = Interlocked.Increment(ref _attempt) - 1;
             if (attempt > 0
                 && !IsReplaySafeMethod(_original.Method)
@@ -184,6 +181,11 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
                 throw new HttpRequestReplayException(
                     $"HTTP {_original.Method} is not replayed automatically. Set AllowUnsafeMethodReplay " +
                     "only when the operation is idempotent, or provide RequestFactory.");
+            }
+
+            if (attempt > 0)
+            {
+                DisposeSupersededResponses();
             }
 
             HttpRequestMessage request;
@@ -198,7 +200,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             }
             else
             {
-                request = (await GetTemplateAsync().ConfigureAwait(false)).CreateRequest();
+                request = (await GetTemplateAsync(cancellationToken).ConfigureAwait(false)).CreateRequest();
             }
 
             var ownsRequest = !ReferenceEquals(request, _original);
@@ -257,7 +259,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             DisposeResponses(discarded);
         }
 
-        private Task<HttpRequestTemplate> GetTemplateAsync()
+        private Task<HttpRequestTemplate> GetTemplateAsync(CancellationToken cancellationToken)
         {
             lock (_gate)
             {
@@ -265,8 +267,27 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
                     _original,
                     _options.ContentReplayPolicy,
                     _options.MaximumBufferSize,
-                    _callerToken).AsTask();
+                    cancellationToken).AsTask();
             }
+        }
+
+        private void DisposeSupersededResponses()
+        {
+            List<HttpResponseMessage>? superseded = null;
+            lock (_gate)
+            {
+                for (var index = _responses.Count - 1; index >= 0; index--)
+                {
+                    var response = _responses[index];
+                    if (_handler._policy.IsResultHandledByRepeatingStrategy(response))
+                    {
+                        (superseded ??= []).Add(response);
+                        _responses.RemoveAt(index);
+                    }
+                }
+            }
+
+            DisposeResponses(superseded);
         }
 
         private void RegisterResponse(HttpResponseMessage response)
