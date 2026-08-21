@@ -28,7 +28,8 @@ internal sealed class FallbackStrategy<TResult> : Strategy, IFallbackStrategyIns
 
     Type? IFallbackStrategyInspection.ResultType => typeof(TResult);
 
-    bool IFallbackStrategyInspection.HasNotification => _onFallback is not null;
+    bool IFallbackStrategyInspection.HasNotification =>
+        _onFallback is not null || _onFallbackAsync is not null;
 
     public override string Describe() => "Fallback";
 
@@ -146,7 +147,8 @@ internal sealed class VoidFallbackStrategy : Strategy, IFallbackStrategyInspecti
 
     Type? IFallbackStrategyInspection.ResultType => null;
 
-    bool IFallbackStrategyInspection.HasNotification => false;
+    bool IFallbackStrategyInspection.HasNotification =>
+        _onFallback is not null || _onFallbackAsync is not null;
 
     public override string Describe() => "Fallback";
 
