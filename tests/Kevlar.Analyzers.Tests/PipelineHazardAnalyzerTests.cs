@@ -102,6 +102,12 @@ public class PipelineHazardAnalyzerTests
             "_ = ShieldExtensions.Fallback(ShieldExtensions.Retry(Shield.Empty, 1), static _ => ValueTask.CompletedTask);",
             "_ = Shield.For<int>().Retry(1).Wrap(Shield.Empty).Fallback(0);",
             "_ = Shield.For<int>().Retry(1).Wrap(Shield.Timeout(TimeSpan.FromSeconds(1))).Fallback(0);",
+            "_ = Shield<int>.Empty.Wrap(Shield.Retry(1)).Fallback(0);",
+            "_ = Shield.Compose(Shield.Retry(1)).For<int>().Fallback(0);",
+            "_ = Shield.Compose(Shield.Timeout(TimeSpan.FromSeconds(1)), Shield.Retry(1)).For<int>().Fallback(0);",
+            "_ = Shield.Compose([Shield.Retry(1)]).For<int>().Fallback(0);",
+            "var parts = new[] { Shield.Retry(1) }; _ = Shield.Compose(parts).For<int>().Fallback(0);",
+            "_ = Shield.Compose(Shield.When<InvalidOperationException>().Retry(1), Shield.Empty).For<int>().Fallback(0);",
         };
 
         await AssertEachAsync(cases, "KEV003");
@@ -140,6 +146,9 @@ public class PipelineHazardAnalyzerTests
             "var shield = CreateShield(); _ = shield.Fallback(0);",
             "var shield = Shield.For<int>().Retry(1); shield = Shield<int>.Empty; _ = shield.Fallback(0);",
             "_ = Shield.For<int>().Retry(1).Wrap(Shield.For<int>().When<InvalidOperationException>().Timeout(TimeSpan.FromSeconds(1))).Fallback(0);",
+            "_ = Shield.For<int>().When<InvalidOperationException>().Timeout(TimeSpan.FromSeconds(1)).Wrap(Shield.Retry(1)).Fallback(0);",
+            "_ = Shield.Compose(Shield.When<InvalidOperationException>().Timeout(TimeSpan.FromSeconds(1)), Shield.Retry(1)).For<int>().Fallback(0);",
+            "var parts = new[] { Shield.Retry(1) }; parts[0] = Shield.Empty; _ = Shield.Compose(parts).For<int>().Fallback(0);",
         };
 
         foreach (var body in cases)

@@ -220,22 +220,15 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         var isCompositionBoundary = IsCompositionBoundary(method, knownTypes);
         if (stopAtCompositionBoundary && isCompositionBoundary)
         {
-            if (method.Name == "Wrap"
-                && WrapPreservesAmbient(invocation, context, knownTypes, visitedLocals))
-            {
-                return FindInPipeline(
-                    GetReceiver(invocation),
-                    context,
-                    predicate,
-                    knownTypes,
-                    stopAtHandlingClause,
-                    stopAtCompositionBoundary,
-                    visitedLocals,
-                    out matchedMethod);
-            }
-
-            matchedMethod = null;
-            return false;
+            return FindAtCompositionBoundary(
+                invocation,
+                context,
+                predicate,
+                knownTypes,
+                stopAtHandlingClause,
+                stopAtCompositionBoundary,
+                visitedLocals,
+                out matchedMethod);
         }
 
         if (!IsKevlarFluentMethod(method, knownTypes))
@@ -272,6 +265,192 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             stopAtCompositionBoundary,
             visitedLocals,
             out matchedMethod);
+    }
+
+    private static bool FindAtCompositionBoundary(
+        IInvocationOperation invocation,
+        OperationAnalysisContext context,
+        Func<IInvocationOperation, bool> predicate,
+        KnownTypes knownTypes,
+        bool stopAtHandlingClause,
+        bool stopAtCompositionBoundary,
+        HashSet<ISymbol>? visitedLocals,
+        out string? matchedMethod)
+    {
+        var method = Normalize(invocation.TargetMethod);
+        if (method.Name == "Compose")
+        {
+            return FindInComposeAmbient(
+                invocation,
+                context,
+                predicate,
+                knownTypes,
+                stopAtHandlingClause,
+                stopAtCompositionBoundary,
+                visitedLocals,
+                out matchedMethod);
+        }
+
+        var outer = GetReceiver(invocation);
+        var inner = GetArgument(invocation, "inner");
+        if (inner is null)
+        {
+            matchedMethod = null;
+            return false;
+        }
+
+        if (!IsKnownClauseFree(inner, context, knownTypes, visitedLocals))
+        {
+            return FindInPipeline(
+                inner,
+                context,
+                predicate,
+                knownTypes,
+                stopAtHandlingClause,
+                stopAtCompositionBoundary,
+                visitedLocals,
+                out matchedMethod);
+        }
+
+        if (FindInPipeline(
+            outer,
+            context,
+            predicate,
+            knownTypes,
+            stopAtHandlingClause,
+            stopAtCompositionBoundary,
+            visitedLocals,
+            out matchedMethod))
+        {
+            return true;
+        }
+
+        return IsKnownClauseFree(outer, context, knownTypes, visitedLocals)
+            && FindInPipeline(
+                inner,
+                context,
+                predicate,
+                knownTypes,
+                stopAtHandlingClause,
+                stopAtCompositionBoundary,
+                visitedLocals,
+                out matchedMethod);
+    }
+
+    private static bool FindInComposeAmbient(
+        IInvocationOperation invocation,
+        OperationAnalysisContext context,
+        Func<IInvocationOperation, bool> predicate,
+        KnownTypes knownTypes,
+        bool stopAtHandlingClause,
+        bool stopAtCompositionBoundary,
+        HashSet<ISymbol>? visitedLocals,
+        out string? matchedMethod)
+    {
+        var operands = new List<IOperation>();
+        foreach (var argument in invocation.Arguments)
+        {
+            CollectCompositionOperands(argument.Value, context, operands, visitedLocals);
+        }
+
+        for (var index = operands.Count - 1; index >= 0; index--)
+        {
+            if (IsKnownClauseFree(operands[index], context, knownTypes, visitedLocals))
+            {
+                continue;
+            }
+
+            return FindInPipeline(
+                operands[index],
+                context,
+                predicate,
+                knownTypes,
+                stopAtHandlingClause,
+                stopAtCompositionBoundary,
+                visitedLocals,
+                out matchedMethod);
+        }
+
+        foreach (var operand in operands)
+        {
+            if (FindInPipeline(
+                operand,
+                context,
+                predicate,
+                knownTypes,
+                stopAtHandlingClause,
+                stopAtCompositionBoundary,
+                visitedLocals,
+                out matchedMethod))
+            {
+                return true;
+            }
+        }
+
+        matchedMethod = null;
+        return false;
+    }
+
+    private static void CollectCompositionOperands(
+        IOperation? operation,
+        OperationAnalysisContext context,
+        List<IOperation> operands,
+        HashSet<ISymbol>? visitedLocals)
+    {
+        operation = Unwrap(operation);
+        if (operation is ILocalReferenceOperation localReference)
+        {
+            visitedLocals ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+            if (visitedLocals.Add(localReference.Local))
+            {
+                if (TryGetStableInitializer(localReference, context, out var initializer))
+                {
+                    CollectCompositionOperands(initializer, context, operands, visitedLocals);
+                    visitedLocals.Remove(localReference.Local);
+                    return;
+                }
+
+                visitedLocals.Remove(localReference.Local);
+            }
+        }
+
+        if (operation is IArrayCreationOperation { Initializer: { } arrayInitializer })
+        {
+            foreach (var element in arrayInitializer.ElementValues)
+            {
+                CollectCompositionOperands(element, context, operands, visitedLocals);
+            }
+
+            return;
+        }
+
+        if (operation?.Syntax is CollectionExpressionSyntax)
+        {
+            foreach (var child in operation.ChildOperations)
+            {
+                CollectCompositionOperands(child, context, operands, visitedLocals);
+            }
+
+            return;
+        }
+
+        if (operation is not null)
+        {
+            operands.Add(operation);
+        }
+    }
+
+    private static IOperation? GetArgument(IInvocationOperation invocation, string parameterName)
+    {
+        foreach (var argument in invocation.Arguments)
+        {
+            if (argument.Parameter?.Name == parameterName)
+            {
+                return argument.Value;
+            }
+        }
+
+        return null;
     }
 
     private static bool WrapPreservesAmbient(
