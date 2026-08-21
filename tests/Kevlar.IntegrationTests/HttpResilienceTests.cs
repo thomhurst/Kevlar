@@ -178,4 +178,30 @@ public class HttpResilienceTests
         await Assert.That(await response.Content.ReadAsStringAsync()).IsEqualTo("factory ok");
         await Assert.That(server.CallCount).IsEqualTo(2);
     }
+
+    [Test]
+    public async Task HttpClientFactory_Standard_Hedging_Routes_Across_Loopback_Endpoints()
+    {
+        await using var failing = FlakyHttpServer.Start((_, context) =>
+            FlakyHttpServer.Respond(context, 503));
+        await using var healthy = FlakyHttpServer.Start((_, context) =>
+            FlakyHttpServer.Respond(context, 200, "hedged ok"));
+        using var services = new ServiceCollection()
+            .AddHttpClient("hedged-backend")
+            .AddStandardHedgingShield(options =>
+            {
+                options.Endpoints.Add(new HttpEndpoint(new Uri(failing.Url)));
+                options.Endpoints.Add(new HttpEndpoint(new Uri(healthy.Url)));
+                options.HedgeDelay = Timeout.InfiniteTimeSpan;
+            })
+            .Services
+            .BuildServiceProvider();
+        using var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("hedged-backend");
+
+        using var response = await client.GetAsync("http://origin.invalid/path?q=1");
+
+        await Assert.That(await response.Content.ReadAsStringAsync()).IsEqualTo("hedged ok");
+        await Assert.That(failing.CallCount).IsEqualTo(1);
+        await Assert.That(healthy.CallCount).IsEqualTo(1);
+    }
 }

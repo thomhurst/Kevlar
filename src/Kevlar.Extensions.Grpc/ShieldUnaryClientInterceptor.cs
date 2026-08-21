@@ -214,7 +214,8 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
                 && rpcException.StatusCode is (
                     StatusCode.DeadlineExceeded
                     or StatusCode.Cancelled
-                    or StatusCode.Unknown))
+                    or StatusCode.Unknown
+                    or StatusCode.Unavailable))
             {
                 return rpcException.StatusCode == StatusCode.DeadlineExceeded
                     ? rpcException

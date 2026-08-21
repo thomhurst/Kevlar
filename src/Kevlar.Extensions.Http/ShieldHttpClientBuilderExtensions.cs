@@ -171,4 +171,118 @@ public static class ShieldHttpClientBuilderExtensions
 
         return snapshot;
     }
+
+    /// <summary>
+    /// Adds a standard endpoint-aware pipeline: total timeout, hedging, per-endpoint concurrency
+    /// limit and circuit breaker, then per-attempt timeout.
+    /// </summary>
+    public static IHttpClientBuilder AddStandardHedgingShield(
+        this IHttpClientBuilder builder,
+        Action<StandardHedgingShieldOptions> configure)
+    {
+        if (builder is null)
+        {
+            throw new ArgumentNullException(nameof(builder));
+        }
+
+        if (configure is null)
+        {
+            throw new ArgumentNullException(nameof(configure));
+        }
+
+        var options = new StandardHedgingShieldOptions();
+        configure(options);
+        var shield = CreateHedgingShield(options);
+        var handlerOptions = CreateHandlerOptions(options);
+
+        return builder.AddHttpMessageHandler(() =>
+            new ShieldDelegatingHandler(shield, handlerOptions));
+    }
+
+    private static Shield<HttpResponseMessage> CreateHedgingShield(StandardHedgingShieldOptions options) =>
+        Shield.Timeout(options.TotalTimeout)
+            .For<HttpResponseMessage>()
+            .When<HttpRequestException>()
+            .When<TimeoutExceededException>()
+            .When<ConcurrencyLimitExceededException>()
+            .When<CircuitOpenException>()
+            .WhenResult(HttpShield.IsTransient)
+            .Hedge(options.MaxAttempts, options.HedgeDelay);
+
+    private static ShieldHttpHandlerOptions CreateHandlerOptions(StandardHedgingShieldOptions options)
+    {
+        if (!Enum.IsDefined(typeof(HttpEndpointSelectionMode), options.SelectionMode))
+        {
+            throw new ArgumentOutOfRangeException(nameof(options), "The endpoint selection mode is invalid.");
+        }
+
+        if (!Enum.IsDefined(typeof(HttpContentReplayPolicy), options.ContentReplayPolicy))
+        {
+            throw new ArgumentOutOfRangeException(nameof(options), "ContentReplayPolicy is invalid.");
+        }
+
+        if (options.MaximumBufferSize <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(options), "MaximumBufferSize must be positive.");
+        }
+
+        if (options.Endpoints.Count == 0)
+        {
+            throw new ArgumentException("Standard hedging requires at least one endpoint.", nameof(options));
+        }
+
+        if (options.Endpoints.Any(static endpoint => endpoint is null))
+        {
+            throw new ArgumentException("Endpoints cannot contain null.", nameof(options));
+        }
+
+        var routing = new HttpEndpointRoutingOptions
+        {
+            SelectionMode = options.SelectionMode,
+            Seed = options.Seed,
+            ShieldFactory = CreateEndpointShieldFactory(options),
+        };
+        foreach (var endpoint in options.Endpoints)
+        {
+            routing.Endpoints.Add(endpoint);
+        }
+
+        return new ShieldHttpHandlerOptions
+        {
+            ContentReplayPolicy = options.ContentReplayPolicy,
+            MaximumBufferSize = options.MaximumBufferSize,
+            AllowUnsafeMethodReplay = options.AllowUnsafeMethodReplay,
+            RequestFactory = options.RequestFactory,
+            Routing = routing,
+        };
+    }
+
+    private static Func<Uri, Shield<HttpResponseMessage>> CreateEndpointShieldFactory(
+        StandardHedgingShieldOptions options)
+    {
+        var maxConcurrency = options.MaxConcurrency;
+        var maxQueue = options.MaxQueue;
+        var consecutiveFailures = options.ConsecutiveFailures;
+        var failureRatio = options.FailureRatio;
+        var minimumThroughput = options.MinimumThroughput;
+        var samplingWindow = options.SamplingWindow;
+        var breakDuration = options.BreakDuration;
+        var attemptTimeout = options.AttemptTimeout;
+
+        Shield<HttpResponseMessage> CreateEndpointShield(Uri _) =>
+            HttpShield.WhenTransient()
+                .ConcurrencyLimit(maxConcurrency, maxQueue)
+                .CircuitBreaker(circuitBreaker =>
+                {
+                    circuitBreaker.ConsecutiveFailures = consecutiveFailures;
+                    circuitBreaker.FailureRatio = failureRatio;
+                    circuitBreaker.MinimumThroughput = minimumThroughput;
+                    circuitBreaker.SamplingWindow = samplingWindow;
+                    circuitBreaker.BreakDuration = breakDuration;
+                })
+                .Timeout(attemptTimeout);
+
+        _ = CreateEndpointShield(null!);
+        return CreateEndpointShield;
+    }
 }
