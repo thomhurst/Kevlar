@@ -220,6 +220,30 @@ public class GrpcResilienceTests
     }
 
     [Test]
+    public async Task Expired_Grpc_Deadline_Normalizes_Transport_Unavailable()
+    {
+        var response = new TaskCompletionSource<TestReply>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var trailers = new Metadata { { "selected", "true" } };
+        var invoker = new DelegateCallInvoker((_, _) => Call(response.Task))
+            .Intercept(new ShieldUnaryClientInterceptor(Shield.Empty));
+        var client = new Resilience.ResilienceClient(invoker);
+        using var call = client.UnaryAsync(
+            new TestRequest(),
+            deadline: DateTime.UtcNow.AddMilliseconds(50));
+        await Task.Delay(TimeSpan.FromMilliseconds(100));
+        response.SetException(new RpcException(
+            new Status(StatusCode.Unavailable, "transport cancellation race"),
+            trailers));
+
+        var exception = await Assert.That(async () => await call.ResponseAsync)
+            .Throws<RpcException>();
+
+        await Assert.That(exception!.StatusCode).IsEqualTo(StatusCode.DeadlineExceeded);
+        await Assert.That(exception.Trailers.GetValue("selected")).IsEqualTo("true");
+    }
+
+    [Test]
     public async Task Deadline_Admission_Cutoff_Preserves_The_Failed_Attempt_Metadata()
     {
         var response = new TaskCompletionSource<TestReply>(TaskCreationOptions.RunContinuationsAsynchronously);
