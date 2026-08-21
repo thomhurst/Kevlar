@@ -356,6 +356,42 @@ public class GrpcStreamingResilienceTests
     }
 
     [Test]
+    public async Task Request_Stream_Writer_Forwards_Options_And_Explicit_Token()
+    {
+        var writer = new DelegateWriter();
+        var interceptor = new ShieldStreamingClientInterceptor(Shield.Empty);
+        using var call = interceptor.AsyncClientStreamingCall(
+            Context(ClientStreamingMethod),
+            _ => ClientCall(writer, Task.FromResult(new StreamReply())));
+        var options = new WriteOptions(WriteFlags.BufferHint);
+
+        call.RequestStream.WriteOptions = options;
+        await call.RequestStream.WriteAsync(new StreamRequest(), CancellationToken.None);
+
+        await Assert.That(ReferenceEquals(call.RequestStream.WriteOptions, options)).IsTrue();
+        await Assert.That(ReferenceEquals(writer.WriteOptions, options)).IsTrue();
+    }
+
+    [Test]
+    public async Task Request_Stream_Construction_Failure_Preserves_Identity()
+    {
+        var expected = new InvalidOperationException("construction");
+        var interceptor = new ShieldStreamingClientInterceptor(Shield.Empty);
+
+        var clientException = await Assert.That(() => interceptor.AsyncClientStreamingCall(
+                Context(ClientStreamingMethod),
+                _ => throw expected))
+            .Throws<InvalidOperationException>();
+        var duplexException = await Assert.That(() => interceptor.AsyncDuplexStreamingCall(
+                Context(DuplexStreamingMethod),
+                _ => throw expected))
+            .Throws<InvalidOperationException>();
+
+        await Assert.That(ReferenceEquals(clientException, expected)).IsTrue();
+        await Assert.That(ReferenceEquals(duplexException, expected)).IsTrue();
+    }
+
+    [Test]
     public async Task Client_Stream_Response_Does_Not_Occupy_Operation_Concurrency()
     {
         var response = new TaskCompletionSource<StreamReply>(
@@ -475,6 +511,29 @@ public class GrpcStreamingResilienceTests
         await Assert.That(attempts).IsEqualTo(3);
         await Assert.That((await call.ResponseHeadersAsync).GetValue("attempt")).IsEqualTo("3");
         await Assert.That(call.GetTrailers().GetValue("selected")).IsEqualTo("3");
+    }
+
+    [Test]
+    public async Task Server_Stream_Failure_Snapshots_Missing_Status_And_Trailers()
+    {
+        var expected = new InvalidOperationException("stream-failure");
+        var interceptor = new ShieldStreamingClientInterceptor(Shield.Empty);
+        using var call = interceptor.AsyncServerStreamingCall(
+            new StreamRequest(),
+            Context(ServerStreamingMethod),
+            (_, _) => ServerCall(
+                Reader((_, _) => Task.FromException<(bool, StreamReply?)>(expected)),
+                getStatus: static () => throw new InvalidOperationException(),
+                getTrailers: static () => throw new InvalidOperationException()));
+
+        var actual = await Assert.That(async () =>
+                await call.ResponseStream.MoveNext(CancellationToken.None))
+            .Throws<InvalidOperationException>();
+
+        await Assert.That(ReferenceEquals(actual, expected)).IsTrue();
+        await Assert.That(call.GetStatus().StatusCode).IsEqualTo(StatusCode.Unknown);
+        await Assert.That(call.GetStatus().Detail).IsEqualTo(expected.Message);
+        await Assert.That(call.GetTrailers().Count).IsEqualTo(0);
     }
 
     [Test]
@@ -818,11 +877,13 @@ public class GrpcStreamingResilienceTests
         Action? dispose = null,
         Metadata? headers = null,
         Metadata? trailers = null,
-        Task<Metadata>? responseHeaders = null) => new(
+        Task<Metadata>? responseHeaders = null,
+        Func<Status>? getStatus = null,
+        Func<Metadata>? getTrailers = null) => new(
         reader,
         responseHeaders ?? Task.FromResult(headers ?? new Metadata()),
-        static () => Status.DefaultSuccess,
-        () => trailers ?? new Metadata(),
+        getStatus ?? (() => Status.DefaultSuccess),
+        getTrailers ?? (() => trailers ?? new Metadata()),
         dispose ?? NoOp);
 
     private static AsyncClientStreamingCall<StreamRequest, StreamReply> ClientCall(
