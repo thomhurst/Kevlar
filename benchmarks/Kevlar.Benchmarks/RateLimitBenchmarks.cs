@@ -16,6 +16,13 @@ namespace Kevlar.Benchmarks;
 public class RateLimitBenchmarks
 {
     private static readonly Shield KevlarRateLimit = Shield.RateLimit(1_000_000_000, TimeSpan.FromSeconds(1));
+    private static readonly Shield KevlarRateLimitWithHooks = Shield.RateLimit(options =>
+    {
+        options.Permits = 1_000_000_000;
+        options.Window = TimeSpan.FromSeconds(1);
+        options.OnRejected = static _ => { };
+        options.OnRejectedAsync = static _ => ValueTask.CompletedTask;
+    });
 
     private static readonly ResiliencePipeline PollyRateLimit = new ResiliencePipelineBuilder()
         .AddRateLimiter(new FixedWindowRateLimiter(new FixedWindowRateLimiterOptions
@@ -31,4 +38,8 @@ public class RateLimitBenchmarks
 
     [BenchmarkCategory("Uncontended"), Benchmark]
     public ValueTask<int> Polly_Uncontended() => PollyRateLimit.ExecuteAsync(static _ => new ValueTask<int>(42));
+
+    [BenchmarkCategory("Uncontended"), Benchmark]
+    public ValueTask<int> Kevlar_WithHooks_Uncontended() =>
+        KevlarRateLimitWithHooks.ExecuteAsync(static _ => new ValueTask<int>(42));
 }

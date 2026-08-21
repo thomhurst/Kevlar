@@ -12,6 +12,8 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
     private readonly int _maxConcurrency;
     private readonly int _maxQueue;
     private readonly long _capacity;
+    private readonly Action<ConcurrencyLimitRejectedEvent>? _onRejected;
+    private readonly Func<ConcurrencyLimitRejectedEvent, ValueTask>? _onRejectedAsync;
     private int _available;
     private int _waiters;
     private StrategyMetricAlias[] _metricsAliasSnapshot = [];
@@ -25,6 +27,8 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
     internal int MaxConcurrency => _maxConcurrency;
 
     internal int MaxQueue => _maxQueue;
+
+    internal bool HasNotification => _onRejected is not null || _onRejectedAsync is not null;
 
     internal (int Available, int Running, int Queued) CaptureState()
     {
@@ -43,6 +47,8 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
         _maxQueue = options.MaxQueue;
         _capacity = options.MaxConcurrency + (long)options.MaxQueue;
         _available = options.MaxConcurrency;
+        _onRejected = options.OnRejected;
+        _onRejectedAsync = options.OnRejectedAsync;
     }
 
     public override string Describe() =>
@@ -56,8 +62,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
             Interlocked.Decrement(ref _pending);
             RecordState(alias);
             KevlarMetrics.Rejection(context.ShieldName, "concurrency_limit");
-            return new ValueTask<Outcome<T>>(
-                Outcome<T>.FromException(new ConcurrencyLimitExceededException()));
+            return RejectAsync<T>(context);
         }
 
         try
@@ -76,6 +81,57 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
         }
 
         return ExecuteQueuedAsync(next, context, alias);
+    }
+
+    private ValueTask<Outcome<T>> RejectAsync<T>(KevlarContext context)
+    {
+        var rejection = new ConcurrencyLimitExceededException();
+        if (_onRejected is null && _onRejectedAsync is null)
+        {
+            return new ValueTask<Outcome<T>>(Outcome<T>.FromException(rejection));
+        }
+
+        var rejectedEvent = new ConcurrencyLimitRejectedEvent(
+            _maxConcurrency,
+            _maxQueue,
+            context.StrategyIndex,
+            context);
+        try
+        {
+            _onRejected?.Invoke(rejectedEvent);
+            if (_onRejectedAsync is null)
+            {
+                return new ValueTask<Outcome<T>>(Outcome<T>.FromException(rejection));
+            }
+
+            var notification = _onRejectedAsync(rejectedEvent);
+            if (notification.IsCompletedSuccessfully)
+            {
+                notification.GetAwaiter().GetResult();
+                return new ValueTask<Outcome<T>>(Outcome<T>.FromException(rejection));
+            }
+
+            return AwaitRejectionAsync<T>(notification, rejection);
+        }
+        catch (Exception callbackFailure)
+        {
+            return new ValueTask<Outcome<T>>(Outcome<T>.FromException(callbackFailure));
+        }
+    }
+
+    private static async ValueTask<Outcome<T>> AwaitRejectionAsync<T>(
+        ValueTask notification,
+        ConcurrencyLimitExceededException rejection)
+    {
+        try
+        {
+            await notification.ConfigureAwait(false);
+            return Outcome<T>.FromException(rejection);
+        }
+        catch (Exception callbackFailure)
+        {
+            return Outcome<T>.FromException(callbackFailure);
+        }
     }
 
     private async ValueTask<Outcome<T>> ExecuteQueuedAsync<T, TState>(

@@ -8,13 +8,15 @@ public sealed class RateLimitStrategyDescriptor : StrategyDescriptor
         int permits,
         TimeSpan window,
         int burst,
-        int queueLimit)
+        int queueLimit,
+        bool hasNotification)
         : base(StrategyKind.RateLimit, description)
     {
         Permits = permits;
         Window = window;
         Burst = burst;
         QueueLimit = queueLimit;
+        HasNotification = hasNotification;
     }
 
     /// <summary>Permits replenished per window.</summary>
@@ -28,4 +30,7 @@ public sealed class RateLimitStrategyDescriptor : StrategyDescriptor
 
     /// <summary>The maximum wait queue size.</summary>
     public int QueueLimit { get; }
+
+    /// <summary>Whether synchronous or asynchronous rejection notifications are configured.</summary>
+    public bool HasNotification { get; }
 }

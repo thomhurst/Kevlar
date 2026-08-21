@@ -104,3 +104,30 @@ Kevlar.HedgingOptions.OnHedgeAsync.get -> System.Func<Kevlar.HedgeEvent, System.
 Kevlar.HedgingOptions.OnHedgeAsync.set -> void
 static Kevlar.HedgeActionGenerator.Create(System.Func<Kevlar.HedgeActionGeneratorEvent, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>?>! generator) -> Kevlar.HedgeActionGenerator!
 static Kevlar.HedgeActionGenerator.Create<TResult>(System.Func<Kevlar.HedgeActionGeneratorEvent<TResult>, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>?>! generator) -> Kevlar.HedgeActionGenerator!
+Kevlar.ConcurrencyLimitOptions.OnRejected.get -> System.Action<Kevlar.ConcurrencyLimitRejectedEvent>?
+Kevlar.ConcurrencyLimitOptions.OnRejected.set -> void
+Kevlar.ConcurrencyLimitOptions.OnRejectedAsync.get -> System.Func<Kevlar.ConcurrencyLimitRejectedEvent, System.Threading.Tasks.ValueTask>?
+Kevlar.ConcurrencyLimitOptions.OnRejectedAsync.set -> void
+Kevlar.ConcurrencyLimitRejectedEvent
+Kevlar.ConcurrencyLimitRejectedEvent.ConcurrencyLimitRejectedEvent() -> void
+Kevlar.ConcurrencyLimitRejectedEvent.Context.get -> Kevlar.KevlarContext!
+Kevlar.ConcurrencyLimitRejectedEvent.MaxConcurrency.get -> int
+Kevlar.ConcurrencyLimitRejectedEvent.MaxQueue.get -> int
+Kevlar.ConcurrencyLimitRejectedEvent.StrategyIndex.get -> int
+Kevlar.RateLimitOptions.OnRejected.get -> System.Action<Kevlar.RateLimitRejectedEvent>?
+Kevlar.RateLimitOptions.OnRejected.set -> void
+Kevlar.RateLimitOptions.OnRejectedAsync.get -> System.Func<Kevlar.RateLimitRejectedEvent, System.Threading.Tasks.ValueTask>?
+Kevlar.RateLimitOptions.OnRejectedAsync.set -> void
+Kevlar.RateLimitRejectedEvent
+Kevlar.RateLimitRejectedEvent.RateLimitRejectedEvent() -> void
+Kevlar.RateLimitRejectedEvent.Burst.get -> int
+Kevlar.RateLimitRejectedEvent.Context.get -> Kevlar.KevlarContext!
+Kevlar.RateLimitRejectedEvent.Permits.get -> int
+Kevlar.RateLimitRejectedEvent.QueueLimit.get -> int
+Kevlar.RateLimitRejectedEvent.RetryAfter.get -> System.TimeSpan?
+Kevlar.RateLimitRejectedEvent.StrategyIndex.get -> int
+Kevlar.RateLimitRejectedEvent.Window.get -> System.TimeSpan
+Kevlar.ShieldBuilder.ConcurrencyLimit(System.Action<Kevlar.ConcurrencyLimitOptions!>! configure) -> Kevlar.Shield!
+Kevlar.ShieldBuilder.RateLimit(System.Action<Kevlar.RateLimitOptions!>! configure) -> Kevlar.Shield!
+Kevlar.ShieldBuilder<TResult>.ConcurrencyLimit(System.Action<Kevlar.ConcurrencyLimitOptions!>! configure) -> Kevlar.Shield<TResult>!
+Kevlar.ShieldBuilder<TResult>.RateLimit(System.Action<Kevlar.RateLimitOptions!>! configure) -> Kevlar.Shield<TResult>!

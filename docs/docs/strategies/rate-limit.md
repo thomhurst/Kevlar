@@ -15,6 +15,9 @@ Shield.RateLimit(o =>
     o.Window = TimeSpan.FromSeconds(1);    // default 1s
     o.Burst = 200;                         // default: same as Permits
     o.QueueLimit = 20;                     // default 0
+    o.OnRejected = rejection =>
+        logger.LogWarning("Rate limited; retry after {RetryAfter}", rejection.RetryAfter);
+    o.OnRejectedAsync = static _ => ValueTask.CompletedTask;
 });
 ```
 
@@ -26,12 +29,25 @@ Shield.RateLimit(o =>
 | `Window` | `1s` | The replenishment window |
 | `Burst` | = `Permits` | Bucket capacity: how far above the steady rate a burst may spike |
 | `QueueLimit` | `0` | How many executions may *wait* for a permit instead of being rejected immediately |
+| `OnRejected` | — | Synchronous notification for an actual rejection |
+| `OnRejectedAsync` | — | Awaited notification after `OnRejected` |
 
 ## Rejection vs queueing
 
 With `QueueLimit = 0`, an execution that finds the bucket empty fails immediately with `RateLimitExceededException`. The exception carries `RetryAfter` — an estimate of when a permit will next be available — which pairs naturally with an outer retry's `DelayGenerator`.
 
 With `QueueLimit > 0`, up to that many executions reserve a future permit and **wait** for it instead of failing. Beyond the queue limit, rejections resume.
+
+For an actual rejection, Kevlar records rejection metrics, invokes `OnRejected`, awaits
+`OnRejectedAsync`, then surfaces `RateLimitExceededException`. The event includes `RetryAfter`,
+the configured permit/window/burst/queue values, the strategy index, and `KevlarContext`.
+A synchronous callback failure skips the asynchronous callback; either callback's failure replaces
+the limiter exception and preserves its exception instance. Queued cancellation is cancellation,
+not rejection, so it invokes neither hook.
+
+Callback contexts are pooled. Do not retain `RateLimitRejectedEvent.Context` after the synchronous
+callback or returned `ValueTask` completes. Hooks run outside limiter locks and may run concurrently
+or re-enter the same shield; captured state must be thread-safe.
 
 :::note Queueing is reservation-based, not FIFO
 Queued executions each sleep until their reserved permit replenishes; there's no fairness ordering among waiters.

@@ -13,6 +13,9 @@ Shield.ConcurrencyLimit(o =>
 {
     o.MaxConcurrency = 10;   // default 10
     o.MaxQueue = 20;         // default 0 — reject immediately when full
+    o.OnRejected = rejection =>
+        logger.LogWarning("Concurrency limit {Limit} rejected work", rejection.MaxConcurrency);
+    o.OnRejectedAsync = static _ => ValueTask.CompletedTask;
 });
 ```
 
@@ -22,10 +25,25 @@ Shield.ConcurrencyLimit(o =>
 |---|---|---|
 | `MaxConcurrency` | `10` | Executions allowed to run simultaneously |
 | `MaxQueue` | `0` | Executions allowed to wait for a slot; `0` = reject immediately when all slots are busy |
+| `OnRejected` | — | Synchronous notification for an actual rejection |
+| `OnRejectedAsync` | — | Awaited notification after `OnRejected` |
 
 Total capacity is `MaxConcurrency + MaxQueue`. Anything beyond that fails **immediately** with `ConcurrencyLimitExceededException` — the overflow check happens before any waiting, so rejection is instant and allocation-light.
 
+For an actual rejection, Kevlar publishes current limiter state and rejection metrics, invokes
+`OnRejected`, awaits `OnRejectedAsync`, then surfaces `ConcurrencyLimitExceededException`. The
+event includes the configured concurrency/queue limits, strategy index, and `KevlarContext`.
+A synchronous callback failure skips the asynchronous callback; either callback's failure replaces
+the limiter exception and preserves its exception instance.
+
+Callback contexts are pooled. Do not retain `ConcurrencyLimitRejectedEvent.Context` after the
+synchronous callback or returned `ValueTask` completes. Hooks run outside limiter locks and may run
+concurrently or re-enter the same shield; captured state must be thread-safe.
+
 Cancelling a queued execution frees its queue place when the asynchronous wait observes cancellation. `CancellationTokenSource.Cancel()` can return before that continuation updates accounting, so await the cancelled execution before assuming the place is reusable. If cancellation races a slot grant, the wait either cancels or acquires the slot; both paths update queue and running accounting exactly once, so later executions see the full capacity after the admitted work drains.
+
+Queued cancellation is not rejection and invokes neither rejection hook. A pre-cancelled caller is
+stopped at the shield boundary before the limiter runs.
 
 ## Why concurrency limits
 
