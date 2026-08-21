@@ -62,7 +62,9 @@ jobs:
       - name: Verify packages
         if: matrix.os == 'ubuntu-latest'
         shell: pwsh
-        run: ./scripts/Verify-Packages.ps1 -PackagesPath artifacts/package/release -Version ${{ steps.gitversion.outputs.semVer }}
+        env:
+          PACKAGE_VERSION: ${{ steps.gitversion.outputs.semVer }}
+        run: ./scripts/Verify-Packages.ps1 -PackagesPath artifacts/package/release -Version $env:PACKAGE_VERSION
 
       - name: Upload packages
         if: matrix.os == 'ubuntu-latest'
