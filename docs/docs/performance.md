@@ -26,7 +26,7 @@ As always with microbenchmarks: measure your own workload before optimizing arou
 
 ## Allocation regression gates
 
-BenchmarkDotNet remains the trend and comparison tool. Pull requests also run a smaller deterministic allocation suite on Ubuntu with .NET 10. Each scenario is warmed up before measurement, then sampled five times over 10,000 operations with `GC.GetAllocatedBytesForCurrentThread()` so JIT, static initialization, pool seeding, test-runner work, and allocations on unrelated threads stay outside the per-operation count.
+BenchmarkDotNet remains the trend and comparison tool. Pull requests also run a smaller deterministic allocation suite on Ubuntu with .NET 10. Each scenario is warmed up before measurement, then sampled five times over 10,000 operations. Synchronous-completion paths use `GC.GetAllocatedBytesForCurrentThread()` so test-runner work and unrelated threads stay outside the count. The parallel-hedge path waits for every canceled loser and uses `GC.GetTotalAllocatedBytes(precise: true)` so its asynchronous continuation and cleanup allocations are included regardless of which thread runs them.
 
 Documented synchronous-completion hot paths have a strict `0 B/op` budget. Paths that inherently create failures or parallel hedge attempts have explicit bounded budgets; those gates catch meaningful recurring regressions without pretending the failure path can be allocation-free. The allocation project is intentionally separate from coverage collection, which instruments assemblies and would contaminate the counts.
 

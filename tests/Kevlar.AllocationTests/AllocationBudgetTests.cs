@@ -1,5 +1,6 @@
 namespace Kevlar.AllocationTests;
 
+/// <summary>Guards documented allocation budgets for representative shield execution paths.</summary>
 [NotInParallel]
 public class AllocationBudgetTests
 {
@@ -39,6 +40,7 @@ public class AllocationBudgetTests
     private readonly Counter _retryCounter = new();
     private readonly ParallelHedgeState _parallelHedgeState = new();
 
+    /// <summary>Verifies that documented synchronous-completion hot paths allocate no managed memory.</summary>
     [Test]
     public void Documented_Hot_Paths_Allocate_Zero_Bytes_Per_Operation()
     {
@@ -69,6 +71,7 @@ public class AllocationBudgetTests
             test._primaryWinsHedge.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
     }
 
+    /// <summary>Verifies bounded allocations for failure and parallel execution paths.</summary>
     [Test]
     public void Allocating_Paths_Stay_Within_Per_Operation_Budgets()
     {
@@ -96,11 +99,14 @@ public class AllocationBudgetTests
             {
             }
         });
-        AssertBudget("hedge launches second attempt", 2_048, this, static test =>
+        AssertBudget("hedge launches second attempt", 3_072, this, static test =>
+        {
             test._parallelHedge.ExecuteAsync(
                 test._parallelHedgeState,
                 static (state, cancellationToken) => state.ExecuteAsync(cancellationToken))
-            .GetAwaiter().GetResult());
+                .GetAwaiter().GetResult();
+            test._parallelHedgeState.WaitForLoserCompletion();
+        }, AllocationScope.AllThreads);
     }
 
     private static void AssertZero<TState>(string scenario, TState state, Action<TState> operation) =>
@@ -110,7 +116,8 @@ public class AllocationBudgetTests
         string scenario,
         long maximumBytesPerOperation,
         TState state,
-        Action<TState> operation)
+        Action<TState> operation,
+        AllocationScope scope = AllocationScope.CurrentThread)
     {
         for (var operationIndex = 0; operationIndex < WarmupOperations; operationIndex++)
         {
@@ -120,13 +127,13 @@ public class AllocationBudgetTests
         var maximumObserved = 0L;
         for (var sample = 0; sample < Samples; sample++)
         {
-            var before = GC.GetAllocatedBytesForCurrentThread();
+            var before = GetAllocatedBytes(scope);
             for (var operationIndex = 0; operationIndex < MeasuredOperations; operationIndex++)
             {
                 operation(state);
             }
 
-            var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+            var allocated = GetAllocatedBytes(scope) - before;
             maximumObserved = Math.Max(maximumObserved, allocated);
         }
 
@@ -150,6 +157,7 @@ public class AllocationBudgetTests
 
     private sealed class ParallelHedgeState
     {
+        private readonly SemaphoreSlim _loserCompleted = new(initialCount: 0, maxCount: 1);
         private int _attempt;
 
         public ValueTask<int> ExecuteAsync(CancellationToken cancellationToken) =>
@@ -157,10 +165,36 @@ public class AllocationBudgetTests
                 ? new ValueTask<int>(42)
                 : WaitForCancellationAsync(cancellationToken);
 
-        private static async ValueTask<int> WaitForCancellationAsync(CancellationToken cancellationToken)
+        public void WaitForLoserCompletion()
         {
-            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
-            return 0;
+            if (!_loserCompleted.Wait(TimeSpan.FromSeconds(5)))
+            {
+                throw new TimeoutException("The canceled hedge attempt did not complete.");
+            }
         }
+
+        private async ValueTask<int> WaitForCancellationAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+                return 0;
+            }
+            finally
+            {
+                _loserCompleted.Release();
+            }
+        }
+    }
+
+    private static long GetAllocatedBytes(AllocationScope scope) =>
+        scope == AllocationScope.AllThreads
+            ? GC.GetTotalAllocatedBytes(precise: true)
+            : GC.GetAllocatedBytesForCurrentThread();
+
+    private enum AllocationScope
+    {
+        CurrentThread,
+        AllThreads,
     }
 }
