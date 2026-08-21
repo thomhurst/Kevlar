@@ -55,9 +55,10 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
             new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         private ConditionalWeakTable<Exception, FailureSelection>? _failedCalls;
-        private RpcException? _deadlineException;
+        private Exception? _deadlineFailure;
         private Task<TResponse> _response = null!;
         private AsyncUnaryCall<TResponse>? _terminalCall;
+        private AsyncUnaryCall<TResponse>? _selectedAttemptCall;
         private int _lifetimeCompleted;
         private bool _selected;
         private bool _disposed;
@@ -118,6 +119,11 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
                     ExceptionDispatchInfo.Capture(attemptException.Original).Throw();
                 }
 
+                if (exception is AttemptFailureException attemptFailure)
+                {
+                    ExceptionDispatchInfo.Capture(attemptFailure.Original).Throw();
+                }
+
                 if (exception is ExpiredDeadlineRpcException deadlineException)
                 {
                     ExceptionDispatchInfo.Capture(deadlineException.Original).Throw();
@@ -137,9 +143,13 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
                 && admissionDeadline <= DateTime.UtcNow)
             {
                 CancelLifetime();
+                if (Volatile.Read(ref _deadlineFailure) is { } deadlineFailure)
+                {
+                    ExceptionDispatchInfo.Capture(deadlineFailure).Throw();
+                }
+
                 throw new ExpiredDeadlineRpcException(
-                    Volatile.Read(ref _deadlineException)
-                    ?? new RpcException(new Status(StatusCode.DeadlineExceeded, "Deadline exceeded.")));
+                    new RpcException(new Status(StatusCode.DeadlineExceeded, "Deadline exceeded.")));
             }
 
             DisposeSupersededFailures();
@@ -170,18 +180,23 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
             }
             catch (Exception exception)
             {
-                if (exception is RpcException rpcException
-                    && rpcException.StatusCode == StatusCode.DeadlineExceeded)
+                var deadlineException = exception as RpcException;
+                var deadlineExceeded = deadlineException?.StatusCode == StatusCode.DeadlineExceeded;
+                if (deadlineExceeded)
                 {
-                    Volatile.Write(ref _deadlineException, rpcException);
                     if (_context.Options.Deadline is { } deadline
                         && deadline <= DateTime.UtcNow)
                     {
-                        exception = new ExpiredDeadlineRpcException(rpcException);
+                        exception = new ExpiredDeadlineRpcException(deadlineException!);
                     }
                 }
 
                 var attemptException = await CompleteFailureAsync(call, exception).ConfigureAwait(false);
+                if (deadlineExceeded)
+                {
+                    Volatile.Write(ref _deadlineFailure, attemptException);
+                }
+
                 if (ReferenceEquals(attemptException, exception))
                 {
                     throw;
@@ -218,7 +233,7 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
             {
                 if (_selected || _disposed)
                 {
-                    dispose = !ReferenceEquals(call, _terminalCall);
+                    dispose = !ReferenceEquals(call, _selectedAttemptCall);
                 }
                 else
                 {
@@ -258,18 +273,21 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
                         continue;
                     }
 
-                    if (exception is RpcException rpcException
+                    if (exception is not null
                         && _failedCalls is not null
                         && _failedCalls.TryGetValue(exception, out _))
                     {
-                        exception = new AttemptRpcException(rpcException);
+                        exception = exception is RpcException rpcException
+                            ? new AttemptRpcException(rpcException)
+                            : new AttemptFailureException(exception);
                     }
 
                     _attempts[index] = new AttemptRecord(call, exception);
                     if (exception is not null)
                     {
                         (_failedCalls ??= new())
-                            .GetValue(exception, static _ => new FailureSelection()).Call = failureCall;
+                            .GetValue(exception, static _ => new FailureSelection())
+                            .Set(call, failureCall);
                     }
 
                     return exception;
@@ -335,13 +353,18 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
         private void SelectFailure(Exception exception)
         {
             AsyncUnaryCall<TResponse>? call = null;
+            AsyncUnaryCall<TResponse>? selectedAttemptCall = null;
             lock (_gate)
             {
                 for (var index = _attempts.Count - 1; index >= 0; index--)
                 {
                     if (ReferenceEquals(_attempts[index].Exception, exception))
                     {
-                        call = _attempts[index].Call;
+                        call = _failedCalls is not null
+                            && _failedCalls.TryGetValue(exception, out var matchingFailure)
+                            ? matchingFailure.Call
+                            : _attempts[index].Call;
+                        selectedAttemptCall = _attempts[index].Call;
                         break;
                     }
                 }
@@ -351,6 +374,7 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
                     && _failedCalls.TryGetValue(exception, out var failure))
                 {
                     call = failure.Call;
+                    selectedAttemptCall = failure.AttemptCall;
                 }
 
                 if (call is null && exception is TimeoutExceededException)
@@ -367,15 +391,18 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
                             && _failedCalls.TryGetValue(attemptException, out failure)
                             ? failure.Call
                             : _attempts[index].Call;
+                        selectedAttemptCall = _attempts[index].Call;
                         break;
                     }
                 }
             }
 
-            SelectCore(call);
+            SelectCore(call, selectedAttemptCall);
         }
 
-        private void SelectCore(AsyncUnaryCall<TResponse>? terminalCall)
+        private void SelectCore(
+            AsyncUnaryCall<TResponse>? terminalCall,
+            AsyncUnaryCall<TResponse>? selectedAttemptCall = null)
         {
             List<AsyncUnaryCall<TResponse>>? discarded = null;
             lock (_gate)
@@ -387,9 +414,10 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
 
                 _selected = true;
                 _terminalCall = terminalCall;
+                _selectedAttemptCall = selectedAttemptCall ?? terminalCall;
                 foreach (var attempt in _attempts)
                 {
-                    if (!ReferenceEquals(attempt.Call, terminalCall))
+                    if (!ReferenceEquals(attempt.Call, _selectedAttemptCall))
                     {
                         (discarded ??= []).Add(attempt.Call);
                     }
@@ -458,9 +486,9 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
                 }
 
                 _attempts.Clear();
-                if (_terminalCall is not null)
+                if (_selectedAttemptCall is not null)
                 {
-                    calls.Add(_terminalCall);
+                    calls.Add(_selectedAttemptCall);
                 }
             }
 
@@ -490,13 +518,29 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
 
         private sealed class FailureSelection
         {
+            public AsyncUnaryCall<TResponse>? AttemptCall { get; private set; }
+
             public AsyncUnaryCall<TResponse>? Call { get; set; }
+
+            public void Set(
+                AsyncUnaryCall<TResponse> attemptCall,
+                AsyncUnaryCall<TResponse>? failureCall)
+            {
+                AttemptCall = attemptCall;
+                Call = failureCall;
+            }
         }
 
         private sealed class AttemptRpcException(RpcException original)
             : RpcException(original.Status, original.Trailers, original.Message)
         {
             public RpcException Original { get; } = original;
+        }
+
+        private sealed class AttemptFailureException(Exception original)
+            : Exception(original.Message, original)
+        {
+            public Exception Original { get; } = original;
         }
 
         private sealed class ExpiredDeadlineRpcException(RpcException original)
