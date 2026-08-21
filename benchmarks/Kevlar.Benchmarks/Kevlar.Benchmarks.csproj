@@ -18,6 +18,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Kevlar\Kevlar.csproj" />
     <ProjectReference Include="..\..\src\Kevlar.Extensions.DependencyInjection\Kevlar.Extensions.DependencyInjection.csproj" />
+    <ProjectReference Include="..\..\src\Kevlar.Extensions.Grpc\Kevlar.Extensions.Grpc.csproj" />
   </ItemGroup>
 
 </Project>

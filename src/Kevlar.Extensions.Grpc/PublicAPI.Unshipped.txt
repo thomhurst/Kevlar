@@ -1,0 +1,12 @@
+#nullable enable
+Kevlar.Extensions.Grpc.GrpcShield
+Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions
+Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor
+Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor.ShieldUnaryClientInterceptor(Kevlar.Shield! shield) -> void
+override Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor.AsyncUnaryCall<TRequest, TResponse>(TRequest! request, Grpc.Core.Interceptors.ClientInterceptorContext<TRequest!, TResponse!> context, Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation<TRequest!, TResponse!>! continuation) -> Grpc.Core.AsyncUnaryCall<TResponse!>!
+static Kevlar.Extensions.Grpc.GrpcShield.IsTransient(Grpc.Core.RpcException! exception) -> bool
+static Kevlar.Extensions.Grpc.GrpcShield.IsTransient(Grpc.Core.StatusCode statusCode) -> bool
+static Kevlar.Extensions.Grpc.GrpcShield.WhenTransient() -> Kevlar.ShieldBuilder!
+static Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, Kevlar.Shield! shield) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
+static Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, System.Func<System.IServiceProvider!, Kevlar.Shield!>! shieldFactory) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
+static Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, string! shieldName) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!

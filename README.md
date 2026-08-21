@@ -64,6 +64,7 @@ One clause up top decides what "failure" means for every strategy below it — e
 | `Kevlar` | The core: all strategies |
 | `Kevlar.Extensions.DependencyInjection` | Named shields, config-bound shields + `IKevlarRegistry` for Microsoft DI |
 | `Kevlar.Extensions.Http` | `HttpClientFactory` integration, transient-fault handling, `Retry-After` support |
+| `Kevlar.Extensions.Grpc` | Unary gRPC client interceptor, transient-status helpers, named-shield DI integration |
 | `Kevlar.Analyzers` | Roslyn analyzers that catch resilience mistakes at compile time |
 
 ## The five-minute tour
