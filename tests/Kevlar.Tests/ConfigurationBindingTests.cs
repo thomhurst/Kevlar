@@ -99,4 +99,36 @@ public class ConfigurationBindingTests
         await Assert.That(definition.Build().ToString())
             .IsEqualTo("Retry(3, exponential 250ms ×2 +jitter ≤30s)");
     }
+
+    [Test]
+    public async Task Configuration_Binds_Every_Strategy_Option_Without_Reflection()
+    {
+        var configuration = BuildConfiguration(
+            ("Timeout", "00:00:20"),
+            ("Retry:MaxRetries", "2"),
+            ("Retry:Backoff", "exponential"),
+            ("Retry:BaseDelay", "00:00:00.100"),
+            ("Retry:Factor", "3"),
+            ("Retry:Jitter", "false"),
+            ("Retry:MaxDelay", "00:00:02"),
+            ("CircuitBreaker:FailureRatio", "0.25"),
+            ("CircuitBreaker:MinimumThroughput", "4"),
+            ("CircuitBreaker:SamplingWindow", "00:00:08"),
+            ("CircuitBreaker:BreakDuration", "00:00:05"),
+            ("RateLimit:Permits", "5"),
+            ("RateLimit:Window", "00:00:10"),
+            ("RateLimit:Burst", "7"),
+            ("RateLimit:QueueLimit", "2"),
+            ("ConcurrencyLimit:MaxConcurrency", "3"),
+            ("ConcurrencyLimit:MaxQueue", "4"),
+            ("AttemptTimeout", "00:00:01"));
+        var services = new ServiceCollection();
+        services.AddShield("complete", configuration);
+        using var provider = services.BuildServiceProvider();
+
+        var shield = provider.GetRequiredService<IKevlarRegistry>().GetShield("complete");
+
+        await Assert.That(shield.ToString()).IsEqualTo(
+            "complete: Timeout(20s) → Retry(2, exponential 100ms ×3 ≤2s) → CircuitBreaker(25% over 8s, min 4, break 5s) → RateLimit(5/10s, burst 7, queue 2) → ConcurrencyLimit(3, queue 4) → Timeout(1s)");
+    }
 }

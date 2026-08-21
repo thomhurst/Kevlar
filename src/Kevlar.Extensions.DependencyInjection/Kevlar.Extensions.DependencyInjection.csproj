@@ -12,7 +12,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Kevlar\Kevlar.csproj" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
     <PackageReference Include="Polyfill" PrivateAssets="all" />
   </ItemGroup>
 

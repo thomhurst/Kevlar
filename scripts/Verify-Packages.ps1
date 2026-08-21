@@ -89,8 +89,8 @@ $expectedDependencies = @{
         '.NETStandard2.0' = @('Microsoft.Bcl.TimeProvider', 'Reservoir', 'System.Threading.Tasks.Extensions')
     }
     'Kevlar.Extensions.DependencyInjection' = @{
-        'net10.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Binder', 'Microsoft.Extensions.DependencyInjection.Abstractions')
-        '.NETStandard2.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Binder', 'Microsoft.Extensions.DependencyInjection.Abstractions')
+        'net10.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.DependencyInjection.Abstractions')
+        '.NETStandard2.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.DependencyInjection.Abstractions')
     }
     'Kevlar.Extensions.Http' = @{
         'net10.0' = @('Kevlar', 'Microsoft.Extensions.Http')
@@ -277,6 +277,11 @@ Console.WriteLine("Kevlar package consumer passed.");
         Invoke-DotNet @('restore', $projectPath, '--configfile', $nugetConfigPath, '--no-cache', '--force-evaluate')
         Invoke-DotNet @('run', '--project', $projectPath, '-c', 'Release', '--no-restore')
     }
+
+    & (Join-Path $PSScriptRoot 'Verify-PublishCompatibility.ps1') `
+        -PackagesPath $packageDirectory `
+        -Version $Version `
+        -NuGetConfigPath $nugetConfigPath
 
     $analyzerDirectory = Join-Path $temporaryRoot 'analyzer'
     $analyzerProject = @"
