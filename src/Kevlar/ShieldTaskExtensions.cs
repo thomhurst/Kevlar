@@ -32,6 +32,24 @@ public static class ShieldTaskExtensions
         return shield.ExecuteAsync((state, action), static (s, token) => new ValueTask<T>(s.action(s.state, token)), cancellationToken);
     }
 
+    /// <summary>Initializes execution properties, then executes a context-aware <see cref="Task{TResult}"/>-returning delegate.</summary>
+    public static ValueTask<T> ExecuteWithContextAsync<T, TState>(
+        this Shield shield,
+        TState state,
+        Action<TState, KevlarProperties> initializeProperties,
+        Func<TState, KevlarContext, Task<T>> action,
+        CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(shield, nameof(shield));
+        Throw.IfNull(initializeProperties, nameof(initializeProperties));
+        Throw.IfNull(action, nameof(action));
+        return shield.ExecuteWithContextAsync(
+            (state, initializeProperties, action),
+            static (s, properties) => s.initializeProperties(s.state, properties),
+            static (s, context) => new ValueTask<T>(s.action(s.state, context)),
+            cancellationToken);
+    }
+
     /// <summary>Executes the <see cref="Task"/>-returning void delegate through the pipeline.</summary>
     public static ValueTask ExecuteAsync(this Shield shield, Func<CancellationToken, Task> action, CancellationToken cancellationToken = default)
     {
@@ -46,6 +64,24 @@ public static class ShieldTaskExtensions
         Throw.IfNull(shield, nameof(shield));
         Throw.IfNull(action, nameof(action));
         return shield.ExecuteAsync((state, action), static (s, token) => new ValueTask(s.action(s.state, token)), cancellationToken);
+    }
+
+    /// <summary>Initializes execution properties, then executes a context-aware <see cref="Task"/>-returning void delegate.</summary>
+    public static ValueTask ExecuteWithContextAsync<TState>(
+        this Shield shield,
+        TState state,
+        Action<TState, KevlarProperties> initializeProperties,
+        Func<TState, KevlarContext, Task> action,
+        CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(shield, nameof(shield));
+        Throw.IfNull(initializeProperties, nameof(initializeProperties));
+        Throw.IfNull(action, nameof(action));
+        return shield.ExecuteWithContextAsync(
+            (state, initializeProperties, action),
+            static (s, properties) => s.initializeProperties(s.state, properties),
+            static (s, context) => new ValueTask(s.action(s.state, context)),
+            cancellationToken);
     }
 
     /// <summary>Executes the <see cref="Task{T}"/>-returning delegate through the pipeline and returns the outcome instead of throwing.</summary>
@@ -80,6 +116,24 @@ public static class ShieldTaskExtensions
         Throw.IfNull(shield, nameof(shield));
         Throw.IfNull(action, nameof(action));
         return shield.ExecuteAsync((state, action), static (s, token) => new ValueTask<TResult>(s.action(s.state, token)), cancellationToken);
+    }
+
+    /// <summary>Initializes execution properties, then executes a context-aware <see cref="Task{TResult}"/>-returning delegate.</summary>
+    public static ValueTask<TResult> ExecuteWithContextAsync<TResult, TState>(
+        this Shield<TResult> shield,
+        TState state,
+        Action<TState, KevlarProperties> initializeProperties,
+        Func<TState, KevlarContext, Task<TResult>> action,
+        CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(shield, nameof(shield));
+        Throw.IfNull(initializeProperties, nameof(initializeProperties));
+        Throw.IfNull(action, nameof(action));
+        return shield.ExecuteWithContextAsync(
+            (state, initializeProperties, action),
+            static (s, properties) => s.initializeProperties(s.state, properties),
+            static (s, context) => new ValueTask<TResult>(s.action(s.state, context)),
+            cancellationToken);
     }
 
     /// <summary>Executes the <see cref="Task{TResult}"/>-returning delegate through the pipeline and returns the outcome instead of throwing.</summary>

@@ -9,6 +9,8 @@ public class AllocationBudgetTests
     private const int Samples = 5;
 
     private static readonly InvalidOperationException RecoverableFailure = new("recoverable");
+    private static readonly KevlarKey<AllocationBudgetTests> MetadataState = new("metadata-state");
+    private static readonly KevlarKey<int> MetadataValue = new("metadata-value");
 
     private readonly Shield _empty = Shield.Empty;
     private readonly Shield _retry = Shield.Retry(3, Backoff.None);
@@ -64,6 +66,7 @@ public class AllocationBudgetTests
     private readonly Counter _retryCounter = new();
     private readonly Counter _asyncDelayRetryCounter = new();
     private readonly ParallelHedgeState _parallelHedgeState = new();
+    private readonly int _metadataValue = 42;
 
     public AllocationBudgetTests() => _ = _partitioned.GetShield(42);
 
@@ -76,6 +79,21 @@ public class AllocationBudgetTests
             test._empty.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("empty async state", this, static test =>
             test._empty.ExecuteAsync(42, static (state, _) => new ValueTask<int>(state)).GetAwaiter().GetResult());
+        AssertZero("empty async context state", this, static test =>
+            test._empty.ExecuteWithContextAsync(
+                test,
+                static (state, properties) => properties.Set(MetadataState, state),
+                static (_, context) => new ValueTask<int>(
+                    context.Properties.GetOrDefault<AllocationBudgetTests>(MetadataState)!._metadataValue))
+                .GetAwaiter()
+                .GetResult());
+        AssertZero("empty async context value state", this, static test =>
+            test._empty.ExecuteWithContextAsync(
+                test._metadataValue,
+                static (state, properties) => properties.Set(MetadataValue, state),
+                static (_, context) => new ValueTask<int>(context.Properties.GetOrDefault(MetadataValue)))
+                .GetAwaiter()
+                .GetResult());
         AssertZero("retry sync happy path", this, static test =>
             test._retry.Execute(static _ => 42));
         AssertZero("retry async happy path", this, static test =>

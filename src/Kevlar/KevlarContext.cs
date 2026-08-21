@@ -5,7 +5,9 @@ namespace Kevlar;
 /// <summary>
 /// Ambient state for a single execution flowing through a shield pipeline.
 /// Contexts are created and pooled by Kevlar automatically; user code observes them
-/// in strategy callbacks and never needs to construct or return them.
+/// in strategy callbacks or context-aware execution delegates and never needs to construct
+/// or return them. A context is valid only during the current callback or delegate invocation
+/// and must never be retained.
 /// </summary>
 public sealed class KevlarContext
 {
@@ -35,7 +37,10 @@ public sealed class KevlarContext
     /// <summary>The time provider used for delays, timeouts and time-window calculations.</summary>
     public TimeProvider TimeProvider { get; internal set; } = TimeProvider.System;
 
-    /// <summary>Custom properties carried through the execution.</summary>
+    /// <summary>
+    /// Custom properties carried through the execution. The bag is pooled with this context
+    /// and must not be retained beyond the current callback or delegate invocation.
+    /// </summary>
     public KevlarProperties Properties { get; } = new();
 
     internal static KevlarContext Rent(CancellationToken cancellationToken, bool isSynchronous, TimeProvider timeProvider, string? shieldName)

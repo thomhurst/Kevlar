@@ -149,6 +149,29 @@ public class NewApiTests
     }
 
     [Test]
+    public async Task Typed_Retry_Callbacks_Can_All_Be_Cleared()
+    {
+        var options = new RetryOptions<int>
+        {
+            OnRetry = static _ => { },
+            OnRetryAsync = static _ => ValueTask.CompletedTask,
+            DelayGenerator = static _ => TimeSpan.Zero,
+            DelayGeneratorAsync = static _ => new ValueTask<TimeSpan?>(TimeSpan.Zero),
+        };
+
+        options.OnRetry = null;
+        options.OnRetryAsync = null;
+        options.DelayGenerator = null;
+        options.DelayGeneratorAsync = null;
+
+        var untyped = (RetryOptions)options;
+        await Assert.That(ReferenceEquals(untyped.OnRetry, null)).IsTrue();
+        await Assert.That(ReferenceEquals(untyped.OnRetryAsync, null)).IsTrue();
+        await Assert.That(ReferenceEquals(untyped.DelayGenerator, null)).IsTrue();
+        await Assert.That(ReferenceEquals(untyped.DelayGeneratorAsync, null)).IsTrue();
+    }
+
+    [Test]
     public async Task MaxDelay_Caps_Generator_Supplied_Delays()
     {
         var reportedDelays = new List<TimeSpan>();

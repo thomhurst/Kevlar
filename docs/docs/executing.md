@@ -66,6 +66,44 @@ await shield.ExecuteAsync(
 
 The `static` keyword makes the compiler enforce it: this call site allocates nothing for the delegate.
 
+## Execution-scoped metadata and context
+
+Use `ExecuteWithContextAsync` when metadata must be available before the outermost strategy runs,
+or when the action needs the current execution context:
+
+```csharp
+var requestIdKey = new KevlarKey<string>("request-id");
+var user = await shield.ExecuteWithContextAsync(
+    (client, id, requestId: "req-42", requestIdKey),
+    static (state, properties) =>
+        properties.Set(state.requestIdKey, state.requestId),
+    static (state, context) =>
+        state.client.GetUserAsync(state.id, context.CancellationToken),
+    cancellationToken);
+```
+
+The initializer runs once, after the caller cancellation check and before any strategy. Every
+strategy and retry attempt sees the same logical properties. Hedged attempts copy the initialized
+properties when each fork launches; later mutations stay isolated between attempts. The action's
+`context.CancellationToken` is the effective token for that attempt, including timeout and hedge
+cancellation.
+
+`ExecuteWithContext` provides the same contract for synchronous actions. Both `Shield` and
+`Shield<TResult>` support the context-aware shape; `Task` and `ValueTask` actions are accepted.
+Use static initializer and action delegates with the state parameter to avoid closures. The pooled
+context path itself allocates 0 B/op after warm-up when existing property storage can be reused;
+adding a new key allocates its reusable typed property slot, while value types are not boxed.
+
+Keep these three kinds of state distinct:
+
+- `TState` is caller-owned action input and remains the simplest, fastest path for business data.
+- `KevlarContext.Properties` is mutable metadata for one logical execution and its strategy callbacks.
+- Breaker and limiter state belongs to the shared shield/strategy instance, not one execution.
+
+`KevlarContext` and its `Properties` bag are pooled. Read or mutate them only during the current
+action or strategy callback. Never retain either object, return it to the caller, or use it after
+the callback finishes. Kevlar clears properties before a pooled context serves another execution.
+
 ## No-throw execution
 
 When a failure is an expected outcome rather than an exceptional one, skip the throw/catch entirely and inspect the outcome:

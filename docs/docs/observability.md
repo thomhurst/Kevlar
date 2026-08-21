@@ -86,7 +86,7 @@ dotnet add package Kevlar.Analyzers
 
 | Rule | Severity | Catches |
 |---|---|---|
-| `KEV001` | Warning | An execution delegate that never uses the `CancellationToken` it is handed — the most common way to defeat a [timeout](strategies/timeout.md). |
+| `KEV001` | Warning | An execution delegate that never uses its effective `CancellationToken` — passed directly by ordinary execution APIs or exposed as `context.CancellationToken` by context-aware APIs. Ignoring it is the most common way to defeat a [timeout](strategies/timeout.md). |
 | `KEV002` | Warning | A statically known multi-attempt hedging pipeline passed to synchronous `Execute`. |
 | `KEV003` | Warning | An inner fallback that makes retry, hedging, or circuit breaker unreachable under the same handling clause. |
 

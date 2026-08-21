@@ -6,10 +6,10 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Kevlar.Analyzers;
 
 /// <summary>
-/// KEV001: the delegate passed to a Kevlar execute method never uses the
-/// <see cref="System.Threading.CancellationToken"/> it is handed. Timeout strategies and caller
-/// cancellation work by cancelling that token, so ignoring it means the work cannot be stopped —
-/// the single most common way to defeat a timeout.
+/// KEV001: the delegate passed to a Kevlar execute method never uses its effective
+/// <see cref="System.Threading.CancellationToken"/>, either from a direct parameter or from
+/// <see cref="Kevlar.KevlarContext.CancellationToken"/>. Timeout strategies and caller cancellation
+/// work by cancelling that token, so ignoring it means the work cannot be stopped.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class IgnoredCancellationTokenAnalyzer : DiagnosticAnalyzer
@@ -47,28 +47,41 @@ public sealed class IgnoredCancellationTokenAnalyzer : DiagnosticAnalyzer
 
         foreach (var argument in invocation.Arguments)
         {
-            if (!AcceptsCancellationTokenDelegate(argument.Parameter)
+            if (argument.Parameter?.Name != "action"
                 || argument.Value is not IDelegateCreationOperation { Target: IAnonymousFunctionOperation lambda })
             {
                 continue;
             }
 
-            var tokenParameter = FindExecutionCancellationTokenParameter(lambda.Symbol);
-            if (tokenParameter is null || tokenParameter.Name == "_" || UsesParameter(lambda, tokenParameter))
+            var contextParameter = FindExecutionContextParameter(
+                lambda.Symbol,
+                argument.Parameter,
+                context.Compilation);
+            if (contextParameter is not null)
             {
+                if (contextParameter.Name != "_"
+                    && !UsesContextCancellationToken(lambda, contextParameter, context.Compilation))
+                {
+                    Report(context, lambda, method);
+                }
+
                 continue;
             }
 
-            context.ReportDiagnostic(Diagnostic.Create(
-                Rule,
-                lambda.Syntax.GetLocation(),
-                method.Name));
+            var tokenParameter = FindExecutionCancellationTokenParameter(lambda.Symbol);
+            if (tokenParameter is not null
+                && tokenParameter.Name != "_"
+                && !UsesParameter(lambda, tokenParameter))
+            {
+                Report(context, lambda, method);
+            }
         }
     }
 
     private static bool IsKevlarExecutionMethod(IMethodSymbol method, Compilation compilation)
     {
-        if (method.Name is not ("Execute" or "ExecuteAsync" or "ExecuteOutcomeAsync"))
+        if (method.Name is not ("Execute" or "ExecuteAsync" or "ExecuteOutcomeAsync"
+            or "ExecuteWithContext" or "ExecuteWithContextAsync"))
         {
             return false;
         }
@@ -82,14 +95,29 @@ public sealed class IgnoredCancellationTokenAnalyzer : DiagnosticAnalyzer
     private static bool IsType(INamedTypeSymbol type, INamedTypeSymbol? expected) =>
         expected is not null && SymbolEqualityComparer.Default.Equals(type, expected);
 
-    private static bool AcceptsCancellationTokenDelegate(IParameterSymbol? parameter)
+    private static IParameterSymbol? FindExecutionContextParameter(
+        IMethodSymbol lambda,
+        IParameterSymbol? callbackParameter,
+        Compilation compilation)
     {
-        if (parameter?.Type is not INamedTypeSymbol { TypeKind: TypeKind.Delegate, DelegateInvokeMethod: { } invokeMethod })
+        var contextType = compilation.GetTypeByMetadataName("Kevlar.KevlarContext");
+        if (contextType is null
+            || callbackParameter?.OriginalDefinition.Type is not INamedTypeSymbol callbackType
+            || callbackType.DelegateInvokeMethod is not { } invokeMethod)
         {
-            return false;
+            return null;
         }
 
-        return FindExecutionCancellationTokenParameter(invokeMethod) is not null;
+        for (var index = invokeMethod.Parameters.Length - 1; index >= 0; index--)
+        {
+            if (SymbolEqualityComparer.Default.Equals(invokeMethod.Parameters[index].Type, contextType)
+                && index < lambda.Parameters.Length)
+            {
+                return lambda.Parameters[index];
+            }
+        }
+
+        return null;
     }
 
     private static IParameterSymbol? FindExecutionCancellationTokenParameter(IMethodSymbol method)
@@ -119,6 +147,160 @@ public sealed class IgnoredCancellationTokenAnalyzer : DiagnosticAnalyzer
 
         return false;
     }
+
+    private static bool UsesContextCancellationToken(
+        IOperation root,
+        IParameterSymbol contextParameter,
+        Compilation compilation)
+    {
+        var contextType = compilation.GetTypeByMetadataName("Kevlar.KevlarContext");
+        foreach (var operation in Descendants(root))
+        {
+            if (operation is IPropertyReferenceOperation
+                {
+                    Property.Name: "CancellationToken",
+                    Property.ContainingType: { } containingType,
+                    Instance: { } instance,
+                }
+                && SymbolEqualityComparer.Default.Equals(containingType, contextType)
+                && ReferencesAlias(
+                    instance,
+                    FindLocalAliases(root, contextParameter, operation)))
+            {
+                return true;
+            }
+
+            if (operation is IParameterReferenceOperation or ILocalReferenceOperation
+                && IsDirectArgumentValue(operation)
+                && IsAliasReference(
+                    operation,
+                    FindLocalAliases(root, contextParameter, operation)))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static HashSet<ISymbol> FindLocalAliases(
+        IOperation root,
+        IParameterSymbol contextParameter,
+        IOperation beforeOperation)
+    {
+        var beforePosition = beforeOperation.Syntax.SpanStart;
+        var containingBlock = FindContainingBlock(beforeOperation);
+        var aliases = new HashSet<ISymbol>(SymbolEqualityComparer.Default) { contextParameter };
+        var definitions = Descendants(root)
+            .Select(operation => operation switch
+            {
+                IVariableDeclaratorOperation
+                {
+                    Initializer.Value: { } value,
+                    Symbol: { } local,
+                } when value.Syntax.SpanStart < beforePosition =>
+                    (Local: local, Value: value, Definition: operation),
+                ISimpleAssignmentOperation
+                {
+                    Target: { } target,
+                    Value: { } value,
+                } when value.Syntax.SpanStart < beforePosition
+                    && Unwrap(target) is ILocalReferenceOperation local =>
+                    (Local: local.Local, Value: value, Definition: operation),
+                _ => default,
+            })
+            .Where(definition => definition.Local is not null)
+            .GroupBy(definition => definition.Local, SymbolEqualityComparer.Default)
+            .Select(definitionsForLocal =>
+            {
+                var orderedDefinitions = definitionsForLocal
+                    .OrderBy(definition => definition.Definition.Syntax.SpanStart)
+                    .ToArray();
+                var latestDefinitionInBlock = Array.FindLastIndex(
+                    orderedDefinitions,
+                    definition => ReferenceEquals(
+                        FindContainingBlock(definition.Definition),
+                        containingBlock));
+                var reachingDefinitions = latestDefinitionInBlock < 0
+                    ? orderedDefinitions
+                    : orderedDefinitions.Skip(latestDefinitionInBlock).ToArray();
+                return (Local: definitionsForLocal.Key!, Reaching: reachingDefinitions);
+            })
+            .ToArray();
+
+        bool foundAlias;
+        do
+        {
+            foundAlias = false;
+            foreach (var definition in definitions)
+            {
+                if (definition.Reaching.All(candidate => ReferencesAlias(candidate.Value, aliases))
+                    && aliases.Add(definition.Local))
+                {
+                    foundAlias = true;
+                }
+            }
+        }
+        while (foundAlias);
+
+        return aliases;
+    }
+
+    private static IBlockOperation? FindContainingBlock(IOperation operation)
+    {
+        for (var current = operation.Parent; current is not null; current = current.Parent)
+        {
+            if (current is IBlockOperation block)
+            {
+                return block;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool ReferencesAlias(IOperation operation, HashSet<ISymbol> aliases)
+    {
+        operation = Unwrap(operation);
+        return IsAliasReference(operation, aliases);
+    }
+
+    private static bool IsAliasReference(IOperation operation, HashSet<ISymbol> aliases) =>
+        operation switch
+        {
+            IParameterReferenceOperation parameter => aliases.Contains(parameter.Parameter),
+            ILocalReferenceOperation local => aliases.Contains(local.Local),
+            _ => false,
+        };
+
+    private static bool IsDirectArgumentValue(IOperation operation)
+    {
+        while (operation.Parent is IConversionOperation or IParenthesizedOperation)
+        {
+            operation = operation.Parent;
+        }
+
+        return operation.Parent is IArgumentOperation argument && argument.Value == operation;
+    }
+
+    private static IOperation Unwrap(IOperation operation)
+    {
+        while (operation is IConversionOperation conversion)
+        {
+            operation = conversion.Operand;
+        }
+
+        return operation;
+    }
+
+    private static void Report(
+        OperationAnalysisContext context,
+        IAnonymousFunctionOperation lambda,
+        IMethodSymbol method) =>
+        context.ReportDiagnostic(Diagnostic.Create(
+            Rule,
+            lambda.Syntax.GetLocation(),
+            method.Name));
 
     private static IEnumerable<IOperation> Descendants(IOperation root)
     {

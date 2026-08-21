@@ -89,6 +89,10 @@ collide, while new key instances with the same name and type address the same va
 are valid. Stored `null` is present and distinct from a missing key, so `TryGet` returns `true`
 with a `null` value and `GetOrDefault` does not substitute its fallback.
 
+Callers can seed this bag with `ExecuteWithContextAsync` or `ExecuteWithContext`. The initializer
+runs before the outermost strategy, retries reuse the logical context, and hedged attempts receive
+detached property snapshots. See [Executing](executing.md#execution-scoped-metadata-and-context).
+
 ## KevlarContext
 
 The context flows through the whole pipeline:

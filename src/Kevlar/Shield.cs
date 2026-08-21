@@ -156,6 +156,28 @@ public sealed class Shield
         return ShieldEngine.ExecuteAsync(Head, TimeOrSystem, Name, state, action, cancellationToken);
     }
 
+    /// <summary>
+    /// Initializes execution properties, then executes a context-aware delegate through the pipeline.
+    /// The context is pooled and is valid only for the duration of the delegate invocation; never retain it.
+    /// </summary>
+    public ValueTask<T> ExecuteWithContextAsync<T, TState>(
+        TState state,
+        Action<TState, KevlarProperties> initializeProperties,
+        Func<TState, KevlarContext, ValueTask<T>> action,
+        CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(initializeProperties, nameof(initializeProperties));
+        Throw.IfNull(action, nameof(action));
+        return ShieldEngine.ExecuteWithContextAsync(
+            Head,
+            TimeOrSystem,
+            Name,
+            state,
+            initializeProperties,
+            action,
+            cancellationToken);
+    }
+
     /// <summary>Executes the void delegate through the pipeline.</summary>
     public ValueTask ExecuteAsync(Func<CancellationToken, ValueTask> action, CancellationToken cancellationToken = default)
     {
@@ -185,6 +207,32 @@ public sealed class Shield
             static async (s, token) =>
             {
                 await s.action(s.state, token).ConfigureAwait(false);
+                return Nothing.Value;
+            },
+            cancellationToken));
+    }
+
+    /// <summary>
+    /// Initializes execution properties, then executes a context-aware void delegate through the pipeline.
+    /// The context is pooled and is valid only for the duration of the delegate invocation; never retain it.
+    /// </summary>
+    public ValueTask ExecuteWithContextAsync<TState>(
+        TState state,
+        Action<TState, KevlarProperties> initializeProperties,
+        Func<TState, KevlarContext, ValueTask> action,
+        CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(initializeProperties, nameof(initializeProperties));
+        Throw.IfNull(action, nameof(action));
+        return StripResult(ShieldEngine.ExecuteWithContextAsync(
+            Head,
+            TimeOrSystem,
+            Name,
+            (state, initializeProperties, action),
+            static (s, properties) => s.initializeProperties(s.state, properties),
+            static async (s, context) =>
+            {
+                await s.action(s.state, context).ConfigureAwait(false);
                 return Nothing.Value;
             },
             cancellationToken));
@@ -226,6 +274,28 @@ public sealed class Shield
         return ShieldEngine.ExecuteSync(Head, TimeOrSystem, Name, state, action, cancellationToken);
     }
 
+    /// <summary>
+    /// Initializes execution properties, then executes a context-aware delegate synchronously through the pipeline.
+    /// The context is pooled and is valid only for the duration of the delegate invocation; never retain it.
+    /// </summary>
+    public T ExecuteWithContext<T, TState>(
+        TState state,
+        Action<TState, KevlarProperties> initializeProperties,
+        Func<TState, KevlarContext, T> action,
+        CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(initializeProperties, nameof(initializeProperties));
+        Throw.IfNull(action, nameof(action));
+        return ShieldEngine.ExecuteWithContextSync(
+            Head,
+            TimeOrSystem,
+            Name,
+            state,
+            initializeProperties,
+            action,
+            cancellationToken);
+    }
+
     /// <summary>Executes the void delegate synchronously through the pipeline.</summary>
     public void Execute(Action<CancellationToken> action, CancellationToken cancellationToken = default)
     {
@@ -246,6 +316,32 @@ public sealed class Shield
             s.action(s.state, token);
             return Nothing.Value;
         }, cancellationToken);
+    }
+
+    /// <summary>
+    /// Initializes execution properties, then executes a context-aware void delegate synchronously through the pipeline.
+    /// The context is pooled and is valid only for the duration of the delegate invocation; never retain it.
+    /// </summary>
+    public void ExecuteWithContext<TState>(
+        TState state,
+        Action<TState, KevlarProperties> initializeProperties,
+        Action<TState, KevlarContext> action,
+        CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(initializeProperties, nameof(initializeProperties));
+        Throw.IfNull(action, nameof(action));
+        ShieldEngine.ExecuteWithContextSync(
+            Head,
+            TimeOrSystem,
+            Name,
+            (state, initializeProperties, action),
+            static (s, properties) => s.initializeProperties(s.state, properties),
+            static (s, context) =>
+            {
+                s.action(s.state, context);
+                return Nothing.Value;
+            },
+            cancellationToken);
     }
 
     /// <summary>

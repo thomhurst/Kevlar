@@ -13,6 +13,7 @@ namespace Kevlar.Benchmarks;
 [CategoriesColumn]
 public class OverheadBenchmarks
 {
+    private static readonly KevlarKey<OverheadBenchmarks> MetadataState = new("metadata-state");
     private static readonly Shield KevlarEmpty = Shield.Empty;
     private static readonly ResiliencePipeline PollyEmpty = ResiliencePipeline.Empty;
     private static readonly Task<int> CompletedStateTask = Task.FromResult(42);
@@ -28,6 +29,18 @@ public class OverheadBenchmarks
     [BenchmarkCategory("EmptyState"), Benchmark(Baseline = true)]
     public ValueTask<int> Kevlar_EmptyState() =>
         KevlarEmpty.ExecuteAsync(_state, static (s, _) => new ValueTask<int>(s));
+
+    [BenchmarkCategory("EmptyContextState"), Benchmark(Baseline = true)]
+    public ValueTask<int> Kevlar_EmptyReferenceState() =>
+        KevlarEmpty.ExecuteAsync(this, static (state, _) => new ValueTask<int>(state._state));
+
+    [BenchmarkCategory("EmptyContextState"), Benchmark]
+    public ValueTask<int> Kevlar_EmptyContextState() =>
+        KevlarEmpty.ExecuteWithContextAsync(
+            this,
+            static (state, properties) => properties.Set(MetadataState, state),
+            static (_, context) => new ValueTask<int>(
+                context.Properties.GetOrDefault<OverheadBenchmarks>(MetadataState)!._state));
 
     [BenchmarkCategory("EmptyState"), Benchmark]
     public ValueTask<int> Polly_EmptyState() =>

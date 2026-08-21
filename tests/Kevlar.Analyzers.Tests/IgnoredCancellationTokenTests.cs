@@ -19,28 +19,50 @@ public class IgnoredCancellationTokenTests
         ("var result = Shield.Empty.Execute(1, (state, ct) => state);", "Kevlar.Shield.Execute(M1,System.Func<M1,System.Threading.CancellationToken,M0>,System.Threading.CancellationToken)"),
         ("Shield.Empty.Execute(ct => { });", "Kevlar.Shield.Execute(System.Action<System.Threading.CancellationToken>,System.Threading.CancellationToken)"),
         ("Shield.Empty.Execute(1, (state, ct) => { _ = state; });", "Kevlar.Shield.Execute(M0,System.Action<M0,System.Threading.CancellationToken>,System.Threading.CancellationToken)"),
+        ("var result = Shield.Empty.ExecuteWithContext(1, (_, _) => { }, (state, context) => state);", "Kevlar.Shield.ExecuteWithContext(M1,System.Action<M1,Kevlar.KevlarProperties>,System.Func<M1,Kevlar.KevlarContext,M0>,System.Threading.CancellationToken)"),
+        ("Shield.Empty.ExecuteWithContext(1, (_, _) => { }, (state, context) => { _ = state; });", "Kevlar.Shield.ExecuteWithContext(M0,System.Action<M0,Kevlar.KevlarProperties>,System.Action<M0,Kevlar.KevlarContext>,System.Threading.CancellationToken)"),
         ("await Shield.Empty.ExecuteAsync(ct => new ValueTask<int>(1));", "Kevlar.Shield.ExecuteAsync(System.Func<System.Threading.CancellationToken,System.Threading.Tasks.ValueTask<M0>>,System.Threading.CancellationToken)"),
         ("await Shield.Empty.ExecuteAsync(1, (state, ct) => new ValueTask<int>(state));", "Kevlar.Shield.ExecuteAsync(M1,System.Func<M1,System.Threading.CancellationToken,System.Threading.Tasks.ValueTask<M0>>,System.Threading.CancellationToken)"),
         ("await Shield.Empty.ExecuteAsync(ct => ValueTask.CompletedTask);", "Kevlar.Shield.ExecuteAsync(System.Func<System.Threading.CancellationToken,System.Threading.Tasks.ValueTask>,System.Threading.CancellationToken)"),
         ("await Shield.Empty.ExecuteAsync(1, (state, ct) => { _ = state; return ValueTask.CompletedTask; });", "Kevlar.Shield.ExecuteAsync(M0,System.Func<M0,System.Threading.CancellationToken,System.Threading.Tasks.ValueTask>,System.Threading.CancellationToken)"),
+        ("await Shield.Empty.ExecuteWithContextAsync(1, (_, _) => { }, (state, context) => new ValueTask<int>(state));", "Kevlar.Shield.ExecuteWithContextAsync(M1,System.Action<M1,Kevlar.KevlarProperties>,System.Func<M1,Kevlar.KevlarContext,System.Threading.Tasks.ValueTask<M0>>,System.Threading.CancellationToken)"),
+        ("await Shield.Empty.ExecuteWithContextAsync(1, (_, _) => { }, (state, context) => { _ = state; return ValueTask.CompletedTask; });", "Kevlar.Shield.ExecuteWithContextAsync(M0,System.Action<M0,Kevlar.KevlarProperties>,System.Func<M0,Kevlar.KevlarContext,System.Threading.Tasks.ValueTask>,System.Threading.CancellationToken)"),
         ("await Shield.Empty.ExecuteOutcomeAsync(ct => new ValueTask<int>(1));", "Kevlar.Shield.ExecuteOutcomeAsync(System.Func<System.Threading.CancellationToken,System.Threading.Tasks.ValueTask<M0>>,System.Threading.CancellationToken)"),
         ("await Shield.Empty.ExecuteOutcomeAsync(1, (state, ct) => new ValueTask<int>(state));", "Kevlar.Shield.ExecuteOutcomeAsync(M1,System.Func<M1,System.Threading.CancellationToken,System.Threading.Tasks.ValueTask<M0>>,System.Threading.CancellationToken)"),
         ("await Shield.Empty.ExecuteAsync(ct => Task.FromResult(1));", "Kevlar.ShieldTaskExtensions.ExecuteAsync(Kevlar.Shield,System.Func<System.Threading.CancellationToken,System.Threading.Tasks.Task<M0>>,System.Threading.CancellationToken)"),
         ("await Shield.Empty.ExecuteAsync(1, (state, ct) => Task.FromResult(state));", "Kevlar.ShieldTaskExtensions.ExecuteAsync(Kevlar.Shield,M1,System.Func<M1,System.Threading.CancellationToken,System.Threading.Tasks.Task<M0>>,System.Threading.CancellationToken)"),
         ("await Shield.Empty.ExecuteAsync(ct => Task.CompletedTask);", "Kevlar.ShieldTaskExtensions.ExecuteAsync(Kevlar.Shield,System.Func<System.Threading.CancellationToken,System.Threading.Tasks.Task>,System.Threading.CancellationToken)"),
         ("await Shield.Empty.ExecuteAsync(1, (state, ct) => { _ = state; return Task.CompletedTask; });", "Kevlar.ShieldTaskExtensions.ExecuteAsync(Kevlar.Shield,M0,System.Func<M0,System.Threading.CancellationToken,System.Threading.Tasks.Task>,System.Threading.CancellationToken)"),
+        ("await Shield.Empty.ExecuteWithContextAsync(1, (_, _) => { }, (state, context) => Task.FromResult(state));", "Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield,M1,System.Action<M1,Kevlar.KevlarProperties>,System.Func<M1,Kevlar.KevlarContext,System.Threading.Tasks.Task<M0>>,System.Threading.CancellationToken)"),
+        ("await Shield.Empty.ExecuteWithContextAsync(1, (_, _) => { }, (state, context) => { _ = state; return Task.CompletedTask; });", "Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield,M0,System.Action<M0,Kevlar.KevlarProperties>,System.Func<M0,Kevlar.KevlarContext,System.Threading.Tasks.Task>,System.Threading.CancellationToken)"),
         ("await Shield.Empty.ExecuteOutcomeAsync(ct => Task.FromResult(1));", "Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync(Kevlar.Shield,System.Func<System.Threading.CancellationToken,System.Threading.Tasks.Task<M0>>,System.Threading.CancellationToken)"),
         ("await Shield.Empty.ExecuteOutcomeAsync(1, (state, ct) => Task.FromResult(state));", "Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync(Kevlar.Shield,M1,System.Func<M1,System.Threading.CancellationToken,System.Threading.Tasks.Task<M0>>,System.Threading.CancellationToken)"),
         ("var result = Shield<int>.Empty.Execute(ct => 1);", "Kevlar.Shield<T0>.Execute(System.Func<System.Threading.CancellationToken,T0>,System.Threading.CancellationToken)"),
         ("var result = Shield<int>.Empty.Execute(1, (state, ct) => state);", "Kevlar.Shield<T0>.Execute(M0,System.Func<M0,System.Threading.CancellationToken,T0>,System.Threading.CancellationToken)"),
+        ("var result = Shield<int>.Empty.ExecuteWithContext(1, (_, _) => { }, (state, context) => state);", "Kevlar.Shield<T0>.ExecuteWithContext(M0,System.Action<M0,Kevlar.KevlarProperties>,System.Func<M0,Kevlar.KevlarContext,T0>,System.Threading.CancellationToken)"),
         ("await Shield<int>.Empty.ExecuteAsync(ct => new ValueTask<int>(1));", "Kevlar.Shield<T0>.ExecuteAsync(System.Func<System.Threading.CancellationToken,System.Threading.Tasks.ValueTask<T0>>,System.Threading.CancellationToken)"),
         ("await Shield<int>.Empty.ExecuteAsync(1, (state, ct) => new ValueTask<int>(state));", "Kevlar.Shield<T0>.ExecuteAsync(M0,System.Func<M0,System.Threading.CancellationToken,System.Threading.Tasks.ValueTask<T0>>,System.Threading.CancellationToken)"),
+        ("await Shield<int>.Empty.ExecuteWithContextAsync(1, (_, _) => { }, (state, context) => new ValueTask<int>(state));", "Kevlar.Shield<T0>.ExecuteWithContextAsync(M0,System.Action<M0,Kevlar.KevlarProperties>,System.Func<M0,Kevlar.KevlarContext,System.Threading.Tasks.ValueTask<T0>>,System.Threading.CancellationToken)"),
         ("await Shield<int>.Empty.ExecuteOutcomeAsync(ct => new ValueTask<int>(1));", "Kevlar.Shield<T0>.ExecuteOutcomeAsync(System.Func<System.Threading.CancellationToken,System.Threading.Tasks.ValueTask<T0>>,System.Threading.CancellationToken)"),
         ("await Shield<int>.Empty.ExecuteOutcomeAsync(1, (state, ct) => new ValueTask<int>(state));", "Kevlar.Shield<T0>.ExecuteOutcomeAsync(M0,System.Func<M0,System.Threading.CancellationToken,System.Threading.Tasks.ValueTask<T0>>,System.Threading.CancellationToken)"),
         ("await Shield<int>.Empty.ExecuteAsync(ct => Task.FromResult(1));", "Kevlar.ShieldTaskExtensions.ExecuteAsync(Kevlar.Shield<M0>,System.Func<System.Threading.CancellationToken,System.Threading.Tasks.Task<M0>>,System.Threading.CancellationToken)"),
         ("await Shield<int>.Empty.ExecuteAsync(1, (state, ct) => Task.FromResult(state));", "Kevlar.ShieldTaskExtensions.ExecuteAsync(Kevlar.Shield<M0>,M1,System.Func<M1,System.Threading.CancellationToken,System.Threading.Tasks.Task<M0>>,System.Threading.CancellationToken)"),
+        ("await Shield<int>.Empty.ExecuteWithContextAsync(1, (_, _) => { }, (state, context) => Task.FromResult(state));", "Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield<M0>,M1,System.Action<M1,Kevlar.KevlarProperties>,System.Func<M1,Kevlar.KevlarContext,System.Threading.Tasks.Task<M0>>,System.Threading.CancellationToken)"),
         ("await Shield<int>.Empty.ExecuteOutcomeAsync(ct => Task.FromResult(1));", "Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync(Kevlar.Shield<M0>,System.Func<System.Threading.CancellationToken,System.Threading.Tasks.Task<M0>>,System.Threading.CancellationToken)"),
         ("await Shield<int>.Empty.ExecuteOutcomeAsync(1, (state, ct) => Task.FromResult(state));", "Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync(Kevlar.Shield<M0>,M1,System.Func<M1,System.Threading.CancellationToken,System.Threading.Tasks.Task<M0>>,System.Threading.CancellationToken)"),
+    ];
+
+    private static readonly string[] CleanContextExecutionCases =
+    [
+        "var result = Shield.Empty.ExecuteWithContext(1, static (_, _) => { }, static (_, context) => context.CancellationToken.GetHashCode());",
+        "Shield.Empty.ExecuteWithContext(1, static (_, _) => { }, static (_, context) => context.CancellationToken.ThrowIfCancellationRequested());",
+        "await Shield.Empty.ExecuteWithContextAsync(1, static (_, _) => { }, static (_, context) => new ValueTask<int>(context.CancellationToken.GetHashCode()));",
+        "await Shield.Empty.ExecuteWithContextAsync(1, static (_, _) => { }, static (_, context) => { context.CancellationToken.ThrowIfCancellationRequested(); return ValueTask.CompletedTask; });",
+        "await Shield.Empty.ExecuteWithContextAsync(1, static (_, _) => { }, static (_, context) => Task.FromResult(context.CancellationToken.GetHashCode()));",
+        "await Shield.Empty.ExecuteWithContextAsync(1, static (_, _) => { }, static (_, context) => { context.CancellationToken.ThrowIfCancellationRequested(); return Task.CompletedTask; });",
+        "var result = Shield<int>.Empty.ExecuteWithContext(1, static (_, _) => { }, static (_, context) => context.CancellationToken.GetHashCode());",
+        "await Shield<int>.Empty.ExecuteWithContextAsync(1, static (_, _) => { }, static (_, context) => new ValueTask<int>(context.CancellationToken.GetHashCode()));",
+        "await Shield<int>.Empty.ExecuteWithContextAsync(1, static (_, _) => { }, static (_, context) => Task.FromResult(context.CancellationToken.GetHashCode()));",
     ];
 
     private static Task<ImmutableArray<Diagnostic>> AnalyzeAsync(string body) =>
@@ -137,7 +159,8 @@ public class IgnoredCancellationTokenTests
     }
 
     private static bool IsExecutionMethod(IMethodSymbol method) =>
-        method.Name is "Execute" or "ExecuteAsync" or "ExecuteOutcomeAsync";
+        method.Name is "Execute" or "ExecuteAsync" or "ExecuteOutcomeAsync"
+            or "ExecuteWithContext" or "ExecuteWithContextAsync";
 
     private static string GetMethodSignature(IMethodSymbol method) =>
         $"{GetTypeSignature(method.ContainingType)}.{method.Name}({string.Join(",", method.Parameters.Select(parameter => GetTypeSignature(parameter.Type)))})";
@@ -238,6 +261,121 @@ public class IgnoredCancellationTokenTests
     }
 
     [Test]
+    public async Task Context_Actions_Must_Use_The_Effective_Token()
+    {
+        var ignored = await AnalyzeAsync("""
+            await Shield.Empty.ExecuteWithContextAsync(
+                5,
+                static (_, _) => { },
+                static (state, context) => new ValueTask<int>(state + context.Properties.GetOrDefault(new KevlarKey<int>("value"))));
+            """);
+        await Assert.That(ignored.Length).IsEqualTo(1);
+
+        var clean = await AnalyzeAsync("""
+            await Shield.Empty.ExecuteWithContextAsync(
+                5,
+                static (_, _) => { },
+                static (state, context) => new ValueTask<int>(state + context.CancellationToken.GetHashCode()));
+            """);
+        await Assert.That(clean.Length).IsEqualTo(0);
+    }
+
+    [Test]
+    public Task Context_Action_Families_Accept_The_Effective_Token() =>
+        AssertDiagnosticCountAsync(CleanContextExecutionCases, 0, "context token used");
+
+    [Test]
+    public async Task Reassigned_Context_Alias_Does_Not_Suppress_The_Diagnostic()
+    {
+        var direct = await AnalyzeAsync("""
+            KevlarContext state = null!;
+            await Shield.Empty.ExecuteWithContextAsync(
+                state,
+                static (_, _) => { },
+                static (other, context) =>
+                {
+                    var active = context;
+                    active = other;
+                    return new ValueTask<int>(active.CancellationToken.GetHashCode());
+                });
+            """);
+        await Assert.That(direct.Length).IsEqualTo(1);
+
+        var conditional = await AnalyzeAsync("""
+            KevlarContext state = null!;
+            await Shield.Empty.ExecuteWithContextAsync(
+                state,
+                static (_, _) => { },
+                static (other, context) =>
+                {
+                    KevlarContext active;
+                    if (DateTime.UtcNow.Ticks > 0)
+                    {
+                        active = context;
+                    }
+                    else
+                    {
+                        active = other;
+                    }
+
+                    return new ValueTask<int>(active.CancellationToken.GetHashCode());
+                });
+            """);
+        await Assert.That(conditional.Length).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Context_Alias_Is_Tracked_At_The_Use_Site()
+    {
+        var diagnostics = await AnalyzeAsync("""
+            KevlarContext state = null!;
+            await Shield.Empty.ExecuteWithContextAsync(
+                state,
+                static (_, _) => { },
+                static (other, context) =>
+                {
+                    var active = context;
+                    var result = active.CancellationToken.GetHashCode();
+                    active = other;
+                    return new ValueTask<int>(result);
+                });
+            """);
+
+        await Assert.That(diagnostics.Length).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Latest_Context_Assignment_Restores_Alias_State()
+    {
+        var diagnostics = await AnalyzeAsync("""
+            KevlarContext state = null!;
+            await Shield.Empty.ExecuteWithContextAsync(
+                state,
+                static (_, _) => { },
+                static (other, context) =>
+                {
+                    KevlarContext active = other;
+                    active = context;
+                    return new ValueTask<int>(active.CancellationToken.GetHashCode());
+                });
+            """);
+
+        await Assert.That(diagnostics.Length).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Delegate_Valued_State_Is_Not_Analyzed_As_The_Action()
+    {
+        var diagnostics = await AnalyzeAsync("""
+            var result = Shield.Empty.Execute<int, Func<CancellationToken, int>>(
+                ignored => 1,
+                static (state, cancellationToken) => state(cancellationToken) + cancellationToken.GetHashCode());
+            """);
+
+        await Assert.That(diagnostics.Length).IsEqualTo(0);
+    }
+
+    [Test]
     public async Task CancellationToken_State_Does_Not_Suppress_The_Execution_Token()
     {
         var diagnostics = await AnalyzeAsync("""
@@ -247,6 +385,97 @@ public class IgnoredCancellationTokenTests
             """);
 
         await Assert.That(diagnostics.Length).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task CancellationToken_State_Does_Not_Hide_The_Context_Token()
+    {
+        var ignored = await AnalyzeAsync("""
+            await Shield.Empty.ExecuteWithContextAsync(
+                CancellationToken.None,
+                static (state, properties) => properties.Set(new KevlarKey<int>("state"), state.GetHashCode()),
+                static (state, context) => new ValueTask<int>(state.GetHashCode()));
+            """);
+        await Assert.That(ignored.Length).IsEqualTo(1);
+
+        var clean = await AnalyzeAsync("""
+            await Shield.Empty.ExecuteWithContextAsync(
+                CancellationToken.None,
+                static (state, properties) => properties.Set(new KevlarKey<int>("value"), 1),
+                static (_, context) => new ValueTask<int>(context.CancellationToken.GetHashCode()));
+            """);
+        await Assert.That(clean.Length).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task KevlarContext_State_Does_Not_Hide_The_Execution_Token()
+    {
+        var ignored = await AnalyzeAsync("""
+            KevlarContext state = null!;
+            await Shield.Empty.ExecuteAsync(
+                state,
+                static (contextState, ct) => new ValueTask<int>(contextState.CancellationToken.GetHashCode()));
+            """);
+        await Assert.That(ignored.Length).IsEqualTo(1);
+
+        var clean = await AnalyzeAsync("""
+            KevlarContext state = null!;
+            await Shield.Empty.ExecuteAsync(
+                state,
+                static (contextState, ct) => new ValueTask<int>(ct.GetHashCode()));
+            """);
+        await Assert.That(clean.Length).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Forwarded_Context_Is_Clean()
+    {
+        var diagnostics = await AnalyzeAsync("""
+            static ValueTask<int> RunAsync(int state, KevlarContext context) =>
+                new(state + context.CancellationToken.GetHashCode());
+
+            await Shield.Empty.ExecuteWithContextAsync(
+                5,
+                static (_, _) => { },
+                static (state, context) => RunAsync(state, context));
+            """);
+
+        await Assert.That(diagnostics.Length).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Context_Token_Use_Through_A_Local_Alias_Is_Clean()
+    {
+        var diagnostics = await AnalyzeAsync("""
+            await Shield.Empty.ExecuteWithContextAsync(
+                5,
+                static (_, _) => { },
+                static (state, context) =>
+                {
+                    var activeContext = context;
+                    return new ValueTask<int>(state + activeContext.CancellationToken.GetHashCode());
+                });
+            """);
+
+        await Assert.That(diagnostics.Length).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Context_Token_Use_Through_An_Assigned_Local_Alias_Is_Clean()
+    {
+        var diagnostics = await AnalyzeAsync("""
+            await Shield.Empty.ExecuteWithContextAsync(
+                5,
+                static (_, _) => { },
+                static (state, context) =>
+                {
+                    KevlarContext activeContext;
+                    activeContext = context;
+                    return new ValueTask<int>(state + activeContext.CancellationToken.GetHashCode());
+                });
+            """);
+
+        await Assert.That(diagnostics.Length).IsEqualTo(0);
     }
 
     [Test]

@@ -86,6 +86,8 @@ _SECTIONS = {
 _SCENARIO_LABELS = {
     ("OverheadBenchmarks", "Empty"): "Empty pipeline — async",
     ("OverheadBenchmarks", "EmptyState"): "Empty pipeline — zero-closure state overload",
+    ("OverheadBenchmarks", "EmptyReferenceState"): "Empty pipeline — reference-state baseline",
+    ("OverheadBenchmarks", "EmptyContextState"): "Empty pipeline — caller-seeded context",
     ("OverheadBenchmarks", "EmptySync"): "Empty pipeline — sync",
     ("RetryBenchmarks", "HappyPath"): "Retry(3) — success on first attempt",
     ("RetryBenchmarks", "Recovery"): "Retry(3) — two failures then success",
