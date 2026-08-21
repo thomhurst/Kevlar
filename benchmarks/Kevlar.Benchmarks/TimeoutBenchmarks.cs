@@ -16,6 +16,19 @@ public class TimeoutBenchmarks
 {
     private static readonly Shield KevlarTimeout = Shield.Timeout(TimeSpan.FromSeconds(10));
 
+    private static readonly Shield KevlarGeneratedTimeout = Shield.Timeout(options =>
+        options.TimeoutGenerator = static _ =>
+            new ValueTask<TimeSpan>(TimeSpan.FromSeconds(10)));
+
+    private static readonly Shield KevlarAsyncGeneratedTimeout = Shield.Timeout(options =>
+        options.TimeoutGenerator = GenerateTimeoutAsync);
+
+    private static readonly Shield KevlarAsyncHookConfigured = Shield.Timeout(options =>
+    {
+        options.Timeout = TimeSpan.FromSeconds(10);
+        options.OnTimeoutAsync = static _ => ValueTask.CompletedTask;
+    });
+
     private static readonly ResiliencePipeline PollyTimeout = new ResiliencePipelineBuilder()
         .AddTimeout(new TimeoutStrategyOptions { Timeout = TimeSpan.FromSeconds(10) })
         .Build();
@@ -25,4 +38,22 @@ public class TimeoutBenchmarks
 
     [BenchmarkCategory("HappyPath"), Benchmark]
     public ValueTask<int> Polly_HappyPath() => PollyTimeout.ExecuteAsync(static _ => new ValueTask<int>(42));
+
+    [BenchmarkCategory("HappyPath"), Benchmark]
+    public ValueTask<int> Kevlar_SynchronousGenerator_HappyPath() =>
+        KevlarGeneratedTimeout.ExecuteAsync(static _ => new ValueTask<int>(42));
+
+    [BenchmarkCategory("HappyPath"), Benchmark]
+    public ValueTask<int> Kevlar_AsynchronousGenerator_HappyPath() =>
+        KevlarAsyncGeneratedTimeout.ExecuteAsync(static _ => new ValueTask<int>(42));
+
+    [BenchmarkCategory("HappyPath"), Benchmark]
+    public ValueTask<int> Kevlar_AsyncHookConfigured_HappyPath() =>
+        KevlarAsyncHookConfigured.ExecuteAsync(static _ => new ValueTask<int>(42));
+
+    private static async ValueTask<TimeSpan> GenerateTimeoutAsync(KevlarContext _)
+    {
+        await Task.Yield();
+        return TimeSpan.FromSeconds(10);
+    }
 }

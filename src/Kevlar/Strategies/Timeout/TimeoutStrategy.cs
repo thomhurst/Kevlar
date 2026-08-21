@@ -11,19 +11,67 @@ namespace Kevlar.Strategies;
 internal sealed class TimeoutStrategy : Strategy
 {
     private readonly TimeSpan _timeout;
+    private readonly Func<KevlarContext, ValueTask<TimeSpan>>? _timeoutGenerator;
     private readonly Action<TimeoutEvent>? _onTimeout;
+    private readonly Func<TimeoutEvent, ValueTask>? _onTimeoutAsync;
 
     public TimeoutStrategy(TimeoutOptions options)
     {
         Throw.IfOutOfRange(options.Timeout <= TimeSpan.Zero, nameof(options), "Timeout must be positive.");
         Throw.IfOutOfRange(options.Timeout > DelayHelper.MaximumDelay, nameof(options.Timeout), "Timeout exceeds the runtime timer limit.");
         _timeout = options.Timeout;
+        _timeoutGenerator = options.TimeoutGenerator;
         _onTimeout = options.OnTimeout;
+        _onTimeoutAsync = options.OnTimeoutAsync;
     }
 
-    public override string Describe() => $"Timeout({DescribeHelper.Time(_timeout)})";
+    public override string Describe() => _timeoutGenerator is null
+        ? $"Timeout({DescribeHelper.Time(_timeout)})"
+        : "Timeout(dynamic)";
 
     public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
+    {
+        if (_timeoutGenerator is null)
+        {
+            return ExecuteWithTimeout(next, context, _timeout);
+        }
+
+        var generation = _timeoutGenerator(context);
+        if (!generation.IsCompletedSuccessfully)
+        {
+            return AwaitGenerationAsync(generation, next, context);
+        }
+
+        var timeout = generation.Result;
+        ValidateGeneratedTimeout(timeout);
+        if (context.CancellationToken.IsCancellationRequested)
+        {
+            return new ValueTask<Outcome<T>>(Outcome<T>.FromException(
+                new OperationCanceledException(context.CancellationToken)));
+        }
+
+        return ExecuteWithTimeout(next, context, timeout);
+    }
+
+    private async ValueTask<Outcome<T>> AwaitGenerationAsync<T, TState>(
+        ValueTask<TimeSpan> generation,
+        Continuation<T, TState> next,
+        KevlarContext context)
+    {
+        var timeout = await generation.ConfigureAwait(false);
+        ValidateGeneratedTimeout(timeout);
+        if (context.CancellationToken.IsCancellationRequested)
+        {
+            return Outcome<T>.FromException(new OperationCanceledException(context.CancellationToken));
+        }
+
+        return await ExecuteWithTimeout(next, context, timeout).ConfigureAwait(false);
+    }
+
+    private ValueTask<Outcome<T>> ExecuteWithTimeout<T, TState>(
+        Continuation<T, TState> next,
+        KevlarContext context,
+        TimeSpan timeout)
     {
         var priorToken = context.CancellationToken;
         var usesSystemTime = ReferenceEquals(context.TimeProvider, TimeProvider.System);
@@ -37,7 +85,7 @@ internal sealed class TimeoutStrategy : Strategy
         {
             if (usesSystemTime)
             {
-                timeoutSource.CancelAfter(_timeout);
+                timeoutSource.CancelAfter(timeout);
             }
             else
             {
@@ -54,7 +102,7 @@ internal sealed class TimeoutStrategy : Strategy
                         }
                     },
                     timeoutSource,
-                    _timeout,
+                    timeout,
                     System.Threading.Timeout.InfiniteTimeSpan);
             }
 
@@ -69,7 +117,7 @@ internal sealed class TimeoutStrategy : Strategy
 
         if (!execution.IsCompletedSuccessfully)
         {
-            return AwaitAsync(execution, context, priorToken, timeoutSource, timer);
+            return AwaitAsync(execution, context, priorToken, timeoutSource, timer, timeout);
         }
 
         var outcome = execution.Result;
@@ -79,13 +127,14 @@ internal sealed class TimeoutStrategy : Strategy
             return new ValueTask<Outcome<T>>(outcome);
         }
 
-        return new ValueTask<Outcome<T>>(CompleteCancellation(
+        return CompleteCancellationAsync(
             outcome,
             cancellationException,
             context,
             priorToken,
             timeoutSource,
-            timer));
+            timer,
+            timeout);
     }
 
     private async ValueTask<Outcome<T>> AwaitAsync<T>(
@@ -93,7 +142,8 @@ internal sealed class TimeoutStrategy : Strategy
         KevlarContext context,
         CancellationToken priorToken,
         CancellationTokenSource timeoutSource,
-        ITimer? timer)
+        ITimer? timer,
+        TimeSpan timeout)
     {
         Outcome<T> outcome;
 
@@ -113,7 +163,14 @@ internal sealed class TimeoutStrategy : Strategy
             return outcome;
         }
 
-        return CompleteCancellation(outcome, cancellationException, context, priorToken, timeoutSource, timer);
+        return await CompleteCancellationAsync(
+            outcome,
+            cancellationException,
+            context,
+            priorToken,
+            timeoutSource,
+            timer,
+            timeout).ConfigureAwait(false);
     }
 
     private static void Cleanup(
@@ -127,13 +184,14 @@ internal sealed class TimeoutStrategy : Strategy
         timeoutSource.Dispose();
     }
 
-    private Outcome<T> CompleteCancellation<T>(
+    private ValueTask<Outcome<T>> CompleteCancellationAsync<T>(
         Outcome<T> outcome,
         OperationCanceledException cancellationException,
         KevlarContext context,
         CancellationToken priorToken,
         CancellationTokenSource timeoutSource,
-        ITimer? timer)
+        ITimer? timer,
+        TimeSpan timeout)
     {
         context.CancellationToken = priorToken;
         timer?.Dispose();
@@ -144,13 +202,13 @@ internal sealed class TimeoutStrategy : Strategy
 
             if (cancellationException.CancellationToken == priorToken)
             {
-                return outcome;
+                return new ValueTask<Outcome<T>>(outcome);
             }
 
-            return Outcome<T>.FromException(new OperationCanceledException(
+            return new ValueTask<Outcome<T>>(Outcome<T>.FromException(new OperationCanceledException(
                 cancellationException.Message,
                 cancellationException,
-                priorToken));
+                priorToken)));
         }
 
         var timedOut = timeoutSource.IsCancellationRequested
@@ -160,10 +218,38 @@ internal sealed class TimeoutStrategy : Strategy
         if (timedOut)
         {
             KevlarMetrics.Timeout(context.ShieldName);
-            _onTimeout?.Invoke(new TimeoutEvent(_timeout, context));
-            return Outcome<T>.FromException(new TimeoutExceededException(_timeout));
+            var timeoutEvent = new TimeoutEvent(timeout, context);
+            _onTimeout?.Invoke(timeoutEvent);
+
+            if (_onTimeoutAsync is not null)
+            {
+                var notification = _onTimeoutAsync(timeoutEvent);
+                if (!notification.IsCompletedSuccessfully)
+                {
+                    return AwaitTimeoutNotificationAsync<T>(notification, timeout);
+                }
+
+                notification.GetAwaiter().GetResult();
+            }
+
+            return new ValueTask<Outcome<T>>(Outcome<T>.FromException(
+                new TimeoutExceededException(timeout)));
         }
 
-        return outcome;
+        return new ValueTask<Outcome<T>>(outcome);
+    }
+
+    private static async ValueTask<Outcome<T>> AwaitTimeoutNotificationAsync<T>(
+        ValueTask notification,
+        TimeSpan timeout)
+    {
+        await notification.ConfigureAwait(false);
+        return Outcome<T>.FromException(new TimeoutExceededException(timeout));
+    }
+
+    private static void ValidateGeneratedTimeout(TimeSpan timeout)
+    {
+        Throw.IfOutOfRange(timeout <= TimeSpan.Zero, nameof(timeout), "Generated timeout must be positive.");
+        Throw.IfOutOfRange(timeout > DelayHelper.MaximumDelay, nameof(timeout), "Generated timeout exceeds the runtime timer limit.");
     }
 }
