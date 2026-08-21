@@ -16,6 +16,7 @@ The only exception: [hedging](strategies/hedging.md) is inherently concurrent an
 
 `Task` and `ValueTask` delegates both work — your existing `Task`-returning methods flow straight in, no wrapping:
 
+<!-- doc-test-ignore: Method declaration uses an ellipsis for the application implementation. -->
 ```csharp
 Task<User> LoadUserAsync(int id, CancellationToken ct) => ...;   // ordinary Task method
 

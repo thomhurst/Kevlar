@@ -6,6 +6,7 @@ sidebar_position: 10
 
 You ship a library that talks to something flaky — an HTTP API, a database, a queue — and you want *your users* to decide how resilient those calls are. The integration surface is one parameter:
 
+<!-- doc-test-ignore: Library type depends on the author's Report model and FetchReportAsync transport. -->
 ```csharp
 public sealed class ReportsClient
 {
@@ -50,6 +51,7 @@ And for testing, you don't need a mock: `Shield.Empty` is the no-op, and fault i
 
 If callers should be able to react to *result values* — retry on `null`, hedge on an error status — accept a `Shield<T>` instead:
 
+<!-- doc-test-ignore: Constructor fragment intended to appear inside the library's ProfileClient type. -->
 ```csharp
 public ProfileClient(Shield<Profile?>? shield = null)
     => _shield = shield ?? Shield<Profile?>.Empty;
@@ -64,6 +66,7 @@ var client = new ProfileClient(
 
 `Shield.Empty` is the right default when resilience is genuinely optional. If your library *should* retry out of the box, default to a real shield instead — and think about where its state lives:
 
+<!-- doc-test-ignore: Constructor fragment intended to appear inside the library's ReportsClient type. -->
 ```csharp
 public ReportsClient(HttpClient http, Shield? shield = null)
     => _shield = shield ?? Shield.Retry(3).Timeout(TimeSpan.FromSeconds(10));

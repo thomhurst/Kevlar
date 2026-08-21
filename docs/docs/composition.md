@@ -77,6 +77,7 @@ var background  = Shield.Timeout(TimeSpan.FromSeconds(30)).Retry(5).Wrap(downstr
 
 A [handling clause](handling-failures.md) applies to the strategy it precedes *and* to every reactive strategy chained after it, until you write a new clause:
 
+<!-- doc-test-ignore: Uses an ellipsis to illustrate a fallback body defined by the application. -->
 ```csharp
 Shield
     .When<HttpRequestException>()
@@ -90,6 +91,7 @@ Shield
 
 One ordering is always a bug: a `Fallback` chained *after* (inside) a retry, hedge or circuit breaker that shares its handling clause. The fallback recovers every failure before the outer strategy sees one, silently disabling it. Kevlar refuses to build that chain:
 
+<!-- doc-test-run: invalid-composition -->
 ```csharp
 Shield.For<int>().Retry(3).Fallback(-1);
 // InvalidOperationException: … makes Retry(3, …) unreachable.

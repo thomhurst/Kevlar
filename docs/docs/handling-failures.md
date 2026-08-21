@@ -49,6 +49,7 @@ Shield.For<User?>().WhenDefault().Retry(2);   // retry when the result is null /
 
 A clause applies to the strategy it creates *and* to every reactive strategy chained after it, until you write a new clause:
 
+<!-- doc-test-ignore: Uses an ellipsis for the application-specific fallback implementation. -->
 ```csharp
 Shield
     .When<HttpRequestException>()      // clause #1

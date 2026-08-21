@@ -65,7 +65,7 @@ var shield = Shield.CircuitBreaker(o =>
     o.OnStateChanged = c => logger.LogWarning("Circuit {From} -> {To}", c.From, c.To);
 });
 
-monitor.State;          // Closed / Open / HalfOpen / Isolated
+_ = monitor.State;      // Closed / Open / HalfOpen / Isolated
 monitor.StateChanged += e => metrics.Record(e.To);
 monitor.Isolate();      // force open (maintenance switch)
 monitor.Reset();        // close and clear metrics

@@ -130,7 +130,7 @@ Shield.CircuitBreaker(o =>
     o.OnStateChanged = c => logger.LogWarning("Circuit {From} -> {To}", c.From, c.To);
 });
 
-monitor.State;      // Closed / Open / HalfOpen / Isolated
+_ = monitor.State;  // Closed / Open / HalfOpen / Isolated
 monitor.Isolate();  // force open (maintenance switch)
 monitor.Reset();    // close and clear metrics
 ```
@@ -173,11 +173,13 @@ var shield = Shield.For<Config>()
     .Fallback(Config.Default);
 
 // Or compute it, with access to the typed failure:
-.Fallback((outcome, ct) =>
-{
-    logger.LogError(outcome.Exception, "Using cached config");
-    return new ValueTask<Config>(cache.Get());
-});
+var computed = Shield.For<Config>()
+    .When<HttpRequestException>()
+    .Fallback((outcome, ct) =>
+    {
+        logger.LogError(outcome.Exception, "Using cached config");
+        return new ValueTask<Config>(cache.Get());
+    });
 
 // Void executions have their own fallback on the plain Shield:
 Shield.When<MessagingException>()
@@ -237,6 +239,7 @@ The same shield serves any result type, sync or async. (One exception: hedging i
 
 ## Dependency injection
 
+<!-- doc-test-tail-declaration: split-before=public sealed class -->
 ```csharp
 services.AddShield("github", Shield.Timeout(TimeSpan.FromSeconds(10)).Retry(3));
 services.AddShield<HttpResponseMessage>("downstream",
@@ -248,7 +251,10 @@ services.AddShield("github", builder.Configuration.GetSection("Resilience:GitHub
 // Consume via the registry…
 var shield = registry.GetShield("github");                       // IKevlarRegistry
 // …or as a keyed service
-public sealed class GitHubClient([FromKeyedServices("github")] Shield shield) { }
+public sealed class GitHubClient([FromKeyedServices("github")] Shield shield)
+{
+    public Shield Resilience { get; } = shield;
+}
 ```
 
 ## HTTP
@@ -275,6 +281,7 @@ And `dotnet add package Kevlar.Analyzers` adds compile-time checks — starting 
 
 Everything in Kevlar is a `Strategy` — middleware over an `Outcome<T>` pipeline. Write your own:
 
+<!-- doc-test-declaration: split-before=var shield -->
 ```csharp
 public sealed class LoggingStrategy(ILogger logger) : Strategy
 {

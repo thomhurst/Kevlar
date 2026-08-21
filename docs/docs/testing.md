@@ -31,6 +31,24 @@ dotnet stryker --config-file stryker-config.json
 Pop-Location
 ```
 
+## Documentation snippet gates
+
+Every C# fence in the README and Docusaurus documentation is compiled on pull requests. The harness extracts source directly from Markdown, generates isolated call sites, and restores Kevlar from the locally packed `.nupkg` files. This keeps documentation as the single source of truth and catches stale package IDs, API names, and overloads.
+
+Complete snippets need no marker. A fragment that intentionally depends on omitted application code must place an explicit reason immediately before its fence:
+
+```markdown
+<!-- doc-test-ignore: Application transport implementation is omitted. -->
+```
+
+Class-level declarations use `doc-test-declaration`; mixed blocks can split declarations from call sites with `doc-test-tail-declaration`; isolated custom strategy members use `doc-test-strategy-member`; safe behavioral samples use `doc-test-run`. Unknown or malformed directives fail validation. Shell `dotnet add package` IDs and `dotnet run --project` paths are validated separately.
+
+After packing with a chosen version, run the same package-consumer check locally:
+
+```powershell
+./scripts/Verify-DocSnippets.ps1 -PackagesPath artifacts/package/release -Version $packageVersion
+```
+
 Every delay, timeout and time window in Kevlar runs on a `TimeProvider`. Swap in a fake and your tests never actually wait:
 
 ```csharp

@@ -26,6 +26,7 @@ Because shields are immutable and thread-safe, each named shield is a singleton 
 
 ## Consuming via the registry
 
+<!-- doc-test-ignore: Application client type requires the host's FetchUserAsync implementation. -->
 ```csharp
 public sealed class GitHubClient(IKevlarRegistry registry)
 {
@@ -79,10 +80,11 @@ The schema is `ShieldDefinition`: optional `Timeout`, `Retry`, `CircuitBreaker`,
 
 Named shields are also registered as keyed services, so you can skip the registry entirely:
 
+<!-- doc-test-declaration -->
 ```csharp
 public sealed class GitHubClient([FromKeyedServices("github")] Shield shield)
 {
-    // ...
+    public Shield Resilience { get; } = shield;
 }
 ```
 
