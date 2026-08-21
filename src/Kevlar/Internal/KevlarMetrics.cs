@@ -17,9 +17,9 @@ internal static class KevlarMetrics
     public const int MaxTrackedStrategyAliases = 64;
 
 #if NET9_0_OR_GREATER
-    private const int MinimumCachedStrategyIndex = -1;
-    private const int MaximumCachedStrategyIndex = 63;
-    private static readonly object[] BoxedStrategyIndexes = CreateBoxedStrategyIndexes();
+    private const int _minimumCachedStrategyIndex = -1;
+    private const int _maximumCachedStrategyIndex = 63;
+    private static readonly object[] _boxedStrategyIndexes = CreateBoxedStrategyIndexes();
 #endif
 
 #if NET8_0_OR_GREATER
@@ -287,16 +287,16 @@ internal static class KevlarMetrics
     }
 
     private static object BoxStrategyIndex(int strategyIndex) =>
-        strategyIndex is >= MinimumCachedStrategyIndex and <= MaximumCachedStrategyIndex
-            ? BoxedStrategyIndexes[strategyIndex - MinimumCachedStrategyIndex]
+        strategyIndex is >= _minimumCachedStrategyIndex and <= _maximumCachedStrategyIndex
+            ? _boxedStrategyIndexes[strategyIndex - _minimumCachedStrategyIndex]
             : strategyIndex;
 
     private static object[] CreateBoxedStrategyIndexes()
     {
-        var indexes = new object[MaximumCachedStrategyIndex - MinimumCachedStrategyIndex + 1];
-        for (var index = MinimumCachedStrategyIndex; index <= MaximumCachedStrategyIndex; index++)
+        var indexes = new object[_maximumCachedStrategyIndex - _minimumCachedStrategyIndex + 1];
+        for (var index = _minimumCachedStrategyIndex; index <= _maximumCachedStrategyIndex; index++)
         {
-            indexes[index - MinimumCachedStrategyIndex] = index;
+            indexes[index - _minimumCachedStrategyIndex] = index;
         }
 
         return indexes;
