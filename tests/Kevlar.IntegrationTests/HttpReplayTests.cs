@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Headers;
 using Kevlar.Extensions.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Kevlar.IntegrationTests;
 
@@ -386,6 +387,255 @@ public class HttpReplayTests
     }
 
     [Test]
+    public async Task Standard_Hedging_Routes_And_Isolates_Endpoint_Breakers()
+    {
+        var calls = new System.Collections.Concurrent.ConcurrentDictionary<string, int>(
+            StringComparer.Ordinal);
+        var transport = new RecordingHandler((_, request, _) =>
+        {
+            var host = request.RequestUri!.Host;
+            _ = calls.AddOrUpdate(host, 1, static (_, current) => current + 1);
+            return Task.FromResult(new HttpResponseMessage(
+                host == "first.example" ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.OK));
+        });
+        using var services = CreateStandardHedgingServices(transport, options =>
+        {
+            options.Endpoints.Add(new HttpEndpoint(new Uri("https://first.example")));
+            options.Endpoints.Add(new HttpEndpoint(new Uri("https://second.example")));
+            options.HedgeDelay = Timeout.InfiniteTimeSpan;
+            options.ConsecutiveFailures = 1;
+            options.FailureRatio = null;
+        });
+        using var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("standard-hedging");
+
+        using var first = await client.GetAsync("https://origin.example/api");
+        using var second = await client.GetAsync("https://origin.example/api");
+
+        await Assert.That(first.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(second.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(calls["first.example"]).IsEqualTo(1);
+        await Assert.That(calls["second.example"]).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task Standard_Hedging_Attempt_Timeout_Advances_To_Next_Endpoint()
+    {
+        var timedOut = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var transport = new RecordingHandler(async (_, request, cancellationToken) =>
+        {
+            if (request.RequestUri!.Host == "first.example")
+            {
+                try
+                {
+                    await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    timedOut.TrySetResult();
+                    throw;
+                }
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        });
+        using var services = CreateStandardHedgingServices(transport, options =>
+        {
+            options.Endpoints.Add(new HttpEndpoint(new Uri("https://first.example")));
+            options.Endpoints.Add(new HttpEndpoint(new Uri("https://second.example")));
+            options.HedgeDelay = Timeout.InfiniteTimeSpan;
+            options.AttemptTimeout = TimeSpan.FromMilliseconds(20);
+        });
+        using var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("standard-hedging");
+
+        using var response = await client.GetAsync("https://origin.example/api")
+            .WaitAsync(TimeSpan.FromSeconds(5));
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await timedOut.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await Assert.That(transport.Attempts).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task Standard_Hedging_Propagates_Caller_Cancellation()
+    {
+        var transport = new RecordingHandler(async (_, _, cancellationToken) =>
+        {
+            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        });
+        using var services = CreateStandardHedgingServices(transport, options =>
+        {
+            options.Endpoints.Add(new HttpEndpoint(new Uri("https://first.example")));
+            options.Endpoints.Add(new HttpEndpoint(new Uri("https://second.example")));
+            options.HedgeDelay = TimeSpan.Zero;
+            options.TotalTimeout = TimeSpan.FromMinutes(1);
+            options.AttemptTimeout = TimeSpan.FromMinutes(1);
+        });
+        using var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("standard-hedging");
+        using var cancellation = new CancellationTokenSource();
+
+        var send = client.GetAsync("https://origin.example/api", cancellation.Token);
+        await Task.Delay(20);
+        cancellation.Cancel();
+
+        var exception = await Assert.That(async () => await send).Throws<OperationCanceledException>();
+        await Assert.That(exception!.CancellationToken).IsEqualTo(cancellation.Token);
+    }
+
+    [Test]
+    public async Task Standard_Hedging_Total_Timeout_Covers_All_Attempts()
+    {
+        var transport = new RecordingHandler(async (_, _, cancellationToken) =>
+        {
+            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        });
+        using var services = CreateStandardHedgingServices(transport, options =>
+        {
+            options.Endpoints.Add(new HttpEndpoint(new Uri("https://first.example")));
+            options.Endpoints.Add(new HttpEndpoint(new Uri("https://second.example")));
+            options.HedgeDelay = TimeSpan.Zero;
+            options.TotalTimeout = TimeSpan.FromSeconds(1);
+            options.AttemptTimeout = TimeSpan.FromMinutes(1);
+        });
+        using var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("standard-hedging");
+
+        _ = await Assert.That(async () => await client.GetAsync("https://origin.example/api"))
+            .Throws<TimeoutExceededException>();
+
+        await Assert.That(transport.Attempts).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task Standard_Hedging_Explicitly_Replays_Unsafe_Content_And_Disposes_Failure()
+    {
+        var failedContent = new TrackingContent("failed");
+        var bodies = new List<string>();
+        var transport = new RecordingHandler(async (_, request, _) =>
+        {
+            bodies.Add(await request.Content!.ReadAsStringAsync());
+            return request.RequestUri!.Host == "first.example"
+                ? new HttpResponseMessage(HttpStatusCode.ServiceUnavailable) { Content = failedContent }
+                : new HttpResponseMessage(HttpStatusCode.OK);
+        });
+        using var services = CreateStandardHedgingServices(transport, options =>
+        {
+            options.Endpoints.Add(new HttpEndpoint(new Uri("https://first.example")));
+            options.Endpoints.Add(new HttpEndpoint(new Uri("https://second.example")));
+            options.HedgeDelay = Timeout.InfiniteTimeSpan;
+            options.ContentReplayPolicy = HttpContentReplayPolicy.Buffer;
+            options.AllowUnsafeMethodReplay = true;
+        });
+        using var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("standard-hedging");
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://origin.example/upload")
+        {
+            Content = new StringContent("payload"),
+        };
+
+        using var response = await client.SendAsync(request);
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(bodies).IsEquivalentTo(["payload", "payload"]);
+        await Assert.That(failedContent.DisposeCount).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Standard_Hedging_Rejects_Unsafe_Replay_Without_Explicit_Opt_In()
+    {
+        var failedContent = new TrackingContent("failed");
+        var transport = new RecordingHandler((_, _, _) => Task.FromResult(
+            new HttpResponseMessage(HttpStatusCode.ServiceUnavailable) { Content = failedContent }));
+        using var services = CreateStandardHedgingServices(transport, options =>
+        {
+            options.Endpoints.Add(new HttpEndpoint(new Uri("https://first.example")));
+            options.Endpoints.Add(new HttpEndpoint(new Uri("https://second.example")));
+            options.HedgeDelay = Timeout.InfiniteTimeSpan;
+        });
+        using var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("standard-hedging");
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://origin.example/upload")
+        {
+            Content = new StringContent("payload"),
+        };
+
+        _ = await Assert.That(async () => await client.SendAsync(request))
+            .Throws<HttpRequestReplayException>();
+
+        await Assert.That(transport.Attempts).IsEqualTo(1);
+        await Assert.That(failedContent.DisposeCount).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Standard_Hedging_Uses_Second_Endpoint_When_First_Is_Concurrency_Limited()
+    {
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var firstStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var hosts = new System.Collections.Concurrent.ConcurrentBag<string>();
+        var transport = new RecordingHandler(async (_, request, cancellationToken) =>
+        {
+            hosts.Add(request.RequestUri!.Host);
+            if (request.RequestUri.Host == "first.example")
+            {
+                firstStarted.TrySetResult();
+                await release.Task.WaitAsync(cancellationToken);
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        });
+        using var services = CreateStandardHedgingServices(transport, options =>
+        {
+            options.Endpoints.Add(new HttpEndpoint(new Uri("https://first.example")));
+            options.Endpoints.Add(new HttpEndpoint(new Uri("https://second.example")));
+            options.HedgeDelay = Timeout.InfiniteTimeSpan;
+            options.MaxConcurrency = 1;
+            options.MaxQueue = 0;
+            options.TotalTimeout = TimeSpan.FromMinutes(1);
+            options.AttemptTimeout = TimeSpan.FromMinutes(1);
+        });
+        using var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("standard-hedging");
+
+        var holding = client.GetAsync("https://origin.example/holding");
+        await firstStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        using var overflow = await client.GetAsync("https://origin.example/overflow")
+            .WaitAsync(TimeSpan.FromSeconds(5));
+        release.TrySetResult();
+        using var held = await holding.WaitAsync(TimeSpan.FromSeconds(5));
+
+        await Assert.That(overflow.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(held.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(hosts.Count(static host => host == "first.example")).IsEqualTo(1);
+        await Assert.That(hosts.Count(static host => host == "second.example")).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Standard_Hedging_Uses_Weighted_Endpoint_Selection()
+    {
+        var hosts = new List<string>();
+        var transport = new RecordingHandler((_, request, _) =>
+        {
+            hosts.Add(request.RequestUri!.Host);
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
+        });
+        using var services = CreateStandardHedgingServices(transport, options =>
+        {
+            options.Endpoints.Add(new HttpEndpoint(new Uri("https://first.example"), 5));
+            options.Endpoints.Add(new HttpEndpoint(new Uri("https://second.example"), 1));
+            options.SelectionMode = HttpEndpointSelectionMode.Weighted;
+            options.Seed = 1729;
+            options.MaxAttempts = 1;
+        });
+        using var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("standard-hedging");
+
+        for (var index = 0; index < 32; index++)
+        {
+            using var response = await client.GetAsync($"https://origin.example/{index}");
+        }
+
+        await Assert.That(hosts.Distinct().Count()).IsEqualTo(2);
+        await Assert.That(hosts.Count(static host => host == "first.example"))
+            .IsGreaterThan(hosts.Count(static host => host == "second.example"));
+    }
+
+    [Test]
     public async Task Weighted_Routing_Is_Deterministic_For_A_Seed()
     {
         var first = await WeightedSequence(1729);
@@ -589,6 +839,17 @@ public class HttpReplayTests
         }
 
         return new ShieldHttpHandlerOptions { Routing = routing };
+    }
+
+    private static ServiceProvider CreateStandardHedgingServices(
+        HttpMessageHandler transport,
+        Action<StandardHedgingShieldOptions> configure)
+    {
+        var services = new ServiceCollection();
+        services.AddHttpClient("standard-hedging")
+            .ConfigurePrimaryHttpMessageHandler(() => transport)
+            .AddStandardHedgingShield(configure);
+        return services.BuildServiceProvider();
     }
 
     private static HttpMessageInvoker CreateInvoker(

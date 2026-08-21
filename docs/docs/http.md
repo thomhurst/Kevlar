@@ -143,6 +143,31 @@ Route attempt 1, attempt 2, and so on across alternate authorities while preserv
 path and query:
 
 ```csharp
+services.AddHttpClient("routed")
+    .AddStandardHedgingShield(options =>
+    {
+        options.Endpoints.Add(new HttpEndpoint(new Uri("https://api-a.example"), weight: 3));
+        options.Endpoints.Add(new HttpEndpoint(new Uri("https://api-b.example"), weight: 1));
+        options.SelectionMode = HttpEndpointSelectionMode.Weighted;
+        options.MaxAttempts = 2;
+        options.HedgeDelay = TimeSpan.FromMilliseconds(500);
+    });
+```
+
+`AddStandardHedgingShield` installs a 30s total timeout and up to two hedged attempts. Each endpoint
+gets its own 10-concurrent/zero-queue limiter, 50%-over-30s circuit breaker (minimum 10 attempts,
+15s break), and 10s attempt timeout. Configure those defaults through `TotalTimeout`, `MaxAttempts`,
+`HedgeDelay`, `MaxConcurrency`, `MaxQueue`, `FailureRatio` or `ConsecutiveFailures`,
+`MinimumThroughput`, `SamplingWindow`, `BreakDuration`, and `AttemptTimeout`.
+
+The registration also exposes `ContentReplayPolicy`, `MaximumBufferSize`,
+`AllowUnsafeMethodReplay`, and `RequestFactory`. POST, PATCH, and custom methods still require the
+same explicit idempotency opt-in described above; registering the standard hedging pipeline does not
+make an unsafe operation safe to repeat.
+
+For a fully custom endpoint-aware pipeline, compose the outer and endpoint shields directly:
+
+```csharp
 var routing = new HttpEndpointRoutingOptions
 {
     SelectionMode = HttpEndpointSelectionMode.Ordered,
@@ -169,6 +194,7 @@ shield so every additional send goes through safe replay and routing.
 - **Superseded responses are handler-owned.** The handler disposes failed retry responses and losing hedge responses, including a loser that completes after the winner. A custom `OnRetry` response-disposal hook is unnecessary with `ShieldDelegatingHandler`; the hook that `HttpShield.Standard()` installs stays safe because `HttpResponseMessage.Dispose` is idempotent. The selected response remains caller-owned.
 - **Redirects remain transport-owned.** Each Kevlar attempt begins with the original absolute URI (or its routed authority). Normal `HttpClientHandler` redirect policy runs inside that attempt.
 - **State sharing depends on registration form.** Parameterless `AddStandardShield()`, its one-argument options callback, and `AddShield(shield)` build/capture one shield for that named client, so state survives handler rotation. Service-provider callbacks run once per `HttpClientFactory` handler lifetime and create fresh state unless they resolve and return shared state from DI.
+- **Standard hedging state is endpoint-local.** `AddStandardHedgingShield` creates one limiter and breaker per authority in each `HttpClientFactory` handler pipeline and reuses them across requests for that handler's lifetime.
 - **Compose with other handlers normally.** The Kevlar handler is a regular `DelegatingHandler`; ordering relative to your own handlers follows the usual `AddHttpMessageHandler` rules.
 
 :::tip Handling clause already done

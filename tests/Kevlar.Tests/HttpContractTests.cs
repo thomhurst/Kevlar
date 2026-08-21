@@ -607,6 +607,13 @@ public class HttpContractTests
         await Assert.That(() => builder.AddStandardShield(
                 (Action<IServiceProvider, StandardHttpShieldOptions>)null!))
             .Throws<ArgumentNullException>();
+        await Assert.That(() => ShieldHttpClientBuilderExtensions.AddStandardHedgingShield(
+                nullBuilder!, _ => { }))
+            .Throws<ArgumentNullException>();
+        await Assert.That(() => builder.AddStandardHedgingShield(null!))
+            .Throws<ArgumentNullException>();
+        await Assert.That(() => builder.AddStandardHedgingShield(_ => { }))
+            .Throws<ArgumentException>();
     }
 
     private static HttpClient CreateClient(HttpMessageHandler inner, Shield<HttpResponseMessage> shield) =>
