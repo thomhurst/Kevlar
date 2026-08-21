@@ -6,6 +6,36 @@ Kevlar.TimeoutOptions.TimeoutGenerator.get -> System.Func<Kevlar.KevlarContext!,
 Kevlar.TimeoutOptions.TimeoutGenerator.set -> void
 static Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync<T, TState>(this Kevlar.Shield! shield, TState state, System.Func<TState, System.Threading.CancellationToken, System.Threading.Tasks.Task<T>!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Kevlar.Outcome<T>>
 static Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync<TResult, TState>(this Kevlar.Shield<TResult>! shield, TState state, System.Func<TState, System.Threading.CancellationToken, System.Threading.Tasks.Task<TResult>!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Kevlar.Outcome<TResult>>
+Kevlar.PartitionedShield<TKey, TResult>
+Kevlar.PartitionedShield<TKey, TResult>.CapacityEvictionCount.get -> long
+Kevlar.PartitionedShield<TKey, TResult>.Clear() -> void
+Kevlar.PartitionedShield<TKey, TResult>.Count.get -> int
+Kevlar.PartitionedShield<TKey, TResult>.CreatedCount.get -> long
+Kevlar.PartitionedShield<TKey, TResult>.ExpirationEvictionCount.get -> long
+Kevlar.PartitionedShield<TKey, TResult>.GetShield(TKey key) -> Kevlar.Shield<TResult>!
+Kevlar.PartitionedShield<TKey, TResult>.PartitionedShield(System.Func<TKey, Kevlar.Shield<TResult>!>! factory, Kevlar.PartitionedShieldOptions? options = null, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> void
+Kevlar.PartitionedShield<TKey, TResult>.PruneExpired() -> int
+Kevlar.PartitionedShield<TKey, TResult>.Remove(TKey key) -> bool
+Kevlar.PartitionedShield<TKey, TResult>.TryGetShield(TKey key, out Kevlar.Shield<TResult>? shield) -> bool
+Kevlar.PartitionedShield<TKey>
+Kevlar.PartitionedShield<TKey>.CapacityEvictionCount.get -> long
+Kevlar.PartitionedShield<TKey>.Clear() -> void
+Kevlar.PartitionedShield<TKey>.Count.get -> int
+Kevlar.PartitionedShield<TKey>.CreatedCount.get -> long
+Kevlar.PartitionedShield<TKey>.ExpirationEvictionCount.get -> long
+Kevlar.PartitionedShield<TKey>.GetShield(TKey key) -> Kevlar.Shield!
+Kevlar.PartitionedShield<TKey>.PartitionedShield(System.Func<TKey, Kevlar.Shield!>! factory, Kevlar.PartitionedShieldOptions? options = null, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> void
+Kevlar.PartitionedShield<TKey>.PruneExpired() -> int
+Kevlar.PartitionedShield<TKey>.Remove(TKey key) -> bool
+Kevlar.PartitionedShield<TKey>.TryGetShield(TKey key, out Kevlar.Shield? shield) -> bool
+Kevlar.PartitionedShieldOptions
+Kevlar.PartitionedShieldOptions.IdleExpiration.get -> System.TimeSpan?
+Kevlar.PartitionedShieldOptions.IdleExpiration.set -> void
+Kevlar.PartitionedShieldOptions.MaximumPartitions.get -> int
+Kevlar.PartitionedShieldOptions.MaximumPartitions.set -> void
+Kevlar.PartitionedShieldOptions.PartitionedShieldOptions() -> void
+Kevlar.PartitionedShieldOptions.TimeProvider.get -> System.TimeProvider!
+Kevlar.PartitionedShieldOptions.TimeProvider.set -> void
 virtual Kevlar.Strategy.IsDuplicateReferenceUnsafe.get -> bool
 Kevlar.RetryOptions.DelayGeneratorAsync.get -> System.Func<Kevlar.RetryEvent, System.Threading.Tasks.ValueTask<System.TimeSpan?>>?
 Kevlar.RetryOptions.DelayGeneratorAsync.set -> void

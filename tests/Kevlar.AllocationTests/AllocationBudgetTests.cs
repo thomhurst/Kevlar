@@ -36,6 +36,7 @@ public class AllocationBudgetTests
         .ConcurrencyLimit(1024);
     private readonly Shield<int> _primaryWinsHedge = Shield.For<int>()
         .Hedge(2, TimeSpan.FromMinutes(1));
+    private readonly PartitionedShield<int> _partitioned = new(static _ => Shield.Empty);
 
     private readonly Shield _recoveryRetry = Shield.Retry(3, Backoff.None);
     private readonly Shield _recoveryAsyncDelayRetry = Shield.Retry(options =>
@@ -52,6 +53,8 @@ public class AllocationBudgetTests
     private readonly Counter _retryCounter = new();
     private readonly Counter _asyncDelayRetryCounter = new();
     private readonly ParallelHedgeState _parallelHedgeState = new();
+
+    public AllocationBudgetTests() => _ = _partitioned.GetShield(42);
 
     /// <summary>Verifies that documented synchronous-completion hot paths allocate no managed memory.</summary>
     [Test]
@@ -84,6 +87,8 @@ public class AllocationBudgetTests
             test._composed.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("hedge primary wins", this, static test =>
             test._primaryWinsHedge.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
+        AssertZero("warm partition lookup", this, static test =>
+            _ = test._partitioned.GetShield(42));
     }
 
     /// <summary>Verifies bounded allocations for failure and parallel execution paths.</summary>
