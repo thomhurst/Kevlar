@@ -92,6 +92,20 @@ internal sealed class CircuitBreakerCore
         ? DescribeHelper.Time(_breakDuration)
         : "dynamic";
 
+    internal int? ConsecutiveFailures => _consecutiveFailureLimit;
+
+    internal double? FailureRatio => _failureRatio;
+
+    internal int MinimumThroughput => _minimumThroughput;
+
+    internal TimeSpan SamplingWindow => _samplingWindow;
+
+    internal TimeSpan BreakDuration => _breakDuration;
+
+    internal bool HasMonitor => _monitor is not null;
+
+    internal bool HasNotification => _onStateChanged is not null;
+
     public CircuitState State
     {
         get

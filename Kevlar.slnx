@@ -9,6 +9,7 @@
     <Project Path="src/Kevlar.Extensions.Http/Kevlar.Extensions.Http.csproj" />
     <Project Path="src/Kevlar/Kevlar.csproj" />
     <Project Path="src/Kevlar.Analyzers/Kevlar.Analyzers.csproj" />
+    <Project Path="src/Kevlar.Testing/Kevlar.Testing.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Kevlar.Chaos.Tests/Kevlar.Chaos.Tests.csproj" />
@@ -17,5 +18,6 @@
     <Project Path="tests/Kevlar.NetStandard.Tests/Kevlar.NetStandard.Tests.csproj" />
     <Project Path="tests/Kevlar.Tests/Kevlar.Tests.csproj" />
     <Project Path="tests/Kevlar.Analyzers.Tests/Kevlar.Analyzers.Tests.csproj" />
+    <Project Path="tests/Kevlar.Testing.Tests/Kevlar.Testing.Tests.csproj" />
   </Folder>
 </Solution>

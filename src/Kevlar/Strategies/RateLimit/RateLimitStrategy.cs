@@ -38,6 +38,14 @@ internal sealed class RateLimitStrategy : Strategy
 
     protected internal override bool IsDuplicateReferenceUnsafe => true;
 
+    internal int Permits => _permits;
+
+    internal TimeSpan Window => _window;
+
+    internal int Burst => _burst;
+
+    internal int QueueLimit => _queueLimit;
+
     public RateLimitStrategy(RateLimitOptions options)
     {
         Throw.IfOutOfRange(options.Permits <= 0, nameof(options), "Permits must be positive.");

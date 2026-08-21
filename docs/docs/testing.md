@@ -4,11 +4,41 @@ sidebar_position: 10
 
 # Testing Your Shields
 
+## Inspecting pipeline shape
+
+Install `Kevlar.Testing` in the test project only:
+
+```shell
+dotnet add package Kevlar.Testing
+```
+
+`GetDescriptor()` returns an immutable snapshot. Strategy kinds, execution order, and the typed configuration properties are stable contracts. `Description` is diagnostic text only; display it in failures, but do not parse it. Descriptors never expose a mutable strategy, callback, monitor, or `TimeProvider` instance.
+
+In a TUnit `[Test]`, use the framework-independent shape assertions alongside TUnit's value assertions:
+
+<!-- doc-test-ignore: The executable documentation harness owns Main; this TUnit example is compiled by Kevlar.Testing.Tests. -->
+```csharp
+var shield = Shield
+    .Timeout(TimeSpan.FromSeconds(2))
+    .Retry(3, Backoff.Constant(TimeSpan.FromMilliseconds(50)))
+    .WithName("catalog");
+
+var descriptor = shield.GetDescriptor()
+    .AssertStrategyCount(2)
+    .AssertStrategyOrder(StrategyKind.Timeout, StrategyKind.Retry);
+
+var retry = descriptor.AssertContainsSingle<RetryStrategyDescriptor>();
+await TUnit.Assertions.Assert.That(retry.MaxRetries).IsEqualTo(3);
+await TUnit.Assertions.Assert.That(descriptor.Name).IsEqualTo("catalog");
+```
+
+`AssertContains<TDescriptor>()` checks presence when repeats are valid. `AssertContainsSingle<TDescriptor>()` also rejects duplicates. All shape failures throw `ShieldAssertionException` with expected and actual pipeline details.
+
 ## Repository quality gates
 
-Pull requests build on Windows and Linux, then run the unit, chaos, netstandard2.0 asset, integration, and analyzer suites independently with a five-minute timeout. Every suite requires at least one discovered test, so a runner or discovery regression cannot pass as an empty run.
+Pull requests build on Windows and Linux, then run the unit, chaos, netstandard2.0 asset, integration, analyzer, and testing-package suites independently with a five-minute timeout. Every suite requires at least one discovered test, so a runner or discovery regression cannot pass as an empty run.
 
-The Linux coverage job merges all five suites into Cobertura XML and an HTML report. It excludes test assemblies, benchmarks, generated code, and code marked with `ExcludeFromCodeCoverageAttribute`, then enforces the measured baselines of 92% line coverage and 86% branch coverage. Download the `coverage-report` workflow artifact to inspect either format.
+The Linux coverage job merges all six suites into Cobertura XML and an HTML report. It excludes test assemblies, benchmarks, generated code, and code marked with `ExcludeFromCodeCoverageAttribute`, then enforces the measured baselines of 92% line coverage and 86% branch coverage. Download the `coverage-report` workflow artifact to inspect either format.
 
 Core strategy mutation testing runs every Monday at 03:23 UTC and on demand. It uses the checked-in Stryker configuration, keeps 74% as the report reference, and treats the aggregate score as informational because timing-sensitive mutants make it nondeterministic. Operational Stryker failures still fail the workflow. Superseded runs are cancelled, and completed runs publish HTML and JSON reports as the `mutation-report` artifact. The audited initial survivors and threshold policy are recorded in `.github/mutation-baseline.md`. Run the test and mutation checks locally with:
 
@@ -20,12 +50,14 @@ dotnet run --project tests/Kevlar.Chaos.Tests -c Release --no-build -- --timeout
 dotnet run --project tests/Kevlar.NetStandard.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict
 dotnet run --project tests/Kevlar.IntegrationTests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict
 dotnet run --project tests/Kevlar.Analyzers.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict
+dotnet run --project tests/Kevlar.Testing.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict
 $coverageRoot = (New-Item -ItemType Directory -Force artifacts/coverage/raw).FullName
 dotnet run --project tests/Kevlar.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output "$coverageRoot/unit.cobertura.xml" --coverage-output-format cobertura
 dotnet run --project tests/Kevlar.Chaos.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output "$coverageRoot/chaos.cobertura.xml" --coverage-output-format cobertura
 dotnet run --project tests/Kevlar.NetStandard.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output "$coverageRoot/netstandard.cobertura.xml" --coverage-output-format cobertura
 dotnet run --project tests/Kevlar.IntegrationTests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output "$coverageRoot/integration.cobertura.xml" --coverage-output-format cobertura
 dotnet run --project tests/Kevlar.Analyzers.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output "$coverageRoot/analyzers.cobertura.xml" --coverage-output-format cobertura
+dotnet run --project tests/Kevlar.Testing.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output "$coverageRoot/testing.cobertura.xml" --coverage-output-format cobertura
 dotnet reportgenerator '-reports:artifacts/coverage/raw/*.cobertura.xml' '-targetdir:artifacts/coverage/report' '-reporttypes:Cobertura;Html'
 ./.github/scripts/Assert-Coverage.ps1 -Report artifacts/coverage/report/Cobertura.xml -MinimumLinePercent 92 -MinimumBranchPercent 86
 Push-Location src/Kevlar

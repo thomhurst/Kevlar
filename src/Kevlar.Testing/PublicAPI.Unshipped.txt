@@ -1,0 +1,75 @@
+Kevlar.Testing.BackoffDescriptor
+Kevlar.Testing.BackoffDescriptor.BaseDelay.get -> System.TimeSpan?
+Kevlar.Testing.BackoffDescriptor.Factor.get -> double?
+Kevlar.Testing.BackoffDescriptor.Jitter.get -> bool?
+Kevlar.Testing.BackoffDescriptor.Kind.get -> Kevlar.Testing.BackoffKind
+Kevlar.Testing.BackoffDescriptor.MaxDelay.get -> System.TimeSpan?
+Kevlar.Testing.BackoffKind
+Kevlar.Testing.BackoffKind.Constant = 1 -> Kevlar.Testing.BackoffKind
+Kevlar.Testing.BackoffKind.Custom = 4 -> Kevlar.Testing.BackoffKind
+Kevlar.Testing.BackoffKind.Exponential = 3 -> Kevlar.Testing.BackoffKind
+Kevlar.Testing.BackoffKind.Linear = 2 -> Kevlar.Testing.BackoffKind
+Kevlar.Testing.BackoffKind.None = 0 -> Kevlar.Testing.BackoffKind
+Kevlar.Testing.CircuitBreakerStrategyDescriptor
+Kevlar.Testing.CircuitBreakerStrategyDescriptor.BreakDuration.get -> System.TimeSpan
+Kevlar.Testing.CircuitBreakerStrategyDescriptor.ConsecutiveFailures.get -> int?
+Kevlar.Testing.CircuitBreakerStrategyDescriptor.FailureRatio.get -> double?
+Kevlar.Testing.CircuitBreakerStrategyDescriptor.HasMonitor.get -> bool
+Kevlar.Testing.CircuitBreakerStrategyDescriptor.HasNotification.get -> bool
+Kevlar.Testing.CircuitBreakerStrategyDescriptor.MinimumThroughput.get -> int
+Kevlar.Testing.CircuitBreakerStrategyDescriptor.SamplingWindow.get -> System.TimeSpan
+Kevlar.Testing.ConcurrencyLimitStrategyDescriptor
+Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.MaxConcurrency.get -> int
+Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.MaxQueue.get -> int
+Kevlar.Testing.CustomStrategyDescriptor
+Kevlar.Testing.CustomStrategyDescriptor.StrategyType.get -> System.Type!
+Kevlar.Testing.FallbackStrategyDescriptor
+Kevlar.Testing.FallbackStrategyDescriptor.HasNotification.get -> bool
+Kevlar.Testing.FallbackStrategyDescriptor.IsVoid.get -> bool
+Kevlar.Testing.FallbackStrategyDescriptor.ResultType.get -> System.Type?
+Kevlar.Testing.HedgingStrategyDescriptor
+Kevlar.Testing.HedgingStrategyDescriptor.Delay.get -> System.TimeSpan
+Kevlar.Testing.HedgingStrategyDescriptor.HasNotification.get -> bool
+Kevlar.Testing.HedgingStrategyDescriptor.MaxAttempts.get -> int
+Kevlar.Testing.RateLimitStrategyDescriptor
+Kevlar.Testing.RateLimitStrategyDescriptor.Burst.get -> int
+Kevlar.Testing.RateLimitStrategyDescriptor.Permits.get -> int
+Kevlar.Testing.RateLimitStrategyDescriptor.QueueLimit.get -> int
+Kevlar.Testing.RateLimitStrategyDescriptor.Window.get -> System.TimeSpan
+Kevlar.Testing.RetryStrategyDescriptor
+Kevlar.Testing.RetryStrategyDescriptor.Backoff.get -> Kevlar.Testing.BackoffDescriptor!
+Kevlar.Testing.RetryStrategyDescriptor.HasDelayGenerator.get -> bool
+Kevlar.Testing.RetryStrategyDescriptor.HasNotification.get -> bool
+Kevlar.Testing.RetryStrategyDescriptor.MaxDelay.get -> System.TimeSpan?
+Kevlar.Testing.RetryStrategyDescriptor.MaxRetries.get -> int
+Kevlar.Testing.ShieldAssertionException
+Kevlar.Testing.ShieldAssertionException.ShieldAssertionException(string! message) -> void
+Kevlar.Testing.ShieldDescriptor
+Kevlar.Testing.ShieldDescriptor.Name.get -> string?
+Kevlar.Testing.ShieldDescriptor.ResultType.get -> System.Type?
+Kevlar.Testing.ShieldDescriptor.Strategies.get -> System.Collections.Generic.IReadOnlyList<Kevlar.Testing.StrategyDescriptor!>!
+Kevlar.Testing.ShieldDescriptor.UsesCustomTimeProvider.get -> bool
+Kevlar.Testing.ShieldDescriptorAssertionExtensions
+Kevlar.Testing.ShieldDescriptorExtensions
+Kevlar.Testing.StrategyDescriptor
+Kevlar.Testing.StrategyDescriptor.Description.get -> string!
+Kevlar.Testing.StrategyDescriptor.Kind.get -> Kevlar.Testing.StrategyKind
+Kevlar.Testing.StrategyKind
+Kevlar.Testing.StrategyKind.CircuitBreaker = 3 -> Kevlar.Testing.StrategyKind
+Kevlar.Testing.StrategyKind.ConcurrencyLimit = 5 -> Kevlar.Testing.StrategyKind
+Kevlar.Testing.StrategyKind.Custom = 0 -> Kevlar.Testing.StrategyKind
+Kevlar.Testing.StrategyKind.Fallback = 7 -> Kevlar.Testing.StrategyKind
+Kevlar.Testing.StrategyKind.Hedging = 6 -> Kevlar.Testing.StrategyKind
+Kevlar.Testing.StrategyKind.RateLimit = 4 -> Kevlar.Testing.StrategyKind
+Kevlar.Testing.StrategyKind.Retry = 1 -> Kevlar.Testing.StrategyKind
+Kevlar.Testing.StrategyKind.Timeout = 2 -> Kevlar.Testing.StrategyKind
+Kevlar.Testing.TimeoutStrategyDescriptor
+Kevlar.Testing.TimeoutStrategyDescriptor.HasNotification.get -> bool
+Kevlar.Testing.TimeoutStrategyDescriptor.HasTimeoutGenerator.get -> bool
+Kevlar.Testing.TimeoutStrategyDescriptor.Timeout.get -> System.TimeSpan
+static Kevlar.Testing.ShieldDescriptorAssertionExtensions.AssertContains<TDescriptor>(this Kevlar.Testing.ShieldDescriptor! descriptor) -> TDescriptor!
+static Kevlar.Testing.ShieldDescriptorAssertionExtensions.AssertContainsSingle<TDescriptor>(this Kevlar.Testing.ShieldDescriptor! descriptor) -> TDescriptor!
+static Kevlar.Testing.ShieldDescriptorAssertionExtensions.AssertStrategyCount(this Kevlar.Testing.ShieldDescriptor! descriptor, int expected) -> Kevlar.Testing.ShieldDescriptor!
+static Kevlar.Testing.ShieldDescriptorAssertionExtensions.AssertStrategyOrder(this Kevlar.Testing.ShieldDescriptor! descriptor, params Kevlar.Testing.StrategyKind[]! expected) -> Kevlar.Testing.ShieldDescriptor!
+static Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor(this Kevlar.Shield! shield) -> Kevlar.Testing.ShieldDescriptor!
+static Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor<TResult>(this Kevlar.Shield<TResult>! shield) -> Kevlar.Testing.ShieldDescriptor!

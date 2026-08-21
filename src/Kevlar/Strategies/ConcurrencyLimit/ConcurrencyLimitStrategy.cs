@@ -20,6 +20,10 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
 
     protected internal override bool IsDuplicateReferenceUnsafe => true;
 
+    internal int MaxConcurrency => _maxConcurrency;
+
+    internal int MaxQueue => _maxQueue;
+
     public ConcurrencyLimitStrategy(ConcurrencyLimitOptions options)
     {
         Throw.IfOutOfRange(options.MaxConcurrency <= 0, nameof(options), "MaxConcurrency must be positive.");
