@@ -72,6 +72,28 @@ internal static class ShieldEngine
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(new OperationCanceledException(cancellationToken)));
         }
 
+        if (head is null)
+        {
+            ValueTask<T> execution;
+            try
+            {
+                execution = action(state, cancellationToken);
+            }
+            catch (Exception exception)
+            {
+                RecordExecution(startedAt, shieldName, success: false);
+                return new ValueTask<Outcome<T>>(Outcome<T>.FromException(exception));
+            }
+
+            if (execution.IsCompletedSuccessfully)
+            {
+                RecordExecution(startedAt, shieldName, success: true);
+                return new ValueTask<Outcome<T>>(Outcome<T>.FromResult(execution.Result));
+            }
+
+            return AwaitDirectOutcomeAsync(execution, shieldName, startedAt);
+        }
+
         var context = KevlarContext.Rent(cancellationToken, isSynchronous: false, timeProvider, shieldName);
         var pipeline = RunAsync(head, state, action, context);
 
@@ -211,6 +233,25 @@ internal static class ShieldEngine
             RecordExecution(startedAt, shieldName, success: false);
             throw;
         }
+    }
+
+    private static async ValueTask<Outcome<T>> AwaitDirectOutcomeAsync<T>(
+        ValueTask<T> execution,
+        string? shieldName,
+        long startedAt)
+    {
+        Outcome<T> outcome;
+        try
+        {
+            outcome = Outcome<T>.FromResult(await execution.ConfigureAwait(false));
+        }
+        catch (Exception exception)
+        {
+            outcome = Outcome<T>.FromException(exception);
+        }
+
+        RecordExecution(startedAt, shieldName, outcome.IsSuccess);
+        return outcome;
     }
 
     private static async ValueTask<Outcome<T>> AwaitOutcomeAsync<T>(
