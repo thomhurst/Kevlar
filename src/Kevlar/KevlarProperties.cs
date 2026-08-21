@@ -11,6 +11,8 @@ public sealed class KevlarProperties
 {
     private const int RetainedSlotCapacity = 32;
 
+    private PropertyIdentity _firstIdentity;
+    private PropertySlot? _firstItem;
     private Dictionary<PropertyIdentity, PropertySlot>? _items;
 
     internal KevlarProperties()
@@ -28,6 +30,14 @@ public sealed class KevlarProperties
     public bool TryGet<T>(KevlarKey<T> key, out T value)
     {
         var identity = GetIdentity(key);
+        if (_firstItem is not null &&
+            _firstIdentity == identity &&
+            _firstItem is PropertySlot<T> firstSlot &&
+            firstSlot.TryGet(out value))
+        {
+            return true;
+        }
+
         if (_items is not null &&
             _items.TryGetValue(identity, out var stored) &&
             stored is PropertySlot<T> slot &&
@@ -46,46 +56,70 @@ public sealed class KevlarProperties
 
     internal void Clear()
     {
-        if (_items is null)
+        if (_firstItem is null)
         {
             return;
         }
 
-        if (_items.Count > RetainedSlotCapacity)
+        if (_items is { Count: >= RetainedSlotCapacity })
         {
+            _firstIdentity = default;
+            _firstItem = null;
             _items = null;
             return;
         }
 
-        foreach (var slot in _items.Values)
+        _firstItem.Clear();
+        if (_items is not null)
         {
-            slot.Clear();
+            foreach (var slot in _items.Values)
+            {
+                slot.Clear();
+            }
         }
     }
 
     internal void CopyTo(KevlarProperties target)
     {
-        if (_items is null || _items.Count == 0)
+        if (_firstItem is null)
         {
             return;
         }
 
-        foreach (var pair in _items)
+        _firstItem.CopyTo(target, _firstIdentity);
+        if (_items is not null)
         {
-            pair.Value.CopyTo(target, pair.Key);
+            foreach (var pair in _items)
+            {
+                pair.Value.CopyTo(target, pair.Key);
+            }
         }
     }
 
     private void Set<T>(PropertyIdentity identity, T value)
     {
+        if (_firstItem is null)
+        {
+            _firstIdentity = identity;
+            _firstItem = new PropertySlot<T>(value);
+            return;
+        }
+
+        if (_firstIdentity == identity)
+        {
+            ((PropertySlot<T>)_firstItem).Set(value);
+            return;
+        }
+
         var items = _items ??= [];
         if (items.TryGetValue(identity, out var stored))
         {
             ((PropertySlot<T>)stored).Set(value);
-            return;
         }
-
-        items.Add(identity, new PropertySlot<T>(value));
+        else
+        {
+            items.Add(identity, new PropertySlot<T>(value));
+        }
     }
 
     private static PropertyIdentity GetIdentity<T>(KevlarKey<T> key)
