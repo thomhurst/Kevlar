@@ -48,7 +48,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
     public override string Describe() =>
         _maxQueue > 0 ? $"ConcurrencyLimit({_maxConcurrency}, queue {_maxQueue})" : $"ConcurrencyLimit({_maxConcurrency})";
 
-    public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
+    public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
         var alias = new StrategyMetricAlias(context.ShieldName, context.StrategyIndex);
         if (Interlocked.Increment(ref _pending) > _capacity)
@@ -56,106 +56,99 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
             Interlocked.Decrement(ref _pending);
             RecordState(alias);
             KevlarMetrics.Rejection(context.ShieldName, "concurrency_limit");
-            return Outcome<T>.FromException(new ConcurrencyLimitExceededException());
+            return new ValueTask<Outcome<T>>(
+                Outcome<T>.FromException(new ConcurrencyLimitExceededException()));
         }
 
-        var queued = false;
         try
         {
             context.CancellationToken.ThrowIfCancellationRequested();
+            if (TryAcquirePermit())
+            {
+                return ExecuteAcquired(next, context, alias, queued: false);
+            }
+        }
+        catch (OperationCanceledException cancelled)
+        {
+            Interlocked.Decrement(ref _pending);
+            RecordState(alias);
+            return new ValueTask<Outcome<T>>(Outcome<T>.FromException(NormalizeCancellation(cancelled, context)));
+        }
+
+        return ExecuteQueuedAsync(next, context, alias);
+    }
+
+    private async ValueTask<Outcome<T>> ExecuteQueuedAsync<T, TState>(
+        Continuation<T, TState> next,
+        KevlarContext context,
+        StrategyMetricAlias alias)
+    {
+        UpdateMetricsState(inflightDelta: 0, queuedDelta: 1);
+        Interlocked.Increment(ref _waiters);
+        try
+        {
             if (!TryAcquirePermit())
             {
-                queued = true;
-                UpdateMetricsState(inflightDelta: 0, queuedDelta: 1);
-                Interlocked.Increment(ref _waiters);
-                try
+                if (context.IsSynchronous)
                 {
-                    if (!TryAcquirePermit())
-                    {
-                        if (context.IsSynchronous)
-                        {
-                            RecordState(alias);
-                            _semaphore.Wait(context.CancellationToken);
-                        }
-                        else
-                        {
-                            using var waitCancellation = context.CancellationToken.CanBeCanceled
-                                ? CancellationTokenSource.CreateLinkedTokenSource(context.CancellationToken)
-                                : new CancellationTokenSource();
-                            var wait = _semaphore.WaitAsync(waitCancellation.Token);
-                            try
-                            {
-                                RecordState(alias);
-                            }
-                            catch (Exception publicationFailure)
-                            {
-                                waitCancellation.Cancel();
-                                try
-                                {
-                                    await wait.ConfigureAwait(false);
-                                    ReleasePermit();
-                                }
-                                catch (OperationCanceledException)
-                                {
-                                    // Cancellation withdrew the wait before it took a permit.
-                                }
-
-                                ExceptionDispatchInfo.Capture(publicationFailure).Throw();
-                            }
-
-                            await wait.ConfigureAwait(false);
-                        }
-                    }
+                    RecordState(alias);
+                    _semaphore.Wait(context.CancellationToken);
                 }
-                finally
+                else
                 {
-                    Interlocked.Decrement(ref _waiters);
+                    using var waitCancellation = context.CancellationToken.CanBeCanceled
+                        ? CancellationTokenSource.CreateLinkedTokenSource(context.CancellationToken)
+                        : new CancellationTokenSource();
+                    var wait = _semaphore.WaitAsync(waitCancellation.Token);
+                    try
+                    {
+                        RecordState(alias);
+                    }
+                    catch (Exception publicationFailure)
+                    {
+                        waitCancellation.Cancel();
+                        try
+                        {
+                            await wait.ConfigureAwait(false);
+                            ReleasePermit();
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            // Cancellation withdrew the wait before it took a permit.
+                        }
+
+                        ExceptionDispatchInfo.Capture(publicationFailure).Throw();
+                    }
+
+                    await wait.ConfigureAwait(false);
                 }
             }
         }
         catch (OperationCanceledException cancelled)
         {
-            if (context.CancellationToken.IsCancellationRequested
-                && cancelled.CancellationToken != context.CancellationToken)
-            {
-                cancelled = new OperationCanceledException(
-                    cancelled.Message,
-                    cancelled,
-                    context.CancellationToken);
-            }
-
-            Interlocked.Decrement(ref _pending);
-            if (queued)
-            {
-                UpdateMetricsState(inflightDelta: 0, queuedDelta: -1);
-            }
-
-            RecordState(alias);
-            return Outcome<T>.FromException(cancelled);
+            ReleaseQueued(alias);
+            return Outcome<T>.FromException(NormalizeCancellation(cancelled, context));
         }
         catch (Exception publicationFailure)
         {
-            Interlocked.Decrement(ref _pending);
-            if (queued)
-            {
-                UpdateMetricsState(inflightDelta: 0, queuedDelta: -1);
-            }
-
-            try
-            {
-                RecordState(alias);
-            }
-            catch (Exception correctionFailure)
-            {
-                publicationFailure = new AggregateException(
-                    publicationFailure,
-                    correctionFailure).Flatten();
-            }
-
+            ReleaseQueued(alias, publicationFailure);
             ExceptionDispatchInfo.Capture(publicationFailure).Throw();
             throw;
         }
+        finally
+        {
+            Interlocked.Decrement(ref _waiters);
+        }
 
+        return await ExecuteAcquired(next, context, alias, queued: true).ConfigureAwait(false);
+    }
+
+    private ValueTask<Outcome<T>> ExecuteAcquired<T, TState>(
+        Continuation<T, TState> next,
+        KevlarContext context,
+        StrategyMetricAlias alias,
+        bool queued)
+    {
         UpdateMetricsState(inflightDelta: 1, queuedDelta: queued ? -1 : 0);
         try
         {
@@ -181,18 +174,66 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
             throw;
         }
 
+        var execution = next.InvokeAsync(context);
+        if (!execution.IsCompletedSuccessfully)
+        {
+            return AwaitExecutionAsync(execution, alias);
+        }
+
+        var outcome = execution.Result;
+        CompleteExecution(alias);
+        return new ValueTask<Outcome<T>>(outcome);
+    }
+
+    private async ValueTask<Outcome<T>> AwaitExecutionAsync<T>(
+        ValueTask<Outcome<T>> execution,
+        StrategyMetricAlias alias)
+    {
         try
         {
-            return await next.InvokeAsync(context).ConfigureAwait(false);
+            return await execution.ConfigureAwait(false);
         }
         finally
         {
-            UpdateMetricsState(inflightDelta: -1, queuedDelta: 0);
-            ReleasePermit();
-            Interlocked.Decrement(ref _pending);
-            RecordState(alias);
+            CompleteExecution(alias);
         }
     }
+
+    private void CompleteExecution(StrategyMetricAlias alias)
+    {
+        UpdateMetricsState(inflightDelta: -1, queuedDelta: 0);
+        ReleasePermit();
+        Interlocked.Decrement(ref _pending);
+        RecordState(alias);
+    }
+
+    private void ReleaseQueued(
+        StrategyMetricAlias alias,
+        Exception? publicationFailure = null)
+    {
+        Interlocked.Decrement(ref _pending);
+        UpdateMetricsState(inflightDelta: 0, queuedDelta: -1);
+
+        try
+        {
+            RecordState(alias);
+        }
+        catch (Exception correctionFailure) when (publicationFailure is not null)
+        {
+            throw new AggregateException(publicationFailure, correctionFailure).Flatten();
+        }
+    }
+
+    private static OperationCanceledException NormalizeCancellation(
+        OperationCanceledException cancelled,
+        KevlarContext context) =>
+        context.CancellationToken.IsCancellationRequested
+        && cancelled.CancellationToken != context.CancellationToken
+            ? new OperationCanceledException(
+                cancelled.Message,
+                cancelled,
+                context.CancellationToken)
+            : cancelled;
 
     private bool TryAcquirePermit()
     {
