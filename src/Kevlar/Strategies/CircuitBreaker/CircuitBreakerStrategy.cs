@@ -196,9 +196,19 @@ internal sealed class CircuitBreakerStrategy : Strategy
         bool recordState)
     {
         var entry = _core.TryEnterAsync(context.TimeProvider);
-        return entry.IsCompletedSuccessfully
-            ? ExecuteConfiguredEntry(entry.Result, next, context, alias, recordState)
-            : AwaitConfiguredEntryAsync(entry, next, context, alias, recordState);
+        if (!entry.IsCompletedSuccessfully)
+        {
+            return AwaitConfiguredEntryAsync(entry, next, context, alias, recordState);
+        }
+
+        try
+        {
+            return ExecuteConfiguredEntry(entry.Result, next, context, alias, recordState);
+        }
+        catch (Exception exception)
+        {
+            return new ValueTask<Outcome<T>>(Task.FromException<Outcome<T>>(exception));
+        }
     }
 
     private async ValueTask<Outcome<T>> AwaitConfiguredEntryAsync<T, TState>(
