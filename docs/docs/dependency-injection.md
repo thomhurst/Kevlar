@@ -84,7 +84,7 @@ Named shields are also registered as keyed services, so you can skip the registr
 ```csharp
 public sealed class GitHubClient([FromKeyedServices("github")] Shield shield)
 {
-    // ...
+    public Shield Resilience { get; } = shield;
 }
 ```
 

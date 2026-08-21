@@ -251,7 +251,10 @@ services.AddShield("github", builder.Configuration.GetSection("Resilience:GitHub
 // Consume via the registry…
 var shield = registry.GetShield("github");                       // IKevlarRegistry
 // …or as a keyed service
-public sealed class GitHubClient([FromKeyedServices("github")] Shield shield) { }
+public sealed class GitHubClient([FromKeyedServices("github")] Shield shield)
+{
+    public Shield Resilience { get; } = shield;
+}
 ```
 
 ## HTTP
