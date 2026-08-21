@@ -158,9 +158,9 @@ internal sealed class HedgingStrategy : Strategy
     {
         if (attemptNumber > 1)
         {
-            KevlarMetrics.Hedge(context.ShieldName);
             _onHedge?.Invoke(new HedgeEvent(attemptNumber, context));
             context.CancellationToken.ThrowIfCancellationRequested();
+            KevlarMetrics.Hedge(context.ShieldName);
         }
 
         var cancellation = CancellationTokenSourcePool.Shared.RentLinked(context.CancellationToken);
