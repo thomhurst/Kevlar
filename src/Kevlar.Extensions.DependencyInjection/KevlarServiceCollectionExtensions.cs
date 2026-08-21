@@ -84,50 +84,92 @@ public static class KevlarServiceCollectionExtensions
         var retry = configuration.GetSection(nameof(ShieldDefinition.Retry));
         if (HasValues(retry))
         {
-            definition.Retry = new RetryDefinition
+            var retryDefinition = new RetryDefinition
             {
-                MaxRetries = ReadInt(retry, nameof(RetryDefinition.MaxRetries), 3),
-                Backoff = ReadEnum(retry, nameof(RetryDefinition.Backoff), BackoffKind.Exponential),
                 BaseDelay = ReadTimeSpan(retry, nameof(RetryDefinition.BaseDelay)),
-                Factor = ReadDouble(retry, nameof(RetryDefinition.Factor), 2),
-                Jitter = ReadBool(retry, nameof(RetryDefinition.Jitter), fallback: true),
                 MaxDelay = ReadTimeSpan(retry, nameof(RetryDefinition.MaxDelay)),
             };
+            if (ReadNullableInt(retry, nameof(RetryDefinition.MaxRetries)) is { } maxRetries)
+            {
+                retryDefinition.MaxRetries = maxRetries;
+            }
+            if (ReadNullableEnum<BackoffKind>(retry, nameof(RetryDefinition.Backoff)) is { } backoff)
+            {
+                retryDefinition.Backoff = backoff;
+            }
+            if (ReadNullableDouble(retry, nameof(RetryDefinition.Factor)) is { } factor)
+            {
+                retryDefinition.Factor = factor;
+            }
+            if (ReadNullableBool(retry, nameof(RetryDefinition.Jitter)) is { } jitter)
+            {
+                retryDefinition.Jitter = jitter;
+            }
+
+            definition.Retry = retryDefinition;
         }
 
         var breaker = configuration.GetSection(nameof(ShieldDefinition.CircuitBreaker));
         if (HasValues(breaker))
         {
-            definition.CircuitBreaker = new CircuitBreakerDefinition
+            var breakerDefinition = new CircuitBreakerDefinition
             {
                 ConsecutiveFailures = ReadNullableInt(breaker, nameof(CircuitBreakerDefinition.ConsecutiveFailures)),
                 FailureRatio = ReadNullableDouble(breaker, nameof(CircuitBreakerDefinition.FailureRatio)),
-                MinimumThroughput = ReadInt(breaker, nameof(CircuitBreakerDefinition.MinimumThroughput), 10),
-                SamplingWindow = ReadTimeSpan(breaker, nameof(CircuitBreakerDefinition.SamplingWindow)) ?? TimeSpan.FromSeconds(30),
-                BreakDuration = ReadTimeSpan(breaker, nameof(CircuitBreakerDefinition.BreakDuration)) ?? TimeSpan.FromSeconds(15),
             };
+            if (ReadNullableInt(breaker, nameof(CircuitBreakerDefinition.MinimumThroughput)) is { } minimumThroughput)
+            {
+                breakerDefinition.MinimumThroughput = minimumThroughput;
+            }
+            if (ReadTimeSpan(breaker, nameof(CircuitBreakerDefinition.SamplingWindow)) is { } samplingWindow)
+            {
+                breakerDefinition.SamplingWindow = samplingWindow;
+            }
+            if (ReadTimeSpan(breaker, nameof(CircuitBreakerDefinition.BreakDuration)) is { } breakDuration)
+            {
+                breakerDefinition.BreakDuration = breakDuration;
+            }
+
+            definition.CircuitBreaker = breakerDefinition;
         }
 
         var rateLimit = configuration.GetSection(nameof(ShieldDefinition.RateLimit));
         if (HasValues(rateLimit))
         {
-            definition.RateLimit = new RateLimitDefinition
+            var rateLimitDefinition = new RateLimitDefinition
             {
-                Permits = ReadInt(rateLimit, nameof(RateLimitDefinition.Permits), 100),
-                Window = ReadTimeSpan(rateLimit, nameof(RateLimitDefinition.Window)) ?? TimeSpan.FromSeconds(1),
                 Burst = ReadNullableInt(rateLimit, nameof(RateLimitDefinition.Burst)),
-                QueueLimit = ReadInt(rateLimit, nameof(RateLimitDefinition.QueueLimit), 0),
             };
+            if (ReadNullableInt(rateLimit, nameof(RateLimitDefinition.Permits)) is { } permits)
+            {
+                rateLimitDefinition.Permits = permits;
+            }
+            if (ReadTimeSpan(rateLimit, nameof(RateLimitDefinition.Window)) is { } window)
+            {
+                rateLimitDefinition.Window = window;
+            }
+            if (ReadNullableInt(rateLimit, nameof(RateLimitDefinition.QueueLimit)) is { } queueLimit)
+            {
+                rateLimitDefinition.QueueLimit = queueLimit;
+            }
+
+            definition.RateLimit = rateLimitDefinition;
         }
 
         var concurrency = configuration.GetSection(nameof(ShieldDefinition.ConcurrencyLimit));
         if (HasValues(concurrency))
         {
-            definition.ConcurrencyLimit = new ConcurrencyLimitDefinition
+            var concurrencyDefinition = new ConcurrencyLimitDefinition();
+            if (ReadNullableInt(concurrency, nameof(ConcurrencyLimitDefinition.MaxConcurrency)) is { } maxConcurrency)
             {
-                MaxConcurrency = ReadInt(concurrency, nameof(ConcurrencyLimitDefinition.MaxConcurrency), 10),
-                MaxQueue = ReadInt(concurrency, nameof(ConcurrencyLimitDefinition.MaxQueue), 0),
-            };
+                concurrencyDefinition.MaxConcurrency = maxConcurrency;
+            }
+            if (ReadNullableInt(concurrency, nameof(ConcurrencyLimitDefinition.MaxQueue)) is { } maxQueue)
+            {
+                concurrencyDefinition.MaxQueue = maxQueue;
+            }
+
+            definition.ConcurrencyLimit = concurrencyDefinition;
         }
 
         return definition;
@@ -139,37 +181,66 @@ public static class KevlarServiceCollectionExtensions
     private static string? Read(IConfiguration configuration, string key) =>
         configuration[key] is { Length: > 0 } value ? value : null;
 
-    private static int ReadInt(IConfiguration configuration, string key, int fallback) =>
-        Read(configuration, key) is { } value
-            ? int.Parse(value, NumberStyles.Integer, CultureInfo.InvariantCulture)
-            : fallback;
-
     private static int? ReadNullableInt(IConfiguration configuration, string key) =>
         Read(configuration, key) is { } value
-            ? int.Parse(value, NumberStyles.Integer, CultureInfo.InvariantCulture)
+            ? ParseInt(configuration, key, value)
             : null;
-
-    private static double ReadDouble(IConfiguration configuration, string key, double fallback) =>
-        Read(configuration, key) is { } value
-            ? double.Parse(value, NumberStyles.Float, CultureInfo.InvariantCulture)
-            : fallback;
 
     private static double? ReadNullableDouble(IConfiguration configuration, string key) =>
         Read(configuration, key) is { } value
-            ? double.Parse(value, NumberStyles.Float, CultureInfo.InvariantCulture)
+            ? ParseDouble(configuration, key, value)
             : null;
 
-    private static bool ReadBool(IConfiguration configuration, string key, bool fallback) =>
-        Read(configuration, key) is { } value ? bool.Parse(value) : fallback;
+    private static bool? ReadNullableBool(IConfiguration configuration, string key) =>
+        Read(configuration, key) is { } value ? ParseBool(configuration, key, value) : null;
 
     private static TimeSpan? ReadTimeSpan(IConfiguration configuration, string key) =>
         Read(configuration, key) is { } value
-            ? TimeSpan.Parse(value, CultureInfo.InvariantCulture)
+            ? ParseTimeSpan(configuration, key, value)
             : null;
 
-    private static TEnum ReadEnum<TEnum>(IConfiguration configuration, string key, TEnum fallback)
+    private static TEnum? ReadNullableEnum<TEnum>(IConfiguration configuration, string key)
         where TEnum : struct, Enum =>
         Read(configuration, key) is { } value
-            ? Enum.Parse<TEnum>(value, ignoreCase: true)
-            : fallback;
+            ? ParseEnum<TEnum>(configuration, key, value)
+            : null;
+
+    private static int ParseInt(IConfiguration configuration, string key, string value) =>
+        int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed)
+            ? parsed
+            : throw InvalidValue(configuration, key, value, "an integer");
+
+    private static double ParseDouble(IConfiguration configuration, string key, string value) =>
+        double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
+            ? parsed
+            : throw InvalidValue(configuration, key, value, "a number");
+
+    private static bool ParseBool(IConfiguration configuration, string key, string value) =>
+        bool.TryParse(value, out var parsed)
+            ? parsed
+            : throw InvalidValue(configuration, key, value, "a Boolean");
+
+    private static TimeSpan ParseTimeSpan(IConfiguration configuration, string key, string value) =>
+        TimeSpan.TryParse(value, CultureInfo.InvariantCulture, out var parsed)
+            ? parsed
+            : throw InvalidValue(configuration, key, value, "a TimeSpan");
+
+    private static TEnum ParseEnum<TEnum>(IConfiguration configuration, string key, string value)
+        where TEnum : struct, Enum =>
+        Enum.TryParse<TEnum>(value, ignoreCase: true, out var parsed)
+            ? parsed
+            : throw InvalidValue(configuration, key, value, $"a {typeof(TEnum).Name}");
+
+    private static InvalidOperationException InvalidValue(
+        IConfiguration configuration,
+        string key,
+        string value,
+        string expected)
+    {
+        var path = configuration is IConfigurationSection { Path.Length: > 0 } section
+            ? ConfigurationPath.Combine(section.Path, key)
+            : key;
+        return new InvalidOperationException(
+            $"Configuration value '{value}' for '{path}' is not {expected}.");
+    }
 }

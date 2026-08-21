@@ -132,6 +132,12 @@ local platforms explicitly.
 
 Run the complete package check after packing a local version:
 
+On Linux, install the NativeAOT prerequisites first:
+
+```bash
+sudo apt-get update && sudo apt-get install --yes clang zlib1g-dev
+```
+
 ```powershell
 dotnet pack Kevlar.slnx -c Release -p:Version=0.0.0-local
 ./scripts/Verify-Packages.ps1 -PackagesPath artifacts/package/release -Version 0.0.0-local

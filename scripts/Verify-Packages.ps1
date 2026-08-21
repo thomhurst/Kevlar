@@ -83,6 +83,15 @@ if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($expectedRepositoryComm
     throw 'Unable to determine the expected repository commit.'
 }
 
+$centralPackagesPath = Join-Path $PSScriptRoot '..\Directory.Packages.props'
+[xml]$centralPackages = Get-Content -LiteralPath $centralPackagesPath -Raw
+$configurationVersion = Get-NodeText $centralPackages "/Project/ItemGroup/PackageVersion[@Include='Microsoft.Extensions.Configuration']/@Version"
+$dependencyInjectionVersion = Get-NodeText $centralPackages "/Project/ItemGroup/PackageVersion[@Include='Microsoft.Extensions.DependencyInjection']/@Version"
+if ($null -eq $configurationVersion -or $null -eq $dependencyInjectionVersion)
+{
+    throw 'Could not resolve Microsoft.Extensions package versions from Directory.Packages.props.'
+}
+
 $expectedDependencies = @{
     'Kevlar' = @{
         'net10.0' = @('Reservoir')
@@ -281,7 +290,8 @@ Console.WriteLine("Kevlar package consumer passed.");
     & (Join-Path $PSScriptRoot 'Verify-PublishCompatibility.ps1') `
         -PackagesPath $packageDirectory `
         -Version $Version `
-        -NuGetConfigPath $nugetConfigPath
+        -ConfigurationVersion $configurationVersion `
+        -DependencyInjectionVersion $dependencyInjectionVersion
 
     $analyzerDirectory = Join-Path $temporaryRoot 'analyzer'
     $analyzerProject = @"

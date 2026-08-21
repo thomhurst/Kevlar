@@ -1,3 +1,4 @@
+using System.Globalization;
 using Kevlar.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -130,5 +131,60 @@ public class ConfigurationBindingTests
 
         await Assert.That(shield.ToString()).IsEqualTo(
             "complete: Timeout(20s) → Retry(2, exponential 100ms ×3 ≤2s) → CircuitBreaker(25% over 8s, min 4, break 5s) → RateLimit(5/10s, burst 7, queue 2) → ConcurrencyLimit(3, queue 4) → Timeout(1s)");
+    }
+
+    [Test]
+    public async Task Configuration_Preserves_Definition_Defaults_For_Absent_Keys()
+    {
+        var configuration = BuildConfiguration(
+            ("Retry:MaxRetries", "3"),
+            ("CircuitBreaker:FailureRatio", "0.5"),
+            ("RateLimit:Burst", "100"),
+            ("ConcurrencyLimit:MaxQueue", "0"));
+        var services = new ServiceCollection();
+        services.AddShield("defaults", configuration);
+        using var provider = services.BuildServiceProvider();
+
+        var shield = provider.GetRequiredService<IKevlarRegistry>().GetShield("defaults");
+
+        await Assert.That(shield.ToString()).IsEqualTo(
+            "defaults: Retry(3, exponential 250ms ×2 +jitter ≤30s) → CircuitBreaker(50% over 30s, min 10, break 15s) → RateLimit(100/1s) → ConcurrencyLimit(10)");
+    }
+
+    [Test]
+    public async Task Configuration_Parses_Numbers_Using_Invariant_Culture()
+    {
+        var configuration = BuildConfiguration(("CircuitBreaker:FailureRatio", "0.25"));
+        var services = new ServiceCollection();
+        services.AddShield("invariant", configuration);
+        using var provider = services.BuildServiceProvider();
+        var previousCulture = CultureInfo.CurrentCulture;
+        Shield shield;
+
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("de-DE");
+            shield = provider.GetRequiredService<IKevlarRegistry>().GetShield("invariant");
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = previousCulture;
+        }
+
+        await Assert.That(shield.ToString())
+            .IsEqualTo("invariant: CircuitBreaker(25% over 30s, min 10, break 15s)");
+    }
+
+    [Test]
+    public async Task Configuration_Invalid_Value_Identifies_The_Full_Key()
+    {
+        var configuration = BuildConfiguration(("Retry:MaxRetries", "abc"));
+        var services = new ServiceCollection();
+        services.AddShield("invalid", configuration);
+        using var provider = services.BuildServiceProvider();
+
+        await Assert.That(() => provider.GetRequiredService<IKevlarRegistry>().GetShield("invalid"))
+            .Throws<InvalidOperationException>()
+            .WithMessage("Configuration value 'abc' for 'Retry:MaxRetries' is not an integer.");
     }
 }

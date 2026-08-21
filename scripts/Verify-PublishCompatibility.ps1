@@ -7,7 +7,10 @@ param(
     [string]$Version,
 
     [Parameter(Mandatory)]
-    [string]$NuGetConfigPath
+    [string]$ConfigurationVersion,
+
+    [Parameter(Mandatory)]
+    [string]$DependencyInjectionVersion
 )
 
 $ErrorActionPreference = 'Stop'
@@ -57,17 +60,29 @@ function Get-RuntimeIdentifier
 }
 
 $packageDirectory = (Resolve-Path -LiteralPath $PackagesPath).Path
-$nugetConfig = (Resolve-Path -LiteralPath $NuGetConfigPath).Path
 $runtimeIdentifier = Get-RuntimeIdentifier
 $platformName = $runtimeIdentifier.Split('-')[0]
 $temporaryRoot = Join-Path ([System.IO.Path]::GetTempPath()) "kevlar-publish-consumer-$([guid]::NewGuid().ToString('N'))"
 $consumerDirectory = Join-Path $temporaryRoot 'consumer'
 $projectPath = Join-Path $consumerDirectory 'PublishConsumer.csproj'
+$nugetConfigPath = Join-Path $temporaryRoot 'NuGet.Config'
 $previousPackagesPath = $env:NUGET_PACKAGES
 $env:NUGET_PACKAGES = Join-Path $temporaryRoot '.packages'
 
 try
 {
+    $escapedPackageDirectory = [System.Security.SecurityElement]::Escape($packageDirectory)
+    Write-TextFile $nugetConfigPath @"
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <clear />
+    <add key="local" value="$escapedPackageDirectory" />
+    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+  </packageSources>
+</configuration>
+"@
+
     $project = @"
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
@@ -87,8 +102,8 @@ try
     <PackageReference Include="Kevlar" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.DependencyInjection" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.Http" Version="$Version" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.11" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="$ConfigurationVersion" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="$DependencyInjectionVersion" />
   </ItemGroup>
 </Project>
 "@
@@ -196,7 +211,7 @@ file sealed class StubHandler : HttpMessageHandler
             '-f', $entry.Framework,
             '-r', $runtimeIdentifier,
             '--self-contained', 'true',
-            '--configfile', $nugetConfig,
+            '--configfile', $nugetConfigPath,
             '--no-cache',
             '-o', $outputDirectory
         ) + $entry.Properties
