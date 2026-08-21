@@ -189,13 +189,36 @@ internal sealed class CircuitBreakerStrategy : Strategy
         }
     }
 
-    private async ValueTask<Outcome<T>> ExecuteConfiguredAsync<T, TState>(
+    private ValueTask<Outcome<T>> ExecuteConfiguredAsync<T, TState>(
         Continuation<T, TState> next,
         KevlarContext context,
         StrategyMetricAlias alias,
         bool recordState)
     {
-        var entry = await _core.TryEnterAsync(context.TimeProvider).ConfigureAwait(false);
+        var entry = _core.TryEnterAsync(context.TimeProvider);
+        return entry.IsCompletedSuccessfully
+            ? ExecuteConfiguredEntry(entry.Result, next, context, alias, recordState)
+            : AwaitConfiguredEntryAsync(entry, next, context, alias, recordState);
+    }
+
+    private async ValueTask<Outcome<T>> AwaitConfiguredEntryAsync<T, TState>(
+        ValueTask<CircuitBreakerCore.EntryResult> entry,
+        Continuation<T, TState> next,
+        KevlarContext context,
+        StrategyMetricAlias alias,
+        bool recordState)
+    {
+        var result = await entry.ConfigureAwait(false);
+        return await ExecuteConfiguredEntry(result, next, context, alias, recordState).ConfigureAwait(false);
+    }
+
+    private ValueTask<Outcome<T>> ExecuteConfiguredEntry<T, TState>(
+        CircuitBreakerCore.EntryResult entry,
+        Continuation<T, TState> next,
+        KevlarContext context,
+        StrategyMetricAlias alias,
+        bool recordState)
+    {
         if (!entry.Allowed)
         {
             if (recordState)
@@ -204,7 +227,7 @@ internal sealed class CircuitBreakerStrategy : Strategy
             }
 
             KevlarMetrics.Rejection(context.ShieldName, "circuit_open");
-            return Outcome<T>.FromException(entry.Rejection!);
+            return new ValueTask<Outcome<T>>(Outcome<T>.FromException(entry.Rejection!));
         }
 
         if (recordState)
@@ -220,21 +243,76 @@ internal sealed class CircuitBreakerStrategy : Strategy
             }
         }
 
-        var outcome = await next.InvokeAsync(context).ConfigureAwait(false);
+        var execution = next.InvokeAsync(context);
+        return execution.IsCompletedSuccessfully
+            ? CompleteConfigured(execution.Result, context, entry.AdmittedProbeGeneration, alias, recordState)
+            : AwaitConfiguredOutcomeAsync(
+                execution,
+                context,
+                entry.AdmittedProbeGeneration,
+                alias,
+                recordState);
+    }
 
+    private async ValueTask<Outcome<T>> AwaitConfiguredOutcomeAsync<T>(
+        ValueTask<Outcome<T>> execution,
+        KevlarContext context,
+        long admittedProbeGeneration,
+        StrategyMetricAlias alias,
+        bool recordState)
+    {
+        var outcome = await execution.ConfigureAwait(false);
+        return await CompleteConfigured(
+            outcome,
+            context,
+            admittedProbeGeneration,
+            alias,
+            recordState).ConfigureAwait(false);
+    }
+
+    private ValueTask<Outcome<T>> CompleteConfigured<T>(
+        Outcome<T> outcome,
+        KevlarContext context,
+        long admittedProbeGeneration,
+        StrategyMetricAlias alias,
+        bool recordState)
+    {
+        ValueTask recording;
         if (_judge.ShouldHandle(in outcome))
         {
-            await _core.RecordFailureAsync(context.TimeProvider, in outcome, context).ConfigureAwait(false);
+            recording = _core.RecordFailureAsync(context.TimeProvider, in outcome, context);
         }
         else if (outcome.Exception is OperationCanceledException && context.CancellationToken.IsCancellationRequested)
         {
-            _core.AbandonProbe(entry.AdmittedProbeGeneration);
+            _core.AbandonProbe(admittedProbeGeneration);
+            recording = default;
         }
         else
         {
-            await _core.RecordSuccessAsync(context.TimeProvider).ConfigureAwait(false);
+            recording = _core.RecordSuccessAsync(context.TimeProvider);
         }
 
+        if (!recording.IsCompletedSuccessfully)
+        {
+            return AwaitConfiguredRecordingAsync(recording, outcome, alias, recordState);
+        }
+
+        recording.GetAwaiter().GetResult();
+        if (recordState)
+        {
+            RecordState(alias);
+        }
+
+        return new ValueTask<Outcome<T>>(outcome);
+    }
+
+    private async ValueTask<Outcome<T>> AwaitConfiguredRecordingAsync<T>(
+        ValueTask recording,
+        Outcome<T> outcome,
+        StrategyMetricAlias alias,
+        bool recordState)
+    {
+        await recording.ConfigureAwait(false);
         if (recordState)
         {
             RecordState(alias);
