@@ -554,18 +554,35 @@ public class ChaosStrategyTests
     }
 
     [Test]
-    public async Task Missing_Behavior_Does_Not_Report_An_Injection()
+    public async Task Missing_Behavior_Skips_Decision_And_Injection_Callbacks()
     {
+        var decisionCallbacks = 0;
         var injections = 0;
         var shield = ChaosShield.Behavior(options =>
         {
             options.Enabled = true;
+            options.EnabledGenerator = _ =>
+            {
+                decisionCallbacks++;
+                return true;
+            };
+            options.Predicate = _ =>
+            {
+                decisionCallbacks++;
+                return true;
+            };
+            options.InjectionRateGenerator = _ =>
+            {
+                decisionCallbacks++;
+                return 1;
+            };
             options.OnInjected = _ => injections++;
         });
 
         var result = await shield.ExecuteAsync(static _ => new ValueTask<int>(42));
 
         await Assert.That(result).IsEqualTo(42);
+        await Assert.That(decisionCallbacks).IsEqualTo(0);
         await Assert.That(injections).IsEqualTo(0);
     }
 

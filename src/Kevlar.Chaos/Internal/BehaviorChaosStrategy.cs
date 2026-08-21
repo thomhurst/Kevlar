@@ -16,12 +16,12 @@ internal sealed class BehaviorChaosStrategy : ChaosStrategy
         Continuation<T, TState> next,
         KevlarContext context)
     {
-        if (!TryDecide(context, out var decision))
+        if (_behavior is null)
         {
             return next.InvokeAsync(context);
         }
 
-        if (_behavior is null)
+        if (!TryDecide(context, out var decision))
         {
             return next.InvokeAsync(context);
         }
