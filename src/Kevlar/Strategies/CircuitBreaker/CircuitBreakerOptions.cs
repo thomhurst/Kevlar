@@ -27,6 +27,13 @@ public sealed class CircuitBreakerOptions
     public TimeSpan BreakDuration { get; set; } = TimeSpan.FromSeconds(15);
 
     /// <summary>
+    /// Produces and awaits the break duration when a handled outcome trips or re-opens the
+    /// circuit. The returned value must be positive. The event context is valid only until the
+    /// callback completes. When configured, this value overrides <see cref="BreakDuration"/>.
+    /// </summary>
+    public Func<CircuitBreakerBreakDurationEvent, ValueTask<TimeSpan>>? BreakDurationGenerator { get; set; }
+
+    /// <summary>
     /// An optional monitor giving external code visibility of the circuit state plus manual
     /// <see cref="CircuitBreakerMonitor.Isolate"/> / <see cref="CircuitBreakerMonitor.Reset"/> control.
     /// A monitor can be bound to only one circuit breaker.
@@ -34,11 +41,18 @@ public sealed class CircuitBreakerOptions
     public CircuitBreakerMonitor? Monitor { get; set; }
 
     /// <summary>
-    /// Invoked on every state transition, before <see cref="CircuitBreakerMonitor.StateChanged"/>.
-    /// Transitions are delivered serially outside the circuit lock. Exceptions propagate after
-    /// the monitor observer is invoked; failures from both observers are aggregated. The handler
-    /// runs synchronously and blocks later transition publishers, so it should not perform I/O,
-    /// wait on external work, or otherwise run for a long time.
+    /// Invoked on every state transition, before <see cref="OnStateChangedAsync"/> and
+    /// <see cref="CircuitBreakerMonitor.StateChanged"/>. Transitions are delivered serially
+    /// outside the circuit lock. Exceptions propagate after all observers run; multiple failures
+    /// are aggregated. The handler runs synchronously and blocks later transition publishers, so
+    /// it should not perform I/O, wait on external work, or otherwise run for a long time.
     /// </summary>
     public Action<CircuitStateChangedEvent>? OnStateChanged { get; set; }
+
+    /// <summary>
+    /// Invoked and awaited on every state transition, after <see cref="OnStateChanged"/> and
+    /// before <see cref="CircuitBreakerMonitor.StateChanged"/>. Transitions are delivered
+    /// serially outside the circuit lock.
+    /// </summary>
+    public Func<CircuitStateChangedEvent, ValueTask>? OnStateChangedAsync { get; set; }
 }

@@ -100,4 +100,4 @@ and suppression guidance.
 
 ## Callbacks
 
-Every reactive strategy also raises in-process events for logging — `OnRetry`, `OnTimeout`, `OnStateChanged`, `OnHedge`, `onFallback` — documented on each [strategy page](/docs/category/strategies). Metrics tell you *how much*; callbacks give you the *which request* detail.
+Every reactive strategy also raises in-process events for logging — including synchronous and asynchronous retry, timeout, and circuit-transition callbacks — documented on each [strategy page](/docs/category/strategies). Metrics tell you *how much*; callbacks give you the *which request* detail.

@@ -26,6 +26,11 @@ internal sealed class CircuitBreakerStrategy : Strategy
     {
         var alias = new StrategyMetricAlias(context.ShieldName, context.StrategyIndex);
         var recordState = RegisterMetricsAlias(alias);
+        if (_core.RequiresAsyncExecution)
+        {
+            return await ExecuteConfiguredAsync(next, context, alias, recordState).ConfigureAwait(false);
+        }
+
         if (!_core.TryEnter(context.TimeProvider, out var rejection, out var admittedProbeGeneration))
         {
             if (recordState)
@@ -154,5 +159,59 @@ internal sealed class CircuitBreakerStrategy : Strategy
         {
             throw new AggregateException(failures).Flatten();
         }
+    }
+
+    private async ValueTask<Outcome<T>> ExecuteConfiguredAsync<T, TState>(
+        Continuation<T, TState> next,
+        KevlarContext context,
+        StrategyMetricAlias alias,
+        bool recordState)
+    {
+        var entry = await _core.TryEnterAsync(context.TimeProvider).ConfigureAwait(false);
+        if (!entry.Allowed)
+        {
+            if (recordState)
+            {
+                RecordState(alias);
+            }
+
+            KevlarMetrics.Rejection(context.ShieldName, "circuit_open");
+            return Outcome<T>.FromException(entry.Rejection!);
+        }
+
+        if (recordState)
+        {
+            try
+            {
+                RecordState(alias);
+            }
+            catch
+            {
+                _core.AbandonProbe(entry.AdmittedProbeGeneration);
+                throw;
+            }
+        }
+
+        var outcome = await next.InvokeAsync(context).ConfigureAwait(false);
+
+        if (_judge.ShouldHandle(in outcome))
+        {
+            await _core.RecordFailureAsync(context.TimeProvider, in outcome, context).ConfigureAwait(false);
+        }
+        else if (outcome.Exception is OperationCanceledException && context.CancellationToken.IsCancellationRequested)
+        {
+            _core.AbandonProbe(entry.AdmittedProbeGeneration);
+        }
+        else
+        {
+            await _core.RecordSuccessAsync(context.TimeProvider).ConfigureAwait(false);
+        }
+
+        if (recordState)
+        {
+            RecordState(alias);
+        }
+
+        return outcome;
     }
 }
