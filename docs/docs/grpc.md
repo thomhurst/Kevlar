@@ -51,7 +51,7 @@ The interceptor uses explicit progress boundaries:
 
 - Server streaming may retry or hedge establishment only until response headers or the first item becomes observable. After that point, it never repeats `MoveNext`, so an item cannot be skipped or duplicated. With an at-most-once shield, each later `MoveNext` remains protected by that shield.
 - Client streaming and duplex never buffer or replay request messages. Their shield must be at-most-once; constructing either call with retry, hedging, or another repeating strategy throws `NotSupportedException` before the RPC starts.
-- Client-streaming response completion, request writes, duplex reads, and duplex writes run through the shield. Disposing the wrapper cancels and disposes the underlying call. Status and trailers remain available after normal completion until disposal.
+- Request writes, duplex reads, and duplex writes run through the operation shield. Client-streaming response completion follows the total call lifetime, so waiting for the response cannot occupy an operation concurrency slot. Disposing the wrapper cancels and disposes the underlying call. Status and trailers remain available after normal completion until disposal.
 
 When server-stream establishment needs retry or hedging and later reads still need a timeout, supply separate shields:
 
@@ -69,12 +69,12 @@ The operation shield must be at-most-once. The two-shield constructor rejects re
 |---|---|
 | Server-stream establishment through headers or first item | establishment shield |
 | Individual request writes and post-progress response reads | at-most-once operation shield |
-| Client-streaming response completion | at-most-once operation shield, started when the call is created |
+| Client-streaming response completion | gRPC deadline, caller cancellation token, or call disposal |
 | Total lifetime, including time when no read/write is active | gRPC deadline, caller cancellation token, or call disposal |
 
 A Kevlar operation timeout is not an idle-stream timer. Use the gRPC deadline when the entire stream needs one absolute budget; its timestamp is preserved across server-establishment attempts.
 
-`WriteAsync(message, cancellationToken)` uses the operation token on modern gRPC APIs. On the `netstandard2.0` compatibility target, where gRPC exposes only `WriteAsync(message)`, cancellation is checked before and after the write and wrapper disposal still cancels the call lifetime. A gRPC deadline remains in the original `CallOptions` for every server-streaming establishment attempt.
+`WriteAsync(message, cancellationToken)` uses the operation token on modern gRPC APIs. On the `netstandard2.0` compatibility target, where gRPC exposes only `WriteAsync(message)`, operation cancellation cancels the call lifetime so a blocked write can complete. A gRPC deadline remains in the original `CallOptions` for every server-streaming establishment attempt.
 
 ## Dependency injection and named shields
 

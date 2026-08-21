@@ -54,7 +54,7 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
         private readonly TaskCompletionSource<AsyncUnaryCall<TResponse>?> _responseHeadersCall =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        private ConditionalWeakTable<Exception, FailureSelection>? _failedCalls;
+        private ConditionalWeakTable<AttemptFailureException, FailureSelection>? _failedCalls;
         private Exception? _deadlineFailure;
         private Task<TResponse> _response = null!;
         private AsyncUnaryCall<TResponse>? _terminalCall;
@@ -105,7 +105,10 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
             catch (Exception exception)
             {
                 SelectFailure(exception);
-                if (exception is OperationCanceledException cancellation
+                var visibleException = exception is AttemptFailureException attemptFailure
+                    ? attemptFailure.OriginalException
+                    : exception;
+                if (visibleException is OperationCanceledException cancellation
                     && _context.Options.CancellationToken.IsCancellationRequested)
                 {
                     throw new OperationCanceledException(
@@ -114,16 +117,12 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
                         _context.Options.CancellationToken);
                 }
 
-                if (exception is AttemptRpcException attemptException)
-                {
-                    ExceptionDispatchInfo.Capture(attemptException.Original).Throw();
-                }
-
-                if (exception is ExpiredDeadlineRpcException deadlineException)
+                if (visibleException is ExpiredDeadlineRpcException deadlineException)
                 {
                     ExceptionDispatchInfo.Capture(deadlineException.Original).Throw();
                 }
 
+                ExceptionDispatchInfo.Capture(visibleException).Throw();
                 throw;
             }
             finally
@@ -164,7 +163,8 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
             }
             catch (RpcException exception) when (
                 exception.StatusCode == StatusCode.Cancelled
-                && cancellationToken.IsCancellationRequested)
+                && cancellationToken.IsCancellationRequested
+                && !IsExpiredDeadline())
             {
                 var cancellation = new OperationCanceledException(
                     exception.Message,
@@ -176,7 +176,7 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
             catch (Exception exception)
             {
                 var originalException = exception;
-                var deadlineException = NormalizeExpiredDeadline(exception as RpcException);
+                var deadlineException = NormalizeExpiredDeadline(exception);
                 var deadlineExceeded = deadlineException is not null;
                 if (deadlineException is not null)
                 {
@@ -203,27 +203,39 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
             }
         }
 
-        private RpcException? NormalizeExpiredDeadline(RpcException? exception)
+        private RpcException? NormalizeExpiredDeadline(Exception exception)
         {
-            if (exception is null
-                || _context.Options.Deadline is not { } deadline
-                || deadline > DateTime.UtcNow
-                || _context.Options.CancellationToken.IsCancellationRequested
-                || exception.StatusCode is not (
-                    StatusCode.DeadlineExceeded
-                    or StatusCode.Cancelled
-                    or StatusCode.Unknown))
+            if (!IsExpiredDeadline())
             {
                 return null;
             }
 
-            return exception.StatusCode == StatusCode.DeadlineExceeded
-                ? exception
-                : new RpcException(
-                    new Status(StatusCode.DeadlineExceeded, exception.Status.Detail),
-                    exception.Trailers,
-                    exception.Message);
+            if (exception is RpcException rpcException
+                && rpcException.StatusCode is (
+                    StatusCode.DeadlineExceeded
+                    or StatusCode.Cancelled
+                    or StatusCode.Unknown))
+            {
+                return rpcException.StatusCode == StatusCode.DeadlineExceeded
+                    ? rpcException
+                    : new RpcException(
+                        new Status(StatusCode.DeadlineExceeded, rpcException.Status.Detail),
+                        rpcException.Trailers,
+                        rpcException.Message);
+            }
+
+            return exception is OperationCanceledException && _lifetime.IsCancellationRequested
+                ? new RpcException(
+                    new Status(StatusCode.DeadlineExceeded, "Deadline exceeded."),
+                    new Metadata(),
+                    exception.Message)
+                : null;
         }
+
+        private bool IsExpiredDeadline() =>
+            _context.Options.Deadline is { } deadline
+            && deadline <= DateTime.UtcNow
+            && !_context.Options.CancellationToken.IsCancellationRequested;
 
         private void DisposeSupersededFailures()
         {
@@ -235,6 +247,13 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
                     if (_attempts[index].Exception is null)
                     {
                         continue;
+                    }
+
+                    if (_attempts[index].Exception is AttemptFailureException failure
+                        && _failedCalls is not null
+                        && _failedCalls.TryGetValue(failure, out var selection))
+                    {
+                        selection.MarkDisposed();
                     }
 
                     (superseded ??= []).Add(_attempts[index].Call);
@@ -292,23 +311,18 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
                         continue;
                     }
 
-                    if (exception is not null
-                        && _failedCalls is not null
-                        && _failedCalls.TryGetValue(exception, out _)
-                        && exception is RpcException rpcException)
-                    {
-                        exception = new AttemptRpcException(rpcException);
-                    }
-
-                    _attempts[index] = new AttemptRecord(call, exception);
                     if (exception is not null)
                     {
-                        (_failedCalls ??= new())
-                            .GetValue(exception, static _ => new FailureSelection())
-                            .Set(call, failureCall);
+                        var attemptFailure = new AttemptFailureException(exception);
+                        _attempts[index] = new AttemptRecord(call, attemptFailure);
+                        (_failedCalls ??= new()).Add(
+                            attemptFailure,
+                            new FailureSelection(call, failureCall!));
+                        return attemptFailure;
                     }
 
-                    return exception;
+                    _attempts[index] = new AttemptRecord(call, exception: null);
+                    return null;
                 }
             }
 
@@ -374,25 +388,14 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
             AsyncUnaryCall<TResponse>? selectedAttemptCall = null;
             lock (_gate)
             {
-                for (var index = _attempts.Count - 1; index >= 0; index--)
-                {
-                    if (ReferenceEquals(_attempts[index].Exception, exception))
-                    {
-                        call = _failedCalls is not null
-                            && _failedCalls.TryGetValue(exception, out var matchingFailure)
-                            ? matchingFailure.Call
-                            : _attempts[index].Call;
-                        selectedAttemptCall = _attempts[index].Call;
-                        break;
-                    }
-                }
-
-                if (call is null
+                if (exception is AttemptFailureException attemptFailure
                     && _failedCalls is not null
-                    && _failedCalls.TryGetValue(exception, out var failure))
+                    && _failedCalls.TryGetValue(attemptFailure, out var matchingFailure))
                 {
-                    call = failure.Call;
-                    selectedAttemptCall = failure.AttemptCall;
+                    call = matchingFailure.Call;
+                    selectedAttemptCall = matchingFailure.Disposed
+                        ? null
+                        : matchingFailure.AttemptCall;
                 }
 
                 if (call is null && exception is TimeoutExceededException)
@@ -405,11 +408,19 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
                             continue;
                         }
 
-                        call = _failedCalls is not null
-                            && _failedCalls.TryGetValue(attemptException, out failure)
-                            ? failure.Call
-                            : _attempts[index].Call;
-                        selectedAttemptCall = _attempts[index].Call;
+                        if (attemptException is AttemptFailureException timedOutFailure
+                            && _failedCalls is not null
+                            && _failedCalls.TryGetValue(timedOutFailure, out var failure))
+                        {
+                            call = failure.Call;
+                            selectedAttemptCall = failure.Disposed ? null : failure.AttemptCall;
+                        }
+                        else
+                        {
+                            call = _attempts[index].Call;
+                            selectedAttemptCall = _attempts[index].Call;
+                        }
+
                         break;
                     }
                 }
@@ -534,25 +545,32 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
             }
         }
 
-        private sealed class FailureSelection
+        private sealed class FailureSelection(
+            AsyncUnaryCall<TResponse> attemptCall,
+            AsyncUnaryCall<TResponse> call)
         {
-            public AsyncUnaryCall<TResponse>? AttemptCall { get; private set; }
+            public AsyncUnaryCall<TResponse> AttemptCall { get; } = attemptCall;
 
-            public AsyncUnaryCall<TResponse>? Call { get; set; }
+            public AsyncUnaryCall<TResponse> Call { get; } = call;
 
-            public void Set(
-                AsyncUnaryCall<TResponse> attemptCall,
-                AsyncUnaryCall<TResponse>? failureCall)
-            {
-                AttemptCall = attemptCall;
-                Call = failureCall;
-            }
+            public bool Disposed { get; private set; }
+
+            public void MarkDisposed() => Disposed = true;
         }
 
-        private sealed class AttemptRpcException(RpcException original)
-            : RpcException(original.Status, original.Trailers, original.Message)
+        private sealed class AttemptFailureException : Exception
         {
-            public RpcException Original { get; } = original;
+            private const string ExceptionProxyDataKey =
+                "Kevlar.Internal.ExceptionProxy.6b21d876-5f0c-45d4-a873-cd6d83e9158b";
+
+            public AttemptFailureException(Exception original)
+                : base(original.Message, original)
+            {
+                OriginalException = original;
+                Data[ExceptionProxyDataKey] = original;
+            }
+
+            public Exception OriginalException { get; }
         }
 
         private sealed class ExpiredDeadlineRpcException(RpcException original)

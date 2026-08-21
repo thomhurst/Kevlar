@@ -1,5 +1,6 @@
 using Grpc.Core;
 using Grpc.Core.Interceptors;
+using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 
 namespace Kevlar.Extensions.Grpc;
@@ -27,8 +28,9 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
     /// </summary>
     /// <remarks>
     /// <paramref name="establishmentShield"/> may repeat a server-streaming call before progress.
-    /// <paramref name="operationShield"/> protects individual reads, writes, and client-streaming
-    /// response completion, and therefore must invoke each continuation at most once.
+    /// <paramref name="operationShield"/> protects individual reads and writes, and therefore must
+    /// invoke each continuation at most once. Client-streaming response completion remains governed
+    /// by the call lifetime so waiting for the response cannot occupy an operation concurrency slot.
     /// </remarks>
     public ShieldStreamingClientInterceptor(
         Shield establishmentShield,
@@ -116,8 +118,10 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
         private readonly AsyncServerStreamingCallContinuation<TRequest, TResponse> _continuation;
         private readonly CancellationTokenSource _lifetime;
         private readonly List<Attempt> _attempts = [];
+        private ConditionalWeakTable<AttemptFailureException, FailureSelection>? _failedCalls;
 
         private AsyncServerStreamingCall<TResponse>? _terminalCall;
+        private AsyncServerStreamingCall<TResponse>? _selectedAttemptCall;
         private CancellationTokenSource? _terminalCancellation;
         private bool _selected;
         private bool _disposed;
@@ -156,17 +160,35 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
             {
                 if (TryGetSelected(out var selected))
                 {
-                    if (_operationShield is null)
+                    var operationToken = cancellationToken.CanBeCanceled
+                        ? cancellationToken
+                        : _lifetime.Token;
+                    try
                     {
-                        return await selected.ResponseStream.MoveNext(cancellationToken).ConfigureAwait(false);
-                    }
+                        if (_operationShield is null)
+                        {
+                            return await AwaitGrpcOperationAsync(
+                                selected.ResponseStream.MoveNext(operationToken),
+                                operationToken).ConfigureAwait(false);
+                        }
 
-                    return await _operationShield.ExecuteAsync(
-                        selected.ResponseStream,
-                        static (reader, token) => new ValueTask<bool>(reader.MoveNext(token)),
-                        cancellationToken.CanBeCanceled
-                            ? cancellationToken
-                            : _lifetime.Token).ConfigureAwait(false);
+                        return await _operationShield.ExecuteAsync(
+                            selected.ResponseStream,
+                            static (reader, token) => AwaitGrpcOperationAsync(
+                                reader.MoveNext(token),
+                                token),
+                            operationToken).ConfigureAwait(false);
+                    }
+                    catch (Exception exception) when (
+                        exception is OperationCanceledException
+                            or RpcException { StatusCode: StatusCode.Cancelled }
+                        && _context.Options.CancellationToken.IsCancellationRequested)
+                    {
+                        throw new OperationCanceledException(
+                            exception.Message,
+                            exception,
+                            _context.Options.CancellationToken);
+                    }
                 }
 
                 using var operation = CreateOperationCancellation(cancellationToken);
@@ -176,7 +198,7 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
                         this,
                         static (state, token) => state.StartAndReadAsync(token),
                         operation?.Token ?? _lifetime.Token).ConfigureAwait(false);
-                    Select(result.Call, result.Cancellation);
+                    Select(result.Call, result.Call, result.Cancellation);
                     return result.HasNext;
                 }
                 catch (Exception exception)
@@ -208,7 +230,7 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
                         this,
                         static (state, token) => state.StartAndReadHeadersAsync(token),
                         _lifetime.Token).ConfigureAwait(false);
-                    Select(result.Call, result.Cancellation);
+                    Select(result.Call, result.Call, result.Cancellation);
                     return result.Headers;
                 }
                 catch (Exception exception)
@@ -234,13 +256,13 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
             {
                 var hasNext = await attempt.Call.ResponseStream
                     .MoveNext(attemptToken).ConfigureAwait(false);
-                CompleteAttempt(attempt.Call, exception: null);
+                CompleteAttempt(attempt.Call, exception: null, failureCall: null);
                 return new ReadResult(attempt.Call, attempt.Cancellation, hasNext);
             }
             catch (Exception exception)
             {
                 exception = NormalizeAttemptException(exception, cancellationToken);
-                CompleteAttempt(attempt.Call, exception);
+                exception = await CompleteFailureAsync(attempt.Call, exception).ConfigureAwait(false);
                 ExceptionDispatchInfo.Capture(exception).Throw();
                 throw;
             }
@@ -254,13 +276,13 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
             try
             {
                 var headers = await attempt.Call.ResponseHeadersAsync.ConfigureAwait(false);
-                CompleteAttempt(attempt.Call, exception: null);
+                CompleteAttempt(attempt.Call, exception: null, failureCall: null);
                 return new HeadersResult(attempt.Call, attempt.Cancellation, headers);
             }
             catch (Exception exception)
             {
                 exception = NormalizeAttemptException(exception, cancellationToken);
-                CompleteAttempt(attempt.Call, exception);
+                exception = await CompleteFailureAsync(attempt.Call, exception).ConfigureAwait(false);
                 ExceptionDispatchInfo.Capture(exception).Throw();
                 throw;
             }
@@ -291,19 +313,40 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
                     cancellationToken);
             }
 
-            if (exception is RpcException { StatusCode: StatusCode.DeadlineExceeded } deadlineException
-                && _context.Options.Deadline is { } deadline
-                && deadline <= DateTime.UtcNow)
+            if (IsExpiredDeadline()
+                && exception is RpcException
+                {
+                    StatusCode: StatusCode.DeadlineExceeded or StatusCode.Cancelled or StatusCode.Unknown
+                } deadlineException)
             {
                 CancelLifetime(_lifetime);
                 return new ExpiredDeadlineRpcException(deadlineException);
             }
 
+            if (IsExpiredDeadline()
+                && exception is OperationCanceledException
+                && _lifetime.IsCancellationRequested)
+            {
+                CancelLifetime(_lifetime);
+                return new ExpiredDeadlineRpcException(
+                    new RpcException(new Status(StatusCode.DeadlineExceeded, "Deadline exceeded.")));
+            }
+
             return exception;
         }
 
+        private bool IsExpiredDeadline() =>
+            _context.Options.Deadline is { } deadline
+            && deadline <= DateTime.UtcNow
+            && !_context.Options.CancellationToken.IsCancellationRequested;
+
         private void RethrowNormalized(Exception exception)
         {
+            if (exception is AttemptFailureException attemptFailure)
+            {
+                exception = attemptFailure.OriginalException;
+            }
+
             if (exception is OperationCanceledException cancellation
                 && _context.Options.CancellationToken.IsCancellationRequested
                 && cancellation.CancellationToken != _context.Options.CancellationToken)
@@ -318,6 +361,8 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
             {
                 ExceptionDispatchInfo.Capture(deadlineException.Original).Throw();
             }
+
+            ExceptionDispatchInfo.Capture(exception).Throw();
         }
 
         private Attempt CreateAttempt(CancellationToken cancellationToken)
@@ -362,7 +407,18 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
             return new Attempt(call, cancellation, Exception: null);
         }
 
-        private void CompleteAttempt(AsyncServerStreamingCall<TResponse> call, Exception? exception)
+        private async ValueTask<Exception> CompleteFailureAsync(
+            AsyncServerStreamingCall<TResponse> call,
+            Exception exception)
+        {
+            var failureCall = await SnapshotFailureAsync(call, exception).ConfigureAwait(false);
+            return CompleteAttempt(call, exception, failureCall) ?? exception;
+        }
+
+        private Exception? CompleteAttempt(
+            AsyncServerStreamingCall<TResponse> call,
+            Exception? exception,
+            AsyncServerStreamingCall<TResponse>? failureCall)
         {
             lock (_gate)
             {
@@ -370,13 +426,80 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
                 {
                     if (ReferenceEquals(_attempts[index].Call, call))
                     {
+                        if (exception is not null)
+                        {
+                            var attemptFailure = new AttemptFailureException(exception);
+                            _attempts[index] = new Attempt(
+                                call,
+                                _attempts[index].Cancellation,
+                                attemptFailure);
+                            (_failedCalls ??= new()).Add(
+                                attemptFailure,
+                                new FailureSelection(call, failureCall!));
+                            return attemptFailure;
+                        }
+
                         _attempts[index] = new Attempt(
                             call,
                             _attempts[index].Cancellation,
-                            exception);
-                        return;
+                            Exception: null);
+                        return null;
                     }
                 }
+            }
+
+            return exception;
+        }
+
+        private static async ValueTask<AsyncServerStreamingCall<TResponse>> SnapshotFailureAsync(
+            AsyncServerStreamingCall<TResponse> call,
+            Exception exception)
+        {
+            var responseHeaders = call.ResponseHeadersAsync;
+            try
+            {
+                responseHeaders = Task.FromResult(await responseHeaders.ConfigureAwait(false));
+            }
+            catch (Exception headersException)
+            {
+                responseHeaders = Task.FromException<Metadata>(headersException);
+                _ = responseHeaders.Exception;
+            }
+
+            var rpcException = exception as RpcException ?? exception.InnerException as RpcException;
+            var status = rpcException?.Status ?? GetStatusOrUnknown(call, exception);
+            var trailers = rpcException?.Trailers ?? GetTrailersOrEmpty(call);
+            return new AsyncServerStreamingCall<TResponse>(
+                call.ResponseStream,
+                responseHeaders,
+                () => status,
+                () => trailers,
+                static () => { });
+        }
+
+        private static Status GetStatusOrUnknown(
+            AsyncServerStreamingCall<TResponse> call,
+            Exception exception)
+        {
+            try
+            {
+                return call.GetStatus();
+            }
+            catch (InvalidOperationException)
+            {
+                return new Status(StatusCode.Unknown, exception.Message);
+            }
+        }
+
+        private static Metadata GetTrailersOrEmpty(AsyncServerStreamingCall<TResponse> call)
+        {
+            try
+            {
+                return call.GetTrailers();
+            }
+            catch (InvalidOperationException)
+            {
+                return new Metadata();
             }
         }
 
@@ -392,6 +515,7 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
                         continue;
                     }
 
+                    MarkFailureDisposed(_attempts[index]);
                     (superseded ??= []).Add(_attempts[index]);
                     _attempts.RemoveAt(index);
                 }
@@ -402,40 +526,41 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
 
         private void SelectFailure(Exception exception)
         {
-            Attempt? selected = null;
+            AsyncServerStreamingCall<TResponse>? terminalCall = null;
+            AsyncServerStreamingCall<TResponse>? selectedAttemptCall = null;
+            CancellationTokenSource? selectedCancellation = null;
             lock (_gate)
             {
-                for (var index = _attempts.Count - 1; index >= 0; index--)
+                if (exception is AttemptFailureException attemptFailure
+                    && _failedCalls is not null
+                    && _failedCalls.TryGetValue(attemptFailure, out var failure))
                 {
-                    if (ReferenceEquals(_attempts[index].Exception, exception))
+                    terminalCall = failure.Call;
+                    if (!failure.Disposed)
                     {
-                        selected = _attempts[index];
-                        break;
-                    }
-                }
-
-                if (selected is null)
-                {
-                    for (var index = _attempts.Count - 1; index >= 0; index--)
-                    {
-                        if (_attempts[index].Exception is not null)
+                        selectedAttemptCall = failure.AttemptCall;
+                        for (var index = _attempts.Count - 1; index >= 0; index--)
                         {
-                            selected = _attempts[index];
-                            break;
+                            if (ReferenceEquals(_attempts[index].Call, selectedAttemptCall))
+                            {
+                                selectedCancellation = _attempts[index].Cancellation;
+                                break;
+                            }
                         }
                     }
                 }
             }
 
-            if (selected is { } failure)
+            if (terminalCall is not null)
             {
-                Select(failure.Call, failure.Cancellation);
+                Select(terminalCall, selectedAttemptCall, selectedCancellation);
             }
         }
 
         private void Select(
-            AsyncServerStreamingCall<TResponse> call,
-            CancellationTokenSource cancellation)
+            AsyncServerStreamingCall<TResponse> terminalCall,
+            AsyncServerStreamingCall<TResponse>? selectedAttemptCall,
+            CancellationTokenSource? selectedCancellation)
         {
             List<Attempt>? discarded = null;
             var disposeSelectedLoser = false;
@@ -443,17 +568,21 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
             {
                 if (_selected)
                 {
-                    disposeSelectedLoser = !ReferenceEquals(_terminalCall, call);
+                    disposeSelectedLoser = selectedAttemptCall is not null
+                        && selectedCancellation is not null
+                        && !ReferenceEquals(_selectedAttemptCall, selectedAttemptCall);
                 }
                 else
                 {
                     _selected = true;
-                    _terminalCall = call;
-                    _terminalCancellation = cancellation;
+                    _terminalCall = terminalCall;
+                    _selectedAttemptCall = selectedAttemptCall;
+                    _terminalCancellation = selectedCancellation;
                     foreach (var attempt in _attempts)
                     {
-                        if (!ReferenceEquals(attempt.Call, call))
+                        if (!ReferenceEquals(attempt.Call, selectedAttemptCall))
                         {
+                            MarkFailureDisposed(attempt);
                             (discarded ??= []).Add(attempt);
                         }
                     }
@@ -464,7 +593,7 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
 
             if (disposeSelectedLoser)
             {
-                DisposeAttempt(call, cancellation);
+                DisposeAttempt(selectedAttemptCall!, selectedCancellation!);
             }
             DisposeAttempts(discarded);
         }
@@ -505,21 +634,38 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
 
                 _disposed = true;
                 attempts = [.. _attempts];
+                foreach (var attempt in attempts)
+                {
+                    MarkFailureDisposed(attempt);
+                }
+
                 _attempts.Clear();
-                if (_terminalCall is not null && _terminalCancellation is not null)
+                if (_selectedAttemptCall is not null && _terminalCancellation is not null)
                 {
                     attempts.Add(new Attempt(
-                        _terminalCall,
+                        _selectedAttemptCall,
                         _terminalCancellation,
                         Exception: null));
-                    _terminalCall = null;
-                    _terminalCancellation = null;
                 }
+
+                _terminalCall = null;
+                _selectedAttemptCall = null;
+                _terminalCancellation = null;
             }
 
             CancelLifetime(_lifetime);
             DisposeAttempts(attempts);
             _lifetime.Dispose();
+        }
+
+        private void MarkFailureDisposed(Attempt attempt)
+        {
+            if (attempt.Exception is AttemptFailureException failure
+                && _failedCalls is not null
+                && _failedCalls.TryGetValue(failure, out var selection))
+            {
+                selection.MarkDisposed();
+            }
         }
 
         private static void DisposeAttempts(List<Attempt>? attempts)
@@ -559,6 +705,34 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
             CancellationTokenSource Cancellation,
             Metadata Headers);
 
+        private sealed class FailureSelection(
+            AsyncServerStreamingCall<TResponse> attemptCall,
+            AsyncServerStreamingCall<TResponse> call)
+        {
+            public AsyncServerStreamingCall<TResponse> AttemptCall { get; } = attemptCall;
+
+            public AsyncServerStreamingCall<TResponse> Call { get; } = call;
+
+            public bool Disposed { get; private set; }
+
+            public void MarkDisposed() => Disposed = true;
+        }
+
+        private sealed class AttemptFailureException : Exception
+        {
+            private const string ExceptionProxyDataKey =
+                "Kevlar.Internal.ExceptionProxy.6b21d876-5f0c-45d4-a873-cd6d83e9158b";
+
+            public AttemptFailureException(Exception original)
+                : base(original.Message, original)
+            {
+                OriginalException = original;
+                Data[ExceptionProxyDataKey] = original;
+            }
+
+            public Exception OriginalException { get; }
+        }
+
         private sealed class ExpiredDeadlineRpcException(RpcException original)
             : Exception(original.Message, original)
         {
@@ -573,6 +747,7 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
         private readonly Shield _shield;
         private readonly CancellationTokenSource _lifetime;
         private readonly AsyncClientStreamingCall<TRequest, TResponse> _call;
+        private readonly CancellationToken _callerToken;
         private int _disposed;
 
         public ClientStreamingState(
@@ -581,6 +756,7 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
             AsyncClientStreamingCallContinuation<TRequest, TResponse> continuation)
         {
             _shield = shield;
+            _callerToken = context.Options.CancellationToken;
             _lifetime = CreateLifetime(context.Options.CancellationToken);
             var attemptContext = new ClientInterceptorContext<TRequest, TResponse>(
                 context.Method,
@@ -599,20 +775,12 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
 
         public AsyncClientStreamingCall<TRequest, TResponse> Start() => new(
             new ShieldedClientStreamWriter<TRequest>(_call.RequestStream, _shield, _lifetime),
-            ExecuteResponseAsync(),
+            AwaitCallLifetimeAsync(_call.ResponseAsync, _lifetime, _callerToken),
             static state => ((ClientStreamingState<TRequest, TResponse>)state).ExecuteHeadersAsync(),
             static state => ((ClientStreamingState<TRequest, TResponse>)state)._call.GetStatus(),
             static state => ((ClientStreamingState<TRequest, TResponse>)state)._call.GetTrailers(),
             static state => ((ClientStreamingState<TRequest, TResponse>)state).Dispose(),
             this);
-
-        private Task<TResponse> ExecuteResponseAsync() => _shield.ExecuteAsync(
-            this,
-            static (state, token) => AwaitWithLifetimeAsync(
-                state._call.ResponseAsync,
-                state._lifetime,
-                token),
-            _lifetime.Token).AsTask();
 
         private Task<Metadata> ExecuteHeadersAsync() => _shield.ExecuteAsync(
             this,
@@ -710,18 +878,42 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
             set => writer.WriteOptions = value;
         }
 
-        public Task WriteAsync(T message) => WriteAsync(message, lifetime.Token);
+        public Task WriteAsync(T message) => ExecuteWriteAsync(message, lifetime.Token);
 
-        public Task WriteAsync(T message, CancellationToken cancellationToken) => shield.ExecuteAsync(
-            (Writer: writer, Message: message),
+        public Task WriteAsync(T message, CancellationToken cancellationToken) =>
+            ExecuteWriteAsync(message, cancellationToken);
+
+        private async Task ExecuteWriteAsync(T message, CancellationToken cancellationToken)
+        {
+            using var operation = CancellationTokenSource.CreateLinkedTokenSource(
+                lifetime.Token,
+                cancellationToken);
+            try
+            {
+                await shield.ExecuteAsync(
+                    (Writer: writer, Message: message, Lifetime: lifetime),
 #if NET6_0_OR_GREATER
-            static (state, token) => new ValueTask(state.Writer.WriteAsync(state.Message, token)),
+                    static (state, token) => AwaitGrpcOperationAsync(
+                        state.Writer.WriteAsync(state.Message, token),
+                        token),
 #else
-            static (state, token) => AwaitWithCancellationAsync(
-                state.Writer.WriteAsync(state.Message),
-                token),
+                    static (state, token) => AwaitWithCancellationAsync(
+                        state.Writer.WriteAsync(state.Message),
+                        state.Lifetime,
+                        token),
 #endif
-            cancellationToken.CanBeCanceled ? cancellationToken : lifetime.Token).AsTask();
+                    operation.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException exception) when (
+                cancellationToken.IsCancellationRequested
+                && exception.CancellationToken != cancellationToken)
+            {
+                throw new OperationCanceledException(
+                    exception.Message,
+                    exception,
+                    cancellationToken);
+            }
+        }
 
         public Task CompleteAsync() => shield.ExecuteAsync(
             (Writer: writer, Lifetime: lifetime),
@@ -741,7 +933,7 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
 
         public Task<bool> MoveNext(CancellationToken cancellationToken) => shield.ExecuteAsync(
             reader,
-            static (state, token) => new ValueTask<bool>(state.MoveNext(token)),
+            static (state, token) => AwaitGrpcOperationAsync(state.MoveNext(token), token),
             cancellationToken.CanBeCanceled ? cancellationToken : lifetimeToken).AsTask();
     }
 
@@ -758,7 +950,7 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
         using var registration = cancellationToken.Register(
             static state => CancelLifetime((CancellationTokenSource)state!),
             lifetime);
-        return await task.ConfigureAwait(false);
+        return await AwaitGrpcOperationAsync(task, cancellationToken).ConfigureAwait(false);
     }
 
     private static async ValueTask AwaitWithLifetimeAsync(
@@ -769,7 +961,68 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
         using var registration = cancellationToken.Register(
             static state => CancelLifetime((CancellationTokenSource)state!),
             lifetime);
-        await task.ConfigureAwait(false);
+        await AwaitGrpcOperationAsync(task, cancellationToken).ConfigureAwait(false);
+    }
+
+    private static async Task<T> AwaitCallLifetimeAsync<T>(
+        Task<T> task,
+        CancellationTokenSource lifetime,
+        CancellationToken callerToken)
+    {
+        try
+        {
+            return await task.ConfigureAwait(false);
+        }
+        catch (RpcException exception) when (
+            exception.StatusCode == StatusCode.Cancelled
+            && lifetime.IsCancellationRequested)
+        {
+            var cancellationToken = callerToken.IsCancellationRequested
+                ? callerToken
+                : lifetime.Token;
+            throw new OperationCanceledException(
+                exception.Message,
+                exception,
+                cancellationToken);
+        }
+    }
+
+    private static async ValueTask<T> AwaitGrpcOperationAsync<T>(
+        Task<T> task,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await task.ConfigureAwait(false);
+        }
+        catch (RpcException exception) when (
+            exception.StatusCode == StatusCode.Cancelled
+            && cancellationToken.IsCancellationRequested)
+        {
+            throw new OperationCanceledException(
+                exception.Message,
+                exception,
+                cancellationToken);
+        }
+    }
+
+    private static async ValueTask AwaitGrpcOperationAsync(
+        Task task,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            await task.ConfigureAwait(false);
+        }
+        catch (RpcException exception) when (
+            exception.StatusCode == StatusCode.Cancelled
+            && cancellationToken.IsCancellationRequested)
+        {
+            throw new OperationCanceledException(
+                exception.Message,
+                exception,
+                cancellationToken);
+        }
     }
 
     private static void CancelLifetime(CancellationTokenSource lifetime)
@@ -787,10 +1040,14 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
 #if !NET6_0_OR_GREATER
     private static async ValueTask AwaitWithCancellationAsync(
         Task task,
+        CancellationTokenSource lifetime,
         CancellationToken cancellationToken)
     {
+        using var registration = cancellationToken.Register(
+            static state => CancelLifetime((CancellationTokenSource)state!),
+            lifetime);
         cancellationToken.ThrowIfCancellationRequested();
-        await task.ConfigureAwait(false);
+        await AwaitGrpcOperationAsync(task, cancellationToken).ConfigureAwait(false);
         cancellationToken.ThrowIfCancellationRequested();
     }
 #endif

@@ -376,6 +376,7 @@ public class GrpcResilienceTests
     {
         var pending = new TaskCompletionSource<TestReply>(TaskCreationOptions.RunContinuationsAsynchronously);
         var losingCallDisposed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var selectedCallDisposed = 0;
         var attempts = 0;
         var expected = new RpcException(
             new Status(StatusCode.InvalidArgument, "invalid"),
@@ -386,6 +387,7 @@ public class GrpcResilienceTests
             {
                 return Call(
                     Task.FromException<TestReply>(expected),
+                    () => Interlocked.Increment(ref selectedCallDisposed),
                     status: expected.Status,
                     headers: new Metadata { { "attempt", "1" } },
                     trailers: new Metadata { { "selected", "true" } });
@@ -408,6 +410,9 @@ public class GrpcResilienceTests
         await Assert.That(call.GetStatus()).IsEqualTo(expected.Status);
         await Assert.That(call.GetTrailers().GetValue("selected")).IsEqualTo("true");
         await losingCallDisposed.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        call.Dispose();
+        call.Dispose();
+        await Assert.That(selectedCallDisposed).IsEqualTo(1);
     }
 
     [Test]
@@ -493,6 +498,32 @@ public class GrpcResilienceTests
         await Assert.That(attempts).IsEqualTo(4);
         await Assert.That((await call.ResponseHeadersAsync).GetValue("attempt")).IsEqualTo("4");
         await Assert.That(call.GetTrailers().GetValue("selected")).IsEqualTo("4");
+    }
+
+    [Test]
+    public async Task Retry_Predicate_Sees_The_Original_Reused_RpcException()
+    {
+        var expected = new RpcException(new Status(StatusCode.Unavailable, "shared"));
+        var attempts = 0;
+        var invoker = new DelegateCallInvoker((_, _) =>
+        {
+            var attempt = Interlocked.Increment(ref attempts);
+            return Call(
+                Task.FromException<TestReply>(expected),
+                status: expected.Status,
+                headers: new Metadata { { "attempt", attempt.ToString() } });
+        }).Intercept(new ShieldUnaryClientInterceptor(
+            Shield.When(exception => ReferenceEquals(exception, expected))
+                .Retry(2, Backoff.None)));
+        var client = new Resilience.ResilienceClient(invoker);
+        using var call = client.UnaryAsync(new TestRequest());
+
+        var actual = await Assert.That(async () => await call.ResponseAsync)
+            .Throws<RpcException>();
+
+        await Assert.That(ReferenceEquals(actual, expected)).IsTrue();
+        await Assert.That(attempts).IsEqualTo(3);
+        await Assert.That((await call.ResponseHeadersAsync).GetValue("attempt")).IsEqualTo("3");
     }
 
     [Test]

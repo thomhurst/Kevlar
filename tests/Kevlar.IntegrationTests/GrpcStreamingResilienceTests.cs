@@ -217,6 +217,42 @@ public class GrpcStreamingResilienceTests
     }
 
     [Test]
+    public async Task Server_Stream_Timeout_Normalizes_Transport_Cancellation_After_Progress()
+    {
+        var cancelled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var interceptor = new ShieldStreamingClientInterceptor(
+            Shield.Timeout(TimeSpan.FromMilliseconds(50)));
+        using var call = interceptor.AsyncServerStreamingCall(
+            new StreamRequest(),
+            Context(ServerStreamingMethod),
+            (_, _) => ServerCall(Reader((move, token) =>
+            {
+                if (move == 1)
+                {
+                    return Task.FromResult<(bool, StreamReply?)>(
+                        (true, new StreamReply { Attempt = 1 }));
+                }
+
+                var completion = new TaskCompletionSource<(bool, StreamReply?)>(
+                    TaskCreationOptions.RunContinuationsAsynchronously);
+                token.Register(() =>
+                {
+                    cancelled.TrySetResult();
+                    completion.TrySetException(
+                        new RpcException(new Status(StatusCode.Cancelled, "cancelled")));
+                });
+                return completion.Task;
+            })));
+
+        await Assert.That(await call.ResponseStream.MoveNext(CancellationToken.None)).IsTrue();
+        _ = await Assert.That(async () =>
+                await call.ResponseStream.MoveNext(CancellationToken.None))
+            .Throws<TimeoutExceededException>();
+
+        await cancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
+    }
+
+    [Test]
     public async Task Separate_Shields_Retry_Establishment_And_Timeout_Later_Reads()
     {
         var attempts = 0;
@@ -317,6 +353,95 @@ public class GrpcStreamingResilienceTests
 
         await cancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
         await Assert.That(writes).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Client_Stream_Response_Does_Not_Occupy_Operation_Concurrency()
+    {
+        var response = new TaskCompletionSource<StreamReply>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var writes = 0;
+        var writer = new DelegateWriter(
+            (_, _) =>
+            {
+                Interlocked.Increment(ref writes);
+                return Task.CompletedTask;
+            },
+            () =>
+            {
+                response.TrySetResult(new StreamReply { Attempt = 1 });
+                return Task.CompletedTask;
+            });
+        var interceptor = new ShieldStreamingClientInterceptor(Shield.ConcurrencyLimit(1));
+        using var call = interceptor.AsyncClientStreamingCall(
+            Context(ClientStreamingMethod),
+            _ => ClientCall(writer, response.Task));
+
+        await call.RequestStream.WriteAsync(new StreamRequest());
+        await call.RequestStream.CompleteAsync();
+        var reply = await call.ResponseAsync.WaitAsync(TimeSpan.FromSeconds(5));
+
+        await Assert.That(reply.Attempt).IsEqualTo(1);
+        await Assert.That(writes).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Server_Stream_Retry_Preserves_Reused_Exception_Identity()
+    {
+        var expected = new InvalidOperationException("shared");
+        var attempts = 0;
+        var interceptor = new ShieldStreamingClientInterceptor(
+            Shield.When(exception => ReferenceEquals(exception, expected))
+                .Retry(2, Backoff.None));
+        using var call = interceptor.AsyncServerStreamingCall(
+            new StreamRequest(),
+            Context(ServerStreamingMethod),
+            (_, _) =>
+            {
+                var attempt = Interlocked.Increment(ref attempts);
+                return ServerCall(
+                    Reader((_, _) =>
+                        Task.FromException<(bool, StreamReply?)>(expected)),
+                    headers: new Metadata { { "attempt", attempt.ToString() } },
+                    trailers: new Metadata { { "selected", attempt.ToString() } });
+            });
+
+        var actual = await Assert.That(async () =>
+                await call.ResponseStream.MoveNext(CancellationToken.None))
+            .Throws<InvalidOperationException>();
+
+        await Assert.That(ReferenceEquals(actual, expected)).IsTrue();
+        await Assert.That(attempts).IsEqualTo(3);
+        await Assert.That((await call.ResponseHeadersAsync).GetValue("attempt")).IsEqualTo("3");
+        await Assert.That(call.GetTrailers().GetValue("selected")).IsEqualTo("3");
+    }
+
+    [Test]
+    public async Task Server_Stream_Short_Circuit_Does_Not_Reuse_Failed_Attempt_Metadata()
+    {
+        var attempts = 0;
+        var shield = GrpcShield.WhenTransient()
+            .Retry(1, Backoff.None)
+            .CircuitBreaker(1, TimeSpan.FromMinutes(1));
+        var interceptor = new ShieldStreamingClientInterceptor(shield);
+        using var call = interceptor.AsyncServerStreamingCall(
+            new StreamRequest(),
+            Context(ServerStreamingMethod),
+            (_, _) =>
+            {
+                Interlocked.Increment(ref attempts);
+                return ServerCall(Reader((_, _) =>
+                    Task.FromException<(bool, StreamReply?)>(Transient())));
+            });
+
+        _ = await Assert.That(async () =>
+                await call.ResponseStream.MoveNext(CancellationToken.None))
+            .Throws<CircuitOpenException>();
+        _ = await Assert.That(async () => await call.ResponseHeadersAsync)
+            .Throws<CircuitOpenException>();
+        _ = await Assert.That(() => call.GetStatus()).Throws<InvalidOperationException>();
+        _ = await Assert.That(() => call.GetTrailers()).Throws<InvalidOperationException>();
+        await Assert.That(attempts).IsEqualTo(1);
     }
 
     [Test]
@@ -559,12 +684,13 @@ public class GrpcStreamingResilienceTests
     }
 
     private sealed class DelegateWriter(
-        Func<StreamRequest, CancellationToken, Task>? write = null) :
+        Func<StreamRequest, CancellationToken, Task>? write = null,
+        Func<Task>? complete = null) :
         IClientStreamWriter<StreamRequest>
     {
         public WriteOptions? WriteOptions { get; set; }
 
-        public Task CompleteAsync() => Task.CompletedTask;
+        public Task CompleteAsync() => complete?.Invoke() ?? Task.CompletedTask;
 
         public Task WriteAsync(StreamRequest message) =>
             (write ?? CompletedWrite)(message, CancellationToken.None);
