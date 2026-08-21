@@ -15,7 +15,7 @@ internal sealed class CircuitBreakerStrategy : Strategy
 
     internal override OutcomeJudge? ReactiveJudge => _judge;
 
-    internal override bool IsDuplicateReferenceUnsafe => true;
+    protected internal override bool IsDuplicateReferenceUnsafe => true;
 
     public override string Describe() => _core.Describe();
 

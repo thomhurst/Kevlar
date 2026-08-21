@@ -10,7 +10,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
     private readonly int _capacity;
     private int _pending;
 
-    internal override bool IsDuplicateReferenceUnsafe => true;
+    protected internal override bool IsDuplicateReferenceUnsafe => true;
 
     public ConcurrencyLimitStrategy(ConcurrencyLimitOptions options)
     {

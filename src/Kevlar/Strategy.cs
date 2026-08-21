@@ -42,8 +42,12 @@ public abstract class Strategy
     /// <summary>Marks fallback strategies for chain-order validation.</summary>
     internal virtual bool IsFallback => false;
 
-    /// <summary>Marks stateful built-in strategies that cannot safely appear twice in one chain.</summary>
-    internal virtual bool IsDuplicateReferenceUnsafe => false;
+    /// <summary>
+    /// Gets whether reusing this strategy instance within one chain is unsafe.
+    /// Stateful custom strategies should override this property and return <see langword="true"/>
+    /// when duplicate use could deadlock or corrupt their accounting.
+    /// </summary>
+    protected internal virtual bool IsDuplicateReferenceUnsafe => false;
 }
 
 /// <summary>

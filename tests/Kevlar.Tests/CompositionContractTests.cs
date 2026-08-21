@@ -275,6 +275,15 @@ public class CompositionContractTests
         await Assert.That(calls).IsEqualTo(2);
     }
 
+    [Test]
+    public async Task Custom_Stateful_Strategy_Can_Reject_Duplicate_References()
+    {
+        var strategy = new StatefulCustomStrategy();
+        var stateful = Shield.Use(strategy);
+
+        await Assert.That(() => stateful.Wrap(stateful)).Throws<InvalidOperationException>();
+    }
+
     private static ValueTask<int> ExecuteWrappedAsync(
         WrapKind kind,
         Shield untypedOuter,
@@ -318,5 +327,14 @@ public class CompositionContractTests
             _record(context);
             return next.InvokeAsync(context);
         }
+    }
+
+    private sealed class StatefulCustomStrategy : Strategy
+    {
+        protected internal override bool IsDuplicateReferenceUnsafe => true;
+
+        public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+            Continuation<T, TState> next,
+            KevlarContext context) => next.InvokeAsync(context);
     }
 }

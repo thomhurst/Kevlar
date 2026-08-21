@@ -29,7 +29,7 @@ internal sealed class RateLimitStrategy : Strategy
     private Reservation? _queueTail;
     private int _queuedReservations;
 
-    internal override bool IsDuplicateReferenceUnsafe => true;
+    protected internal override bool IsDuplicateReferenceUnsafe => true;
 
     public RateLimitStrategy(RateLimitOptions options)
     {

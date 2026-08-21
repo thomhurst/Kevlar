@@ -46,7 +46,7 @@ That's the whole rule. Consequences:
 - Reuse a shield instance across call sites → those call sites share the circuit breaker's state, the rate limiter's token bucket, the concurrency limit's slots.
 - Build a new shield (even with identical configuration) → fresh, independent state.
 - `Wrap` and `Compose` don't copy state — they reference the wrapped shield, so the sharing above works across merged shields too.
-- Stateless custom strategy instances may appear more than once in one chain. Kevlar rejects duplicate references to built-in stateful breakers and limiters because nesting the same instance can deadlock or double-count.
+- Stateless custom strategy instances may appear more than once in one chain. Kevlar rejects duplicate references to built-in stateful breakers and limiters because nesting the same instance can deadlock or double-count. A stateful custom `Strategy` can opt into the same protection by overriding `IsDuplicateReferenceUnsafe` and returning `true`.
 
 This is deliberate. A circuit breaker that doesn't share state across the call sites hitting the same dependency isn't protecting anything; a rate limiter with per-call-site buckets isn't limiting anything.
 
