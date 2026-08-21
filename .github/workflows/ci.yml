@@ -47,6 +47,9 @@ jobs:
       - name: Test
         run: dotnet run --project tests/Kevlar.Tests -c Release --no-build -- --timeout 5m
 
+      - name: Test netstandard2.0 asset
+        run: dotnet run --project tests/Kevlar.NetStandard.Tests -c Release --no-build -- --timeout 5m
+
       - name: Integration test
         run: dotnet run --project tests/Kevlar.IntegrationTests -c Release --no-build -- --timeout 5m
 

@@ -10,6 +10,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Kevlar.IntegrationTests/Kevlar.IntegrationTests.csproj" />
+    <Project Path="tests/Kevlar.NetStandard.Tests/Kevlar.NetStandard.Tests.csproj" />
     <Project Path="tests/Kevlar.Tests/Kevlar.Tests.csproj" />
     <Project Path="tests/Kevlar.Analyzers.Tests/Kevlar.Analyzers.Tests.csproj" />
   </Folder>

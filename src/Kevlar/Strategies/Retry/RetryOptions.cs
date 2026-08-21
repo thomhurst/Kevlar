@@ -1,6 +1,11 @@
 namespace Kevlar;
 
 /// <summary>Configuration for a retry strategy.</summary>
+/// <remarks>
+/// Before each retry, callbacks run in this order: <see cref="DelayGenerator"/>,
+/// <see cref="OnRetry"/>, then <see cref="OnRetryAsync"/>. If the caller's cancellation token is
+/// cancelled by the time the callbacks complete, the retry stops and surfaces caller cancellation.
+/// </remarks>
 public class RetryOptions
 {
     /// <summary>
