@@ -29,6 +29,9 @@ public sealed class CircuitBreakerMonitor
 
     /// <summary>
     /// Forces the circuit open and asynchronously waits for configured transition observers.
+    /// A reentrant call from a transition callback queues its transition behind the active
+    /// publication and returns before that queued transition reaches observers; do not use the
+    /// returned task to order reentrant transition work.
     /// Executions are rejected until <see cref="ResetAsync"/> is called.
     /// </summary>
     public ValueTask IsolateAsync() => BoundCore().IsolateAsync();
@@ -36,7 +39,12 @@ public sealed class CircuitBreakerMonitor
     /// <summary>Closes the circuit and clears all failure metrics.</summary>
     public void Reset() => BoundCore().Reset();
 
-    /// <summary>Closes the circuit, clears all failure metrics, and asynchronously waits for configured transition observers.</summary>
+    /// <summary>
+    /// Closes the circuit, clears all failure metrics, and asynchronously waits for configured
+    /// transition observers. A reentrant call from a transition callback queues its transition
+    /// behind the active publication and returns before that queued transition reaches observers;
+    /// do not use the returned task to order reentrant transition work.
+    /// </summary>
     public ValueTask ResetAsync() => BoundCore().ResetAsync();
 
     internal void Bind(CircuitBreakerCore core)
