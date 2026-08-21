@@ -34,6 +34,7 @@ internal sealed class RateLimitStrategy : Strategy
     private Reservation? _queueTail;
     private int _queuedReservations;
     private int _metricsAdmissionDepth;
+    private int _untrackedImmediateAdmissions;
 
     protected internal override bool IsDuplicateReferenceUnsafe => true;
 
@@ -79,67 +80,104 @@ internal sealed class RateLimitStrategy : Strategy
     {
         if (!KevlarMetrics.RateStateEnabled)
         {
-            return TryAcquire(context.TimeProvider, out reservation, out retryAfter, out _);
+            if (_queueLimit > 0)
+            {
+                return TryAcquire(context.TimeProvider, out reservation, out retryAfter, out _);
+            }
+
+            // Register before rechecking publication state so an admission that observed
+            // metrics disabled cannot race past a rollback that starts concurrently.
+            Interlocked.Increment(ref _untrackedImmediateAdmissions);
+            try
+            {
+                if (Volatile.Read(ref _metricsAdmissionDepth) == 0 &&
+                    !KevlarMetrics.RateStateEnabled)
+                {
+                    return TryAcquire(context.TimeProvider, out reservation, out retryAfter, out _);
+                }
+            }
+            finally
+            {
+                Interlocked.Decrement(ref _untrackedImmediateAdmissions);
+            }
         }
 
         lock (_metricsPublicationGate)
         {
-            _metricsAdmissionDepth++;
+            return TryAcquireAndRecordUnderLock(context, out reservation, out retryAfter);
+        }
+    }
+
+    private bool TryAcquireAndRecordUnderLock(
+        KevlarContext context,
+        out Reservation? reservation,
+        out TimeSpan? retryAfter)
+    {
+        Interlocked.Increment(ref _metricsAdmissionDepth);
+        try
+        {
+            if (_metricsAdmissionDepth == 1)
+            {
+                // Once depth is visible, new fast-path admissions join the publication gate.
+                // Drain admissions already beyond that check before capturing rollback state.
+                var spinWait = new SpinWait();
+                while (Volatile.Read(ref _untrackedImmediateAdmissions) != 0)
+                {
+                    spinWait.SpinOnce();
+                }
+            }
+
+            var previousTheoreticalArrival = _queueLimit == 0
+                ? Volatile.Read(ref _theoreticalArrival)
+                : 0;
+            var acquired = TryAcquire(
+                context.TimeProvider,
+                out reservation,
+                out retryAfter,
+                out var admissionTimestamp);
+            var nestedAdmissionIndex = -1;
+            if (acquired && _queueLimit == 0 && _metricsAdmissionDepth > 1)
+            {
+                var admissions = _reentrantImmediateAdmissionTimestamps ??= [];
+                nestedAdmissionIndex = admissions.Count;
+                admissions.Add(admissionTimestamp);
+            }
+
             try
             {
-                var previousTheoreticalArrival = _queueLimit == 0
-                    ? Volatile.Read(ref _theoreticalArrival)
-                    : 0;
-                var acquired = TryAcquire(
-                    context.TimeProvider,
-                    out reservation,
-                    out retryAfter,
-                    out var admissionTimestamp);
-                var nestedAdmissionIndex = -1;
-                if (acquired && _queueLimit == 0 && _metricsAdmissionDepth > 1)
+                RecordStateUnderLock(context.ShieldName, context.TimeProvider);
+                return acquired;
+            }
+            catch (Exception publicationFailure)
+            {
+                if (acquired)
                 {
-                    var admissions = _reentrantImmediateAdmissionTimestamps ??= [];
-                    nestedAdmissionIndex = admissions.Count;
-                    admissions.Add(admissionTimestamp);
+                    RollbackAcquisition(
+                        reservation,
+                        previousTheoreticalArrival,
+                        nestedAdmissionIndex);
                 }
 
                 try
                 {
                     RecordStateUnderLock(context.ShieldName, context.TimeProvider);
-                    return acquired;
                 }
-                catch (Exception publicationFailure)
+                catch (Exception correctionFailure)
                 {
-                    if (acquired)
-                    {
-                        RollbackAcquisition(
-                            reservation,
-                            previousTheoreticalArrival,
-                            nestedAdmissionIndex);
-                    }
-
-                    try
-                    {
-                        RecordStateUnderLock(context.ShieldName, context.TimeProvider);
-                    }
-                    catch (Exception correctionFailure)
-                    {
-                        publicationFailure = new AggregateException(
-                            publicationFailure,
-                            correctionFailure).Flatten();
-                    }
-
-                    ExceptionDispatchInfo.Capture(publicationFailure).Throw();
-                    throw;
+                    publicationFailure = new AggregateException(
+                        publicationFailure,
+                        correctionFailure).Flatten();
                 }
+
+                ExceptionDispatchInfo.Capture(publicationFailure).Throw();
+                throw;
             }
-            finally
+        }
+        finally
+        {
+            if (Interlocked.Decrement(ref _metricsAdmissionDepth) == 0)
             {
-                _metricsAdmissionDepth--;
-                if (_metricsAdmissionDepth == 0)
-                {
-                    _reentrantImmediateAdmissionTimestamps?.Clear();
-                }
+                _reentrantImmediateAdmissionTimestamps?.Clear();
             }
         }
     }

@@ -1239,6 +1239,90 @@ public class MetricsTests
     }
 
     [Test]
+    public async Task Rate_Metric_Failure_Preserves_Admission_After_Listener_Disables()
+    {
+        var nested = false;
+        var nestedInvocations = 0;
+        var metricsFailure = new InvalidOperationException("metrics callback");
+        Shield? shield = null;
+        KevlarMeterListener? listener = null;
+        listener = new KevlarMeterListener((instrument, value) =>
+        {
+            if (nested || instrument != "kevlar.rate_limit.available" || value != 1)
+            {
+                return;
+            }
+
+            nested = true;
+            listener!.Dispose();
+            shield!.ExecuteAsync(_ =>
+            {
+                nestedInvocations++;
+                return ValueTask.CompletedTask;
+            }).GetAwaiter().GetResult();
+            throw metricsFailure;
+        });
+        using (listener)
+        {
+            shield = Shield.RateLimit(options =>
+            {
+                options.Permits = 1;
+                options.Window = TimeSpan.FromHours(1);
+                options.Burst = 2;
+            }).WithName("metrics-rate-disabled-nested-failure");
+
+            var thrown = await Assert.That(async () =>
+                    await shield.ExecuteAsync(_ => ValueTask.CompletedTask))
+                .Throws<InvalidOperationException>();
+            await Assert.That(ReferenceEquals(thrown, metricsFailure)).IsTrue();
+        }
+
+        await Assert.That(nestedInvocations).IsEqualTo(1);
+        await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
+        _ = await Assert.That(async () =>
+                await shield.ExecuteAsync(_ => ValueTask.CompletedTask))
+            .Throws<RateLimitExceededException>();
+    }
+
+    [Test]
+    public async Task Rate_Metric_Rollback_Preserves_An_Admission_That_Observed_Metrics_Disabled()
+    {
+        using var timeProvider = new BlockingFirstTimestampTimeProvider();
+        var shield = Shield.RateLimit(options =>
+        {
+            options.Permits = 1;
+            options.Window = TimeSpan.FromHours(1);
+            options.Burst = 2;
+        }).WithTimeProvider(timeProvider).WithName("metrics-rate-concurrent-enable");
+        var untracked = Task.Run(async () => await shield.ExecuteAsync(_ => ValueTask.CompletedTask));
+
+        await Assert.That(timeProvider.WaitForBlockedSample(TimeSpan.FromSeconds(5))).IsTrue();
+        var metricsFailure = new InvalidOperationException("metrics callback");
+        var throwOnce = true;
+        using var listener = new KevlarMeterListener((instrument, _) =>
+        {
+            if (throwOnce && instrument == "kevlar.rate_limit.available")
+            {
+                throwOnce = false;
+                throw metricsFailure;
+            }
+        });
+        var failedAdmission = Task.Run(async () => await shield.ExecuteAsync(_ => ValueTask.CompletedTask));
+
+        timeProvider.ReleaseBlockedSample();
+        await untracked.WaitAsync(TimeSpan.FromSeconds(5));
+        var thrown = await Assert.That(async () =>
+                await failedAdmission.WaitAsync(TimeSpan.FromSeconds(5)))
+            .Throws<InvalidOperationException>();
+        await Assert.That(ReferenceEquals(thrown, metricsFailure)).IsTrue();
+
+        await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
+        _ = await Assert.That(async () =>
+                await shield.ExecuteAsync(_ => ValueTask.CompletedTask))
+            .Throws<RateLimitExceededException>();
+    }
+
+    [Test]
     public async Task Rate_Queue_Reports_Zero_Availability_After_Its_Due_Time()
     {
         var timeProvider = new FakeTimeProvider();
@@ -1408,5 +1492,35 @@ public class MetricsTests
 
         _ = await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
         monitor.Reset();
+    }
+
+    private sealed class BlockingFirstTimestampTimeProvider : TimeProvider, IDisposable
+    {
+        private readonly ManualResetEventSlim _sampleCaptured = new();
+        private readonly ManualResetEventSlim _releaseSample = new();
+        private int _getTimestampCalls;
+
+        public override long TimestampFrequency => TimeSpan.TicksPerSecond;
+
+        public override long GetTimestamp()
+        {
+            if (Interlocked.Increment(ref _getTimestampCalls) == 1)
+            {
+                _sampleCaptured.Set();
+                _releaseSample.Wait();
+            }
+
+            return 0;
+        }
+
+        public bool WaitForBlockedSample(TimeSpan timeout) => _sampleCaptured.Wait(timeout);
+
+        public void ReleaseBlockedSample() => _releaseSample.Set();
+
+        public void Dispose()
+        {
+            _sampleCaptured.Dispose();
+            _releaseSample.Dispose();
+        }
     }
 }
