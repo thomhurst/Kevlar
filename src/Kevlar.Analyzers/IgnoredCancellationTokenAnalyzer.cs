@@ -40,38 +40,63 @@ public sealed class IgnoredCancellationTokenAnalyzer : DiagnosticAnalyzer
         var invocation = (IInvocationOperation)context.Operation;
         var method = invocation.TargetMethod;
 
-        if (!method.Name.StartsWith("Execute", StringComparison.Ordinal) || !IsKevlarShieldType(method.ContainingType))
+        if (!IsKevlarExecutionMethod(method, context.Compilation))
         {
             return;
         }
 
         foreach (var argument in invocation.Arguments)
         {
-            if (argument.Value is not IDelegateCreationOperation { Target: IAnonymousFunctionOperation lambda })
+            if (!AcceptsCancellationTokenDelegate(argument.Parameter)
+                || argument.Value is not IDelegateCreationOperation { Target: IAnonymousFunctionOperation lambda })
             {
                 continue;
             }
 
-            var tokenParameter = FindCancellationTokenParameter(lambda.Symbol);
-            if (tokenParameter is null || UsesParameter(lambda, tokenParameter))
+            var tokenParameter = FindExecutionCancellationTokenParameter(lambda.Symbol);
+            if (tokenParameter is null || tokenParameter.Name == "_" || UsesParameter(lambda, tokenParameter))
             {
                 continue;
             }
 
             context.ReportDiagnostic(Diagnostic.Create(
                 Rule,
-                argument.Value.Syntax.GetLocation(),
+                lambda.Syntax.GetLocation(),
                 method.Name));
         }
     }
 
-    private static bool IsKevlarShieldType(INamedTypeSymbol? type) =>
-        type is { Name: "Shield" or "ShieldTaskExtensions", ContainingNamespace: { Name: "Kevlar", ContainingNamespace.IsGlobalNamespace: true } };
-
-    private static IParameterSymbol? FindCancellationTokenParameter(IMethodSymbol lambda)
+    private static bool IsKevlarExecutionMethod(IMethodSymbol method, Compilation compilation)
     {
-        foreach (var parameter in lambda.Parameters)
+        if (method.Name is not ("Execute" or "ExecuteAsync" or "ExecuteOutcomeAsync"))
         {
+            return false;
+        }
+
+        var containingType = method.ContainingType.OriginalDefinition;
+        return IsType(containingType, compilation.GetTypeByMetadataName("Kevlar.Shield"))
+            || IsType(containingType, compilation.GetTypeByMetadataName("Kevlar.Shield`1"))
+            || IsType(containingType, compilation.GetTypeByMetadataName("Kevlar.ShieldTaskExtensions"));
+    }
+
+    private static bool IsType(INamedTypeSymbol type, INamedTypeSymbol? expected) =>
+        expected is not null && SymbolEqualityComparer.Default.Equals(type, expected);
+
+    private static bool AcceptsCancellationTokenDelegate(IParameterSymbol? parameter)
+    {
+        if (parameter?.Type is not INamedTypeSymbol { TypeKind: TypeKind.Delegate, DelegateInvokeMethod: { } invokeMethod })
+        {
+            return false;
+        }
+
+        return FindExecutionCancellationTokenParameter(invokeMethod) is not null;
+    }
+
+    private static IParameterSymbol? FindExecutionCancellationTokenParameter(IMethodSymbol method)
+    {
+        for (var index = method.Parameters.Length - 1; index >= 0; index--)
+        {
+            var parameter = method.Parameters[index];
             if (parameter.Type is { Name: "CancellationToken", ContainingNamespace: { Name: "Threading", ContainingNamespace: { Name: "System", ContainingNamespace.IsGlobalNamespace: true } } })
             {
                 return parameter;
