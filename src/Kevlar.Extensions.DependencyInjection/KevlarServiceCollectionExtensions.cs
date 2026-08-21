@@ -77,31 +77,31 @@ public static class KevlarServiceCollectionExtensions
     {
         var definition = new ShieldDefinition
         {
-            Timeout = ReadTimeSpan(configuration, nameof(ShieldDefinition.Timeout)),
-            AttemptTimeout = ReadTimeSpan(configuration, nameof(ShieldDefinition.AttemptTimeout)),
+            Timeout = ReadNullableTimeSpan(configuration, nameof(ShieldDefinition.Timeout)),
+            AttemptTimeout = ReadNullableTimeSpan(configuration, nameof(ShieldDefinition.AttemptTimeout)),
         };
 
         var retry = configuration.GetSection(nameof(ShieldDefinition.Retry));
-        if (HasValues(retry))
+        if (HasChildren(retry))
         {
             var retryDefinition = new RetryDefinition
             {
-                BaseDelay = ReadTimeSpan(retry, nameof(RetryDefinition.BaseDelay)),
-                MaxDelay = ReadTimeSpan(retry, nameof(RetryDefinition.MaxDelay)),
+                BaseDelay = ReadNullableTimeSpan(retry, nameof(RetryDefinition.BaseDelay)),
+                MaxDelay = ReadNullableTimeSpan(retry, nameof(RetryDefinition.MaxDelay)),
             };
-            if (ReadNullableInt(retry, nameof(RetryDefinition.MaxRetries)) is { } maxRetries)
+            if (ReadInt(retry, nameof(RetryDefinition.MaxRetries)) is { } maxRetries)
             {
                 retryDefinition.MaxRetries = maxRetries;
             }
-            if (ReadNullableEnum<BackoffKind>(retry, nameof(RetryDefinition.Backoff)) is { } backoff)
+            if (ReadEnum<BackoffKind>(retry, nameof(RetryDefinition.Backoff)) is { } backoff)
             {
                 retryDefinition.Backoff = backoff;
             }
-            if (ReadNullableDouble(retry, nameof(RetryDefinition.Factor)) is { } factor)
+            if (ReadDouble(retry, nameof(RetryDefinition.Factor)) is { } factor)
             {
                 retryDefinition.Factor = factor;
             }
-            if (ReadNullableBool(retry, nameof(RetryDefinition.Jitter)) is { } jitter)
+            if (ReadBool(retry, nameof(RetryDefinition.Jitter)) is { } jitter)
             {
                 retryDefinition.Jitter = jitter;
             }
@@ -110,14 +110,14 @@ public static class KevlarServiceCollectionExtensions
         }
 
         var breaker = configuration.GetSection(nameof(ShieldDefinition.CircuitBreaker));
-        if (HasValues(breaker))
+        if (HasChildren(breaker))
         {
             var breakerDefinition = new CircuitBreakerDefinition
             {
                 ConsecutiveFailures = ReadNullableInt(breaker, nameof(CircuitBreakerDefinition.ConsecutiveFailures)),
                 FailureRatio = ReadNullableDouble(breaker, nameof(CircuitBreakerDefinition.FailureRatio)),
             };
-            if (ReadNullableInt(breaker, nameof(CircuitBreakerDefinition.MinimumThroughput)) is { } minimumThroughput)
+            if (ReadInt(breaker, nameof(CircuitBreakerDefinition.MinimumThroughput)) is { } minimumThroughput)
             {
                 breakerDefinition.MinimumThroughput = minimumThroughput;
             }
@@ -134,13 +134,13 @@ public static class KevlarServiceCollectionExtensions
         }
 
         var rateLimit = configuration.GetSection(nameof(ShieldDefinition.RateLimit));
-        if (HasValues(rateLimit))
+        if (HasChildren(rateLimit))
         {
             var rateLimitDefinition = new RateLimitDefinition
             {
                 Burst = ReadNullableInt(rateLimit, nameof(RateLimitDefinition.Burst)),
             };
-            if (ReadNullableInt(rateLimit, nameof(RateLimitDefinition.Permits)) is { } permits)
+            if (ReadInt(rateLimit, nameof(RateLimitDefinition.Permits)) is { } permits)
             {
                 rateLimitDefinition.Permits = permits;
             }
@@ -148,7 +148,7 @@ public static class KevlarServiceCollectionExtensions
             {
                 rateLimitDefinition.Window = window;
             }
-            if (ReadNullableInt(rateLimit, nameof(RateLimitDefinition.QueueLimit)) is { } queueLimit)
+            if (ReadInt(rateLimit, nameof(RateLimitDefinition.QueueLimit)) is { } queueLimit)
             {
                 rateLimitDefinition.QueueLimit = queueLimit;
             }
@@ -157,14 +157,14 @@ public static class KevlarServiceCollectionExtensions
         }
 
         var concurrency = configuration.GetSection(nameof(ShieldDefinition.ConcurrencyLimit));
-        if (HasValues(concurrency))
+        if (HasChildren(concurrency))
         {
             var concurrencyDefinition = new ConcurrencyLimitDefinition();
-            if (ReadNullableInt(concurrency, nameof(ConcurrencyLimitDefinition.MaxConcurrency)) is { } maxConcurrency)
+            if (ReadInt(concurrency, nameof(ConcurrencyLimitDefinition.MaxConcurrency)) is { } maxConcurrency)
             {
                 concurrencyDefinition.MaxConcurrency = maxConcurrency;
             }
-            if (ReadNullableInt(concurrency, nameof(ConcurrencyLimitDefinition.MaxQueue)) is { } maxQueue)
+            if (ReadInt(concurrency, nameof(ConcurrencyLimitDefinition.MaxQueue)) is { } maxQueue)
             {
                 concurrencyDefinition.MaxQueue = maxQueue;
             }
@@ -175,23 +175,32 @@ public static class KevlarServiceCollectionExtensions
         return definition;
     }
 
-    private static bool HasValues(IConfigurationSection section) =>
-        section.Value is not null || section.GetChildren().Any();
+    private static bool HasChildren(IConfigurationSection section) => section.GetChildren().Any();
 
     private static string? Read(IConfiguration configuration, string key) =>
         configuration[key];
 
-    private static int? ReadNullableInt(IConfiguration configuration, string key) =>
+    private static int? ReadInt(IConfiguration configuration, string key) =>
         Read(configuration, key) is { } value
             ? ParseInt(configuration, key, value)
             : null;
 
-    private static double? ReadNullableDouble(IConfiguration configuration, string key) =>
+    private static int? ReadNullableInt(IConfiguration configuration, string key) =>
+        ReadNullable(configuration, key) is { } value
+            ? ParseInt(configuration, key, value)
+            : null;
+
+    private static double? ReadDouble(IConfiguration configuration, string key) =>
         Read(configuration, key) is { } value
             ? ParseDouble(configuration, key, value)
             : null;
 
-    private static bool? ReadNullableBool(IConfiguration configuration, string key) =>
+    private static double? ReadNullableDouble(IConfiguration configuration, string key) =>
+        ReadNullable(configuration, key) is { } value
+            ? ParseDouble(configuration, key, value)
+            : null;
+
+    private static bool? ReadBool(IConfiguration configuration, string key) =>
         Read(configuration, key) is { } value ? ParseBool(configuration, key, value) : null;
 
     private static TimeSpan? ReadTimeSpan(IConfiguration configuration, string key) =>
@@ -199,11 +208,22 @@ public static class KevlarServiceCollectionExtensions
             ? ParseTimeSpan(configuration, key, value)
             : null;
 
-    private static TEnum? ReadNullableEnum<TEnum>(IConfiguration configuration, string key)
+    private static TimeSpan? ReadNullableTimeSpan(IConfiguration configuration, string key) =>
+        ReadNullable(configuration, key) is { } value
+            ? ParseTimeSpan(configuration, key, value)
+            : null;
+
+    private static TEnum? ReadEnum<TEnum>(IConfiguration configuration, string key)
         where TEnum : struct, Enum =>
         Read(configuration, key) is { } value
             ? ParseEnum<TEnum>(configuration, key, value)
             : null;
+
+    private static string? ReadNullable(IConfiguration configuration, string key)
+    {
+        var value = Read(configuration, key);
+        return string.IsNullOrEmpty(value) ? null : value;
+    }
 
     private static int ParseInt(IConfiguration configuration, string key, string value) =>
         int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed)

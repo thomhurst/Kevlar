@@ -200,4 +200,60 @@ public class ConfigurationBindingTests
             .Throws<InvalidOperationException>()
             .WithMessage("Configuration value '' for 'Retry:MaxRetries' is not an integer.");
     }
+
+    [Test]
+    public async Task Configuration_Treats_Empty_Nullable_Values_As_Null()
+    {
+        var configuration = BuildConfiguration(
+            ("Timeout", ""),
+            ("AttemptTimeout", ""),
+            ("Retry:MaxRetries", "0"),
+            ("Retry:BaseDelay", ""),
+            ("Retry:MaxDelay", ""),
+            ("CircuitBreaker:ConsecutiveFailures", ""),
+            ("CircuitBreaker:FailureRatio", "0.5"),
+            ("RateLimit:Permits", "5"),
+            ("RateLimit:Burst", ""));
+        var services = new ServiceCollection();
+        services.AddShield("nullable", configuration);
+        using var provider = services.BuildServiceProvider();
+
+        var shield = provider.GetRequiredService<IKevlarRegistry>().GetShield("nullable");
+
+        await Assert.That(shield.ToString()).IsEqualTo(
+            "nullable: Retry(0, exponential 250ms ×2 +jitter ≤30s) → CircuitBreaker(50% over 30s, min 10, break 15s) → RateLimit(5/1s)");
+    }
+
+    [Test]
+    public async Task Configuration_Ignores_Scalar_Strategy_Sections()
+    {
+        var configuration = BuildConfiguration(
+            ("Retry", ""),
+            ("CircuitBreaker", "invalid"),
+            ("RateLimit", "invalid"),
+            ("ConcurrencyLimit", "invalid"));
+        var services = new ServiceCollection();
+        services.AddShield("scalar", configuration);
+        using var provider = services.BuildServiceProvider();
+
+        var shield = provider.GetRequiredService<IKevlarRegistry>().GetShield("scalar");
+
+        await Assert.That(shield.ToString()).IsEqualTo("scalar: (empty)");
+    }
+
+    [Test]
+    public async Task Configuration_Treats_Empty_Failure_Ratio_As_Null()
+    {
+        var configuration = BuildConfiguration(
+            ("CircuitBreaker:ConsecutiveFailures", "2"),
+            ("CircuitBreaker:FailureRatio", ""));
+        var services = new ServiceCollection();
+        services.AddShield("nullable-ratio", configuration);
+        using var provider = services.BuildServiceProvider();
+
+        var shield = provider.GetRequiredService<IKevlarRegistry>().GetShield("nullable-ratio");
+
+        await Assert.That(shield.ToString())
+            .IsEqualTo("nullable-ratio: CircuitBreaker(2 consecutive, break 15s)");
+    }
 }
