@@ -42,6 +42,7 @@ Multiple invocations of your delegate may be in flight at once — it must be sa
 
 - Losing attempts are cancelled through their token (use the token you're handed!).
 - Caller cancellation prevents any later hedge delegate from running, even when it races a completed stagger delay or occurs inside `OnHedge`. A cancellation already observable at the launch boundary suppresses `OnHedge` too.
+- The `kevlar.hedges` counter records only attempts that launch after `OnHedge` returns successfully and cancellation is rechecked. Suppressed launches and failing callbacks are not counted.
 - Each attempt gets a forked context — `Properties` are copied at launch time, so attempts don't see each other's writes.
 - What counts as a failure is the ambient [handling clause](../handling-failures.md), like every reactive strategy.
 
