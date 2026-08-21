@@ -23,10 +23,12 @@ public class GrpcUnaryBenchmarks
     private static readonly CallInvoker ShieldedInvoker =
         DirectInvoker.Intercept(new ShieldUnaryClientInterceptor(Shield.Empty));
 
+    /// <summary>Executes a completed unary call without resilience.</summary>
     [BenchmarkCategory("UnaryHappyPath"), Benchmark(Baseline = true)]
     public Task Direct() =>
         DirectInvoker.AsyncUnaryCall(Method, host: null, default, Request).ResponseAsync;
 
+    /// <summary>Executes a completed unary call through the shield interceptor.</summary>
     [BenchmarkCategory("UnaryHappyPath"), Benchmark]
     public Task Shielded() =>
         ShieldedInvoker.AsyncUnaryCall(Method, host: null, default, Request).ResponseAsync;
