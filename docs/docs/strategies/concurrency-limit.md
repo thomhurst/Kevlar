@@ -25,6 +25,8 @@ Shield.ConcurrencyLimit(o =>
 
 Total capacity is `MaxConcurrency + MaxQueue`. Anything beyond that fails **immediately** with `ConcurrencyLimitExceededException` — the overflow check happens before any waiting, so rejection is instant and allocation-light.
 
+Cancelling a queued execution frees its queue place when the asynchronous wait observes cancellation. `CancellationTokenSource.Cancel()` can return before that continuation updates accounting, so await the cancelled execution before assuming the place is reusable. If cancellation races a slot grant, the wait either cancels or acquires the slot; both paths update queue and running accounting exactly once, so later executions see the full capacity after the admitted work drains.
+
 ## Why concurrency limits
 
 This is the classic *bulkhead* pattern, named after ship compartments: a breach floods one compartment, not the hull. Give each downstream dependency its own concurrency-limited shield and a slow dependency saturates *its* 10 slots — while the rest of your service keeps breathing. Kevlar names the strategy for what it does rather than the metaphor.
