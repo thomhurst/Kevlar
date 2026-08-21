@@ -115,6 +115,56 @@ public static class KevlarServiceCollectionExtensions
         return services;
     }
 
+    /// <summary>
+    /// Registers a named, bounded untyped partition provider as a keyed singleton service.
+    /// </summary>
+    public static IServiceCollection AddPartitionedShield<TKey>(
+        this IServiceCollection services,
+        string name,
+        Func<IServiceProvider, TKey, Shield> factory,
+        Action<PartitionedShieldOptions>? configure = null,
+        IEqualityComparer<TKey>? comparer = null)
+        where TKey : notnull
+    {
+        if (services is null) { throw new ArgumentNullException(nameof(services)); }
+        if (name is null) { throw new ArgumentNullException(nameof(name)); }
+        if (factory is null) { throw new ArgumentNullException(nameof(factory)); }
+
+        var options = new PartitionedShieldOptions();
+        configure?.Invoke(options);
+        services.AddKeyedSingleton<PartitionedShield<TKey>>(name, (serviceProvider, _) =>
+            new PartitionedShield<TKey>(
+                key => factory(serviceProvider, key),
+                options,
+                comparer));
+        return services;
+    }
+
+    /// <summary>
+    /// Registers a named, bounded result-aware partition provider as a keyed singleton service.
+    /// </summary>
+    public static IServiceCollection AddPartitionedShield<TKey, TResult>(
+        this IServiceCollection services,
+        string name,
+        Func<IServiceProvider, TKey, Shield<TResult>> factory,
+        Action<PartitionedShieldOptions>? configure = null,
+        IEqualityComparer<TKey>? comparer = null)
+        where TKey : notnull
+    {
+        if (services is null) { throw new ArgumentNullException(nameof(services)); }
+        if (name is null) { throw new ArgumentNullException(nameof(name)); }
+        if (factory is null) { throw new ArgumentNullException(nameof(factory)); }
+
+        var options = new PartitionedShieldOptions();
+        configure?.Invoke(options);
+        services.AddKeyedSingleton<PartitionedShield<TKey, TResult>>(name, (serviceProvider, _) =>
+            new PartitionedShield<TKey, TResult>(
+                key => factory(serviceProvider, key),
+                options,
+                comparer));
+        return services;
+    }
+
     private static ShieldDefinition BindDefinition(IConfiguration configuration)
     {
         var definition = new ShieldDefinition

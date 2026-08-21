@@ -74,4 +74,44 @@ public class DependencyInjectionTests
 
         await Assert.That(shield).IsNotNull();
     }
+
+    [Test]
+    public async Task Partitioned_Shields_Resolve_As_Keyed_Singletons()
+    {
+        var services = new ServiceCollection();
+        services.AddSingleton(new TimeoutSetting(TimeSpan.FromSeconds(9)));
+        services.AddPartitionedShield<string>(
+            "tenants",
+            (serviceProvider, _) => Shield.Timeout(
+                serviceProvider.GetRequiredService<TimeoutSetting>().Value),
+            options => options.MaximumPartitions = 10);
+        using var provider = services.BuildServiceProvider();
+
+        var first = provider.GetRequiredKeyedService<PartitionedShield<string>>("tenants");
+        var second = provider.GetRequiredKeyedService<PartitionedShield<string>>("tenants");
+
+        await Assert.That(ReferenceEquals(first, second)).IsTrue();
+        await Assert.That(ReferenceEquals(
+            first.GetShield("acme"),
+            second.GetShield("acme"))).IsTrue();
+    }
+
+    [Test]
+    public async Task Typed_And_Untyped_Partitioned_Shields_Coexist()
+    {
+        var services = new ServiceCollection()
+            .AddPartitionedShield<string>("shared", (_, _) => Shield.Empty)
+            .AddPartitionedShield<string, int>(
+                "shared",
+                (_, _) => Shield.For<int>().WhenResult(-1).Fallback(0));
+        using var provider = services.BuildServiceProvider();
+
+        var untyped = provider.GetRequiredKeyedService<PartitionedShield<string>>("shared");
+        var typed = provider.GetRequiredKeyedService<PartitionedShield<string, int>>("shared");
+        var result = await typed.GetShield("tenant")
+            .ExecuteAsync(_ => new ValueTask<int>(-1));
+
+        await Assert.That(untyped.GetShield("tenant")).IsNotNull();
+        await Assert.That(result).IsEqualTo(0);
+    }
 }
