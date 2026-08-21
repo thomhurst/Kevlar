@@ -83,8 +83,8 @@ token passed to the recovery factory; Kevlar does not forcibly stop either callb
 chooses not to observe that token.
 
 `FallbackOptions<T>` preserves typed outcomes. Plain `Shield` uses `FallbackOptions` and a
-non-generic `FallbackEvent` carrying the exact handled exception. Both option objects are copied
-into the immutable strategy when it is built, so changing the options later has no effect.
+non-generic `FallbackEvent` carrying the exact handled exception. Callback properties are
+snapshotted when the shield is built, so replacing them on the options later has no effect.
 
 Hooks may run concurrently when the same shield executes concurrently, and may re-enter the shield;
 they must therefore be thread-safe and must not depend on strategy locks. `FallbackEvent.Context`
