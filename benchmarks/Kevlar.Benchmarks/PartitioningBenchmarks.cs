@@ -9,6 +9,11 @@ namespace Kevlar.Benchmarks;
 [CategoriesColumn]
 public class PartitioningBenchmarks
 {
+    private const int ConcurrentLookupsPerInvoke = 1_024;
+
+    private static readonly PartitionedShield<int> ConcurrentWarm = new(
+        static _ => Shield.Retry(0, Backoff.None));
+
     private readonly PartitionedShield<int> _warm = new(
         static _ => Shield.Retry(0, Backoff.None));
     private readonly PartitionedShield<int> _evicting = new(
@@ -19,12 +24,23 @@ public class PartitioningBenchmarks
 
     public PartitioningBenchmarks()
     {
+        _ = ConcurrentWarm.GetShield(42);
         _ = _warm.GetShield(42);
         _ = _evicting.GetShield(0);
     }
 
     [BenchmarkCategory("WarmLookup"), Benchmark]
     public Shield Warm_Lookup() => _warm.GetShield(42);
+
+    [BenchmarkCategory("WarmLookupContended"), Benchmark(OperationsPerInvoke = ConcurrentLookupsPerInvoke)]
+    public int Warm_Concurrent_Lookups()
+    {
+        Parallel.For(
+            fromInclusive: 0,
+            toExclusive: ConcurrentLookupsPerInvoke,
+            static _ => ConcurrentWarm.GetShield(42));
+        return ConcurrentWarm.Count;
+    }
 
     [BenchmarkCategory("FirstCreation"), Benchmark]
     public Shield Cold_FirstCreation()
