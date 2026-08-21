@@ -66,7 +66,19 @@ internal sealed class RateLimitStrategy : Strategy
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(new RateLimitExceededException(retryAfter)));
         }
 
-        RecordState(context.ShieldName, context.TimeProvider);
+        try
+        {
+            RecordState(context.ShieldName, context.TimeProvider);
+        }
+        catch
+        {
+            if (reservation is not null)
+            {
+                CancelReservation(reservation)?.TrySetResult(true);
+            }
+
+            throw;
+        }
 
         return reservation is null
             ? next.InvokeAsync(context)

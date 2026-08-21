@@ -25,7 +25,7 @@ internal sealed class CircuitBreakerStrategy : Strategy
     public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
         var recordState = RegisterMetricsShieldName(context.ShieldName);
-        if (!_core.TryEnter(context.TimeProvider, out var rejection))
+        if (!_core.TryEnter(context.TimeProvider, out var rejection, out var admittedProbeGeneration))
         {
             if (recordState)
             {
@@ -38,7 +38,15 @@ internal sealed class CircuitBreakerStrategy : Strategy
 
         if (recordState)
         {
-            RecordState(context.ShieldName);
+            try
+            {
+                RecordState(context.ShieldName);
+            }
+            catch
+            {
+                _core.AbandonProbe(admittedProbeGeneration);
+                throw;
+            }
         }
 
         var outcome = await next.InvokeAsync(context).ConfigureAwait(false);
@@ -50,7 +58,7 @@ internal sealed class CircuitBreakerStrategy : Strategy
         else if (outcome.Exception is OperationCanceledException && context.CancellationToken.IsCancellationRequested)
         {
             // A cancelled execution says nothing about downstream health; don't move the circuit.
-            _core.AbandonProbe();
+            _core.AbandonProbe(admittedProbeGeneration);
         }
         else
         {

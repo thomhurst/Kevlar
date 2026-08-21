@@ -665,6 +665,35 @@ public class MetricsTests
     }
 
     [Test]
+    public async Task Circuit_Metric_Failure_Releases_An_Admitted_Probe()
+    {
+        var halfOpenMeasurements = 0;
+        var metricsFailure = new InvalidOperationException("metrics callback");
+        using var listener = new KevlarMeterListener((instrument, value) =>
+        {
+            if (instrument == "kevlar.circuit_breaker.state"
+                && value == 2
+                && Interlocked.Increment(ref halfOpenMeasurements) == 2)
+            {
+                throw metricsFailure;
+            }
+        });
+        var timeProvider = new FakeTimeProvider();
+        var shield = Shield.CircuitBreaker(1, TimeSpan.FromSeconds(1))
+            .WithTimeProvider(timeProvider)
+            .WithName("metrics-circuit-probe-failure");
+
+        _ = await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+        timeProvider.Advance(TimeSpan.FromSeconds(1));
+        var thrown = await Assert.That(async () =>
+                await shield.ExecuteAsync(_ => new ValueTask<int>(1)))
+            .Throws<InvalidOperationException>();
+        await Assert.That(ReferenceEquals(thrown, metricsFailure)).IsTrue();
+
+        await Assert.That(await shield.ExecuteAsync(_ => new ValueTask<int>(2))).IsEqualTo(2);
+    }
+
+    [Test]
     public async Task State_Gauges_Use_Only_Low_Cardinality_Name_Tags()
     {
         using var listener = new KevlarMeterListener();
@@ -810,6 +839,32 @@ public class MetricsTests
     }
 
     [Test]
+    public async Task Concurrency_Inflight_Never_Exceeds_Capacity_During_Handoffs()
+    {
+        using var listener = new KevlarMeterListener();
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var shield = Shield.ConcurrencyLimit(1, 32).WithName("metrics-concurrency-handoffs");
+        var holder = shield.ExecuteAsync(async _ =>
+        {
+            entered.TrySetResult();
+            await release.Task;
+        }).AsTask();
+        await entered.Task;
+
+        var queued = Enumerable.Range(0, 32)
+            .Select(_ => shield.ExecuteAsync(_ => ValueTask.CompletedTask).AsTask())
+            .ToArray();
+        release.TrySetResult();
+        await Task.WhenAll(queued.Prepend(holder));
+
+        await Assert.That(listener.Values(
+                "kevlar.concurrency_limit.inflight",
+                "metrics-concurrency-handoffs").All(value => value <= 1))
+            .IsTrue();
+    }
+
+    [Test]
     public async Task Concurrency_Gauges_Track_Inflight_Queue_And_Cancellation()
     {
         using var listener = new KevlarMeterListener();
@@ -947,6 +1002,39 @@ public class MetricsTests
                 "kevlar.rate_limit.queued",
                 "metrics-rate-alias-second").Last())
             .IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Rate_Metric_Failure_Removes_The_Queued_Reservation()
+    {
+        var throwOnQueued = true;
+        var metricsFailure = new InvalidOperationException("metrics callback");
+        using var listener = new KevlarMeterListener((instrument, value) =>
+        {
+            if (throwOnQueued && instrument == "kevlar.rate_limit.queued" && value == 1)
+            {
+                throwOnQueued = false;
+                throw metricsFailure;
+            }
+        });
+        using var cancellation = new CancellationTokenSource();
+        var timeProvider = new FakeTimeProvider();
+        var shield = Shield.RateLimit(options =>
+        {
+            options.Permits = 1;
+            options.Window = TimeSpan.FromHours(1);
+            options.QueueLimit = 1;
+        }).WithTimeProvider(timeProvider).WithName("metrics-rate-reservation-failure");
+
+        await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
+        var thrown = await Assert.That(async () =>
+                await shield.ExecuteAsync(_ => ValueTask.CompletedTask))
+            .Throws<InvalidOperationException>();
+        await Assert.That(ReferenceEquals(thrown, metricsFailure)).IsTrue();
+
+        var queued = shield.ExecuteAsync(_ => ValueTask.CompletedTask, cancellation.Token).AsTask();
+        cancellation.Cancel();
+        await Assert.That(async () => await queued).Throws<OperationCanceledException>();
     }
 
     private static Dictionary<(CircuitState From, CircuitState To), long> CircuitTransitionTotals(
