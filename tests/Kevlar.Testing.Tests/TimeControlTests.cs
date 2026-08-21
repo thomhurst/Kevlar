@@ -1,3 +1,4 @@
+using System.Diagnostics.Metrics;
 using Kevlar.Testing;
 using Microsoft.Extensions.Time.Testing;
 
@@ -89,6 +90,8 @@ public class TimeControlTests
     [Test]
     public async Task Rate_Limit_Replenishment_Completes_Queued_Execution()
     {
+        const string ShieldName = "testing-rate-queue";
+        using var admission = new QueueAdmissionSignal("kevlar.rate_limit.queued", ShieldName);
         var timeProvider = new FakeTimeProvider();
         var executions = 0;
         var shield = Shield
@@ -98,7 +101,8 @@ public class TimeControlTests
                 options.Window = TimeSpan.FromSeconds(1);
                 options.QueueLimit = 1;
             })
-            .WithTimeProvider(timeProvider);
+            .WithTimeProvider(timeProvider)
+            .WithName(ShieldName);
 
         await Assert.That(await shield.ExecuteAsync(_ =>
         {
@@ -112,7 +116,7 @@ public class TimeControlTests
         }).AsTask();
 
         await queued.WaitForPendingAsync(
-            () => !queued.IsCompleted,
+            () => admission.WasObserved,
             "the rate-limit queue");
         await timeProvider.AdvanceUntilAsync(
             TimeSpan.FromSeconds(1),
@@ -126,9 +130,11 @@ public class TimeControlTests
     [Test]
     public async Task Concurrency_Queue_Completes_After_Permit_Release()
     {
+        const string ShieldName = "testing-concurrency-queue";
+        using var admission = new QueueAdmissionSignal("kevlar.concurrency_limit.queued", ShieldName);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var shield = Shield.ConcurrencyLimit(1, maxQueue: 1);
+        var shield = Shield.ConcurrencyLimit(1, maxQueue: 1).WithName(ShieldName);
         var first = shield.ExecuteAsync<int>(async _ =>
         {
             started.TrySetResult();
@@ -138,7 +144,7 @@ public class TimeControlTests
         var queued = shield.ExecuteAsync(static _ => new ValueTask<int>(2)).AsTask();
 
         await queued.WaitForPendingAsync(
-            () => started.Task.IsCompleted,
+            () => admission.WasObserved,
             "the concurrency-limit queue");
         release.TrySetResult();
         await Assert.That(await first).IsEqualTo(1);
@@ -261,5 +267,53 @@ public class TimeControlTests
                 "work",
                 maxYieldsPerAdvance: 0))
             .Throws<ArgumentOutOfRangeException>();
+    }
+
+    private sealed class QueueAdmissionSignal : IDisposable
+    {
+        private readonly string _instrumentName;
+        private readonly MeterListener _listener = new();
+        private readonly string _shieldName;
+        private int _wasObserved;
+
+        public QueueAdmissionSignal(string instrumentName, string shieldName)
+        {
+            _instrumentName = instrumentName;
+            _shieldName = shieldName;
+            _listener.InstrumentPublished = (instrument, listener) =>
+            {
+                if (instrument.Meter.Name == "Kevlar" && instrument.Name == _instrumentName)
+                {
+                    listener.EnableMeasurementEvents(instrument);
+                }
+            };
+            _listener.SetMeasurementEventCallback<long>(ObserveMeasurement);
+            _listener.Start();
+        }
+
+        public bool WasObserved => Volatile.Read(ref _wasObserved) != 0;
+
+        public void Dispose() => _listener.Dispose();
+
+        private void ObserveMeasurement(
+            Instrument instrument,
+            long value,
+            ReadOnlySpan<KeyValuePair<string, object?>> tags,
+            object? state)
+        {
+            if (value != 1)
+            {
+                return;
+            }
+
+            foreach (var tag in tags)
+            {
+                if (tag.Key == "kevlar.shield.name" && Equals(tag.Value, _shieldName))
+                {
+                    Volatile.Write(ref _wasObserved, 1);
+                    return;
+                }
+            }
+        }
     }
 }

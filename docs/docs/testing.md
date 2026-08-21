@@ -191,7 +191,7 @@ public async Task Retries_Without_Sleeps()
 }
 ```
 
-Both helpers use finite scheduler/advance counts and throw `ShieldAssertionException` with the condition, execution status, fake UTC time, and configured bounds when progress is not observed. Use a caller-owned counter, gate, callback flag, or fake-clock deadline as the condition; then await the execution normally to inspect its result or exception.
+Both helpers use finite scheduler/advance counts. `WaitForPendingAsync` reports the condition, execution status, and scheduler-yield bound when progress is not observed. `AdvanceUntilAsync` reports the condition, fake UTC time, and advance bound. Use a caller-owned counter, gate, callback flag, or fake-clock deadline as the condition; then await the execution normally to inspect its result or exception.
 
 ## Testing circuit breakers
 

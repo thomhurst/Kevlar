@@ -2,26 +2,22 @@ namespace Kevlar.Testing;
 
 internal static class SchedulerDrain
 {
-    public static Task<bool> ObserveAsync(
+    public static async Task<bool> ObserveAsync(
         Func<bool> condition,
         int maxYields,
-        CancellationToken cancellationToken) => Task.Factory.StartNew(
-            () =>
+        CancellationToken cancellationToken)
+    {
+        for (var yield = 0; yield < maxYields; yield++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (condition())
             {
-                for (var yield = 0; yield < maxYields; yield++)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    if (condition())
-                    {
-                        return true;
-                    }
+                return true;
+            }
 
-                    Thread.Yield();
-                }
+            await Task.Yield();
+        }
 
-                return condition();
-            },
-            cancellationToken,
-            TaskCreationOptions.DenyChildAttach | TaskCreationOptions.LongRunning,
-            TaskScheduler.Default);
+        return condition();
+    }
 }
