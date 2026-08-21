@@ -290,7 +290,6 @@ await Shield.Empty.ExecuteAsync(cancellationToken => ValueTask.CompletedTask);
 
     Assert-Set 'analyzer consumer error codes' $analyzerErrorCodes @('KEV001')
 
-    $global:LASTEXITCODE = 0
     Write-Host 'All package layout, metadata, consumer, and analyzer checks passed.'
 }
 finally
@@ -298,3 +297,7 @@ finally
     $env:NUGET_PACKAGES = $previousPackagesPath
     Remove-Item -LiteralPath $temporaryRoot -Recurse -Force
 }
+
+# The analyzer check intentionally runs a failing dotnet build. Do not leak that
+# expected native exit code after every assertion and cleanup step has passed.
+exit 0
