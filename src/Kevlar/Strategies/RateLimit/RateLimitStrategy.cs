@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
 using Kevlar.Internal;
 
 namespace Kevlar.Strategies;
@@ -22,12 +23,18 @@ internal sealed class RateLimitStrategy : Strategy
     private readonly int _queueLimit;
     private readonly double _timestampUnitsPerPermit;
     private readonly double _burstTolerance;
+    private readonly Lock _metricsPublicationGate = new();
+    private readonly HashSet<StrategyMetricAlias> _metricsAliases = [];
     private readonly object _queueGate = new();
+    private StrategyMetricAlias[] _metricsAliasSnapshot = [];
+    private List<double>? _reentrantImmediateAdmissionTimestamps;
 
     private double _theoreticalArrival = double.NegativeInfinity;
     private Reservation? _queueHead;
     private Reservation? _queueTail;
     private int _queuedReservations;
+    private int _metricsAdmissionDepth;
+    private int _untrackedImmediateAdmissions;
 
     protected internal override bool IsDuplicateReferenceUnsafe => true;
 
@@ -55,7 +62,7 @@ internal sealed class RateLimitStrategy : Strategy
 
     public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
-        if (!TryAcquire(context.TimeProvider, out var reservation, out var retryAfter))
+        if (!TryAcquireAndRecord(context, out var reservation, out var retryAfter))
         {
             KevlarMetrics.Rejection(context.ShieldName, "rate_limit");
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(new RateLimitExceededException(retryAfter)));
@@ -64,6 +71,175 @@ internal sealed class RateLimitStrategy : Strategy
         return reservation is null
             ? next.InvokeAsync(context)
             : ExecuteReservedAsync(next, context, reservation);
+    }
+
+    private bool TryAcquireAndRecord(
+        KevlarContext context,
+        out Reservation? reservation,
+        out TimeSpan? retryAfter)
+    {
+        if (!KevlarMetrics.RateStateEnabled)
+        {
+            if (_queueLimit > 0)
+            {
+                return TryAcquire(context.TimeProvider, out reservation, out retryAfter, out _);
+            }
+
+            // Register before rechecking publication state so an admission that observed
+            // metrics disabled cannot race past a rollback that starts concurrently.
+            Interlocked.Increment(ref _untrackedImmediateAdmissions);
+            try
+            {
+                if (Volatile.Read(ref _metricsAdmissionDepth) == 0 &&
+                    !KevlarMetrics.RateStateEnabled)
+                {
+                    return TryAcquire(context.TimeProvider, out reservation, out retryAfter, out _);
+                }
+            }
+            finally
+            {
+                Interlocked.Decrement(ref _untrackedImmediateAdmissions);
+            }
+        }
+
+        lock (_metricsPublicationGate)
+        {
+            return TryAcquireAndRecordUnderLock(context, out reservation, out retryAfter);
+        }
+    }
+
+    private bool TryAcquireAndRecordUnderLock(
+        KevlarContext context,
+        out Reservation? reservation,
+        out TimeSpan? retryAfter)
+    {
+        Interlocked.Increment(ref _metricsAdmissionDepth);
+        try
+        {
+            if (_metricsAdmissionDepth == 1)
+            {
+                // Once depth is visible, new fast-path admissions join the publication gate.
+                // Drain admissions already beyond that check before capturing rollback state.
+                var spinWait = new SpinWait();
+                while (Volatile.Read(ref _untrackedImmediateAdmissions) != 0)
+                {
+                    spinWait.SpinOnce();
+                }
+            }
+
+            var previousTheoreticalArrival = _queueLimit == 0
+                ? Volatile.Read(ref _theoreticalArrival)
+                : 0;
+            var acquired = TryAcquire(
+                context.TimeProvider,
+                out reservation,
+                out retryAfter,
+                out var admissionTimestamp);
+            var nestedAdmissionIndex = -1;
+            if (acquired && _queueLimit == 0 && _metricsAdmissionDepth > 1)
+            {
+                var admissions = _reentrantImmediateAdmissionTimestamps ??= [];
+                nestedAdmissionIndex = admissions.Count;
+                admissions.Add(admissionTimestamp);
+            }
+
+            try
+            {
+                RecordStateUnderLock(
+                    new StrategyMetricAlias(context.ShieldName, context.StrategyIndex),
+                    context.TimeProvider);
+                return acquired;
+            }
+            catch (Exception publicationFailure)
+            {
+                if (acquired)
+                {
+                    RollbackAcquisition(
+                        reservation,
+                        previousTheoreticalArrival,
+                        nestedAdmissionIndex);
+                }
+
+                try
+                {
+                    RecordStateUnderLock(
+                        new StrategyMetricAlias(context.ShieldName, context.StrategyIndex),
+                        context.TimeProvider);
+                }
+                catch (Exception correctionFailure)
+                {
+                    publicationFailure = new AggregateException(
+                        publicationFailure,
+                        correctionFailure).Flatten();
+                }
+
+                ExceptionDispatchInfo.Capture(publicationFailure).Throw();
+                throw;
+            }
+        }
+        finally
+        {
+            if (Interlocked.Decrement(ref _metricsAdmissionDepth) == 0)
+            {
+                _reentrantImmediateAdmissionTimestamps?.Clear();
+            }
+        }
+    }
+
+    private void RollbackAcquisition(
+        Reservation? reservation,
+        double previousTheoreticalArrival,
+        int nestedAdmissionIndex)
+    {
+        if (reservation is not null)
+        {
+            CancelReservation(reservation)?.TrySetResult(true);
+            return;
+        }
+
+        if (_queueLimit == 0)
+        {
+            RollbackImmediatePermit(previousTheoreticalArrival, nestedAdmissionIndex);
+            return;
+        }
+
+        RollbackQueuedPermit();
+    }
+
+    private void RollbackImmediatePermit(
+        double previousTheoreticalArrival,
+        int nestedAdmissionIndex)
+    {
+        var restored = previousTheoreticalArrival;
+        var admissions = _reentrantImmediateAdmissionTimestamps;
+        var firstAdmission = nestedAdmissionIndex < 0 ? 0 : nestedAdmissionIndex + 1;
+        if (admissions is not null)
+        {
+            for (var index = firstAdmission; index < admissions.Count; index++)
+            {
+                restored = GetNextArrival(restored, admissions[index]);
+            }
+
+            if (nestedAdmissionIndex >= 0)
+            {
+                admissions.RemoveAt(nestedAdmissionIndex);
+            }
+        }
+
+        Volatile.Write(ref _theoreticalArrival, restored);
+    }
+
+    private void RollbackQueuedPermit()
+    {
+        lock (_queueGate)
+        {
+            for (var queued = _queueHead; queued is not null; queued = queued.Next)
+            {
+                queued.DueTimestamp -= _timestampUnitsPerPermit;
+            }
+
+            _theoreticalArrival -= _timestampUnitsPerPermit;
+        }
     }
 
     private async ValueTask<Outcome<T>> ExecuteReservedAsync<T, TState>(
@@ -77,6 +253,32 @@ internal sealed class RateLimitStrategy : Strategy
             {
                 if (TryConsumeReservation(reservation, context.TimeProvider, out var wait, out var nextTurn))
                 {
+                    try
+                    {
+                        RecordState(
+                            new StrategyMetricAlias(context.ShieldName, context.StrategyIndex),
+                            context.TimeProvider);
+                    }
+                    catch (Exception publicationFailure)
+                    {
+                        RollbackQueuedPermit();
+                        try
+                        {
+                            RecordState(
+                                new StrategyMetricAlias(context.ShieldName, context.StrategyIndex),
+                                context.TimeProvider);
+                        }
+                        catch (Exception correctionFailure)
+                        {
+                            publicationFailure = new AggregateException(
+                                publicationFailure,
+                                correctionFailure).Flatten();
+                        }
+
+                        nextTurn?.TrySetResult(true);
+                        ExceptionDispatchInfo.Capture(publicationFailure).Throw();
+                    }
+
                     nextTurn?.TrySetResult(true);
                     break;
                 }
@@ -97,6 +299,9 @@ internal sealed class RateLimitStrategy : Strategy
         catch (OperationCanceledException cancelled)
         {
             CancelReservation(reservation)?.TrySetResult(true);
+            RecordState(
+                new StrategyMetricAlias(context.ShieldName, context.StrategyIndex),
+                context.TimeProvider);
             return Outcome<T>.FromException(cancelled);
         }
 
@@ -107,19 +312,24 @@ internal sealed class RateLimitStrategy : Strategy
     private bool TryAcquire(
         TimeProvider timeProvider,
         out Reservation? reservation,
-        out TimeSpan? retryAfter)
+        out TimeSpan? retryAfter,
+        out double admissionTimestamp)
     {
         if (_queueLimit > 0)
         {
+            admissionTimestamp = 0;
             return TryAcquireWithQueue(timeProvider, out reservation, out retryAfter);
         }
 
         reservation = null;
-        return TryAcquireWithoutQueue(timeProvider, out retryAfter);
+        return TryAcquireWithoutQueue(timeProvider, out retryAfter, out admissionTimestamp);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private bool TryAcquireWithoutQueue(TimeProvider timeProvider, out TimeSpan? retryAfter)
+    private bool TryAcquireWithoutQueue(
+        TimeProvider timeProvider,
+        out TimeSpan? retryAfter,
+        out double admissionTimestamp)
     {
         while (true)
         {
@@ -130,22 +340,28 @@ internal sealed class RateLimitStrategy : Strategy
             if (delayTimestampUnits > 0)
             {
                 retryAfter = GetRetryAfter(delayTimestampUnits);
+                admissionTimestamp = 0;
                 return false;
             }
 
-            var arrival = Math.Max(now, theoreticalArrival);
-            var nextArrival = arrival + _timestampUnitsPerPermit;
-            if (nextArrival == arrival)
-            {
-                nextArrival = GetNextRepresentableTimestamp(arrival);
-            }
+            var nextArrival = GetNextArrival(theoreticalArrival, now);
 
             if (Interlocked.CompareExchange(ref _theoreticalArrival, nextArrival, theoreticalArrival) == theoreticalArrival)
             {
                 retryAfter = null;
+                admissionTimestamp = now;
                 return true;
             }
         }
+    }
+
+    private double GetNextArrival(double theoreticalArrival, double now)
+    {
+        var arrival = Math.Max(now, theoreticalArrival);
+        var nextArrival = arrival + _timestampUnitsPerPermit;
+        return nextArrival == arrival
+            ? GetNextRepresentableTimestamp(arrival)
+            : nextArrival;
     }
 
     private bool TryAcquireWithQueue(
@@ -300,6 +516,112 @@ internal sealed class RateLimitStrategy : Strategy
         return seconds >= maximumSeconds - maximumRoundingTolerance
             ? TimeSpan.MaxValue
             : TimeSpan.FromSeconds(seconds);
+    }
+
+    private void RecordState(StrategyMetricAlias alias, TimeProvider timeProvider)
+    {
+        if (!KevlarMetrics.RateStateEnabled)
+        {
+            return;
+        }
+
+        lock (_metricsPublicationGate)
+        {
+            RecordStateUnderLock(alias, timeProvider);
+        }
+    }
+
+    private void RecordStateUnderLock(StrategyMetricAlias alias, TimeProvider timeProvider)
+    {
+        if (_metricsAliases.Count < KevlarMetrics.MaxTrackedStrategyAliases
+            && _metricsAliases.Add(alias))
+        {
+            _metricsAliasSnapshot = [.. _metricsAliases];
+        }
+
+        while (true)
+        {
+            var state = CaptureState(timeProvider);
+            var aliases = _metricsAliasSnapshot;
+            RecordStateForAliases(aliases, state.Available, state.Queued);
+
+            if (state == CaptureState(timeProvider)
+                && ReferenceEquals(aliases, _metricsAliasSnapshot))
+            {
+                return;
+            }
+        }
+    }
+
+    private void RecordStateForAliases(StrategyMetricAlias[] aliases, long available, int queued)
+    {
+        List<Exception>? failures = null;
+        foreach (var alias in aliases)
+        {
+            try
+            {
+                KevlarMetrics.RecordRateState(
+                    alias.ShieldName,
+                    alias.StrategyIndex,
+                    available,
+                    queued);
+            }
+            catch (Exception exception)
+            {
+                (failures ??= []).Add(exception);
+            }
+        }
+
+        if (failures is [var failure])
+        {
+            ExceptionDispatchInfo.Capture(failure).Throw();
+        }
+
+        if (failures is { Count: > 1 })
+        {
+            throw new AggregateException(failures).Flatten();
+        }
+    }
+
+    private (long Available, int Queued) CaptureState(TimeProvider timeProvider)
+    {
+        double theoreticalArrival;
+        int queued;
+        if (_queueLimit > 0)
+        {
+            lock (_queueGate)
+            {
+                theoreticalArrival = _theoreticalArrival;
+                queued = _queuedReservations;
+            }
+        }
+        else
+        {
+            theoreticalArrival = Volatile.Read(ref _theoreticalArrival);
+            queued = 0;
+        }
+
+        long available;
+        if (queued > 0)
+        {
+            available = 0;
+        }
+        else if (double.IsNegativeInfinity(theoreticalArrival))
+        {
+            available = _burst;
+        }
+        else if (double.IsInfinity(_timestampUnitsPerPermit))
+        {
+            available = 0;
+        }
+        else
+        {
+            var debt = Math.Max(0, theoreticalArrival - GetCurrentTimestamp(timeProvider));
+            var consumed = Math.Ceiling(debt / _timestampUnitsPerPermit);
+            available = consumed >= _burst ? 0 : _burst - (long)consumed;
+        }
+
+        return (available, queued);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

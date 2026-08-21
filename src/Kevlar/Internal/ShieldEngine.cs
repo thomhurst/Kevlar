@@ -11,15 +11,16 @@ internal static class ShieldEngine
         Func<TState, CancellationToken, ValueTask<T>> action,
         CancellationToken cancellationToken)
     {
+        var startedAt = KevlarMetrics.DurationEnabled ? KevlarMetrics.StartDuration() : 0;
         if (cancellationToken.IsCancellationRequested)
         {
-            KevlarMetrics.Execution(shieldName, success: false);
+            RecordExecution(startedAt, shieldName, success: false);
             return Rethrow<T>(Outcome<T>.FromException(new OperationCanceledException(cancellationToken)));
         }
 
         if (head is null)
         {
-            if (!KevlarMetrics.ExecutionEnabled)
+            if (!KevlarMetrics.ExecutionEnabled && !KevlarMetrics.DurationEnabled)
             {
                 return action(state, cancellationToken);
             }
@@ -29,15 +30,15 @@ internal static class ShieldEngine
                 var execution = action(state, cancellationToken);
                 if (execution.IsCompletedSuccessfully)
                 {
-                    KevlarMetrics.Execution(shieldName, success: true);
+                    RecordExecution(startedAt, shieldName, success: true);
                     return execution;
                 }
 
-                return AwaitDirectAsync(execution, shieldName);
+                return AwaitDirectAsync(execution, shieldName, startedAt);
             }
             catch
             {
-                KevlarMetrics.Execution(shieldName, success: false);
+                RecordExecution(startedAt, shieldName, success: false);
                 throw;
             }
         }
@@ -49,11 +50,11 @@ internal static class ShieldEngine
         {
             var outcome = pipeline.Result;
             KevlarContext.Return(context);
-            KevlarMetrics.Execution(shieldName, outcome.IsSuccess);
+            RecordExecution(startedAt, shieldName, outcome.IsSuccess);
             return outcome.IsSuccess ? new ValueTask<T>(outcome.Result!) : Rethrow(outcome);
         }
 
-        return AwaitAsync(pipeline, context);
+        return AwaitAsync(pipeline, context, startedAt);
     }
 
     public static ValueTask<Outcome<T>> ExecuteOutcomeAsync<T, TState>(
@@ -64,9 +65,10 @@ internal static class ShieldEngine
         Func<TState, CancellationToken, ValueTask<T>> action,
         CancellationToken cancellationToken)
     {
+        var startedAt = KevlarMetrics.DurationEnabled ? KevlarMetrics.StartDuration() : 0;
         if (cancellationToken.IsCancellationRequested)
         {
-            KevlarMetrics.Execution(shieldName, success: false);
+            RecordExecution(startedAt, shieldName, success: false);
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(new OperationCanceledException(cancellationToken)));
         }
 
@@ -77,11 +79,11 @@ internal static class ShieldEngine
         {
             var outcome = pipeline.Result;
             KevlarContext.Return(context);
-            KevlarMetrics.Execution(shieldName, outcome.IsSuccess);
+            RecordExecution(startedAt, shieldName, outcome.IsSuccess);
             return new ValueTask<Outcome<T>>(outcome);
         }
 
-        return AwaitOutcomeAsync(pipeline, context);
+        return AwaitOutcomeAsync(pipeline, context, startedAt);
     }
 
     public static T ExecuteSync<T, TState>(
@@ -92,9 +94,10 @@ internal static class ShieldEngine
         Func<TState, CancellationToken, T> action,
         CancellationToken cancellationToken)
     {
+        var startedAt = KevlarMetrics.DurationEnabled ? KevlarMetrics.StartDuration() : 0;
         if (cancellationToken.IsCancellationRequested)
         {
-            KevlarMetrics.Execution(shieldName, success: false);
+            RecordExecution(startedAt, shieldName, success: false);
             cancellationToken.ThrowIfCancellationRequested();
         }
 
@@ -103,12 +106,12 @@ internal static class ShieldEngine
             try
             {
                 var result = action(state, cancellationToken);
-                KevlarMetrics.Execution(shieldName, success: true);
+                RecordExecution(startedAt, shieldName, success: true);
                 return result;
             }
             catch
             {
-                KevlarMetrics.Execution(shieldName, success: false);
+                RecordExecution(startedAt, shieldName, success: false);
                 throw;
             }
         }
@@ -122,7 +125,7 @@ internal static class ShieldEngine
                 ? pipeline.Result
                 : pipeline.AsTask().GetAwaiter().GetResult();
 
-            KevlarMetrics.Execution(shieldName, outcome.IsSuccess);
+            RecordExecution(startedAt, shieldName, outcome.IsSuccess);
             return outcome.GetResultOrRethrow();
         }
         finally
@@ -181,12 +184,12 @@ internal static class ShieldEngine
         }
     }
 
-    private static async ValueTask<T> AwaitAsync<T>(ValueTask<Outcome<T>> pipeline, KevlarContext context)
+    private static async ValueTask<T> AwaitAsync<T>(ValueTask<Outcome<T>> pipeline, KevlarContext context, long startedAt)
     {
         try
         {
             var outcome = await pipeline.ConfigureAwait(false);
-            KevlarMetrics.Execution(context.ShieldName, outcome.IsSuccess);
+            RecordExecution(startedAt, context.ShieldName, outcome.IsSuccess);
             return outcome.GetResultOrRethrow();
         }
         finally
@@ -195,33 +198,42 @@ internal static class ShieldEngine
         }
     }
 
-    private static async ValueTask<T> AwaitDirectAsync<T>(ValueTask<T> execution, string? shieldName)
+    private static async ValueTask<T> AwaitDirectAsync<T>(ValueTask<T> execution, string? shieldName, long startedAt)
     {
         try
         {
             var result = await execution.ConfigureAwait(false);
-            KevlarMetrics.Execution(shieldName, success: true);
+            RecordExecution(startedAt, shieldName, success: true);
             return result;
         }
         catch
         {
-            KevlarMetrics.Execution(shieldName, success: false);
+            RecordExecution(startedAt, shieldName, success: false);
             throw;
         }
     }
 
-    private static async ValueTask<Outcome<T>> AwaitOutcomeAsync<T>(ValueTask<Outcome<T>> pipeline, KevlarContext context)
+    private static async ValueTask<Outcome<T>> AwaitOutcomeAsync<T>(
+        ValueTask<Outcome<T>> pipeline,
+        KevlarContext context,
+        long startedAt)
     {
         try
         {
             var outcome = await pipeline.ConfigureAwait(false);
-            KevlarMetrics.Execution(context.ShieldName, outcome.IsSuccess);
+            RecordExecution(startedAt, context.ShieldName, outcome.IsSuccess);
             return outcome;
         }
         finally
         {
             KevlarContext.Return(context);
         }
+    }
+
+    private static void RecordExecution(long startedAt, string? shieldName, bool success)
+    {
+        KevlarMetrics.Duration(startedAt, shieldName, success);
+        KevlarMetrics.Execution(shieldName, success);
     }
 
     private static async ValueTask<T> Rethrow<T>(Outcome<T> outcome)

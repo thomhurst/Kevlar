@@ -23,6 +23,7 @@ internal sealed class CircuitBreakerCore
     private readonly double _bucketDurationTimestampUnits;
     private readonly TimeSpan _breakDuration;
     private readonly double _breakDurationTimestampUnits;
+    private readonly Action<CircuitState> _recordState;
     private readonly Action<CircuitStateChangedEvent>? _onStateChanged;
     private readonly CircuitBreakerMonitor? _monitor;
     private readonly Queue<TransitionPublication> _pendingTransitions = new();
@@ -44,7 +45,7 @@ internal sealed class CircuitBreakerCore
     private int _publishingThreadId;
     private TransitionPublication? _activePublication;
 
-    public CircuitBreakerCore(CircuitBreakerOptions options)
+    public CircuitBreakerCore(CircuitBreakerOptions options, Action<CircuitState> recordState)
     {
         Throw.IfOutOfRange(options.ConsecutiveFailures is <= 0, nameof(options), "ConsecutiveFailures must be positive.");
         Throw.IfOutOfRange(
@@ -63,6 +64,7 @@ internal sealed class CircuitBreakerCore
         _bucketDurationTimestampUnits = options.SamplingWindow.TotalSeconds * Stopwatch.Frequency / BucketCount;
         _breakDuration = options.BreakDuration;
         _breakDurationTimestampUnits = options.BreakDuration.TotalSeconds * Stopwatch.Frequency;
+        _recordState = recordState;
         _onStateChanged = options.OnStateChanged;
         _monitor = options.Monitor;
         _monitor?.Bind(this);
@@ -88,12 +90,15 @@ internal sealed class CircuitBreakerCore
     /// <summary>
     /// Gates an execution. Returns <see langword="false"/> with a rejection when the circuit
     /// refuses it; a <see langword="true"/> return during half-open marks a probe in flight,
-    /// so the caller must report back via Record* or <see cref="AbandonProbe()"/>.
+    /// so the caller must report back via Record* or <see cref="AbandonProbe(long)"/>.
     /// </summary>
-    public bool TryEnter(TimeProvider timeProvider, out CircuitOpenException? rejection)
+    public bool TryEnter(
+        TimeProvider timeProvider,
+        out CircuitOpenException? rejection,
+        out long admittedProbeGeneration)
     {
         TransitionPublication? transition = null;
-        long admittedProbeGeneration = 0;
+        admittedProbeGeneration = 0;
         bool allowed;
         rejection = null;
 
@@ -227,18 +232,7 @@ internal sealed class CircuitBreakerCore
     }
 
     /// <summary>Releases a half-open probe slot without recording an outcome (e.g. the probe was cancelled).</summary>
-    public void AbandonProbe()
-    {
-        lock (_gate)
-        {
-            if (_state == CircuitState.HalfOpen)
-            {
-                _probeInFlight = false;
-            }
-        }
-    }
-
-    private void AbandonProbe(long probeGeneration)
+    public void AbandonProbe(long probeGeneration)
     {
         lock (_gate)
         {
@@ -541,6 +535,15 @@ internal sealed class CircuitBreakerCore
         try
         {
             KevlarMetrics.CircuitTransition(stateChange.From, stateChange.To);
+        }
+        catch (Exception exception)
+        {
+            AddFailure(ref failure, exception);
+        }
+
+        try
+        {
+            _recordState(stateChange.To);
         }
         catch (Exception exception)
         {

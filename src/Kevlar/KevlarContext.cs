@@ -30,6 +30,8 @@ public sealed class KevlarContext
     /// <summary>The name of the executing shield, if one was assigned via <c>WithName</c>.</summary>
     public string? ShieldName { get; internal set; }
 
+    internal int StrategyIndex { get; set; }
+
     /// <summary>The time provider used for delays, timeouts and time-window calculations.</summary>
     public TimeProvider TimeProvider { get; internal set; } = TimeProvider.System;
 
@@ -44,6 +46,7 @@ public sealed class KevlarContext
         context.IsSynchronous = isSynchronous;
         context.TimeProvider = timeProvider;
         context.ShieldName = shieldName;
+        context.StrategyIndex = -1;
         return context;
     }
 
@@ -56,6 +59,7 @@ public sealed class KevlarContext
     internal KevlarContext Fork(CancellationToken cancellationToken)
     {
         var fork = Rent(cancellationToken, IsSynchronous, TimeProvider, ShieldName);
+        fork.StrategyIndex = StrategyIndex;
 
         Properties.CopyTo(fork.Properties);
         return fork;
@@ -70,6 +74,7 @@ public sealed class KevlarContext
             context.CancellationToken = default;
             context.IsSynchronous = false;
             context.ShieldName = null;
+            context.StrategyIndex = -1;
             context.TimeProvider = TimeProvider.System;
             context.Properties.Clear();
             return true;

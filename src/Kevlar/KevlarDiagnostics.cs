@@ -1,13 +1,14 @@
 namespace Kevlar;
 
 /// <summary>
-/// Names for Kevlar's built-in telemetry. On .NET 8+ targets every shield publishes metrics
+/// Names for Kevlar's built-in telemetry. On .NET 8+ targets every shield publishes counters and
+/// duration metrics; the shipped state gauges require .NET 10 or later. Metrics are published
 /// through a <c>System.Diagnostics.Metrics.Meter</c> named <see cref="MeterName"/> with zero
 /// configuration — subscribe with <c>AddMeter("Kevlar")</c> (OpenTelemetry) or a
 /// <c>MeterListener</c>. On <c>netstandard2.0</c> the instruments are inert.
 /// </summary>
 /// <remarks>
-/// The meter version is <c>1.0</c>. Instruments (all <c>Counter&lt;long&gt;</c>):
+/// The meter version is <c>1.0</c>. Instruments:
 /// <list type="bullet">
 /// <item><c>kevlar.executions</c> — completed public execution calls, including empty shields and
 /// pre-cancelled calls; attributes <c>kevlar.shield.name</c>, <c>kevlar.execution.outcome</c> (<c>success</c>/<c>failure</c>)</item>
@@ -17,9 +18,14 @@ namespace Kevlar;
 /// <item><c>kevlar.fallbacks</c> — outcomes replaced by a fallback; attribute <c>kevlar.shield.name</c></item>
 /// <item><c>kevlar.rejections</c> — fail-fast rejections; attributes <c>kevlar.shield.name</c>, <c>kevlar.rejection.type</c> (<c>circuit_open</c>/<c>rate_limit</c>/<c>concurrency_limit</c>)</item>
 /// <item><c>kevlar.circuit_breaker.transitions</c> — circuit state changes; attributes <c>kevlar.circuit_breaker.state.from</c>, <c>kevlar.circuit_breaker.state.to</c></item>
+/// <item><c>kevlar.execution.duration</c> — execution duration histogram in seconds; attributes <c>kevlar.shield.name</c>, <c>kevlar.execution.outcome</c></item>
+/// <item><c>kevlar.circuit_breaker.state</c> — current state gauge (<c>closed=0</c>, <c>open=1</c>, <c>half_open=2</c>, <c>isolated=3</c>)</item>
+/// <item><c>kevlar.concurrency_limit.inflight</c>, <c>kevlar.concurrency_limit.queued</c>, and <c>kevlar.concurrency_limit.capacity</c> — concurrency-limit state gauges</item>
+/// <item><c>kevlar.rate_limit.available</c> and <c>kevlar.rate_limit.queued</c> — rate-limit state gauges</item>
 /// </list>
 /// The <c>kevlar.shield.name</c> attribute is present only for shields named via <c>WithName</c>; an explicitly
-/// empty name is emitted as an empty tag value.
+/// empty name is emitted as an empty tag value. State gauges also carry the bounded
+/// <c>kevlar.strategy.index</c> attribute so multiple stateful strategies in one pipeline remain distinct.
 /// </remarks>
 public static class KevlarDiagnostics
 {
