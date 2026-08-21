@@ -27,6 +27,32 @@ public class PartitionedShieldTests
     }
 
     [Test]
+    public async Task Factory_Can_Wait_For_An_Unrelated_Provider_Lookup()
+    {
+        PartitionedShield<string>? provider = null;
+        provider = new PartitionedShield<string>(key =>
+        {
+            if (key == "dependent")
+            {
+                var lookup = Task.Run(() => provider!.GetShield("warm"));
+                if (!lookup.Wait(TimeSpan.FromSeconds(5)))
+                {
+                    throw new TimeoutException("The unrelated partition lookup was blocked by the factory.");
+                }
+            }
+
+            return Shield.Empty;
+        });
+        _ = provider.GetShield("warm");
+
+        var dependent = await Task.Run(() => provider.GetShield("dependent"))
+            .WaitAsync(TimeSpan.FromSeconds(5));
+
+        await Assert.That(ReferenceEquals(dependent, Shield.Empty)).IsTrue();
+        await Assert.That(provider.CreatedCount).IsEqualTo(2);
+    }
+
+    [Test]
     public async Task Capacity_Uses_Lru_And_Recreates_Fresh_State()
     {
         var provider = new PartitionedShield<string>(

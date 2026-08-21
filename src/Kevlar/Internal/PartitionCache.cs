@@ -1,3 +1,5 @@
+using System.Runtime.ExceptionServices;
+
 namespace Kevlar.Internal;
 
 internal sealed class PartitionCache<TKey, TShield>
@@ -6,6 +8,7 @@ internal sealed class PartitionCache<TKey, TShield>
 {
     private readonly object _gate = new();
     private readonly Dictionary<TKey, Entry> _entries;
+    private readonly Dictionary<TKey, Creation> _creations;
     private readonly Func<TKey, TShield> _factory;
     private readonly int _maximumPartitions;
     private readonly TimeSpan? _idleExpiration;
@@ -39,6 +42,7 @@ internal sealed class PartitionCache<TKey, TShield>
         _idleExpiration = options.IdleExpiration;
         _timeProvider = options.TimeProvider;
         _entries = new Dictionary<TKey, Entry>(comparer);
+        _creations = new Dictionary<TKey, Creation>(comparer);
     }
 
     public int Count
@@ -88,6 +92,8 @@ internal sealed class PartitionCache<TKey, TShield>
     public TShield Get(TKey key)
     {
         ValidateKey(key);
+        Creation creation;
+        var creates = false;
         lock (_gate)
         {
             var now = PruneExpiredUnderLock();
@@ -97,21 +103,95 @@ internal sealed class PartitionCache<TKey, TShield>
                 return existing.Shield;
             }
 
-            var shield = _factory(key)
-                ?? throw new InvalidOperationException("The partition factory returned null.");
-            if (_entries.Count == _maximumPartitions)
+            if (!_creations.TryGetValue(key, out creation!))
             {
-                RemoveEntry(_leastRecentlyUsed!);
-                _capacityEvictionCount++;
+                creation = new Creation();
+                _creations.Add(key, creation);
+                creates = true;
+            }
+        }
+
+        if (!creates)
+        {
+            var completedShield = creation.Wait();
+            lock (_gate)
+            {
+                var now = PruneExpiredUnderLock();
+                if (_entries.TryGetValue(key, out var completedEntry)
+                    && ReferenceEquals(completedEntry.Shield, completedShield))
+                {
+                    Touch(completedEntry, now);
+                }
             }
 
-            var createdAt = _idleExpiration is null ? 0 : _timeProvider.GetTimestamp();
-            var entry = new Entry(key, shield, createdAt);
-            _entries.Add(key, entry);
-            AddMostRecentlyUsed(entry);
-            _createdCount++;
-            return shield;
+            return completedShield;
         }
+
+        TShield shield;
+        try
+        {
+            shield = _factory(key)
+                ?? throw new InvalidOperationException("The partition factory returned null.");
+        }
+        catch (Exception exception)
+        {
+            lock (_gate)
+            {
+                if (_creations.TryGetValue(key, out var current)
+                    && ReferenceEquals(current, creation))
+                {
+                    _creations.Remove(key);
+                }
+            }
+
+            creation.Fail(exception);
+            throw;
+        }
+
+        try
+        {
+            lock (_gate)
+            {
+                var now = PruneExpiredUnderLock();
+                if (_entries.TryGetValue(key, out var existing))
+                {
+                    Touch(existing, now);
+                    shield = existing.Shield;
+                }
+                else
+                {
+                    if (_entries.Count == _maximumPartitions)
+                    {
+                        RemoveEntry(_leastRecentlyUsed!);
+                        _capacityEvictionCount++;
+                    }
+
+                    var entry = new Entry(key, shield, now);
+                    _entries.Add(key, entry);
+                    AddMostRecentlyUsed(entry);
+                    _createdCount++;
+                }
+
+                _creations.Remove(key);
+            }
+        }
+        catch (Exception exception)
+        {
+            lock (_gate)
+            {
+                if (_creations.TryGetValue(key, out var current)
+                    && ReferenceEquals(current, creation))
+                {
+                    _creations.Remove(key);
+                }
+            }
+
+            creation.Fail(exception);
+            throw;
+        }
+
+        creation.Succeed(shield);
+        return shield;
     }
 
     public bool TryGet(TKey key, out TShield? shield)
@@ -268,5 +348,46 @@ internal sealed class PartitionCache<TKey, TShield>
         public Entry? Previous { get; set; }
 
         public Entry? Next { get; set; }
+    }
+
+    private sealed class Creation
+    {
+        private TShield? _shield;
+        private ExceptionDispatchInfo? _failure;
+        private bool _completed;
+
+        public TShield Wait()
+        {
+            lock (this)
+            {
+                while (!_completed)
+                {
+                    Monitor.Wait(this);
+                }
+
+                _failure?.Throw();
+                return _shield!;
+            }
+        }
+
+        public void Succeed(TShield shield)
+        {
+            lock (this)
+            {
+                _shield = shield;
+                _completed = true;
+                Monitor.PulseAll(this);
+            }
+        }
+
+        public void Fail(Exception exception)
+        {
+            lock (this)
+            {
+                _failure = ExceptionDispatchInfo.Capture(exception);
+                _completed = true;
+                Monitor.PulseAll(this);
+            }
+        }
     }
 }
