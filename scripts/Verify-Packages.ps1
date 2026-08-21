@@ -105,6 +105,10 @@ $expectedDependencies = @{
         'net10.0' = @('Kevlar', 'Microsoft.Extensions.Http')
         '.NETStandard2.0' = @('Kevlar', 'Microsoft.Extensions.Http')
     }
+    'Kevlar.Extensions.RateLimiting' = @{
+        'net10.0' = @('Kevlar', 'System.Threading.RateLimiting')
+        '.NETStandard2.0' = @('Kevlar', 'System.Threading.RateLimiting')
+    }
     'Kevlar.Chaos' = @{
         'net10.0' = @('Kevlar')
         'net8.0' = @('Kevlar')
@@ -272,9 +276,11 @@ using Kevlar.Chaos;
 using Kevlar.Extensions.DependencyInjection;
 using Kevlar.Extensions.Grpc;
 using Kevlar.Extensions.Http;
+using Kevlar.Extensions.RateLimiting;
 using Kevlar.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics.Metrics;
+using System.Threading.RateLimiting;
 
 var shield = Shield.Empty;
 var descriptor = shield.GetDescriptor();
@@ -317,6 +323,16 @@ IServiceCollection services = new ServiceCollection();
 services.AddShield("consumer", shield);
 services.AddHttpClient("consumer").AddStandardShield();
 _ = new ShieldUnaryClientInterceptor(GrpcShield.WhenTransient().Retry(1));
+using var limiter = new ConcurrencyLimiter(new ConcurrencyLimiterOptions
+{
+    PermitLimit = 1,
+    QueueLimit = 0,
+    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+});
+if (await Shield.Empty.RateLimit(limiter).ExecuteAsync(static _ => new ValueTask<int>(42)) != 42)
+{
+    throw new InvalidOperationException("Rate limiting adapter execution failed.");
+}
 Console.WriteLine("Kevlar package consumer passed.");
 '@
 
@@ -337,6 +353,7 @@ Console.WriteLine("Kevlar package consumer passed.");
     <PackageReference Include="Kevlar.Chaos" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.DependencyInjection" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.Http" Version="$Version" />
+    <PackageReference Include="Kevlar.Extensions.RateLimiting" Version="$Version" />
     <PackageReference Include="Kevlar.Testing" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.Grpc" Version="$Version" />
   </ItemGroup>

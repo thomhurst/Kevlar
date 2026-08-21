@@ -87,6 +87,9 @@ jobs:
       - name: Testing package tests
         run: dotnet run --project tests/Kevlar.Testing.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --report-trx --report-trx-filename testing.trx --results-directory artifacts/test-results/testing
 
+      - name: Rate limiting adapter tests
+        run: dotnet run --project tests/Kevlar.Extensions.RateLimiting.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --report-trx --report-trx-filename rate-limiting.trx --results-directory artifacts/test-results/rate-limiting
+
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -166,6 +169,9 @@ jobs:
 
       - name: Collect testing package coverage
         run: dotnet run --project tests/Kevlar.Testing.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/testing.cobertura.xml --coverage-output-format cobertura
+
+      - name: Collect rate limiting adapter coverage
+        run: dotnet run --project tests/Kevlar.Extensions.RateLimiting.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/rate-limiting.cobertura.xml --coverage-output-format cobertura
 
       - name: Merge coverage reports
         run: dotnet reportgenerator '-reports:artifacts/coverage/raw/*.cobertura.xml' '-targetdir:artifacts/coverage/report' '-reporttypes:Cobertura;Html'

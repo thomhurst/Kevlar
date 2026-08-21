@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="TUnit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Kevlar.Extensions.RateLimiting\Kevlar.Extensions.RateLimiting.csproj" />
+    <ProjectReference Include="..\..\src\Kevlar.Testing\Kevlar.Testing.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -8,6 +8,7 @@
     <Project Path="src/Kevlar.Extensions.DependencyInjection/Kevlar.Extensions.DependencyInjection.csproj" />
     <Project Path="src/Kevlar.Extensions.Grpc/Kevlar.Extensions.Grpc.csproj" />
     <Project Path="src/Kevlar.Extensions.Http/Kevlar.Extensions.Http.csproj" />
+    <Project Path="src/Kevlar.Extensions.RateLimiting/Kevlar.Extensions.RateLimiting.csproj" />
     <Project Path="src/Kevlar/Kevlar.csproj" />
     <Project Path="src/Kevlar.Analyzers/Kevlar.Analyzers.csproj" />
     <Project Path="src/Kevlar.Testing/Kevlar.Testing.csproj" />
@@ -16,6 +17,7 @@
     <Project Path="tests/Kevlar.Chaos.Tests/Kevlar.Chaos.Tests.csproj" />
     <Project Path="tests/Kevlar.AllocationTests/Kevlar.AllocationTests.csproj" />
     <Project Path="tests/Kevlar.IntegrationTests/Kevlar.IntegrationTests.csproj" />
+    <Project Path="tests/Kevlar.Extensions.RateLimiting.Tests/Kevlar.Extensions.RateLimiting.Tests.csproj" />
     <Project Path="tests/Kevlar.NetStandard.Tests/Kevlar.NetStandard.Tests.csproj" />
     <Project Path="tests/Kevlar.Tests/Kevlar.Tests.csproj" />
     <Project Path="tests/Kevlar.Analyzers.Tests/Kevlar.Analyzers.Tests.csproj" />

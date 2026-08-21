@@ -113,6 +113,7 @@ try
     <PackageReference Include="Kevlar.Extensions.DependencyInjection" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.Grpc" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.Http" Version="$Version" />
+    <PackageReference Include="Kevlar.Extensions.RateLimiting" Version="$Version" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="$ConfigurationVersion" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="$DependencyInjectionVersion" />
   </ItemGroup>
@@ -127,8 +128,10 @@ using Kevlar.Chaos;
 using Kevlar.Extensions.DependencyInjection;
 using Kevlar.Extensions.Grpc;
 using Kevlar.Extensions.Http;
+using Kevlar.Extensions.RateLimiting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System.Threading.RateLimiting;
 
 var untyped = Shield.Empty;
 if (untyped.Execute(static _ => 42) != 42
@@ -171,7 +174,15 @@ var isolated = await Shield.ConcurrencyLimit(1).ExecuteAsync(static _ => new Val
 var hedged = await Shield.Hedge(2, TimeSpan.FromSeconds(1)).ExecuteAsync(static _ => new ValueTask<int>(42));
 var fallback = await Shield.For<int>().When<InvalidOperationException>().Fallback(42)
     .ExecuteAsync<int>(static _ => throw new InvalidOperationException());
-if (retried + timed + broken + limited + isolated + hedged + fallback != 294)
+using var frameworkLimiter = new ConcurrencyLimiter(new ConcurrencyLimiterOptions
+{
+    PermitLimit = 1,
+    QueueLimit = 0,
+    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+});
+var adapted = await Shield.Empty.RateLimit(frameworkLimiter)
+    .ExecuteAsync(static _ => new ValueTask<int>(42));
+if (retried + timed + broken + limited + isolated + hedged + fallback + adapted != 336)
 {
     throw new InvalidOperationException("Built-in strategy execution failed.");
 }
