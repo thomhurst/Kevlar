@@ -69,11 +69,13 @@ public static class ShieldDescriptorExtensions
                 rateLimit.Permits,
                 rateLimit.Window,
                 rateLimit.Burst,
-                rateLimit.QueueLimit),
+                rateLimit.QueueLimit,
+                rateLimit.HasNotification),
             ConcurrencyLimitStrategy concurrency => new ConcurrencyLimitStrategyDescriptor(
                 description,
                 concurrency.MaxConcurrency,
-                concurrency.MaxQueue),
+                concurrency.MaxQueue,
+                concurrency.HasNotification),
             HedgingStrategy hedging => new HedgingStrategyDescriptor(
                 description,
                 hedging.MaxAttempts,

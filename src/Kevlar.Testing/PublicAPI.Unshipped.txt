@@ -142,3 +142,5 @@ Kevlar.Testing.TelemetryRecorder.TelemetryRecorder(bool captureMetrics = true) -
 Kevlar.Testing.TelemetryRecorder.WaitForCallbackCountAsync(int count, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Kevlar.Testing.TelemetryRecorder.WaitForMetricCountAsync(int count, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 static Kevlar.Testing.ShieldExecutionExtensions.WaitForPendingAsync(this System.Threading.Tasks.Task! execution, System.Func<bool>! workStarted, string! workDescription, int maxYields = 100, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.HasNotification.get -> bool
+Kevlar.Testing.RateLimitStrategyDescriptor.HasNotification.get -> bool

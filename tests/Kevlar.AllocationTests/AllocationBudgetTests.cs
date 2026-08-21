@@ -50,7 +50,20 @@ public class AllocationBudgetTests
         .When<InvalidOperationException>()
         .Fallback(7);
     private readonly Shield _rateLimit = Shield.RateLimit(1_000_000_000, TimeSpan.FromSeconds(1));
+    private readonly Shield _rateLimitWithRejectionHooks = Shield.RateLimit(options =>
+    {
+        options.Permits = 1_000_000_000;
+        options.Window = TimeSpan.FromSeconds(1);
+        options.OnRejected = static _ => { };
+        options.OnRejectedAsync = static _ => ValueTask.CompletedTask;
+    });
     private readonly Shield _concurrencyLimit = Shield.ConcurrencyLimit(1024);
+    private readonly Shield _concurrencyLimitWithRejectionHooks = Shield.ConcurrencyLimit(options =>
+    {
+        options.MaxConcurrency = 1024;
+        options.OnRejected = static _ => { };
+        options.OnRejectedAsync = static _ => ValueTask.CompletedTask;
+    });
     private readonly Shield<int> _typedJudge = Shield.For<int>()
         .WhenResult(-1)
         .Retry(3, Backoff.None);
@@ -144,8 +157,12 @@ public class AllocationBudgetTests
             test._fallbackWithAsyncNotification.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("rate limit uncontended", this, static test =>
             test._rateLimit.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
+        AssertZero("rate limit with rejection hooks uncontended", this, static test =>
+            test._rateLimitWithRejectionHooks.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("concurrency limit uncontended", this, static test =>
             test._concurrencyLimit.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
+        AssertZero("concurrency limit with rejection hooks uncontended", this, static test =>
+            test._concurrencyLimitWithRejectionHooks.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("typed result judging", this, static test =>
             test._typedJudge.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("composed pipeline", this, static test =>

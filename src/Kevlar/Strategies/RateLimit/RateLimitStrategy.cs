@@ -25,6 +25,8 @@ internal sealed class RateLimitStrategy : Strategy
     private readonly int _queueLimit;
     private readonly double _timestampUnitsPerPermit;
     private readonly double _burstTolerance;
+    private readonly Action<RateLimitRejectedEvent>? _onRejected;
+    private readonly Func<RateLimitRejectedEvent, ValueTask>? _onRejectedAsync;
     private readonly Lock _metricsPublicationGate = new();
     private readonly HashSet<StrategyMetricAlias> _metricsAliases = [];
     private readonly object _queueGate = new();
@@ -48,6 +50,8 @@ internal sealed class RateLimitStrategy : Strategy
 
     internal int QueueLimit => _queueLimit;
 
+    internal bool HasNotification => _onRejected is not null || _onRejectedAsync is not null;
+
     public RateLimitStrategy(RateLimitOptions options)
     {
         Throw.IfOutOfRange(options.Permits <= 0, nameof(options), "Permits must be positive.");
@@ -61,6 +65,8 @@ internal sealed class RateLimitStrategy : Strategy
         _queueLimit = options.QueueLimit;
         _timestampUnitsPerPermit = options.Window.TotalSeconds * Stopwatch.Frequency / options.Permits;
         _burstTolerance = (_burst - 1) * _timestampUnitsPerPermit;
+        _onRejected = options.OnRejected;
+        _onRejectedAsync = options.OnRejectedAsync;
     }
 
     public override string Describe()
@@ -75,12 +81,67 @@ internal sealed class RateLimitStrategy : Strategy
         if (!TryAcquireAndRecord(context, out var reservation, out var retryAfter))
         {
             KevlarMetrics.Rejection(context.ShieldName, "rate_limit");
-            return new ValueTask<Outcome<T>>(Outcome<T>.FromException(new RateLimitExceededException(retryAfter)));
+            return RejectAsync<T>(context, retryAfter);
         }
 
         return reservation is null
             ? next.InvokeAsync(context)
             : ExecuteReservedAsync(next, context, reservation);
+    }
+
+    private ValueTask<Outcome<T>> RejectAsync<T>(KevlarContext context, TimeSpan? retryAfter)
+    {
+        var rejection = new RateLimitExceededException(retryAfter);
+        if (_onRejected is null && _onRejectedAsync is null)
+        {
+            return new ValueTask<Outcome<T>>(Outcome<T>.FromException(rejection));
+        }
+
+        var rejectedEvent = new RateLimitRejectedEvent(
+            retryAfter,
+            _permits,
+            _window,
+            _burst,
+            _queueLimit,
+            context.StrategyIndex,
+            context);
+
+        try
+        {
+            _onRejected?.Invoke(rejectedEvent);
+            if (_onRejectedAsync is null)
+            {
+                return new ValueTask<Outcome<T>>(Outcome<T>.FromException(rejection));
+            }
+
+            var notification = _onRejectedAsync(rejectedEvent);
+            if (notification.IsCompletedSuccessfully)
+            {
+                notification.GetAwaiter().GetResult();
+                return new ValueTask<Outcome<T>>(Outcome<T>.FromException(rejection));
+            }
+
+            return AwaitRejectionAsync<T>(notification, rejection);
+        }
+        catch (Exception callbackFailure)
+        {
+            return new ValueTask<Outcome<T>>(Outcome<T>.FromException(callbackFailure));
+        }
+    }
+
+    private static async ValueTask<Outcome<T>> AwaitRejectionAsync<T>(
+        ValueTask notification,
+        RateLimitExceededException rejection)
+    {
+        try
+        {
+            await notification.ConfigureAwait(false);
+            return Outcome<T>.FromException(rejection);
+        }
+        catch (Exception callbackFailure)
+        {
+            return Outcome<T>.FromException(callbackFailure);
+        }
     }
 
     private bool TryAcquireAndRecord(

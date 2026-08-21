@@ -37,8 +37,14 @@ public class PipelineDescriptorTests
                 options.Window = TimeSpan.FromSeconds(5);
                 options.Burst = 12;
                 options.QueueLimit = 3;
+                options.OnRejectedAsync = _ => default;
             })
-            .ConcurrencyLimit(6, maxQueue: 2)
+            .ConcurrencyLimit(options =>
+            {
+                options.MaxConcurrency = 6;
+                options.MaxQueue = 2;
+                options.OnRejected = _ => { };
+            })
             .Hedge(options =>
             {
                 options.MaxAttempts = 3;
@@ -87,10 +93,12 @@ public class PipelineDescriptorTests
         await Assert.That(rateLimit.Window).IsEqualTo(TimeSpan.FromSeconds(5));
         await Assert.That(rateLimit.Burst).IsEqualTo(12);
         await Assert.That(rateLimit.QueueLimit).IsEqualTo(3);
+        await Assert.That(rateLimit.HasNotification).IsTrue();
 
         var concurrency = descriptor.AssertContainsSingle<ConcurrencyLimitStrategyDescriptor>();
         await Assert.That(concurrency.MaxConcurrency).IsEqualTo(6);
         await Assert.That(concurrency.MaxQueue).IsEqualTo(2);
+        await Assert.That(concurrency.HasNotification).IsTrue();
 
         var hedge = descriptor.AssertContainsSingle<HedgingStrategyDescriptor>();
         await Assert.That(hedge.MaxAttempts).IsEqualTo(3);

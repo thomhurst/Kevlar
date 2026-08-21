@@ -106,8 +106,14 @@ public sealed class ShieldBuilder
     /// <summary>Limits throughput. The handling clauses remain ambient for later strategies.</summary>
     public Shield RateLimit(int permits, TimeSpan perWindow) => Seal().RateLimit(permits, perWindow);
 
+    /// <summary>Adds a configured rate limit. The handling clauses remain ambient for later strategies.</summary>
+    public Shield RateLimit(Action<RateLimitOptions> configure) => Seal().RateLimit(configure);
+
     /// <summary>Caps concurrency. The handling clauses remain ambient for later strategies.</summary>
     public Shield ConcurrencyLimit(int maxConcurrency, int maxQueue = 0) => Seal().ConcurrencyLimit(maxConcurrency, maxQueue);
+
+    /// <summary>Adds a configured concurrency limit. The handling clauses remain ambient for later strategies.</summary>
+    public Shield ConcurrencyLimit(Action<ConcurrencyLimitOptions> configure) => Seal().ConcurrencyLimit(configure);
 
     private Shield Seal() =>
         new(_parent.Strategies, new ExceptionJudge(Combine(_predicates)), _parent.Name, _parent.Time);
