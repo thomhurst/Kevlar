@@ -1,5 +1,6 @@
 using Grpc.Core;
 using Grpc.Core.Interceptors;
+using System.Runtime.CompilerServices;
 
 namespace Kevlar.Extensions.Grpc;
 
@@ -41,13 +42,14 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
         where TRequest : class
         where TResponse : class
     {
-        private readonly Lock _gate = new();
+        private readonly object _gate = new();
         private readonly Shield _shield;
         private readonly TRequest _request;
         private readonly ClientInterceptorContext<TRequest, TResponse> _context;
         private readonly AsyncUnaryCallContinuation<TRequest, TResponse> _continuation;
         private readonly CancellationTokenSource _lifetime;
         private readonly List<AttemptRecord> _attempts = [];
+        private readonly ConditionalWeakTable<Exception, FailureSelection> _failedCalls = new();
         private readonly TaskCompletionSource<AsyncUnaryCall<TResponse>?> _selectedCall =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -124,11 +126,12 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
                 _context.Host,
                 options);
             var call = _continuation(_request, context);
+            Track(call);
 
             try
             {
                 var response = await call.ResponseAsync.ConfigureAwait(false);
-                Record(call, exception: null);
+                CompleteAttempt(call, exception: null);
                 return new AttemptResult(call, response);
             }
             catch (RpcException exception) when (
@@ -139,12 +142,12 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
                     exception.Message,
                     exception,
                     cancellationToken);
-                Record(call, cancellation);
+                CompleteAttempt(call, cancellation);
                 throw cancellation;
             }
             catch (Exception exception)
             {
-                Record(call, exception);
+                CompleteAttempt(call, exception);
                 throw;
             }
         }
@@ -169,7 +172,7 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
             DisposeCalls(superseded);
         }
 
-        private void Record(AsyncUnaryCall<TResponse> call, Exception? exception)
+        private void Track(AsyncUnaryCall<TResponse> call)
         {
             var dispose = false;
             lock (_gate)
@@ -180,13 +183,78 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
                 }
                 else
                 {
-                    _attempts.Add(new AttemptRecord(call, exception));
+                    _attempts.Add(new AttemptRecord(call, exception: null));
                 }
             }
 
             if (dispose)
             {
                 call.Dispose();
+            }
+        }
+
+        private void CompleteAttempt(AsyncUnaryCall<TResponse> call, Exception? exception)
+        {
+            var failureCall = exception is null ? null : SnapshotFailure(call, exception);
+            lock (_gate)
+            {
+                for (var index = _attempts.Count - 1; index >= 0; index--)
+                {
+                    if (!ReferenceEquals(_attempts[index].Call, call))
+                    {
+                        continue;
+                    }
+
+                    _attempts[index] = new AttemptRecord(call, exception);
+                    if (exception is not null)
+                    {
+                        _failedCalls.GetValue(exception, static _ => new FailureSelection()).Call = failureCall;
+                    }
+
+                    return;
+                }
+            }
+        }
+
+        private static AsyncUnaryCall<TResponse> SnapshotFailure(
+            AsyncUnaryCall<TResponse> call,
+            Exception exception)
+        {
+            var responseHeaders = call.ResponseHeadersAsync;
+            var rpcException = exception as RpcException ?? exception.InnerException as RpcException;
+            var status = rpcException?.Status ?? GetStatusOrUnknown(call, exception);
+            var trailers = rpcException?.Trailers ?? GetTrailersOrEmpty(call);
+            return new AsyncUnaryCall<TResponse>(
+                Task.FromResult(default(TResponse)!),
+                responseHeaders,
+                () => status,
+                () => trailers,
+                static () => { });
+        }
+
+        private static Status GetStatusOrUnknown(
+            AsyncUnaryCall<TResponse> call,
+            Exception exception)
+        {
+            try
+            {
+                return call.GetStatus();
+            }
+            catch (InvalidOperationException)
+            {
+                return new Status(StatusCode.Unknown, exception.Message);
+            }
+        }
+
+        private static Metadata GetTrailersOrEmpty(AsyncUnaryCall<TResponse> call)
+        {
+            try
+            {
+                return call.GetTrailers();
+            }
+            catch (InvalidOperationException)
+            {
+                return new Metadata();
             }
         }
 
@@ -202,6 +270,11 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
                         call = _attempts[index].Call;
                         break;
                     }
+                }
+
+                if (call is null && _failedCalls.TryGetValue(exception, out var failure))
+                {
+                    call = failure.Call;
                 }
             }
 
@@ -311,19 +384,19 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
 
         private void CancelLifetime()
         {
-            if (Interlocked.Exchange(ref _lifetimeCompleted, 1) != 0)
-            {
-                return;
-            }
-
             try
             {
                 _lifetime.Cancel();
             }
-            finally
+            catch (ObjectDisposedException)
             {
-                _lifetime.Dispose();
+                // The execution completed and released the source concurrently.
             }
+        }
+
+        private sealed class FailureSelection
+        {
+            public AsyncUnaryCall<TResponse>? Call { get; set; }
         }
 
         private readonly struct AttemptRecord(
