@@ -45,7 +45,7 @@ Starts a typed `Shield<HttpResponseMessage>` builder with the standard transient
 
 - `HttpRequestException`
 - attempt timeouts (`TimeoutExceededException`)
-- HTTP 5xx responses
+- HTTP 500–599 responses (numeric status codes outside that range are not treated as 5xx)
 - HTTP 408 (Request Timeout)
 - HTTP 429 (Too Many Requests)
 
@@ -67,9 +67,9 @@ services.AddHttpClient("api")
 
 ## Behaviour notes
 
-- **Superseded responses are disposed by the retry hook.** `Standard` disposes each replaced `HttpResponseMessage` in `OnRetry` so connections/buffers aren't leaked — only the final response reaches your code. If you build your own retry over responses, copy that trick: `o.OnRetry = static e => e.Outcome.Result?.Dispose();` (typed retry events carry the response as `Outcome.Result`)
-- **Requests are resent, not cloned.** Retried and hedged attempts resend the same `HttpRequestMessage`. Safe for requests without content and for rewindable content (`StringContent`, `ByteArrayContent`); streamed one-shot content can't be resent.
-- **State sharing applies per registration.** `AddStandardShield` and `AddShield(shield)` build/capture one shield for that named client — every request through `"api"` shares the same circuit breaker, which is what makes the breaker meaningful. (The factory overload runs per handler creation; return a shared instance, e.g. from the registry, to keep one circuit.)
+- **Superseded responses are disposed by the retry hook.** `Standard` disposes each replaced `HttpResponseMessage` in `OnRetry` so connections/buffers aren't leaked. The successful response, or final transient response after retries are exhausted, remains undisposed and belongs to the caller. If you build your own retry over responses, copy that trick: `o.OnRetry = static e => e.Outcome.Result?.Dispose();` (typed retry events carry the response as `Outcome.Result`)
+- **Requests are resent, not cloned.** Retried and hedged attempts reuse the same `HttpRequestMessage`, preserving its method, URI, headers, options, and buffered content. Requests without content and rewindable content (`StringContent`, `ByteArrayContent`) are supported. A one-shot `StreamContent` is not rewound; a retry can fail while serializing it again, so buffer content yourself when retries are possible.
+- **State sharing applies per registration.** `AddStandardShield` and `AddShield(shield)` build/capture one shield for that named client — every request through `"api"` shares the same circuit breaker, which is what makes the breaker meaningful. The factory overload runs once when `HttpClientFactory` creates a handler pipeline, receives that pipeline's service provider, and runs again only when the handler lifetime expires; return a shared instance, e.g. from the registry, to keep one circuit across lifetimes.
 - **Compose with other handlers normally.** The Kevlar handler is a regular `DelegatingHandler`; ordering relative to your own handlers follows the usual `AddHttpMessageHandler` rules.
 
 :::tip Handling clause already done
