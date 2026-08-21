@@ -6,7 +6,9 @@ on:
     paths:
       - '.config/dotnet-tools.json'
       - '.github/workflows/mutation.yml'
+      - 'Directory.Build.props'
       - 'Directory.Packages.props'
+      - 'src/Directory.Build.props'
       - 'src/Kevlar/**'
       - 'tests/Kevlar.Tests/**'
   schedule:
