@@ -25,7 +25,6 @@ internal sealed class RateLimitStrategy : Strategy
     private readonly double _burstTolerance;
     private readonly Lock _metricsPublicationGate = new();
     private readonly HashSet<string?> _metricsShieldNames = [];
-    private readonly string _metricsInstanceId = KevlarMetrics.CreateStrategyInstanceId();
     private readonly object _queueGate = new();
     private string?[] _metricsShieldNameSnapshot = [];
 
@@ -321,7 +320,8 @@ internal sealed class RateLimitStrategy : Strategy
 
         lock (_metricsPublicationGate)
         {
-            if (_metricsShieldNames.Add(shieldName))
+            if (_metricsShieldNames.Count < KevlarMetrics.MaxTrackedStrategyAliases
+                && _metricsShieldNames.Add(shieldName))
             {
                 _metricsShieldNameSnapshot = [.. _metricsShieldNames];
             }
@@ -350,7 +350,6 @@ internal sealed class RateLimitStrategy : Strategy
             {
                 KevlarMetrics.RecordRateState(
                     shieldName,
-                    _metricsInstanceId,
                     available,
                     queued);
             }

@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.Metrics;
+using Kevlar.Internal;
 using Microsoft.Extensions.Time.Testing;
 
 namespace Kevlar.Tests;
@@ -66,6 +67,13 @@ public class MetricsTests
             _measurements
                 .Where(measurement => measurement.Instrument == instrument)
                 .Where(measurement => HasName(measurement.Tags, shieldName, requireName))
+                .Select(measurement => (measurement.Value, measurement.Tags))
+                .ToArray();
+
+        public IReadOnlyCollection<(long Value, Dictionary<string, object?> Tags)> AllLongMeasurements(
+            string instrument) =>
+            _measurements
+                .Where(measurement => measurement.Instrument == instrument)
                 .Select(measurement => (measurement.Value, measurement.Tags))
                 .ToArray();
 
@@ -657,7 +665,7 @@ public class MetricsTests
     }
 
     [Test]
-    public async Task Independent_Stateful_Strategies_Have_Distinct_Series()
+    public async Task State_Gauges_Use_Only_Low_Cardinality_Name_Tags()
     {
         using var listener = new KevlarMeterListener();
         const string name = "metrics-independent-strategies";
@@ -670,11 +678,38 @@ public class MetricsTests
         var measurements = listener.LongMeasurements(
             "kevlar.concurrency_limit.capacity",
             name);
-        var series = measurements.GroupBy(measurement =>
-            measurement.Tags["kevlar.strategy.instance"]);
-        await Assert.That(series.Count()).IsEqualTo(2);
-        await Assert.That(series.SelectMany(group => group.Select(measurement => measurement.Value)).Distinct())
+        await Assert.That(measurements.All(measurement =>
+                !measurement.Tags.ContainsKey("kevlar.strategy.instance")))
+            .IsTrue();
+        await Assert.That(measurements.Select(measurement => measurement.Value).Distinct())
             .IsEquivalentTo([1L, 10L]);
+    }
+
+    [Test]
+    public async Task Circuit_Alias_Tracking_Is_Bounded()
+    {
+        using var listener = new KevlarMeterListener();
+        var monitor = new CircuitBreakerMonitor();
+        var shared = Shield.CircuitBreaker(options => options.Monitor = monitor);
+
+        for (var index = 0; index <= KevlarMetrics.MaxTrackedStrategyAliases; index++)
+        {
+            await shared.WithName($"metrics-bounded-alias-{index}")
+                .ExecuteAsync(_ => ValueTask.CompletedTask);
+        }
+
+        monitor.Isolate();
+
+        var isolatedAliases = listener.AllLongMeasurements("kevlar.circuit_breaker.state")
+            .Where(measurement => measurement.Value == 3)
+            .Select(measurement => measurement.Tags["kevlar.shield.name"])
+            .Distinct()
+            .Count();
+        await Assert.That(isolatedAliases).IsEqualTo(KevlarMetrics.MaxTrackedStrategyAliases);
+        await Assert.That(listener.Values(
+                "kevlar.circuit_breaker.state",
+                $"metrics-bounded-alias-{KevlarMetrics.MaxTrackedStrategyAliases}").Count)
+            .IsEqualTo(0);
     }
 
     [Test]

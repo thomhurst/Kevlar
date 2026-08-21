@@ -9,7 +9,6 @@ internal sealed class CircuitBreakerStrategy : Strategy
     private readonly HashSet<string?> _metricsShieldNames = [];
     private readonly CircuitBreakerCore _core;
     private readonly OutcomeJudge _judge;
-    private readonly string _metricsInstanceId = KevlarMetrics.CreateStrategyInstanceId();
 
     public CircuitBreakerStrategy(CircuitBreakerOptions options, OutcomeJudge judge)
     {
@@ -25,15 +24,22 @@ internal sealed class CircuitBreakerStrategy : Strategy
 
     public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
-        RegisterMetricsShieldName(context.ShieldName);
+        var recordState = RegisterMetricsShieldName(context.ShieldName);
         if (!_core.TryEnter(context.TimeProvider, out var rejection))
         {
-            RecordState(context.ShieldName);
+            if (recordState)
+            {
+                RecordState(context.ShieldName);
+            }
+
             KevlarMetrics.Rejection(context.ShieldName, "circuit_open");
             return Outcome<T>.FromException(rejection!);
         }
 
-        RecordState(context.ShieldName);
+        if (recordState)
+        {
+            RecordState(context.ShieldName);
+        }
 
         var outcome = await next.InvokeAsync(context).ConfigureAwait(false);
 
@@ -51,7 +57,10 @@ internal sealed class CircuitBreakerStrategy : Strategy
             _core.RecordSuccess(context.TimeProvider);
         }
 
-        RecordState(context.ShieldName);
+        if (recordState)
+        {
+            RecordState(context.ShieldName);
+        }
 
         return outcome;
     }
@@ -63,7 +72,7 @@ internal sealed class CircuitBreakerStrategy : Strategy
             while (true)
             {
                 var state = _core.State;
-                KevlarMetrics.RecordCircuitState(shieldName, _metricsInstanceId, state);
+                KevlarMetrics.RecordCircuitState(shieldName, state);
                 if (state == _core.State)
                 {
                     return;
@@ -72,16 +81,27 @@ internal sealed class CircuitBreakerStrategy : Strategy
         }
     }
 
-    private void RegisterMetricsShieldName(string? shieldName)
+    private bool RegisterMetricsShieldName(string? shieldName)
     {
         if (!KevlarMetrics.CircuitStateEnabled)
         {
-            return;
+            return false;
         }
 
         lock (_metricsNamesGate)
         {
+            if (_metricsShieldNames.Contains(shieldName))
+            {
+                return true;
+            }
+
+            if (_metricsShieldNames.Count >= KevlarMetrics.MaxTrackedStrategyAliases)
+            {
+                return false;
+            }
+
             _metricsShieldNames.Add(shieldName);
+            return true;
         }
     }
 
@@ -95,7 +115,7 @@ internal sealed class CircuitBreakerStrategy : Strategy
 
         if (shieldNames.Length == 0)
         {
-            KevlarMetrics.RecordCircuitState(null, _metricsInstanceId, state);
+            KevlarMetrics.RecordCircuitState(null, state);
             return;
         }
 
@@ -104,7 +124,7 @@ internal sealed class CircuitBreakerStrategy : Strategy
         {
             try
             {
-                KevlarMetrics.RecordCircuitState(shieldName, _metricsInstanceId, state);
+                KevlarMetrics.RecordCircuitState(shieldName, state);
             }
             catch (Exception exception)
             {

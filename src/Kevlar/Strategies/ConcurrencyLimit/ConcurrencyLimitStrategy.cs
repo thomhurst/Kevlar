@@ -11,7 +11,6 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
     private readonly int _maxConcurrency;
     private readonly int _maxQueue;
     private readonly long _capacity;
-    private readonly string _metricsInstanceId = KevlarMetrics.CreateStrategyInstanceId();
     private string?[] _metricsShieldNameSnapshot = [];
     private long _pending;
     private long _metricsState;
@@ -140,7 +139,8 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
 
         lock (_metricsPublicationGate)
         {
-            if (_metricsShieldNames.Add(shieldName))
+            if (_metricsShieldNames.Count < KevlarMetrics.MaxTrackedStrategyAliases
+                && _metricsShieldNames.Add(shieldName))
             {
                 _metricsShieldNameSnapshot = [.. _metricsShieldNames];
             }
@@ -171,7 +171,6 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
             {
                 KevlarMetrics.RecordConcurrencyState(
                     shieldName,
-                    _metricsInstanceId,
                     inflight,
                     queued,
                     _maxConcurrency);

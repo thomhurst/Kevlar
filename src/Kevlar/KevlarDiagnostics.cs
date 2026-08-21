@@ -1,7 +1,8 @@
 namespace Kevlar;
 
 /// <summary>
-/// Names for Kevlar's built-in telemetry. On .NET 8+ targets every shield publishes metrics
+/// Names for Kevlar's built-in telemetry. On .NET 8+ targets every shield publishes counters and
+/// duration metrics; state gauges require .NET 9 or later. Metrics are published
 /// through a <c>System.Diagnostics.Metrics.Meter</c> named <see cref="MeterName"/> with zero
 /// configuration — subscribe with <c>AddMeter("Kevlar")</c> (OpenTelemetry) or a
 /// <c>MeterListener</c>. On <c>netstandard2.0</c> the instruments are inert.
@@ -23,8 +24,7 @@ namespace Kevlar;
 /// <item><c>kevlar.rate_limit.available</c> and <c>kevlar.rate_limit.queued</c> — rate-limit state gauges</item>
 /// </list>
 /// The <c>kevlar.shield.name</c> attribute is present only for shields named via <c>WithName</c>; an explicitly
-/// empty name is emitted as an empty tag value. State gauges also carry a process-local
-/// <c>kevlar.strategy.instance</c> attribute that distinguishes independently created strategy instances.
+/// empty name is emitted as an empty tag value. State gauges aggregate by shield name.
 /// </remarks>
 public static class KevlarDiagnostics
 {
