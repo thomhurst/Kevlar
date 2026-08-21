@@ -201,7 +201,7 @@ For assertion-friendly, no-throw checks, use [`ExecuteOutcomeAsync`](executing.m
 Package verification publishes and runs clean package-consuming applications through
 trimmed, single-file, and NativeAOT configurations. The matrix covers all Kevlar
 strategies, typed and untyped execution, configuration-bound dependency injection,
-and HTTP integration on .NET 10. A trimmed .NET 8 application provides the
+and HTTP and gRPC extension integration on .NET 10. A trimmed .NET 8 application provides the
 compatibility baseline. NativeAOT runs on Linux CI; the script reports unsupported
 local platforms explicitly.
 
