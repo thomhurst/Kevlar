@@ -20,7 +20,9 @@ gRPC status handling is opt-in. `GrpcShield.WhenTransient()` handles `RpcExcepti
 
 It does not retry `Cancelled`, validation failures, authentication failures, or other statuses.
 
+<!-- doc-test-ignore: requires an application-generated gRPC client and channel -->
 ```csharp
+using Grpc.Core.Interceptors;
 using Kevlar;
 using Kevlar.Extensions.Grpc;
 
@@ -38,7 +40,12 @@ The final response or `RpcException` remains the caller's result. Superseded ret
 
 The package integrates with `Grpc.Net.ClientFactory` and the existing Kevlar registry:
 
+<!-- doc-test-ignore: requires an application-generated gRPC client -->
 ```csharp
+using Kevlar.Extensions.DependencyInjection;
+using Kevlar.Extensions.Grpc;
+using Microsoft.Extensions.DependencyInjection;
+
 services.AddShield(
     "orders-grpc",
     GrpcShield.WhenTransient()
@@ -60,7 +67,7 @@ A gRPC deadline is an absolute timestamp and is preserved unchanged across retri
 
 ```csharp
 var shield = Shield.Timeout(TimeSpan.FromSeconds(10)) // total Kevlar budget
-    .When<RpcException>(GrpcShield.IsTransient)
+    .When<Grpc.Core.RpcException>(GrpcShield.IsTransient)
     .Retry(2)
     .Timeout(TimeSpan.FromSeconds(3));                // per-attempt budget
 ```
