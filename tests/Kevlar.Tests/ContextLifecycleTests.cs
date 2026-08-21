@@ -22,7 +22,6 @@ public class ContextLifecycleTests
     public async Task Pool_Pressure_Beyond_Capacity_Returns_Only_Clean_Contexts()
     {
         const int pressureCount = 160;
-        const int poolCapacity = 128;
         using var dirtyCancellation = new CancellationTokenSource();
         var dirtyTimeProvider = new FakeTimeProvider();
         var dirty = new PressureStrategy(
@@ -40,27 +39,41 @@ public class ContextLifecycleTests
                 dirtyCancellation.Token).AsTask())
             .ToArray();
 
-        await dirty.AllEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
-        await Assert.That(dirty.DirtyContexts).IsEqualTo(0);
-        await Assert.That(dirty.Contexts.Distinct().Count()).IsEqualTo(pressureCount);
-        dirty.Release.TrySetResult();
+        try
+        {
+            await dirty.AllEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await Assert.That(dirty.DirtyContexts).IsEqualTo(0);
+            await Assert.That(dirty.Contexts.Distinct().Count()).IsEqualTo(pressureCount);
+        }
+        finally
+        {
+            dirty.Release.TrySetResult();
+        }
+
         await Task.WhenAll(dirtyExecutions).WaitAsync(TimeSpan.FromSeconds(5));
 
         var clean = new PressureStrategy(
-            poolCapacity,
+            KevlarContext.PoolCapacity,
             DirtyProperty,
             setDirty: false,
             default,
             TimeProvider.System);
         var cleanShield = Shield.Use(clean).WithName("clean-pressure");
-        var cleanExecutions = Enumerable.Range(0, poolCapacity)
+        var cleanExecutions = Enumerable.Range(0, KevlarContext.PoolCapacity)
             .Select(index => cleanShield.ExecuteAsync(_ => new ValueTask<int>(index)).AsTask())
             .ToArray();
 
-        await clean.AllEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
-        await Assert.That(clean.DirtyContexts).IsEqualTo(0);
-        await Assert.That(clean.Contexts.Distinct().Count()).IsEqualTo(poolCapacity);
-        clean.Release.TrySetResult();
+        try
+        {
+            await clean.AllEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await Assert.That(clean.DirtyContexts).IsEqualTo(0);
+            await Assert.That(clean.Contexts.Distinct().Count()).IsEqualTo(KevlarContext.PoolCapacity);
+        }
+        finally
+        {
+            clean.Release.TrySetResult();
+        }
+
         await Task.WhenAll(cleanExecutions).WaitAsync(TimeSpan.FromSeconds(5));
     }
 
