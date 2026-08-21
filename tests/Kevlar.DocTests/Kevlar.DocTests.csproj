@@ -10,6 +10,7 @@
     <PackageReference Include="Kevlar" VersionOverride="$(KevlarPackageVersion)" />
     <PackageReference Include="Kevlar.Analyzers" VersionOverride="$(KevlarPackageVersion)" PrivateAssets="all" />
     <PackageReference Include="Kevlar.Extensions.DependencyInjection" VersionOverride="$(KevlarPackageVersion)" />
+    <PackageReference Include="Kevlar.Extensions.Grpc" VersionOverride="$(KevlarPackageVersion)" />
     <PackageReference Include="Kevlar.Extensions.Http" VersionOverride="$(KevlarPackageVersion)" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
