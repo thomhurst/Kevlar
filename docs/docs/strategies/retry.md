@@ -49,6 +49,7 @@ Shield.Retry(o =>
     o.OnRetry = e => logger.LogWarning(e.Exception,
         "Retry {Attempt} after {Delay}", e.Attempt, e.Delay);
     o.DelayGenerator = e => /* return a TimeSpan to override the computed delay, or null */ null;
+    o.DelayGeneratorAsync = e => new ValueTask<TimeSpan?>(TimeSpan.Zero);
 });
 ```
 
@@ -60,8 +61,15 @@ Shield.Retry(o =>
 | `OnRetry` | — | Called synchronously before each retry sleeps — attempt number, final delay, failure |
 | `OnRetryAsync` | — | Awaited before each retry sleeps |
 | `DelayGenerator` | — | Per-retry override: return a `TimeSpan` to replace the computed delay, or `null` to keep it. This is how [`Retry-After` support](../http.md) works |
+| `DelayGeneratorAsync` | — | Awaited per-retry override for asynchronous delay sources; return a `TimeSpan` to replace the current delay, or `null` to keep it |
 
-Order per retry: backoff computes the delay → `MaxDelay` clamps it → `DelayGenerator` may override it (non-null, non-negative returns only) → `MaxDelay` clamps the override too → `OnRetry`/`OnRetryAsync` see the final delay → sleep.
+Order per retry: retry metrics are recorded → backoff computes the delay → `MaxDelay` clamps it → `DelayGenerator` may override it → the awaited `DelayGeneratorAsync` may override that result → `OnRetry`/`OnRetryAsync` see the final delay → sleep. Both generators ignore `null` and negative results, and `MaxDelay` clamps each override.
+
+Async generators receive the caller token through `e.Context.CancellationToken`. If cancellation
+arrives while a generator is awaiting, notification hooks still run after it completes, then the
+next attempt is suppressed and caller cancellation surfaces. A generator exception surfaces with
+its original identity and skips later hooks. `RetryEvent.Context` is pooled execution state: use it
+only before the returned `ValueTask` completes; never retain it or its property bag.
 
 On an untyped `Shield`, the `RetryEvent` callbacks receive: `Attempt` (1-based retry number), `Delay`, `Exception` (null when a handled *result* triggered the retry), `Result` (the handled result, boxed as `object?`) and `Context`. On a typed `Shield<T>`, the events are `RetryEvent<T>` instead: same `Attempt`/`Delay`/`Context`, plus the handled failure as a typed `Outcome<T>` — `e.Outcome.Result` is your `T`, no casting.
 

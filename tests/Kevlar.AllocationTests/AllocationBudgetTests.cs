@@ -12,6 +12,12 @@ public class AllocationBudgetTests
 
     private readonly Shield _empty = Shield.Empty;
     private readonly Shield _retry = Shield.Retry(3, Backoff.None);
+    private readonly Shield _asyncDelayRetry = Shield.Retry(options =>
+    {
+        options.MaxRetries = 3;
+        options.Backoff = Backoff.None;
+        options.DelayGeneratorAsync = static _ => new ValueTask<TimeSpan?>(TimeSpan.Zero);
+    });
     private readonly Shield _breaker = Shield.CircuitBreaker(5, TimeSpan.FromMinutes(1));
     private readonly Shield _timeout = Shield.Timeout(TimeSpan.FromMinutes(1));
     private readonly Shield<int> _fallback = Shield.For<int>()
@@ -32,12 +38,19 @@ public class AllocationBudgetTests
         .Hedge(2, TimeSpan.FromMinutes(1));
 
     private readonly Shield _recoveryRetry = Shield.Retry(3, Backoff.None);
+    private readonly Shield _recoveryAsyncDelayRetry = Shield.Retry(options =>
+    {
+        options.MaxRetries = 3;
+        options.Backoff = Backoff.None;
+        options.DelayGeneratorAsync = static _ => new ValueTask<TimeSpan?>(TimeSpan.Zero);
+    });
     private readonly Shield _openBreaker = Shield.CircuitBreaker(1, TimeSpan.FromDays(1));
     private readonly Shield<int> _triggeredFallback = Shield.For<int>()
         .When<InvalidOperationException>()
         .Fallback(7);
     private readonly Shield _parallelHedge = Shield.Hedge(2, TimeSpan.Zero);
     private readonly Counter _retryCounter = new();
+    private readonly Counter _asyncDelayRetryCounter = new();
     private readonly ParallelHedgeState _parallelHedgeState = new();
 
     /// <summary>Verifies that documented synchronous-completion hot paths allocate no managed memory.</summary>
@@ -53,6 +66,8 @@ public class AllocationBudgetTests
             test._retry.Execute(static _ => 42));
         AssertZero("retry async happy path", this, static test =>
             test._retry.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
+        AssertZero("retry async delay generator happy path", this, static test =>
+            test._asyncDelayRetry.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("circuit closed", this, static test =>
             test._breaker.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("timeout happy path", this, static test =>
@@ -79,6 +94,16 @@ public class AllocationBudgetTests
 
         AssertBudget("retry recovers after two failures", 512, this, static test =>
             test._recoveryRetry.ExecuteAsync(test._retryCounter, static (counter, _) =>
+            {
+                if (++counter.Value % 3 != 0)
+                {
+                    throw RecoverableFailure;
+                }
+
+                return new ValueTask<int>(42);
+            }).GetAwaiter().GetResult());
+        AssertBudget("retry async delay generator recovers", 512, this, static test =>
+            test._recoveryAsyncDelayRetry.ExecuteAsync(test._asyncDelayRetryCounter, static (counter, _) =>
             {
                 if (++counter.Value % 3 != 0)
                 {

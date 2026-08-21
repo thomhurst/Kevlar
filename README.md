@@ -107,6 +107,7 @@ Shield.Retry(o =>
     o.MaxDelay = TimeSpan.FromSeconds(10);   // absolute cap — even over DelayGenerator output
     o.OnRetry = e => logger.LogWarning(e.Exception, "Retry {Attempt} after {Delay}", e.Attempt, e.Delay);
     o.DelayGenerator = e => /* return a TimeSpan to override the computed delay, or null */ null;
+    o.DelayGeneratorAsync = e => new ValueTask<TimeSpan?>(TimeSpan.Zero); // awaited override
 });
 ```
 
