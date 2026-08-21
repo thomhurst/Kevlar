@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="Code Coverage">
+        <Configuration>
+          <ModulePaths>
+            <Include>
+              <ModulePath>.*[\\/]Kevlar(?:\.[^\\/]+)?\.dll$</ModulePath>
+            </Include>
+            <Exclude>
+              <ModulePath>.*Tests\.dll$</ModulePath>
+              <ModulePath>.*Benchmarks\.dll$</ModulePath>
+            </Exclude>
+          </ModulePaths>
+          <Sources>
+            <Exclude>
+              <Source>.*[\\/]benchmarks[\\/].*</Source>
+              <Source>.*[\\/]obj[\\/].*</Source>
+            </Exclude>
+          </Sources>
+          <Attributes>
+            <Exclude>
+              <Attribute>^System\.CodeDom\.Compiler\.GeneratedCodeAttribute$</Attribute>
+              <Attribute>^System\.Diagnostics\.CodeAnalysis\.ExcludeFromCodeCoverageAttribute$</Attribute>
+            </Exclude>
+          </Attributes>
+          <IncludeTestAssembly>False</IncludeTestAssembly>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

@@ -1,0 +1,27 @@
+{
+  "stryker-config": {
+    "project": "Kevlar.csproj",
+    "test-projects": [
+      "../../tests/Kevlar.Tests/Kevlar.Tests.csproj"
+    ],
+    "test-runner": "mtp",
+    "target-framework": "net10.0",
+    "configuration": "Release",
+    "mutate": [
+      "Strategies/**/*.cs"
+    ],
+    "reporters": [
+      "progress",
+      "html",
+      "json"
+    ],
+    "report-file-name": "mutation-report",
+    "additional-timeout": 5000,
+    "concurrency": 4,
+    "thresholds": {
+      "high": 74,
+      "low": 74,
+      "break": 74
+    }
+  }
+}
