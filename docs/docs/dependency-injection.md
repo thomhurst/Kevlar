@@ -49,7 +49,7 @@ Registry semantics worth knowing:
 
 - Shields are keyed by **name + result type** — an untyped `"api"` shield and a `Shield<HttpResponseMessage>` named `"api"` coexist independently.
 - Last registration for a given name wins, matching standard DI override behaviour.
-- Factory registrations run lazily on first resolve and the result is cached — so every consumer shares one instance (and its strategy state), exactly like instance registrations.
+- Ordinary factory registrations run lazily on first resolve and the result is cached — so every consumer shares one instance (and its strategy state), exactly like instance registrations.
 - `AddShield` registers the `IKevlarRegistry` for you (`AddKevlar()` exists if you ever need just the registry).
 
 ## Binding shields from configuration
@@ -75,6 +75,48 @@ services.AddShield("github", builder.Configuration.GetSection("Resilience:GitHub
 ```
 
 The schema is `ShieldDefinition`: optional `Timeout`, `Retry`, `CircuitBreaker`, `RateLimit`, `ConcurrencyLimit` and `AttemptTimeout` sections, chained in that fixed order (outermost first). Only the sections you declare are added, and the defaults inside each section match the fluent API's.
+
+### Reloading configuration atomically
+
+`AddShield(name, IConfiguration)` intentionally binds once, when first resolved. Use
+`AddReloadingShield` when future configuration reloads must affect new operations:
+
+```csharp
+services.AddReloadingShield(
+    "github",
+    builder.Configuration.GetSection("Resilience:GitHub"),
+    error => logger.LogError(error, "Rejected GitHub shield configuration"));
+```
+
+Consume the keyed provider and read `Current` once per operation:
+
+<!-- doc-test-ignore: Application client type requires the host's FetchUserAsync implementation. -->
+```csharp
+public sealed class GitHubClient(
+    [FromKeyedServices("github")] IShieldProvider provider)
+{
+    public Task<User> GetUserAsync(string id, CancellationToken ct)
+    {
+        Shield snapshot = provider.Current;
+        return snapshot.ExecuteAsync(
+            ct2 => FetchUserAsync(id, ct2),
+            ct).AsTask();
+    }
+}
+```
+
+Registry consumers can call `registry.GetShield("github")` once per operation to obtain the
+current snapshot. A keyed `Shield` resolved from DI is also one immutable snapshot; it does not
+change after a reload. Every ordinary `AddShield` registration exposes an `IShieldProvider` too,
+but its `Current` snapshot remains fixed.
+
+On a valid change, Kevlar builds the entire replacement before one atomic publish. Operations
+already using the prior snapshot finish on it. Invalid configuration keeps the last known-good
+snapshot and invokes the optional failure callback; callback exceptions are contained so later
+reloads remain active. Each successful replacement starts with fresh circuit-breaker,
+rate-limiter, and concurrency-limiter state. The provider performs no binding, locking, or
+allocation while reading `Current`; all rebuild work occurs on configuration change. Disposing
+the service provider removes the change-token subscription.
 
 ## Consuming as a keyed service
 

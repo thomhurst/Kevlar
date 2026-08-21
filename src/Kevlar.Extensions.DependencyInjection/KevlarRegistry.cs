@@ -50,9 +50,16 @@ internal sealed class KevlarRegistry : IKevlarRegistry
 
     public bool TryGetShield(string name, [NotNullWhen(true)] out Shield? shield)
     {
-        if (Resolve(name, null) is Shield resolved)
+        var value = Resolve(name, null);
+        if (value is Shield resolved)
         {
             shield = resolved;
+            return true;
+        }
+
+        if (value is IShieldProvider provider)
+        {
+            shield = provider.Current;
             return true;
         }
 
@@ -94,4 +101,5 @@ internal sealed class KevlarRegistry : IKevlarRegistry
                 () => registration.Factory(_serviceProvider),
                 LazyThreadSafetyMode.ExecutionAndPublication)).Value;
     }
+
 }
