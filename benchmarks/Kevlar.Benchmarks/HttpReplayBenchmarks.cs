@@ -15,6 +15,10 @@ public class HttpReplayBenchmarks
         Shield<HttpResponseMessage>.Empty,
         new ShieldHttpHandlerOptions(),
         retry: false);
+    private readonly HttpMessageInvoker _standard = CreateInvoker(
+        HttpShield.Standard(),
+        new ShieldHttpHandlerOptions(),
+        retry: false);
     private readonly HttpMessageInvoker _buffered = CreateInvoker(
         HttpShield.WhenTransient().Retry(1, Backoff.None),
         new ShieldHttpHandlerOptions
@@ -40,6 +44,13 @@ public class HttpReplayBenchmarks
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, "https://benchmark.invalid/");
         using var response = await _direct.SendAsync(request, CancellationToken.None);
+    }
+
+    [BenchmarkCategory("HttpNoContent"), Benchmark]
+    public async Task Standard_NoContent()
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, "https://benchmark.invalid/");
+        using var response = await _standard.SendAsync(request, CancellationToken.None);
     }
 
     [BenchmarkCategory("HttpBufferedRetry"), Benchmark]

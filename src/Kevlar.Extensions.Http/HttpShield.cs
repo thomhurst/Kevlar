@@ -30,26 +30,33 @@ public static class HttpShield
     /// disposed) → circuit breaker (50% failure ratio over 30s, minimum 10 calls, 15s break) →
     /// 10s per-attempt timeout.
     /// </summary>
-    public static Shield<HttpResponseMessage> Standard() =>
-        Shield.Timeout(TimeSpan.FromSeconds(30))
+    public static Shield<HttpResponseMessage> Standard() => Standard(new StandardHttpShieldOptions());
+
+    /// <summary>Builds the standard HTTP pipeline from <paramref name="options"/>.</summary>
+    public static Shield<HttpResponseMessage> Standard(StandardHttpShieldOptions options)
+    {
+        if (options is null)
+        {
+            throw new ArgumentNullException(nameof(options));
+        }
+
+        Validate(options);
+
+        var shield = Shield.Timeout(timeout => Copy(options.TotalTimeout, timeout))
             .For<HttpResponseMessage>()
             .When<HttpRequestException>()
             .When<TimeoutExceededException>()
             .WhenResult(IsTransient)
-            .Retry(options =>
-            {
-                options.MaxRetries = 3;
-                options.DelayGenerator = RetryAfter;
-                options.OnRetry = static retry => retry.Outcome.Result?.Dispose();
-            })
-            .CircuitBreaker(options =>
-            {
-                options.FailureRatio = 0.5;
-                options.MinimumThroughput = 10;
-                options.SamplingWindow = TimeSpan.FromSeconds(30);
-                options.BreakDuration = TimeSpan.FromSeconds(15);
-            })
-            .Timeout(TimeSpan.FromSeconds(10));
+            .Retry(retry => Copy(options.Retry, retry))
+            .CircuitBreaker(circuitBreaker => Copy(options.CircuitBreaker, circuitBreaker));
+
+        if (options.ConcurrencyLimit is { } concurrencyLimit)
+        {
+            shield = shield.ConcurrencyLimit(target => Copy(concurrencyLimit, target));
+        }
+
+        return shield.Timeout(timeout => Copy(options.AttemptTimeout, timeout));
+    }
 
     /// <summary>
     /// A <see cref="RetryOptions{TResult}.DelayGenerator"/> honouring the response's
@@ -81,5 +88,86 @@ public static class HttpShield
         }
 
         return suggested is { } value && value > retry.Delay ? value : null;
+    }
+
+    private static void Validate(StandardHttpShieldOptions options)
+    {
+        ValidateTimeout(options.TotalTimeout, nameof(StandardHttpShieldOptions.TotalTimeout));
+        ValidateTimeout(options.AttemptTimeout, nameof(StandardHttpShieldOptions.AttemptTimeout));
+
+        if (options.Retry is null)
+        {
+            throw new ArgumentException("StandardHttpShieldOptions.Retry cannot be null.", nameof(options));
+        }
+
+        if (options.CircuitBreaker is null)
+        {
+            throw new ArgumentException("StandardHttpShieldOptions.CircuitBreaker cannot be null.", nameof(options));
+        }
+
+        if (options.Handler is null)
+        {
+            throw new ArgumentException("StandardHttpShieldOptions.Handler cannot be null.", nameof(options));
+        }
+    }
+
+    private static void ValidateTimeout(TimeoutOptions? timeout, string propertyName)
+    {
+        if (timeout is null)
+        {
+            throw new ArgumentException($"StandardHttpShieldOptions.{propertyName} cannot be null.", "options");
+        }
+
+        if (timeout.Timeout <= TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(
+                "options",
+                $"StandardHttpShieldOptions.{propertyName}.Timeout must be positive.");
+        }
+    }
+
+    private static void Copy(TimeoutOptions source, TimeoutOptions target)
+    {
+        target.Timeout = source.Timeout;
+        target.TimeoutGenerator = source.TimeoutGenerator;
+        target.OnTimeout = source.OnTimeout;
+        target.OnTimeoutAsync = source.OnTimeoutAsync;
+    }
+
+    private static void Copy(
+        RetryOptions<HttpResponseMessage> source,
+        RetryOptions<HttpResponseMessage> target)
+    {
+        var onRetry = source.OnRetry;
+        target.MaxRetries = source.MaxRetries;
+        target.Backoff = source.Backoff;
+        target.MaxDelay = source.MaxDelay;
+        target.DelayGenerator = source.DelayGenerator;
+        target.DelayGeneratorAsync = source.DelayGeneratorAsync;
+        target.OnRetry = retry =>
+        {
+            retry.Outcome.Result?.Dispose();
+            onRetry?.Invoke(retry);
+        };
+        target.OnRetryAsync = source.OnRetryAsync;
+    }
+
+    private static void Copy(CircuitBreakerOptions source, CircuitBreakerOptions target)
+    {
+        target.ConsecutiveFailures = source.ConsecutiveFailures;
+        target.FailureRatio = source.FailureRatio;
+        target.MinimumThroughput = source.MinimumThroughput;
+        target.SamplingWindow = source.SamplingWindow;
+        target.BreakDuration = source.BreakDuration;
+        target.BreakDurationGenerator = source.BreakDurationGenerator;
+        target.Monitor = source.Monitor;
+        target.OnStateChanged = source.OnStateChanged;
+        target.OnStateChangedAsync = source.OnStateChangedAsync;
+    }
+
+    private static void Copy(ConcurrencyLimitOptions source, ConcurrencyLimitOptions target)
+    {
+        target.MaxConcurrency = source.MaxConcurrency;
+        target.MaxQueue = source.MaxQueue;
     }
 }

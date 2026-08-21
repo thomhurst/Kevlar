@@ -35,3 +35,20 @@ Kevlar.Extensions.Http.ShieldHttpHandlerOptions.Routing.set -> void
 Kevlar.Extensions.Http.ShieldHttpHandlerOptions.ShieldHttpHandlerOptions() -> void
 static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, Kevlar.Shield<System.Net.Http.HttpResponseMessage!>! shield, Kevlar.Extensions.Http.ShieldHttpHandlerOptions! options) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
 static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, System.Func<System.IServiceProvider!, Kevlar.Shield<System.Net.Http.HttpResponseMessage!>!>! shieldFactory, System.Func<System.IServiceProvider!, Kevlar.Extensions.Http.ShieldHttpHandlerOptions!>! optionsFactory) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
+Kevlar.Extensions.Http.StandardHttpShieldOptions
+Kevlar.Extensions.Http.StandardHttpShieldOptions.AttemptTimeout.get -> Kevlar.TimeoutOptions!
+Kevlar.Extensions.Http.StandardHttpShieldOptions.AttemptTimeout.set -> void
+Kevlar.Extensions.Http.StandardHttpShieldOptions.CircuitBreaker.get -> Kevlar.CircuitBreakerOptions!
+Kevlar.Extensions.Http.StandardHttpShieldOptions.CircuitBreaker.set -> void
+Kevlar.Extensions.Http.StandardHttpShieldOptions.ConcurrencyLimit.get -> Kevlar.ConcurrencyLimitOptions?
+Kevlar.Extensions.Http.StandardHttpShieldOptions.ConcurrencyLimit.set -> void
+Kevlar.Extensions.Http.StandardHttpShieldOptions.Handler.get -> Kevlar.Extensions.Http.ShieldHttpHandlerOptions!
+Kevlar.Extensions.Http.StandardHttpShieldOptions.Handler.set -> void
+Kevlar.Extensions.Http.StandardHttpShieldOptions.Retry.get -> Kevlar.RetryOptions<System.Net.Http.HttpResponseMessage!>!
+Kevlar.Extensions.Http.StandardHttpShieldOptions.Retry.set -> void
+Kevlar.Extensions.Http.StandardHttpShieldOptions.StandardHttpShieldOptions() -> void
+Kevlar.Extensions.Http.StandardHttpShieldOptions.TotalTimeout.get -> Kevlar.TimeoutOptions!
+Kevlar.Extensions.Http.StandardHttpShieldOptions.TotalTimeout.set -> void
+static Kevlar.Extensions.Http.HttpShield.Standard(Kevlar.Extensions.Http.StandardHttpShieldOptions! options) -> Kevlar.Shield<System.Net.Http.HttpResponseMessage!>!
+static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, System.Action<Kevlar.Extensions.Http.StandardHttpShieldOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
+static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, System.Action<System.IServiceProvider!, Kevlar.Extensions.Http.StandardHttpShieldOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
