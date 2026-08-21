@@ -204,10 +204,10 @@ internal sealed class CircuitBreakerCore
 
         lock (_gate)
         {
+            ResetMetrics();
+            _probeInFlight = false;
             if (_state != CircuitState.Closed)
             {
-                ResetMetrics();
-                _probeInFlight = false;
                 transition = ChangeState(CircuitState.Closed);
             }
         }

@@ -1,0 +1,36 @@
+name: Model tests
+
+on:
+  schedule:
+    - cron: '17 3 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      seed_count:
+        description: Additional deterministic seeds per model
+        type: number
+        required: false
+        default: 250
+
+permissions:
+  contents: read
+
+jobs:
+  model-sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      KEVLAR_MODEL_SWEEP_SEEDS: ${{ github.event.inputs.seed_count || '250' }}
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build
+        run: dotnet build Kevlar.slnx -c Release
+
+      - name: Run deterministic model sweep
+        run: dotnet run --project tests/Kevlar.Tests -c Release --no-build -- --timeout 10m --treenode-filter "/*/*/StrategyModelTests/*"

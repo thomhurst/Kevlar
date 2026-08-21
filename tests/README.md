@@ -10,6 +10,9 @@ Helpers in `Kevlar.Tests/Infrastructure` provide the shared vocabulary:
 - `CancellationProbe` observes cancellation-registration execution.
 - `ControlledTimeProvider` records timers, fires them explicitly, and captures callbacks that must outlive timer disposal.
 - `RaceRunner` executes both named orderings with a reproducible seed and includes the name, iteration, seed, and ordering in failures.
+- `ModelRunner` generates deterministic command sequences from a fixed PR seed corpus. Failures
+  report the seed and a deletion-minimized command sequence. Scheduled sweeps add seeds through
+  `KEVLAR_MODEL_SWEEP_SEEDS` without changing generation semantics.
 
 Every helper wait has a five-second watchdog. The watchdog is only a deadlock bound, never the mechanism that creates the state under test. Prefer `FakeTimeProvider` when only clock advancement matters. Keep real time only for the synchronous timeout smoke test, where blocking behavior itself is the contract.
 
