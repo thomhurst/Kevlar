@@ -108,7 +108,11 @@ $expectedDependencies = @{
     'Kevlar.Chaos' = @{
         'net10.0' = @('Kevlar')
         'net8.0' = @('Kevlar')
-        '.NETStandard2.0' = @('Kevlar', 'Microsoft.Bcl.TimeProvider', 'System.Threading.Tasks.Extensions')
+        '.NETStandard2.0' = @(
+            'Kevlar',
+            'Microsoft.Bcl.TimeProvider',
+            'System.Runtime.CompilerServices.Unsafe',
+            'System.Threading.Tasks.Extensions')
     }
     'Kevlar.Analyzers' = @{
         '.NETStandard2.0' = @()

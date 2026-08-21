@@ -21,7 +21,7 @@ internal static class ChaosDelay
         TimeSpan delay,
         CancellationToken cancellationToken)
     {
-#if NET
+#if NET8_0_OR_GREATER
         return Task.Delay(delay, timeProvider, cancellationToken);
 #else
         return timeProvider.Delay(delay, cancellationToken);

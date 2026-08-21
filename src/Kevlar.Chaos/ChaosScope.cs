@@ -7,13 +7,13 @@ namespace Kevlar.Chaos;
 /// </summary>
 public static class ChaosScope
 {
-    private static readonly AsyncLocal<State?> Current = new();
+    private static readonly AsyncLocal<State?> _current = new();
 
     /// <summary>Gets the current operation label, if any.</summary>
-    public static string? Operation => Current.Value?.Operation;
+    public static string? Operation => _current.Value?.Operation;
 
     /// <summary>Gets the current environment label, if any.</summary>
-    public static string? Environment => Current.Value?.Environment;
+    public static string? Environment => _current.Value?.Environment;
 
     /// <summary>
     /// Begins an asynchronous-flow scope. Omitted values inherit from the enclosing scope.
@@ -23,14 +23,14 @@ public static class ChaosScope
     /// <returns>A handle that restores the enclosing scope when disposed.</returns>
     public static IDisposable Begin(string? operation = null, string? environment = null)
     {
-        var prior = Current.Value;
-        Current.Value = new State(operation ?? prior?.Operation, environment ?? prior?.Environment);
+        var prior = _current.Value;
+        _current.Value = new State(operation ?? prior?.Operation, environment ?? prior?.Environment);
         return new ScopeHandle(prior);
     }
 
     internal static void Capture(out string? operation, out string? environment)
     {
-        var current = Current.Value;
+        var current = _current.Value;
         operation = current?.Operation;
         environment = current?.Environment;
     }
@@ -62,7 +62,7 @@ public static class ChaosScope
                 return;
             }
 
-            Current.Value = _prior;
+            _current.Value = _prior;
             _prior = null;
             _disposed = true;
         }

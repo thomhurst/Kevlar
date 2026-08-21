@@ -21,12 +21,12 @@ internal sealed class BehaviorChaosStrategy : ChaosStrategy
             return next.InvokeAsync(context);
         }
 
-        Notify(ChaosInjectionKind.Behavior, context, decision);
         if (_behavior is null)
         {
             return next.InvokeAsync(context);
         }
 
+        Notify(ChaosInjectionKind.Behavior, context, decision);
         var behavior = _behavior(context);
         if (behavior.IsCompletedSuccessfully)
         {

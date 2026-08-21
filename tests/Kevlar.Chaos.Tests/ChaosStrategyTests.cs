@@ -410,6 +410,8 @@ public class ChaosStrategyTests
         {
             string? shieldName = null;
             string? kind = null;
+            string? operation = null;
+            string? environment = null;
             foreach (var tag in tags)
             {
                 if (tag.Key == "kevlar.shield.name")
@@ -422,17 +424,19 @@ public class ChaosStrategyTests
                 }
                 else if (tag.Key == "kevlar.chaos.operation")
                 {
-                    observedOperation = tag.Value?.ToString();
+                    operation = tag.Value?.ToString();
                 }
                 else if (tag.Key == "kevlar.chaos.environment")
                 {
-                    observedEnvironment = tag.Value?.ToString();
+                    environment = tag.Value?.ToString();
                 }
             }
 
             if (shieldName is not null && kind is not null && shieldName.StartsWith(prefix, StringComparison.Ordinal))
             {
                 observed[shieldName] = kind;
+                observedOperation = operation;
+                observedEnvironment = environment;
             }
         });
         listener.Start();
@@ -443,7 +447,11 @@ public class ChaosStrategyTests
             .WithName($"{prefix}-fault");
         var outcome = ChaosShield.Outcome<int>(static options => options.Enabled = true)
             .WithName($"{prefix}-outcome");
-        var behavior = ChaosShield.Behavior(static options => options.Enabled = true)
+        var behavior = ChaosShield.Behavior(static options =>
+        {
+            options.Enabled = true;
+            options.Behavior = static _ => ValueTask.CompletedTask;
+        })
             .WithName($"{prefix}-behavior");
 
         using (ChaosScope.Begin("metrics-operation", "metrics-environment"))
@@ -543,6 +551,22 @@ public class ChaosStrategyTests
 
         await Assert.That(ReferenceEquals(outcome.Exception, injected)).IsTrue();
         await Assert.That(measurements).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Missing_Behavior_Does_Not_Report_An_Injection()
+    {
+        var injections = 0;
+        var shield = ChaosShield.Behavior(options =>
+        {
+            options.Enabled = true;
+            options.OnInjected = _ => injections++;
+        });
+
+        var result = await shield.ExecuteAsync(static _ => new ValueTask<int>(42));
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(injections).IsEqualTo(0);
     }
 
     [Test]

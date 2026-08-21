@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace Kevlar.Chaos.Internal;
 
@@ -29,7 +30,7 @@ internal sealed class OutcomeChaosStrategy<TResult> : ChaosStrategy
 
         Debug.Assert(typeof(T) == typeof(TResult), "Outcome chaos only executes inside a matching Shield<TResult>.");
         var typedResult = _resultGenerator is null ? _result : _resultGenerator(context);
-        var result = (T)(object?)typedResult!;
+        var result = Unsafe.As<TResult?, T>(ref typedResult);
 
         Notify(ChaosInjectionKind.Outcome, context, decision);
         return new ValueTask<Outcome<T>>(Outcome<T>.FromResult(result));

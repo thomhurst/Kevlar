@@ -8,15 +8,15 @@ namespace Kevlar.Chaos.Internal;
 internal static class ChaosMetrics
 {
 #if NET8_0_OR_GREATER
-    private static readonly Meter Meter = new(ChaosDiagnostics.MeterName, "1.0");
-    private static readonly Counter<long> Injections = Meter.CreateCounter<long>(
+    private static readonly Meter _meter = new(ChaosDiagnostics.MeterName, "1.0");
+    private static readonly Counter<long> _injections = _meter.CreateCounter<long>(
         "kevlar.chaos.injections",
         "{injection}",
         "Chaos injections applied to shield executions.");
 #endif
 
 #if NET8_0_OR_GREATER
-    public static bool Enabled => Injections.Enabled;
+    public static bool Enabled => _injections.Enabled;
 #else
     public static bool Enabled => false;
 #endif
@@ -53,7 +53,7 @@ internal static class ChaosMetrics
             tags.Add("kevlar.chaos.environment", environment);
         }
 
-        Injections.Add(1, tags);
+        _injections.Add(1, tags);
 #endif
     }
 
