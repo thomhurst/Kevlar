@@ -319,7 +319,7 @@ public sealed class Shield
         StrategyNode? next = null;
         for (var i = strategies.Length - 1; i >= 0; i--)
         {
-            next = new StrategyNode(strategies[i], next);
+            next = new StrategyNode(strategies[i], next, i);
         }
 
         return next;

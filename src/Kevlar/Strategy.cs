@@ -94,6 +94,7 @@ public readonly struct Continuation<T, TState>
 
         try
         {
+            context.StrategyIndex = node.Index;
             execution = node.Strategy.ExecuteAsync(
                 new Continuation<T, TState>(node.Next, _callback!, _state),
                 context);
@@ -124,13 +125,16 @@ public readonly struct Continuation<T, TState>
 /// <summary>A node in a shield's immutable strategy chain.</summary>
 public sealed class StrategyNode
 {
-    internal StrategyNode(Strategy strategy, StrategyNode? next)
+    internal StrategyNode(Strategy strategy, StrategyNode? next, int index)
     {
         Strategy = strategy;
         Next = next;
+        Index = index;
     }
 
     internal Strategy Strategy { get; }
 
     internal StrategyNode? Next { get; }
+
+    internal int Index { get; }
 }

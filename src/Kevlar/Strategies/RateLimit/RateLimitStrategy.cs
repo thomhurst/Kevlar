@@ -24,9 +24,9 @@ internal sealed class RateLimitStrategy : Strategy
     private readonly double _timestampUnitsPerPermit;
     private readonly double _burstTolerance;
     private readonly Lock _metricsPublicationGate = new();
-    private readonly HashSet<string?> _metricsShieldNames = [];
+    private readonly HashSet<StrategyMetricAlias> _metricsAliases = [];
     private readonly object _queueGate = new();
-    private string?[] _metricsShieldNameSnapshot = [];
+    private StrategyMetricAlias[] _metricsAliasSnapshot = [];
     private List<double>? _reentrantImmediateAdmissionTimestamps;
 
     private double _theoreticalArrival = double.NegativeInfinity;
@@ -145,7 +145,9 @@ internal sealed class RateLimitStrategy : Strategy
 
             try
             {
-                RecordStateUnderLock(context.ShieldName, context.TimeProvider);
+                RecordStateUnderLock(
+                    new StrategyMetricAlias(context.ShieldName, context.StrategyIndex),
+                    context.TimeProvider);
                 return acquired;
             }
             catch (Exception publicationFailure)
@@ -160,7 +162,9 @@ internal sealed class RateLimitStrategy : Strategy
 
                 try
                 {
-                    RecordStateUnderLock(context.ShieldName, context.TimeProvider);
+                    RecordStateUnderLock(
+                        new StrategyMetricAlias(context.ShieldName, context.StrategyIndex),
+                        context.TimeProvider);
                 }
                 catch (Exception correctionFailure)
                 {
@@ -251,14 +255,18 @@ internal sealed class RateLimitStrategy : Strategy
                 {
                     try
                     {
-                        RecordState(context.ShieldName, context.TimeProvider);
+                        RecordState(
+                            new StrategyMetricAlias(context.ShieldName, context.StrategyIndex),
+                            context.TimeProvider);
                     }
                     catch (Exception publicationFailure)
                     {
                         RollbackQueuedPermit();
                         try
                         {
-                            RecordState(context.ShieldName, context.TimeProvider);
+                            RecordState(
+                                new StrategyMetricAlias(context.ShieldName, context.StrategyIndex),
+                                context.TimeProvider);
                         }
                         catch (Exception correctionFailure)
                         {
@@ -291,7 +299,9 @@ internal sealed class RateLimitStrategy : Strategy
         catch (OperationCanceledException cancelled)
         {
             CancelReservation(reservation)?.TrySetResult(true);
-            RecordState(context.ShieldName, context.TimeProvider);
+            RecordState(
+                new StrategyMetricAlias(context.ShieldName, context.StrategyIndex),
+                context.TimeProvider);
             return Outcome<T>.FromException(cancelled);
         }
 
@@ -508,7 +518,7 @@ internal sealed class RateLimitStrategy : Strategy
             : TimeSpan.FromSeconds(seconds);
     }
 
-    private void RecordState(string? shieldName, TimeProvider timeProvider)
+    private void RecordState(StrategyMetricAlias alias, TimeProvider timeProvider)
     {
         if (!KevlarMetrics.RateStateEnabled)
         {
@@ -517,41 +527,42 @@ internal sealed class RateLimitStrategy : Strategy
 
         lock (_metricsPublicationGate)
         {
-            RecordStateUnderLock(shieldName, timeProvider);
+            RecordStateUnderLock(alias, timeProvider);
         }
     }
 
-    private void RecordStateUnderLock(string? shieldName, TimeProvider timeProvider)
+    private void RecordStateUnderLock(StrategyMetricAlias alias, TimeProvider timeProvider)
     {
-        if (_metricsShieldNames.Count < KevlarMetrics.MaxTrackedStrategyAliases
-            && _metricsShieldNames.Add(shieldName))
+        if (_metricsAliases.Count < KevlarMetrics.MaxTrackedStrategyAliases
+            && _metricsAliases.Add(alias))
         {
-            _metricsShieldNameSnapshot = [.. _metricsShieldNames];
+            _metricsAliasSnapshot = [.. _metricsAliases];
         }
 
         while (true)
         {
             var state = CaptureState(timeProvider);
-            var shieldNames = _metricsShieldNameSnapshot;
-            RecordStateForAliases(shieldNames, state.Available, state.Queued);
+            var aliases = _metricsAliasSnapshot;
+            RecordStateForAliases(aliases, state.Available, state.Queued);
 
             if (state == CaptureState(timeProvider)
-                && ReferenceEquals(shieldNames, _metricsShieldNameSnapshot))
+                && ReferenceEquals(aliases, _metricsAliasSnapshot))
             {
                 return;
             }
         }
     }
 
-    private void RecordStateForAliases(string?[] shieldNames, long available, int queued)
+    private void RecordStateForAliases(StrategyMetricAlias[] aliases, long available, int queued)
     {
         List<Exception>? failures = null;
-        foreach (var shieldName in shieldNames)
+        foreach (var alias in aliases)
         {
             try
             {
                 KevlarMetrics.RecordRateState(
-                    shieldName,
+                    alias.ShieldName,
+                    alias.StrategyIndex,
                     available,
                     queued);
             }

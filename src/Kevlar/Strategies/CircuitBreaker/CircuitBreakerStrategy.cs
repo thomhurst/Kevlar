@@ -6,7 +6,7 @@ namespace Kevlar.Strategies;
 internal sealed class CircuitBreakerStrategy : Strategy
 {
     private readonly Lock _metricsNamesGate = new();
-    private readonly HashSet<string?> _metricsShieldNames = [];
+    private readonly HashSet<StrategyMetricAlias> _metricsAliases = [];
     private readonly CircuitBreakerCore _core;
     private readonly OutcomeJudge _judge;
 
@@ -24,12 +24,13 @@ internal sealed class CircuitBreakerStrategy : Strategy
 
     public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
-        var recordState = RegisterMetricsShieldName(context.ShieldName);
+        var alias = new StrategyMetricAlias(context.ShieldName, context.StrategyIndex);
+        var recordState = RegisterMetricsAlias(alias);
         if (!_core.TryEnter(context.TimeProvider, out var rejection, out var admittedProbeGeneration))
         {
             if (recordState)
             {
-                RecordState(context.ShieldName);
+                RecordState(alias);
             }
 
             KevlarMetrics.Rejection(context.ShieldName, "circuit_open");
@@ -40,7 +41,7 @@ internal sealed class CircuitBreakerStrategy : Strategy
         {
             try
             {
-                RecordState(context.ShieldName);
+                RecordState(alias);
             }
             catch
             {
@@ -67,20 +68,20 @@ internal sealed class CircuitBreakerStrategy : Strategy
 
         if (recordState)
         {
-            RecordState(context.ShieldName);
+            RecordState(alias);
         }
 
         return outcome;
     }
 
-    private void RecordState(string? shieldName)
+    private void RecordState(StrategyMetricAlias alias)
     {
         if (KevlarMetrics.CircuitStateEnabled)
         {
             while (true)
             {
                 var state = _core.State;
-                KevlarMetrics.RecordCircuitState(shieldName, state);
+                KevlarMetrics.RecordCircuitState(alias.ShieldName, alias.StrategyIndex, state);
                 if (state == _core.State)
                 {
                     return;
@@ -89,7 +90,7 @@ internal sealed class CircuitBreakerStrategy : Strategy
         }
     }
 
-    private bool RegisterMetricsShieldName(string? shieldName)
+    private bool RegisterMetricsAlias(StrategyMetricAlias alias)
     {
         if (!KevlarMetrics.CircuitStateEnabled)
         {
@@ -98,17 +99,17 @@ internal sealed class CircuitBreakerStrategy : Strategy
 
         lock (_metricsNamesGate)
         {
-            if (_metricsShieldNames.Contains(shieldName))
+            if (_metricsAliases.Contains(alias))
             {
                 return true;
             }
 
-            if (_metricsShieldNames.Count >= KevlarMetrics.MaxTrackedStrategyAliases)
+            if (_metricsAliases.Count >= KevlarMetrics.MaxTrackedStrategyAliases)
             {
                 return false;
             }
 
-            _metricsShieldNames.Add(shieldName);
+            _metricsAliases.Add(alias);
             return true;
         }
     }
@@ -120,23 +121,23 @@ internal sealed class CircuitBreakerStrategy : Strategy
             return;
         }
 
-        string?[] shieldNames;
+        StrategyMetricAlias[] aliases;
         lock (_metricsNamesGate)
         {
-            if (_metricsShieldNames.Count == 0)
+            if (_metricsAliases.Count == 0)
             {
-                _metricsShieldNames.Add(null);
+                _metricsAliases.Add(new StrategyMetricAlias(null, -1));
             }
 
-            shieldNames = [.. _metricsShieldNames];
+            aliases = [.. _metricsAliases];
         }
 
         List<Exception>? failures = null;
-        foreach (var shieldName in shieldNames)
+        foreach (var alias in aliases)
         {
             try
             {
-                KevlarMetrics.RecordCircuitState(shieldName, state);
+                KevlarMetrics.RecordCircuitState(alias.ShieldName, alias.StrategyIndex, state);
             }
             catch (Exception exception)
             {

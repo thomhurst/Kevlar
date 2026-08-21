@@ -760,7 +760,7 @@ public class MetricsTests
     }
 
     [Test]
-    public async Task State_Gauges_Use_Only_Low_Cardinality_Name_Tags()
+    public async Task State_Gauges_Disambiguate_Strategies_By_Pipeline_Index()
     {
         using var listener = new KevlarMeterListener();
         const string name = "metrics-independent-strategies";
@@ -773,9 +773,9 @@ public class MetricsTests
         var measurements = listener.LongMeasurements(
             "kevlar.concurrency_limit.capacity",
             name);
-        await Assert.That(measurements.All(measurement =>
-                !measurement.Tags.ContainsKey("kevlar.strategy.instance")))
-            .IsTrue();
+        await Assert.That(measurements.Select(measurement =>
+                (int)measurement.Tags["kevlar.strategy.index"]!).Distinct())
+            .IsEquivalentTo([0, 1]);
         await Assert.That(measurements.Select(measurement => measurement.Value).Distinct())
             .IsEquivalentTo([1L, 10L]);
     }

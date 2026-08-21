@@ -24,7 +24,8 @@ namespace Kevlar;
 /// <item><c>kevlar.rate_limit.available</c> and <c>kevlar.rate_limit.queued</c> — rate-limit state gauges</item>
 /// </list>
 /// The <c>kevlar.shield.name</c> attribute is present only for shields named via <c>WithName</c>; an explicitly
-/// empty name is emitted as an empty tag value. State gauges aggregate by shield name.
+/// empty name is emitted as an empty tag value. State gauges also carry the bounded
+/// <c>kevlar.strategy.index</c> attribute so multiple stateful strategies in one pipeline remain distinct.
 /// </remarks>
 public static class KevlarDiagnostics
 {

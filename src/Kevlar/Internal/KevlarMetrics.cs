@@ -201,6 +201,7 @@ internal static class KevlarMetrics
 
     public static void RecordCircuitState(
         string? shieldName,
+        int strategyIndex,
         CircuitState state)
     {
 #if NET9_0_OR_GREATER
@@ -208,19 +209,20 @@ internal static class KevlarMetrics
         {
             CircuitStateGauge.Record(
                 StateValue(state),
-                NameTags(shieldName));
+                StateTags(shieldName, strategyIndex));
         }
 #endif
     }
 
     public static void RecordConcurrencyState(
         string? shieldName,
+        int strategyIndex,
         long inflight,
         long queued,
         long capacity)
     {
 #if NET9_0_OR_GREATER
-        var tags = NameTags(shieldName);
+        var tags = StateTags(shieldName, strategyIndex);
         if (ConcurrencyInflight.Enabled)
         {
             ConcurrencyInflight.Record(inflight, tags);
@@ -240,11 +242,12 @@ internal static class KevlarMetrics
 
     public static void RecordRateState(
         string? shieldName,
+        int strategyIndex,
         long available,
         long queued)
     {
 #if NET9_0_OR_GREATER
-        var tags = NameTags(shieldName);
+        var tags = StateTags(shieldName, strategyIndex);
         if (RateAvailable.Enabled)
         {
             RateAvailable.Record(available, tags);
@@ -269,6 +272,13 @@ internal static class KevlarMetrics
         return tags;
     }
 
+    private static TagList StateTags(string? shieldName, int strategyIndex)
+    {
+        var tags = NameTags(shieldName);
+        tags.Add("kevlar.strategy.index", strategyIndex);
+        return tags;
+    }
+
     private static string StateName(CircuitState state) => state switch
     {
         CircuitState.Closed => "closed",
@@ -288,3 +298,5 @@ internal static class KevlarMetrics
     };
 #endif
 }
+
+internal readonly record struct StrategyMetricAlias(string? ShieldName, int StrategyIndex);

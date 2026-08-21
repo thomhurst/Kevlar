@@ -6,12 +6,12 @@ namespace Kevlar.Strategies;
 internal sealed class ConcurrencyLimitStrategy : Strategy
 {
     private readonly Lock _metricsPublicationGate = new();
-    private readonly HashSet<string?> _metricsShieldNames = [];
+    private readonly HashSet<StrategyMetricAlias> _metricsAliases = [];
     private readonly SemaphoreSlim _semaphore;
     private readonly int _maxConcurrency;
     private readonly int _maxQueue;
     private readonly long _capacity;
-    private string?[] _metricsShieldNameSnapshot = [];
+    private StrategyMetricAlias[] _metricsAliasSnapshot = [];
     private long _pending;
     private long _metricsState;
 
@@ -32,10 +32,11 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
 
     public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
+        var alias = new StrategyMetricAlias(context.ShieldName, context.StrategyIndex);
         if (Interlocked.Increment(ref _pending) > _capacity)
         {
             Interlocked.Decrement(ref _pending);
-            RecordState(context.ShieldName);
+            RecordState(alias);
             KevlarMetrics.Rejection(context.ShieldName, "concurrency_limit");
             return Outcome<T>.FromException(new ConcurrencyLimitExceededException());
         }
@@ -49,7 +50,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
                 {
                     queued = true;
                     UpdateMetricsState(inflightDelta: 0, queuedDelta: 1);
-                    RecordState(context.ShieldName);
+                    RecordState(alias);
                     _semaphore.Wait(context.CancellationToken);
                 }
             }
@@ -65,7 +66,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
                     UpdateMetricsState(inflightDelta: 0, queuedDelta: 1);
                     try
                     {
-                        RecordState(context.ShieldName);
+                        RecordState(alias);
                     }
                     catch (Exception publicationFailure)
                     {
@@ -104,7 +105,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
                 UpdateMetricsState(inflightDelta: 0, queuedDelta: -1);
             }
 
-            RecordState(context.ShieldName);
+            RecordState(alias);
             return Outcome<T>.FromException(cancelled);
         }
         catch (Exception publicationFailure)
@@ -117,7 +118,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
 
             try
             {
-                RecordState(context.ShieldName);
+                RecordState(alias);
             }
             catch (Exception correctionFailure)
             {
@@ -133,7 +134,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
         UpdateMetricsState(inflightDelta: 1, queuedDelta: queued ? -1 : 0);
         try
         {
-            RecordState(context.ShieldName);
+            RecordState(alias);
         }
         catch (Exception publicationFailure)
         {
@@ -142,7 +143,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
             Interlocked.Decrement(ref _pending);
             try
             {
-                RecordState(context.ShieldName);
+                RecordState(alias);
             }
             catch (Exception correctionFailure)
             {
@@ -164,7 +165,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
             UpdateMetricsState(inflightDelta: -1, queuedDelta: 0);
             _semaphore.Release();
             Interlocked.Decrement(ref _pending);
-            RecordState(context.ShieldName);
+            RecordState(alias);
         }
     }
 
@@ -184,7 +185,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
         }
     }
 
-    private void RecordState(string? shieldName)
+    private void RecordState(StrategyMetricAlias alias)
     {
         if (!KevlarMetrics.ConcurrencyStateEnabled)
         {
@@ -193,10 +194,10 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
 
         lock (_metricsPublicationGate)
         {
-            if (_metricsShieldNames.Count < KevlarMetrics.MaxTrackedStrategyAliases
-                && _metricsShieldNames.Add(shieldName))
+            if (_metricsAliases.Count < KevlarMetrics.MaxTrackedStrategyAliases
+                && _metricsAliases.Add(alias))
             {
-                _metricsShieldNameSnapshot = [.. _metricsShieldNames];
+                _metricsAliasSnapshot = [.. _metricsAliases];
             }
 
             while (true)
@@ -204,11 +205,11 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
                 var state = Volatile.Read(ref _metricsState);
                 var inflight = (int)(state >> 32);
                 var queued = (int)(state & uint.MaxValue);
-                var shieldNames = _metricsShieldNameSnapshot;
-                RecordStateForAliases(shieldNames, inflight, queued);
+                var aliases = _metricsAliasSnapshot;
+                RecordStateForAliases(aliases, inflight, queued);
 
                 if (state == Volatile.Read(ref _metricsState)
-                    && ReferenceEquals(shieldNames, _metricsShieldNameSnapshot))
+                    && ReferenceEquals(aliases, _metricsAliasSnapshot))
                 {
                     return;
                 }
@@ -216,15 +217,16 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
         }
     }
 
-    private void RecordStateForAliases(string?[] shieldNames, int inflight, int queued)
+    private void RecordStateForAliases(StrategyMetricAlias[] aliases, int inflight, int queued)
     {
         List<Exception>? failures = null;
-        foreach (var shieldName in shieldNames)
+        foreach (var alias in aliases)
         {
             try
             {
                 KevlarMetrics.RecordConcurrencyState(
-                    shieldName,
+                    alias.ShieldName,
+                    alias.StrategyIndex,
                     inflight,
                     queued,
                     _maxConcurrency);
