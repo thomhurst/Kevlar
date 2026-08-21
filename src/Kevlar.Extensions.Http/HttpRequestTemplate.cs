@@ -52,8 +52,12 @@ internal sealed class HttpRequestTemplate
             try
             {
 #if NETSTANDARD2_0
-                await request.Content.LoadIntoBufferAsync(maximumBufferSize).ConfigureAwait(false);
-                content = await request.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+                await AwaitWithCancellationAsync(
+                    request.Content.LoadIntoBufferAsync(maximumBufferSize),
+                    cancellationToken).ConfigureAwait(false);
+                content = await AwaitWithCancellationAsync(
+                    request.Content.ReadAsByteArrayAsync(),
+                    cancellationToken).ConfigureAwait(false);
 #else
                 await request.Content.LoadIntoBufferAsync(maximumBufferSize, cancellationToken).ConfigureAwait(false);
                 content = await request.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
@@ -77,7 +81,7 @@ internal sealed class HttpRequestTemplate
         return new HttpRequestTemplate(request, content);
     }
 
-    public HttpRequestMessage CreateRequest()
+    public HttpRequestMessage CreateRequest(HttpContent? firstAttemptContent = null)
     {
         var request = new HttpRequestMessage(_method, _requestUri)
         {
@@ -95,13 +99,21 @@ internal sealed class HttpRequestTemplate
         {
             if (_content is null)
             {
-                request.Dispose();
-                throw new HttpRequestReplayException(
-                    "Request content is not replayable with ContentReplayPolicy.NoBuffer. " +
-                    "Use Buffer with a bounded MaximumBufferSize, or provide RequestFactory.");
+                if (firstAttemptContent is null)
+                {
+                    request.Dispose();
+                    throw new HttpRequestReplayException(
+                        "Request content is not replayable with ContentReplayPolicy.NoBuffer. " +
+                        "Use Buffer with a bounded MaximumBufferSize, or provide RequestFactory.");
+                }
+
+                request.Content = firstAttemptContent;
+            }
+            else
+            {
+                request.Content = new ByteArrayContent(_content);
             }
 
-            request.Content = new ByteArrayContent(_content);
             foreach (var header in _contentHeaders)
             {
                 _ = request.Content.Headers.TryAddWithoutValidation(header.Key, header.Value);
@@ -125,4 +137,60 @@ internal sealed class HttpRequestTemplate
     private static HttpRequestReplayException TooLarge(long maximumBufferSize) => new(
         $"Request content exceeds the {maximumBufferSize}-byte replay buffer limit. " +
         "Increase MaximumBufferSize or provide RequestFactory.");
+
+#if NETSTANDARD2_0
+    private static async Task<T> AwaitWithCancellationAsync<T>(
+        Task<T> operation,
+        CancellationToken cancellationToken)
+    {
+        if (operation.IsCompleted || !cancellationToken.CanBeCanceled)
+        {
+            return await operation.ConfigureAwait(false);
+        }
+
+        var cancellation = new TaskCompletionSource<bool>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        using var registration = cancellationToken.Register(
+            static state => ((TaskCompletionSource<bool>)state!).TrySetResult(true),
+            cancellation);
+        if (await Task.WhenAny(operation, cancellation.Task).ConfigureAwait(false) != operation)
+        {
+            ObserveFault(operation);
+            cancellationToken.ThrowIfCancellationRequested();
+        }
+
+        return await operation.ConfigureAwait(false);
+    }
+
+    private static async Task AwaitWithCancellationAsync(
+        Task operation,
+        CancellationToken cancellationToken)
+    {
+        if (operation.IsCompleted || !cancellationToken.CanBeCanceled)
+        {
+            await operation.ConfigureAwait(false);
+            return;
+        }
+
+        var cancellation = new TaskCompletionSource<bool>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        using var registration = cancellationToken.Register(
+            static state => ((TaskCompletionSource<bool>)state!).TrySetResult(true),
+            cancellation);
+        if (await Task.WhenAny(operation, cancellation.Task).ConfigureAwait(false) != operation)
+        {
+            ObserveFault(operation);
+            cancellationToken.ThrowIfCancellationRequested();
+        }
+
+        await operation.ConfigureAwait(false);
+    }
+
+    private static void ObserveFault(Task operation) =>
+        _ = operation.ContinueWith(
+            static completed => _ = completed.Exception,
+            CancellationToken.None,
+            TaskContinuationOptions.ExecuteSynchronously | TaskContinuationOptions.OnlyOnFaulted,
+            TaskScheduler.Default);
+#endif
 }

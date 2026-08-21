@@ -6,9 +6,20 @@ public sealed class HttpEndpoint
     /// <summary>Creates an endpoint. The URI must be absolute and <paramref name="weight"/> positive.</summary>
     public HttpEndpoint(Uri uri, int weight = 1)
     {
-        if (uri is null) { throw new ArgumentNullException(nameof(uri)); }
-        if (!uri.IsAbsoluteUri) { throw new ArgumentException("The endpoint URI must be absolute.", nameof(uri)); }
-        if (weight <= 0) { throw new ArgumentOutOfRangeException(nameof(weight), "Weight must be positive."); }
+        if (uri is null)
+        {
+            throw new ArgumentNullException(nameof(uri));
+        }
+
+        if (!uri.IsAbsoluteUri)
+        {
+            throw new ArgumentException("The endpoint URI must be absolute.", nameof(uri));
+        }
+
+        if (weight <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(weight), "Weight must be positive.");
+        }
 
         Uri = uri;
         Weight = weight;

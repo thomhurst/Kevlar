@@ -50,21 +50,20 @@ public class HttpReplayTests
     }
 
     [Test]
-    public async Task Retry_Disposes_The_Superseded_Response_Before_The_Next_Send()
+    public async Task Retry_Disposes_The_Superseded_Response_After_Final_Selection()
     {
         var supersededContent = new TrackingContent("superseded");
-        var transport = new RecordingHandler(async (attempt, _, _) =>
+        var transport = new RecordingHandler((attempt, _, _) =>
         {
             if (attempt == 1)
             {
-                return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)
                 {
                     Content = supersededContent,
-                };
+                });
             }
 
-            await supersededContent.WaitForDisposalAsync().WaitAsync(TimeSpan.FromSeconds(5));
-            return new HttpResponseMessage(HttpStatusCode.OK);
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
         });
         using var invoker = CreateInvoker(
             HttpShield.WhenTransient().Retry(1, Backoff.None),
@@ -320,11 +319,12 @@ public class HttpReplayTests
     [Test]
     public async Task Endpoint_Shields_Isolate_Circuit_State_By_Authority()
     {
-        var calls = new Dictionary<string, int>();
+        var calls = new System.Collections.Concurrent.ConcurrentDictionary<string, int>(
+            StringComparer.Ordinal);
         var transport = new RecordingHandler((_, request, _) =>
         {
             var host = request.RequestUri!.Host;
-            calls[host] = calls.GetValueOrDefault(host) + 1;
+            _ = calls.AddOrUpdate(host, 1, static (_, current) => current + 1);
             return Task.FromResult(new HttpResponseMessage(
                 host == "first.example" ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.OK));
         });
@@ -350,6 +350,98 @@ public class HttpReplayTests
 
         await Assert.That(calls["first.example"]).IsEqualTo(1);
         await Assert.That(calls["second.example"]).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task Routed_NoBuffer_Content_Is_Sent_Once_Before_Replay_Is_Rejected()
+    {
+        var bodies = new List<string>();
+        var content = new TrackingContent("payload");
+        var transport = new RecordingHandler(async (_, request, _) =>
+        {
+            bodies.Add(await request.Content!.ReadAsStringAsync());
+            return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+        });
+        var options = RoutingOptions(
+            HttpEndpointSelectionMode.Ordered,
+            new HttpEndpoint(new Uri("https://first.example")),
+            new HttpEndpoint(new Uri("https://second.example")));
+        using var invoker = CreateInvoker(
+            HttpShield.WhenTransient().Retry(1, Backoff.None),
+            options,
+            transport);
+        using var request = new HttpRequestMessage(HttpMethod.Put, "https://origin.example/upload")
+        {
+            Content = content,
+        };
+
+        _ = await Assert.That(async () =>
+                await invoker.SendAsync(request, CancellationToken.None))
+            .Throws<HttpRequestReplayException>();
+
+        await Assert.That(bodies).IsEquivalentTo(["payload"]);
+        await Assert.That(transport.Attempts).IsEqualTo(1);
+        await Assert.That(content.DisposeCount).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Failed_Buffering_Is_Not_Cached_Across_Retries()
+    {
+        var content = new FlakyBufferContent();
+        var transport = new RecordingHandler((_, _, _) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)));
+        using var invoker = CreateInvoker(
+            Shield.For<HttpResponseMessage>()
+                .When<HttpRequestReplayException>()
+                .Retry(1, Backoff.None),
+            new ShieldHttpHandlerOptions { ContentReplayPolicy = HttpContentReplayPolicy.Buffer },
+            transport);
+        using var request = new HttpRequestMessage(HttpMethod.Put, "https://origin.example/upload")
+        {
+            Content = content,
+        };
+
+        using var response = await invoker.SendAsync(request, CancellationToken.None);
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(content.SerializationAttempts).IsEqualTo(2);
+        await Assert.That(transport.Attempts).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task All_Failed_Hedges_Keep_Final_Response_Usable_And_Evaluate_Once()
+    {
+        var responses = new System.Collections.Concurrent.ConcurrentBag<
+            (HttpResponseMessage Response, TrackingContent Content)>();
+        var predicateCalls = 0;
+        var transport = new RecordingHandler((attempt, _, _) =>
+        {
+            var content = new TrackingContent($"attempt-{attempt}");
+            var response = new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)
+            {
+                Content = content,
+            };
+            responses.Add((response, content));
+            return Task.FromResult(response);
+        });
+        var policy = Shield.For<HttpResponseMessage>()
+            .WhenResult(_ =>
+            {
+                Interlocked.Increment(ref predicateCalls);
+                return true;
+            })
+            .Hedge(3, TimeSpan.Zero);
+        using var invoker = CreateInvoker(policy, new ShieldHttpHandlerOptions(), transport);
+        using var request = new HttpRequestMessage(HttpMethod.Get, "https://origin.example/api");
+
+        using var response = await invoker.SendAsync(request, CancellationToken.None);
+        var selected = responses.Single(item => ReferenceEquals(item.Response, response));
+
+        await Assert.That(await response.Content.ReadAsStringAsync()).Contains("attempt-");
+        await Assert.That(predicateCalls).IsEqualTo(3);
+        await Assert.That(selected.Content.DisposeCount).IsEqualTo(0);
+        await Assert.That(responses.Where(item => !ReferenceEquals(item.Response, response))
+            .All(static item => item.Content.DisposeCount == 1)).IsTrue();
     }
 
     private static async Task<string[]> WeightedSequence(int seed)
@@ -442,6 +534,29 @@ public class HttpReplayTests
         {
             await stream.WriteAsync(new byte[] { 1, 2, 3 });
             throw new IOException("serialization failed");
+        }
+
+        protected override bool TryComputeLength(out long length)
+        {
+            length = 0;
+            return false;
+        }
+    }
+
+    private sealed class FlakyBufferContent : HttpContent
+    {
+        private int _serializationAttempts;
+
+        public int SerializationAttempts => Volatile.Read(ref _serializationAttempts);
+
+        protected override async Task SerializeToStreamAsync(Stream stream, TransportContext? context)
+        {
+            if (Interlocked.Increment(ref _serializationAttempts) == 1)
+            {
+                throw new IOException("first buffering attempt failed");
+            }
+
+            await stream.WriteAsync(new byte[] { 1, 2, 3 });
         }
 
         protected override bool TryComputeLength(out long length)

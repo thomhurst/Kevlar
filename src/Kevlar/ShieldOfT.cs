@@ -36,22 +36,6 @@ public sealed class Shield<TResult>
 
     internal TimeProvider TimeOrSystem => Time ?? TimeProvider.System;
 
-    internal bool IsResultHandledByRepeatingStrategy(TResult result)
-    {
-        var outcome = Outcome<TResult>.FromResult(result);
-        foreach (var strategy in Strategies)
-        {
-            if (strategy is RetryStrategy or HedgingStrategy
-                && strategy.ReactiveJudge is { } judge
-                && judge.ShouldHandle(in outcome))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     // ── Handling clauses ────────────────────────────────────────────────────────────────
 
     /// <summary>Starts a handling clause: subsequent reactive strategies act on exceptions of type <typeparamref name="TException"/>.</summary>

@@ -121,7 +121,7 @@ shield so every additional send goes through safe replay and routing.
 
 ## Behaviour notes
 
-- **Superseded responses are handler-owned.** The handler disposes failed retry responses and losing hedge responses, including a loser that completes after the winner. Do not add an `OnRetry` response-disposal hook when using `ShieldDelegatingHandler`. The selected response remains caller-owned.
+- **Superseded responses are handler-owned.** The handler disposes failed retry responses and losing hedge responses, including a loser that completes after the winner. A custom `OnRetry` response-disposal hook is unnecessary with `ShieldDelegatingHandler`; the hook that `HttpShield.Standard()` installs stays safe because `HttpResponseMessage.Dispose` is idempotent. The selected response remains caller-owned.
 - **Redirects remain transport-owned.** Each Kevlar attempt begins with the original absolute URI (or its routed authority). Normal `HttpClientHandler` redirect policy runs inside that attempt.
 - **State sharing applies per registration.** `AddStandardShield` and `AddShield(shield)` build/capture one shield for that named client — every request through `"api"` shares the same circuit breaker, which is what makes the breaker meaningful. The factory overload runs once when `HttpClientFactory` creates a handler pipeline, receives that pipeline's service provider, and runs again only when the handler lifetime expires; return a shared instance, e.g. from the registry, to keep one circuit across lifetimes.
 - **Compose with other handlers normally.** The Kevlar handler is a regular `DelegatingHandler`; ordering relative to your own handlers follows the usual `AddHttpMessageHandler` rules.

@@ -183,11 +183,6 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
                     "only when the operation is idempotent, or provide RequestFactory.");
             }
 
-            if (attempt > 0)
-            {
-                DisposeSupersededResponses();
-            }
-
             HttpRequestMessage request;
             if (_options.RequestFactory is { } requestFactory)
             {
@@ -200,7 +195,8 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             }
             else
             {
-                request = (await GetTemplateAsync(cancellationToken).ConfigureAwait(false)).CreateRequest();
+                request = (await GetTemplateAsync(cancellationToken).ConfigureAwait(false))
+                    .CreateRequest(attempt == 0 ? _original.Content : null);
             }
 
             var ownsRequest = !ReferenceEquals(request, _original);
@@ -228,6 +224,11 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             {
                 if (ownsRequest)
                 {
+                    if (ReferenceEquals(request.Content, _original.Content))
+                    {
+                        request.Content = null;
+                    }
+
                     request.Dispose();
                 }
             }
@@ -261,33 +262,53 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
 
         private Task<HttpRequestTemplate> GetTemplateAsync(CancellationToken cancellationToken)
         {
+            TaskCompletionSource<HttpRequestTemplate>? creation = null;
+            Task<HttpRequestTemplate> template;
             lock (_gate)
             {
-                return _template ??= HttpRequestTemplate.CreateAsync(
+                if (_template is null)
+                {
+                    creation = new TaskCompletionSource<HttpRequestTemplate>(
+                        TaskCreationOptions.RunContinuationsAsynchronously);
+                    _template = creation.Task;
+                }
+
+                template = _template;
+            }
+
+            if (creation is not null)
+            {
+                _ = PopulateTemplateAsync(creation, cancellationToken);
+            }
+
+            return template;
+        }
+
+        private async Task PopulateTemplateAsync(
+            TaskCompletionSource<HttpRequestTemplate> creation,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                var template = await HttpRequestTemplate.CreateAsync(
                     _original,
                     _options.ContentReplayPolicy,
                     _options.MaximumBufferSize,
-                    cancellationToken).AsTask();
+                    cancellationToken).ConfigureAwait(false);
+                creation.TrySetResult(template);
             }
-        }
-
-        private void DisposeSupersededResponses()
-        {
-            List<HttpResponseMessage>? superseded = null;
-            lock (_gate)
+            catch (Exception exception)
             {
-                for (var index = _responses.Count - 1; index >= 0; index--)
+                lock (_gate)
                 {
-                    var response = _responses[index];
-                    if (_handler._policy.IsResultHandledByRepeatingStrategy(response))
+                    if (ReferenceEquals(_template, creation.Task))
                     {
-                        (superseded ??= []).Add(response);
-                        _responses.RemoveAt(index);
+                        _template = null;
                     }
                 }
-            }
 
-            DisposeResponses(superseded);
+                creation.TrySetException(exception);
+            }
         }
 
         private void RegisterResponse(HttpResponseMessage response)
