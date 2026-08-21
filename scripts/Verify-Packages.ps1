@@ -279,6 +279,10 @@ await Shield.Empty.ExecuteAsync(cancellationToken => ValueTask.CompletedTask);
     Invoke-DotNet @('restore', $analyzerProjectPath, '--configfile', $nugetConfigPath, '--no-cache', '--force-evaluate')
     $analyzerOutput = (& dotnet build $analyzerProjectPath -c Release --no-restore -p:TreatWarningsAsErrors=false -warnaserror:KEV001 2>&1 | Out-String)
     $analyzerExitCode = $LASTEXITCODE
+    $analyzerErrorLines = @(
+        $analyzerOutput -split '\r?\n' |
+            Where-Object { $_ -match '(?i)\berror(?:\s+[A-Z]+\d+)?\s*:' }
+    )
     $analyzerErrorCodes = @(
         [regex]::Matches($analyzerOutput, '(?m)\berror\s+([A-Z]+\d+)\s*:') |
             ForEach-Object { $_.Groups[1].Value }
@@ -289,6 +293,14 @@ await Shield.Empty.ExecuteAsync(cancellationToken => ValueTask.CompletedTask);
     }
 
     Assert-Set 'analyzer consumer error codes' $analyzerErrorCodes @('KEV001')
+    $unexpectedAnalyzerErrors = @(
+        $analyzerErrorLines |
+            Where-Object { $_ -notmatch '(?i)\berror\s+KEV001\s*:' }
+    )
+    if ($unexpectedAnalyzerErrors.Count -gt 0)
+    {
+        throw "Analyzer consumer produced errors other than KEV001:`n$($unexpectedAnalyzerErrors -join [Environment]::NewLine)"
+    }
 
     Write-Host 'All package layout, metadata, consumer, and analyzer checks passed.'
 }
