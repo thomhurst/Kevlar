@@ -42,6 +42,14 @@ void, synchronous or asynchronous, `Task` or `ValueTask`, and state-passing or c
 
 :::tip Always use the token you're handed
 Your delegate receives a `CancellationToken` that combines your outer token with shield-driven cancellation (timeouts, hedging losers). Pass it to everything you await.
+
+## Ambient context
+
+Kevlar invokes the first user delegate inline, so it initially sees the caller's current `SynchronizationContext`. Internal asynchronous continuations use `ConfigureAwait(false)` and do not marshal back to that context; a later retry, fallback, timeout callback, hedge, or queued execution may therefore run with no `SynchronizationContext`. Your own delegate controls whether its own awaits capture a context.
+
+`ExecutionContext` still flows normally. `AsyncLocal<T>` values visible to the caller flow into actions and strategy callbacks, while parallel hedge attempts receive isolated logical snapshots so one attempt's mutations do not leak into another or a later execution. Calling Kevlar from work started under `ExecutionContext.SuppressFlow()` keeps that flow suppressed.
+
+Synchronous `Execute` never pumps a `SynchronizationContext`. Retry delays and limiter queues block the calling thread until they complete, so prefer `ExecuteAsync` for delayed or queued work. As with any .NET async API, synchronously blocking on the returned task while the user delegate itself awaits a single-threaded context can deadlock; await the operation instead.
 :::
 
 ## Zero-closure hot paths
