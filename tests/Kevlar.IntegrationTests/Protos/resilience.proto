@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+option csharp_namespace = "Kevlar.IntegrationTests.Grpc";
+
+package kevlar.tests;
+
+service Resilience {
+  rpc Unary (TestRequest) returns (TestReply);
+}
+
+message TestRequest {
+  string scenario = 1;
+}
+
+message TestReply {
+  int32 attempt = 1;
+}

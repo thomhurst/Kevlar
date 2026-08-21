@@ -118,6 +118,10 @@ $expectedDependencies = @{
         'net10.0' = @('Kevlar')
         '.NETStandard2.0' = @('Kevlar')
     }
+    'Kevlar.Extensions.Grpc' = @{
+        'net10.0' = @('Grpc.Core.Api', 'Grpc.Net.ClientFactory', 'Kevlar', 'Kevlar.Extensions.DependencyInjection')
+        '.NETStandard2.0' = @('Grpc.Core.Api', 'Grpc.Net.ClientFactory', 'Kevlar', 'Kevlar.Extensions.DependencyInjection')
+    }
     'Kevlar.Analyzers' = @{
         '.NETStandard2.0' = @()
     }
@@ -265,6 +269,7 @@ try
 using Kevlar;
 using Kevlar.Chaos;
 using Kevlar.Extensions.DependencyInjection;
+using Kevlar.Extensions.Grpc;
 using Kevlar.Extensions.Http;
 using Kevlar.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -310,6 +315,7 @@ if (injections != 1)
 IServiceCollection services = new ServiceCollection();
 services.AddShield("consumer", shield);
 services.AddHttpClient("consumer").AddStandardShield();
+_ = new ShieldUnaryClientInterceptor(GrpcShield.WhenTransient().Retry(1));
 Console.WriteLine("Kevlar package consumer passed.");
 '@
 
@@ -331,6 +337,7 @@ Console.WriteLine("Kevlar package consumer passed.");
     <PackageReference Include="Kevlar.Extensions.DependencyInjection" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.Http" Version="$Version" />
     <PackageReference Include="Kevlar.Testing" Version="$Version" />
+    <PackageReference Include="Kevlar.Extensions.Grpc" Version="$Version" />
   </ItemGroup>
 </Project>
 "@
