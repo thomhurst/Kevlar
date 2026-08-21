@@ -75,27 +75,13 @@ internal sealed class RateLimitStrategy : Strategy
             {
                 if (TryConsumeReservation(reservation, context.TimeProvider, out var wait, out var nextTurn))
                 {
-                    nextTurn?.Cancel();
+                    nextTurn?.TrySetResult(true);
                     break;
                 }
 
                 if (wait == Timeout.InfiniteTimeSpan)
                 {
-                    using var waitCancellation = CancellationTokenSource.CreateLinkedTokenSource(
-                        context.CancellationToken,
-                        reservation.Turn.Token);
-                    try
-                    {
-                        await Task.Delay(Timeout.Infinite, waitCancellation.Token).ConfigureAwait(false);
-                    }
-                    catch (OperationCanceledException) when (!context.CancellationToken.IsCancellationRequested)
-                    {
-                        continue;
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        throw new OperationCanceledException(context.CancellationToken);
-                    }
+                    await reservation.WaitForTurnAsync(context.CancellationToken).ConfigureAwait(false);
                 }
                 else
                 {
@@ -108,12 +94,10 @@ internal sealed class RateLimitStrategy : Strategy
         }
         catch (OperationCanceledException cancelled)
         {
-            CancelReservation(reservation)?.Cancel();
-            reservation.Turn.Dispose();
+            CancelReservation(reservation)?.TrySetResult(true);
             return Outcome<T>.FromException(cancelled);
         }
 
-        reservation.Turn.Dispose();
         return await next.InvokeAsync(context).ConfigureAwait(false);
     }
 
@@ -206,7 +190,7 @@ internal sealed class RateLimitStrategy : Strategy
         Reservation reservation,
         TimeProvider timeProvider,
         out TimeSpan wait,
-        out CancellationTokenSource? nextTurn)
+        out TaskCompletionSource<bool>? nextTurn)
     {
         lock (_queueGate)
         {
@@ -231,7 +215,7 @@ internal sealed class RateLimitStrategy : Strategy
         }
     }
 
-    private CancellationTokenSource? CancelReservation(Reservation reservation)
+    private TaskCompletionSource<bool>? CancelReservation(Reservation reservation)
     {
         lock (_queueGate)
         {
@@ -266,7 +250,7 @@ internal sealed class RateLimitStrategy : Strategy
         _queuedReservations++;
     }
 
-    private CancellationTokenSource? RemoveReservation(Reservation reservation)
+    private TaskCompletionSource<bool>? RemoveReservation(Reservation reservation)
     {
         var wasHead = ReferenceEquals(_queueHead, reservation);
         if (reservation.Previous is null)
@@ -346,6 +330,24 @@ internal sealed class RateLimitStrategy : Strategy
 
         public bool IsQueued { get; set; } = true;
 
-        public CancellationTokenSource Turn { get; } = new();
+        public TaskCompletionSource<bool> Turn { get; } =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public async Task WaitForTurnAsync(CancellationToken cancellationToken)
+        {
+            if (!cancellationToken.CanBeCanceled)
+            {
+                await Turn.Task.ConfigureAwait(false);
+                return;
+            }
+
+            var cancellation = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            using var registration = cancellationToken.Register(
+                static state => ((TaskCompletionSource<bool>)state!).TrySetResult(true),
+                cancellation);
+
+            await Task.WhenAny(Turn.Task, cancellation.Task).ConfigureAwait(false);
+            cancellationToken.ThrowIfCancellationRequested();
+        }
     }
 }

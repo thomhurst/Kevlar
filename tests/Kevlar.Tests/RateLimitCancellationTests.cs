@@ -75,6 +75,36 @@ public class RateLimitCancellationTests
     }
 
     [Test]
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task Successor_Cancellation_Is_Safe_On_Either_Side_Of_Promotion(bool cancelFirst)
+    {
+        var fakeTime = new FakeTimeProvider();
+        var shield = CreateShield(fakeTime, queueLimit: 2);
+        using var cancellation = new CancellationTokenSource();
+
+        await shield.ExecuteAsync(_ => new ValueTask<int>(0));
+        var head = shield.ExecuteAsync(_ => new ValueTask<int>(1)).AsTask();
+        var successor = shield.ExecuteAsync(_ => new ValueTask<int>(2), cancellation.Token).AsTask();
+
+        if (cancelFirst)
+        {
+            cancellation.Cancel();
+            await Assert.That(async () => await successor).Throws<OperationCanceledException>();
+            fakeTime.Advance(TimeSpan.FromSeconds(1));
+        }
+        else
+        {
+            fakeTime.Advance(TimeSpan.FromSeconds(1));
+            await Assert.That(await head.WaitAsync(TimeSpan.FromSeconds(5))).IsEqualTo(1);
+            cancellation.Cancel();
+        }
+
+        await Assert.That(await head.WaitAsync(TimeSpan.FromSeconds(5))).IsEqualTo(1);
+        await Assert.That(async () => await successor).Throws<OperationCanceledException>();
+    }
+
+    [Test]
     public async Task Concurrent_Callers_Admit_Only_Burst_And_Queue_Capacity()
     {
         const int burst = 2;
@@ -114,20 +144,14 @@ public class RateLimitCancellationTests
 
         for (var permit = 1; permit <= queueLimit; permit++)
         {
+            var pending = calls.Where(call => !call.IsCompleted).ToArray();
             fakeTime.Advance(TimeSpan.FromSeconds(1));
             fakeTime.Advance(TimeSpan.FromTicks(1));
             var expectedCompleted = callerCount - queueLimit + permit;
-            if (calls.Count(call => call.IsCompleted) < expectedCompleted)
-            {
-                var pending = calls.Where(call => !call.IsCompleted).ToArray();
-                if (pending.Length > 0)
-                {
-                    var next = await WaitWithMessage(
-                        Task.WhenAny(pending),
-                        $"Permit {permit} stalled with {calls.Count(call => call.IsCompleted)} completed calls.");
-                    await next;
-                }
-            }
+            var next = await WaitWithMessage(
+                Task.WhenAny(pending),
+                $"Permit {permit} stalled with {calls.Count(call => call.IsCompleted)} completed calls.");
+            await next;
 
             await Assert.That(calls.Count(call => call.IsCompleted))
                 .IsEqualTo(expectedCompleted);
@@ -190,7 +214,9 @@ public class RateLimitCancellationTests
         {
             await shield.ExecuteAsync(_ => new ValueTask<int>(-1));
             var queued = Enumerable.Range(0, 3)
-                .Select(index => shield.ExecuteAsync(_ => new ValueTask<int>(index), cancellations[index].Token).AsTask())
+                .Select(index => shield.ExecuteAsync(
+                    _ => new ValueTask<int>(index),
+                    cancellations[index].Token).AsTask())
                 .ToArray();
 
             cancellations[cancelledIndex].Cancel();
@@ -200,16 +226,15 @@ public class RateLimitCancellationTests
 
             var replacement = shield.ExecuteAsync(_ => new ValueTask<int>(3)).AsTask();
             var active = queued.Where((_, index) => index != cancelledIndex).Append(replacement).ToArray();
-            for (var permit = 0; permit < active.Length; permit++)
-            {
-                fakeTime.Advance(TimeSpan.FromSeconds(1));
-                fakeTime.Advance(TimeSpan.FromTicks(1));
-                await WaitWithMessage(
-                    active[permit],
-                    $"Cancellation index {cancelledIndex}, permit {permit + 1} stalled.");
-                await Assert.That(active.Take(permit + 1).All(task => task.IsCompletedSuccessfully)).IsTrue();
-                await Assert.That(active.Skip(permit + 1).All(task => !task.IsCompleted)).IsTrue();
-            }
+            fakeTime.Advance(TimeSpan.FromSeconds(active.Length));
+            fakeTime.Advance(TimeSpan.FromTicks(active.Length));
+
+            var results = await WaitWithMessage(
+                Task.WhenAll(active),
+                $"Cancellation index {cancelledIndex} did not reclaim its permit debt.");
+            var expectedOrder = Enumerable.Range(0, 3).Where(index => index != cancelledIndex).Append(3).ToArray();
+
+            await Assert.That(results.SequenceEqual(expectedOrder)).IsTrue();
         }
         finally
         {
