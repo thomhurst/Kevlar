@@ -117,6 +117,11 @@ internal sealed class RateLimitStrategy : Strategy
             return;
         }
 
+        RollbackQueuedPermit();
+    }
+
+    private void RollbackQueuedPermit()
+    {
         lock (_queueGate)
         {
             for (var queued = _queueHead; queued is not null; queued = queued.Next)
@@ -139,8 +144,29 @@ internal sealed class RateLimitStrategy : Strategy
             {
                 if (TryConsumeReservation(reservation, context.TimeProvider, out var wait, out var nextTurn))
                 {
+                    try
+                    {
+                        RecordState(context.ShieldName, context.TimeProvider);
+                    }
+                    catch (Exception publicationFailure)
+                    {
+                        RollbackQueuedPermit();
+                        try
+                        {
+                            RecordState(context.ShieldName, context.TimeProvider);
+                        }
+                        catch (Exception correctionFailure)
+                        {
+                            publicationFailure = new AggregateException(
+                                publicationFailure,
+                                correctionFailure).Flatten();
+                        }
+
+                        nextTurn?.TrySetResult(true);
+                        ExceptionDispatchInfo.Capture(publicationFailure).Throw();
+                    }
+
                     nextTurn?.TrySetResult(true);
-                    RecordState(context.ShieldName, context.TimeProvider);
                     break;
                 }
 

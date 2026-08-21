@@ -115,6 +115,11 @@ internal sealed class CircuitBreakerStrategy : Strategy
 
     private void RecordTransitionState(CircuitState state)
     {
+        if (!KevlarMetrics.CircuitStateEnabled)
+        {
+            return;
+        }
+
         string?[] shieldNames;
         lock (_metricsNamesGate)
         {

@@ -646,6 +646,29 @@ public class MetricsTests
     }
 
     [Test]
+    public async Task Disabled_Circuit_Gauge_Does_Not_Create_An_Unnamed_Alias()
+    {
+        var monitor = new CircuitBreakerMonitor();
+        var shield = Shield.CircuitBreaker(options => options.Monitor = monitor)
+            .WithName("metrics-disabled-circuit-alias");
+        monitor.Isolate();
+
+        using var listener = new KevlarMeterListener();
+        _ = await shield.ExecuteOutcomeAsync(_ => new ValueTask<int>(1));
+        monitor.Reset();
+
+        await Assert.That(listener.Values(
+                "kevlar.circuit_breaker.state",
+                shieldName: null,
+                requireName: false).Count)
+            .IsEqualTo(0);
+        await Assert.That(listener.Values(
+                "kevlar.circuit_breaker.state",
+                "metrics-disabled-circuit-alias").Last())
+            .IsEqualTo(0);
+    }
+
+    [Test]
     public async Task Shared_Circuit_Updates_Every_Named_Alias()
     {
         using var listener = new KevlarMeterListener();
@@ -1144,6 +1167,47 @@ public class MetricsTests
 
         await Assert.That(advancedWithQueuedReservation).IsTrue();
         await Assert.That(observedInvalidAvailability).IsFalse();
+    }
+
+    [Test]
+    public async Task Rate_Metric_Failure_Restores_A_Consumed_Queued_Permit()
+    {
+        var timeProvider = new FakeTimeProvider();
+        var reservationQueued = false;
+        var throwOnConsumption = true;
+        var metricsFailure = new InvalidOperationException("metrics callback");
+        using var listener = new KevlarMeterListener((instrument, value) =>
+        {
+            if (instrument != "kevlar.rate_limit.queued")
+            {
+                return;
+            }
+
+            if (value == 1 && !reservationQueued)
+            {
+                reservationQueued = true;
+                timeProvider.Advance(TimeSpan.FromSeconds(1));
+            }
+            else if (value == 0 && reservationQueued && throwOnConsumption)
+            {
+                throwOnConsumption = false;
+                throw metricsFailure;
+            }
+        });
+        var shield = Shield.RateLimit(options =>
+        {
+            options.Permits = 1;
+            options.Window = TimeSpan.FromSeconds(1);
+            options.QueueLimit = 1;
+        }).WithTimeProvider(timeProvider).WithName("metrics-rate-consumption-failure");
+
+        await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
+        var thrown = await Assert.That(async () =>
+                await shield.ExecuteAsync(_ => ValueTask.CompletedTask))
+            .Throws<InvalidOperationException>();
+        await Assert.That(ReferenceEquals(thrown, metricsFailure)).IsTrue();
+
+        await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
     }
 
     private static Dictionary<(CircuitState From, CircuitState To), long> CircuitTransitionTotals(
