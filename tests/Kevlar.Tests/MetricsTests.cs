@@ -939,6 +939,7 @@ public class MetricsTests
     {
         var throwOnQueued = true;
         var metricsFailure = new InvalidOperationException("metrics callback");
+        using var observer = new KevlarMeterListener();
         using var listener = new KevlarMeterListener((instrument, value) =>
         {
             if (throwOnQueued && instrument == "kevlar.concurrency_limit.queued" && value == 1)
@@ -965,6 +966,10 @@ public class MetricsTests
             thrown = await Assert.That(async () =>
                     await failed.WaitAsync(TimeSpan.FromSeconds(5)))
                 .Throws<InvalidOperationException>();
+            await Assert.That(observer.Values(
+                    "kevlar.concurrency_limit.queued",
+                    "metrics-concurrency-pending-failure").Last())
+                .IsEqualTo(0);
         }
         finally
         {
@@ -1122,6 +1127,7 @@ public class MetricsTests
     {
         var throwOnQueued = true;
         var metricsFailure = new InvalidOperationException("metrics callback");
+        using var observer = new KevlarMeterListener();
         using var listener = new KevlarMeterListener((instrument, value) =>
         {
             if (throwOnQueued && instrument == "kevlar.rate_limit.queued" && value == 1)
@@ -1144,6 +1150,10 @@ public class MetricsTests
                 await shield.ExecuteAsync(_ => ValueTask.CompletedTask))
             .Throws<InvalidOperationException>();
         await Assert.That(ReferenceEquals(thrown, metricsFailure)).IsTrue();
+        await Assert.That(observer.Values(
+                "kevlar.rate_limit.queued",
+                "metrics-rate-reservation-failure").Last())
+            .IsEqualTo(0);
 
         var queued = shield.ExecuteAsync(_ => ValueTask.CompletedTask, cancellation.Token).AsTask();
         cancellation.Cancel();
@@ -1155,6 +1165,7 @@ public class MetricsTests
     {
         var throwOnAvailable = true;
         var metricsFailure = new InvalidOperationException("metrics callback");
+        using var observer = new KevlarMeterListener();
         using var listener = new KevlarMeterListener((instrument, value) =>
         {
             if (throwOnAvailable && instrument == "kevlar.rate_limit.available" && value == 0)
@@ -1176,6 +1187,10 @@ public class MetricsTests
             .Throws<InvalidOperationException>();
         await Assert.That(ReferenceEquals(thrown, metricsFailure)).IsTrue();
         await Assert.That(invoked).IsFalse();
+        await Assert.That(observer.Values(
+                "kevlar.rate_limit.available",
+                "metrics-rate-immediate-failure").Last())
+            .IsEqualTo(1);
 
         await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
     }
@@ -1183,6 +1198,7 @@ public class MetricsTests
     [Test]
     public async Task Rate_Metric_Failure_Preserves_A_Nested_Admission()
     {
+        var timeProvider = new FakeTimeProvider();
         var nested = false;
         var nestedInvocations = 0;
         var metricsFailure = new InvalidOperationException("metrics callback");
@@ -1195,6 +1211,7 @@ public class MetricsTests
             }
 
             nested = true;
+            timeProvider.Advance(TimeSpan.FromHours(2));
             shield!.ExecuteAsync(_ =>
             {
                 nestedInvocations++;
@@ -1207,7 +1224,7 @@ public class MetricsTests
             options.Permits = 1;
             options.Window = TimeSpan.FromHours(1);
             options.Burst = 2;
-        }).WithName("metrics-rate-nested-failure");
+        }).WithTimeProvider(timeProvider).WithName("metrics-rate-nested-failure");
 
         var thrown = await Assert.That(async () =>
                 await shield.ExecuteAsync(_ => ValueTask.CompletedTask))

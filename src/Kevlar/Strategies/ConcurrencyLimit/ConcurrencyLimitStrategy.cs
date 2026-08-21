@@ -107,7 +107,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
             RecordState(context.ShieldName);
             return Outcome<T>.FromException(cancelled);
         }
-        catch
+        catch (Exception publicationFailure)
         {
             Interlocked.Decrement(ref _pending);
             if (queued)
@@ -115,6 +115,18 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
                 UpdateMetricsState(inflightDelta: 0, queuedDelta: -1);
             }
 
+            try
+            {
+                RecordState(context.ShieldName);
+            }
+            catch (Exception correctionFailure)
+            {
+                publicationFailure = new AggregateException(
+                    publicationFailure,
+                    correctionFailure).Flatten();
+            }
+
+            ExceptionDispatchInfo.Capture(publicationFailure).Throw();
             throw;
         }
 
@@ -123,11 +135,23 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
         {
             RecordState(context.ShieldName);
         }
-        catch
+        catch (Exception publicationFailure)
         {
             UpdateMetricsState(inflightDelta: -1, queuedDelta: 0);
             _semaphore.Release();
             Interlocked.Decrement(ref _pending);
+            try
+            {
+                RecordState(context.ShieldName);
+            }
+            catch (Exception correctionFailure)
+            {
+                publicationFailure = new AggregateException(
+                    publicationFailure,
+                    correctionFailure).Flatten();
+            }
+
+            ExceptionDispatchInfo.Capture(publicationFailure).Throw();
             throw;
         }
 

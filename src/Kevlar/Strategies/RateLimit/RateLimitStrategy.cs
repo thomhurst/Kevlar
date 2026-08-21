@@ -27,11 +27,13 @@ internal sealed class RateLimitStrategy : Strategy
     private readonly HashSet<string?> _metricsShieldNames = [];
     private readonly object _queueGate = new();
     private string?[] _metricsShieldNameSnapshot = [];
+    private List<double>? _reentrantImmediateAdmissionTimestamps;
 
     private double _theoreticalArrival = double.NegativeInfinity;
     private Reservation? _queueHead;
     private Reservation? _queueTail;
     private int _queuedReservations;
+    private int _metricsAdmissionDepth;
 
     protected internal override bool IsDuplicateReferenceUnsafe => true;
 
@@ -77,34 +79,67 @@ internal sealed class RateLimitStrategy : Strategy
     {
         if (!KevlarMetrics.RateStateEnabled)
         {
-            return TryAcquire(context.TimeProvider, out reservation, out retryAfter);
+            return TryAcquire(context.TimeProvider, out reservation, out retryAfter, out _);
         }
 
         lock (_metricsPublicationGate)
         {
-            var previousTheoreticalArrival = _queueLimit == 0
-                ? Volatile.Read(ref _theoreticalArrival)
-                : 0;
-            var acquired = TryAcquire(context.TimeProvider, out reservation, out retryAfter);
-            var acquiredTheoreticalArrival = acquired && _queueLimit == 0
-                ? Volatile.Read(ref _theoreticalArrival)
-                : 0;
+            _metricsAdmissionDepth++;
             try
             {
-                RecordStateUnderLock(context.ShieldName, context.TimeProvider);
-                return acquired;
-            }
-            catch
-            {
-                if (acquired)
+                var previousTheoreticalArrival = _queueLimit == 0
+                    ? Volatile.Read(ref _theoreticalArrival)
+                    : 0;
+                var acquired = TryAcquire(
+                    context.TimeProvider,
+                    out reservation,
+                    out retryAfter,
+                    out var admissionTimestamp);
+                var nestedAdmissionIndex = -1;
+                if (acquired && _queueLimit == 0 && _metricsAdmissionDepth > 1)
                 {
-                    RollbackAcquisition(
-                        reservation,
-                        previousTheoreticalArrival,
-                        acquiredTheoreticalArrival);
+                    var admissions = _reentrantImmediateAdmissionTimestamps ??= [];
+                    nestedAdmissionIndex = admissions.Count;
+                    admissions.Add(admissionTimestamp);
                 }
 
-                throw;
+                try
+                {
+                    RecordStateUnderLock(context.ShieldName, context.TimeProvider);
+                    return acquired;
+                }
+                catch (Exception publicationFailure)
+                {
+                    if (acquired)
+                    {
+                        RollbackAcquisition(
+                            reservation,
+                            previousTheoreticalArrival,
+                            nestedAdmissionIndex);
+                    }
+
+                    try
+                    {
+                        RecordStateUnderLock(context.ShieldName, context.TimeProvider);
+                    }
+                    catch (Exception correctionFailure)
+                    {
+                        publicationFailure = new AggregateException(
+                            publicationFailure,
+                            correctionFailure).Flatten();
+                    }
+
+                    ExceptionDispatchInfo.Capture(publicationFailure).Throw();
+                    throw;
+                }
+            }
+            finally
+            {
+                _metricsAdmissionDepth--;
+                if (_metricsAdmissionDepth == 0)
+                {
+                    _reentrantImmediateAdmissionTimestamps?.Clear();
+                }
             }
         }
     }
@@ -112,7 +147,7 @@ internal sealed class RateLimitStrategy : Strategy
     private void RollbackAcquisition(
         Reservation? reservation,
         double previousTheoreticalArrival,
-        double acquiredTheoreticalArrival)
+        int nestedAdmissionIndex)
     {
         if (reservation is not null)
         {
@@ -122,7 +157,7 @@ internal sealed class RateLimitStrategy : Strategy
 
         if (_queueLimit == 0)
         {
-            RollbackImmediatePermit(previousTheoreticalArrival, acquiredTheoreticalArrival);
+            RollbackImmediatePermit(previousTheoreticalArrival, nestedAdmissionIndex);
             return;
         }
 
@@ -131,19 +166,25 @@ internal sealed class RateLimitStrategy : Strategy
 
     private void RollbackImmediatePermit(
         double previousTheoreticalArrival,
-        double acquiredTheoreticalArrival)
+        int nestedAdmissionIndex)
     {
-        while (true)
+        var restored = previousTheoreticalArrival;
+        var admissions = _reentrantImmediateAdmissionTimestamps;
+        var firstAdmission = nestedAdmissionIndex < 0 ? 0 : nestedAdmissionIndex + 1;
+        if (admissions is not null)
         {
-            var current = Volatile.Read(ref _theoreticalArrival);
-            var restored = current == acquiredTheoreticalArrival
-                ? previousTheoreticalArrival
-                : current - _timestampUnitsPerPermit;
-            if (Interlocked.CompareExchange(ref _theoreticalArrival, restored, current) == current)
+            for (var index = firstAdmission; index < admissions.Count; index++)
             {
-                return;
+                restored = GetNextArrival(restored, admissions[index]);
+            }
+
+            if (nestedAdmissionIndex >= 0)
+            {
+                admissions.RemoveAt(nestedAdmissionIndex);
             }
         }
+
+        Volatile.Write(ref _theoreticalArrival, restored);
     }
 
     private void RollbackQueuedPermit()
@@ -223,19 +264,24 @@ internal sealed class RateLimitStrategy : Strategy
     private bool TryAcquire(
         TimeProvider timeProvider,
         out Reservation? reservation,
-        out TimeSpan? retryAfter)
+        out TimeSpan? retryAfter,
+        out double admissionTimestamp)
     {
         if (_queueLimit > 0)
         {
+            admissionTimestamp = 0;
             return TryAcquireWithQueue(timeProvider, out reservation, out retryAfter);
         }
 
         reservation = null;
-        return TryAcquireWithoutQueue(timeProvider, out retryAfter);
+        return TryAcquireWithoutQueue(timeProvider, out retryAfter, out admissionTimestamp);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private bool TryAcquireWithoutQueue(TimeProvider timeProvider, out TimeSpan? retryAfter)
+    private bool TryAcquireWithoutQueue(
+        TimeProvider timeProvider,
+        out TimeSpan? retryAfter,
+        out double admissionTimestamp)
     {
         while (true)
         {
@@ -246,22 +292,28 @@ internal sealed class RateLimitStrategy : Strategy
             if (delayTimestampUnits > 0)
             {
                 retryAfter = GetRetryAfter(delayTimestampUnits);
+                admissionTimestamp = 0;
                 return false;
             }
 
-            var arrival = Math.Max(now, theoreticalArrival);
-            var nextArrival = arrival + _timestampUnitsPerPermit;
-            if (nextArrival == arrival)
-            {
-                nextArrival = GetNextRepresentableTimestamp(arrival);
-            }
+            var nextArrival = GetNextArrival(theoreticalArrival, now);
 
             if (Interlocked.CompareExchange(ref _theoreticalArrival, nextArrival, theoreticalArrival) == theoreticalArrival)
             {
                 retryAfter = null;
+                admissionTimestamp = now;
                 return true;
             }
         }
+    }
+
+    private double GetNextArrival(double theoreticalArrival, double now)
+    {
+        var arrival = Math.Max(now, theoreticalArrival);
+        var nextArrival = arrival + _timestampUnitsPerPermit;
+        return nextArrival == arrival
+            ? GetNextRepresentableTimestamp(arrival)
+            : nextArrival;
     }
 
     private bool TryAcquireWithQueue(
