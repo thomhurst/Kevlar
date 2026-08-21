@@ -9,7 +9,7 @@ sidebar_label: Stress Tests
 
 Kevlar and [Polly v8](https://github.com/App-vNext/Polly) run the same composed timeout, retry, and circuit-breaker workload under sustained parallel load. The two phases run one after another in a single process, so they use the same GitHub runner.
 
-*Last updated 2026-08-21 16:33 UTC (commit `e0f1531`).*
+*Last updated 2026-08-21 17:21 UTC (commit `86185a2`).*
 
 :::note
 Shared CI runners vary. Treat one run as a sustained-load health check, not a universal capacity claim. Compare ratios and allocation behavior, then measure your own workload.
@@ -19,10 +19,10 @@ Shared CI runners vary. Treat one run as a sustained-load health check, not a un
 
 | Library | Throughput | Operations | Allocated | Allocated/op | Managed heap (before / after) | GC collections (0 / 1 / 2) |
 |---|---:|---:|---:|---:|---:|---:|
-| Kevlar | 3.05M ops/s | 1.37B | 3.24 KiB | 0.00 B | 278.12 KiB / 334.66 KiB | 0 / 0 / 0 |
-| Polly | 2.67M ops/s | 1.20B | 53.66 GiB | 48.00 B | 221.99 KiB / 2.87 MiB | 3453 / 44 / 4 |
+| Kevlar | 3.70M ops/s | 1.67B | 3.24 KiB | 0.00 B | 286.13 KiB / 342.68 KiB | 0 / 0 / 0 |
+| Polly | 2.76M ops/s | 1.24B | 55.56 GiB | 48.00 B | 223.06 KiB / 9.15 MiB | 3575 / 44 / 4 |
 
-Kevlar completed **1.14×** as many operations per second as Polly in this run.
+Kevlar completed **1.34×** as many operations per second as Polly in this run.
 
 ## Method
 
