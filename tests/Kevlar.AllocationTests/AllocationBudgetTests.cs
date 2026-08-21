@@ -1,3 +1,4 @@
+using System.Diagnostics.Metrics;
 using Kevlar.Chaos;
 
 namespace Kevlar.AllocationTests;
@@ -153,6 +154,31 @@ public class AllocationBudgetTests
             test._primaryWinsHedge.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("warm partition lookup", this, static test =>
             _ = test._partitioned.GetShield(42));
+    }
+
+    [Test]
+    public void State_Metrics_Allocate_Zero_Bytes_Per_Operation()
+    {
+        using var listener = new MeterListener
+        {
+            InstrumentPublished = static (instrument, meterListener) =>
+            {
+                if (instrument.Meter.Name == KevlarDiagnostics.MeterName)
+                {
+                    meterListener.EnableMeasurementEvents(instrument);
+                }
+            },
+        };
+        listener.SetMeasurementEventCallback<long>(static (_, _, _, _) => { });
+        listener.SetMeasurementEventCallback<double>(static (_, _, _, _) => { });
+        listener.Start();
+
+        AssertZero("circuit state metrics", this, static test =>
+            test._breaker.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
+        AssertZero("rate limit state metrics", this, static test =>
+            test._rateLimit.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
+        AssertZero("concurrency state metrics", this, static test =>
+            test._concurrencyLimit.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
     }
 
     /// <summary>Verifies bounded allocations for failure and parallel execution paths.</summary>
