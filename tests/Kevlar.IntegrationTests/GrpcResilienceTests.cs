@@ -237,6 +237,7 @@ public class GrpcResilienceTests
             new TaskCompletionSource<TestReply>(TaskCreationOptions.RunContinuationsAsynchronously),
         };
         var bothStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var secondFailureObserved = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var attempts = 0;
         var expected = new RpcException(new Status(StatusCode.Unavailable, "shared"));
         var invoker = new DelegateCallInvoker((_, _) =>
@@ -251,12 +252,13 @@ public class GrpcResilienceTests
                 responses[attempt - 1].Task,
                 headers: new Metadata { { "attempt", attempt.ToString() } });
         }).Intercept(new ShieldUnaryClientInterceptor(
-            GrpcShield.WhenTransient().Hedge(2, TimeSpan.Zero)));
+            Shield.Use(new SelectFirstAfterSecondStrategy(secondFailureObserved))));
         var client = new Resilience.ResilienceClient(invoker);
         using var call = client.UnaryAsync(new TestRequest());
 
         await bothStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
         responses[1].TrySetException(expected);
+        await secondFailureObserved.Task.WaitAsync(TimeSpan.FromSeconds(5));
         responses[0].TrySetException(expected);
         var actual = await Assert.That(async () => await call.ResponseAsync).Throws<RpcException>();
 
@@ -396,6 +398,21 @@ public class GrpcResilienceTests
             Method<TRequest, TResponse> method,
             string? host,
             CallOptions options) => throw new NotSupportedException();
+    }
+
+    private sealed class SelectFirstAfterSecondStrategy(
+        TaskCompletionSource secondFailureObserved) : Strategy
+    {
+        public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+            Continuation<T, TState> next,
+            KevlarContext context)
+        {
+            var first = next.InvokeAsync(context).AsTask();
+            var second = next.InvokeAsync(context).AsTask();
+            _ = await second.ConfigureAwait(false);
+            secondFailureObserved.TrySetResult();
+            return await first.ConfigureAwait(false);
+        }
     }
 
     private sealed class GrpcTestServer : IAsyncDisposable
