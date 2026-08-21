@@ -64,6 +64,7 @@ internal sealed class RetryStrategy : Strategy
                 return new ValueTask<Outcome<T>>(outcome);
             }
 
+            execution = new ValueTask<Outcome<T>>(outcome);
             firstOutcomeShouldRetry = true;
         }
 

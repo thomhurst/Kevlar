@@ -1,9 +1,25 @@
+using System.Threading.Tasks.Sources;
 using Microsoft.Extensions.Time.Testing;
 
 namespace Kevlar.Tests;
 
 public class RetryEdgeCaseTests
 {
+    [Test]
+    public async Task Retry_Consumes_Source_Backed_Synchronous_Outcomes_Once()
+    {
+        var strategy = new SourceBackedResultStrategy();
+        var shield = Shield.For<int>()
+            .WhenResult(0)
+            .Retry(1, Backoff.None)
+            .Use(strategy);
+
+        var result = await shield.ExecuteAsync(_ => new ValueTask<int>(-1));
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(strategy.Invocations).IsEqualTo(2);
+    }
+
     [Test]
     public async Task RetryForever_Keeps_Retrying_Until_Success()
     {
@@ -319,5 +335,44 @@ public class RetryEdgeCaseTests
                 ? new InvalidOperationException($"attempt {attempts}")
                 : new ApplicationException("final");
         })).Throws<ApplicationException>().WithMessage("final");
+    }
+
+    private sealed class SourceBackedResultStrategy : Strategy
+    {
+        private int _invocations;
+
+        public int Invocations => Volatile.Read(ref _invocations);
+
+        public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+            Continuation<T, TState> next,
+            KevlarContext context)
+        {
+            var invocation = Interlocked.Increment(ref _invocations);
+            var outcome = Outcome<T>.FromResult((T)(object)(invocation == 1 ? 0 : 42));
+            return new ValueTask<Outcome<T>>(new SingleConsumptionSource<T>(outcome), 0);
+        }
+    }
+
+    private sealed class SingleConsumptionSource<T>(Outcome<T> outcome) : IValueTaskSource<Outcome<T>>
+    {
+        private int _consumptionCount;
+
+        public Outcome<T> GetResult(short token)
+        {
+            if (Interlocked.Increment(ref _consumptionCount) != 1)
+            {
+                throw new InvalidOperationException("ValueTask source consumed more than once.");
+            }
+
+            return outcome;
+        }
+
+        public ValueTaskSourceStatus GetStatus(short token) => ValueTaskSourceStatus.Succeeded;
+
+        public void OnCompleted(
+            Action<object?> continuation,
+            object? state,
+            short token,
+            ValueTaskSourceOnCompletedFlags flags) => throw new InvalidOperationException("Source completed synchronously.");
     }
 }
