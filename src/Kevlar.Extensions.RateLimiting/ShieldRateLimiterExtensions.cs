@@ -19,6 +19,22 @@ public static class ShieldRateLimiterExtensions
         return shield.Use(CreateStrategy(limiter, configure));
     }
 
+    /// <summary>
+    /// Appends a strategy backed by a context-aware <paramref name="limiter"/>.
+    /// </summary>
+    public static Shield RateLimit(
+        this Shield shield,
+        PartitionedRateLimiter<KevlarContext> limiter,
+        Action<RateLimiterAdapterOptions>? configure = null)
+    {
+        if (shield is null)
+        {
+            throw new ArgumentNullException(nameof(shield));
+        }
+
+        return shield.Use(CreateStrategy(limiter, configure));
+    }
+
     /// <summary>Appends a strategy backed by caller-provided asynchronous lease acquisition.</summary>
     public static Shield RateLimit(
         this Shield shield,
@@ -37,6 +53,22 @@ public static class ShieldRateLimiterExtensions
     public static Shield<TResult> RateLimit<TResult>(
         this Shield<TResult> shield,
         RateLimiter limiter,
+        Action<RateLimiterAdapterOptions>? configure = null)
+    {
+        if (shield is null)
+        {
+            throw new ArgumentNullException(nameof(shield));
+        }
+
+        return shield.Use(CreateStrategy(limiter, configure));
+    }
+
+    /// <summary>
+    /// Appends a strategy backed by a context-aware <paramref name="limiter"/>.
+    /// </summary>
+    public static Shield<TResult> RateLimit<TResult>(
+        this Shield<TResult> shield,
+        PartitionedRateLimiter<KevlarContext> limiter,
         Action<RateLimiterAdapterOptions>? configure = null)
     {
         if (shield is null)
@@ -75,6 +107,25 @@ public static class ShieldRateLimiterExtensions
             (permitCount, context) => limiter.AcquireAsync(permitCount, context.CancellationToken),
             options,
             "framework");
+    }
+
+    private static Strategy CreateStrategy(
+        PartitionedRateLimiter<KevlarContext> limiter,
+        Action<RateLimiterAdapterOptions>? configure)
+    {
+        if (limiter is null)
+        {
+            throw new ArgumentNullException(nameof(limiter));
+        }
+
+        var options = CreateOptions(configure);
+        return new RateLimiterStrategy(
+            (permitCount, context) => limiter.AcquireAsync(
+                context,
+                permitCount,
+                context.CancellationToken),
+            options,
+            "partitioned-framework");
     }
 
     private static Strategy CreateStrategy(

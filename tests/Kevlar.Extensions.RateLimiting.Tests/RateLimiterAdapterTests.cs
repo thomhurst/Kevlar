@@ -7,6 +7,8 @@ namespace Kevlar.Extensions.RateLimiting.Tests;
 
 public class RateLimiterAdapterTests
 {
+    private static readonly KevlarKey<string> TenantKey = new("tenant");
+
     [Test]
     public async Task Fixed_Window_Preserves_Retry_After_And_Hook_Order()
     {
@@ -119,6 +121,114 @@ public class RateLimiterAdapterTests
         release.SetResult();
         await Assert.That(await occupying).IsEqualTo(1);
         await Assert.That(await replacement.WaitAsync(TimeSpan.FromSeconds(5))).IsEqualTo(3);
+    }
+
+    [Test]
+    public async Task Partitioned_Limiter_Isolates_Context_Partitions_And_Composes_With_Partitioned_Shields()
+    {
+        using var limiter = CreateTenantConcurrencyLimiter(queueLimit: 0);
+        var shields = new PartitionedShield<string>(_ => Shield.Empty.RateLimit(limiter));
+        var shield = shields.GetShield("pipeline");
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var occupying = ExecuteForTenantAsync(shield, "alpha", async _ =>
+        {
+            entered.SetResult();
+            await release.Task;
+            return 1;
+        }).AsTask();
+        await entered.Task;
+
+        await Assert.That(async () => await ExecuteForTenantAsync(
+            shield,
+            "alpha",
+            static _ => new ValueTask<int>(2))).Throws<RateLimitExceededException>();
+        await Assert.That(await ExecuteForTenantAsync(
+            shield,
+            "beta",
+            static _ => new ValueTask<int>(3))).IsEqualTo(3);
+
+        release.SetResult();
+        await Assert.That(await occupying).IsEqualTo(1);
+        await Assert.That(shields.Count).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Partitioned_Limiter_Queue_Cancellation_Does_Not_Consume_Capacity()
+    {
+        using var limiter = CreateTenantConcurrencyLimiter(queueLimit: 1);
+        var shield = Shield.Empty.RateLimit(limiter);
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var occupying = ExecuteForTenantAsync(shield, "alpha", async _ =>
+        {
+            entered.SetResult();
+            await release.Task;
+            return 1;
+        }).AsTask();
+        await entered.Task;
+
+        using var cancellation = new CancellationTokenSource();
+        var queued = ExecuteForTenantAsync(
+            shield,
+            "alpha",
+            static _ => new ValueTask<int>(2),
+            cancellation.Token).AsTask();
+        await Assert.That(queued.IsCompleted).IsFalse();
+        cancellation.Cancel();
+        await Assert.That(async () => await queued).Throws<OperationCanceledException>();
+
+        var replacement = ExecuteForTenantAsync(
+            shield,
+            "alpha",
+            static _ => new ValueTask<int>(3)).AsTask();
+        release.SetResult();
+        await Assert.That(await occupying).IsEqualTo(1);
+        await Assert.That(await replacement.WaitAsync(TimeSpan.FromSeconds(5))).IsEqualTo(3);
+    }
+
+    [Test]
+    public async Task Partitioned_Limiter_Preserves_Context_Metadata_And_Lease_Ownership()
+    {
+        var retryAfter = TimeSpan.FromSeconds(5);
+        var lease = new TrackingLease(
+            isAcquired: false,
+            new Dictionary<string, object?>
+            {
+                [MetadataName.RetryAfter.Name] = retryAfter,
+                ["partition"] = "alpha",
+            });
+        string? observedTenant = null;
+        CancellationToken observedCancellation = default;
+        using var limiter = new StubPartitionedLimiter((context, cancellationToken) =>
+        {
+            observedTenant = context.Properties.GetOrDefault(TenantKey, string.Empty);
+            observedCancellation = cancellationToken;
+            return new ValueTask<RateLimitLease>(lease);
+        });
+        RateLimiterRejectedEvent observedRejection = default;
+        var shield = Shield.Empty.RateLimit(
+            limiter,
+            options =>
+            {
+                options.PermitCount = 2;
+                options.OnRejected = rejection => observedRejection = rejection;
+            });
+        using var cancellation = new CancellationTokenSource();
+
+        var exception = await Assert.That(async () => await ExecuteForTenantAsync(
+            shield,
+            "alpha",
+            static _ => new ValueTask<int>(42),
+            cancellation.Token)).Throws<RateLimitExceededException>();
+
+        await Assert.That(exception!.RetryAfter).IsEqualTo(retryAfter);
+        await Assert.That(observedTenant).IsEqualTo("alpha");
+        await Assert.That(observedCancellation).IsEqualTo(cancellation.Token);
+        await Assert.That(observedRejection.Metadata["partition"]).IsEqualTo("alpha");
+        await Assert.That(observedRejection.PermitCount).IsEqualTo(2);
+        await Assert.That(lease.DisposeCount).IsEqualTo(1);
+        await Assert.That(lease.MetadataReadAfterDispose).IsFalse();
     }
 
     [Test]
@@ -308,17 +418,26 @@ public class RateLimiterAdapterTests
         var frameworkShield = Shield.Empty.RateLimit(limiter, options => options.PermitCount = 2);
         var delegateShield = Shield<int>.Empty.RateLimit(static (_, _) =>
             new ValueTask<RateLimitLease>(new TrackingLease(true)));
+        using var partitionedLimiter = new StubPartitionedLimiter(static (_, _) =>
+            new ValueTask<RateLimitLease>(new TrackingLease(true)));
+        var partitionedShield = Shield<int>.Empty.RateLimit(partitionedLimiter);
 
         var frameworkDescriptor = frameworkShield.GetDescriptor()
             .AssertContainsSingle<CustomStrategyDescriptor>();
         var delegateDescriptor = delegateShield.GetDescriptor()
+            .AssertContainsSingle<CustomStrategyDescriptor>();
+        var partitionedDescriptor = partitionedShield.GetDescriptor()
             .AssertContainsSingle<CustomStrategyDescriptor>();
 
         await Assert.That(frameworkDescriptor.Description).IsEqualTo(
             "RateLimitAdapter(framework, permits 2)");
         await Assert.That(delegateDescriptor.Description).IsEqualTo(
             "RateLimitAdapter(delegate, permits 1)");
+        await Assert.That(partitionedDescriptor.Description).IsEqualTo(
+            "RateLimitAdapter(partitioned-framework, permits 1)");
         await Assert.That(frameworkDescriptor.Description.Contains(limiter.GetType().FullName!)).IsFalse();
+        await Assert.That(partitionedDescriptor.Description.Contains(
+            partitionedLimiter.GetType().FullName!)).IsFalse();
     }
 
     [Test]
@@ -414,6 +533,8 @@ public class RateLimiterAdapterTests
             new ValueTask<RateLimitLease>(new TrackingLease(true)));
         RateLimitLeaseAcquirer acquire = static (_, _) =>
             new ValueTask<RateLimitLease>(new TrackingLease(true));
+        using var partitionedLimiter = new StubPartitionedLimiter(static (_, _) =>
+            new ValueTask<RateLimitLease>(new TrackingLease(true)));
 
         await Assert.That(() => ShieldRateLimiterExtensions.RateLimit(null!, limiter))
             .Throws<ArgumentNullException>();
@@ -423,11 +544,40 @@ public class RateLimiterAdapterTests
             .Throws<ArgumentNullException>();
         await Assert.That(() => ShieldRateLimiterExtensions.RateLimit<int>(null!, acquire))
             .Throws<ArgumentNullException>();
+        await Assert.That(() => ShieldRateLimiterExtensions.RateLimit(null!, partitionedLimiter))
+            .Throws<ArgumentNullException>();
+        await Assert.That(() => ShieldRateLimiterExtensions.RateLimit<int>(null!, partitionedLimiter))
+            .Throws<ArgumentNullException>();
         await Assert.That(() => Shield.Empty.RateLimit((RateLimiter)null!))
             .Throws<ArgumentNullException>();
         await Assert.That(() => Shield.Empty.RateLimit((RateLimitLeaseAcquirer)null!))
             .Throws<ArgumentNullException>();
+        await Assert.That(() => Shield.Empty.RateLimit((PartitionedRateLimiter<KevlarContext>)null!))
+            .Throws<ArgumentNullException>();
     }
+
+    private static PartitionedRateLimiter<KevlarContext> CreateTenantConcurrencyLimiter(
+        int queueLimit) =>
+        PartitionedRateLimiter.Create<KevlarContext, string>(context =>
+            RateLimitPartition.GetConcurrencyLimiter(
+                context.Properties.GetOrDefault(TenantKey, "default"),
+                _ => new ConcurrencyLimiterOptions
+                {
+                    PermitLimit = 1,
+                    QueueLimit = queueLimit,
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                }));
+
+    private static ValueTask<T> ExecuteForTenantAsync<T>(
+        Shield shield,
+        string tenant,
+        Func<CancellationToken, ValueTask<T>> action,
+        CancellationToken cancellationToken = default) =>
+        shield.ExecuteWithContextAsync(
+            (tenant, action),
+            static (state, properties) => properties.Set(TenantKey, state.tenant),
+            static (state, context) => state.action(context.CancellationToken),
+            cancellationToken);
 
     private static async Task AssertRejectsSecondExecution(RateLimiter limiter)
     {
@@ -450,6 +600,23 @@ public class RateLimiterAdapterTests
             CancellationToken cancellationToken) => acquire(cancellationToken);
 
         public override RateLimiterStatistics? GetStatistics() => null;
+    }
+
+    private sealed class StubPartitionedLimiter(
+        Func<KevlarContext, CancellationToken, ValueTask<RateLimitLease>> acquire)
+        : PartitionedRateLimiter<KevlarContext>
+    {
+        protected override RateLimitLease AttemptAcquireCore(
+            KevlarContext resource,
+            int permitCount) =>
+            acquire(resource, default).GetAwaiter().GetResult();
+
+        protected override ValueTask<RateLimitLease> AcquireAsyncCore(
+            KevlarContext resource,
+            int permitCount,
+            CancellationToken cancellationToken) => acquire(resource, cancellationToken);
+
+        public override RateLimiterStatistics? GetStatistics(KevlarContext resource) => null;
     }
 
     private sealed class TrackingLease : RateLimitLease

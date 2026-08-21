@@ -31,6 +31,18 @@ public class RateLimitBenchmarks
         QueueLimit = 0,
     });
     private static readonly Shield KevlarFrameworkRateLimit = Shield.Empty.RateLimit(FrameworkLimiter);
+    private static readonly PartitionedRateLimiter<KevlarContext> FrameworkPartitionedLimiter =
+        PartitionedRateLimiter.Create<KevlarContext, int>(context =>
+            RateLimitPartition.Get(
+                context.IsSynchronous ? 0 : 1,
+                static _ => new FixedWindowRateLimiter(new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = 1_000_000_000,
+                    Window = TimeSpan.FromSeconds(1),
+                    QueueLimit = 0,
+                })));
+    private static readonly Shield KevlarPartitionedFrameworkRateLimit =
+        Shield.Empty.RateLimit(FrameworkPartitionedLimiter);
 
     private static readonly ResiliencePipeline PollyRateLimit = new ResiliencePipelineBuilder()
         .AddRateLimiter(new TokenBucketRateLimiter(new TokenBucketRateLimiterOptions
@@ -59,4 +71,8 @@ public class RateLimitBenchmarks
     [BenchmarkCategory("Uncontended"), Benchmark]
     public ValueTask<int> Kevlar_FrameworkAdapter_Uncontended() =>
         KevlarFrameworkRateLimit.ExecuteAsync(static _ => new ValueTask<int>(42));
+
+    [BenchmarkCategory("Uncontended"), Benchmark]
+    public ValueTask<int> Kevlar_PartitionedFrameworkAdapter_Uncontended() =>
+        KevlarPartitionedFrameworkRateLimit.ExecuteAsync(static _ => new ValueTask<int>(42));
 }

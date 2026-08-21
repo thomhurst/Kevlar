@@ -5,7 +5,7 @@
     <RootNamespace>Kevlar.Extensions.RateLimiting</RootNamespace>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IsPackable>true</IsPackable>
-    <Description>System.Threading.RateLimiting adapters for Kevlar shields, including custom asynchronous lease acquisition.</Description>
+    <Description>System.Threading.RateLimiting adapters for Kevlar shields, including partitioned and custom asynchronous lease acquisition.</Description>
     <PackageTags>resilience;rate-limiting;system-threading-ratelimiting;kevlar</PackageTags>
   </PropertyGroup>
 
