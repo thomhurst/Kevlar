@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis.Operations;
 namespace Kevlar.Analyzers;
 
 /// <summary>
-/// Diagnoses statically provable Kevlar pipeline hazards: synchronous hedging and reactive
+/// Diagnoses statically provable Kevlar pipeline hazards: synchronous multi-attempt hedging and reactive
 /// strategies made unreachable by an inner fallback using the same handling clause.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -17,12 +17,12 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     /// <summary>The KEV002 rule.</summary>
     public static readonly DiagnosticDescriptor SynchronousHedgingRule = new(
         id: "KEV002",
-        title: "Hedging requires asynchronous execution",
-        messageFormat: "This shield contains hedging, which cannot run through synchronous 'Execute'. Use 'ExecuteAsync' or remove hedging.",
+        title: "Multi-attempt hedging requires asynchronous execution",
+        messageFormat: "This shield contains multi-attempt hedging, which cannot run through synchronous 'Execute'. Use 'ExecuteAsync' or remove hedging.",
         category: "Reliability",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        description: "Hedging races concurrent attempts and is only supported by Kevlar's asynchronous execution boundary. Synchronous Execute always fails for a pipeline containing hedging.");
+        description: "Multi-attempt hedging races concurrent attempts and is only supported by Kevlar's asynchronous execution boundary. Synchronous Execute fails for a pipeline containing statically known multi-attempt hedging.");
 
     /// <summary>The KEV003 rule.</summary>
     public static readonly DiagnosticDescriptor UnreachableReactiveStrategyRule = new(
@@ -57,10 +57,10 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         var invocation = (IInvocationOperation)context.Operation;
 
         if (IsSynchronousExecute(invocation.TargetMethod, knownTypes)
-            && FindInReceiverChain(
+            && FindInPipeline(
                 GetReceiver(invocation),
                 context,
-                method => IsKevlarFluentMethod(method, knownTypes, "Hedge"),
+                candidate => IsKnownMultiAttemptHedge(candidate, knownTypes),
                 knownTypes,
                 stopAtHandlingClause: false,
                 stopAtCompositionBoundary: false,
@@ -72,10 +72,10 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         }
 
         if (IsKevlarFluentMethod(invocation.TargetMethod, knownTypes, "Fallback")
-            && FindInReceiverChain(
+            && FindInPipeline(
                 GetReceiver(invocation),
                 context,
-                method => IsReactiveStrategy(method, knownTypes),
+                candidate => IsReactiveStrategy(Normalize(candidate.TargetMethod), knownTypes),
                 knownTypes,
                 stopAtHandlingClause: true,
                 stopAtCompositionBoundary: true,
@@ -88,15 +88,15 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static bool FindInReceiverChain(
+    private static bool FindInPipeline(
         IOperation? operation,
         OperationAnalysisContext context,
-        Func<IMethodSymbol, bool> predicate,
+        Func<IInvocationOperation, bool> predicate,
         KnownTypes knownTypes,
         bool stopAtHandlingClause,
         bool stopAtCompositionBoundary,
         out string? matchedMethod)
-        => FindInReceiverChain(
+        => FindInPipeline(
             operation,
             context,
             predicate,
@@ -106,10 +106,10 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             visitedLocals: null,
             out matchedMethod);
 
-    private static bool FindInReceiverChain(
+    private static bool FindInPipeline(
         IOperation? operation,
         OperationAnalysisContext context,
-        Func<IMethodSymbol, bool> predicate,
+        Func<IInvocationOperation, bool> predicate,
         KnownTypes knownTypes,
         bool stopAtHandlingClause,
         bool stopAtCompositionBoundary,
@@ -128,8 +128,23 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 return false;
             }
 
-            return FindInReceiverChain(
+            var found = FindInPipeline(
                 initializer,
+                context,
+                predicate,
+                knownTypes,
+                stopAtHandlingClause,
+                stopAtCompositionBoundary,
+                visitedLocals,
+                out matchedMethod);
+            visitedLocals.Remove(localReference.Local);
+            return found;
+        }
+
+        if (operation is IConditionalAccessOperation conditionalAccess)
+        {
+            return FindInPipeline(
+                conditionalAccess.Operation,
                 context,
                 predicate,
                 knownTypes,
@@ -139,17 +154,26 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 out matchedMethod);
         }
 
-        if (operation is IConditionalAccessOperation conditionalAccess)
+        if (operation is IArrayCreationOperation { Initializer: { } arrayInitializer })
         {
-            return FindInReceiverChain(
-                conditionalAccess.Operation,
-                context,
-                predicate,
-                knownTypes,
-                stopAtHandlingClause,
-                stopAtCompositionBoundary,
-                visitedLocals,
-                out matchedMethod);
+            foreach (var element in arrayInitializer.ElementValues)
+            {
+                if (FindInPipeline(
+                    element,
+                    context,
+                    predicate,
+                    knownTypes,
+                    stopAtHandlingClause,
+                    stopAtCompositionBoundary,
+                    visitedLocals,
+                    out matchedMethod))
+                {
+                    return true;
+                }
+            }
+
+            matchedMethod = null;
+            return false;
         }
 
         if (operation is not IInvocationOperation invocation)
@@ -165,13 +189,14 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        if (predicate(method))
+        if (predicate(invocation))
         {
             matchedMethod = method.Name;
             return true;
         }
 
-        if (stopAtCompositionBoundary && IsCompositionBoundary(method, knownTypes))
+        var isCompositionBoundary = IsCompositionBoundary(method, knownTypes);
+        if (stopAtCompositionBoundary && isCompositionBoundary)
         {
             matchedMethod = null;
             return false;
@@ -183,7 +208,26 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        return FindInReceiverChain(
+        if (isCompositionBoundary)
+        {
+            foreach (var argument in invocation.Arguments)
+            {
+                if (FindInPipeline(
+                    argument.Value,
+                    context,
+                    predicate,
+                    knownTypes,
+                    stopAtHandlingClause,
+                    stopAtCompositionBoundary,
+                    visitedLocals,
+                    out matchedMethod))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return FindInPipeline(
             GetReceiver(invocation),
             context,
             predicate,
@@ -328,6 +372,27 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     private static bool IsReactiveStrategy(IMethodSymbol method, KnownTypes knownTypes) =>
         (method.Name is "Retry" or "RetryForever" or "Hedge" or "CircuitBreaker")
         && IsKevlarFluentMethod(method, knownTypes);
+
+    private static bool IsKnownMultiAttemptHedge(
+        IInvocationOperation invocation,
+        KnownTypes knownTypes)
+    {
+        if (!IsKevlarFluentMethod(invocation.TargetMethod, knownTypes, "Hedge"))
+        {
+            return false;
+        }
+
+        foreach (var argument in invocation.Arguments)
+        {
+            if (argument.Parameter?.Name == "maxAttempts"
+                && argument.Value.ConstantValue is { HasValue: true, Value: int maxAttempts })
+            {
+                return maxAttempts > 1;
+            }
+        }
+
+        return false;
+    }
 
     private static bool StartsHandlingClause(IMethodSymbol method, KnownTypes knownTypes) =>
         (method.Name is "When" or "WhenResult" or "WhenDefault")

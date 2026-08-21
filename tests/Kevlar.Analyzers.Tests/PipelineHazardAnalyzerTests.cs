@@ -19,6 +19,9 @@ public class PipelineHazardAnalyzerTests
             "var shield = Shield.Hedge(2, TimeSpan.Zero); var alias = shield; _ = alias.Execute(_ => 1);",
             "Shield? shield = Shield.Hedge(2, TimeSpan.Zero); _ = shield?.Execute(_ => 1);",
             "var shield = ShieldExtensions.Hedge(Shield.Empty, 2, TimeSpan.Zero); _ = shield.Execute(_ => 1);",
+            "_ = Shield.Empty.Wrap(Shield.Hedge(2, TimeSpan.Zero)).Execute(_ => 1);",
+            "_ = Shield.Compose(Shield.Empty, Shield.Hedge(2, TimeSpan.Zero)).Execute(_ => 1);",
+            "_ = Shield<int>.Empty.Wrap(Shield.Hedge(2, TimeSpan.Zero)).Execute(_ => 1);",
         };
 
         await AssertEachAsync(cases, "KEV002");
@@ -55,6 +58,9 @@ public class PipelineHazardAnalyzerTests
             "var shield = CreateShield(); _ = shield.Execute(_ => 1);",
             "var shield = Shield.Hedge(2, TimeSpan.Zero); shield = Shield.Empty; _ = shield.Execute(_ => 1);",
             "_ = Shield.Empty.Execute(_ => 1);",
+            "_ = Shield.Hedge(1, TimeSpan.Zero).Execute(_ => 1);",
+            "var attempts = DateTime.Now.Day; _ = Shield.Hedge(attempts, TimeSpan.Zero).Execute(_ => 1);",
+            "_ = Shield.Hedge(options => options.MaxAttempts = 2).Execute(_ => 1);",
         };
 
         foreach (var body in cases)

@@ -17,7 +17,7 @@ Generated code is ignored.
 | Rule | Severity | Hazard |
 |---|---|---|
 | `KEV001` | Warning | execution delegate ignores its `CancellationToken` |
-| `KEV002` | Warning | hedging pipeline is passed to synchronous `Execute` |
+| `KEV002` | Warning | known multi-attempt hedging pipeline is passed to synchronous `Execute` |
 | `KEV003` | Warning | inner fallback makes retry, hedging, or circuit breaker unreachable |
 
 ## KEV001: ignored execution cancellation
@@ -35,8 +35,9 @@ uncancellable and ignoring cancellation is deliberate.
 
 ## KEV002: synchronous hedging
 
-Hedging races concurrent attempts and therefore supports only asynchronous execution. Synchronous
-`Execute` always throws for a shield containing hedging, so use `ExecuteAsync` or remove hedging:
+Multi-attempt hedging races concurrent attempts and therefore supports only asynchronous execution.
+Synchronous `Execute` throws for a shield containing a hedge with a known `MaxAttempts` greater than
+one, so use `ExecuteAsync` or remove hedging:
 
 ```csharp
 var hedged = Shield.Hedge(2, TimeSpan.FromMilliseconds(50));
@@ -44,8 +45,9 @@ var hedged = Shield.Hedge(2, TimeSpan.FromMilliseconds(50));
 var value = await hedged.ExecuteAsync(ct => LoadAsync(ct));   // clean
 ```
 
-The rule recognizes direct fluent chains and stable local aliases, including typed shields and
-extension-method syntax. It deliberately skips opaque factory results and reassigned locals.
+The rule recognizes direct fluent chains, composed shields, and stable local aliases, including typed
+shields and extension-method syntax. It deliberately skips opaque factory results, reassigned locals,
+and hedging whose configured attempt count is not a compile-time constant.
 
 ## KEV003: unreachable reactive strategy
 
