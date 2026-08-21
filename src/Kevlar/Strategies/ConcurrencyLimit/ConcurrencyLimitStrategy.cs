@@ -7,8 +7,8 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
     private readonly SemaphoreSlim _semaphore;
     private readonly int _maxConcurrency;
     private readonly int _maxQueue;
-    private readonly int _capacity;
-    private int _pending;
+    private readonly long _capacity;
+    private long _pending;
 
     protected internal override bool IsDuplicateReferenceUnsafe => true;
 
@@ -16,11 +16,10 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
     {
         Throw.IfOutOfRange(options.MaxConcurrency <= 0, nameof(options), "MaxConcurrency must be positive.");
         Throw.IfOutOfRange(options.MaxQueue < 0, nameof(options), "MaxQueue must not be negative.");
-
         _semaphore = new SemaphoreSlim(options.MaxConcurrency, options.MaxConcurrency);
         _maxConcurrency = options.MaxConcurrency;
         _maxQueue = options.MaxQueue;
-        _capacity = options.MaxConcurrency + options.MaxQueue;
+        _capacity = options.MaxConcurrency + (long)options.MaxQueue;
     }
 
     public override string Describe() =>

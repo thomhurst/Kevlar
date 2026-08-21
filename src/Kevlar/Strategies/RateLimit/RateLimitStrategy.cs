@@ -129,7 +129,7 @@ internal sealed class RateLimitStrategy : Strategy
 
             if (delayTimestampUnits > 0)
             {
-                retryAfter = TimeSpan.FromSeconds(delayTimestampUnits * SecondsPerSystemTimestamp);
+                retryAfter = GetRetryAfter(delayTimestampUnits);
                 return false;
             }
 
@@ -164,8 +164,7 @@ internal sealed class RateLimitStrategy : Strategy
                 if (_queuedReservations >= _queueLimit)
                 {
                     reservation = null;
-                    retryAfter = TimeSpan.FromSeconds(
-                        Math.Max(0, delayTimestampUnits) * SecondsPerSystemTimestamp);
+                    retryAfter = GetRetryAfter(Math.Max(0, delayTimestampUnits));
                     return false;
                 }
 
@@ -206,7 +205,7 @@ internal sealed class RateLimitStrategy : Strategy
             var delayTimestampUnits = reservation.DueTimestamp - GetCurrentTimestamp(timeProvider);
             if (delayTimestampUnits > 0)
             {
-                wait = TimeSpan.FromSeconds(delayTimestampUnits * SecondsPerSystemTimestamp);
+                wait = DelayHelper.FromSecondsClamped(delayTimestampUnits * SecondsPerSystemTimestamp);
                 nextTurn = null;
                 return false;
             }
@@ -286,6 +285,23 @@ internal sealed class RateLimitStrategy : Strategy
         return BitConverter.Int64BitsToDouble(timestamp < 0 ? bits - 1 : bits + 1);
     }
 
+    private static TimeSpan GetRetryAfter(double delayTimestampUnits)
+    {
+        var seconds = delayTimestampUnits * SecondsPerSystemTimestamp;
+        if (double.IsNaN(seconds) || seconds <= 0)
+        {
+            return TimeSpan.Zero;
+        }
+
+        // Scaling through provider timestamp units can lose a few ULPs at TimeSpan.MaxValue.
+        const double doubleMachineEpsilon = 2.2204460492503131e-16;
+        var maximumSeconds = TimeSpan.MaxValue.TotalSeconds;
+        var maximumRoundingTolerance = maximumSeconds * (4 * doubleMachineEpsilon);
+        return seconds >= maximumSeconds - maximumRoundingTolerance
+            ? TimeSpan.MaxValue
+            : TimeSpan.FromSeconds(seconds);
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private double GetCurrentTimestamp(TimeProvider timeProvider) =>
         ReferenceEquals(timeProvider, TimeProvider.System)
@@ -299,9 +315,10 @@ internal sealed class RateLimitStrategy : Strategy
             timeProvider,
             static provider => new CustomTimestampOrigin(provider));
         var timestamp = timeProvider.GetTimestamp();
+        var elapsedTimestamp = unchecked(timestamp - origin.ProviderTimestamp);
 
         return origin.SystemTimestamp - _systemTimestampOrigin
-            + ((timestamp - origin.ProviderTimestamp) * origin.TimestampScale);
+            + (elapsedTimestamp * origin.TimestampScale);
     }
 
     private sealed class CustomTimestampOrigin

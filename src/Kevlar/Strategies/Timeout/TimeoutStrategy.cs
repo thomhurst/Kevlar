@@ -16,6 +16,7 @@ internal sealed class TimeoutStrategy : Strategy
     public TimeoutStrategy(TimeoutOptions options)
     {
         Throw.IfOutOfRange(options.Timeout <= TimeSpan.Zero, nameof(options), "Timeout must be positive.");
+        Throw.IfOutOfRange(options.Timeout > DelayHelper.MaximumDelay, nameof(options.Timeout), "Timeout exceeds the runtime timer limit.");
         _timeout = options.Timeout;
         _onTimeout = options.OnTimeout;
     }

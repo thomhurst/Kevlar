@@ -2,6 +2,22 @@ namespace Kevlar.Internal;
 
 internal static class DelayHelper
 {
+    public static readonly TimeSpan MaximumDelay = TimeSpan.FromMilliseconds(uint.MaxValue - 1d);
+
+    public static TimeSpan Clamp(TimeSpan delay) => delay > MaximumDelay ? MaximumDelay : delay;
+
+    public static TimeSpan FromSecondsClamped(double seconds)
+    {
+        if (double.IsNaN(seconds) || seconds <= 0)
+        {
+            return TimeSpan.Zero;
+        }
+
+        return seconds >= MaximumDelay.TotalSeconds
+            ? MaximumDelay
+            : TimeSpan.FromSeconds(seconds);
+    }
+
     /// <summary>
     /// Waits for <paramref name="delay"/> honouring the context's <see cref="TimeProvider"/> and
     /// cancellation token. In synchronous executions the wait blocks the calling thread so the

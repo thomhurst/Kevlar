@@ -25,8 +25,8 @@ internal sealed class CircuitBreakerCore
     private readonly Action<CircuitStateChangedEvent>? _onStateChanged;
     private readonly CircuitBreakerMonitor? _monitor;
 
-    private readonly int[] _bucketFailures = new int[BucketCount];
-    private readonly int[] _bucketSuccesses = new int[BucketCount];
+    private readonly long[] _bucketFailures = new long[BucketCount];
+    private readonly long[] _bucketSuccesses = new long[BucketCount];
     private double _currentBucketStart = double.NaN;
     private int _currentBucketIndex;
 
@@ -40,7 +40,10 @@ internal sealed class CircuitBreakerCore
     public CircuitBreakerCore(CircuitBreakerOptions options)
     {
         Throw.IfOutOfRange(options.ConsecutiveFailures is <= 0, nameof(options), "ConsecutiveFailures must be positive.");
-        Throw.IfOutOfRange(options.FailureRatio is <= 0 or > 1, nameof(options), "FailureRatio must be between 0 (exclusive) and 1 (inclusive).");
+        Throw.IfOutOfRange(
+            options.FailureRatio is { } ratio && (double.IsNaN(ratio) || ratio <= 0 || ratio > 1),
+            nameof(options.FailureRatio),
+            "FailureRatio must be between 0 (exclusive) and 1 (inclusive).");
         Throw.IfOutOfRange(options.ConsecutiveFailures is not null && options.FailureRatio is not null, nameof(options), "Configure either ConsecutiveFailures or FailureRatio, not both.");
         Throw.IfOutOfRange(options.MinimumThroughput < 1, nameof(options), "MinimumThroughput must be at least 1.");
         Throw.IfOutOfRange(options.SamplingWindow <= TimeSpan.Zero, nameof(options), "SamplingWindow must be positive.");
@@ -88,6 +91,7 @@ internal sealed class CircuitBreakerCore
 
         lock (_gate)
         {
+            var now = _state == CircuitState.Open ? timeProvider.GetUtcNow() : default;
             switch (_state)
             {
                 case CircuitState.Closed:
@@ -253,7 +257,7 @@ internal sealed class CircuitBreakerCore
         var bucket = AdvanceBucket(timestamp);
         _bucketFailures[bucket]++;
 
-        int failures = 0, total = 0;
+        long failures = 0, total = 0;
         for (var i = 0; i < BucketCount; i++)
         {
             failures += _bucketFailures[i];
