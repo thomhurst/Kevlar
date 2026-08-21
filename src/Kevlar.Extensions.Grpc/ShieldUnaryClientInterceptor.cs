@@ -137,7 +137,7 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
             try
             {
                 var response = await call.ResponseAsync.ConfigureAwait(false);
-                CompleteAttempt(call, exception: null);
+                CompleteAttempt(call, exception: null, failureCall: null);
                 return new AttemptResult(call, response);
             }
             catch (RpcException exception) when (
@@ -148,12 +148,12 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
                     exception.Message,
                     exception,
                     cancellationToken);
-                CompleteAttempt(call, cancellation);
+                _ = await CompleteFailureAsync(call, cancellation).ConfigureAwait(false);
                 throw cancellation;
             }
             catch (Exception exception)
             {
-                var attemptException = CompleteAttempt(call, exception);
+                var attemptException = await CompleteFailureAsync(call, exception).ConfigureAwait(false);
                 if (ReferenceEquals(attemptException, exception))
                 {
                     throw;
@@ -204,9 +204,19 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
             }
         }
 
-        private Exception? CompleteAttempt(AsyncUnaryCall<TResponse> call, Exception? exception)
+        private async ValueTask<Exception> CompleteFailureAsync(
+            AsyncUnaryCall<TResponse> call,
+            Exception exception)
         {
-            var failureCall = exception is null ? null : SnapshotFailure(call, exception);
+            var failureCall = await SnapshotFailureAsync(call, exception).ConfigureAwait(false);
+            return CompleteAttempt(call, exception, failureCall) ?? exception;
+        }
+
+        private Exception? CompleteAttempt(
+            AsyncUnaryCall<TResponse> call,
+            Exception? exception,
+            AsyncUnaryCall<TResponse>? failureCall)
+        {
             lock (_gate)
             {
                 for (var index = _attempts.Count - 1; index >= 0; index--)
@@ -237,11 +247,22 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
             return exception;
         }
 
-        private static AsyncUnaryCall<TResponse> SnapshotFailure(
+        private static async ValueTask<AsyncUnaryCall<TResponse>> SnapshotFailureAsync(
             AsyncUnaryCall<TResponse> call,
             Exception exception)
         {
             var responseHeaders = call.ResponseHeadersAsync;
+            try
+            {
+                responseHeaders = Task.FromResult(
+                    await responseHeaders.ConfigureAwait(false));
+            }
+            catch (Exception headersException)
+            {
+                responseHeaders = Task.FromException<Metadata>(headersException);
+                _ = responseHeaders.Exception;
+            }
+
             var rpcException = exception as RpcException ?? exception.InnerException as RpcException;
             var status = rpcException?.Status ?? GetStatusOrUnknown(call, exception);
             var trailers = rpcException?.Trailers ?? GetTrailersOrEmpty(call);
