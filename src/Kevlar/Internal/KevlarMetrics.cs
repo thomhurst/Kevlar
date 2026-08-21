@@ -1,6 +1,7 @@
 #if NET8_0_OR_GREATER
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using System.Globalization;
 #endif
 using Kevlar.Strategies;
 
@@ -14,9 +15,8 @@ namespace Kevlar.Internal;
 /// </summary>
 internal static class KevlarMetrics
 {
-    private static long _nextStrategyInstanceId;
-
 #if NET8_0_OR_GREATER
+    private static long _nextStrategyInstanceId;
     private static readonly Meter Meter = new(KevlarDiagnostics.MeterName, "1.0");
     private static readonly Counter<long> Executions = Meter.CreateCounter<long>(
         "kevlar.executions",
@@ -95,8 +95,12 @@ internal static class KevlarMetrics
     public static bool RateStateEnabled => false;
 #endif
 
-    public static long CreateStrategyInstanceId() =>
-        Interlocked.Increment(ref _nextStrategyInstanceId);
+    public static string CreateStrategyInstanceId() =>
+#if NET8_0_OR_GREATER
+        Interlocked.Increment(ref _nextStrategyInstanceId).ToString(CultureInfo.InvariantCulture);
+#else
+        string.Empty;
+#endif
 
     public static void Execution(string? shieldName, bool success)
     {
@@ -197,7 +201,7 @@ internal static class KevlarMetrics
 
     public static void RecordCircuitState(
         string? shieldName,
-        long strategyInstanceId,
+        string strategyInstanceId,
         CircuitState state)
     {
 #if NET8_0_OR_GREATER
@@ -212,7 +216,7 @@ internal static class KevlarMetrics
 
     public static void RecordConcurrencyState(
         string? shieldName,
-        long strategyInstanceId,
+        string strategyInstanceId,
         long inflight,
         long queued,
         long capacity)
@@ -238,7 +242,7 @@ internal static class KevlarMetrics
 
     public static void RecordRateState(
         string? shieldName,
-        long strategyInstanceId,
+        string strategyInstanceId,
         long available,
         long queued)
     {
@@ -268,7 +272,7 @@ internal static class KevlarMetrics
         return tags;
     }
 
-    private static TagList StrategyTags(string? shieldName, long strategyInstanceId)
+    private static TagList StrategyTags(string? shieldName, string strategyInstanceId)
     {
         var tags = NameTags(shieldName);
         tags.Add("kevlar.strategy.instance", strategyInstanceId);

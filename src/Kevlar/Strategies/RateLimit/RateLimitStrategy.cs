@@ -23,7 +23,7 @@ internal sealed class RateLimitStrategy : Strategy
     private readonly double _timestampUnitsPerPermit;
     private readonly double _burstTolerance;
     private readonly Lock _metricsPublicationGate = new();
-    private readonly long _metricsInstanceId = KevlarMetrics.CreateStrategyInstanceId();
+    private readonly string _metricsInstanceId = KevlarMetrics.CreateStrategyInstanceId();
     private readonly object _queueGate = new();
 
     private double _theoreticalArrival = double.NegativeInfinity;

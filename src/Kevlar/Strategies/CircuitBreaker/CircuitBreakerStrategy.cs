@@ -9,7 +9,7 @@ internal sealed class CircuitBreakerStrategy : Strategy
     private readonly HashSet<string?> _metricsShieldNames = [];
     private readonly CircuitBreakerCore _core;
     private readonly OutcomeJudge _judge;
-    private readonly long _metricsInstanceId = KevlarMetrics.CreateStrategyInstanceId();
+    private readonly string _metricsInstanceId = KevlarMetrics.CreateStrategyInstanceId();
 
     public CircuitBreakerStrategy(CircuitBreakerOptions options, OutcomeJudge judge)
     {

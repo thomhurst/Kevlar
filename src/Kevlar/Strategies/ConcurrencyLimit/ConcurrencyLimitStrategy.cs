@@ -9,7 +9,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
     private readonly int _maxConcurrency;
     private readonly int _maxQueue;
     private readonly long _capacity;
-    private readonly long _metricsInstanceId = KevlarMetrics.CreateStrategyInstanceId();
+    private readonly string _metricsInstanceId = KevlarMetrics.CreateStrategyInstanceId();
     private long _pending;
     private long _metricsState;
 
