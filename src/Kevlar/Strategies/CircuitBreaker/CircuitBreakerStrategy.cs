@@ -60,7 +60,15 @@ internal sealed class CircuitBreakerStrategy : Strategy
     {
         if (KevlarMetrics.CircuitStateEnabled)
         {
-            KevlarMetrics.RecordCircuitState(shieldName, _metricsInstanceId, _core.State);
+            while (true)
+            {
+                var state = _core.State;
+                KevlarMetrics.RecordCircuitState(shieldName, _metricsInstanceId, state);
+                if (state == _core.State)
+                {
+                    return;
+                }
+            }
         }
     }
 

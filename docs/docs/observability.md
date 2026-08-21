@@ -68,11 +68,11 @@ BenchmarkDotNet `ShortRun` results on .NET 10.0.11, Windows 11, and an Intel Cor
 
 | Pipeline | Listener off | Listener on | Allocated |
 |---|---:|---:|---:|
-| Empty shield | 4 ns | 236 ns | 0 B |
-| Retry | 93 ns | 322 ns | 0 B |
-| Circuit breaker | 110 ns | 408 ns | 0 B |
-| Rate limit | 83 ns | 411 ns | 0 B |
-| Concurrency limit | 128 ns | 526 ns | 0 B |
+| Empty shield | 4 ns | 242 ns | 0 B |
+| Retry | 98 ns | 327 ns | 0 B |
+| Circuit breaker | 107 ns | 440 ns | 0 B |
+| Rate limit | 90 ns | 578 ns | 0 B |
+| Concurrency limit | 130 ns | 632 ns | 0 B |
 
 These figures are a local comparison rather than a performance guarantee. Run `TelemetryBenchmarks` on the deployment hardware to measure exporter and listener costs in that environment.
 

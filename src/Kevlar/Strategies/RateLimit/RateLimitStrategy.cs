@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Runtime.ExceptionServices;
 using Kevlar.Internal;
 
 namespace Kevlar.Strategies;
@@ -23,8 +24,10 @@ internal sealed class RateLimitStrategy : Strategy
     private readonly double _timestampUnitsPerPermit;
     private readonly double _burstTolerance;
     private readonly Lock _metricsPublicationGate = new();
+    private readonly HashSet<string?> _metricsShieldNames = [];
     private readonly string _metricsInstanceId = KevlarMetrics.CreateStrategyInstanceId();
     private readonly object _queueGate = new();
+    private string?[] _metricsShieldNameSnapshot = [];
 
     private double _theoreticalArrival = double.NegativeInfinity;
     private Reservation? _queueHead;
@@ -318,20 +321,53 @@ internal sealed class RateLimitStrategy : Strategy
 
         lock (_metricsPublicationGate)
         {
+            if (_metricsShieldNames.Add(shieldName))
+            {
+                _metricsShieldNameSnapshot = [.. _metricsShieldNames];
+            }
+
             while (true)
             {
                 var state = CaptureState(timeProvider);
-                KevlarMetrics.RecordRateState(
-                    shieldName,
-                    _metricsInstanceId,
-                    state.Available,
-                    state.Queued);
+                var shieldNames = _metricsShieldNameSnapshot;
+                RecordStateForAliases(shieldNames, state.Available, state.Queued);
 
-                if (state == CaptureState(timeProvider))
+                if (state == CaptureState(timeProvider)
+                    && ReferenceEquals(shieldNames, _metricsShieldNameSnapshot))
                 {
                     return;
                 }
             }
+        }
+    }
+
+    private void RecordStateForAliases(string?[] shieldNames, long available, int queued)
+    {
+        List<Exception>? failures = null;
+        foreach (var shieldName in shieldNames)
+        {
+            try
+            {
+                KevlarMetrics.RecordRateState(
+                    shieldName,
+                    _metricsInstanceId,
+                    available,
+                    queued);
+            }
+            catch (Exception exception)
+            {
+                (failures ??= []).Add(exception);
+            }
+        }
+
+        if (failures is [var failure])
+        {
+            ExceptionDispatchInfo.Capture(failure).Throw();
+        }
+
+        if (failures is { Count: > 1 })
+        {
+            throw new AggregateException(failures).Flatten();
         }
     }
 

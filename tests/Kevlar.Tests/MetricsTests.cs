@@ -15,12 +15,14 @@ public class MetricsTests
     private sealed class KevlarMeterListener : IDisposable
     {
         private readonly MeterListener _listener = new();
+        private readonly Action<string, long>? _onLongMeasurement;
         private readonly ConcurrentDictionary<string, Instrument> _instruments = new(StringComparer.Ordinal);
         private readonly ConcurrentQueue<(string Instrument, long Value, Dictionary<string, object?> Tags)> _measurements = [];
         private readonly ConcurrentQueue<(string Instrument, double Value, Dictionary<string, object?> Tags)> _doubleMeasurements = [];
 
-        public KevlarMeterListener()
+        public KevlarMeterListener(Action<string, long>? onLongMeasurement = null)
         {
+            _onLongMeasurement = onLongMeasurement;
             _listener.InstrumentPublished = (instrument, listener) =>
             {
                 if (instrument.Meter.Name == KevlarDiagnostics.MeterName)
@@ -31,6 +33,7 @@ public class MetricsTests
             };
             _listener.SetMeasurementEventCallback<long>((instrument, value, tags, _) =>
             {
+                _onLongMeasurement?.Invoke(instrument.Name, value);
                 _measurements.Enqueue((instrument.Name, value, CaptureTags(tags)));
             });
             _listener.SetMeasurementEventCallback<double>((instrument, value, tags, _) =>
@@ -625,6 +628,35 @@ public class MetricsTests
     }
 
     [Test]
+    public async Task Circuit_Execution_Sample_Cannot_Overwrite_A_Newer_Transition()
+    {
+        CircuitBreakerMonitor? monitor = null;
+        var openMeasurements = 0;
+        using var listener = new KevlarMeterListener((instrument, value) =>
+        {
+            if (instrument == "kevlar.circuit_breaker.state"
+                && value == 1
+                && Interlocked.Increment(ref openMeasurements) == 2)
+            {
+                monitor!.Reset();
+            }
+        });
+        monitor = new CircuitBreakerMonitor();
+        var shield = Shield.CircuitBreaker(options =>
+        {
+            options.ConsecutiveFailures = 1;
+            options.Monitor = monitor;
+        }).WithName("metrics-circuit-transition-race");
+
+        _ = await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+
+        await Assert.That(listener.Values(
+                "kevlar.circuit_breaker.state",
+                "metrics-circuit-transition-race").Last())
+            .IsEqualTo(0);
+    }
+
+    [Test]
     public async Task Independent_Stateful_Strategies_Have_Distinct_Series()
     {
         using var listener = new KevlarMeterListener();
@@ -691,6 +723,54 @@ public class MetricsTests
         await Assert.That(listener.Values(
                 "kevlar.concurrency_limit.queued",
                 "metrics-concurrent-completion").Last())
+            .IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Shared_Concurrency_Updates_Every_Named_Alias()
+    {
+        using var listener = new KevlarMeterListener();
+        var firstEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var secondEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseFirst = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseSecond = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var shared = Shield.ConcurrencyLimit(1, 1);
+        var first = shared.WithName("metrics-concurrency-alias-first");
+        var second = shared.WithName("metrics-concurrency-alias-second");
+
+        var firstExecution = first.ExecuteAsync(async _ =>
+        {
+            firstEntered.TrySetResult();
+            await releaseFirst.Task;
+        }).AsTask();
+        await firstEntered.Task;
+        var secondExecution = second.ExecuteAsync(async _ =>
+        {
+            secondEntered.TrySetResult();
+            await releaseSecond.Task;
+        }).AsTask();
+
+        releaseFirst.TrySetResult();
+        await secondEntered.Task;
+        await firstExecution;
+        releaseSecond.TrySetResult();
+        await secondExecution;
+
+        await Assert.That(listener.Values(
+                "kevlar.concurrency_limit.inflight",
+                "metrics-concurrency-alias-first").Last())
+            .IsEqualTo(0);
+        await Assert.That(listener.Values(
+                "kevlar.concurrency_limit.queued",
+                "metrics-concurrency-alias-first").Last())
+            .IsEqualTo(0);
+        await Assert.That(listener.Values(
+                "kevlar.concurrency_limit.inflight",
+                "metrics-concurrency-alias-second").Last())
+            .IsEqualTo(0);
+        await Assert.That(listener.Values(
+                "kevlar.concurrency_limit.queued",
+                "metrics-concurrency-alias-second").Last())
             .IsEqualTo(0);
     }
 
@@ -792,6 +872,45 @@ public class MetricsTests
         await Assert.That(listener.Values(
                 "kevlar.rate_limit.queued",
                 "metrics-concurrent-rate-cancellation").Last())
+            .IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Shared_Rate_Limit_Updates_Every_Named_Alias()
+    {
+        using var listener = new KevlarMeterListener();
+        using var firstCancellation = new CancellationTokenSource();
+        using var secondCancellation = new CancellationTokenSource();
+        var timeProvider = new FakeTimeProvider();
+        var shared = Shield.RateLimit(options =>
+        {
+            options.Permits = 1;
+            options.Window = TimeSpan.FromHours(1);
+            options.QueueLimit = 2;
+        }).WithTimeProvider(timeProvider);
+        var first = shared.WithName("metrics-rate-alias-first");
+        var second = shared.WithName("metrics-rate-alias-second");
+
+        await first.ExecuteAsync(_ => ValueTask.CompletedTask);
+        var firstQueued = first.ExecuteAsync(
+            _ => ValueTask.CompletedTask,
+            firstCancellation.Token).AsTask();
+        var secondQueued = second.ExecuteAsync(
+            _ => ValueTask.CompletedTask,
+            secondCancellation.Token).AsTask();
+
+        firstCancellation.Cancel();
+        await Assert.That(async () => await firstQueued).Throws<OperationCanceledException>();
+        secondCancellation.Cancel();
+        await Assert.That(async () => await secondQueued).Throws<OperationCanceledException>();
+
+        await Assert.That(listener.Values(
+                "kevlar.rate_limit.queued",
+                "metrics-rate-alias-first").Last())
+            .IsEqualTo(0);
+        await Assert.That(listener.Values(
+                "kevlar.rate_limit.queued",
+                "metrics-rate-alias-second").Last())
             .IsEqualTo(0);
     }
 

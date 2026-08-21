@@ -1,3 +1,4 @@
+using System.Runtime.ExceptionServices;
 using Kevlar.Internal;
 
 namespace Kevlar.Strategies;
@@ -5,11 +6,13 @@ namespace Kevlar.Strategies;
 internal sealed class ConcurrencyLimitStrategy : Strategy
 {
     private readonly Lock _metricsPublicationGate = new();
+    private readonly HashSet<string?> _metricsShieldNames = [];
     private readonly SemaphoreSlim _semaphore;
     private readonly int _maxConcurrency;
     private readonly int _maxQueue;
     private readonly long _capacity;
     private readonly string _metricsInstanceId = KevlarMetrics.CreateStrategyInstanceId();
+    private string?[] _metricsShieldNameSnapshot = [];
     private long _pending;
     private long _metricsState;
 
@@ -137,24 +140,56 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
 
         lock (_metricsPublicationGate)
         {
+            if (_metricsShieldNames.Add(shieldName))
+            {
+                _metricsShieldNameSnapshot = [.. _metricsShieldNames];
+            }
+
             while (true)
             {
                 var state = Volatile.Read(ref _metricsState);
                 var inflight = (int)(state >> 32);
                 var queued = (int)(state & uint.MaxValue);
+                var shieldNames = _metricsShieldNameSnapshot;
+                RecordStateForAliases(shieldNames, inflight, queued);
 
+                if (state == Volatile.Read(ref _metricsState)
+                    && ReferenceEquals(shieldNames, _metricsShieldNameSnapshot))
+                {
+                    return;
+                }
+            }
+        }
+    }
+
+    private void RecordStateForAliases(string?[] shieldNames, int inflight, int queued)
+    {
+        List<Exception>? failures = null;
+        foreach (var shieldName in shieldNames)
+        {
+            try
+            {
                 KevlarMetrics.RecordConcurrencyState(
                     shieldName,
                     _metricsInstanceId,
                     inflight,
                     queued,
                     _maxConcurrency);
-
-                if (state == Volatile.Read(ref _metricsState))
-                {
-                    return;
-                }
             }
+            catch (Exception exception)
+            {
+                (failures ??= []).Add(exception);
+            }
+        }
+
+        if (failures is [var failure])
+        {
+            ExceptionDispatchInfo.Capture(failure).Throw();
+        }
+
+        if (failures is { Count: > 1 })
+        {
+            throw new AggregateException(failures).Flatten();
         }
     }
 }
