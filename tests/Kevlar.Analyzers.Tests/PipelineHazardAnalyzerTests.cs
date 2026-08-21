@@ -9,6 +9,238 @@ namespace Kevlar.Analyzers.Tests;
 public class PipelineHazardAnalyzerTests
 {
     [Test]
+    public async Task KEV004_Flags_Inline_Stateful_Shields_For_All_Execution_Forms()
+    {
+        var cases = new[]
+        {
+            "_ = Shield.CircuitBreaker(2, TimeSpan.FromSeconds(1)).Execute(_ => 1);",
+            "await Shield.RateLimit(10, TimeSpan.FromSeconds(1)).ExecuteAsync(_ => new ValueTask<int>(1));",
+            "await Shield.ConcurrencyLimit(2).ExecuteOutcomeAsync(_ => new ValueTask<int>(1));",
+            "_ = Shield.For<int>().CircuitBreaker(2, TimeSpan.FromSeconds(1)).Execute(_ => 1);",
+            "await Shield.For<int>().RateLimit(10, TimeSpan.FromSeconds(1)).ExecuteAsync(_ => new ValueTask<int>(1));",
+            "await Shield.For<int>().ConcurrencyLimit(2).ExecuteOutcomeAsync(_ => new ValueTask<int>(1));",
+            "await Shield.CircuitBreaker(2, TimeSpan.FromSeconds(1)).ExecuteAsync(_ => Task.FromResult(1));",
+            "await Shield.For<int>().RateLimit(10, TimeSpan.FromSeconds(1)).ExecuteOutcomeAsync(_ => Task.FromResult(1));",
+            "Shield.CircuitBreaker(2, TimeSpan.FromSeconds(1)).Execute(_ => { });",
+            "_ = Shield.RateLimit(10, TimeSpan.FromSeconds(1)).Execute(1, (state, _) => state);",
+            "await Shield.ConcurrencyLimit(2).ExecuteAsync(_ => ValueTask.CompletedTask);",
+            "await Shield.CircuitBreaker(2, TimeSpan.FromSeconds(1)).ExecuteAsync(1, (state, _) => Task.FromResult(state));",
+            "await Shield.RateLimit(10, TimeSpan.FromSeconds(1)).ExecuteOutcomeAsync(1, (state, _) => new ValueTask<int>(state));",
+            "_ = Shield.For<int>().CircuitBreaker(2, TimeSpan.FromSeconds(1)).Execute(1, (state, _) => state);",
+            "await Shield.For<int>().RateLimit(10, TimeSpan.FromSeconds(1)).ExecuteAsync(1, (state, _) => Task.FromResult(state));",
+            "await Shield.For<int>().ConcurrencyLimit(2).ExecuteOutcomeAsync(1, (state, _) => new ValueTask<int>(state));",
+        };
+
+        await AssertEachAsync(cases, "KEV004");
+    }
+
+    [Test]
+    public async Task KEV004_Flags_Single_Use_Locals_Aliases_And_Extension_Syntax()
+    {
+        var cases = new[]
+        {
+            "var shield = Shield.CircuitBreaker(2, TimeSpan.FromSeconds(1)); _ = shield.Execute(_ => 1);",
+            "var shield = Shield.RateLimit(10, TimeSpan.FromSeconds(1)); var alias = shield; await alias.ExecuteAsync(_ => new ValueTask<int>(1));",
+            "_ = ShieldExtensions.ConcurrencyLimit(Shield.Empty, 2).Execute(_ => 1);",
+            "Func<ValueTask<int>> run = () => Shield.CircuitBreaker(2, TimeSpan.FromSeconds(1)).ExecuteAsync(_ => new ValueTask<int>(1)); await run();",
+        };
+
+        await AssertEachAsync(cases, "KEV004");
+
+        var typeAlias = await AnalyzeSourceAsync("""
+            using KShield = Kevlar.Shield;
+
+            public class TestSubject
+            {
+                public int Run() => KShield.RateLimit(10, TimeSpan.FromSeconds(1)).Execute(_ => 1);
+            }
+            """);
+        await AssertRuleAsync(typeAlias, "KEV004");
+    }
+
+    [Test]
+    public async Task KEV004_Flags_Per_Execution_Partition_Providers()
+    {
+        var cases = new[]
+        {
+            "_ = new PartitionedShield<string>(_ => Shield.Empty).GetShield(\"tenant\").Execute(_ => 1);",
+            "await new PartitionedShield<string, int>(_ => Shield<int>.Empty).GetShield(\"tenant\").ExecuteAsync(_ => new ValueTask<int>(1));",
+            "var partitions = new PartitionedShield<string>(_ => Shield.Empty); await partitions.GetShield(\"tenant\").ExecuteOutcomeAsync(_ => new ValueTask<int>(1));",
+            "var partitions = new PartitionedShield<string>(_ => Shield.Empty); var shield = partitions.GetShield(\"tenant\"); _ = shield.Execute(_ => 1);",
+        };
+
+        await AssertEachAsync(cases, "KEV004");
+    }
+
+    [Test]
+    public async Task KEV004_Skips_Stateless_Reused_And_Ambiguous_Shields()
+    {
+        var cases = new[]
+        {
+            "_ = Shield.Retry(2).Execute(_ => 1);",
+            "await Shield.Timeout(TimeSpan.FromSeconds(1)).ExecuteAsync(_ => new ValueTask<int>(1));",
+            "await Shield.For<int>().Fallback(0).ExecuteOutcomeAsync(_ => new ValueTask<int>(1));",
+            "var shield = Shield.CircuitBreaker(2, TimeSpan.FromSeconds(1)); _ = shield.Execute(_ => 1); _ = shield.Execute(_ => 2);",
+            "var shield = CreateShield(); _ = shield.Execute(_ => 1);",
+            "var partitions = new PartitionedShield<string>(_ => Shield.Empty); _ = partitions.GetShield(\"one\"); _ = partitions.GetShield(\"two\").Execute(_ => 1);",
+            "var shield = Shield.CircuitBreaker(2, TimeSpan.FromSeconds(1)); Func<int> run = () => shield.Execute(_ => 1); _ = run();",
+        };
+
+        foreach (var body in cases)
+        {
+            var diagnostics = await AnalyzeBodyAsync(
+                body,
+                "private static Shield CreateShield() => Shield.CircuitBreaker(2, TimeSpan.FromSeconds(1));");
+            await Assert.That(diagnostics).IsEmpty();
+        }
+    }
+
+    [Test]
+    public async Task KEV004_Skips_Fields_Parameters_Factories_Registrations_And_Test_Assemblies()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private static readonly Shield Shared = Shield.CircuitBreaker(2, TimeSpan.FromSeconds(1));
+                private readonly PartitionedShield<string> _partitions = new(_ => Shield.Empty);
+
+                public int FromField() => Shared.Execute(_ => 1);
+                public int FromParameter(Shield shield) => shield.Execute(_ => 1);
+                public int FromPartitionField() => _partitions.GetShield("tenant").Execute(_ => 1);
+                public Shield Create() => Shield.RateLimit(10, TimeSpan.FromSeconds(1));
+                public void Configure() => Register(Shield.ConcurrencyLimit(2));
+                private static void Register(Shield shield) { }
+            }
+            """);
+        var testAssemblyDiagnostics = await AnalyzeBodyAsync(
+            "_ = Shield.CircuitBreaker(2, TimeSpan.FromSeconds(1)).Execute(_ => 1);",
+            assemblyName: "Sample.Tests");
+        var testMethodDiagnostics = await AnalyzeSourceAsync("""
+            namespace Xunit
+            {
+                public sealed class FactAttribute : Attribute { }
+            }
+
+            public sealed class TestSubject
+            {
+                [Xunit.Fact]
+                public int IsolatedExecution() =>
+                    Shield.CircuitBreaker(2, TimeSpan.FromSeconds(1)).Execute(_ => 1);
+            }
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+        await Assert.That(testAssemblyDiagnostics).IsEmpty();
+        await Assert.That(testMethodDiagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV004_Ignores_Lookalikes_Generated_Code_And_Malformed_Code()
+    {
+        var lookalike = await AnalyzeSourceAsync("""
+            public sealed class OtherShield
+            {
+                public static OtherShield CircuitBreaker() => new();
+                public int Execute(Func<CancellationToken, int> action) => action(default);
+            }
+
+            public class TestSubject
+            {
+                public int Run() => OtherShield.CircuitBreaker().Execute(_ => 1);
+            }
+            """);
+        var generated = await AnalyzeBodyAsync(
+            "_ = Shield.CircuitBreaker(2, TimeSpan.FromSeconds(1)).Execute(_ => 1);",
+            isGenerated: true);
+        var malformed = await AnalyzeSourceAsync("""
+            public class TestSubject
+            {
+                public async Task RunAsync()
+                {
+                    await Shield.CircuitBreaker(2, TimeSpan.FromSeconds(1)).ExecuteAsync(_ =>
+                }
+            }
+            """, allowCompilationErrors: true);
+
+        await Assert.That(lookalike).IsEmpty();
+        await Assert.That(generated).IsEmpty();
+        await Assert.That(malformed.Any(diagnostic => diagnostic.Id == "AD0001")).IsFalse();
+    }
+
+    [Test]
+    public async Task KEV004_Diagnostic_Contract_Location_And_Suppression_Are_Exact()
+    {
+        const string construction = "Shield.CircuitBreaker(2, TimeSpan.FromSeconds(1))";
+        var source = $$"""
+            public class TestSubject
+            {
+                public int Run() => {{construction}}.Execute(_ => 1);
+            }
+            """;
+        var diagnostics = await AnalyzeSourceAsync(source);
+        var suppressed = await AnalyzeSourceAsync("""
+            public class TestSubject
+            {
+                public int Run()
+                {
+            #pragma warning disable KEV004 // Isolated execution is intentional.
+                    return Shield.CircuitBreaker(2, TimeSpan.FromSeconds(1)).Execute(_ => 1);
+            #pragma warning restore KEV004
+                }
+            }
+            """);
+
+        await Assert.That(diagnostics.Length).IsEqualTo(1);
+        var diagnostic = diagnostics[0];
+        await Assert.That(diagnostic.Id).IsEqualTo("KEV004");
+        await Assert.That(diagnostic.Severity).IsEqualTo(DiagnosticSeverity.Warning);
+        await Assert.That(diagnostic.GetMessage()).IsEqualTo(
+            "'CircuitBreaker' creates resilience state for one execution. Store and reuse the shield or partition provider as a field, singleton/keyed DI registration, or registry entry.");
+        await Assert.That(diagnostic.Location.SourceSpan.Start)
+            .IsEqualTo(CreateSource(source).IndexOf(construction, StringComparison.Ordinal));
+        await Assert.That(diagnostic.Location.SourceSpan.Length).IsEqualTo(construction.Length);
+        await Assert.That(suppressed).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV004_Concurrent_Analyzer_Runs_Are_Deterministic()
+    {
+        var source = CreateSource("""
+            public class TestSubject
+            {
+                public async Task RunAsync()
+                {
+                    _ = Shield.CircuitBreaker(2, TimeSpan.FromSeconds(1)).Execute(_ => 1);
+                    await Shield.RateLimit(10, TimeSpan.FromSeconds(1)).ExecuteAsync(_ => new ValueTask<int>(1));
+                    await new PartitionedShield<string>(_ => Shield.Empty).GetShield("tenant").ExecuteOutcomeAsync(_ => new ValueTask<int>(1));
+                }
+            }
+            """);
+        var compilation = CreateCompilation(source);
+        var runs = await Task.WhenAll(Enumerable.Range(0, 16)
+            .Select(_ => GetAnalyzerDiagnosticsAsync(compilation)));
+        var expected = runs[0]
+            .Where(diagnostic => diagnostic.Id == "KEV004")
+            .Select(diagnostic => diagnostic.Location.SourceSpan)
+            .OrderBy(span => span.Start)
+            .ToArray();
+
+        await Assert.That(expected.Length).IsEqualTo(3);
+        foreach (var run in runs)
+        {
+            var actual = run
+                .Where(diagnostic => diagnostic.Id == "KEV004")
+                .Select(diagnostic => diagnostic.Location.SourceSpan)
+                .OrderBy(span => span.Start)
+                .ToArray();
+            if (!expected.SequenceEqual(actual))
+            {
+                throw new InvalidOperationException("Concurrent analyzer runs produced different KEV004 spans.");
+            }
+        }
+    }
+
+    [Test]
     public async Task KEV002_Flags_Known_Hedging_Shields_Used_Synchronously()
     {
         var cases = new[]
@@ -211,24 +443,39 @@ public class PipelineHazardAnalyzerTests
     private static Task<ImmutableArray<Diagnostic>> AnalyzeBodyAsync(
         string body,
         string members = "",
-        bool isGenerated = false) =>
+        bool isGenerated = false,
+        string assemblyName = "PipelineHazardAnalyzerTestSubject") =>
         AnalyzeSourceAsync($$"""
             public class TestSubject
             {
                 {{members}}
 
-                public void Run()
+                public async Task RunAsync()
                 {
                     {{body}}
                 }
             }
-            """, isGenerated);
+            """, isGenerated, assemblyName: assemblyName);
 
     private static async Task<ImmutableArray<Diagnostic>> AnalyzeSourceAsync(
         string declarations,
-        bool isGenerated = false)
+        bool isGenerated = false,
+        bool allowCompilationErrors = false,
+        string assemblyName = "PipelineHazardAnalyzerTestSubject")
     {
-        var source = (isGenerated ? "// <auto-generated/>\n" : string.Empty) + $$"""
+        var source = CreateSource(declarations, isGenerated);
+        var compilation = CreateCompilation(source, assemblyName);
+        var errors = compilation.GetDiagnostics().Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error).ToArray();
+        if (!allowCompilationErrors && errors.Length > 0)
+        {
+            throw new InvalidOperationException("Test source does not compile: " + string.Join("; ", errors.Select(static error => error.ToString())));
+        }
+
+        return await GetAnalyzerDiagnosticsAsync(compilation);
+    }
+
+    private static string CreateSource(string declarations, bool isGenerated = false) =>
+        (isGenerated ? "// <auto-generated/>\n" : string.Empty) + $$"""
             using System;
             using System.Threading;
             using System.Threading.Tasks;
@@ -236,23 +483,24 @@ public class PipelineHazardAnalyzerTests
 
             {{declarations}}
             """;
+
+    private static CSharpCompilation CreateCompilation(
+        string source,
+        string assemblyName = "PipelineHazardAnalyzerTestSubject")
+    {
         var references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)
             .Split(Path.PathSeparator)
             .Select(path => (MetadataReference)MetadataReference.CreateFromFile(path))
             .Append(MetadataReference.CreateFromFile(typeof(Shield).Assembly.Location));
-        var compilation = CSharpCompilation.Create(
-            "PipelineHazardAnalyzerTestSubject",
+        return CSharpCompilation.Create(
+            assemblyName,
             [CSharpSyntaxTree.ParseText(source)],
             references,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
-        var errors = compilation.GetDiagnostics().Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error).ToArray();
-        if (errors.Length > 0)
-        {
-            throw new InvalidOperationException("Test source does not compile: " + string.Join("; ", errors.Select(static error => error.ToString())));
-        }
+    }
 
-        return await compilation
+    private static Task<ImmutableArray<Diagnostic>> GetAnalyzerDiagnosticsAsync(CSharpCompilation compilation) =>
+        compilation
             .WithAnalyzers(ImmutableArray.Create<DiagnosticAnalyzer>(new PipelineHazardAnalyzer()))
             .GetAnalyzerDiagnosticsAsync();
-    }
 }
