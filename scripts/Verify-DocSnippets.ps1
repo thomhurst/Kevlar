@@ -28,6 +28,7 @@ $requiredPackages = @(
     'Kevlar.Chaos'
     'Kevlar.Extensions.DependencyInjection'
     'Kevlar.Extensions.Http'
+    'Kevlar.Testing'
 )
 
 foreach ($packageId in $requiredPackages)
@@ -183,6 +184,7 @@ $builder = [Text.StringBuilder]::new()
 [void]$builder.AppendLine('using Kevlar.Chaos;')
 [void]$builder.AppendLine('using Kevlar.Extensions.DependencyInjection;')
 [void]$builder.AppendLine('using Kevlar.Extensions.Http;')
+[void]$builder.AppendLine('using Kevlar.Testing;')
 [void]$builder.AppendLine('using Microsoft.Extensions.DependencyInjection;')
 [void]$builder.AppendLine('using Microsoft.Extensions.Time.Testing;')
 [void]$builder.AppendLine('using Microsoft.Extensions.Logging;')

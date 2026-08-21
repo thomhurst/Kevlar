@@ -20,6 +20,8 @@ internal sealed class CircuitBreakerStrategy : Strategy
 
     protected internal override bool IsDuplicateReferenceUnsafe => true;
 
+    internal CircuitBreakerCore Core => _core;
+
     public override string Describe() => _core.Describe();
 
     /// <inheritdoc />

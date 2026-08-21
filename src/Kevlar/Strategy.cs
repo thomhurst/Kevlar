@@ -50,6 +50,13 @@ public abstract class Strategy
     protected internal virtual bool IsDuplicateReferenceUnsafe => false;
 }
 
+internal interface IFallbackStrategyInspection
+{
+    Type? ResultType { get; }
+
+    bool HasNotification { get; }
+}
+
 /// <summary>
 /// The rest of a shield pipeline, from a strategy's point of view. Invoking it runs every
 /// remaining strategy and finally the user's delegate. It may be invoked multiple times

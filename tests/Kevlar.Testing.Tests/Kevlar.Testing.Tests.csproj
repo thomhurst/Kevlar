@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="TUnit" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Kevlar\Kevlar.csproj" />
+    <ProjectReference Include="..\..\src\Kevlar.Testing\Kevlar.Testing.csproj" />
+  </ItemGroup>
+
+</Project>

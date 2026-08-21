@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Kevlar.Tests" />
+    <InternalsVisibleTo Include="Kevlar.Testing" />
   </ItemGroup>
 
 </Project>

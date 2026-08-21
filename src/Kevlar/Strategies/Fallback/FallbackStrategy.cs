@@ -3,7 +3,7 @@ using Kevlar.Internal;
 
 namespace Kevlar.Strategies;
 
-internal sealed class FallbackStrategy<TResult> : Strategy
+internal sealed class FallbackStrategy<TResult> : Strategy, IFallbackStrategyInspection
 {
     private readonly Func<Outcome<TResult>, KevlarContext, ValueTask<TResult>> _fallback;
     private readonly OutcomeJudge _judge;
@@ -25,6 +25,10 @@ internal sealed class FallbackStrategy<TResult> : Strategy
     internal override OutcomeJudge? ReactiveJudge => _judge;
 
     internal override bool IsFallback => true;
+
+    Type? IFallbackStrategyInspection.ResultType => typeof(TResult);
+
+    bool IFallbackStrategyInspection.HasNotification => _onFallback is not null;
 
     public override string Describe() => "Fallback";
 
@@ -117,7 +121,7 @@ internal sealed class FallbackStrategy<TResult> : Strategy
 /// in place of a handled failure. Result-returning executions are rejected with a descriptive
 /// error, because a void fallback cannot produce a result value.
 /// </summary>
-internal sealed class VoidFallbackStrategy : Strategy
+internal sealed class VoidFallbackStrategy : Strategy, IFallbackStrategyInspection
 {
     private readonly Func<Exception, CancellationToken, ValueTask> _fallback;
     private readonly OutcomeJudge _judge;
@@ -139,6 +143,10 @@ internal sealed class VoidFallbackStrategy : Strategy
     internal override OutcomeJudge? ReactiveJudge => _judge;
 
     internal override bool IsFallback => true;
+
+    Type? IFallbackStrategyInspection.ResultType => null;
+
+    bool IFallbackStrategyInspection.HasNotification => false;
 
     public override string Describe() => "Fallback";
 

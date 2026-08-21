@@ -32,6 +32,16 @@ internal sealed class RetryStrategy : Strategy
 
     internal override OutcomeJudge? ReactiveJudge => _judge;
 
+    internal int MaxRetries => _maxRetries;
+
+    internal Backoff Backoff => _backoff;
+
+    internal TimeSpan? MaxDelay => _maxDelay;
+
+    internal bool HasDelayGenerator => _delayGenerator is not null || _delayGeneratorAsync is not null;
+
+    internal bool HasNotification => _onRetry is not null || _onRetryAsync is not null;
+
     public override string Describe()
     {
         var cap = _maxDelay is { } max ? $", ≤{DescribeHelper.Time(max)}" : string.Empty;

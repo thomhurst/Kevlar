@@ -24,6 +24,12 @@ internal sealed class HedgingStrategy : Strategy
 
     internal override OutcomeJudge? ReactiveJudge => _judge;
 
+    internal int MaxAttempts => _maxAttempts;
+
+    internal TimeSpan Delay => _delay;
+
+    internal bool HasNotification => _onHedge is not null;
+
     public override string Describe() => $"Hedge({_maxAttempts} attempts, delay {DescribeHelper.Time(_delay)})";
 
     public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)

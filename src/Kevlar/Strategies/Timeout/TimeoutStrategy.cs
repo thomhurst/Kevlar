@@ -29,6 +29,12 @@ internal sealed class TimeoutStrategy : Strategy
         ? $"Timeout({DescribeHelper.Time(_timeout)})"
         : "Timeout(dynamic)";
 
+    internal TimeSpan Timeout => _timeout;
+
+    internal bool HasTimeoutGenerator => _timeoutGenerator is not null;
+
+    internal bool HasNotification => _onTimeout is not null || _onTimeoutAsync is not null;
+
     public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
         if (_timeoutGenerator is null)

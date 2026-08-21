@@ -114,6 +114,10 @@ $expectedDependencies = @{
             'System.Runtime.CompilerServices.Unsafe',
             'System.Threading.Tasks.Extensions')
     }
+    'Kevlar.Testing' = @{
+        'net10.0' = @('Kevlar')
+        '.NETStandard2.0' = @('Kevlar')
+    }
     'Kevlar.Analyzers' = @{
         '.NETStandard2.0' = @()
     }
@@ -262,10 +266,13 @@ using Kevlar;
 using Kevlar.Chaos;
 using Kevlar.Extensions.DependencyInjection;
 using Kevlar.Extensions.Http;
+using Kevlar.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics.Metrics;
 
 var shield = Shield.Empty;
+var descriptor = shield.GetDescriptor();
+descriptor.AssertStrategyCount(0);
 var value = await shield.ExecuteAsync(static cancellationToken =>
     new ValueTask<int>(cancellationToken.CanBeCanceled ? 41 : 42));
 if (value != 42)
@@ -323,6 +330,7 @@ Console.WriteLine("Kevlar package consumer passed.");
     <PackageReference Include="Kevlar.Chaos" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.DependencyInjection" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.Http" Version="$Version" />
+    <PackageReference Include="Kevlar.Testing" Version="$Version" />
   </ItemGroup>
 </Project>
 "@
