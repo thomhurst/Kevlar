@@ -96,8 +96,8 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
         catch
         {
             UpdateMetricsState(inflightDelta: -1, queuedDelta: 0);
-            Interlocked.Decrement(ref _pending);
             _semaphore.Release();
+            Interlocked.Decrement(ref _pending);
             throw;
         }
 
@@ -108,8 +108,8 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
         finally
         {
             UpdateMetricsState(inflightDelta: -1, queuedDelta: 0);
-            Interlocked.Decrement(ref _pending);
             _semaphore.Release();
+            Interlocked.Decrement(ref _pending);
             RecordState(context.ShieldName);
         }
     }

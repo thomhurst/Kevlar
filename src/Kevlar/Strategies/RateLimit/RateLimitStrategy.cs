@@ -401,7 +401,11 @@ internal sealed class RateLimitStrategy : Strategy
         }
 
         long available;
-        if (double.IsNegativeInfinity(theoreticalArrival))
+        if (queued > 0)
+        {
+            available = 0;
+        }
+        else if (double.IsNegativeInfinity(theoreticalArrival))
         {
             available = _burst;
         }

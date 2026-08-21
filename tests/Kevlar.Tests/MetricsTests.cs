@@ -1037,6 +1037,42 @@ public class MetricsTests
         await Assert.That(async () => await queued).Throws<OperationCanceledException>();
     }
 
+    [Test]
+    public async Task Rate_Queue_Reports_Zero_Availability_After_Its_Due_Time()
+    {
+        var timeProvider = new FakeTimeProvider();
+        var advancedWithQueuedReservation = false;
+        var observedInvalidAvailability = false;
+        using var listener = new KevlarMeterListener((instrument, value) =>
+        {
+            if (instrument == "kevlar.rate_limit.queued"
+                && value == 1
+                && !advancedWithQueuedReservation)
+            {
+                advancedWithQueuedReservation = true;
+                timeProvider.Advance(TimeSpan.FromSeconds(1));
+            }
+            else if (instrument == "kevlar.rate_limit.available"
+                && value > 0
+                && advancedWithQueuedReservation)
+            {
+                observedInvalidAvailability = true;
+            }
+        });
+        var shield = Shield.RateLimit(options =>
+        {
+            options.Permits = 1;
+            options.Window = TimeSpan.FromSeconds(1);
+            options.QueueLimit = 1;
+        }).WithTimeProvider(timeProvider).WithName("metrics-rate-due-reservation");
+
+        await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
+        await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
+
+        await Assert.That(advancedWithQueuedReservation).IsTrue();
+        await Assert.That(observedInvalidAvailability).IsFalse();
+    }
+
     private static Dictionary<(CircuitState From, CircuitState To), long> CircuitTransitionTotals(
         KevlarMeterListener listener) =>
         (from source in Enum.GetValues<CircuitState>()
