@@ -1,0 +1,37 @@
+Kevlar.Extensions.Http.HttpContentReplayPolicy
+Kevlar.Extensions.Http.HttpContentReplayPolicy.Buffer = 1 -> Kevlar.Extensions.Http.HttpContentReplayPolicy
+Kevlar.Extensions.Http.HttpContentReplayPolicy.NoBuffer = 0 -> Kevlar.Extensions.Http.HttpContentReplayPolicy
+Kevlar.Extensions.Http.HttpEndpoint
+Kevlar.Extensions.Http.HttpEndpoint.HttpEndpoint(System.Uri! uri, int weight = 1) -> void
+Kevlar.Extensions.Http.HttpEndpoint.Uri.get -> System.Uri!
+Kevlar.Extensions.Http.HttpEndpoint.Weight.get -> int
+Kevlar.Extensions.Http.HttpEndpointRoutingOptions
+Kevlar.Extensions.Http.HttpEndpointRoutingOptions.Endpoints.get -> System.Collections.Generic.IList<Kevlar.Extensions.Http.HttpEndpoint!>!
+Kevlar.Extensions.Http.HttpEndpointRoutingOptions.HttpEndpointRoutingOptions() -> void
+Kevlar.Extensions.Http.HttpEndpointRoutingOptions.Seed.get -> int
+Kevlar.Extensions.Http.HttpEndpointRoutingOptions.Seed.set -> void
+Kevlar.Extensions.Http.HttpEndpointRoutingOptions.SelectionMode.get -> Kevlar.Extensions.Http.HttpEndpointSelectionMode
+Kevlar.Extensions.Http.HttpEndpointRoutingOptions.SelectionMode.set -> void
+Kevlar.Extensions.Http.HttpEndpointRoutingOptions.ShieldFactory.get -> System.Func<System.Uri!, Kevlar.Shield<System.Net.Http.HttpResponseMessage!>!>?
+Kevlar.Extensions.Http.HttpEndpointRoutingOptions.ShieldFactory.set -> void
+Kevlar.Extensions.Http.HttpEndpointSelectionMode
+Kevlar.Extensions.Http.HttpEndpointSelectionMode.Ordered = 0 -> Kevlar.Extensions.Http.HttpEndpointSelectionMode
+Kevlar.Extensions.Http.HttpEndpointSelectionMode.Weighted = 1 -> Kevlar.Extensions.Http.HttpEndpointSelectionMode
+Kevlar.Extensions.Http.HttpRequestReplayException
+Kevlar.Extensions.Http.HttpRequestReplayException.HttpRequestReplayException(string! message) -> void
+Kevlar.Extensions.Http.HttpRequestReplayException.HttpRequestReplayException(string! message, System.Exception! innerException) -> void
+Kevlar.Extensions.Http.ShieldDelegatingHandler.ShieldDelegatingHandler(Kevlar.Shield<System.Net.Http.HttpResponseMessage!>! shield, Kevlar.Extensions.Http.ShieldHttpHandlerOptions! options) -> void
+Kevlar.Extensions.Http.ShieldHttpHandlerOptions
+Kevlar.Extensions.Http.ShieldHttpHandlerOptions.AllowUnsafeMethodReplay.get -> bool
+Kevlar.Extensions.Http.ShieldHttpHandlerOptions.AllowUnsafeMethodReplay.set -> void
+Kevlar.Extensions.Http.ShieldHttpHandlerOptions.ContentReplayPolicy.get -> Kevlar.Extensions.Http.HttpContentReplayPolicy
+Kevlar.Extensions.Http.ShieldHttpHandlerOptions.ContentReplayPolicy.set -> void
+Kevlar.Extensions.Http.ShieldHttpHandlerOptions.MaximumBufferSize.get -> long
+Kevlar.Extensions.Http.ShieldHttpHandlerOptions.MaximumBufferSize.set -> void
+Kevlar.Extensions.Http.ShieldHttpHandlerOptions.RequestFactory.get -> System.Func<System.Net.Http.HttpRequestMessage!, int, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<System.Net.Http.HttpRequestMessage!>>?
+Kevlar.Extensions.Http.ShieldHttpHandlerOptions.RequestFactory.set -> void
+Kevlar.Extensions.Http.ShieldHttpHandlerOptions.Routing.get -> Kevlar.Extensions.Http.HttpEndpointRoutingOptions?
+Kevlar.Extensions.Http.ShieldHttpHandlerOptions.Routing.set -> void
+Kevlar.Extensions.Http.ShieldHttpHandlerOptions.ShieldHttpHandlerOptions() -> void
+static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, Kevlar.Shield<System.Net.Http.HttpResponseMessage!>! shield, Kevlar.Extensions.Http.ShieldHttpHandlerOptions! options) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
+static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, System.Func<System.IServiceProvider!, Kevlar.Shield<System.Net.Http.HttpResponseMessage!>!>! shieldFactory, System.Func<System.IServiceProvider!, Kevlar.Extensions.Http.ShieldHttpHandlerOptions!>! optionsFactory) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!

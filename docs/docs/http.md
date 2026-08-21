@@ -28,13 +28,19 @@ services.AddHttpClient("api")
 
 ```csharp
 services.AddHttpClient("api")
-    .AddShield(HttpShield.WhenTransient()
-        .Retry(o =>
+    .AddShield(
+        HttpShield.WhenTransient()
+            .Retry(o =>
+            {
+                o.MaxRetries = 4;
+                o.DelayGenerator = HttpShield.RetryAfter;
+            })
+            .CircuitBreaker(o => o.FailureRatio = 0.5),
+        new ShieldHttpHandlerOptions
         {
-            o.MaxRetries = 4;
-            o.DelayGenerator = HttpShield.RetryAfter;   // server-driven delays
-        })
-        .CircuitBreaker(o => o.FailureRatio = 0.5));
+            ContentReplayPolicy = HttpContentReplayPolicy.Buffer,
+            MaximumBufferSize = 1024 * 1024,
+        });
 ```
 
 You can also grab that exact shield directly with `HttpShield.Standard()`.
@@ -65,10 +71,58 @@ services.AddHttpClient("api")
 
 `AddShield` accepts a shield instance or an `IServiceProvider` factory.
 
+## Safe request replay
+
+The first no-routing attempt sends the caller's original request directly. Additional attempts use
+clones that preserve method, URI, HTTP version and version policy, request headers, request options,
+and content headers. The handler owns every clone and every nonselected response; the caller owns
+the original request and the returned response.
+
+Content replay is explicit:
+
+- `NoBuffer` (default) does no up-front body work. A request with content may be sent once; another
+  attempt throws `HttpRequestReplayException` before reaching the transport.
+- `Buffer` serializes content once before sending, bounded by `MaximumBufferSize`, then gives each
+  attempt its own `ByteArrayContent`. Oversize or partial serialization fails before attempt 1.
+- `RequestFactory` creates a complete fresh request per attempt. Use it for one-shot streams,
+  generated bodies, signatures, or other request state that cannot be cloned. Factory requests are
+  disposed by the handler.
+
+GET, HEAD, OPTIONS, TRACE, PUT, and DELETE can replay automatically. POST, PATCH, and custom methods
+require `AllowUnsafeMethodReplay = true` or a `RequestFactory`; only opt in when the operation is
+actually idempotent. Timeouts and caller cancellation flow to every attempt and request factory.
+
+## Endpoint-aware hedging
+
+Route attempt 1, attempt 2, and so on across alternate authorities while preserving the original
+path and query:
+
+```csharp
+var routing = new HttpEndpointRoutingOptions
+{
+    SelectionMode = HttpEndpointSelectionMode.Ordered,
+    ShieldFactory = endpoint => HttpShield.WhenTransient()
+        .CircuitBreaker(5, TimeSpan.FromSeconds(30)),
+};
+routing.Endpoints.Add(new HttpEndpoint(new Uri("https://api-a.example")));
+routing.Endpoints.Add(new HttpEndpoint(new Uri("https://api-b.example")));
+
+services.AddHttpClient("routed")
+    .AddShield(
+        HttpShield.WhenTransient().Hedge(2, TimeSpan.Zero),
+        new ShieldHttpHandlerOptions { Routing = routing });
+```
+
+`Ordered` is deterministic configuration order. `Weighted` creates a deterministic weighted
+permutation from `Seed`; a request visits every configured endpoint before cycling. `ShieldFactory`
+is cached by authority, so circuit-breaker and limiter state stays isolated per endpoint. Keep that
+endpoint-local shield single-attempt (breaker, limiter, timeout); put retry or hedging in the outer
+shield so every additional send goes through safe replay and routing.
+
 ## Behaviour notes
 
-- **Superseded responses are disposed by the retry hook.** `Standard` disposes each replaced `HttpResponseMessage` in `OnRetry` so connections/buffers aren't leaked. The successful response, or final transient response after retries are exhausted, remains undisposed and belongs to the caller. If you build your own retry over responses, copy that trick: `o.OnRetry = static e => e.Outcome.Result?.Dispose();` (typed retry events carry the response as `Outcome.Result`)
-- **Requests are resent, not cloned.** Retried and hedged attempts reuse the same `HttpRequestMessage`, preserving its method, URI, headers, options, and buffered content. Requests without content and rewindable content (`StringContent`, `ByteArrayContent`) are supported. A one-shot `StreamContent` is not rewound; a retry can fail while serializing it again, so buffer content yourself when retries are possible.
+- **Superseded responses are handler-owned.** The handler disposes failed retry responses and losing hedge responses, including a loser that completes after the winner. A custom `OnRetry` response-disposal hook is unnecessary with `ShieldDelegatingHandler`; the hook that `HttpShield.Standard()` installs stays safe because `HttpResponseMessage.Dispose` is idempotent. The selected response remains caller-owned.
+- **Redirects remain transport-owned.** Each Kevlar attempt begins with the original absolute URI (or its routed authority). Normal `HttpClientHandler` redirect policy runs inside that attempt.
 - **State sharing applies per registration.** `AddStandardShield` and `AddShield(shield)` build/capture one shield for that named client — every request through `"api"` shares the same circuit breaker, which is what makes the breaker meaningful. The factory overload runs once when `HttpClientFactory` creates a handler pipeline, receives that pipeline's service provider, and runs again only when the handler lifetime expires; return a shared instance, e.g. from the registry, to keep one circuit across lifetimes.
 - **Compose with other handlers normally.** The Kevlar handler is a regular `DelegatingHandler`; ordering relative to your own handlers follows the usual `AddHttpMessageHandler` rules.
 
