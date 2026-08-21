@@ -16,6 +16,12 @@ internal static class KevlarMetrics
 {
     public const int MaxTrackedStrategyAliases = 64;
 
+#if NET9_0_OR_GREATER
+    private const int _minimumCachedStrategyIndex = -1;
+    private const int _maximumCachedStrategyIndex = 63;
+    private static readonly object[] _boxedStrategyIndexes = CreateBoxedStrategyIndexes();
+#endif
+
 #if NET8_0_OR_GREATER
     private static readonly Meter Meter = new(KevlarDiagnostics.MeterName, "1.0");
     private static readonly Counter<long> Executions = Meter.CreateCounter<long>(
@@ -272,12 +278,30 @@ internal static class KevlarMetrics
         return tags;
     }
 
+#if NET9_0_OR_GREATER
     private static TagList StateTags(string? shieldName, int strategyIndex)
     {
         var tags = NameTags(shieldName);
-        tags.Add("kevlar.strategy.index", strategyIndex);
+        tags.Add("kevlar.strategy.index", BoxStrategyIndex(strategyIndex));
         return tags;
     }
+
+    private static object BoxStrategyIndex(int strategyIndex) =>
+        strategyIndex is >= _minimumCachedStrategyIndex and <= _maximumCachedStrategyIndex
+            ? _boxedStrategyIndexes[strategyIndex - _minimumCachedStrategyIndex]
+            : strategyIndex;
+
+    private static object[] CreateBoxedStrategyIndexes()
+    {
+        var indexes = new object[_maximumCachedStrategyIndex - _minimumCachedStrategyIndex + 1];
+        for (var index = _minimumCachedStrategyIndex; index <= _maximumCachedStrategyIndex; index++)
+        {
+            indexes[index - _minimumCachedStrategyIndex] = index;
+        }
+
+        return indexes;
+    }
+#endif
 
     private static string StateName(CircuitState state) => state switch
     {
