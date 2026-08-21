@@ -25,7 +25,7 @@ Log it once at startup and every incident review starts from the actual configur
 
 ## Metrics
 
-On .NET 8+ every shield publishes metrics through a `System.Diagnostics.Metrics.Meter` named `Kevlar` — zero configuration, and effectively free (a branch per event) until something listens. Subscribe with OpenTelemetry:
+On .NET 8+ every shield publishes metrics through a `System.Diagnostics.Metrics.Meter` named `Kevlar`, version `1.0` — zero configuration, and effectively free (a branch per event) until something listens. All instruments are `Counter<long>`. Subscribe with OpenTelemetry:
 
 ```csharp
 services.AddOpenTelemetry().WithMetrics(metrics => metrics.AddMeter(KevlarDiagnostics.MeterName));
@@ -33,7 +33,7 @@ services.AddOpenTelemetry().WithMetrics(metrics => metrics.AddMeter(KevlarDiagno
 
 | Instrument | Counts | Tags |
 |---|---|---|
-| `kevlar.executions` | completed executions | `shield.name`, `outcome` (`success`/`failure`) |
+| `kevlar.executions` | completed public execution calls, including empty shields and pre-cancelled calls | `shield.name`, `outcome` (`success`/`failure`) |
 | `kevlar.retries` | retry attempts | `shield.name` |
 | `kevlar.timeouts` | executions cancelled by a timeout strategy | `shield.name` |
 | `kevlar.hedges` | extra hedged attempts launched | `shield.name` |
@@ -41,7 +41,9 @@ services.AddOpenTelemetry().WithMetrics(metrics => metrics.AddMeter(KevlarDiagno
 | `kevlar.rejections` | fail-fast rejections | `shield.name`, `kind` (`circuit_open`/`rate_limit`/`concurrency_limit`) |
 | `kevlar.circuit_breaker.transitions` | circuit state changes | `from`, `to` |
 
-The `shield.name` tag appears only for shields named via `WithName` — name the shields you dashboard. On `netstandard2.0` targets the instruments are inert because the metrics API isn't in-box there.
+Each public execution call records exactly one `kevlar.executions` measurement after its final outcome: recovery through fallback is `success`; exceptions, caller cancellation, timeout, and strategy rejection are `failure`. Retry and hedge attempts do not add execution measurements of their own.
+
+The `shield.name` tag appears only for shields named via `WithName` — name the shields you dashboard. `WithName("")` emits the tag with an empty value; an unnamed shield omits it. On `netstandard2.0` targets the instruments are inert because the metrics API isn't in-box there.
 
 ## Compile-time checks
 
