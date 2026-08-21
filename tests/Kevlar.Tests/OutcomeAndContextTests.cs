@@ -14,6 +14,18 @@ public class OutcomeAndContextTests
     }
 
     [Test]
+    public async Task FromResult_Formats_Null_And_Custom_Values()
+    {
+        var nullOutcome = Outcome<string?>.FromResult(null);
+        var customOutcome = Outcome<CustomValue>.FromResult(new CustomValue());
+
+        await Assert.That(nullOutcome.IsSuccess).IsTrue();
+        await Assert.That(nullOutcome.Result).IsNull();
+        await Assert.That(nullOutcome.ToString()).IsEqualTo(string.Empty);
+        await Assert.That(customOutcome.ToString()).IsEqualTo("custom-value");
+    }
+
+    [Test]
     public async Task FromException_Is_Failure()
     {
         var exception = new InvalidOperationException("boom");
@@ -32,7 +44,7 @@ public class OutcomeAndContextTests
     [Test]
     public async Task GetResultOrRethrow_Throws_The_Original_Exception_Instance()
     {
-        var original = new InvalidOperationException("boom");
+        var original = CaptureOriginalException();
         var outcome = Outcome<int>.FromException(original);
 
         try
@@ -43,17 +55,22 @@ public class OutcomeAndContextTests
         catch (InvalidOperationException caught)
         {
             await Assert.That(ReferenceEquals(caught, original)).IsTrue();
+            await Assert.That(caught.StackTrace!.Contains(nameof(ThrowOriginal))).IsTrue();
         }
     }
 
     [Test]
     public async Task Default_Outcome_Is_A_Success_With_The_Default_Value()
     {
-        var outcome = default(Outcome<string>);
+        var referenceOutcome = default(Outcome<string>);
+        var valueOutcome = default(Outcome<int>);
 
-        await Assert.That(outcome.IsSuccess).IsTrue();
-        await Assert.That(outcome.Result).IsNull();
-        await Assert.That(outcome.ToString()).IsEqualTo(string.Empty);
+        await Assert.That(referenceOutcome.IsSuccess).IsTrue();
+        await Assert.That(referenceOutcome.Result).IsNull();
+        await Assert.That(referenceOutcome.ToString()).IsEqualTo(string.Empty);
+        await Assert.That(valueOutcome.IsSuccess).IsTrue();
+        await Assert.That(valueOutcome.Result).IsEqualTo(0);
+        await Assert.That(valueOutcome.ToString()).IsEqualTo("0");
     }
 
     [Test]
@@ -114,6 +131,48 @@ public class OutcomeAndContextTests
     }
 
     [Test]
+    public async Task Properties_Distinguish_Stored_Null_From_Missing()
+    {
+        var properties = CapturedProperties();
+        var stored = new KevlarKey<string?>("stored-null");
+
+        properties.Set(stored, null);
+
+        await Assert.That(properties.TryGet(stored, out var value)).IsTrue();
+        await Assert.That(value).IsNull();
+        await Assert.That(properties.GetOrDefault(stored, "fallback")).IsNull();
+        await Assert.That(properties.TryGet(new KevlarKey<string?>("missing"), out _)).IsFalse();
+        await Assert.That(properties.GetOrDefault(new KevlarKey<string?>("missing"), "fallback")).IsEqualTo("fallback");
+    }
+
+    [Test]
+    public async Task Properties_Use_Name_And_Value_Type_As_Key_Identity()
+    {
+        var properties = CapturedProperties();
+        var text = new KevlarKey<string>("shared");
+        var number = new KevlarKey<int>("shared");
+
+        properties.Set(text, "value");
+        properties.Set(number, 42);
+
+        await Assert.That(properties.GetOrDefault<string>(new KevlarKey<string>("shared"))).IsEqualTo("value");
+        await Assert.That(properties.GetOrDefault(new KevlarKey<int>("shared"))).IsEqualTo(42);
+    }
+
+    [Test]
+    public async Task Property_Names_Are_Case_Sensitive_And_May_Be_Empty()
+    {
+        var properties = CapturedProperties();
+        properties.Set(new KevlarKey<int>("Key"), 1);
+        properties.Set(new KevlarKey<int>("key"), 2);
+        properties.Set(new KevlarKey<int>(string.Empty), 3);
+
+        await Assert.That(properties.GetOrDefault(new KevlarKey<int>("Key"))).IsEqualTo(1);
+        await Assert.That(properties.GetOrDefault(new KevlarKey<int>("key"))).IsEqualTo(2);
+        await Assert.That(properties.GetOrDefault(new KevlarKey<int>(string.Empty))).IsEqualTo(3);
+    }
+
+    [Test]
     public async Task Properties_Are_Cleared_Between_Executions()
     {
         // The context is pooled; whatever instance an execution rents must start with
@@ -166,4 +225,24 @@ public class OutcomeAndContextTests
 
     // The internal constructor is reachable via InternalsVisibleTo.
     private static KevlarProperties CapturedProperties() => new();
+
+    private static InvalidOperationException CaptureOriginalException()
+    {
+        try
+        {
+            ThrowOriginal();
+            throw new InvalidOperationException("Unreachable.");
+        }
+        catch (InvalidOperationException exception)
+        {
+            return exception;
+        }
+    }
+
+    private static void ThrowOriginal() => throw new InvalidOperationException("boom");
+
+    private sealed class CustomValue
+    {
+        public override string ToString() => "custom-value";
+    }
 }
