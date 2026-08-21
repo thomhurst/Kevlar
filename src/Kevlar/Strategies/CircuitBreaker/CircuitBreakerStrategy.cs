@@ -118,13 +118,12 @@ internal sealed class CircuitBreakerStrategy : Strategy
         string?[] shieldNames;
         lock (_metricsNamesGate)
         {
-            shieldNames = [.. _metricsShieldNames];
-        }
+            if (_metricsShieldNames.Count == 0)
+            {
+                _metricsShieldNames.Add(null);
+            }
 
-        if (shieldNames.Length == 0)
-        {
-            KevlarMetrics.RecordCircuitState(null, state);
-            return;
+            shieldNames = [.. _metricsShieldNames];
         }
 
         List<Exception>? failures = null;

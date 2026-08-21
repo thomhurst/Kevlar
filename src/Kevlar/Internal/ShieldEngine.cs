@@ -232,8 +232,8 @@ internal static class ShieldEngine
 
     private static void RecordExecution(long startedAt, string? shieldName, bool success)
     {
-        KevlarMetrics.Execution(shieldName, success);
         KevlarMetrics.Duration(startedAt, shieldName, success);
+        KevlarMetrics.Execution(shieldName, success);
     }
 
     private static async ValueTask<T> Rethrow<T>(Outcome<T> outcome)

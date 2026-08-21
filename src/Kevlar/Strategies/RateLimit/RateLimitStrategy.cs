@@ -59,30 +59,73 @@ internal sealed class RateLimitStrategy : Strategy
 
     public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
-        if (!TryAcquire(context.TimeProvider, out var reservation, out var retryAfter))
+        if (!TryAcquireAndRecord(context, out var reservation, out var retryAfter))
         {
-            RecordState(context.ShieldName, context.TimeProvider);
             KevlarMetrics.Rejection(context.ShieldName, "rate_limit");
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(new RateLimitExceededException(retryAfter)));
-        }
-
-        try
-        {
-            RecordState(context.ShieldName, context.TimeProvider);
-        }
-        catch
-        {
-            if (reservation is not null)
-            {
-                CancelReservation(reservation)?.TrySetResult(true);
-            }
-
-            throw;
         }
 
         return reservation is null
             ? next.InvokeAsync(context)
             : ExecuteReservedAsync(next, context, reservation);
+    }
+
+    private bool TryAcquireAndRecord(
+        KevlarContext context,
+        out Reservation? reservation,
+        out TimeSpan? retryAfter)
+    {
+        if (!KevlarMetrics.RateStateEnabled)
+        {
+            return TryAcquire(context.TimeProvider, out reservation, out retryAfter);
+        }
+
+        lock (_metricsPublicationGate)
+        {
+            var previousTheoreticalArrival = _queueLimit == 0
+                ? Volatile.Read(ref _theoreticalArrival)
+                : 0;
+            var acquired = TryAcquire(context.TimeProvider, out reservation, out retryAfter);
+            try
+            {
+                RecordStateUnderLock(context.ShieldName, context.TimeProvider);
+                return acquired;
+            }
+            catch
+            {
+                if (acquired)
+                {
+                    RollbackAcquisition(reservation, previousTheoreticalArrival);
+                }
+
+                throw;
+            }
+        }
+    }
+
+    private void RollbackAcquisition(Reservation? reservation, double previousTheoreticalArrival)
+    {
+        if (reservation is not null)
+        {
+            CancelReservation(reservation)?.TrySetResult(true);
+            return;
+        }
+
+        if (_queueLimit == 0)
+        {
+            Volatile.Write(ref _theoreticalArrival, previousTheoreticalArrival);
+            return;
+        }
+
+        lock (_queueGate)
+        {
+            for (var queued = _queueHead; queued is not null; queued = queued.Next)
+            {
+                queued.DueTimestamp -= _timestampUnitsPerPermit;
+            }
+
+            _theoreticalArrival -= _timestampUnitsPerPermit;
+        }
     }
 
     private async ValueTask<Outcome<T>> ExecuteReservedAsync<T, TState>(
@@ -332,23 +375,28 @@ internal sealed class RateLimitStrategy : Strategy
 
         lock (_metricsPublicationGate)
         {
-            if (_metricsShieldNames.Count < KevlarMetrics.MaxTrackedStrategyAliases
-                && _metricsShieldNames.Add(shieldName))
-            {
-                _metricsShieldNameSnapshot = [.. _metricsShieldNames];
-            }
+            RecordStateUnderLock(shieldName, timeProvider);
+        }
+    }
 
-            while (true)
-            {
-                var state = CaptureState(timeProvider);
-                var shieldNames = _metricsShieldNameSnapshot;
-                RecordStateForAliases(shieldNames, state.Available, state.Queued);
+    private void RecordStateUnderLock(string? shieldName, TimeProvider timeProvider)
+    {
+        if (_metricsShieldNames.Count < KevlarMetrics.MaxTrackedStrategyAliases
+            && _metricsShieldNames.Add(shieldName))
+        {
+            _metricsShieldNameSnapshot = [.. _metricsShieldNames];
+        }
 
-                if (state == CaptureState(timeProvider)
-                    && ReferenceEquals(shieldNames, _metricsShieldNameSnapshot))
-                {
-                    return;
-                }
+        while (true)
+        {
+            var state = CaptureState(timeProvider);
+            var shieldNames = _metricsShieldNameSnapshot;
+            RecordStateForAliases(shieldNames, state.Available, state.Queued);
+
+            if (state == CaptureState(timeProvider)
+                && ReferenceEquals(shieldNames, _metricsShieldNameSnapshot))
+            {
+                return;
             }
         }
     }

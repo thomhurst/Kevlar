@@ -550,6 +550,26 @@ public class MetricsTests
     }
 
     [Test]
+    public async Task Execution_Duration_Excludes_Execution_Counter_Listener_Time()
+    {
+        using var listener = new KevlarMeterListener((instrument, _) =>
+        {
+            if (instrument == "kevlar.executions")
+            {
+                Thread.Sleep(TimeSpan.FromMilliseconds(100));
+            }
+        });
+        var shield = Shield.Empty.WithName("metrics-duration-listener-overhead");
+
+        await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
+
+        await Assert.That(listener.DoubleValues(
+                "kevlar.execution.duration",
+                "metrics-duration-listener-overhead").Single())
+            .IsLessThan(0.05);
+    }
+
+    [Test]
     public async Task Circuit_State_Gauge_Reports_Every_State()
     {
         using var listener = new KevlarMeterListener();
@@ -600,6 +620,29 @@ public class MetricsTests
                 "kevlar.circuit_breaker.state",
                 "metrics-manual-circuit-state").Count(value => value == 0))
             .IsEqualTo(closedMeasurements + 1);
+    }
+
+    [Test]
+    public async Task Provisional_Unnamed_Circuit_Series_Stays_Current()
+    {
+        using var listener = new KevlarMeterListener();
+        var monitor = new CircuitBreakerMonitor();
+        var shield = Shield.CircuitBreaker(options => options.Monitor = monitor)
+            .WithName("metrics-provisional-circuit-name");
+
+        monitor.Isolate();
+        _ = await shield.ExecuteOutcomeAsync(_ => new ValueTask<int>(1));
+        monitor.Reset();
+
+        await Assert.That(listener.Values(
+                "kevlar.circuit_breaker.state",
+                shieldName: null,
+                requireName: false).Last())
+            .IsEqualTo(0);
+        await Assert.That(listener.Values(
+                "kevlar.circuit_breaker.state",
+                "metrics-provisional-circuit-name").Last())
+            .IsEqualTo(0);
     }
 
     [Test]
@@ -1035,6 +1078,36 @@ public class MetricsTests
         var queued = shield.ExecuteAsync(_ => ValueTask.CompletedTask, cancellation.Token).AsTask();
         cancellation.Cancel();
         await Assert.That(async () => await queued).Throws<OperationCanceledException>();
+    }
+
+    [Test]
+    public async Task Rate_Metric_Failure_Restores_An_Immediate_Permit()
+    {
+        var throwOnAvailable = true;
+        var metricsFailure = new InvalidOperationException("metrics callback");
+        using var listener = new KevlarMeterListener((instrument, value) =>
+        {
+            if (throwOnAvailable && instrument == "kevlar.rate_limit.available" && value == 0)
+            {
+                throwOnAvailable = false;
+                throw metricsFailure;
+            }
+        });
+        var invoked = false;
+        var shield = Shield.RateLimit(1, TimeSpan.FromHours(1))
+            .WithName("metrics-rate-immediate-failure");
+
+        var thrown = await Assert.That(async () =>
+                await shield.ExecuteAsync(_ =>
+                {
+                    invoked = true;
+                    return ValueTask.CompletedTask;
+                }))
+            .Throws<InvalidOperationException>();
+        await Assert.That(ReferenceEquals(thrown, metricsFailure)).IsTrue();
+        await Assert.That(invoked).IsFalse();
+
+        await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
     }
 
     [Test]

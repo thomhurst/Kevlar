@@ -2,7 +2,7 @@ namespace Kevlar;
 
 /// <summary>
 /// Names for Kevlar's built-in telemetry. On .NET 8+ targets every shield publishes counters and
-/// duration metrics; state gauges require .NET 9 or later. Metrics are published
+/// duration metrics; the shipped state gauges require .NET 10 or later. Metrics are published
 /// through a <c>System.Diagnostics.Metrics.Meter</c> named <see cref="MeterName"/> with zero
 /// configuration — subscribe with <c>AddMeter("Kevlar")</c> (OpenTelemetry) or a
 /// <c>MeterListener</c>. On <c>netstandard2.0</c> the instruments are inert.
