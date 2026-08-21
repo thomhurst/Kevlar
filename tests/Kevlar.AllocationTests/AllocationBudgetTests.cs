@@ -103,6 +103,7 @@ public class AllocationBudgetTests
     private readonly Counter _retryCounter = new();
     private readonly Counter _asyncDelayRetryCounter = new();
     private readonly ParallelHedgeState _parallelHedgeState = new();
+    private readonly NoOpEventListener _eventListener = new();
     private readonly int _metadataValue = 42;
 
     public AllocationBudgetTests() => _ = _partitioned.GetShield(42);
@@ -196,6 +197,15 @@ public class AllocationBudgetTests
             test._rateLimit.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("concurrency state metrics", this, static test =>
             test._concurrencyLimit.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
+    }
+
+    [Test]
+    public void Structured_Execution_Events_Allocate_Zero_Bytes_Per_Operation()
+    {
+        using var subscription = KevlarDiagnostics.Subscribe(_eventListener);
+
+        AssertZero("structured execution events", this, static test =>
+            test._empty.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
     }
 
     /// <summary>Verifies bounded allocations for failure and parallel execution paths.</summary>
@@ -294,6 +304,13 @@ public class AllocationBudgetTests
     private sealed class Counter
     {
         public int Value;
+    }
+
+    private sealed class NoOpEventListener : KevlarEventListener
+    {
+        public override void OnEvent<T>(in KevlarEvent<T> telemetryEvent)
+        {
+        }
     }
 
     private sealed class ParallelHedgeState

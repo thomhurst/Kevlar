@@ -31,4 +31,15 @@ public static class KevlarDiagnostics
 {
     /// <summary>The name of Kevlar's <c>Meter</c>.</summary>
     public const string MeterName = "Kevlar";
+
+    /// <summary>
+    /// Subscribes <paramref name="listener"/> to the process-wide structured event stream.
+    /// Dispose the returned subscription to stop delivery. Subscriptions are invoked in
+    /// registration order; disposal does not interrupt a callback already in progress.
+    /// </summary>
+    public static IDisposable Subscribe(KevlarEventListener listener)
+    {
+        Internal.Throw.IfNull(listener, nameof(listener));
+        return Internal.KevlarEventSource.Subscribe(listener);
+    }
 }

@@ -56,6 +56,55 @@ Kevlar.Shield<TResult>.ExecuteWithContextAsync<TState>(TState state, System.Acti
 static Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync<T, TState>(this Kevlar.Shield! shield, TState state, System.Action<TState, Kevlar.KevlarProperties!>! initializeProperties, System.Func<TState, Kevlar.KevlarContext!, System.Threading.Tasks.Task<T>!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T>
 static Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync<TResult, TState>(this Kevlar.Shield<TResult>! shield, TState state, System.Action<TState, Kevlar.KevlarProperties!>! initializeProperties, System.Func<TState, Kevlar.KevlarContext!, System.Threading.Tasks.Task<TResult>!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<TResult>
 static Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync<TState>(this Kevlar.Shield! shield, TState state, System.Action<TState, Kevlar.KevlarProperties!>! initializeProperties, System.Func<TState, Kevlar.KevlarContext!, System.Threading.Tasks.Task!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+abstract Kevlar.KevlarEventListener.OnEvent<T>(in Kevlar.KevlarEvent<T> telemetryEvent) -> void
+Kevlar.KevlarEvent<T>
+Kevlar.KevlarEvent<T>.Attempt.get -> int
+Kevlar.KevlarEvent<T>.Context.get -> Kevlar.KevlarContext!
+Kevlar.KevlarEvent<T>.Duration.get -> System.TimeSpan
+Kevlar.KevlarEvent<T>.Handled.get -> bool
+Kevlar.KevlarEvent<T>.HasOutcome.get -> bool
+Kevlar.KevlarEvent<T>.KevlarEvent() -> void
+Kevlar.KevlarEvent<T>.Kind.get -> Kevlar.KevlarEventKind
+Kevlar.KevlarEvent<T>.Outcome.get -> Kevlar.Outcome<T>
+Kevlar.KevlarEvent<T>.OutcomeClassification.get -> Kevlar.KevlarOutcomeClassification
+Kevlar.KevlarEvent<T>.Severity.get -> Kevlar.KevlarEventSeverity
+Kevlar.KevlarEvent<T>.ShieldName.get -> string?
+Kevlar.KevlarEvent<T>.StrategyIndex.get -> int
+Kevlar.KevlarEvent<T>.StrategyKind.get -> Kevlar.KevlarStrategyKind
+Kevlar.KevlarEvent<T>.TryGetOutcome(out Kevlar.Outcome<T> outcome) -> bool
+Kevlar.KevlarEventKind
+Kevlar.KevlarEventKind.CircuitStateChanged = 6 -> Kevlar.KevlarEventKind
+Kevlar.KevlarEventKind.ConcurrencyLimitRejected = 8 -> Kevlar.KevlarEventKind
+Kevlar.KevlarEventKind.ExecutionCompleted = 1 -> Kevlar.KevlarEventKind
+Kevlar.KevlarEventKind.ExecutionStarted = 0 -> Kevlar.KevlarEventKind
+Kevlar.KevlarEventKind.Fallback = 5 -> Kevlar.KevlarEventKind
+Kevlar.KevlarEventKind.HedgeStarted = 4 -> Kevlar.KevlarEventKind
+Kevlar.KevlarEventKind.RateLimitRejected = 7 -> Kevlar.KevlarEventKind
+Kevlar.KevlarEventKind.RetryScheduled = 2 -> Kevlar.KevlarEventKind
+Kevlar.KevlarEventKind.Timeout = 3 -> Kevlar.KevlarEventKind
+Kevlar.KevlarEventListener
+Kevlar.KevlarEventListener.KevlarEventListener() -> void
+Kevlar.KevlarEventSeverity
+Kevlar.KevlarEventSeverity.Debug = 0 -> Kevlar.KevlarEventSeverity
+Kevlar.KevlarEventSeverity.Error = 3 -> Kevlar.KevlarEventSeverity
+Kevlar.KevlarEventSeverity.Information = 1 -> Kevlar.KevlarEventSeverity
+Kevlar.KevlarEventSeverity.Warning = 2 -> Kevlar.KevlarEventSeverity
+Kevlar.KevlarOutcomeClassification
+Kevlar.KevlarOutcomeClassification.Canceled = 3 -> Kevlar.KevlarOutcomeClassification
+Kevlar.KevlarOutcomeClassification.Failure = 2 -> Kevlar.KevlarOutcomeClassification
+Kevlar.KevlarOutcomeClassification.None = 0 -> Kevlar.KevlarOutcomeClassification
+Kevlar.KevlarOutcomeClassification.Success = 1 -> Kevlar.KevlarOutcomeClassification
+Kevlar.KevlarStrategyKind
+Kevlar.KevlarStrategyKind.CircuitBreaker = 5 -> Kevlar.KevlarStrategyKind
+Kevlar.KevlarStrategyKind.ConcurrencyLimit = 7 -> Kevlar.KevlarStrategyKind
+Kevlar.KevlarStrategyKind.Fallback = 4 -> Kevlar.KevlarStrategyKind
+Kevlar.KevlarStrategyKind.Hedging = 3 -> Kevlar.KevlarStrategyKind
+Kevlar.KevlarStrategyKind.None = 0 -> Kevlar.KevlarStrategyKind
+Kevlar.KevlarStrategyKind.RateLimit = 6 -> Kevlar.KevlarStrategyKind
+Kevlar.KevlarStrategyKind.Retry = 1 -> Kevlar.KevlarStrategyKind
+Kevlar.KevlarStrategyKind.Timeout = 2 -> Kevlar.KevlarStrategyKind
+static Kevlar.KevlarDiagnostics.Subscribe(Kevlar.KevlarEventListener! listener) -> System.IDisposable!
+virtual Kevlar.KevlarEventListener.IsEnabled(Kevlar.KevlarEventKind kind) -> bool
 Kevlar.Shield.InvokesContinuationAtMostOnce.get -> bool
 virtual Kevlar.Strategy.IsDuplicateReferenceUnsafe.get -> bool
 Kevlar.RetryOptions.DelayGeneratorAsync.get -> System.Func<Kevlar.RetryEvent, System.Threading.Tasks.ValueTask<System.TimeSpan?>>?

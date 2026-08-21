@@ -11,6 +11,11 @@ internal static class ShieldEngine
         Func<TState, CancellationToken, ValueTask<T>> action,
         CancellationToken cancellationToken)
     {
+        if (KevlarEventSource.Enabled)
+        {
+            return ExecuteObservedAsync(head, timeProvider, shieldName, state, action, cancellationToken);
+        }
+
         var startedAt = KevlarMetrics.DurationEnabled ? KevlarMetrics.StartDuration() : 0;
         if (cancellationToken.IsCancellationRequested)
         {
@@ -65,6 +70,11 @@ internal static class ShieldEngine
         Func<TState, CancellationToken, ValueTask<T>> action,
         CancellationToken cancellationToken)
     {
+        if (KevlarEventSource.Enabled)
+        {
+            return ExecuteObservedOutcomeAsync(head, timeProvider, shieldName, state, action, cancellationToken);
+        }
+
         var startedAt = KevlarMetrics.DurationEnabled ? KevlarMetrics.StartDuration() : 0;
         if (cancellationToken.IsCancellationRequested)
         {
@@ -117,6 +127,18 @@ internal static class ShieldEngine
         Func<TState, KevlarContext, ValueTask<T>> action,
         CancellationToken cancellationToken)
     {
+        if (KevlarEventSource.Enabled)
+        {
+            return ExecuteObservedWithContextAsync(
+                head,
+                timeProvider,
+                shieldName,
+                state,
+                initializeProperties,
+                action,
+                cancellationToken);
+        }
+
         var startedAt = KevlarMetrics.DurationEnabled ? KevlarMetrics.StartDuration() : 0;
         if (cancellationToken.IsCancellationRequested)
         {
@@ -156,6 +178,11 @@ internal static class ShieldEngine
         Func<TState, CancellationToken, T> action,
         CancellationToken cancellationToken)
     {
+        if (KevlarEventSource.Enabled)
+        {
+            return ExecuteObservedSync(head, timeProvider, shieldName, state, action, cancellationToken);
+        }
+
         var startedAt = KevlarMetrics.DurationEnabled ? KevlarMetrics.StartDuration() : 0;
         if (cancellationToken.IsCancellationRequested)
         {
@@ -205,6 +232,18 @@ internal static class ShieldEngine
         Func<TState, KevlarContext, T> action,
         CancellationToken cancellationToken)
     {
+        if (KevlarEventSource.Enabled)
+        {
+            return ExecuteObservedWithContextSync(
+                head,
+                timeProvider,
+                shieldName,
+                state,
+                initializeProperties,
+                action,
+                cancellationToken);
+        }
+
         var startedAt = KevlarMetrics.DurationEnabled ? KevlarMetrics.StartDuration() : 0;
         if (cancellationToken.IsCancellationRequested)
         {
@@ -238,6 +277,285 @@ internal static class ShieldEngine
             KevlarContext.Return(context);
         }
     }
+
+    private static ValueTask<T> ExecuteObservedAsync<T, TState>(
+        StrategyNode? head,
+        TimeProvider timeProvider,
+        string? shieldName,
+        TState state,
+        Func<TState, CancellationToken, ValueTask<T>> action,
+        CancellationToken cancellationToken)
+    {
+        var metricsStartedAt = KevlarMetrics.DurationEnabled ? KevlarMetrics.StartDuration() : 0;
+        var context = KevlarContext.Rent(cancellationToken, isSynchronous: false, timeProvider, shieldName);
+        var eventStartedAt = StartEventDuration();
+        KevlarEventSource.ExecutionStarted<T>(context);
+
+        ValueTask<Outcome<T>> pipeline;
+        if (cancellationToken.IsCancellationRequested)
+        {
+            pipeline = new ValueTask<Outcome<T>>(Outcome<T>.FromException(
+                new OperationCanceledException(cancellationToken)));
+        }
+        else
+        {
+            pipeline = RunAsync(head, state, action, context);
+        }
+
+        if (!pipeline.IsCompletedSuccessfully)
+        {
+            return AwaitObservedAsync(pipeline, context, eventStartedAt, metricsStartedAt);
+        }
+
+        var outcome = pipeline.Result;
+        try
+        {
+            CompleteObservedExecution(context, in outcome, eventStartedAt, metricsStartedAt);
+            return outcome.IsSuccess ? new ValueTask<T>(outcome.Result!) : Rethrow(outcome);
+        }
+        finally
+        {
+            KevlarContext.Return(context);
+        }
+    }
+
+    private static ValueTask<Outcome<T>> ExecuteObservedOutcomeAsync<T, TState>(
+        StrategyNode? head,
+        TimeProvider timeProvider,
+        string? shieldName,
+        TState state,
+        Func<TState, CancellationToken, ValueTask<T>> action,
+        CancellationToken cancellationToken)
+    {
+        var metricsStartedAt = KevlarMetrics.DurationEnabled ? KevlarMetrics.StartDuration() : 0;
+        var context = KevlarContext.Rent(cancellationToken, isSynchronous: false, timeProvider, shieldName);
+        var eventStartedAt = StartEventDuration();
+        KevlarEventSource.ExecutionStarted<T>(context);
+
+        ValueTask<Outcome<T>> pipeline;
+        if (cancellationToken.IsCancellationRequested)
+        {
+            pipeline = new ValueTask<Outcome<T>>(Outcome<T>.FromException(
+                new OperationCanceledException(cancellationToken)));
+        }
+        else
+        {
+            pipeline = RunAsync(head, state, action, context);
+        }
+
+        if (!pipeline.IsCompletedSuccessfully)
+        {
+            return AwaitObservedOutcomeAsync(pipeline, context, eventStartedAt, metricsStartedAt);
+        }
+
+        var outcome = pipeline.Result;
+        try
+        {
+            CompleteObservedExecution(context, in outcome, eventStartedAt, metricsStartedAt);
+            return new ValueTask<Outcome<T>>(outcome);
+        }
+        finally
+        {
+            KevlarContext.Return(context);
+        }
+    }
+
+    private static ValueTask<T> ExecuteObservedWithContextAsync<T, TState>(
+        StrategyNode? head,
+        TimeProvider timeProvider,
+        string? shieldName,
+        TState state,
+        Action<TState, KevlarProperties> initializeProperties,
+        Func<TState, KevlarContext, ValueTask<T>> action,
+        CancellationToken cancellationToken)
+    {
+        var metricsStartedAt = KevlarMetrics.DurationEnabled ? KevlarMetrics.StartDuration() : 0;
+        var context = KevlarContext.Rent(cancellationToken, isSynchronous: false, timeProvider, shieldName);
+        var eventStartedAt = StartEventDuration();
+        if (cancellationToken.IsCancellationRequested)
+        {
+            KevlarEventSource.ExecutionStarted<T>(context);
+            var canceled = Outcome<T>.FromException(new OperationCanceledException(cancellationToken));
+            try
+            {
+                CompleteObservedExecution(context, in canceled, eventStartedAt, metricsStartedAt);
+                return Rethrow(canceled);
+            }
+            finally
+            {
+                KevlarContext.Return(context);
+            }
+        }
+
+        try
+        {
+            initializeProperties(state, context.Properties);
+        }
+        catch (Exception exception)
+        {
+            KevlarEventSource.ExecutionStarted<T>(context);
+            var failed = Outcome<T>.FromException(exception);
+            try
+            {
+                CompleteObservedExecution(context, in failed, eventStartedAt, metricsStartedAt);
+            }
+            finally
+            {
+                KevlarContext.Return(context);
+            }
+
+            throw;
+        }
+
+        KevlarEventSource.ExecutionStarted<T>(context);
+        var pipeline = RunWithContextAsync(head, state, action, context);
+        if (!pipeline.IsCompletedSuccessfully)
+        {
+            return AwaitObservedAsync(pipeline, context, eventStartedAt, metricsStartedAt);
+        }
+
+        var outcome = pipeline.Result;
+        try
+        {
+            CompleteObservedExecution(context, in outcome, eventStartedAt, metricsStartedAt);
+            return outcome.IsSuccess ? new ValueTask<T>(outcome.Result!) : Rethrow(outcome);
+        }
+        finally
+        {
+            KevlarContext.Return(context);
+        }
+    }
+
+    private static T ExecuteObservedSync<T, TState>(
+        StrategyNode? head,
+        TimeProvider timeProvider,
+        string? shieldName,
+        TState state,
+        Func<TState, CancellationToken, T> action,
+        CancellationToken cancellationToken)
+    {
+        var metricsStartedAt = KevlarMetrics.DurationEnabled ? KevlarMetrics.StartDuration() : 0;
+        var context = KevlarContext.Rent(cancellationToken, isSynchronous: true, timeProvider, shieldName);
+        var eventStartedAt = StartEventDuration();
+        try
+        {
+            KevlarEventSource.ExecutionStarted<T>(context);
+            var outcome = cancellationToken.IsCancellationRequested
+                ? Outcome<T>.FromException(new OperationCanceledException(cancellationToken))
+                : GetSyncOutcome(RunSync(head, state, action, context));
+            CompleteObservedExecution(context, in outcome, eventStartedAt, metricsStartedAt);
+            return outcome.GetResultOrRethrowInternal();
+        }
+        finally
+        {
+            KevlarContext.Return(context);
+        }
+    }
+
+    private static T ExecuteObservedWithContextSync<T, TState>(
+        StrategyNode? head,
+        TimeProvider timeProvider,
+        string? shieldName,
+        TState state,
+        Action<TState, KevlarProperties> initializeProperties,
+        Func<TState, KevlarContext, T> action,
+        CancellationToken cancellationToken)
+    {
+        var metricsStartedAt = KevlarMetrics.DurationEnabled ? KevlarMetrics.StartDuration() : 0;
+        var context = KevlarContext.Rent(cancellationToken, isSynchronous: true, timeProvider, shieldName);
+        var eventStartedAt = StartEventDuration();
+        try
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                KevlarEventSource.ExecutionStarted<T>(context);
+                var canceled = Outcome<T>.FromException(new OperationCanceledException(cancellationToken));
+                CompleteObservedExecution(context, in canceled, eventStartedAt, metricsStartedAt);
+                return canceled.GetResultOrRethrowInternal();
+            }
+
+            try
+            {
+                initializeProperties(state, context.Properties);
+            }
+            catch (Exception exception)
+            {
+                KevlarEventSource.ExecutionStarted<T>(context);
+                var failed = Outcome<T>.FromException(exception);
+                CompleteObservedExecution(context, in failed, eventStartedAt, metricsStartedAt);
+                throw;
+            }
+
+            KevlarEventSource.ExecutionStarted<T>(context);
+            var outcome = GetSyncOutcome(RunWithContextSync(head, state, action, context));
+            CompleteObservedExecution(context, in outcome, eventStartedAt, metricsStartedAt);
+            return outcome.GetResultOrRethrowInternal();
+        }
+        finally
+        {
+            KevlarContext.Return(context);
+        }
+    }
+
+    private static Outcome<T> GetSyncOutcome<T>(ValueTask<Outcome<T>> pipeline) =>
+        pipeline.IsCompletedSuccessfully
+            ? pipeline.Result
+            : pipeline.AsTask().GetAwaiter().GetResult();
+
+    private static async ValueTask<T> AwaitObservedAsync<T>(
+        ValueTask<Outcome<T>> pipeline,
+        KevlarContext context,
+        long eventStartedAt,
+        long metricsStartedAt)
+    {
+        try
+        {
+            var outcome = await pipeline.ConfigureAwait(false);
+            CompleteObservedExecution(context, in outcome, eventStartedAt, metricsStartedAt);
+            return outcome.GetResultOrRethrowInternal();
+        }
+        finally
+        {
+            KevlarContext.Return(context);
+        }
+    }
+
+    private static async ValueTask<Outcome<T>> AwaitObservedOutcomeAsync<T>(
+        ValueTask<Outcome<T>> pipeline,
+        KevlarContext context,
+        long eventStartedAt,
+        long metricsStartedAt)
+    {
+        try
+        {
+            var outcome = await pipeline.ConfigureAwait(false);
+            CompleteObservedExecution(context, in outcome, eventStartedAt, metricsStartedAt);
+            return outcome;
+        }
+        finally
+        {
+            KevlarContext.Return(context);
+        }
+    }
+
+    private static void CompleteObservedExecution<T>(
+        KevlarContext context,
+        in Outcome<T> outcome,
+        long eventStartedAt,
+        long metricsStartedAt)
+    {
+        KevlarEventSource.ExecutionCompleted(
+            context,
+            in outcome,
+            GetEventDuration(eventStartedAt));
+        RecordExecution(metricsStartedAt, context.ShieldName, outcome.IsSuccess);
+    }
+
+    private static long StartEventDuration() => System.Diagnostics.Stopwatch.GetTimestamp();
+
+    private static TimeSpan GetEventDuration(long startedAt) => TimeSpan.FromSeconds(
+        (System.Diagnostics.Stopwatch.GetTimestamp() - startedAt)
+        / (double)System.Diagnostics.Stopwatch.Frequency);
 
     private static ValueTask<Outcome<T>> RunAsync<T, TState>(
         StrategyNode? head,

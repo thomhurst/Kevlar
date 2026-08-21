@@ -4,7 +4,8 @@ sidebar_position: 11
 
 # Observability
 
-Shields are observable without any setup: they describe themselves as strings, publish metrics through a built-in `Meter`, and an analyzer package catches the most common resilience mistake at compile time.
+Shields describe themselves as strings, publish metrics through a built-in `Meter`, expose an
+optional structured event stream, and ship an analyzer package for common resilience mistakes.
 
 ## Pipeline descriptions
 
@@ -23,6 +24,60 @@ Console.WriteLine(shield);
 ```
 
 Log it once at startup and every incident review starts from the actual configuration, not the configuration someone remembers. Custom strategies participate by overriding `Strategy.Describe()`.
+
+## Structured events
+
+Subscribe once to the process-wide event stream for request-level diagnostics without wiring every
+strategy callback:
+
+<!-- doc-test-declaration -->
+```csharp
+public sealed class ApplicationEventListener : KevlarEventListener
+{
+    public static IDisposable Subscribe() =>
+        KevlarDiagnostics.Subscribe(new ApplicationEventListener());
+
+    public override bool IsEnabled(KevlarEventKind kind) =>
+        kind == KevlarEventKind.ExecutionCompleted;
+
+    public override void OnEvent<T>(in KevlarEvent<T> telemetryEvent)
+    {
+        Console.WriteLine(
+            $"{telemetryEvent.ShieldName}: {telemetryEvent.OutcomeClassification} " +
+            $"in {telemetryEvent.Duration.TotalMilliseconds:F1} ms");
+    }
+}
+```
+
+Every public call emits `ExecutionStarted` followed by `ExecutionCompleted`, including empty
+shields, synchronous calls, outcome-returning calls, and calls cancelled before dispatch. A
+completion carries `Success`, `Failure`, or `Canceled`; metrics still record exactly one execution,
+so subscribing does not double-count it. The generic `KevlarEvent<T>` preserves value-type results
+without boxing. Read `Outcome` only when `HasOutcome` is true; use `OutcomeClassification` when a
+bounded, result-free value is sufficient.
+
+Callbacks are synchronous and run in subscription order. Concurrent executions may invoke the
+same listener concurrently, so listeners must be thread-safe. Reentrant shield execution and
+subscription disposal are supported. Listener and filter exceptions are suppressed and cannot
+change pipeline outcomes or stop later listeners. Disposal stops future delivery but does not
+interrupt an in-progress callback.
+
+`KevlarEvent<T>` and its `Context` are callback-scoped. Never retain or mutate the context or its
+properties: the context returns to a pool immediately after completion delivery. Operation
+metadata added with `ExecuteWithContext` is readable from `telemetryEvent.Context.Properties`
+during the callback. Shield names, event kinds, strategy kinds, strategy indexes, attempts,
+severity, outcome classification, and duration are bounded schema fields; application property
+values are not automatically promoted to metric dimensions.
+
+BenchmarkDotNet `ShortRun` results on .NET 10.0.11, Windows 11, and an Intel Core i7-12700K:
+
+| Pipeline | Listener off | No-op listener | Allocated |
+|---|---:|---:|---:|
+| Empty shield | 3.6 ns | 108.1 ns | 0 B |
+| Retry happy path | 63.1 ns | 117.5 ns | 0 B |
+
+The pre-change empty-shield baseline was 3.7 ns, within the disabled result's confidence interval.
+These figures measure synchronous no-op delivery, not logging or exporter cost.
 
 ## Metrics
 
@@ -100,4 +155,8 @@ and suppression guidance.
 
 ## Callbacks
 
-Strategy callbacks provide request-level logging where configured. Retry, circuit breaker, timeout, and result-aware fallback expose synchronous and asynchronous callbacks. Hedging exposes a synchronous callback only. Concurrency limit and rate limit expose no callback APIs. Each callback is documented on its [strategy page](/docs/category/strategies). Metrics tell you *how much*; callbacks give you the *which request* detail.
+Strategy callbacks provide targeted notifications where configured. The structured event stream is
+the single subscription point for cross-strategy request diagnostics; individual callbacks remain
+useful when application behavior must run at one specific boundary. Each callback is documented on
+its [strategy page](/docs/category/strategies). Metrics tell you *how much*; structured events and
+callbacks provide the *which request* detail.
