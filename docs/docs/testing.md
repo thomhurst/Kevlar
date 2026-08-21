@@ -4,6 +4,26 @@ sidebar_position: 10
 
 # Testing Your Shields
 
+## Repository quality gates
+
+Pull requests build on Windows and Linux, then run the unit, netstandard2.0 asset, integration, and analyzer suites independently with a five-minute timeout. Every suite requires at least one discovered test, so a runner or discovery regression cannot pass as an empty run.
+
+The Linux coverage job merges all four suites into Cobertura XML and an HTML report. It excludes test assemblies, benchmarks, generated code, and code marked with `ExcludeFromCodeCoverageAttribute`, then enforces the measured baselines of 92% line coverage and 86% branch coverage. Download the `coverage-report` workflow artifact to inspect either format.
+
+Core strategy mutation testing runs for pull requests that change strategy code or unit tests, every Monday, and on demand. It uses the checked-in Stryker configuration and fails below the measured 74% mutation-score floor. The workflow has a 30-minute limit and publishes HTML and JSON reports as the `mutation-report` artifact. The audited initial survivors and ratchet policy are recorded in `.github/mutation-baseline.md`. Run the test and mutation gates locally with:
+
+```powershell
+dotnet tool restore
+dotnet build Kevlar.slnx -c Release
+dotnet run --project tests/Kevlar.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict
+dotnet run --project tests/Kevlar.NetStandard.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict
+dotnet run --project tests/Kevlar.IntegrationTests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict
+dotnet run --project tests/Kevlar.Analyzers.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict
+Push-Location src/Kevlar
+dotnet stryker --config-file stryker-config.json
+Pop-Location
+```
+
 Every delay, timeout and time window in Kevlar runs on a `TimeProvider`. Swap in a fake and your tests never actually wait:
 
 ```csharp

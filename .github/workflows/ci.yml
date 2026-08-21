@@ -44,14 +44,25 @@ jobs:
       - name: Build
         run: dotnet build Kevlar.slnx -c Release -p:Version=${{ steps.gitversion.outputs.semVer }}
 
-      - name: Test
-        run: dotnet run --project tests/Kevlar.Tests -c Release --no-build -- --timeout 5m
+      - name: Unit tests
+        run: dotnet run --project tests/Kevlar.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --report-trx --report-trx-filename unit.trx --results-directory artifacts/test-results/unit
 
-      - name: Test netstandard2.0 asset
-        run: dotnet run --project tests/Kevlar.NetStandard.Tests -c Release --no-build -- --timeout 5m
+      - name: netstandard2.0 asset tests
+        run: dotnet run --project tests/Kevlar.NetStandard.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --report-trx --report-trx-filename netstandard.trx --results-directory artifacts/test-results/netstandard
 
-      - name: Integration test
-        run: dotnet run --project tests/Kevlar.IntegrationTests -c Release --no-build -- --timeout 5m
+      - name: Integration tests
+        run: dotnet run --project tests/Kevlar.IntegrationTests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --report-trx --report-trx-filename integration.trx --results-directory artifacts/test-results/integration
+
+      - name: Analyzer tests
+        run: dotnet run --project tests/Kevlar.Analyzers.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --report-trx --report-trx-filename analyzers.trx --results-directory artifacts/test-results/analyzers
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-${{ matrix.os }}
+          path: artifacts/test-results/**/*.trx
+          if-no-files-found: error
 
       - name: Pack
         if: matrix.os == 'ubuntu-latest'
@@ -64,11 +75,62 @@ jobs:
           name: nuget-packages
           path: artifacts/package/release/*.nupkg
 
+  coverage:
+    name: Coverage
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore tools
+        run: dotnet tool restore
+
+      - name: Build
+        run: dotnet build Kevlar.slnx -c Release
+
+      - name: Prepare coverage output
+        run: mkdir -p artifacts/coverage/raw
+
+      - name: Collect unit coverage
+        run: dotnet run --project tests/Kevlar.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/unit.cobertura.xml --coverage-output-format cobertura
+
+      - name: Collect netstandard2.0 asset coverage
+        run: dotnet run --project tests/Kevlar.NetStandard.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/netstandard.cobertura.xml --coverage-output-format cobertura
+
+      - name: Collect integration coverage
+        run: dotnet run --project tests/Kevlar.IntegrationTests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/integration.cobertura.xml --coverage-output-format cobertura
+
+      - name: Collect analyzer coverage
+        run: dotnet run --project tests/Kevlar.Analyzers.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/analyzers.cobertura.xml --coverage-output-format cobertura
+
+      - name: Merge coverage reports
+        run: dotnet reportgenerator '-reports:artifacts/coverage/raw/*.cobertura.xml' '-targetdir:artifacts/coverage/report' '-reporttypes:Cobertura;Html'
+
+      - name: Enforce coverage baseline
+        shell: pwsh
+        run: ./.github/scripts/Assert-Coverage.ps1 -Report artifacts/coverage/report/Cobertura.xml -MinimumLinePercent 92 -MinimumBranchPercent 86
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: artifacts/coverage/
+          if-no-files-found: error
+          retention-days: 14
+
   # Only reachable from a manual run with the "Upload package to NuGet"
   # checkbox ticked, and only after both OS legs are green.
   publish:
     name: Publish NuGet
-    needs: build-and-test
+    needs: [build-and-test, coverage]
     if: github.event_name == 'workflow_dispatch' && inputs.publish_nuget == true
     runs-on: ubuntu-latest
     permissions:
