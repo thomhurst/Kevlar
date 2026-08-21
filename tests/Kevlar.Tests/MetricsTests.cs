@@ -797,7 +797,11 @@ public class MetricsTests
 
         var isolatedAliases = listener.AllLongMeasurements("kevlar.circuit_breaker.state")
             .Where(measurement => measurement.Value == 3)
-            .Select(measurement => measurement.Tags["kevlar.shield.name"])
+            .Select(measurement => measurement.Tags.TryGetValue("kevlar.shield.name", out var name)
+                ? name as string
+                : null)
+            .Where(name => name is not null
+                && name.StartsWith("metrics-bounded-alias-", StringComparison.Ordinal))
             .Distinct()
             .Count();
         await Assert.That(isolatedAliases).IsEqualTo(KevlarMetrics.MaxTrackedStrategyAliases);
@@ -928,6 +932,39 @@ public class MetricsTests
                 "kevlar.concurrency_limit.inflight",
                 "metrics-concurrency-handoffs").All(value => value <= 1))
             .IsTrue();
+    }
+
+    [Test]
+    public async Task Concurrency_Metric_Failure_Releases_The_Pending_Wait()
+    {
+        var throwOnQueued = true;
+        var metricsFailure = new InvalidOperationException("metrics callback");
+        using var listener = new KevlarMeterListener((instrument, value) =>
+        {
+            if (throwOnQueued && instrument == "kevlar.concurrency_limit.queued" && value == 1)
+            {
+                throwOnQueued = false;
+                throw metricsFailure;
+            }
+        });
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var shield = Shield.ConcurrencyLimit(1, 1)
+            .WithName("metrics-concurrency-pending-failure");
+        var holder = shield.ExecuteAsync(async _ =>
+        {
+            entered.TrySetResult();
+            await release.Task;
+        }).AsTask();
+        await entered.Task;
+
+        var failed = shield.ExecuteAsync(_ => ValueTask.CompletedTask).AsTask();
+        release.TrySetResult();
+        await holder;
+        var thrown = await Assert.That(async () => await failed).Throws<InvalidOperationException>();
+        await Assert.That(ReferenceEquals(thrown, metricsFailure)).IsTrue();
+
+        await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
     }
 
     [Test]

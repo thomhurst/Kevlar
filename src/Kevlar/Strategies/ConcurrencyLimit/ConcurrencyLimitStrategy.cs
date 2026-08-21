@@ -60,7 +60,15 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
                 {
                     queued = true;
                     UpdateMetricsState(inflightDelta: 0, queuedDelta: 1);
-                    RecordState(context.ShieldName);
+                    try
+                    {
+                        RecordState(context.ShieldName);
+                    }
+                    catch (Exception publicationFailure)
+                    {
+                        await ReleasePendingWaitAsync(wait).ConfigureAwait(false);
+                        ExceptionDispatchInfo.Capture(publicationFailure).Throw();
+                    }
                 }
 
                 await wait.ConfigureAwait(false);
@@ -111,6 +119,19 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
             _semaphore.Release();
             Interlocked.Decrement(ref _pending);
             RecordState(context.ShieldName);
+        }
+    }
+
+    private async ValueTask ReleasePendingWaitAsync(Task wait)
+    {
+        try
+        {
+            await wait.ConfigureAwait(false);
+            _semaphore.Release();
+        }
+        catch (OperationCanceledException)
+        {
+            // A cancelled wait did not take a permit.
         }
     }
 
