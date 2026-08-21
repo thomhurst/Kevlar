@@ -174,8 +174,10 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         private CancellationTokenSource? _templateCancellation;
         private int _templateWaiters;
         private HttpResponseMessage? _terminalResponse;
+        private CancellationToken _lastAttemptToken;
         private int _attempt;
         private bool _completed;
+        private bool _hasAttemptToken;
 
         public RequestExecution(
             ShieldDelegatingHandler handler,
@@ -206,8 +208,18 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         public async ValueTask<HttpResponseMessage> SendAttemptAsync(CancellationToken cancellationToken)
         {
             await PrepareAsync(cancellationToken).ConfigureAwait(false);
-            var attempt = Interlocked.Increment(ref _attempt) - 1;
-            if (attempt > 0)
+            int attempt;
+            bool isSequentialReplay;
+            lock (_gate)
+            {
+                attempt = _attempt++;
+                isSequentialReplay = _hasAttemptToken
+                    && _lastAttemptToken == cancellationToken;
+                _lastAttemptToken = cancellationToken;
+                _hasAttemptToken = true;
+            }
+
+            if (attempt > 0 && isSequentialReplay)
             {
                 DisposePriorResponses();
             }
@@ -344,6 +356,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
                 lock (_gate)
                 {
                     _templateWaiters--;
+#if !NETSTANDARD2_0
                     if (_templateWaiters == 0
                         && ReferenceEquals(_template, template)
                         && !template.IsCompleted)
@@ -352,6 +365,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
                         abandon = _templateCancellation;
                         _templateCancellation = null;
                     }
+#endif
                 }
 
                 if (abandon is not null)

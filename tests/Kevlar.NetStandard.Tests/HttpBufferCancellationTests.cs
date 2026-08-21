@@ -19,8 +19,15 @@ public class HttpBufferCancellationTests
         var send = invoker.SendAsync(request, CancellationToken.None);
         await content.Started.WaitAsync(TimeSpan.FromSeconds(5));
 
-        _ = await Assert.That(async () => await send.WaitAsync(TimeSpan.FromSeconds(5)))
-            .Throws<TimeoutExceededException>();
+        try
+        {
+            _ = await Assert.That(async () => await send.WaitAsync(TimeSpan.FromSeconds(5)))
+                .Throws<TimeoutExceededException>();
+        }
+        finally
+        {
+            content.Release();
+        }
     }
 
     [Test]
@@ -36,11 +43,47 @@ public class HttpBufferCancellationTests
         var send = invoker.SendAsync(request, cancellation.Token);
         await content.Started.WaitAsync(TimeSpan.FromSeconds(5));
 
-        cancellation.Cancel();
-        var exception = await Assert.That(async () => await send.WaitAsync(TimeSpan.FromSeconds(5)))
-            .Throws<OperationCanceledException>();
+        OperationCanceledException? exception;
+        try
+        {
+            cancellation.Cancel();
+            exception = await Assert.That(async () => await send.WaitAsync(TimeSpan.FromSeconds(5)))
+                .Throws<OperationCanceledException>();
+        }
+        finally
+        {
+            content.Release();
+        }
 
         await Assert.That(exception!.CancellationToken).IsEqualTo(cancellation.Token);
+    }
+
+    [Test]
+    public async Task NetStandard_Buffering_Timeout_Retry_Reuses_InFlight_Buffering()
+    {
+        var content = new BlockingContent();
+        var shield = Shield.For<HttpResponseMessage>()
+            .When<TimeoutExceededException>()
+            .Retry(1, Backoff.None)
+            .Timeout(TimeSpan.FromMilliseconds(50));
+        using var invoker = CreateInvoker(shield);
+        using var request = new HttpRequestMessage(HttpMethod.Put, "https://example.test/upload")
+        {
+            Content = content,
+        };
+        var send = invoker.SendAsync(request, CancellationToken.None);
+        await content.Started.WaitAsync(TimeSpan.FromSeconds(5));
+
+        try
+        {
+            _ = await Assert.That(async () => await send.WaitAsync(TimeSpan.FromSeconds(5)))
+                .Throws<TimeoutExceededException>();
+            await Assert.That(content.SerializationAttempts).IsEqualTo(1);
+        }
+        finally
+        {
+            content.Release();
+        }
     }
 
     private static HttpMessageInvoker CreateInvoker(Shield<HttpResponseMessage> shield) => new(
@@ -58,15 +101,21 @@ public class HttpBufferCancellationTests
     {
         private readonly TaskCompletionSource _started = new(
             TaskCreationOptions.RunContinuationsAsynchronously);
-        private readonly TaskCompletionSource _never = new(
+        private readonly TaskCompletionSource _release = new(
             TaskCreationOptions.RunContinuationsAsynchronously);
+        private int _serializationAttempts;
 
         public Task Started => _started.Task;
 
+        public int SerializationAttempts => Volatile.Read(ref _serializationAttempts);
+
+        public void Release() => _release.TrySetResult();
+
         protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context)
         {
+            Interlocked.Increment(ref _serializationAttempts);
             _started.TrySetResult();
-            return _never.Task;
+            return _release.Task;
         }
 
         protected override bool TryComputeLength(out long length)

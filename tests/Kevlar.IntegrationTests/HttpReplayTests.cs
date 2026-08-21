@@ -81,6 +81,40 @@ public class HttpReplayTests
     }
 
     [Test]
+    public async Task Hedge_Defers_Prior_Response_Disposal_Until_Final_Selection()
+    {
+        var firstContent = new TrackingContent("first");
+        var disposedBeforeHedge = false;
+        var transport = new RecordingHandler((attempt, _, _) =>
+        {
+            if (attempt == 1)
+            {
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)
+                {
+                    Content = firstContent,
+                });
+            }
+
+            disposedBeforeHedge = firstContent.DisposeCount != 0;
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)
+            {
+                Content = new StringContent("terminal"),
+            });
+        });
+        using var invoker = CreateInvoker(
+            HttpShield.WhenTransient().Hedge(2, TimeSpan.Zero),
+            new ShieldHttpHandlerOptions(),
+            transport);
+        using var request = new HttpRequestMessage(HttpMethod.Get, "https://origin.example/api");
+
+        using var response = await invoker.SendAsync(request, CancellationToken.None);
+
+        await Assert.That(disposedBeforeHedge).IsFalse();
+        await Assert.That(await response.Content.ReadAsStringAsync()).IsEqualTo("terminal");
+        await Assert.That(firstContent.DisposeCount).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task NoBuffer_Rejects_A_OneShot_Content_Second_Send()
     {
         var transport = new RecordingHandler(async (_, request, _) =>
