@@ -1,4 +1,6 @@
 using System.Collections.Concurrent;
+using Kevlar.Internal;
+using Kevlar.Strategies;
 using Microsoft.Extensions.Time.Testing;
 
 namespace Kevlar.Tests;
@@ -385,6 +387,38 @@ public class CircuitBreakerDynamicOptionsTests
         await Assert.That(ReferenceEquals(thrown, callbackFailure)).IsTrue();
         await Assert.That(observed).IsEqualTo(CircuitState.Open);
         await Assert.That(monitor.State).IsEqualTo(CircuitState.Open);
+    }
+
+    [Test]
+    public async Task Configured_Breaker_Returns_Synchronous_Processing_Failure_As_Faulted_ValueTask()
+    {
+        var predicateFailure = new InvalidOperationException("predicate");
+        var shield = Shield.When(_ => throw predicateFailure).CircuitBreaker(options =>
+        {
+            options.OnStateChangedAsync = static _ => ValueTask.CompletedTask;
+        });
+        var strategy = (CircuitBreakerStrategy)shield.Strategies.Single();
+        var context = KevlarContext.Rent(default, isSynchronous: false, TimeProvider.System, shieldName: null);
+
+        try
+        {
+            var continuation = new Continuation<int, object?>(
+                next: null,
+                static (_, _) => new ValueTask<Outcome<int>>(
+                    Outcome<int>.FromException(new ApplicationException("operation"))),
+                state: null);
+
+            var execution = strategy.ExecuteAsync(continuation, context);
+
+            await Assert.That(execution.IsCompleted).IsTrue();
+            await Assert.That(execution.IsCompletedSuccessfully).IsFalse();
+            var thrown = await Assert.That(async () => await execution).Throws<InvalidOperationException>();
+            await Assert.That(ReferenceEquals(thrown, predicateFailure)).IsTrue();
+        }
+        finally
+        {
+            KevlarContext.Return(context);
+        }
     }
 
     [Test]
