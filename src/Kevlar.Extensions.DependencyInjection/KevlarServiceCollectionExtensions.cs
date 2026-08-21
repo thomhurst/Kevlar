@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -47,7 +48,7 @@ public static class KevlarServiceCollectionExtensions
 
         return services.AddShield(name, _ =>
         {
-            var definition = configuration.Get<ShieldDefinition>() ?? new ShieldDefinition();
+            var definition = BindDefinition(configuration);
             return definition.Build().WithName(name);
         });
     }
@@ -70,5 +71,196 @@ public static class KevlarServiceCollectionExtensions
         services.AddSingleton(new ShieldRegistration(name, typeof(TResult), factory));
         services.AddKeyedSingleton(name, (sp, _) => sp.GetRequiredService<IKevlarRegistry>().GetShield<TResult>(name));
         return services;
+    }
+
+    private static ShieldDefinition BindDefinition(IConfiguration configuration)
+    {
+        var definition = new ShieldDefinition
+        {
+            Timeout = ReadNullableTimeSpan(configuration, nameof(ShieldDefinition.Timeout)),
+            AttemptTimeout = ReadNullableTimeSpan(configuration, nameof(ShieldDefinition.AttemptTimeout)),
+        };
+
+        var retry = configuration.GetSection(nameof(ShieldDefinition.Retry));
+        if (HasChildren(retry))
+        {
+            var retryDefinition = new RetryDefinition
+            {
+                BaseDelay = ReadNullableTimeSpan(retry, nameof(RetryDefinition.BaseDelay)),
+                MaxDelay = ReadNullableTimeSpan(retry, nameof(RetryDefinition.MaxDelay)),
+            };
+            if (ReadInt(retry, nameof(RetryDefinition.MaxRetries)) is { } maxRetries)
+            {
+                retryDefinition.MaxRetries = maxRetries;
+            }
+            if (ReadEnum<BackoffKind>(retry, nameof(RetryDefinition.Backoff)) is { } backoff)
+            {
+                retryDefinition.Backoff = backoff;
+            }
+            if (ReadDouble(retry, nameof(RetryDefinition.Factor)) is { } factor)
+            {
+                retryDefinition.Factor = factor;
+            }
+            if (ReadBool(retry, nameof(RetryDefinition.Jitter)) is { } jitter)
+            {
+                retryDefinition.Jitter = jitter;
+            }
+
+            definition.Retry = retryDefinition;
+        }
+
+        var breaker = configuration.GetSection(nameof(ShieldDefinition.CircuitBreaker));
+        if (HasChildren(breaker))
+        {
+            var breakerDefinition = new CircuitBreakerDefinition
+            {
+                ConsecutiveFailures = ReadNullableInt(breaker, nameof(CircuitBreakerDefinition.ConsecutiveFailures)),
+                FailureRatio = ReadNullableDouble(breaker, nameof(CircuitBreakerDefinition.FailureRatio)),
+            };
+            if (ReadInt(breaker, nameof(CircuitBreakerDefinition.MinimumThroughput)) is { } minimumThroughput)
+            {
+                breakerDefinition.MinimumThroughput = minimumThroughput;
+            }
+            if (ReadTimeSpan(breaker, nameof(CircuitBreakerDefinition.SamplingWindow)) is { } samplingWindow)
+            {
+                breakerDefinition.SamplingWindow = samplingWindow;
+            }
+            if (ReadTimeSpan(breaker, nameof(CircuitBreakerDefinition.BreakDuration)) is { } breakDuration)
+            {
+                breakerDefinition.BreakDuration = breakDuration;
+            }
+
+            definition.CircuitBreaker = breakerDefinition;
+        }
+
+        var rateLimit = configuration.GetSection(nameof(ShieldDefinition.RateLimit));
+        if (HasChildren(rateLimit))
+        {
+            var rateLimitDefinition = new RateLimitDefinition
+            {
+                Burst = ReadNullableInt(rateLimit, nameof(RateLimitDefinition.Burst)),
+            };
+            if (ReadInt(rateLimit, nameof(RateLimitDefinition.Permits)) is { } permits)
+            {
+                rateLimitDefinition.Permits = permits;
+            }
+            if (ReadTimeSpan(rateLimit, nameof(RateLimitDefinition.Window)) is { } window)
+            {
+                rateLimitDefinition.Window = window;
+            }
+            if (ReadInt(rateLimit, nameof(RateLimitDefinition.QueueLimit)) is { } queueLimit)
+            {
+                rateLimitDefinition.QueueLimit = queueLimit;
+            }
+
+            definition.RateLimit = rateLimitDefinition;
+        }
+
+        var concurrency = configuration.GetSection(nameof(ShieldDefinition.ConcurrencyLimit));
+        if (HasChildren(concurrency))
+        {
+            var concurrencyDefinition = new ConcurrencyLimitDefinition();
+            if (ReadInt(concurrency, nameof(ConcurrencyLimitDefinition.MaxConcurrency)) is { } maxConcurrency)
+            {
+                concurrencyDefinition.MaxConcurrency = maxConcurrency;
+            }
+            if (ReadInt(concurrency, nameof(ConcurrencyLimitDefinition.MaxQueue)) is { } maxQueue)
+            {
+                concurrencyDefinition.MaxQueue = maxQueue;
+            }
+
+            definition.ConcurrencyLimit = concurrencyDefinition;
+        }
+
+        return definition;
+    }
+
+    private static bool HasChildren(IConfigurationSection section) => section.GetChildren().Any();
+
+    private static string? Read(IConfiguration configuration, string key) =>
+        configuration[key];
+
+    private static int? ReadInt(IConfiguration configuration, string key) =>
+        Read(configuration, key) is { } value
+            ? ParseInt(configuration, key, value)
+            : null;
+
+    private static int? ReadNullableInt(IConfiguration configuration, string key) =>
+        ReadNullable(configuration, key) is { } value
+            ? ParseInt(configuration, key, value)
+            : null;
+
+    private static double? ReadDouble(IConfiguration configuration, string key) =>
+        Read(configuration, key) is { } value
+            ? ParseDouble(configuration, key, value)
+            : null;
+
+    private static double? ReadNullableDouble(IConfiguration configuration, string key) =>
+        ReadNullable(configuration, key) is { } value
+            ? ParseDouble(configuration, key, value)
+            : null;
+
+    private static bool? ReadBool(IConfiguration configuration, string key) =>
+        Read(configuration, key) is { } value ? ParseBool(configuration, key, value) : null;
+
+    private static TimeSpan? ReadTimeSpan(IConfiguration configuration, string key) =>
+        Read(configuration, key) is { } value
+            ? ParseTimeSpan(configuration, key, value)
+            : null;
+
+    private static TimeSpan? ReadNullableTimeSpan(IConfiguration configuration, string key) =>
+        ReadNullable(configuration, key) is { } value
+            ? ParseTimeSpan(configuration, key, value)
+            : null;
+
+    private static TEnum? ReadEnum<TEnum>(IConfiguration configuration, string key)
+        where TEnum : struct, Enum =>
+        Read(configuration, key) is { } value
+            ? ParseEnum<TEnum>(configuration, key, value)
+            : null;
+
+    private static string? ReadNullable(IConfiguration configuration, string key)
+    {
+        var value = Read(configuration, key);
+        return string.IsNullOrEmpty(value) ? null : value;
+    }
+
+    private static int ParseInt(IConfiguration configuration, string key, string value) =>
+        int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed)
+            ? parsed
+            : throw InvalidValue(configuration, key, value, "an integer");
+
+    private static double ParseDouble(IConfiguration configuration, string key, string value) =>
+        double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
+            ? parsed
+            : throw InvalidValue(configuration, key, value, "a number");
+
+    private static bool ParseBool(IConfiguration configuration, string key, string value) =>
+        bool.TryParse(value, out var parsed)
+            ? parsed
+            : throw InvalidValue(configuration, key, value, "a Boolean");
+
+    private static TimeSpan ParseTimeSpan(IConfiguration configuration, string key, string value) =>
+        TimeSpan.TryParse(value, CultureInfo.InvariantCulture, out var parsed)
+            ? parsed
+            : throw InvalidValue(configuration, key, value, "a TimeSpan");
+
+    private static TEnum ParseEnum<TEnum>(IConfiguration configuration, string key, string value)
+        where TEnum : struct, Enum =>
+        Enum.TryParse<TEnum>(value, ignoreCase: true, out var parsed)
+            ? parsed
+            : throw InvalidValue(configuration, key, value, $"a {typeof(TEnum).Name}");
+
+    private static InvalidOperationException InvalidValue(
+        IConfiguration configuration,
+        string key,
+        string value,
+        string expected)
+    {
+        var path = configuration is IConfigurationSection { Path.Length: > 0 } section
+            ? ConfigurationPath.Combine(section.Path, key)
+            : key;
+        return new InvalidOperationException(
+            $"Configuration value '{value}' for '{path}' is not {expected}.");
     }
 }

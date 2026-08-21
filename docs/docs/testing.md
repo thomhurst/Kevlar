@@ -120,3 +120,25 @@ var result = await shield.ExecuteAsync(ct =>
 ```
 
 For assertion-friendly, no-throw checks, use [`ExecuteOutcomeAsync`](executing.md#no-throw-execution) and inspect the `Outcome<T>` instead of catching.
+
+## Publish compatibility
+
+Package verification publishes and runs clean package-consuming applications through
+trimmed, single-file, and NativeAOT configurations. The matrix covers all Kevlar
+strategies, typed and untyped execution, configuration-bound dependency injection,
+and HTTP integration on .NET 10. A trimmed .NET 8 application provides the
+compatibility baseline. NativeAOT runs on Linux CI; the script reports unsupported
+local platforms explicitly.
+
+Run the complete package check after packing a local version:
+
+On Linux, install the NativeAOT prerequisites first:
+
+```bash
+sudo apt-get update && sudo apt-get install --yes clang zlib1g-dev
+```
+
+```powershell
+dotnet pack Kevlar.slnx -c Release -p:Version=0.0.0-local
+./scripts/Verify-Packages.ps1 -PackagesPath artifacts/package/release -Version 0.0.0-local
+```

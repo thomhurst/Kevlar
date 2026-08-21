@@ -83,14 +83,23 @@ if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($expectedRepositoryComm
     throw 'Unable to determine the expected repository commit.'
 }
 
+$centralPackagesPath = Join-Path $PSScriptRoot '..\Directory.Packages.props'
+[xml]$centralPackages = Get-Content -LiteralPath $centralPackagesPath -Raw
+$configurationVersion = Get-NodeText $centralPackages "/Project/ItemGroup/PackageVersion[@Include='Microsoft.Extensions.Configuration']/@Version"
+$dependencyInjectionVersion = Get-NodeText $centralPackages "/Project/ItemGroup/PackageVersion[@Include='Microsoft.Extensions.DependencyInjection']/@Version"
+if ($null -eq $configurationVersion -or $null -eq $dependencyInjectionVersion)
+{
+    throw 'Could not resolve Microsoft.Extensions package versions from Directory.Packages.props.'
+}
+
 $expectedDependencies = @{
     'Kevlar' = @{
         'net10.0' = @('Reservoir')
         '.NETStandard2.0' = @('Microsoft.Bcl.TimeProvider', 'Reservoir', 'System.Threading.Tasks.Extensions')
     }
     'Kevlar.Extensions.DependencyInjection' = @{
-        'net10.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Binder', 'Microsoft.Extensions.DependencyInjection.Abstractions')
-        '.NETStandard2.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Binder', 'Microsoft.Extensions.DependencyInjection.Abstractions')
+        'net10.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.DependencyInjection.Abstractions')
+        '.NETStandard2.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.DependencyInjection.Abstractions')
     }
     'Kevlar.Extensions.Http' = @{
         'net10.0' = @('Kevlar', 'Microsoft.Extensions.Http')
@@ -277,6 +286,12 @@ Console.WriteLine("Kevlar package consumer passed.");
         Invoke-DotNet @('restore', $projectPath, '--configfile', $nugetConfigPath, '--no-cache', '--force-evaluate')
         Invoke-DotNet @('run', '--project', $projectPath, '-c', 'Release', '--no-restore')
     }
+
+    & (Join-Path $PSScriptRoot 'Verify-PublishCompatibility.ps1') `
+        -PackagesPath $packageDirectory `
+        -Version $Version `
+        -ConfigurationVersion $configurationVersion `
+        -DependencyInjectionVersion $dependencyInjectionVersion
 
     $analyzerDirectory = Join-Path $temporaryRoot 'analyzer'
     $analyzerProject = @"
