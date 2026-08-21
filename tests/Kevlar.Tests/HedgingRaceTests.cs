@@ -172,6 +172,7 @@ public class HedgingRaceTests
             .Use(forkObserver);
 
         var result = await shield.ExecuteAsync(_ => new ValueTask<int>(42));
+        await forkObserver.WaitForAllObservedAsync();
 
         await Assert.That(result).IsEqualTo(42);
         await Assert.That(forkObserver.ObservedValues.Count).IsEqualTo(2);
@@ -334,7 +335,10 @@ public class HedgingRaceTests
     {
         private readonly TaskCompletionSource _allArrived =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _allObserved =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
         private int _arrived;
+        private int _observed;
 
         public System.Collections.Concurrent.ConcurrentDictionary<int, int> ObservedValues { get; } = new();
 
@@ -351,8 +355,16 @@ public class HedgingRaceTests
 
             await _allArrived.Task.WaitAsync(TimeSpan.FromSeconds(5));
             ObservedValues[attempt] = context.Properties.GetOrDefault(key, -1);
+            if (Interlocked.Increment(ref _observed) == participantCount)
+            {
+                _allObserved.TrySetResult();
+            }
+
             return await next.InvokeAsync(context);
         }
+
+        public Task WaitForAllObservedAsync() =>
+            _allObserved.Task.WaitAsync(TimeSpan.FromSeconds(5));
     }
 
     private sealed class ParentPropertyObserver(KevlarKey<int> key) : Strategy
