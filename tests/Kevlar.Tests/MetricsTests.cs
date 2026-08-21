@@ -43,7 +43,7 @@ public class MetricsTests
         public long Total(string instrument, string? shieldName = null, params (string Key, string Value)[] tags) =>
             _measurements
                 .Where(m => m.Instrument == instrument)
-                .Where(m => shieldName is null || (m.Tags.TryGetValue("shield.name", out var name) && Equals(name, shieldName)))
+                .Where(m => shieldName is null || (m.Tags.TryGetValue("kevlar.shield.name", out var name) && Equals(name, shieldName)))
                 .Where(m => tags.All(tag => m.Tags.TryGetValue(tag.Key, out var value) && Equals(value, tag.Value)))
                 .Sum(m => m.Value);
 
@@ -56,8 +56,8 @@ public class MetricsTests
             _measurements
                 .Where(measurement => measurement.Instrument == instrument)
                 .Where(measurement => requireName
-                    ? measurement.Tags.TryGetValue("shield.name", out var name) && Equals(name, shieldName)
-                    : !measurement.Tags.ContainsKey("shield.name"))
+                    ? measurement.Tags.TryGetValue("kevlar.shield.name", out var name) && Equals(name, shieldName)
+                    : !measurement.Tags.ContainsKey("kevlar.shield.name"))
                 .Select(measurement => measurement.Tags)
                 .ToArray();
 
@@ -74,8 +74,8 @@ public class MetricsTests
         await Assert.That(async () => await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
             .Throws<InvalidOperationException>();
 
-        await Assert.That(listener.Total("kevlar.executions", "metrics-executions", ("outcome", "success"))).IsEqualTo(1);
-        await Assert.That(listener.Total("kevlar.executions", "metrics-executions", ("outcome", "failure"))).IsEqualTo(1);
+        await Assert.That(listener.Total("kevlar.executions", "metrics-executions", ("kevlar.execution.outcome", "success"))).IsEqualTo(1);
+        await Assert.That(listener.Total("kevlar.executions", "metrics-executions", ("kevlar.execution.outcome", "failure"))).IsEqualTo(1);
     }
 
     [Test]
@@ -86,7 +86,7 @@ public class MetricsTests
 
         await shield.ExecuteAsync(_ => new ValueTask<int>(42));
 
-        await Assert.That(listener.Total("kevlar.executions", "metrics-empty", ("outcome", "success")))
+        await Assert.That(listener.Total("kevlar.executions", "metrics-empty", ("kevlar.execution.outcome", "success")))
             .IsEqualTo(1);
     }
 
@@ -115,7 +115,7 @@ public class MetricsTests
         _ = await typed.ExecuteOutcomeAsync(taskResult);
         _ = typed.Execute(_ => 42);
 
-        await Assert.That(listener.Total("kevlar.executions", name, ("outcome", "success")))
+        await Assert.That(listener.Total("kevlar.executions", name, ("kevlar.execution.outcome", "success")))
             .IsEqualTo(13);
     }
 
@@ -147,7 +147,7 @@ public class MetricsTests
 
         await Assert.That(invoked).IsFalse();
         await Assert.That(outcome.IsSuccess).IsFalse();
-        await Assert.That(listener.Total("kevlar.executions", name, ("outcome", "failure")))
+        await Assert.That(listener.Total("kevlar.executions", name, ("kevlar.execution.outcome", "failure")))
             .IsEqualTo(3);
     }
 
@@ -158,22 +158,27 @@ public class MetricsTests
         await Shield.Empty.WithName("metrics-schema")
             .ExecuteAsync(_ => new ValueTask<int>(42));
 
-        var expectedNames = new[]
+        var expectedInstruments = new Dictionary<string, string>
         {
-            "kevlar.executions",
-            "kevlar.retries",
-            "kevlar.timeouts",
-            "kevlar.hedges",
-            "kevlar.fallbacks",
-            "kevlar.rejections",
-            "kevlar.circuit_breaker.transitions",
+            ["kevlar.executions"] = "{execution}",
+            ["kevlar.retries"] = "{retry}",
+            ["kevlar.timeouts"] = "{timeout}",
+            ["kevlar.hedges"] = "{hedge}",
+            ["kevlar.fallbacks"] = "{fallback}",
+            ["kevlar.rejections"] = "{rejection}",
+            ["kevlar.circuit_breaker.transitions"] = "{transition}",
         };
 
         await Assert.That(listener.Instruments.Select(instrument => instrument.Name))
-            .IsEquivalentTo(expectedNames);
+            .IsEquivalentTo(expectedInstruments.Keys);
         await Assert.That(listener.Instruments.All(instrument => instrument is Counter<long>)).IsTrue();
         await Assert.That(listener.Instruments.All(instrument => instrument.Meter.Name == "Kevlar")).IsTrue();
         await Assert.That(listener.Instruments.All(instrument => instrument.Meter.Version == "1.0")).IsTrue();
+        await Assert.That(listener.Instruments.All(instrument =>
+            expectedInstruments.TryGetValue(instrument.Name, out var unit) && instrument.Unit == unit))
+            .IsTrue();
+        await Assert.That(listener.Instruments.All(instrument => !string.IsNullOrWhiteSpace(instrument.Description)))
+            .IsTrue();
     }
 
     [Test]
@@ -191,11 +196,11 @@ public class MetricsTests
         var unnamedTags = listener.Measurements("kevlar.executions", null, requireName: false);
         var emptyTags = listener.Measurements("kevlar.executions", string.Empty).Single();
         var namedTags = listener.Measurements("kevlar.executions", "metrics-tags").Single();
-        await Assert.That(unnamedTags.Any(tags => tags.Keys.SequenceEqual(["outcome"]))).IsTrue();
-        await Assert.That(emptyTags.Keys).IsEquivalentTo(["shield.name", "outcome"]);
-        await Assert.That(emptyTags["shield.name"]).IsEqualTo(string.Empty);
-        await Assert.That(namedTags.Keys).IsEquivalentTo(["shield.name", "outcome"]);
-        await Assert.That(namedTags["outcome"]).IsEqualTo("success");
+        await Assert.That(unnamedTags.Any(tags => tags.Keys.SequenceEqual(["kevlar.execution.outcome"]))).IsTrue();
+        await Assert.That(emptyTags.Keys).IsEquivalentTo(["kevlar.shield.name", "kevlar.execution.outcome"]);
+        await Assert.That(emptyTags["kevlar.shield.name"]).IsEqualTo(string.Empty);
+        await Assert.That(namedTags.Keys).IsEquivalentTo(["kevlar.shield.name", "kevlar.execution.outcome"]);
+        await Assert.That(namedTags["kevlar.execution.outcome"]).IsEqualTo("success");
     }
 
     [Test]
@@ -229,7 +234,7 @@ public class MetricsTests
             .Throws<TimeoutExceededException>();
 
         await Assert.That(listener.Total("kevlar.timeouts", "metrics-timeouts")).IsEqualTo(1);
-        await Assert.That(listener.Total("kevlar.executions", "metrics-timeouts", ("outcome", "failure")))
+        await Assert.That(listener.Total("kevlar.executions", "metrics-timeouts", ("kevlar.execution.outcome", "failure")))
             .IsEqualTo(1);
     }
 
@@ -243,7 +248,7 @@ public class MetricsTests
         await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(2)))
             .Throws<RateLimitExceededException>();
 
-        await Assert.That(listener.Total("kevlar.rejections", "metrics-rate", ("kind", "rate_limit"))).IsEqualTo(1);
+        await Assert.That(listener.Total("kevlar.rejections", "metrics-rate", ("kevlar.rejection.type", "rate_limit"))).IsEqualTo(1);
     }
 
     [Test]
@@ -282,21 +287,21 @@ public class MetricsTests
 
         _ = await occupying;
 
-        await Assert.That(listener.Total("kevlar.rejections", "metrics-reject-rate", ("kind", "rate_limit")))
+        await Assert.That(listener.Total("kevlar.rejections", "metrics-reject-rate", ("kevlar.rejection.type", "rate_limit")))
             .IsEqualTo(1);
-        await Assert.That(listener.Total("kevlar.rejections", "metrics-reject-circuit", ("kind", "circuit_open")))
+        await Assert.That(listener.Total("kevlar.rejections", "metrics-reject-circuit", ("kevlar.rejection.type", "circuit_open")))
             .IsEqualTo(1);
-        await Assert.That(listener.Total("kevlar.rejections", "metrics-reject-concurrency", ("kind", "concurrency_limit")))
+        await Assert.That(listener.Total("kevlar.rejections", "metrics-reject-concurrency", ("kevlar.rejection.type", "concurrency_limit")))
             .IsEqualTo(1);
-        await Assert.That(listener.Total("kevlar.executions", "metrics-reject-rate", ("outcome", "success")))
+        await Assert.That(listener.Total("kevlar.executions", "metrics-reject-rate", ("kevlar.execution.outcome", "success")))
             .IsEqualTo(1);
-        await Assert.That(listener.Total("kevlar.executions", "metrics-reject-rate", ("outcome", "failure")))
+        await Assert.That(listener.Total("kevlar.executions", "metrics-reject-rate", ("kevlar.execution.outcome", "failure")))
             .IsEqualTo(1);
-        await Assert.That(listener.Total("kevlar.executions", "metrics-reject-circuit", ("outcome", "failure")))
+        await Assert.That(listener.Total("kevlar.executions", "metrics-reject-circuit", ("kevlar.execution.outcome", "failure")))
             .IsEqualTo(2);
-        await Assert.That(listener.Total("kevlar.executions", "metrics-reject-concurrency", ("outcome", "success")))
+        await Assert.That(listener.Total("kevlar.executions", "metrics-reject-concurrency", ("kevlar.execution.outcome", "success")))
             .IsEqualTo(1);
-        await Assert.That(listener.Total("kevlar.executions", "metrics-reject-concurrency", ("outcome", "failure")))
+        await Assert.That(listener.Total("kevlar.executions", "metrics-reject-concurrency", ("kevlar.execution.outcome", "failure")))
             .IsEqualTo(1);
     }
 
@@ -320,7 +325,7 @@ public class MetricsTests
 
         await Assert.That(result).IsEqualTo(42);
         await Assert.That(attempts).IsEqualTo(3);
-        await Assert.That(listener.Total("kevlar.executions", name, ("outcome", "success"))).IsEqualTo(1);
+        await Assert.That(listener.Total("kevlar.executions", name, ("kevlar.execution.outcome", "success"))).IsEqualTo(1);
         await Assert.That(listener.Total("kevlar.retries", name)).IsEqualTo(2);
         await Assert.That(listener.Total("kevlar.fallbacks", name)).IsEqualTo(1);
     }
@@ -347,9 +352,9 @@ public class MetricsTests
             });
         _ = await Task.WhenAll(executions);
 
-        await Assert.That(listener.Total("kevlar.executions", firstName, ("outcome", "success")))
+        await Assert.That(listener.Total("kevlar.executions", firstName, ("kevlar.execution.outcome", "success")))
             .IsEqualTo(countPerShield);
-        await Assert.That(listener.Total("kevlar.executions", secondName, ("outcome", "success")))
+        await Assert.That(listener.Total("kevlar.executions", secondName, ("kevlar.execution.outcome", "success")))
             .IsEqualTo(countPerShield);
     }
 
@@ -402,7 +407,11 @@ public class MetricsTests
 
         // The breaker tripped Closed -> Open; transitions carry no shield name, and other tests
         // may trip breakers concurrently, so assert at least ours was recorded.
-        var transitions = listener.Total("kevlar.circuit_breaker.transitions", null, ("from", "Closed"), ("to", "Open"));
+        var transitions = listener.Total(
+            "kevlar.circuit_breaker.transitions",
+            null,
+            ("kevlar.circuit_breaker.state.from", "closed"),
+            ("kevlar.circuit_breaker.state.to", "open"));
         await Assert.That(transitions >= 1).IsTrue();
     }
 
@@ -450,8 +459,17 @@ public class MetricsTests
             direction => listener.Total(
                 "kevlar.circuit_breaker.transitions",
                 null,
-                ("from", direction.source.ToString()),
-                ("to", direction.target.ToString())));
+                ("kevlar.circuit_breaker.state.from", StateName(direction.source)),
+                ("kevlar.circuit_breaker.state.to", StateName(direction.target))));
+
+    private static string StateName(CircuitState state) => state switch
+    {
+        CircuitState.Closed => "closed",
+        CircuitState.Open => "open",
+        CircuitState.HalfOpen => "half_open",
+        CircuitState.Isolated => "isolated",
+        _ => throw new ArgumentOutOfRangeException(nameof(state)),
+    };
 
     private static async Task EmitNaturalCircuitTransitions()
     {
