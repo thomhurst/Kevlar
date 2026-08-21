@@ -668,6 +668,46 @@ public class GrpcResilienceTests
     }
 
     [Test]
+    public async Task Direct_DI_Shield_Configures_Streaming_Operations()
+    {
+        await using var server = await GrpcTestServer.StartAsync();
+        var services = new ServiceCollection();
+        services.AddGrpcClient<Resilience.ResilienceClient>(options =>
+            options.Address = new Uri("http://localhost"))
+            .ConfigurePrimaryHttpMessageHandler(server.CreateHandler)
+            .AddShieldStreamingInterceptor(Shield.Timeout(TimeSpan.FromSeconds(5)));
+        await using var provider = services.BuildServiceProvider();
+        using var call = provider.GetRequiredService<Resilience.ResilienceClient>().ClientStream();
+
+        await call.RequestStream.WriteAsync(new TestRequest());
+        await call.RequestStream.CompleteAsync();
+        var response = await call.ResponseAsync;
+
+        await Assert.That(response.Attempt).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Factory_DI_Shield_Configures_Streaming_Operations()
+    {
+        await using var server = await GrpcTestServer.StartAsync();
+        var services = new ServiceCollection();
+        services.AddSingleton(Shield.Timeout(TimeSpan.FromSeconds(5)));
+        services.AddGrpcClient<Resilience.ResilienceClient>(options =>
+            options.Address = new Uri("http://localhost"))
+            .ConfigurePrimaryHttpMessageHandler(server.CreateHandler)
+            .AddShieldStreamingInterceptor(static provider =>
+                provider.GetRequiredService<Shield>());
+        await using var provider = services.BuildServiceProvider();
+        using var call = provider.GetRequiredService<Resilience.ResilienceClient>().ClientStream();
+
+        await call.RequestStream.WriteAsync(new TestRequest());
+        await call.RequestStream.CompleteAsync();
+        var response = await call.ResponseAsync;
+
+        await Assert.That(response.Attempt).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Server_Streaming_Retries_The_Loopback_Call_Before_Progress()
     {
         await using var server = await GrpcTestServer.StartAsync();
