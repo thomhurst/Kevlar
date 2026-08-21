@@ -69,6 +69,88 @@ The one-argument callback runs during registration and its shield is shared acro
 rotations, matching parameterless `AddStandardShield()`. The service-provider callback runs once
 per `HttpClientFactory` handler lifetime and creates fresh strategy state for that lifetime.
 
+## Configuration and reload
+
+Pass an `IConfiguration` section to bind the standard pipeline and reload it when the section's
+change token fires:
+
+```csharp
+var configuration = new ConfigurationBuilder()
+    .AddInMemoryCollection(new Dictionary<string, string?>
+    {
+        ["Http:Api:TotalTimeout"] = "00:00:20",
+        ["Http:Api:Retry:MaxRetries"] = "2",
+        ["Http:Api:Retry:Backoff"] = "Exponential",
+        ["Http:Api:Retry:BaseDelay"] = "00:00:00.100",
+        ["Http:Api:Retry:Jitter"] = "true",
+        ["Http:Api:AttemptTimeout"] = "00:00:05",
+        ["Http:Api:Handler:MaximumBufferSize"] = "262144",
+    })
+    .Build();
+
+services.AddHttpClient("api")
+    .AddStandardShield(
+        configuration.GetSection("Http:Api"),
+        onReloadFailure: exception =>
+            Console.Error.WriteLine(exception.Message));
+```
+
+Timeouts accept either a scalar (`TotalTimeout`) or the options-shaped
+`TotalTimeout:Timeout` key. Retry keys are `MaxRetries`, `Backoff` (`None`, `Constant`, `Linear`,
+or `Exponential`), `BaseDelay`, `Factor`, `Jitter`, `BackoffMaxDelay`, and `MaxDelay`. Circuit
+breaker, concurrency-limit, handler, routing, and endpoint keys match their public option-property
+names. Endpoint entries accept either a URI scalar or `Uri` plus optional `Weight` children.
+
+Configuration is applied first. The service-provider callback overload runs afterward, so DI values
+and delegates can deliberately override bound values:
+
+```csharp
+var configuration = new ConfigurationBuilder()
+    .AddInMemoryCollection(new Dictionary<string, string?>
+    {
+        ["Retry:MaxRetries"] = "2",
+    })
+    .Build();
+
+services.AddLogging();
+services.AddHttpClient("api")
+    .AddStandardShield(configuration, (serviceProvider, options) =>
+    {
+        var logger = serviceProvider
+            .GetRequiredService<ILoggerFactory>()
+            .CreateLogger("HttpResilience");
+        options.Retry.OnRetry = retry =>
+            logger.LogWarning("Retry {Attempt}", retry.Attempt);
+    });
+```
+
+Each request captures one immutable shield-and-handler snapshot. A valid reload builds the whole
+replacement before publishing it atomically; in-flight requests finish on their original snapshot.
+Invalid binding or validation keeps the last valid snapshot and calls `onReloadFailure` with the
+full configuration path. A successful reload starts fresh breaker, limiter, and endpoint-local
+state. `HttpClientFactory` handler rotation also creates fresh state and reruns the
+service-provider callback; disposed handlers unsubscribe from configuration changes.
+
+Hedging uses the same reload contract. Its scalar keys match `StandardHedgingShieldOptions`, and
+`Endpoints` is required:
+
+```csharp
+var configuration = new ConfigurationBuilder()
+    .AddInMemoryCollection(new Dictionary<string, string?>
+    {
+        ["MaxAttempts"] = "2",
+        ["HedgeDelay"] = "00:00:00.500",
+        ["SelectionMode"] = "Weighted",
+        ["Endpoints:0:Uri"] = "https://api-a.example",
+        ["Endpoints:0:Weight"] = "3",
+        ["Endpoints:1:Uri"] = "https://api-b.example",
+    })
+    .Build();
+
+services.AddHttpClient("routed")
+    .AddStandardHedgingShield(configuration);
+```
+
 ## Bring your own pipeline
 
 ```csharp
@@ -194,6 +276,7 @@ shield so every additional send goes through safe replay and routing.
 - **Superseded responses are handler-owned.** The handler disposes failed retry responses and losing hedge responses, including a loser that completes after the winner. A custom `OnRetry` response-disposal hook is unnecessary with `ShieldDelegatingHandler`; the hook that `HttpShield.Standard()` installs stays safe because `HttpResponseMessage.Dispose` is idempotent. The selected response remains caller-owned.
 - **Redirects remain transport-owned.** Each Kevlar attempt begins with the original absolute URI (or its routed authority). Normal `HttpClientHandler` redirect policy runs inside that attempt.
 - **State sharing depends on registration form.** Parameterless `AddStandardShield()`, its one-argument options callback, and `AddShield(shield)` build/capture one shield for that named client, so state survives handler rotation. Service-provider callbacks run once per `HttpClientFactory` handler lifetime and create fresh state unless they resolve and return shared state from DI.
+- **Configuration-backed state is replaced, not mutated.** Reload and handler rotation publish fresh complete pipelines. Requests already executing retain the snapshot they captured at send start.
 - **Standard hedging state is endpoint-local.** `AddStandardHedgingShield` creates one limiter and breaker per authority in each `HttpClientFactory` handler pipeline and reuses them across requests for that handler's lifetime.
 - **Compose with other handlers normally.** The Kevlar handler is a regular `DelegatingHandler`; ordering relative to your own handlers follows the usual `AddHttpMessageHandler` rules.
 

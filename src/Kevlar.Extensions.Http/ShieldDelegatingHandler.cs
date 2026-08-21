@@ -7,11 +7,8 @@ namespace Kevlar.Extensions.Http;
 /// </remarks>
 public sealed class ShieldDelegatingHandler : DelegatingHandler
 {
-    private readonly object _endpointGate = new();
-    private readonly Dictionary<string, Lazy<Shield<HttpResponseMessage>>> _endpointShields = [];
-    private readonly Shield<HttpResponseMessage> _policy;
-    private readonly ShieldHttpHandlerOptions _options;
-    private long _routingSequence;
+    private readonly HttpShieldPipeline _pipeline;
+    private readonly ReloadingHttpShieldPipeline? _reloadingPipeline;
 
     /// <summary>Creates the handler with safe no-buffer replay defaults.</summary>
     public ShieldDelegatingHandler(Shield<HttpResponseMessage> shield)
@@ -24,10 +21,21 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         Shield<HttpResponseMessage> shield,
         ShieldHttpHandlerOptions options)
     {
-        _policy = shield ?? throw new ArgumentNullException(nameof(shield));
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-        ValidateOptions(options);
+        _pipeline = new HttpShieldPipeline(shield, options);
     }
+
+    private ShieldDelegatingHandler(
+        ReloadingHttpShieldPipeline reloadingPipeline,
+        bool _)
+    {
+        _reloadingPipeline = reloadingPipeline
+            ?? throw new ArgumentNullException(nameof(reloadingPipeline));
+        _pipeline = null!;
+    }
+
+    internal static ShieldDelegatingHandler CreateReloading(
+        ReloadingHttpShieldPipeline reloadingPipeline) =>
+        new(reloadingPipeline, true);
 
     /// <inheritdoc />
     protected override async Task<HttpResponseMessage> SendAsync(
@@ -36,14 +44,15 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
     {
         if (request is null) { throw new ArgumentNullException(nameof(request)); }
 
+        var pipeline = _reloadingPipeline?.Current ?? _pipeline;
         var execution = new RequestExecution(
             this,
             request,
-            _options,
+            pipeline,
             cancellationToken);
         try
         {
-            var response = await _policy.ExecuteAsync(
+            var response = await pipeline.Policy.ExecuteAsync(
                 execution,
                 static (state, token) => state.SendAttemptAsync(token),
                 cancellationToken).ConfigureAwait(false);
@@ -62,110 +71,23 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         CancellationToken cancellationToken) =>
         base.SendAsync(request, cancellationToken);
 
-    private Shield<HttpResponseMessage>? GetEndpointShield(Uri endpoint)
+    /// <inheritdoc />
+    protected override void Dispose(bool disposing)
     {
-        var factory = _options.Routing?.ShieldFactory;
-        if (factory is null)
+        if (disposing)
         {
-            return null;
+            _reloadingPipeline?.Dispose();
         }
 
-        var authority = endpoint.GetLeftPart(UriPartial.Authority);
-        Lazy<Shield<HttpResponseMessage>> creation;
-        lock (_endpointGate)
-        {
-            if (!_endpointShields.TryGetValue(authority, out creation!))
-            {
-                creation = new Lazy<Shield<HttpResponseMessage>>(
-                    () => factory(endpoint)
-                        ?? throw new InvalidOperationException("The endpoint shield factory returned null."),
-                    LazyThreadSafetyMode.ExecutionAndPublication);
-                _endpointShields.Add(authority, creation);
-            }
-        }
-
-        try
-        {
-            return creation.Value;
-        }
-        catch
-        {
-            lock (_endpointGate)
-            {
-                if (_endpointShields.TryGetValue(authority, out var current)
-                    && ReferenceEquals(current, creation))
-                {
-                    _endpointShields.Remove(authority);
-                }
-            }
-
-            throw;
-        }
-    }
-
-    private Uri[]? CreateEndpointOrder(HttpEndpointRoutingOptions? routing)
-    {
-        if (routing is null)
-        {
-            return null;
-        }
-
-        if (routing.SelectionMode == HttpEndpointSelectionMode.Ordered)
-        {
-            return routing.Endpoints.Select(static endpoint => endpoint.Uri).ToArray();
-        }
-
-        var sequence = Interlocked.Increment(ref _routingSequence) - 1;
-        var seed = unchecked(routing.Seed + ((int)sequence * 0x61C88647));
-        var random = new DeterministicRandom(seed);
-        return routing.Endpoints
-            .Select(endpoint => (
-                endpoint.Uri,
-                Priority: -Math.Log(random.NextExclusiveDouble()) / endpoint.Weight))
-            .OrderBy(static endpoint => endpoint.Priority)
-            .Select(static endpoint => endpoint.Uri)
-            .ToArray();
-    }
-
-    private static void ValidateOptions(ShieldHttpHandlerOptions options)
-    {
-        if (!Enum.IsDefined(typeof(HttpContentReplayPolicy), options.ContentReplayPolicy))
-        {
-            throw new ArgumentOutOfRangeException(nameof(options), "ContentReplayPolicy is invalid.");
-        }
-
-        if (options.MaximumBufferSize <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(options), "MaximumBufferSize must be positive.");
-        }
-
-        if (options.Routing is not { } routing)
-        {
-            return;
-        }
-
-        if (!Enum.IsDefined(typeof(HttpEndpointSelectionMode), routing.SelectionMode))
-        {
-            throw new ArgumentOutOfRangeException(nameof(options), "The endpoint selection mode is invalid.");
-        }
-
-        if (routing.Endpoints.Count == 0)
-        {
-            throw new ArgumentException("Routing requires at least one endpoint.", nameof(options));
-        }
-
-        if (routing.Endpoints.Any(static endpoint => endpoint is null))
-        {
-            throw new ArgumentException("Routing endpoints cannot contain null.", nameof(options));
-        }
+        base.Dispose(disposing);
     }
 
     private sealed class RequestExecution
     {
         private readonly object _gate = new();
         private readonly ShieldDelegatingHandler _handler;
+        private readonly HttpShieldPipeline _pipeline;
         private readonly HttpRequestMessage _original;
-        private readonly ShieldHttpHandlerOptions _options;
         private readonly CancellationToken _executionCancellationToken;
         private readonly List<HttpResponseMessage> _responses = [];
         private readonly Uri[]? _endpointOrder;
@@ -182,22 +104,24 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         public RequestExecution(
             ShieldDelegatingHandler handler,
             HttpRequestMessage original,
-            ShieldHttpHandlerOptions options,
+            HttpShieldPipeline pipeline,
             CancellationToken executionCancellationToken)
         {
             _handler = handler;
+            _pipeline = pipeline;
             _original = original;
-            _options = options;
             _executionCancellationToken = executionCancellationToken;
-            _endpointOrder = handler.CreateEndpointOrder(options.Routing);
+            _endpointOrder = pipeline.CreateEndpointOrder();
         }
+
+        private ShieldHttpHandlerOptions Options => _pipeline.Options;
 
         private ValueTask PrepareAsync(CancellationToken cancellationToken)
         {
-            if (_options.RequestFactory is null
+            if (Options.RequestFactory is null
                 && (_endpointOrder is not null
                     || (_original.Content is not null
-                        && _options.ContentReplayPolicy == HttpContentReplayPolicy.Buffer)))
+                        && Options.ContentReplayPolicy == HttpContentReplayPolicy.Buffer)))
             {
                 return new ValueTask(GetTemplateAsync(cancellationToken));
             }
@@ -226,8 +150,8 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
 
             if (attempt > 0
                 && !IsReplaySafeMethod(_original.Method)
-                && !_options.AllowUnsafeMethodReplay
-                && _options.RequestFactory is null)
+                && !Options.AllowUnsafeMethodReplay
+                && Options.RequestFactory is null)
             {
                 throw new HttpRequestReplayException(
                     $"HTTP {_original.Method} is not replayed automatically. Set AllowUnsafeMethodReplay " +
@@ -235,7 +159,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             }
 
             HttpRequestMessage request;
-            if (_options.RequestFactory is { } requestFactory)
+            if (Options.RequestFactory is { } requestFactory)
             {
                 request = await requestFactory(_original, attempt, cancellationToken).ConfigureAwait(false)
                     ?? throw new HttpRequestReplayException("RequestFactory returned null.");
@@ -260,7 +184,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
                     RouteToAuthority(request, endpoint);
                 }
 
-                var endpointShield = endpoint is null ? null : _handler.GetEndpointShield(endpoint);
+                var endpointShield = endpoint is null ? null : _pipeline.GetEndpointShield(endpoint);
                 var response = endpointShield is null
                     ? await _handler.BaseSendAsync(request, cancellationToken).ConfigureAwait(false)
                     : await endpointShield.ExecuteAsync(
@@ -383,8 +307,8 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             {
                 var template = await HttpRequestTemplate.CreateAsync(
                     _original,
-                    _options.ContentReplayPolicy,
-                    _options.MaximumBufferSize,
+                    Options.ContentReplayPolicy,
+                    Options.MaximumBufferSize,
                     creationCancellation.Token).ConfigureAwait(false);
                 creation.TrySetResult(template);
             }
@@ -510,24 +434,4 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         }
     }
 
-    private struct DeterministicRandom(int seed)
-    {
-        private uint _state = unchecked((uint)seed) + 0x9E3779B9u;
-
-        public double NextExclusiveDouble()
-        {
-            var value = NextUInt32();
-            return (value + 1d) / (uint.MaxValue + 2d);
-        }
-
-        private uint NextUInt32()
-        {
-            var value = _state;
-            value ^= value << 13;
-            value ^= value >> 17;
-            value ^= value << 5;
-            _state = value == 0 ? 0xA341316Cu : value;
-            return _state;
-        }
-    }
 }

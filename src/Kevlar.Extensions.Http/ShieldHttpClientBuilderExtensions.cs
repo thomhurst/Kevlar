@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Kevlar.Extensions.Http;
@@ -138,6 +139,65 @@ public static class ShieldHttpClientBuilderExtensions
         });
     }
 
+    /// <summary>
+    /// Adds a reload-aware standard shield bound from a configuration section.
+    /// A valid change replaces the complete pipeline for subsequent requests.
+    /// </summary>
+    public static IHttpClientBuilder AddStandardShield(
+        this IHttpClientBuilder builder,
+        IConfiguration configuration,
+        Action<Exception>? onReloadFailure = null) =>
+        AddStandardShield(
+            builder,
+            configuration,
+            static (_, _) => { },
+            onReloadFailure);
+
+    /// <summary>
+    /// Adds a reload-aware standard shield bound from configuration, then customized using the
+    /// handler pipeline's service provider. The callback runs for the initial snapshot and every
+    /// reload after configuration values have been applied.
+    /// </summary>
+    public static IHttpClientBuilder AddStandardShield(
+        this IHttpClientBuilder builder,
+        IConfiguration configuration,
+        Action<IServiceProvider, StandardHttpShieldOptions> configure,
+        Action<Exception>? onReloadFailure = null)
+    {
+        if (builder is null)
+        {
+            throw new ArgumentNullException(nameof(builder));
+        }
+
+        if (configuration is null)
+        {
+            throw new ArgumentNullException(nameof(configuration));
+        }
+
+        if (configure is null)
+        {
+            throw new ArgumentNullException(nameof(configure));
+        }
+
+        ValidateStandardConfiguration(configuration);
+        return builder.AddHttpMessageHandler(services =>
+        {
+            HttpShieldPipeline CreatePipeline()
+            {
+                var options = StandardHttpConfigurationBinder.BindStandard(configuration);
+                configure(services, options);
+                return new HttpShieldPipeline(
+                    HttpShield.Standard(options),
+                    Snapshot(options.Handler));
+            }
+
+            return ShieldDelegatingHandler.CreateReloading(new ReloadingHttpShieldPipeline(
+                CreatePipeline,
+                configuration.GetReloadToken,
+                onReloadFailure));
+        });
+    }
+
     private static ShieldHttpHandlerOptions Snapshot(ShieldHttpHandlerOptions source)
     {
         var snapshot = new ShieldHttpHandlerOptions
@@ -197,6 +257,77 @@ public static class ShieldHttpClientBuilderExtensions
 
         return builder.AddHttpMessageHandler(() =>
             new ShieldDelegatingHandler(shield, handlerOptions));
+    }
+
+    /// <summary>
+    /// Adds a reload-aware standard hedging shield bound from a configuration section.
+    /// A valid change replaces the complete pipeline and all endpoint-local state.
+    /// </summary>
+    public static IHttpClientBuilder AddStandardHedgingShield(
+        this IHttpClientBuilder builder,
+        IConfiguration configuration,
+        Action<Exception>? onReloadFailure = null) =>
+        AddStandardHedgingShield(
+            builder,
+            configuration,
+            static (_, _) => { },
+            onReloadFailure);
+
+    /// <summary>
+    /// Adds a reload-aware standard hedging shield bound from configuration, then customized
+    /// using the handler pipeline's service provider. The callback runs for every snapshot after
+    /// configuration values have been applied.
+    /// </summary>
+    public static IHttpClientBuilder AddStandardHedgingShield(
+        this IHttpClientBuilder builder,
+        IConfiguration configuration,
+        Action<IServiceProvider, StandardHedgingShieldOptions> configure,
+        Action<Exception>? onReloadFailure = null)
+    {
+        if (builder is null)
+        {
+            throw new ArgumentNullException(nameof(builder));
+        }
+
+        if (configuration is null)
+        {
+            throw new ArgumentNullException(nameof(configuration));
+        }
+
+        if (configure is null)
+        {
+            throw new ArgumentNullException(nameof(configure));
+        }
+
+        ValidateHedgingConfiguration(configuration);
+        return builder.AddHttpMessageHandler(services =>
+        {
+            HttpShieldPipeline CreatePipeline()
+            {
+                var options = StandardHttpConfigurationBinder.BindHedging(configuration);
+                configure(services, options);
+                return new HttpShieldPipeline(
+                    CreateHedgingShield(options),
+                    CreateHandlerOptions(options));
+            }
+
+            return ShieldDelegatingHandler.CreateReloading(new ReloadingHttpShieldPipeline(
+                CreatePipeline,
+                configuration.GetReloadToken,
+                onReloadFailure));
+        });
+    }
+
+    private static void ValidateStandardConfiguration(IConfiguration configuration)
+    {
+        var options = StandardHttpConfigurationBinder.BindStandard(configuration);
+        _ = new HttpShieldPipeline(HttpShield.Standard(options), Snapshot(options.Handler));
+    }
+
+    private static void ValidateHedgingConfiguration(IConfiguration configuration)
+    {
+        var options = StandardHttpConfigurationBinder.BindHedging(configuration);
+        _ = new HttpShieldPipeline(CreateHedgingShield(options), CreateHandlerOptions(options));
     }
 
     private static Shield<HttpResponseMessage> CreateHedgingShield(StandardHedgingShieldOptions options) =>
