@@ -52,7 +52,7 @@ One clause up top decides what "failure" means for every strategy below it — e
 - **Intuitive first.** `Shield.When<TimeoutException>().Retry(3)` reads like what it does. No context pooling ceremony, no predicate-builder classes, no options objects for the simple cases — and full options objects when you want them.
 - **Fast.** Outcomes flow between pipeline layers as structs instead of thrown exceptions; contexts are pooled internally; state-passing overloads eliminate closures; `ValueTask` end to end.
 - **Production defaults.** `Shield.Retry(3)` gives you exponential backoff *with jitter* capped at 30s — the thing you'd have configured anyway.
-- **Hard to hold wrong.** Impossible chain orders throw at build time with the fix in the message, and the `Kevlar.Analyzers` package flags delegates that ignore their `CancellationToken` at compile time.
+- **Hard to hold wrong.** Impossible chain orders throw at build time with the fix in the message, and the `Kevlar.Analyzers` package flags cancellation and pipeline hazards at compile time.
 - **Observable out of the box.** `shield.ToString()` prints the whole pipeline; every shield publishes metrics through a built-in `Meter` — no telemetry package, no setup.
 - **Composable.** Shields merge with `Wrap` and `Compose`, chain fluently, and stateful strategies (breakers, limiters) intentionally share their state wherever the same shield instance is reused.
 - **Broad reach.** `netstandard2.0` (covers .NET Framework 4.6.2+) and `net10.0` targets.
@@ -276,7 +276,7 @@ services.AddHttpClient("api")
 
 On .NET 8+ every shield publishes metrics through a `Meter` named `"Kevlar"` with zero configuration — executions, retries, timeouts, hedges, fallbacks, rejections and circuit transitions, tagged with the shield's `WithName` name. Subscribe with `AddMeter(KevlarDiagnostics.MeterName)`.
 
-And `dotnet add package Kevlar.Analyzers` adds compile-time checks — starting with KEV001: an execution delegate that ignores the `CancellationToken` it is handed (the most common way to defeat a timeout).
+And `dotnet add package Kevlar.Analyzers` adds compile-time checks for ignored execution cancellation, synchronous hedging, and unreachable reactive strategies. See the [analyzer rule reference](docs/docs/analyzers.md).
 
 ## Custom strategies
 
