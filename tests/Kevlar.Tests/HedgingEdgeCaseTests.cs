@@ -91,16 +91,18 @@ public class HedgingEdgeCaseTests
     {
         using var cancellation = new CancellationTokenSource();
         var started = 0;
+        var attemptsStarted = new AsyncCounter("hedged attempts");
         var shield = Shield.Hedge(2, TimeSpan.Zero);
 
         var task = shield.ExecuteAsync(async token =>
         {
             Interlocked.Increment(ref started);
+            attemptsStarted.Signal();
             await Task.Delay(System.Threading.Timeout.InfiniteTimeSpan, token);
             return 1;
         }, cancellation.Token).AsTask();
 
-        await TestHelpers.WaitUntil(() => Volatile.Read(ref started) == 2);
+        await attemptsStarted.WaitForAsync(2);
         cancellation.Cancel();
 
         await Assert.That(async () => await task).Throws<OperationCanceledException>();

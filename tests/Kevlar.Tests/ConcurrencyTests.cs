@@ -125,17 +125,19 @@ public class ConcurrencyTests
 
         var probeGate = new TaskCompletionSource();
         var probes = 0;
+        var probesStarted = new AsyncCounter("half-open probes");
 
         var outcomes = Enumerable.Range(0, 16).Select(_ =>
             shield.ExecuteOutcomeAsync(async _ =>
             {
                 Interlocked.Increment(ref probes);
+                probesStarted.Signal();
                 await probeGate.Task;
                 return 1;
             }).AsTask()).ToArray();
 
         // Exactly one execution won the probe slot; every other one was rejected immediately.
-        await TestHelpers.WaitUntil(() => Volatile.Read(ref probes) == 1);
+        await probesStarted.WaitForAsync(1);
         var rejected = outcomes.Count(task => task.IsCompletedSuccessfully && task.Result.Exception is CircuitOpenException);
         await Assert.That(rejected).IsEqualTo(15);
 

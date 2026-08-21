@@ -7,20 +7,22 @@ public class TimeoutEdgeCaseTests
     [Test]
     public async Task A_Result_Produced_After_The_Timer_Fired_Is_Still_Delivered()
     {
+        var timeProvider = new ControlledTimeProvider();
+        var action = new GatedDelegate<int>("successful timeout-ignoring action", static (_, _) => new ValueTask<int>(7));
         var timedOut = false;
         var shield = Shield.Timeout(options =>
         {
-            options.Timeout = TimeSpan.FromMilliseconds(50);
+            options.Timeout = TimeSpan.FromMinutes(1);
             options.OnTimeout = _ => timedOut = true;
-        });
+        }).WithTimeProvider(timeProvider);
 
         // The delegate ignores its token and completes anyway; the timeout is cooperative,
         // so the successful result wins and no timeout is reported.
-        var result = await shield.ExecuteAsync(async _ =>
-        {
-            await Task.Delay(300);
-            return 7;
-        });
+        var task = shield.ExecuteAsync(action.InvokeAsync).AsTask();
+        await action.WaitForInvocationsAsync(1);
+        timeProvider.FireTimer(0);
+        action.Release();
+        var result = await task;
 
         await Assert.That(result).IsEqualTo(7);
         await Assert.That(timedOut).IsFalse();
@@ -29,13 +31,17 @@ public class TimeoutEdgeCaseTests
     [Test]
     public async Task A_NonCancellation_Failure_After_The_Timer_Fired_Is_Not_Rewritten()
     {
-        var shield = Shield.Timeout(TimeSpan.FromMilliseconds(50));
+        var timeProvider = new ControlledTimeProvider();
+        var action = new GatedDelegate<int>("failing timeout-ignoring action", static (_, _) =>
+            throw new InvalidOperationException("real failure"));
+        var shield = Shield.Timeout(TimeSpan.FromMinutes(1)).WithTimeProvider(timeProvider);
 
-        await Assert.That(async () => await shield.ExecuteAsync<int>(async _ =>
-        {
-            await Task.Delay(300);
-            throw new InvalidOperationException("real failure");
-        })).Throws<InvalidOperationException>().WithMessage("real failure");
+        var task = shield.ExecuteAsync(action.InvokeAsync).AsTask();
+        await action.WaitForInvocationsAsync(1);
+        timeProvider.FireTimer(0);
+        action.Release();
+
+        await Assert.That(async () => await task).Throws<InvalidOperationException>().WithMessage("real failure");
     }
 
     [Test]
@@ -85,7 +91,7 @@ public class TimeoutEdgeCaseTests
     {
         using var cancellation = new CancellationTokenSource();
         var timedOut = false;
-        var started = new TaskCompletionSource();
+        var probeReady = new TaskCompletionSource<CancellationProbe>(TaskCreationOptions.RunContinuationsAsynchronously);
         var shield = Shield.Timeout(options =>
         {
             options.Timeout = TimeSpan.FromMinutes(10);
@@ -94,16 +100,20 @@ public class TimeoutEdgeCaseTests
 
         var task = shield.ExecuteAsync(async token =>
         {
-            started.SetResult();
-            await Task.Delay(System.Threading.Timeout.InfiniteTimeSpan, token);
+            using var probe = new CancellationProbe(token);
+            probeReady.SetResult(probe);
+            await probe.WaitAsync();
+            token.ThrowIfCancellationRequested();
             return 1;
         }, cancellation.Token).AsTask();
 
-        await started.Task;
+        var cancellationProbe = await TestHelpers.WaitAsync(probeReady.Task, "timeout action to register cancellation");
         cancellation.Cancel();
+        await cancellationProbe.WaitAsync();
 
         await Assert.That(async () => await task).Throws<OperationCanceledException>();
         await Assert.That(timedOut).IsFalse();
+        await Assert.That(cancellationProbe.Count).IsEqualTo(1);
     }
 
     [Test]
@@ -111,6 +121,7 @@ public class TimeoutEdgeCaseTests
     {
         var fakeTime = new FakeTimeProvider();
         var attempts = 0;
+        var attemptsStarted = new AsyncCounter("per-attempt timeouts");
 
         // Retry is outermost, so the inner timeout budget restarts per attempt.
         var shield = Shield
@@ -121,6 +132,7 @@ public class TimeoutEdgeCaseTests
         var task = shield.ExecuteAsync(async token =>
         {
             var attempt = Interlocked.Increment(ref attempts);
+            attemptsStarted.Signal();
             if (attempt < 3)
             {
                 await Task.Delay(System.Threading.Timeout.InfiniteTimeSpan, token);
@@ -129,11 +141,11 @@ public class TimeoutEdgeCaseTests
             return attempt;
         }).AsTask();
 
-        await TestHelpers.WaitUntil(() => Volatile.Read(ref attempts) == 1);
+        await attemptsStarted.WaitForAsync(1);
         fakeTime.Advance(TimeSpan.FromSeconds(1));
-        await TestHelpers.WaitUntil(() => Volatile.Read(ref attempts) == 2);
+        await attemptsStarted.WaitForAsync(2);
         fakeTime.Advance(TimeSpan.FromSeconds(1));
-        await TestHelpers.WaitUntil(() => Volatile.Read(ref attempts) == 3);
+        await attemptsStarted.WaitForAsync(3);
 
         var result = await task;
         await Assert.That(result).IsEqualTo(3);
@@ -186,13 +198,21 @@ public class TimeoutEdgeCaseTests
     [Test]
     public async Task A_Queued_Custom_Timer_Callback_Cannot_Cancel_A_Later_Execution()
     {
-        var timeProvider = new QueuedCallbackTimeProvider();
+        var timeProvider = new ControlledTimeProvider();
+        ControlledTimeProvider.QueuedTimerCallback? queuedCallback = null;
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var shield = Shield
             .Timeout(TimeSpan.FromMinutes(1))
             .WithTimeProvider(timeProvider);
 
-        await shield.ExecuteAsync(_ => new ValueTask<int>(1));
+        await shield.ExecuteAsync(_ =>
+        {
+            queuedCallback = timeProvider.QueueTimerCallback(0);
+            return new ValueTask<int>(1);
+        });
+
+        await Assert.That(timeProvider.IsTimerDisposed(0)).IsTrue();
+        await Assert.That(timeProvider.QueuedCallbackCount).IsEqualTo(1);
 
         var task = shield.ExecuteAsync(async token =>
         {
@@ -201,10 +221,11 @@ public class TimeoutEdgeCaseTests
             return 2;
         }).AsTask();
 
-        timeProvider.Fire(timerIndex: 0);
+        queuedCallback!.Fire();
         release.SetResult();
 
         await Assert.That(await task).IsEqualTo(2);
+        await Assert.That(timeProvider.QueuedCallbackCount).IsEqualTo(0);
     }
 
     [Test]
@@ -218,33 +239,6 @@ public class TimeoutEdgeCaseTests
         await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(1)))
             .Throws<InvalidOperationException>();
         await Assert.That(() => timeProvider.Source!.Token).Throws<ObjectDisposedException>();
-    }
-
-    private sealed class QueuedCallbackTimeProvider : TimeProvider
-    {
-        private readonly List<QueuedTimer> _timers = [];
-
-        public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period)
-        {
-            var timer = new QueuedTimer(callback, state);
-            _timers.Add(timer);
-            return timer;
-        }
-
-        public void Fire(int timerIndex) => _timers[timerIndex].Fire();
-
-        private sealed class QueuedTimer(TimerCallback callback, object? state) : ITimer
-        {
-            public bool Change(TimeSpan dueTime, TimeSpan period) => true;
-
-            public void Dispose()
-            {
-            }
-
-            public ValueTask DisposeAsync() => default;
-
-            public void Fire() => callback(state);
-        }
     }
 
     private sealed class ThrowingTimeProvider : TimeProvider
