@@ -186,6 +186,7 @@ public sealed class IgnoredCancellationTokenAnalyzer : DiagnosticAnalyzer
     {
         var aliases = new HashSet<ISymbol>(SymbolEqualityComparer.Default) { contextParameter };
         var declarators = Descendants(root).OfType<IVariableDeclaratorOperation>().ToArray();
+        var assignments = Descendants(root).OfType<ISimpleAssignmentOperation>().ToArray();
 
         bool foundAlias;
         do
@@ -196,6 +197,16 @@ public sealed class IgnoredCancellationTokenAnalyzer : DiagnosticAnalyzer
                 if (declarator.Initializer is { Value: { } value }
                     && ReferencesAlias(value, aliases)
                     && aliases.Add(declarator.Symbol))
+                {
+                    foundAlias = true;
+                }
+            }
+
+            foreach (var assignment in assignments)
+            {
+                if (Unwrap(assignment.Target) is ILocalReferenceOperation target
+                    && ReferencesAlias(assignment.Value, aliases)
+                    && aliases.Add(target.Local))
                 {
                     foundAlias = true;
                 }

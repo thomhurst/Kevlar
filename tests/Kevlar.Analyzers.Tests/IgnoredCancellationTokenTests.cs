@@ -353,6 +353,24 @@ public class IgnoredCancellationTokenTests
     }
 
     [Test]
+    public async Task Context_Token_Use_Through_An_Assigned_Local_Alias_Is_Clean()
+    {
+        var diagnostics = await AnalyzeAsync("""
+            await Shield.Empty.ExecuteWithContextAsync(
+                5,
+                static (_, _) => { },
+                static (state, context) =>
+                {
+                    KevlarContext activeContext;
+                    activeContext = context;
+                    return new ValueTask<int>(state + activeContext.CancellationToken.GetHashCode());
+                });
+            """);
+
+        await Assert.That(diagnostics.Length).IsEqualTo(0);
+    }
+
+    [Test]
     public async Task Typed_Shields_Are_Analyzed()
     {
         var diagnostics = await AnalyzeAsync("""
