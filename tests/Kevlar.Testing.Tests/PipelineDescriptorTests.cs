@@ -70,6 +70,8 @@ public class PipelineDescriptorTests
         await Assert.That(retry.MaxRetries).IsEqualTo(4);
         await Assert.That(retry.MaxDelay).IsEqualTo(TimeSpan.FromSeconds(1));
         await Assert.That(retry.HasNotification).IsTrue();
+        await Assert.That(retry.Backoff.Kind).IsEqualTo(BackoffKind.Constant);
+        await Assert.That(retry.Backoff.BaseDelay).IsEqualTo(TimeSpan.FromMilliseconds(50));
 
         var breaker = descriptor.AssertContainsSingle<CircuitBreakerStrategyDescriptor>();
         await Assert.That(breaker.FailureRatio).IsEqualTo(0.25);
@@ -149,6 +151,53 @@ public class PipelineDescriptorTests
     }
 
     [Test]
+    public async Task Custom_Backoff_Is_Described_Without_Executing_Or_Exposing_Callback()
+    {
+        var callbackCalls = 0;
+        var shield = Shield.Retry(1, Backoff.Custom(_ =>
+        {
+            callbackCalls++;
+            return TimeSpan.FromSeconds(callbackCalls);
+        }));
+
+        var backoff = shield.GetDescriptor()
+            .AssertContainsSingle<RetryStrategyDescriptor>()
+            .Backoff;
+
+        await Assert.That(backoff.Kind).IsEqualTo(BackoffKind.Custom);
+        await Assert.That(backoff.BaseDelay).IsNull();
+        await Assert.That(backoff.Factor).IsNull();
+        await Assert.That(backoff.MaxDelay).IsNull();
+        await Assert.That(backoff.Jitter).IsNull();
+        await Assert.That(callbackCalls).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Built_In_Backoff_Options_Are_Captured_As_Inert_Values()
+    {
+        var none = DescribeBackoff(Backoff.None);
+        var linear = DescribeBackoff(Backoff.Linear(
+            TimeSpan.FromMilliseconds(20),
+            TimeSpan.FromSeconds(2)));
+        var exponential = DescribeBackoff(Backoff.Exponential(
+            TimeSpan.FromMilliseconds(30),
+            factor: 3,
+            maxDelay: TimeSpan.FromSeconds(4),
+            jitter: false));
+
+        await Assert.That(none.Kind).IsEqualTo(BackoffKind.None);
+        await Assert.That(none.BaseDelay).IsEqualTo(TimeSpan.Zero);
+        await Assert.That(linear.Kind).IsEqualTo(BackoffKind.Linear);
+        await Assert.That(linear.BaseDelay).IsEqualTo(TimeSpan.FromMilliseconds(20));
+        await Assert.That(linear.MaxDelay).IsEqualTo(TimeSpan.FromSeconds(2));
+        await Assert.That(exponential.Kind).IsEqualTo(BackoffKind.Exponential);
+        await Assert.That(exponential.BaseDelay).IsEqualTo(TimeSpan.FromMilliseconds(30));
+        await Assert.That(exponential.Factor).IsEqualTo(3);
+        await Assert.That(exponential.MaxDelay).IsEqualTo(TimeSpan.FromSeconds(4));
+        await Assert.That(exponential.Jitter).IsFalse();
+    }
+
+    [Test]
     public async Task Assertion_Failures_Explain_Expected_And_Actual_Shape()
     {
         var descriptor = Shield.Timeout(TimeSpan.FromSeconds(1)).GetDescriptor();
@@ -176,4 +225,10 @@ public class PipelineDescriptorTests
             Continuation<T, TState> next,
             KevlarContext context) => next.InvokeAsync(context);
     }
+
+    private static BackoffDescriptor DescribeBackoff(Backoff backoff) =>
+        Shield.Retry(1, backoff)
+            .GetDescriptor()
+            .AssertContainsSingle<RetryStrategyDescriptor>()
+            .Backoff;
 }

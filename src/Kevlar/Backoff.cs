@@ -63,6 +63,16 @@ public abstract class Backoff
     /// <summary>Returns the delay before the given 1-based retry attempt.</summary>
     public abstract TimeSpan GetDelay(int attempt);
 
+    internal abstract BackoffConfigurationKind ConfigurationKind { get; }
+
+    internal virtual TimeSpan? BaseDelay => null;
+
+    internal virtual double? Factor => null;
+
+    internal virtual TimeSpan? MaxDelay => null;
+
+    internal virtual bool? Jitter => null;
+
     private protected static void ValidateAttempt(int attempt) =>
         Throw.IfOutOfRange(attempt < 1, nameof(attempt), "Attempt must be at least 1.");
 
@@ -100,6 +110,11 @@ public abstract class Backoff
             return _delay;
         }
 
+        internal override BackoffConfigurationKind ConfigurationKind =>
+            _delay == TimeSpan.Zero ? BackoffConfigurationKind.None : BackoffConfigurationKind.Constant;
+
+        internal override TimeSpan? BaseDelay => _delay;
+
         public override string ToString() =>
             _delay == TimeSpan.Zero ? "no delay" : $"constant {DescribeHelper.Time(_delay)}";
     }
@@ -120,6 +135,12 @@ public abstract class Backoff
             ValidateAttempt(attempt);
             return FromTicksClamped((double)_step.Ticks * attempt, _maxDelay);
         }
+
+        internal override BackoffConfigurationKind ConfigurationKind => BackoffConfigurationKind.Linear;
+
+        internal override TimeSpan? BaseDelay => _step;
+
+        internal override TimeSpan? MaxDelay => _maxDelay;
 
         public override string ToString()
         {
@@ -156,6 +177,16 @@ public abstract class Backoff
             return FromTicksClamped(ticks, _maxDelay);
         }
 
+        internal override BackoffConfigurationKind ConfigurationKind => BackoffConfigurationKind.Exponential;
+
+        internal override TimeSpan? BaseDelay => _initialDelay;
+
+        internal override double? Factor => _factor;
+
+        internal override TimeSpan? MaxDelay => _maxDelay;
+
+        internal override bool? Jitter => _jitter;
+
         public override string ToString()
         {
             var jitter = _jitter ? " +jitter" : string.Empty;
@@ -177,6 +208,17 @@ public abstract class Backoff
             return delay < TimeSpan.Zero ? TimeSpan.Zero : DelayHelper.Clamp(delay);
         }
 
+        internal override BackoffConfigurationKind ConfigurationKind => BackoffConfigurationKind.Custom;
+
         public override string ToString() => "custom backoff";
     }
+}
+
+internal enum BackoffConfigurationKind
+{
+    None,
+    Constant,
+    Linear,
+    Exponential,
+    Custom,
 }

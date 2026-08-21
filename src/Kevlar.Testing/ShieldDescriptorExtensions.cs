@@ -54,7 +54,7 @@ public static class ShieldDescriptorExtensions
             RetryStrategy retry => new RetryStrategyDescriptor(
                 description,
                 retry.MaxRetries,
-                retry.Backoff,
+                DescribeBackoff(retry.Backoff),
                 retry.MaxDelay,
                 retry.HasDelayGenerator,
                 retry.HasNotification),
@@ -98,4 +98,18 @@ public static class ShieldDescriptorExtensions
             core.BreakDuration,
             core.HasMonitor,
             core.HasNotification);
+
+    private static BackoffDescriptor DescribeBackoff(Backoff backoff) => new(
+        backoff.ConfigurationKind switch
+        {
+            BackoffConfigurationKind.None => BackoffKind.None,
+            BackoffConfigurationKind.Constant => BackoffKind.Constant,
+            BackoffConfigurationKind.Linear => BackoffKind.Linear,
+            BackoffConfigurationKind.Exponential => BackoffKind.Exponential,
+            _ => BackoffKind.Custom,
+        },
+        backoff.BaseDelay,
+        backoff.Factor,
+        backoff.MaxDelay,
+        backoff.Jitter);
 }

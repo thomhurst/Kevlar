@@ -6,7 +6,7 @@ public sealed class RetryStrategyDescriptor : StrategyDescriptor
     internal RetryStrategyDescriptor(
         string description,
         int maxRetries,
-        Backoff backoff,
+        BackoffDescriptor backoff,
         TimeSpan? maxDelay,
         bool hasDelayGenerator,
         bool hasNotification)
@@ -22,8 +22,8 @@ public sealed class RetryStrategyDescriptor : StrategyDescriptor
     /// <summary>Maximum retries after the initial attempt.</summary>
     public int MaxRetries { get; }
 
-    /// <summary>The immutable backoff configuration.</summary>
-    public Backoff Backoff { get; }
+    /// <summary>An inert snapshot of the backoff configuration.</summary>
+    public BackoffDescriptor Backoff { get; }
 
     /// <summary>The absolute delay cap, when configured.</summary>
     public TimeSpan? MaxDelay { get; }
