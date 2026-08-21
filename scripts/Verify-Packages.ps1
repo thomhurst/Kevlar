@@ -277,12 +277,20 @@ await Shield.Empty.ExecuteAsync(cancellationToken => ValueTask.CompletedTask);
 '@
     $analyzerProjectPath = Join-Path $analyzerDirectory 'AnalyzerConsumer.csproj'
     Invoke-DotNet @('restore', $analyzerProjectPath, '--configfile', $nugetConfigPath, '--no-cache', '--force-evaluate')
-    $analyzerOutput = (& dotnet build $analyzerProjectPath -c Release --no-restore 2>&1 | Out-String)
-    if ($LASTEXITCODE -eq 0 -or $analyzerOutput -notmatch '\bKEV001\b')
+    $analyzerOutput = (& dotnet build $analyzerProjectPath -c Release --no-restore -p:TreatWarningsAsErrors=false -warnaserror:KEV001 2>&1 | Out-String)
+    $analyzerExitCode = $LASTEXITCODE
+    $analyzerErrorCodes = @(
+        [regex]::Matches($analyzerOutput, '(?m)\berror\s+([A-Z]+\d+)\s*:') |
+            ForEach-Object { $_.Groups[1].Value }
+    )
+    if ($analyzerExitCode -eq 0)
     {
-        throw "Kevlar.Analyzers package did not activate KEV001 as an error.`n$analyzerOutput"
+        throw "Kevlar.Analyzers package did not fail the consumer build with KEV001.`n$analyzerOutput"
     }
 
+    Assert-Set 'analyzer consumer error codes' $analyzerErrorCodes @('KEV001')
+
+    $global:LASTEXITCODE = 0
     Write-Host 'All package layout, metadata, consumer, and analyzer checks passed.'
 }
 finally
