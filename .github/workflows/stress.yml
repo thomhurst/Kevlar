@@ -1,0 +1,120 @@
+name: Stress tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/Kevlar/**'
+      - 'benchmarks/Kevlar.StressTests/**'
+      - '.github/workflows/stress.yml'
+      - '.github/scripts/stress_docs.py'
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stress-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
+
+jobs:
+  run-stress-test:
+    name: Run 15-minute stress test
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build
+        run: dotnet build benchmarks/Kevlar.StressTests/Kevlar.StressTests.csproj -c Release
+
+      - name: Run stress test
+        run: >-
+          dotnet run --project benchmarks/Kevlar.StressTests -c Release --no-build --
+          --duration 00:15:00
+          --output artifacts/stress/stress-results.json
+
+      - name: Generate run summary
+        run: >-
+          python3 .github/scripts/stress_docs.py
+          --input artifacts/stress/stress-results.json
+          --commit "${GITHUB_SHA::7}"
+          --output artifacts/stress/stress-results.md
+
+      - name: Write run summary
+        run: cat artifacts/stress/stress-results.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stress-results
+          path: artifacts/stress/stress-results.*
+          retention-days: 30
+
+  publish-docs:
+    name: Publish stress results to docs
+    runs-on: ubuntu-latest
+    needs: run-stress-test
+    if: github.ref == 'refs/heads/main'
+    timeout-minutes: 20
+
+    permissions:
+      contents: write
+      actions: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download results
+        uses: actions/download-artifact@v4
+        with:
+          name: stress-results
+          path: stress-results
+
+      - name: Generate stress page
+        run: >-
+          python3 .github/scripts/stress_docs.py
+          --input stress-results/stress-results.json
+          --commit "${GITHUB_SHA::7}"
+          --output docs/docs/stress-tests.md
+
+      - name: Commit and deploy
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if git diff --quiet docs/docs/stress-tests.md; then
+            echo "Stress page unchanged; nothing to publish."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/docs/stress-tests.md
+          git commit -m "docs: update stress results [skip ci]"
+          git pull --rebase origin main
+          git push origin HEAD:main
+          dispatch_ref="stress-docs-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          git push origin "HEAD:refs/heads/$dispatch_ref"
+          trap 'git push origin --delete "$dispatch_ref" || true' EXIT
+          gh workflow run docs.yml --ref "$dispatch_ref"
+          run_id=""
+          for attempt in {1..30}; do
+            run_id=$(gh run list --workflow docs.yml --branch "$dispatch_ref" --event workflow_dispatch --limit 1 --json databaseId --jq '.[0].databaseId // empty')
+            if [ -n "$run_id" ]; then
+              break
+            fi
+            sleep 2
+          done
+          if [ -z "$run_id" ]; then
+            echo "Timed out waiting for the dispatched docs workflow."
+            exit 1
+          fi
+          gh run watch "$run_id" --exit-status
