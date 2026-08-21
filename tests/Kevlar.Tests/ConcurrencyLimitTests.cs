@@ -3,6 +3,23 @@ namespace Kevlar.Tests;
 public class BulkheadTests
 {
     [Test]
+    public async Task Uncontended_Async_Execution_Completes_Synchronously()
+    {
+        var shield = Shield.ConcurrencyLimit(maxConcurrency: 1);
+
+        var first = shield.ExecuteAsync(
+            static _ => new ValueTask<int>(42));
+
+        await Assert.That(first.IsCompletedSuccessfully).IsTrue();
+        await Assert.That(await first).IsEqualTo(42);
+
+        var afterRelease = shield.ExecuteAsync(
+            static _ => new ValueTask<int>(43));
+        await Assert.That(afterRelease.IsCompletedSuccessfully).IsTrue();
+        await Assert.That(await afterRelease).IsEqualTo(43);
+    }
+
+    [Test]
     public async Task Rejects_When_Concurrency_And_Queue_Are_Full()
     {
         var shield = Shield.ConcurrencyLimit(maxConcurrency: 1);
