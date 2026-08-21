@@ -100,4 +100,4 @@ and suppression guidance.
 
 ## Callbacks
 
-Every reactive strategy also raises in-process events for logging — `OnRetry`, `OnTimeout`, `OnStateChanged`, `OnHedge`, `onFallback` — documented on each [strategy page](/docs/category/strategies). Metrics tell you *how much*; callbacks give you the *which request* detail.
+Strategy callbacks provide request-level logging where configured. Retry, circuit breaker, timeout, and result-aware fallback expose synchronous and asynchronous callbacks. Hedging exposes a synchronous callback only. Concurrency limit and rate limit expose no callback APIs. Each callback is documented on its [strategy page](/docs/category/strategies). Metrics tell you *how much*; callbacks give you the *which request* detail.

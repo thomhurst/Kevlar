@@ -1,3 +1,14 @@
+Kevlar.CircuitBreakerBreakDurationEvent
+Kevlar.CircuitBreakerBreakDurationEvent.CircuitBreakerBreakDurationEvent() -> void
+Kevlar.CircuitBreakerBreakDurationEvent.Context.get -> Kevlar.KevlarContext!
+Kevlar.CircuitBreakerBreakDurationEvent.Exception.get -> System.Exception?
+Kevlar.CircuitBreakerBreakDurationEvent.Result.get -> object?
+Kevlar.CircuitBreakerMonitor.IsolateAsync() -> System.Threading.Tasks.ValueTask
+Kevlar.CircuitBreakerMonitor.ResetAsync() -> System.Threading.Tasks.ValueTask
+Kevlar.CircuitBreakerOptions.BreakDurationGenerator.get -> System.Func<Kevlar.CircuitBreakerBreakDurationEvent, System.Threading.Tasks.ValueTask<System.TimeSpan>>?
+Kevlar.CircuitBreakerOptions.BreakDurationGenerator.set -> void
+Kevlar.CircuitBreakerOptions.OnStateChangedAsync.get -> System.Func<Kevlar.CircuitStateChangedEvent, System.Threading.Tasks.ValueTask>?
+Kevlar.CircuitBreakerOptions.OnStateChangedAsync.set -> void
 Kevlar.Shield.ExecuteOutcomeAsync<T, TState>(TState state, System.Func<TState, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<T>>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Kevlar.Outcome<T>>
 Kevlar.Shield<TResult>.ExecuteOutcomeAsync<TState>(TState state, System.Func<TState, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Kevlar.Outcome<TResult>>
 Kevlar.TimeoutOptions.OnTimeoutAsync.get -> System.Func<Kevlar.TimeoutEvent, System.Threading.Tasks.ValueTask>?

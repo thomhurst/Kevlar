@@ -15,6 +15,16 @@ namespace Kevlar.Benchmarks;
 public class CircuitBreakerBenchmarks
 {
     private static readonly Shield KevlarBreaker = Shield.CircuitBreaker(5, TimeSpan.FromSeconds(30));
+    private static readonly Shield KevlarDynamicDurationBreaker = Shield.CircuitBreaker(options =>
+    {
+        options.ConsecutiveFailures = 5;
+        options.BreakDurationGenerator = static _ => new ValueTask<TimeSpan>(TimeSpan.FromSeconds(30));
+    });
+    private static readonly Shield KevlarAsyncCallbackBreaker = Shield.CircuitBreaker(options =>
+    {
+        options.ConsecutiveFailures = 5;
+        options.OnStateChangedAsync = static _ => default;
+    });
     private static readonly Shield KevlarOpenBreaker = Shield.CircuitBreaker(1, TimeSpan.FromDays(1));
 
     private static readonly ResiliencePipeline PollyBreaker = new ResiliencePipelineBuilder()
@@ -46,6 +56,14 @@ public class CircuitBreakerBenchmarks
 
     [BenchmarkCategory("ClosedHappyPath"), Benchmark]
     public ValueTask<int> Polly_ClosedHappyPath() => PollyBreaker.ExecuteAsync(static _ => new ValueTask<int>(42));
+
+    [BenchmarkCategory("ClosedHappyPath"), Benchmark]
+    public ValueTask<int> Kevlar_DynamicDurationConfigured() =>
+        KevlarDynamicDurationBreaker.ExecuteAsync(static _ => new ValueTask<int>(42));
+
+    [BenchmarkCategory("ClosedHappyPath"), Benchmark]
+    public ValueTask<int> Kevlar_AsyncCallbackConfigured() =>
+        KevlarAsyncCallbackBreaker.ExecuteAsync(static _ => new ValueTask<int>(42));
 
     [BenchmarkCategory("OpenFastFail"), Benchmark(Baseline = true)]
     public async ValueTask<bool> Kevlar_OpenFastFail()

@@ -15,9 +15,10 @@ public sealed class CircuitBreakerMonitor
 
     /// <summary>
     /// Raised on every state transition of the bound circuit, after
-    /// <see cref="CircuitBreakerOptions.OnStateChanged"/>. Transitions are delivered serially
-    /// outside the circuit lock, so handlers may read state or call <see cref="Reset"/> or
-    /// <see cref="Isolate"/> without deadlocking. Handlers run synchronously and block later
+    /// <see cref="CircuitBreakerOptions.OnStateChanged"/> and
+    /// <see cref="CircuitBreakerOptions.OnStateChangedAsync"/>. Transitions are delivered
+    /// serially outside the circuit lock, so handlers may read state or call <see cref="Reset"/>
+    /// or <see cref="Isolate"/> without deadlocking. Handlers run synchronously and block later
     /// transition publishers, so they should not perform I/O, wait on external work, or otherwise
     /// run for a long time.
     /// </summary>
@@ -26,8 +27,25 @@ public sealed class CircuitBreakerMonitor
     /// <summary>Forces the circuit open. Executions are rejected until <see cref="Reset"/> is called.</summary>
     public void Isolate() => BoundCore().Isolate();
 
+    /// <summary>
+    /// Forces the circuit open and asynchronously waits for configured transition observers.
+    /// A reentrant call from a transition callback queues its transition behind the active
+    /// publication and returns before that queued transition reaches observers; do not use the
+    /// returned task to order reentrant transition work.
+    /// Executions are rejected until <see cref="ResetAsync"/> is called.
+    /// </summary>
+    public ValueTask IsolateAsync() => BoundCore().IsolateAsync();
+
     /// <summary>Closes the circuit and clears all failure metrics.</summary>
     public void Reset() => BoundCore().Reset();
+
+    /// <summary>
+    /// Closes the circuit, clears all failure metrics, and asynchronously waits for configured
+    /// transition observers. A reentrant call from a transition callback queues its transition
+    /// behind the active publication and returns before that queued transition reaches observers;
+    /// do not use the returned task to order reentrant transition work.
+    /// </summary>
+    public ValueTask ResetAsync() => BoundCore().ResetAsync();
 
     internal void Bind(CircuitBreakerCore core)
     {

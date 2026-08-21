@@ -21,6 +21,16 @@ public class AllocationBudgetTests
         options.DelayGeneratorAsync = static _ => new ValueTask<TimeSpan?>(TimeSpan.Zero);
     });
     private readonly Shield _breaker = Shield.CircuitBreaker(5, TimeSpan.FromMinutes(1));
+    private readonly Shield _dynamicBreaker = Shield.CircuitBreaker(options =>
+    {
+        options.ConsecutiveFailures = 5;
+        options.BreakDurationGenerator = static _ => new ValueTask<TimeSpan>(TimeSpan.FromMinutes(1));
+    });
+    private readonly Shield _asyncTransitionBreaker = Shield.CircuitBreaker(options =>
+    {
+        options.ConsecutiveFailures = 5;
+        options.OnStateChangedAsync = static _ => default;
+    });
     private readonly Shield _timeout = Shield.Timeout(TimeSpan.FromMinutes(1));
     private readonly Shield<int> _fallback = Shield.For<int>()
         .When<InvalidOperationException>()
@@ -102,6 +112,10 @@ public class AllocationBudgetTests
             test._asyncDelayRetry.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("circuit closed", this, static test =>
             test._breaker.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
+        AssertZero("dynamic circuit closed", this, static test =>
+            test._dynamicBreaker.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
+        AssertZero("async transition circuit closed", this, static test =>
+            test._asyncTransitionBreaker.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("timeout happy path", this, static test =>
             test._timeout.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("fallback pass-through", this, static test =>
