@@ -68,6 +68,34 @@ var shield = Shield.Empty.RateLimit(
         AcquireTenantLeaseAsync(permitCount, context.CancellationToken));
 ```
 
+Use `PartitionedRateLimiter<KevlarContext>` when partition selection depends on execution metadata:
+
+```csharp
+var tenantKey = new KevlarKey<string>("tenant");
+using var limiter = PartitionedRateLimiter.Create<KevlarContext, string>(context =>
+    RateLimitPartition.Get(
+        context.Properties.GetOrDefault(tenantKey, "default"),
+        static _ => new ConcurrencyLimiter(new ConcurrencyLimiterOptions
+        {
+            PermitLimit = 10,
+            QueueLimit = 20,
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+        })));
+var shield = Shield.Empty.RateLimit(limiter);
+
+await shield.ExecuteWithContextAsync(
+    "tenant-42",
+    (tenant, properties) => properties.Set(tenantKey, tenant),
+    static (_, context) => new ValueTask(Task.Delay(1, context.CancellationToken)));
+```
+
+The partition callback receives the live pooled `KevlarContext`; read it only during the callback
+and never retain it. One `PartitionedRateLimiter<KevlarContext>` instance shares partition state
+across every shield using it, including shields returned by Kevlar's `PartitionedShield<TKey>`.
+Partition retention follows the limiter implementation; keep attacker-controlled key cardinality
+bounded. The caller owns and disposes the partitioned limiter and its child limiters; Kevlar owns
+only each returned lease.
+
 The delegate must return a fresh acquired or rejected lease for each call. Rejection metrics and
 hooks follow the built-in contract: metric first, then `OnRejected`, then awaited
 `OnRejectedAsync`; a hook failure replaces `RateLimitExceededException`. Cancellation while
