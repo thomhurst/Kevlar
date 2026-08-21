@@ -30,6 +30,7 @@ const sidebars: SidebarsConfig = {
     'dependency-injection',
     'http',
     'chaos',
+    'grpc',
     'custom-strategies',
     'library-authors',
     'analyzers',

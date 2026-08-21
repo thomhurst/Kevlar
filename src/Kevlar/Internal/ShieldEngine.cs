@@ -188,7 +188,7 @@ internal static class ShieldEngine
                 : pipeline.AsTask().GetAwaiter().GetResult();
 
             RecordExecution(startedAt, shieldName, outcome.IsSuccess);
-            return outcome.GetResultOrRethrow();
+            return outcome.GetResultOrRethrowInternal();
         }
         finally
         {
@@ -347,7 +347,7 @@ internal static class ShieldEngine
         {
             var outcome = await pipeline.ConfigureAwait(false);
             RecordExecution(startedAt, context.ShieldName, outcome.IsSuccess);
-            return outcome.GetResultOrRethrow();
+            return outcome.GetResultOrRethrowInternal();
         }
         finally
         {
@@ -414,7 +414,7 @@ internal static class ShieldEngine
 
     private static async ValueTask<T> Rethrow<T>(Outcome<T> outcome)
     {
-        outcome.GetResultOrRethrow();
+        outcome.GetResultOrRethrowInternal();
         return default!;
     }
 

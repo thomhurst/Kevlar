@@ -11,22 +11,25 @@ namespace Kevlar;
 /// <typeparam name="T">The result type of the execution.</typeparam>
 public readonly struct Outcome<T>
 {
+    private const string ExceptionProxyDataKey =
+        "Kevlar.Internal.ExceptionProxy.6b21d876-5f0c-45d4-a873-cd6d83e9158b";
     private readonly T? _result;
+    private readonly Exception? _exception;
 
     private Outcome(T? result, Exception? exception)
     {
         _result = result;
-        Exception = exception;
+        _exception = exception;
     }
 
     /// <summary>The captured exception, or <see langword="null"/> if the execution produced a result.</summary>
-    public Exception? Exception { get; }
+    public Exception? Exception => _exception?.Data[ExceptionProxyDataKey] as Exception ?? _exception;
 
     /// <summary>The result value. Only meaningful when <see cref="Exception"/> is <see langword="null"/>.</summary>
     public T? Result => _result;
 
     /// <summary><see langword="true"/> when the execution produced a result rather than an exception.</summary>
-    public bool IsSuccess => Exception is null;
+    public bool IsSuccess => _exception is null;
 
     /// <summary>Creates an outcome holding a result value.</summary>
     public static Outcome<T> FromResult(T result) => new(result, null);
@@ -44,6 +47,16 @@ public readonly struct Outcome<T>
     public T GetResultOrRethrow()
     {
         if (Exception is { } exception)
+        {
+            ExceptionDispatchInfo.Capture(exception).Throw();
+        }
+
+        return _result!;
+    }
+
+    internal T GetResultOrRethrowInternal()
+    {
+        if (_exception is { } exception)
         {
             ExceptionDispatchInfo.Capture(exception).Throw();
         }

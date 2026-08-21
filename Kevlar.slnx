@@ -6,6 +6,7 @@
   <Folder Name="/src/">
     <Project Path="src/Kevlar.Chaos/Kevlar.Chaos.csproj" />
     <Project Path="src/Kevlar.Extensions.DependencyInjection/Kevlar.Extensions.DependencyInjection.csproj" />
+    <Project Path="src/Kevlar.Extensions.Grpc/Kevlar.Extensions.Grpc.csproj" />
     <Project Path="src/Kevlar.Extensions.Http/Kevlar.Extensions.Http.csproj" />
     <Project Path="src/Kevlar/Kevlar.csproj" />
     <Project Path="src/Kevlar.Analyzers/Kevlar.Analyzers.csproj" />

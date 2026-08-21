@@ -27,6 +27,7 @@ $requiredPackages = @(
     'Kevlar.Analyzers'
     'Kevlar.Chaos'
     'Kevlar.Extensions.DependencyInjection'
+    'Kevlar.Extensions.Grpc'
     'Kevlar.Extensions.Http'
     'Kevlar.Testing'
 )
@@ -183,6 +184,7 @@ $builder = [Text.StringBuilder]::new()
 [void]$builder.AppendLine('using Kevlar;')
 [void]$builder.AppendLine('using Kevlar.Chaos;')
 [void]$builder.AppendLine('using Kevlar.Extensions.DependencyInjection;')
+[void]$builder.AppendLine('using Kevlar.Extensions.Grpc;')
 [void]$builder.AppendLine('using Kevlar.Extensions.Http;')
 [void]$builder.AppendLine('using Kevlar.Testing;')
 [void]$builder.AppendLine('using Microsoft.Extensions.DependencyInjection;')
