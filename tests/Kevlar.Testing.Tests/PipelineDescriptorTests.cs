@@ -69,6 +69,7 @@ public class PipelineDescriptorTests
         var retry = descriptor.AssertContainsSingle<RetryStrategyDescriptor>();
         await Assert.That(retry.MaxRetries).IsEqualTo(4);
         await Assert.That(retry.MaxDelay).IsEqualTo(TimeSpan.FromSeconds(1));
+        await Assert.That(retry.HasDelayGenerator).IsFalse();
         await Assert.That(retry.HasNotification).IsTrue();
         await Assert.That(retry.Backoff.Kind).IsEqualTo(BackoffKind.Constant);
         await Assert.That(retry.Backoff.BaseDelay).IsEqualTo(TimeSpan.FromMilliseconds(50));
@@ -78,9 +79,12 @@ public class PipelineDescriptorTests
         await Assert.That(breaker.MinimumThroughput).IsEqualTo(8);
         await Assert.That(breaker.SamplingWindow).IsEqualTo(TimeSpan.FromSeconds(20));
         await Assert.That(breaker.BreakDuration).IsEqualTo(TimeSpan.FromSeconds(7));
+        await Assert.That(breaker.HasMonitor).IsFalse();
+        await Assert.That(breaker.HasNotification).IsTrue();
 
         var rateLimit = descriptor.AssertContainsSingle<RateLimitStrategyDescriptor>();
         await Assert.That(rateLimit.Permits).IsEqualTo(10);
+        await Assert.That(rateLimit.Window).IsEqualTo(TimeSpan.FromSeconds(5));
         await Assert.That(rateLimit.Burst).IsEqualTo(12);
         await Assert.That(rateLimit.QueueLimit).IsEqualTo(3);
 
@@ -90,6 +94,7 @@ public class PipelineDescriptorTests
 
         var hedge = descriptor.AssertContainsSingle<HedgingStrategyDescriptor>();
         await Assert.That(hedge.MaxAttempts).IsEqualTo(3);
+        await Assert.That(hedge.Delay).IsEqualTo(TimeSpan.FromMilliseconds(25));
         await Assert.That(hedge.HasNotification).IsTrue();
     }
 
@@ -114,6 +119,16 @@ public class PipelineDescriptorTests
         var fallback = descriptor.AssertContainsSingle<FallbackStrategyDescriptor>();
         await Assert.That(fallback.ResultType).IsEqualTo(typeof(int));
         await Assert.That(fallback.IsVoid).IsFalse();
+        await Assert.That(fallback.HasNotification).IsFalse();
+
+        var voidFallback = Shield
+            .When<InvalidOperationException>()
+            .Fallback(static (_, _) => default)
+            .GetDescriptor()
+            .AssertContainsSingle<FallbackStrategyDescriptor>();
+        await Assert.That(voidFallback.ResultType).IsNull();
+        await Assert.That(voidFallback.IsVoid).IsTrue();
+        await Assert.That(voidFallback.HasNotification).IsFalse();
     }
 
     [Test]
