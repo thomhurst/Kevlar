@@ -121,6 +121,7 @@ try
     Write-TextFile $projectPath $project
     Write-TextFile (Join-Path $consumerDirectory 'Program.cs') @'
 using System.Net;
+using Grpc.Core;
 using Kevlar;
 using Kevlar.Chaos;
 using Kevlar.Extensions.DependencyInjection;
@@ -189,10 +190,14 @@ var configuration = new ConfigurationBuilder().AddInMemoryCollection(settings).B
 var services = new ServiceCollection();
 services.AddShield("configured", configuration);
 services.AddShield<int>("typed", typed);
+services.AddGrpcClient<SmokeGrpcClient>("grpc", static options =>
+    options.Address = new Uri("http://localhost"))
+    .AddShieldUnaryInterceptor("configured");
 services.AddHttpClient("http")
     .ConfigurePrimaryHttpMessageHandler(static () => new StubHandler())
     .AddShield(HttpShield.WhenTransient().Retry(1, Backoff.None));
 using var provider = services.BuildServiceProvider();
+_ = provider.GetRequiredService<SmokeGrpcClient>();
 var registry = provider.GetRequiredService<IKevlarRegistry>();
 if (await registry.GetShield("configured").ExecuteAsync(static _ => new ValueTask<int>(42)) != 42
     || await registry.GetShield<int>("typed").ExecuteAsync(static _ => new ValueTask<int>(42)) != 42)
@@ -215,6 +220,22 @@ file sealed class StubHandler : HttpMessageHandler
         HttpRequestMessage request,
         CancellationToken cancellationToken) =>
         Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
+}
+
+file sealed class SmokeGrpcClient : ClientBase<SmokeGrpcClient>
+{
+    public SmokeGrpcClient(CallInvoker callInvoker)
+        : base(callInvoker)
+    {
+    }
+
+    private SmokeGrpcClient(ClientBaseConfiguration configuration)
+        : base(configuration)
+    {
+    }
+
+    protected override SmokeGrpcClient NewInstance(ClientBaseConfiguration configuration) =>
+        new(configuration);
 }
 '@
 

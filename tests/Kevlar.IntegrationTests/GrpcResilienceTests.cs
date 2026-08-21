@@ -229,6 +229,42 @@ public class GrpcResilienceTests
     }
 
     [Test]
+    public async Task Hedge_Selects_Metadata_When_Attempts_Reuse_An_Exception()
+    {
+        var responses = new[]
+        {
+            new TaskCompletionSource<TestReply>(TaskCreationOptions.RunContinuationsAsynchronously),
+            new TaskCompletionSource<TestReply>(TaskCreationOptions.RunContinuationsAsynchronously),
+        };
+        var bothStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var attempts = 0;
+        var expected = new RpcException(new Status(StatusCode.Unavailable, "shared"));
+        var invoker = new DelegateCallInvoker((_, _) =>
+        {
+            var attempt = Interlocked.Increment(ref attempts);
+            if (attempt == 2)
+            {
+                bothStarted.TrySetResult();
+            }
+
+            return Call(
+                responses[attempt - 1].Task,
+                headers: new Metadata { { "attempt", attempt.ToString() } });
+        }).Intercept(new ShieldUnaryClientInterceptor(
+            GrpcShield.WhenTransient().Hedge(2, TimeSpan.Zero)));
+        var client = new Resilience.ResilienceClient(invoker);
+        using var call = client.UnaryAsync(new TestRequest());
+
+        await bothStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        responses[1].TrySetException(expected);
+        responses[0].TrySetException(expected);
+        var actual = await Assert.That(async () => await call.ResponseAsync).Throws<RpcException>();
+
+        await Assert.That(ReferenceEquals(actual, expected)).IsTrue();
+        await Assert.That((await call.ResponseHeadersAsync).GetValue("attempt")).IsEqualTo("1");
+    }
+
+    [Test]
     public async Task Completed_Call_Detaches_The_Caller_Cancellation_Token()
     {
         using var cancellation = new CancellationTokenSource();
