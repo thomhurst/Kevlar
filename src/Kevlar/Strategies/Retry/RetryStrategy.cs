@@ -11,6 +11,7 @@ internal sealed class RetryStrategy : Strategy
     private readonly Action<RetryEvent>? _onRetry;
     private readonly Func<RetryEvent, ValueTask>? _onRetryAsync;
     private readonly Func<RetryEvent, TimeSpan?>? _delayGenerator;
+    private readonly Func<RetryEvent, ValueTask<TimeSpan?>>? _delayGeneratorAsync;
 
     public RetryStrategy(RetryOptions options, OutcomeJudge judge)
     {
@@ -26,6 +27,7 @@ internal sealed class RetryStrategy : Strategy
         _onRetry = options.OnRetry;
         _onRetryAsync = options.OnRetryAsync;
         _delayGenerator = options.DelayGenerator;
+        _delayGeneratorAsync = options.DelayGeneratorAsync;
     }
 
     internal override OutcomeJudge? ReactiveJudge => _judge;
@@ -60,19 +62,26 @@ internal sealed class RetryStrategy : Strategy
                 delay = cap;
             }
 
-            if (_delayGenerator is not null || _onRetry is not null || _onRetryAsync is not null)
+            if (_delayGenerator is not null
+                || _delayGeneratorAsync is not null
+                || _onRetry is not null
+                || _onRetryAsync is not null)
             {
                 var result = outcome.Exception is null ? (object?)outcome.Result : null;
 
-                if (_delayGenerator is not null
-                    && _delayGenerator(new RetryEvent(attempt, delay, outcome.Exception, result, context)) is { } custom
-                    && custom >= TimeSpan.Zero)
+                if (_delayGenerator is not null)
                 {
-                    // MaxDelay is an absolute bound: it also caps generator-supplied delays
-                    // such as a server's Retry-After suggestion.
-                    delay = _maxDelay is { } absolute && custom > absolute
-                        ? absolute
-                        : DelayHelper.Clamp(custom);
+                    var generated = _delayGenerator(
+                        new RetryEvent(attempt, delay, outcome.Exception, result, context));
+                    delay = ApplyGeneratedDelay(delay, generated);
+                }
+
+                if (_delayGeneratorAsync is not null)
+                {
+                    var generated = await _delayGeneratorAsync(
+                        new RetryEvent(attempt, delay, outcome.Exception, result, context))
+                        .ConfigureAwait(false);
+                    delay = ApplyGeneratedDelay(delay, generated);
                 }
 
                 if (_onRetry is not null || _onRetryAsync is not null)
@@ -99,5 +108,19 @@ internal sealed class RetryStrategy : Strategy
                 }
             }
         }
+    }
+
+    private TimeSpan ApplyGeneratedDelay(TimeSpan current, TimeSpan? generated)
+    {
+        if (generated is not { } custom || custom < TimeSpan.Zero)
+        {
+            return current;
+        }
+
+        // MaxDelay is an absolute bound: it also caps generator-supplied delays
+        // such as a server's Retry-After suggestion.
+        return _maxDelay is { } absolute && custom > absolute
+            ? absolute
+            : DelayHelper.Clamp(custom);
     }
 }

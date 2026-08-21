@@ -74,8 +74,9 @@ public sealed class Shield<TResult>
 
     /// <summary>
     /// Adds a retry strategy configured via <paramref name="configure"/>. The options expose
-    /// result-typed events: <c>OnRetry</c>, <c>OnRetryAsync</c> and <c>DelayGenerator</c> receive
-    /// a <see cref="RetryEvent{TResult}"/> carrying the handled <see cref="Outcome{TResult}"/>.
+    /// result-typed events: <c>OnRetry</c>, <c>OnRetryAsync</c>, <c>DelayGenerator</c>, and
+    /// <c>DelayGeneratorAsync</c> receive a <see cref="RetryEvent{TResult}"/> carrying the handled
+    /// <see cref="Outcome{TResult}"/>.
     /// </summary>
     public Shield<TResult> Retry(Action<RetryOptions<TResult>> configure)
     {

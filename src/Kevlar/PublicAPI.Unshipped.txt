@@ -3,3 +3,7 @@ Kevlar.Shield<TResult>.ExecuteOutcomeAsync<TState>(TState state, System.Func<TSt
 static Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync<T, TState>(this Kevlar.Shield! shield, TState state, System.Func<TState, System.Threading.CancellationToken, System.Threading.Tasks.Task<T>!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Kevlar.Outcome<T>>
 static Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync<TResult, TState>(this Kevlar.Shield<TResult>! shield, TState state, System.Func<TState, System.Threading.CancellationToken, System.Threading.Tasks.Task<TResult>!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Kevlar.Outcome<TResult>>
 virtual Kevlar.Strategy.IsDuplicateReferenceUnsafe.get -> bool
+Kevlar.RetryOptions.DelayGeneratorAsync.get -> System.Func<Kevlar.RetryEvent, System.Threading.Tasks.ValueTask<System.TimeSpan?>>?
+Kevlar.RetryOptions.DelayGeneratorAsync.set -> void
+Kevlar.RetryOptions<TResult>.DelayGeneratorAsync.get -> System.Func<Kevlar.RetryEvent<TResult>, System.Threading.Tasks.ValueTask<System.TimeSpan?>>?
+Kevlar.RetryOptions<TResult>.DelayGeneratorAsync.set -> void

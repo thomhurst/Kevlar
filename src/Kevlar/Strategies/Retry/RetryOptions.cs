@@ -3,8 +3,9 @@ namespace Kevlar;
 /// <summary>Configuration for a retry strategy.</summary>
 /// <remarks>
 /// Before each retry, callbacks run in this order: <see cref="DelayGenerator"/>,
-/// <see cref="OnRetry"/>, then <see cref="OnRetryAsync"/>. If the caller's cancellation token is
-/// cancelled by the time the callbacks complete, the retry stops and surfaces caller cancellation.
+/// <see cref="DelayGeneratorAsync"/>, <see cref="OnRetry"/>, then <see cref="OnRetryAsync"/>.
+/// If the caller's cancellation token is cancelled by the time the callbacks complete, the retry
+/// stops and surfaces caller cancellation.
 /// </remarks>
 public class RetryOptions
 {
@@ -35,6 +36,15 @@ public class RetryOptions
     /// HTTP <c>Retry-After</c> header). <see cref="MaxDelay"/> still caps the returned value.
     /// </summary>
     public Func<RetryEvent, TimeSpan?>? DelayGenerator { get; set; }
+
+    /// <summary>
+    /// Asynchronously overrides the delay for a specific retry. Receives the delay after
+    /// <see cref="DelayGenerator"/> and <see cref="MaxDelay"/> have been applied; return a
+    /// non-null value to replace it. <see cref="MaxDelay"/> still caps the returned value.
+    /// The callback is awaited before retry notifications run. Do not retain its pooled
+    /// <see cref="RetryEvent.Context"/> after the returned task completes.
+    /// </summary>
+    public Func<RetryEvent, ValueTask<TimeSpan?>>? DelayGeneratorAsync { get; set; }
 }
 
 /// <summary>
@@ -46,6 +56,7 @@ public sealed class RetryOptions<TResult> : RetryOptions
     private Action<RetryEvent<TResult>>? _onRetry;
     private Func<RetryEvent<TResult>, ValueTask>? _onRetryAsync;
     private Func<RetryEvent<TResult>, TimeSpan?>? _delayGenerator;
+    private Func<RetryEvent<TResult>, ValueTask<TimeSpan?>>? _delayGeneratorAsync;
 
     /// <summary>Invoked synchronously before each retry sleeps, with the typed handled outcome.</summary>
     public new Action<RetryEvent<TResult>>? OnRetry
@@ -83,6 +94,23 @@ public sealed class RetryOptions<TResult> : RetryOptions
             base.DelayGenerator = value is null ? null : untyped => value(new RetryEvent<TResult>(untyped));
         }
     }
+
+    /// <summary>
+    /// Asynchronously overrides the delay for a specific retry, with the typed handled outcome.
+    /// Receives the delay after the synchronous generator and <see cref="RetryOptions.MaxDelay"/>
+    /// have been applied. Return a non-null value to replace it; the maximum still applies.
+    /// </summary>
+    public new Func<RetryEvent<TResult>, ValueTask<TimeSpan?>>? DelayGeneratorAsync
+    {
+        get => _delayGeneratorAsync;
+        set
+        {
+            _delayGeneratorAsync = value;
+            base.DelayGeneratorAsync = value is null
+                ? null
+                : untyped => value(new RetryEvent<TResult>(untyped));
+        }
+    }
 }
 
 /// <summary>Describes a retry that is about to happen.</summary>
@@ -109,7 +137,10 @@ public readonly struct RetryEvent
     /// <summary>The handled result from the failed attempt (boxed), or <see langword="null"/> when an exception occurred.</summary>
     public object? Result { get; }
 
-    /// <summary>The ambient execution context.</summary>
+    /// <summary>
+    /// The ambient execution context. It is pooled; do not retain it or its property bag after
+    /// the callback (including an asynchronous callback) completes.
+    /// </summary>
     public KevlarContext Context { get; }
 }
 
@@ -132,6 +163,9 @@ public readonly struct RetryEvent<TResult>
             ? Outcome<TResult>.FromException(exception)
             : Outcome<TResult>.FromResult((TResult)_inner.Result!);
 
-    /// <summary>The ambient execution context.</summary>
+    /// <summary>
+    /// The ambient execution context. It is pooled; do not retain it or its property bag after
+    /// the callback (including an asynchronous callback) completes.
+    /// </summary>
     public KevlarContext Context => _inner.Context;
 }
