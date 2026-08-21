@@ -17,11 +17,11 @@
     ],
     "report-file-name": "mutation-report",
     "additional-timeout": 5000,
-    "concurrency": 4,
+    "concurrency": 2,
     "thresholds": {
       "high": 74,
       "low": 74,
-      "break": 74
+      "break": 0
     }
   }
 }

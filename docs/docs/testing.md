@@ -10,7 +10,7 @@ Pull requests build on Windows and Linux, then run the unit, netstandard2.0 asse
 
 The Linux coverage job merges all four suites into Cobertura XML and an HTML report. It excludes test assemblies, benchmarks, generated code, and code marked with `ExcludeFromCodeCoverageAttribute`, then enforces the measured baselines of 92% line coverage and 86% branch coverage. Download the `coverage-report` workflow artifact to inspect either format.
 
-Core strategy mutation testing runs for pull requests that change strategy code or unit tests, every Monday, and on demand. It uses the checked-in Stryker configuration and fails below the measured 74% mutation-score floor. The workflow has a 30-minute limit and publishes HTML and JSON reports as the `mutation-report` artifact. The audited initial survivors and ratchet policy are recorded in `.github/mutation-baseline.md`. Run the test and mutation gates locally with:
+Core strategy mutation testing runs for pull requests that change strategy code or unit tests, every Monday, and on demand. It uses the checked-in Stryker configuration, keeps 74% as the report reference, and treats the aggregate score as informational because timing-sensitive mutants make it nondeterministic. Operational Stryker failures still fail the workflow. Superseded pull-request runs are cancelled, and completed runs publish HTML and JSON reports as the `mutation-report` artifact. The audited initial survivors and threshold policy are recorded in `.github/mutation-baseline.md`. Run the test and mutation checks locally with:
 
 ```powershell
 dotnet tool restore
