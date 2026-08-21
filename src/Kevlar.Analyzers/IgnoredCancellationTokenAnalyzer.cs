@@ -158,7 +158,6 @@ public sealed class IgnoredCancellationTokenAnalyzer : DiagnosticAnalyzer
         Compilation compilation)
     {
         var contextType = compilation.GetTypeByMetadataName("Kevlar.KevlarContext");
-        var aliases = FindLocalAliases(root, contextParameter);
         foreach (var operation in Descendants(root))
         {
             if (operation is IPropertyReferenceOperation
@@ -168,12 +167,18 @@ public sealed class IgnoredCancellationTokenAnalyzer : DiagnosticAnalyzer
                     Instance: { } instance,
                 }
                 && SymbolEqualityComparer.Default.Equals(containingType, contextType)
-                && ReferencesAlias(instance, aliases))
+                && ReferencesAlias(
+                    instance,
+                    FindLocalAliases(root, contextParameter, operation.Syntax.SpanStart)))
             {
                 return true;
             }
 
-            if (IsAliasReference(operation, aliases) && IsDirectArgumentValue(operation))
+            if (operation is IParameterReferenceOperation or ILocalReferenceOperation
+                && IsDirectArgumentValue(operation)
+                && IsAliasReference(
+                    operation,
+                    FindLocalAliases(root, contextParameter, operation.Syntax.SpanStart)))
             {
                 return true;
             }
@@ -182,31 +187,40 @@ public sealed class IgnoredCancellationTokenAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static HashSet<ISymbol> FindLocalAliases(IOperation root, IParameterSymbol contextParameter)
+    private static HashSet<ISymbol> FindLocalAliases(
+        IOperation root,
+        IParameterSymbol contextParameter,
+        int beforePosition)
     {
         var aliases = new HashSet<ISymbol>(SymbolEqualityComparer.Default) { contextParameter };
-        var declarators = Descendants(root).OfType<IVariableDeclaratorOperation>().ToArray();
-        var assignments = Descendants(root).OfType<ISimpleAssignmentOperation>().ToArray();
+        var definitions = Descendants(root)
+            .Select(operation => operation switch
+            {
+                IVariableDeclaratorOperation
+                {
+                    Initializer.Value: { } value,
+                    Symbol: { } local,
+                } when value.Syntax.SpanStart < beforePosition => (Local: local, Value: value),
+                ISimpleAssignmentOperation
+                {
+                    Target: { } target,
+                    Value: { } value,
+                } when value.Syntax.SpanStart < beforePosition
+                    && Unwrap(target) is ILocalReferenceOperation local => (Local: local.Local, Value: value),
+                _ => default,
+            })
+            .Where(definition => definition.Local is not null)
+            .GroupBy(definition => definition.Local, SymbolEqualityComparer.Default)
+            .ToArray();
 
         bool foundAlias;
         do
         {
             foundAlias = false;
-            foreach (var declarator in declarators)
+            foreach (var definitionsForLocal in definitions)
             {
-                if (declarator.Initializer is { Value: { } value }
-                    && ReferencesAlias(value, aliases)
-                    && aliases.Add(declarator.Symbol))
-                {
-                    foundAlias = true;
-                }
-            }
-
-            foreach (var assignment in assignments)
-            {
-                if (Unwrap(assignment.Target) is ILocalReferenceOperation target
-                    && ReferencesAlias(assignment.Value, aliases)
-                    && aliases.Add(target.Local))
+                if (definitionsForLocal.All(definition => ReferencesAlias(definition.Value, aliases))
+                    && aliases.Add(definitionsForLocal.Key!))
                 {
                     foundAlias = true;
                 }
