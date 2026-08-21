@@ -293,7 +293,11 @@ internal sealed class RateLimitStrategy : Strategy
             return TimeSpan.Zero;
         }
 
-        return seconds >= TimeSpan.MaxValue.TotalSeconds
+        // Scaling through provider timestamp units can lose a few ULPs at TimeSpan.MaxValue.
+        const double doubleMachineEpsilon = 2.2204460492503131e-16;
+        var maximumSeconds = TimeSpan.MaxValue.TotalSeconds;
+        var maximumRoundingTolerance = maximumSeconds * (4 * doubleMachineEpsilon);
+        return seconds >= maximumSeconds - maximumRoundingTolerance
             ? TimeSpan.MaxValue
             : TimeSpan.FromSeconds(seconds);
     }
