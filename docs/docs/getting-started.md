@@ -42,6 +42,7 @@ Three things to notice:
 
 Shields are immutable and thread-safe. Build one, store it in a `static readonly` field or register it in [DI](dependency-injection.md), and use it for every call to that dependency:
 
+<!-- doc-test-declaration: split-before=// Any result -->
 ```csharp
 private static readonly Shield GitHubShield = Shield
     .Timeout(TimeSpan.FromSeconds(10))

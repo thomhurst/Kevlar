@@ -8,6 +8,7 @@ Everything in Kevlar is a `Strategy` — middleware over an `Outcome<T>` pipelin
 
 ## A logging strategy
 
+<!-- doc-test-declaration: split-before=var shield -->
 ```csharp
 public sealed class LoggingStrategy(ILogger logger) : Strategy
 {
@@ -29,6 +30,7 @@ var shield = Shield.Use(new LoggingStrategy(logger)).Retry(3);
 
 Override `Describe()` so `shield.ToString()` names your strategy meaningfully in [pipeline descriptions](observability.md#pipeline-descriptions):
 
+<!-- doc-test-strategy-member -->
 ```csharp
 public override string Describe() => "Logging";
 ```
@@ -60,6 +62,7 @@ The power is in how many times you call `next`:
 
 Strategies return failures as `Outcome<T>` values rather than throwing, so outer strategies can react to them cheaply:
 
+<!-- doc-test-strategy-member -->
 ```csharp
 public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
     Continuation<T, TState> next, KevlarContext context)
@@ -96,6 +99,7 @@ The context flows through the whole pipeline:
 - `context.IsSynchronous` — `true` under `Execute`; branch on it if your strategy would otherwise block or break a sync caller (hedging throws for sync callers this way).
 - `context.Properties` — a typed property bag: `Set(key, value)`, `TryGet(key, out value)`, `GetOrDefault(key)`, keyed by `KevlarKey<T>`:
 
+<!-- doc-test-declaration: split-before=context.Properties -->
 ```csharp
 static readonly KevlarKey<string> TenantId = new("tenant-id");
 

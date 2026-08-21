@@ -10,6 +10,7 @@ Shields are observable without any setup: they describe themselves as strings, p
 
 `shield.ToString()` prints the whole pipeline, outermost strategy first, with each strategy's configuration:
 
+<!-- doc-test-run: pipeline-description -->
 ```csharp
 var shield = Shield
     .Timeout(TimeSpan.FromSeconds(30))

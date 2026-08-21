@@ -28,6 +28,7 @@ A void fallback guards void executions only; executing a result-returning delega
 
 ## Three shapes
 
+<!-- doc-test-ignore: Alternative fluent fragments require the typed builder introduced by the surrounding prose. -->
 ```csharp
 // 1. A constant value:
 .Fallback(Config.Default)
@@ -45,6 +46,7 @@ A void fallback guards void executions only; executing a result-returning delega
 
 Every overload takes an optional `onFallback` callback:
 
+<!-- doc-test-ignore: Fluent fragment requires the typed builder introduced by the surrounding prose. -->
 ```csharp
 .Fallback(Config.Default,
     onFallback: e => metrics.Increment("config.fallback"))

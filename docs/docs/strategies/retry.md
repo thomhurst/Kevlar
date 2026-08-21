@@ -30,8 +30,8 @@ Backoff.Constant(TimeSpan.FromSeconds(1));       // 1s, 1s, 1s, ...
 Backoff.Linear(TimeSpan.FromMilliseconds(500));  // 500ms, 1s, 1.5s, ...
 Backoff.Exponential(TimeSpan.FromSeconds(1));    // ~1s, ~2s, ~4s, ... (jittered)
 Backoff.Custom(attempt => TimeSpan.FromMilliseconds(100 * attempt));   // attempt is 1-based
-Backoff.None;                                    // no delay between attempts
-Backoff.Default;                                 // what bare Retry(n) uses
+_ = Backoff.None;                                // no delay between attempts
+_ = Backoff.Default;                             // what bare Retry(n) uses
 ```
 
 - `Exponential(initialDelay, factor = 2.0, maxDelay = null, jitter = true)` — jitter scales each delay by a random factor in [0.5, 1.5) to avoid synchronized retry storms. `Backoff.Default` = `Exponential(250ms, maxDelay: 30s)`.
