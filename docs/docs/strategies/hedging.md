@@ -41,6 +41,7 @@ Multiple invocations of your delegate may be in flight at once — it must be sa
 :::
 
 - Losing attempts are cancelled through their token (use the token you're handed!).
+- Caller cancellation prevents any later hedge from launching, even when it races a completed stagger delay. `OnHedge` runs only for attempts that actually launch.
 - Each attempt gets a forked context — `Properties` are copied at launch time, so attempts don't see each other's writes.
 - What counts as a failure is the ambient [handling clause](../handling-failures.md), like every reactive strategy.
 

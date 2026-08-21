@@ -149,6 +149,7 @@ internal sealed class HedgingStrategy : Strategy
 
     private void Launch<T, TState>(List<HedgeAttempt<T>> pending, Continuation<T, TState> next, KevlarContext context, ref int launched)
     {
+        context.CancellationToken.ThrowIfCancellationRequested();
         var attemptNumber = ++launched;
         pending.Add(StartAttempt(next, context, attemptNumber).AsPending());
     }
