@@ -58,7 +58,31 @@ function Invoke-DotNet([string[]]$Arguments)
     }
 }
 
+$repositoryRoot = Split-Path -Parent $PSScriptRoot
+$buildPropertiesJson = & dotnet msbuild `
+    (Join-Path $repositoryRoot 'src/Kevlar/Kevlar.csproj') `
+    -nologo `
+    -p:CI=true `
+    -getProperty:Deterministic,ContinuousIntegrationBuild,DeterministicSourcePaths,PublishRepositoryUrl,EmbedUntrackedSources
+if ($LASTEXITCODE -ne 0)
+{
+    throw 'Unable to inspect deterministic build properties.'
+}
+
+$buildProperties = ($buildPropertiesJson | Out-String | ConvertFrom-Json).Properties
+Assert-Equal 'Deterministic' $buildProperties.Deterministic 'true'
+Assert-Equal 'ContinuousIntegrationBuild' $buildProperties.ContinuousIntegrationBuild 'true'
+Assert-Equal 'DeterministicSourcePaths' $buildProperties.DeterministicSourcePaths 'true'
+Assert-Equal 'PublishRepositoryUrl' $buildProperties.PublishRepositoryUrl 'true'
+Assert-Equal 'EmbedUntrackedSources' $buildProperties.EmbedUntrackedSources 'true'
+
 $packageDirectory = (Resolve-Path -LiteralPath $PackagesPath).Path
+$expectedRepositoryCommit = (& git rev-parse HEAD).Trim()
+if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($expectedRepositoryCommit))
+{
+    throw 'Unable to determine the expected repository commit.'
+}
+
 $expectedDependencies = @{
     'Kevlar' = @{
         'net10.0' = @('Reservoir')
@@ -117,6 +141,7 @@ foreach ($packageId in $expectedDependencies.Keys)
         Assert-Equal "$packageId README metadata" (Get-NodeText $metadata "*[local-name()='readme']") 'README.md'
         Assert-Equal "$packageId repository URL" (Get-NodeText $metadata "*[local-name()='repository']/@url") 'https://github.com/thomhurst/Kevlar'
         Assert-Equal "$packageId repository type" (Get-NodeText $metadata "*[local-name()='repository']/@type") 'git'
+        Assert-Equal "$packageId repository commit" (Get-NodeText $metadata "*[local-name()='repository']/@commit") $expectedRepositoryCommit
 
         if ($entries -notcontains 'README.md')
         {
