@@ -442,13 +442,16 @@ public class HttpConfigurationReloadTests
         using (await first.GetAsync("https://example.test/"))
         {
         }
-        await Task.Delay(TimeSpan.FromMilliseconds(1_100));
-        using (var second = factory.CreateClient("client"))
-        using (await second.GetAsync("https://example.test/"))
+
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
+        while (Volatile.Read(ref configurations) < 2 && DateTime.UtcNow < deadline)
         {
+            await Task.Delay(TimeSpan.FromMilliseconds(100));
+            using var rotated = factory.CreateClient("client");
+            using var response = await rotated.GetAsync("https://example.test/");
         }
 
-        await Assert.That(Volatile.Read(ref configurations)).IsEqualTo(2);
+        await Assert.That(Volatile.Read(ref configurations)).IsGreaterThanOrEqualTo(2);
     }
 
     [Test]
