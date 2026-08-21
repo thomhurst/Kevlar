@@ -53,7 +53,7 @@ public sealed class IgnoredCancellationTokenAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            var tokenParameter = FindCancellationTokenParameter(lambda.Symbol);
+            var tokenParameter = FindExecutionCancellationTokenParameter(lambda.Symbol);
             if (tokenParameter is null || tokenParameter.Name == "_" || UsesParameter(lambda, tokenParameter))
             {
                 continue;
@@ -89,13 +89,14 @@ public sealed class IgnoredCancellationTokenAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        return FindCancellationTokenParameter(invokeMethod) is not null;
+        return FindExecutionCancellationTokenParameter(invokeMethod) is not null;
     }
 
-    private static IParameterSymbol? FindCancellationTokenParameter(IMethodSymbol lambda)
+    private static IParameterSymbol? FindExecutionCancellationTokenParameter(IMethodSymbol method)
     {
-        foreach (var parameter in lambda.Parameters)
+        for (var index = method.Parameters.Length - 1; index >= 0; index--)
         {
+            var parameter = method.Parameters[index];
             if (parameter.Type is { Name: "CancellationToken", ContainingNamespace: { Name: "Threading", ContainingNamespace: { Name: "System", ContainingNamespace.IsGlobalNamespace: true } } })
             {
                 return parameter;

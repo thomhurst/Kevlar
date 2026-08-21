@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using Kevlar.Analyzers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 
 namespace Kevlar.Analyzers.Tests;
@@ -12,30 +13,30 @@ namespace Kevlar.Analyzers.Tests;
 /// </summary>
 public class IgnoredCancellationTokenTests
 {
-    private static readonly string[] IgnoredExecutionOverloadCases =
+    private static readonly (string Body, string ExpectedSignature)[] IgnoredExecutionOverloadCases =
     [
-        "var result = Shield.Empty.Execute(ct => 1);",
-        "var result = Shield.Empty.Execute(1, (state, ct) => state);",
-        "Shield.Empty.Execute(ct => { });",
-        "Shield.Empty.Execute(1, (state, ct) => { _ = state; });",
-        "await Shield.Empty.ExecuteAsync(ct => new ValueTask<int>(1));",
-        "await Shield.Empty.ExecuteAsync(1, (state, ct) => new ValueTask<int>(state));",
-        "await Shield.Empty.ExecuteAsync(ct => ValueTask.CompletedTask);",
-        "await Shield.Empty.ExecuteAsync(1, (state, ct) => { _ = state; return ValueTask.CompletedTask; });",
-        "await Shield.Empty.ExecuteOutcomeAsync(ct => new ValueTask<int>(1));",
-        "await Shield.Empty.ExecuteAsync(ct => Task.FromResult(1));",
-        "await Shield.Empty.ExecuteAsync(1, (state, ct) => Task.FromResult(state));",
-        "await Shield.Empty.ExecuteAsync(ct => Task.CompletedTask);",
-        "await Shield.Empty.ExecuteAsync(1, (state, ct) => { _ = state; return Task.CompletedTask; });",
-        "await Shield.Empty.ExecuteOutcomeAsync(ct => Task.FromResult(1));",
-        "var result = Shield<int>.Empty.Execute(ct => 1);",
-        "var result = Shield<int>.Empty.Execute(1, (state, ct) => state);",
-        "await Shield<int>.Empty.ExecuteAsync(ct => new ValueTask<int>(1));",
-        "await Shield<int>.Empty.ExecuteAsync(1, (state, ct) => new ValueTask<int>(state));",
-        "await Shield<int>.Empty.ExecuteOutcomeAsync(ct => new ValueTask<int>(1));",
-        "await Shield<int>.Empty.ExecuteAsync(ct => Task.FromResult(1));",
-        "await Shield<int>.Empty.ExecuteAsync(1, (state, ct) => Task.FromResult(state));",
-        "await Shield<int>.Empty.ExecuteOutcomeAsync(ct => Task.FromResult(1));",
+        ("var result = Shield.Empty.Execute(ct => 1);", "Kevlar.Shield.Execute(System.Func<System.Threading.CancellationToken,M0>,System.Threading.CancellationToken)"),
+        ("var result = Shield.Empty.Execute(1, (state, ct) => state);", "Kevlar.Shield.Execute(M1,System.Func<M1,System.Threading.CancellationToken,M0>,System.Threading.CancellationToken)"),
+        ("Shield.Empty.Execute(ct => { });", "Kevlar.Shield.Execute(System.Action<System.Threading.CancellationToken>,System.Threading.CancellationToken)"),
+        ("Shield.Empty.Execute(1, (state, ct) => { _ = state; });", "Kevlar.Shield.Execute(M0,System.Action<M0,System.Threading.CancellationToken>,System.Threading.CancellationToken)"),
+        ("await Shield.Empty.ExecuteAsync(ct => new ValueTask<int>(1));", "Kevlar.Shield.ExecuteAsync(System.Func<System.Threading.CancellationToken,System.Threading.Tasks.ValueTask<M0>>,System.Threading.CancellationToken)"),
+        ("await Shield.Empty.ExecuteAsync(1, (state, ct) => new ValueTask<int>(state));", "Kevlar.Shield.ExecuteAsync(M1,System.Func<M1,System.Threading.CancellationToken,System.Threading.Tasks.ValueTask<M0>>,System.Threading.CancellationToken)"),
+        ("await Shield.Empty.ExecuteAsync(ct => ValueTask.CompletedTask);", "Kevlar.Shield.ExecuteAsync(System.Func<System.Threading.CancellationToken,System.Threading.Tasks.ValueTask>,System.Threading.CancellationToken)"),
+        ("await Shield.Empty.ExecuteAsync(1, (state, ct) => { _ = state; return ValueTask.CompletedTask; });", "Kevlar.Shield.ExecuteAsync(M0,System.Func<M0,System.Threading.CancellationToken,System.Threading.Tasks.ValueTask>,System.Threading.CancellationToken)"),
+        ("await Shield.Empty.ExecuteOutcomeAsync(ct => new ValueTask<int>(1));", "Kevlar.Shield.ExecuteOutcomeAsync(System.Func<System.Threading.CancellationToken,System.Threading.Tasks.ValueTask<M0>>,System.Threading.CancellationToken)"),
+        ("await Shield.Empty.ExecuteAsync(ct => Task.FromResult(1));", "Kevlar.ShieldTaskExtensions.ExecuteAsync(Kevlar.Shield,System.Func<System.Threading.CancellationToken,System.Threading.Tasks.Task<M0>>,System.Threading.CancellationToken)"),
+        ("await Shield.Empty.ExecuteAsync(1, (state, ct) => Task.FromResult(state));", "Kevlar.ShieldTaskExtensions.ExecuteAsync(Kevlar.Shield,M1,System.Func<M1,System.Threading.CancellationToken,System.Threading.Tasks.Task<M0>>,System.Threading.CancellationToken)"),
+        ("await Shield.Empty.ExecuteAsync(ct => Task.CompletedTask);", "Kevlar.ShieldTaskExtensions.ExecuteAsync(Kevlar.Shield,System.Func<System.Threading.CancellationToken,System.Threading.Tasks.Task>,System.Threading.CancellationToken)"),
+        ("await Shield.Empty.ExecuteAsync(1, (state, ct) => { _ = state; return Task.CompletedTask; });", "Kevlar.ShieldTaskExtensions.ExecuteAsync(Kevlar.Shield,M0,System.Func<M0,System.Threading.CancellationToken,System.Threading.Tasks.Task>,System.Threading.CancellationToken)"),
+        ("await Shield.Empty.ExecuteOutcomeAsync(ct => Task.FromResult(1));", "Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync(Kevlar.Shield,System.Func<System.Threading.CancellationToken,System.Threading.Tasks.Task<M0>>,System.Threading.CancellationToken)"),
+        ("var result = Shield<int>.Empty.Execute(ct => 1);", "Kevlar.Shield<T0>.Execute(System.Func<System.Threading.CancellationToken,T0>,System.Threading.CancellationToken)"),
+        ("var result = Shield<int>.Empty.Execute(1, (state, ct) => state);", "Kevlar.Shield<T0>.Execute(M0,System.Func<M0,System.Threading.CancellationToken,T0>,System.Threading.CancellationToken)"),
+        ("await Shield<int>.Empty.ExecuteAsync(ct => new ValueTask<int>(1));", "Kevlar.Shield<T0>.ExecuteAsync(System.Func<System.Threading.CancellationToken,System.Threading.Tasks.ValueTask<T0>>,System.Threading.CancellationToken)"),
+        ("await Shield<int>.Empty.ExecuteAsync(1, (state, ct) => new ValueTask<int>(state));", "Kevlar.Shield<T0>.ExecuteAsync(M0,System.Func<M0,System.Threading.CancellationToken,System.Threading.Tasks.ValueTask<T0>>,System.Threading.CancellationToken)"),
+        ("await Shield<int>.Empty.ExecuteOutcomeAsync(ct => new ValueTask<int>(1));", "Kevlar.Shield<T0>.ExecuteOutcomeAsync(System.Func<System.Threading.CancellationToken,System.Threading.Tasks.ValueTask<T0>>,System.Threading.CancellationToken)"),
+        ("await Shield<int>.Empty.ExecuteAsync(ct => Task.FromResult(1));", "Kevlar.ShieldTaskExtensions.ExecuteAsync(Kevlar.Shield<M0>,System.Func<System.Threading.CancellationToken,System.Threading.Tasks.Task<M0>>,System.Threading.CancellationToken)"),
+        ("await Shield<int>.Empty.ExecuteAsync(1, (state, ct) => Task.FromResult(state));", "Kevlar.ShieldTaskExtensions.ExecuteAsync(Kevlar.Shield<M0>,M1,System.Func<M1,System.Threading.CancellationToken,System.Threading.Tasks.Task<M0>>,System.Threading.CancellationToken)"),
+        ("await Shield<int>.Empty.ExecuteOutcomeAsync(ct => Task.FromResult(1));", "Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync(Kevlar.Shield<M0>,System.Func<System.Threading.CancellationToken,System.Threading.Tasks.Task<M0>>,System.Threading.CancellationToken)"),
     ];
 
     private static Task<ImmutableArray<Diagnostic>> AnalyzeAsync(string body) =>
@@ -95,6 +96,64 @@ public class IgnoredCancellationTokenTests
         compilation
             .WithAnalyzers(ImmutableArray.Create<DiagnosticAnalyzer>(new IgnoredCancellationTokenAnalyzer()))
             .GetAnalyzerDiagnosticsAsync();
+
+    private static string GetExecutionOverloadSignature(string body)
+    {
+        var compilation = CreateCompilation(CreateSource($$"""
+            public class TestSubject
+            {
+                public async Task RunAsync()
+                {
+                    {{body}}
+                }
+            }
+            """));
+        var syntaxTree = compilation.SyntaxTrees.Single();
+        var semanticModel = compilation.GetSemanticModel(syntaxTree);
+        var method = syntaxTree.GetRoot()
+            .DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .Select(invocation => semanticModel.GetSymbolInfo(invocation).Symbol)
+            .OfType<IMethodSymbol>()
+            .Single(IsExecutionMethod);
+
+        return GetMethodSignature(method.ReducedFrom?.OriginalDefinition ?? method.OriginalDefinition);
+    }
+
+    private static HashSet<string> GetPublicExecutionOverloadSignatures()
+    {
+        var compilation = CreateCompilation(CreateSource("public class TestSubject { }"));
+        return new[] { "Kevlar.Shield", "Kevlar.Shield`1", "Kevlar.ShieldTaskExtensions" }
+            .Select(compilation.GetTypeByMetadataName)
+            .OfType<INamedTypeSymbol>()
+            .SelectMany(type => type.GetMembers().OfType<IMethodSymbol>())
+            .Where(method => method.DeclaredAccessibility == Accessibility.Public && IsExecutionMethod(method))
+            .Select(method => GetMethodSignature(method.OriginalDefinition))
+            .ToHashSet(StringComparer.Ordinal);
+    }
+
+    private static bool IsExecutionMethod(IMethodSymbol method) =>
+        method.Name is "Execute" or "ExecuteAsync" or "ExecuteOutcomeAsync";
+
+    private static string GetMethodSignature(IMethodSymbol method) =>
+        $"{GetTypeSignature(method.ContainingType)}.{method.Name}({string.Join(",", method.Parameters.Select(parameter => GetTypeSignature(parameter.Type)))})";
+
+    private static string GetTypeSignature(ITypeSymbol type)
+    {
+        if (type is ITypeParameterSymbol typeParameter)
+        {
+            var prefix = typeParameter.TypeParameterKind == TypeParameterKind.Method ? "M" : "T";
+            return prefix + typeParameter.Ordinal;
+        }
+
+        var namedType = (INamedTypeSymbol)type;
+        var name = namedType.ContainingNamespace.IsGlobalNamespace
+            ? namedType.Name
+            : $"{namedType.ContainingNamespace.ToDisplayString()}.{namedType.Name}";
+        return namedType.TypeArguments.Length == 0
+            ? name
+            : $"{name}<{string.Join(",", namedType.TypeArguments.Select(GetTypeSignature))}>";
+    }
 
     private static async Task AssertDiagnosticCountAsync(
         IEnumerable<string> cases,
@@ -175,6 +234,18 @@ public class IgnoredCancellationTokenTests
     }
 
     [Test]
+    public async Task CancellationToken_State_Does_Not_Suppress_The_Execution_Token()
+    {
+        var diagnostics = await AnalyzeAsync("""
+            await Shield.Empty.ExecuteAsync(
+                CancellationToken.None,
+                (_, ct) => new ValueTask<int>(1));
+            """);
+
+        await Assert.That(diagnostics.Length).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Typed_Shields_Are_Analyzed()
     {
         var diagnostics = await AnalyzeAsync("""
@@ -206,20 +277,20 @@ public class IgnoredCancellationTokenTests
     [Test]
     public async Task Every_Public_Execution_Overload_Is_Analyzed()
     {
-        var publicOverloadCount = new[]
+        foreach (var (body, expectedSignature) in IgnoredExecutionOverloadCases)
         {
-            typeof(Shield),
-            typeof(Shield<>),
-            typeof(ShieldTaskExtensions),
-        }.Sum(type => type
-            .GetMethods(System.Reflection.BindingFlags.Public
-                | System.Reflection.BindingFlags.Instance
-                | System.Reflection.BindingFlags.Static
-                | System.Reflection.BindingFlags.DeclaredOnly)
-            .Count(method => method.Name is "Execute" or "ExecuteAsync" or "ExecuteOutcomeAsync"));
+            await Assert.That(GetExecutionOverloadSignature(body)).IsEqualTo(expectedSignature);
+        }
 
-        await Assert.That(IgnoredExecutionOverloadCases.Length).IsEqualTo(publicOverloadCount);
-        await AssertDiagnosticCountAsync(IgnoredExecutionOverloadCases, 1, "public execution overload");
+        var expectedSignatures = IgnoredExecutionOverloadCases
+            .Select(testCase => testCase.ExpectedSignature)
+            .ToHashSet(StringComparer.Ordinal);
+        await Assert.That(expectedSignatures.SetEquals(GetPublicExecutionOverloadSignatures())).IsTrue();
+        await Assert.That(expectedSignatures.Count).IsEqualTo(IgnoredExecutionOverloadCases.Length);
+        await AssertDiagnosticCountAsync(
+            IgnoredExecutionOverloadCases.Select(testCase => testCase.Body),
+            1,
+            "public execution overload");
     }
 
     [Test]
