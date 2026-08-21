@@ -125,6 +125,18 @@ public class DependencyInjectionContractTests
     }
 
     [Test]
+    public async Task Ordinary_Shield_Exposes_A_Fixed_Keyed_Provider()
+    {
+        using var services = new ServiceCollection()
+            .AddShield("static", Shield.Empty)
+            .BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        var shieldProvider = services.GetRequiredKeyedService<IShieldProvider>("static");
+
+        await Assert.That(ReferenceEquals(shieldProvider.Current, registry.GetShield("static"))).IsTrue();
+    }
+
+    [Test]
     public async Task Missing_Typed_Registration_Reports_Name_And_Result_Type()
     {
         using var provider = new ServiceCollection().AddKevlar().BuildServiceProvider();

@@ -4,9 +4,9 @@ namespace Kevlar.Extensions.DependencyInjection;
 
 /// <summary>Resolves named shields registered via <c>AddShield</c>.</summary>
 /// <remarks>
-/// Each registered factory runs at most once. Its shield or exception is cached and returned or
-/// rethrown by every registry, <c>TryGet</c>, and keyed-service path for that registration.
-/// Names are case-sensitive; an empty name is valid.
+/// Each registration factory runs at most once. Ordinary shields and factory exceptions are
+/// cached. Reload-aware registrations cache their provider; <see cref="GetShield(string)"/>
+/// returns that provider's current snapshot. Names are case-sensitive; an empty name is valid.
 /// </remarks>
 public interface IKevlarRegistry
 {

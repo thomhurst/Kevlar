@@ -98,8 +98,8 @@ $expectedDependencies = @{
         '.NETStandard2.0' = @('Microsoft.Bcl.TimeProvider', 'Reservoir', 'System.Threading.Tasks.Extensions')
     }
     'Kevlar.Extensions.DependencyInjection' = @{
-        'net10.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.DependencyInjection.Abstractions')
-        '.NETStandard2.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.DependencyInjection.Abstractions')
+        'net10.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.DependencyInjection.Abstractions', 'Microsoft.Extensions.Primitives')
+        '.NETStandard2.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.DependencyInjection.Abstractions', 'Microsoft.Extensions.Primitives')
     }
     'Kevlar.Extensions.Http' = @{
         'net10.0' = @('Kevlar', 'Microsoft.Extensions.Http')
