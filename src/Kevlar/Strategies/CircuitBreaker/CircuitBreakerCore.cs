@@ -42,6 +42,7 @@ internal sealed class CircuitBreakerCore
     private Exception? _lastException;
     private bool _isPublishing;
     private int _publishingThreadId;
+    private TransitionPublication? _activePublication;
 
     public CircuitBreakerCore(CircuitBreakerOptions options)
     {
@@ -418,12 +419,13 @@ internal sealed class CircuitBreakerCore
 
         if (publication.StartsDrain)
         {
-            var reentrantFailures = DrainPublications();
-            publication.ThrowIfFailed(reentrantFailures);
+            DrainPublications();
+            publication.ThrowIfFailed();
         }
         else if (Volatile.Read(ref _publishingThreadId) == Environment.CurrentManagedThreadId)
         {
-            publication.IsReentrant = true;
+            publication.Parent = _activePublication;
+            _activePublication!.PendingChildren++;
         }
         else
         {
@@ -432,14 +434,13 @@ internal sealed class CircuitBreakerCore
         }
     }
 
-    private List<Exception>? DrainPublications()
+    private void DrainPublications()
     {
         lock (_gate)
         {
             Volatile.Write(ref _publishingThreadId, Environment.CurrentManagedThreadId);
         }
 
-        List<Exception>? reentrantFailures = null;
         TransitionPublication? activePublication = null;
         Exception? drainFailure = null;
         var completed = false;
@@ -454,19 +455,17 @@ internal sealed class CircuitBreakerCore
                         Volatile.Write(ref _publishingThreadId, 0);
                         _isPublishing = false;
                         completed = true;
-                        return reentrantFailures;
+                        return;
                     }
 
                     activePublication = _pendingTransitions.Dequeue();
                 }
 
+                _activePublication = activePublication;
                 activePublication.Failure = PublishObservers(activePublication.StateChange);
-                if (activePublication.IsReentrant && activePublication.Failure is { } reentrantFailure)
-                {
-                    (reentrantFailures ??= []).Add(reentrantFailure);
-                }
-
-                activePublication.Completion.TrySetResult(true);
+                _activePublication = null;
+                activePublication.ObserversCompleted = true;
+                CompletePublication(activePublication);
                 activePublication = null;
             }
         }
@@ -481,6 +480,7 @@ internal sealed class CircuitBreakerCore
             {
                 lock (_gate)
                 {
+                    _activePublication = null;
                     Volatile.Write(ref _publishingThreadId, 0);
                     _isPublishing = false;
                     FailPublication(activePublication, drainFailure);
@@ -491,6 +491,30 @@ internal sealed class CircuitBreakerCore
                 }
             }
         }
+    }
+
+    private static void CompletePublication(TransitionPublication publication)
+    {
+        if (!publication.ObserversCompleted || publication.PendingChildren != 0)
+        {
+            return;
+        }
+
+        publication.Completion.TrySetResult(true);
+        if (publication.Parent is not { } parent)
+        {
+            return;
+        }
+
+        if (publication.Failure is { } failure)
+        {
+            var parentFailure = parent.Failure;
+            AddFailure(ref parentFailure, failure);
+            parent.Failure = parentFailure;
+        }
+
+        parent.PendingChildren--;
+        CompletePublication(parent);
     }
 
     private static void FailPublication(TransitionPublication? publication, Exception? failure)
@@ -507,7 +531,8 @@ internal sealed class CircuitBreakerCore
             publication.Failure = publicationFailure;
         }
 
-        publication.Completion.TrySetResult(true);
+        publication.ObserversCompleted = true;
+        CompletePublication(publication);
     }
 
     private Exception? PublishObservers(CircuitStateChangedEvent stateChange)
@@ -562,33 +587,20 @@ internal sealed class CircuitBreakerCore
 
         public bool StartsDrain { get; set; }
 
-        public bool IsReentrant { get; set; }
+        public TransitionPublication? Parent { get; set; }
+
+        public int PendingChildren { get; set; }
+
+        public bool ObserversCompleted { get; set; }
 
         public Exception? Failure { get; set; }
 
-        public void ThrowIfFailed(List<Exception>? additionalFailures = null)
+        public void ThrowIfFailed()
         {
-            if (additionalFailures is null or { Count: 0 })
+            if (Failure is { } failure)
             {
-                if (Failure is { } failure)
-                {
-                    ExceptionDispatchInfo.Capture(failure).Throw();
-                }
-
-                return;
+                ExceptionDispatchInfo.Capture(failure).Throw();
             }
-
-            if (Failure is { } publicationFailure)
-            {
-                additionalFailures.Insert(0, publicationFailure);
-            }
-
-            if (additionalFailures.Count == 1)
-            {
-                ExceptionDispatchInfo.Capture(additionalFailures[0]).Throw();
-            }
-
-            throw new AggregateException(additionalFailures).Flatten();
         }
     }
 }

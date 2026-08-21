@@ -324,6 +324,53 @@ public class CircuitBreakerTransitionOrderingTests
     }
 
     [Test]
+    public async Task Reentrant_Failure_Is_Attributed_To_Its_Concurrent_Parent()
+    {
+        var monitor = new CircuitBreakerMonitor();
+        var nestedFailure = new InvalidOperationException("nested observer");
+        var firstObserverEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseFirstObserver = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var blockFirstIsolation = true;
+        _ = Shield.CircuitBreaker(options =>
+        {
+            options.Monitor = monitor;
+            options.OnStateChanged = change =>
+            {
+                if (change is { From: CircuitState.Closed, To: CircuitState.Isolated })
+                {
+                    if (blockFirstIsolation)
+                    {
+                        blockFirstIsolation = false;
+                        firstObserverEntered.TrySetResult();
+                        releaseFirstObserver.Task.GetAwaiter().GetResult();
+                        return;
+                    }
+
+                    throw nestedFailure;
+                }
+
+                if (change.To == CircuitState.Closed)
+                {
+                    monitor.Isolate();
+                }
+            };
+        });
+
+        var first = Task.Run(monitor.Isolate);
+        await firstObserverEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        var second = Task.Run(monitor.Reset);
+        await WaitForStateAsync(monitor, CircuitState.Closed);
+
+        releaseFirstObserver.TrySetResult();
+        await first.WaitAsync(TimeSpan.FromSeconds(5));
+        var thrown = await Assert.That(async () => await second.WaitAsync(TimeSpan.FromSeconds(5)))
+            .Throws<InvalidOperationException>();
+
+        await Assert.That(ReferenceEquals(thrown, nestedFailure)).IsTrue();
+        await Assert.That(monitor.State).IsEqualTo(CircuitState.Isolated);
+    }
+
+    [Test]
     public async Task Repeated_Failure_Storms_Produce_One_Opening_Transition()
     {
         for (var iteration = 0; iteration < 25; iteration++)
