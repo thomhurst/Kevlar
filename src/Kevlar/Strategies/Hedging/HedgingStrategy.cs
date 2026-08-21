@@ -55,7 +55,7 @@ internal sealed class HedgingStrategy : Strategy
 
         if (!_judge.ShouldHandle(in outcome))
         {
-            return new ValueTask<Outcome<T>>(outcome);
+            return new ValueTask<Outcome<T>>(NormalizeCancellation(outcome, context));
         }
 
         return ExecuteCoreAsync(next, context, initial: null, launched: 1, outcome);
@@ -115,7 +115,7 @@ internal sealed class HedgingStrategy : Strategy
                         : await WhenAnyAttempt(pending).ConfigureAwait(false);
                 }
 
-                var outcome = await completed.ConfigureAwait(false);
+                var outcome = NormalizeCancellation(await completed.ConfigureAwait(false), context);
                 Remove(pending, completed);
 
                 if (!_judge.ShouldHandle(in outcome))
@@ -225,6 +225,21 @@ internal sealed class HedgingStrategy : Strategy
             CancellationToken.None,
             TaskContinuationOptions.ExecuteSynchronously,
             TaskScheduler.Default);
+    }
+
+    private static Outcome<T> NormalizeCancellation<T>(Outcome<T> outcome, KevlarContext context)
+    {
+        if (!context.CancellationToken.IsCancellationRequested
+            || outcome.Exception is not OperationCanceledException cancellation
+            || cancellation.CancellationToken == context.CancellationToken)
+        {
+            return outcome;
+        }
+
+        return Outcome<T>.FromException(new OperationCanceledException(
+            cancellation.Message,
+            cancellation,
+            context.CancellationToken));
     }
 
     private readonly struct HedgeAttempt<T>
