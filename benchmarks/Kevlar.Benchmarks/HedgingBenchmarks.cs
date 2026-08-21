@@ -74,9 +74,9 @@ public class HedgingBenchmarks
 
     private ValueTask<int> ExecuteFailureThenSuccess(Shield<int> shield)
     {
-        _attempt = 0;
+        Volatile.Write(ref _attempt, 0);
         return shield.ExecuteAsync(this, static (benchmark, _) =>
-            ++benchmark._attempt == 1
+            Interlocked.Increment(ref benchmark._attempt) == 1
                 ? ValueTask.FromException<int>(new InvalidOperationException())
                 : new ValueTask<int>(42));
     }

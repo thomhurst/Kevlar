@@ -175,6 +175,7 @@ internal sealed class HedgingStrategy : Strategy
         if (_onHedgeAsync is { } onHedgeAsync)
         {
             var notification = onHedgeAsync(hedgeEvent);
+            // Stryker disable once all: Route selection is performance-only; both branches await the hook.
             if (!notification.IsCompletedSuccessfully)
             {
                 return AwaitHedgeNotificationAsync(notification, next, context, attemptNumber);
@@ -194,6 +195,7 @@ internal sealed class HedgingStrategy : Strategy
         KevlarContext context,
         int attemptNumber)
     {
+        // Stryker disable once all: ConfigureAwait is execution-context policy, not outcome behavior.
         await notification.ConfigureAwait(false);
         context.CancellationToken.ThrowIfCancellationRequested();
         return StartHedgeAttempt(next, context, attemptNumber).AsPending();
@@ -230,7 +232,7 @@ internal sealed class HedgingStrategy : Strategy
             if (_actionGenerator is not null)
             {
                 Func<CancellationToken, ValueTask<T>> originalAction =
-                    _ => GetOriginalResultAsync(next.InvokeAsync(fork));
+                    token => InvokeOriginalAction(next, fork, token);
                 generatedAction = _actionGenerator.Generate(
                     attemptNumber,
                     fork,
@@ -254,6 +256,7 @@ internal sealed class HedgingStrategy : Strategy
 
     private static ValueTask<T> GetOriginalResultAsync<T>(ValueTask<Outcome<T>> execution)
     {
+        // Stryker disable once all: Route selection is performance-only; both branches unwrap the outcome.
         if (execution.IsCompletedSuccessfully)
         {
             return new ValueTask<T>(execution.Result.GetResultOrRethrow());
@@ -262,8 +265,63 @@ internal sealed class HedgingStrategy : Strategy
         return AwaitOriginalResultAsync(execution);
     }
 
-    private static async ValueTask<T> AwaitOriginalResultAsync<T>(ValueTask<Outcome<T>> execution) =>
-        (await execution.ConfigureAwait(false)).GetResultOrRethrow();
+    private static ValueTask<T> InvokeOriginalAction<T, TState>(
+        Continuation<T, TState> next,
+        KevlarContext attemptContext,
+        CancellationToken cancellationToken)
+    {
+        if (cancellationToken == attemptContext.CancellationToken)
+        {
+            return GetOriginalResultAsync(next.InvokeAsync(attemptContext));
+        }
+
+        var invocationContext = attemptContext.Fork(cancellationToken);
+        ValueTask<Outcome<T>> execution;
+        try
+        {
+            execution = next.InvokeAsync(invocationContext);
+        }
+        catch
+        {
+            KevlarContext.Return(invocationContext);
+            throw;
+        }
+
+        if (!execution.IsCompletedSuccessfully)
+        {
+            return AwaitOriginalResultAsync(execution, invocationContext);
+        }
+
+        try
+        {
+            return new ValueTask<T>(execution.Result.GetResultOrRethrow());
+        }
+        finally
+        {
+            KevlarContext.Return(invocationContext);
+        }
+    }
+
+    private static async ValueTask<T> AwaitOriginalResultAsync<T>(ValueTask<Outcome<T>> execution)
+    {
+        // Stryker disable once all: ConfigureAwait is execution-context policy, not outcome behavior.
+        return (await execution.ConfigureAwait(false)).GetResultOrRethrow();
+    }
+
+    private static async ValueTask<T> AwaitOriginalResultAsync<T>(
+        ValueTask<Outcome<T>> execution,
+        KevlarContext invocationContext)
+    {
+        try
+        {
+            // Stryker disable once all: ConfigureAwait is execution-context policy, not outcome behavior.
+            return (await execution.ConfigureAwait(false)).GetResultOrRethrow();
+        }
+        finally
+        {
+            KevlarContext.Return(invocationContext);
+        }
+    }
 
     private static ValueTask<Outcome<T>> InvokeGeneratedAction<T>(
         Func<CancellationToken, ValueTask<T>> action,
@@ -279,6 +337,7 @@ internal sealed class HedgingStrategy : Strategy
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(exception));
         }
 
+        // Stryker disable once all: Route selection is performance-only; both branches preserve the outcome.
         if (execution.IsCompletedSuccessfully)
         {
             return new ValueTask<Outcome<T>>(Outcome<T>.FromResult(execution.Result));
@@ -291,6 +350,7 @@ internal sealed class HedgingStrategy : Strategy
     {
         try
         {
+            // Stryker disable once all: ConfigureAwait is execution-context policy, not outcome behavior.
             return Outcome<T>.FromResult(await execution.ConfigureAwait(false));
         }
         catch (Exception exception)

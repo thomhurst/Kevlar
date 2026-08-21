@@ -75,62 +75,20 @@ public sealed class HedgeActionGenerator
 
     private sealed class VoidOriginalActionAdapter(Func<CancellationToken, ValueTask<Nothing>> action)
     {
-        public async ValueTask Invoke(CancellationToken cancellationToken) =>
+        public async ValueTask Invoke(CancellationToken cancellationToken)
+        {
+            // Stryker disable once all: ConfigureAwait is execution-context policy, not outcome behavior.
             _ = await action(cancellationToken).ConfigureAwait(false);
+        }
     }
 
     private sealed class VoidActionAdapter(Func<CancellationToken, ValueTask> action)
     {
         public async ValueTask<Nothing> Invoke(CancellationToken cancellationToken)
         {
+            // Stryker disable once all: ConfigureAwait is execution-context policy, not outcome behavior.
             await action(cancellationToken).ConfigureAwait(false);
             return Nothing.Value;
         }
     }
-}
-
-/// <summary>Arguments used to select a result-returning operation for a hedged attempt.</summary>
-public readonly struct HedgeActionGeneratorEvent<TResult>
-{
-    internal HedgeActionGeneratorEvent(
-        int attempt,
-        KevlarContext context,
-        Func<CancellationToken, ValueTask<TResult>> originalAction)
-    {
-        Attempt = attempt;
-        Context = context;
-        OriginalAction = originalAction;
-    }
-
-    /// <summary>The 1-based attempt number (2 = first hedge).</summary>
-    public int Attempt { get; }
-
-    /// <summary>The isolated context that belongs to this attempt.</summary>
-    public KevlarContext Context { get; }
-
-    /// <summary>The original operation, including strategies nested inside the hedge.</summary>
-    public Func<CancellationToken, ValueTask<TResult>> OriginalAction { get; }
-}
-
-/// <summary>Arguments used to select a void-returning operation for a hedged attempt.</summary>
-public readonly struct HedgeActionGeneratorEvent
-{
-    internal HedgeActionGeneratorEvent(
-        int attempt,
-        KevlarContext context,
-        Func<CancellationToken, ValueTask> originalAction)
-    {
-        Attempt = attempt;
-        Context = context;
-        OriginalAction = originalAction;
-    }
-
-    /// <summary>The 1-based attempt number (2 = first hedge).</summary>
-    public int Attempt { get; }
-
-    /// <summary>The isolated context that belongs to this attempt.</summary>
-    public KevlarContext Context { get; }
-
-    /// <summary>The original operation, including strategies nested inside the hedge.</summary>
-    public Func<CancellationToken, ValueTask> OriginalAction { get; }
 }

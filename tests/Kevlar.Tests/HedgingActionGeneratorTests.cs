@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+
 namespace Kevlar.Tests;
 
 public class HedgingActionGeneratorTests
@@ -157,6 +159,23 @@ public class HedgingActionGeneratorTests
     }
 
     [Test]
+    public async Task Synchronously_Faulted_Async_Hook_Preserves_Identity()
+    {
+        var expected = new ApplicationException("hook");
+        var shield = Shield.Hedge(options =>
+        {
+            options.MaxAttempts = 2;
+            options.Delay = Timeout.InfiniteTimeSpan;
+            options.OnHedgeAsync = _ => ValueTask.FromException(expected);
+        });
+
+        var outcome = await shield.ExecuteOutcomeAsync<int>(static _ =>
+            ValueTask.FromException<int>(new InvalidOperationException("primary")));
+
+        await Assert.That(ReferenceEquals(outcome.Exception, expected)).IsTrue();
+    }
+
+    [Test]
     public async Task Caller_Cancellation_During_Async_Hook_Suppresses_Generation()
     {
         using var cancellation = new CancellationTokenSource();
@@ -263,14 +282,14 @@ public class HedgingActionGeneratorTests
         var primaryCancelled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var loserCancelled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var releaseWinner = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var contexts = new Dictionary<int, KevlarContext>();
+        var contexts = new ConcurrentDictionary<int, KevlarContext>();
         var shield = Shield.For<int>().Hedge(options =>
         {
             options.MaxAttempts = 3;
             options.Delay = TimeSpan.Zero;
             options.ActionGenerator = HedgeActionGenerator.Create<int>(hedge =>
             {
-                contexts.Add(hedge.Attempt, hedge.Context);
+                contexts[hedge.Attempt] = hedge.Context;
                 return async token =>
                 {
                     if (hedge.Attempt == 2)
@@ -522,6 +541,65 @@ public class HedgingActionGeneratorTests
     }
 
     [Test]
+    public async Task Original_Action_Uses_The_Supplied_Cancellation_Token()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var attempts = 0;
+        var observedToken = default(CancellationToken);
+        var shield = Shield.For<int>().Hedge(options =>
+        {
+            options.MaxAttempts = 2;
+            options.Delay = Timeout.InfiniteTimeSpan;
+            options.ActionGenerator = HedgeActionGenerator.Create<int>(hedge =>
+                _ => hedge.OriginalAction(cancellation.Token));
+        });
+
+        var result = await shield.ExecuteAsync(token =>
+        {
+            if (Interlocked.Increment(ref attempts) == 1)
+            {
+                return ValueTask.FromException<int>(new InvalidOperationException("primary"));
+            }
+
+            observedToken = token;
+            return new ValueTask<int>(42);
+        });
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(observedToken).IsEqualTo(cancellation.Token);
+    }
+
+    [Test]
+    public async Task Async_Original_Action_Uses_The_Supplied_Cancellation_Token()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var attempts = 0;
+        var observedToken = default(CancellationToken);
+        var shield = Shield.For<int>().Hedge(options =>
+        {
+            options.MaxAttempts = 2;
+            options.Delay = Timeout.InfiniteTimeSpan;
+            options.ActionGenerator = HedgeActionGenerator.Create<int>(hedge =>
+                _ => hedge.OriginalAction(cancellation.Token));
+        });
+
+        var result = await shield.ExecuteAsync(async token =>
+        {
+            if (Interlocked.Increment(ref attempts) == 1)
+            {
+                throw new InvalidOperationException("primary");
+            }
+
+            await Task.Yield();
+            observedToken = token;
+            return 42;
+        });
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(observedToken).IsEqualTo(cancellation.Token);
+    }
+
+    [Test]
     public async Task Void_Generated_Action_Is_Awaited_To_Completion()
     {
         var actionCompleted = false;
@@ -540,6 +618,25 @@ public class HedgingActionGeneratorTests
             ValueTask.FromException(new InvalidOperationException("primary")));
 
         await Assert.That(actionCompleted).IsTrue();
+    }
+
+    [Test]
+    public async Task Void_Generated_Action_Can_Invoke_Original_Action()
+    {
+        var attempts = 0;
+        var shield = Shield.Hedge(options =>
+        {
+            options.MaxAttempts = 2;
+            options.Delay = Timeout.InfiniteTimeSpan;
+            options.ActionGenerator = HedgeActionGenerator.Create(hedge =>
+                token => hedge.OriginalAction(token));
+        });
+
+        await shield.ExecuteAsync(_ => Interlocked.Increment(ref attempts) == 1
+            ? ValueTask.FromException(new InvalidOperationException("primary"))
+            : ValueTask.CompletedTask);
+
+        await Assert.That(attempts).IsEqualTo(2);
     }
 
     private sealed class PropertyObserver(KevlarKey<int> key) : Strategy
