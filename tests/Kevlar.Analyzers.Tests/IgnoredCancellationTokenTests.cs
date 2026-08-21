@@ -280,6 +280,59 @@ public class IgnoredCancellationTokenTests
     }
 
     [Test]
+    public async Task CancellationToken_State_Does_Not_Hide_The_Context_Token()
+    {
+        var ignored = await AnalyzeAsync("""
+            await Shield.Empty.ExecuteWithContextAsync(
+                CancellationToken.None,
+                static (state, properties) => properties.Set(new KevlarKey<int>("state"), state.GetHashCode()),
+                static (state, context) => new ValueTask<int>(state.GetHashCode()));
+            """);
+        await Assert.That(ignored.Length).IsEqualTo(1);
+
+        var clean = await AnalyzeAsync("""
+            await Shield.Empty.ExecuteWithContextAsync(
+                CancellationToken.None,
+                static (state, properties) => properties.Set(new KevlarKey<int>("value"), 1),
+                static (_, context) => new ValueTask<int>(context.CancellationToken.GetHashCode()));
+            """);
+        await Assert.That(clean.Length).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Forwarded_Context_Is_Clean()
+    {
+        var diagnostics = await AnalyzeAsync("""
+            static ValueTask<int> RunAsync(int state, KevlarContext context) =>
+                new(state + context.CancellationToken.GetHashCode());
+
+            await Shield.Empty.ExecuteWithContextAsync(
+                5,
+                static (_, _) => { },
+                static (state, context) => RunAsync(state, context));
+            """);
+
+        await Assert.That(diagnostics.Length).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Context_Token_Use_Through_A_Local_Alias_Is_Clean()
+    {
+        var diagnostics = await AnalyzeAsync("""
+            await Shield.Empty.ExecuteWithContextAsync(
+                5,
+                static (_, _) => { },
+                static (state, context) =>
+                {
+                    var activeContext = context;
+                    return new ValueTask<int>(state + activeContext.CancellationToken.GetHashCode());
+                });
+            """);
+
+        await Assert.That(diagnostics.Length).IsEqualTo(0);
+    }
+
+    [Test]
     public async Task Typed_Shields_Are_Analyzed()
     {
         var diagnostics = await AnalyzeAsync("""

@@ -52,10 +52,16 @@ public sealed class IgnoredCancellationTokenAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            var tokenParameter = FindExecutionCancellationTokenParameter(lambda.Symbol);
-            if (tokenParameter is not null)
+            if (argument.Parameter?.Name == "initializeProperties")
             {
-                if (tokenParameter.Name != "_" && !UsesParameter(lambda, tokenParameter))
+                continue;
+            }
+
+            var contextParameter = FindExecutionContextParameter(lambda.Symbol, context.Compilation);
+            if (contextParameter is not null)
+            {
+                if (contextParameter.Name != "_"
+                    && !UsesContextCancellationToken(lambda, contextParameter, context.Compilation))
                 {
                     Report(context, lambda, method);
                 }
@@ -63,10 +69,10 @@ public sealed class IgnoredCancellationTokenAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            var contextParameter = FindExecutionContextParameter(lambda.Symbol, context.Compilation);
-            if (contextParameter is not null
-                && contextParameter.Name != "_"
-                && !UsesContextCancellationToken(lambda, contextParameter, context.Compilation))
+            var tokenParameter = FindExecutionCancellationTokenParameter(lambda.Symbol);
+            if (tokenParameter is not null
+                && tokenParameter.Name != "_"
+                && !UsesParameter(lambda, tokenParameter))
             {
                 Report(context, lambda, method);
             }
@@ -144,30 +150,86 @@ public sealed class IgnoredCancellationTokenAnalyzer : DiagnosticAnalyzer
         Compilation compilation)
     {
         var contextType = compilation.GetTypeByMetadataName("Kevlar.KevlarContext");
+        var aliases = FindLocalAliases(root, contextParameter);
         foreach (var operation in Descendants(root))
         {
-            if (operation is not IPropertyReferenceOperation
+            if (operation is IPropertyReferenceOperation
                 {
                     Property.Name: "CancellationToken",
                     Property.ContainingType: { } containingType,
                     Instance: { } instance,
                 }
-                || !SymbolEqualityComparer.Default.Equals(containingType, contextType))
+                && SymbolEqualityComparer.Default.Equals(containingType, contextType)
+                && ReferencesAlias(instance, aliases))
             {
-                continue;
+                return true;
             }
 
-            foreach (var child in Descendants(instance))
+            if (IsAliasReference(operation, aliases) && IsDirectArgumentValue(operation))
             {
-                if (child is IParameterReferenceOperation reference
-                    && SymbolEqualityComparer.Default.Equals(reference.Parameter, contextParameter))
-                {
-                    return true;
-                }
+                return true;
             }
         }
 
         return false;
+    }
+
+    private static HashSet<ISymbol> FindLocalAliases(IOperation root, IParameterSymbol contextParameter)
+    {
+        var aliases = new HashSet<ISymbol>(SymbolEqualityComparer.Default) { contextParameter };
+        var declarators = Descendants(root).OfType<IVariableDeclaratorOperation>().ToArray();
+
+        bool foundAlias;
+        do
+        {
+            foundAlias = false;
+            foreach (var declarator in declarators)
+            {
+                if (declarator.Initializer is { Value: { } value }
+                    && ReferencesAlias(value, aliases)
+                    && aliases.Add(declarator.Symbol))
+                {
+                    foundAlias = true;
+                }
+            }
+        }
+        while (foundAlias);
+
+        return aliases;
+    }
+
+    private static bool ReferencesAlias(IOperation operation, HashSet<ISymbol> aliases)
+    {
+        operation = Unwrap(operation);
+        return IsAliasReference(operation, aliases);
+    }
+
+    private static bool IsAliasReference(IOperation operation, HashSet<ISymbol> aliases) =>
+        operation switch
+        {
+            IParameterReferenceOperation parameter => aliases.Contains(parameter.Parameter),
+            ILocalReferenceOperation local => aliases.Contains(local.Local),
+            _ => false,
+        };
+
+    private static bool IsDirectArgumentValue(IOperation operation)
+    {
+        while (operation.Parent is IConversionOperation or IParenthesizedOperation)
+        {
+            operation = operation.Parent;
+        }
+
+        return operation.Parent is IArgumentOperation argument && argument.Value == operation;
+    }
+
+    private static IOperation Unwrap(IOperation operation)
+    {
+        while (operation is IConversionOperation conversion)
+        {
+            operation = conversion.Operand;
+        }
+
+        return operation;
     }
 
     private static void Report(
