@@ -122,7 +122,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         {
             visitedLocals ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
             if (!visitedLocals.Add(localReference.Local)
-                || !TryGetStableInitializer(localReference.Local, context, out var initializer))
+                || !TryGetStableInitializer(localReference, context, out var initializer))
             {
                 matchedMethod = null;
                 return false;
@@ -239,10 +239,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     }
 
     private static bool TryGetStableInitializer(
-        ILocalSymbol local,
+        ILocalReferenceOperation localReference,
         OperationAnalysisContext context,
         out IOperation? initializer)
     {
+        var local = localReference.Local;
         var declarations = local.DeclaringSyntaxReferences;
         if (declarations.Length != 1
             || declarations[0].GetSyntax(context.CancellationToken) is not VariableDeclaratorSyntax
@@ -270,7 +271,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 && SymbolEqualityComparer.Default.Equals(
                     semanticModel.GetSymbolInfo(identifier, context.CancellationToken).Symbol,
                     local)
-                && IsWritten(identifier))
+                && (IsWritten(identifier)
+                    || local.Type is IArrayTypeSymbol
+                        && IsEscapingArrayReference(identifier, localReference.Syntax)))
             {
                 initializer = null;
                 return false;
@@ -279,6 +282,35 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         initializer = semanticModel.GetOperation(initializerSyntax, context.CancellationToken);
         return initializer is not null;
+    }
+
+    private static bool IsEscapingArrayReference(
+        IdentifierNameSyntax identifier,
+        SyntaxNode permittedReference)
+    {
+        if (identifier.SyntaxTree == permittedReference.SyntaxTree
+            && identifier.Span == permittedReference.Span)
+        {
+            return false;
+        }
+
+        foreach (var ancestor in identifier.Ancestors())
+        {
+            switch (ancestor)
+            {
+                case ArgumentSyntax:
+                case EqualsValueClauseSyntax:
+                case ReturnStatementSyntax:
+                case YieldStatementSyntax:
+                    return true;
+                case AssignmentExpressionSyntax assignment when assignment.Right.Span.Contains(identifier.Span):
+                    return true;
+                case StatementSyntax:
+                    return false;
+            }
+        }
+
+        return true;
     }
 
     private static bool IsWritten(IdentifierNameSyntax identifier)
