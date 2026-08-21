@@ -591,7 +591,7 @@ internal sealed class RateLimitStrategy : Strategy
         }
     }
 
-    private (long Available, int Queued) CaptureState(TimeProvider timeProvider)
+    internal (long Available, int Queued) CaptureState(TimeProvider timeProvider)
     {
         double theoreticalArrival;
         int queued;

@@ -24,6 +24,14 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
 
     internal int MaxQueue => _maxQueue;
 
+    internal (int Available, int Running, int Queued) CaptureState()
+    {
+        var state = Volatile.Read(ref _metricsState);
+        var running = (int)(state >> 32);
+        var queued = (int)(state & uint.MaxValue);
+        return (_maxConcurrency - running, running, queued);
+    }
+
     public ConcurrencyLimitStrategy(ConcurrencyLimitOptions options)
     {
         Throw.IfOutOfRange(options.MaxConcurrency <= 0, nameof(options), "MaxConcurrency must be positive.");
