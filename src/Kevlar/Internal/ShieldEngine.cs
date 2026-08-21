@@ -13,13 +13,33 @@ internal static class ShieldEngine
     {
         if (cancellationToken.IsCancellationRequested)
         {
+            KevlarMetrics.Execution(shieldName, success: false);
             return Rethrow<T>(Outcome<T>.FromException(new OperationCanceledException(cancellationToken)));
         }
 
         if (head is null)
         {
-            // No strategies: skip the context and outcome machinery entirely.
-            return action(state, cancellationToken);
+            if (!KevlarMetrics.ExecutionEnabled)
+            {
+                return action(state, cancellationToken);
+            }
+
+            try
+            {
+                var execution = action(state, cancellationToken);
+                if (execution.IsCompletedSuccessfully)
+                {
+                    KevlarMetrics.Execution(shieldName, success: true);
+                    return execution;
+                }
+
+                return AwaitDirectAsync(execution, shieldName);
+            }
+            catch
+            {
+                KevlarMetrics.Execution(shieldName, success: false);
+                throw;
+            }
         }
 
         var context = KevlarContext.Rent(cancellationToken, isSynchronous: false, timeProvider, shieldName);
@@ -46,6 +66,7 @@ internal static class ShieldEngine
     {
         if (cancellationToken.IsCancellationRequested)
         {
+            KevlarMetrics.Execution(shieldName, success: false);
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(new OperationCanceledException(cancellationToken)));
         }
 
@@ -71,11 +92,25 @@ internal static class ShieldEngine
         Func<TState, CancellationToken, T> action,
         CancellationToken cancellationToken)
     {
-        cancellationToken.ThrowIfCancellationRequested();
+        if (cancellationToken.IsCancellationRequested)
+        {
+            KevlarMetrics.Execution(shieldName, success: false);
+            cancellationToken.ThrowIfCancellationRequested();
+        }
 
         if (head is null)
         {
-            return action(state, cancellationToken);
+            try
+            {
+                var result = action(state, cancellationToken);
+                KevlarMetrics.Execution(shieldName, success: true);
+                return result;
+            }
+            catch
+            {
+                KevlarMetrics.Execution(shieldName, success: false);
+                throw;
+            }
         }
 
         var context = KevlarContext.Rent(cancellationToken, isSynchronous: true, timeProvider, shieldName);
@@ -157,6 +192,21 @@ internal static class ShieldEngine
         finally
         {
             KevlarContext.Return(context);
+        }
+    }
+
+    private static async ValueTask<T> AwaitDirectAsync<T>(ValueTask<T> execution, string? shieldName)
+    {
+        try
+        {
+            var result = await execution.ConfigureAwait(false);
+            KevlarMetrics.Execution(shieldName, success: true);
+            return result;
+        }
+        catch
+        {
+            KevlarMetrics.Execution(shieldName, success: false);
+            throw;
         }
     }
 

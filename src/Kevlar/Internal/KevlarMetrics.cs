@@ -25,6 +25,12 @@ internal static class KevlarMetrics
     private static readonly Counter<long> CircuitTransitions = Meter.CreateCounter<long>("kevlar.circuit_breaker.transitions");
 #endif
 
+#if NET8_0_OR_GREATER
+    public static bool ExecutionEnabled => Executions.Enabled;
+#else
+    public static bool ExecutionEnabled => false;
+#endif
+
     public static void Execution(string? shieldName, bool success)
     {
 #if NET8_0_OR_GREATER
