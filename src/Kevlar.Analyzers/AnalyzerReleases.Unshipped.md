@@ -6,3 +6,5 @@
 Rule ID | Category | Severity | Notes
 --------|----------|----------|--------------------
 KEV001 | Reliability | Warning | Execution delegate ignores its CancellationToken
+KEV002 | Reliability | Warning | Hedging requires asynchronous execution
+KEV003 | Configuration | Warning | Fallback makes a reactive strategy unreachable
