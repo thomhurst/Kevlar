@@ -14,6 +14,29 @@ on:
         default: false
 
 jobs:
+  allocation-gates:
+    name: Allocation gates (.NET 10, Ubuntu)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0  # Required for GitVersion
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Run allocation gates
+        run: >-
+          dotnet run --project tests/Kevlar.AllocationTests -c Release --
+          --timeout 5m --minimum-expected-tests 2 --zero-tests-policy strict
+
   build-and-test:
     strategy:
       fail-fast: false
@@ -138,10 +161,10 @@ jobs:
           retention-days: 14
 
   # Only reachable from a manual run with the "Upload package to NuGet"
-  # checkbox ticked, and only after both OS legs are green.
+  # checkbox ticked, and only after tests, coverage, and allocation gates are green.
   publish:
     name: Publish NuGet
-    needs: [build-and-test, coverage]
+    needs: [allocation-gates, build-and-test, coverage]
     if: github.event_name == 'workflow_dispatch' && inputs.publish_nuget == true
     runs-on: ubuntu-latest
     permissions:
