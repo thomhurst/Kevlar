@@ -52,6 +52,7 @@ internal sealed class CircuitBreakerStrategy : Strategy
         }
 
         var execution = next.InvokeAsync(context);
+        // Stryker disable once all: Route selection is performance-only; both branches call Complete.
         return execution.IsCompletedSuccessfully
             ? new ValueTask<Outcome<T>>(Complete(execution.Result, context, admittedProbeGeneration, alias, recordState))
             : AwaitOutcomeAsync(execution, context, admittedProbeGeneration, alias, recordState);
@@ -64,6 +65,7 @@ internal sealed class CircuitBreakerStrategy : Strategy
         StrategyMetricAlias alias,
         bool recordState)
     {
+        // Stryker disable once all: ConfigureAwait is execution-context policy, not outcome behavior.
         var outcome = await execution.ConfigureAwait(false);
         return Complete(outcome, context, admittedProbeGeneration, alias, recordState);
     }
