@@ -19,6 +19,13 @@ dotnet run --project tests/Kevlar.Tests -c Release --no-build -- --timeout 5m --
 dotnet run --project tests/Kevlar.NetStandard.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict
 dotnet run --project tests/Kevlar.IntegrationTests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict
 dotnet run --project tests/Kevlar.Analyzers.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict
+$coverageRoot = (New-Item -ItemType Directory -Force artifacts/coverage/raw).FullName
+dotnet run --project tests/Kevlar.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output "$coverageRoot/unit.cobertura.xml" --coverage-output-format cobertura
+dotnet run --project tests/Kevlar.NetStandard.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output "$coverageRoot/netstandard.cobertura.xml" --coverage-output-format cobertura
+dotnet run --project tests/Kevlar.IntegrationTests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output "$coverageRoot/integration.cobertura.xml" --coverage-output-format cobertura
+dotnet run --project tests/Kevlar.Analyzers.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output "$coverageRoot/analyzers.cobertura.xml" --coverage-output-format cobertura
+dotnet reportgenerator '-reports:artifacts/coverage/raw/*.cobertura.xml' '-targetdir:artifacts/coverage/report' '-reporttypes:Cobertura;Html'
+./.github/scripts/Assert-Coverage.ps1 -Report artifacts/coverage/report/Cobertura.xml -MinimumLinePercent 92 -MinimumBranchPercent 86
 Push-Location src/Kevlar
 dotnet stryker --config-file stryker-config.json
 Pop-Location
