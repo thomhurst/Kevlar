@@ -119,7 +119,10 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
         private readonly CancellationTokenSource _lifetime;
         private readonly List<Attempt> _attempts = [];
         private ConditionalWeakTable<AttemptFailureException, FailureSelection>? _failedCalls;
+        private TaskCompletionSource<Attempt> _activeAttemptReady = NewAttemptSource();
+        private Exception? _deadlineFailure;
 
+        private Attempt? _activeAttempt;
         private AsyncServerStreamingCall<TResponse>? _terminalCall;
         private AsyncServerStreamingCall<TResponse>? _selectedAttemptCall;
         private CancellationTokenSource? _terminalCancellation;
@@ -204,6 +207,7 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
                 catch (Exception exception)
                 {
                     SelectFailure(exception);
+                    SignalEstablishmentFailure(GetVisibleException(exception));
                     RethrowNormalized(exception);
                     throw;
                 }
@@ -216,7 +220,32 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
 
         private async Task<Metadata> GetResponseHeadersAsync()
         {
-            await _operationGate.WaitAsync(_lifetime.Token).ConfigureAwait(false);
+            using var gateCancellation = CancellationTokenSource.CreateLinkedTokenSource(
+                _lifetime.Token);
+            var gateWait = _operationGate.WaitAsync(gateCancellation.Token);
+            var activeAttempt = GetActiveAttemptAsync();
+            await Task.WhenAny(gateWait, activeAttempt).ConfigureAwait(false);
+            var observingActive = gateWait.Status != TaskStatus.RanToCompletion
+                && activeAttempt.IsCompleted;
+            if (observingActive)
+            {
+                CancelLifetime(gateCancellation);
+                try
+                {
+                    await gateWait.ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (observingActive)
+                {
+                    // The in-flight attempt owns establishment; observe its headers directly.
+                }
+
+                var attempt = await activeAttempt.ConfigureAwait(false);
+                var headers = await attempt.Call.ResponseHeadersAsync.ConfigureAwait(false);
+                Select(attempt.Call, attempt.Call, attempt.Cancellation);
+                return headers;
+            }
+
+            await gateWait.ConfigureAwait(false);
             try
             {
                 if (TryGetSelected(out var selected))
@@ -236,6 +265,7 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
                 catch (Exception exception)
                 {
                     SelectFailure(exception);
+                    SignalEstablishmentFailure(GetVisibleException(exception));
                     RethrowNormalized(exception);
                     throw;
                 }
@@ -262,7 +292,13 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
             catch (Exception exception)
             {
                 exception = NormalizeAttemptException(exception, cancellationToken);
+                var deadlineExceeded = exception is ExpiredDeadlineRpcException;
                 exception = await CompleteFailureAsync(attempt.Call, exception).ConfigureAwait(false);
+                if (deadlineExceeded)
+                {
+                    Volatile.Write(ref _deadlineFailure, exception);
+                }
+
                 ExceptionDispatchInfo.Capture(exception).Throw();
                 throw;
             }
@@ -282,7 +318,13 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
             catch (Exception exception)
             {
                 exception = NormalizeAttemptException(exception, cancellationToken);
+                var deadlineExceeded = exception is ExpiredDeadlineRpcException;
                 exception = await CompleteFailureAsync(attempt.Call, exception).ConfigureAwait(false);
+                if (deadlineExceeded)
+                {
+                    Volatile.Write(ref _deadlineFailure, exception);
+                }
+
                 ExceptionDispatchInfo.Capture(exception).Throw();
                 throw;
             }
@@ -296,6 +338,11 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
             }
 
             CancelLifetime(_lifetime);
+            if (Volatile.Read(ref _deadlineFailure) is { } deadlineFailure)
+            {
+                ExceptionDispatchInfo.Capture(deadlineFailure).Throw();
+            }
+
             throw new ExpiredDeadlineRpcException(
                 new RpcException(new Status(StatusCode.DeadlineExceeded, "Deadline exceeded.")));
         }
@@ -305,7 +352,8 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
             CancellationToken cancellationToken)
         {
             if (exception is RpcException { StatusCode: StatusCode.Cancelled } rpcCancellation
-                && cancellationToken.IsCancellationRequested)
+                && cancellationToken.IsCancellationRequested
+                && !IsExpiredDeadline())
             {
                 return new OperationCanceledException(
                     rpcCancellation.Message,
@@ -320,7 +368,13 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
                 } deadlineException)
             {
                 CancelLifetime(_lifetime);
-                return new ExpiredDeadlineRpcException(deadlineException);
+                var normalized = deadlineException.StatusCode == StatusCode.DeadlineExceeded
+                    ? deadlineException
+                    : new RpcException(
+                        new Status(StatusCode.DeadlineExceeded, deadlineException.Status.Detail),
+                        deadlineException.Trailers,
+                        deadlineException.Message);
+                return new ExpiredDeadlineRpcException(normalized);
             }
 
             if (IsExpiredDeadline()
@@ -342,6 +396,11 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
 
         private void RethrowNormalized(Exception exception)
         {
+            ExceptionDispatchInfo.Capture(GetVisibleException(exception)).Throw();
+        }
+
+        private Exception GetVisibleException(Exception exception)
+        {
             if (exception is AttemptFailureException attemptFailure)
             {
                 exception = attemptFailure.OriginalException;
@@ -351,7 +410,7 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
                 && _context.Options.CancellationToken.IsCancellationRequested
                 && cancellation.CancellationToken != _context.Options.CancellationToken)
             {
-                throw new OperationCanceledException(
+                return new OperationCanceledException(
                     cancellation.Message,
                     cancellation,
                     _context.Options.CancellationToken);
@@ -359,10 +418,10 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
 
             if (exception is ExpiredDeadlineRpcException deadlineException)
             {
-                ExceptionDispatchInfo.Capture(deadlineException.Original).Throw();
+                return deadlineException.Original;
             }
 
-            ExceptionDispatchInfo.Capture(exception).Throw();
+            return exception;
         }
 
         private Attempt CreateAttempt(CancellationToken cancellationToken)
@@ -394,7 +453,10 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
                 }
                 else
                 {
-                    _attempts.Add(new Attempt(call, cancellation, Exception: null));
+                    var attempt = new Attempt(call, cancellation, Exception: null);
+                    _attempts.Add(attempt);
+                    _activeAttempt = attempt;
+                    _activeAttemptReady.TrySetResult(attempt);
                 }
             }
 
@@ -436,6 +498,7 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
                             (_failedCalls ??= new()).Add(
                                 attemptFailure,
                                 new FailureSelection(call, failureCall!));
+                            ClearActiveAttempt(call);
                             return attemptFailure;
                         }
 
@@ -450,6 +513,41 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
 
             return exception;
         }
+
+        private Task<Attempt> GetActiveAttemptAsync()
+        {
+            lock (_gate)
+            {
+                return _activeAttempt is { } attempt
+                    ? Task.FromResult(attempt)
+                    : _activeAttemptReady.Task;
+            }
+        }
+
+        private void ClearActiveAttempt(AsyncServerStreamingCall<TResponse> call)
+        {
+            if (_activeAttempt is not { } active || !ReferenceEquals(active.Call, call))
+            {
+                return;
+            }
+
+            _activeAttempt = null;
+            _activeAttemptReady = NewAttemptSource();
+        }
+
+        private void SignalEstablishmentFailure(Exception exception)
+        {
+            lock (_gate)
+            {
+                if (_activeAttemptReady.TrySetException(exception))
+                {
+                    _ = _activeAttemptReady.Task.Exception;
+                }
+            }
+        }
+
+        private static TaskCompletionSource<Attempt> NewAttemptSource() =>
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         private static async ValueTask<AsyncServerStreamingCall<TResponse>> SnapshotFailureAsync(
             AsyncServerStreamingCall<TResponse> call,
@@ -651,6 +749,9 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
                 _terminalCall = null;
                 _selectedAttemptCall = null;
                 _terminalCancellation = null;
+                _activeAttempt = null;
+                _activeAttemptReady.TrySetException(
+                    new ObjectDisposedException(nameof(ShieldStreamingClientInterceptor)));
             }
 
             CancelLifetime(_lifetime);

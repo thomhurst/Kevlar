@@ -445,6 +445,39 @@ public class GrpcStreamingResilienceTests
     }
 
     [Test]
+    public async Task Server_Headers_Observe_An_InFlight_MoveNext_Attempt()
+    {
+        var readStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseRead = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var interceptor = new ShieldStreamingClientInterceptor(Shield.Empty);
+        using var call = interceptor.AsyncServerStreamingCall(
+            new StreamRequest(),
+            Context(ServerStreamingMethod),
+            (_, _) => ServerCall(
+                Reader(async (_, token) =>
+                {
+                    readStarted.TrySetResult();
+                    await releaseRead.Task.WaitAsync(TimeSpan.FromSeconds(5), token);
+                    return (true, new StreamReply { Attempt = 1 });
+                }),
+                headers: new Metadata { { "attempt", "1" } }));
+        var move = call.ResponseStream.MoveNext(CancellationToken.None);
+        await readStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        try
+        {
+            var headers = await call.ResponseHeadersAsync.WaitAsync(TimeSpan.FromSeconds(1));
+            await Assert.That(headers.GetValue("attempt")).IsEqualTo("1");
+        }
+        finally
+        {
+            releaseRead.TrySetResult();
+        }
+
+        await Assert.That(await move).IsTrue();
+    }
+
+    [Test]
     public async Task Duplex_Stream_Shields_Reads_And_Writes_Without_Replay()
     {
         var writes = 0;
@@ -555,6 +588,40 @@ public class GrpcStreamingResilienceTests
             .Throws<RpcException>();
 
         await Assert.That(ReferenceEquals(actual, expected)).IsTrue();
+        await Assert.That(attempts).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Deadline_Hedge_Admission_Normalizes_The_Active_Attempt()
+    {
+        var attempts = 0;
+        var interceptor = new ShieldStreamingClientInterceptor(
+            Shield.When(static _ => true).Hedge(2, TimeSpan.FromMilliseconds(100)));
+        using var call = interceptor.AsyncServerStreamingCall(
+            new StreamRequest(),
+            Context(
+                ServerStreamingMethod,
+                new CallOptions(deadline: DateTime.UtcNow.AddMilliseconds(50))),
+            (_, context) =>
+            {
+                Interlocked.Increment(ref attempts);
+                return ServerCall(Reader((_, _) =>
+                {
+                    var completion = new TaskCompletionSource<(bool, StreamReply?)>(
+                        TaskCreationOptions.RunContinuationsAsynchronously);
+                    context.Options.CancellationToken.Register(() =>
+                        completion.TrySetException(
+                            new RpcException(new Status(StatusCode.Cancelled, "cancelled"))));
+                    return completion.Task;
+                }));
+            });
+
+        var exception = await Assert.That(async () =>
+                await call.ResponseStream.MoveNext(CancellationToken.None)
+                    .WaitAsync(TimeSpan.FromSeconds(5)))
+            .Throws<RpcException>();
+
+        await Assert.That(exception!.StatusCode).IsEqualTo(StatusCode.DeadlineExceeded);
         await Assert.That(attempts).IsEqualTo(1);
     }
 
