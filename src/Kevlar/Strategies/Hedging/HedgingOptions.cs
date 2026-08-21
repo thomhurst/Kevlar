@@ -8,6 +8,9 @@ namespace Kevlar;
 /// <remarks>
 /// The executed delegate may be invoked multiple times concurrently — it must be safe to do so.
 /// Hedging requires asynchronous execution.
+/// Before an additional attempt starts, callbacks run in this order: <see cref="OnHedge"/>,
+/// <see cref="OnHedgeAsync"/>, then <see cref="ActionGenerator"/>. Caller cancellation is checked
+/// before callbacks and again before the generated operation starts.
 /// </remarks>
 public sealed class HedgingOptions
 {
@@ -24,6 +27,16 @@ public sealed class HedgingOptions
 
     /// <summary>Invoked when an additional hedged attempt is launched.</summary>
     public Action<HedgeEvent>? OnHedge { get; set; }
+
+    /// <summary>Invoked and awaited after <see cref="OnHedge"/> and before an additional attempt starts.</summary>
+    public Func<HedgeEvent, ValueTask>? OnHedgeAsync { get; set; }
+
+    /// <summary>
+    /// Selects a replacement operation for each additional attempt. A <see langword="null"/>
+    /// result runs the original operation. Create the generator with the result type used to
+    /// execute the shield; use the void factory for void executions.
+    /// </summary>
+    public HedgeActionGenerator? ActionGenerator { get; set; }
 }
 
 /// <summary>Describes a hedged attempt being launched.</summary>
@@ -38,6 +51,9 @@ public readonly struct HedgeEvent
     /// <summary>The 1-based number of the attempt being launched (2 = first hedge).</summary>
     public int Attempt { get; }
 
-    /// <summary>The ambient execution context.</summary>
+    /// <summary>
+    /// The ambient execution context. It is pooled; do not retain it after synchronous and
+    /// asynchronous hedge callbacks complete.
+    /// </summary>
     public KevlarContext Context { get; }
 }

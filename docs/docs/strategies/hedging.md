@@ -17,6 +17,7 @@ Shield.Hedge(o =>
     o.MaxAttempts = 2;                        // default 2 (total attempts, incl. the first)
     o.Delay = TimeSpan.FromSeconds(1);        // default 1s
     o.OnHedge = e => logger.LogInformation("Hedge attempt {Attempt}", e.Attempt);
+    o.OnHedgeAsync = static _ => ValueTask.CompletedTask;
 });
 ```
 
@@ -27,6 +28,37 @@ Shield.Hedge(o =>
 | `MaxAttempts` | `2` | Total attempts, including the first |
 | `Delay` | `1s` | Wait before launching the next attempt (see special values below) |
 | `OnHedge` | — | Callback when a hedge launches — `e.Attempt` is 1-based, so `2` = first hedge |
+| `OnHedgeAsync` | — | Awaited callback after `OnHedge` and before the attempt starts |
+| `ActionGenerator` | — | Select a different operation for each additional attempt; `null` uses the original |
+
+### Selecting another target
+
+Use `HedgeActionGenerator.Create<TResult>` to send a hedge to a different replica without boxing
+the result. The generator runs after both hedge callbacks and receives the isolated attempt context.
+`OriginalAction` includes strategies nested inside the hedge, so returning it preserves the inner
+pipeline. Returning another operation replaces that inner pipeline for that attempt.
+
+```csharp
+var replicas = new Func<CancellationToken, ValueTask<string>>[]
+{
+    static _ => new ValueTask<string>("primary"),
+    static _ => new ValueTask<string>("secondary"),
+    static _ => new ValueTask<string>("tertiary"),
+};
+var shield = Shield.For<string>().Hedge(o =>
+{
+    o.MaxAttempts = replicas.Length;
+    o.Delay = TimeSpan.FromMilliseconds(100);
+    o.ActionGenerator = HedgeActionGenerator.Create<string>(hedge =>
+        ct => replicas[hedge.Attempt - 1](ct));
+});
+
+// The original callback is attempt 1; generated callbacks are attempts 2 and 3.
+var response = await shield.ExecuteAsync(ct => replicas[0](ct));
+```
+
+For a void execution, use the non-generic `HedgeActionGenerator.Create` overload. A generator must
+match the execution result type; a mismatch fails before the additional operation starts.
 
 ### Special delay values
 
@@ -41,9 +73,12 @@ Multiple invocations of your delegate may be in flight at once — it must be sa
 :::
 
 - Losing attempts are cancelled through their token (use the token you're handed!).
-- Caller cancellation prevents any later hedge delegate from running, even when it races a completed stagger delay or occurs inside `OnHedge`. A cancellation already observable at the launch boundary suppresses `OnHedge` too.
-- The `kevlar.hedges` counter records only attempts that launch after `OnHedge` returns successfully and cancellation is rechecked. Suppressed launches and failing callbacks are not counted.
+- Caller cancellation prevents any later hedge delegate from running, even when it races a completed stagger delay or occurs inside `OnHedge`/`OnHedgeAsync`. A cancellation already observable at the launch boundary suppresses both callbacks.
+- Launch ordering is `OnHedge`, awaited `OnHedgeAsync`, action generation, metrics, then the selected operation. Callback or generator failures preserve their exception identity, cancel in-flight attempts, and are not counted as launched hedges.
 - Each attempt gets a forked context — `Properties` are copied at launch time, so attempts don't see each other's writes.
+- Callback contexts are pooled. Do not retain them after the synchronous callback or returned `ValueTask` completes; a generated action's isolated context remains valid until that attempt completes.
+- Callbacks and generators run without a strategy lock. They may re-enter the same shield, and concurrent shield executions may invoke them concurrently; keep captured state thread-safe.
+- Losing operations are cancelled first, then their isolated contexts are returned to the pool after those operations complete.
 - What counts as a failure is the ambient [handling clause](../handling-failures.md), like every reactive strategy.
 
 ## When to hedge (and when not to)
