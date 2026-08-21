@@ -17,7 +17,7 @@ public class RetryBenchmarks
 {
     private static readonly InvalidOperationException RecoverableError = new("transient");
 
-    private static readonly Shield KevlarRetry = Shield.Retry(3);
+    private static readonly Shield KevlarRetry = Shield.Retry(3, Backoff.None);
     private static readonly Shield KevlarRetryNoBackoff = Shield.Retry(options =>
     {
         options.MaxRetries = 3;
@@ -25,7 +25,7 @@ public class RetryBenchmarks
     });
 
     private static readonly ResiliencePipeline PollyRetry = new ResiliencePipelineBuilder()
-        .AddRetry(new RetryStrategyOptions { MaxRetryAttempts = 3 })
+        .AddRetry(new RetryStrategyOptions { MaxRetryAttempts = 3, Delay = TimeSpan.Zero })
         .Build();
     private static readonly ResiliencePipeline PollyRetryNoBackoff = new ResiliencePipelineBuilder()
         .AddRetry(new RetryStrategyOptions { MaxRetryAttempts = 3, Delay = TimeSpan.Zero })

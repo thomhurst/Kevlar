@@ -47,8 +47,8 @@ _SECTIONS = {
     "CircuitBreakerBenchmarks": (
         "Circuit breaker",
         3,
-        "Success bookkeeping while closed, and the fast-fail rejection cost while open "
-        "(thrown exception included).",
+        "Ratio/sampling bookkeeping while closed, and the fast-fail rejection cost while "
+        "manually isolated (thrown exception included).",
     ),
     "HedgingBenchmarks": (
         "Hedging",
@@ -63,7 +63,7 @@ _SECTIONS = {
     "RateLimitBenchmarks": (
         "Rate limit",
         6,
-        "Uncontended permit acquisition — every call is admitted.",
+        "Uncontended token-bucket permit acquisition — every call is admitted.",
     ),
     "ConcurrencyLimitBenchmarks": (
         "Concurrency limit",
@@ -94,14 +94,21 @@ _SCENARIO_LABELS = {
     ("TimeoutBenchmarks", "HappyPath"): "Timeout(10 s) — completes instantly",
     ("CircuitBreakerBenchmarks", "ClosedHappyPath"): "Closed circuit — success",
     ("CircuitBreakerBenchmarks", "OpenFastFail"): "Open circuit — fast-fail rejection",
+    ("CircuitBreakerBenchmarks", "RatioClosedHappyPath"): "Ratio breaker, closed — success",
+    ("CircuitBreakerBenchmarks", "IsolatedFastFail"): "Isolated circuit — fast-fail rejection",
     ("HedgingBenchmarks", "PrimaryWins"): "Hedge(2) — primary wins",
     ("FallbackBenchmarks", "PassThrough"): "Fallback — not triggered",
     ("FallbackBenchmarks", "Triggered"): "Fallback — triggered by exception",
     ("RateLimitBenchmarks", "Uncontended"): "Rate limit — uncontended acquire",
+    ("RateLimitBenchmarks", "TokenBucketUncontended"): "Token bucket — uncontended acquire",
     ("ConcurrencyLimitBenchmarks", "Uncontended"): "Concurrency limit — uncontended",
     ("TypedResultBenchmarks", "ResultJudged"): "Typed retry — result judged, no retry",
     ("PipelineBenchmarks", "TimeoutRetryBreaker"): "Timeout → Retry → Circuit breaker",
     ("PipelineBenchmarks", "FiveStrategyChain"): "Five-strategy chain",
+    ("PipelineBenchmarks", "RatioTimeoutRetryBreaker"): "Timeout → Retry → ratio breaker",
+    ("PipelineBenchmarks", "TokenBucketRatioFiveStrategyChain"): (
+        "Token bucket → Timeout → Retry → ratio breaker → Concurrency limit"
+    ),
 }
 
 

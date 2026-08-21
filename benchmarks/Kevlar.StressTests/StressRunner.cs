@@ -9,6 +9,8 @@ namespace Kevlar.StressTests;
 
 internal static class StressRunner
 {
+    private const int MeasurementRounds = 4;
+
     private static readonly Shield KevlarShield = Shield
         .Timeout(TimeSpan.FromSeconds(10))
         .Retry(3, Backoff.None)
@@ -34,19 +36,37 @@ internal static class StressRunner
 
     public static async Task<StressRunResult> RunAsync(StressOptions options)
     {
-        var phaseDuration = TimeSpan.FromTicks(options.Duration.Ticks / 2);
+        var phaseDuration = TimeSpan.FromTicks(options.Duration.Ticks / (MeasurementRounds * 2));
         Console.WriteLine(
-            $"Running {options.Workers} workers for {phaseDuration:g} per library " +
-            $"({options.Duration:g} total measured time).");
+            $"Running {options.Workers} workers for {MeasurementRounds} alternating rounds " +
+            $"of {phaseDuration:g} per library ({options.Duration:g} total measured time).");
 
         await WarmUpAsync("Polly", ExecutePollyAsync, options);
         await WarmUpAsync("Kevlar", ExecuteKevlarAsync, options);
 
-        var results = new[]
+        var phases = new List<StressPhaseResult>(MeasurementRounds * 2);
+        for (var round = 0; round < MeasurementRounds; round++)
         {
-            await MeasureAsync("Polly", ExecutePollyAsync, phaseDuration, options.Workers),
-            await MeasureAsync("Kevlar", ExecuteKevlarAsync, phaseDuration, options.Workers),
-        };
+            if (round % 2 == 0)
+            {
+                phases.Add(await MeasureAsync("Polly", ExecutePollyAsync, phaseDuration, options.Workers, round));
+                phases.Add(await MeasureAsync("Kevlar", ExecuteKevlarAsync, phaseDuration, options.Workers, round));
+            }
+            else
+            {
+                phases.Add(await MeasureAsync("Kevlar", ExecuteKevlarAsync, phaseDuration, options.Workers, round));
+                phases.Add(await MeasureAsync("Polly", ExecutePollyAsync, phaseDuration, options.Workers, round));
+            }
+        }
+
+        var results = new[] { Aggregate("Polly", phases), Aggregate("Kevlar", phases) };
+        foreach (var result in results)
+        {
+            Console.WriteLine(
+                $"{result.Library} total: {result.OperationsPerSecond:N0} ops/s, " +
+                $"{result.BytesPerOperation:N2} B/op, " +
+                $"{result.AllocatedBytes / 1_048_576d:N1} MiB allocated.");
+        }
 
         using var process = Process.GetCurrentProcess();
         process.Refresh();
@@ -59,6 +79,7 @@ internal static class StressRunner
             options.Workers,
             options.Duration,
             options.Warmup,
+            MeasurementRounds,
             process.PeakWorkingSet64,
             results);
     }
@@ -81,7 +102,8 @@ internal static class StressRunner
         string library,
         Func<ValueTask<int>> operation,
         TimeSpan duration,
-        int workers)
+        int workers,
+        int round)
     {
         ForceCollection();
         var allocatedBefore = GC.GetTotalAllocatedBytes(precise: true);
@@ -90,7 +112,7 @@ internal static class StressRunner
         var gen1Before = GC.CollectionCount(1);
         var gen2Before = GC.CollectionCount(2);
 
-        Console.WriteLine($"Measuring {library} for {duration:g}...");
+        Console.WriteLine($"Measuring {library}, round {round + 1}/{MeasurementRounds}, for {duration:g}...");
         var stopwatch = Stopwatch.StartNew();
         var operations = await RunWorkersAsync(operation, duration, workers);
         stopwatch.Stop();
@@ -114,9 +136,30 @@ internal static class StressRunner
             GC.CollectionCount(2) - gen2Before);
 
         Console.WriteLine(
-            $"{library}: {result.OperationsPerSecond:N0} ops/s, " +
+            $"{library} round {round + 1}: {result.OperationsPerSecond:N0} ops/s, " +
             $"{result.BytesPerOperation:N2} B/op, {result.AllocatedBytes / 1_048_576d:N1} MiB allocated.");
         return result;
+    }
+
+    private static StressPhaseResult Aggregate(string library, List<StressPhaseResult> phases)
+    {
+        var matching = phases.Where(result => result.Library == library).ToArray();
+        var operations = matching.Sum(result => result.Operations);
+        var elapsedSeconds = matching.Sum(result => result.ElapsedSeconds);
+        var allocatedBytes = matching.Sum(result => result.AllocatedBytes);
+
+        return new StressPhaseResult(
+            library,
+            operations,
+            elapsedSeconds,
+            operations / elapsedSeconds,
+            allocatedBytes,
+            allocatedBytes / (double)operations,
+            matching[0].ManagedBytesBefore,
+            matching[^1].ManagedBytesAfter,
+            matching.Sum(result => result.Gen0Collections),
+            matching.Sum(result => result.Gen1Collections),
+            matching.Sum(result => result.Gen2Collections));
     }
 
     private static async Task<long> RunWorkersAsync(

@@ -14,59 +14,81 @@ namespace Kevlar.Benchmarks;
 [CategoriesColumn]
 public class CircuitBreakerBenchmarks
 {
-    private static readonly Shield KevlarBreaker = Shield.CircuitBreaker(5, TimeSpan.FromSeconds(30));
+    private const double FailureRatio = 0.1;
+    private const int MinimumThroughput = 100;
+    private static readonly TimeSpan SamplingWindow = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan BreakDuration = TimeSpan.FromSeconds(5);
+
+    private static readonly Shield KevlarBreaker = Shield.CircuitBreaker(ConfigureKevlarRatioBreaker);
     private static readonly Shield KevlarDynamicDurationBreaker = Shield.CircuitBreaker(options =>
     {
-        options.ConsecutiveFailures = 5;
-        options.BreakDurationGenerator = static _ => new ValueTask<TimeSpan>(TimeSpan.FromSeconds(30));
+        ConfigureKevlarRatioBreaker(options);
+        options.BreakDurationGenerator = static _ => new ValueTask<TimeSpan>(BreakDuration);
     });
     private static readonly Shield KevlarAsyncCallbackBreaker = Shield.CircuitBreaker(options =>
     {
-        options.ConsecutiveFailures = 5;
+        ConfigureKevlarRatioBreaker(options);
         options.OnStateChangedAsync = static _ => default;
     });
-    private static readonly Shield KevlarOpenBreaker = Shield.CircuitBreaker(1, TimeSpan.FromDays(1));
+
+    private static readonly CircuitBreakerMonitor KevlarManualControl = new();
+    private static readonly Shield KevlarOpenBreaker = Shield.CircuitBreaker(options =>
+    {
+        ConfigureKevlarRatioBreaker(options);
+        options.Monitor = KevlarManualControl;
+    });
 
     private static readonly ResiliencePipeline PollyBreaker = new ResiliencePipelineBuilder()
-        .AddCircuitBreaker(new CircuitBreakerStrategyOptions())
+        .AddCircuitBreaker(CreatePollyRatioBreakerOptions())
         .Build();
 
     private static readonly CircuitBreakerManualControl PollyManualControl = new();
     private static readonly ResiliencePipeline PollyOpenBreaker = new ResiliencePipelineBuilder()
-        .AddCircuitBreaker(new CircuitBreakerStrategyOptions { ManualControl = PollyManualControl })
+        .AddCircuitBreaker(CreatePollyRatioBreakerOptions(PollyManualControl))
         .Build();
 
-    [GlobalSetup(Target = nameof(Kevlar_OpenFastFail))]
-    public async Task TripKevlarBreaker()
-    {
-        try
-        {
-            await KevlarOpenBreaker.ExecuteAsync(static _ => throw new InvalidOperationException("trip"));
-        }
-        catch (InvalidOperationException)
-        {
-        }
-    }
+    [GlobalSetup(Target = nameof(Kevlar_IsolatedFastFail))]
+    public ValueTask IsolateKevlarBreaker() => KevlarManualControl.IsolateAsync();
 
-    [GlobalSetup(Target = nameof(Polly_OpenFastFail))]
+    [GlobalSetup(Target = nameof(Polly_IsolatedFastFail))]
     public Task IsolatePollyBreaker() => PollyManualControl.IsolateAsync();
 
-    [BenchmarkCategory("ClosedHappyPath"), Benchmark(Baseline = true)]
-    public ValueTask<int> Kevlar_ClosedHappyPath() => KevlarBreaker.ExecuteAsync(static _ => new ValueTask<int>(42));
+    private static void ConfigureKevlarRatioBreaker(CircuitBreakerOptions options)
+    {
+        options.FailureRatio = FailureRatio;
+        options.MinimumThroughput = MinimumThroughput;
+        options.SamplingWindow = SamplingWindow;
+        options.BreakDuration = BreakDuration;
+    }
 
-    [BenchmarkCategory("ClosedHappyPath"), Benchmark]
-    public ValueTask<int> Polly_ClosedHappyPath() => PollyBreaker.ExecuteAsync(static _ => new ValueTask<int>(42));
+    private static CircuitBreakerStrategyOptions CreatePollyRatioBreakerOptions(
+        CircuitBreakerManualControl? manualControl = null) => new()
+        {
+            FailureRatio = FailureRatio,
+            MinimumThroughput = MinimumThroughput,
+            SamplingDuration = SamplingWindow,
+            BreakDuration = BreakDuration,
+            ManualControl = manualControl,
+        };
 
-    [BenchmarkCategory("ClosedHappyPath"), Benchmark]
+    [BenchmarkCategory("RatioClosedHappyPath"), Benchmark(Baseline = true)]
+    public ValueTask<int> Kevlar_RatioClosedHappyPath() =>
+        KevlarBreaker.ExecuteAsync(static _ => new ValueTask<int>(42));
+
+    [BenchmarkCategory("RatioClosedHappyPath"), Benchmark]
+    public ValueTask<int> Polly_RatioClosedHappyPath() =>
+        PollyBreaker.ExecuteAsync(static _ => new ValueTask<int>(42));
+
+    [BenchmarkCategory("RatioClosedHappyPath"), Benchmark]
     public ValueTask<int> Kevlar_DynamicDurationConfigured() =>
         KevlarDynamicDurationBreaker.ExecuteAsync(static _ => new ValueTask<int>(42));
 
-    [BenchmarkCategory("ClosedHappyPath"), Benchmark]
+    [BenchmarkCategory("RatioClosedHappyPath"), Benchmark]
     public ValueTask<int> Kevlar_AsyncCallbackConfigured() =>
         KevlarAsyncCallbackBreaker.ExecuteAsync(static _ => new ValueTask<int>(42));
 
-    [BenchmarkCategory("OpenFastFail"), Benchmark(Baseline = true)]
-    public async ValueTask<bool> Kevlar_OpenFastFail()
+    [BenchmarkCategory("IsolatedFastFail"), Benchmark(Baseline = true)]
+    public async ValueTask<bool> Kevlar_IsolatedFastFail()
     {
         try
         {
@@ -79,8 +101,8 @@ public class CircuitBreakerBenchmarks
         }
     }
 
-    [BenchmarkCategory("OpenFastFail"), Benchmark]
-    public async ValueTask<bool> Polly_OpenFastFail()
+    [BenchmarkCategory("IsolatedFastFail"), Benchmark]
+    public async ValueTask<bool> Polly_IsolatedFastFail()
     {
         try
         {

@@ -63,7 +63,7 @@ def build_page(data, commit):
         "",
         "# Stress tests",
         "",
-        "Kevlar and [Polly v8](https://github.com/App-vNext/Polly) run the same composed timeout, retry, and circuit-breaker workload under sustained parallel load. The two phases run one after another in a single process, so they use the same GitHub runner.",
+        "Kevlar and [Polly v8](https://github.com/App-vNext/Polly) run the same composed timeout, retry, and circuit-breaker workload under sustained parallel load. Alternating measurement rounds run in a single process, so they use the same GitHub runner while balancing early- and late-run conditions.",
         "",
         f"*Last updated {timestamp}{suffix}.*",
         "",
@@ -94,7 +94,9 @@ def build_page(data, commit):
         "",
         "## Method",
         "",
-        f"- {data['workers']} parallel workers; {fmt_duration(data['totalDuration'])} total measured time, split equally between libraries.",
+        f"- {data['workers']} parallel workers; "
+        f"{fmt_duration(data['totalDuration'])} total measured time, split equally "
+        f"between libraries across {data.get('measurementRounds', 1)} alternating rounds.",
         f"- Each pipeline warmed for {fmt_duration(data['warmup'])} before measurement.",
         "- Each operation returns `42` successfully through Timeout(10 s) → Retry(3, no delay) → CircuitBreaker(10% over 30 s, min 100, break 5 s).",
         "- Process-wide allocation counters include all worker threads. GC counts are captured separately for each phase.",

@@ -11,6 +11,7 @@ internal sealed record StressRunResult(
     int Workers,
     TimeSpan TotalDuration,
     TimeSpan Warmup,
+    int MeasurementRounds,
     long PeakWorkingSetBytes,
     IReadOnlyList<StressPhaseResult> Results);
 
