@@ -1,9 +1,11 @@
 namespace Kevlar.Tests;
 
+/// <summary>Defines synchronization and execution-context behavior across strategy boundaries.</summary>
 public class AmbientContextContractTests
 {
     private static readonly AsyncLocal<string?> Ambient = new();
 
+    /// <summary>Verifies retry continuations do not post to the caller synchronization context.</summary>
     [Test]
     public async Task Retry_Does_Not_Post_Internal_Continuations_To_The_Caller_Context()
     {
@@ -38,6 +40,7 @@ public class AmbientContextContractTests
         Ambient.Value = null;
     }
 
+    /// <summary>Verifies timeout continuations do not post to the caller synchronization context.</summary>
     [Test]
     public async Task Timeout_Does_Not_Post_Internal_Continuations_To_The_Caller_Context()
     {
@@ -72,6 +75,7 @@ public class AmbientContextContractTests
         Ambient.Value = null;
     }
 
+    /// <summary>Verifies fallback continuations do not post to the caller synchronization context.</summary>
     [Test]
     public async Task Fallback_Does_Not_Post_Internal_Continuations_To_The_Caller_Context()
     {
@@ -108,6 +112,7 @@ public class AmbientContextContractTests
         Ambient.Value = null;
     }
 
+    /// <summary>Verifies queued limiter work does not post to the caller synchronization context.</summary>
     [Test]
     public async Task Queued_Limiter_Does_Not_Post_Internal_Continuations_To_The_Caller_Context()
     {
@@ -142,6 +147,7 @@ public class AmbientContextContractTests
         Ambient.Value = null;
     }
 
+    /// <summary>Verifies strategy callbacks receive the caller execution context.</summary>
     [Test]
     public async Task Retry_Fallback_Timeout_And_Hedge_Callbacks_Observe_ExecutionContext()
     {
@@ -203,6 +209,7 @@ public class AmbientContextContractTests
         Ambient.Value = null;
     }
 
+    /// <summary>Verifies hedge attempts isolate their ambient-context mutations.</summary>
     [Test]
     public async Task Hedge_Attempts_Isolate_AsyncLocal_Mutations_From_Each_Other_And_Later_Executions()
     {
@@ -249,6 +256,7 @@ public class AmbientContextContractTests
         Ambient.Value = null;
     }
 
+    /// <summary>Verifies suppressed execution context remains suppressed in actions and callbacks.</summary>
     [Test]
     public async Task Suppressed_ExecutionContext_Does_Not_Flow_Into_Action_Or_Callback()
     {
@@ -288,6 +296,7 @@ public class AmbientContextContractTests
         Ambient.Value = null;
     }
 
+    /// <summary>Verifies synchronous delays block without pumping a synchronization context.</summary>
     [Test]
     public async Task Synchronous_Delayed_Execution_Blocks_Without_Pumping_SynchronizationContext()
     {

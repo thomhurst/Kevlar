@@ -46,7 +46,7 @@ Your delegate receives a `CancellationToken` that combines your outer token with
 
 ## Ambient context
 
-Kevlar invokes the first user delegate inline, so it initially sees the caller's current `SynchronizationContext`. Internal asynchronous continuations use `ConfigureAwait(false)` and do not marshal back to that context; a later retry, fallback, timeout callback, hedge, or queued execution may therefore run with no `SynchronizationContext`. Your own delegate controls whether its own awaits capture a context.
+Kevlar invokes the first user delegate inline when no preceding strategy defers execution, so it initially sees the caller's current `SynchronizationContext`. A queued limiter execution and other deferred work may first invoke the delegate with no `SynchronizationContext`. Internal asynchronous continuations use `ConfigureAwait(false)` and do not marshal back to the caller's context; a later retry, fallback, timeout callback, or hedge may likewise run with no `SynchronizationContext`. Your own delegate controls whether its own awaits capture a context.
 
 `ExecutionContext` still flows normally. `AsyncLocal<T>` values visible to the caller flow into actions and strategy callbacks, while parallel hedge attempts receive isolated logical snapshots so one attempt's mutations do not leak into another or a later execution. Calling Kevlar from work started under `ExecutionContext.SuppressFlow()` keeps that flow suppressed.
 
