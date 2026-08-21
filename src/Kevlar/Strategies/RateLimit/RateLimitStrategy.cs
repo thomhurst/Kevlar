@@ -299,9 +299,10 @@ internal sealed class RateLimitStrategy : Strategy
             timeProvider,
             static provider => new CustomTimestampOrigin(provider));
         var timestamp = timeProvider.GetTimestamp();
+        var elapsedTimestamp = unchecked(timestamp - origin.ProviderTimestamp);
 
         return origin.SystemTimestamp - _systemTimestampOrigin
-            + ((double)((decimal)timestamp - origin.ProviderTimestamp) * origin.TimestampScale);
+            + (elapsedTimestamp * origin.TimestampScale);
     }
 
     private sealed class CustomTimestampOrigin

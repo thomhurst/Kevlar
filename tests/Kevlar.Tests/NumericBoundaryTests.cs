@@ -187,6 +187,19 @@ public class NumericBoundaryTests
         await Assert.That(result).IsEqualTo(2);
     }
 
+    [Test]
+    public async Task Rate_Limit_Preserves_Timestamp_Rollover()
+    {
+        var timeProvider = new FixedTimestampTimeProvider(long.MaxValue, timestampFrequency: 1);
+        var shield = Shield.RateLimit(1, TimeSpan.FromSeconds(1)).WithTimeProvider(timeProvider);
+
+        await shield.ExecuteAsync(_ => new ValueTask<int>(1));
+        timeProvider.Advance();
+        var result = await shield.ExecuteAsync(_ => new ValueTask<int>(2));
+
+        await Assert.That(result).IsEqualTo(2);
+    }
+
     private static async Task AssertOutOfRangeAsync(Action action, string paramName)
     {
         var exception = await Assert.That(action).Throws<ArgumentOutOfRangeException>();
