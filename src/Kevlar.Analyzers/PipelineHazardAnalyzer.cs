@@ -299,6 +299,41 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
+        if (TryGetAmbientClause(inner, context, knownTypes, visitedLocals, out var innerAmbient)
+            && TryGetAmbientClause(outer, context, knownTypes, visitedLocals, out var outerAmbient))
+        {
+            var resultAmbient = innerAmbient ?? outerAmbient;
+            if (SameAmbient(innerAmbient, resultAmbient)
+                && FindInPipeline(
+                    inner,
+                    context,
+                    predicate,
+                    knownTypes,
+                    stopAtHandlingClause,
+                    stopAtCompositionBoundary,
+                    visitedLocals,
+                    out matchedMethod))
+            {
+                return true;
+            }
+
+            if (SameAmbient(outerAmbient, resultAmbient))
+            {
+                return FindInPipeline(
+                    outer,
+                    context,
+                    predicate,
+                    knownTypes,
+                    stopAtHandlingClause,
+                    stopAtCompositionBoundary,
+                    visitedLocals,
+                    out matchedMethod);
+            }
+
+            matchedMethod = null;
+            return false;
+        }
+
         if (!IsKnownClauseFree(inner, context, knownTypes, visitedLocals))
         {
             return FindInPipeline(
@@ -351,6 +386,55 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         foreach (var argument in invocation.Arguments)
         {
             CollectCompositionOperands(argument.Value, context, operands, visitedLocals);
+        }
+
+        var ambientClauses = new SyntaxNode?[operands.Count];
+        var allKnown = true;
+        for (var index = 0; index < operands.Count; index++)
+        {
+            if (!TryGetAmbientClause(
+                operands[index],
+                context,
+                knownTypes,
+                visitedLocals,
+                out ambientClauses[index]))
+            {
+                allKnown = false;
+                break;
+            }
+        }
+
+        if (allKnown)
+        {
+            SyntaxNode? resultAmbient = null;
+            for (var index = ambientClauses.Length - 1; index >= 0; index--)
+            {
+                if (ambientClauses[index] is not null)
+                {
+                    resultAmbient = ambientClauses[index];
+                    break;
+                }
+            }
+
+            for (var index = 0; index < operands.Count; index++)
+            {
+                if (SameAmbient(ambientClauses[index], resultAmbient)
+                    && FindInPipeline(
+                        operands[index],
+                        context,
+                        predicate,
+                        knownTypes,
+                        stopAtHandlingClause,
+                        stopAtCompositionBoundary,
+                        visitedLocals,
+                        out matchedMethod))
+                {
+                    return true;
+                }
+            }
+
+            matchedMethod = null;
+            return false;
         }
 
         for (var index = operands.Count - 1; index >= 0; index--)
@@ -451,6 +535,140 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         }
 
         return null;
+    }
+
+    private static bool TryGetAmbientClause(
+        IOperation? operation,
+        OperationAnalysisContext context,
+        KnownTypes knownTypes,
+        HashSet<ISymbol>? visitedLocals,
+        out SyntaxNode? ambientClause)
+    {
+        operation = Unwrap(operation);
+        if (operation is ILocalReferenceOperation localReference)
+        {
+            visitedLocals ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+            if (!visitedLocals.Add(localReference.Local)
+                || !TryGetStableInitializer(localReference, context, out var initializer))
+            {
+                ambientClause = null;
+                return false;
+            }
+
+            var found = TryGetAmbientClause(
+                initializer,
+                context,
+                knownTypes,
+                visitedLocals,
+                out ambientClause);
+            visitedLocals.Remove(localReference.Local);
+            return found;
+        }
+
+        if (operation is IConditionalAccessOperation conditionalAccess)
+        {
+            return TryGetAmbientClause(
+                conditionalAccess.Operation,
+                context,
+                knownTypes,
+                visitedLocals,
+                out ambientClause);
+        }
+
+        if (operation is IPropertyReferenceOperation propertyReference)
+        {
+            ambientClause = null;
+            return propertyReference.Property.Name == "Empty"
+                && knownTypes.IsShield(propertyReference.Property.ContainingType);
+        }
+
+        if (operation is not IInvocationOperation invocation)
+        {
+            ambientClause = null;
+            return false;
+        }
+
+        var method = Normalize(invocation.TargetMethod);
+        if (StartsHandlingClause(method, knownTypes))
+        {
+            ambientClause = invocation.Syntax;
+            return true;
+        }
+
+        if (!IsKevlarFluentMethod(method, knownTypes))
+        {
+            ambientClause = null;
+            return false;
+        }
+
+        if (method.Name == "Wrap")
+        {
+            var inner = GetArgument(invocation, "inner");
+            if (!TryGetAmbientClause(inner, context, knownTypes, visitedLocals, out ambientClause))
+            {
+                return false;
+            }
+
+            return ambientClause is not null
+                || TryGetAmbientClause(
+                    GetReceiver(invocation),
+                    context,
+                    knownTypes,
+                    visitedLocals,
+                    out ambientClause);
+        }
+
+        if (method.Name == "Compose")
+        {
+            var operands = new List<IOperation>();
+            foreach (var argument in invocation.Arguments)
+            {
+                CollectCompositionOperands(argument.Value, context, operands, visitedLocals);
+            }
+
+            ambientClause = null;
+            foreach (var operand in operands)
+            {
+                if (!TryGetAmbientClause(
+                    operand,
+                    context,
+                    knownTypes,
+                    visitedLocals,
+                    out var operandAmbient))
+                {
+                    ambientClause = null;
+                    return false;
+                }
+
+                ambientClause = operandAmbient ?? ambientClause;
+            }
+
+            return true;
+        }
+
+        var receiver = GetReceiver(invocation);
+        if (receiver is not null)
+        {
+            return TryGetAmbientClause(
+                receiver,
+                context,
+                knownTypes,
+                visitedLocals,
+                out ambientClause);
+        }
+
+        ambientClause = null;
+        return knownTypes.IsShield(method.ContainingType);
+    }
+
+    private static bool SameAmbient(SyntaxNode? left, SyntaxNode? right)
+    {
+        if (left is null || right is null)
+        {
+            return left is null && right is null;
+        }
+
+        return left.SyntaxTree == right.SyntaxTree && left.Span == right.Span;
     }
 
     private static bool WrapPreservesAmbient(

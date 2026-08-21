@@ -108,6 +108,8 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.Compose([Shield.Retry(1)]).For<int>().Fallback(0);",
             "var parts = new[] { Shield.Retry(1) }; _ = Shield.Compose(parts).For<int>().Fallback(0);",
             "_ = Shield.Compose(Shield.When<InvalidOperationException>().Retry(1), Shield.Empty).For<int>().Fallback(0);",
+            "var clause = Shield.For<int>().When<InvalidOperationException>().Timeout(TimeSpan.Zero); var outer = clause.Retry(1); _ = outer.Wrap(clause).Fallback(0);",
+            "var clause = Shield.When<InvalidOperationException>().Timeout(TimeSpan.Zero); var outer = clause.Retry(1); _ = Shield.Compose(outer, clause).For<int>().Fallback(0);",
         };
 
         await AssertEachAsync(cases, "KEV003");
