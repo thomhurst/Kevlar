@@ -168,9 +168,11 @@ public class GrpcResilienceTests
     public async Task Disposing_The_Wrapper_Cancels_And_Disposes_The_Active_Call()
     {
         var response = new TaskCompletionSource<TestReply>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var disposed = 0;
         var invoker = new DelegateCallInvoker((_, options) =>
         {
+            started.TrySetResult();
             return Call(response.Task, () =>
             {
                 Interlocked.Increment(ref disposed);
@@ -180,6 +182,7 @@ public class GrpcResilienceTests
         var client = new Resilience.ResilienceClient(invoker);
         var call = client.UnaryAsync(new TestRequest());
 
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
         call.Dispose();
         call.Dispose();
 
@@ -226,6 +229,20 @@ public class GrpcResilienceTests
         await Assert.That(call.GetStatus()).IsEqualTo(expected.Status);
         await Assert.That(call.GetTrailers().GetValue("selected")).IsEqualTo("true");
         await losingCallDisposed.Task.WaitAsync(TimeSpan.FromSeconds(5));
+    }
+
+    [Test]
+    public async Task Discarded_Loopback_Failure_Preserves_Response_Headers()
+    {
+        await using var server = await GrpcTestServer.StartAsync();
+        var client = server.Client(Shield.Use(new ReturnFirstAfterSecondStrategy()));
+        using var call = client.UnaryAsync(new TestRequest { Scenario = "invalid" });
+
+        var exception = await Assert.That(async () => await call.ResponseAsync).Throws<RpcException>();
+
+        await Assert.That(exception!.StatusCode).IsEqualTo(StatusCode.InvalidArgument);
+        await Assert.That((await call.ResponseHeadersAsync).GetValue("attempt")).IsEqualTo("1");
+        await Assert.That(server.State.Attempts("invalid")).IsEqualTo(2);
     }
 
     [Test]
@@ -412,6 +429,18 @@ public class GrpcResilienceTests
             _ = await second.ConfigureAwait(false);
             secondFailureObserved.TrySetResult();
             return await first.ConfigureAwait(false);
+        }
+    }
+
+    private sealed class ReturnFirstAfterSecondStrategy : Strategy
+    {
+        public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+            Continuation<T, TState> next,
+            KevlarContext context)
+        {
+            var first = await next.InvokeAsync(context).ConfigureAwait(false);
+            _ = await next.InvokeAsync(context).ConfigureAwait(false);
+            return first;
         }
     }
 
