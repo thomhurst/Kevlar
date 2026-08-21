@@ -86,6 +86,9 @@ internal sealed class RateLimitStrategy : Strategy
                 ? Volatile.Read(ref _theoreticalArrival)
                 : 0;
             var acquired = TryAcquire(context.TimeProvider, out reservation, out retryAfter);
+            var acquiredTheoreticalArrival = acquired && _queueLimit == 0
+                ? Volatile.Read(ref _theoreticalArrival)
+                : 0;
             try
             {
                 RecordStateUnderLock(context.ShieldName, context.TimeProvider);
@@ -95,7 +98,10 @@ internal sealed class RateLimitStrategy : Strategy
             {
                 if (acquired)
                 {
-                    RollbackAcquisition(reservation, previousTheoreticalArrival);
+                    RollbackAcquisition(
+                        reservation,
+                        previousTheoreticalArrival,
+                        acquiredTheoreticalArrival);
                 }
 
                 throw;
@@ -103,7 +109,10 @@ internal sealed class RateLimitStrategy : Strategy
         }
     }
 
-    private void RollbackAcquisition(Reservation? reservation, double previousTheoreticalArrival)
+    private void RollbackAcquisition(
+        Reservation? reservation,
+        double previousTheoreticalArrival,
+        double acquiredTheoreticalArrival)
     {
         if (reservation is not null)
         {
@@ -113,11 +122,28 @@ internal sealed class RateLimitStrategy : Strategy
 
         if (_queueLimit == 0)
         {
-            Volatile.Write(ref _theoreticalArrival, previousTheoreticalArrival);
+            RollbackImmediatePermit(previousTheoreticalArrival, acquiredTheoreticalArrival);
             return;
         }
 
         RollbackQueuedPermit();
+    }
+
+    private void RollbackImmediatePermit(
+        double previousTheoreticalArrival,
+        double acquiredTheoreticalArrival)
+    {
+        while (true)
+        {
+            var current = Volatile.Read(ref _theoreticalArrival);
+            var restored = current == acquiredTheoreticalArrival
+                ? previousTheoreticalArrival
+                : current - _timestampUnitsPerPermit;
+            if (Interlocked.CompareExchange(ref _theoreticalArrival, restored, current) == current)
+            {
+                return;
+            }
+        }
     }
 
     private void RollbackQueuedPermit()

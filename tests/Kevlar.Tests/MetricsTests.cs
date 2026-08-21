@@ -959,9 +959,19 @@ public class MetricsTests
         await entered.Task;
 
         var failed = shield.ExecuteAsync(_ => ValueTask.CompletedTask).AsTask();
-        release.TrySetResult();
-        await holder;
-        var thrown = await Assert.That(async () => await failed).Throws<InvalidOperationException>();
+        InvalidOperationException? thrown;
+        try
+        {
+            thrown = await Assert.That(async () =>
+                    await failed.WaitAsync(TimeSpan.FromSeconds(5)))
+                .Throws<InvalidOperationException>();
+        }
+        finally
+        {
+            release.TrySetResult();
+            await holder;
+        }
+
         await Assert.That(ReferenceEquals(thrown, metricsFailure)).IsTrue();
 
         await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
@@ -1168,6 +1178,47 @@ public class MetricsTests
         await Assert.That(invoked).IsFalse();
 
         await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
+    }
+
+    [Test]
+    public async Task Rate_Metric_Failure_Preserves_A_Nested_Admission()
+    {
+        var nested = false;
+        var nestedInvocations = 0;
+        var metricsFailure = new InvalidOperationException("metrics callback");
+        Shield? shield = null;
+        using var listener = new KevlarMeterListener((instrument, value) =>
+        {
+            if (nested || instrument != "kevlar.rate_limit.available" || value != 1)
+            {
+                return;
+            }
+
+            nested = true;
+            shield!.ExecuteAsync(_ =>
+            {
+                nestedInvocations++;
+                return ValueTask.CompletedTask;
+            }).GetAwaiter().GetResult();
+            throw metricsFailure;
+        });
+        shield = Shield.RateLimit(options =>
+        {
+            options.Permits = 1;
+            options.Window = TimeSpan.FromHours(1);
+            options.Burst = 2;
+        }).WithName("metrics-rate-nested-failure");
+
+        var thrown = await Assert.That(async () =>
+                await shield.ExecuteAsync(_ => ValueTask.CompletedTask))
+            .Throws<InvalidOperationException>();
+        await Assert.That(ReferenceEquals(thrown, metricsFailure)).IsTrue();
+        await Assert.That(nestedInvocations).IsEqualTo(1);
+
+        await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
+        _ = await Assert.That(async () =>
+                await shield.ExecuteAsync(_ => ValueTask.CompletedTask))
+            .Throws<RateLimitExceededException>();
     }
 
     [Test]

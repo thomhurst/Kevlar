@@ -55,9 +55,12 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
             }
             else
             {
-                var wait = _semaphore.WaitAsync(context.CancellationToken);
-                if (!wait.IsCompleted)
+                if (!_semaphore.Wait(0, context.CancellationToken))
                 {
+                    using var waitCancellation = context.CancellationToken.CanBeCanceled
+                        ? CancellationTokenSource.CreateLinkedTokenSource(context.CancellationToken)
+                        : new CancellationTokenSource();
+                    var wait = _semaphore.WaitAsync(waitCancellation.Token);
                     queued = true;
                     UpdateMetricsState(inflightDelta: 0, queuedDelta: 1);
                     try
@@ -66,16 +69,35 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
                     }
                     catch (Exception publicationFailure)
                     {
-                        await ReleasePendingWaitAsync(wait).ConfigureAwait(false);
+                        waitCancellation.Cancel();
+                        try
+                        {
+                            await wait.ConfigureAwait(false);
+                            _semaphore.Release();
+                        }
+                        catch (OperationCanceledException)
+                        {
+                            // Cancellation withdrew the wait before it took a permit.
+                        }
+
                         ExceptionDispatchInfo.Capture(publicationFailure).Throw();
                     }
-                }
 
-                await wait.ConfigureAwait(false);
+                    await wait.ConfigureAwait(false);
+                }
             }
         }
         catch (OperationCanceledException cancelled)
         {
+            if (context.CancellationToken.IsCancellationRequested
+                && cancelled.CancellationToken != context.CancellationToken)
+            {
+                cancelled = new OperationCanceledException(
+                    cancelled.Message,
+                    cancelled,
+                    context.CancellationToken);
+            }
+
             Interlocked.Decrement(ref _pending);
             if (queued)
             {
@@ -119,19 +141,6 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
             _semaphore.Release();
             Interlocked.Decrement(ref _pending);
             RecordState(context.ShieldName);
-        }
-    }
-
-    private async ValueTask ReleasePendingWaitAsync(Task wait)
-    {
-        try
-        {
-            await wait.ConfigureAwait(false);
-            _semaphore.Release();
-        }
-        catch (OperationCanceledException)
-        {
-            // A cancelled wait did not take a permit.
         }
     }
 
