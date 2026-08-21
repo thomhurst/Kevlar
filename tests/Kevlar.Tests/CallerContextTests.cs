@@ -86,11 +86,11 @@ public class CallerContextTests
                 if (currentAttempt == 1)
                 {
                     entered.TrySetResult();
-                    await release.Task.ConfigureAwait(false);
+                    await release.Task.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
                     throw new InvalidOperationException("primary");
                 }
 
-                await entered.Task.ConfigureAwait(false);
+                await entered.Task.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
                 release.TrySetResult();
                 return 42;
             });

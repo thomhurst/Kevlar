@@ -10,6 +10,7 @@ public class AllocationBudgetTests
 
     private static readonly InvalidOperationException RecoverableFailure = new("recoverable");
     private static readonly KevlarKey<AllocationBudgetTests> MetadataState = new("metadata-state");
+    private static readonly KevlarKey<int> MetadataValue = new("metadata-value");
 
     private readonly Shield _empty = Shield.Empty;
     private readonly Shield _retry = Shield.Retry(3, Backoff.None);
@@ -84,6 +85,13 @@ public class AllocationBudgetTests
                 static (state, properties) => properties.Set(MetadataState, state),
                 static (_, context) => new ValueTask<int>(
                     context.Properties.GetOrDefault<AllocationBudgetTests>(MetadataState)!._metadataValue))
+                .GetAwaiter()
+                .GetResult());
+        AssertZero("empty async context value state", this, static test =>
+            test._empty.ExecuteWithContextAsync(
+                test._metadataValue,
+                static (state, properties) => properties.Set(MetadataValue, state),
+                static (_, context) => new ValueTask<int>(context.Properties.GetOrDefault(MetadataValue)))
                 .GetAwaiter()
                 .GetResult());
         AssertZero("retry sync happy path", this, static test =>
