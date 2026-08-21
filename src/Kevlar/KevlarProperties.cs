@@ -4,7 +4,8 @@ namespace Kevlar;
 
 /// <summary>
 /// A strongly typed property bag carried by <see cref="KevlarContext"/> for passing
-/// custom data between the caller and strategy callbacks.
+/// custom data between the caller, execution delegate, and strategy callbacks. The bag is
+/// pooled with its context and must not be retained beyond the current callback or delegate.
 /// </summary>
 public sealed class KevlarProperties
 {

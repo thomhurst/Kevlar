@@ -296,6 +296,28 @@ public sealed class Shield<TResult>
         return ShieldEngine.ExecuteAsync(Head, TimeOrSystem, Name, state, action, cancellationToken);
     }
 
+    /// <summary>
+    /// Initializes execution properties, then executes a context-aware delegate through the pipeline.
+    /// The context is pooled and is valid only for the duration of the delegate invocation; never retain it.
+    /// </summary>
+    public ValueTask<TResult> ExecuteWithContextAsync<TState>(
+        TState state,
+        Action<TState, KevlarProperties> initializeProperties,
+        Func<TState, KevlarContext, ValueTask<TResult>> action,
+        CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(initializeProperties, nameof(initializeProperties));
+        Throw.IfNull(action, nameof(action));
+        return ShieldEngine.ExecuteWithContextAsync(
+            Head,
+            TimeOrSystem,
+            Name,
+            state,
+            initializeProperties,
+            action,
+            cancellationToken);
+    }
+
     /// <summary>Executes the delegate through the pipeline and returns the outcome instead of throwing.</summary>
     public ValueTask<Outcome<TResult>> ExecuteOutcomeAsync(Func<CancellationToken, ValueTask<TResult>> action, CancellationToken cancellationToken = default)
     {
@@ -328,6 +350,28 @@ public sealed class Shield<TResult>
     {
         Throw.IfNull(action, nameof(action));
         return ShieldEngine.ExecuteSync(Head, TimeOrSystem, Name, state, action, cancellationToken);
+    }
+
+    /// <summary>
+    /// Initializes execution properties, then executes a context-aware delegate synchronously through the pipeline.
+    /// The context is pooled and is valid only for the duration of the delegate invocation; never retain it.
+    /// </summary>
+    public TResult ExecuteWithContext<TState>(
+        TState state,
+        Action<TState, KevlarProperties> initializeProperties,
+        Func<TState, KevlarContext, TResult> action,
+        CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(initializeProperties, nameof(initializeProperties));
+        Throw.IfNull(action, nameof(action));
+        return ShieldEngine.ExecuteWithContextSync(
+            Head,
+            TimeOrSystem,
+            Name,
+            state,
+            initializeProperties,
+            action,
+            cancellationToken);
     }
 
     /// <summary>Describes the pipeline, outermost strategy first, like <see cref="Shield.ToString"/>.</summary>

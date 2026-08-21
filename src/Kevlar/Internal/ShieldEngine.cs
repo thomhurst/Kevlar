@@ -86,6 +86,45 @@ internal static class ShieldEngine
         return AwaitOutcomeAsync(pipeline, context, startedAt);
     }
 
+    public static ValueTask<T> ExecuteWithContextAsync<T, TState>(
+        StrategyNode? head,
+        TimeProvider timeProvider,
+        string? shieldName,
+        TState state,
+        Action<TState, KevlarProperties> initializeProperties,
+        Func<TState, KevlarContext, ValueTask<T>> action,
+        CancellationToken cancellationToken)
+    {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            KevlarMetrics.Execution(shieldName, success: false);
+            return Rethrow<T>(Outcome<T>.FromException(new OperationCanceledException(cancellationToken)));
+        }
+
+        var context = KevlarContext.Rent(cancellationToken, isSynchronous: false, timeProvider, shieldName);
+        try
+        {
+            initializeProperties(state, context.Properties);
+        }
+        catch
+        {
+            KevlarContext.Return(context);
+            KevlarMetrics.Execution(shieldName, success: false);
+            throw;
+        }
+
+        var pipeline = RunWithContextAsync(head, state, action, context);
+        if (pipeline.IsCompletedSuccessfully)
+        {
+            var outcome = pipeline.Result;
+            KevlarContext.Return(context);
+            KevlarMetrics.Execution(shieldName, outcome.IsSuccess);
+            return outcome.IsSuccess ? new ValueTask<T>(outcome.Result!) : Rethrow(outcome);
+        }
+
+        return AwaitAsync(pipeline, context);
+    }
+
     public static T ExecuteSync<T, TState>(
         StrategyNode? head,
         TimeProvider timeProvider,
@@ -134,6 +173,48 @@ internal static class ShieldEngine
         }
     }
 
+    public static T ExecuteWithContextSync<T, TState>(
+        StrategyNode? head,
+        TimeProvider timeProvider,
+        string? shieldName,
+        TState state,
+        Action<TState, KevlarProperties> initializeProperties,
+        Func<TState, KevlarContext, T> action,
+        CancellationToken cancellationToken)
+    {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            KevlarMetrics.Execution(shieldName, success: false);
+            cancellationToken.ThrowIfCancellationRequested();
+        }
+
+        var context = KevlarContext.Rent(cancellationToken, isSynchronous: true, timeProvider, shieldName);
+        try
+        {
+            try
+            {
+                initializeProperties(state, context.Properties);
+            }
+            catch
+            {
+                KevlarMetrics.Execution(shieldName, success: false);
+                throw;
+            }
+
+            var pipeline = RunWithContextSync(head, state, action, context);
+            var outcome = pipeline.IsCompletedSuccessfully
+                ? pipeline.Result
+                : pipeline.AsTask().GetAwaiter().GetResult();
+
+            KevlarMetrics.Execution(shieldName, outcome.IsSuccess);
+            return outcome.GetResultOrRethrow();
+        }
+        finally
+        {
+            KevlarContext.Return(context);
+        }
+    }
+
     private static ValueTask<Outcome<T>> RunAsync<T, TState>(
         StrategyNode? head,
         TState state,
@@ -172,11 +253,63 @@ internal static class ShieldEngine
         return continuation.InvokeAsync(context);
     }
 
+    private static ValueTask<Outcome<T>> RunWithContextAsync<T, TState>(
+        StrategyNode? head,
+        TState state,
+        Func<TState, KevlarContext, ValueTask<T>> action,
+        KevlarContext context)
+    {
+        var continuation = new Continuation<T, ContextAsyncCallback<TState, T>>(
+            head,
+            static (callback, ctx) => InvokeWithContextAsync(callback, ctx),
+            new ContextAsyncCallback<TState, T>(state, action));
+
+        return continuation.InvokeAsync(context);
+    }
+
+    private static ValueTask<Outcome<T>> RunWithContextSync<T, TState>(
+        StrategyNode? head,
+        TState state,
+        Func<TState, KevlarContext, T> action,
+        KevlarContext context)
+    {
+        var continuation = new Continuation<T, ContextSyncCallback<TState, T>>(
+            head,
+            static (callback, ctx) =>
+            {
+                try
+                {
+                    return new ValueTask<Outcome<T>>(Outcome<T>.FromResult(callback.Action(callback.State, ctx)));
+                }
+                catch (Exception exception)
+                {
+                    return new ValueTask<Outcome<T>>(Outcome<T>.FromException(exception));
+                }
+            },
+            new ContextSyncCallback<TState, T>(state, action));
+
+        return continuation.InvokeAsync(context);
+    }
+
     private static async ValueTask<Outcome<T>> InvokeAsync<TState, T>(AsyncCallback<TState, T> callback, KevlarContext context)
     {
         try
         {
             return Outcome<T>.FromResult(await callback.Action(callback.State, context.CancellationToken).ConfigureAwait(false));
+        }
+        catch (Exception exception)
+        {
+            return Outcome<T>.FromException(exception);
+        }
+    }
+
+    private static async ValueTask<Outcome<T>> InvokeWithContextAsync<TState, T>(
+        ContextAsyncCallback<TState, T> callback,
+        KevlarContext context)
+    {
+        try
+        {
+            return Outcome<T>.FromResult(await callback.Action(callback.State, context).ConfigureAwait(false));
         }
         catch (Exception exception)
         {
@@ -266,5 +399,31 @@ internal static class ShieldEngine
         public TState State { get; }
 
         public Func<TState, CancellationToken, T> Action { get; }
+    }
+
+    private readonly struct ContextAsyncCallback<TState, T>
+    {
+        public ContextAsyncCallback(TState state, Func<TState, KevlarContext, ValueTask<T>> action)
+        {
+            State = state;
+            Action = action;
+        }
+
+        public TState State { get; }
+
+        public Func<TState, KevlarContext, ValueTask<T>> Action { get; }
+    }
+
+    private readonly struct ContextSyncCallback<TState, T>
+    {
+        public ContextSyncCallback(TState state, Func<TState, KevlarContext, T> action)
+        {
+            State = state;
+            Action = action;
+        }
+
+        public TState State { get; }
+
+        public Func<TState, KevlarContext, T> Action { get; }
     }
 }
