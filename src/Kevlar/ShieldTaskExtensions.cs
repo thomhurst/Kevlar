@@ -56,6 +56,14 @@ public static class ShieldTaskExtensions
         return shield.ExecuteOutcomeAsync(token => new ValueTask<T>(action(token)), cancellationToken);
     }
 
+    /// <summary>Executes the <see cref="Task{T}"/>-returning delegate through the pipeline, threading <paramref name="state"/> to avoid closure allocations, and returns the outcome instead of throwing.</summary>
+    public static ValueTask<Outcome<T>> ExecuteOutcomeAsync<T, TState>(this Shield shield, TState state, Func<TState, CancellationToken, Task<T>> action, CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(shield, nameof(shield));
+        Throw.IfNull(action, nameof(action));
+        return shield.ExecuteOutcomeAsync((state, action), static (s, token) => new ValueTask<T>(s.action(s.state, token)), cancellationToken);
+    }
+
     // ── Shield<TResult> ─────────────────────────────────────────────────────────────────
 
     /// <summary>Executes the <see cref="Task{TResult}"/>-returning delegate through the pipeline.</summary>
@@ -80,5 +88,13 @@ public static class ShieldTaskExtensions
         Throw.IfNull(shield, nameof(shield));
         Throw.IfNull(action, nameof(action));
         return shield.ExecuteOutcomeAsync(token => new ValueTask<TResult>(action(token)), cancellationToken);
+    }
+
+    /// <summary>Executes the <see cref="Task{TResult}"/>-returning delegate through the pipeline, threading <paramref name="state"/> to avoid closure allocations, and returns the outcome instead of throwing.</summary>
+    public static ValueTask<Outcome<TResult>> ExecuteOutcomeAsync<TResult, TState>(this Shield<TResult> shield, TState state, Func<TState, CancellationToken, Task<TResult>> action, CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(shield, nameof(shield));
+        Throw.IfNull(action, nameof(action));
+        return shield.ExecuteOutcomeAsync((state, action), static (s, token) => new ValueTask<TResult>(s.action(s.state, token)), cancellationToken);
     }
 }
