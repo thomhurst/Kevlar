@@ -179,7 +179,7 @@ public static class KevlarServiceCollectionExtensions
         section.Value is not null || section.GetChildren().Any();
 
     private static string? Read(IConfiguration configuration, string key) =>
-        configuration[key] is { Length: > 0 } value ? value : null;
+        configuration[key];
 
     private static int? ReadNullableInt(IConfiguration configuration, string key) =>
         Read(configuration, key) is { } value

@@ -187,4 +187,17 @@ public class ConfigurationBindingTests
             .Throws<InvalidOperationException>()
             .WithMessage("Configuration value 'abc' for 'Retry:MaxRetries' is not an integer.");
     }
+
+    [Test]
+    public async Task Configuration_Rejects_Explicit_Empty_Value()
+    {
+        var configuration = BuildConfiguration(("Retry:MaxRetries", ""));
+        var services = new ServiceCollection();
+        services.AddShield("empty", configuration);
+        using var provider = services.BuildServiceProvider();
+
+        await Assert.That(() => provider.GetRequiredService<IKevlarRegistry>().GetShield("empty"))
+            .Throws<InvalidOperationException>()
+            .WithMessage("Configuration value '' for 'Retry:MaxRetries' is not an integer.");
+    }
 }
