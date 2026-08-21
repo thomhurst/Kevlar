@@ -22,6 +22,7 @@ internal sealed class CircuitBreakerStrategy : Strategy
 
     public override string Describe() => _core.Describe();
 
+    /// <inheritdoc />
     public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
         var alias = new StrategyMetricAlias(context.ShieldName, context.StrategyIndex);
