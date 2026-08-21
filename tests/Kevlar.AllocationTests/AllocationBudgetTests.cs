@@ -1,3 +1,5 @@
+using Kevlar.Chaos;
+
 namespace Kevlar.AllocationTests;
 
 /// <summary>Guards documented allocation budgets for representative shield execution paths.</summary>
@@ -32,6 +34,17 @@ public class AllocationBudgetTests
         options.OnStateChangedAsync = static _ => default;
     });
     private readonly Shield _timeout = Shield.Timeout(TimeSpan.FromMinutes(1));
+    private readonly Shield _disabledChaos = ChaosShield.Fault(static _ => { });
+    private readonly Shield _excludedChaos = ChaosShield.Fault(static options =>
+    {
+        options.Enabled = true;
+        options.InjectionRate = 0;
+    });
+    private readonly Shield<int> _enabledOutcomeChaos = ChaosShield.Outcome<int>(static options =>
+    {
+        options.Enabled = true;
+        options.Result = 42;
+    });
     private readonly Shield<int> _fallback = Shield.For<int>()
         .When<InvalidOperationException>()
         .Fallback(7);
@@ -118,6 +131,12 @@ public class AllocationBudgetTests
             test._asyncTransitionBreaker.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("timeout happy path", this, static test =>
             test._timeout.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
+        AssertZero("chaos disabled", this, static test =>
+            test._disabledChaos.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
+        AssertZero("chaos excluded by rate", this, static test =>
+            test._excludedChaos.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
+        AssertZero("chaos outcome injected", this, static test =>
+            test._enabledOutcomeChaos.ExecuteAsync(static _ => new ValueTask<int>(0)).GetAwaiter().GetResult());
         AssertZero("fallback pass-through", this, static test =>
             test._fallback.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("fallback async notification pass-through", this, static test =>

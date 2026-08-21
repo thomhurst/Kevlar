@@ -109,6 +109,7 @@ try
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Kevlar" Version="$Version" />
+    <PackageReference Include="Kevlar.Chaos" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.DependencyInjection" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.Http" Version="$Version" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="$ConfigurationVersion" />
@@ -120,6 +121,7 @@ try
     Write-TextFile (Join-Path $consumerDirectory 'Program.cs') @'
 using System.Net;
 using Kevlar;
+using Kevlar.Chaos;
 using Kevlar.Extensions.DependencyInjection;
 using Kevlar.Extensions.Http;
 using Microsoft.Extensions.Configuration;
@@ -138,6 +140,16 @@ if (typed.Execute(static _ => 42) != 42
     || await typed.ExecuteAsync(static _ => new ValueTask<int>(42)) != 42)
 {
     throw new InvalidOperationException("Typed execution failed.");
+}
+
+var chaos = ChaosShield.Outcome<int>(options =>
+{
+    options.Enabled = true;
+    options.Result = 42;
+});
+if (await chaos.ExecuteAsync(static _ => new ValueTask<int>(0)) != 42)
+{
+    throw new InvalidOperationException("Chaos package execution failed.");
 }
 
 var retryAttempts = 0;
