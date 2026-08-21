@@ -97,6 +97,15 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
             catch (Exception exception)
             {
                 SelectFailure(exception);
+                if (exception is OperationCanceledException cancellation
+                    && _context.Options.CancellationToken.IsCancellationRequested)
+                {
+                    throw new OperationCanceledException(
+                        cancellation.Message,
+                        cancellation,
+                        _context.Options.CancellationToken);
+                }
+
                 throw;
             }
         }

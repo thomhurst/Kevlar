@@ -94,7 +94,9 @@ public class GrpcResilienceTests
 
         cancellation.Cancel();
 
-        _ = await Assert.That(async () => await call.ResponseAsync).Throws<OperationCanceledException>();
+        var exception = await Assert.That(async () => await call.ResponseAsync)
+            .Throws<OperationCanceledException>();
+        await Assert.That(exception!.CancellationToken).IsEqualTo(cancellation.Token);
         await server.State.WaitForCancellationAsync().WaitAsync(TimeSpan.FromSeconds(5));
     }
 
