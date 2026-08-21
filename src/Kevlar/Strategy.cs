@@ -51,7 +51,7 @@ public abstract class Strategy
 public readonly struct Continuation<T, TState>
 {
     private readonly StrategyNode? _next;
-    private readonly Func<TState, KevlarContext, ValueTask<Outcome<T>>> _callback;
+    private readonly Func<TState, KevlarContext, ValueTask<Outcome<T>>>? _callback;
     private readonly TState _state;
 
     internal Continuation(StrategyNode? next, Func<TState, KevlarContext, ValueTask<Outcome<T>>> callback, TState state)
@@ -88,7 +88,7 @@ public readonly struct Continuation<T, TState>
         try
         {
             execution = node.Strategy.ExecuteAsync(
-                new Continuation<T, TState>(node.Next, _callback, _state),
+                new Continuation<T, TState>(node.Next, _callback!, _state),
                 context);
         }
         catch (Exception exception)

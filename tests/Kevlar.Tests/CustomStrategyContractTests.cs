@@ -189,13 +189,15 @@ public class CustomStrategyContractTests
     [Test]
     public async Task Stateless_Strategy_Is_Safe_For_Parallel_Reuse()
     {
-        var shield = Shield.Use(PassThroughStrategy.Instance);
+        var strategy = new CountingPassThroughStrategy();
+        var shield = Shield.Use(strategy);
         var executions = Enumerable.Range(0, 128)
             .Select(value => shield.ExecuteAsync(value, ExecuteAsynchronously).AsTask());
 
         var results = await Task.WhenAll(executions);
 
         await Assert.That(results).IsEquivalentTo(Enumerable.Range(0, 128));
+        await Assert.That(strategy.Invocations).IsEqualTo(128);
     }
 
     [Test]
@@ -324,7 +326,7 @@ public class CustomStrategyContractTests
             KevlarContext context) =>
             FaultAsync<T>();
 
-        private async ValueTask<Outcome<T>> FaultAsync<T>()
+        private async ValueTask<Outcome<TResult>> FaultAsync<TResult>()
         {
             await Task.Yield();
             throw failure;
@@ -339,6 +341,21 @@ public class CustomStrategyContractTests
             Continuation<T, TState> next,
             KevlarContext context) =>
             next.InvokeAsync(context);
+    }
+
+    private sealed class CountingPassThroughStrategy : Strategy
+    {
+        private int _invocations;
+
+        public int Invocations => Volatile.Read(ref _invocations);
+
+        public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+            Continuation<T, TState> next,
+            KevlarContext context)
+        {
+            Interlocked.Increment(ref _invocations);
+            return next.InvokeAsync(context);
+        }
     }
 
     private sealed class DescribedStrategy : Strategy
