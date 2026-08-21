@@ -4,7 +4,7 @@ import type * as Preset from '@docusaurus/preset-classic';
 
 const config: Config = {
   title: 'Kevlar',
-  tagline: 'Fast, zero-dependency resilience for .NET',
+  tagline: 'Fast resilience for .NET',
   favicon: 'img/logo.svg',
 
   url: 'https://thomhurst.github.io',

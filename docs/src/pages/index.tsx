@@ -171,8 +171,8 @@ function HomepageHeader() {
               <span> standing.</span>
             </Heading>
             <p className={styles.heroTagline}>
-              Fast, zero-dependency resilience for .NET. Every strategy you
-              need, composed through one fluent shield API.
+              Fast resilience for .NET. Every strategy you need, composed
+              through one fluent shield API.
             </p>
             <div className={styles.buttons}>
               <Link className={styles.primaryButton} to="/docs/getting-started">
@@ -360,7 +360,7 @@ export default function Home(): ReactNode {
   return (
     <Layout
       title={siteConfig.title}
-      description="Fast, zero-dependency resilience for .NET — retries, circuit breakers, timeouts, rate limiting, concurrency limits, hedging and fallbacks through one fluent shield API.">
+      description="Fast resilience for .NET — retries, circuit breakers, timeouts, rate limiting, concurrency limits, hedging and fallbacks through one fluent shield API.">
       <HomepageHeader />
       <main className={styles.main}>
         <StrategyRail />
