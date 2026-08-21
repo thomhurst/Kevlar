@@ -301,7 +301,7 @@ internal sealed class RateLimitStrategy : Strategy
         var timestamp = timeProvider.GetTimestamp();
 
         return origin.SystemTimestamp - _systemTimestampOrigin
-            + (((double)timestamp - origin.ProviderTimestamp) * origin.TimestampScale);
+            + ((double)((decimal)timestamp - origin.ProviderTimestamp) * origin.TimestampScale);
     }
 
     private sealed class CustomTimestampOrigin

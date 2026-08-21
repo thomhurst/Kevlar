@@ -91,6 +91,7 @@ internal sealed class CircuitBreakerCore
 
         lock (_gate)
         {
+            var now = _state == CircuitState.Open ? timeProvider.GetUtcNow() : default;
             switch (_state)
             {
                 case CircuitState.Closed:

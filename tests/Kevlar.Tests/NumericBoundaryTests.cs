@@ -109,7 +109,11 @@ public class NumericBoundaryTests
 
         var rejection = await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(42)))
             .Throws<CircuitOpenException>();
-        await Assert.That(rejection!.RetryAfter).IsEqualTo(TimeSpan.FromTicks(1));
+        await Assert.That(rejection!.RetryAfter).IsNull();
+
+        timeProvider.Advance(TimeSpan.FromTicks(1));
+        await Assert.That(async () => await shield.ExecuteAsync(_ => new ValueTask<int>(42)))
+            .Throws<CircuitOpenException>();
     }
 
     [Test]
@@ -170,6 +174,19 @@ public class NumericBoundaryTests
         await Assert.That(rejection!.RetryAfter).IsEqualTo(MaximumRuntimeDelay);
     }
 
+    [Test]
+    public async Task Rate_Limit_Preserves_Small_Advances_At_Large_Timestamps()
+    {
+        var timeProvider = new FixedTimestampTimeProvider(long.MaxValue - 1, timestampFrequency: 1);
+        var shield = Shield.RateLimit(1, TimeSpan.FromSeconds(1)).WithTimeProvider(timeProvider);
+
+        await shield.ExecuteAsync(_ => new ValueTask<int>(1));
+        timeProvider.Advance();
+        var result = await shield.ExecuteAsync(_ => new ValueTask<int>(2));
+
+        await Assert.That(result).IsEqualTo(2);
+    }
+
     private static async Task AssertOutOfRangeAsync(Action action, string paramName)
     {
         var exception = await Assert.That(action).Throws<ArgumentOutOfRangeException>();
@@ -183,5 +200,16 @@ public class NumericBoundaryTests
         Linear,
         Exponential,
         Custom,
+    }
+
+    private sealed class FixedTimestampTimeProvider(long timestamp, long timestampFrequency) : TimeProvider
+    {
+        private long _timestamp = timestamp;
+
+        public override long TimestampFrequency => timestampFrequency;
+
+        public override long GetTimestamp() => Volatile.Read(ref _timestamp);
+
+        public void Advance() => Interlocked.Increment(ref _timestamp);
     }
 }
