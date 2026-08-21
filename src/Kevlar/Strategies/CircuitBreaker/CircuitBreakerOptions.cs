@@ -33,6 +33,10 @@ public sealed class CircuitBreakerOptions
     /// </summary>
     public CircuitBreakerMonitor? Monitor { get; set; }
 
-    /// <summary>Invoked on every state transition.</summary>
+    /// <summary>
+    /// Invoked on every state transition, before <see cref="CircuitBreakerMonitor.StateChanged"/>.
+    /// Transitions are delivered serially outside the circuit lock. Exceptions propagate after
+    /// the monitor observer is invoked; failures from both observers are aggregated.
+    /// </summary>
     public Action<CircuitStateChangedEvent>? OnStateChanged { get; set; }
 }
