@@ -187,6 +187,11 @@ Shield.When<MessagingException>()
     .Fallback((exception, ct) => deadLetter.PublishAsync(exception, ct));
 ```
 
+For awaited audit or telemetry work, use `FallbackWithNotifications` with
+`FallbackOptions<T>.OnFallbackAsync`. The hook completes before recovery runs; hook failures keep
+their exact exception identity and skip the recovery factory. Notification hooks may be concurrent
+and reentrant, and their pooled `FallbackEvent.Context` must not be retained after completion.
+
 Fallback belongs **before** the strategies it recovers from (first = outermost). Chain it after a retry with the same clause and Kevlar throws at build time — that order silently disables the retry, so it refuses to build it.
 
 ## Composition

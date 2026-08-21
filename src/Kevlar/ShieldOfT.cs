@@ -171,20 +171,62 @@ public sealed class Shield<TResult>
 
     /// <summary>Replaces handled outcomes with <paramref name="fallbackValue"/>.</summary>
     public Shield<TResult> Fallback(TResult fallbackValue, Action<FallbackEvent<TResult>>? onFallback = null) =>
-        Append(new FallbackStrategy<TResult>((_, _) => new ValueTask<TResult>(fallbackValue), JudgeOrDefault, onFallback));
+        Append(new FallbackStrategy<TResult>((_, _) => new ValueTask<TResult>(fallbackValue), JudgeOrDefault, onFallback, null));
+
+    /// <summary>Replaces handled outcomes with <paramref name="fallbackValue"/> and uses the configured notifications.</summary>
+    public Shield<TResult> FallbackWithNotifications(TResult fallbackValue, FallbackOptions<TResult> options)
+    {
+        Throw.IfNull(options, nameof(options));
+        return Append(new FallbackStrategy<TResult>(
+            (_, _) => new ValueTask<TResult>(fallbackValue),
+            JudgeOrDefault,
+            options.OnFallback,
+            options.OnFallbackAsync));
+    }
 
     /// <summary>Replaces handled outcomes with the result of <paramref name="fallback"/>.</summary>
     public Shield<TResult> Fallback(Func<CancellationToken, ValueTask<TResult>> fallback, Action<FallbackEvent<TResult>>? onFallback = null)
     {
         Throw.IfNull(fallback, nameof(fallback));
-        return Append(new FallbackStrategy<TResult>((_, context) => fallback(context.CancellationToken), JudgeOrDefault, onFallback));
+        return Append(new FallbackStrategy<TResult>((_, context) => fallback(context.CancellationToken), JudgeOrDefault, onFallback, null));
+    }
+
+    /// <summary>Replaces handled outcomes with the result of <paramref name="fallback"/> and uses the configured notifications.</summary>
+    public Shield<TResult> FallbackWithNotifications(
+        Func<CancellationToken, ValueTask<TResult>> fallback,
+        FallbackOptions<TResult> options)
+    {
+        Throw.IfNull(fallback, nameof(fallback));
+        Throw.IfNull(options, nameof(options));
+        return Append(new FallbackStrategy<TResult>(
+            (_, context) => fallback(context.CancellationToken),
+            JudgeOrDefault,
+            options.OnFallback,
+            options.OnFallbackAsync));
     }
 
     /// <summary>Replaces handled outcomes with the result of <paramref name="fallback"/>, which receives the handled outcome.</summary>
     public Shield<TResult> Fallback(Func<Outcome<TResult>, CancellationToken, ValueTask<TResult>> fallback, Action<FallbackEvent<TResult>>? onFallback = null)
     {
         Throw.IfNull(fallback, nameof(fallback));
-        return Append(new FallbackStrategy<TResult>((outcome, context) => fallback(outcome, context.CancellationToken), JudgeOrDefault, onFallback));
+        return Append(new FallbackStrategy<TResult>((outcome, context) => fallback(outcome, context.CancellationToken), JudgeOrDefault, onFallback, null));
+    }
+
+    /// <summary>
+    /// Replaces handled outcomes with the result of <paramref name="fallback"/>, which receives
+    /// the handled outcome, and uses the configured notifications.
+    /// </summary>
+    public Shield<TResult> FallbackWithNotifications(
+        Func<Outcome<TResult>, CancellationToken, ValueTask<TResult>> fallback,
+        FallbackOptions<TResult> options)
+    {
+        Throw.IfNull(fallback, nameof(fallback));
+        Throw.IfNull(options, nameof(options));
+        return Append(new FallbackStrategy<TResult>(
+            (outcome, context) => fallback(outcome, context.CancellationToken),
+            JudgeOrDefault,
+            options.OnFallback,
+            options.OnFallbackAsync));
     }
 
     /// <summary>Appends a custom <see cref="Strategy"/> implementation to the pipeline.</summary>

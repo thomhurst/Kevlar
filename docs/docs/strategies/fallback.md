@@ -58,6 +58,39 @@ The `FallbackEvent<T>` carries the failure that triggered it as a typed `Outcome
 exception becomes the pipeline outcome and the factory is not called. A later execution is
 unaffected. Async factory failures are likewise preserved as the pipeline outcome.
 
+## Awaited notifications
+
+Use `FallbackWithNotifications` when notification work must be awaited:
+
+<!-- doc-test-ignore: Illustrative logger and audit dependencies are application services. -->
+```csharp
+var shield = Shield.For<Config>()
+    .When<HttpRequestException>()
+    .FallbackWithNotifications(
+        Config.Default,
+        new FallbackOptions<Config>
+        {
+            OnFallback = e => logger.LogWarning(e.Outcome.Exception, "Using defaults"),
+            OnFallbackAsync = async e =>
+                await audit.RecordFallbackAsync(e.Outcome, e.Context.CancellationToken),
+        });
+```
+
+Kevlar records its fallback metric, invokes `OnFallback`, awaits `OnFallbackAsync`, then runs
+the fallback value or factory. A notification exception or cancellation is preserved as the exact
+pipeline outcome and skips recovery. Caller cancellation is exposed through `e.Context` and the
+token passed to the recovery factory; Kevlar does not forcibly stop either callback when user code
+chooses not to observe that token.
+
+`FallbackOptions<T>` preserves typed outcomes. Plain `Shield` uses `FallbackOptions` and a
+non-generic `FallbackEvent` carrying the exact handled exception. Both option objects are copied
+into the immutable strategy when it is built, so changing the options later has no effect.
+
+Hooks may run concurrently when the same shield executes concurrently, and may re-enter the shield;
+they must therefore be thread-safe and must not depend on strategy locks. `FallbackEvent.Context`
+remains valid until that hook returns or its `ValueTask` completes. Do not retain the pooled context
+or use it from background work after completion.
+
 ## What triggers it
 
 The ambient [handling clause](../handling-failures.md) — exceptions *and* handled results:
