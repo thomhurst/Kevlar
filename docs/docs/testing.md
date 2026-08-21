@@ -52,6 +52,8 @@ var result = await pending;
 
 `WithTimeProvider` returns a new shield (shields are immutable) with every time-dependent strategy — retry backoff, timeouts, circuit breaker break durations and sampling windows, rate-limit windows, hedging delays — driven by the provider you supply.
 
+Copies still share stateful strategies. Circuit breakers and rate limiters normalize each provider's monotonic timestamp onto one elapsed-time timeline, so copies can safely use providers with different UTC epochs. Move time with the provider's normal advance mechanism; changing UTC alone does not advance break durations or sampling windows.
+
 :::warning Advance *after* the execution is in flight
 Start the execution first (note the `.AsTask()` without `await`), *then* advance time. If you advance before the shield has scheduled its delay, there's nothing to advance past and the pending task will hang waiting for a tick that already happened.
 :::
