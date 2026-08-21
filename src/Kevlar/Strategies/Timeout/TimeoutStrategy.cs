@@ -72,8 +72,19 @@ internal sealed class TimeoutStrategy : Strategy
         }
 
         var outcome = execution.Result;
-        var timedOut = Cleanup(context, priorToken, timeoutSource, timer);
-        return new ValueTask<Outcome<T>>(HandleOutcome(outcome, timedOut, context));
+        if (outcome.Exception is not OperationCanceledException cancellationException)
+        {
+            Cleanup(context, priorToken, timeoutSource, timer);
+            return new ValueTask<Outcome<T>>(outcome);
+        }
+
+        return new ValueTask<Outcome<T>>(CompleteCancellation(
+            outcome,
+            cancellationException,
+            context,
+            priorToken,
+            timeoutSource,
+            timer));
     }
 
     private async ValueTask<Outcome<T>> AwaitAsync<T>(
@@ -84,21 +95,27 @@ internal sealed class TimeoutStrategy : Strategy
         ITimer? timer)
     {
         Outcome<T> outcome;
-        bool timedOut;
 
         try
         {
             outcome = await execution.ConfigureAwait(false);
         }
-        finally
+        catch
         {
-            timedOut = Cleanup(context, priorToken, timeoutSource, timer);
+            Cleanup(context, priorToken, timeoutSource, timer);
+            throw;
         }
 
-        return HandleOutcome(outcome, timedOut, context);
+        if (outcome.Exception is not OperationCanceledException cancellationException)
+        {
+            Cleanup(context, priorToken, timeoutSource, timer);
+            return outcome;
+        }
+
+        return CompleteCancellation(outcome, cancellationException, context, priorToken, timeoutSource, timer);
     }
 
-    private static bool Cleanup(
+    private static void Cleanup(
         KevlarContext context,
         CancellationToken priorToken,
         CancellationTokenSource timeoutSource,
@@ -106,14 +123,40 @@ internal sealed class TimeoutStrategy : Strategy
     {
         context.CancellationToken = priorToken;
         timer?.Dispose();
-        var timedOut = timeoutSource.IsCancellationRequested && !priorToken.IsCancellationRequested;
         timeoutSource.Dispose();
-        return timedOut;
     }
 
-    private Outcome<T> HandleOutcome<T>(Outcome<T> outcome, bool timedOut, KevlarContext context)
+    private Outcome<T> CompleteCancellation<T>(
+        Outcome<T> outcome,
+        OperationCanceledException cancellationException,
+        KevlarContext context,
+        CancellationToken priorToken,
+        CancellationTokenSource timeoutSource,
+        ITimer? timer)
     {
-        if (timedOut && outcome.Exception is OperationCanceledException)
+        context.CancellationToken = priorToken;
+        timer?.Dispose();
+
+        if (priorToken.IsCancellationRequested)
+        {
+            timeoutSource.Dispose();
+
+            if (cancellationException.CancellationToken == priorToken)
+            {
+                return outcome;
+            }
+
+            return Outcome<T>.FromException(new OperationCanceledException(
+                cancellationException.Message,
+                cancellationException,
+                priorToken));
+        }
+
+        var timedOut = timeoutSource.IsCancellationRequested
+            && cancellationException.CancellationToken == timeoutSource.Token;
+        timeoutSource.Dispose();
+
+        if (timedOut)
         {
             KevlarMetrics.Timeout(context.ShieldName);
             _onTimeout?.Invoke(new TimeoutEvent(_timeout, context));
