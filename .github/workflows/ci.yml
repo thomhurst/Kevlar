@@ -158,10 +158,10 @@ jobs:
           retention-days: 14
 
   # Only reachable from a manual run with the "Upload package to NuGet"
-  # checkbox ticked, and only after both OS legs are green.
+  # checkbox ticked, and only after tests, coverage, and allocation gates are green.
   publish:
     name: Publish NuGet
-    needs: [build-and-test, coverage]
+    needs: [allocation-gates, build-and-test, coverage]
     if: github.event_name == 'workflow_dispatch' && inputs.publish_nuget == true
     runs-on: ubuntu-latest
     permissions:

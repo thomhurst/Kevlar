@@ -37,7 +37,7 @@ public class AllocationBudgetTests
         .Fallback(7);
     private readonly Shield _parallelHedge = Shield.Hedge(2, TimeSpan.Zero);
     private readonly Counter _retryCounter = new();
-    private readonly Counter _hedgeCounter = new();
+    private readonly ParallelHedgeState _parallelHedgeState = new();
 
     [Test]
     public void Documented_Hot_Paths_Allocate_Zero_Bytes_Per_Operation()
@@ -97,15 +97,10 @@ public class AllocationBudgetTests
             }
         });
         AssertBudget("hedge launches second attempt", 2_048, this, static test =>
-            test._parallelHedge.ExecuteAsync(test._hedgeCounter, static (counter, _) =>
-            {
-                if (++counter.Value % 2 != 0)
-                {
-                    throw RecoverableFailure;
-                }
-
-                return new ValueTask<int>(42);
-            }).GetAwaiter().GetResult());
+            test._parallelHedge.ExecuteAsync(
+                test._parallelHedgeState,
+                static (state, cancellationToken) => state.ExecuteAsync(cancellationToken))
+            .GetAwaiter().GetResult());
     }
 
     private static void AssertZero<TState>(string scenario, TState state, Action<TState> operation) =>
@@ -151,5 +146,21 @@ public class AllocationBudgetTests
     private sealed class Counter
     {
         public int Value;
+    }
+
+    private sealed class ParallelHedgeState
+    {
+        private int _attempt;
+
+        public ValueTask<int> ExecuteAsync(CancellationToken cancellationToken) =>
+            ++_attempt % 2 == 0
+                ? new ValueTask<int>(42)
+                : WaitForCancellationAsync(cancellationToken);
+
+        private static async ValueTask<int> WaitForCancellationAsync(CancellationToken cancellationToken)
+        {
+            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            return 0;
+        }
     }
 }
