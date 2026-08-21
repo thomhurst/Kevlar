@@ -117,11 +117,28 @@ public sealed class ShieldBuilder<TResult>
     /// <summary>Replaces handled outcomes with <paramref name="fallbackValue"/>.</summary>
     public Shield<TResult> Fallback(TResult fallbackValue, Action<FallbackEvent<TResult>>? onFallback = null) => Seal().Fallback(fallbackValue, onFallback);
 
+    /// <summary>Replaces handled outcomes with <paramref name="fallbackValue"/> and uses the configured notifications.</summary>
+    public Shield<TResult> FallbackWithNotifications(TResult fallbackValue, FallbackOptions<TResult> options) =>
+        Seal().FallbackWithNotifications(fallbackValue, options);
+
     /// <summary>Replaces handled outcomes with the result of <paramref name="fallback"/>.</summary>
     public Shield<TResult> Fallback(Func<CancellationToken, ValueTask<TResult>> fallback, Action<FallbackEvent<TResult>>? onFallback = null) => Seal().Fallback(fallback, onFallback);
 
+    /// <summary>Replaces handled outcomes with the result of <paramref name="fallback"/> and uses the configured notifications.</summary>
+    public Shield<TResult> FallbackWithNotifications(
+        Func<CancellationToken, ValueTask<TResult>> fallback,
+        FallbackOptions<TResult> options) => Seal().FallbackWithNotifications(fallback, options);
+
     /// <summary>Replaces handled outcomes with the result of <paramref name="fallback"/>, which receives the handled outcome.</summary>
     public Shield<TResult> Fallback(Func<Outcome<TResult>, CancellationToken, ValueTask<TResult>> fallback, Action<FallbackEvent<TResult>>? onFallback = null) => Seal().Fallback(fallback, onFallback);
+
+    /// <summary>
+    /// Replaces handled outcomes with the result of <paramref name="fallback"/>, which receives
+    /// the handled outcome, and uses the configured notifications.
+    /// </summary>
+    public Shield<TResult> FallbackWithNotifications(
+        Func<Outcome<TResult>, CancellationToken, ValueTask<TResult>> fallback,
+        FallbackOptions<TResult> options) => Seal().FallbackWithNotifications(fallback, options);
 
     /// <summary>Cancels executions that exceed <paramref name="timeout"/>. The handling clauses remain ambient for later strategies.</summary>
     public Shield<TResult> Timeout(TimeSpan timeout) => Seal().Timeout(timeout);

@@ -49,6 +49,17 @@ public class AllocationBudgetTests
     private readonly Shield<int> _triggeredFallback = Shield.For<int>()
         .When<InvalidOperationException>()
         .Fallback(7);
+    private readonly Shield<int> _fallbackWithSyncNotification = Shield.For<int>()
+        .When<InvalidOperationException>()
+        .Fallback(7, static _ => { });
+    private readonly Shield<int> _fallbackWithAsyncNotification = Shield.For<int>()
+        .When<InvalidOperationException>()
+        .FallbackWithNotifications(
+            7,
+            new FallbackOptions<int>
+            {
+                OnFallbackAsync = static _ => ValueTask.CompletedTask,
+            });
     private readonly Shield _parallelHedge = Shield.Hedge(2, TimeSpan.Zero);
     private readonly Counter _retryCounter = new();
     private readonly Counter _asyncDelayRetryCounter = new();
@@ -77,6 +88,8 @@ public class AllocationBudgetTests
             test._timeout.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("fallback pass-through", this, static test =>
             test._fallback.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
+        AssertZero("fallback async notification pass-through", this, static test =>
+            test._fallbackWithAsyncNotification.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("rate limit uncontended", this, static test =>
             test._rateLimit.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("concurrency limit uncontended", this, static test =>
@@ -119,6 +132,10 @@ public class AllocationBudgetTests
             }).GetAwaiter().GetResult());
         AssertBudget("fallback triggered", 512, this, static test =>
             test._triggeredFallback.ExecuteAsync(static _ => throw RecoverableFailure).GetAwaiter().GetResult());
+        AssertBudget("fallback sync notification", 512, this, static test =>
+            test._fallbackWithSyncNotification.ExecuteAsync(static _ => throw RecoverableFailure).GetAwaiter().GetResult());
+        AssertBudget("fallback completed async notification", 512, this, static test =>
+            test._fallbackWithAsyncNotification.ExecuteAsync(static _ => throw RecoverableFailure).GetAwaiter().GetResult());
         AssertBudget("open circuit rejection", 2_048, this, static test =>
         {
             try

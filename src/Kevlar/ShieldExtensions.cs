@@ -199,7 +199,26 @@ public static class ShieldExtensions
     {
         Throw.IfNull(shield, nameof(shield));
         Throw.IfNull(fallback, nameof(fallback));
-        return shield.Append(new VoidFallbackStrategy(fallback, shield.JudgeOrDefault));
+        return shield.Append(new VoidFallbackStrategy(fallback, shield.JudgeOrDefault, null, null));
+    }
+
+    /// <summary>
+    /// Runs <paramref name="fallback"/> in place of handled failures and uses the configured
+    /// notifications. Applies to void executions only.
+    /// </summary>
+    public static Shield FallbackWithNotifications(
+        this Shield shield,
+        Func<Exception, CancellationToken, ValueTask> fallback,
+        FallbackOptions options)
+    {
+        Throw.IfNull(shield, nameof(shield));
+        Throw.IfNull(fallback, nameof(fallback));
+        Throw.IfNull(options, nameof(options));
+        return shield.Append(new VoidFallbackStrategy(
+            fallback,
+            shield.JudgeOrDefault,
+            options.OnFallback,
+            options.OnFallbackAsync));
     }
 
     /// <summary>
@@ -211,6 +230,20 @@ public static class ShieldExtensions
     {
         Throw.IfNull(fallback, nameof(fallback));
         return shield.Fallback((_, token) => fallback(token));
+    }
+
+    /// <summary>
+    /// Runs <paramref name="fallback"/> in place of handled failures and uses the configured
+    /// notifications. Applies to void executions only.
+    /// </summary>
+    public static Shield FallbackWithNotifications(
+        this Shield shield,
+        Func<CancellationToken, ValueTask> fallback,
+        FallbackOptions options)
+    {
+        Throw.IfNull(fallback, nameof(fallback));
+        Throw.IfNull(options, nameof(options));
+        return shield.FallbackWithNotifications((_, token) => fallback(token), options);
     }
 
     /// <summary>Returns a copy of this shield with a diagnostic name (surfaced as <see cref="KevlarContext.ShieldName"/>).</summary>

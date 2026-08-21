@@ -8,15 +8,18 @@ internal sealed class FallbackStrategy<TResult> : Strategy
     private readonly Func<Outcome<TResult>, KevlarContext, ValueTask<TResult>> _fallback;
     private readonly OutcomeJudge _judge;
     private readonly Action<FallbackEvent<TResult>>? _onFallback;
+    private readonly Func<FallbackEvent<TResult>, ValueTask>? _onFallbackAsync;
 
     public FallbackStrategy(
         Func<Outcome<TResult>, KevlarContext, ValueTask<TResult>> fallback,
         OutcomeJudge judge,
-        Action<FallbackEvent<TResult>>? onFallback)
+        Action<FallbackEvent<TResult>>? onFallback,
+        Func<FallbackEvent<TResult>, ValueTask>? onFallbackAsync)
     {
         _fallback = fallback;
         _judge = judge;
         _onFallback = onFallback;
+        _onFallbackAsync = onFallbackAsync;
     }
 
     internal override OutcomeJudge? ReactiveJudge => _judge;
@@ -50,8 +53,28 @@ internal sealed class FallbackStrategy<TResult> : Strategy
         var typedOutcome = (Outcome<TResult>)(object)outcome;
 
         KevlarMetrics.Fallback(context.ShieldName);
-        _onFallback?.Invoke(new FallbackEvent<TResult>(typedOutcome, context));
+        if (_onFallback is not null || _onFallbackAsync is not null)
+        {
+            var fallbackEvent = new FallbackEvent<TResult>(typedOutcome, context);
+            _onFallback?.Invoke(fallbackEvent);
 
+            if (_onFallbackAsync is not null)
+            {
+                var notification = _onFallbackAsync(fallbackEvent);
+                if (!notification.IsCompletedSuccessfully)
+                {
+                    return AwaitNotificationAsync(notification, outcome, context);
+                }
+
+                notification.GetAwaiter().GetResult();
+            }
+        }
+
+        return InvokeFallback(outcome, context);
+    }
+
+    private ValueTask<Outcome<T>> InvokeFallback<T>(Outcome<T> outcome, KevlarContext context)
+    {
         var fallback = (Func<Outcome<T>, KevlarContext, ValueTask<T>>)(object)_fallback;
 
         try
@@ -65,6 +88,15 @@ internal sealed class FallbackStrategy<TResult> : Strategy
         {
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(exception));
         }
+    }
+
+    private async ValueTask<Outcome<T>> AwaitNotificationAsync<T>(
+        ValueTask notification,
+        Outcome<T> outcome,
+        KevlarContext context)
+    {
+        await notification.ConfigureAwait(false);
+        return await InvokeFallback(outcome, context).ConfigureAwait(false);
     }
 
     private static async ValueTask<Outcome<T>> AwaitFallbackAsync<T>(ValueTask<T> execution)
@@ -89,11 +121,19 @@ internal sealed class VoidFallbackStrategy : Strategy
 {
     private readonly Func<Exception, CancellationToken, ValueTask> _fallback;
     private readonly OutcomeJudge _judge;
+    private readonly Action<FallbackEvent>? _onFallback;
+    private readonly Func<FallbackEvent, ValueTask>? _onFallbackAsync;
 
-    public VoidFallbackStrategy(Func<Exception, CancellationToken, ValueTask> fallback, OutcomeJudge judge)
+    public VoidFallbackStrategy(
+        Func<Exception, CancellationToken, ValueTask> fallback,
+        OutcomeJudge judge,
+        Action<FallbackEvent>? onFallback,
+        Func<FallbackEvent, ValueTask>? onFallbackAsync)
     {
         _fallback = fallback;
         _judge = judge;
+        _onFallback = onFallback;
+        _onFallbackAsync = onFallbackAsync;
     }
 
     internal override OutcomeJudge? ReactiveJudge => _judge;
@@ -119,6 +159,17 @@ internal sealed class VoidFallbackStrategy : Strategy
                 "Fallback on a non-generic Shield applies only to void executions. " +
                 "For executions that return a value, build a result-aware shield with " +
                 "Shield.For<T>() and use its Fallback overloads."));
+        }
+
+        if (_onFallback is not null || _onFallbackAsync is not null)
+        {
+            var fallbackEvent = new FallbackEvent(exception, context);
+            _onFallback?.Invoke(fallbackEvent);
+
+            if (_onFallbackAsync is not null)
+            {
+                await _onFallbackAsync(fallbackEvent).ConfigureAwait(false);
+            }
         }
 
         try

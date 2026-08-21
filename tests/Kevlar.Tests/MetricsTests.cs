@@ -403,6 +403,35 @@ public class MetricsTests
     }
 
     [Test]
+    public async Task Fallback_Metric_Is_Recorded_Before_Sync_And_Async_Notifications()
+    {
+        using var listener = new KevlarMeterListener();
+        const string name = "metrics-fallback-notifications";
+        var syncObservedMetric = false;
+        var asyncObservedMetric = false;
+        var shield = Shield.For<int>()
+            .When<InvalidOperationException>()
+            .FallbackWithNotifications(
+                42,
+                new FallbackOptions<int>
+                {
+                    OnFallback = _ => syncObservedMetric = listener.Total("kevlar.fallbacks", name) == 1,
+                    OnFallbackAsync = _ =>
+                    {
+                        asyncObservedMetric = listener.Total("kevlar.fallbacks", name) == 1;
+                        return ValueTask.CompletedTask;
+                    },
+                })
+            .WithName(name);
+
+        var result = await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException());
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(syncObservedMetric).IsTrue();
+        await Assert.That(asyncObservedMetric).IsTrue();
+    }
+
+    [Test]
     public async Task Concurrent_Execution_Totals_Are_Exact_And_Isolated_By_Name()
     {
         using var listener = new KevlarMeterListener();
