@@ -760,6 +760,73 @@ public class GrpcStreamingResilienceTests
     }
 
     [Test]
+    public async Task Duplex_MoveNext_Cancellation_Preserves_Operation_Token()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var interceptor = new ShieldStreamingClientInterceptor(Shield.Empty);
+        using var call = interceptor.AsyncDuplexStreamingCall(
+            Context(DuplexStreamingMethod),
+            _ => DuplexCall(
+                new DelegateWriter(),
+                Reader(async (_, token) =>
+                {
+                    started.TrySetResult();
+                    try
+                    {
+                        await Task.Delay(Timeout.InfiniteTimeSpan, token);
+                        return (false, null);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        throw new RpcException(new Status(StatusCode.Cancelled, "cancelled"));
+                    }
+                })));
+        var move = call.ResponseStream.MoveNext(cancellation.Token);
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        cancellation.Cancel();
+        var exception = await Assert.That(async () => await move)
+            .Throws<OperationCanceledException>();
+        call.Dispose();
+        call.Dispose();
+
+        await Assert.That(exception!.CancellationToken).IsEqualTo(cancellation.Token);
+    }
+
+    [Test]
+    public async Task Client_Stream_Response_Cancellation_Preserves_Visible_Token()
+    {
+        using var callerCancellation = new CancellationTokenSource();
+        var interceptor = new ShieldStreamingClientInterceptor(Shield.Empty);
+        using var callerCall = interceptor.AsyncClientStreamingCall(
+            Context(
+                ClientStreamingMethod,
+                new CallOptions(cancellationToken: callerCancellation.Token)),
+            context => ClientCall(
+                new DelegateWriter(),
+                CancelledResponse(context.Options.CancellationToken)));
+        var callerResponse = callerCall.ResponseAsync;
+
+        callerCancellation.Cancel();
+        var callerException = await Assert.That(async () => await callerResponse)
+            .Throws<OperationCanceledException>();
+
+        var disposedCall = interceptor.AsyncClientStreamingCall(
+            Context(ClientStreamingMethod),
+            context => ClientCall(
+                new DelegateWriter(),
+                CancelledResponse(context.Options.CancellationToken)));
+        var disposedResponse = disposedCall.ResponseAsync;
+        disposedCall.Dispose();
+        var disposalException = await Assert.That(async () => await disposedResponse)
+            .Throws<OperationCanceledException>();
+
+        await Assert.That(callerException!.CancellationToken).IsEqualTo(callerCancellation.Token);
+        await Assert.That(disposalException!.CancellationToken.CanBeCanceled).IsTrue();
+    }
+
+    [Test]
     public async Task Request_Streaming_Rejects_Strategies_That_Can_Replay_Operations()
     {
         var interceptor = new ShieldStreamingClientInterceptor(
@@ -926,6 +993,33 @@ public class GrpcStreamingResilienceTests
             .Throws<ArgumentException>();
     }
 
+    [Test]
+    public async Task Streaming_Entry_Points_Reject_Null_Arguments()
+    {
+        var interceptor = new ShieldStreamingClientInterceptor(Shield.Empty);
+        var serverContext = Context(ServerStreamingMethod);
+
+        _ = await Assert.That(() => interceptor.AsyncServerStreamingCall<StreamRequest, StreamReply>(
+                null!,
+                serverContext,
+                (_, _) => ServerCall(Reader((_, _) =>
+                    Task.FromResult<(bool, StreamReply?)>((false, null))))))
+            .Throws<ArgumentNullException>();
+        _ = await Assert.That(() => interceptor.AsyncServerStreamingCall(
+                new StreamRequest(),
+                serverContext,
+                null!))
+            .Throws<ArgumentNullException>();
+        _ = await Assert.That(() => interceptor.AsyncClientStreamingCall(
+                Context(ClientStreamingMethod),
+                null!))
+            .Throws<ArgumentNullException>();
+        _ = await Assert.That(() => interceptor.AsyncDuplexStreamingCall(
+                Context(DuplexStreamingMethod),
+                null!))
+            .Throws<ArgumentNullException>();
+    }
+
     private static ClientInterceptorContext<StreamRequest, StreamReply> Context(
         Method<StreamRequest, StreamReply> method,
         CallOptions options = default) => new(method, host: null, options);
@@ -939,6 +1033,15 @@ public class GrpcStreamingResilienceTests
 
     private static RpcException Transient() =>
         new(new Status(StatusCode.Unavailable, "transient"));
+
+    private static Task<StreamReply> CancelledResponse(CancellationToken cancellationToken)
+    {
+        var completion = new TaskCompletionSource<StreamReply>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        cancellationToken.Register(() => completion.TrySetException(
+            new RpcException(new Status(StatusCode.Cancelled, "cancelled"))));
+        return completion.Task;
+    }
 
     private static DelegateReader Reader(
         Func<int, CancellationToken, Task<(bool HasNext, StreamReply? Current)>> move) => new(move);

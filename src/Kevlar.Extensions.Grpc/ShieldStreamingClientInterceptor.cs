@@ -1145,6 +1145,7 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
         CancellationTokenSource lifetime,
         CancellationToken callerToken)
     {
+        var lifetimeToken = lifetime.Token;
         try
         {
             return await task.ConfigureAwait(false);
@@ -1155,7 +1156,7 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
         {
             var cancellationToken = callerToken.IsCancellationRequested
                 ? callerToken
-                : lifetime.Token;
+                : lifetimeToken;
             throw new OperationCanceledException(
                 exception.Message,
                 exception,
