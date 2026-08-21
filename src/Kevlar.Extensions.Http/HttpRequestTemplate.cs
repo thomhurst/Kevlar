@@ -112,11 +112,10 @@ internal sealed class HttpRequestTemplate
             else
             {
                 request.Content = new ByteArrayContent(_content);
-            }
-
-            foreach (var header in _contentHeaders)
-            {
-                _ = request.Content.Headers.TryAddWithoutValidation(header.Key, header.Value);
+                foreach (var header in _contentHeaders)
+                {
+                    _ = request.Content.Headers.TryAddWithoutValidation(header.Key, header.Value);
+                }
             }
         }
 

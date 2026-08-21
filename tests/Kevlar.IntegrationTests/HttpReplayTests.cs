@@ -53,6 +53,7 @@ public class HttpReplayTests
     public async Task Retry_Disposes_The_Superseded_Response_After_Final_Selection()
     {
         var supersededContent = new TrackingContent("superseded");
+        var disposedBeforeRepeat = false;
         var transport = new RecordingHandler((attempt, _, _) =>
         {
             if (attempt == 1)
@@ -63,6 +64,7 @@ public class HttpReplayTests
                 });
             }
 
+            disposedBeforeRepeat = supersededContent.DisposeCount == 1;
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
         });
         using var invoker = CreateInvoker(
@@ -74,6 +76,7 @@ public class HttpReplayTests
         using var response = await invoker.SendAsync(request, CancellationToken.None);
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(disposedBeforeRepeat).IsTrue();
         await Assert.That(supersededContent.DisposeCount).IsEqualTo(1);
     }
 
@@ -204,6 +207,32 @@ public class HttpReplayTests
     }
 
     [Test]
+    public async Task Hedge_Attempt_Timeout_Does_Not_Cancel_Shared_Buffering()
+    {
+        var content = new DelayedContent("payload", TimeSpan.FromMilliseconds(110));
+        var transport = new RecordingHandler((_, _, _) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)));
+        var policy = HttpShield.WhenTransient()
+            .Hedge(2, TimeSpan.FromMilliseconds(70))
+            .Timeout(TimeSpan.FromMilliseconds(100));
+        using var invoker = CreateInvoker(
+            policy,
+            new ShieldHttpHandlerOptions { ContentReplayPolicy = HttpContentReplayPolicy.Buffer },
+            transport);
+        using var request = new HttpRequestMessage(HttpMethod.Put, "https://origin.example/upload")
+        {
+            Content = content,
+        };
+
+        using var response = await invoker.SendAsync(request, CancellationToken.None)
+            .WaitAsync(TimeSpan.FromSeconds(5));
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(content.SerializationAttempts).IsEqualTo(1);
+        await Assert.That(transport.Attempts).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task PreCancellation_Skips_RequestFactory_And_Transport()
     {
         using var cancellation = new CancellationTokenSource();
@@ -317,6 +346,36 @@ public class HttpReplayTests
     }
 
     [Test]
+    public async Task Weighted_Routing_Advances_Primary_Selection_Between_Requests()
+    {
+        var hosts = new List<string>();
+        var transport = new RecordingHandler((_, request, _) =>
+        {
+            hosts.Add(request.RequestUri!.Host);
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
+        });
+        var options = RoutingOptions(
+            HttpEndpointSelectionMode.Weighted,
+            new HttpEndpoint(new Uri("https://first.example"), 5),
+            new HttpEndpoint(new Uri("https://second.example"), 2),
+            new HttpEndpoint(new Uri("https://third.example"), 1));
+        options.Routing!.Seed = 1729;
+        using var invoker = CreateInvoker(Shield<HttpResponseMessage>.Empty, options, transport);
+
+        for (var index = 0; index < 32; index++)
+        {
+            using var request = new HttpRequestMessage(
+                HttpMethod.Get,
+                $"https://origin.example/{index}");
+            using var response = await invoker.SendAsync(request, CancellationToken.None);
+        }
+
+        await Assert.That(hosts.Distinct().Count()).IsGreaterThan(1);
+        await Assert.That(hosts.Count(static host => host == "first.example"))
+            .IsGreaterThan(hosts.Count(static host => host == "third.example"));
+    }
+
+    [Test]
     public async Task Endpoint_Shields_Isolate_Circuit_State_By_Authority()
     {
         var calls = new System.Collections.Concurrent.ConcurrentDictionary<string, int>(
@@ -356,10 +415,12 @@ public class HttpReplayTests
     public async Task Routed_NoBuffer_Content_Is_Sent_Once_Before_Replay_Is_Rejected()
     {
         var bodies = new List<string>();
+        var contentHeaderCounts = new List<int>();
         var content = new TrackingContent("payload");
         var transport = new RecordingHandler(async (_, request, _) =>
         {
             bodies.Add(await request.Content!.ReadAsStringAsync());
+            contentHeaderCounts.Add(request.Content.Headers.GetValues("x-content").Count());
             return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
         });
         var options = RoutingOptions(
@@ -374,12 +435,14 @@ public class HttpReplayTests
         {
             Content = content,
         };
+        request.Content.Headers.TryAddWithoutValidation("x-content", new[] { "one", "two" });
 
         _ = await Assert.That(async () =>
                 await invoker.SendAsync(request, CancellationToken.None))
             .Throws<HttpRequestReplayException>();
 
         await Assert.That(bodies).IsEquivalentTo(["payload"]);
+        await Assert.That(contentHeaderCounts).IsEquivalentTo([2]);
         await Assert.That(transport.Attempts).IsEqualTo(1);
         await Assert.That(content.DisposeCount).IsEqualTo(0);
     }
@@ -599,6 +662,29 @@ public class HttpReplayTests
         {
             length = 0;
             return false;
+        }
+    }
+
+    private sealed class DelayedContent(string value, TimeSpan delay) : HttpContent
+    {
+        private readonly byte[] _bytes = System.Text.Encoding.UTF8.GetBytes(value);
+        private int _serializationAttempts;
+
+        public int SerializationAttempts => Volatile.Read(ref _serializationAttempts);
+
+        protected override async Task SerializeToStreamAsync(
+            Stream stream,
+            TransportContext? context)
+        {
+            Interlocked.Increment(ref _serializationAttempts);
+            await Task.Delay(delay);
+            await stream.WriteAsync(_bytes);
+        }
+
+        protected override bool TryComputeLength(out long length)
+        {
+            length = _bytes.Length;
+            return true;
         }
     }
 }

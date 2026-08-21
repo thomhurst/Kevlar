@@ -11,6 +11,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
     private readonly Dictionary<string, Lazy<Shield<HttpResponseMessage>>> _endpointShields = [];
     private readonly Shield<HttpResponseMessage> _policy;
     private readonly ShieldHttpHandlerOptions _options;
+    private long _routingSequence;
 
     /// <summary>Creates the handler with safe no-buffer replay defaults.</summary>
     public ShieldDelegatingHandler(Shield<HttpResponseMessage> shield)
@@ -35,7 +36,11 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
     {
         if (request is null) { throw new ArgumentNullException(nameof(request)); }
 
-        var execution = new RequestExecution(this, request, _options);
+        var execution = new RequestExecution(
+            this,
+            request,
+            _options,
+            cancellationToken);
         try
         {
             var response = await _policy.ExecuteAsync(
@@ -98,6 +103,30 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         }
     }
 
+    private Uri[]? CreateEndpointOrder(HttpEndpointRoutingOptions? routing)
+    {
+        if (routing is null)
+        {
+            return null;
+        }
+
+        if (routing.SelectionMode == HttpEndpointSelectionMode.Ordered)
+        {
+            return routing.Endpoints.Select(static endpoint => endpoint.Uri).ToArray();
+        }
+
+        var sequence = Interlocked.Increment(ref _routingSequence) - 1;
+        var seed = unchecked(routing.Seed + ((int)sequence * 0x61C88647));
+        var random = new DeterministicRandom(seed);
+        return routing.Endpoints
+            .Select(endpoint => (
+                endpoint.Uri,
+                Priority: -Math.Log(random.NextExclusiveDouble()) / endpoint.Weight))
+            .OrderBy(static endpoint => endpoint.Priority)
+            .Select(static endpoint => endpoint.Uri)
+            .ToArray();
+    }
+
     private static void ValidateOptions(ShieldHttpHandlerOptions options)
     {
         if (!Enum.IsDefined(typeof(HttpContentReplayPolicy), options.ContentReplayPolicy))
@@ -137,10 +166,13 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         private readonly ShieldDelegatingHandler _handler;
         private readonly HttpRequestMessage _original;
         private readonly ShieldHttpHandlerOptions _options;
+        private readonly CancellationToken _executionCancellationToken;
         private readonly List<HttpResponseMessage> _responses = [];
         private readonly Uri[]? _endpointOrder;
 
         private Task<HttpRequestTemplate>? _template;
+        private CancellationTokenSource? _templateCancellation;
+        private int _templateWaiters;
         private HttpResponseMessage? _terminalResponse;
         private int _attempt;
         private bool _completed;
@@ -148,12 +180,14 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         public RequestExecution(
             ShieldDelegatingHandler handler,
             HttpRequestMessage original,
-            ShieldHttpHandlerOptions options)
+            ShieldHttpHandlerOptions options,
+            CancellationToken executionCancellationToken)
         {
             _handler = handler;
             _original = original;
             _options = options;
-            _endpointOrder = CreateEndpointOrder(options.Routing);
+            _executionCancellationToken = executionCancellationToken;
+            _endpointOrder = handler.CreateEndpointOrder(options.Routing);
         }
 
         private ValueTask PrepareAsync(CancellationToken cancellationToken)
@@ -173,6 +207,11 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         {
             await PrepareAsync(cancellationToken).ConfigureAwait(false);
             var attempt = Interlocked.Increment(ref _attempt) - 1;
+            if (attempt > 0)
+            {
+                DisposePriorResponses();
+            }
+
             if (attempt > 0
                 && !IsReplaySafeMethod(_original.Method)
                 && !_options.AllowUnsafeMethodReplay
@@ -260,9 +299,10 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             DisposeResponses(discarded);
         }
 
-        private Task<HttpRequestTemplate> GetTemplateAsync(CancellationToken cancellationToken)
+        private async Task<HttpRequestTemplate> GetTemplateAsync(CancellationToken cancellationToken)
         {
             TaskCompletionSource<HttpRequestTemplate>? creation = null;
+            CancellationTokenSource? creationCancellation = null;
             Task<HttpRequestTemplate> template;
             lock (_gate)
             {
@@ -271,22 +311,59 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
                     creation = new TaskCompletionSource<HttpRequestTemplate>(
                         TaskCreationOptions.RunContinuationsAsynchronously);
                     _template = creation.Task;
+                    _templateCancellation = creationCancellation =
+                        CancellationTokenSource.CreateLinkedTokenSource(
+                            _executionCancellationToken);
                 }
 
                 template = _template;
+                _templateWaiters++;
             }
 
             if (creation is not null)
             {
-                _ = PopulateTemplateAsync(creation, cancellationToken);
+                _ = PopulateTemplateAsync(creation, creationCancellation!);
             }
 
-            return template;
+            try
+            {
+                return await AwaitTemplateAsync(template, cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException exception) when (
+                _executionCancellationToken.IsCancellationRequested
+                && exception.CancellationToken != _executionCancellationToken)
+            {
+                throw new OperationCanceledException(
+                    exception.Message,
+                    exception,
+                    _executionCancellationToken);
+            }
+            finally
+            {
+                CancellationTokenSource? abandon = null;
+                lock (_gate)
+                {
+                    _templateWaiters--;
+                    if (_templateWaiters == 0
+                        && ReferenceEquals(_template, template)
+                        && !template.IsCompleted)
+                    {
+                        _template = null;
+                        abandon = _templateCancellation;
+                        _templateCancellation = null;
+                    }
+                }
+
+                if (abandon is not null)
+                {
+                    Cancel(abandon);
+                }
+            }
         }
 
         private async Task PopulateTemplateAsync(
             TaskCompletionSource<HttpRequestTemplate> creation,
-            CancellationToken cancellationToken)
+            CancellationTokenSource creationCancellation)
         {
             try
             {
@@ -294,7 +371,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
                     _original,
                     _options.ContentReplayPolicy,
                     _options.MaximumBufferSize,
-                    cancellationToken).ConfigureAwait(false);
+                    creationCancellation.Token).ConfigureAwait(false);
                 creation.TrySetResult(template);
             }
             catch (Exception exception)
@@ -304,11 +381,53 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
                     if (ReferenceEquals(_template, creation.Task))
                     {
                         _template = null;
+                        _templateCancellation = null;
                     }
                 }
 
                 creation.TrySetException(exception);
             }
+            finally
+            {
+                creationCancellation.Dispose();
+            }
+        }
+
+        private static async Task<HttpRequestTemplate> AwaitTemplateAsync(
+            Task<HttpRequestTemplate> template,
+            CancellationToken cancellationToken)
+        {
+            if (template.IsCompleted || !cancellationToken.CanBeCanceled)
+            {
+                return await template.ConfigureAwait(false);
+            }
+
+            var cancellation = new TaskCompletionSource<bool>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+            using var registration = cancellationToken.Register(
+                static state => ((TaskCompletionSource<bool>)state!).TrySetResult(true),
+                cancellation);
+            if (await Task.WhenAny(template, cancellation.Task).ConfigureAwait(false) != template)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+            }
+
+            return await template.ConfigureAwait(false);
+        }
+
+        private void DisposePriorResponses()
+        {
+            List<HttpResponseMessage>? prior = null;
+            lock (_gate)
+            {
+                if (_responses.Count > 0)
+                {
+                    prior = [.. _responses];
+                    _responses.Clear();
+                }
+            }
+
+            DisposeResponses(prior);
         }
 
         private void RegisterResponse(HttpResponseMessage response)
@@ -330,28 +449,6 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             {
                 response.Dispose();
             }
-        }
-
-        private static Uri[]? CreateEndpointOrder(HttpEndpointRoutingOptions? routing)
-        {
-            if (routing is null)
-            {
-                return null;
-            }
-
-            if (routing.SelectionMode == HttpEndpointSelectionMode.Ordered)
-            {
-                return routing.Endpoints.Select(static endpoint => endpoint.Uri).ToArray();
-            }
-
-            var random = new DeterministicRandom(routing.Seed);
-            return routing.Endpoints
-                .Select(endpoint => (
-                    endpoint.Uri,
-                    Priority: -Math.Log(random.NextExclusiveDouble()) / endpoint.Weight))
-                .OrderBy(static endpoint => endpoint.Priority)
-                .Select(static endpoint => endpoint.Uri)
-                .ToArray();
         }
 
         private static void RouteToAuthority(HttpRequestMessage request, Uri endpoint)
@@ -383,6 +480,18 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             foreach (var response in responses)
             {
                 response.Dispose();
+            }
+        }
+
+        private static void Cancel(CancellationTokenSource cancellation)
+        {
+            try
+            {
+                cancellation.Cancel();
+            }
+            catch (ObjectDisposedException)
+            {
+                // Template completion may dispose the source as the last waiter exits.
             }
         }
     }
