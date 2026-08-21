@@ -98,6 +98,38 @@ public class CircuitBreakerDynamicOptionsTests
     }
 
     [Test]
+    public async Task Synchronous_BreakDurationGenerator_Failure_Releases_The_Opening_Reservation()
+    {
+        var expected = new InvalidOperationException("synchronous generator");
+        var calls = 0;
+        var monitor = new CircuitBreakerMonitor();
+        var shield = Shield.CircuitBreaker(options =>
+        {
+            options.ConsecutiveFailures = 1;
+            options.Monitor = monitor;
+            options.BreakDurationGenerator = _ =>
+            {
+                if (++calls == 1)
+                {
+                    throw expected;
+                }
+
+                return new ValueTask<TimeSpan>(TimeSpan.FromMinutes(1));
+            };
+        });
+
+        var thrown = await Assert.That(async () =>
+                await shield.ExecuteAsync<int>(_ => throw new ApplicationException("operation")))
+            .Throws<InvalidOperationException>();
+        await Assert.That(ReferenceEquals(thrown, expected)).IsTrue();
+        await Assert.That(monitor.State).IsEqualTo(CircuitState.Closed);
+
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new ApplicationException("operation"));
+        await Assert.That(calls).IsEqualTo(2);
+        await Assert.That(monitor.State).IsEqualTo(CircuitState.Open);
+    }
+
+    [Test]
     public async Task Generated_BreakDuration_Must_Be_Positive()
     {
         var shield = Shield.CircuitBreaker(options =>
@@ -109,6 +141,27 @@ public class CircuitBreakerDynamicOptionsTests
         await Assert.That(async () =>
                 await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
             .Throws<ArgumentOutOfRangeException>();
+    }
+
+    [Test]
+    public async Task Asynchronously_Generated_BreakDuration_Must_Be_Positive()
+    {
+        var monitor = new CircuitBreakerMonitor();
+        var shield = Shield.CircuitBreaker(options =>
+        {
+            options.ConsecutiveFailures = 1;
+            options.Monitor = monitor;
+            options.BreakDurationGenerator = async _ =>
+            {
+                await Task.Yield();
+                return TimeSpan.Zero;
+            };
+        });
+
+        _ = await Assert.That(async () =>
+                await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
+            .Throws<ArgumentOutOfRangeException>();
+        await Assert.That(monitor.State).IsEqualTo(CircuitState.Closed);
     }
 
     [Test]
@@ -306,6 +359,39 @@ public class CircuitBreakerDynamicOptionsTests
             .Throws<InvalidOperationException>();
         await Assert.That(ReferenceEquals(thrown, callbackFailure)).IsTrue();
 
+        await Assert.That(await shield.ExecuteAsync(_ => new ValueTask<int>(42))).IsEqualTo(42);
+    }
+
+    [Test]
+    public async Task Dynamic_Breaker_Releases_Probe_When_Async_HalfOpen_Callback_Fails()
+    {
+        var timeProvider = new FakeTimeProvider();
+        var expected = new InvalidOperationException("async half-open callback");
+        var failCallback = true;
+        var shield = Shield.CircuitBreaker(options =>
+        {
+            options.ConsecutiveFailures = 1;
+            options.BreakDurationGenerator = static _ =>
+                new ValueTask<TimeSpan>(TimeSpan.FromSeconds(1));
+            options.OnStateChangedAsync = change =>
+            {
+                if (change.To == CircuitState.HalfOpen && failCallback)
+                {
+                    failCallback = false;
+                    return ValueTask.FromException(expected);
+                }
+
+                return ValueTask.CompletedTask;
+            };
+        }).WithTimeProvider(timeProvider);
+
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new ApplicationException("open"));
+        timeProvider.Advance(TimeSpan.FromSeconds(1));
+
+        var thrown = await Assert.That(async () =>
+                await shield.ExecuteAsync(_ => new ValueTask<int>(1)))
+            .Throws<InvalidOperationException>();
+        await Assert.That(ReferenceEquals(thrown, expected)).IsTrue();
         await Assert.That(await shield.ExecuteAsync(_ => new ValueTask<int>(42))).IsEqualTo(42);
     }
 
