@@ -45,7 +45,8 @@ stateful strategies: calls made through the same shield share its circuit breake
 - **Composition is explicit.** Chain strategies, or combine existing shields with `Wrap` and
   `Compose`. The first strategy is always the outermost.
 - **It is designed for hot paths.** Struct outcomes, pooled contexts, state-passing overloads and
-  `ValueTask` keep overhead and allocations low. The repository publishes comparative
+  `ValueTask` keep overhead and allocations low. Browse the
+  [benchmark suite](benchmarks/Kevlar.Benchmarks) or the published comparative
   [BenchmarkDotNet results](https://thomhurst.github.io/Kevlar/docs/benchmarks).
 - **Production concerns are built in.** Shields support `TimeProvider`, describe their own pipeline,
   and publish metrics through the `Kevlar` meter on .NET 8 and later. An optional analyzer catches
