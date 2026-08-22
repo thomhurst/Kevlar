@@ -78,6 +78,14 @@
   font-weight: 700;
 }
 
+@media (max-width: 996px) {
+  /* A backdrop filter makes fixed descendants use the navbar as their
+     containing block, collapsing Docusaurus' mobile sidebar to navbar height. */
+  .navbar {
+    backdrop-filter: none;
+  }
+}
+
 .footer--dark {
   --ifm-footer-background-color: #090b0a;
   border-top: 1px solid #252824;
