@@ -16,13 +16,14 @@ Handling clauses now use one spelling per position. `When…` starts a clause on
 | `Shield.For<T>().Or<A>()` | `Shield.For<T>().When<A>()` |
 | `ShieldBuilder<T> builder = Shield.For<T>()` | `Shield<T> shield = Shield.For<T>()` |
 | `builder.OrWhen(predicate)` | `builder.Or(predicate)` |
-| `Shield.For<T>().WhenDefault()` | `Shield.For<T>().WhenResultDefault()` |
-| `builder.OrDefault()` | `builder.OrResultDefault()` |
+| `Shield.For<T>().WhenDefault()` | `Shield.For<T>().WhenResultIsDefault()` |
+| `builder.OrDefault()` | `builder.OrResultIsDefault()` |
 
 `OrWhen` is gone: `Or(Func<Exception, bool>)` now mirrors `When(Func<Exception, bool>)`, so the
 untyped predicate has the same spelling in both clause positions. `WhenDefault`/`OrDefault` were
-renamed to `WhenResultDefault`/`OrResultDefault` because their "default" is `default(TResult)`,
-not the default *handling* that the neighbouring `WhenAnyError()` restores.
+renamed to `WhenResultIsDefault`/`OrResultIsDefault` because their "default" is `default(TResult)`,
+not the default *handling* that the neighbouring `WhenAnyError()` restores. (An earlier pre-release
+build spelled these `WhenResultDefault`/`OrResultDefault`; the `Is` makes the reading unambiguous.)
 
 - `RetryOptions<TResult>` no longer inherits `RetryOptions`. Both types retain the same scalar
   property names and defaults, but helpers that accepted `RetryOptions` must configure typed retry
@@ -43,9 +44,16 @@ not the default *handling* that the neighbouring `WhenAnyError()` restores.
 - `HandlesException`/`HandlesResult` documentation on every options type now leads with the fact
   that the property makes its strategy ignore the ambient `When…` clause, and points at
   `HandlingClause`. `ShieldBuilder`/`ShieldBuilder<TResult>` document the override from the clause side.
+- `ShieldBuilder` and `ShieldBuilder<TResult>` snapshot their accumulated clause whenever a strategy
+  seals it. A builder held in a variable can be extended with further `Or…` terms afterwards without
+  changing the handling of any shield already built from it.
 
 ### Added
 
+- `KEV009`: an informational hint marking each reactive strategy that inherits a handling clause
+  declared earlier in its chain, so the clause's span is visible in the editor. It is `Info`
+  severity — the inheritance is by design, and the hint never fails a build. Proactive strategies
+  and strategies with a local `HandlesException`/`HandlesResult` override are never flagged.
 - `KEV008`: a fluent chaining call written as a statement, such as `shield.Retry(3);`. Shields are
   immutable, so the new shield the call returns is thrown away and nothing is configured.
   Discarded clause builders keep reporting as `KEV007`.

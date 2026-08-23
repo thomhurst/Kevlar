@@ -209,8 +209,8 @@ static Kevlar.Shield.For<TResult>() -> Kevlar.Shield<TResult>!
 *REMOVED*Kevlar.ShieldBuilder<TResult>.OrDefault() -> Kevlar.ShieldBuilder<TResult>!
 *REMOVED*Kevlar.ShieldBuilder.OrWhen(System.Func<System.Exception!, bool>! predicate) -> Kevlar.ShieldBuilder!
 *REMOVED*Kevlar.ShieldBuilder<TResult>.OrWhen(System.Func<System.Exception!, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
-Kevlar.Shield<TResult>.WhenResultDefault() -> Kevlar.ShieldBuilder<TResult>!
-Kevlar.ShieldBuilder<TResult>.OrResultDefault() -> Kevlar.ShieldBuilder<TResult>!
+Kevlar.Shield<TResult>.WhenResultIsDefault() -> Kevlar.ShieldBuilder<TResult>!
+Kevlar.ShieldBuilder<TResult>.OrResultIsDefault() -> Kevlar.ShieldBuilder<TResult>!
 Kevlar.ShieldBuilder.Or(System.Func<System.Exception!, bool>! predicate) -> Kevlar.ShieldBuilder!
 Kevlar.ShieldBuilder<TResult>.Or(System.Func<System.Exception!, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
 Kevlar.Shield.ExecuteWithContext<T>(System.Func<Kevlar.KevlarContext!, T>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> T

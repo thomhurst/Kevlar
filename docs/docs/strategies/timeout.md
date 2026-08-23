@@ -17,7 +17,10 @@ Shield.Timeout(o =>
 });
 ```
 
-Exceeding the budget surfaces `TimeoutExceededException` (with a `Timeout` property).
+Exceeding the budget surfaces `TimeoutExceededException` (with a `Timeout` property). It derives from
+`KevlarException`, **not** from `System.TimeoutException`, so a reflexive `catch (TimeoutException)`
+compiles but never matches — catch `TimeoutExceededException` (or `KevlarException` for any Kevlar
+rejection) instead.
 
 ## Timeouts are cooperative
 

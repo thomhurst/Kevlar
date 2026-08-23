@@ -582,7 +582,7 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.When<InvalidOperationException>();",
             "_ = Shield.Empty.When<InvalidOperationException>();",
             "_ = Shield.For<int>().WhenResult(static value => value < 0);",
-            "_ = Shield.For<int>().WhenResultDefault().Or<TimeoutException>();",
+            "_ = Shield.For<int>().WhenResultIsDefault().Or<TimeoutException>();",
             "var clause = Shield.When<InvalidOperationException>().Or<TimeoutException>();",
             "var clause = Shield.For<int>().When<InvalidOperationException>();",
         };
@@ -719,7 +719,7 @@ public class PipelineHazardAnalyzerTests
         {
             "Shield.When<InvalidOperationException>();",
             "Shield.Empty.When<InvalidOperationException>().Or<TimeoutException>();",
-            "Shield.For<int>().WhenResultDefault();",
+            "Shield.For<int>().WhenResultIsDefault();",
         };
 
         await AssertEachAsync(cases, "KEV007");
@@ -794,8 +794,9 @@ public class PipelineHazardAnalyzerTests
         };
 
         // Some cases replace a clause that only a timeout ever saw, which is exactly what KEV007
-        // reports; the fallback reachability under test is unaffected.
-        await AssertEachAsync(cases, "KEV003", "KEV007");
+        // reports, and some chain a fallback behind a reactive strategy under one clause, which is
+        // what KEV009 makes visible; the fallback reachability under test is unaffected by either.
+        await AssertEachAsync(cases, "KEV003", "KEV007", "KEV009");
     }
 
     [Test]
@@ -954,6 +955,104 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV009_Flags_Reactive_Strategies_That_Inherit_An_Earlier_Clause()
+    {
+        var cases = new[]
+        {
+            "_ = Shield.When<InvalidOperationException>().Retry(1).CircuitBreaker(2, TimeSpan.FromSeconds(1));",
+            "_ = Shield.When<InvalidOperationException>().Or<TimeoutException>().Retry(1).CircuitBreaker(2, TimeSpan.FromSeconds(1));",
+            "_ = Shield.When<InvalidOperationException>().Retry(1).RetryForever(Backoff.None);",
+            "_ = Shield.For<int>().WhenResult(0).Retry(1).Hedge(2, TimeSpan.Zero);",
+            "_ = Shield.For<int>().When<InvalidOperationException>().Fallback(0).Retry(1);",
+            "_ = Shield.For<int>().WhenResultIsDefault().Retry(1).CircuitBreaker(2, TimeSpan.FromSeconds(1));",
+            "var outer = Shield.When<InvalidOperationException>().Retry(1); _ = outer.CircuitBreaker(2, TimeSpan.FromSeconds(1));",
+        };
+
+        await AssertEachAsync(cases, "KEV009", DiagnosticSeverity.Info);
+    }
+
+    [Test]
+    public async Task KEV009_Flags_Every_Strategy_After_The_First_Across_Proactive_Links()
+    {
+        var diagnostics = await AnalyzeBodyAsync(
+            """
+            _ = Shield.When<InvalidOperationException>()
+                .Retry(1)
+                .Timeout(TimeSpan.FromSeconds(1))
+                .CircuitBreaker(2, TimeSpan.FromSeconds(1))
+                .RateLimit(10, TimeSpan.FromSeconds(1))
+                .RetryForever(Backoff.None);
+            """);
+
+        // The retry states the clause at its own call site; the breaker and the forever-retry
+        // inherit it across the timeout and rate limit, which carry no clause of their own.
+        await Assert.That(diagnostics.Length).IsEqualTo(2);
+        await Assert.That(diagnostics).All(static diagnostic => diagnostic.Id == "KEV009");
+        await Assert.That(MarkedText(diagnostics)).IsEquivalentTo(new[] { "CircuitBreaker", "RetryForever" });
+    }
+
+    private static string[] MarkedText(ImmutableArray<Diagnostic> diagnostics) =>
+        diagnostics
+            .OrderBy(static diagnostic => diagnostic.Location.SourceSpan.Start)
+            .Select(static diagnostic => diagnostic.Location.SourceTree!.ToString()
+                .Substring(diagnostic.Location.SourceSpan.Start, diagnostic.Location.SourceSpan.Length))
+            .ToArray();
+
+    [Test]
+    public async Task KEV009_Skips_Reset_Replaced_Absent_Overridden_And_Sealed_Clauses()
+    {
+        var cases = new[]
+        {
+            "_ = Shield.When<InvalidOperationException>().Retry(1);",
+            "_ = Shield.Retry(1).CircuitBreaker(2, TimeSpan.FromSeconds(1));",
+            "_ = Shield.When<InvalidOperationException>().Retry(1).WhenAnyError().CircuitBreaker(2, TimeSpan.FromSeconds(1));",
+            "_ = Shield.When<InvalidOperationException>().Retry(1).When<TimeoutException>().CircuitBreaker(2, TimeSpan.FromSeconds(1));",
+            "_ = Shield.When<InvalidOperationException>().Timeout(TimeSpan.FromSeconds(1)).RateLimit(10, TimeSpan.FromSeconds(1)).ConcurrencyLimit(2).Retry(1);",
+            "_ = Shield.When<InvalidOperationException>().Retry(1).Wrap(Shield.Empty).CircuitBreaker(2, TimeSpan.FromSeconds(1));",
+            "_ = Shield.Compose(Shield.When<InvalidOperationException>().Retry(1), Shield.Empty).CircuitBreaker(2, TimeSpan.FromSeconds(1));",
+            "_ = Shield.For<int>().When<InvalidOperationException>().Retry(1).CircuitBreaker(options => options.HandlesException = exception => exception is TimeoutException);",
+            "_ = Shield.For<int>().When<InvalidOperationException>().CircuitBreaker(options => options.HandlesException = exception => exception is TimeoutException).Retry(1);",
+            "_ = CreateShield().CircuitBreaker(2, TimeSpan.FromSeconds(1));",
+        };
+
+        foreach (var body in cases)
+        {
+            var diagnostics = await AnalyzeBodyAsync(
+                body,
+                "private static Shield CreateShield() => Shield.When<InvalidOperationException>().Retry(1);");
+            await Assert.That(diagnostics).IsEmpty();
+        }
+    }
+
+    [Test]
+    public async Task KEV009_Diagnostic_Contract_And_Suppression_Are_Exact()
+    {
+        const string body = "_ = Shield.When<InvalidOperationException>().Retry(1).CircuitBreaker(2, TimeSpan.FromSeconds(1));";
+        var diagnostics = await AnalyzeBodyAsync(body);
+        var suppressed = await AnalyzeBodyAsync($"""
+            #pragma warning disable KEV009 // The inherited clause is deliberate here.
+            {body}
+            #pragma warning restore KEV009
+            """);
+
+        await Assert.That(diagnostics.Length).IsEqualTo(1);
+        var diagnostic = diagnostics[0];
+        await Assert.That(diagnostic.Id).IsEqualTo("KEV009");
+        await Assert.That(diagnostic.Severity).IsEqualTo(DiagnosticSeverity.Info);
+        await Assert.That(diagnostic.GetMessage()).IsEqualTo(
+            "This strategy inherits the handling clause declared earlier in the chain "
+            + "('When<InvalidOperationException>…'); only those exceptions or results count toward "
+            + "it. Declare a new clause, or call 'WhenAnyError()' first, to give it different "
+            + "handling.");
+
+        // The hint marks only the inheriting strategy's name, not the whole chain.
+        var span = diagnostic.Location.SourceSpan;
+        await Assert.That(diagnostic.Location.SourceTree!.ToString().Substring(span.Start, span.Length))
+            .IsEqualTo("CircuitBreaker");
+        await Assert.That(suppressed).IsEmpty();
+    }
+
+    [Test]
     public async Task Non_Kevlar_Methods_And_Generated_Code_Are_Ignored()
     {
         var unrelated = await AnalyzeSourceAsync("""
@@ -990,6 +1089,19 @@ public class PipelineHazardAnalyzerTests
         }
     }
 
+    private static async Task AssertEachAsync(
+        IEnumerable<string> cases,
+        string expectedRule,
+        DiagnosticSeverity expectedSeverity,
+        params string[] expectedCompanionRules)
+    {
+        foreach (var body in cases)
+        {
+            var diagnostics = await AnalyzeBodyAsync(body);
+            await AssertRuleAsync(Without(diagnostics, expectedCompanionRules), expectedRule, expectedSeverity);
+        }
+    }
+
     /// <summary>
     /// Drops rules a case is expected to trigger in addition to the rule under test — untyped
     /// hedging cases, for instance, always also report KEV006.
@@ -1003,11 +1115,14 @@ public class PipelineHazardAnalyzerTests
                 .Where(diagnostic => !ruleIds.Contains(diagnostic.Id, StringComparer.Ordinal))
                 .ToImmutableArray();
 
-    private static async Task AssertRuleAsync(ImmutableArray<Diagnostic> diagnostics, string expectedRule)
+    private static async Task AssertRuleAsync(
+        ImmutableArray<Diagnostic> diagnostics,
+        string expectedRule,
+        DiagnosticSeverity expectedSeverity = DiagnosticSeverity.Warning)
     {
         await Assert.That(diagnostics.Length).IsEqualTo(1);
         await Assert.That(diagnostics[0].Id).IsEqualTo(expectedRule);
-        await Assert.That(diagnostics[0].Severity).IsEqualTo(DiagnosticSeverity.Warning);
+        await Assert.That(diagnostics[0].Severity).IsEqualTo(expectedSeverity);
     }
 
     private static Task<ImmutableArray<Diagnostic>> AnalyzeBodyAsync(

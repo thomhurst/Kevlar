@@ -61,11 +61,7 @@ public sealed class Shield<TResult>
     /// Starts a handling clause for results equal to <c>default(TResult)</c> — <see langword="null"/>
     /// for reference types. Use <see cref="WhenAnyError"/> to return to default handling.
     /// </summary>
-    /// <remarks>
-    /// The <c>Default</c> here means "the default value of <typeparamref name="TResult"/>", not
-    /// "Kevlar's default handling"; <see cref="WhenAnyError"/> is the one that resets handling.
-    /// </remarks>
-    public ShieldBuilder<TResult> WhenResultDefault() => new ShieldBuilder<TResult>(this).OrResultDefault();
+    public ShieldBuilder<TResult> WhenResultIsDefault() => new ShieldBuilder<TResult>(this).OrResultIsDefault();
 
     /// <summary>
     /// Resets the ambient handling clause. Subsequent reactive strategies use the default

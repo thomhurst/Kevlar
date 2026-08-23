@@ -106,7 +106,7 @@ public class DescribeTests
             .IsEqualTo("[when exception predicate] Retry(1, no delay)");
         await Assert.That(Shield.For<int>().WhenResult(static _ => true).Retry(1, Backoff.None).ToString())
             .IsEqualTo("[when result predicate] Retry(1, no delay)");
-        await Assert.That(Shield.For<int>().WhenResultDefault().Retry(1, Backoff.None).ToString())
+        await Assert.That(Shield.For<int>().WhenResultIsDefault().Retry(1, Backoff.None).ToString())
             .IsEqualTo("[when default result] Retry(1, no delay)");
         await Assert.That(Shield.For<string>().WhenResult("busy").Retry(1, Backoff.None).ToString())
             .IsEqualTo("[when result \"busy\"] Retry(1, no delay)");

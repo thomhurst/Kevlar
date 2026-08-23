@@ -12,6 +12,8 @@ namespace Kevlar.Analyzers;
 /// strategies made unreachable by an inner fallback, per-execution construction of stateful shields,
 /// void fallbacks used for result-returning executions, hedging on an untyped shield, handling
 /// clauses that never reach a reactive strategy, and fluent chaining results discarded as statements.
+/// It also reports, at hint severity, the strategies that inherit a handling clause declared
+/// earlier in their chain, so the clause's span is visible where it applies.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
@@ -86,6 +88,16 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         isEnabledByDefault: true,
         description: "Shield, Shield<TResult> and their builders are immutable: every fluent method returns a new instance and leaves its receiver untouched. A chaining call written as a statement therefore has no effect.");
 
+    /// <summary>The KEV009 rule.</summary>
+    public static readonly DiagnosticDescriptor InheritedHandlingClauseRule = new(
+        id: "KEV009",
+        title: "Strategy inherits a handling clause declared earlier in the chain",
+        messageFormat: "This strategy inherits the handling clause declared earlier in the chain ('{0}'); only those exceptions or results count toward it. Declare a new clause, or call 'WhenAnyError()' first, to give it different handling.",
+        category: "Configuration",
+        defaultSeverity: DiagnosticSeverity.Info,
+        isEnabledByDefault: true,
+        description: "A handling clause stays ambient for every reactive strategy chained after it until a new clause replaces it, WhenAnyError resets it, or Wrap/Compose seals it. That is by design; this diagnostic makes the inherited span visible at the strategies that silently pick the clause up.");
+
     /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
         ImmutableArray.Create(
@@ -95,7 +107,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             VoidFallbackResultExecutionRule,
             UntypedHedgingRule,
             DeadHandlingClauseRule,
-            DiscardedChainResultRule);
+            DiscardedChainResultRule,
+            InheritedHandlingClauseRule);
 
     /// <inheritdoc />
     public override void Initialize(AnalysisContext context)
@@ -210,7 +223,124 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 invocation.Syntax.GetLocation(),
                 Normalize(invocation.TargetMethod).Name));
         }
+
+        if (InheritsAmbientHandlingClause(invocation, context, knownTypes, out var inheritedClause))
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                InheritedHandlingClauseRule,
+                GetMethodNameLocation(invocation),
+                inheritedClause));
+        }
     }
+
+    /// <summary>
+    /// Reports the second and later reactive strategies that read one ambient handling clause.
+    /// The first strategy after a <c>When…</c> states its own handling at the call site; the ones
+    /// after it inherit it silently, which is what this walk surfaces.
+    /// </summary>
+    private static bool InheritsAmbientHandlingClause(
+        IInvocationOperation invocation,
+        OperationAnalysisContext context,
+        KnownTypes knownTypes,
+        out string? clause)
+    {
+        clause = null;
+        if (!IsClauseConsumingStrategy(Normalize(invocation.TargetMethod), knownTypes)
+            || HasLocalHandlingOverride(invocation, context) is not false)
+        {
+            return false;
+        }
+
+        HashSet<ISymbol>? visitedLocals = null;
+        var sawEarlierStrategy = false;
+        for (var current = Unwrap(GetReceiver(invocation)); current is not null;)
+        {
+            if (current is ILocalReferenceOperation localReference)
+            {
+                visitedLocals ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+                if (!visitedLocals.Add(localReference.Local)
+                    || !TryGetStableInitializer(localReference, context, out var initializer))
+                {
+                    return false;
+                }
+
+                current = Unwrap(initializer);
+                continue;
+            }
+
+            if (current is IConditionalAccessOperation conditionalAccess)
+            {
+                current = Unwrap(conditionalAccess.Operation);
+                continue;
+            }
+
+            if (current is not IInvocationOperation link)
+            {
+                return false;
+            }
+
+            var method = Normalize(link.TargetMethod);
+
+            // WhenAnyError resets the clause and Wrap/Compose seals it, so nothing is inherited
+            // across either. Checked before StartsHandlingClause, which also matches WhenAnyError.
+            if (method.Name == "WhenAnyError" || IsCompositionBoundary(method, knownTypes))
+            {
+                return false;
+            }
+
+            if (StartsHandlingClause(method, knownTypes))
+            {
+                if (!sawEarlierStrategy)
+                {
+                    return false;
+                }
+
+                clause = DescribeClause(link);
+                return true;
+            }
+
+            if (!IsKevlarFluentMethod(method, knownTypes))
+            {
+                return false;
+            }
+
+            // Proactive strategies carry no clause and Or… only extends the one being walked to,
+            // so neither counts as an earlier consumer.
+            if (IsClauseConsumingStrategy(method, knownTypes)
+                && HasLocalHandlingOverride(link, context) is false)
+            {
+                sawEarlierStrategy = true;
+            }
+
+            current = Unwrap(GetReceiver(link));
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// The built-in reactive strategies that read the ambient clause rather than declaring handling.
+    /// <c>Use</c> is excluded: its factory takes the <c>HandlingClause</c> as a parameter, so what it
+    /// inherits is already spelled out at the call site.
+    /// </summary>
+    private static bool IsClauseConsumingStrategy(IMethodSymbol method, KnownTypes knownTypes) =>
+        (method.Name is "Retry" or "RetryForever" or "Hedge" or "CircuitBreaker" or "Fallback")
+        && IsKevlarFluentMethod(method, knownTypes);
+
+    /// <summary>Renders a clause declaration the way it was written, e.g. <c>When&lt;HttpRequestException&gt;…</c>.</summary>
+    private static string DescribeClause(IInvocationOperation invocation) =>
+        (invocation.Syntax is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax memberAccess }
+            ? memberAccess.Name.ToString()
+            : Normalize(invocation.TargetMethod).Name) + "…";
+
+    /// <summary>
+    /// The invoked method's name alone, so a hint marks the one strategy it is about rather than
+    /// underlining the whole fluent chain leading up to it.
+    /// </summary>
+    private static Location GetMethodNameLocation(IInvocationOperation invocation) =>
+        invocation.Syntax is InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax memberAccess }
+            ? memberAccess.Name.GetLocation()
+            : invocation.Syntax.GetLocation();
 
     /// <summary>
     /// Reports a fluent call whose new shield is dropped where it stands. Calls that hand back a
@@ -288,8 +418,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
     /// <summary>Whether a reactive strategy reads the ambient clause this method seals.</summary>
     private static bool ConsumesHandlingClause(IMethodSymbol method, KnownTypes knownTypes) =>
-        (method.Name is "Retry" or "RetryForever" or "Hedge" or "CircuitBreaker" or "Fallback" or "Use")
-        && IsKevlarFluentMethod(method, knownTypes);
+        IsClauseConsumingStrategy(method, knownTypes)
+        || (method.Name == "Use" && IsKevlarFluentMethod(method, knownTypes));
 
     private static bool IsDiscardedClauseBuilder(
         IInvocationOperation invocation,
@@ -1895,7 +2025,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     }
 
     private static bool StartsHandlingClause(IMethodSymbol method, KnownTypes knownTypes) =>
-        (method.Name is "When" or "WhenResult" or "WhenResultDefault" or "WhenAnyError")
+        (method.Name is "When" or "WhenResult" or "WhenResultIsDefault" or "WhenAnyError")
         && (knownTypes.IsShield(method.ContainingType)
             || knownTypes.IsShieldExtensions(method.ContainingType));
 

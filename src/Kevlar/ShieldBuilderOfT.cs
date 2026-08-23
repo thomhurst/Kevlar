@@ -14,6 +14,13 @@ namespace Kevlar;
 /// <c>Shield.For&lt;T&gt;().When&lt;A&gt;().OrResult(r =&gt; …).Retry(3)</c>.
 /// </para>
 /// <para>
+/// <c>Or…</c> accumulates into the builder and returns that same builder, so a builder held in a
+/// variable keeps every term added to it. The clause is snapshotted when a strategy is added:
+/// adding further <c>Or…</c> terms afterwards never changes a shield already built. Branching two
+/// chains from one stored builder, however, gives both chains every term either branch added, so
+/// start a fresh <c>When…</c> for each chain.
+/// </para>
+/// <para>
 /// One strategy can opt out of the ambient clause: setting <c>HandlesException</c> or
 /// <c>HandlesResult</c> on its options (<see cref="RetryOptions{TResult}"/>,
 /// <see cref="CircuitBreakerOptions{TResult}"/>, <see cref="HedgeOptions{TResult}"/>,
@@ -76,7 +83,7 @@ public sealed class ShieldBuilder<TResult>
     }
 
     /// <summary>Also handle results equal to <c>default(TResult)</c> — <see langword="null"/> for reference types.</summary>
-    public ShieldBuilder<TResult> OrResultDefault()
+    public ShieldBuilder<TResult> OrResultIsDefault()
     {
         _resultPredicates.Add(static candidate => EqualityComparer<TResult>.Default.Equals(candidate, default!));
         _clauseTerms.Add("default result");
@@ -164,10 +171,18 @@ public sealed class ShieldBuilder<TResult>
     /// <summary>Adds a configured concurrency limit. The handling clauses remain ambient for later strategies.</summary>
     public Shield<TResult> ConcurrencyLimit(Action<ConcurrencyLimitOptions> configure) => Seal().ConcurrencyLimit(configure);
 
+    /// <summary>
+    /// Freezes the clause accumulated so far into a shield. Both predicate lists are copied and the
+    /// description is rendered here, so a builder kept in a variable and extended with further
+    /// <c>Or…</c> calls can never change the handling of a shield already built from it.
+    /// </summary>
     private Shield<TResult> Seal()
     {
-        var exceptionPredicate = _exceptionPredicates.Count == 0 ? null : ShieldBuilder.Combine(_exceptionPredicates);
-        var resultPredicate = CombineResults(_resultPredicates);
+        var exceptionPredicates = _exceptionPredicates.ToArray();
+        var exceptionPredicate = exceptionPredicates.Length == 0
+            ? null
+            : ShieldBuilder.Combine(exceptionPredicates);
+        var resultPredicate = CombineResults(_resultPredicates.ToArray());
         var judge = new TypedJudge<TResult>(
             exceptionPredicate,
             resultPredicate,
@@ -175,22 +190,21 @@ public sealed class ShieldBuilder<TResult>
         return new Shield<TResult>(_parent.Strategies, judge, _parent.Name, _parent.Time);
     }
 
-    private static Func<TResult, bool>? CombineResults(List<Func<TResult, bool>> predicates)
+    private static Func<TResult, bool>? CombineResults(Func<TResult, bool>[] predicates)
     {
-        if (predicates.Count == 0)
+        if (predicates.Length == 0)
         {
             return null;
         }
 
-        if (predicates.Count == 1)
+        if (predicates.Length == 1)
         {
             return predicates[0];
         }
 
-        var snapshot = predicates.ToArray();
         return result =>
         {
-            foreach (var predicate in snapshot)
+            foreach (var predicate in predicates)
             {
                 if (predicate(result))
                 {

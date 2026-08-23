@@ -3,7 +3,7 @@ using Microsoft.Extensions.Time.Testing;
 namespace Kevlar.Tests;
 
 /// <summary>
-/// Guards the API refinements: the unified When/Or clause grammar, WhenResultDefault, typed retry
+/// Guards the API refinements: the unified When/Or clause grammar, WhenResultIsDefault, typed retry
 /// events, the MaxDelay absolute cap, the context-only ExecuteWithContext overloads, and Compose
 /// preserving metadata while sealing clauses.
 /// </summary>
@@ -110,10 +110,10 @@ public class NewApiTests
     }
 
     [Test]
-    public async Task WhenResultDefault_Retries_Null_Results()
+    public async Task WhenResultIsDefault_Retries_Null_Results()
     {
         var attempts = 0;
-        var shield = Shield.For<string?>().WhenResultDefault().Retry(2, Backoff.None);
+        var shield = Shield.For<string?>().WhenResultIsDefault().Retry(2, Backoff.None);
 
         var result = await shield.ExecuteAsync(_ => new ValueTask<string?>(attempts++ < 2 ? null : "loaded"));
 
@@ -122,10 +122,10 @@ public class NewApiTests
     }
 
     [Test]
-    public async Task WhenResultDefault_Matches_Default_Value_Types()
+    public async Task WhenResultIsDefault_Matches_Default_Value_Types()
     {
         var attempts = 0;
-        var shield = Shield.For<int>().WhenResultDefault().Retry(1, Backoff.None);
+        var shield = Shield.For<int>().WhenResultIsDefault().Retry(1, Backoff.None);
 
         var result = await shield.ExecuteAsync(_ => new ValueTask<int>(attempts++ == 0 ? 0 : 7));
 
