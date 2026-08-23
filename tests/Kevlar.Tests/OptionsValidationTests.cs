@@ -110,7 +110,7 @@ public class OptionsValidationTests
         await Assert.That(() => Shield.Compose(shield, null!)).Throws<ArgumentNullException>();
         await Assert.That(() => shield.Wrap((Shield)null!)).Throws<ArgumentNullException>();
         await Assert.That(() => shield.Wrap((Shield<int>)null!)).Throws<ArgumentNullException>();
-        await Assert.That(() => shield.Use(null!)).Throws<ArgumentNullException>();
+        await Assert.That(() => shield.Use((Strategy)null!)).Throws<ArgumentNullException>();
         await Assert.That(() => shield.WithName(null!)).Throws<ArgumentNullException>();
         await Assert.That(() => shield.WithTimeProvider(null!)).Throws<ArgumentNullException>();
     }

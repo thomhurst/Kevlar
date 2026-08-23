@@ -81,6 +81,35 @@ public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
 
 The exception is only thrown once — at the pipeline boundary, back in the caller's frame, with its original stack trace intact.
 
+## Consume handling clauses
+
+Reactive custom strategies should use the shield's active handling clause instead of hard-coding exception filters. Pass a factory to `Use`; Kevlar invokes it once and supplies a `HandlingClause` that wraps the current `When`/`Or` clause, or `HandlingClause.Default` when none is active:
+
+<!-- doc-test-declaration: split-before=var shield -->
+```csharp
+public sealed class RetryOnceStrategy(HandlingClause handling) : Strategy
+{
+    protected override HandlingClause? Handling => handling;
+
+    public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+        Continuation<T, TState> next, KevlarContext context)
+    {
+        var outcome = await next.InvokeAsync(context);
+        return handling.ShouldHandle(in outcome)
+            ? await next.InvokeAsync(context)
+            : outcome;
+    }
+}
+
+var shield = Shield
+    .When<HttpRequestException>()
+    .Use(clause => new RetryOnceStrategy(clause));
+```
+
+`ShouldHandle` works with exception and typed-result outcomes. The default handles any exception except `OperationCanceledException`. The existing `Use(Strategy)` overload remains the simpler choice for proactive strategies that do not inspect failures.
+
+Override `Strategy.Handling` when retaining the supplied clause, as above. This declaration lets Kevlar's unreachable-fallback validation and `Kevlar.Testing` custom strategy descriptors see the strategy's handling. A strategy with intentionally local rules may ignore the factory argument and implement those rules itself.
+
 ## Context properties
 
 `KevlarContext.Properties` is isolated per execution. A `KevlarKey<T>` is identified by both

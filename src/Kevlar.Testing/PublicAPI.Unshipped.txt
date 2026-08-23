@@ -22,6 +22,7 @@ Kevlar.Testing.ConcurrencyLimitStrategyDescriptor
 Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.MaxConcurrency.get -> int
 Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.MaxQueue.get -> int
 Kevlar.Testing.CustomStrategyDescriptor
+Kevlar.Testing.CustomStrategyDescriptor.Handling.get -> Kevlar.HandlingClause?
 Kevlar.Testing.CustomStrategyDescriptor.StrategyType.get -> System.Type!
 Kevlar.Testing.FallbackStrategyDescriptor
 Kevlar.Testing.FallbackStrategyDescriptor.HasNotification.get -> bool

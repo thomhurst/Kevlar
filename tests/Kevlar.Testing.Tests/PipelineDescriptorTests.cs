@@ -148,6 +148,22 @@ public class PipelineDescriptorTests
 
         await Assert.That(custom.StrategyType).IsEqualTo(typeof(PassThroughStrategy));
         await Assert.That(custom.Description).IsEqualTo("pass-through");
+        await Assert.That(custom.Handling).IsNull();
+    }
+
+    [Test]
+    public async Task Custom_Strategy_Descriptor_Exposes_Declared_Handling()
+    {
+        var custom = Shield.When<ArgumentException>()
+            .Use(clause => new HandlingAwareStrategy(clause))
+            .GetDescriptor()
+            .AssertContainsSingle<CustomStrategyDescriptor>();
+
+        await Assert.That(custom.Handling.HasValue).IsTrue();
+        await Assert.That(custom.Handling!.Value.ShouldHandle(
+            Outcome<int>.FromException(new ArgumentException()))).IsTrue();
+        await Assert.That(custom.Handling.Value.ShouldHandle(
+            Outcome<int>.FromException(new InvalidOperationException()))).IsFalse();
     }
 
     [Test]
@@ -243,6 +259,15 @@ public class PipelineDescriptorTests
     private sealed class PassThroughStrategy : Strategy
     {
         public override string Describe() => "pass-through";
+
+        public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+            Continuation<T, TState> next,
+            KevlarContext context) => next.InvokeAsync(context);
+    }
+
+    private sealed class HandlingAwareStrategy(HandlingClause handling) : Strategy
+    {
+        protected override HandlingClause? Handling => handling;
 
         public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
             Continuation<T, TState> next,

@@ -212,8 +212,79 @@ public class CustomStrategyContractTests
     [Test]
     public async Task Use_Rejects_Null_Strategies()
     {
-        await Assert.That(() => Shield.Use(null!)).Throws<ArgumentNullException>();
-        await Assert.That(() => Shield<int>.Empty.Use(null!)).Throws<ArgumentNullException>();
+        await Assert.That(() => Shield.Use((Strategy)null!)).Throws<ArgumentNullException>();
+        await Assert.That(() => Shield<int>.Empty.Use((Strategy)null!)).Throws<ArgumentNullException>();
+    }
+
+    [Test]
+    public async Task Use_Factory_Receives_The_Active_Exception_Handling_Clause_Once()
+    {
+        HandlingClause? captured = null;
+        var factoryCalls = 0;
+
+        var shield = Shield.When<ArgumentException>().Use(clause =>
+        {
+            factoryCalls++;
+            captured = clause;
+            return PassThroughStrategy.Instance;
+        });
+
+        await Assert.That(factoryCalls).IsEqualTo(1);
+        await Assert.That(captured.HasValue).IsTrue();
+        await Assert.That(captured!.Value.ShouldHandle(Outcome<int>.FromException(new ArgumentException()))).IsTrue();
+        await Assert.That(captured.Value.ShouldHandle(Outcome<int>.FromException(new InvalidOperationException()))).IsFalse();
+
+        var result = await shield.ExecuteAsync(_ => new ValueTask<int>(42));
+        await Assert.That(result).IsEqualTo(42);
+    }
+
+    [Test]
+    public async Task Use_Factory_Receives_Default_And_Typed_Result_Handling()
+    {
+        HandlingClause untyped = default;
+        HandlingClause typed = default;
+
+        _ = Shield.Use(clause =>
+        {
+            untyped = clause;
+            return PassThroughStrategy.Instance;
+        });
+        _ = Shield.For<int>().WhenResult(0).Use(clause =>
+        {
+            typed = clause;
+            return PassThroughStrategy.Instance;
+        });
+
+        await Assert.That(untyped.ShouldHandle(Outcome<int>.FromException(new InvalidOperationException()))).IsTrue();
+        await Assert.That(untyped.ShouldHandle(Outcome<int>.FromException(new OperationCanceledException()))).IsFalse();
+        await Assert.That(untyped.ShouldHandle(Outcome<int>.FromResult(0))).IsFalse();
+        await Assert.That(typed.ShouldHandle(Outcome<int>.FromResult(0))).IsTrue();
+        await Assert.That(typed.ShouldHandle(Outcome<int>.FromResult(1))).IsFalse();
+        await Assert.That(HandlingClause.Default.ShouldHandle(
+            Outcome<int>.FromException(new InvalidOperationException()))).IsTrue();
+    }
+
+    [Test]
+    public async Task Use_Factory_Is_Available_On_Typed_Shields_And_Rejects_Null()
+    {
+        var shield = Shield<int>.Empty.Use(_ => PassThroughStrategy.Instance);
+
+        await Assert.That(await shield.ExecuteAsync(_ => new ValueTask<int>(42))).IsEqualTo(42);
+        await Assert.That(() => Shield.Empty.Use((Func<HandlingClause, Strategy>)null!))
+            .Throws<ArgumentNullException>();
+        await Assert.That(() => Shield.Empty.Use(_ => null!)).Throws<InvalidOperationException>();
+    }
+
+    [Test]
+    public async Task Declared_Handling_Participates_In_Chain_Validation()
+    {
+        await Assert.That(() =>
+        {
+            _ = Shield.For<int>()
+                .When<ArgumentException>()
+                .Use(clause => new HandlingAwareStrategy(clause))
+                .Fallback(0);
+        }).Throws<InvalidOperationException>();
     }
 
     [Test]
@@ -356,6 +427,15 @@ public class CustomStrategyContractTests
             Interlocked.Increment(ref _invocations);
             return next.InvokeAsync(context);
         }
+    }
+
+    private sealed class HandlingAwareStrategy(HandlingClause handling) : Strategy
+    {
+        protected override HandlingClause? Handling => handling;
+
+        public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+            Continuation<T, TState> next,
+            KevlarContext context) => next.InvokeAsync(context);
     }
 
     private sealed class DescribedStrategy : Strategy

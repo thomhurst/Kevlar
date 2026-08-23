@@ -96,6 +96,12 @@ public sealed class Shield
     /// <summary>Starts a pipeline with a custom <see cref="Strategy"/> implementation.</summary>
     public static Shield Use(Strategy strategy) => ShieldExtensions.Use(Empty, strategy);
 
+    /// <summary>
+    /// Starts a pipeline with a custom strategy created from the default handling clause.
+    /// The factory runs once when the strategy is appended.
+    /// </summary>
+    public static Shield Use(Func<HandlingClause, Strategy> factory) => ShieldExtensions.Use(Empty, factory);
+
     /// <summary>Starts a handling clause: subsequent reactive strategies act on exceptions of type <typeparamref name="TException"/>.</summary>
     public static ShieldBuilder When<TException>()
         where TException : Exception

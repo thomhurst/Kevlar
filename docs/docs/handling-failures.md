@@ -69,6 +69,18 @@ This is why most chains only need one clause, written once at the top — and wh
 Timeouts, rate limits and concurrency limits don't care why something failed — they act on time and concurrency, not outcomes. Clauses only drive the reactive strategies.
 :::
 
+## Custom reactive strategies
+
+Custom strategies opt into ambient handling through the `Use` factory overload:
+
+<!-- doc-test-ignore: RetryOnceStrategy is defined on the Custom Strategies page. -->
+```csharp
+var shield = Shield.When<HttpRequestException>()
+    .Use(clause => new RetryOnceStrategy(clause));
+```
+
+The factory runs once and receives a `HandlingClause`. Call `clause.ShouldHandle(in outcome)` inside the strategy so exception and result rules stay aligned with the shield. See [Custom Strategies](custom-strategies.md#consume-handling-clauses) for a complete implementation.
+
 :::info Clauses survive lifting and composing
 `shield.For<T>()` carries an ambient exception clause into the typed shield, and `Shield.Compose(...)` keeps the last input's clause ambient — so strategies chained afterwards keep handling what you declared. Write a new clause any time you want different handling.
 :::

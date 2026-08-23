@@ -236,6 +236,18 @@ public sealed class Shield<TResult>
         return Append(strategy);
     }
 
+    /// <summary>
+    /// Appends a custom strategy created from the active handling clause. The factory runs once;
+    /// reactive custom strategies should retain and consult the supplied clause.
+    /// </summary>
+    public Shield<TResult> Use(Func<HandlingClause, Strategy> factory)
+    {
+        Throw.IfNull(factory, nameof(factory));
+        var strategy = factory(new HandlingClause(JudgeOrDefault))
+            ?? throw new InvalidOperationException("The strategy factory returned null.");
+        return Append(strategy);
+    }
+
     // ── Composition ─────────────────────────────────────────────────────────────────────
 
     /// <summary>
