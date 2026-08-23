@@ -2,6 +2,9 @@ namespace Kevlar.Tests;
 
 public class OutcomeAndContextTests
 {
+    private const string ExceptionProxyDataKey =
+        "Kevlar.Internal.ExceptionProxy.6b21d876-5f0c-45d4-a873-cd6d83e9158b";
+
     [Test]
     public async Task FromResult_Is_Success()
     {
@@ -57,6 +60,47 @@ public class OutcomeAndContextTests
             await Assert.That(ReferenceEquals(caught, original)).IsTrue();
             await Assert.That(caught.StackTrace!.Contains(nameof(ThrowOriginal))).IsTrue();
         }
+    }
+
+    [Test]
+    public async Task TryGetResult_Returns_Value_For_Successful_Outcomes()
+    {
+        var valueOutcome = Outcome<int>.FromResult(42);
+        var referenceOutcome = Outcome<string>.FromResult("value");
+
+        await Assert.That(valueOutcome.TryGetResult(out var value)).IsTrue();
+        await Assert.That(value).IsEqualTo(42);
+        await Assert.That(referenceOutcome.TryGetResult(out var reference)).IsTrue();
+        await Assert.That(reference).IsEqualTo("value");
+        await Assert.That(GetLength(referenceOutcome)).IsEqualTo(5);
+    }
+
+    [Test]
+    public async Task TryGetResult_Returns_Default_And_Preserves_Exception_For_Failures()
+    {
+        var exception = new InvalidOperationException("boom");
+        var valueOutcome = Outcome<int>.FromException(exception);
+        var referenceOutcome = Outcome<string>.FromException(exception);
+
+        await Assert.That(valueOutcome.TryGetResult(out var value)).IsFalse();
+        await Assert.That(value).IsEqualTo(default);
+        await Assert.That(valueOutcome.Exception).IsSameReferenceAs(exception);
+        await Assert.That(referenceOutcome.TryGetResult(out var reference)).IsFalse();
+        await Assert.That(reference).IsNull();
+        await Assert.That(referenceOutcome.Exception).IsSameReferenceAs(exception);
+    }
+
+    [Test]
+    public async Task TryGetResult_Preserves_Proxy_Exception_Unwrapping()
+    {
+        var original = new InvalidOperationException("original");
+        var proxy = new Exception("proxy");
+        proxy.Data[ExceptionProxyDataKey] = original;
+        var outcome = Outcome<int>.FromException(proxy);
+
+        await Assert.That(outcome.TryGetResult(out var result)).IsFalse();
+        await Assert.That(result).IsEqualTo(default);
+        await Assert.That(outcome.Exception).IsSameReferenceAs(original);
     }
 
     [Test]
@@ -250,6 +294,9 @@ public class OutcomeAndContextTests
     }
 
     private static void ThrowOriginal() => throw new InvalidOperationException("boom");
+
+    private static int GetLength(Outcome<string> outcome) =>
+        outcome.TryGetResult(out var result) ? result.Length : -1;
 
     private sealed class CustomValue
     {

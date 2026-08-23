@@ -9,6 +9,7 @@ Kevlar.CircuitBreakerOptions.BreakDurationGenerator.get -> System.Func<Kevlar.Ci
 Kevlar.CircuitBreakerOptions.BreakDurationGenerator.set -> void
 Kevlar.CircuitBreakerOptions.OnStateChangedAsync.get -> System.Func<Kevlar.CircuitStateChangedEvent, System.Threading.Tasks.ValueTask>?
 Kevlar.CircuitBreakerOptions.OnStateChangedAsync.set -> void
+Kevlar.Outcome<T>.TryGetResult(out T result) -> bool
 Kevlar.Shield.ExecuteOutcomeAsync<T, TState>(TState state, System.Func<TState, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<T>>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Kevlar.Outcome<T>>
 Kevlar.Shield<TResult>.ExecuteOutcomeAsync<TState>(TState state, System.Func<TState, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Kevlar.Outcome<TResult>>
 Kevlar.TimeoutOptions.OnTimeoutAsync.get -> System.Func<Kevlar.TimeoutEvent, System.Threading.Tasks.ValueTask>?
