@@ -3,8 +3,9 @@ using Microsoft.Extensions.Time.Testing;
 namespace Kevlar.Tests;
 
 /// <summary>
-/// Guards the API refinements: the unified When/Or clause grammar, WhenDefault, typed retry
-/// events, the MaxDelay absolute cap, and Compose preserving metadata while sealing clauses.
+/// Guards the API refinements: the unified When/Or clause grammar, WhenResultDefault, typed retry
+/// events, the MaxDelay absolute cap, the context-only ExecuteWithContext overloads, and Compose
+/// preserving metadata while sealing clauses.
 /// </summary>
 public class NewApiTests
 {
@@ -63,7 +64,7 @@ public class NewApiTests
         var shield = Shield
             .When<ArgumentException>()
             .Or<InvalidOperationException>()
-            .OrWhen(exception => exception is TimeoutException)
+            .Or(exception => exception is TimeoutException)
             .Retry(3, Backoff.None);
 
         await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
@@ -109,10 +110,10 @@ public class NewApiTests
     }
 
     [Test]
-    public async Task WhenDefault_Retries_Null_Results()
+    public async Task WhenResultDefault_Retries_Null_Results()
     {
         var attempts = 0;
-        var shield = Shield.For<string?>().WhenDefault().Retry(2, Backoff.None);
+        var shield = Shield.For<string?>().WhenResultDefault().Retry(2, Backoff.None);
 
         var result = await shield.ExecuteAsync(_ => new ValueTask<string?>(attempts++ < 2 ? null : "loaded"));
 
@@ -121,10 +122,10 @@ public class NewApiTests
     }
 
     [Test]
-    public async Task WhenDefault_Matches_Default_Value_Types()
+    public async Task WhenResultDefault_Matches_Default_Value_Types()
     {
         var attempts = 0;
-        var shield = Shield.For<int>().WhenDefault().Retry(1, Backoff.None);
+        var shield = Shield.For<int>().WhenResultDefault().Retry(1, Backoff.None);
 
         var result = await shield.ExecuteAsync(_ => new ValueTask<int>(attempts++ == 0 ? 0 : 7));
 
@@ -442,6 +443,134 @@ public class NewApiTests
         await Assert.That(composed.Ambient).IsNull();
         await Assert.That(result).IsEqualTo(42);
         await Assert.That(attempts).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task Or_Accepts_A_Bare_Exception_Predicate_On_Both_Builders()
+    {
+        // A bare lambda cannot infer TException for Or<TException>(Func<TException, bool>),
+        // so this binds to the non-generic Or(Func<Exception, bool>) continuation.
+        var untypedAttempts = 0;
+        var untyped = Shield
+            .When<ArgumentException>()
+            .Or(exception => exception is TimeoutException)
+            .Retry(2, Backoff.None);
+
+        await Assert.That(async () => await untyped.ExecuteAsync<int>(_ =>
+        {
+            untypedAttempts++;
+            throw untypedAttempts switch
+            {
+                1 => new ArgumentException(),
+                2 => (Exception)new TimeoutException(),
+                _ => new ShortCircuitException(),
+            };
+        })).Throws<ShortCircuitException>();
+        await Assert.That(untypedAttempts).IsEqualTo(3);
+
+        var typedAttempts = 0;
+        var typed = Shield.For<int>()
+            .WhenResult(0)
+            .Or(exception => exception is TimeoutException)
+            .Retry(2, Backoff.None);
+
+        var result = await typed.ExecuteAsync(_ =>
+        {
+            typedAttempts++;
+            return typedAttempts switch
+            {
+                1 => new ValueTask<int>(0),
+                2 => throw new TimeoutException(),
+                _ => new ValueTask<int>(42),
+            };
+        });
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(typedAttempts).IsEqualTo(3);
+    }
+
+    [Test]
+    public async Task Or_Is_The_Only_Predicate_Continuation_On_The_Builders()
+    {
+        foreach (var builderType in new[] { typeof(ShieldBuilder), typeof(ShieldBuilder<int>) })
+        {
+            var declared = builderType.GetMethods(System.Reflection.BindingFlags.Instance
+                | System.Reflection.BindingFlags.Public
+                | System.Reflection.BindingFlags.DeclaredOnly);
+
+            await Assert.That(declared.Any(static method => method.Name == "OrWhen")).IsFalse();
+
+            var predicateContinuation = declared
+                .Single(static method => method.Name == "Or" && !method.IsGenericMethodDefinition);
+            await Assert.That(predicateContinuation.GetParameters().Single().ParameterType)
+                .IsEqualTo(typeof(Func<Exception, bool>));
+        }
+    }
+
+    [Test]
+    public async Task ExecuteWithContext_Reads_The_Context_Without_Property_Ceremony()
+    {
+        var shield = Shield.Retry(1, Backoff.None).WithName("context-only");
+        var typed = Shield.For<int>().Retry(1, Backoff.None).WithName("typed-context-only");
+
+        await Assert.That(await shield.ExecuteWithContextAsync(
+            context => new ValueTask<string?>(context.ShieldName))).IsEqualTo("context-only");
+        await Assert.That(await shield.ExecuteWithContextAsync(
+            context => Task.FromResult(context.ShieldName))).IsEqualTo("context-only");
+        await Assert.That(shield.ExecuteWithContext(context => context.ShieldName)).IsEqualTo("context-only");
+
+        await Assert.That(await typed.ExecuteWithContextAsync(
+            context => new ValueTask<int>(context.ShieldName!.Length))).IsEqualTo("typed-context-only".Length);
+        await Assert.That(await typed.ExecuteWithContextAsync(
+            context => Task.FromResult(context.ShieldName!.Length))).IsEqualTo("typed-context-only".Length);
+        await Assert.That(typed.ExecuteWithContext(context => context.ShieldName!.Length))
+            .IsEqualTo("typed-context-only".Length);
+
+        string? fromValueTaskVoid = null;
+        await shield.ExecuteWithContextAsync(context =>
+        {
+            fromValueTaskVoid = context.ShieldName;
+            return ValueTask.CompletedTask;
+        });
+
+        string? fromTaskVoid = null;
+        await shield.ExecuteWithContextAsync(context =>
+        {
+            fromTaskVoid = context.ShieldName;
+            return Task.CompletedTask;
+        });
+
+        string? fromSyncVoid = null;
+        shield.ExecuteWithContext(context => { fromSyncVoid = context.ShieldName; });
+
+        await Assert.That(fromValueTaskVoid).IsEqualTo("context-only");
+        await Assert.That(fromTaskVoid).IsEqualTo("context-only");
+        await Assert.That(fromSyncVoid).IsEqualTo("context-only");
+    }
+
+    [Test]
+    public async Task ExecuteWithContext_Without_Properties_Still_Retries_And_Threads_Cancellation()
+    {
+        var shield = Shield.Retry(1, Backoff.None);
+        var attempts = 0;
+
+        var result = await shield.ExecuteWithContextAsync(context =>
+        {
+            attempts++;
+            context.CancellationToken.ThrowIfCancellationRequested();
+            return attempts == 1
+                ? ValueTask.FromException<int>(new InvalidOperationException())
+                : new ValueTask<int>(7);
+        });
+
+        await Assert.That(result).IsEqualTo(7);
+        await Assert.That(attempts).IsEqualTo(2);
+
+        using var cancellation = new CancellationTokenSource();
+        await cancellation.CancelAsync();
+        await Assert.That(async () => await shield.ExecuteWithContextAsync(
+            context => new ValueTask<int>(1),
+            cancellation.Token)).Throws<OperationCanceledException>();
     }
 
     private sealed class ShortCircuitException : Exception;

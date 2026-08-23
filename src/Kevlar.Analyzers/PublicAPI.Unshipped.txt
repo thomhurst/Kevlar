@@ -5,4 +5,5 @@ override Kevlar.Analyzers.PipelineHazardAnalyzer.Initialize(Microsoft.CodeAnalys
 override Kevlar.Analyzers.PipelineHazardAnalyzer.SupportedDiagnostics.get -> System.Collections.Immutable.ImmutableArray<Microsoft.CodeAnalysis.DiagnosticDescriptor!>
 static readonly Kevlar.Analyzers.PipelineHazardAnalyzer.SynchronousHedgingRule -> Microsoft.CodeAnalysis.DiagnosticDescriptor!
 static readonly Kevlar.Analyzers.PipelineHazardAnalyzer.UnreachableReactiveStrategyRule -> Microsoft.CodeAnalysis.DiagnosticDescriptor!
+static readonly Kevlar.Analyzers.PipelineHazardAnalyzer.UntypedHedgingRule -> Microsoft.CodeAnalysis.DiagnosticDescriptor!
 static readonly Kevlar.Analyzers.PipelineHazardAnalyzer.VoidFallbackResultExecutionRule -> Microsoft.CodeAnalysis.DiagnosticDescriptor!

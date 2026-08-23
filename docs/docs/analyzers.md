@@ -21,6 +21,7 @@ Generated code is ignored.
 | `KEV003` | Warning | inner fallback makes retry, hedging, or circuit breaker unreachable |
 | `KEV004` | Warning | stateful shield or partition provider is constructed for one execution |
 | `KEV005` | Warning | void fallback is executed with a result-returning delegate |
+| `KEV006` | Warning | hedging is added to an untyped shield, whose action must be idempotent |
 
 ## KEV001: ignored execution cancellation
 
@@ -136,6 +137,34 @@ The rule recognizes same-expression chains and stable local aliases for synchron
 outcome-returning, context-aware, and `Task<T>` execution overloads. It deliberately skips
 parameters, returned shields, reassigned locals, and fields because their construction cannot be
 proved by the current intraprocedural analysis.
+
+## KEV006: hedging on an untyped shield
+
+Hedging launches the execution delegate more than once, concurrently. An untyped `Shield` can judge
+those attempts only by their exceptions, so every attempt it starts runs to completion against the
+real dependency — and a losing hedge has still done its work. Duplicate writes, charges, or sends are
+observable unless the action is idempotent:
+
+```csharp
+var shield = Shield.Hedge(maxAttempts: 2, delay: TimeSpan.FromMilliseconds(50)); // KEV006
+```
+
+Build a result-aware shield so a [result clause](handling-failures.md#result-clauses) can decide
+which attempt is acceptable:
+
+```csharp
+var shield = Shield.For<HttpResponseMessage>()
+    .WhenResult(response => (int)response.StatusCode >= 500)
+    .Hedge(maxAttempts: 2, delay: TimeSpan.FromMilliseconds(50));
+```
+
+If the untyped shape is deliberate — the action is a genuinely idempotent read — suppress the
+warning at that site with a pragma that records why.
+
+The rule reports every `Hedge` overload that returns the untyped `Shield`: the static
+`Shield.Hedge(...)` factories, the `ShieldExtensions.Hedge(...)` chaining methods, and
+`ShieldBuilder.Hedge(...)`. `Shield<T>.Hedge(...)` and `ShieldBuilder<T>.Hedge(...)` are never
+flagged.
 
 ## Suppression
 

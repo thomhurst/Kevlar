@@ -40,8 +40,8 @@ public sealed class ShieldBuilder<TResult>
         return this;
     }
 
-    /// <summary>Also handle exceptions matching <paramref name="predicate"/>.</summary>
-    public ShieldBuilder<TResult> OrWhen(Func<Exception, bool> predicate)
+    /// <summary>Also handle exceptions matching <paramref name="predicate"/>, whatever their type.</summary>
+    public ShieldBuilder<TResult> Or(Func<Exception, bool> predicate)
     {
         Throw.IfNull(predicate, nameof(predicate));
         _exceptionPredicates.Add(predicate);
@@ -63,20 +63,33 @@ public sealed class ShieldBuilder<TResult>
         return this;
     }
 
-    /// <summary>Also handle results equal to <c>default</c> — <see langword="null"/> for reference types.</summary>
-    public ShieldBuilder<TResult> OrDefault()
+    /// <summary>Also handle results equal to <c>default(TResult)</c> — <see langword="null"/> for reference types.</summary>
+    public ShieldBuilder<TResult> OrResultDefault()
     {
         _resultPredicates.Add(static candidate => EqualityComparer<TResult>.Default.Equals(candidate, default!));
         return this;
     }
 
     /// <summary>Retries handled outcomes up to <paramref name="maxRetries"/> times with the default exponential jittered backoff.</summary>
+    /// <param name="maxRetries">
+    /// The number of <em>retries</em>, not the number of attempts: <c>Retry(3)</c> makes up to 4
+    /// total attempts — the initial call plus 3 retries.
+    /// </param>
     public Shield<TResult> Retry(int maxRetries = 3) => Seal().Retry(maxRetries);
 
     /// <summary>Retries handled outcomes up to <paramref name="maxRetries"/> times with the given backoff.</summary>
+    /// <param name="maxRetries">
+    /// The number of <em>retries</em>, not the number of attempts: <c>Retry(3)</c> makes up to 4
+    /// total attempts — the initial call plus 3 retries.
+    /// </param>
+    /// <param name="backoff">The delay computation applied between attempts.</param>
     public Shield<TResult> Retry(int maxRetries, Backoff backoff) => Seal().Retry(maxRetries, backoff);
 
     /// <summary>Adds a retry strategy configured via <paramref name="configure"/>.</summary>
+    /// <remarks>
+    /// <see cref="RetryOptions{TResult}.MaxRetries"/> counts <em>retries</em>, not attempts:
+    /// <c>MaxRetries = 3</c> makes up to 4 total attempts — the initial call plus 3 retries.
+    /// </remarks>
     public Shield<TResult> Retry(Action<RetryOptions<TResult>> configure) => Seal().Retry(configure);
 
     /// <summary>Retries handled outcomes indefinitely.</summary>

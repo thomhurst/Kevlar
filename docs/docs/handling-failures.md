@@ -20,16 +20,19 @@ remains available through `outcome.Exception`.
 var shield = Shield
     .When<HttpRequestException>()                     // this exception type (and subtypes)
     .Or<TimeoutExceededException>()                     // or this one
-    .OrWhen(ex => ex is IOException { Message: var m } && m.Contains("pipe"))  // or any predicate
+    .Or(ex => ex is IOException { Message: var m } && m.Contains("pipe"))  // or any predicate
     .Retry(5);
 ```
 
 - `When<TException>()` starts a clause matching `TException` and anything derived from it. `When<TException>(predicate)` narrows it further, and `When(predicate)` matches on any exception.
-- `Or<TException>()` / `Or<TException>(predicate)` / `OrWhen(predicate)` add alternatives to the clause. All alternatives OR together.
+- `Or<TException>()` / `Or<TException>(predicate)` / `Or(predicate)` add alternatives to the clause. All alternatives OR together.
+
+`Or` mirrors `When` exactly: the untyped `Or(predicate)` takes a `Func<Exception, bool>`, and a bare
+lambda binds to it because there is no type argument to infer for the generic overload.
 
 Clause position determines the vocabulary: `When…` starts a clause on a shield, while `Or…`
 continues that clause on the returned builder. The compiler therefore enforces
-`When<A>().Or<B>().OrWhen(...)`.
+`When<A>().Or<B>().Or(...)`.
 
 ## Result clauses
 
@@ -47,9 +50,13 @@ Now a 503 response triggers a retry exactly as a thrown `HttpRequestException` w
 Typed builders add result alternatives with `OrResult(predicate)` / `OrResult(value)`, and two shorthands for the most common check of all:
 
 ```csharp
-Shield.For<User?>().WhenDefault().Retry(2);   // retry when the result is null / default
-// mid-chain: .OrDefault() adds the same check to an existing clause
+Shield.For<User?>().WhenResultDefault().Retry(2);   // retry when the result is null / default
+// mid-chain: .OrResultDefault() adds the same check to an existing clause
 ```
+
+`WhenResultDefault` / `OrResultDefault` mean "the result equals `default(T)`". They are named after
+the `WhenResult` / `OrResult` family precisely so they cannot be confused with `WhenAnyError()`,
+which resets *handling* to Kevlar's default.
 
 ## Clauses are ambient
 

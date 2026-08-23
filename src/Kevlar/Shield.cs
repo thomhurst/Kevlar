@@ -51,12 +51,25 @@ public sealed class Shield
     // ── Static factories ────────────────────────────────────────────────────────────────
 
     /// <summary>Retries failed executions up to <paramref name="maxRetries"/> times with the default exponential jittered backoff.</summary>
+    /// <param name="maxRetries">
+    /// The number of <em>retries</em>, not the number of attempts: <c>Retry(3)</c> makes up to 4
+    /// total attempts — the initial call plus 3 retries.
+    /// </param>
     public static Shield Retry(int maxRetries = 3) => ShieldExtensions.Retry(Empty, maxRetries);
 
     /// <summary>Retries failed executions up to <paramref name="maxRetries"/> times with the given backoff.</summary>
+    /// <param name="maxRetries">
+    /// The number of <em>retries</em>, not the number of attempts: <c>Retry(3)</c> makes up to 4
+    /// total attempts — the initial call plus 3 retries.
+    /// </param>
+    /// <param name="backoff">The delay computation applied between attempts.</param>
     public static Shield Retry(int maxRetries, Backoff backoff) => ShieldExtensions.Retry(Empty, maxRetries, backoff);
 
     /// <summary>Adds a retry strategy configured via <paramref name="configure"/>.</summary>
+    /// <remarks>
+    /// <see cref="RetryOptions.MaxRetries"/> counts <em>retries</em>, not attempts:
+    /// <c>MaxRetries = 3</c> makes up to 4 total attempts — the initial call plus 3 retries.
+    /// </remarks>
     public static Shield Retry(Action<RetryOptions> configure) => ShieldExtensions.Retry(Empty, configure);
 
     /// <summary>Retries failed executions indefinitely.</summary>
@@ -88,9 +101,21 @@ public sealed class Shield
     public static Shield ConcurrencyLimit(Action<ConcurrencyLimitOptions> configure) => ShieldExtensions.ConcurrencyLimit(Empty, configure);
 
     /// <summary>Races up to <paramref name="maxAttempts"/> concurrent attempts staggered by <paramref name="delay"/>; first acceptable outcome wins.</summary>
+    /// <remarks>
+    /// Hedging on an untyped <see cref="Shield"/> runs the execution delegate more than once,
+    /// concurrently, and only its exceptions can select a winner. The delegate must therefore be
+    /// idempotent: duplicate writes, charges, or sends are otherwise observable side effects of a
+    /// hedge that later loses. Prefer <see cref="For{TResult}"/>, where result clauses decide which
+    /// attempt is acceptable, or confirm the action is safe to repeat.
+    /// </remarks>
     public static Shield Hedge(int maxAttempts, TimeSpan delay) => ShieldExtensions.Hedge(Empty, maxAttempts, delay);
 
     /// <summary>Adds a hedging strategy configured via <paramref name="configure"/>.</summary>
+    /// <remarks>
+    /// Hedging on an untyped <see cref="Shield"/> runs the execution delegate more than once,
+    /// concurrently, so the delegate must be idempotent. Prefer <see cref="For{TResult}"/>, or
+    /// confirm the action is safe to repeat.
+    /// </remarks>
     public static Shield Hedge(Action<HedgingOptions> configure) => ShieldExtensions.Hedge(Empty, configure);
 
     /// <summary>Starts a pipeline with a custom <see cref="Strategy"/> implementation.</summary>
@@ -190,6 +215,22 @@ public sealed class Shield
             cancellationToken);
     }
 
+    /// <summary>
+    /// Executes a context-aware delegate through the pipeline without seeding execution properties.
+    /// The context is pooled and is valid only for the duration of the delegate invocation; never retain it.
+    /// </summary>
+    public ValueTask<T> ExecuteWithContextAsync<T>(
+        Func<KevlarContext, ValueTask<T>> action,
+        CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(action, nameof(action));
+        return ExecuteWithContextAsync(
+            action,
+            static (_, _) => { },
+            static (a, context) => a(context),
+            cancellationToken);
+    }
+
     /// <summary>Executes the void delegate through the pipeline.</summary>
     public ValueTask ExecuteAsync(Func<CancellationToken, ValueTask> action, CancellationToken cancellationToken = default)
     {
@@ -251,6 +292,22 @@ public sealed class Shield
     }
 
     /// <summary>
+    /// Executes a context-aware void delegate through the pipeline without seeding execution properties.
+    /// The context is pooled and is valid only for the duration of the delegate invocation; never retain it.
+    /// </summary>
+    public ValueTask ExecuteWithContextAsync(
+        Func<KevlarContext, ValueTask> action,
+        CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(action, nameof(action));
+        return ExecuteWithContextAsync(
+            action,
+            static (_, _) => { },
+            static (a, context) => a(context),
+            cancellationToken);
+    }
+
+    /// <summary>
     /// Executes the delegate through the pipeline and returns the outcome instead of throwing.
     /// </summary>
     public ValueTask<Outcome<T>> ExecuteOutcomeAsync<T>(Func<CancellationToken, ValueTask<T>> action, CancellationToken cancellationToken = default)
@@ -308,6 +365,21 @@ public sealed class Shield
             cancellationToken);
     }
 
+    /// <summary>
+    /// Executes a context-aware delegate synchronously through the pipeline without seeding execution
+    /// properties. The context is pooled and is valid only for the duration of the delegate invocation;
+    /// never retain it.
+    /// </summary>
+    public T ExecuteWithContext<T>(Func<KevlarContext, T> action, CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(action, nameof(action));
+        return ExecuteWithContext(
+            action,
+            static (_, _) => { },
+            static (a, context) => a(context),
+            cancellationToken);
+    }
+
     /// <summary>Executes the void delegate synchronously through the pipeline.</summary>
     public void Execute(Action<CancellationToken> action, CancellationToken cancellationToken = default)
     {
@@ -353,6 +425,21 @@ public sealed class Shield
                 s.action(s.state, context);
                 return Nothing.Value;
             },
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Executes a context-aware void delegate synchronously through the pipeline without seeding
+    /// execution properties. The context is pooled and is valid only for the duration of the delegate
+    /// invocation; never retain it.
+    /// </summary>
+    public void ExecuteWithContext(Action<KevlarContext> action, CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(action, nameof(action));
+        ExecuteWithContext(
+            action,
+            static (_, _) => { },
+            static (a, context) => a(context),
             cancellationToken);
     }
 

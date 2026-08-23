@@ -15,7 +15,9 @@ Shield.Retry(3, Backoff.Linear(TimeSpan.FromMilliseconds(500)));
 Shield.RetryForever(Backoff.Exponential(TimeSpan.FromSeconds(1), maxDelay: TimeSpan.FromMinutes(1)));
 ```
 
-`Retry(3)` means **3 retries** — up to 4 total attempts.
+The count is **retries, not attempts**: `Retry(3)` makes up to 4 total attempts — the initial call
+plus 3 retries. The same reading applies to `MaxRetries` in the options form, and to every `Retry`
+overload on `Shield`, `Shield<T>`, and the `When…` builders.
 
 :::tip The default is the good one
 Bare `Shield.Retry(3)` gives exponential backoff **with jitter**, 250ms base, capped at 30s. Jitter prevents retry storms where every failed caller retries in lockstep; you'd have configured this anyway.
@@ -55,7 +57,7 @@ Shield.Retry(o =>
 
 | Option | Default | What it does |
 |---|---|---|
-| `MaxRetries` | `3` | Retry attempts after the initial one; `int.MaxValue` = forever |
+| `MaxRetries` | `3` | Retries after the initial attempt — `3` means up to 4 total attempts; `int.MaxValue` = forever |
 | `Backoff` | `Backoff.Default` | The delay sequence (see above) |
 | `MaxDelay` | — | Absolute cap applied to every delay — including `DelayGenerator` output, so a hostile `Retry-After` can't stall the pipeline |
 | `OnRetry` | — | Called synchronously before each retry sleeps — attempt number, final delay, failure |

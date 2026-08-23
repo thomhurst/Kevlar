@@ -69,7 +69,7 @@ public ProfileClient(Shield<Profile?>? shield = null)
 
 ```csharp
 var client = new ProfileClient(
-    Shield.For<Profile?>().WhenDefault().Or<HttpRequestException>().Retry(3));
+    Shield.For<Profile?>().WhenResultDefault().Or<HttpRequestException>().Retry(3));
 ```
 
 ## Opinionated defaults

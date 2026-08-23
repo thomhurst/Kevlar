@@ -36,26 +36,34 @@ public sealed class ShieldBuilder
         return this;
     }
 
-    /// <summary>Also handle exceptions matching <paramref name="predicate"/>.</summary>
-    public ShieldBuilder OrWhen(Func<Exception, bool> predicate)
+    /// <summary>Also handle exceptions matching <paramref name="predicate"/>, whatever their type.</summary>
+    public ShieldBuilder Or(Func<Exception, bool> predicate)
     {
         Throw.IfNull(predicate, nameof(predicate));
-        return Or(predicate);
-    }
-
-    private ShieldBuilder Or(Func<Exception, bool> predicate)
-    {
         _predicates.Add(predicate);
         return this;
     }
 
     /// <summary>Retries handled exceptions up to <paramref name="maxRetries"/> times with the default exponential jittered backoff.</summary>
+    /// <param name="maxRetries">
+    /// The number of <em>retries</em>, not the number of attempts: <c>Retry(3)</c> makes up to 4
+    /// total attempts — the initial call plus 3 retries.
+    /// </param>
     public Shield Retry(int maxRetries = 3) => Seal().Retry(maxRetries);
 
     /// <summary>Retries handled exceptions up to <paramref name="maxRetries"/> times with the given backoff.</summary>
+    /// <param name="maxRetries">
+    /// The number of <em>retries</em>, not the number of attempts: <c>Retry(3)</c> makes up to 4
+    /// total attempts — the initial call plus 3 retries.
+    /// </param>
+    /// <param name="backoff">The delay computation applied between attempts.</param>
     public Shield Retry(int maxRetries, Backoff backoff) => Seal().Retry(maxRetries, backoff);
 
     /// <summary>Adds a retry strategy configured via <paramref name="configure"/>.</summary>
+    /// <remarks>
+    /// <see cref="RetryOptions.MaxRetries"/> counts <em>retries</em>, not attempts:
+    /// <c>MaxRetries = 3</c> makes up to 4 total attempts — the initial call plus 3 retries.
+    /// </remarks>
     public Shield Retry(Action<RetryOptions> configure) => Seal().Retry(configure);
 
     /// <summary>Retries handled exceptions indefinitely.</summary>
@@ -68,9 +76,21 @@ public sealed class ShieldBuilder
     public Shield CircuitBreaker(Action<CircuitBreakerOptions> configure) => Seal().CircuitBreaker(configure);
 
     /// <summary>Races concurrent attempts; a handled exception launches the next attempt immediately.</summary>
+    /// <remarks>
+    /// Hedging on an untyped <see cref="Shield"/> runs the execution delegate more than once,
+    /// concurrently, and only its exceptions can select a winner. The delegate must therefore be
+    /// idempotent: duplicate writes, charges, or sends are otherwise observable side effects of a
+    /// hedge that later loses. Prefer <c>Shield.For&lt;T&gt;()</c>, where result clauses decide which
+    /// attempt is acceptable, or confirm the action is safe to repeat.
+    /// </remarks>
     public Shield Hedge(int maxAttempts, TimeSpan delay) => Seal().Hedge(maxAttempts, delay);
 
     /// <summary>Adds a hedging strategy configured via <paramref name="configure"/>.</summary>
+    /// <remarks>
+    /// Hedging on an untyped <see cref="Shield"/> runs the execution delegate more than once,
+    /// concurrently, so the delegate must be idempotent. Prefer <c>Shield.For&lt;T&gt;()</c>, or
+    /// confirm the action is safe to repeat.
+    /// </remarks>
     public Shield Hedge(Action<HedgingOptions> configure) => Seal().Hedge(configure);
 
     /// <summary>Creates and appends a custom strategy using the accumulated handling clause.</summary>

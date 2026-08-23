@@ -52,7 +52,7 @@ public sealed class Shield<TResult>
         => new ShieldBuilder<TResult>(this).Or(predicate);
 
     /// <summary>Starts a handling clause for exceptions matching <paramref name="predicate"/>. Use <see cref="WhenAnyError"/> to return to default handling.</summary>
-    public ShieldBuilder<TResult> When(Func<Exception, bool> predicate) => new ShieldBuilder<TResult>(this).OrWhen(predicate);
+    public ShieldBuilder<TResult> When(Func<Exception, bool> predicate) => new ShieldBuilder<TResult>(this).Or(predicate);
 
     /// <summary>Starts a handling clause for results matching <paramref name="predicate"/>. Use <see cref="WhenAnyError"/> to return to default handling.</summary>
     public ShieldBuilder<TResult> WhenResult(Func<TResult, bool> predicate) => new ShieldBuilder<TResult>(this).OrResult(predicate);
@@ -60,8 +60,15 @@ public sealed class Shield<TResult>
     /// <summary>Starts a handling clause for results equal to <paramref name="result"/>. Use <see cref="WhenAnyError"/> to return to default handling.</summary>
     public ShieldBuilder<TResult> WhenResult(TResult result) => new ShieldBuilder<TResult>(this).OrResult(result);
 
-    /// <summary>Starts a handling clause for results equal to <c>default</c> — <see langword="null"/> for reference types. Use <see cref="WhenAnyError"/> to return to default handling.</summary>
-    public ShieldBuilder<TResult> WhenDefault() => new ShieldBuilder<TResult>(this).OrDefault();
+    /// <summary>
+    /// Starts a handling clause for results equal to <c>default(TResult)</c> — <see langword="null"/>
+    /// for reference types. Use <see cref="WhenAnyError"/> to return to default handling.
+    /// </summary>
+    /// <remarks>
+    /// The <c>Default</c> here means "the default value of <typeparamref name="TResult"/>", not
+    /// "Kevlar's default handling"; <see cref="WhenAnyError"/> is the one that resets handling.
+    /// </remarks>
+    public ShieldBuilder<TResult> WhenResultDefault() => new ShieldBuilder<TResult>(this).OrResultDefault();
 
     /// <summary>
     /// Resets the ambient handling clause. Subsequent reactive strategies use the default
@@ -72,9 +79,18 @@ public sealed class Shield<TResult>
     // ── Strategy chaining ───────────────────────────────────────────────────────────────
 
     /// <summary>Retries handled outcomes up to <paramref name="maxRetries"/> times with the default exponential jittered backoff.</summary>
+    /// <param name="maxRetries">
+    /// The number of <em>retries</em>, not the number of attempts: <c>Retry(3)</c> makes up to 4
+    /// total attempts — the initial call plus 3 retries.
+    /// </param>
     public Shield<TResult> Retry(int maxRetries = 3) => Retry(options => options.MaxRetries = maxRetries);
 
     /// <summary>Retries handled outcomes up to <paramref name="maxRetries"/> times with the given backoff.</summary>
+    /// <param name="maxRetries">
+    /// The number of <em>retries</em>, not the number of attempts: <c>Retry(3)</c> makes up to 4
+    /// total attempts — the initial call plus 3 retries.
+    /// </param>
+    /// <param name="backoff">The delay computation applied between attempts.</param>
     public Shield<TResult> Retry(int maxRetries, Backoff backoff) => Retry(options =>
     {
         options.MaxRetries = maxRetries;
@@ -87,6 +103,10 @@ public sealed class Shield<TResult>
     /// <c>DelayGeneratorAsync</c> receive a <see cref="RetryEvent{TResult}"/> carrying the handled
     /// <see cref="Outcome{TResult}"/>.
     /// </summary>
+    /// <remarks>
+    /// <see cref="RetryOptions{TResult}.MaxRetries"/> counts <em>retries</em>, not attempts:
+    /// <c>MaxRetries = 3</c> makes up to 4 total attempts — the initial call plus 3 retries.
+    /// </remarks>
     public Shield<TResult> Retry(Action<RetryOptions<TResult>> configure)
     {
         Throw.IfNull(configure, nameof(configure));
@@ -378,6 +398,22 @@ public sealed class Shield<TResult>
             cancellationToken);
     }
 
+    /// <summary>
+    /// Executes a context-aware delegate through the pipeline without seeding execution properties.
+    /// The context is pooled and is valid only for the duration of the delegate invocation; never retain it.
+    /// </summary>
+    public ValueTask<TResult> ExecuteWithContextAsync(
+        Func<KevlarContext, ValueTask<TResult>> action,
+        CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(action, nameof(action));
+        return ExecuteWithContextAsync(
+            action,
+            static (_, _) => { },
+            static (a, context) => a(context),
+            cancellationToken);
+    }
+
     /// <summary>Executes the delegate through the pipeline and returns the outcome instead of throwing.</summary>
     public ValueTask<Outcome<TResult>> ExecuteOutcomeAsync(Func<CancellationToken, ValueTask<TResult>> action, CancellationToken cancellationToken = default)
     {
@@ -431,6 +467,23 @@ public sealed class Shield<TResult>
             state,
             initializeProperties,
             action,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Executes a context-aware delegate synchronously through the pipeline without seeding execution
+    /// properties. The context is pooled and is valid only for the duration of the delegate invocation;
+    /// never retain it.
+    /// </summary>
+    public TResult ExecuteWithContext(
+        Func<KevlarContext, TResult> action,
+        CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(action, nameof(action));
+        return ExecuteWithContext(
+            action,
+            static (_, _) => { },
+            static (a, context) => a(context),
             cancellationToken);
     }
 

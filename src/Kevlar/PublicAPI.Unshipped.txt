@@ -211,3 +211,20 @@ Kevlar.ShieldBuilder<TResult>.Hedge(System.Action<Kevlar.HedgingOptions<TResult>
 *REMOVED*Kevlar.ShieldBuilder<TResult>.CircuitBreaker(System.Action<Kevlar.CircuitBreakerOptions!>! configure) -> Kevlar.Shield<TResult>!
 *REMOVED*Kevlar.ShieldBuilder<TResult>.Hedge(System.Action<Kevlar.HedgingOptions!>! configure) -> Kevlar.Shield<TResult>!
 static Kevlar.Shield.For<TResult>() -> Kevlar.Shield<TResult>!
+*REMOVED*Kevlar.Shield<TResult>.WhenDefault() -> Kevlar.ShieldBuilder<TResult>!
+*REMOVED*Kevlar.ShieldBuilder<TResult>.OrDefault() -> Kevlar.ShieldBuilder<TResult>!
+*REMOVED*Kevlar.ShieldBuilder.OrWhen(System.Func<System.Exception!, bool>! predicate) -> Kevlar.ShieldBuilder!
+*REMOVED*Kevlar.ShieldBuilder<TResult>.OrWhen(System.Func<System.Exception!, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
+Kevlar.Shield<TResult>.WhenResultDefault() -> Kevlar.ShieldBuilder<TResult>!
+Kevlar.ShieldBuilder<TResult>.OrResultDefault() -> Kevlar.ShieldBuilder<TResult>!
+Kevlar.ShieldBuilder.Or(System.Func<System.Exception!, bool>! predicate) -> Kevlar.ShieldBuilder!
+Kevlar.ShieldBuilder<TResult>.Or(System.Func<System.Exception!, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
+Kevlar.Shield.ExecuteWithContext<T>(System.Func<Kevlar.KevlarContext!, T>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> T
+Kevlar.Shield.ExecuteWithContext(System.Action<Kevlar.KevlarContext!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> void
+Kevlar.Shield.ExecuteWithContextAsync<T>(System.Func<Kevlar.KevlarContext!, System.Threading.Tasks.ValueTask<T>>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T>
+Kevlar.Shield.ExecuteWithContextAsync(System.Func<Kevlar.KevlarContext!, System.Threading.Tasks.ValueTask>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Kevlar.Shield<TResult>.ExecuteWithContext(System.Func<Kevlar.KevlarContext!, TResult>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> TResult
+Kevlar.Shield<TResult>.ExecuteWithContextAsync(System.Func<Kevlar.KevlarContext!, System.Threading.Tasks.ValueTask<TResult>>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<TResult>
+static Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync<T>(this Kevlar.Shield! shield, System.Func<Kevlar.KevlarContext!, System.Threading.Tasks.Task<T>!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<T>
+static Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(this Kevlar.Shield! shield, System.Func<Kevlar.KevlarContext!, System.Threading.Tasks.Task!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+static Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync<TResult>(this Kevlar.Shield<TResult>! shield, System.Func<Kevlar.KevlarContext!, System.Threading.Tasks.Task<TResult>!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<TResult>

@@ -88,6 +88,20 @@ properties when each fork launches; later mutations stay isolated between attemp
 `context.CancellationToken` is the effective token for that attempt, including timeout and hedge
 cancellation.
 
+When you only need to *read* the context — the shield name, the effective token, the ambient
+`TimeProvider` — there is a shorter overload that skips the state and initializer entirely:
+
+```csharp
+var name = await shield.ExecuteWithContextAsync(
+    static context => new ValueTask<string?>(context.ShieldName),
+    cancellationToken);
+```
+
+It exists in the same shapes as the full form: result-returning and void, synchronous and
+asynchronous, `ValueTask` and `Task`, on both `Shield` and `Shield<TResult>`. It delegates to the
+state-based overload, passing your delegate as the state, so it stays closure-free when the lambda
+is `static`.
+
 `ExecuteWithContext` provides the same contract for synchronous actions. Both `Shield` and
 `Shield<TResult>` support the context-aware shape; `Task` and `ValueTask` actions are accepted.
 Use static initializer and action delegates with the state parameter to avoid closures. The pooled
