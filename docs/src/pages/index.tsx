@@ -111,12 +111,12 @@ const features: FeatureItem[] = [
   },
   {
     number: '05',
-    title: 'Nothing hiding underneath',
-    accent: '0 DEPS',
+    title: 'Ships where you ship',
+    accent: 'AOT',
     description: (
       <>
-        Core Kevlar depends on nothing but the BCL. No surprise transitive
-        packages, version conflicts or dependency-tree baggage.
+        No reflection, no runtime code generation. CI smoke-tests trimmed,
+        single-file and NativeAOT consumers on every change.
       </>
     ),
   },
@@ -126,7 +126,7 @@ const features: FeatureItem[] = [
     accent: '.NET',
     description: (
       <>
-        Targets <code>netstandard2.0</code> and <code>net8.0</code>, with
+        Targets <code>netstandard2.0</code> and <code>net10.0</code>, with
         integrations for Microsoft DI and <code>HttpClientFactory</code>.
       </>
     ),
@@ -271,16 +271,12 @@ function ProofBand() {
             <Heading as="h2">Tiny overhead.<br />Serious protection.</Heading>
           </div>
           <div className={styles.metric}>
-            <strong>100<span> ns</span></strong>
+            <strong>127<span> ns</span></strong>
             <p>Successful Retry(3) execution</p>
           </div>
           <div className={styles.metric}>
             <strong>0<span> B</span></strong>
             <p>Allocated on the happy path</p>
-          </div>
-          <div className={styles.metric}>
-            <strong>0<span> deps</span></strong>
-            <p>In the core package</p>
           </div>
         </div>
         <Link className={styles.proofLink} to="/docs/performance">
