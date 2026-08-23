@@ -24,9 +24,12 @@ internal sealed class HedgingStrategy : Strategy
         _onHedge = options.OnHedge;
         _onHedgeAsync = options.OnHedgeAsync;
         _actionGenerator = options.ActionGenerator;
+        HasHandlingOverride = options.HasHandlingOverride;
     }
 
     internal override OutcomeJudge? ReactiveJudge => _judge;
+
+    internal override bool HasHandlingOverride { get; }
 
     internal int MaxAttempts => _maxAttempts;
 

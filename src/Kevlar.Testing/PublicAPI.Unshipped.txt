@@ -75,6 +75,10 @@ static Kevlar.Testing.ShieldDescriptorAssertionExtensions.AssertStrategyCount(th
 static Kevlar.Testing.ShieldDescriptorAssertionExtensions.AssertStrategyOrder(this Kevlar.Testing.ShieldDescriptor! descriptor, params Kevlar.Testing.StrategyKind[]! expected) -> Kevlar.Testing.ShieldDescriptor!
 static Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor(this Kevlar.Shield! shield) -> Kevlar.Testing.ShieldDescriptor!
 static Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor<TResult>(this Kevlar.Shield<TResult>! shield) -> Kevlar.Testing.ShieldDescriptor!
+Kevlar.Testing.CircuitBreakerStrategyDescriptor.HasHandlingOverride.get -> bool
+Kevlar.Testing.FallbackStrategyDescriptor.HasHandlingOverride.get -> bool
+Kevlar.Testing.HedgingStrategyDescriptor.HasHandlingOverride.get -> bool
+Kevlar.Testing.RetryStrategyDescriptor.HasHandlingOverride.get -> bool
 Kevlar.Testing.CircuitBreakerStateSnapshot
 Kevlar.Testing.CircuitBreakerStateSnapshot.State.get -> Kevlar.CircuitState
 Kevlar.Testing.ConcurrencyLimitStateSnapshot

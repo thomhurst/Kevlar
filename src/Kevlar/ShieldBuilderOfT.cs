@@ -86,13 +86,13 @@ public sealed class ShieldBuilder<TResult>
     public Shield<TResult> CircuitBreaker(int consecutiveFailures, TimeSpan breakDuration) => Seal().CircuitBreaker(consecutiveFailures, breakDuration);
 
     /// <summary>Adds a circuit breaker strategy configured via <paramref name="configure"/>.</summary>
-    public Shield<TResult> CircuitBreaker(Action<CircuitBreakerOptions> configure) => Seal().CircuitBreaker(configure);
+    public Shield<TResult> CircuitBreaker(Action<CircuitBreakerOptions<TResult>> configure) => Seal().CircuitBreaker(configure);
 
     /// <summary>Races concurrent attempts; a handled outcome launches the next attempt immediately.</summary>
     public Shield<TResult> Hedge(int maxAttempts, TimeSpan delay) => Seal().Hedge(maxAttempts, delay);
 
     /// <summary>Adds a hedging strategy configured via <paramref name="configure"/>.</summary>
-    public Shield<TResult> Hedge(Action<HedgingOptions> configure) => Seal().Hedge(configure);
+    public Shield<TResult> Hedge(Action<HedgingOptions<TResult>> configure) => Seal().Hedge(configure);
 
     /// <summary>Creates and appends a custom strategy using the accumulated handling clause.</summary>
     public Shield<TResult> Use(Func<HandlingClause, Strategy> factory) => Seal().Use(factory);

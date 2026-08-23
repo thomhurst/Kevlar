@@ -92,6 +92,11 @@ chooses not to observe that token.
 non-generic `FallbackEvent` carrying the exact handled exception. Callback properties are
 snapshotted when the shield is built, so replacing them on the options later has no effect.
 
+Both option types expose `HandlesException`; `FallbackOptions<T>` also exposes `HandlesResult`.
+Setting either creates a [per-strategy override](../handling-failures.md#per-strategy-overrides)
+that fully replaces the ambient clause for this fallback. A result-only override does not recover
+exceptions, and an exception-only override does not recover results.
+
 Hooks may run concurrently when the same shield executes concurrently, and may re-enter the shield;
 they must therefore be thread-safe and must not depend on strategy locks. `FallbackEvent.Context`
 remains valid until that hook returns or its `ValueTask` completes. Do not retain the pooled context

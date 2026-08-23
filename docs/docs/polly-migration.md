@@ -11,7 +11,7 @@ Kevlar's pipeline model translates 1:1 from Polly v8 — the "first strategy add
 | Polly v8 | Kevlar |
 |---|---|
 | `new ResiliencePipelineBuilder().AddRetry(new RetryStrategyOptions { … }).Build()` | `Shield.Retry(3)` |
-| `ShouldHandle = new PredicateBuilder().Handle<T>()` | `Shield.When<T>().…` (ambient for the whole chain) |
+| `ShouldHandle = new PredicateBuilder().Handle<T>()` | `Shield.When<T>().…` for an ambient rule, or `options.HandlesException` / `HandlesResult` for a direct per-strategy equivalent |
 | `ResiliencePipeline` / `ResiliencePipeline<T>` | `Shield` / `Shield<T>` |
 | `ResilienceContextPool.Shared.Get(...)` + `Return` | automatic — contexts are pooled internally |
 | `BrokenCircuitException` | `CircuitOpenException` (with `RetryAfter`) |
@@ -68,7 +68,7 @@ Note the handling clause: written once, it covers the retry *and* the breaker. I
 ## Semantic differences worth knowing
 
 - **Retry defaults differ.** Polly's default is constant 2s delays with no jitter; Kevlar's is exponential-with-jitter from 250ms capped at 30s. If you relied on Polly's default timing, say so explicitly: `Shield.Retry(3, Backoff.Constant(TimeSpan.FromSeconds(2)))`.
-- **Handling clauses are ambient within one fluent chain.** A clause applies to every reactive strategy after it until replaced; call `WhenAnyError()` to return subsequent strategies to Kevlar's default. `Wrap` and `Compose` seal clauses at the composition boundary: strategies already inside keep their handling, while strategies appended afterwards use the default unless you declare a new local clause.
+- **Handling clauses are ambient within one fluent chain.** A clause applies to every reactive strategy after it until replaced; call `WhenAnyError()` to return subsequent strategies to Kevlar's default. `Wrap` and `Compose` seal clauses at the composition boundary: strategies already inside keep their handling, while strategies appended afterwards use the default unless you declare a new local clause. For a Polly strategy with a distinct `ShouldHandle`, set that strategy's `HandlesException` / `HandlesResult` options; a local override fully replaces the ambient clause.
 - **Default handling excludes cancellation.** With no clause at all, Kevlar handles any exception except `OperationCanceledException` — same spirit as Polly's recommended predicate, but built in.
 - **One shield, every shape.** There's no separate sync/async pipeline type: `shield.Execute(...)` and `shield.ExecuteAsync(...)` are the same instance. (Hedging is async-only, as in Polly.)
 - **Nonsense orders fail fast.** Chaining a `Fallback` *after* a retry, hedge or breaker that shares its handling clause throws at build time, because the fallback would swallow every failure before the outer strategy saw one. Polly builds such pipelines silently. Put the fallback first (outermost), or give it a narrower clause.

@@ -5,8 +5,16 @@ namespace Kevlar;
 /// <see cref="ConsecutiveFailures"/> (simple mode) or <see cref="FailureRatio"/>
 /// (sampling mode). When neither is set, the breaker trips after 5 consecutive failures.
 /// </summary>
-public sealed class CircuitBreakerOptions
+public class CircuitBreakerOptions
 {
+    /// <summary>
+    /// Locally selects exceptions handled by this circuit breaker. When set, this strategy ignores
+    /// the ambient handling clause and handles only outcomes selected by its local predicates.
+    /// </summary>
+    public Func<Exception, bool>? HandlesException { get; set; }
+
+    internal virtual bool HasHandlingOverride => HandlesException is not null;
+
     /// <summary>Trips the circuit after this many consecutive handled failures.</summary>
     public int? ConsecutiveFailures { get; set; }
 

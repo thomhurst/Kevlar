@@ -178,4 +178,36 @@ Kevlar.ShieldBuilder<TResult>.RateLimit(System.Action<Kevlar.RateLimitOptions!>!
 *REMOVED*Kevlar.ShieldBuilder<TResult>.WhenResult(System.Func<TResult, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
 *REMOVED*Kevlar.ShieldBuilder<TResult>.WhenResult(TResult result) -> Kevlar.ShieldBuilder<TResult>!
 *REMOVED*static Kevlar.Shield.For<TResult>() -> Kevlar.ShieldBuilder<TResult>!
+Kevlar.CircuitBreakerOptions.HandlesException.get -> System.Func<System.Exception!, bool>?
+Kevlar.CircuitBreakerOptions.HandlesException.set -> void
+Kevlar.CircuitBreakerOptions<TResult>
+Kevlar.CircuitBreakerOptions<TResult>.CircuitBreakerOptions() -> void
+Kevlar.CircuitBreakerOptions<TResult>.HandlesResult.get -> System.Func<TResult, bool>?
+Kevlar.CircuitBreakerOptions<TResult>.HandlesResult.set -> void
+Kevlar.FallbackOptions.HandlesException.get -> System.Func<System.Exception!, bool>?
+Kevlar.FallbackOptions.HandlesException.set -> void
+Kevlar.FallbackOptions<TResult>.HandlesException.get -> System.Func<System.Exception!, bool>?
+Kevlar.FallbackOptions<TResult>.HandlesException.set -> void
+Kevlar.FallbackOptions<TResult>.HandlesResult.get -> System.Func<TResult, bool>?
+Kevlar.FallbackOptions<TResult>.HandlesResult.set -> void
+Kevlar.HedgingOptions.HandlesException.get -> System.Func<System.Exception!, bool>?
+Kevlar.HedgingOptions.HandlesException.set -> void
+Kevlar.HedgingOptions<TResult>
+Kevlar.HedgingOptions<TResult>.HandlesResult.get -> System.Func<TResult, bool>?
+Kevlar.HedgingOptions<TResult>.HandlesResult.set -> void
+Kevlar.HedgingOptions<TResult>.HedgingOptions() -> void
+Kevlar.RetryOptions.HandlesException.get -> System.Func<System.Exception!, bool>?
+Kevlar.RetryOptions.HandlesException.set -> void
+Kevlar.RetryOptions<TResult>.HandlesException.get -> System.Func<System.Exception!, bool>?
+Kevlar.RetryOptions<TResult>.HandlesException.set -> void
+Kevlar.RetryOptions<TResult>.HandlesResult.get -> System.Func<TResult, bool>?
+Kevlar.RetryOptions<TResult>.HandlesResult.set -> void
+Kevlar.Shield<TResult>.CircuitBreaker(System.Action<Kevlar.CircuitBreakerOptions<TResult>!>! configure) -> Kevlar.Shield<TResult>!
+Kevlar.Shield<TResult>.Hedge(System.Action<Kevlar.HedgingOptions<TResult>!>! configure) -> Kevlar.Shield<TResult>!
+Kevlar.ShieldBuilder<TResult>.CircuitBreaker(System.Action<Kevlar.CircuitBreakerOptions<TResult>!>! configure) -> Kevlar.Shield<TResult>!
+Kevlar.ShieldBuilder<TResult>.Hedge(System.Action<Kevlar.HedgingOptions<TResult>!>! configure) -> Kevlar.Shield<TResult>!
+*REMOVED*Kevlar.Shield<TResult>.CircuitBreaker(System.Action<Kevlar.CircuitBreakerOptions!>! configure) -> Kevlar.Shield<TResult>!
+*REMOVED*Kevlar.Shield<TResult>.Hedge(System.Action<Kevlar.HedgingOptions!>! configure) -> Kevlar.Shield<TResult>!
+*REMOVED*Kevlar.ShieldBuilder<TResult>.CircuitBreaker(System.Action<Kevlar.CircuitBreakerOptions!>! configure) -> Kevlar.Shield<TResult>!
+*REMOVED*Kevlar.ShieldBuilder<TResult>.Hedge(System.Action<Kevlar.HedgingOptions!>! configure) -> Kevlar.Shield<TResult>!
 static Kevlar.Shield.For<TResult>() -> Kevlar.Shield<TResult>!

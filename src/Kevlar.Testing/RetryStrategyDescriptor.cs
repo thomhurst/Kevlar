@@ -9,7 +9,8 @@ public sealed class RetryStrategyDescriptor : StrategyDescriptor
         BackoffDescriptor backoff,
         TimeSpan? maxDelay,
         bool hasDelayGenerator,
-        bool hasNotification)
+        bool hasNotification,
+        bool hasHandlingOverride)
         : base(StrategyKind.Retry, description)
     {
         MaxRetries = maxRetries;
@@ -17,6 +18,7 @@ public sealed class RetryStrategyDescriptor : StrategyDescriptor
         MaxDelay = maxDelay;
         HasDelayGenerator = hasDelayGenerator;
         HasNotification = hasNotification;
+        HasHandlingOverride = hasHandlingOverride;
     }
 
     /// <summary>Maximum retries after the initial attempt.</summary>
@@ -33,4 +35,7 @@ public sealed class RetryStrategyDescriptor : StrategyDescriptor
 
     /// <summary>Whether a synchronous or asynchronous retry notification is configured.</summary>
     public bool HasNotification { get; }
+
+    /// <summary>Whether local predicates replace the ambient handling clause.</summary>
+    public bool HasHandlingOverride { get; }
 }

@@ -10,6 +10,14 @@ namespace Kevlar;
 public class RetryOptions
 {
     /// <summary>
+    /// Locally selects exceptions handled by this retry. When set, this strategy ignores the
+    /// ambient handling clause and handles only outcomes selected by its local predicates.
+    /// </summary>
+    public Func<Exception, bool>? HandlesException { get; set; }
+
+    internal bool HasHandlingOverride => HandlesException is not null;
+
+    /// <summary>
     /// Maximum number of retries after the initial attempt. The default is 3
     /// (up to 4 total executions). Use <see cref="int.MaxValue"/> to retry forever.
     /// </summary>
@@ -76,6 +84,21 @@ public sealed class RetryOptions<TResult>
     /// <see cref="DelayGenerator"/> (so a huge <c>Retry-After</c> header cannot stall the pipeline).
     /// </summary>
     public TimeSpan? MaxDelay { get; set; }
+
+    /// <summary>
+    /// Locally selects exceptions handled by this retry. When either local predicate is set, this
+    /// strategy ignores the ambient handling clause and handles only outcomes selected locally.
+    /// </summary>
+    public Func<Exception, bool>? HandlesException { get; set; }
+
+    /// <summary>
+    /// Locally selects results handled by this retry. When either local predicate is set, this
+    /// strategy ignores the ambient handling clause and handles only outcomes selected locally.
+    /// </summary>
+    public Func<TResult, bool>? HandlesResult { get; set; }
+
+    internal bool HasHandlingOverride =>
+        HandlesException is not null || HandlesResult is not null;
 
     /// <summary>Invoked synchronously before each retry sleeps, with the typed handled outcome.</summary>
     public Action<RetryEvent<TResult>>? OnRetry { get; set; }

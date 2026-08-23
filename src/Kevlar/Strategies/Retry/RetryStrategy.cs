@@ -22,7 +22,8 @@ internal sealed class RetryStrategy : Strategy
             options.OnRetry,
             options.OnRetryAsync,
             options.DelayGenerator,
-            options.DelayGeneratorAsync)
+            options.DelayGeneratorAsync,
+            options.HasHandlingOverride)
     {
     }
 
@@ -34,7 +35,8 @@ internal sealed class RetryStrategy : Strategy
         Action<RetryEvent>? onRetry,
         Func<RetryEvent, ValueTask>? onRetryAsync,
         Func<RetryEvent, TimeSpan?>? delayGenerator,
-        Func<RetryEvent, ValueTask<TimeSpan?>>? delayGeneratorAsync)
+        Func<RetryEvent, ValueTask<TimeSpan?>>? delayGeneratorAsync,
+        bool hasHandlingOverride)
     {
         Throw.IfOutOfRange(maxRetries < 0, "options", "MaxRetries must not be negative.");
         Throw.IfNull(backoff, "options");
@@ -49,6 +51,7 @@ internal sealed class RetryStrategy : Strategy
         _onRetryAsync = onRetryAsync;
         _delayGenerator = delayGenerator;
         _delayGeneratorAsync = delayGeneratorAsync;
+        HasHandlingOverride = hasHandlingOverride;
     }
 
     internal static RetryStrategy Create<TResult>(RetryOptions<TResult> options, OutcomeJudge judge)
@@ -68,10 +71,13 @@ internal sealed class RetryStrategy : Strategy
             delayGenerator is null ? null : retry => delayGenerator(new RetryEvent<TResult>(retry)),
             delayGeneratorAsync is null
                 ? null
-                : retry => delayGeneratorAsync(new RetryEvent<TResult>(retry)));
+                : retry => delayGeneratorAsync(new RetryEvent<TResult>(retry)),
+            options.HasHandlingOverride);
     }
 
     internal override OutcomeJudge? ReactiveJudge => _judge;
+
+    internal override bool HasHandlingOverride { get; }
 
     internal int MaxRetries => _maxRetries;
 

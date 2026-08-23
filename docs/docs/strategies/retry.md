@@ -62,6 +62,8 @@ Shield.Retry(o =>
 | `OnRetryAsync` | — | Awaited before each retry sleeps |
 | `DelayGenerator` | — | Per-retry override: return a `TimeSpan` to replace the computed delay, or `null` to keep it. This is how [`Retry-After` support](../http.md) works |
 | `DelayGeneratorAsync` | — | Awaited per-retry override for asynchronous delay sources; return a `TimeSpan` to replace the current delay, or `null` to keep it |
+| `HandlesException` | — | Local exception predicate; replaces the ambient clause for this retry |
+| `HandlesResult` (`RetryOptions<T>`) | — | Local result predicate; replaces the ambient clause together with `HandlesException` |
 
 Order per retry: retry metrics are recorded → backoff computes the delay → `MaxDelay` clamps it → `DelayGenerator` may override it → the awaited `DelayGeneratorAsync` may override that result → `OnRetry`/`OnRetryAsync` see the final delay → sleep. Both generators ignore `null` and negative results, and `MaxDelay` clamps each override.
 
@@ -88,6 +90,10 @@ Shield
     .Or<TimeoutExceededException>()
     .Retry(5);
 ```
+
+The options-lambda form can instead set `HandlesException` and, on `Shield<T>`, `HandlesResult`.
+Setting either creates a [per-strategy override](../handling-failures.md#per-strategy-overrides);
+unspecified outcome kinds are not handled.
 
 ## Placement in the chain
 

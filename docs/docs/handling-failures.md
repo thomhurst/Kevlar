@@ -82,6 +82,31 @@ var shield = Shield
 
 `WhenAnyError()` preserves existing strategies, the shield name, and its `TimeProvider`; it only changes handling for reactive strategies added afterwards. It is available on both `Shield` and `Shield<T>`.
 
+## Per-strategy overrides
+
+Use an options predicate when one reactive strategy needs different handling without changing the
+ambient clause for its neighbors:
+
+```csharp
+var shield = Shield.When<HttpRequestException>()
+    .Retry(3) // ambient clause
+    .CircuitBreaker(options =>
+    {
+        options.ConsecutiveFailures = 5;
+        options.HandlesException = exception => exception is TimeoutExceededException;
+    })
+    .Fallback(static (_, _) => default); // ambient clause again
+```
+
+`HandlesException` is available on retry, circuit-breaker, hedging, and fallback options. Their
+typed options also expose `HandlesResult`. If either property is set, that strategy ignores the
+ambient clause completely: local override > ambient clause > default. Predicates are not merged.
+
+Only what you list is handled. A result-only override does not handle exceptions, and an
+exception-only override does not handle results. Prefer the ambient clause when several neighboring
+strategies share the same rule; prefer a local override for a single exception to that rule or when
+porting one Polly `ShouldHandle` predicate directly.
+
 :::info Proactive strategies don't consult clauses
 Timeouts, rate limits and concurrency limits don't care why something failed — they act on time and concurrency, not outcomes. Clauses only drive the reactive strategies.
 :::

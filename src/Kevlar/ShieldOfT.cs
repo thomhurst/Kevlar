@@ -92,7 +92,8 @@ public sealed class Shield<TResult>
         Throw.IfNull(configure, nameof(configure));
         var options = new RetryOptions<TResult>();
         configure(options);
-        return Append(RetryStrategy.Create(options, JudgeOrDefault));
+        var judge = HandlingOverride.Resolve(options.HandlesException, options.HandlesResult, JudgeOrDefault);
+        return Append(RetryStrategy.Create(options, judge));
     }
 
     /// <summary>Retries handled outcomes indefinitely.</summary>
@@ -122,12 +123,13 @@ public sealed class Shield<TResult>
     });
 
     /// <summary>Adds a circuit breaker strategy configured via <paramref name="configure"/>.</summary>
-    public Shield<TResult> CircuitBreaker(Action<CircuitBreakerOptions> configure)
+    public Shield<TResult> CircuitBreaker(Action<CircuitBreakerOptions<TResult>> configure)
     {
         Throw.IfNull(configure, nameof(configure));
-        var options = new CircuitBreakerOptions();
+        var options = new CircuitBreakerOptions<TResult>();
         configure(options);
-        return Append(new CircuitBreakerStrategy(options, JudgeOrDefault));
+        var judge = HandlingOverride.Resolve(options.HandlesException, options.HandlesResult, JudgeOrDefault);
+        return Append(new CircuitBreakerStrategy(options, judge));
     }
 
     /// <summary>Limits throughput to <paramref name="permits"/> executions per <paramref name="perWindow"/> (token bucket).</summary>
@@ -170,12 +172,13 @@ public sealed class Shield<TResult>
     });
 
     /// <summary>Adds a hedging strategy configured via <paramref name="configure"/>.</summary>
-    public Shield<TResult> Hedge(Action<HedgingOptions> configure)
+    public Shield<TResult> Hedge(Action<HedgingOptions<TResult>> configure)
     {
         Throw.IfNull(configure, nameof(configure));
-        var options = new HedgingOptions();
+        var options = new HedgingOptions<TResult>();
         configure(options);
-        return Append(new HedgingStrategy(options, JudgeOrDefault));
+        var judge = HandlingOverride.Resolve(options.HandlesException, options.HandlesResult, JudgeOrDefault);
+        return Append(new HedgingStrategy(options, judge));
     }
 
     /// <summary>Replaces handled outcomes with <paramref name="fallbackValue"/>.</summary>
@@ -194,11 +197,13 @@ public sealed class Shield<TResult>
         Throw.IfNull(configure, nameof(configure));
         var options = new FallbackOptions<TResult>();
         configure(options);
+        var judge = HandlingOverride.Resolve(options.HandlesException, options.HandlesResult, JudgeOrDefault);
         return Append(new FallbackStrategy<TResult>(
             (_, _) => new ValueTask<TResult>(fallbackValue),
-            JudgeOrDefault,
+            judge,
             options.OnFallback,
-            options.OnFallbackAsync));
+            options.OnFallbackAsync,
+            options.HandlesException is not null || options.HandlesResult is not null));
     }
 
     /// <summary>Replaces handled outcomes with the result of <paramref name="fallback"/>.</summary>
@@ -225,11 +230,13 @@ public sealed class Shield<TResult>
         Throw.IfNull(configure, nameof(configure));
         var options = new FallbackOptions<TResult>();
         configure(options);
+        var judge = HandlingOverride.Resolve(options.HandlesException, options.HandlesResult, JudgeOrDefault);
         return Append(new FallbackStrategy<TResult>(
             (_, context) => fallback(context.CancellationToken),
-            JudgeOrDefault,
+            judge,
             options.OnFallback,
-            options.OnFallbackAsync));
+            options.OnFallbackAsync,
+            options.HandlesException is not null || options.HandlesResult is not null));
     }
 
     /// <summary>Replaces handled outcomes with the result of <paramref name="fallback"/>, which receives the handled outcome.</summary>
@@ -259,11 +266,13 @@ public sealed class Shield<TResult>
         Throw.IfNull(configure, nameof(configure));
         var options = new FallbackOptions<TResult>();
         configure(options);
+        var judge = HandlingOverride.Resolve(options.HandlesException, options.HandlesResult, JudgeOrDefault);
         return Append(new FallbackStrategy<TResult>(
             (outcome, context) => fallback(outcome, context.CancellationToken),
-            JudgeOrDefault,
+            judge,
             options.OnFallback,
-            options.OnFallbackAsync));
+            options.OnFallbackAsync,
+            options.HandlesException is not null || options.HandlesResult is not null));
     }
 
     /// <summary>Appends a custom <see cref="Strategy"/> implementation to the pipeline.</summary>

@@ -57,13 +57,14 @@ public static class ShieldDescriptorExtensions
                 DescribeBackoff(retry.Backoff),
                 retry.MaxDelay,
                 retry.HasDelayGenerator,
-                retry.HasNotification),
+                retry.HasNotification,
+                retry.HasHandlingOverride),
             TimeoutStrategy timeout => new TimeoutStrategyDescriptor(
                 description,
                 timeout.Timeout,
                 timeout.HasTimeoutGenerator,
                 timeout.HasNotification),
-            CircuitBreakerStrategy circuit => DescribeCircuitBreaker(description, circuit.Core),
+            CircuitBreakerStrategy circuit => DescribeCircuitBreaker(description, circuit),
             RateLimitStrategy rateLimit => new RateLimitStrategyDescriptor(
                 description,
                 rateLimit.Permits,
@@ -80,11 +81,13 @@ public static class ShieldDescriptorExtensions
                 description,
                 hedging.MaxAttempts,
                 hedging.Delay,
-                hedging.HasNotification),
+                hedging.HasNotification,
+                hedging.HasHandlingOverride),
             IFallbackStrategyInspection fallback => new FallbackStrategyDescriptor(
                 description,
                 fallback.ResultType,
-                fallback.HasNotification),
+                fallback.HasNotification,
+                strategy.HasHandlingOverride),
             _ => new CustomStrategyDescriptor(
                 description,
                 strategy.GetType(),
@@ -94,15 +97,16 @@ public static class ShieldDescriptorExtensions
 
     private static CircuitBreakerStrategyDescriptor DescribeCircuitBreaker(
         string description,
-        CircuitBreakerCore core) => new(
+        CircuitBreakerStrategy strategy) => new(
             description,
-            core.ConsecutiveFailures,
-            core.FailureRatio,
-            core.MinimumThroughput,
-            core.SamplingWindow,
-            core.BreakDuration,
-            core.HasMonitor,
-            core.HasNotification);
+            strategy.Core.ConsecutiveFailures,
+            strategy.Core.FailureRatio,
+            strategy.Core.MinimumThroughput,
+            strategy.Core.SamplingWindow,
+            strategy.Core.BreakDuration,
+            strategy.Core.HasMonitor,
+            strategy.Core.HasNotification,
+            strategy.HasHandlingOverride);
 
     private static BackoffDescriptor DescribeBackoff(Backoff backoff) => new(
         backoff.ConfigurationKind switch

@@ -146,6 +146,27 @@ public class PipelineDescriptorTests
     }
 
     [Test]
+    public async Task Reactive_Descriptors_Report_Local_Handling_Overrides()
+    {
+        var descriptor = Shield.Empty
+            .Retry(options => options.HandlesException = _ => true)
+            .CircuitBreaker(options => options.HandlesException = _ => true)
+            .Hedge(options => options.HandlesException = _ => true)
+            .Fallback(
+                static (_, _) => default,
+                options => options.HandlesException = _ => true)
+            .GetDescriptor();
+
+        await Assert.That(descriptor.AssertContainsSingle<RetryStrategyDescriptor>().HasHandlingOverride).IsTrue();
+        await Assert.That(descriptor.AssertContainsSingle<CircuitBreakerStrategyDescriptor>().HasHandlingOverride).IsTrue();
+        await Assert.That(descriptor.AssertContainsSingle<HedgingStrategyDescriptor>().HasHandlingOverride).IsTrue();
+        await Assert.That(descriptor.AssertContainsSingle<FallbackStrategyDescriptor>().HasHandlingOverride).IsTrue();
+
+        var ambient = Shield.Retry(1).GetDescriptor().AssertContainsSingle<RetryStrategyDescriptor>();
+        await Assert.That(ambient.HasHandlingOverride).IsFalse();
+    }
+
+    [Test]
     public async Task Custom_Strategy_Uses_A_Diagnostic_Descriptor()
     {
         var shield = Shield.Empty.Use(new PassThroughStrategy());

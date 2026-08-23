@@ -15,9 +15,12 @@ internal sealed class CircuitBreakerStrategy : Strategy
     {
         _core = new CircuitBreakerCore(options, RecordTransitionState);
         _judge = judge;
+        HasHandlingOverride = options.HasHandlingOverride;
     }
 
     internal override OutcomeJudge? ReactiveJudge => _judge;
+
+    internal override bool HasHandlingOverride { get; }
 
     protected internal override bool IsDuplicateReferenceUnsafe => true;
 
