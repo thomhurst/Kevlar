@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Kevlar.Tests;
 
 /// <summary>
@@ -78,7 +80,110 @@ public class DescribeTests
     {
         var shield = Shield.For<int>().WhenResult(0).Fallback(-1).Retry(1, Backoff.None);
 
-        await Assert.That(shield.ToString()).IsEqualTo("Fallback → Retry(1, no delay)");
+        await Assert.That(shield.ToString()).IsEqualTo("[when result 0] Fallback → Retry(1, no delay)");
+    }
+
+    [Test]
+    public async Task A_Non_Default_Clause_Prefixes_The_Strategies_That_Share_It()
+    {
+        var shield = Shield
+            .When<InvalidOperationException>()
+            .Or<TimeoutExceededException>()
+            .Retry(1, Backoff.None)
+            .CircuitBreaker(5, TimeSpan.FromSeconds(30));
+
+        await Assert.That(shield.ToString()).IsEqualTo(
+            "[when InvalidOperationException | TimeoutExceededException] Retry(1, no delay) → "
+            + "CircuitBreaker(5 consecutive, break 30s)");
+    }
+
+    [Test]
+    public async Task Each_Clause_Term_Has_Its_Own_Rendering()
+    {
+        await Assert.That(Shield.When<InvalidOperationException>(static _ => true).Retry(1, Backoff.None).ToString())
+            .IsEqualTo("[when InvalidOperationException matching predicate] Retry(1, no delay)");
+        await Assert.That(Shield.When(static _ => true).Retry(1, Backoff.None).ToString())
+            .IsEqualTo("[when exception predicate] Retry(1, no delay)");
+        await Assert.That(Shield.For<int>().WhenResult(static _ => true).Retry(1, Backoff.None).ToString())
+            .IsEqualTo("[when result predicate] Retry(1, no delay)");
+        await Assert.That(Shield.For<int>().WhenResultDefault().Retry(1, Backoff.None).ToString())
+            .IsEqualTo("[when default result] Retry(1, no delay)");
+        await Assert.That(Shield.For<string>().WhenResult("busy").Retry(1, Backoff.None).ToString())
+            .IsEqualTo("[when result \"busy\"] Retry(1, no delay)");
+    }
+
+    [Test]
+    public async Task Result_Literals_Are_Culture_Invariant()
+    {
+        var previous = CultureInfo.CurrentCulture;
+        CultureInfo.CurrentCulture = new CultureInfo("de-DE");
+        try
+        {
+            await Assert.That(Shield.For<double>().WhenResult(1.5).Retry(1, Backoff.None).ToString())
+                .IsEqualTo("[when result 1.5] Retry(1, no delay)");
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = previous;
+        }
+    }
+
+    [Test]
+    public async Task Proactive_Strategies_Neither_Open_Nor_Close_A_Clause_Run()
+    {
+        var shield = Shield
+            .Timeout(TimeSpan.FromSeconds(30))
+            .When<InvalidOperationException>()
+            .Retry(1, Backoff.None)
+            .Timeout(TimeSpan.FromSeconds(10))
+            .CircuitBreaker(5, TimeSpan.FromSeconds(30));
+
+        await Assert.That(shield.ToString()).IsEqualTo(
+            "Timeout(30s) → [when InvalidOperationException] Retry(1, no delay) → Timeout(10s) → "
+            + "CircuitBreaker(5 consecutive, break 30s)");
+    }
+
+    [Test]
+    public async Task A_Replaced_Or_Reset_Clause_Starts_A_New_Run()
+    {
+        var replaced = Shield
+            .When<InvalidOperationException>()
+            .Retry(1, Backoff.None)
+            .When<TimeoutExceededException>()
+            .Retry(2, Backoff.None);
+
+        var reset = Shield
+            .When<InvalidOperationException>()
+            .Retry(1, Backoff.None)
+            .WhenAnyError()
+            .Retry(2, Backoff.None)
+            .When<InvalidOperationException>()
+            .Retry(3, Backoff.None);
+
+        await Assert.That(replaced.ToString()).IsEqualTo(
+            "[when InvalidOperationException] Retry(1, no delay) → "
+            + "[when TimeoutExceededException] Retry(2, no delay)");
+        await Assert.That(reset.ToString()).IsEqualTo(
+            "[when InvalidOperationException] Retry(1, no delay) → Retry(2, no delay) → "
+            + "[when InvalidOperationException] Retry(3, no delay)");
+    }
+
+    [Test]
+    public async Task A_Local_Handling_Override_Is_Marked_On_The_Strategy()
+    {
+        var shield = Shield
+            .When<InvalidOperationException>()
+            .Retry(options =>
+            {
+                options.MaxRetries = 1;
+                options.Backoff = Backoff.None;
+                options.HandlesException = static _ => true;
+            })
+            .CircuitBreaker(5, TimeSpan.FromSeconds(30));
+
+        await Assert.That(shield.ToString()).IsEqualTo(
+            "Retry(1, no delay) (local handling) → "
+            + "[when InvalidOperationException] CircuitBreaker(5 consecutive, break 30s)");
     }
 
     [Test]

@@ -12,15 +12,27 @@ namespace Kevlar;
 public sealed class FallbackOptions<TResult>
 {
     /// <summary>
-    /// Locally selects exceptions handled by this fallback. When either local predicate is set,
-    /// this strategy ignores the ambient handling clause and handles only outcomes selected locally.
+    /// Setting this — or <see cref="HandlesResult"/> — makes this fallback ignore the ambient
+    /// <c>When…</c> handling clause; this predicate then selects the exceptions it handles.
     /// </summary>
+    /// <remarks>
+    /// The ambient clause is started with <c>When…</c> on a shield and continued with <c>Or…</c> on
+    /// the builder it returns, and applies to every reactive strategy chained after it. These
+    /// properties replace that clause for this strategy alone; they do not narrow it.
+    /// </remarks>
+    /// <seealso cref="HandlingClause"/>
     public Func<Exception, bool>? HandlesException { get; set; }
 
     /// <summary>
-    /// Locally selects results handled by this fallback. When either local predicate is set, this
-    /// strategy ignores the ambient handling clause and handles only outcomes selected locally.
+    /// Setting this — or <see cref="HandlesException"/> — makes this fallback ignore the ambient
+    /// <c>When…</c> handling clause; this predicate then selects the results it handles.
     /// </summary>
+    /// <remarks>
+    /// The ambient clause is started with <c>When…</c>/<c>WhenResult…</c> on a shield and continued
+    /// with <c>Or…</c> on the builder it returns, and applies to every reactive strategy chained
+    /// after it. These properties replace that clause for this strategy alone; they do not narrow it.
+    /// </remarks>
+    /// <seealso cref="HandlingClause"/>
     public Func<TResult, bool>? HandlesResult { get; set; }
 
     /// <summary>Invoked synchronously before the recovery factory, with the typed handled outcome.</summary>

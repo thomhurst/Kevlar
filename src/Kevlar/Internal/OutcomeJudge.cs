@@ -9,6 +9,13 @@ internal abstract class OutcomeJudge
     /// <summary>The default: handle any exception except <see cref="OperationCanceledException"/>.</summary>
     public static readonly OutcomeJudge Default = new DefaultJudge();
 
+    /// <summary>
+    /// A human-readable rendering of the clause — the terms the caller wrote, joined with
+    /// <c>" | "</c> — for pipeline descriptions. <see langword="null"/> when the clause adds
+    /// nothing worth printing, which covers default handling and local option overrides.
+    /// </summary>
+    public virtual string? Description => null;
+
     public abstract bool ShouldHandle<T>(in Outcome<T> outcome);
 
     private sealed class DefaultJudge : OutcomeJudge
@@ -22,8 +29,15 @@ internal abstract class OutcomeJudge
 internal sealed class ExceptionJudge : OutcomeJudge
 {
     private readonly Func<Exception, bool> _predicate;
+    private readonly string? _description;
 
-    public ExceptionJudge(Func<Exception, bool> predicate) => _predicate = predicate;
+    public ExceptionJudge(Func<Exception, bool> predicate, string? description = null)
+    {
+        _predicate = predicate;
+        _description = description;
+    }
+
+    public override string? Description => _description;
 
     public override bool ShouldHandle<T>(in Outcome<T> outcome) =>
         outcome.Exception is { } exception && _predicate(exception);
@@ -37,12 +51,19 @@ internal sealed class TypedJudge<TResult> : OutcomeJudge
 {
     private readonly Func<Exception, bool>? _exceptionPredicate;
     private readonly Func<TResult, bool>? _resultPredicate;
+    private readonly string? _description;
 
-    public TypedJudge(Func<Exception, bool>? exceptionPredicate, Func<TResult, bool>? resultPredicate)
+    public TypedJudge(
+        Func<Exception, bool>? exceptionPredicate,
+        Func<TResult, bool>? resultPredicate,
+        string? description = null)
     {
         _exceptionPredicate = exceptionPredicate;
         _resultPredicate = resultPredicate;
+        _description = description;
     }
+
+    public override string? Description => _description;
 
     public override bool ShouldHandle<T>(in Outcome<T> outcome)
     {

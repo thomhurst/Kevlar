@@ -663,6 +663,100 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV008_Flags_Static_Instance_And_Builder_Chains_Used_As_Statements()
+    {
+        var cases = new[]
+        {
+            "Shield.Retry(3);",
+            "Shield.CircuitBreaker(2, TimeSpan.FromSeconds(1));",
+            "Shield.Empty.Retry(3);",
+            "Shield.Empty.WithName(\"api\");",
+            "Shield.Empty.For<int>();",
+            "Shield.For<int>().Retry(3);",
+            "Shield.When<InvalidOperationException>().Retry(3);",
+            "Shield.For<int>().WhenResult(static value => value < 0).Fallback(0);",
+            "Shield.Compose(Shield.Empty, Shield.Empty);",
+            "var shield = Shield.Empty; shield.Timeout(TimeSpan.FromSeconds(1));",
+        };
+
+        await AssertEachAsync(cases, "KEV008");
+    }
+
+    [Test]
+    public async Task KEV008_Leaves_Used_Results_And_Executions_Alone()
+    {
+        var cases = new[]
+        {
+            "var shield = Shield.Retry(3);",
+            "var shield = Shield.Empty; shield = shield.Retry(3);",
+            "_ = Shield.Retry(3);",
+            "Consume(Shield.Empty.Retry(3));",
+            "Consume(Build());",
+            "Shield.Empty.Execute(static _ => { });",
+            "await Shield.Empty.ExecuteAsync(static _ => ValueTask.CompletedTask);",
+            "_ = await Shield.For<int>().Retry(1).ExecuteAsync(static _ => new ValueTask<int>(1));",
+        };
+
+        foreach (var body in cases)
+        {
+            var diagnostics = await AnalyzeBodyAsync(
+                body,
+                """
+                private static Shield Build() => Shield.Retry(3);
+
+                private static void Consume(Shield shield)
+                {
+                }
+                """);
+            await Assert.That(diagnostics).IsEmpty();
+        }
+    }
+
+    [Test]
+    public async Task KEV008_Defers_Discarded_Clause_Builders_To_KEV007()
+    {
+        var cases = new[]
+        {
+            "Shield.When<InvalidOperationException>();",
+            "Shield.Empty.When<InvalidOperationException>().Or<TimeoutException>();",
+            "Shield.For<int>().WhenResultDefault();",
+        };
+
+        await AssertEachAsync(cases, "KEV007");
+    }
+
+    [Test]
+    public async Task KEV008_Diagnostic_Contract_And_Suppression_Are_Exact()
+    {
+        const string chain = "Shield.Empty.Retry(3)";
+        var source = $$"""
+            public class TestSubject
+            {
+                public void Build() => {{chain}};
+            }
+            """;
+        var diagnostics = await AnalyzeSourceAsync(source);
+        var suppressed = await AnalyzeBodyAsync("""
+            #pragma warning disable KEV008 // Construction is asserted on elsewhere.
+            Shield.Empty.Retry(3);
+            #pragma warning restore KEV008
+            """);
+
+        await Assert.That(diagnostics.Length).IsEqualTo(1);
+        var diagnostic = diagnostics[0];
+        await Assert.That(diagnostic.Id).IsEqualTo("KEV008");
+        await Assert.That(diagnostic.Severity).IsEqualTo(DiagnosticSeverity.Warning);
+        await Assert.That(diagnostic.GetMessage()).IsEqualTo(
+            "'Retry' returns a new shield instead of changing this one, and its result is discarded "
+            + "here, so this statement configures nothing. Assign the returned shield, or continue "
+            + "the chain from it.");
+        await Assert.That(diagnostic.Location.SourceSpan.Start)
+            .IsEqualTo(CreateSource(source).IndexOf(chain, StringComparison.Ordinal));
+        await Assert.That(diagnostic.Location.SourceSpan.Length).IsEqualTo(chain.Length);
+        await Assert.That(suppressed).IsEmpty();
+    }
+
+    [Test]
     public async Task KEV003_Flags_Unreachable_Reactive_Strategies()
     {
         var cases = new[]

@@ -180,6 +180,7 @@ public class CallerContextTests
             .Throws<InvalidOperationException>();
 
         await Assert.That(captured).IsNotNull();
+        KevlarContext.AllowPooledInspection(captured!);
         await Assert.That(captured!.Properties.TryGet(RequestId, out _)).IsFalse();
         await Assert.That(captured.CancellationToken).IsEqualTo(default(CancellationToken));
         await Assert.That(captured.ShieldName).IsNull();
@@ -200,6 +201,7 @@ public class CallerContextTests
             });
 
         await Assert.That(captured).IsNotNull();
+        KevlarContext.AllowPooledInspection(captured!);
         await Assert.That(captured!.Properties.TryGet(RequestId, out _)).IsFalse();
     }
 

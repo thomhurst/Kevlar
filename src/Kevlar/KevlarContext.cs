@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Reservoir;
 
 namespace Kevlar;
@@ -9,11 +10,28 @@ namespace Kevlar;
 /// or return them. A context is valid only during the current callback or delegate invocation
 /// and must never be retained.
 /// </summary>
+/// <remarks>
+/// Debug builds of Kevlar enforce that contract: a context that has gone back to the pool throws
+/// <see cref="InvalidOperationException"/> from every public member until it is handed out again.
+/// Release builds carry no such check, so a retained context there silently observes another
+/// execution's state.
+/// </remarks>
 public sealed class KevlarContext
 {
     internal const int PoolCapacity = 128;
 
     private static readonly ObjectPool<KevlarContext, PoolPolicy> Pool = new(maxCapacity: PoolCapacity);
+
+    private readonly KevlarProperties _properties = new();
+
+    private CancellationToken _cancellationToken;
+    private bool _isSynchronous;
+    private string? _shieldName;
+    private TimeProvider _timeProvider = TimeProvider.System;
+
+#if DEBUG
+    private bool _returnedToPool;
+#endif
 
     private KevlarContext()
     {
@@ -24,29 +42,73 @@ public sealed class KevlarContext
     /// token for the layers beneath them, which is why executed delegates must use the token
     /// they are handed rather than a captured one.
     /// </summary>
-    public CancellationToken CancellationToken { get; internal set; }
+    public CancellationToken CancellationToken
+    {
+        get
+        {
+            ThrowIfReturnedToPool();
+            return _cancellationToken;
+        }
+
+        internal set => _cancellationToken = value;
+    }
 
     /// <summary><see langword="true"/> when the execution was started through a synchronous <c>Execute</c> call.</summary>
-    public bool IsSynchronous { get; internal set; }
+    public bool IsSynchronous
+    {
+        get
+        {
+            ThrowIfReturnedToPool();
+            return _isSynchronous;
+        }
+
+        internal set => _isSynchronous = value;
+    }
 
     /// <summary>The name of the executing shield, if one was assigned via <c>WithName</c>.</summary>
-    public string? ShieldName { get; internal set; }
+    public string? ShieldName
+    {
+        get
+        {
+            ThrowIfReturnedToPool();
+            return _shieldName;
+        }
+
+        internal set => _shieldName = value;
+    }
 
     internal int StrategyIndex { get; set; }
 
     /// <summary>The time provider used for delays, timeouts and time-window calculations.</summary>
-    public TimeProvider TimeProvider { get; internal set; } = TimeProvider.System;
+    public TimeProvider TimeProvider
+    {
+        get
+        {
+            ThrowIfReturnedToPool();
+            return _timeProvider;
+        }
+
+        internal set => _timeProvider = value;
+    }
 
     /// <summary>
     /// Custom properties carried through the execution. The bag is pooled with this context
     /// and must not be retained beyond the current callback or delegate invocation.
     /// </summary>
-    public KevlarProperties Properties { get; } = new();
+    public KevlarProperties Properties
+    {
+        get
+        {
+            ThrowIfReturnedToPool();
+            return _properties;
+        }
+    }
 
     internal static KevlarContext Rent(CancellationToken cancellationToken, bool isSynchronous, TimeProvider timeProvider, string? shieldName)
     {
         var context = Pool.Rent();
 
+        MarkRented(context);
         context.CancellationToken = cancellationToken;
         context.IsSynchronous = isSynchronous;
         context.TimeProvider = timeProvider;
@@ -55,7 +117,11 @@ public sealed class KevlarContext
         return context;
     }
 
-    internal static void Return(KevlarContext context) => Pool.Return(context);
+    internal static void Return(KevlarContext context)
+    {
+        MarkReturned(context);
+        Pool.Return(context);
+    }
 
     /// <summary>
     /// Creates a detached copy of this context for a concurrent attempt (used by hedging).
@@ -70,6 +136,42 @@ public sealed class KevlarContext
         return fork;
     }
 
+    /// <summary>
+    /// Clears the debug pooling guard on a context that Kevlar's own pool tests inspect after it
+    /// went back to the pool. A no-op in release builds, where the guard does not exist.
+    /// </summary>
+    internal static void AllowPooledInspection(KevlarContext context) => MarkRented(context);
+
+    [Conditional("DEBUG")]
+    private static void MarkRented(KevlarContext context)
+    {
+#if DEBUG
+        context._returnedToPool = false;
+#endif
+    }
+
+    [Conditional("DEBUG")]
+    private static void MarkReturned(KevlarContext context)
+    {
+#if DEBUG
+        context._returnedToPool = true;
+#endif
+    }
+
+    [Conditional("DEBUG")]
+    private void ThrowIfReturnedToPool()
+    {
+#if DEBUG
+        if (_returnedToPool)
+        {
+            throw new InvalidOperationException(
+                "This KevlarContext has been returned to Kevlar's context pool and is no longer valid. " +
+                "A context — and its Properties — may only be used while the callback or delegate that " +
+                "received it is running; never retain it afterwards. Copy the values you need instead.");
+        }
+#endif
+    }
+
     private readonly struct PoolPolicy : IPooledObjectPolicy<KevlarContext>
     {
         public KevlarContext Create() => new();
@@ -81,7 +183,7 @@ public sealed class KevlarContext
             context.ShieldName = null;
             context.StrategyIndex = -1;
             context.TimeProvider = TimeProvider.System;
-            context.Properties.Clear();
+            context._properties.Clear();
             return true;
         }
     }

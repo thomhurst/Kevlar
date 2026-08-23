@@ -23,6 +23,7 @@ Generated code is ignored.
 | `KEV005` | Warning | void fallback is executed with a result-returning delegate |
 | `KEV006` | Warning | hedging is added to an untyped shield, whose action must be idempotent |
 | `KEV007` | Warning | handling clause never reaches a reactive strategy |
+| `KEV008` | Warning | fluent chaining result is discarded as a statement |
 
 ## KEV001: ignored execution cancellation
 
@@ -208,6 +209,28 @@ var shield = Shield
 The rule follows one fluent chain and a clause builder stored in a local. It deliberately stays
 quiet when the builder escapes — returned, passed as an argument, assigned to a field — and at
 `Wrap`/`Compose` boundaries, because a clause's fate is no longer visible there.
+
+## KEV008: discarded fluent chaining result
+
+Shields are immutable. Every fluent method returns a *new* shield and leaves its receiver untouched,
+so a chaining call written as a statement configures nothing:
+
+<!-- doc-test-ignore: A deliberately discarded chain that the analyzer is expected to flag. -->
+```csharp
+var shield = Shield.Timeout(TimeSpan.FromSeconds(5));
+shield.Retry(3);                                   // KEV008 — the retry is thrown away
+await shield.ExecuteAsync(ct => CallAsync(ct));    // still just a timeout
+```
+
+Keep the returned shield instead:
+
+```csharp
+var shield = Shield.Timeout(TimeSpan.FromSeconds(5)).Retry(3);
+```
+
+The rule fires only on a statement whose value is a `Shield` or `Shield<TResult>`, so assigning the
+result, returning it, or passing it as an argument is never flagged. Discarded *clause builders* are
+reported by [`KEV007`](#kev007-dead-handling-clause) instead, which names that hazard directly.
 
 ## Suppression
 

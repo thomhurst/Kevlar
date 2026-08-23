@@ -119,6 +119,56 @@ public class ContextLifecycleTests
         }
     }
 
+    [Test]
+    public async Task A_Context_Returned_To_The_Pool_Rejects_Its_Public_Members()
+    {
+        KevlarContext? retained = null;
+        var result = await Shield.Empty.ExecuteWithContextAsync(context =>
+        {
+            retained = context;
+            return new ValueTask<int>(7);
+        });
+
+        await Assert.That(result).IsEqualTo(7);
+        await Assert.That(retained).IsNotNull();
+#if DEBUG
+        await AssertPooledAccessThrows(() => retained!.CancellationToken);
+        await AssertPooledAccessThrows(() => retained!.Properties);
+        await AssertPooledAccessThrows(() => retained!.ShieldName);
+        await AssertPooledAccessThrows(() => retained!.TimeProvider);
+        await AssertPooledAccessThrows(() => retained!.IsSynchronous);
+#else
+        await Assert.That(retained!.ShieldName).IsNull();
+#endif
+    }
+
+    [Test]
+    public async Task Renting_A_Pooled_Context_Makes_It_Usable_Again()
+    {
+        KevlarContext.Return(KevlarContext.Rent(default, isSynchronous: false, TimeProvider.System, "first"));
+        var reused = KevlarContext.Rent(default, isSynchronous: true, TimeProvider.System, "second");
+
+        try
+        {
+            await Assert.That(reused.ShieldName).IsEqualTo("second");
+            await Assert.That(reused.IsSynchronous).IsTrue();
+            await Assert.That(reused.Properties.TryGet(DirtyProperty, out _)).IsFalse();
+            await Assert.That(ReferenceEquals(reused.TimeProvider, TimeProvider.System)).IsTrue();
+        }
+        finally
+        {
+            KevlarContext.Return(reused);
+        }
+    }
+
+#if DEBUG
+    private static async Task AssertPooledAccessThrows(Func<object?> access)
+    {
+        var error = await Assert.That(access).Throws<InvalidOperationException>();
+        await Assert.That(error!.Message).Contains("returned to Kevlar's context pool");
+    }
+#endif
+
     private static async Task AssertResetAfter(ExitPath exitPath)
     {
         var observer = new ContextObserverStrategy(DirtyProperty);
@@ -178,6 +228,7 @@ public class ContextLifecycleTests
         await Assert.That(snapshot.PropertiesWereInitiallyClean).IsTrue();
 
         var returned = observer.Context!;
+        KevlarContext.AllowPooledInspection(returned);
         await Assert.That(returned.CancellationToken).IsEqualTo(default(CancellationToken));
         await Assert.That(returned.IsSynchronous).IsFalse();
         await Assert.That(returned.ShieldName).IsNull();

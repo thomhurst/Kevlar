@@ -12,3 +12,4 @@ KEV004 | Reliability | Warning | Stateful shield or partition provider is constr
 KEV005 | Configuration | Warning | Void fallback is used with a result-returning execution
 KEV006 | Reliability | Warning | Hedging on an untyped Shield requires an idempotent action
 KEV007 | Configuration | Warning | Handling clause never reaches a reactive strategy
+KEV008 | Configuration | Warning | Fluent chaining result is discarded as a statement

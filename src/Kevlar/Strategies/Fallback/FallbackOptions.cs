@@ -9,9 +9,15 @@ namespace Kevlar;
 public sealed class FallbackOptions
 {
     /// <summary>
-    /// Locally selects exceptions handled by this fallback. When set, this strategy ignores the
-    /// ambient handling clause and handles only exceptions selected here.
+    /// Setting this makes this fallback ignore the ambient <c>When…</c> handling clause and handle
+    /// only the exceptions this predicate selects.
     /// </summary>
+    /// <remarks>
+    /// The ambient clause is started with <c>When…</c> on a shield and continued with <c>Or…</c> on
+    /// the builder it returns, and applies to every reactive strategy chained after it. This
+    /// property replaces that clause for this strategy alone; it does not narrow it.
+    /// </remarks>
+    /// <seealso cref="HandlingClause"/>
     public Func<Exception, bool>? HandlesException { get; set; }
 
     /// <summary>Invoked synchronously before the recovery action.</summary>

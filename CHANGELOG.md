@@ -37,9 +37,27 @@ not the default *handling* that the neighbouring `WhenAnyError()` restores.
 ### Changed
 
 - **Breaking:** `Shield.Wrap(...)` and `Shield.Compose(...)` now seal ambient handling clauses. Reactive strategies appended after composition use default handling unless a new clause is declared. Existing strategies inside composed shields keep their original handling.
+- Setting both `CircuitBreakerOptions.ConsecutiveFailures` and `FailureRatio` still throws, but the
+  message now names both properties and states the fix. `ConsecutiveFailures` range errors report
+  that property as the parameter name instead of `options`.
+- `HandlesException`/`HandlesResult` documentation on every options type now leads with the fact
+  that the property makes its strategy ignore the ambient `When…` clause, and points at
+  `HandlingClause`. `ShieldBuilder`/`ShieldBuilder<TResult>` document the override from the clause side.
 
 ### Added
 
+- `KEV008`: a fluent chaining call written as a statement, such as `shield.Retry(3);`. Shields are
+  immutable, so the new shield the call returns is thrown away and nothing is configured.
+  Discarded clause builders keep reporting as `KEV007`.
+- Pipeline descriptions show handling. `ToString()`/`Describe()` now prefixes each run of strategies
+  sharing a non-default clause with `[when …]` — for example
+  `[when HttpRequestException | TimeoutExceededException] Retry(3, no delay) → CircuitBreaker(5 consecutive, break 30s)`
+  — and marks a strategy whose options replaced the clause locally with `(local handling)`. Shields
+  that use only default handling describe exactly as before.
+- Debug builds of Kevlar enforce the pooled-context contract: after a `KevlarContext` goes back to
+  the pool, its `CancellationToken`, `Properties`, `ShieldName`, `TimeProvider` and `IsSynchronous`
+  throw `InvalidOperationException` until it is rented again. Release builds are unchanged and carry
+  no extra check.
 - `KEV007`: a `When…`/`Or…` handling clause that never reaches a reactive strategy — the
   `ShieldBuilder` is discarded, or a later `When…`/`WhenAnyError()` replaces the clause while only
   proactive strategies stood between them.
