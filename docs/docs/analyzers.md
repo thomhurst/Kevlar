@@ -175,12 +175,19 @@ A [handling clause](handling-failures.md) changes nothing on its own — it only
 reactive strategy (retry, circuit breaker, hedging, fallback, or a `Use` factory) consumes it. Two
 shapes silently do nothing.
 
-The first is a clause whose `ShieldBuilder` is dropped instead of being finished with a strategy:
+The first is a clause whose `ShieldBuilder` is dropped instead of being finished with a strategy.
+Builders are immutable — every `When…`/`Or…` returns a *new* builder and leaves its receiver
+untouched — so a dropped builder is simply lost, including a dropped `Or…` that looks like it is
+extending a clause in place:
 
 <!-- doc-test-ignore: Deliberately dead clauses that the analyzer is expected to flag. -->
 ```csharp
 Shield.When<HttpRequestException>();                          // KEV007 — nothing consumes it
 var clause = Shield.When<HttpRequestException>().Or<TimeoutExceededException>();  // KEV007 — never used
+
+var transient = Shield.When<HttpRequestException>();
+transient.Or<TimeoutExceededException>();                     // KEV007 — the new builder is dropped
+var shield = transient.Retry(3);                              // still HttpRequestException only
 ```
 
 The second is a clause that a later `When…` or `WhenAnyError()` replaces while only *proactive*
@@ -213,8 +220,9 @@ quiet when the builder escapes — returned, passed as an argument, assigned to 
 
 ## KEV008: discarded fluent chaining result
 
-Shields are immutable. Every fluent method returns a *new* shield and leaves its receiver untouched,
-so a chaining call written as a statement configures nothing:
+Shields — and the clause builders they hand back — are immutable. Every fluent method returns a
+*new* value and leaves its receiver untouched, so a chaining call written as a statement configures
+nothing:
 
 <!-- doc-test-ignore: A deliberately discarded chain that the analyzer is expected to flag. -->
 ```csharp

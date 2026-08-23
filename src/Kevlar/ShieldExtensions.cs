@@ -45,12 +45,22 @@ public static class ShieldExtensions
         return shield.Append(new RetryStrategy(options, judge));
     }
 
-    /// <summary>Appends a retry that never gives up.</summary>
-    public static Shield RetryForever(this Shield shield, Backoff? backoff = null) => shield.Retry(options =>
+    /// <summary>Appends a retry that never gives up, with the default exponential jittered backoff.</summary>
+    /// <param name="shield">The shield to append the retry to.</param>
+    public static Shield RetryForever(this Shield shield) => shield.RetryForever(Backoff.Default);
+
+    /// <summary>Appends a retry that never gives up, with the given backoff.</summary>
+    /// <param name="shield">The shield to append the retry to.</param>
+    /// <param name="backoff">The delay computation applied between attempts.</param>
+    public static Shield RetryForever(this Shield shield, Backoff backoff)
     {
-        options.MaxRetries = int.MaxValue;
-        options.Backoff = backoff ?? Backoff.Default;
-    });
+        Throw.IfNull(backoff, nameof(backoff));
+        return shield.Retry(options =>
+        {
+            options.MaxRetries = int.MaxValue;
+            options.Backoff = backoff;
+        });
+    }
 
     /// <summary>Appends a timeout, surfacing <see cref="TimeoutExceededException"/> when exceeded.</summary>
     public static Shield Timeout(this Shield shield, TimeSpan timeout) => shield.Timeout(options => options.Timeout = timeout);

@@ -585,6 +585,11 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.For<int>().WhenResultIsDefault().Or<TimeoutException>();",
             "var clause = Shield.When<InvalidOperationException>().Or<TimeoutException>();",
             "var clause = Shield.For<int>().When<InvalidOperationException>();",
+
+            // Builders are immutable, so an Or… whose new builder is dropped extends nothing —
+            // the stored builder still carries InvalidOperationException alone.
+            "var clause = Shield.When<InvalidOperationException>(); clause.Or<TimeoutException>(); _ = clause.Retry(1);",
+            "var clause = Shield.For<int>().When<InvalidOperationException>(); clause.OrResultIsDefault(); _ = clause.Retry(1);",
         };
 
         await AssertEachAsync(cases, "KEV007");

@@ -37,7 +37,7 @@ internal static class DescribeHelper
     }
 
     /// <summary>Joins the terms of one handling clause into <c>A | B | C</c>.</summary>
-    public static string Clause(List<string> terms) => string.Join(" | ", terms);
+    public static string Clause(string[] terms) => string.Join(" | ", terms);
 
     /// <summary>Renders a result value inside a handling clause description.</summary>
     public static string Value<TResult>(TResult value) => value switch
