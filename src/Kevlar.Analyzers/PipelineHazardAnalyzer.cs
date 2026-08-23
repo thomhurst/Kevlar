@@ -461,23 +461,10 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         var method = Normalize(invocation.TargetMethod);
         if (stopAtHandlingClause
-            && method.Name == "WhenAnyError"
-            && TryGetAmbientClause(
-                GetReceiver(invocation),
-                context,
-                knownTypes,
-                visitedLocals,
-                out var previousAmbient)
-            && previousAmbient is not null
-            && TryGetReceiverBeforeCurrentHandlingClause(
-                GetReceiver(invocation),
-                context,
-                knownTypes,
-                visitedLocals,
-                out var beforeCurrentClause))
+            && method.Name == "WhenAnyError")
         {
-            return FindInPipeline(
-                beforeCurrentClause,
+            return FindInDefaultHandlingSegments(
+                GetReceiver(invocation),
                 context,
                 predicate,
                 knownTypes,
@@ -488,7 +475,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         }
 
         if (stopAtHandlingClause
-            && StopsHandlingTraversal(invocation, context, knownTypes, visitedLocals))
+            && StartsHandlingClause(method, knownTypes))
         {
             matchedMethod = null;
             return false;
@@ -1404,93 +1391,6 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         (method.Name is "When" or "WhenResult" or "WhenDefault" or "WhenAnyError")
         && (knownTypes.IsShield(method.ContainingType)
             || knownTypes.IsShieldExtensions(method.ContainingType));
-
-    private static bool StopsHandlingTraversal(
-        IInvocationOperation invocation,
-        OperationAnalysisContext context,
-        KnownTypes knownTypes,
-        HashSet<ISymbol>? visitedLocals)
-    {
-        var method = Normalize(invocation.TargetMethod);
-        if (!StartsHandlingClause(method, knownTypes))
-        {
-            return false;
-        }
-
-        return method.Name != "WhenAnyError"
-            || !TryGetAmbientClause(
-                GetReceiver(invocation),
-                context,
-                knownTypes,
-                visitedLocals,
-                out var previousAmbient)
-            || previousAmbient is not null;
-    }
-
-    private static bool TryGetReceiverBeforeCurrentHandlingClause(
-        IOperation? operation,
-        OperationAnalysisContext context,
-        KnownTypes knownTypes,
-        HashSet<ISymbol>? visitedLocals,
-        out IOperation? receiver)
-    {
-        operation = Unwrap(operation);
-        if (operation is ILocalReferenceOperation localReference)
-        {
-            visitedLocals ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
-            if (!visitedLocals.Add(localReference.Local)
-                || !TryGetStableInitializer(localReference, context, out var initializer))
-            {
-                receiver = null;
-                return false;
-            }
-
-            var found = TryGetReceiverBeforeCurrentHandlingClause(
-                initializer,
-                context,
-                knownTypes,
-                visitedLocals,
-                out receiver);
-            visitedLocals.Remove(localReference.Local);
-            return found;
-        }
-
-        if (operation is IConditionalAccessOperation conditionalAccess)
-        {
-            return TryGetReceiverBeforeCurrentHandlingClause(
-                conditionalAccess.Operation,
-                context,
-                knownTypes,
-                visitedLocals,
-                out receiver);
-        }
-
-        if (operation is not IInvocationOperation invocation)
-        {
-            receiver = null;
-            return false;
-        }
-
-        var method = Normalize(invocation.TargetMethod);
-        if (StartsHandlingClause(method, knownTypes))
-        {
-            receiver = GetReceiver(invocation);
-            return receiver is not null;
-        }
-
-        if (!IsKevlarFluentMethod(method, knownTypes) || IsCompositionBoundary(method, knownTypes))
-        {
-            receiver = null;
-            return false;
-        }
-
-        return TryGetReceiverBeforeCurrentHandlingClause(
-            GetReceiver(invocation),
-            context,
-            knownTypes,
-            visitedLocals,
-            out receiver);
-    }
 
     private static bool IsCompositionBoundary(IMethodSymbol method, KnownTypes knownTypes) =>
         (method.Name is "Wrap" or "Compose") && IsKevlarFluentMethod(method, knownTypes);
