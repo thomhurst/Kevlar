@@ -614,7 +614,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         var method = Normalize(invocation.TargetMethod);
         if (method.Name == "Compose")
         {
-            return FindInComposeAmbient(
+            return FindInComposeDefaultAmbient(
                 invocation,
                 context,
                 predicate,
@@ -634,67 +634,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         }
 
         if (TryGetAmbientClause(inner, context, knownTypes, visitedLocals, out var innerAmbient)
-            && TryGetAmbientClause(outer, context, knownTypes, visitedLocals, out var outerAmbient))
-        {
-            var resultAmbient = innerAmbient ?? outerAmbient;
-            if (SameAmbient(innerAmbient, resultAmbient)
-                && FindInPipeline(
-                    inner,
-                    context,
-                    predicate,
-                    knownTypes,
-                    stopAtHandlingClause,
-                    stopAtCompositionBoundary,
-                    visitedLocals,
-                    out matchedMethod))
-            {
-                return true;
-            }
-
-            if (SameAmbient(outerAmbient, resultAmbient))
-            {
-                return FindInPipeline(
-                    outer,
-                    context,
-                    predicate,
-                    knownTypes,
-                    stopAtHandlingClause,
-                    stopAtCompositionBoundary,
-                    visitedLocals,
-                    out matchedMethod);
-            }
-
-            matchedMethod = null;
-            return false;
-        }
-
-        if (!IsKnownClauseFree(inner, context, knownTypes, visitedLocals))
-        {
-            return FindInPipeline(
-                inner,
-                context,
-                predicate,
-                knownTypes,
-                stopAtHandlingClause,
-                stopAtCompositionBoundary,
-                visitedLocals,
-                out matchedMethod);
-        }
-
-        if (FindInPipeline(
-            outer,
-            context,
-            predicate,
-            knownTypes,
-            stopAtHandlingClause,
-            stopAtCompositionBoundary,
-            visitedLocals,
-            out matchedMethod))
-        {
-            return true;
-        }
-
-        return IsKnownClauseFree(outer, context, knownTypes, visitedLocals)
+            && innerAmbient is null
             && FindInPipeline(
                 inner,
                 context,
@@ -703,10 +643,30 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 stopAtHandlingClause,
                 stopAtCompositionBoundary,
                 visitedLocals,
+                out matchedMethod))
+        {
+            return true;
+        }
+
+        if (TryGetAmbientClause(outer, context, knownTypes, visitedLocals, out var outerAmbient)
+            && outerAmbient is null)
+        {
+            return FindInPipeline(
+                outer,
+                context,
+                predicate,
+                knownTypes,
+                stopAtHandlingClause,
+                stopAtCompositionBoundary,
+                visitedLocals,
                 out matchedMethod);
+        }
+
+        matchedMethod = null;
+        return false;
     }
 
-    private static bool FindInComposeAmbient(
+    private static bool FindInComposeDefaultAmbient(
         IInvocationOperation invocation,
         OperationAnalysisContext context,
         Func<IInvocationOperation, bool> predicate,
@@ -722,84 +682,24 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             CollectCompositionOperands(argument.Value, context, operands, visitedLocals);
         }
 
-        var ambientClauses = new SyntaxNode?[operands.Count];
-        var allKnown = true;
-        for (var index = 0; index < operands.Count; index++)
-        {
-            if (!TryGetAmbientClause(
-                operands[index],
-                context,
-                knownTypes,
-                visitedLocals,
-                out ambientClauses[index]))
-            {
-                allKnown = false;
-                break;
-            }
-        }
-
-        if (allKnown)
-        {
-            SyntaxNode? resultAmbient = null;
-            for (var index = ambientClauses.Length - 1; index >= 0; index--)
-            {
-                if (ambientClauses[index] is not null)
-                {
-                    resultAmbient = ambientClauses[index];
-                    break;
-                }
-            }
-
-            for (var index = 0; index < operands.Count; index++)
-            {
-                if (SameAmbient(ambientClauses[index], resultAmbient)
-                    && FindInPipeline(
-                        operands[index],
-                        context,
-                        predicate,
-                        knownTypes,
-                        stopAtHandlingClause,
-                        stopAtCompositionBoundary,
-                        visitedLocals,
-                        out matchedMethod))
-                {
-                    return true;
-                }
-            }
-
-            matchedMethod = null;
-            return false;
-        }
-
-        for (var index = operands.Count - 1; index >= 0; index--)
-        {
-            if (IsKnownClauseFree(operands[index], context, knownTypes, visitedLocals))
-            {
-                continue;
-            }
-
-            return FindInPipeline(
-                operands[index],
-                context,
-                predicate,
-                knownTypes,
-                stopAtHandlingClause,
-                stopAtCompositionBoundary,
-                visitedLocals,
-                out matchedMethod);
-        }
-
         foreach (var operand in operands)
         {
-            if (FindInPipeline(
+            if (TryGetAmbientClause(
                 operand,
                 context,
-                predicate,
                 knownTypes,
-                stopAtHandlingClause,
-                stopAtCompositionBoundary,
                 visitedLocals,
-                out matchedMethod))
+                out var ambientClause)
+                && ambientClause is null
+                && FindInPipeline(
+                    operand,
+                    context,
+                    predicate,
+                    knownTypes,
+                    stopAtHandlingClause,
+                    stopAtCompositionBoundary,
+                    visitedLocals,
+                    out matchedMethod))
             {
                 return true;
             }
@@ -950,46 +850,13 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         if (method.Name == "Wrap")
         {
-            var inner = GetArgument(invocation, "inner");
-            if (!TryGetAmbientClause(inner, context, knownTypes, visitedLocals, out ambientClause))
-            {
-                return false;
-            }
-
-            return ambientClause is not null
-                || TryGetAmbientClause(
-                    GetReceiver(invocation),
-                    context,
-                    knownTypes,
-                    visitedLocals,
-                    out ambientClause);
+            ambientClause = null;
+            return true;
         }
 
         if (method.Name == "Compose")
         {
-            var operands = new List<IOperation>();
-            foreach (var argument in invocation.Arguments)
-            {
-                CollectCompositionOperands(argument.Value, context, operands, visitedLocals);
-            }
-
             ambientClause = null;
-            foreach (var operand in operands)
-            {
-                if (!TryGetAmbientClause(
-                    operand,
-                    context,
-                    knownTypes,
-                    visitedLocals,
-                    out var operandAmbient))
-                {
-                    ambientClause = null;
-                    return false;
-                }
-
-                ambientClause = operandAmbient ?? ambientClause;
-            }
-
             return true;
         }
 
