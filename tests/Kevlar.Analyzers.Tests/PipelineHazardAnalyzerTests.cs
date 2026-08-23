@@ -566,6 +566,22 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV003_Recognizes_Compound_Local_Handling_Assignments()
+    {
+        var cases = new[]
+        {
+            "_ = Shield.For<int>().When<InvalidOperationException>().CircuitBreaker(options => options.HandlesException ??= exception => exception is TimeoutException).Fallback(0);",
+            "_ = Shield.For<int>().When<InvalidOperationException>().CircuitBreaker(options => options.HandlesException += exception => exception is TimeoutException).Fallback(0);",
+        };
+
+        foreach (var body in cases)
+        {
+            var diagnostics = await AnalyzeBodyAsync(body);
+            await Assert.That(diagnostics).IsEmpty();
+        }
+    }
+
+    [Test]
     public async Task KEV003_Skips_Fallback_With_Local_Handling_Override()
     {
         var diagnostics = await AnalyzeBodyAsync(

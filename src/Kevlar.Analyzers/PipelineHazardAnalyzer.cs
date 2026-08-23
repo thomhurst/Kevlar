@@ -1451,7 +1451,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        if (operation is ISimpleAssignmentOperation
+        if (operation is IAssignmentOperation
             {
                 Target: IPropertyReferenceOperation propertyReference,
                 Value: { } value,
