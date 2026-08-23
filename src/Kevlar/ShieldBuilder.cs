@@ -14,6 +14,13 @@ namespace Kevlar;
 /// <c>Shield.When&lt;A&gt;().Or&lt;B&gt;().Retry(3)</c>.
 /// </para>
 /// <para>
+/// <c>Or…</c> accumulates into the builder and returns that same builder, so a builder held in a
+/// variable keeps every term added to it. The clause is snapshotted when a strategy is added:
+/// adding further <c>Or…</c> terms afterwards never changes a shield already built. Branching two
+/// chains from one stored builder, however, gives both chains every term either branch added, so
+/// start a fresh <c>When…</c> for each chain.
+/// </para>
+/// <para>
 /// One strategy can opt out of the ambient clause: setting <c>HandlesException</c> on its options
 /// (<see cref="RetryOptions"/>, <see cref="CircuitBreakerOptions"/>, <see cref="HedgeOptions"/>,
 /// <see cref="FallbackOptions"/>) makes that strategy ignore the clause and handle only what its
@@ -137,29 +144,33 @@ public sealed class ShieldBuilder
     /// <summary>Adds a configured concurrency limit. The handling clauses remain ambient for later strategies.</summary>
     public Shield ConcurrencyLimit(Action<ConcurrencyLimitOptions> configure) => Seal().ConcurrencyLimit(configure);
 
+    /// <summary>
+    /// Freezes the clause accumulated so far into a shield. The predicates are copied and the
+    /// description is rendered here, so a builder kept in a variable and extended with further
+    /// <c>Or…</c> calls can never change the handling of a shield already built from it.
+    /// </summary>
     private Shield Seal() =>
         new(
             _parent.Strategies,
-            new ExceptionJudge(Combine(_predicates), DescribeHelper.Clause(_clauseTerms)),
+            new ExceptionJudge(Combine(_predicates.ToArray()), DescribeHelper.Clause(_clauseTerms)),
             _parent.Name,
             _parent.Time);
 
-    internal static Func<Exception, bool> Combine(List<Func<Exception, bool>> predicates)
+    internal static Func<Exception, bool> Combine(Func<Exception, bool>[] predicates)
     {
-        if (predicates.Count == 0)
+        if (predicates.Length == 0)
         {
             throw new InvalidOperationException("No handling clauses were added.");
         }
 
-        if (predicates.Count == 1)
+        if (predicates.Length == 1)
         {
             return predicates[0];
         }
 
-        var snapshot = predicates.ToArray();
         return exception =>
         {
-            foreach (var predicate in snapshot)
+            foreach (var predicate in predicates)
             {
                 if (predicate(exception))
                 {

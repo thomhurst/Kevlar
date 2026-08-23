@@ -50,11 +50,11 @@ Now a 503 response triggers a retry exactly as a thrown `HttpRequestException` w
 Typed builders add result alternatives with `OrResult(predicate)` / `OrResult(value)`, and two shorthands for the most common check of all:
 
 ```csharp
-Shield.For<User?>().WhenResultDefault().Retry(2);   // retry when the result is null / default
-// mid-chain: .OrResultDefault() adds the same check to an existing clause
+Shield.For<User?>().WhenResultIsDefault().Retry(2);   // retry when the result is null / default
+// mid-chain: .OrResultIsDefault() adds the same check to an existing clause
 ```
 
-`WhenResultDefault` / `OrResultDefault` mean "the result equals `default(T)`". They are named after
+`WhenResultIsDefault` / `OrResultIsDefault` mean "the result equals `default(T)`". They are named after
 the `WhenResult` / `OrResult` family precisely so they cannot be confused with `WhenAnyError()`,
 which resets *handling* to Kevlar's default.
 
@@ -75,7 +75,7 @@ Shield
 
 This is why most chains only need one clause, written once at the top — and why you never repeat a `ShouldHandle` predicate per strategy like in Polly v8.
 
-A clause that never reaches a reactive strategy does nothing at all. The optional analyzer reports that as [`KEV007`](analyzers.md#kev007-dead-handling-clause).
+A clause that never reaches a reactive strategy does nothing at all. The optional analyzer reports that as [`KEV007`](analyzers.md#kev007-dead-handling-clause). It also marks the strategies that *inherit* a clause, rather than declaring one, as the informational hint [`KEV009`](analyzers.md#kev009-inherited-handling-clause), so the span above is visible in the editor.
 
 ### Reset to default handling
 

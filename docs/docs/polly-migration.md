@@ -22,6 +22,38 @@ Kevlar's pipeline model translates 1:1 from Polly v8 — the "first strategy add
 | Retry default: constant 2s, no jitter | exponential + jitter, 30s cap |
 | First strategy added is outermost | same rule — pipelines translate 1:1 |
 
+:::warning `TimeoutExceededException` is **not** a `System.TimeoutException`
+
+`Kevlar.TimeoutExceededException` derives from `KevlarException`, not from `System.TimeoutException`.
+Polly set the same trap — `TimeoutRejectedException` derived from `ExecutionRejectedException`, never
+from `System.TimeoutException` — and the reflex is the same in both libraries: a `catch (TimeoutException)`
+carried over from application code still compiles, never matches, and lets the timeout escape as an
+unhandled exception.
+
+Catch the exception the strategy actually throws, or `KevlarException` for any Kevlar rejection:
+
+```csharp
+var saveShield = Shield.Timeout(TimeSpan.FromSeconds(30));
+
+try
+{
+    await saveShield.ExecuteAsync(ct => SaveAsync(ct), cancellationToken);
+}
+catch (TimeoutExceededException exception)      // not System.TimeoutException
+{
+    logger.LogWarning("Timed out after {Timeout}", exception.Timeout);
+}
+catch (KevlarException exception)               // CircuitOpenException, RateLimitExceededException, …
+{
+    logger.LogWarning(exception, "Shielded call was rejected");
+}
+```
+
+The same applies to `CircuitOpenException`, `RateLimitExceededException` and
+`ConcurrencyLimitExceededException`: every rejection Kevlar raises derives from `KevlarException`.
+
+:::
+
 ## Worked example
 
 Polly v8:

@@ -24,6 +24,7 @@ Generated code is ignored.
 | `KEV006` | Warning | hedging is added to an untyped shield, whose action must be idempotent |
 | `KEV007` | Warning | handling clause never reaches a reactive strategy |
 | `KEV008` | Warning | fluent chaining result is discarded as a statement |
+| `KEV009` | Info | strategy inherits a handling clause declared earlier in the chain |
 
 ## KEV001: ignored execution cancellation
 
@@ -231,6 +232,43 @@ var shield = Shield.Timeout(TimeSpan.FromSeconds(5)).Retry(3);
 The rule fires only on a statement whose value is a `Shield` or `Shield<TResult>`, so assigning the
 result, returning it, or passing it as an argument is never flagged. Discarded *clause builders* are
 reported by [`KEV007`](#kev007-dead-handling-clause) instead, which names that hazard directly.
+
+## KEV009: inherited handling clause
+
+A [handling clause](handling-failures.md) stays ambient: it applies to the strategy it is attached to
+*and* to every reactive strategy chained after it, until a new `When…` replaces it, `WhenAnyError()`
+resets it, or `Wrap`/`Compose` seals it. That is by design — writing the clause once is the point —
+but only the *first* strategy states it at its own call site. `KEV009` is an informational hint, not
+a warning: it marks the second and later strategies so the clause's span is visible in the editor.
+
+```csharp
+var shield = Shield
+    .When<HttpRequestException>()
+    .Retry(3)                                      // states the clause here
+    .Timeout(TimeSpan.FromSeconds(5))
+    .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30));
+//   ^^^^^^^^^^^^^^ KEV009 — only HttpRequestException opens this circuit
+```
+
+Nothing needs fixing if that is what you meant. If it is not, give the later strategy its own
+handling — a new clause, a reset, or a local override:
+
+```csharp
+var shield = Shield
+    .When<HttpRequestException>()
+    .Retry(3)
+    .WhenAnyError()
+    .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30));
+```
+
+Proactive strategies — timeout, rate limit, concurrency limit — never consult a clause, so they are
+never flagged and never end the inherited span. A strategy that sets `HandlesException` or
+`HandlesResult` in its own options has opted out of the ambient clause and is not flagged either.
+The rule follows one fluent chain and a stable local, and stops at `Wrap`/`Compose` boundaries.
+
+Because it is `Info`, `KEV009` never fails a build, including under `TreatWarningsAsErrors`. Turn it
+off entirely with `dotnet_diagnostic.KEV009.severity = none` in `.editorconfig` if the ambient model
+is already second nature to your team.
 
 ## Suppression
 
