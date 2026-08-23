@@ -72,8 +72,12 @@ public sealed class Shield
     /// </remarks>
     public static Shield Retry(Action<RetryOptions> configure) => ShieldExtensions.Retry(Empty, configure);
 
-    /// <summary>Retries failed executions indefinitely.</summary>
-    public static Shield RetryForever(Backoff? backoff = null) => ShieldExtensions.RetryForever(Empty, backoff);
+    /// <summary>Retries failed executions indefinitely with the default exponential jittered backoff.</summary>
+    public static Shield RetryForever() => ShieldExtensions.RetryForever(Empty);
+
+    /// <summary>Retries failed executions indefinitely with the given backoff.</summary>
+    /// <param name="backoff">The delay computation applied between attempts.</param>
+    public static Shield RetryForever(Backoff backoff) => ShieldExtensions.RetryForever(Empty, backoff);
 
     /// <summary>Cancels executions that exceed <paramref name="timeout"/>, surfacing <see cref="TimeoutExceededException"/>.</summary>
     public static Shield Timeout(TimeSpan timeout) => ShieldExtensions.Timeout(Empty, timeout);

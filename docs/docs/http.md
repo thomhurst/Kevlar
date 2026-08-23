@@ -281,5 +281,5 @@ shield so every additional send goes through safe replay and routing.
 - **Compose with other handlers normally.** The Kevlar handler is a regular `DelegatingHandler`; ordering relative to your own handlers follows the usual `AddHttpMessageHandler` rules.
 
 :::tip Handling clause already done
-`WhenTransient()` is a normal [handling clause](handling-failures.md) — everything you chain after it (retry, breaker, fallback) reacts to that transient-fault definition. Add your own `WhenResult` calls to extend it.
+`WhenTransient()` is a normal [handling clause](handling-failures.md) — everything you chain after it (retry, breaker, fallback) reacts to that transient-fault definition. Add your own `Or…`/`OrResult…` calls to extend it. The builder it returns is immutable, so one stored `WhenTransient()` can be branched into several pipelines without the branches leaking terms into each other.
 :::

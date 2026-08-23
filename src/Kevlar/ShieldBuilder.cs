@@ -3,9 +3,9 @@ using Kevlar.Internal;
 namespace Kevlar;
 
 /// <summary>
-/// Accumulates exception-handling clauses for a <see cref="Shield"/> chain. Obtained via
-/// <c>Shield.When&lt;T&gt;()</c> or <c>shield.When&lt;T&gt;()</c>; finished by adding a
-/// strategy. The clauses become the shield's ambient handling: they apply to the strategy added
+/// An immutable exception-handling clause under construction for a <see cref="Shield"/> chain.
+/// Obtained via <c>Shield.When&lt;T&gt;()</c> or <c>shield.When&lt;T&gt;()</c>; finished by adding a
+/// strategy. The clause becomes the shield's ambient handling: it applies to the strategy added
 /// here and to reactive strategies chained afterwards, until replaced by a new clause.
 /// </summary>
 /// <remarks>
@@ -14,11 +14,13 @@ namespace Kevlar;
 /// <c>Shield.When&lt;A&gt;().Or&lt;B&gt;().Retry(3)</c>.
 /// </para>
 /// <para>
-/// <c>Or…</c> accumulates into the builder and returns that same builder, so a builder held in a
-/// variable keeps every term added to it. The clause is snapshotted when a strategy is added:
-/// adding further <c>Or…</c> terms afterwards never changes a shield already built. Branching two
-/// chains from one stored builder, however, gives both chains every term either branch added, so
-/// start a fresh <c>When…</c> for each chain.
+/// The builder is immutable. Each <c>Or…</c> returns a <em>new</em> builder holding the terms
+/// accumulated so far plus the one just added, and leaves the builder it was called on untouched.
+/// A builder held in a variable can therefore be branched into two chains safely: each branch gets
+/// only its own terms. The corollary is that code must use the builder each <c>Or…</c>
+/// <em>returns</em> — calling <c>Or…</c> and discarding the result adds nothing to anything.
+/// Adding a strategy freezes the clause of that builder, so a shield already built is never
+/// changed by further chaining either.
 /// </para>
 /// <para>
 /// One strategy can opt out of the ambient clause: setting <c>HandlesException</c> on its options
@@ -30,37 +32,41 @@ namespace Kevlar;
 public sealed class ShieldBuilder
 {
     private readonly Shield _parent;
-    private readonly List<Func<Exception, bool>> _predicates = [];
-    private readonly List<string> _clauseTerms = [];
+    private readonly Func<Exception, bool>[] _predicates;
+    private readonly string[] _clauseTerms;
 
-    internal ShieldBuilder(Shield parent) => _parent = parent;
-
-    /// <summary>Also handle exceptions of type <typeparamref name="TException"/>.</summary>
-    public ShieldBuilder Or<TException>()
-        where TException : Exception
+    internal ShieldBuilder(Shield parent)
+        : this(parent, [], [])
     {
-        _predicates.Add(static exception => exception is TException);
-        _clauseTerms.Add(typeof(TException).Name);
-        return this;
     }
 
-    /// <summary>Also handle exceptions of type <typeparamref name="TException"/> matching <paramref name="predicate"/>.</summary>
+    private ShieldBuilder(Shield parent, Func<Exception, bool>[] predicates, string[] clauseTerms)
+    {
+        _parent = parent;
+        _predicates = predicates;
+        _clauseTerms = clauseTerms;
+    }
+
+    /// <summary>Returns a new builder that also handles exceptions of type <typeparamref name="TException"/>.</summary>
+    public ShieldBuilder Or<TException>()
+        where TException : Exception
+        => With(static exception => exception is TException, typeof(TException).Name);
+
+    /// <summary>Returns a new builder that also handles exceptions of type <typeparamref name="TException"/> matching <paramref name="predicate"/>.</summary>
     public ShieldBuilder Or<TException>(Func<TException, bool> predicate)
         where TException : Exception
     {
         Throw.IfNull(predicate, nameof(predicate));
-        _predicates.Add(exception => exception is TException typed && predicate(typed));
-        _clauseTerms.Add(typeof(TException).Name + " matching predicate");
-        return this;
+        return With(
+            exception => exception is TException typed && predicate(typed),
+            typeof(TException).Name + " matching predicate");
     }
 
-    /// <summary>Also handle exceptions matching <paramref name="predicate"/>, whatever their type.</summary>
+    /// <summary>Returns a new builder that also handles exceptions matching <paramref name="predicate"/>, whatever their type.</summary>
     public ShieldBuilder Or(Func<Exception, bool> predicate)
     {
         Throw.IfNull(predicate, nameof(predicate));
-        _predicates.Add(predicate);
-        _clauseTerms.Add("exception predicate");
-        return this;
+        return With(predicate, "exception predicate");
     }
 
     /// <summary>Retries handled exceptions up to <paramref name="maxRetries"/> times with the default exponential jittered backoff.</summary>
@@ -85,8 +91,12 @@ public sealed class ShieldBuilder
     /// </remarks>
     public Shield Retry(Action<RetryOptions> configure) => Seal().Retry(configure);
 
-    /// <summary>Retries handled exceptions indefinitely.</summary>
-    public Shield RetryForever(Backoff? backoff = null) => Seal().RetryForever(backoff);
+    /// <summary>Retries handled exceptions indefinitely with the default exponential jittered backoff.</summary>
+    public Shield RetryForever() => Seal().RetryForever();
+
+    /// <summary>Retries handled exceptions indefinitely with the given backoff.</summary>
+    /// <param name="backoff">The delay computation applied between attempts.</param>
+    public Shield RetryForever(Backoff backoff) => Seal().RetryForever(backoff);
 
     /// <summary>Breaks the circuit for <paramref name="breakDuration"/> after <paramref name="consecutiveFailures"/> consecutive handled exceptions.</summary>
     public Shield CircuitBreaker(int consecutiveFailures, TimeSpan breakDuration) => Seal().CircuitBreaker(consecutiveFailures, breakDuration);
@@ -145,16 +155,29 @@ public sealed class ShieldBuilder
     public Shield ConcurrencyLimit(Action<ConcurrencyLimitOptions> configure) => Seal().ConcurrencyLimit(configure);
 
     /// <summary>
-    /// Freezes the clause accumulated so far into a shield. The predicates are copied and the
-    /// description is rendered here, so a builder kept in a variable and extended with further
-    /// <c>Or…</c> calls can never change the handling of a shield already built from it.
+    /// Freezes this builder's clause into a shield. The predicate array is already private and
+    /// never mutated, and the description is rendered here, so no later chaining — on this builder
+    /// or on any builder derived from it — can change the handling of a shield already built.
     /// </summary>
     private Shield Seal() =>
         new(
             _parent.Strategies,
-            new ExceptionJudge(Combine(_predicates.ToArray()), DescribeHelper.Clause(_clauseTerms)),
+            new ExceptionJudge(Combine(_predicates), DescribeHelper.Clause(_clauseTerms)),
             _parent.Name,
             _parent.Time);
+
+    /// <summary>Builds the successor holding this builder's terms plus one more.</summary>
+    private ShieldBuilder With(Func<Exception, bool> predicate, string clauseTerm) =>
+        new(_parent, Append(_predicates, predicate), Append(_clauseTerms, clauseTerm));
+
+    /// <summary>Copies <paramref name="source"/> with <paramref name="item"/> appended.</summary>
+    internal static T[] Append<T>(T[] source, T item)
+    {
+        var appended = new T[source.Length + 1];
+        Array.Copy(source, appended, source.Length);
+        appended[source.Length] = item;
+        return appended;
+    }
 
     internal static Func<Exception, bool> Combine(Func<Exception, bool>[] predicates)
     {

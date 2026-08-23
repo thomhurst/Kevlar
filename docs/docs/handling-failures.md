@@ -34,6 +34,25 @@ Clause position determines the vocabulary: `When…` starts a clause on a shield
 continues that clause on the returned builder. The compiler therefore enforces
 `When<A>().Or<B>().Or(...)`.
 
+### Builders are immutable
+
+Clause builders are immutable, exactly like shields. Every `Or…` returns a *new* builder holding the
+terms so far plus the one just added, and leaves the builder it was called on untouched — so a
+builder held in a variable can be branched into independent chains:
+
+```csharp
+var transient = Shield.When<HttpRequestException>();
+
+var reads = transient.Or<TimeoutExceededException>().Retry(3);
+var writes = transient.Or<IOException>().Retry(1);   // no TimeoutExceededException here
+```
+
+`reads` handles `HttpRequestException | TimeoutExceededException`, `writes` handles
+`HttpRequestException | IOException`, and neither branch sees the other's term. The corollary is
+that only the builder an `Or…` *returns* carries the new term: writing `builder.Or<TException>();`
+as a statement adds nothing to anything, which the analyzer reports as
+[`KEV007`](analyzers.md#kev007-dead-handling-clause).
+
 ## Result clauses
 
 Sometimes failure isn't an exception — it's a well-formed response you don't like (an HTTP 500, an empty payload, a `Status = "Retry"` field). Lift into a typed shield with `For<T>` and add `WhenResult`:

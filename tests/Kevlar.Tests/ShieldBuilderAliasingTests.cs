@@ -1,71 +1,134 @@
 namespace Kevlar.Tests;
 
 /// <summary>
-/// Guards the snapshot taken when a <see cref="ShieldBuilder"/> or <see cref="ShieldBuilder{TResult}"/>
-/// seals a clause. <c>Or…</c> accumulates into the builder and returns that same instance, so a
-/// builder held in a variable stays live; a shield already built from it must keep the clause it
-/// was built with, whatever is added to the builder afterwards.
+/// Guards the immutability of <see cref="ShieldBuilder"/> and <see cref="ShieldBuilder{TResult}"/>.
+/// Every <c>Or…</c> returns a new builder and leaves its receiver untouched, so a builder held in a
+/// variable can be branched into independent chains, a shield already built from it keeps the clause
+/// it was built with, and an <c>Or…</c> whose result is discarded changes nothing at all.
 /// </summary>
 public class ShieldBuilderAliasingTests
 {
+    [Test]
+    public async Task Untyped_Branching_One_Builder_Gives_Independent_Clauses()
+    {
+        var shared = Shield.When<ArgumentException>();
+        var left = shared.Or<InvalidOperationException>().Retry(1, Backoff.None);
+        var right = shared.Or<TimeoutException>().Retry(1, Backoff.None);
+
+        await Assert.That(left.ToString())
+            .IsEqualTo("[when ArgumentException | InvalidOperationException] Retry(1, no delay)");
+        await Assert.That(right.ToString())
+            .IsEqualTo("[when ArgumentException | TimeoutException] Retry(1, no delay)");
+
+        // Each branch retries only the exception it added: neither inherited the other's term.
+        await Assert.That(await AttemptsUntilThrow<InvalidOperationException>(left)).IsEqualTo(2);
+        await Assert.That(await AttemptsUntilThrow<TimeoutException>(left)).IsEqualTo(1);
+        await Assert.That(await AttemptsUntilThrow<InvalidOperationException>(right)).IsEqualTo(1);
+        await Assert.That(await AttemptsUntilThrow<TimeoutException>(right)).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task Untyped_Discarded_Or_Leaves_The_Builder_Unchanged()
+    {
+        var builder = Shield.When<ArgumentException>();
+
+        // The returned builder is dropped, so nothing is added anywhere (the shape KEV007 flags).
+        builder.Or<InvalidOperationException>();
+
+        var shield = builder.Retry(1, Backoff.None);
+
+        await Assert.That(shield.ToString()).IsEqualTo("[when ArgumentException] Retry(1, no delay)");
+        await Assert.That(await AttemptsUntilThrow<InvalidOperationException>(shield)).IsEqualTo(1);
+    }
+
     [Test]
     public async Task Untyped_Shield_Keeps_The_Clause_It_Was_Built_With()
     {
         var builder = Shield.When<ArgumentException>();
         var first = builder.Retry(1, Backoff.None);
+        var second = builder.Or<InvalidOperationException>().Retry(1, Backoff.None);
 
-        builder.Or<InvalidOperationException>();
-        var second = builder.Retry(1, Backoff.None);
-
-        var firstAttempts = 0;
-        await Assert.That(async () => await first.ExecuteAsync<int>(_ =>
-        {
-            firstAttempts++;
-            throw new InvalidOperationException();
-        })).Throws<InvalidOperationException>();
-
-        var secondAttempts = 0;
-        await Assert.That(async () => await second.ExecuteAsync<int>(_ =>
-        {
-            secondAttempts++;
-            throw new InvalidOperationException();
-        })).Throws<InvalidOperationException>();
-
-        // The first shield never learned about InvalidOperationException, so it did not retry.
-        await Assert.That(firstAttempts).IsEqualTo(1);
-        await Assert.That(secondAttempts).IsEqualTo(2);
         await Assert.That(first.ToString()).IsEqualTo("[when ArgumentException] Retry(1, no delay)");
         await Assert.That(second.ToString())
             .IsEqualTo("[when ArgumentException | InvalidOperationException] Retry(1, no delay)");
+
+        // The first shield never learned about InvalidOperationException, so it did not retry.
+        await Assert.That(await AttemptsUntilThrow<InvalidOperationException>(first)).IsEqualTo(1);
+        await Assert.That(await AttemptsUntilThrow<InvalidOperationException>(second)).IsEqualTo(2);
     }
 
     [Test]
-    public async Task Untyped_Single_Term_Clause_Is_Not_Extended_After_Sealing()
+    public async Task Typed_Branching_One_Builder_Gives_Independent_Clauses()
     {
-        var builder = Shield.When<ArgumentException>();
-        var first = builder.Retry(1, Backoff.None);
+        var shared = Shield.For<int>().When<ArgumentException>();
+        var left = shared.OrResult(0).Retry(1, Backoff.None);
+        var right = shared.Or<InvalidOperationException>().Retry(1, Backoff.None);
 
-        builder.Or(static exception => exception is TimeoutException);
+        await Assert.That(left.ToString())
+            .IsEqualTo("[when ArgumentException | result 0] Retry(1, no delay)");
+        await Assert.That(right.ToString())
+            .IsEqualTo("[when ArgumentException | InvalidOperationException] Retry(1, no delay)");
+
+        // The result term went only to the left branch; the exception term only to the right.
+        var leftAttempts = 0;
+        var leftResult = await left.ExecuteAsync(_ =>
+        {
+            leftAttempts++;
+            return new ValueTask<int>(leftAttempts == 1 ? 0 : 7);
+        });
+        await Assert.That(leftResult).IsEqualTo(7);
+        await Assert.That(leftAttempts).IsEqualTo(2);
+
+        var rightAttempts = 0;
+        var rightResult = await right.ExecuteAsync(_ =>
+        {
+            rightAttempts++;
+            return new ValueTask<int>(0);
+        });
+        await Assert.That(rightResult).IsEqualTo(0);
+        await Assert.That(rightAttempts).IsEqualTo(1);
+
+        await Assert.That(await TypedAttemptsUntilThrow<InvalidOperationException>(left)).IsEqualTo(1);
+        await Assert.That(await TypedAttemptsUntilThrow<InvalidOperationException>(right)).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task Typed_Discarded_Or_Leaves_The_Builder_Unchanged()
+    {
+        var builder = Shield.For<int>().When<ArgumentException>();
+
+        // Both returned builders are dropped, so the clause stays a single term.
+        builder.OrResult(0);
+        builder.Or<InvalidOperationException>();
+
+        var shield = builder.Retry(1, Backoff.None);
+
+        await Assert.That(shield.ToString()).IsEqualTo("[when ArgumentException] Retry(1, no delay)");
 
         var attempts = 0;
-        await Assert.That(async () => await first.ExecuteAsync<int>(_ =>
+        var result = await shield.ExecuteAsync(_ =>
         {
             attempts++;
-            throw new TimeoutException();
-        })).Throws<TimeoutException>();
+            return new ValueTask<int>(0);
+        });
 
+        await Assert.That(result).IsEqualTo(0);
         await Assert.That(attempts).IsEqualTo(1);
+        await Assert.That(await TypedAttemptsUntilThrow<InvalidOperationException>(shield)).IsEqualTo(1);
     }
 
     [Test]
-    public async Task Typed_Shield_Keeps_The_Result_Clause_It_Was_Built_With()
+    public async Task Typed_Shield_Keeps_The_Clause_It_Was_Built_With()
     {
         var builder = Shield.For<int>().When<ArgumentException>();
         var first = builder.Retry(1, Backoff.None);
+        var second = builder.OrResult(0).Retry(1, Backoff.None);
 
-        builder.OrResult(0);
-        var second = builder.Retry(1, Backoff.None);
+        await Assert.That(first.ToString()).IsEqualTo("[when ArgumentException] Retry(1, no delay)");
+        await Assert.That(second.ToString())
+            .IsEqualTo("[when ArgumentException | result 0] Retry(1, no delay)");
 
+        // The first shield's clause never gained the result term, so 0 was an acceptable result.
         var firstAttempts = 0;
         var firstResult = await first.ExecuteAsync(_ =>
         {
@@ -73,39 +136,8 @@ public class ShieldBuilderAliasingTests
             return new ValueTask<int>(0);
         });
 
-        var secondAttempts = 0;
-        var secondResult = await second.ExecuteAsync(_ =>
-        {
-            secondAttempts++;
-            return new ValueTask<int>(secondAttempts == 1 ? 0 : 7);
-        });
-
-        // The first shield's clause never gained the result term, so 0 was an acceptable result.
         await Assert.That(firstResult).IsEqualTo(0);
         await Assert.That(firstAttempts).IsEqualTo(1);
-        await Assert.That(secondResult).IsEqualTo(7);
-        await Assert.That(secondAttempts).IsEqualTo(2);
-        await Assert.That(first.ToString()).IsEqualTo("[when ArgumentException] Retry(1, no delay)");
-        await Assert.That(second.ToString())
-            .IsEqualTo("[when ArgumentException | result 0] Retry(1, no delay)");
-    }
-
-    [Test]
-    public async Task Typed_Shield_Keeps_The_Exception_Clause_It_Was_Built_With()
-    {
-        var builder = Shield.For<int>().When<ArgumentException>();
-        var first = builder.Retry(1, Backoff.None);
-
-        builder.Or<InvalidOperationException>();
-
-        var attempts = 0;
-        await Assert.That(async () => await first.ExecuteAsync(_ =>
-        {
-            attempts++;
-            return ValueTask.FromException<int>(new InvalidOperationException());
-        })).Throws<InvalidOperationException>();
-
-        await Assert.That(attempts).IsEqualTo(1);
     }
 
     [Test]
@@ -119,5 +151,33 @@ public class ShieldBuilderAliasingTests
             .IsEqualTo("[when ArgumentException | InvalidOperationException] Retry(1, no delay)");
         await Assert.That(second.ToString())
             .IsEqualTo("[when ArgumentException | InvalidOperationException] CircuitBreaker(2 consecutive, break 1s)");
+    }
+
+    /// <summary>Counts the attempts a shield makes before <typeparamref name="TException"/> escapes.</summary>
+    private static async Task<int> AttemptsUntilThrow<TException>(Shield shield)
+        where TException : Exception, new()
+    {
+        var attempts = 0;
+        await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
+        {
+            attempts++;
+            throw new TException();
+        })).Throws<TException>();
+
+        return attempts;
+    }
+
+    /// <summary>Counts the attempts a result-aware shield makes before <typeparamref name="TException"/> escapes.</summary>
+    private static async Task<int> TypedAttemptsUntilThrow<TException>(Shield<int> shield)
+        where TException : Exception, new()
+    {
+        var attempts = 0;
+        await Assert.That(async () => await shield.ExecuteAsync(_ =>
+        {
+            attempts++;
+            return ValueTask.FromException<int>(new TException());
+        })).Throws<TException>();
+
+        return attempts;
     }
 }

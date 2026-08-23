@@ -109,12 +109,20 @@ public sealed class Shield<TResult>
         return Append(RetryStrategy.Create(options, judge));
     }
 
-    /// <summary>Retries handled outcomes indefinitely.</summary>
-    public Shield<TResult> RetryForever(Backoff? backoff = null) => Retry(options =>
+    /// <summary>Retries handled outcomes indefinitely with the default exponential jittered backoff.</summary>
+    public Shield<TResult> RetryForever() => RetryForever(Backoff.Default);
+
+    /// <summary>Retries handled outcomes indefinitely with the given backoff.</summary>
+    /// <param name="backoff">The delay computation applied between attempts.</param>
+    public Shield<TResult> RetryForever(Backoff backoff)
     {
-        options.MaxRetries = int.MaxValue;
-        options.Backoff = backoff ?? Backoff.Default;
-    });
+        Throw.IfNull(backoff, nameof(backoff));
+        return Retry(options =>
+        {
+            options.MaxRetries = int.MaxValue;
+            options.Backoff = backoff;
+        });
+    }
 
     /// <summary>Cancels executions that exceed <paramref name="timeout"/>, surfacing <see cref="TimeoutExceededException"/>.</summary>
     public Shield<TResult> Timeout(TimeSpan timeout) => Timeout(options => options.Timeout = timeout);

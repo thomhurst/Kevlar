@@ -44,9 +44,17 @@ build spelled these `WhenResultDefault`/`OrResultDefault`; the `Is` makes the re
 - `HandlesException`/`HandlesResult` documentation on every options type now leads with the fact
   that the property makes its strategy ignore the ambient `When…` clause, and points at
   `HandlingClause`. `ShieldBuilder`/`ShieldBuilder<TResult>` document the override from the clause side.
-- `ShieldBuilder` and `ShieldBuilder<TResult>` snapshot their accumulated clause whenever a strategy
-  seals it. A builder held in a variable can be extended with further `Or…` terms afterwards without
-  changing the handling of any shield already built from it.
+- `ShieldBuilder` and `ShieldBuilder<TResult>` are immutable. Every `Or…`/`OrResult…`/
+  `OrResultIsDefault` returns a *new* builder carrying the terms so far plus the one just added, and
+  leaves the builder it was called on untouched. Branching two chains from one stored builder is now
+  safe — each branch gets only its own terms — and a shield already built from a builder still keeps
+  the clause it was built with. The corollary is that only the builder an `Or…` *returns* carries
+  the new term; `builder.Or<T>();` written as a statement adds nothing, which `KEV007` reports.
+- **Breaking:** `RetryForever` is now two overloads — `RetryForever()` and `RetryForever(Backoff)` —
+  on `Shield` (static), `ShieldExtensions`, `Shield<TResult>`, `ShieldBuilder` and
+  `ShieldBuilder<TResult>`, replacing the single `RetryForever(Backoff? backoff = null)`. This
+  matches `Retry(int, Backoff)`, whose `Backoff` was already non-nullable. The parameterless
+  overload still uses `Backoff.Default`; passing `null` explicitly is no longer legal.
 
 ### Added
 
