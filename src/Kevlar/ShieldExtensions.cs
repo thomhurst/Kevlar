@@ -26,7 +26,8 @@ public static class ShieldExtensions
         Throw.IfNull(configure, nameof(configure));
         var options = new RetryOptions();
         configure(options);
-        return shield.Append(new RetryStrategy(options, shield.JudgeOrDefault));
+        var judge = HandlingOverride.Resolve(options.HandlesException, shield.JudgeOrDefault);
+        return shield.Append(new RetryStrategy(options, judge));
     }
 
     /// <summary>Appends a retry that never gives up.</summary>
@@ -63,7 +64,8 @@ public static class ShieldExtensions
         Throw.IfNull(configure, nameof(configure));
         var options = new CircuitBreakerOptions();
         configure(options);
-        return shield.Append(new CircuitBreakerStrategy(options, shield.JudgeOrDefault));
+        var judge = HandlingOverride.Resolve(options.HandlesException, shield.JudgeOrDefault);
+        return shield.Append(new CircuitBreakerStrategy(options, judge));
     }
 
     /// <summary>Appends a token-bucket rate limit of <paramref name="permits"/> executions per <paramref name="perWindow"/>.</summary>
@@ -114,7 +116,8 @@ public static class ShieldExtensions
         Throw.IfNull(configure, nameof(configure));
         var options = new HedgingOptions();
         configure(options);
-        return shield.Append(new HedgingStrategy(options, shield.JudgeOrDefault));
+        var judge = HandlingOverride.Resolve(options.HandlesException, shield.JudgeOrDefault);
+        return shield.Append(new HedgingStrategy(options, judge));
     }
 
     /// <summary>Starts a handling clause: subsequent reactive strategies act on exceptions of type <typeparamref name="TException"/>. Use <see cref="WhenAnyError"/> to return to default handling.</summary>
@@ -241,11 +244,13 @@ public static class ShieldExtensions
         Throw.IfNull(configure, nameof(configure));
         var options = new FallbackOptions();
         configure(options);
+        var judge = HandlingOverride.Resolve(options.HandlesException, shield.JudgeOrDefault);
         return shield.Append(new VoidFallbackStrategy(
             fallback,
-            shield.JudgeOrDefault,
+            judge,
             options.OnFallback,
-            options.OnFallbackAsync));
+            options.OnFallbackAsync,
+            options.HandlesException is not null));
     }
 
     /// <summary>

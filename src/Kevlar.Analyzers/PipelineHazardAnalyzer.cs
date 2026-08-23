@@ -97,10 +97,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         }
 
         if (IsKevlarFluentMethod(invocation.TargetMethod, knownTypes, "Fallback")
+            && HasLocalHandlingOverride(invocation, context) is false
             && FindInPipeline(
                 GetReceiver(invocation),
                 context,
-                candidate => IsReactiveStrategy(Normalize(candidate.TargetMethod), knownTypes),
+                candidate => IsReactiveStrategyWithAmbientHandling(candidate, context, knownTypes),
                 knownTypes,
                 stopAtHandlingClause: true,
                 stopAtCompositionBoundary: true,
@@ -586,7 +587,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             if (!FindInPipeline(
                 operands[fallbackIndex],
                 context,
-                candidate => IsKevlarFluentMethod(candidate.TargetMethod, knownTypes, "Fallback"),
+                candidate => IsKevlarFluentMethod(candidate.TargetMethod, knownTypes, "Fallback")
+                    && HasLocalHandlingOverride(candidate, context) is false,
                 knownTypes,
                 stopAtHandlingClause: true,
                 stopAtCompositionBoundary: true,
@@ -601,7 +603,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     && FindInPipeline(
                         operands[reactiveIndex],
                         context,
-                        candidate => IsReactiveStrategy(Normalize(candidate.TargetMethod), knownTypes),
+                        candidate => IsReactiveStrategyWithAmbientHandling(candidate, context, knownTypes),
                         knownTypes,
                         stopAtHandlingClause: true,
                         stopAtCompositionBoundary: true,
@@ -1365,6 +1367,230 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     private static bool IsReactiveStrategy(IMethodSymbol method, KnownTypes knownTypes) =>
         (method.Name is "Retry" or "RetryForever" or "Hedge" or "CircuitBreaker")
         && IsKevlarFluentMethod(method, knownTypes);
+
+    private static bool IsReactiveStrategyWithAmbientHandling(
+        IInvocationOperation invocation,
+        OperationAnalysisContext context,
+        KnownTypes knownTypes) =>
+        IsReactiveStrategy(Normalize(invocation.TargetMethod), knownTypes)
+        && HasLocalHandlingOverride(invocation, context) is false;
+
+    private static bool? HasLocalHandlingOverride(
+        IInvocationOperation invocation,
+        OperationAnalysisContext context)
+    {
+        foreach (var argument in invocation.Arguments)
+        {
+            if (argument.Parameter?.Name == "configure")
+            {
+                return AnalyzeLocalHandlingConfigurator(
+                    argument.Value,
+                    context,
+                    visitedSymbols: null);
+            }
+        }
+
+        return false;
+    }
+
+    private static bool? AnalyzeLocalHandlingConfigurator(
+        IOperation operation,
+        OperationAnalysisContext context,
+        HashSet<ISymbol>? visitedSymbols)
+    {
+        operation = Unwrap(operation)!;
+        if (operation is IDelegateCreationOperation delegateCreation)
+        {
+            return AnalyzeLocalHandlingConfigurator(delegateCreation.Target, context, visitedSymbols);
+        }
+
+        if (operation is ILocalReferenceOperation localReference)
+        {
+            visitedSymbols ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+            if (!visitedSymbols.Add(localReference.Local)
+                || !TryGetStableInitializer(localReference, context, out var initializer)
+                || initializer is null)
+            {
+                return null;
+            }
+
+            var result = AnalyzeLocalHandlingConfigurator(initializer, context, visitedSymbols);
+            visitedSymbols.Remove(localReference.Local);
+            return result;
+        }
+
+        if (operation is IMethodReferenceOperation methodReference)
+        {
+            return ContainsLocalHandlingOverride(methodReference.Method, context, visitedSymbols);
+        }
+
+        if (operation is IParameterReferenceOperation
+            or IPropertyReferenceOperation
+            or IFieldReferenceOperation)
+        {
+            return null;
+        }
+
+        return operation is IAnonymousFunctionOperation
+            ? ContainsLocalHandlingOverride(
+                operation,
+                context,
+                visitedSymbols,
+                includeAnonymousFunctionBody: true)
+            : null;
+    }
+
+    private static bool? ContainsLocalHandlingOverride(
+        IOperation operation,
+        OperationAnalysisContext context,
+        HashSet<ISymbol>? visitedSymbols,
+        bool includeAnonymousFunctionBody = false)
+    {
+        operation = Unwrap(operation)!;
+        if (operation is IDelegateCreationOperation)
+        {
+            return false;
+        }
+
+        if (operation is IAnonymousFunctionOperation anonymousFunction)
+        {
+            return includeAnonymousFunctionBody
+                ? ContainsLocalHandlingOverride(anonymousFunction.Body, context, visitedSymbols)
+                : false;
+        }
+
+        if (operation is IAssignmentOperation
+            {
+                Target: IPropertyReferenceOperation propertyReference,
+                Value: { } value,
+            }
+            && propertyReference.Property.Name is "HandlesException" or "HandlesResult"
+            && propertyReference.Property.ContainingNamespace.ToDisplayString() == "Kevlar"
+            && value.ConstantValue is not { HasValue: true, Value: null })
+        {
+            return true;
+        }
+
+        bool? result = operation is IInvocationOperation invocation
+            ? ContainsLocalHandlingOverride(invocation, context, visitedSymbols)
+            : false;
+        if (result is true)
+        {
+            return true;
+        }
+
+        foreach (var child in operation.ChildOperations)
+        {
+            var childResult = ContainsLocalHandlingOverride(child, context, visitedSymbols);
+            if (childResult is true)
+            {
+                return true;
+            }
+
+            if (childResult is null)
+            {
+                result = null;
+            }
+        }
+
+        return result;
+    }
+
+    private static bool? ContainsLocalHandlingOverride(
+        IInvocationOperation invocation,
+        OperationAnalysisContext context,
+        HashSet<ISymbol>? visitedSymbols)
+    {
+        if (!invocation.TargetMethod.DeclaringSyntaxReferences.IsEmpty)
+        {
+            return ContainsLocalHandlingOverride(invocation.TargetMethod, context, visitedSymbols);
+        }
+
+        if (IsHandlingOptionsType(Unwrap(invocation.Instance)?.Type))
+        {
+            return null;
+        }
+
+        foreach (var argument in invocation.Arguments)
+        {
+            if (IsHandlingOptionsType(Unwrap(argument.Value)?.Type))
+            {
+                return null;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsHandlingOptionsType(ITypeSymbol? type)
+    {
+        for (var current = type as INamedTypeSymbol; current is not null; current = current.BaseType)
+        {
+            if (current.ContainingNamespace.ToDisplayString() == "Kevlar"
+                && (current.GetMembers("HandlesException").Length > 0
+                    || current.GetMembers("HandlesResult").Length > 0))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool? ContainsLocalHandlingOverride(
+        IMethodSymbol method,
+        OperationAnalysisContext context,
+        HashSet<ISymbol>? visitedSymbols)
+    {
+        visitedSymbols ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+        if (!visitedSymbols.Add(method))
+        {
+            return null;
+        }
+
+        try
+        {
+            if (method.DeclaringSyntaxReferences.Length == 0)
+            {
+                return null;
+            }
+
+            bool? result = false;
+            foreach (var syntaxReference in method.DeclaringSyntaxReferences)
+            {
+                var syntax = syntaxReference.GetSyntax(context.CancellationToken);
+                var semanticModel = context.Operation.SemanticModel;
+                var methodOperation = semanticModel?.SyntaxTree == syntax.SyntaxTree
+                    ? semanticModel.GetOperation(syntax, context.CancellationToken)
+                    : null;
+                if (methodOperation is null)
+                {
+                    result = null;
+                    continue;
+                }
+
+                var methodResult = ContainsLocalHandlingOverride(
+                    methodOperation,
+                    context,
+                    visitedSymbols);
+                if (methodResult is true)
+                {
+                    return true;
+                }
+
+                if (methodResult is null)
+                {
+                    result = null;
+                }
+            }
+
+            return result;
+        }
+        finally
+        {
+            visitedSymbols.Remove(method);
+        }
+    }
 
     private static bool IsKnownMultiAttemptHedge(
         IInvocationOperation invocation,

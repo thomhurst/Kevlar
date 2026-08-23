@@ -48,6 +48,9 @@ public abstract class Strategy
     /// <summary>The handling clause this reactive strategy acts on; null for proactive strategies.</summary>
     internal virtual OutcomeJudge? ReactiveJudge => Handling?.Judge;
 
+    /// <summary>Whether this reactive strategy replaces ambient handling with local predicates.</summary>
+    internal virtual bool HasHandlingOverride => false;
+
     /// <summary>Marks fallback strategies for chain-order validation.</summary>
     internal virtual bool IsFallback => false;
 

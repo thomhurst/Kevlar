@@ -6,11 +6,13 @@ public sealed class FallbackStrategyDescriptor : StrategyDescriptor
     internal FallbackStrategyDescriptor(
         string description,
         Type? resultType,
-        bool hasNotification)
+        bool hasNotification,
+        bool hasHandlingOverride)
         : base(StrategyKind.Fallback, description)
     {
         ResultType = resultType;
         HasNotification = hasNotification;
+        HasHandlingOverride = hasHandlingOverride;
     }
 
     /// <summary>The fallback result type, or <see langword="null"/> for a void fallback.</summary>
@@ -21,4 +23,7 @@ public sealed class FallbackStrategyDescriptor : StrategyDescriptor
 
     /// <summary>Whether a fallback notification is configured.</summary>
     public bool HasNotification { get; }
+
+    /// <summary>Whether local predicates replace the ambient handling clause.</summary>
+    public bool HasHandlingOverride { get; }
 }

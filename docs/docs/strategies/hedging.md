@@ -30,6 +30,8 @@ Shield.Hedge(o =>
 | `OnHedge` | — | Callback when a hedge launches — `e.Attempt` is 1-based, so `2` = first hedge |
 | `OnHedgeAsync` | — | Awaited callback after `OnHedge` and before the attempt starts |
 | `ActionGenerator` | — | Select a different operation for each additional attempt; `null` uses the original |
+| `HandlesException` | — | Local exception predicate; replaces the ambient clause for this hedge |
+| `HandlesResult` (`HedgingOptions<T>`) | — | Local result predicate on `Shield<T>`; replaces the ambient clause together with `HandlesException` |
 
 ### Selecting another target
 
@@ -79,7 +81,9 @@ Multiple invocations of your delegate may be in flight at once — it must be sa
 - Callback contexts are pooled. Do not retain them after the synchronous callback or returned `ValueTask` completes; a generated action's isolated context remains valid until that attempt completes.
 - Callbacks and generators run without a strategy lock. They may re-enter the same shield, and concurrent shield executions may invoke them concurrently; keep captured state thread-safe.
 - Losing operations are cancelled first, then their isolated contexts are returned to the pool after those operations complete.
-- What counts as a failure is the ambient [handling clause](../handling-failures.md), like every reactive strategy.
+- What counts as a failure is the ambient [handling clause](../handling-failures.md), unless the
+  options set `HandlesException` or `HandlesResult` as a
+  [per-strategy override](../handling-failures.md#per-strategy-overrides).
 
 ## When to hedge (and when not to)
 

@@ -121,6 +121,47 @@ public class HttpContractTests
     }
 
     [Test]
+    public async Task Configured_Standard_Copies_Local_Handling_Overrides()
+    {
+        var retryOptions = new StandardHttpShieldOptions();
+        retryOptions.Retry.HandlesException = static _ => false;
+        retryOptions.Retry.HandlesResult = static _ => false;
+        var retryCalls = 0;
+        var retryShield = HttpShield.Standard(retryOptions);
+
+        using var response = await retryShield.ExecuteAsync(_ =>
+        {
+            retryCalls++;
+            return new ValueTask<HttpResponseMessage>(
+                new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+        });
+
+        await Assert.That(retryCalls).IsEqualTo(1);
+
+        var exceptionCalls = 0;
+        await Assert.That(async () => await retryShield.ExecuteAsync<HttpResponseMessage>(_ =>
+        {
+            exceptionCalls++;
+            throw new HttpRequestException("not handled");
+        })).Throws<HttpRequestException>();
+        await Assert.That(exceptionCalls).IsEqualTo(1);
+
+        var breakerOptions = new StandardHttpShieldOptions();
+        breakerOptions.Retry.MaxRetries = 0;
+        breakerOptions.CircuitBreaker.ConsecutiveFailures = 1;
+        breakerOptions.CircuitBreaker.FailureRatio = null;
+        breakerOptions.CircuitBreaker.HandlesException = static _ => false;
+        var breakerShield = HttpShield.Standard(breakerOptions);
+
+        for (var attempt = 0; attempt < 2; attempt++)
+        {
+            await Assert.That(async () => await breakerShield.ExecuteAsync<HttpResponseMessage>(
+                _ => throw new HttpRequestException("not handled")))
+                .Throws<HttpRequestException>();
+        }
+    }
+
+    [Test]
     public async Task Configured_Standard_Replays_Buffered_Unsafe_Requests()
     {
         var calls = 0;

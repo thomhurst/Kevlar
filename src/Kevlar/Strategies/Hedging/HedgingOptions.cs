@@ -12,8 +12,16 @@ namespace Kevlar;
 /// <see cref="OnHedgeAsync"/>, then <see cref="ActionGenerator"/>. Caller cancellation is checked
 /// before callbacks and again before the generated operation starts.
 /// </remarks>
-public sealed class HedgingOptions
+public class HedgingOptions
 {
+    /// <summary>
+    /// Locally selects exceptions handled by this hedging strategy. When set, this strategy
+    /// ignores the ambient handling clause and handles only outcomes selected locally.
+    /// </summary>
+    public Func<Exception, bool>? HandlesException { get; set; }
+
+    internal virtual bool HasHandlingOverride => HandlesException is not null;
+
     /// <summary>Total attempts including the original. Default 2.</summary>
     public int MaxAttempts { get; set; } = 2;
 

@@ -11,6 +11,18 @@ namespace Kevlar;
 /// </remarks>
 public sealed class FallbackOptions<TResult>
 {
+    /// <summary>
+    /// Locally selects exceptions handled by this fallback. When either local predicate is set,
+    /// this strategy ignores the ambient handling clause and handles only outcomes selected locally.
+    /// </summary>
+    public Func<Exception, bool>? HandlesException { get; set; }
+
+    /// <summary>
+    /// Locally selects results handled by this fallback. When either local predicate is set, this
+    /// strategy ignores the ambient handling clause and handles only outcomes selected locally.
+    /// </summary>
+    public Func<TResult, bool>? HandlesResult { get; set; }
+
     /// <summary>Invoked synchronously before the recovery factory, with the typed handled outcome.</summary>
     public Action<FallbackEvent<TResult>>? OnFallback { get; set; }
 

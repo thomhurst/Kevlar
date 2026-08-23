@@ -144,6 +144,8 @@ public static class HttpShield
         target.MaxDelay = source.MaxDelay;
         target.DelayGenerator = source.DelayGenerator;
         target.DelayGeneratorAsync = source.DelayGeneratorAsync;
+        target.HandlesException = source.HandlesException;
+        target.HandlesResult = source.HandlesResult;
         target.OnRetry = retry =>
         {
             retry.Outcome.Result?.Dispose();
@@ -160,6 +162,7 @@ public static class HttpShield
         target.SamplingWindow = source.SamplingWindow;
         target.BreakDuration = source.BreakDuration;
         target.BreakDurationGenerator = source.BreakDurationGenerator;
+        target.HandlesException = source.HandlesException;
         target.Monitor = source.Monitor;
         target.OnStateChanged = source.OnStateChanged;
         target.OnStateChangedAsync = source.OnStateChangedAsync;

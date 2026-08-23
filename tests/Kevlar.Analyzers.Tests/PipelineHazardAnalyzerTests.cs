@@ -504,6 +504,10 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.For<int>().Retry(1).Fallback(0);",
             "_ = Shield.For<int>().Hedge(2, TimeSpan.Zero).Fallback(0);",
             "_ = Shield.For<int>().CircuitBreaker(2, TimeSpan.FromSeconds(1)).Fallback(0);",
+            "_ = Shield.For<int>().CircuitBreaker(options => options.ConsecutiveFailures = 2).Fallback(0);",
+            "_ = Shield.For<int>().CircuitBreaker(options => options.BreakDuration = TimeSpan.FromSeconds(1)).Fallback(0);",
+            "_ = Shield.For<int>().CircuitBreaker(options => options.HandlesException = null).Fallback(0);",
+            "_ = Shield.For<int>().CircuitBreaker(options => options.OnStateChanged = _ => options.HandlesException = exception => exception is TimeoutException).Fallback(0);",
             "_ = Shield.For<int>().WhenResult(0).Retry(1).Fallback(0);",
             "_ = Shield.For<int>().Retry(1).Fallback(0, static options => options.OnFallback = static _ => { });",
             "_ = Shield.Retry(1).Fallback(static _ => ValueTask.CompletedTask, static options => options.OnFallback = static _ => { });",
@@ -552,6 +556,109 @@ public class PipelineHazardAnalyzerTests
 
         await AssertRuleAsync(aliasDiagnostics, "KEV003");
         await AssertRuleAsync(genericDiagnostics, "KEV003");
+    }
+
+    [Test]
+    public async Task KEV003_Skips_Reactive_Strategy_With_Local_Handling_Override()
+    {
+        var diagnostics = await AnalyzeBodyAsync(
+            "_ = Shield.For<int>().When<InvalidOperationException>().CircuitBreaker(options => options.HandlesException = exception => exception is TimeoutException).Fallback(0);");
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV003_Recognizes_Compound_Local_Handling_Assignments()
+    {
+        var cases = new[]
+        {
+            "_ = Shield.For<int>().When<InvalidOperationException>().CircuitBreaker(options => options.HandlesException ??= exception => exception is TimeoutException).Fallback(0);",
+            "_ = Shield.For<int>().When<InvalidOperationException>().CircuitBreaker(options => options.HandlesException += exception => exception is TimeoutException).Fallback(0);",
+        };
+
+        foreach (var body in cases)
+        {
+            var diagnostics = await AnalyzeBodyAsync(body);
+            await Assert.That(diagnostics).IsEmpty();
+        }
+    }
+
+    [Test]
+    public async Task KEV003_Skips_Fallback_With_Local_Handling_Override()
+    {
+        var diagnostics = await AnalyzeBodyAsync(
+            "_ = Shield.For<int>().Retry(1).Fallback(0, options => options.HandlesException = exception => exception is TimeoutException);");
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV003_Resolves_Reusable_Local_Handling_Configurators()
+    {
+        var diagnostics = await AnalyzeBodyAsync(
+            """
+            Action<CircuitBreakerOptions<int>> configure = ConfigureBreaker;
+            _ = Shield.For<int>().CircuitBreaker(ConfigureBreaker).Fallback(0);
+            _ = Shield.For<int>().CircuitBreaker(configure).Fallback(0);
+            _ = Shield.For<int>().Retry(1).Fallback(0, ConfigureFallback);
+            """,
+            """
+            private static void ConfigureBreaker(CircuitBreakerOptions<int> options) =>
+                options.HandlesException = exception => exception is TimeoutException;
+
+            private static void ConfigureFallback(FallbackOptions<int> options) =>
+                options.HandlesException = exception => exception is TimeoutException;
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV003_Follows_Source_Configurator_Helper_Calls()
+    {
+        var diagnostics = await AnalyzeBodyAsync(
+            "_ = Shield.For<int>().CircuitBreaker(ConfigureBreaker).Fallback(0);",
+            """
+            private static void ConfigureBreaker(CircuitBreakerOptions<int> options) =>
+                ApplyHandling(options);
+
+            private static void ApplyHandling(CircuitBreakerOptions<int> options) =>
+                options.HandlesException = exception => exception is TimeoutException;
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV003_Propagates_Unknown_From_Nested_Configurator_Call()
+    {
+        var diagnostics = await AnalyzeBodyAsync(
+            "_ = Shield.For<int>().CircuitBreaker(ConfigureBreaker).Fallback(0);",
+            """
+            private static Action<CircuitBreakerOptions<int>> SharedConfigure { get; } =
+                options => options.HandlesException = exception => exception is TimeoutException;
+
+            private static void ConfigureBreaker(CircuitBreakerOptions<int> options) =>
+                SharedConfigure(options);
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV003_Skips_Opaque_Local_Handling_Configurator()
+    {
+        var diagnostics = await AnalyzeBodyAsync(
+            "_ = Build(options => options.HandlesException = exception => exception is TimeoutException);",
+            """
+            private static Shield<int> Build(Action<CircuitBreakerOptions<int>> configure) =>
+                Shield.For<int>()
+                    .When<InvalidOperationException>()
+                    .CircuitBreaker(configure)
+                    .Fallback(0);
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
     }
 
     [Test]

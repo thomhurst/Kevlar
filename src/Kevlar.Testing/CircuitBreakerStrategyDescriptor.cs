@@ -11,7 +11,8 @@ public sealed class CircuitBreakerStrategyDescriptor : StrategyDescriptor
         TimeSpan samplingWindow,
         TimeSpan breakDuration,
         bool hasMonitor,
-        bool hasNotification)
+        bool hasNotification,
+        bool hasHandlingOverride)
         : base(StrategyKind.CircuitBreaker, description)
     {
         ConsecutiveFailures = consecutiveFailures;
@@ -21,6 +22,7 @@ public sealed class CircuitBreakerStrategyDescriptor : StrategyDescriptor
         BreakDuration = breakDuration;
         HasMonitor = hasMonitor;
         HasNotification = hasNotification;
+        HasHandlingOverride = hasHandlingOverride;
     }
 
     /// <summary>The consecutive-failure threshold in simple mode.</summary>
@@ -43,4 +45,7 @@ public sealed class CircuitBreakerStrategyDescriptor : StrategyDescriptor
 
     /// <summary>Whether a state-change notification is configured.</summary>
     public bool HasNotification { get; }
+
+    /// <summary>Whether local predicates replace the ambient handling clause.</summary>
+    public bool HasHandlingOverride { get; }
 }

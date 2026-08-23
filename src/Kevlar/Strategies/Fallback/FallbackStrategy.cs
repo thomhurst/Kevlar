@@ -16,15 +16,19 @@ internal sealed class FallbackStrategy<TResult> : Strategy, IFallbackStrategyIns
         Func<Outcome<TResult>, KevlarContext, ValueTask<TResult>> fallback,
         OutcomeJudge judge,
         Action<FallbackEvent<TResult>>? onFallback,
-        Func<FallbackEvent<TResult>, ValueTask>? onFallbackAsync)
+        Func<FallbackEvent<TResult>, ValueTask>? onFallbackAsync,
+        bool hasHandlingOverride = false)
     {
         _fallback = fallback;
         _judge = judge;
         _onFallback = onFallback;
         _onFallbackAsync = onFallbackAsync;
+        HasHandlingOverride = hasHandlingOverride;
     }
 
     internal override OutcomeJudge? ReactiveJudge => _judge;
+
+    internal override bool HasHandlingOverride { get; }
 
     internal override bool IsFallback => true;
 
@@ -137,15 +141,19 @@ internal sealed class VoidFallbackStrategy : Strategy, IFallbackStrategyInspecti
         Func<Exception, CancellationToken, ValueTask> fallback,
         OutcomeJudge judge,
         Action<FallbackEvent>? onFallback,
-        Func<FallbackEvent, ValueTask>? onFallbackAsync)
+        Func<FallbackEvent, ValueTask>? onFallbackAsync,
+        bool hasHandlingOverride = false)
     {
         _fallback = fallback;
         _judge = judge;
         _onFallback = onFallback;
         _onFallbackAsync = onFallbackAsync;
+        HasHandlingOverride = hasHandlingOverride;
     }
 
     internal override OutcomeJudge? ReactiveJudge => _judge;
+
+    internal override bool HasHandlingOverride { get; }
 
     internal override bool IsFallback => true;
 

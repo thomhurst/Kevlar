@@ -8,6 +8,12 @@ namespace Kevlar;
 /// </remarks>
 public sealed class FallbackOptions
 {
+    /// <summary>
+    /// Locally selects exceptions handled by this fallback. When set, this strategy ignores the
+    /// ambient handling clause and handles only exceptions selected here.
+    /// </summary>
+    public Func<Exception, bool>? HandlesException { get; set; }
+
     /// <summary>Invoked synchronously before the recovery action.</summary>
     public Action<FallbackEvent>? OnFallback { get; set; }
 

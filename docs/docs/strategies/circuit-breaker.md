@@ -37,6 +37,8 @@ Configure either `ConsecutiveFailures` *or* `FailureRatio` — not both. When ne
 | `Monitor` | — | A `CircuitBreakerMonitor` for observing + manual control |
 | `OnStateChanged` | — | Callback on every transition: `e.From`, `e.To`, `e.LastException` |
 | `OnStateChangedAsync` | — | Awaited callback on every transition, after `OnStateChanged` |
+| `HandlesException` | — | Local exception predicate; replaces the ambient clause for this breaker |
+| `HandlesResult` (`CircuitBreakerOptions<T>`) | — | Local result predicate on `Shield<T>`; replaces the ambient clause together with `HandlesException` |
 
 ### Dynamic break duration
 
@@ -121,3 +123,7 @@ See [Composition](../composition.md#the-state-sharing-rule).
 ## What counts as a failure
 
 Whatever the current [handling clause](../handling-failures.md) says — including handled *results* on typed shields, so an HTTP breaker can trip on 5xx responses without a single exception being thrown.
+
+For one breaker with different rules, set `HandlesException` or `HandlesResult` in its options.
+This [local override](../handling-failures.md#per-strategy-overrides) replaces, rather than extends,
+the ambient clause.
