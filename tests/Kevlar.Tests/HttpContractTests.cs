@@ -89,7 +89,8 @@ public class HttpContractTests
     [Test]
     public async Task Standard_Has_The_Documented_Pipeline() =>
         await Assert.That(HttpShield.Standard().ToString()).IsEqualTo(
-            "Timeout(30s) → Retry(3, exponential 250ms ×2 +jitter ≤30s) → CircuitBreaker(50% over 30s, min 10, break 15s) → Timeout(10s)");
+            "Timeout(30s) → [when HttpRequestException | TimeoutExceededException | result predicate] "
+            + "Retry(3, exponential 250ms ×2 +jitter ≤30s) → CircuitBreaker(50% over 30s, min 10, break 15s) → Timeout(10s)");
 
     [Test]
     public async Task Configured_Standard_Has_Custom_Stages()
@@ -117,7 +118,8 @@ public class HttpContractTests
         };
 
         await Assert.That(HttpShield.Standard(options).ToString()).IsEqualTo(
-            "Timeout(20s) → Retry(1, no delay) → CircuitBreaker(8 consecutive, break 5s) → ConcurrencyLimit(12, queue 4) → Timeout(3s)");
+            "Timeout(20s) → [when HttpRequestException | TimeoutExceededException | result predicate] "
+            + "Retry(1, no delay) → CircuitBreaker(8 consecutive, break 5s) → ConcurrencyLimit(12, queue 4) → Timeout(3s)");
     }
 
     [Test]

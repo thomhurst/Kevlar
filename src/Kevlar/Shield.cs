@@ -488,11 +488,53 @@ public sealed class Shield
 
     internal static string Describe(string? name, Strategy[] strategies)
     {
-        var pipeline = strategies.Length == 0
-            ? "(empty)"
-            : string.Join(" → ", strategies.Select(static strategy => strategy.Describe()));
+        var pipeline = strategies.Length == 0 ? "(empty)" : DescribeStrategies(strategies);
 
         return name is null ? pipeline : $"{name}: {pipeline}";
+    }
+
+    /// <summary>
+    /// Renders the chain, prefixing each run of strategies that shares a non-default handling
+    /// clause with <c>[when …]</c> and marking strategies whose options replaced that clause
+    /// locally. Proactive strategies carry no clause and never open or close a run.
+    /// </summary>
+    private static string DescribeStrategies(Strategy[] strategies)
+    {
+        var parts = new string[strategies.Length];
+        string? activeClause = null;
+
+        for (var i = 0; i < strategies.Length; i++)
+        {
+            var strategy = strategies[i];
+            var description = strategy.Describe();
+
+            if (strategy.HasHandlingOverride)
+            {
+                parts[i] = description + " (local handling)";
+                continue;
+            }
+
+            if (strategy.ReactiveJudge is not { } judge)
+            {
+                parts[i] = description;
+                continue;
+            }
+
+            var clause = judge.Description;
+            if (clause is null)
+            {
+                activeClause = null;
+                parts[i] = description;
+                continue;
+            }
+
+            parts[i] = string.Equals(clause, activeClause, StringComparison.Ordinal)
+                ? description
+                : $"[when {clause}] {description}";
+            activeClause = clause;
+        }
+
+        return string.Join(" → ", parts);
     }
 
     internal static void ValidateChain(Strategy[] strategies)

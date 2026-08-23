@@ -116,6 +116,10 @@ exception-only override does not handle results. Prefer the ambient clause when 
 strategies share the same rule; prefer a local override for a single exception to that rule or when
 porting one Polly `ShouldHandle` predicate directly.
 
+Which strategy ended up with which rule is visible at runtime: `shield.ToString()` prefixes each run
+of strategies sharing a non-default clause with `[when …]` and marks a locally overridden strategy
+`(local handling)`. See [pipeline descriptions](observability.md#pipeline-descriptions).
+
 :::info Proactive strategies don't consult clauses
 Timeouts, rate limits and concurrency limits don't care why something failed — they act on time and concurrency, not outcomes. Clauses only drive the reactive strategies.
 :::

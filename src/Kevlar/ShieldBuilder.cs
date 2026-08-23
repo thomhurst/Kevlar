@@ -9,13 +9,22 @@ namespace Kevlar;
 /// here and to reactive strategies chained afterwards, until replaced by a new clause.
 /// </summary>
 /// <remarks>
+/// <para>
 /// Start a clause with <c>When…</c> on a shield, then continue it with <c>Or…</c> on this builder:
 /// <c>Shield.When&lt;A&gt;().Or&lt;B&gt;().Retry(3)</c>.
+/// </para>
+/// <para>
+/// One strategy can opt out of the ambient clause: setting <c>HandlesException</c> on its options
+/// (<see cref="RetryOptions"/>, <see cref="CircuitBreakerOptions"/>, <see cref="HedgeOptions"/>,
+/// <see cref="FallbackOptions"/>) makes that strategy ignore the clause and handle only what its
+/// own predicate selects. Every other strategy in the chain keeps using the ambient clause.
+/// </para>
 /// </remarks>
 public sealed class ShieldBuilder
 {
     private readonly Shield _parent;
     private readonly List<Func<Exception, bool>> _predicates = [];
+    private readonly List<string> _clauseTerms = [];
 
     internal ShieldBuilder(Shield parent) => _parent = parent;
 
@@ -24,6 +33,7 @@ public sealed class ShieldBuilder
         where TException : Exception
     {
         _predicates.Add(static exception => exception is TException);
+        _clauseTerms.Add(typeof(TException).Name);
         return this;
     }
 
@@ -33,6 +43,7 @@ public sealed class ShieldBuilder
     {
         Throw.IfNull(predicate, nameof(predicate));
         _predicates.Add(exception => exception is TException typed && predicate(typed));
+        _clauseTerms.Add(typeof(TException).Name + " matching predicate");
         return this;
     }
 
@@ -41,6 +52,7 @@ public sealed class ShieldBuilder
     {
         Throw.IfNull(predicate, nameof(predicate));
         _predicates.Add(predicate);
+        _clauseTerms.Add("exception predicate");
         return this;
     }
 
@@ -126,7 +138,11 @@ public sealed class ShieldBuilder
     public Shield ConcurrencyLimit(Action<ConcurrencyLimitOptions> configure) => Seal().ConcurrencyLimit(configure);
 
     private Shield Seal() =>
-        new(_parent.Strategies, new ExceptionJudge(Combine(_predicates)), _parent.Name, _parent.Time);
+        new(
+            _parent.Strategies,
+            new ExceptionJudge(Combine(_predicates), DescribeHelper.Clause(_clauseTerms)),
+            _parent.Name,
+            _parent.Time);
 
     internal static Func<Exception, bool> Combine(List<Func<Exception, bool>> predicates)
     {

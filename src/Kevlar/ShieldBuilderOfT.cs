@@ -9,14 +9,24 @@ namespace Kevlar;
 /// strategy added here and reactive strategies chained afterwards.
 /// </summary>
 /// <remarks>
+/// <para>
 /// Start a clause with <c>When…</c> on a shield, then continue it with <c>Or…</c> on this builder:
 /// <c>Shield.For&lt;T&gt;().When&lt;A&gt;().OrResult(r =&gt; …).Retry(3)</c>.
+/// </para>
+/// <para>
+/// One strategy can opt out of the ambient clause: setting <c>HandlesException</c> or
+/// <c>HandlesResult</c> on its options (<see cref="RetryOptions{TResult}"/>,
+/// <see cref="CircuitBreakerOptions{TResult}"/>, <see cref="HedgeOptions{TResult}"/>,
+/// <see cref="FallbackOptions{TResult}"/>) makes that strategy ignore the clause and handle only
+/// what its own predicates select. Every other strategy in the chain keeps using the ambient clause.
+/// </para>
 /// </remarks>
 public sealed class ShieldBuilder<TResult>
 {
     private readonly Shield<TResult> _parent;
     private readonly List<Func<Exception, bool>> _exceptionPredicates = [];
     private readonly List<Func<TResult, bool>> _resultPredicates = [];
+    private readonly List<string> _clauseTerms = [];
 
     internal ShieldBuilder(Shield<TResult> parent) => _parent = parent;
 
@@ -25,6 +35,7 @@ public sealed class ShieldBuilder<TResult>
         where TException : Exception
     {
         _exceptionPredicates.Add(static exception => exception is TException);
+        _clauseTerms.Add(typeof(TException).Name);
         return this;
     }
 
@@ -34,6 +45,7 @@ public sealed class ShieldBuilder<TResult>
     {
         Throw.IfNull(predicate, nameof(predicate));
         _exceptionPredicates.Add(exception => exception is TException typed && predicate(typed));
+        _clauseTerms.Add(typeof(TException).Name + " matching predicate");
         return this;
     }
 
@@ -42,6 +54,7 @@ public sealed class ShieldBuilder<TResult>
     {
         Throw.IfNull(predicate, nameof(predicate));
         _exceptionPredicates.Add(predicate);
+        _clauseTerms.Add("exception predicate");
         return this;
     }
 
@@ -50,6 +63,7 @@ public sealed class ShieldBuilder<TResult>
     {
         Throw.IfNull(predicate, nameof(predicate));
         _resultPredicates.Add(predicate);
+        _clauseTerms.Add("result predicate");
         return this;
     }
 
@@ -57,6 +71,7 @@ public sealed class ShieldBuilder<TResult>
     public ShieldBuilder<TResult> OrResult(TResult result)
     {
         _resultPredicates.Add(candidate => EqualityComparer<TResult>.Default.Equals(candidate, result));
+        _clauseTerms.Add("result " + DescribeHelper.Value(result));
         return this;
     }
 
@@ -64,6 +79,7 @@ public sealed class ShieldBuilder<TResult>
     public ShieldBuilder<TResult> OrResultDefault()
     {
         _resultPredicates.Add(static candidate => EqualityComparer<TResult>.Default.Equals(candidate, default!));
+        _clauseTerms.Add("default result");
         return this;
     }
 
@@ -152,7 +168,10 @@ public sealed class ShieldBuilder<TResult>
     {
         var exceptionPredicate = _exceptionPredicates.Count == 0 ? null : ShieldBuilder.Combine(_exceptionPredicates);
         var resultPredicate = CombineResults(_resultPredicates);
-        var judge = new TypedJudge<TResult>(exceptionPredicate, resultPredicate);
+        var judge = new TypedJudge<TResult>(
+            exceptionPredicate,
+            resultPredicate,
+            DescribeHelper.Clause(_clauseTerms));
         return new Shield<TResult>(_parent.Strategies, judge, _parent.Name, _parent.Time);
     }
 

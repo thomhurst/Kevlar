@@ -24,6 +24,21 @@ Console.WriteLine(shield);
 
 Log it once at startup and every incident review starts from the actual configuration, not the configuration someone remembers. Custom strategies participate by overriding `Strategy.Describe()`.
 
+[Handling clauses](handling-failures.md) show up too, so "why didn't the breaker trip?" is answerable from the description alone. A `[when …]` prefix opens each run of strategies sharing a non-default clause, and a strategy whose options replaced that clause with `HandlesException`/`HandlesResult` is marked `(local handling)`:
+
+```csharp
+var shield = Shield
+    .When<HttpRequestException>()
+    .Or<TimeoutExceededException>()
+    .Retry(3, Backoff.None)
+    .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30));
+
+Console.WriteLine(shield);
+// [when HttpRequestException | TimeoutExceededException] Retry(3, no delay) → CircuitBreaker(5 consecutive, break 30s)
+```
+
+Shields that use only the default handling — any exception except `OperationCanceledException` — print exactly as before, with no prefix.
+
 ## Metrics
 
 On .NET 8+ every shield publishes metrics through a `System.Diagnostics.Metrics.Meter` named `Kevlar`, version `1.0` — zero configuration, and effectively free (an enabled check per instrument) until something listens. Subscribe with OpenTelemetry:

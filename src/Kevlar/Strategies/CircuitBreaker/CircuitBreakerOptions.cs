@@ -8,9 +8,16 @@ namespace Kevlar;
 public class CircuitBreakerOptions
 {
     /// <summary>
-    /// Locally selects exceptions handled by this circuit breaker. When set, this strategy ignores
-    /// the ambient handling clause and handles only outcomes selected by its local predicates.
+    /// Setting this — or, on <see cref="CircuitBreakerOptions{TResult}"/>, its <c>HandlesResult</c>
+    /// — makes this circuit breaker ignore the ambient <c>When…</c> handling clause; this predicate
+    /// then selects the exceptions it handles.
     /// </summary>
+    /// <remarks>
+    /// The ambient clause is started with <c>When…</c> on a shield and continued with <c>Or…</c> on
+    /// the builder it returns, and applies to every reactive strategy chained after it. These
+    /// properties replace that clause for this strategy alone; they do not narrow it.
+    /// </remarks>
+    /// <seealso cref="HandlingClause"/>
     public Func<Exception, bool>? HandlesException { get; set; }
 
     internal virtual bool HasHandlingOverride => HandlesException is not null;

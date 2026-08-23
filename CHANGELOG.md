@@ -37,9 +37,17 @@ not the default *handling* that the neighbouring `WhenAnyError()` restores.
 ### Changed
 
 - **Breaking:** `Shield.Wrap(...)` and `Shield.Compose(...)` now seal ambient handling clauses. Reactive strategies appended after composition use default handling unless a new clause is declared. Existing strategies inside composed shields keep their original handling.
+- `HandlesException`/`HandlesResult` documentation on every options type now leads with the fact
+  that the property makes its strategy ignore the ambient `When…` clause, and points at
+  `HandlingClause`. `ShieldBuilder`/`ShieldBuilder<TResult>` document the override from the clause side.
 
 ### Added
 
+- Pipeline descriptions show handling. `ToString()`/`Describe()` now prefixes each run of strategies
+  sharing a non-default clause with `[when …]` — for example
+  `[when HttpRequestException | TimeoutExceededException] Retry(3, no delay) → CircuitBreaker(5 consecutive, break 30s)`
+  — and marks a strategy whose options replaced the clause locally with `(local handling)`. Shields
+  that use only default handling describe exactly as before.
 - `KEV007`: a `When…`/`Or…` handling clause that never reaches a reactive strategy — the
   `ShieldBuilder` is discarded, or a later `When…`/`WhenAnyError()` replaces the clause while only
   proactive strategies stood between them.
