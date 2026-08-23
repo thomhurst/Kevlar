@@ -56,7 +56,7 @@ Kevlar:
 var shield = Shield.For<HttpResponseMessage>()
     .Timeout(TimeSpan.FromSeconds(30))
     .When<HttpRequestException>()
-    .WhenResult(r => (int)r.StatusCode >= 500)
+    .OrResult(r => (int)r.StatusCode >= 500)
     .Retry(3)
     .CircuitBreaker(o => { o.FailureRatio = 0.5; o.MinimumThroughput = 20; o.BreakDuration = TimeSpan.FromSeconds(30); });
 

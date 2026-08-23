@@ -4,13 +4,12 @@ namespace Kevlar;
 
 /// <summary>
 /// Accumulates exception and result handling clauses for a <see cref="Shield{TResult}"/> chain.
-/// Obtained via <c>Shield.For&lt;T&gt;()</c> or the <c>When</c>/<c>WhenResult</c> methods on
-/// <see cref="Shield{TResult}"/>; finished by adding a strategy. The clauses become the shield's
-/// ambient handling for the strategy added here and reactive strategies chained afterwards.
+/// Obtained via the <c>When</c>/<c>WhenResult</c> methods on <see cref="Shield{TResult}"/> and
+/// finished by adding a strategy. The clauses become the shield's ambient handling for the
+/// strategy added here and reactive strategies chained afterwards.
 /// </summary>
 /// <remarks>
-/// <c>When…</c> and <c>Or…</c> are interchangeable; the convention is <c>When</c> for the first
-/// clause and <c>Or</c> for each additional one:
+/// Start a clause with <c>When…</c> on a shield, then continue it with <c>Or…</c> on this builder:
 /// <c>Shield.For&lt;T&gt;().When&lt;A&gt;().OrResult(r =&gt; …).Retry(3)</c>.
 /// </remarks>
 public sealed class ShieldBuilder<TResult>
@@ -21,16 +20,16 @@ public sealed class ShieldBuilder<TResult>
 
     internal ShieldBuilder(Shield<TResult> parent) => _parent = parent;
 
-    /// <summary>Handle exceptions of type <typeparamref name="TException"/>.</summary>
-    public ShieldBuilder<TResult> When<TException>()
+    /// <summary>Also handle exceptions of type <typeparamref name="TException"/>.</summary>
+    public ShieldBuilder<TResult> Or<TException>()
         where TException : Exception
     {
         _exceptionPredicates.Add(static exception => exception is TException);
         return this;
     }
 
-    /// <summary>Handle exceptions of type <typeparamref name="TException"/> matching <paramref name="predicate"/>.</summary>
-    public ShieldBuilder<TResult> When<TException>(Func<TException, bool> predicate)
+    /// <summary>Also handle exceptions of type <typeparamref name="TException"/> matching <paramref name="predicate"/>.</summary>
+    public ShieldBuilder<TResult> Or<TException>(Func<TException, bool> predicate)
         where TException : Exception
     {
         Throw.IfNull(predicate, nameof(predicate));
@@ -38,57 +37,35 @@ public sealed class ShieldBuilder<TResult>
         return this;
     }
 
-    /// <summary>Handle exceptions matching <paramref name="predicate"/>.</summary>
-    public ShieldBuilder<TResult> When(Func<Exception, bool> predicate)
+    /// <summary>Also handle exceptions matching <paramref name="predicate"/>.</summary>
+    public ShieldBuilder<TResult> OrWhen(Func<Exception, bool> predicate)
     {
         Throw.IfNull(predicate, nameof(predicate));
         _exceptionPredicates.Add(predicate);
         return this;
     }
 
-    /// <summary>Handle results matching <paramref name="predicate"/>.</summary>
-    public ShieldBuilder<TResult> WhenResult(Func<TResult, bool> predicate)
+    /// <summary>Also handle results matching <paramref name="predicate"/>.</summary>
+    public ShieldBuilder<TResult> OrResult(Func<TResult, bool> predicate)
     {
         Throw.IfNull(predicate, nameof(predicate));
         _resultPredicates.Add(predicate);
         return this;
     }
 
-    /// <summary>Handle results equal to <paramref name="result"/>.</summary>
-    public ShieldBuilder<TResult> WhenResult(TResult result)
+    /// <summary>Also handle results equal to <paramref name="result"/>.</summary>
+    public ShieldBuilder<TResult> OrResult(TResult result)
     {
         _resultPredicates.Add(candidate => EqualityComparer<TResult>.Default.Equals(candidate, result));
         return this;
     }
 
-    /// <summary>Handle results equal to <c>default</c> — <see langword="null"/> for reference types.</summary>
-    public ShieldBuilder<TResult> WhenDefault()
+    /// <summary>Also handle results equal to <c>default</c> — <see langword="null"/> for reference types.</summary>
+    public ShieldBuilder<TResult> OrDefault()
     {
         _resultPredicates.Add(static candidate => EqualityComparer<TResult>.Default.Equals(candidate, default!));
         return this;
     }
-
-    /// <summary>Also handle exceptions of type <typeparamref name="TException"/>. Interchangeable with <see cref="When{TException}()"/>.</summary>
-    public ShieldBuilder<TResult> Or<TException>()
-        where TException : Exception
-        => When<TException>();
-
-    /// <summary>Also handle exceptions of type <typeparamref name="TException"/> matching <paramref name="predicate"/>.</summary>
-    public ShieldBuilder<TResult> Or<TException>(Func<TException, bool> predicate)
-        where TException : Exception
-        => When(predicate);
-
-    /// <summary>Also handle exceptions matching <paramref name="predicate"/>.</summary>
-    public ShieldBuilder<TResult> OrWhen(Func<Exception, bool> predicate) => When(predicate);
-
-    /// <summary>Also handle results matching <paramref name="predicate"/>.</summary>
-    public ShieldBuilder<TResult> OrResult(Func<TResult, bool> predicate) => WhenResult(predicate);
-
-    /// <summary>Also handle results equal to <paramref name="result"/>.</summary>
-    public ShieldBuilder<TResult> OrResult(TResult result) => WhenResult(result);
-
-    /// <summary>Also handle results equal to <c>default</c> — <see langword="null"/> for reference types.</summary>
-    public ShieldBuilder<TResult> OrDefault() => WhenDefault();
 
     /// <summary>Retries handled outcomes up to <paramref name="maxRetries"/> times with the default exponential jittered backoff.</summary>
     public Shield<TResult> Retry(int maxRetries = 3) => Seal().Retry(maxRetries);
@@ -157,11 +134,6 @@ public sealed class ShieldBuilder<TResult>
 
     private Shield<TResult> Seal()
     {
-        if (_exceptionPredicates.Count == 0 && _resultPredicates.Count == 0)
-        {
-            return _parent;
-        }
-
         var exceptionPredicate = _exceptionPredicates.Count == 0 ? null : ShieldBuilder.Combine(_exceptionPredicates);
         var resultPredicate = CombineResults(_resultPredicates);
         var judge = new TypedJudge<TResult>(exceptionPredicate, resultPredicate);

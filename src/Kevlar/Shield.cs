@@ -109,8 +109,8 @@ public sealed class Shield
     /// <summary>Starts a handling clause for exceptions matching <paramref name="predicate"/>.</summary>
     public static ShieldBuilder When(Func<Exception, bool> predicate) => ShieldExtensions.When(Empty, predicate);
 
-    /// <summary>Starts building a result-aware shield for executions returning <typeparamref name="TResult"/>.</summary>
-    public static ShieldBuilder<TResult> For<TResult>() => new(Shield<TResult>.Empty);
+    /// <summary>Starts a result-aware shield for executions returning <typeparamref name="TResult"/>.</summary>
+    public static Shield<TResult> For<TResult>() => Shield<TResult>.Empty;
 
     /// <summary>
     /// Merges shields into one pipeline. The first shield is the outermost. Stateful strategies

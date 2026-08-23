@@ -41,24 +41,24 @@ public sealed class Shield<TResult>
     /// <summary>Starts a handling clause: subsequent reactive strategies act on exceptions of type <typeparamref name="TException"/>.</summary>
     public ShieldBuilder<TResult> When<TException>()
         where TException : Exception
-        => new ShieldBuilder<TResult>(this).When<TException>();
+        => new ShieldBuilder<TResult>(this).Or<TException>();
 
     /// <summary>Starts a handling clause for exceptions of type <typeparamref name="TException"/> matching <paramref name="predicate"/>.</summary>
     public ShieldBuilder<TResult> When<TException>(Func<TException, bool> predicate)
         where TException : Exception
-        => new ShieldBuilder<TResult>(this).When(predicate);
+        => new ShieldBuilder<TResult>(this).Or(predicate);
 
     /// <summary>Starts a handling clause for exceptions matching <paramref name="predicate"/>.</summary>
-    public ShieldBuilder<TResult> When(Func<Exception, bool> predicate) => new ShieldBuilder<TResult>(this).When(predicate);
+    public ShieldBuilder<TResult> When(Func<Exception, bool> predicate) => new ShieldBuilder<TResult>(this).OrWhen(predicate);
 
     /// <summary>Starts a handling clause for results matching <paramref name="predicate"/>.</summary>
-    public ShieldBuilder<TResult> WhenResult(Func<TResult, bool> predicate) => new ShieldBuilder<TResult>(this).WhenResult(predicate);
+    public ShieldBuilder<TResult> WhenResult(Func<TResult, bool> predicate) => new ShieldBuilder<TResult>(this).OrResult(predicate);
 
     /// <summary>Starts a handling clause for results equal to <paramref name="result"/>.</summary>
-    public ShieldBuilder<TResult> WhenResult(TResult result) => new ShieldBuilder<TResult>(this).WhenResult(result);
+    public ShieldBuilder<TResult> WhenResult(TResult result) => new ShieldBuilder<TResult>(this).OrResult(result);
 
     /// <summary>Starts a handling clause for results equal to <c>default</c> — <see langword="null"/> for reference types.</summary>
-    public ShieldBuilder<TResult> WhenDefault() => new ShieldBuilder<TResult>(this).WhenDefault();
+    public ShieldBuilder<TResult> WhenDefault() => new ShieldBuilder<TResult>(this).OrDefault();
 
     // ── Strategy chaining ───────────────────────────────────────────────────────────────
 

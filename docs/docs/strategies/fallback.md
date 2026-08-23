@@ -101,7 +101,7 @@ The ambient [handling clause](../handling-failures.md) — exceptions *and* hand
 ```csharp
 var http = Shield.For<HttpResponseMessage>()
     .When<HttpRequestException>()
-    .WhenResult(r => (int)r.StatusCode >= 500)
+    .OrResult(r => (int)r.StatusCode >= 500)
     .Fallback((outcome, ct) => new ValueTask<HttpResponseMessage>(CachedResponse()));
 ```
 
@@ -129,7 +129,7 @@ Fallback is usually **outermost** — the last line of defence after retries and
 ```csharp
 var shield = Shield.For<Quote>()
     .When<HttpRequestException>()
-    .When<CircuitOpenException>()    // catch the breaker's rejection too
+    .Or<CircuitOpenException>()      // catch the breaker's rejection too
     .Fallback(Quote.Unavailable)
     .Retry(3)
     .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30));

@@ -132,3 +132,14 @@ Kevlar.ShieldBuilder.ConcurrencyLimit(System.Action<Kevlar.ConcurrencyLimitOptio
 Kevlar.ShieldBuilder.RateLimit(System.Action<Kevlar.RateLimitOptions!>! configure) -> Kevlar.Shield!
 Kevlar.ShieldBuilder<TResult>.ConcurrencyLimit(System.Action<Kevlar.ConcurrencyLimitOptions!>! configure) -> Kevlar.Shield<TResult>!
 Kevlar.ShieldBuilder<TResult>.RateLimit(System.Action<Kevlar.RateLimitOptions!>! configure) -> Kevlar.Shield<TResult>!
+*REMOVED*Kevlar.ShieldBuilder.When(System.Func<System.Exception!, bool>! predicate) -> Kevlar.ShieldBuilder!
+*REMOVED*Kevlar.ShieldBuilder.When<TException>() -> Kevlar.ShieldBuilder!
+*REMOVED*Kevlar.ShieldBuilder.When<TException>(System.Func<TException!, bool>! predicate) -> Kevlar.ShieldBuilder!
+*REMOVED*Kevlar.ShieldBuilder<TResult>.When(System.Func<System.Exception!, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
+*REMOVED*Kevlar.ShieldBuilder<TResult>.When<TException>() -> Kevlar.ShieldBuilder<TResult>!
+*REMOVED*Kevlar.ShieldBuilder<TResult>.When<TException>(System.Func<TException!, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
+*REMOVED*Kevlar.ShieldBuilder<TResult>.WhenDefault() -> Kevlar.ShieldBuilder<TResult>!
+*REMOVED*Kevlar.ShieldBuilder<TResult>.WhenResult(System.Func<TResult, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
+*REMOVED*Kevlar.ShieldBuilder<TResult>.WhenResult(TResult result) -> Kevlar.ShieldBuilder<TResult>!
+*REMOVED*static Kevlar.Shield.For<TResult>() -> Kevlar.ShieldBuilder<TResult>!
+static Kevlar.Shield.For<TResult>() -> Kevlar.Shield<TResult>!
