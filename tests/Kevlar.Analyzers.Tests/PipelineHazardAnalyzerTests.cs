@@ -505,6 +505,7 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.For<int>().Hedge(2, TimeSpan.Zero).Fallback(0);",
             "_ = Shield.For<int>().CircuitBreaker(2, TimeSpan.FromSeconds(1)).Fallback(0);",
             "_ = Shield.For<int>().CircuitBreaker(options => options.ConsecutiveFailures = 2).Fallback(0);",
+            "_ = Shield.For<int>().CircuitBreaker(options => options.BreakDuration = TimeSpan.FromSeconds(1)).Fallback(0);",
             "_ = Shield.For<int>().CircuitBreaker(options => options.HandlesException = null).Fallback(0);",
             "_ = Shield.For<int>().CircuitBreaker(options => options.OnStateChanged = _ => options.HandlesException = exception => exception is TimeoutException).Fallback(0);",
             "_ = Shield.For<int>().WhenResult(0).Retry(1).Fallback(0);",

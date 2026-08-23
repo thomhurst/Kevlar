@@ -1472,8 +1472,13 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         }
 
         bool? result = operation is IInvocationOperation invocation
-            ? ContainsLocalHandlingOverride(invocation.TargetMethod, context, visitedSymbols)
+            ? ContainsLocalHandlingOverride(invocation, context, visitedSymbols)
             : false;
+        if (result is true)
+        {
+            return true;
+        }
+
         foreach (var child in operation.ChildOperations)
         {
             var childResult = ContainsLocalHandlingOverride(child, context, visitedSymbols);
@@ -1489,6 +1494,47 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         }
 
         return result;
+    }
+
+    private static bool? ContainsLocalHandlingOverride(
+        IInvocationOperation invocation,
+        OperationAnalysisContext context,
+        HashSet<ISymbol>? visitedSymbols)
+    {
+        if (!invocation.TargetMethod.DeclaringSyntaxReferences.IsEmpty)
+        {
+            return ContainsLocalHandlingOverride(invocation.TargetMethod, context, visitedSymbols);
+        }
+
+        if (IsHandlingOptionsType(Unwrap(invocation.Instance)?.Type))
+        {
+            return null;
+        }
+
+        foreach (var argument in invocation.Arguments)
+        {
+            if (IsHandlingOptionsType(Unwrap(argument.Value)?.Type))
+            {
+                return null;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsHandlingOptionsType(ITypeSymbol? type)
+    {
+        for (var current = type as INamedTypeSymbol; current is not null; current = current.BaseType)
+        {
+            if (current.ContainingNamespace.ToDisplayString() == "Kevlar"
+                && (current.GetMembers("HandlesException").Length > 0
+                    || current.GetMembers("HandlesResult").Length > 0))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool? ContainsLocalHandlingOverride(
