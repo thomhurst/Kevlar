@@ -17,6 +17,8 @@
 
 Use four-space indentation, file-scoped namespaces, braces on new lines, and modern C# patterns. Public types and members use `PascalCase`; locals and parameters use `camelCase`; private fields use `_camelCase`. Name one primary type per file. Keep hot paths zero-allocation where practical; benchmark unavoidable allocation changes. Nullable reference types and implicit usings are enabled, `LangVersion` is `latest`, and warnings fail the build. Document public APIs with XML comments. No repository-specific formatter is configured; match nearby code and keep `dotnet build` clean.
 
+In C# examples across the README, docs, and XML comments, the first shorthand-strategy argument may be positional when the method name makes its meaning clear. Name every later numeric, duration, or boolean argument. Name both `CircuitBreaker` shorthand arguments (`consecutiveFailures:` and `breakDuration:`) because its first argument is not self-explanatory.
+
 ## Testing Guidelines
 
 Tests use TUnit with `[Test]` methods and names such as `Exponential_Respects_MaxDelay`. Put focused behavior tests in `Kevlar.Tests`, cross-component scenarios in `Kevlar.IntegrationTests`, and diagnostic cases in `Kevlar.Analyzers.Tests`. Add regression tests for bug fixes and edge cases. No fixed coverage threshold is configured; meaningful behavioral coverage is expected.

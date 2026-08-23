@@ -11,7 +11,7 @@ tenant, shard, authority, or operation while placing an explicit bound on retain
 ```csharp
 var endpoints = new PartitionedShield<string>(
     endpoint => Shield.When<TimeoutException>()
-        .CircuitBreaker(5, TimeSpan.FromSeconds(30)),
+        .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30)),
     new PartitionedShieldOptions
     {
         MaximumPartitions = 500,
@@ -54,7 +54,7 @@ application service provider and the partition key.
 services.AddPartitionedShield<Uri>(
     "endpoints",
     (serviceProvider, endpoint) => Shield.When<HttpRequestException>()
-        .CircuitBreaker(5, TimeSpan.FromSeconds(30))
+        .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30))
         .WithName("outbound-endpoint"),
     options =>
     {
@@ -81,7 +81,7 @@ services.AddPartitionedShield<string, TenantResult>(
     "tenants",
     (serviceProvider, tenantId) => Shield.For<TenantResult>()
         .When<TimeoutException>()
-        .CircuitBreaker(3, TimeSpan.FromSeconds(20))
+        .CircuitBreaker(consecutiveFailures: 3, breakDuration: TimeSpan.FromSeconds(20))
         .WithName("tenant-operation"),
     options => options.MaximumPartitions = 5_000,
     StringComparer.Ordinal);

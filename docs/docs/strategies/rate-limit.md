@@ -148,7 +148,7 @@ var polite = Shield
         o.MaxRetries = 3;
         o.DelayGenerator = e => (e.Exception as RateLimitExceededException)?.RetryAfter;
     })
-    .RateLimit(100, TimeSpan.FromSeconds(1));
+    .RateLimit(100, perWindow: TimeSpan.FromSeconds(1));
 ```
 
 :::warning Sync callers block

@@ -110,7 +110,7 @@ Transitions are delivered serially in state-change order: `OnStateChanged`, awai
 A breaker only protects a dependency if every call site hitting that dependency shares it. State lives with the shield instance:
 
 ```csharp
-var breaker = Shield.CircuitBreaker(5, TimeSpan.FromSeconds(30));   // ONE circuit
+var breaker = Shield.CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30));   // ONE circuit
 var reads   = Shield.Retry(3).Wrap(breaker);
 var writes  = Shield.Timeout(TimeSpan.FromSeconds(5)).Wrap(breaker);
 // failures through either trip both

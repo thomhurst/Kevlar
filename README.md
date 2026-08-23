@@ -23,7 +23,7 @@ using Kevlar;
 var shield = Shield
     .Timeout(TimeSpan.FromSeconds(30))
     .Retry(3)
-    .CircuitBreaker(5, breakDuration: TimeSpan.FromSeconds(30));
+    .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30));
 
 var user = await shield.ExecuteAsync(
     ct => LoadUserAsync(id, ct), cancellationToken);
@@ -66,7 +66,7 @@ var search = Shield.For<HttpResponseMessage>()
     .OrResult(response => (int)response.StatusCode is 429 or >= 500)
     .Fallback((outcome, ct) => cache.GetCachedResultsAsync(ct))
     .Retry(3)
-    .CircuitBreaker(5, TimeSpan.FromSeconds(30));
+    .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30));
 ```
 
 The clause applies to the reactive strategies that follow it. Typed shields keep result handling
@@ -80,7 +80,7 @@ The first strategy is the outermost, just like ASP.NET middleware:
 var shield = Shield
     .Timeout(TimeSpan.FromSeconds(30))  // total budget
     .Retry(3)                           // retry within that budget
-    .CircuitBreaker(5, TimeSpan.FromSeconds(30))
+    .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30))
     .Timeout(TimeSpan.FromSeconds(5));  // budget for each attempt
 ```
 

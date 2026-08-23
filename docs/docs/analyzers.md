@@ -41,7 +41,7 @@ Synchronous `Execute` throws for a shield containing a hedge with a known `MaxAt
 one, so use `ExecuteAsync` or remove hedging:
 
 ```csharp
-var hedged = Shield.Hedge(2, TimeSpan.FromMilliseconds(50));
+var hedged = Shield.Hedge(2, delay: TimeSpan.FromMilliseconds(50));
 
 var value = await hedged.ExecuteAsync(ct => LoadAsync(ct));   // clean
 ```
@@ -84,7 +84,7 @@ and limiter capacity is not shared:
 
 ```csharp
 // KEV004: a new circuit exists for only this call.
-await Shield.CircuitBreaker(5, TimeSpan.FromSeconds(30))
+await Shield.CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30))
     .ExecuteAsync(static _ => ValueTask.CompletedTask);
 ```
 
@@ -92,7 +92,7 @@ await Shield.CircuitBreaker(5, TimeSpan.FromSeconds(30))
 ```csharp
 // Clean: every call shares the same circuit.
 private static readonly Shield _dependencyShield =
-    Shield.CircuitBreaker(5, TimeSpan.FromSeconds(30));
+    Shield.CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30));
 
 await _dependencyShield.ExecuteAsync(static _ => ValueTask.CompletedTask);
 ```
@@ -115,7 +115,7 @@ the wider invariant:
 
 ```csharp
 #pragma warning disable KEV004 // This isolated circuit is intentional in a one-shot diagnostic.
-var value = Shield.CircuitBreaker(1, TimeSpan.FromSeconds(1)).Execute(_ => 1);
+var value = Shield.CircuitBreaker(consecutiveFailures: 1, breakDuration: TimeSpan.FromSeconds(1)).Execute(_ => 1);
 #pragma warning restore KEV004
 ```
 

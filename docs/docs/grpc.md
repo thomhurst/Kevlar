@@ -28,7 +28,7 @@ using Kevlar.Extensions.Grpc;
 
 var shield = GrpcShield.WhenTransient()
     .Retry(3)
-    .CircuitBreaker(5, TimeSpan.FromSeconds(30));
+    .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30));
 
 var client = new Orders.OrdersClient(
     channel.Intercept(new ShieldUnaryClientInterceptor(shield)));
@@ -90,7 +90,7 @@ services.AddShield(
     "orders-grpc",
     GrpcShield.WhenTransient()
         .Retry(3)
-        .CircuitBreaker(5, TimeSpan.FromSeconds(30)));
+        .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30)));
 
 services.AddGrpcClient<Orders.OrdersClient>(options =>
         options.Address = new Uri("https://orders.example"))
