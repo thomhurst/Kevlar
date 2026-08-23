@@ -30,7 +30,7 @@ public class ChainValidationTests
     [Test]
     public async Task Void_Fallback_Inside_A_Retry_With_The_Same_Clause_Throws()
     {
-        await Assert.That(() => { _ = Shield.When<InvalidOperationException>().Retry(2, Backoff.None).Fallback((_, _) => default); })
+        await Assert.That(() => { _ = Shield.When<InvalidOperationException>().Retry(2, Backoff.None).FallbackAction((_, _) => default); })
             .Throws<InvalidOperationException>();
     }
 

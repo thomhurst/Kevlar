@@ -54,6 +54,13 @@ public abstract class Backoff
     }
 
     /// <summary>A caller-supplied delay function receiving the 1-based retry attempt number.</summary>
+    /// <remarks>
+    /// The returned delay is clamped rather than trusted: a negative delay becomes
+    /// <see cref="TimeSpan.Zero"/> and anything above the runtime timer limit
+    /// (<c>uint.MaxValue - 1</c> milliseconds, roughly 49 days) becomes that limit. A retry's own
+    /// <see cref="RetryOptions.MaxDelay"/> then caps what is left, so an arithmetic slip in
+    /// <paramref name="delayFactory"/> cannot wedge a pipeline on a delay it can never wait out.
+    /// </remarks>
     public static Backoff Custom(Func<int, TimeSpan> delayFactory)
     {
         Throw.IfNull(delayFactory, nameof(delayFactory));

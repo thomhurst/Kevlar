@@ -34,10 +34,29 @@ build spelled these `WhenResultDefault`/`OrResultDefault`; the `Is` makes the re
   so the strategy method and its options type share a stem, like `Retry`/`RetryOptions` and
   `Timeout`/`TimeoutOptions`. `Kevlar.Extensions.Http`'s `StandardHedgingShieldOptions` and
   `AddStandardHedgingShield` are unchanged.
+- The untyped fallback is now `FallbackAction`, with the same signatures on the static
+  `Shield.FallbackAction(…)` factories, the `ShieldExtensions.FallbackAction(this Shield, …)`
+  extensions and `ShieldBuilder.FallbackAction(…)`. It applies to void executions only and fails a
+  result-returning execution with `InvalidOperationException`, so the name now carries that contract
+  to callers `KEV005` cannot see — a shield handed across an assembly boundary, for instance.
+  `Shield<TResult>.Fallback(…)` and `ShieldBuilder<TResult>.Fallback(…)` are unchanged, and the
+  strategy still describes as `Fallback` in pipeline descriptions.
+
+| Before | After |
+|---|---|
+| `Shield.Fallback(action)` | `Shield.FallbackAction(action)` |
+| `shield.Fallback(action)` | `shield.FallbackAction(action)` |
+| `Shield.When<T>().Fallback(action)` | `Shield.When<T>().FallbackAction(action)` |
 
 ### Changed
 
 - **Breaking:** `Shield.Wrap(...)` and `Shield.Compose(...)` now seal ambient handling clauses. Reactive strategies appended after composition use default handling unless a new clause is declared. Existing strategies inside composed shields keep their original handling.
+- `Backoff.Custom` documents the clamping the retry path already applied to its delegate's result: a
+  negative delay becomes zero, a delay above the runtime timer limit becomes that limit, and the
+  retry's own `MaxDelay` caps what is left.
+- The composition guide states that `outer.Wrap(inner)` and `Shield.Compose(outer, inner)` are the
+  same operation — same strategy order, same first non-null name and `TimeProvider`, same sealed
+  clause — so there is no semantic difference to hunt for.
 - Setting both `CircuitBreakerOptions.ConsecutiveFailures` and `FailureRatio` still throws, but the
   message now names both properties and states the fix. `ConsecutiveFailures` range errors report
   that property as the parameter name instead of `options`.
@@ -58,6 +77,15 @@ build spelled these `WhenResultDefault`/`OrResultDefault`; the `Is` makes the re
 
 ### Added
 
+- `WhenResultIsNull()` / `OrResultIsNull()` on `ShieldResultExtensions`: the null-result clause
+  `WhenResultIsDefault`/`OrResultIsDefault` was really written for, constrained to reference types
+  (`where TResult : class?`) so it cannot be written where `default` is an ordinary value. They
+  render as `[when null result]`. `WhenResultIsDefault`/`OrResultIsDefault` stay, for value types
+  and generic code.
+- `KEV010`: an informational hint on `WhenResultIsDefault`/`OrResultIsDefault` written for a
+  non-nullable value type, where `default(T)` — `0`, `false`, an empty struct — is as often a
+  legitimate result as a failure. `Nullable<T>` results and generic code are not flagged, and like
+  `KEV009` the hint never fails a build.
 - `KEV009`: an informational hint marking each reactive strategy that inherits a handling clause
   declared earlier in its chain, so the clause's span is visible in the editor. It is `Info`
   severity — the inheritance is by design, and the hint never fails a build. Proactive strategies

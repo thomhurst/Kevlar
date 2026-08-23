@@ -149,6 +149,41 @@ public class RetryEdgeCaseTests
         await Assert.That(seenDelays).IsEquivalentTo([TimeSpan.FromSeconds(1)]);
     }
 
+    /// <summary>
+    /// A custom backoff is untrusted arithmetic: <see cref="Backoff.Custom"/> clamps its result to
+    /// the runtime timer limit, and the retry's own MaxDelay caps what is left. Neither step can be
+    /// skipped without a pipeline stalling on a delay it can never wait out.
+    /// </summary>
+    [Test]
+    public async Task MaxDelay_Caps_An_Unbounded_Custom_Backoff()
+    {
+        var fakeTime = new FakeTimeProvider();
+        var attemptsStarted = new AsyncCounter("custom-backoff attempts");
+        var seenDelays = new List<TimeSpan>();
+        var shield = Shield
+            .Retry(options =>
+            {
+                options.MaxRetries = 1;
+                options.Backoff = Backoff.Custom(static _ => TimeSpan.MaxValue);
+                options.MaxDelay = TimeSpan.FromSeconds(1);
+                options.OnRetry = retry => seenDelays.Add(retry.Delay);
+            })
+            .WithTimeProvider(fakeTime);
+
+        var task = shield.ExecuteAsync<int>(_ =>
+        {
+            attemptsStarted.Signal();
+            throw new InvalidOperationException();
+        }).AsTask();
+
+        await attemptsStarted.WaitForAsync(1);
+        fakeTime.Advance(TimeSpan.FromSeconds(1));
+        await attemptsStarted.WaitForAsync(2);
+
+        await Assert.That(async () => await task).Throws<InvalidOperationException>();
+        await Assert.That(seenDelays).IsEquivalentTo([TimeSpan.FromSeconds(1)]);
+    }
+
     [Test]
     public async Task Negative_DelayGenerator_Values_Are_Ignored()
     {

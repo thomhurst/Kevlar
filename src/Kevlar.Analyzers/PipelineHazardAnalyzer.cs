@@ -13,7 +13,8 @@ namespace Kevlar.Analyzers;
 /// void fallbacks used for result-returning executions, hedging on an untyped shield, handling
 /// clauses that never reach a reactive strategy, and fluent chaining results discarded as statements.
 /// It also reports, at hint severity, the strategies that inherit a handling clause declared
-/// earlier in their chain, so the clause's span is visible where it applies.
+/// earlier in their chain, so the clause's span is visible where it applies, and the default-result
+/// clauses written for a value type, whose default is usually a legitimate result.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
@@ -51,8 +52,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     /// <summary>The KEV005 rule.</summary>
     public static readonly DiagnosticDescriptor VoidFallbackResultExecutionRule = new(
         id: "KEV005",
-        title: "Fallback on a non-generic Shield applies only to void executions",
-        messageFormat: "Fallback on a non-generic Shield applies only to void executions. For executions that return a value, build a result-aware shield with Shield.For<T>() and use its Fallback overloads.",
+        title: "FallbackAction applies only to void executions",
+        messageFormat: "FallbackAction applies only to void executions. For executions that return a value, build a result-aware shield with Shield.For<T>() and use its Fallback overloads.",
         category: "Configuration",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
@@ -98,6 +99,16 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         isEnabledByDefault: true,
         description: "A handling clause stays ambient for every reactive strategy chained after it until a new clause replaces it, WhenAnyError resets it, or Wrap/Compose seals it. That is by design; this diagnostic makes the inherited span visible at the strategies that silently pick the clause up.");
 
+    /// <summary>The KEV010 rule.</summary>
+    public static readonly DiagnosticDescriptor DefaultResultClauseOnValueTypeRule = new(
+        id: "KEV010",
+        title: "Default-result clause handles a value type's default",
+        messageFormat: "'{0}' handles 'default({1})', which for a value type — 0, false, an empty struct — is as often a legitimate result as a failure. Confirm that is intended, or select the failing results with 'WhenResult'/'OrResult'.",
+        category: "Configuration",
+        defaultSeverity: DiagnosticSeverity.Info,
+        isEnabledByDefault: true,
+        description: "WhenResultIsDefault and OrResultIsDefault were named for reference types, where default(TResult) is null and a missing value is usually the failure. On a value type the same clause treats a zero, a false, or an empty struct as a failure worth retrying, hedging, or falling back from. Reference-type shields can say so explicitly with WhenResultIsNull and OrResultIsNull.");
+
     /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
         ImmutableArray.Create(
@@ -108,7 +119,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             UntypedHedgingRule,
             DeadHandlingClauseRule,
             DiscardedChainResultRule,
-            InheritedHandlingClauseRule);
+            InheritedHandlingClauseRule,
+            DefaultResultClauseOnValueTypeRule);
 
     /// <inheritdoc />
     public override void Initialize(AnalysisContext context)
@@ -143,7 +155,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 invocation.Syntax.GetLocation()));
         }
 
-        if (IsKevlarFluentMethod(invocation.TargetMethod, knownTypes, "Fallback")
+        if (IsFallbackStrategy(invocation.TargetMethod, knownTypes)
             && HasLocalHandlingOverride(invocation, context) is false
             && FindInPipeline(
                 GetReceiver(invocation),
@@ -231,7 +243,58 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 GetMethodNameLocation(invocation),
                 inheritedClause));
         }
+
+        if (IsDefaultResultClauseOnValueType(invocation, knownTypes, out var clauseMethod, out var resultType))
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                DefaultResultClauseOnValueTypeRule,
+                GetMethodNameLocation(invocation),
+                clauseMethod,
+                resultType));
+        }
     }
+
+    /// <summary>
+    /// Reports a <c>WhenResultIsDefault</c>/<c>OrResultIsDefault</c> clause whose result is a
+    /// non-nullable value type. Type parameters are left alone: generic code cannot say which
+    /// results its callers consider failures, and <c>default(TResult)</c> is the only term it has.
+    /// </summary>
+    private static bool IsDefaultResultClauseOnValueType(
+        IInvocationOperation invocation,
+        KnownTypes knownTypes,
+        out string? clauseMethod,
+        out string? resultType)
+    {
+        clauseMethod = null;
+        resultType = null;
+
+        var method = Normalize(invocation.TargetMethod);
+        if (method.Name is not ("WhenResultIsDefault" or "OrResultIsDefault")
+            || !IsKevlarFluentMethod(method, knownTypes))
+        {
+            return false;
+        }
+
+        // Read TResult from the constructed receiver: the normalized definition still says TResult.
+        var typeArguments = invocation.TargetMethod.ContainingType.TypeArguments;
+        if (typeArguments.Length != 1 || !IsNonNullableValueType(typeArguments[0]))
+        {
+            return false;
+        }
+
+        clauseMethod = method.Name;
+        resultType = typeArguments[0].ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+        return true;
+    }
+
+    /// <summary>
+    /// Whether the result type has a <c>default</c> that is an ordinary value. <c>Nullable&lt;T&gt;</c>
+    /// is excluded: its default is the missing value the clause was written for.
+    /// </summary>
+    private static bool IsNonNullableValueType(ITypeSymbol type) =>
+        type.IsValueType
+        && type.TypeKind != TypeKind.TypeParameter
+        && type.OriginalDefinition.SpecialType != SpecialType.System_Nullable_T;
 
     /// <summary>
     /// Reports the second and later reactive strategies that read one ambient handling clause.
@@ -324,7 +387,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     /// inherits is already spelled out at the call site.
     /// </summary>
     private static bool IsClauseConsumingStrategy(IMethodSymbol method, KnownTypes knownTypes) =>
-        (method.Name is "Retry" or "RetryForever" or "Hedge" or "CircuitBreaker" or "Fallback")
+        (method.Name is "Retry" or "RetryForever" or "Hedge" or "CircuitBreaker" or "Fallback" or "FallbackAction")
         && IsKevlarFluentMethod(method, knownTypes);
 
     /// <summary>Renders a clause declaration the way it was written, e.g. <c>When&lt;HttpRequestException&gt;…</c>.</summary>
@@ -989,7 +1052,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             if (!FindInPipeline(
                 operands[fallbackIndex],
                 context,
-                candidate => IsKevlarFluentMethod(candidate.TargetMethod, knownTypes, "Fallback")
+                candidate => IsFallbackStrategy(candidate.TargetMethod, knownTypes)
                     && HasLocalHandlingOverride(candidate, context) is false,
                 knownTypes,
                 stopAtHandlingClause: true,
@@ -1728,9 +1791,21 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     private static bool IsVoidFallback(IMethodSymbol method, KnownTypes knownTypes)
     {
         method = Normalize(method);
-        return method.Name == "Fallback"
+        return method.Name == "FallbackAction"
             && method.ReturnType is INamedTypeSymbol returnType
             && knownTypes.IsUntypedShield(returnType)
+            && IsKevlarFluentMethod(method, knownTypes);
+    }
+
+    /// <summary>
+    /// Either fallback: <c>Fallback</c> on a result-aware shield, or <c>FallbackAction</c>, its
+    /// void-only counterpart on the untyped <see cref="Shield"/>. Both recover handled failures,
+    /// so both make an outer strategy sharing their clause unreachable.
+    /// </summary>
+    private static bool IsFallbackStrategy(IMethodSymbol method, KnownTypes knownTypes)
+    {
+        method = Normalize(method);
+        return (method.Name is "Fallback" or "FallbackAction")
             && IsKevlarFluentMethod(method, knownTypes);
     }
 
@@ -2025,7 +2100,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     }
 
     private static bool StartsHandlingClause(IMethodSymbol method, KnownTypes knownTypes) =>
-        (method.Name is "When" or "WhenResult" or "WhenResultIsDefault" or "WhenAnyError")
+        (method.Name is "When" or "WhenResult" or "WhenResultIsDefault" or "WhenResultIsNull" or "WhenAnyError")
         && (knownTypes.IsShield(method.ContainingType)
             || knownTypes.IsShieldExtensions(method.ContainingType));
 
@@ -2051,6 +2126,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         private readonly INamedTypeSymbol? _shieldBuilder;
         private readonly INamedTypeSymbol? _shieldBuilderOfT;
         private readonly INamedTypeSymbol? _shieldExtensions;
+        private readonly INamedTypeSymbol? _shieldResultExtensions;
         private readonly INamedTypeSymbol? _shieldTaskExtensions;
         private readonly INamedTypeSymbol? _partitionedShield;
         private readonly INamedTypeSymbol? _partitionedShieldOfT;
@@ -2063,6 +2139,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             _shieldBuilder = compilation.GetTypeByMetadataName("Kevlar.ShieldBuilder");
             _shieldBuilderOfT = compilation.GetTypeByMetadataName("Kevlar.ShieldBuilder`1");
             _shieldExtensions = compilation.GetTypeByMetadataName("Kevlar.ShieldExtensions");
+            _shieldResultExtensions = compilation.GetTypeByMetadataName("Kevlar.ShieldResultExtensions");
             _shieldTaskExtensions = compilation.GetTypeByMetadataName("Kevlar.ShieldTaskExtensions");
             _partitionedShield = compilation.GetTypeByMetadataName("Kevlar.PartitionedShield`1");
             _partitionedShieldOfT = compilation.GetTypeByMetadataName("Kevlar.PartitionedShield`2");
@@ -2083,7 +2160,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         internal bool IsShieldBuilder(INamedTypeSymbol type) =>
             Is(type, _shieldBuilder) || Is(type, _shieldBuilderOfT);
 
-        internal bool IsShieldExtensions(INamedTypeSymbol type) => Is(type, _shieldExtensions);
+        internal bool IsShieldExtensions(INamedTypeSymbol type) =>
+            Is(type, _shieldExtensions) || Is(type, _shieldResultExtensions);
 
         internal bool IsShieldTaskExtensions(INamedTypeSymbol type) => Is(type, _shieldTaskExtensions);
 

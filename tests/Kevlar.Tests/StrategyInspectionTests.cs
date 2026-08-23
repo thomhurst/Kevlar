@@ -88,13 +88,13 @@ public class StrategyInspectionTests
             static options => options.OnFallbackAsync = static _ => default));
         var fixedFallback = GetInspection(Shield.For<int>().Fallback(42));
         var voidFallback = GetInspection(
-            Shield.When<InvalidOperationException>().Fallback(static (_, _) => default));
+            Shield.When<InvalidOperationException>().FallbackAction(static (_, _) => default));
         var notifiedVoidFallback = GetInspection(
-            Shield.When<InvalidOperationException>().Fallback(
+            Shield.When<InvalidOperationException>().FallbackAction(
                 static (_, _) => default,
                 static options => options.OnFallback = static _ => { }));
         var asyncNotifiedVoidFallback = GetInspection(
-            Shield.When<InvalidOperationException>().Fallback(
+            Shield.When<InvalidOperationException>().FallbackAction(
                 static (_, _) => default,
                 static options => options.OnFallbackAsync = static _ => default));
         await Assert.That(notifiedFallback.HasNotification).IsTrue();

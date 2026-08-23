@@ -61,6 +61,11 @@ public sealed class Shield<TResult>
     /// Starts a handling clause for results equal to <c>default(TResult)</c> — <see langword="null"/>
     /// for reference types. Use <see cref="WhenAnyError"/> to return to default handling.
     /// </summary>
+    /// <remarks>
+    /// For a reference type prefer <see cref="ShieldResultExtensions.WhenResultIsNull{TResult}(Shield{TResult})"/>,
+    /// which says what it matches. This method stays for value types and generic code, where
+    /// <c>default(TResult)</c> — <c>0</c>, <see langword="false"/> — may or may not be a failure.
+    /// </remarks>
     public ShieldBuilder<TResult> WhenResultIsDefault() => new ShieldBuilder<TResult>(this).OrResultIsDefault();
 
     /// <summary>

@@ -76,7 +76,7 @@ public class FallbackContractTests
         var fallbackFailure = new OperationCanceledException("void fallback cancelled", cancellation.Token);
         CancellationToken seenToken = default;
         var sawCancellation = false;
-        var shield = Shield.Empty.Fallback(async (_, token) =>
+        var shield = Shield.Empty.FallbackAction(async (_, token) =>
         {
             seenToken = token;
             started.SetResult();
@@ -243,7 +243,7 @@ public class FallbackContractTests
         }).Throws<InvalidOperationException>();
         await Assert.That(() =>
         {
-            _ = Shield.Hedge(2, TimeSpan.Zero).Fallback((_, _) => default);
+            _ = Shield.Hedge(2, TimeSpan.Zero).FallbackAction((_, _) => default);
         }).Throws<InvalidOperationException>();
     }
 

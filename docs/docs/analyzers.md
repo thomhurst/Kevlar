@@ -20,11 +20,12 @@ Generated code is ignored.
 | `KEV002` | Warning | known multi-attempt hedging pipeline is passed to synchronous `Execute` |
 | `KEV003` | Warning | inner fallback makes retry, hedging, or circuit breaker unreachable |
 | `KEV004` | Warning | stateful shield or partition provider is constructed for one execution |
-| `KEV005` | Warning | void fallback is executed with a result-returning delegate |
+| `KEV005` | Warning | `FallbackAction` is executed with a result-returning delegate |
 | `KEV006` | Warning | hedging is added to an untyped shield, whose action must be idempotent |
 | `KEV007` | Warning | handling clause never reaches a reactive strategy |
 | `KEV008` | Warning | fluent chaining result is discarded as a statement |
 | `KEV009` | Info | strategy inherits a handling clause declared earlier in the chain |
+| `KEV010` | Info | default-result clause is written for a value type, whose default is usually valid |
 
 ## KEV001: ignored execution cancellation
 
@@ -113,15 +114,16 @@ generated code, and assemblies ending in `.Test` or `.Tests` remain clean. Custo
 instances are not assumed to be stateful because that cannot be proven from their public contract.
 Test methods marked with standard TUnit, xUnit, NUnit, or MSTest attributes are also ignored.
 
-## KEV005: void fallback with a result
+## KEV005: FallbackAction with a result
 
-A fallback on non-generic `Shield` can recover void executions only. If that shield executes a
+`FallbackAction` on non-generic `Shield` can recover void executions only — the name says so, and
+this rule catches the call sites where the name was not enough. If that shield executes a
 result-returning delegate, the fallback cannot produce the required value and fails at runtime when
 it handles an outcome:
 
 ```csharp
 var voidShield = Shield.Retry(3)
-    .Fallback(static _ => ValueTask.CompletedTask);
+    .FallbackAction(static _ => ValueTask.CompletedTask);
 
 var value = await voidShield.ExecuteAsync(static _ => new ValueTask<int>(42)); // KEV005
 ```
@@ -277,6 +279,36 @@ The rule follows one fluent chain and a stable local, and stops at `Wrap`/`Compo
 Because it is `Info`, `KEV009` never fails a build, including under `TreatWarningsAsErrors`. Turn it
 off entirely with `dotnet_diagnostic.KEV009.severity = none` in `.editorconfig` if the ambient model
 is already second nature to your team.
+
+## KEV010: default-result clause on a value type
+
+`WhenResultIsDefault` and `OrResultIsDefault` were named for reference types, where `default(T)` is
+`null` and a missing value is usually the failure. On a value type the same clause treats `0`,
+`false`, or an empty struct as a failure worth retrying, hedging, or falling back from — which is
+occasionally right and often a foot-gun:
+
+```csharp
+var shield = Shield.For<int>().WhenResultIsDefault().Retry(3);
+//                             ^^^^^^^^^^^^^^^^^^^ KEV010 — is 0 really a failure here?
+```
+
+Say which results are failures instead, or keep the clause if `0` genuinely is one:
+
+```csharp
+var shield = Shield.For<int>().WhenResult(static count => count < 0).Retry(3);
+```
+
+Reference-type shields have a clause that cannot be written by mistake — `WhenResultIsNull` and
+`OrResultIsNull` are constrained to reference types, so they never compile for an `int`:
+
+```csharp
+var shield = Shield.For<string>().WhenResultIsNull().Retry(3);
+```
+
+The rule reads `TResult` from the shield being configured. `Nullable<T>` results are left alone —
+their default *is* the missing value — and so is generic code, where `default(TResult)` is the only
+term available. Like `KEV009`, `KEV010` is `Info` and never fails a build; silence it per site with
+a pragma or project-wide with `dotnet_diagnostic.KEV010.severity = none`.
 
 ## Suppression
 

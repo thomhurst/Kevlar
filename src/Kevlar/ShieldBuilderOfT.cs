@@ -90,10 +90,12 @@ public sealed class ShieldBuilder<TResult>
             "result " + DescribeHelper.Value(result));
 
     /// <summary>Returns a new builder that also handles results equal to <c>default(TResult)</c> — <see langword="null"/> for reference types.</summary>
-    public ShieldBuilder<TResult> OrResultIsDefault() =>
-        WithResult(
-            static candidate => EqualityComparer<TResult>.Default.Equals(candidate, default!),
-            "default result");
+    /// <remarks>
+    /// For a reference type prefer <see cref="ShieldResultExtensions.OrResultIsNull{TResult}(ShieldBuilder{TResult})"/>,
+    /// which says what it matches. This overload stays for value types and generic code, where
+    /// <c>default(TResult)</c> — <c>0</c>, <see langword="false"/> — may or may not be a failure.
+    /// </remarks>
+    public ShieldBuilder<TResult> OrResultIsDefault() => WithDefaultResult("default result");
 
     /// <summary>Retries handled outcomes up to <paramref name="maxRetries"/> times with the default exponential jittered backoff.</summary>
     /// <param name="maxRetries">
@@ -197,6 +199,16 @@ public sealed class ShieldBuilder<TResult>
             DescribeHelper.Clause(_clauseTerms));
         return new Shield<TResult>(_parent.Strategies, judge, _parent.Name, _parent.Time);
     }
+
+    /// <summary>
+    /// Adds the <c>default(TResult)</c> term under the description its caller chose, so the one
+    /// predicate reads as <c>default result</c> or <c>null result</c> depending on the spelling
+    /// the clause was written with.
+    /// </summary>
+    internal ShieldBuilder<TResult> WithDefaultResult(string clauseTerm) =>
+        WithResult(
+            static candidate => EqualityComparer<TResult>.Default.Equals(candidate, default!),
+            clauseTerm);
 
     /// <summary>Builds the successor holding this builder's terms plus one more exception term.</summary>
     private ShieldBuilder<TResult> WithException(Func<Exception, bool> predicate, string clauseTerm) =>

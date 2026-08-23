@@ -11,7 +11,7 @@ public class VoidFallbackTests
     public async Task A_Failing_Void_Execution_Is_Recovered()
     {
         var fallbackRan = false;
-        var shield = Shield.When<InvalidOperationException>().Fallback((_, _) =>
+        var shield = Shield.When<InvalidOperationException>().FallbackAction((_, _) =>
         {
             fallbackRan = true;
             return default;
@@ -27,7 +27,7 @@ public class VoidFallbackTests
     {
         var original = new InvalidOperationException("original");
         Exception? seen = null;
-        var shield = Shield.When<InvalidOperationException>().Fallback((exception, _) =>
+        var shield = Shield.When<InvalidOperationException>().FallbackAction((exception, _) =>
         {
             seen = exception;
             return default;
@@ -42,7 +42,7 @@ public class VoidFallbackTests
     public async Task The_Exception_Free_Overload_Works_Too()
     {
         var fallbackRan = false;
-        var shield = Shield.Timeout(TimeSpan.FromMinutes(1)).Fallback(_ =>
+        var shield = Shield.Timeout(TimeSpan.FromMinutes(1)).FallbackAction(_ =>
         {
             fallbackRan = true;
             return default;
@@ -57,7 +57,7 @@ public class VoidFallbackTests
     public async Task Unhandled_Exception_Types_Pass_Through()
     {
         var fallbackRan = false;
-        var shield = Shield.When<TimeoutExceededException>().Fallback((_, _) =>
+        var shield = Shield.When<TimeoutExceededException>().FallbackAction((_, _) =>
         {
             fallbackRan = true;
             return default;
@@ -71,7 +71,7 @@ public class VoidFallbackTests
     [Test]
     public async Task A_Result_Returning_Execution_Is_Refused_With_Guidance()
     {
-        var shield = Shield.When<InvalidOperationException>().Fallback((_, _) => default);
+        var shield = Shield.When<InvalidOperationException>().FallbackAction((_, _) => default);
 
         InvalidOperationException? error = null;
         try
@@ -91,7 +91,7 @@ public class VoidFallbackTests
     public async Task Successful_Result_Executions_Are_Untouched()
     {
         var fallbackRan = false;
-        var shield = Shield.When<InvalidOperationException>().Fallback((_, _) =>
+        var shield = Shield.When<InvalidOperationException>().FallbackAction((_, _) =>
         {
             fallbackRan = true;
             return default;
@@ -107,7 +107,7 @@ public class VoidFallbackTests
     public async Task A_Throwing_Fallback_Surfaces_Its_Own_Exception()
     {
         var shield = Shield.When<InvalidOperationException>()
-            .Fallback((_, _) => throw new ArgumentException("fallback failed"));
+            .FallbackAction((_, _) => throw new ArgumentException("fallback failed"));
 
         await Assert.That(async () => await shield.ExecuteAsync(_ => throw new InvalidOperationException()))
             .Throws<ArgumentException>().WithMessage("fallback failed");
@@ -117,7 +117,7 @@ public class VoidFallbackTests
     public async Task Void_Fallback_Works_Synchronously()
     {
         var fallbackRan = false;
-        var shield = Shield.When<InvalidOperationException>().Fallback((_, _) =>
+        var shield = Shield.When<InvalidOperationException>().FallbackAction((_, _) =>
         {
             fallbackRan = true;
             return default;
@@ -135,20 +135,20 @@ public class VoidFallbackTests
         var exceptionFree = false;
         var notified = 0;
 
-        var withException = Shield.Fallback((exception, _) =>
+        var withException = Shield.FallbackAction((exception, _) =>
         {
             seenException = exception;
             return default;
         });
-        var withoutException = Shield.Fallback(_ =>
+        var withoutException = Shield.FallbackAction(_ =>
         {
             exceptionFree = true;
             return default;
         });
-        var withExceptionAndOptions = Shield.Fallback(
+        var withExceptionAndOptions = Shield.FallbackAction(
             static (_, _) => default,
             options => options.OnFallback = _ => notified++);
-        var withoutExceptionAndOptions = Shield.Fallback(
+        var withoutExceptionAndOptions = Shield.FallbackAction(
             static _ => default,
             options => options.OnFallback = _ => notified++);
 
@@ -171,7 +171,7 @@ public class VoidFallbackTests
 
         // Fallback first is the valid order: the retry runs inside it.
         var shield = Shield
-            .Fallback((_, _) =>
+            .FallbackAction((_, _) =>
             {
                 recovered = true;
                 return default;
