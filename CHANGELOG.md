@@ -54,6 +54,10 @@ not the default *handling* that the neighbouring `WhenAnyError()` restores.
   `[when HttpRequestException | TimeoutExceededException] Retry(3, no delay) → CircuitBreaker(5 consecutive, break 30s)`
   — and marks a strategy whose options replaced the clause locally with `(local handling)`. Shields
   that use only default handling describe exactly as before.
+- Debug builds of Kevlar enforce the pooled-context contract: after a `KevlarContext` goes back to
+  the pool, its `CancellationToken`, `Properties`, `ShieldName`, `TimeProvider` and `IsSynchronous`
+  throw `InvalidOperationException` until it is rented again. Release builds are unchanged and carry
+  no extra check.
 - `KEV007`: a `When…`/`Or…` handling clause that never reaches a reactive strategy — the
   `ShieldBuilder` is discarded, or a later `When…`/`WhenAnyError()` replaces the clause while only
   proactive strategies stood between them.
