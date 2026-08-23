@@ -1,3 +1,13 @@
+Kevlar.HandlingClause
+Kevlar.HandlingClause.HandlingClause() -> void
+Kevlar.HandlingClause.ShouldHandle<T>(in Kevlar.Outcome<T> outcome) -> bool
+static Kevlar.HandlingClause.Default.get -> Kevlar.HandlingClause
+static Kevlar.Shield.Use(System.Func<Kevlar.HandlingClause, Kevlar.Strategy!>! factory) -> Kevlar.Shield!
+static Kevlar.ShieldExtensions.Use(this Kevlar.Shield! shield, System.Func<Kevlar.HandlingClause, Kevlar.Strategy!>! factory) -> Kevlar.Shield!
+Kevlar.Shield<TResult>.Use(System.Func<Kevlar.HandlingClause, Kevlar.Strategy!>! factory) -> Kevlar.Shield<TResult>!
+Kevlar.ShieldBuilder.Use(System.Func<Kevlar.HandlingClause, Kevlar.Strategy!>! factory) -> Kevlar.Shield!
+Kevlar.ShieldBuilder<TResult>.Use(System.Func<Kevlar.HandlingClause, Kevlar.Strategy!>! factory) -> Kevlar.Shield<TResult>!
+virtual Kevlar.Strategy.Handling.get -> Kevlar.HandlingClause?
 Kevlar.CircuitBreakerBreakDurationEvent
 Kevlar.CircuitBreakerBreakDurationEvent.CircuitBreakerBreakDurationEvent() -> void
 Kevlar.CircuitBreakerBreakDurationEvent.Context.get -> Kevlar.KevlarContext!

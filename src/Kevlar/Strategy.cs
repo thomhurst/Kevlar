@@ -24,6 +24,13 @@ public abstract class Strategy
     internal virtual bool InvokesContinuationAtMostOnce => false;
 
     /// <summary>
+    /// The handling clause this reactive strategy acts on, or <see langword="null"/> for a
+    /// proactive strategy. Override this when the strategy receives a clause through a
+    /// <c>Use</c> factory so chain validation and testing descriptors can inspect it.
+    /// </summary>
+    protected virtual HandlingClause? Handling => null;
+
+    /// <summary>
     /// Executes the strategy around the rest of the pipeline.
     /// </summary>
     /// <typeparam name="T">The result type of the execution.</typeparam>
@@ -39,7 +46,7 @@ public abstract class Strategy
     public virtual string Describe() => GetType().Name;
 
     /// <summary>The handling clause this reactive strategy acts on; null for proactive strategies.</summary>
-    internal virtual OutcomeJudge? ReactiveJudge => null;
+    internal virtual OutcomeJudge? ReactiveJudge => Handling?.Judge;
 
     /// <summary>Marks fallback strategies for chain-order validation.</summary>
     internal virtual bool IsFallback => false;

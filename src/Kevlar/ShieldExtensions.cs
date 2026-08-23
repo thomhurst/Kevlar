@@ -149,6 +149,19 @@ public static class ShieldExtensions
     }
 
     /// <summary>
+    /// Appends a custom strategy created from the active handling clause. The factory runs once;
+    /// reactive custom strategies should retain and consult the supplied clause.
+    /// </summary>
+    public static Shield Use(this Shield shield, Func<HandlingClause, Strategy> factory)
+    {
+        Throw.IfNull(shield, nameof(shield));
+        Throw.IfNull(factory, nameof(factory));
+        var strategy = factory(new HandlingClause(shield.JudgeOrDefault))
+            ?? throw new InvalidOperationException("The strategy factory returned null.");
+        return shield.Append(strategy);
+    }
+
+    /// <summary>
     /// Wraps <paramref name="inner"/> inside <paramref name="outer"/>: the outer shield's strategies
     /// run first. The first non-null name and time provider win; the last handling clause stays ambient.
     /// </summary>

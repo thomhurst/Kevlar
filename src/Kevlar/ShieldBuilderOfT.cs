@@ -91,6 +91,9 @@ public sealed class ShieldBuilder<TResult>
     /// <summary>Adds a hedging strategy configured via <paramref name="configure"/>.</summary>
     public Shield<TResult> Hedge(Action<HedgingOptions> configure) => Seal().Hedge(configure);
 
+    /// <summary>Creates and appends a custom strategy using the accumulated handling clause.</summary>
+    public Shield<TResult> Use(Func<HandlingClause, Strategy> factory) => Seal().Use(factory);
+
     /// <summary>Replaces handled outcomes with <paramref name="fallbackValue"/>.</summary>
     public Shield<TResult> Fallback(TResult fallbackValue, Action<FallbackEvent<TResult>>? onFallback = null) => Seal().Fallback(fallbackValue, onFallback);
 

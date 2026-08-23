@@ -73,6 +73,9 @@ public sealed class ShieldBuilder
     /// <summary>Adds a hedging strategy configured via <paramref name="configure"/>.</summary>
     public Shield Hedge(Action<HedgingOptions> configure) => Seal().Hedge(configure);
 
+    /// <summary>Creates and appends a custom strategy using the accumulated handling clause.</summary>
+    public Shield Use(Func<HandlingClause, Strategy> factory) => Seal().Use(factory);
+
     /// <summary>
     /// Runs <paramref name="fallback"/> in place of handled failures. Applies to void executions
     /// only; result-returning executions need <c>Shield.For&lt;T&gt;().Fallback(…)</c>.

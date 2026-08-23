@@ -47,6 +47,16 @@ For the same reason there is no `Kevlar.Abstractions` package. Kevlar keeps its 
 
 And for testing, you don't need a mock: `Shield.Empty` is the no-op, and fault injection works better through a real shield with a [custom strategy](custom-strategies.md) — it exercises the actual engine. See [Testing Your Shields](testing.md).
 
+If your library ships a reactive custom strategy, accept its active handling through the `Use` factory rather than baking exception rules into the package:
+
+<!-- doc-test-ignore: LibraryRetryStrategy is supplied by the library author. -->
+```csharp
+var shield = Shield.When<HttpRequestException>()
+    .Use(clause => new LibraryRetryStrategy(clause));
+```
+
+Store the supplied `HandlingClause`, consult it for each `Outcome<T>`, and override `Strategy.Handling` so chain validation and `Kevlar.Testing` can inspect the declaration. Proactive custom strategies can keep using `Use(Strategy)`.
+
 ## Result-aware parameters
 
 If callers should be able to react to *result values* — retry on `null`, hedge on an error status — accept a `Shield<T>` instead:

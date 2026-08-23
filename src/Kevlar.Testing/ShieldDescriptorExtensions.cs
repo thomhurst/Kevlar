@@ -85,7 +85,10 @@ public static class ShieldDescriptorExtensions
                 description,
                 fallback.ResultType,
                 fallback.HasNotification),
-            _ => new CustomStrategyDescriptor(description, strategy.GetType()),
+            _ => new CustomStrategyDescriptor(
+                description,
+                strategy.GetType(),
+                strategy.ReactiveJudge is { } judge ? new HandlingClause(judge) : null),
         };
     }
 

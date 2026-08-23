@@ -3,9 +3,16 @@ namespace Kevlar.Testing;
 /// <summary>Diagnostic description of a caller-defined strategy.</summary>
 public sealed class CustomStrategyDescriptor : StrategyDescriptor
 {
-    internal CustomStrategyDescriptor(string description, Type strategyType)
-        : base(StrategyKind.Custom, description) => StrategyType = strategyType;
+    internal CustomStrategyDescriptor(string description, Type strategyType, HandlingClause? handling)
+        : base(StrategyKind.Custom, description)
+    {
+        StrategyType = strategyType;
+        Handling = handling;
+    }
 
     /// <summary>The caller-defined strategy type.</summary>
     public Type StrategyType { get; }
+
+    /// <summary>The strategy's declared handling clause, or <see langword="null"/> when proactive.</summary>
+    public HandlingClause? Handling { get; }
 }
