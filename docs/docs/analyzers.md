@@ -22,6 +22,7 @@ Generated code is ignored.
 | `KEV004` | Warning | stateful shield or partition provider is constructed for one execution |
 | `KEV005` | Warning | void fallback is executed with a result-returning delegate |
 | `KEV006` | Warning | hedging is added to an untyped shield, whose action must be idempotent |
+| `KEV007` | Warning | handling clause never reaches a reactive strategy |
 
 ## KEV001: ignored execution cancellation
 
@@ -165,6 +166,48 @@ The rule reports every `Hedge` overload that returns the untyped `Shield`: the s
 `Shield.Hedge(...)` factories, the `ShieldExtensions.Hedge(...)` chaining methods, and
 `ShieldBuilder.Hedge(...)`. `Shield<T>.Hedge(...)` and `ShieldBuilder<T>.Hedge(...)` are never
 flagged.
+
+## KEV007: dead handling clause
+
+A [handling clause](handling-failures.md) changes nothing on its own — it only takes effect once a
+reactive strategy (retry, circuit breaker, hedging, fallback, or a `Use` factory) consumes it. Two
+shapes silently do nothing.
+
+The first is a clause whose `ShieldBuilder` is dropped instead of being finished with a strategy:
+
+<!-- doc-test-ignore: Deliberately dead clauses that the analyzer is expected to flag. -->
+```csharp
+Shield.When<HttpRequestException>();                          // KEV007 — nothing consumes it
+var clause = Shield.When<HttpRequestException>().Or<TimeoutExceededException>();  // KEV007 — never used
+```
+
+The second is a clause that a later `When…` or `WhenAnyError()` replaces while only *proactive*
+strategies — timeout, rate limit, concurrency limit — sat in between. Proactive strategies never
+consult clauses, so the first clause never applied to anything:
+
+<!-- doc-test-ignore: Deliberately dead clauses that the analyzer is expected to flag. -->
+```csharp
+var shield = Shield
+    .When<HttpRequestException>()                 // KEV007 — only the timeout saw this clause
+    .Timeout(TimeSpan.FromSeconds(5))
+    .WhenAnyError()
+    .Retry(3);
+```
+
+Fix either by finishing the clause with the reactive strategy it was written for:
+
+```csharp
+var shield = Shield
+    .When<HttpRequestException>()
+    .Timeout(TimeSpan.FromSeconds(5))
+    .Retry(3)                                     // the clause reaches a reactive strategy
+    .WhenAnyError()
+    .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30));
+```
+
+The rule follows one fluent chain and a clause builder stored in a local. It deliberately stays
+quiet when the builder escapes — returned, passed as an argument, assigned to a field — and at
+`Wrap`/`Compose` boundaries, because a clause's fate is no longer visible there.
 
 ## Suppression
 

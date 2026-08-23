@@ -40,6 +40,9 @@ not the default *handling* that the neighbouring `WhenAnyError()` restores.
 
 ### Added
 
+- `KEV007`: a `When…`/`Or…` handling clause that never reaches a reactive strategy — the
+  `ShieldBuilder` is discarded, or a later `When…`/`WhenAnyError()` replaces the clause while only
+  proactive strategies stood between them.
 - `Shield.Fallback(…)` static factories, mirroring the four untyped `ShieldExtensions.Fallback`
   overloads, so a fallback can start a chain like every other strategy. Fallback-first is the
   valid order: it recovers what the strategies chained inside it could not.

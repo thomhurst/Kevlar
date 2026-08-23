@@ -11,3 +11,4 @@ KEV003 | Configuration | Warning | Fallback makes a reactive strategy unreachabl
 KEV004 | Reliability | Warning | Stateful shield or partition provider is constructed per execution
 KEV005 | Configuration | Warning | Void fallback is used with a result-returning execution
 KEV006 | Reliability | Warning | Hedging on an untyped Shield requires an idempotent action
+KEV007 | Configuration | Warning | Handling clause never reaches a reactive strategy
