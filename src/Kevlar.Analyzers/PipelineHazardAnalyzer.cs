@@ -460,7 +460,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         }
 
         var method = Normalize(invocation.TargetMethod);
-        if (stopAtHandlingClause && StartsHandlingClause(method, knownTypes))
+        if (stopAtHandlingClause
+            && StopsHandlingTraversal(invocation, context, knownTypes, visitedLocals))
         {
             matchedMethod = null;
             return false;
@@ -898,6 +899,12 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         }
 
         var method = Normalize(invocation.TargetMethod);
+        if (method.Name == "WhenAnyError" && StartsHandlingClause(method, knownTypes))
+        {
+            ambientClause = null;
+            return true;
+        }
+
         if (StartsHandlingClause(method, knownTypes))
         {
             ambientClause = invocation.Syntax;
@@ -1370,6 +1377,28 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         (method.Name is "When" or "WhenResult" or "WhenDefault" or "WhenAnyError")
         && (knownTypes.IsShield(method.ContainingType)
             || knownTypes.IsShieldExtensions(method.ContainingType));
+
+    private static bool StopsHandlingTraversal(
+        IInvocationOperation invocation,
+        OperationAnalysisContext context,
+        KnownTypes knownTypes,
+        HashSet<ISymbol>? visitedLocals)
+    {
+        var method = Normalize(invocation.TargetMethod);
+        if (!StartsHandlingClause(method, knownTypes))
+        {
+            return false;
+        }
+
+        return method.Name != "WhenAnyError"
+            || !TryGetAmbientClause(
+                GetReceiver(invocation),
+                context,
+                knownTypes,
+                visitedLocals,
+                out var previousAmbient)
+            || previousAmbient is not null;
+    }
 
     private static bool IsCompositionBoundary(IMethodSymbol method, KnownTypes knownTypes) =>
         (method.Name is "Wrap" or "Compose") && IsKevlarFluentMethod(method, knownTypes);
