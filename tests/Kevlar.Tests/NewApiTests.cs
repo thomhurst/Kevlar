@@ -4,7 +4,7 @@ namespace Kevlar.Tests;
 
 /// <summary>
 /// Guards the API refinements: the unified When/Or clause grammar, WhenDefault, typed retry
-/// events, the MaxDelay absolute cap, and Compose preserving names, time providers and clauses.
+/// events, the MaxDelay absolute cap, and Compose preserving metadata while sealing clauses.
 /// </summary>
 public class NewApiTests
 {
@@ -312,20 +312,23 @@ public class NewApiTests
     }
 
     [Test]
-    public async Task Compose_Keeps_The_Last_Ambient_Clause_For_Further_Chaining()
+    public async Task Compose_Seals_The_Ambient_Clause_For_Further_Chaining()
     {
         var withClause = Shield.When<ArgumentException>().Timeout(TimeSpan.FromMinutes(1));
-        var composed = Shield.Compose(Shield.Timeout(TimeSpan.FromMinutes(1)), withClause).Retry(1, Backoff.None);
+        var composed = Shield.Compose(Shield.Timeout(TimeSpan.FromMinutes(1)), withClause);
+        var shield = composed.Retry(1, Backoff.None);
 
         var attempts = 0;
-        await Assert.That(async () => await composed.ExecuteAsync<int>(_ =>
+        var result = await shield.ExecuteAsync(_ =>
         {
             attempts++;
-            throw attempts == 1 ? new ArgumentException() : new InvalidOperationException();
-        })).Throws<InvalidOperationException>();
+            return attempts == 1
+                ? ValueTask.FromException<int>(new InvalidOperationException())
+                : new ValueTask<int>(42);
+        });
 
-        // The retry appended after Compose inherited the ArgumentException clause:
-        // it retried the first failure and surfaced the unhandled second one.
+        await Assert.That(composed.Ambient).IsNull();
+        await Assert.That(result).IsEqualTo(42);
         await Assert.That(attempts).IsEqualTo(2);
     }
 

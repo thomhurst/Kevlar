@@ -163,7 +163,8 @@ public static class ShieldExtensions
 
     /// <summary>
     /// Wraps <paramref name="inner"/> inside <paramref name="outer"/>: the outer shield's strategies
-    /// run first. The first non-null name and time provider win; the last handling clause stays ambient.
+    /// run first. The first non-null name and time provider win. Composition seals handling clauses,
+    /// so reactive strategies appended afterwards use default handling unless a new clause is declared.
     /// </summary>
     public static Shield Wrap(this Shield outer, Shield inner)
     {
@@ -171,15 +172,15 @@ public static class ShieldExtensions
         Throw.IfNull(inner, nameof(inner));
         return new Shield(
             Shield.Concat(outer.Strategies, inner.Strategies),
-            inner.Ambient ?? outer.Ambient,
+            null,
             outer.Name ?? inner.Name,
             outer.Time ?? inner.Time);
     }
 
     /// <summary>
     /// Wraps a result-aware <paramref name="inner"/> shield inside <paramref name="outer"/>, producing
-    /// a result-aware shield. The first non-null name and time provider win; the last handling clause
-    /// stays ambient.
+    /// a result-aware shield. The first non-null name and time provider win. Composition seals handling
+    /// clauses, so reactive strategies appended afterwards use default handling unless a new clause is declared.
     /// </summary>
     public static Shield<TResult> Wrap<TResult>(this Shield outer, Shield<TResult> inner)
     {
@@ -187,7 +188,7 @@ public static class ShieldExtensions
         Throw.IfNull(inner, nameof(inner));
         return new Shield<TResult>(
             Shield.Concat(outer.Strategies, inner.Strategies),
-            inner.Ambient ?? outer.Ambient,
+            null,
             outer.Name ?? inner.Name,
             outer.Time ?? inner.Time);
     }

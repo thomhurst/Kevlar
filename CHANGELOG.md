@@ -17,3 +17,7 @@ Handling clauses now use one spelling per position. `When…` starts a clause on
 - `RetryOptions<TResult>` no longer inherits `RetryOptions`. Both types retain the same scalar
   property names and defaults, but helpers that accepted `RetryOptions` must configure typed retry
   options separately. Typed callback getters now return the exact delegates assigned to them.
+
+### Changed
+
+- **Breaking:** `Shield.Wrap(...)` and `Shield.Compose(...)` now seal ambient handling clauses. Reactive strategies appended after composition use default handling unless a new clause is declared. Existing strategies inside composed shields keep their original handling.

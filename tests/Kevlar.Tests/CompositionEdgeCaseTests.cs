@@ -86,15 +86,15 @@ public class CompositionEdgeCaseTests
     }
 
     [Test]
-    public async Task Wrapping_A_Typed_Policy_Keeps_Its_Result_Handling_For_Later_Strategies()
+    public async Task Wrapping_A_Typed_Policy_Seals_Its_Result_Handling_For_Later_Strategies()
     {
         var typed = Shield.For<int>().WhenResult(value => value < 0).Timeout(TimeSpan.FromMinutes(1));
-        var combined = Shield.Retry(0, Backoff.None).Wrap(typed).Fallback(99);
+        var combined = Shield.Timeout(TimeSpan.FromMinutes(1)).Wrap(typed).Fallback(99);
 
-        // The fallback appended after the wrap inherits the typed shield's result clause.
+        // Composition sealed the result clause, so the default fallback ignores successful results.
         var result = await combined.ExecuteAsync(_ => new ValueTask<int>(-5));
 
-        await Assert.That(result).IsEqualTo(99);
+        await Assert.That(result).IsEqualTo(-5);
     }
 
     [Test]

@@ -53,7 +53,7 @@ Shield.For<User?>().WhenDefault().Retry(2);   // retry when the result is null /
 
 ## Clauses are ambient
 
-A clause applies to the strategy it creates *and* to every reactive strategy chained after it, until you write a new clause:
+A clause applies to the strategy it creates *and* to every reactive strategy chained after it, until you write a new clause or compose the shield with `Wrap`/`Compose`:
 
 <!-- doc-test-ignore: Uses an ellipsis for the application-specific fallback implementation. -->
 ```csharp
@@ -83,6 +83,6 @@ var shield = Shield.When<HttpRequestException>()
 
 The factory runs once and receives a `HandlingClause`. Call `clause.ShouldHandle(in outcome)` inside the strategy so exception and result rules stay aligned with the shield. See [Custom Strategies](custom-strategies.md#consume-handling-clauses) for a complete implementation.
 
-:::info Clauses survive lifting and composing
-`shield.For<T>()` carries an ambient exception clause into the typed shield, and `Shield.Compose(...)` keeps the last input's clause ambient — so strategies chained afterwards keep handling what you declared. Write a new clause any time you want different handling.
+:::info Lifting preserves clauses; composition seals them
+`shield.For<T>()`, `WithName(...)`, and `WithTimeProvider(...)` are same-chain copies, so they preserve the ambient clause. `Wrap(...)` and `Shield.Compose(...)` are composition boundaries: strategies already inside keep their original handling, but reactive strategies chained afterwards use the default unless you declare a new local clause.
 :::

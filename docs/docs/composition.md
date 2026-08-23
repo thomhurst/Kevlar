@@ -49,7 +49,9 @@ var combined = Shield.Compose(timeoutShield, retryShield, breakerShield);  // fi
 ```
 
 :::note What survives a merge
-`Wrap` and `Compose` carry the *strategies* (with their state) forward. Both keep the first non-null name and `TimeProvider` from outer to inner, while the innermost available ambient [handling clause](handling-failures.md) stays ambient for further chaining. In `outer.Wrap(inner)`, outer metadata therefore wins when present, and the inner clause wins when present.
+`Wrap` and `Compose` carry the *strategies* (with their state) forward. Both keep the first non-null name and `TimeProvider` from outer to inner. Ambient [handling clauses](handling-failures.md) stop at the composition boundary, so reactive strategies appended to the merged shield use default handling unless you declare a new clause.
+
+Strategies already inside each input keep the handling rules they were built with. Composition seals only the ambient clause that would otherwise affect later additions; it does not change existing pipeline behavior. In `outer.Wrap(inner)`, outer metadata still wins when present.
 :::
 
 ## The state-sharing rule
@@ -73,9 +75,9 @@ var interactive = Shield.Timeout(TimeSpan.FromSeconds(2)).Wrap(downstreamBreaker
 var background  = Shield.Timeout(TimeSpan.FromSeconds(30)).Retry(5).Wrap(downstreamBreaker);
 ```
 
-## Handling clauses flow down the chain
+## Handling clauses flow down a fluent chain
 
-A [handling clause](handling-failures.md) applies to the strategy it precedes *and* to every reactive strategy chained after it, until you write a new clause:
+A [handling clause](handling-failures.md) applies to the strategy it precedes *and* to every reactive strategy chained after it, until you write a new clause or compose the shield:
 
 <!-- doc-test-ignore: Uses an ellipsis to illustrate a fallback body defined by the application. -->
 ```csharp
@@ -85,6 +87,19 @@ Shield
     .CircuitBreaker(consecutiveFailures: 5, breakDuration: breakDur)   // breaker also counts HttpRequestException
     .When<TimeoutExceededException>()
     .Fallback(...);                // fallback reacts to TimeoutExceededException only
+```
+
+`Wrap` and `Compose` are scope boundaries. A reactive strategy added afterwards uses Kevlar's default handling—any exception except `OperationCanceledException`—unless the new expression declares a clause locally:
+
+```csharp
+var apiDefaults = Shield.When<HttpRequestException>().Retry(3);
+
+var shield = Shield.Timeout(TimeSpan.FromSeconds(30))
+    .Wrap(apiDefaults)
+    .When<HttpRequestException>()
+    .CircuitBreaker(
+        consecutiveFailures: 5,
+        breakDuration: TimeSpan.FromSeconds(30));
 ```
 
 ## Impossible orders fail fast
