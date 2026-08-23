@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.ExceptionServices;
 using Kevlar.Internal;
 
@@ -25,7 +26,10 @@ public readonly struct Outcome<T>
     /// <summary>The captured exception, or <see langword="null"/> if the execution produced a result.</summary>
     public Exception? Exception => _exception?.Data[ExceptionProxyDataKey] as Exception ?? _exception;
 
-    /// <summary>The result value. Only meaningful when <see cref="Exception"/> is <see langword="null"/>.</summary>
+    /// <summary>
+    /// The result value. Only meaningful when <see cref="Exception"/> is <see langword="null"/>.
+    /// For flow-analysis-friendly access, use <see cref="TryGetResult(out T)"/>.
+    /// </summary>
     public T? Result => _result;
 
     /// <summary><see langword="true"/> when the execution produced a result rather than an exception.</summary>
@@ -39,6 +43,23 @@ public readonly struct Outcome<T>
     {
         Throw.IfNull(exception, nameof(exception));
         return new Outcome<T>(default, exception);
+    }
+
+    /// <summary>Tries to get the result without throwing the captured exception.</summary>
+    /// <param name="result">
+    /// The result value when the outcome is successful; otherwise, the default value of <typeparamref name="T"/>.
+    /// </param>
+    /// <returns><see langword="true"/> when the execution produced a result; otherwise, <see langword="false"/>.</returns>
+    public bool TryGetResult([MaybeNullWhen(false)] out T result)
+    {
+        if (IsSuccess)
+        {
+            result = _result!;
+            return true;
+        }
+
+        result = default;
+        return false;
     }
 
     /// <summary>

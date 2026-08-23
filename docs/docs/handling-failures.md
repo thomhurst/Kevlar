@@ -10,6 +10,10 @@ Reactive strategies — [retry](strategies/retry.md), [circuit breaker](strategi
 
 With no handling clause, the default is: **any exception except `OperationCanceledException`**. Cancellation isn't a fault; retrying it would fight the caller.
 
+When you execute with `ExecuteOutcomeAsync`, use `outcome.TryGetResult(out var result)` to
+consume a successful result without throwing. If it returns `false`, the final captured failure
+remains available through `outcome.Exception`.
+
 ## Exception clauses
 
 ```csharp

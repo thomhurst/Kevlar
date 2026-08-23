@@ -111,14 +111,18 @@ When a failure is an expected outcome rather than an exceptional one, skip the t
 ```csharp
 Outcome<User> outcome = await shield.ExecuteOutcomeAsync(ct => LoadAsync(ct));
 
-if (!outcome.IsSuccess)
+if (outcome.TryGetResult(out var user))
 {
-    logger.LogError(outcome.Exception, "gave up loading user");
-    return cached;
+    return user;
 }
 
-return outcome.Result;
+logger.LogError(outcome.Exception, "gave up loading user");
+return cached;
 ```
+
+`TryGetResult` returns `true` exactly when the outcome succeeded. Its nullability annotation
+also tells flow analysis that a non-nullable result is available inside the success branch.
+Use `GetResultOrRethrow()` when you want the throwing path instead.
 
 No-throw execution also supports state-passing `ValueTask` and `Task` delegates. Use a static
 delegate to keep caller data out of a closure:
