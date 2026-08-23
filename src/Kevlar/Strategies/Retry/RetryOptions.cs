@@ -18,8 +18,9 @@ public class RetryOptions
     internal bool HasHandlingOverride => HandlesException is not null;
 
     /// <summary>
-    /// Maximum number of retries after the initial attempt. The default is 3
-    /// (up to 4 total executions). Use <see cref="int.MaxValue"/> to retry forever.
+    /// The number of <em>retries</em> made after the initial attempt — not the number of attempts.
+    /// <c>MaxRetries = 3</c> (the default) makes up to 4 total attempts: the initial call plus
+    /// 3 retries. Use <see cref="int.MaxValue"/> to retry forever.
     /// </summary>
     public int MaxRetries { get; set; } = 3;
 
@@ -71,8 +72,9 @@ public class RetryOptions
 public sealed class RetryOptions<TResult>
 {
     /// <summary>
-    /// Maximum number of retries after the initial attempt. The default is 3
-    /// (up to 4 total executions). Use <see cref="int.MaxValue"/> to retry forever.
+    /// The number of <em>retries</em> made after the initial attempt — not the number of attempts.
+    /// <c>MaxRetries = 3</c> (the default) makes up to 4 total attempts: the initial call plus
+    /// 3 retries. Use <see cref="int.MaxValue"/> to retry forever.
     /// </summary>
     public int MaxRetries { get; set; } = 3;
 

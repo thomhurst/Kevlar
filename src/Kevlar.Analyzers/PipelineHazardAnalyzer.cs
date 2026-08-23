@@ -10,7 +10,7 @@ namespace Kevlar.Analyzers;
 /// <summary>
 /// Diagnoses statically provable Kevlar pipeline hazards: synchronous multi-attempt hedging, reactive
 /// strategies made unreachable by an inner fallback, per-execution construction of stateful shields,
-/// and void fallbacks used for result-returning executions.
+/// void fallbacks used for result-returning executions, and hedging on an untyped shield.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
@@ -55,13 +55,24 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         isEnabledByDefault: true,
         description: "A void fallback cannot produce a value for a result-returning execution and fails at runtime when it handles an outcome.");
 
+    /// <summary>The KEV006 rule.</summary>
+    public static readonly DiagnosticDescriptor UntypedHedgingRule = new(
+        id: "KEV006",
+        title: "Hedging on an untyped Shield requires an idempotent action",
+        messageFormat: "Hedging on an untyped Shield runs the execution delegate more than once, concurrently. Build a result-aware shield with Shield.For<T>() so result clauses can select the winning attempt, or confirm the action is idempotent.",
+        category: "Reliability",
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "An untyped Shield can only judge hedged attempts by their exceptions, so every attempt it launches runs to completion against the real dependency. Duplicate writes, charges, or sends from a losing hedge are observable unless the action is idempotent.");
+
     /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
         ImmutableArray.Create(
             SynchronousHedgingRule,
             UnreachableReactiveStrategyRule,
             EphemeralStatefulShieldRule,
-            VoidFallbackResultExecutionRule);
+            VoidFallbackResultExecutionRule,
+            UntypedHedgingRule);
 
     /// <inheritdoc />
     public override void Initialize(AnalysisContext context)
@@ -137,6 +148,13 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 EphemeralStatefulShieldRule,
                 location,
                 statefulComponent));
+        }
+
+        if (IsUntypedHedge(invocation.TargetMethod, knownTypes))
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                UntypedHedgingRule,
+                invocation.Syntax.GetLocation()));
         }
 
         if (IsResultReturningExecution(invocation.TargetMethod, knownTypes)
@@ -1332,6 +1350,15 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             && IsKevlarFluentMethod(method, knownTypes);
     }
 
+    private static bool IsUntypedHedge(IMethodSymbol method, KnownTypes knownTypes)
+    {
+        method = Normalize(method);
+        return method.Name == "Hedge"
+            && method.ReturnType is INamedTypeSymbol returnType
+            && knownTypes.IsUntypedShield(returnType)
+            && IsKevlarFluentMethod(method, knownTypes);
+    }
+
     private static bool IsStatefulStrategy(IMethodSymbol method, KnownTypes knownTypes) =>
         method.Name is "CircuitBreaker" or "RateLimit" or "ConcurrencyLimit"
         && IsKevlarFluentMethod(method, knownTypes);
@@ -1614,7 +1641,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     }
 
     private static bool StartsHandlingClause(IMethodSymbol method, KnownTypes knownTypes) =>
-        (method.Name is "When" or "WhenResult" or "WhenDefault" or "WhenAnyError")
+        (method.Name is "When" or "WhenResult" or "WhenResultDefault" or "WhenAnyError")
         && (knownTypes.IsShield(method.ContainingType)
             || knownTypes.IsShieldExtensions(method.ContainingType));
 

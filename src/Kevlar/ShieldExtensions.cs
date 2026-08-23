@@ -10,9 +10,20 @@ namespace Kevlar;
 public static class ShieldExtensions
 {
     /// <summary>Appends a retry of handled exceptions, up to <paramref name="maxRetries"/> times, with the default exponential jittered backoff.</summary>
+    /// <param name="shield">The shield to append the retry to.</param>
+    /// <param name="maxRetries">
+    /// The number of <em>retries</em>, not the number of attempts: <c>Retry(3)</c> makes up to 4
+    /// total attempts — the initial call plus 3 retries.
+    /// </param>
     public static Shield Retry(this Shield shield, int maxRetries = 3) => shield.Retry(options => options.MaxRetries = maxRetries);
 
     /// <summary>Appends a retry of handled exceptions, up to <paramref name="maxRetries"/> times, with the given backoff.</summary>
+    /// <param name="shield">The shield to append the retry to.</param>
+    /// <param name="maxRetries">
+    /// The number of <em>retries</em>, not the number of attempts: <c>Retry(3)</c> makes up to 4
+    /// total attempts — the initial call plus 3 retries.
+    /// </param>
+    /// <param name="backoff">The delay computation applied between attempts.</param>
     public static Shield Retry(this Shield shield, int maxRetries, Backoff backoff) => shield.Retry(options =>
     {
         options.MaxRetries = maxRetries;
@@ -20,6 +31,10 @@ public static class ShieldExtensions
     });
 
     /// <summary>Appends a retry strategy configured via <paramref name="configure"/>.</summary>
+    /// <remarks>
+    /// <see cref="RetryOptions.MaxRetries"/> counts <em>retries</em>, not attempts:
+    /// <c>MaxRetries = 3</c> makes up to 4 total attempts — the initial call plus 3 retries.
+    /// </remarks>
     public static Shield Retry(this Shield shield, Action<RetryOptions> configure)
     {
         Throw.IfNull(shield, nameof(shield));
@@ -103,6 +118,13 @@ public static class ShieldExtensions
     }
 
     /// <summary>Appends hedging: up to <paramref name="maxAttempts"/> concurrent attempts staggered by <paramref name="delay"/>.</summary>
+    /// <remarks>
+    /// Hedging on an untyped <see cref="Shield"/> runs the execution delegate more than once,
+    /// concurrently, and only its exceptions can select a winner. The delegate must therefore be
+    /// idempotent: duplicate writes, charges, or sends are otherwise observable side effects of a
+    /// hedge that later loses. Prefer <c>Shield.For&lt;T&gt;()</c>, where result clauses decide which
+    /// attempt is acceptable, or confirm the action is safe to repeat.
+    /// </remarks>
     public static Shield Hedge(this Shield shield, int maxAttempts, TimeSpan delay) => shield.Hedge(options =>
     {
         options.MaxAttempts = maxAttempts;
@@ -110,6 +132,11 @@ public static class ShieldExtensions
     });
 
     /// <summary>Appends a hedging strategy configured via <paramref name="configure"/>.</summary>
+    /// <remarks>
+    /// Hedging on an untyped <see cref="Shield"/> runs the execution delegate more than once,
+    /// concurrently, so the delegate must be idempotent. Prefer <c>Shield.For&lt;T&gt;()</c>, or
+    /// confirm the action is safe to repeat.
+    /// </remarks>
     public static Shield Hedge(this Shield shield, Action<HedgingOptions> configure)
     {
         Throw.IfNull(shield, nameof(shield));
@@ -140,7 +167,7 @@ public static class ShieldExtensions
     public static ShieldBuilder When(this Shield shield, Func<Exception, bool> predicate)
     {
         Throw.IfNull(shield, nameof(shield));
-        return new ShieldBuilder(shield).OrWhen(predicate);
+        return new ShieldBuilder(shield).Or(predicate);
     }
 
     /// <summary>

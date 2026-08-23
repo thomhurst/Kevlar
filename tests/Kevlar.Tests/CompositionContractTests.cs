@@ -198,12 +198,12 @@ public class CompositionContractTests
                 calls.Add("first");
                 return exception is ArgumentNullException;
             })
-            .OrWhen(exception =>
+            .Or(exception =>
             {
                 calls.Add("second");
                 return exception is ArgumentException;
             })
-            .OrWhen(_ =>
+            .Or(_ =>
             {
                 calls.Add("third");
                 throw new InvalidOperationException("must be short-circuited");

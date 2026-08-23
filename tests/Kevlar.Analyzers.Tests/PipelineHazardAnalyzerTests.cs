@@ -434,7 +434,7 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield<int>.Empty.Wrap(Shield.Hedge(2, TimeSpan.Zero)).Execute(_ => 1);",
         };
 
-        await AssertEachAsync(cases, "KEV002");
+        await AssertEachAsync(cases, "KEV002", "KEV006");
     }
 
     [Test]
@@ -455,7 +455,7 @@ public class PipelineHazardAnalyzerTests
             }
             """);
 
-        await AssertRuleAsync(aliasDiagnostics, "KEV002");
+        await AssertRuleAsync(Without(aliasDiagnostics, "KEV006"), "KEV002");
         await AssertRuleAsync(genericDiagnostics, "KEV002");
     }
 
@@ -476,7 +476,7 @@ public class PipelineHazardAnalyzerTests
         foreach (var body in cases)
         {
             var diagnostics = await AnalyzeBodyAsync(body, "private static Shield CreateShield() => Shield.Hedge(2, TimeSpan.Zero);");
-            await Assert.That(diagnostics).IsEmpty();
+            await Assert.That(Without(diagnostics, "KEV006")).IsEmpty();
         }
     }
 
@@ -492,8 +492,77 @@ public class PipelineHazardAnalyzerTests
         foreach (var body in cases)
         {
             var diagnostics = await AnalyzeBodyAsync(body);
+            await Assert.That(Without(diagnostics, "KEV006")).IsEmpty();
+        }
+    }
+
+    [Test]
+    public async Task KEV006_Flags_Hedging_On_Untyped_Shields_And_Builders()
+    {
+        var cases = new[]
+        {
+            "_ = Shield.Hedge(2, TimeSpan.Zero);",
+            "_ = Shield.Hedge(options => options.MaxAttempts = 2);",
+            "_ = Shield.Empty.Hedge(2, TimeSpan.Zero);",
+            "_ = Shield.Empty.Hedge(options => options.MaxAttempts = 2);",
+            "_ = ShieldExtensions.Hedge(Shield.Empty, 2, TimeSpan.Zero);",
+            "_ = Shield.When<InvalidOperationException>().Hedge(2, TimeSpan.Zero);",
+            "_ = Shield.When<InvalidOperationException>().Hedge(options => options.MaxAttempts = 2);",
+            "_ = Shield.Timeout(TimeSpan.FromSeconds(1)).Hedge(2, TimeSpan.Zero).Retry(1);",
+        };
+
+        await AssertEachAsync(cases, "KEV006");
+    }
+
+    [Test]
+    public async Task KEV006_Skips_Typed_Shields_And_Typed_Builders()
+    {
+        var cases = new[]
+        {
+            "_ = Shield.For<int>().Hedge(2, TimeSpan.Zero);",
+            "_ = Shield.For<int>().Hedge(options => options.MaxAttempts = 2);",
+            "_ = Shield.For<int>().When<InvalidOperationException>().Hedge(2, TimeSpan.Zero);",
+            "_ = Shield.For<int>().WhenResult(0).Hedge(options => options.MaxAttempts = 2);",
+            "_ = Shield.Empty.For<int>().Hedge(2, TimeSpan.Zero);",
+            "_ = Shield.For<int>().Retry(1);",
+        };
+
+        foreach (var body in cases)
+        {
+            var diagnostics = await AnalyzeBodyAsync(body);
             await Assert.That(diagnostics).IsEmpty();
         }
+    }
+
+    [Test]
+    public async Task KEV006_Diagnostic_Contract_And_Suppression_Are_Exact()
+    {
+        const string construction = "Shield.Hedge(2, TimeSpan.Zero)";
+        var source = $$"""
+            public class TestSubject
+            {
+                public Shield Build() => {{construction}};
+            }
+            """;
+        var diagnostics = await AnalyzeSourceAsync(source);
+        var suppressed = await AnalyzeBodyAsync("""
+            #pragma warning disable KEV006 // The documented action is idempotent.
+            _ = Shield.Hedge(2, TimeSpan.Zero);
+            #pragma warning restore KEV006
+            """);
+
+        await Assert.That(diagnostics.Length).IsEqualTo(1);
+        var diagnostic = diagnostics[0];
+        await Assert.That(diagnostic.Id).IsEqualTo("KEV006");
+        await Assert.That(diagnostic.Severity).IsEqualTo(DiagnosticSeverity.Warning);
+        await Assert.That(diagnostic.GetMessage()).IsEqualTo(
+            "Hedging on an untyped Shield runs the execution delegate more than once, concurrently. "
+            + "Build a result-aware shield with Shield.For<T>() so result clauses can select the "
+            + "winning attempt, or confirm the action is idempotent.");
+        await Assert.That(diagnostic.Location.SourceSpan.Start)
+            .IsEqualTo(CreateSource(source).IndexOf(construction, StringComparison.Ordinal));
+        await Assert.That(diagnostic.Location.SourceSpan.Length).IsEqualTo(construction.Length);
+        await Assert.That(suppressed).IsEmpty();
     }
 
     [Test]
@@ -716,14 +785,30 @@ public class PipelineHazardAnalyzerTests
         await Assert.That(generated).IsEmpty();
     }
 
-    private static async Task AssertEachAsync(IEnumerable<string> cases, string expectedRule)
+    private static async Task AssertEachAsync(
+        IEnumerable<string> cases,
+        string expectedRule,
+        params string[] expectedCompanionRules)
     {
         foreach (var body in cases)
         {
             var diagnostics = await AnalyzeBodyAsync(body);
-            await AssertRuleAsync(diagnostics, expectedRule);
+            await AssertRuleAsync(Without(diagnostics, expectedCompanionRules), expectedRule);
         }
     }
+
+    /// <summary>
+    /// Drops rules a case is expected to trigger in addition to the rule under test — untyped
+    /// hedging cases, for instance, always also report KEV006.
+    /// </summary>
+    private static ImmutableArray<Diagnostic> Without(
+        ImmutableArray<Diagnostic> diagnostics,
+        params string[] ruleIds) =>
+        ruleIds.Length == 0
+            ? diagnostics
+            : diagnostics
+                .Where(diagnostic => !ruleIds.Contains(diagnostic.Id, StringComparer.Ordinal))
+                .ToImmutableArray();
 
     private static async Task AssertRuleAsync(ImmutableArray<Diagnostic> diagnostics, string expectedRule)
     {

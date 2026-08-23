@@ -74,6 +74,15 @@ match the execution result type; a mismatch fails before the additional operatio
 Multiple invocations of your delegate may be in flight at once — it must be safe to invoke concurrently. This is also why **hedging requires async execution**: synchronous `Execute` throws `NotSupportedException`.
 :::
 
+:::warning Hedging on an untyped `Shield` needs an idempotent action
+An untyped `Shield` can judge attempts only by their *exceptions*, so every attempt it launches runs
+to completion against the real dependency. A losing hedge still did its work: duplicate writes,
+charges, or sends are observable unless the action is idempotent. Prefer `Shield.For<T>()`, where a
+[result clause](../handling-failures.md#result-clauses) decides which attempt is acceptable — or
+confirm the action is safe to repeat. The [`KEV006` analyzer](../analyzers.md#kev006-hedging-on-an-untyped-shield)
+flags untyped `Hedge(...)` for exactly this reason.
+:::
+
 - Losing attempts are cancelled through their token (use the token you're handed!).
 - Caller cancellation prevents any later hedge delegate from running, even when it races a completed stagger delay or occurs inside `OnHedge`/`OnHedgeAsync`. A cancellation already observable at the launch boundary suppresses both callbacks.
 - Launch ordering is `OnHedge`, awaited `OnHedgeAsync`, action generation, metrics, then the selected operation. Callback or generator failures preserve their exception identity, cancel in-flight attempts, and are not counted as launched hedges.

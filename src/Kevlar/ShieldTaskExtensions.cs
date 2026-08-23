@@ -50,6 +50,24 @@ public static class ShieldTaskExtensions
             cancellationToken);
     }
 
+    /// <summary>
+    /// Executes a context-aware <see cref="Task{TResult}"/>-returning delegate without seeding
+    /// execution properties. The context is pooled; never retain it beyond the delegate.
+    /// </summary>
+    public static ValueTask<T> ExecuteWithContextAsync<T>(
+        this Shield shield,
+        Func<KevlarContext, Task<T>> action,
+        CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(shield, nameof(shield));
+        Throw.IfNull(action, nameof(action));
+        return shield.ExecuteWithContextAsync(
+            action,
+            static (_, _) => { },
+            static (a, context) => new ValueTask<T>(a(context)),
+            cancellationToken);
+    }
+
     /// <summary>Executes the <see cref="Task"/>-returning void delegate through the pipeline.</summary>
     public static ValueTask ExecuteAsync(this Shield shield, Func<CancellationToken, Task> action, CancellationToken cancellationToken = default)
     {
@@ -81,6 +99,24 @@ public static class ShieldTaskExtensions
             (state, initializeProperties, action),
             static (s, properties) => s.initializeProperties(s.state, properties),
             static (s, context) => new ValueTask(s.action(s.state, context)),
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Executes a context-aware <see cref="Task"/>-returning void delegate without seeding execution
+    /// properties. The context is pooled; never retain it beyond the delegate.
+    /// </summary>
+    public static ValueTask ExecuteWithContextAsync(
+        this Shield shield,
+        Func<KevlarContext, Task> action,
+        CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(shield, nameof(shield));
+        Throw.IfNull(action, nameof(action));
+        return shield.ExecuteWithContextAsync(
+            action,
+            static (_, _) => { },
+            static (a, context) => new ValueTask(a(context)),
             cancellationToken);
     }
 
@@ -133,6 +169,24 @@ public static class ShieldTaskExtensions
             (state, initializeProperties, action),
             static (s, properties) => s.initializeProperties(s.state, properties),
             static (s, context) => new ValueTask<TResult>(s.action(s.state, context)),
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Executes a context-aware <see cref="Task{TResult}"/>-returning delegate without seeding
+    /// execution properties. The context is pooled; never retain it beyond the delegate.
+    /// </summary>
+    public static ValueTask<TResult> ExecuteWithContextAsync<TResult>(
+        this Shield<TResult> shield,
+        Func<KevlarContext, Task<TResult>> action,
+        CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(shield, nameof(shield));
+        Throw.IfNull(action, nameof(action));
+        return shield.ExecuteWithContextAsync(
+            action,
+            static (_, _) => { },
+            static (a, context) => new ValueTask<TResult>(a(context)),
             cancellationToken);
     }
 
