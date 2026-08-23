@@ -41,27 +41,33 @@ public sealed class Shield<TResult>
 
     // ── Handling clauses ────────────────────────────────────────────────────────────────
 
-    /// <summary>Starts a handling clause: subsequent reactive strategies act on exceptions of type <typeparamref name="TException"/>.</summary>
+    /// <summary>Starts a handling clause: subsequent reactive strategies act on exceptions of type <typeparamref name="TException"/>. Use <see cref="WhenAnyError"/> to return to default handling.</summary>
     public ShieldBuilder<TResult> When<TException>()
         where TException : Exception
         => new ShieldBuilder<TResult>(this).Or<TException>();
 
-    /// <summary>Starts a handling clause for exceptions of type <typeparamref name="TException"/> matching <paramref name="predicate"/>.</summary>
+    /// <summary>Starts a handling clause for exceptions of type <typeparamref name="TException"/> matching <paramref name="predicate"/>. Use <see cref="WhenAnyError"/> to return to default handling.</summary>
     public ShieldBuilder<TResult> When<TException>(Func<TException, bool> predicate)
         where TException : Exception
         => new ShieldBuilder<TResult>(this).Or(predicate);
 
-    /// <summary>Starts a handling clause for exceptions matching <paramref name="predicate"/>.</summary>
+    /// <summary>Starts a handling clause for exceptions matching <paramref name="predicate"/>. Use <see cref="WhenAnyError"/> to return to default handling.</summary>
     public ShieldBuilder<TResult> When(Func<Exception, bool> predicate) => new ShieldBuilder<TResult>(this).OrWhen(predicate);
 
-    /// <summary>Starts a handling clause for results matching <paramref name="predicate"/>.</summary>
+    /// <summary>Starts a handling clause for results matching <paramref name="predicate"/>. Use <see cref="WhenAnyError"/> to return to default handling.</summary>
     public ShieldBuilder<TResult> WhenResult(Func<TResult, bool> predicate) => new ShieldBuilder<TResult>(this).OrResult(predicate);
 
-    /// <summary>Starts a handling clause for results equal to <paramref name="result"/>.</summary>
+    /// <summary>Starts a handling clause for results equal to <paramref name="result"/>. Use <see cref="WhenAnyError"/> to return to default handling.</summary>
     public ShieldBuilder<TResult> WhenResult(TResult result) => new ShieldBuilder<TResult>(this).OrResult(result);
 
-    /// <summary>Starts a handling clause for results equal to <c>default</c> — <see langword="null"/> for reference types.</summary>
+    /// <summary>Starts a handling clause for results equal to <c>default</c> — <see langword="null"/> for reference types. Use <see cref="WhenAnyError"/> to return to default handling.</summary>
     public ShieldBuilder<TResult> WhenDefault() => new ShieldBuilder<TResult>(this).OrDefault();
+
+    /// <summary>
+    /// Resets the ambient handling clause. Subsequent reactive strategies use the default
+    /// handling: any exception except <see cref="OperationCanceledException"/>.
+    /// </summary>
+    public Shield<TResult> WhenAnyError() => new(Strategies, OutcomeJudge.Default, Name, Time);
 
     // ── Strategy chaining ───────────────────────────────────────────────────────────────
 
