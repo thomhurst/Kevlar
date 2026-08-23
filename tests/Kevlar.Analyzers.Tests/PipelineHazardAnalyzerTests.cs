@@ -504,6 +504,8 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.For<int>().Retry(1).Fallback(0);",
             "_ = Shield.For<int>().Hedge(2, TimeSpan.Zero).Fallback(0);",
             "_ = Shield.For<int>().CircuitBreaker(2, TimeSpan.FromSeconds(1)).Fallback(0);",
+            "_ = Shield.For<int>().CircuitBreaker(options => options.ConsecutiveFailures = 2).Fallback(0);",
+            "_ = Shield.For<int>().CircuitBreaker(options => options.HandlesException = null).Fallback(0);",
             "_ = Shield.For<int>().WhenResult(0).Retry(1).Fallback(0);",
             "_ = Shield.For<int>().Retry(1).Fallback(0, static options => options.OnFallback = static _ => { });",
             "_ = Shield.Retry(1).Fallback(static _ => ValueTask.CompletedTask, static options => options.OnFallback = static _ => { });",
@@ -552,6 +554,15 @@ public class PipelineHazardAnalyzerTests
 
         await AssertRuleAsync(aliasDiagnostics, "KEV003");
         await AssertRuleAsync(genericDiagnostics, "KEV003");
+    }
+
+    [Test]
+    public async Task KEV003_Skips_Reactive_Strategy_With_Local_Handling_Override()
+    {
+        var diagnostics = await AnalyzeBodyAsync(
+            "_ = Shield.For<int>().When<InvalidOperationException>().CircuitBreaker(options => options.HandlesException = exception => exception is TimeoutException).Fallback(0);");
+
+        await Assert.That(diagnostics).IsEmpty();
     }
 
     [Test]

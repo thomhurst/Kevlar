@@ -100,7 +100,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             && FindInPipeline(
                 GetReceiver(invocation),
                 context,
-                candidate => IsReactiveStrategy(Normalize(candidate.TargetMethod), knownTypes),
+                candidate => IsReactiveStrategyWithAmbientHandling(candidate, knownTypes),
                 knownTypes,
                 stopAtHandlingClause: true,
                 stopAtCompositionBoundary: true,
@@ -601,7 +601,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     && FindInPipeline(
                         operands[reactiveIndex],
                         context,
-                        candidate => IsReactiveStrategy(Normalize(candidate.TargetMethod), knownTypes),
+                        candidate => IsReactiveStrategyWithAmbientHandling(candidate, knownTypes),
                         knownTypes,
                         stopAtHandlingClause: true,
                         stopAtCompositionBoundary: true,
@@ -1365,6 +1365,52 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     private static bool IsReactiveStrategy(IMethodSymbol method, KnownTypes knownTypes) =>
         (method.Name is "Retry" or "RetryForever" or "Hedge" or "CircuitBreaker")
         && IsKevlarFluentMethod(method, knownTypes);
+
+    private static bool IsReactiveStrategyWithAmbientHandling(
+        IInvocationOperation invocation,
+        KnownTypes knownTypes) =>
+        IsReactiveStrategy(Normalize(invocation.TargetMethod), knownTypes)
+        && !HasLocalHandlingOverride(invocation);
+
+    private static bool HasLocalHandlingOverride(IInvocationOperation invocation)
+    {
+        foreach (var argument in invocation.Arguments)
+        {
+            if (argument.Parameter?.Name == "configure"
+                && ContainsLocalHandlingOverride(argument.Value))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool ContainsLocalHandlingOverride(IOperation operation)
+    {
+        operation = Unwrap(operation)!;
+        if (operation is ISimpleAssignmentOperation
+            {
+                Target: IPropertyReferenceOperation propertyReference,
+                Value: { } value,
+            }
+            && propertyReference.Property.Name is "HandlesException" or "HandlesResult"
+            && propertyReference.Property.ContainingNamespace.ToDisplayString() == "Kevlar"
+            && value.ConstantValue is not { HasValue: true, Value: null })
+        {
+            return true;
+        }
+
+        foreach (var child in operation.ChildOperations)
+        {
+            if (ContainsLocalHandlingOverride(child))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     private static bool IsKnownMultiAttemptHedge(
         IInvocationOperation invocation,
