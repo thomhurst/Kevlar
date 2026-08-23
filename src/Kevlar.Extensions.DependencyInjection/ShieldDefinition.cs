@@ -3,11 +3,22 @@ namespace Kevlar.Extensions.DependencyInjection;
 /// <summary>
 /// A declarative shield that can be bound from configuration (appsettings, environment,
 /// key vault…), so retry counts, timeouts and breaker thresholds are tunable without a redeploy.
-/// Strategies are chained in a fixed, sensible order, outermost first:
+/// </summary>
+/// <remarks>
+/// <para>
+/// <see cref="Build"/> chains the sections in one fixed order, outermost first:
 /// <see cref="Timeout"/> → <see cref="Retry"/> → <see cref="CircuitBreaker"/> →
 /// <see cref="RateLimit"/> → <see cref="ConcurrencyLimit"/> → <see cref="AttemptTimeout"/>.
-/// Only the sections present in configuration are added.
-/// </summary>
+/// Only the sections present in configuration are added; the rest keep their relative order.
+/// </para>
+/// <para>
+/// The order reads like any fluent chain: <see cref="Timeout"/> is the total budget around
+/// everything, retries happen inside it, every attempt passes through the breaker and the two
+/// limiters, and <see cref="AttemptTimeout"/> is the innermost per-attempt budget. Configuration
+/// cannot reorder the chain — build the shield with the fluent API when a different shape is
+/// needed.
+/// </para>
+/// </remarks>
 public sealed class ShieldDefinition
 {
     /// <summary>Total budget for the whole operation (outermost). Omit for none.</summary>
@@ -28,7 +39,12 @@ public sealed class ShieldDefinition
     /// <summary>Budget for each individual attempt (innermost). Omit for none.</summary>
     public TimeSpan? AttemptTimeout { get; set; }
 
-    /// <summary>Builds the configured <see cref="Shield"/>.</summary>
+    /// <summary>
+    /// Builds the configured <see cref="Shield"/>, chaining the declared sections outermost first:
+    /// <see cref="Timeout"/> → <see cref="Retry"/> → <see cref="CircuitBreaker"/> →
+    /// <see cref="RateLimit"/> → <see cref="ConcurrencyLimit"/> → <see cref="AttemptTimeout"/>.
+    /// Sections left null are skipped without changing the order of the rest.
+    /// </summary>
     public Shield Build()
     {
         var shield = Shield.Empty;

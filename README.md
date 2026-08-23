@@ -69,8 +69,21 @@ var search = Shield.For<HttpResponseMessage>()
     .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30));
 ```
 
-The clause applies to the reactive strategies that follow it. Typed shields keep result handling
-strongly typed, including callback events and `Outcome<T>` values.
+**A clause is ambient.** It applies to the strategy it is attached to *and* to every reactive
+strategy chained after it, until a new clause replaces it, `WhenAnyError()` resets it, or
+`Wrap`/`Compose` seals it. Above, the fallback, the retry *and* the circuit breaker all react to
+the same three conditions. Nothing repeats the predicate per strategy:
+
+```csharp
+var api = Shield
+    .When<HttpRequestException>()
+    .Retry(3)                        // retries HttpRequestException
+    .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30));
+    // the breaker inherits the clause above: only HttpRequestException counts toward tripping it
+```
+
+Typed shields keep result handling strongly typed, including callback events and `Outcome<T>`
+values.
 
 ## Compose protection in reading order
 
