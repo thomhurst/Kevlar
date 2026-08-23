@@ -4,7 +4,7 @@
 
 ### Breaking changes
 
-- Configure fallback notifications through `Fallback(..., configure)`. The pre-release `FallbackWithNotifications` methods and typed optional `onFallback` parameters were removed.
+- Configure fallback notifications through `Fallback(..., configure)`. The pre-release `FallbackWithNotifications` methods and typed optional `onFallback` parameters were removed. Migration-only error overloads prevent old positional callback lambdas from silently binding as options configurators.
 
 Handling clauses now use one spelling per position. `When…` starts a clause on `Shield` or
 `Shield<TResult>`; only `Or…` continues it on a builder. `Shield.For<TResult>()` now returns

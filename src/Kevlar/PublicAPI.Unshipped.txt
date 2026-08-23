@@ -86,17 +86,23 @@ Kevlar.FallbackOptions<TResult>.OnFallbackAsync.set -> void
 *REMOVED*Kevlar.ShieldBuilder<TResult>.Fallback(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! fallback, System.Action<Kevlar.FallbackEvent<TResult>>? onFallback = null) -> Kevlar.Shield<TResult>!
 *REMOVED*Kevlar.ShieldBuilder<TResult>.Fallback(TResult fallbackValue, System.Action<Kevlar.FallbackEvent<TResult>>? onFallback = null) -> Kevlar.Shield<TResult>!
 Kevlar.Shield<TResult>.Fallback(System.Func<Kevlar.Outcome<TResult>, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! fallback) -> Kevlar.Shield<TResult>!
+Kevlar.Shield<TResult>.Fallback(System.Func<Kevlar.Outcome<TResult>, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! fallback, System.Action<Kevlar.FallbackEvent<TResult>>! onFallback) -> Kevlar.Shield<TResult>!
 Kevlar.Shield<TResult>.Fallback(System.Func<Kevlar.Outcome<TResult>, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! fallback, System.Action<Kevlar.FallbackOptions<TResult>!>! configure) -> Kevlar.Shield<TResult>!
 Kevlar.Shield<TResult>.Fallback(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! fallback) -> Kevlar.Shield<TResult>!
+Kevlar.Shield<TResult>.Fallback(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! fallback, System.Action<Kevlar.FallbackEvent<TResult>>! onFallback) -> Kevlar.Shield<TResult>!
 Kevlar.Shield<TResult>.Fallback(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! fallback, System.Action<Kevlar.FallbackOptions<TResult>!>! configure) -> Kevlar.Shield<TResult>!
 Kevlar.Shield<TResult>.Fallback(TResult fallbackValue) -> Kevlar.Shield<TResult>!
+Kevlar.Shield<TResult>.Fallback(TResult fallbackValue, System.Action<Kevlar.FallbackEvent<TResult>>! onFallback) -> Kevlar.Shield<TResult>!
 Kevlar.Shield<TResult>.Fallback(TResult fallbackValue, System.Action<Kevlar.FallbackOptions<TResult>!>! configure) -> Kevlar.Shield<TResult>!
 Kevlar.ShieldBuilder.Fallback(System.Func<System.Exception!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback, System.Action<Kevlar.FallbackOptions!>! configure) -> Kevlar.Shield!
 Kevlar.ShieldBuilder<TResult>.Fallback(System.Func<Kevlar.Outcome<TResult>, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! fallback) -> Kevlar.Shield<TResult>!
+Kevlar.ShieldBuilder<TResult>.Fallback(System.Func<Kevlar.Outcome<TResult>, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! fallback, System.Action<Kevlar.FallbackEvent<TResult>>! onFallback) -> Kevlar.Shield<TResult>!
 Kevlar.ShieldBuilder<TResult>.Fallback(System.Func<Kevlar.Outcome<TResult>, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! fallback, System.Action<Kevlar.FallbackOptions<TResult>!>! configure) -> Kevlar.Shield<TResult>!
 Kevlar.ShieldBuilder<TResult>.Fallback(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! fallback) -> Kevlar.Shield<TResult>!
+Kevlar.ShieldBuilder<TResult>.Fallback(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! fallback, System.Action<Kevlar.FallbackEvent<TResult>>! onFallback) -> Kevlar.Shield<TResult>!
 Kevlar.ShieldBuilder<TResult>.Fallback(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! fallback, System.Action<Kevlar.FallbackOptions<TResult>!>! configure) -> Kevlar.Shield<TResult>!
 Kevlar.ShieldBuilder<TResult>.Fallback(TResult fallbackValue) -> Kevlar.Shield<TResult>!
+Kevlar.ShieldBuilder<TResult>.Fallback(TResult fallbackValue, System.Action<Kevlar.FallbackEvent<TResult>>! onFallback) -> Kevlar.Shield<TResult>!
 Kevlar.ShieldBuilder<TResult>.Fallback(TResult fallbackValue, System.Action<Kevlar.FallbackOptions<TResult>!>! configure) -> Kevlar.Shield<TResult>!
 static Kevlar.ShieldExtensions.Fallback(this Kevlar.Shield! shield, System.Func<System.Exception!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback, System.Action<Kevlar.FallbackOptions!>! configure) -> Kevlar.Shield!
 static Kevlar.ShieldExtensions.Fallback(this Kevlar.Shield! shield, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback, System.Action<Kevlar.FallbackOptions!>! configure) -> Kevlar.Shield!

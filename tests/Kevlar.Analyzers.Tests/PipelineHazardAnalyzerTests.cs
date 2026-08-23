@@ -9,6 +9,48 @@ namespace Kevlar.Analyzers.Tests;
 public class PipelineHazardAnalyzerTests
 {
     [Test]
+    public async Task Legacy_Fallback_Callbacks_Cannot_Bind_As_Options_Configurators()
+    {
+        var ambiguous = CreateCompilation(CreateSource("""
+            public class TestSubject
+            {
+                public void Configure()
+                {
+                    _ = Shield.For<int>().Fallback(42, _ => { });
+                    _ = Shield.For<int>().Fallback(_ => new ValueTask<int>(42), _ => { });
+                    _ = Shield.For<int>().Fallback((_, _) => new ValueTask<int>(42), _ => { });
+                    _ = Shield.For<int>().When<Exception>().Fallback(42, _ => { });
+                    _ = Shield.For<int>().When<Exception>().Fallback(_ => new ValueTask<int>(42), _ => { });
+                    _ = Shield.For<int>().When<Exception>().Fallback((_, _) => new ValueTask<int>(42), _ => { });
+                }
+            }
+            """));
+        var ambiguousErrors = ambiguous.GetDiagnostics()
+            .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+            .ToArray();
+
+        await Assert.That(ambiguousErrors).Count().IsEqualTo(6);
+        await Assert.That(ambiguousErrors).All(static diagnostic => diagnostic.Id == "CS0121");
+
+        var explicitLegacy = CreateCompilation(CreateSource("""
+            public class TestSubject
+            {
+                public void Configure()
+                {
+                    Action<FallbackEvent<int>> callback = _ => { };
+                    _ = Shield.For<int>().Fallback(42, callback);
+                }
+            }
+            """));
+        var explicitErrors = explicitLegacy.GetDiagnostics()
+            .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+            .ToArray();
+
+        await Assert.That(explicitErrors).Count().IsEqualTo(1);
+        await Assert.That(explicitErrors[0].Id).IsEqualTo("CS0619");
+    }
+
+    [Test]
     public async Task KEV004_Flags_Inline_Stateful_Shields_For_All_Execution_Forms()
     {
         var cases = new[]
