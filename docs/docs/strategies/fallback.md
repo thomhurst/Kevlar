@@ -47,35 +47,38 @@ in the same expression or a stable local.
 })
 ```
 
-Every overload takes an optional `onFallback` callback:
+Every overload also has an options configurator for fallback notifications:
 
 <!-- doc-test-ignore: Fluent fragment requires the typed builder introduced by the surrounding prose. -->
 ```csharp
 .Fallback(Config.Default,
-    onFallback: e => metrics.Increment("config.fallback"))
+    options => options.OnFallback = e => metrics.Increment("config.fallback"))
 ```
+
+Legacy positional notification callbacks intentionally fail compilation instead of being
+reinterpreted as configurators. Assign the callback to `options.OnFallback` as shown above.
 
 The `FallbackEvent<T>` carries the failure that triggered it as a typed `Outcome<T>` — `Outcome.Exception` when an exception was handled, `Outcome.Result` when a result value was. No casting, no boxing.
 
-`onFallback` runs before the fallback value or factory. If the callback throws, its exact
+`OnFallback` runs before the fallback value or factory. If the callback throws, its exact
 exception becomes the pipeline outcome and the factory is not called. A later execution is
 unaffected. Async factory failures are likewise preserved as the pipeline outcome.
 
-## Awaited notifications
+## Notifications
 
-Use `FallbackWithNotifications` when notification work must be awaited:
+Configure both synchronous and awaited notification work in the same lambda:
 
 <!-- doc-test-ignore: Illustrative logger and audit dependencies are application services. -->
 ```csharp
 var shield = Shield.For<Config>()
     .When<HttpRequestException>()
-    .FallbackWithNotifications(
+    .Fallback(
         Config.Default,
-        new FallbackOptions<Config>
+        options =>
         {
-            OnFallback = e => logger.LogWarning(e.Outcome.Exception, "Using defaults"),
-            OnFallbackAsync = async e =>
-                await audit.RecordFallbackAsync(e.Outcome, e.Context.CancellationToken),
+            options.OnFallback = e => logger.LogWarning(e.Outcome.Exception, "Using defaults");
+            options.OnFallbackAsync = async e =>
+                await audit.RecordFallbackAsync(e.Outcome, e.Context.CancellationToken);
         });
 ```
 

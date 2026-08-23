@@ -82,21 +82,21 @@ public class StrategyInspectionTests
         await Assert.That(fixedCircuit.Core.HasMonitor).IsFalse();
         await Assert.That(fixedCircuit.Core.HasNotification).IsFalse();
 
-        var notifiedFallback = GetInspection(Shield.For<int>().Fallback(42, static _ => { }));
-        var asyncNotifiedFallback = GetInspection(Shield.For<int>().FallbackWithNotifications(
+        var notifiedFallback = GetInspection(Shield.For<int>().Fallback(42, static options => options.OnFallback = static _ => { }));
+        var asyncNotifiedFallback = GetInspection(Shield.For<int>().Fallback(
             42,
-            new FallbackOptions<int> { OnFallbackAsync = static _ => default }));
+            static options => options.OnFallbackAsync = static _ => default));
         var fixedFallback = GetInspection(Shield.For<int>().Fallback(42));
         var voidFallback = GetInspection(
             Shield.When<InvalidOperationException>().Fallback(static (_, _) => default));
         var notifiedVoidFallback = GetInspection(
-            Shield.When<InvalidOperationException>().FallbackWithNotifications(
+            Shield.When<InvalidOperationException>().Fallback(
                 static (_, _) => default,
-                new FallbackOptions { OnFallback = static _ => { } }));
+                static options => options.OnFallback = static _ => { }));
         var asyncNotifiedVoidFallback = GetInspection(
-            Shield.When<InvalidOperationException>().FallbackWithNotifications(
+            Shield.When<InvalidOperationException>().Fallback(
                 static (_, _) => default,
-                new FallbackOptions { OnFallbackAsync = static _ => default }));
+                static options => options.OnFallbackAsync = static _ => default));
         await Assert.That(notifiedFallback.HasNotification).IsTrue();
         await Assert.That(asyncNotifiedFallback.HasNotification).IsTrue();
         await Assert.That(fixedFallback.HasNotification).IsFalse();

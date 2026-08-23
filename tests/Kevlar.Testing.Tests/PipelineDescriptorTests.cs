@@ -129,6 +129,12 @@ public class PipelineDescriptorTests
         await Assert.That(fallback.IsVoid).IsFalse();
         await Assert.That(fallback.HasNotification).IsFalse();
 
+        var configuredFallback = Shield.For<int>()
+            .Fallback(42, static options => options.OnFallback = static _ => { })
+            .GetDescriptor()
+            .AssertContainsSingle<FallbackStrategyDescriptor>();
+        await Assert.That(configuredFallback.HasNotification).IsTrue();
+
         var voidFallback = Shield
             .When<InvalidOperationException>()
             .Fallback(static (_, _) => default)

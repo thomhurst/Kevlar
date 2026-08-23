@@ -90,7 +90,7 @@ public class AmbientContextContractTests
                     Record(observations, "fallback");
                     return new ValueTask<int>(42);
                 },
-                _ => Record(observations, "on-fallback"));
+                options => options.OnFallback = _ => Record(observations, "on-fallback"));
 
         Ambient.Value = "fallback-flow";
         var execution = StartUnderContext(synchronizationContext, () => shield.ExecuteAsync(_ =>
@@ -177,7 +177,7 @@ public class AmbientContextContractTests
                     Record(observations, "fallback-action");
                     return new ValueTask<int>(2);
                 },
-                _ => Record(observations, "fallback-callback"));
+                options => options.OnFallback = _ => Record(observations, "fallback-callback"));
         await fallback.ExecuteAsync<int>(_ => throw new InvalidOperationException());
 
         var timeProvider = new ControlledTimeProvider();

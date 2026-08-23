@@ -1303,7 +1303,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     private static bool IsVoidFallback(IMethodSymbol method, KnownTypes knownTypes)
     {
         method = Normalize(method);
-        return method.Name is "Fallback" or "FallbackWithNotifications"
+        return method.Name == "Fallback"
             && method.ReturnType is INamedTypeSymbol returnType
             && knownTypes.IsUntypedShield(returnType)
             && IsKevlarFluentMethod(method, knownTypes);

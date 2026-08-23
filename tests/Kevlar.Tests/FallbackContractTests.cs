@@ -16,7 +16,7 @@ public class FallbackContractTests
                 factoryCalls++;
                 return new ValueTask<int>(42);
             },
-            onFallback: _ =>
+            options => options.OnFallback = _ =>
             {
                 callbackCalls++;
                 if (callbackCalls == 1)
@@ -119,7 +119,7 @@ public class FallbackContractTests
                     explicitFactoryCalls++;
                     return new ValueTask<int>(42);
                 },
-                onFallback: fallback => observed = fallback.Outcome.Exception);
+                options => options.OnFallback = fallback => observed = fallback.Outcome.Exception);
 
         var bypassed = await defaultShield.ExecuteOutcomeAsync<int>(_ => throw original);
         var recovered = await explicitShield.ExecuteAsync<int>(_ => throw original);
@@ -147,7 +147,7 @@ public class FallbackContractTests
                 handledOutcome = outcome;
                 fallbackToken = token;
                 return new ValueTask<int>(42);
-            }, onFallback: fallback => eventOutcome = fallback.Outcome)
+            }, options => options.OnFallback = fallback => eventOutcome = fallback.Outcome)
             .Timeout(TimeSpan.FromSeconds(1))
             .WithTimeProvider(timeProvider);
 
@@ -218,7 +218,7 @@ public class FallbackContractTests
                     observed = outcome.Exception;
                     return new ValueTask<int>(42);
                 },
-                onFallback: _ => eventCalls++)
+                options => options.OnFallback = _ => eventCalls++)
             .Hedge(3, Timeout.InfiniteTimeSpan);
 
         var result = await shield.ExecuteAsync<int>(_ =>
@@ -263,7 +263,7 @@ public class FallbackContractTests
                     factoryOutcome = outcome;
                     return new ValueTask<int>(42);
                 },
-                onFallback: fallback =>
+                options => options.OnFallback = fallback =>
                 {
                     order.Add("event");
                     eventOutcome = fallback.Outcome;
@@ -292,7 +292,7 @@ public class FallbackContractTests
                     factoryOutcome = outcome;
                     return new ValueTask<int>(42);
                 },
-                onFallback: fallback =>
+                options => options.OnFallback = fallback =>
                 {
                     order.Add("event");
                     eventOutcome = fallback.Outcome;

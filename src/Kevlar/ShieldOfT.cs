@@ -11,6 +11,9 @@ namespace Kevlar;
 /// </summary>
 public sealed class Shield<TResult>
 {
+    private const string LegacyFallbackCallbackMessage =
+        "Configure fallback notifications with Fallback(..., options => options.OnFallback = callback).";
+
     internal readonly Strategy[] Strategies;
     internal readonly StrategyNode? Head;
     internal readonly OutcomeJudge? Ambient;
@@ -170,13 +173,21 @@ public sealed class Shield<TResult>
     }
 
     /// <summary>Replaces handled outcomes with <paramref name="fallbackValue"/>.</summary>
-    public Shield<TResult> Fallback(TResult fallbackValue, Action<FallbackEvent<TResult>>? onFallback = null) =>
-        Append(new FallbackStrategy<TResult>((_, _) => new ValueTask<TResult>(fallbackValue), JudgeOrDefault, onFallback, null));
+    public Shield<TResult> Fallback(TResult fallbackValue) =>
+        Append(new FallbackStrategy<TResult>((_, _) => new ValueTask<TResult>(fallbackValue), JudgeOrDefault, null, null));
 
-    /// <summary>Replaces handled outcomes with <paramref name="fallbackValue"/> and uses the configured notifications.</summary>
-    public Shield<TResult> FallbackWithNotifications(TResult fallbackValue, FallbackOptions<TResult> options)
+    /// <summary>Prevents legacy notification callbacks from binding as options configurators.</summary>
+    [Obsolete(LegacyFallbackCallbackMessage, error: true)]
+    public Shield<TResult> Fallback(TResult fallbackValue, Action<FallbackEvent<TResult>> onFallback) =>
+        Fallback(fallbackValue, options => options.OnFallback = onFallback);
+
+    /// <summary>Replaces handled outcomes with <paramref name="fallbackValue"/> and configures notifications.</summary>
+    /// <remarks>Runs <see cref="FallbackOptions{TResult}.OnFallback"/>, then <see cref="FallbackOptions{TResult}.OnFallbackAsync"/>, before recovery. A notification failure skips recovery.</remarks>
+    public Shield<TResult> Fallback(TResult fallbackValue, Action<FallbackOptions<TResult>> configure)
     {
-        Throw.IfNull(options, nameof(options));
+        Throw.IfNull(configure, nameof(configure));
+        var options = new FallbackOptions<TResult>();
+        configure(options);
         return Append(new FallbackStrategy<TResult>(
             (_, _) => new ValueTask<TResult>(fallbackValue),
             JudgeOrDefault,
@@ -185,19 +196,29 @@ public sealed class Shield<TResult>
     }
 
     /// <summary>Replaces handled outcomes with the result of <paramref name="fallback"/>.</summary>
-    public Shield<TResult> Fallback(Func<CancellationToken, ValueTask<TResult>> fallback, Action<FallbackEvent<TResult>>? onFallback = null)
+    public Shield<TResult> Fallback(Func<CancellationToken, ValueTask<TResult>> fallback)
     {
         Throw.IfNull(fallback, nameof(fallback));
-        return Append(new FallbackStrategy<TResult>((_, context) => fallback(context.CancellationToken), JudgeOrDefault, onFallback, null));
+        return Append(new FallbackStrategy<TResult>((_, context) => fallback(context.CancellationToken), JudgeOrDefault, null, null));
     }
 
-    /// <summary>Replaces handled outcomes with the result of <paramref name="fallback"/> and uses the configured notifications.</summary>
-    public Shield<TResult> FallbackWithNotifications(
+    /// <summary>Prevents legacy notification callbacks from binding as options configurators.</summary>
+    [Obsolete(LegacyFallbackCallbackMessage, error: true)]
+    public Shield<TResult> Fallback(
         Func<CancellationToken, ValueTask<TResult>> fallback,
-        FallbackOptions<TResult> options)
+        Action<FallbackEvent<TResult>> onFallback) =>
+        Fallback(fallback, options => options.OnFallback = onFallback);
+
+    /// <summary>Replaces handled outcomes with the result of <paramref name="fallback"/> and configures notifications.</summary>
+    /// <remarks>Runs <see cref="FallbackOptions{TResult}.OnFallback"/>, then <see cref="FallbackOptions{TResult}.OnFallbackAsync"/>, before recovery. A notification failure skips recovery.</remarks>
+    public Shield<TResult> Fallback(
+        Func<CancellationToken, ValueTask<TResult>> fallback,
+        Action<FallbackOptions<TResult>> configure)
     {
         Throw.IfNull(fallback, nameof(fallback));
-        Throw.IfNull(options, nameof(options));
+        Throw.IfNull(configure, nameof(configure));
+        var options = new FallbackOptions<TResult>();
+        configure(options);
         return Append(new FallbackStrategy<TResult>(
             (_, context) => fallback(context.CancellationToken),
             JudgeOrDefault,
@@ -206,22 +227,32 @@ public sealed class Shield<TResult>
     }
 
     /// <summary>Replaces handled outcomes with the result of <paramref name="fallback"/>, which receives the handled outcome.</summary>
-    public Shield<TResult> Fallback(Func<Outcome<TResult>, CancellationToken, ValueTask<TResult>> fallback, Action<FallbackEvent<TResult>>? onFallback = null)
+    public Shield<TResult> Fallback(Func<Outcome<TResult>, CancellationToken, ValueTask<TResult>> fallback)
     {
         Throw.IfNull(fallback, nameof(fallback));
-        return Append(new FallbackStrategy<TResult>((outcome, context) => fallback(outcome, context.CancellationToken), JudgeOrDefault, onFallback, null));
+        return Append(new FallbackStrategy<TResult>((outcome, context) => fallback(outcome, context.CancellationToken), JudgeOrDefault, null, null));
     }
+
+    /// <summary>Prevents legacy notification callbacks from binding as options configurators.</summary>
+    [Obsolete(LegacyFallbackCallbackMessage, error: true)]
+    public Shield<TResult> Fallback(
+        Func<Outcome<TResult>, CancellationToken, ValueTask<TResult>> fallback,
+        Action<FallbackEvent<TResult>> onFallback) =>
+        Fallback(fallback, options => options.OnFallback = onFallback);
 
     /// <summary>
     /// Replaces handled outcomes with the result of <paramref name="fallback"/>, which receives
-    /// the handled outcome, and uses the configured notifications.
+    /// the handled outcome, and configures notifications.
     /// </summary>
-    public Shield<TResult> FallbackWithNotifications(
+    /// <remarks>Runs <see cref="FallbackOptions{TResult}.OnFallback"/>, then <see cref="FallbackOptions{TResult}.OnFallbackAsync"/>, before recovery. A notification failure skips recovery.</remarks>
+    public Shield<TResult> Fallback(
         Func<Outcome<TResult>, CancellationToken, ValueTask<TResult>> fallback,
-        FallbackOptions<TResult> options)
+        Action<FallbackOptions<TResult>> configure)
     {
         Throw.IfNull(fallback, nameof(fallback));
-        Throw.IfNull(options, nameof(options));
+        Throw.IfNull(configure, nameof(configure));
+        var options = new FallbackOptions<TResult>();
+        configure(options);
         return Append(new FallbackStrategy<TResult>(
             (outcome, context) => fallback(outcome, context.CancellationToken),
             JudgeOrDefault,

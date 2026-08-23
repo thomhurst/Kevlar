@@ -9,6 +9,48 @@ namespace Kevlar.Analyzers.Tests;
 public class PipelineHazardAnalyzerTests
 {
     [Test]
+    public async Task Legacy_Fallback_Callbacks_Cannot_Bind_As_Options_Configurators()
+    {
+        var ambiguous = CreateCompilation(CreateSource("""
+            public class TestSubject
+            {
+                public void Configure()
+                {
+                    _ = Shield.For<int>().Fallback(42, _ => { });
+                    _ = Shield.For<int>().Fallback(_ => new ValueTask<int>(42), _ => { });
+                    _ = Shield.For<int>().Fallback((_, _) => new ValueTask<int>(42), _ => { });
+                    _ = Shield.For<int>().When<Exception>().Fallback(42, _ => { });
+                    _ = Shield.For<int>().When<Exception>().Fallback(_ => new ValueTask<int>(42), _ => { });
+                    _ = Shield.For<int>().When<Exception>().Fallback((_, _) => new ValueTask<int>(42), _ => { });
+                }
+            }
+            """));
+        var ambiguousErrors = ambiguous.GetDiagnostics()
+            .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+            .ToArray();
+
+        await Assert.That(ambiguousErrors).Count().IsEqualTo(6);
+        await Assert.That(ambiguousErrors).All(static diagnostic => diagnostic.Id == "CS0121");
+
+        var explicitLegacy = CreateCompilation(CreateSource("""
+            public class TestSubject
+            {
+                public void Configure()
+                {
+                    Action<FallbackEvent<int>> callback = _ => { };
+                    _ = Shield.For<int>().Fallback(42, callback);
+                }
+            }
+            """));
+        var explicitErrors = explicitLegacy.GetDiagnostics()
+            .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+            .ToArray();
+
+        await Assert.That(explicitErrors).Count().IsEqualTo(1);
+        await Assert.That(explicitErrors[0].Id).IsEqualTo("CS0619");
+    }
+
+    [Test]
     public async Task KEV004_Flags_Inline_Stateful_Shields_For_All_Execution_Forms()
     {
         var cases = new[]
@@ -284,7 +326,7 @@ public class PipelineHazardAnalyzerTests
             "_ = await Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteAsync(static _ => Task.FromResult(1));",
             "_ = await Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteOutcomeAsync(static _ => Task.FromResult(1));",
             "_ = await Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteWithContextAsync(0, static (_, _) => { }, static (_, _) => Task.FromResult(1));",
-            "_ = Shield.Empty.FallbackWithNotifications(static _ => ValueTask.CompletedTask, new FallbackOptions()).Execute(static _ => 1);",
+            "_ = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask, static options => options.OnFallback = static _ => { }).Execute(static _ => 1);",
         };
 
         await AssertEachAsync(cases, "KEV005");
@@ -463,6 +505,8 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.For<int>().Hedge(2, TimeSpan.Zero).Fallback(0);",
             "_ = Shield.For<int>().CircuitBreaker(2, TimeSpan.FromSeconds(1)).Fallback(0);",
             "_ = Shield.For<int>().WhenResult(0).Retry(1).Fallback(0);",
+            "_ = Shield.For<int>().Retry(1).Fallback(0, static options => options.OnFallback = static _ => { });",
+            "_ = Shield.Retry(1).Fallback(static _ => ValueTask.CompletedTask, static options => options.OnFallback = static _ => { });",
             "var shield = Shield.For<int>().Retry(1); var alias = shield; _ = alias.Fallback(0);",
             "Shield<int>? shield = Shield.For<int>().Retry(1); _ = shield?.Fallback(0);",
             "_ = ShieldExtensions.Fallback(ShieldExtensions.Retry(Shield.Empty, 1), static _ => ValueTask.CompletedTask);",

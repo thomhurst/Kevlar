@@ -92,7 +92,7 @@ public class FallbackEdgeCaseTests
         Exception? seenException = null;
         var shield = Shield.For<int>()
             .WhenResult(-1)
-            .Fallback(0, fallback =>
+            .Fallback(0, options => options.OnFallback = fallback =>
             {
                 seenResult = fallback.Outcome.Result;
                 seenException = fallback.Outcome.Exception;
@@ -110,7 +110,9 @@ public class FallbackEdgeCaseTests
     {
         var original = new InvalidOperationException("original");
         Exception? seenException = null;
-        var shield = Shield.For<int>().Fallback(0, fallback => seenException = fallback.Outcome.Exception);
+        var shield = Shield.For<int>().Fallback(
+            0,
+            options => options.OnFallback = fallback => seenException = fallback.Outcome.Exception);
 
         await shield.ExecuteAsync(_ => throw original);
 
