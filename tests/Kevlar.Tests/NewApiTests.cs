@@ -199,6 +199,51 @@ public class NewApiTests
     }
 
     [Test]
+    public async Task WhenAnyError_Reset_Survives_Compose()
+    {
+        var outer = Shield.When<TimeoutException>().Timeout(TimeSpan.FromMinutes(1));
+        var reset = Shield.When<ArgumentException>()
+            .Timeout(TimeSpan.FromMinutes(1))
+            .WhenAnyError();
+        var shield = Shield.Compose(outer, reset).Retry(1, Backoff.None);
+        var attempts = 0;
+
+        var result = await shield.ExecuteAsync(_ =>
+        {
+            attempts++;
+            return attempts == 1
+                ? ValueTask.FromException<int>(new InvalidOperationException())
+                : new ValueTask<int>(42);
+        });
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(attempts).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task WhenAnyError_Reset_Survives_Typed_Wrap()
+    {
+        var outer = Shield.For<int>().When<TimeoutException>().Timeout(TimeSpan.FromMinutes(1));
+        var reset = Shield.For<int>()
+            .When<ArgumentException>()
+            .Timeout(TimeSpan.FromMinutes(1))
+            .WhenAnyError();
+        var shield = outer.Wrap(reset).Retry(1, Backoff.None);
+        var attempts = 0;
+
+        var result = await shield.ExecuteAsync(_ =>
+        {
+            attempts++;
+            return attempts == 1
+                ? ValueTask.FromException<int>(new InvalidOperationException())
+                : new ValueTask<int>(42);
+        });
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(attempts).IsEqualTo(2);
+    }
+
+    [Test]
     public async Task Typed_Retry_Events_Carry_The_Typed_Outcome()
     {
         var seen = new List<Outcome<int>>();

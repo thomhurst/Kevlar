@@ -147,7 +147,7 @@ public static class ShieldExtensions
     public static Shield WhenAnyError(this Shield shield)
     {
         Throw.IfNull(shield, nameof(shield));
-        return new Shield(shield.Strategies, null, shield.Name, shield.Time);
+        return new Shield(shield.Strategies, OutcomeJudge.Default, shield.Name, shield.Time);
     }
 
     /// <summary>Appends a custom <see cref="Strategy"/> implementation to the pipeline.</summary>
