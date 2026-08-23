@@ -24,7 +24,10 @@ var shield = Shield
 await shield.ExecuteAsync(ct => bus.PublishAsync(message, ct));
 ```
 
-A void fallback guards void executions only; executing a result-returning delegate through it fails with a descriptive error rather than inventing a default value.
+A void fallback guards void executions only; executing a result-returning delegate through it fails
+with a descriptive error rather than inventing a default value. The optional analyzer reports this
+mistake as [`KEV005`](../analyzers.md#kev005-void-fallback-with-a-result) when the pipeline is visible
+in the same expression or a stable local.
 
 ## Three shapes
 

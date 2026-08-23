@@ -262,6 +262,118 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV005_Flags_Inline_Void_Fallback_For_Each_Result_Execution_Method()
+    {
+        var cases = new[]
+        {
+            "_ = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).Execute(static _ => 1);",
+            "_ = await Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteAsync(static _ => new ValueTask<int>(1));",
+            "_ = await Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteOutcomeAsync(static _ => new ValueTask<int>(1));",
+            "_ = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteWithContext(0, static (_, _) => { }, static (_, _) => 1);",
+            "_ = await Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteWithContextAsync(0, static (_, _) => { }, static (_, _) => new ValueTask<int>(1));",
+        };
+
+        await AssertEachAsync(cases, "KEV005");
+    }
+
+    [Test]
+    public async Task KEV005_Flags_Task_Extensions_And_Transitional_Fallback_Overload()
+    {
+        var cases = new[]
+        {
+            "_ = await Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteAsync(static _ => Task.FromResult(1));",
+            "_ = await Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteOutcomeAsync(static _ => Task.FromResult(1));",
+            "_ = await Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteWithContextAsync(0, static (_, _) => { }, static (_, _) => Task.FromResult(1));",
+            "_ = Shield.Empty.FallbackWithNotifications(static _ => ValueTask.CompletedTask, new FallbackOptions()).Execute(static _ => 1);",
+        };
+
+        await AssertEachAsync(cases, "KEV005");
+    }
+
+    [Test]
+    public async Task KEV005_Flags_Stable_Locals_Aliases_Builders_And_Result_Lifts()
+    {
+        var cases = new[]
+        {
+            "var shield = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask); _ = shield.Execute(static _ => 1);",
+            "var shield = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask); var alias = shield; _ = alias.Execute(static _ => 1);",
+            "var shield = Shield.When<InvalidOperationException>().Fallback(static (_, _) => ValueTask.CompletedTask); _ = shield.Execute(static _ => 1);",
+            "var shield = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask); _ = shield.For<int>().Execute(static _ => 1);",
+            "_ = Shield.Empty.Wrap(Shield.Empty.Fallback(static _ => ValueTask.CompletedTask)).Execute(static _ => 1);",
+            "var fallback = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask); _ = Shield.Compose(Shield.Empty, fallback).Execute(static _ => 1);",
+        };
+
+        await AssertEachAsync(cases, "KEV005");
+    }
+
+    [Test]
+    public async Task KEV005_Skips_Typed_Fallbacks_And_Void_Executions()
+    {
+        var cases = new[]
+        {
+            "_ = Shield.For<int>().Fallback(0).Execute(static _ => 1);",
+            "Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).Execute(static _ => { });",
+            "await Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteAsync(static _ => ValueTask.CompletedTask);",
+            "Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteWithContext(0, static (_, _) => { }, static (_, _) => { });",
+            "await Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteWithContextAsync(0, static (_, _) => { }, static (_, _) => ValueTask.CompletedTask);",
+        };
+
+        foreach (var body in cases)
+        {
+            var diagnostics = await AnalyzeBodyAsync(body);
+            await Assert.That(diagnostics).IsEmpty();
+        }
+    }
+
+    [Test]
+    public async Task KEV005_Defers_Fields_And_Skips_Escaped_Or_Unstable_Locals()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private static readonly Shield Shared = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask);
+
+                public int FromField() => Shared.Execute(static _ => 1);
+
+                public Shield Escape() => Shield.Empty.Fallback(static _ => ValueTask.CompletedTask);
+
+                public int FromParameter(Shield shield) => shield.Execute(static _ => 1);
+
+                public int Reassigned()
+                {
+                    var shield = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask);
+                    shield = Shield.Empty;
+                    return shield.Execute(static _ => 1);
+                }
+            }
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV005_Diagnostic_Contract_And_Suppression_Are_Exact()
+    {
+        var diagnostics = await AnalyzeBodyAsync(
+            "_ = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).Execute(static _ => 1);");
+        var suppressed = await AnalyzeBodyAsync("""
+            #pragma warning disable KEV005 // Result use is validated elsewhere.
+            _ = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).Execute(static _ => 1);
+            #pragma warning restore KEV005
+            """);
+
+        await Assert.That(diagnostics.Length).IsEqualTo(1);
+        var diagnostic = diagnostics[0];
+        await Assert.That(diagnostic.Id).IsEqualTo("KEV005");
+        await Assert.That(diagnostic.Severity).IsEqualTo(DiagnosticSeverity.Warning);
+        await Assert.That(diagnostic.GetMessage()).IsEqualTo(
+            "Fallback on a non-generic Shield applies only to void executions. " +
+            "For executions that return a value, build a result-aware shield with " +
+            "Shield.For<T>() and use its Fallback overloads.");
+        await Assert.That(suppressed).IsEmpty();
+    }
+
+    [Test]
     public async Task KEV002_Flags_Known_Hedging_Shields_Used_Synchronously()
     {
         var cases = new[]

@@ -9,3 +9,4 @@ KEV001 | Reliability | Warning | Execution delegate ignores its CancellationToke
 KEV002 | Reliability | Warning | Statically known multi-attempt hedging requires asynchronous execution
 KEV003 | Configuration | Warning | Fallback makes a reactive strategy unreachable
 KEV004 | Reliability | Warning | Stateful shield or partition provider is constructed per execution
+KEV005 | Configuration | Warning | Void fallback is used with a result-returning execution
