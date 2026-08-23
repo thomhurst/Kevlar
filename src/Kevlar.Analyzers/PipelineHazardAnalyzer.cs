@@ -97,10 +97,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         }
 
         if (IsKevlarFluentMethod(invocation.TargetMethod, knownTypes, "Fallback")
+            && !HasLocalHandlingOverride(invocation, context)
             && FindInPipeline(
                 GetReceiver(invocation),
                 context,
-                candidate => IsReactiveStrategyWithAmbientHandling(candidate, knownTypes),
+                candidate => IsReactiveStrategyWithAmbientHandling(candidate, context, knownTypes),
                 knownTypes,
                 stopAtHandlingClause: true,
                 stopAtCompositionBoundary: true,
@@ -586,7 +587,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             if (!FindInPipeline(
                 operands[fallbackIndex],
                 context,
-                candidate => IsKevlarFluentMethod(candidate.TargetMethod, knownTypes, "Fallback"),
+                candidate => IsKevlarFluentMethod(candidate.TargetMethod, knownTypes, "Fallback")
+                    && !HasLocalHandlingOverride(candidate, context),
                 knownTypes,
                 stopAtHandlingClause: true,
                 stopAtCompositionBoundary: true,
@@ -601,7 +603,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     && FindInPipeline(
                         operands[reactiveIndex],
                         context,
-                        candidate => IsReactiveStrategyWithAmbientHandling(candidate, knownTypes),
+                        candidate => IsReactiveStrategyWithAmbientHandling(candidate, context, knownTypes),
                         knownTypes,
                         stopAtHandlingClause: true,
                         stopAtCompositionBoundary: true,
@@ -1368,16 +1370,22 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
     private static bool IsReactiveStrategyWithAmbientHandling(
         IInvocationOperation invocation,
+        OperationAnalysisContext context,
         KnownTypes knownTypes) =>
         IsReactiveStrategy(Normalize(invocation.TargetMethod), knownTypes)
-        && !HasLocalHandlingOverride(invocation);
+        && !HasLocalHandlingOverride(invocation, context);
 
-    private static bool HasLocalHandlingOverride(IInvocationOperation invocation)
+    private static bool HasLocalHandlingOverride(
+        IInvocationOperation invocation,
+        OperationAnalysisContext context)
     {
         foreach (var argument in invocation.Arguments)
         {
             if (argument.Parameter?.Name == "configure"
-                && ContainsLocalHandlingOverride(argument.Value))
+                && ContainsLocalHandlingOverride(
+                    argument.Value,
+                    context,
+                    visitedSymbols: null))
             {
                 return true;
             }
@@ -1386,9 +1394,63 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static bool ContainsLocalHandlingOverride(IOperation operation)
+    private static bool ContainsLocalHandlingOverride(
+        IOperation operation,
+        OperationAnalysisContext context,
+        HashSet<ISymbol>? visitedSymbols)
     {
         operation = Unwrap(operation)!;
+        if (operation is ILocalReferenceOperation localReference)
+        {
+            visitedSymbols ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+            if (!visitedSymbols.Add(localReference.Local)
+                || !TryGetStableInitializer(localReference, context, out var initializer)
+                || initializer is null)
+            {
+                return false;
+            }
+
+            var found = ContainsLocalHandlingOverride(initializer, context, visitedSymbols);
+            visitedSymbols.Remove(localReference.Local);
+            return found;
+        }
+
+        if (operation is IMethodReferenceOperation methodReference)
+        {
+            visitedSymbols ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+            if (!visitedSymbols.Add(methodReference.Method))
+            {
+                return false;
+            }
+
+            foreach (var syntaxReference in methodReference.Method.DeclaringSyntaxReferences)
+            {
+                var syntax = syntaxReference.GetSyntax(context.CancellationToken);
+                var semanticModel = context.Operation.SemanticModel;
+                if (semanticModel is null || semanticModel.SyntaxTree != syntax.SyntaxTree)
+                {
+                    if (ContainsLocalHandlingOverride(syntax, methodReference.Method))
+                    {
+                        visitedSymbols.Remove(methodReference.Method);
+                        return true;
+                    }
+
+                    continue;
+                }
+
+                var methodOperation = semanticModel.GetOperation(syntax, context.CancellationToken);
+                if (methodOperation is not null
+                    && ContainsLocalHandlingOverride(methodOperation, context, visitedSymbols))
+                {
+                    visitedSymbols.Remove(methodReference.Method);
+                    return true;
+                }
+            }
+
+            visitedSymbols.Remove(methodReference.Method);
+            return false;
+        }
+
         if (operation is ISimpleAssignmentOperation
             {
                 Target: IPropertyReferenceOperation propertyReference,
@@ -1403,7 +1465,32 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         foreach (var child in operation.ChildOperations)
         {
-            if (ContainsLocalHandlingOverride(child))
+            if (ContainsLocalHandlingOverride(child, context, visitedSymbols))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool ContainsLocalHandlingOverride(
+        SyntaxNode syntax,
+        IMethodSymbol method)
+    {
+        var optionParameterNames = new HashSet<string>(
+            method.Parameters.Select(static parameter => parameter.Name),
+            StringComparer.Ordinal);
+
+        foreach (var assignment in syntax.DescendantNodes().OfType<AssignmentExpressionSyntax>())
+        {
+            if (assignment.Left is MemberAccessExpressionSyntax
+                {
+                    Expression: IdentifierNameSyntax receiver,
+                    Name.Identifier.ValueText: "HandlesException" or "HandlesResult",
+                }
+                && optionParameterNames.Contains(receiver.Identifier.ValueText)
+                && !assignment.Right.IsKind(SyntaxKind.NullLiteralExpression))
             {
                 return true;
             }

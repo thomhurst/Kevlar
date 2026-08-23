@@ -566,6 +566,36 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV003_Skips_Fallback_With_Local_Handling_Override()
+    {
+        var diagnostics = await AnalyzeBodyAsync(
+            "_ = Shield.For<int>().Retry(1).Fallback(0, options => options.HandlesException = exception => exception is TimeoutException);");
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV003_Resolves_Reusable_Local_Handling_Configurators()
+    {
+        var diagnostics = await AnalyzeBodyAsync(
+            """
+            Action<CircuitBreakerOptions<int>> configure = ConfigureBreaker;
+            _ = Shield.For<int>().CircuitBreaker(ConfigureBreaker).Fallback(0);
+            _ = Shield.For<int>().CircuitBreaker(configure).Fallback(0);
+            _ = Shield.For<int>().Retry(1).Fallback(0, ConfigureFallback);
+            """,
+            """
+            private static void ConfigureBreaker(CircuitBreakerOptions<int> options) =>
+                options.HandlesException = exception => exception is TimeoutException;
+
+            private static void ConfigureFallback(FallbackOptions<int> options) =>
+                options.HandlesException = exception => exception is TimeoutException;
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
     public async Task KEV003_Skips_Valid_Or_Unknown_Compositions()
     {
         var cases = new[]
