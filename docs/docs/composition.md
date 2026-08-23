@@ -97,7 +97,9 @@ var apiDefaults = Shield.When<HttpRequestException>().Retry(3);
 var shield = Shield.Timeout(TimeSpan.FromSeconds(30))
     .Wrap(apiDefaults)
     .When<HttpRequestException>()
-    .CircuitBreaker(5, TimeSpan.FromSeconds(30));
+    .CircuitBreaker(
+        consecutiveFailures: 5,
+        breakDuration: TimeSpan.FromSeconds(30));
 ```
 
 ## Impossible orders fail fast
