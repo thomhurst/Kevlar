@@ -1458,38 +1458,14 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         if (operation is IMethodReferenceOperation methodReference)
         {
-            visitedSymbols ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
-            if (!visitedSymbols.Add(methodReference.Method))
-            {
-                return false;
-            }
+            return ContainsLocalHandlingOverride(methodReference.Method, context, visitedSymbols);
+        }
 
-            foreach (var syntaxReference in methodReference.Method.DeclaringSyntaxReferences)
-            {
-                var syntax = syntaxReference.GetSyntax(context.CancellationToken);
-                var semanticModel = context.Operation.SemanticModel;
-                if (semanticModel is null || semanticModel.SyntaxTree != syntax.SyntaxTree)
-                {
-                    if (ContainsLocalHandlingOverride(syntax, methodReference.Method))
-                    {
-                        visitedSymbols.Remove(methodReference.Method);
-                        return true;
-                    }
-
-                    continue;
-                }
-
-                var methodOperation = semanticModel.GetOperation(syntax, context.CancellationToken);
-                if (methodOperation is not null
-                    && ContainsLocalHandlingOverride(methodOperation, context, visitedSymbols))
-                {
-                    visitedSymbols.Remove(methodReference.Method);
-                    return true;
-                }
-            }
-
-            visitedSymbols.Remove(methodReference.Method);
-            return false;
+        if (operation is IInvocationOperation invocation
+            && !invocation.TargetMethod.DeclaringSyntaxReferences.IsEmpty
+            && ContainsLocalHandlingOverride(invocation.TargetMethod, context, visitedSymbols))
+        {
+            return true;
         }
 
         if (operation is IAssignmentOperation
@@ -1512,6 +1488,37 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             }
         }
 
+        return false;
+    }
+
+    private static bool ContainsLocalHandlingOverride(
+        IMethodSymbol method,
+        OperationAnalysisContext context,
+        HashSet<ISymbol>? visitedSymbols)
+    {
+        visitedSymbols ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+        if (!visitedSymbols.Add(method))
+        {
+            return false;
+        }
+
+        foreach (var syntaxReference in method.DeclaringSyntaxReferences)
+        {
+            var syntax = syntaxReference.GetSyntax(context.CancellationToken);
+            var semanticModel = context.Operation.SemanticModel;
+            var methodOperation = semanticModel?.SyntaxTree == syntax.SyntaxTree
+                ? semanticModel.GetOperation(syntax, context.CancellationToken)
+                : null;
+            if ((methodOperation is not null
+                    && ContainsLocalHandlingOverride(methodOperation, context, visitedSymbols))
+                || (methodOperation is null && ContainsLocalHandlingOverride(syntax, method)))
+            {
+                visitedSymbols.Remove(method);
+                return true;
+            }
+        }
+
+        visitedSymbols.Remove(method);
         return false;
     }
 

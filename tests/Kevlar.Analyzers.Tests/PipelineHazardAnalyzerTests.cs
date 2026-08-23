@@ -612,6 +612,22 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV003_Follows_Source_Configurator_Helper_Calls()
+    {
+        var diagnostics = await AnalyzeBodyAsync(
+            "_ = Shield.For<int>().CircuitBreaker(ConfigureBreaker).Fallback(0);",
+            """
+            private static void ConfigureBreaker(CircuitBreakerOptions<int> options) =>
+                ApplyHandling(options);
+
+            private static void ApplyHandling(CircuitBreakerOptions<int> options) =>
+                options.HandlesException = exception => exception is TimeoutException;
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
     public async Task KEV003_Skips_Opaque_Local_Handling_Configurator()
     {
         var diagnostics = await AnalyzeBodyAsync(
