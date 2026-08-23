@@ -83,7 +83,7 @@ public sealed class Shield<TResult>
         Throw.IfNull(configure, nameof(configure));
         var options = new RetryOptions<TResult>();
         configure(options);
-        return Append(new RetryStrategy(options, JudgeOrDefault));
+        return Append(RetryStrategy.Create(options, JudgeOrDefault));
     }
 
     /// <summary>Retries handled outcomes indefinitely.</summary>

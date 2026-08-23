@@ -65,6 +65,11 @@ Shield.Retry(o =>
 
 Order per retry: retry metrics are recorded → backoff computes the delay → `MaxDelay` clamps it → `DelayGenerator` may override it → the awaited `DelayGeneratorAsync` may override that result → `OnRetry`/`OnRetryAsync` see the final delay → sleep. Both generators ignore `null` and negative results, and `MaxDelay` clamps each override.
 
+`RetryOptions` and `RetryOptions<T>` are standalone sibling types. Both expose the same
+`MaxRetries`, `Backoff`, and `MaxDelay` settings, while their callback properties use distinct
+`RetryEvent` and `RetryEvent<T>` delegates. Configure shared scalar defaults in each options
+lambda; a `RetryOptions<T>` instance is not assignable to `RetryOptions`.
+
 Async generators receive the caller token through `e.Context.CancellationToken`. If cancellation
 arrives while a generator is awaiting, notification hooks still run after it completes, then the
 next attempt is suppressed and caller cancellation surfaces. A generator exception surfaces with
