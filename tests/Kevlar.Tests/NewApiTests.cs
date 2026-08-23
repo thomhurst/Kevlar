@@ -132,6 +132,73 @@ public class NewApiTests
     }
 
     [Test]
+    public async Task WhenAnyError_Resets_Untyped_Handling_To_The_Default()
+    {
+        var timeProvider = new FakeTimeProvider();
+        var original = Shield.When<ArgumentException>()
+            .Retry(1, Backoff.None)
+            .WithName("reset-test")
+            .WithTimeProvider(timeProvider);
+        var reset = original.WhenAnyError();
+
+        await Assert.That(reset.Name).IsEqualTo(original.Name);
+        await Assert.That(ReferenceEquals(reset.Time, original.Time)).IsTrue();
+        await Assert.That(ReferenceEquals(reset.Strategies, original.Strategies)).IsTrue();
+        await Assert.That(reset.ToString()).IsEqualTo(original.ToString());
+
+        var attempts = 0;
+        var shield = reset.Retry(1, Backoff.None);
+
+        await shield.ExecuteAsync<int>(_ =>
+        {
+            attempts++;
+            return attempts == 1
+                ? ValueTask.FromException<int>(new InvalidOperationException())
+                : new ValueTask<int>(42);
+        });
+
+        await Assert.That(attempts).IsEqualTo(2);
+
+        attempts = 0;
+        await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
+        {
+            attempts++;
+            throw new OperationCanceledException();
+        })).Throws<OperationCanceledException>();
+        await Assert.That(attempts).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task WhenAnyError_Resets_Typed_Handling_And_Preserves_Shield_State()
+    {
+        var timeProvider = new FakeTimeProvider();
+        var original = Shield.For<int>()
+            .When<ArgumentException>()
+            .Retry(1, Backoff.None)
+            .WithName("reset-test")
+            .WithTimeProvider(timeProvider);
+
+        var reset = original.WhenAnyError();
+
+        await Assert.That(reset.Name).IsEqualTo(original.Name);
+        await Assert.That(ReferenceEquals(reset.Time, original.Time)).IsTrue();
+        await Assert.That(ReferenceEquals(reset.Strategies, original.Strategies)).IsTrue();
+        await Assert.That(reset.ToString()).IsEqualTo(original.ToString());
+
+        var attempts = 0;
+        var result = await reset.Retry(1, Backoff.None).ExecuteAsync(_ =>
+        {
+            attempts++;
+            return attempts == 1
+                ? ValueTask.FromException<int>(new InvalidOperationException())
+                : new ValueTask<int>(42);
+        });
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(attempts).IsEqualTo(2);
+    }
+
+    [Test]
     public async Task Typed_Retry_Events_Carry_The_Typed_Outcome()
     {
         var seen = new List<Outcome<int>>();

@@ -117,7 +117,7 @@ public static class ShieldExtensions
         return shield.Append(new HedgingStrategy(options, shield.JudgeOrDefault));
     }
 
-    /// <summary>Starts a handling clause: subsequent reactive strategies act on exceptions of type <typeparamref name="TException"/>.</summary>
+    /// <summary>Starts a handling clause: subsequent reactive strategies act on exceptions of type <typeparamref name="TException"/>. Use <see cref="WhenAnyError"/> to return to default handling.</summary>
     public static ShieldBuilder When<TException>(this Shield shield)
         where TException : Exception
     {
@@ -125,7 +125,7 @@ public static class ShieldExtensions
         return new ShieldBuilder(shield).Or<TException>();
     }
 
-    /// <summary>Starts a handling clause for exceptions of type <typeparamref name="TException"/> matching <paramref name="predicate"/>.</summary>
+    /// <summary>Starts a handling clause for exceptions of type <typeparamref name="TException"/> matching <paramref name="predicate"/>. Use <see cref="WhenAnyError"/> to return to default handling.</summary>
     public static ShieldBuilder When<TException>(this Shield shield, Func<TException, bool> predicate)
         where TException : Exception
     {
@@ -133,11 +133,21 @@ public static class ShieldExtensions
         return new ShieldBuilder(shield).Or(predicate);
     }
 
-    /// <summary>Starts a handling clause for exceptions matching <paramref name="predicate"/>.</summary>
+    /// <summary>Starts a handling clause for exceptions matching <paramref name="predicate"/>. Use <see cref="WhenAnyError"/> to return to default handling.</summary>
     public static ShieldBuilder When(this Shield shield, Func<Exception, bool> predicate)
     {
         Throw.IfNull(shield, nameof(shield));
         return new ShieldBuilder(shield).OrWhen(predicate);
+    }
+
+    /// <summary>
+    /// Resets the ambient handling clause. Subsequent reactive strategies use the default
+    /// handling: any exception except <see cref="OperationCanceledException"/>.
+    /// </summary>
+    public static Shield WhenAnyError(this Shield shield)
+    {
+        Throw.IfNull(shield, nameof(shield));
+        return new Shield(shield.Strategies, null, shield.Name, shield.Time);
     }
 
     /// <summary>Appends a custom <see cref="Strategy"/> implementation to the pipeline.</summary>

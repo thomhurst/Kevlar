@@ -53,7 +53,8 @@ Shield.For<User?>().WhenDefault().Retry(2);   // retry when the result is null /
 
 ## Clauses are ambient
 
-A clause applies to the strategy it creates *and* to every reactive strategy chained after it, until you write a new clause or compose the shield with `Wrap`/`Compose`:
+A clause applies to the strategy it creates *and* to every reactive strategy chained after it,
+until you write a new clause, call `WhenAnyError()`, or compose with `Wrap`/`Compose`:
 
 <!-- doc-test-ignore: Uses an ellipsis for the application-specific fallback implementation. -->
 ```csharp
@@ -66,6 +67,20 @@ Shield
 ```
 
 This is why most chains only need one clause, written once at the top — and why you never repeat a `ShouldHandle` predicate per strategy like in Polly v8.
+
+### Reset to default handling
+
+Call `WhenAnyError()` to clear the ambient clause. Reactive strategies chained after it return to Kevlar's default handling: any exception except `OperationCanceledException`.
+
+```csharp
+var shield = Shield
+    .When<HttpRequestException>()
+    .Retry(3)                                      // handles HttpRequestException only
+    .WhenAnyError()
+    .CircuitBreaker(5, TimeSpan.FromSeconds(30)); // handles any non-cancellation exception
+```
+
+`WhenAnyError()` preserves existing strategies, the shield name, and its `TimeProvider`; it only changes handling for reactive strategies added afterwards. It is available on both `Shield` and `Shield<T>`.
 
 :::info Proactive strategies don't consult clauses
 Timeouts, rate limits and concurrency limits don't care why something failed — they act on time and concurrency, not outcomes. Clauses only drive the reactive strategies.
@@ -84,5 +99,9 @@ var shield = Shield.When<HttpRequestException>()
 The factory runs once and receives a `HandlingClause`. Call `clause.ShouldHandle(in outcome)` inside the strategy so exception and result rules stay aligned with the shield. See [Custom Strategies](custom-strategies.md#consume-handling-clauses) for a complete implementation.
 
 :::info Lifting preserves clauses; composition seals them
-`shield.For<T>()`, `WithName(...)`, and `WithTimeProvider(...)` are same-chain copies, so they preserve the ambient clause. `Wrap(...)` and `Shield.Compose(...)` are composition boundaries: strategies already inside keep their original handling, but reactive strategies chained afterwards use the default unless you declare a new local clause.
+`shield.For<T>()`, `WithName(...)`, and `WithTimeProvider(...)` are same-chain copies, so they
+preserve the ambient clause. `Wrap(...)` and `Shield.Compose(...)` are composition boundaries:
+strategies already inside keep their original handling, but reactive strategies chained afterwards
+use the default unless you declare a new local clause. Within one chain, `WhenAnyError()` explicitly
+returns subsequent strategies to the default.
 :::
