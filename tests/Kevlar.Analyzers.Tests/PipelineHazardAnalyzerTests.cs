@@ -506,6 +506,7 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.For<int>().CircuitBreaker(2, TimeSpan.FromSeconds(1)).Fallback(0);",
             "_ = Shield.For<int>().CircuitBreaker(options => options.ConsecutiveFailures = 2).Fallback(0);",
             "_ = Shield.For<int>().CircuitBreaker(options => options.HandlesException = null).Fallback(0);",
+            "_ = Shield.For<int>().CircuitBreaker(options => options.OnStateChanged = _ => options.HandlesException = exception => exception is TimeoutException).Fallback(0);",
             "_ = Shield.For<int>().WhenResult(0).Retry(1).Fallback(0);",
             "_ = Shield.For<int>().Retry(1).Fallback(0, static options => options.OnFallback = static _ => { });",
             "_ = Shield.Retry(1).Fallback(static _ => ValueTask.CompletedTask, static options => options.OnFallback = static _ => { });",
@@ -622,6 +623,22 @@ public class PipelineHazardAnalyzerTests
 
             private static void ApplyHandling(CircuitBreakerOptions<int> options) =>
                 options.HandlesException = exception => exception is TimeoutException;
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV003_Propagates_Unknown_From_Nested_Configurator_Call()
+    {
+        var diagnostics = await AnalyzeBodyAsync(
+            "_ = Shield.For<int>().CircuitBreaker(ConfigureBreaker).Fallback(0);",
+            """
+            private static Action<CircuitBreakerOptions<int>> SharedConfigure { get; } =
+                options => options.HandlesException = exception => exception is TimeoutException;
+
+            private static void ConfigureBreaker(CircuitBreakerOptions<int> options) =>
+                SharedConfigure(options);
             """);
 
         await Assert.That(diagnostics).IsEmpty();

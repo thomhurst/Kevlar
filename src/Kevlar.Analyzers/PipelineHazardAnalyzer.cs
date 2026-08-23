@@ -1419,10 +1419,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             return result;
         }
 
-        if (operation is IMethodReferenceOperation methodReference
-            && methodReference.Method.DeclaringSyntaxReferences.IsEmpty)
+        if (operation is IMethodReferenceOperation methodReference)
         {
-            return null;
+            return ContainsLocalHandlingOverride(methodReference.Method, context, visitedSymbols);
         }
 
         if (operation is IParameterReferenceOperation
@@ -1432,40 +1431,32 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             return null;
         }
 
-        return ContainsLocalHandlingOverride(operation, context, visitedSymbols);
+        return operation is IAnonymousFunctionOperation
+            ? ContainsLocalHandlingOverride(
+                operation,
+                context,
+                visitedSymbols,
+                includeAnonymousFunctionBody: true)
+            : null;
     }
 
-    private static bool ContainsLocalHandlingOverride(
+    private static bool? ContainsLocalHandlingOverride(
         IOperation operation,
         OperationAnalysisContext context,
-        HashSet<ISymbol>? visitedSymbols)
+        HashSet<ISymbol>? visitedSymbols,
+        bool includeAnonymousFunctionBody = false)
     {
         operation = Unwrap(operation)!;
-        if (operation is ILocalReferenceOperation localReference)
+        if (operation is IDelegateCreationOperation)
         {
-            visitedSymbols ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
-            if (!visitedSymbols.Add(localReference.Local)
-                || !TryGetStableInitializer(localReference, context, out var initializer)
-                || initializer is null)
-            {
-                return false;
-            }
-
-            var found = ContainsLocalHandlingOverride(initializer, context, visitedSymbols);
-            visitedSymbols.Remove(localReference.Local);
-            return found;
+            return false;
         }
 
-        if (operation is IMethodReferenceOperation methodReference)
+        if (operation is IAnonymousFunctionOperation anonymousFunction)
         {
-            return ContainsLocalHandlingOverride(methodReference.Method, context, visitedSymbols);
-        }
-
-        if (operation is IInvocationOperation invocation
-            && !invocation.TargetMethod.DeclaringSyntaxReferences.IsEmpty
-            && ContainsLocalHandlingOverride(invocation.TargetMethod, context, visitedSymbols))
-        {
-            return true;
+            return includeAnonymousFunctionBody
+                ? ContainsLocalHandlingOverride(anonymousFunction.Body, context, visitedSymbols)
+                : false;
         }
 
         if (operation is IAssignmentOperation
@@ -1480,18 +1471,27 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             return true;
         }
 
+        bool? result = operation is IInvocationOperation invocation
+            ? ContainsLocalHandlingOverride(invocation.TargetMethod, context, visitedSymbols)
+            : false;
         foreach (var child in operation.ChildOperations)
         {
-            if (ContainsLocalHandlingOverride(child, context, visitedSymbols))
+            var childResult = ContainsLocalHandlingOverride(child, context, visitedSymbols);
+            if (childResult is true)
             {
                 return true;
             }
+
+            if (childResult is null)
+            {
+                result = null;
+            }
         }
 
-        return false;
+        return result;
     }
 
-    private static bool ContainsLocalHandlingOverride(
+    private static bool? ContainsLocalHandlingOverride(
         IMethodSymbol method,
         OperationAnalysisContext context,
         HashSet<ISymbol>? visitedSymbols)
@@ -1499,52 +1499,51 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         visitedSymbols ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
         if (!visitedSymbols.Add(method))
         {
-            return false;
+            return null;
         }
 
-        foreach (var syntaxReference in method.DeclaringSyntaxReferences)
+        try
         {
-            var syntax = syntaxReference.GetSyntax(context.CancellationToken);
-            var semanticModel = context.Operation.SemanticModel;
-            var methodOperation = semanticModel?.SyntaxTree == syntax.SyntaxTree
-                ? semanticModel.GetOperation(syntax, context.CancellationToken)
-                : null;
-            if ((methodOperation is not null
-                    && ContainsLocalHandlingOverride(methodOperation, context, visitedSymbols))
-                || (methodOperation is null && ContainsLocalHandlingOverride(syntax, method)))
+            if (method.DeclaringSyntaxReferences.Length == 0)
             {
-                visitedSymbols.Remove(method);
-                return true;
+                return null;
             }
-        }
 
-        visitedSymbols.Remove(method);
-        return false;
-    }
-
-    private static bool ContainsLocalHandlingOverride(
-        SyntaxNode syntax,
-        IMethodSymbol method)
-    {
-        var optionParameterNames = new HashSet<string>(
-            method.Parameters.Select(static parameter => parameter.Name),
-            StringComparer.Ordinal);
-
-        foreach (var assignment in syntax.DescendantNodes().OfType<AssignmentExpressionSyntax>())
-        {
-            if (assignment.Left is MemberAccessExpressionSyntax
+            bool? result = false;
+            foreach (var syntaxReference in method.DeclaringSyntaxReferences)
+            {
+                var syntax = syntaxReference.GetSyntax(context.CancellationToken);
+                var semanticModel = context.Operation.SemanticModel;
+                var methodOperation = semanticModel?.SyntaxTree == syntax.SyntaxTree
+                    ? semanticModel.GetOperation(syntax, context.CancellationToken)
+                    : null;
+                if (methodOperation is null)
                 {
-                    Expression: IdentifierNameSyntax receiver,
-                    Name.Identifier.ValueText: "HandlesException" or "HandlesResult",
+                    result = null;
+                    continue;
                 }
-                && optionParameterNames.Contains(receiver.Identifier.ValueText)
-                && !assignment.Right.IsKind(SyntaxKind.NullLiteralExpression))
-            {
-                return true;
-            }
-        }
 
-        return false;
+                var methodResult = ContainsLocalHandlingOverride(
+                    methodOperation,
+                    context,
+                    visitedSymbols);
+                if (methodResult is true)
+                {
+                    return true;
+                }
+
+                if (methodResult is null)
+                {
+                    result = null;
+                }
+            }
+
+            return result;
+        }
+        finally
+        {
+            visitedSymbols.Remove(method);
+        }
     }
 
     private static bool IsKnownMultiAttemptHedge(
