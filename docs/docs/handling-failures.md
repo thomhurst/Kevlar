@@ -60,8 +60,8 @@ which resets *handling* to Kevlar's default.
 
 ## Clauses are ambient
 
-A clause applies to the strategy it creates *and* to every reactive strategy chained after it,
-until you write a new clause, call `WhenAnyError()`, or compose with `Wrap`/`Compose`:
+A clause applies to the strategy it is attached to *and* to every reactive strategy chained after
+it, until you write a new clause, call `WhenAnyError()`, or compose with `Wrap`/`Compose`:
 
 <!-- doc-test-ignore: Uses an ellipsis for the application-specific fallback implementation. -->
 ```csharp
@@ -74,6 +74,8 @@ Shield
 ```
 
 This is why most chains only need one clause, written once at the top — and why you never repeat a `ShouldHandle` predicate per strategy like in Polly v8.
+
+A clause that never reaches a reactive strategy does nothing at all. The optional analyzer reports that as [`KEV007`](analyzers.md#kev007-dead-handling-clause).
 
 ### Reset to default handling
 
