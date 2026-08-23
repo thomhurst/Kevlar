@@ -72,7 +72,7 @@ Want to treat certain *results* as failures too (HTTP 500s, say)? Lift into a ty
 ```csharp
 var http = Shield.For<HttpResponseMessage>()
     .When<HttpRequestException>()
-    .WhenResult(r => (int)r.StatusCode >= 500)
+    .OrResult(r => (int)r.StatusCode >= 500)
     .Retry(3);
 ```
 

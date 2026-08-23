@@ -27,8 +27,8 @@ public class HttpResilienceTests
         var shield = Shield.Timeout(TimeSpan.FromSeconds(30))
             .For<HttpResponseMessage>()
             .When<HttpRequestException>()
-            .When<TimeoutExceededException>()
-            .WhenResult(HttpShield.IsTransient)
+            .Or<TimeoutExceededException>()
+            .OrResult(HttpShield.IsTransient)
             .Retry(options =>
             {
                 options.MaxRetries = 3;
@@ -140,7 +140,7 @@ public class HttpResilienceTests
 
         var shield = Shield.For<HttpResponseMessage>()
             .When<HttpRequestException>()
-            .WhenResult(HttpShield.IsTransient)
+            .OrResult(HttpShield.IsTransient)
             .Hedge(maxAttempts: 2, delay: TimeSpan.FromMilliseconds(100));
 
         var stopwatch = Stopwatch.StartNew();

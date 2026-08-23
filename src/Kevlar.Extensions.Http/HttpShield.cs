@@ -21,8 +21,8 @@ public static class HttpShield
     public static ShieldBuilder<HttpResponseMessage> WhenTransient() =>
         Shield.For<HttpResponseMessage>()
             .When<HttpRequestException>()
-            .When<TimeoutExceededException>()
-            .WhenResult(IsTransient);
+            .Or<TimeoutExceededException>()
+            .OrResult(IsTransient);
 
     /// <summary>
     /// A production-ready pipeline, outermost first: 30s total timeout → 3 retries with
@@ -45,8 +45,8 @@ public static class HttpShield
         var shield = Shield.Timeout(timeout => Copy(options.TotalTimeout, timeout))
             .For<HttpResponseMessage>()
             .When<HttpRequestException>()
-            .When<TimeoutExceededException>()
-            .WhenResult(IsTransient)
+            .Or<TimeoutExceededException>()
+            .OrResult(IsTransient)
             .Retry(retry => Copy(options.Retry, retry))
             .CircuitBreaker(circuitBreaker => Copy(options.CircuitBreaker, circuitBreaker));
 

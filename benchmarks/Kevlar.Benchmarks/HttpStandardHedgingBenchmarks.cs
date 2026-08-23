@@ -60,10 +60,10 @@ public class HttpStandardHedgingBenchmarks
         Shield.Timeout(TimeSpan.FromSeconds(30))
             .For<HttpResponseMessage>()
             .When<HttpRequestException>()
-            .When<TimeoutExceededException>()
-            .When<ConcurrencyLimitExceededException>()
-            .When<CircuitOpenException>()
-            .WhenResult(HttpShield.IsTransient)
+            .Or<TimeoutExceededException>()
+            .Or<ConcurrencyLimitExceededException>()
+            .Or<CircuitOpenException>()
+            .OrResult(HttpShield.IsTransient)
             .Hedge(2, TimeSpan.FromSeconds(1));
 
     private static ShieldHttpHandlerOptions CreateHandlerOptions()

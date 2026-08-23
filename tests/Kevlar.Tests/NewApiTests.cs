@@ -9,6 +9,54 @@ namespace Kevlar.Tests;
 public class NewApiTests
 {
     [Test]
+    public async Task For_Returns_Typed_Shield_And_Builders_Expose_Only_Or_Continuations()
+    {
+        Shield<int> typed = Shield.For<int>();
+        await Assert.That(typed.GetType()).IsEqualTo(typeof(Shield<int>));
+
+        var untypedBuilderWhenMethods = typeof(ShieldBuilder)
+            .GetMethods(System.Reflection.BindingFlags.Instance
+                | System.Reflection.BindingFlags.Public
+                | System.Reflection.BindingFlags.DeclaredOnly)
+            .Where(static method => method.Name.StartsWith("When", StringComparison.Ordinal))
+            .Select(static method => method.Name)
+            .ToArray();
+        var typedBuilderWhenMethods = typeof(ShieldBuilder<int>)
+            .GetMethods(System.Reflection.BindingFlags.Instance
+                | System.Reflection.BindingFlags.Public
+                | System.Reflection.BindingFlags.DeclaredOnly)
+            .Where(static method => method.Name.StartsWith("When", StringComparison.Ordinal))
+            .Select(static method => method.Name)
+            .ToArray();
+        var shieldOrMethods = new[] { typeof(Shield), typeof(Shield<int>) }
+            .SelectMany(static type => type.GetMethods(
+                System.Reflection.BindingFlags.Instance
+                | System.Reflection.BindingFlags.Static
+                | System.Reflection.BindingFlags.Public
+                | System.Reflection.BindingFlags.DeclaredOnly))
+            .Where(static method => method.Name.StartsWith("Or", StringComparison.Ordinal))
+            .Select(static method => method.Name)
+            .ToArray();
+
+        await Assert.That(untypedBuilderWhenMethods).IsEmpty();
+        await Assert.That(typedBuilderWhenMethods).IsEmpty();
+        await Assert.That(shieldOrMethods).IsEmpty();
+
+        var attempts = 0;
+        var shield = Shield.For<int>().Retry(1, Backoff.None);
+        var result = await shield.ExecuteAsync(_ =>
+        {
+            attempts++;
+            return attempts == 1
+                ? ValueTask.FromException<int>(new InvalidOperationException())
+                : new ValueTask<int>(42);
+        });
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(attempts).IsEqualTo(2);
+    }
+
+    [Test]
     public async Task When_And_Or_Compose_On_The_Untyped_Builder()
     {
         var attempts = 0;

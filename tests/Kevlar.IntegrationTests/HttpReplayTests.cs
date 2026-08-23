@@ -695,7 +695,7 @@ public class HttpReplayTests
             HttpShield.WhenTransient().CircuitBreaker(1, TimeSpan.FromHours(1));
         var routingPolicy = Shield.For<HttpResponseMessage>()
             .When<CircuitOpenException>()
-            .WhenResult(HttpShield.IsTransient)
+            .OrResult(HttpShield.IsTransient)
             .Hedge(2, TimeSpan.Zero);
         using var invoker = CreateInvoker(routingPolicy, options, transport);
 

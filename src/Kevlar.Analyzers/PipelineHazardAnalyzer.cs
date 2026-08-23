@@ -1382,7 +1382,6 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     private static bool StartsHandlingClause(IMethodSymbol method, KnownTypes knownTypes) =>
         (method.Name is "When" or "WhenResult" or "WhenDefault")
         && (knownTypes.IsShield(method.ContainingType)
-            || knownTypes.IsShieldBuilder(method.ContainingType)
             || knownTypes.IsShieldExtensions(method.ContainingType));
 
     private static bool IsCompositionBoundary(IMethodSymbol method, KnownTypes knownTypes) =>

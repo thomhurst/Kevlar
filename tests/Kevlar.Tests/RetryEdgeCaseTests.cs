@@ -286,7 +286,7 @@ public class RetryEdgeCaseTests
         var attempts = 0;
         var shield = Shield.For<int>()
             .When<InvalidOperationException>()
-            .WhenResult(-1)
+            .OrResult(-1)
             .Retry(3, Backoff.None);
 
         var result = await shield.ExecuteAsync(_ =>

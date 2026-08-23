@@ -334,10 +334,10 @@ public static class ShieldHttpClientBuilderExtensions
         Shield.Timeout(options.TotalTimeout)
             .For<HttpResponseMessage>()
             .When<HttpRequestException>()
-            .When<TimeoutExceededException>()
-            .When<ConcurrencyLimitExceededException>()
-            .When<CircuitOpenException>()
-            .WhenResult(HttpShield.IsTransient)
+            .Or<TimeoutExceededException>()
+            .Or<ConcurrencyLimitExceededException>()
+            .Or<CircuitOpenException>()
+            .OrResult(HttpShield.IsTransient)
             .Hedge(options.MaxAttempts, options.HedgeDelay);
 
     private static ShieldHttpHandlerOptions CreateHandlerOptions(StandardHedgingShieldOptions options)

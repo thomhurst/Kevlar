@@ -9,8 +9,8 @@ namespace Kevlar;
 /// here and to reactive strategies chained afterwards, until replaced by a new clause.
 /// </summary>
 /// <remarks>
-/// <c>When…</c> and <c>Or…</c> are interchangeable; the convention is <c>When</c> for the first
-/// clause and <c>Or</c> for each additional one: <c>Shield.When&lt;A&gt;().Or&lt;B&gt;().Retry(3)</c>.
+/// Start a clause with <c>When…</c> on a shield, then continue it with <c>Or…</c> on this builder:
+/// <c>Shield.When&lt;A&gt;().Or&lt;B&gt;().Retry(3)</c>.
 /// </remarks>
 public sealed class ShieldBuilder
 {
@@ -42,19 +42,6 @@ public sealed class ShieldBuilder
         Throw.IfNull(predicate, nameof(predicate));
         return Or(predicate);
     }
-
-    /// <summary>Also handle exceptions of type <typeparamref name="TException"/>. Interchangeable with <see cref="Or{TException}()"/>.</summary>
-    public ShieldBuilder When<TException>()
-        where TException : Exception
-        => Or<TException>();
-
-    /// <summary>Also handle exceptions of type <typeparamref name="TException"/> matching <paramref name="predicate"/>.</summary>
-    public ShieldBuilder When<TException>(Func<TException, bool> predicate)
-        where TException : Exception
-        => Or(predicate);
-
-    /// <summary>Also handle exceptions matching <paramref name="predicate"/>.</summary>
-    public ShieldBuilder When(Func<Exception, bool> predicate) => OrWhen(predicate);
 
     private ShieldBuilder Or(Func<Exception, bool> predicate)
     {

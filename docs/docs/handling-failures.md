@@ -27,7 +27,9 @@ var shield = Shield
 - `When<TException>()` starts a clause matching `TException` and anything derived from it. `When<TException>(predicate)` narrows it further, and `When(predicate)` matches on any exception.
 - `Or<TException>()` / `Or<TException>(predicate)` / `OrWhen(predicate)` add alternatives to the clause. All alternatives OR together.
 
-Both builders speak the same grammar. `When…` and `Or…` are interchangeable — the convention is `When` for the first clause and `Or` for each addition: `When<A>().Or<B>().OrWhen(...)`.
+Clause position determines the vocabulary: `When…` starts a clause on a shield, while `Or…`
+continues that clause on the returned builder. The compiler therefore enforces
+`When<A>().Or<B>().OrWhen(...)`.
 
 ## Result clauses
 
@@ -36,7 +38,7 @@ Sometimes failure isn't an exception — it's a well-formed response you don't l
 ```csharp
 var http = Shield.For<HttpResponseMessage>()
     .When<HttpRequestException>()
-    .WhenResult(r => (int)r.StatusCode >= 500)
+    .OrResult(r => (int)r.StatusCode >= 500)
     .Retry(3);
 ```
 
