@@ -254,14 +254,14 @@ var routing = new HttpEndpointRoutingOptions
 {
     SelectionMode = HttpEndpointSelectionMode.Ordered,
     ShieldFactory = endpoint => HttpShield.WhenTransient()
-        .CircuitBreaker(5, TimeSpan.FromSeconds(30)),
+        .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30)),
 };
 routing.Endpoints.Add(new HttpEndpoint(new Uri("https://api-a.example")));
 routing.Endpoints.Add(new HttpEndpoint(new Uri("https://api-b.example")));
 
 services.AddHttpClient("routed")
     .AddShield(
-        HttpShield.WhenTransient().Hedge(2, TimeSpan.Zero),
+        HttpShield.WhenTransient().Hedge(2, delay: TimeSpan.Zero),
         new ShieldHttpHandlerOptions { Routing = routing });
 ```
 

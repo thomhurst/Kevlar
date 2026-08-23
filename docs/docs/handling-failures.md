@@ -54,7 +54,7 @@ A clause applies to the strategy it creates *and* to every reactive strategy cha
 Shield
     .When<HttpRequestException>()      // clause #1
     .Retry(3)                            //   ← uses clause #1
-    .CircuitBreaker(5, breakDuration)    //   ← also clause #1
+    .CircuitBreaker(consecutiveFailures: 5, breakDuration: breakDuration)    //   ← also clause #1
     .When<TimeoutExceededException>()  // clause #2 replaces #1 from here on
     .Fallback(...);                      //   ← uses clause #2
 ```

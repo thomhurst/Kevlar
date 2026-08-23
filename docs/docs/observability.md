@@ -15,7 +15,7 @@ Shields are observable without any setup: they describe themselves as strings, p
 var shield = Shield
     .Timeout(TimeSpan.FromSeconds(30))
     .Retry(3)
-    .CircuitBreaker(5, TimeSpan.FromSeconds(30))
+    .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30))
     .WithName("github");
 
 Console.WriteLine(shield);

@@ -12,7 +12,7 @@ sidebar_position: 5
 Shield
     .Timeout(TimeSpan.FromSeconds(30))   // 1. total budget around everything below
     .Retry(3)                            // 2. retries happen inside that budget
-    .CircuitBreaker(5, TimeSpan.FromSeconds(30))  // 3. breaker sees each attempt
+    .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30))  // 3. breaker sees each attempt
     .Timeout(TimeSpan.FromSeconds(5));   // 4. each individual attempt gets 5s
 ```
 
@@ -40,7 +40,7 @@ not count as their timeout and does not invoke their `OnTimeout` callback.
 Use `Wrap` to put one shield around another, or `Compose` to stack several:
 
 ```csharp
-var breaker  = Shield.CircuitBreaker(5, TimeSpan.FromSeconds(30));   // built once — holds the circuit state
+var breaker  = Shield.CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30));   // built once — holds the circuit state
 var reads    = Shield.Retry(3).Wrap(breaker);
 var writes   = Shield.Timeout(TimeSpan.FromSeconds(5)).Wrap(breaker);
 // reads and writes share ONE circuit: failures through either trip both.
@@ -82,7 +82,7 @@ A [handling clause](handling-failures.md) applies to the strategy it precedes *a
 Shield
     .When<HttpRequestException>()
     .Retry(3)                      // retries HttpRequestException
-    .CircuitBreaker(5, breakDur)   // breaker also counts HttpRequestException
+    .CircuitBreaker(consecutiveFailures: 5, breakDuration: breakDur)   // breaker also counts HttpRequestException
     .When<TimeoutExceededException>()
     .Fallback(...);                // fallback reacts to TimeoutExceededException only
 ```
@@ -110,7 +110,7 @@ Every shield describes itself — `ToString()` prints the pipeline, outermost fi
 var shield = Shield
     .Timeout(TimeSpan.FromSeconds(30))
     .Retry(3)
-    .CircuitBreaker(5, TimeSpan.FromSeconds(30))
+    .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30))
     .WithName("github");
 
 logger.LogInformation("using {Shield}", shield);

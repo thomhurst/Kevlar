@@ -129,7 +129,7 @@ var shield = Shield.For<Quote>()
     .When<CircuitOpenException>()    // catch the breaker's rejection too
     .Fallback(Quote.Unavailable)
     .Retry(3)
-    .CircuitBreaker(5, TimeSpan.FromSeconds(30));
+    .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30));
 ```
 
 Note the clause: to fall back when the circuit is open, the fallback's handling clause must include `CircuitOpenException`.

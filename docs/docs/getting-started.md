@@ -28,7 +28,7 @@ using Kevlar;
 var shield = Shield
     .Timeout(TimeSpan.FromSeconds(30))   // total budget for the whole operation
     .Retry(3)                            // exponential backoff + jitter, out of the box
-    .CircuitBreaker(5, breakDuration: TimeSpan.FromSeconds(30));
+    .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30));
 
 var user = await shield.ExecuteAsync(ct => LoadUserAsync(id, ct), cancellationToken);
 ```

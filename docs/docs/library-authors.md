@@ -32,7 +32,7 @@ var client = new ReportsClient(http,
     Shield
         .Timeout(TimeSpan.FromSeconds(30))
         .Retry(3)
-        .CircuitBreaker(5, TimeSpan.FromSeconds(30)));
+        .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30)));
 ```
 
 `Shield.Empty` executes the delegate directly with no strategies in between, so the null-coalescing default costs nothing and needs no branching at call sites.
