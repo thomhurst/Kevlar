@@ -9,45 +9,51 @@ namespace Kevlar.Analyzers.Tests;
 public class PipelineHazardAnalyzerTests
 {
     [Test]
-    public async Task Legacy_Fallback_Callbacks_Cannot_Bind_As_Options_Configurators()
+    public async Task Typed_Fallback_Keeps_Only_The_Bare_And_Configure_Tiers()
     {
-        var ambiguous = CreateCompilation(CreateSource("""
+        var supported = CreateCompilation(CreateSource("""
             public class TestSubject
             {
                 public void Configure()
                 {
-                    _ = Shield.For<int>().Fallback(42, _ => { });
-                    _ = Shield.For<int>().Fallback(_ => new ValueTask<int>(42), _ => { });
-                    _ = Shield.For<int>().Fallback((_, _) => new ValueTask<int>(42), _ => { });
-                    _ = Shield.For<int>().When<Exception>().Fallback(42, _ => { });
-                    _ = Shield.For<int>().When<Exception>().Fallback(_ => new ValueTask<int>(42), _ => { });
-                    _ = Shield.For<int>().When<Exception>().Fallback((_, _) => new ValueTask<int>(42), _ => { });
+                    _ = Shield.For<int>().Fallback(42);
+                    _ = Shield.For<int>().Fallback(_ => new ValueTask<int>(42));
+                    _ = Shield.For<int>().Fallback((_, _) => new ValueTask<int>(42));
+                    _ = Shield.For<int>().Fallback(42, options => options.OnFallback = _ => { });
+                    _ = Shield.For<int>().Fallback(_ => new ValueTask<int>(42), options => options.OnFallback = _ => { });
+                    _ = Shield.For<int>().Fallback((_, _) => new ValueTask<int>(42), options => options.OnFallback = _ => { });
+                    _ = Shield.For<int>().When<Exception>().Fallback(42);
+                    _ = Shield.For<int>().When<Exception>().Fallback(_ => new ValueTask<int>(42));
+                    _ = Shield.For<int>().When<Exception>().Fallback((_, _) => new ValueTask<int>(42));
+                    _ = Shield.For<int>().When<Exception>().Fallback(42, options => options.OnFallback = _ => { });
+                    _ = Shield.For<int>().When<Exception>().Fallback(_ => new ValueTask<int>(42), options => options.OnFallback = _ => { });
+                    _ = Shield.For<int>().When<Exception>().Fallback((_, _) => new ValueTask<int>(42), options => options.OnFallback = _ => { });
                 }
             }
             """));
-        var ambiguousErrors = ambiguous.GetDiagnostics()
+        var supportedErrors = supported.GetDiagnostics()
             .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
             .ToArray();
 
-        await Assert.That(ambiguousErrors).Count().IsEqualTo(6);
-        await Assert.That(ambiguousErrors).All(static diagnostic => diagnostic.Id == "CS0121");
+        await Assert.That(supportedErrors).IsEmpty();
 
-        var explicitLegacy = CreateCompilation(CreateSource("""
+        var legacyCallback = CreateCompilation(CreateSource("""
             public class TestSubject
             {
                 public void Configure()
                 {
                     Action<FallbackEvent<int>> callback = _ => { };
                     _ = Shield.For<int>().Fallback(42, callback);
+                    _ = Shield.For<int>().When<Exception>().Fallback(42, callback);
                 }
             }
             """));
-        var explicitErrors = explicitLegacy.GetDiagnostics()
+        var legacyErrors = legacyCallback.GetDiagnostics()
             .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
             .ToArray();
 
-        await Assert.That(explicitErrors).Count().IsEqualTo(1);
-        await Assert.That(explicitErrors[0].Id).IsEqualTo("CS0619");
+        await Assert.That(legacyErrors).Count().IsEqualTo(2);
+        await Assert.That(legacyErrors).All(static diagnostic => diagnostic.Id == "CS1503");
     }
 
     [Test]
@@ -566,6 +572,97 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV007_Flags_Clause_Builders_That_Never_Reach_A_Strategy()
+    {
+        var cases = new[]
+        {
+            "Shield.When<InvalidOperationException>();",
+            "Shield.When<InvalidOperationException>().Or<TimeoutException>();",
+            "Shield.When<InvalidOperationException>().Or<TimeoutException>().Or(static exception => exception is null);",
+            "_ = Shield.When<InvalidOperationException>();",
+            "_ = Shield.Empty.When<InvalidOperationException>();",
+            "_ = Shield.For<int>().WhenResult(static value => value < 0);",
+            "_ = Shield.For<int>().WhenResultDefault().Or<TimeoutException>();",
+            "var clause = Shield.When<InvalidOperationException>().Or<TimeoutException>();",
+            "var clause = Shield.For<int>().When<InvalidOperationException>();",
+        };
+
+        await AssertEachAsync(cases, "KEV007");
+    }
+
+    [Test]
+    public async Task KEV007_Flags_A_Clause_Replaced_Before_Any_Reactive_Strategy()
+    {
+        var cases = new[]
+        {
+            "_ = Shield.When<InvalidOperationException>().Timeout(TimeSpan.FromSeconds(1)).WhenAnyError().Retry(1);",
+            "_ = Shield.When<InvalidOperationException>().Timeout(TimeSpan.FromSeconds(1)).When<TimeoutException>().Retry(1);",
+            "_ = Shield.When<InvalidOperationException>().Or<TimeoutException>().RateLimit(1, TimeSpan.FromSeconds(1)).When<TimeoutException>().Retry(1);",
+            "_ = Shield.For<int>().When<InvalidOperationException>().Timeout(TimeSpan.FromSeconds(1)).WhenResult(static value => value < 0).Retry(1);",
+        };
+
+        await AssertEachAsync(cases, "KEV007", "KEV004");
+    }
+
+    [Test]
+    public async Task KEV007_Leaves_Consumed_And_Escaping_Clauses_Alone()
+    {
+        var cases = new[]
+        {
+            "_ = Shield.When<InvalidOperationException>().Retry(1);",
+            "_ = Shield.When<InvalidOperationException>().Or<TimeoutException>().CircuitBreaker(2, TimeSpan.FromSeconds(1));",
+            "_ = Shield.When<InvalidOperationException>().Timeout(TimeSpan.FromSeconds(1)).Retry(1);",
+            "_ = Shield.When<InvalidOperationException>().Fallback(static (_, _) => default);",
+            "_ = Shield.For<int>().WhenResult(static value => value < 0).Fallback(0);",
+            "_ = Shield.For<int>().When<InvalidOperationException>().Timeout(TimeSpan.FromSeconds(1)).Retry(1);",
+            "var clause = Shield.When<InvalidOperationException>(); _ = clause.Retry(1);",
+            "var clause = Shield.When<InvalidOperationException>(); _ = clause.Or<TimeoutException>().Retry(1);",
+            "_ = Shield.When<InvalidOperationException>().Timeout(TimeSpan.FromSeconds(1)).Wrap(Shield.Empty).When<TimeoutException>().Retry(1);",
+            "_ = Clause().Retry(1);",
+            "_ = Shield.Empty.WhenAnyError().Retry(1);",
+        };
+
+        foreach (var body in cases)
+        {
+            var diagnostics = await AnalyzeBodyAsync(
+                body,
+                "private static ShieldBuilder Clause() => Shield.When<InvalidOperationException>();");
+            await Assert.That(diagnostics).IsEmpty();
+        }
+    }
+
+    [Test]
+    public async Task KEV007_Diagnostic_Contract_And_Suppression_Are_Exact()
+    {
+        const string clause = "Shield.When<InvalidOperationException>().Or<TimeoutException>()";
+        var source = $$"""
+            public class TestSubject
+            {
+                public void Build() => {{clause}};
+            }
+            """;
+        var diagnostics = await AnalyzeSourceAsync(source);
+        var suppressed = await AnalyzeBodyAsync("""
+            #pragma warning disable KEV007 // The clause is asserted on elsewhere.
+            Shield.When<InvalidOperationException>();
+            #pragma warning restore KEV007
+            """);
+
+        await Assert.That(diagnostics.Length).IsEqualTo(1);
+        var diagnostic = diagnostics[0];
+        await Assert.That(diagnostic.Id).IsEqualTo("KEV007");
+        await Assert.That(diagnostic.Severity).IsEqualTo(DiagnosticSeverity.Warning);
+        await Assert.That(diagnostic.GetMessage()).IsEqualTo(
+            "This handling clause never reaches a reactive strategy, so it has no effect: "
+            + "the ShieldBuilder it returns is discarded. Finish the clause with Retry, "
+            + "CircuitBreaker, Hedge, Fallback, or Use, or remove it.");
+        await Assert.That(diagnostic.Location.SourceSpan.Start)
+            .IsEqualTo(CreateSource(source).IndexOf(clause, StringComparison.Ordinal));
+        await Assert.That(diagnostic.Location.SourceSpan.Length).IsEqualTo(clause.Length);
+        await Assert.That(suppressed).IsEmpty();
+    }
+
+    [Test]
     public async Task KEV003_Flags_Unreachable_Reactive_Strategies()
     {
         var cases = new[]
@@ -602,7 +699,9 @@ public class PipelineHazardAnalyzerTests
             "var retry = Shield.Retry(1); var fallback = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask); _ = Shield.Compose(retry, fallback);",
         };
 
-        await AssertEachAsync(cases, "KEV003");
+        // Some cases replace a clause that only a timeout ever saw, which is exactly what KEV007
+        // reports; the fallback reachability under test is unaffected.
+        await AssertEachAsync(cases, "KEV003", "KEV007");
     }
 
     [Test]
@@ -738,7 +837,7 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.For<int>().Fallback(0).Retry(1);",
             "_ = Shield.For<int>().Retry(1).When<InvalidOperationException>().Fallback(0);",
             "_ = Shield.For<int>().When<InvalidOperationException>().Retry(1).WhenAnyError().Fallback(0);",
-            "_ = Shield.For<int>().When<ArgumentException>().Retry(1).When<InvalidOperationException>().Timeout(TimeSpan.Zero).WhenAnyError().Fallback(0);",
+            "_ = Shield.For<int>().When<ArgumentException>().Retry(1).When<InvalidOperationException>().Timeout(TimeSpan.Zero).CircuitBreaker(2, TimeSpan.FromSeconds(1)).WhenAnyError().Fallback(0);",
             "_ = Shield.For<int>().Timeout(TimeSpan.FromSeconds(1)).Fallback(0);",
             "var shield = CreateShield(); _ = shield.Fallback(0);",
             "var shield = Shield.For<int>().Retry(1); shield = Shield<int>.Empty; _ = shield.Fallback(0);",

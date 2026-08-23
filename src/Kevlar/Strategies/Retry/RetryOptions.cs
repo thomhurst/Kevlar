@@ -144,7 +144,18 @@ public readonly struct RetryEvent
     /// <summary>The exception from the failed attempt, or <see langword="null"/> when a result was handled.</summary>
     public Exception? Exception { get; }
 
-    /// <summary>The handled result from the failed attempt (boxed), or <see langword="null"/> when an exception occurred.</summary>
+    /// <summary>
+    /// The handled result from the failed attempt, or <see langword="null"/> when an exception
+    /// occurred.
+    /// </summary>
+    /// <remarks>
+    /// The untyped event carries the result as <see cref="object"/>, so a value-type result is
+    /// boxed on every retry and has to be unboxed — and its type re-asserted — by the callback.
+    /// Configure the retry through <see cref="RetryOptions{TResult}"/> on a
+    /// <see cref="Shield{TResult}"/> to receive <see cref="RetryEvent{TResult}"/> instead: its
+    /// <see cref="RetryEvent{TResult}.Outcome"/> is a typed <see cref="Outcome{TResult}"/>, with
+    /// no boxing and no cast.
+    /// </remarks>
     public object? Result { get; }
 
     /// <summary>

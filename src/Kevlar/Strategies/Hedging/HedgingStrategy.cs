@@ -12,7 +12,7 @@ internal sealed class HedgingStrategy : Strategy
     private readonly Func<HedgeEvent, ValueTask>? _onHedgeAsync;
     private readonly HedgeActionGenerator? _actionGenerator;
 
-    public HedgingStrategy(HedgingOptions options, OutcomeJudge judge)
+    public HedgingStrategy(HedgeOptions options, OutcomeJudge judge)
     {
         Throw.IfOutOfRange(options.MaxAttempts < 1, nameof(options), "MaxAttempts must be at least 1.");
         Throw.IfOutOfRange(options.Delay < TimeSpan.Zero && options.Delay != System.Threading.Timeout.InfiniteTimeSpan, nameof(options), "Delay must be non-negative or Timeout.InfiniteTimeSpan.");

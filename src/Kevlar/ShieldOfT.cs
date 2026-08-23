@@ -11,9 +11,6 @@ namespace Kevlar;
 /// </summary>
 public sealed class Shield<TResult>
 {
-    private const string LegacyFallbackCallbackMessage =
-        "Configure fallback notifications with Fallback(..., options => options.OnFallback = callback).";
-
     internal readonly Strategy[] Strategies;
     internal readonly StrategyNode? Head;
     internal readonly OutcomeJudge? Ambient;
@@ -192,10 +189,10 @@ public sealed class Shield<TResult>
     });
 
     /// <summary>Adds a hedging strategy configured via <paramref name="configure"/>.</summary>
-    public Shield<TResult> Hedge(Action<HedgingOptions<TResult>> configure)
+    public Shield<TResult> Hedge(Action<HedgeOptions<TResult>> configure)
     {
         Throw.IfNull(configure, nameof(configure));
-        var options = new HedgingOptions<TResult>();
+        var options = new HedgeOptions<TResult>();
         configure(options);
         var judge = HandlingOverride.Resolve(options.HandlesException, options.HandlesResult, JudgeOrDefault);
         return Append(new HedgingStrategy(options, judge));
@@ -204,11 +201,6 @@ public sealed class Shield<TResult>
     /// <summary>Replaces handled outcomes with <paramref name="fallbackValue"/>.</summary>
     public Shield<TResult> Fallback(TResult fallbackValue) =>
         Append(new FallbackStrategy<TResult>((_, _) => new ValueTask<TResult>(fallbackValue), JudgeOrDefault, null, null));
-
-    /// <summary>Prevents legacy notification callbacks from binding as options configurators.</summary>
-    [Obsolete(LegacyFallbackCallbackMessage, error: true)]
-    public Shield<TResult> Fallback(TResult fallbackValue, Action<FallbackEvent<TResult>> onFallback) =>
-        Fallback(fallbackValue, options => options.OnFallback = onFallback);
 
     /// <summary>Replaces handled outcomes with <paramref name="fallbackValue"/> and configures notifications.</summary>
     /// <remarks>Runs <see cref="FallbackOptions{TResult}.OnFallback"/>, then <see cref="FallbackOptions{TResult}.OnFallbackAsync"/>, before recovery. A notification failure skips recovery.</remarks>
@@ -232,13 +224,6 @@ public sealed class Shield<TResult>
         Throw.IfNull(fallback, nameof(fallback));
         return Append(new FallbackStrategy<TResult>((_, context) => fallback(context.CancellationToken), JudgeOrDefault, null, null));
     }
-
-    /// <summary>Prevents legacy notification callbacks from binding as options configurators.</summary>
-    [Obsolete(LegacyFallbackCallbackMessage, error: true)]
-    public Shield<TResult> Fallback(
-        Func<CancellationToken, ValueTask<TResult>> fallback,
-        Action<FallbackEvent<TResult>> onFallback) =>
-        Fallback(fallback, options => options.OnFallback = onFallback);
 
     /// <summary>Replaces handled outcomes with the result of <paramref name="fallback"/> and configures notifications.</summary>
     /// <remarks>Runs <see cref="FallbackOptions{TResult}.OnFallback"/>, then <see cref="FallbackOptions{TResult}.OnFallbackAsync"/>, before recovery. A notification failure skips recovery.</remarks>
@@ -265,13 +250,6 @@ public sealed class Shield<TResult>
         Throw.IfNull(fallback, nameof(fallback));
         return Append(new FallbackStrategy<TResult>((outcome, context) => fallback(outcome, context.CancellationToken), JudgeOrDefault, null, null));
     }
-
-    /// <summary>Prevents legacy notification callbacks from binding as options configurators.</summary>
-    [Obsolete(LegacyFallbackCallbackMessage, error: true)]
-    public Shield<TResult> Fallback(
-        Func<Outcome<TResult>, CancellationToken, ValueTask<TResult>> fallback,
-        Action<FallbackEvent<TResult>> onFallback) =>
-        Fallback(fallback, options => options.OnFallback = onFallback);
 
     /// <summary>
     /// Replaces handled outcomes with the result of <paramref name="fallback"/>, which receives
@@ -344,6 +322,33 @@ public sealed class Shield<TResult>
             null,
             Name ?? inner.Name,
             Time ?? inner.Time);
+    }
+
+    /// <summary>
+    /// Merges result-aware shields into one pipeline. The first shield is the outermost. Stateful
+    /// strategies keep their identity, so a shared circuit breaker shield shares its circuit here.
+    /// The result keeps the first non-null <see cref="Name"/> and <see cref="TimeProvider"/>
+    /// among the inputs. Composition seals handling clauses, so reactive strategies appended
+    /// afterwards use default handling unless a new clause is declared.
+    /// </summary>
+    public static Shield<TResult> Compose(params Shield<TResult>[] shields)
+    {
+        Throw.IfNull(shields, nameof(shields));
+
+        var parts = new Strategy[shields.Length][];
+        string? name = null;
+        TimeProvider? time = null;
+
+        for (var i = 0; i < shields.Length; i++)
+        {
+            var shield = shields[i];
+            Throw.IfNull(shield, nameof(shields));
+            parts[i] = shield.Strategies;
+            name ??= shield.Name;
+            time ??= shield.Time;
+        }
+
+        return new Shield<TResult>(Shield.Concat(parts), null, name, time);
     }
 
     /// <summary>Returns a copy of this shield with a diagnostic name (surfaced as <see cref="KevlarContext.ShieldName"/>).</summary>

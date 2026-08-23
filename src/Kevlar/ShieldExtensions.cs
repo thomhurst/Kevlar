@@ -137,11 +137,11 @@ public static class ShieldExtensions
     /// concurrently, so the delegate must be idempotent. Prefer <c>Shield.For&lt;T&gt;()</c>, or
     /// confirm the action is safe to repeat.
     /// </remarks>
-    public static Shield Hedge(this Shield shield, Action<HedgingOptions> configure)
+    public static Shield Hedge(this Shield shield, Action<HedgeOptions> configure)
     {
         Throw.IfNull(shield, nameof(shield));
         Throw.IfNull(configure, nameof(configure));
-        var options = new HedgingOptions();
+        var options = new HedgeOptions();
         configure(options);
         var judge = HandlingOverride.Resolve(options.HandlesException, shield.JudgeOrDefault);
         return shield.Append(new HedgingStrategy(options, judge));

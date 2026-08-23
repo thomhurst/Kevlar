@@ -48,6 +48,16 @@ var writes   = Shield.Timeout(TimeSpan.FromSeconds(5)).Wrap(breaker);
 var combined = Shield.Compose(timeoutShield, retryShield, breakerShield);  // first = outermost
 ```
 
+Result-aware shields compose the same way through `Shield<T>.Compose`, with the same metadata and
+clause-sealing rules:
+
+```csharp
+var typedTimeout = Shield.For<HttpResponseMessage>().Timeout(TimeSpan.FromSeconds(5));
+var typedRetry = Shield.For<HttpResponseMessage>().Retry(3);
+
+var typed = Shield<HttpResponseMessage>.Compose(typedTimeout, typedRetry);  // first = outermost
+```
+
 :::note What survives a merge
 `Wrap` and `Compose` carry the *strategies* (with their state) forward. Both keep the first non-null name and `TimeProvider` from outer to inner. Ambient [handling clauses](handling-failures.md) stop at the composition boundary, so reactive strategies appended to the merged shield use default handling unless you declare a new clause.
 
@@ -77,7 +87,23 @@ var background  = Shield.Timeout(TimeSpan.FromSeconds(30)).Retry(5).Wrap(downstr
 
 ## Handling clauses flow down a fluent chain
 
-A [handling clause](handling-failures.md) applies to the strategy it precedes *and* to every reactive strategy chained after it, until you write a new clause or compose the shield:
+:::tip The ambient clause rule
+A [handling clause](handling-failures.md) applies to **the strategy it is attached to and to every reactive strategy chained after it**, until a new clause replaces it, `WhenAnyError()` resets it, or `Wrap`/`Compose` seals it at a composition boundary.
+:::
+
+The circuit breaker below never declares a clause of its own. It inherits the one written at the top of the chain, so only `HttpRequestException` counts toward tripping it:
+
+```csharp
+var shield = Shield
+    .When<HttpRequestException>()
+    .Retry(3)                                                                     // retries HttpRequestException
+    .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30));
+    // ↑ the breaker counts HttpRequestException failures only
+```
+
+Proactive strategies — timeout, rate limit, concurrency limit — never consult a clause, but they do not end it either: the clause stays ambient for the next reactive strategy. A clause that reaches no reactive strategy at all is dead, and the optional analyzer reports it as [`KEV007`](analyzers.md#kev007-dead-handling-clause).
+
+Writing a new clause mid-chain replaces the previous one from that point on:
 
 <!-- doc-test-ignore: Uses an ellipsis to illustrate a fallback body defined by the application. -->
 ```csharp

@@ -10,7 +10,8 @@ namespace Kevlar.Analyzers;
 /// <summary>
 /// Diagnoses statically provable Kevlar pipeline hazards: synchronous multi-attempt hedging, reactive
 /// strategies made unreachable by an inner fallback, per-execution construction of stateful shields,
-/// void fallbacks used for result-returning executions, and hedging on an untyped shield.
+/// void fallbacks used for result-returning executions, hedging on an untyped shield, and handling
+/// clauses that never reach a reactive strategy.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
@@ -65,6 +66,16 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         isEnabledByDefault: true,
         description: "An untyped Shield can only judge hedged attempts by their exceptions, so every attempt it launches runs to completion against the real dependency. Duplicate writes, charges, or sends from a losing hedge are observable unless the action is idempotent.");
 
+    /// <summary>The KEV007 rule.</summary>
+    public static readonly DiagnosticDescriptor DeadHandlingClauseRule = new(
+        id: "KEV007",
+        title: "Handling clause never reaches a reactive strategy",
+        messageFormat: "This handling clause never reaches a reactive strategy, so it has no effect: {0}. Finish the clause with Retry, CircuitBreaker, Hedge, Fallback, or Use, or remove it.",
+        category: "Configuration",
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "A When/Or clause only changes behaviour once a reactive strategy consumes it. A clause whose builder is discarded, or that a later When clause replaces before any reactive strategy is added, silently does nothing.");
+
     /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
         ImmutableArray.Create(
@@ -72,7 +83,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             UnreachableReactiveStrategyRule,
             EphemeralStatefulShieldRule,
             VoidFallbackResultExecutionRule,
-            UntypedHedgingRule);
+            UntypedHedgingRule,
+            DeadHandlingClauseRule);
 
     /// <inheritdoc />
     public override void Initialize(AnalysisContext context)
@@ -171,6 +183,196 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 VoidFallbackResultExecutionRule,
                 invocation.Syntax.GetLocation()));
         }
+
+        if (TryFindDeadHandlingClause(invocation, context, knownTypes, out var deadClauseReason))
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                DeadHandlingClauseRule,
+                invocation.Syntax.GetLocation(),
+                deadClauseReason));
+        }
+    }
+
+    /// <summary>
+    /// Reports a handling clause that cannot change any strategy's behaviour: either the
+    /// <c>ShieldBuilder</c> it produces is dropped without a strategy, or a later <c>When…</c> in
+    /// the same fluent chain replaces it before a reactive strategy consumes it.
+    /// </summary>
+    private static bool TryFindDeadHandlingClause(
+        IInvocationOperation invocation,
+        OperationAnalysisContext context,
+        KnownTypes knownTypes,
+        out string? reason)
+    {
+        var method = Normalize(invocation.TargetMethod);
+
+        if (ProducesHandlingClauseBuilder(method, knownTypes)
+            && IsDiscardedClauseBuilder(invocation, context))
+        {
+            reason = "the ShieldBuilder it returns is discarded";
+            return true;
+        }
+
+        if (DeclaresHandlingClause(method, knownTypes)
+            && IsReplacedBeforeUse(invocation, knownTypes))
+        {
+            reason = "a later When clause replaces it first";
+            return true;
+        }
+
+        reason = null;
+        return false;
+    }
+
+    /// <summary>Whether the fluent method hands back a clause builder that still needs a strategy.</summary>
+    private static bool ProducesHandlingClauseBuilder(IMethodSymbol method, KnownTypes knownTypes) =>
+        method.ReturnType is INamedTypeSymbol returnType
+        && knownTypes.IsShieldBuilder(returnType)
+        && IsKevlarFluentMethod(method, knownTypes);
+
+    /// <summary>Whether the method opens a clause carrying predicates, as opposed to resetting one.</summary>
+    private static bool DeclaresHandlingClause(IMethodSymbol method, KnownTypes knownTypes) =>
+        method.Name != "WhenAnyError" && StartsHandlingClause(method, knownTypes);
+
+    /// <summary>Whether a reactive strategy reads the ambient clause this method seals.</summary>
+    private static bool ConsumesHandlingClause(IMethodSymbol method, KnownTypes knownTypes) =>
+        (method.Name is "Retry" or "RetryForever" or "Hedge" or "CircuitBreaker" or "Fallback" or "Use")
+        && IsKevlarFluentMethod(method, knownTypes);
+
+    private static bool IsDiscardedClauseBuilder(
+        IInvocationOperation invocation,
+        OperationAnalysisContext context)
+    {
+        for (var parent = invocation.Parent; parent is not null; parent = parent.Parent)
+        {
+            switch (parent)
+            {
+                case IConversionOperation or IParenthesizedOperation:
+                    continue;
+
+                // `shield.When<T>();` — the builder is dropped where it stands.
+                case IExpressionStatementOperation:
+                    return true;
+
+                // `_ = shield.When<T>();` — dropped just as deliberately.
+                case IAssignmentOperation { Target: IDiscardOperation }:
+                    return true;
+
+                // `var clause = shield.When<T>();` with no later mention of `clause`.
+                case IVariableInitializerOperation { Parent: IVariableDeclaratorOperation declarator }:
+                    return IsNeverRead(declarator.Symbol, context);
+
+                // A chained call consumes it: either another Or… (analysed in its own right, so
+                // only the outermost link of a dead chain is reported) or a strategy that seals it.
+                // Anything else — an argument, a return, a field — escapes this analysis.
+                default:
+                    return false;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsNeverRead(ILocalSymbol local, OperationAnalysisContext context)
+    {
+        var declarations = local.DeclaringSyntaxReferences;
+        var semanticModel = context.Operation.SemanticModel;
+        if (declarations.Length != 1 || semanticModel is null)
+        {
+            return false;
+        }
+
+        var declarator = declarations[0].GetSyntax(context.CancellationToken);
+        if (semanticModel.SyntaxTree != declarator.SyntaxTree)
+        {
+            return false;
+        }
+
+        var scope = GetExecutableScope(declarator, context.CancellationToken);
+        foreach (var identifier in scope.DescendantNodes().OfType<IdentifierNameSyntax>())
+        {
+            if (identifier.Identifier.ValueText == local.Name
+                && SymbolEqualityComparer.Default.Equals(
+                    semanticModel.GetSymbolInfo(identifier, context.CancellationToken).Symbol,
+                    local))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Walks outward from a <c>When…</c> through the calls that consume its value. Only a chain
+    /// that reaches another clause declaration — with nothing reactive in between — is dead;
+    /// anything the walk cannot follow leaves the clause alone.
+    /// </summary>
+    private static bool IsReplacedBeforeUse(IInvocationOperation invocation, KnownTypes knownTypes)
+    {
+        for (var consumer = FindChainedConsumer(invocation); consumer is not null; consumer = FindChainedConsumer(consumer))
+        {
+            var method = Normalize(consumer.TargetMethod);
+
+            if (ConsumesHandlingClause(method, knownTypes))
+            {
+                return false;
+            }
+
+            // A new clause replaced the old one, and nothing reactive read it on the way here.
+            // Checked before the builder test because When… also returns a builder; only the
+            // Or… continuations declared on ShieldBuilder itself extend the existing clause.
+            if (StartsHandlingClause(method, knownTypes))
+            {
+                return true;
+            }
+
+            // Or… continues the same clause.
+            if (ProducesHandlingClauseBuilder(method, knownTypes))
+            {
+                continue;
+            }
+
+            // Proactive strategies and metadata keep the clause ambient; anything else — including
+            // Wrap and Compose, which seal clauses — is beyond what this walk should judge.
+            if (IsCompositionBoundary(method, knownTypes) || !IsKevlarFluentMethod(method, knownTypes))
+            {
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>The invocation that takes <paramref name="invocation"/> as its fluent receiver, if any.</summary>
+    private static IInvocationOperation? FindChainedConsumer(IInvocationOperation invocation)
+    {
+        for (IOperation? current = invocation, parent = invocation.Parent;
+            parent is not null;
+            current = parent, parent = parent.Parent)
+        {
+            switch (parent)
+            {
+                case IConversionOperation or IParenthesizedOperation:
+                    continue;
+
+                // An instance call: `clause.Retry(3)`.
+                case IInvocationOperation consumer
+                    when ReferenceEquals(GetReceiver(consumer), current):
+                    return consumer;
+
+                // A reduced extension call: `shield.When<T>()` parents the receiver under the
+                // argument that carries it, not under the invocation itself.
+                case IArgumentOperation { Parent: IInvocationOperation extensionConsumer }
+                    when ReferenceEquals(GetReceiver(extensionConsumer), current):
+                    return extensionConsumer;
+
+                default:
+                    return null;
+            }
+        }
+
+        return null;
     }
 
     private static bool TryFindEphemeralStatefulConstruction(

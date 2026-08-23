@@ -74,7 +74,15 @@ Registry semantics worth knowing:
 services.AddShield("github", builder.Configuration.GetSection("Resilience:GitHub"));
 ```
 
-The schema is `ShieldDefinition`: optional `Timeout`, `Retry`, `CircuitBreaker`, `RateLimit`, `ConcurrencyLimit` and `AttemptTimeout` sections, chained in that fixed order (outermost first). Only the sections you declare are added, and the defaults inside each section match the fluent API's.
+The schema is `ShieldDefinition`. `ShieldDefinition.Build()` always chains the sections it finds in one fixed order, outermost first:
+
+```text
+Timeout → Retry → CircuitBreaker → RateLimit → ConcurrencyLimit → AttemptTimeout
+```
+
+Read that the same way as any [fluent chain](composition.md): `Timeout` is the total budget wrapping everything, retries happen inside it, each attempt passes through the breaker and the two limiters, and `AttemptTimeout` is the innermost per-attempt budget. Only the sections you declare are added; the remaining ones keep their relative order. The defaults inside each section match the fluent API's.
+
+Configuration cannot reorder that chain — the order is what makes a definition readable across environments. Build the shield with the fluent API and register the instance when you need a different shape.
 
 ### Reloading configuration atomically
 

@@ -24,6 +24,15 @@ var shield = Shield
 await shield.ExecuteAsync(ct => bus.PublishAsync(message, ct));
 ```
 
+`Shield.Fallback(…)` is the static factory form, for when the fallback is the outermost strategy —
+which is the valid position for one, since it recovers what everything inside it could not:
+
+```csharp
+var shield = Shield
+    .Fallback((exception, ct) => deadLetter.PublishAsync(exception, ct))
+    .Retry(3);
+```
+
 A void fallback guards void executions only; executing a result-returning delegate through it fails
 with a descriptive error rather than inventing a default value. The optional analyzer reports this
 mistake as [`KEV005`](../analyzers.md#kev005-void-fallback-with-a-result) when the pipeline is visible
@@ -55,8 +64,8 @@ Every overload also has an options configurator for fallback notifications:
     options => options.OnFallback = e => metrics.Increment("config.fallback"))
 ```
 
-Legacy positional notification callbacks intentionally fail compilation instead of being
-reinterpreted as configurators. Assign the callback to `options.OnFallback` as shown above.
+Each shape has exactly two overloads — bare and `configure`. There is no positional `onFallback`
+parameter: assign the callback to `options.OnFallback` as shown above.
 
 The `FallbackEvent<T>` carries the failure that triggered it as a typed `Outcome<T>` — `Outcome.Exception` when an exception was handled, `Outcome.Result` when a result value was. No casting, no boxing.
 

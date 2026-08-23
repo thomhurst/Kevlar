@@ -4,7 +4,7 @@
 
 ### Breaking changes
 
-- Configure fallback notifications through `Fallback(..., configure)`. The pre-release `FallbackWithNotifications` methods and typed optional `onFallback` parameters were removed. Migration-only error overloads prevent old positional callback lambdas from silently binding as options configurators.
+- Configure fallback notifications through `Fallback(..., configure)`. The pre-release `FallbackWithNotifications` methods and typed `onFallback` parameters were removed, including the migration-only error overloads that briefly replaced them. Every fallback shape now has exactly two overloads — bare and `Action<FallbackOptions>`/`Action<FallbackOptions<TResult>>` — on `Shield`, `Shield<TResult>`, `ShieldBuilder` and `ShieldBuilder<TResult>`.
 
 Handling clauses now use one spelling per position. `When…` starts a clause on `Shield` or
 `Shield<TResult>`; only `Or…` continues it on a builder. `Shield.For<TResult>()` now returns
@@ -28,7 +28,11 @@ not the default *handling* that the neighbouring `WhenAnyError()` restores.
   property names and defaults, but helpers that accepted `RetryOptions` must configure typed retry
   options separately. Typed callback getters now return the exact delegates assigned to them.
 - Typed circuit-breaker and hedging configuration now uses `CircuitBreakerOptions<TResult>` and
-  `HedgingOptions<TResult>` so result predicates remain strongly typed.
+  `HedgeOptions<TResult>` so result predicates remain strongly typed.
+- `HedgingOptions`/`HedgingOptions<TResult>` were renamed to `HedgeOptions`/`HedgeOptions<TResult>`
+  so the strategy method and its options type share a stem, like `Retry`/`RetryOptions` and
+  `Timeout`/`TimeoutOptions`. `Kevlar.Extensions.Http`'s `StandardHedgingShieldOptions` and
+  `AddStandardHedgingShield` are unchanged.
 
 ### Changed
 
@@ -36,6 +40,15 @@ not the default *handling* that the neighbouring `WhenAnyError()` restores.
 
 ### Added
 
+- `KEV007`: a `When…`/`Or…` handling clause that never reaches a reactive strategy — the
+  `ShieldBuilder` is discarded, or a later `When…`/`WhenAnyError()` replaces the clause while only
+  proactive strategies stood between them.
+- `Shield.Fallback(…)` static factories, mirroring the four untyped `ShieldExtensions.Fallback`
+  overloads, so a fallback can start a chain like every other strategy. Fallback-first is the
+  valid order: it recovers what the strategies chained inside it could not.
+- `Shield<TResult>.Compose(params Shield<TResult>[])`, the result-aware counterpart of
+  `Shield.Compose`. Same semantics: first shield outermost, first non-null name and
+  `TimeProvider` win, ambient handling clauses sealed.
 - Reactive strategy options can replace ambient handling locally with `HandlesException` and, on
   typed options, `HandlesResult`. Testing descriptors expose `HasHandlingOverride`.
 - Context-only `ExecuteWithContext`/`ExecuteWithContextAsync` overloads that take just the
