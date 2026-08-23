@@ -260,6 +260,7 @@ public class CustomStrategyContractTests
         await Assert.That(untyped.ShouldHandle(Outcome<int>.FromResult(0))).IsFalse();
         await Assert.That(typed.ShouldHandle(Outcome<int>.FromResult(0))).IsTrue();
         await Assert.That(typed.ShouldHandle(Outcome<int>.FromResult(1))).IsFalse();
+        await Assert.That(typed.ShouldHandle(Outcome<string>.FromResult("0"))).IsFalse();
         await Assert.That(HandlingClause.Default.ShouldHandle(
             Outcome<int>.FromException(new InvalidOperationException()))).IsTrue();
     }

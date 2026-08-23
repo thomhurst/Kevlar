@@ -1,5 +1,3 @@
-using System.Diagnostics;
-
 namespace Kevlar.Internal;
 
 /// <summary>
@@ -53,12 +51,11 @@ internal sealed class TypedJudge<TResult> : OutcomeJudge
             return _exceptionPredicate?.Invoke(exception) ?? false;
         }
 
-        if (_resultPredicate is null)
+        if (_resultPredicate is null || typeof(T) != typeof(TResult))
         {
             return false;
         }
 
-        Debug.Assert(typeof(T) == typeof(TResult), "Typed strategies only execute inside a matching Shield<TResult>.");
         var predicate = (Func<T, bool>)(object)_resultPredicate;
         return predicate(outcome.Result!);
     }
