@@ -612,6 +612,22 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV003_Skips_Opaque_Local_Handling_Configurator()
+    {
+        var diagnostics = await AnalyzeBodyAsync(
+            "_ = Build(options => options.HandlesException = exception => exception is TimeoutException);",
+            """
+            private static Shield<int> Build(Action<CircuitBreakerOptions<int>> configure) =>
+                Shield.For<int>()
+                    .When<InvalidOperationException>()
+                    .CircuitBreaker(configure)
+                    .Fallback(0);
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
     public async Task KEV003_Skips_Valid_Or_Unknown_Compositions()
     {
         var cases = new[]

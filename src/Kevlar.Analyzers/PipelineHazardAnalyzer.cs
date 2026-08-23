@@ -97,7 +97,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         }
 
         if (IsKevlarFluentMethod(invocation.TargetMethod, knownTypes, "Fallback")
-            && !HasLocalHandlingOverride(invocation, context)
+            && HasLocalHandlingOverride(invocation, context) is false
             && FindInPipeline(
                 GetReceiver(invocation),
                 context,
@@ -588,7 +588,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 operands[fallbackIndex],
                 context,
                 candidate => IsKevlarFluentMethod(candidate.TargetMethod, knownTypes, "Fallback")
-                    && !HasLocalHandlingOverride(candidate, context),
+                    && HasLocalHandlingOverride(candidate, context) is false,
                 knownTypes,
                 stopAtHandlingClause: true,
                 stopAtCompositionBoundary: true,
@@ -1373,25 +1373,66 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         OperationAnalysisContext context,
         KnownTypes knownTypes) =>
         IsReactiveStrategy(Normalize(invocation.TargetMethod), knownTypes)
-        && !HasLocalHandlingOverride(invocation, context);
+        && HasLocalHandlingOverride(invocation, context) is false;
 
-    private static bool HasLocalHandlingOverride(
+    private static bool? HasLocalHandlingOverride(
         IInvocationOperation invocation,
         OperationAnalysisContext context)
     {
         foreach (var argument in invocation.Arguments)
         {
-            if (argument.Parameter?.Name == "configure"
-                && ContainsLocalHandlingOverride(
+            if (argument.Parameter?.Name == "configure")
+            {
+                return AnalyzeLocalHandlingConfigurator(
                     argument.Value,
                     context,
-                    visitedSymbols: null))
-            {
-                return true;
+                    visitedSymbols: null);
             }
         }
 
         return false;
+    }
+
+    private static bool? AnalyzeLocalHandlingConfigurator(
+        IOperation operation,
+        OperationAnalysisContext context,
+        HashSet<ISymbol>? visitedSymbols)
+    {
+        operation = Unwrap(operation)!;
+        if (operation is IDelegateCreationOperation delegateCreation)
+        {
+            return AnalyzeLocalHandlingConfigurator(delegateCreation.Target, context, visitedSymbols);
+        }
+
+        if (operation is ILocalReferenceOperation localReference)
+        {
+            visitedSymbols ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+            if (!visitedSymbols.Add(localReference.Local)
+                || !TryGetStableInitializer(localReference, context, out var initializer)
+                || initializer is null)
+            {
+                return null;
+            }
+
+            var result = AnalyzeLocalHandlingConfigurator(initializer, context, visitedSymbols);
+            visitedSymbols.Remove(localReference.Local);
+            return result;
+        }
+
+        if (operation is IMethodReferenceOperation methodReference
+            && methodReference.Method.DeclaringSyntaxReferences.IsEmpty)
+        {
+            return null;
+        }
+
+        if (operation is IParameterReferenceOperation
+            or IPropertyReferenceOperation
+            or IFieldReferenceOperation)
+        {
+            return null;
+        }
+
+        return ContainsLocalHandlingOverride(operation, context, visitedSymbols);
     }
 
     private static bool ContainsLocalHandlingOverride(
