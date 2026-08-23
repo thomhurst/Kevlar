@@ -65,7 +65,7 @@ public class FallbackTests
         var fired = false;
         var shield = Shield.For<int>()
             .WhenResult(-1)
-            .Fallback(0, onFallback: _ => fired = true);
+            .Fallback(0, options => options.OnFallback = _ => fired = true);
 
         await shield.ExecuteAsync(_ => new ValueTask<int>(-1));
 

@@ -23,25 +23,19 @@ public class FallbackBenchmarks
 
     private static readonly Shield<int> KevlarSyncNotification = Shield.For<int>()
         .When<InvalidOperationException>()
-        .Fallback(7, static _ => { });
+        .Fallback(7, static options => options.OnFallback = static _ => { });
 
     private static readonly Shield<int> KevlarCompletedAsyncNotification = Shield.For<int>()
         .When<InvalidOperationException>()
-        .FallbackWithNotifications(
+        .Fallback(
             7,
-            new FallbackOptions<int>
-            {
-                OnFallbackAsync = static _ => ValueTask.CompletedTask,
-            });
+            static options => options.OnFallbackAsync = static _ => ValueTask.CompletedTask);
 
     private static readonly Shield<int> KevlarYieldingAsyncNotification = Shield.For<int>()
         .When<InvalidOperationException>()
-        .FallbackWithNotifications(
+        .Fallback(
             7,
-            new FallbackOptions<int>
-            {
-                OnFallbackAsync = static async _ => await Task.Yield(),
-            });
+            static options => options.OnFallbackAsync = static async _ => await Task.Yield());
 
     private static readonly ResiliencePipeline<int> PollyFallback = new ResiliencePipelineBuilder<int>()
         .AddFallback(new FallbackStrategyOptions<int>

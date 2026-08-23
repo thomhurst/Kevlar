@@ -411,16 +411,16 @@ public class MetricsTests
         var asyncObservedMetric = false;
         var shield = Shield.For<int>()
             .When<InvalidOperationException>()
-            .FallbackWithNotifications(
+            .Fallback(
                 42,
-                new FallbackOptions<int>
+                options =>
                 {
-                    OnFallback = _ => syncObservedMetric = listener.Total("kevlar.fallbacks", name) == 1,
-                    OnFallbackAsync = _ =>
+                    options.OnFallback = _ => syncObservedMetric = listener.Total("kevlar.fallbacks", name) == 1;
+                    options.OnFallbackAsync = _ =>
                     {
                         asyncObservedMetric = listener.Total("kevlar.fallbacks", name) == 1;
                         return ValueTask.CompletedTask;
-                    },
+                    };
                 })
             .WithName(name);
 

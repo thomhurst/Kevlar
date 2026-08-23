@@ -284,7 +284,7 @@ public class PipelineHazardAnalyzerTests
             "_ = await Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteAsync(static _ => Task.FromResult(1));",
             "_ = await Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteOutcomeAsync(static _ => Task.FromResult(1));",
             "_ = await Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteWithContextAsync(0, static (_, _) => { }, static (_, _) => Task.FromResult(1));",
-            "_ = Shield.Empty.FallbackWithNotifications(static _ => ValueTask.CompletedTask, new FallbackOptions()).Execute(static _ => 1);",
+            "_ = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask, static options => options.OnFallback = static _ => { }).Execute(static _ => 1);",
         };
 
         await AssertEachAsync(cases, "KEV005");
@@ -463,6 +463,8 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.For<int>().Hedge(2, TimeSpan.Zero).Fallback(0);",
             "_ = Shield.For<int>().CircuitBreaker(2, TimeSpan.FromSeconds(1)).Fallback(0);",
             "_ = Shield.For<int>().WhenResult(0).Retry(1).Fallback(0);",
+            "_ = Shield.For<int>().Retry(1).Fallback(0, static options => options.OnFallback = static _ => { });",
+            "_ = Shield.Retry(1).Fallback(static _ => ValueTask.CompletedTask, static options => options.OnFallback = static _ => { });",
             "var shield = Shield.For<int>().Retry(1); var alias = shield; _ = alias.Fallback(0);",
             "Shield<int>? shield = Shield.For<int>().Retry(1); _ = shield?.Fallback(0);",
             "_ = ShieldExtensions.Fallback(ShieldExtensions.Retry(Shield.Empty, 1), static _ => ValueTask.CompletedTask);",

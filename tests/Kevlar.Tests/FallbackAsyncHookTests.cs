@@ -13,26 +13,26 @@ public class FallbackAsyncHookTests
         Outcome<object> factoryOutcome = default;
         var shield = Shield.For<object>()
             .WhenResult(handled)
-            .FallbackWithNotifications(
+            .Fallback(
                 (outcome, _) =>
                 {
                     order.Add("factory");
                     factoryOutcome = outcome;
                     return new ValueTask<object>(recovered);
                 },
-                new FallbackOptions<object>
+                options =>
                 {
-                    OnFallback = fallback =>
+                    options.OnFallback = fallback =>
                     {
                         order.Add("sync");
                         syncOutcome = fallback.Outcome;
-                    },
-                    OnFallbackAsync = fallback =>
+                    };
+                    options.OnFallbackAsync = fallback =>
                     {
                         order.Add("async");
                         asyncOutcome = fallback.Outcome;
                         return ValueTask.CompletedTask;
-                    },
+                    };
                 });
 
         var result = await shield.ExecuteAsync(_ => new ValueTask<object>(handled));
@@ -50,19 +50,19 @@ public class FallbackAsyncHookTests
         var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var factoryCalls = 0;
-        var shield = Shield.For<int>().FallbackWithNotifications(
+        var shield = Shield.For<int>().Fallback(
             _ =>
             {
                 factoryCalls++;
                 return new ValueTask<int>(42);
             },
-            new FallbackOptions<int>
+            options =>
             {
-                OnFallbackAsync = async _ =>
+                options.OnFallbackAsync = async _ =>
                 {
                     started.SetResult();
                     await release.Task;
-                },
+                };
             });
 
         var execution = shield.ExecuteAsync(_ => throw new InvalidOperationException()).AsTask();
@@ -84,19 +84,19 @@ public class FallbackAsyncHookTests
         var hookFailure = new ApplicationException("hook failed");
         Exception? observed = null;
         var factoryCalls = 0;
-        var shield = Shield.For<int>().FallbackWithNotifications(
+        var shield = Shield.For<int>().Fallback(
             _ =>
             {
                 factoryCalls++;
                 return new ValueTask<int>(42);
             },
-            new FallbackOptions<int>
+            options =>
             {
-                OnFallbackAsync = fallback =>
+                options.OnFallbackAsync = fallback =>
                 {
                     observed = fallback.Outcome.Exception;
                     return ValueTask.FromException(hookFailure);
-                },
+                };
             });
 
         var outcome = await shield.ExecuteOutcomeAsync<int>(_ => throw original);
@@ -111,12 +111,9 @@ public class FallbackAsyncHookTests
     {
         using var cancellation = new CancellationTokenSource();
         var hookCancellation = new OperationCanceledException("hook cancelled", cancellation.Token);
-        var shield = Shield.For<int>().FallbackWithNotifications(
+        var shield = Shield.For<int>().Fallback(
             42,
-            new FallbackOptions<int>
-            {
-                OnFallbackAsync = _ => ValueTask.FromException(hookCancellation),
-            });
+            options => options.OnFallbackAsync = _ => ValueTask.FromException(hookCancellation));
 
         var outcome = await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
 
@@ -131,20 +128,20 @@ public class FallbackAsyncHookTests
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         CancellationToken hookToken = default;
         CancellationToken factoryToken = default;
-        var shield = Shield.For<int>().FallbackWithNotifications(
+        var shield = Shield.For<int>().Fallback(
             (_, token) =>
             {
                 factoryToken = token;
                 return new ValueTask<int>(42);
             },
-            new FallbackOptions<int>
+            options =>
             {
-                OnFallbackAsync = async fallback =>
+                options.OnFallbackAsync = async fallback =>
                 {
                     started.SetResult();
                     await release.Task;
                     hookToken = fallback.Context.CancellationToken;
-                },
+                };
             });
 
         var execution = shield.ExecuteAsync<int>(_ => throw new InvalidOperationException(), cancellation.Token).AsTask();
@@ -169,11 +166,11 @@ public class FallbackAsyncHookTests
         Shield<int>? shield = null;
         shield = Shield<int>.Empty
             .WithName("fallback-hook")
-            .FallbackWithNotifications(
+            .Fallback(
                 42,
-                new FallbackOptions<int>
+                options =>
                 {
-                    OnFallbackAsync = async fallback =>
+                    options.OnFallbackAsync = async fallback =>
                     {
                         await Task.Yield();
                         nestedResult = await shield!.ExecuteAsync(_ => new ValueTask<int>(7));
@@ -184,7 +181,7 @@ public class FallbackAsyncHookTests
                         }
 
                         await release.Task;
-                    },
+                    };
                 });
 
         var first = shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()).AsTask();
@@ -205,25 +202,25 @@ public class FallbackAsyncHookTests
         var order = new List<string>();
         Exception? syncException = null;
         Exception? asyncException = null;
-        var shield = Shield.Empty.FallbackWithNotifications(
+        var shield = Shield.Empty.Fallback(
             (exception, _) =>
             {
                 order.Add("fallback");
                 return ValueTask.CompletedTask;
             },
-            new FallbackOptions
+            options =>
             {
-                OnFallback = fallback =>
+                options.OnFallback = fallback =>
                 {
                     order.Add("sync");
                     syncException = fallback.Exception;
-                },
-                OnFallbackAsync = fallback =>
+                };
+                options.OnFallbackAsync = fallback =>
                 {
                     order.Add("async");
                     asyncException = fallback.Exception;
                     return ValueTask.CompletedTask;
-                },
+                };
             });
 
         await shield.ExecuteAsync(_ => throw original);
@@ -240,16 +237,13 @@ public class FallbackAsyncHookTests
         var fallbackCalls = 0;
         var shield = Shield
             .When<InvalidOperationException>()
-            .FallbackWithNotifications(
+            .Fallback(
                 (_, _) =>
                 {
                     fallbackCalls++;
                     return ValueTask.CompletedTask;
                 },
-                new FallbackOptions
-                {
-                    OnFallbackAsync = _ => ValueTask.FromException(hookFailure),
-                });
+                options => options.OnFallbackAsync = _ => ValueTask.FromException(hookFailure));
 
         Exception? caught = null;
         try
@@ -266,29 +260,47 @@ public class FallbackAsyncHookTests
     }
 
     [Test]
-    public async Task Notification_Options_Are_Snapshotted_When_The_Shield_Is_Built()
+    public async Task Untyped_CancellationToken_Overload_Configures_Notifications()
     {
-        var firstCalls = 0;
-        var secondCalls = 0;
-        var options = new FallbackOptions<int>
-        {
-            OnFallbackAsync = _ =>
+        var notificationCalls = 0;
+        var fallbackCalls = 0;
+        var shield = Shield.Empty.Fallback(
+            _ =>
             {
-                firstCalls++;
+                fallbackCalls++;
                 return ValueTask.CompletedTask;
             },
-        };
-        var shield = Shield.For<int>().FallbackWithNotifications(42, options);
-        options.OnFallbackAsync = _ =>
-        {
-            secondCalls++;
-            return ValueTask.CompletedTask;
-        };
+            options => options.OnFallback = _ => notificationCalls++);
 
-        var result = await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException());
+        await shield.ExecuteAsync(_ => throw new InvalidOperationException());
 
-        await Assert.That(result).IsEqualTo(42);
-        await Assert.That(firstCalls).IsEqualTo(1);
-        await Assert.That(secondCalls).IsEqualTo(0);
+        await Assert.That(notificationCalls).IsEqualTo(1);
+        await Assert.That(fallbackCalls).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Notification_Configuration_Runs_Once_When_The_Shield_Is_Built()
+    {
+        var configureCalls = 0;
+        var firstCalls = 0;
+        var shield = Shield.For<int>().Fallback(
+            42,
+            options =>
+            {
+                configureCalls++;
+                options.OnFallbackAsync = _ =>
+                {
+                    firstCalls++;
+                    return ValueTask.CompletedTask;
+                };
+            });
+
+        var firstResult = await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException());
+        var secondResult = await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException());
+
+        await Assert.That(firstResult).IsEqualTo(42);
+        await Assert.That(secondResult).IsEqualTo(42);
+        await Assert.That(configureCalls).IsEqualTo(1);
+        await Assert.That(firstCalls).IsEqualTo(2);
     }
 }

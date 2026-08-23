@@ -30,7 +30,7 @@ public class TelemetryRecorderTests
         using var recorder = new TelemetryRecorder(captureMetrics: false);
         var typed = Shield.For<int>()
             .WhenResult(static result => result < 0)
-            .Fallback(42, recorder.Record)
+            .Fallback(42, options => options.OnFallback = recorder.Record)
             .Retry(options =>
             {
                 options.MaxRetries = 1;

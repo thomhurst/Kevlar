@@ -203,17 +203,20 @@ public static class ShieldExtensions
     }
 
     /// <summary>
-    /// Runs <paramref name="fallback"/> in place of handled failures and uses the configured
-    /// notifications. Applies to void executions only.
+    /// Runs <paramref name="fallback"/> in place of handled failures and configures notifications.
+    /// Applies to void executions only.
     /// </summary>
-    public static Shield FallbackWithNotifications(
+    /// <remarks>Runs <see cref="FallbackOptions.OnFallback"/>, then <see cref="FallbackOptions.OnFallbackAsync"/>, before recovery. A notification failure skips recovery.</remarks>
+    public static Shield Fallback(
         this Shield shield,
         Func<Exception, CancellationToken, ValueTask> fallback,
-        FallbackOptions options)
+        Action<FallbackOptions> configure)
     {
         Throw.IfNull(shield, nameof(shield));
         Throw.IfNull(fallback, nameof(fallback));
-        Throw.IfNull(options, nameof(options));
+        Throw.IfNull(configure, nameof(configure));
+        var options = new FallbackOptions();
+        configure(options);
         return shield.Append(new VoidFallbackStrategy(
             fallback,
             shield.JudgeOrDefault,
@@ -233,17 +236,18 @@ public static class ShieldExtensions
     }
 
     /// <summary>
-    /// Runs <paramref name="fallback"/> in place of handled failures and uses the configured
-    /// notifications. Applies to void executions only.
+    /// Runs <paramref name="fallback"/> in place of handled failures and configures notifications.
+    /// Applies to void executions only.
     /// </summary>
-    public static Shield FallbackWithNotifications(
+    /// <remarks>Runs <see cref="FallbackOptions.OnFallback"/>, then <see cref="FallbackOptions.OnFallbackAsync"/>, before recovery. A notification failure skips recovery.</remarks>
+    public static Shield Fallback(
         this Shield shield,
         Func<CancellationToken, ValueTask> fallback,
-        FallbackOptions options)
+        Action<FallbackOptions> configure)
     {
         Throw.IfNull(fallback, nameof(fallback));
-        Throw.IfNull(options, nameof(options));
-        return shield.FallbackWithNotifications((_, token) => fallback(token), options);
+        Throw.IfNull(configure, nameof(configure));
+        return shield.Fallback((_, token) => fallback(token), configure);
     }
 
     /// <summary>Returns a copy of this shield with a diagnostic name (surfaced as <see cref="KevlarContext.ShieldName"/>).</summary>
