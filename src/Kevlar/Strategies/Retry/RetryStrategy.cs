@@ -14,20 +14,61 @@ internal sealed class RetryStrategy : Strategy
     private readonly Func<RetryEvent, ValueTask<TimeSpan?>>? _delayGeneratorAsync;
 
     public RetryStrategy(RetryOptions options, OutcomeJudge judge)
+        : this(
+            options.MaxRetries,
+            options.Backoff,
+            options.MaxDelay,
+            judge,
+            options.OnRetry,
+            options.OnRetryAsync,
+            options.DelayGenerator,
+            options.DelayGeneratorAsync)
     {
-        Throw.IfOutOfRange(options.MaxRetries < 0, nameof(options), "MaxRetries must not be negative.");
-        Throw.IfNull(options.Backoff, nameof(options));
-        Throw.IfOutOfRange(options.MaxDelay.HasValue && options.MaxDelay.Value < TimeSpan.Zero, nameof(options.MaxDelay), "MaxDelay must not be negative.");
-        Throw.IfOutOfRange(options.MaxDelay > DelayHelper.MaximumDelay, nameof(options.MaxDelay), "MaxDelay exceeds the runtime timer limit.");
+    }
+
+    private RetryStrategy(
+        int maxRetries,
+        Backoff backoff,
+        TimeSpan? maxDelay,
+        OutcomeJudge judge,
+        Action<RetryEvent>? onRetry,
+        Func<RetryEvent, ValueTask>? onRetryAsync,
+        Func<RetryEvent, TimeSpan?>? delayGenerator,
+        Func<RetryEvent, ValueTask<TimeSpan?>>? delayGeneratorAsync)
+    {
+        Throw.IfOutOfRange(maxRetries < 0, "options", "MaxRetries must not be negative.");
+        Throw.IfNull(backoff, "options");
+        Throw.IfOutOfRange(maxDelay.HasValue && maxDelay.Value < TimeSpan.Zero, "MaxDelay", "MaxDelay must not be negative.");
+        Throw.IfOutOfRange(maxDelay > DelayHelper.MaximumDelay, "MaxDelay", "MaxDelay exceeds the runtime timer limit.");
 
         _judge = judge;
-        _maxRetries = options.MaxRetries;
-        _backoff = options.Backoff;
-        _maxDelay = options.MaxDelay;
-        _onRetry = options.OnRetry;
-        _onRetryAsync = options.OnRetryAsync;
-        _delayGenerator = options.DelayGenerator;
-        _delayGeneratorAsync = options.DelayGeneratorAsync;
+        _maxRetries = maxRetries;
+        _backoff = backoff;
+        _maxDelay = maxDelay;
+        _onRetry = onRetry;
+        _onRetryAsync = onRetryAsync;
+        _delayGenerator = delayGenerator;
+        _delayGeneratorAsync = delayGeneratorAsync;
+    }
+
+    internal static RetryStrategy Create<TResult>(RetryOptions<TResult> options, OutcomeJudge judge)
+    {
+        var onRetry = options.OnRetry;
+        var onRetryAsync = options.OnRetryAsync;
+        var delayGenerator = options.DelayGenerator;
+        var delayGeneratorAsync = options.DelayGeneratorAsync;
+
+        return new RetryStrategy(
+            options.MaxRetries,
+            options.Backoff,
+            options.MaxDelay,
+            judge,
+            onRetry is null ? null : retry => onRetry(new RetryEvent<TResult>(retry)),
+            onRetryAsync is null ? null : retry => onRetryAsync(new RetryEvent<TResult>(retry)),
+            delayGenerator is null ? null : retry => delayGenerator(new RetryEvent<TResult>(retry)),
+            delayGeneratorAsync is null
+                ? null
+                : retry => delayGeneratorAsync(new RetryEvent<TResult>(retry)));
     }
 
     internal override OutcomeJudge? ReactiveJudge => _judge;

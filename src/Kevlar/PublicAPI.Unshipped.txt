@@ -61,8 +61,14 @@ Kevlar.Shield.InvokesContinuationAtMostOnce.get -> bool
 virtual Kevlar.Strategy.IsDuplicateReferenceUnsafe.get -> bool
 Kevlar.RetryOptions.DelayGeneratorAsync.get -> System.Func<Kevlar.RetryEvent, System.Threading.Tasks.ValueTask<System.TimeSpan?>>?
 Kevlar.RetryOptions.DelayGeneratorAsync.set -> void
+Kevlar.RetryOptions<TResult>.Backoff.get -> Kevlar.Backoff!
+Kevlar.RetryOptions<TResult>.Backoff.set -> void
 Kevlar.RetryOptions<TResult>.DelayGeneratorAsync.get -> System.Func<Kevlar.RetryEvent<TResult>, System.Threading.Tasks.ValueTask<System.TimeSpan?>>?
 Kevlar.RetryOptions<TResult>.DelayGeneratorAsync.set -> void
+Kevlar.RetryOptions<TResult>.MaxDelay.get -> System.TimeSpan?
+Kevlar.RetryOptions<TResult>.MaxDelay.set -> void
+Kevlar.RetryOptions<TResult>.MaxRetries.get -> int
+Kevlar.RetryOptions<TResult>.MaxRetries.set -> void
 Kevlar.FallbackEvent
 Kevlar.FallbackEvent.Context.get -> Kevlar.KevlarContext!
 Kevlar.FallbackEvent.Exception.get -> System.Exception!

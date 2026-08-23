@@ -51,66 +51,51 @@ public class RetryOptions
 /// Result-typed configuration for a retry strategy on a <see cref="Shield{TResult}"/>: the events
 /// carry a typed <see cref="Outcome{TResult}"/> instead of a boxed <see cref="object"/> result.
 /// </summary>
-public sealed class RetryOptions<TResult> : RetryOptions
+/// <remarks>
+/// <see cref="RetryOptions{TResult}"/> and <see cref="RetryOptions"/> are standalone sibling types.
+/// Their callback properties expose distinct delegate types and preserve the delegates assigned
+/// to them.
+/// Before each retry, callbacks run in this order: <see cref="DelayGenerator"/>,
+/// <see cref="DelayGeneratorAsync"/>, <see cref="OnRetry"/>, then <see cref="OnRetryAsync"/>.
+/// If the caller's cancellation token is cancelled by the time the callbacks complete, the retry
+/// stops and surfaces caller cancellation.
+/// </remarks>
+public sealed class RetryOptions<TResult>
 {
-    private Action<RetryEvent<TResult>>? _onRetry;
-    private Func<RetryEvent<TResult>, ValueTask>? _onRetryAsync;
-    private Func<RetryEvent<TResult>, TimeSpan?>? _delayGenerator;
-    private Func<RetryEvent<TResult>, ValueTask<TimeSpan?>>? _delayGeneratorAsync;
+    /// <summary>
+    /// Maximum number of retries after the initial attempt. The default is 3
+    /// (up to 4 total executions). Use <see cref="int.MaxValue"/> to retry forever.
+    /// </summary>
+    public int MaxRetries { get; set; } = 3;
+
+    /// <summary>The delay computation between attempts. Defaults to <see cref="Backoff.Default"/>.</summary>
+    public Backoff Backoff { get; set; } = Backoff.Default;
+
+    /// <summary>
+    /// An absolute upper bound applied to every delay, including delays produced by
+    /// <see cref="DelayGenerator"/> (so a huge <c>Retry-After</c> header cannot stall the pipeline).
+    /// </summary>
+    public TimeSpan? MaxDelay { get; set; }
 
     /// <summary>Invoked synchronously before each retry sleeps, with the typed handled outcome.</summary>
-    public new Action<RetryEvent<TResult>>? OnRetry
-    {
-        get => _onRetry;
-        set
-        {
-            _onRetry = value;
-            base.OnRetry = value is null ? null : untyped => value(new RetryEvent<TResult>(untyped));
-        }
-    }
+    public Action<RetryEvent<TResult>>? OnRetry { get; set; }
 
     /// <summary>Invoked and awaited before each retry sleeps, with the typed handled outcome.</summary>
-    public new Func<RetryEvent<TResult>, ValueTask>? OnRetryAsync
-    {
-        get => _onRetryAsync;
-        set
-        {
-            _onRetryAsync = value;
-            base.OnRetryAsync = value is null ? null : untyped => value(new RetryEvent<TResult>(untyped));
-        }
-    }
+    public Func<RetryEvent<TResult>, ValueTask>? OnRetryAsync { get; set; }
 
     /// <summary>
     /// Overrides the computed delay for a specific retry, with the typed handled outcome.
     /// Return a non-null value to replace the backoff-computed delay;
-    /// <see cref="RetryOptions.MaxDelay"/> still caps the returned value.
+    /// <see cref="MaxDelay"/> still caps the returned value.
     /// </summary>
-    public new Func<RetryEvent<TResult>, TimeSpan?>? DelayGenerator
-    {
-        get => _delayGenerator;
-        set
-        {
-            _delayGenerator = value;
-            base.DelayGenerator = value is null ? null : untyped => value(new RetryEvent<TResult>(untyped));
-        }
-    }
+    public Func<RetryEvent<TResult>, TimeSpan?>? DelayGenerator { get; set; }
 
     /// <summary>
     /// Asynchronously overrides the delay for a specific retry, with the typed handled outcome.
-    /// Receives the delay after the synchronous generator and <see cref="RetryOptions.MaxDelay"/>
+    /// Receives the delay after the synchronous generator and <see cref="MaxDelay"/>
     /// have been applied. Return a non-null value to replace it; the maximum still applies.
     /// </summary>
-    public new Func<RetryEvent<TResult>, ValueTask<TimeSpan?>>? DelayGeneratorAsync
-    {
-        get => _delayGeneratorAsync;
-        set
-        {
-            _delayGeneratorAsync = value;
-            base.DelayGeneratorAsync = value is null
-                ? null
-                : untyped => value(new RetryEvent<TResult>(untyped));
-        }
-    }
+    public Func<RetryEvent<TResult>, ValueTask<TimeSpan?>>? DelayGeneratorAsync { get; set; }
 }
 
 /// <summary>Describes a retry that is about to happen.</summary>
