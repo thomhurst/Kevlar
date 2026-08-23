@@ -558,6 +558,7 @@ public class PipelineHazardAnalyzerTests
         {
             "_ = Shield.For<int>().Fallback(0).Retry(1);",
             "_ = Shield.For<int>().Retry(1).When<InvalidOperationException>().Fallback(0);",
+            "_ = Shield.For<int>().When<InvalidOperationException>().Retry(1).WhenAnyError().Fallback(0);",
             "_ = Shield.For<int>().Timeout(TimeSpan.FromSeconds(1)).Fallback(0);",
             "var shield = CreateShield(); _ = shield.Fallback(0);",
             "var shield = Shield.For<int>().Retry(1); shield = Shield<int>.Empty; _ = shield.Fallback(0);",

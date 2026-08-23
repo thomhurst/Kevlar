@@ -77,7 +77,7 @@ var shield = Shield
     .When<HttpRequestException>()
     .Retry(3)                                      // handles HttpRequestException only
     .WhenAnyError()
-    .CircuitBreaker(5, TimeSpan.FromSeconds(30)); // handles any non-cancellation exception
+    .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30)); // handles any non-cancellation exception
 ```
 
 `WhenAnyError()` preserves existing strategies, the shield name, and its `TimeProvider`; it only changes handling for reactive strategies added afterwards. It is available on both `Shield` and `Shield<T>`.
