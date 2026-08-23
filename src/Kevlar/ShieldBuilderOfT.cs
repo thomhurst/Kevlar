@@ -14,9 +14,6 @@ namespace Kevlar;
 /// </remarks>
 public sealed class ShieldBuilder<TResult>
 {
-    private const string LegacyFallbackCallbackMessage =
-        "Configure fallback notifications with Fallback(..., options => options.OnFallback = callback).";
-
     private readonly Shield<TResult> _parent;
     private readonly List<Func<Exception, bool>> _exceptionPredicates = [];
     private readonly List<Func<TResult, bool>> _resultPredicates = [];
@@ -113,24 +110,12 @@ public sealed class ShieldBuilder<TResult>
     /// <summary>Replaces handled outcomes with <paramref name="fallbackValue"/>.</summary>
     public Shield<TResult> Fallback(TResult fallbackValue) => Seal().Fallback(fallbackValue);
 
-    /// <summary>Prevents legacy notification callbacks from binding as options configurators.</summary>
-    [Obsolete(LegacyFallbackCallbackMessage, error: true)]
-    public Shield<TResult> Fallback(TResult fallbackValue, Action<FallbackEvent<TResult>> onFallback) =>
-        Seal().Fallback(fallbackValue, options => options.OnFallback = onFallback);
-
     /// <summary>Replaces handled outcomes with <paramref name="fallbackValue"/> and configures notifications.</summary>
     public Shield<TResult> Fallback(TResult fallbackValue, Action<FallbackOptions<TResult>> configure) =>
         Seal().Fallback(fallbackValue, configure);
 
     /// <summary>Replaces handled outcomes with the result of <paramref name="fallback"/>.</summary>
     public Shield<TResult> Fallback(Func<CancellationToken, ValueTask<TResult>> fallback) => Seal().Fallback(fallback);
-
-    /// <summary>Prevents legacy notification callbacks from binding as options configurators.</summary>
-    [Obsolete(LegacyFallbackCallbackMessage, error: true)]
-    public Shield<TResult> Fallback(
-        Func<CancellationToken, ValueTask<TResult>> fallback,
-        Action<FallbackEvent<TResult>> onFallback) =>
-        Seal().Fallback(fallback, options => options.OnFallback = onFallback);
 
     /// <summary>Replaces handled outcomes with the result of <paramref name="fallback"/> and configures notifications.</summary>
     public Shield<TResult> Fallback(
@@ -139,13 +124,6 @@ public sealed class ShieldBuilder<TResult>
 
     /// <summary>Replaces handled outcomes with the result of <paramref name="fallback"/>, which receives the handled outcome.</summary>
     public Shield<TResult> Fallback(Func<Outcome<TResult>, CancellationToken, ValueTask<TResult>> fallback) => Seal().Fallback(fallback);
-
-    /// <summary>Prevents legacy notification callbacks from binding as options configurators.</summary>
-    [Obsolete(LegacyFallbackCallbackMessage, error: true)]
-    public Shield<TResult> Fallback(
-        Func<Outcome<TResult>, CancellationToken, ValueTask<TResult>> fallback,
-        Action<FallbackEvent<TResult>> onFallback) =>
-        Seal().Fallback(fallback, options => options.OnFallback = onFallback);
 
     /// <summary>
     /// Replaces handled outcomes with the result of <paramref name="fallback"/>, which receives

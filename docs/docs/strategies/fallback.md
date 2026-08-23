@@ -55,8 +55,8 @@ Every overload also has an options configurator for fallback notifications:
     options => options.OnFallback = e => metrics.Increment("config.fallback"))
 ```
 
-Legacy positional notification callbacks intentionally fail compilation instead of being
-reinterpreted as configurators. Assign the callback to `options.OnFallback` as shown above.
+Each shape has exactly two overloads — bare and `configure`. There is no positional `onFallback`
+parameter: assign the callback to `options.OnFallback` as shown above.
 
 The `FallbackEvent<T>` carries the failure that triggered it as a typed `Outcome<T>` — `Outcome.Exception` when an exception was handled, `Outcome.Result` when a result value was. No casting, no boxing.
 

@@ -9,45 +9,51 @@ namespace Kevlar.Analyzers.Tests;
 public class PipelineHazardAnalyzerTests
 {
     [Test]
-    public async Task Legacy_Fallback_Callbacks_Cannot_Bind_As_Options_Configurators()
+    public async Task Typed_Fallback_Keeps_Only_The_Bare_And_Configure_Tiers()
     {
-        var ambiguous = CreateCompilation(CreateSource("""
+        var supported = CreateCompilation(CreateSource("""
             public class TestSubject
             {
                 public void Configure()
                 {
-                    _ = Shield.For<int>().Fallback(42, _ => { });
-                    _ = Shield.For<int>().Fallback(_ => new ValueTask<int>(42), _ => { });
-                    _ = Shield.For<int>().Fallback((_, _) => new ValueTask<int>(42), _ => { });
-                    _ = Shield.For<int>().When<Exception>().Fallback(42, _ => { });
-                    _ = Shield.For<int>().When<Exception>().Fallback(_ => new ValueTask<int>(42), _ => { });
-                    _ = Shield.For<int>().When<Exception>().Fallback((_, _) => new ValueTask<int>(42), _ => { });
+                    _ = Shield.For<int>().Fallback(42);
+                    _ = Shield.For<int>().Fallback(_ => new ValueTask<int>(42));
+                    _ = Shield.For<int>().Fallback((_, _) => new ValueTask<int>(42));
+                    _ = Shield.For<int>().Fallback(42, options => options.OnFallback = _ => { });
+                    _ = Shield.For<int>().Fallback(_ => new ValueTask<int>(42), options => options.OnFallback = _ => { });
+                    _ = Shield.For<int>().Fallback((_, _) => new ValueTask<int>(42), options => options.OnFallback = _ => { });
+                    _ = Shield.For<int>().When<Exception>().Fallback(42);
+                    _ = Shield.For<int>().When<Exception>().Fallback(_ => new ValueTask<int>(42));
+                    _ = Shield.For<int>().When<Exception>().Fallback((_, _) => new ValueTask<int>(42));
+                    _ = Shield.For<int>().When<Exception>().Fallback(42, options => options.OnFallback = _ => { });
+                    _ = Shield.For<int>().When<Exception>().Fallback(_ => new ValueTask<int>(42), options => options.OnFallback = _ => { });
+                    _ = Shield.For<int>().When<Exception>().Fallback((_, _) => new ValueTask<int>(42), options => options.OnFallback = _ => { });
                 }
             }
             """));
-        var ambiguousErrors = ambiguous.GetDiagnostics()
+        var supportedErrors = supported.GetDiagnostics()
             .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
             .ToArray();
 
-        await Assert.That(ambiguousErrors).Count().IsEqualTo(6);
-        await Assert.That(ambiguousErrors).All(static diagnostic => diagnostic.Id == "CS0121");
+        await Assert.That(supportedErrors).IsEmpty();
 
-        var explicitLegacy = CreateCompilation(CreateSource("""
+        var legacyCallback = CreateCompilation(CreateSource("""
             public class TestSubject
             {
                 public void Configure()
                 {
                     Action<FallbackEvent<int>> callback = _ => { };
                     _ = Shield.For<int>().Fallback(42, callback);
+                    _ = Shield.For<int>().When<Exception>().Fallback(42, callback);
                 }
             }
             """));
-        var explicitErrors = explicitLegacy.GetDiagnostics()
+        var legacyErrors = legacyCallback.GetDiagnostics()
             .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
             .ToArray();
 
-        await Assert.That(explicitErrors).Count().IsEqualTo(1);
-        await Assert.That(explicitErrors[0].Id).IsEqualTo("CS0619");
+        await Assert.That(legacyErrors).Count().IsEqualTo(2);
+        await Assert.That(legacyErrors).All(static diagnostic => diagnostic.Id == "CS1503");
     }
 
     [Test]
