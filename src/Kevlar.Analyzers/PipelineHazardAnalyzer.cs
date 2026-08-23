@@ -633,9 +633,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        if (TryGetAmbientClause(inner, context, knownTypes, visitedLocals, out var innerAmbient)
-            && innerAmbient is null
-            && FindInPipeline(
+        if (FindInDefaultHandlingSegments(
                 inner,
                 context,
                 predicate,
@@ -648,22 +646,15 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             return true;
         }
 
-        if (TryGetAmbientClause(outer, context, knownTypes, visitedLocals, out var outerAmbient)
-            && outerAmbient is null)
-        {
-            return FindInPipeline(
-                outer,
-                context,
-                predicate,
-                knownTypes,
-                stopAtHandlingClause,
-                stopAtCompositionBoundary,
-                visitedLocals,
-                out matchedMethod);
-        }
-
-        matchedMethod = null;
-        return false;
+        return FindInDefaultHandlingSegments(
+            outer,
+            context,
+            predicate,
+            knownTypes,
+            stopAtHandlingClause,
+            stopAtCompositionBoundary,
+            visitedLocals,
+            out matchedMethod);
     }
 
     private static bool FindInComposeDefaultAmbient(
@@ -684,22 +675,15 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         foreach (var operand in operands)
         {
-            if (TryGetAmbientClause(
+            if (FindInDefaultHandlingSegments(
                 operand,
                 context,
+                predicate,
                 knownTypes,
+                stopAtHandlingClause,
+                stopAtCompositionBoundary,
                 visitedLocals,
-                out var ambientClause)
-                && ambientClause is null
-                && FindInPipeline(
-                    operand,
-                    context,
-                    predicate,
-                    knownTypes,
-                    stopAtHandlingClause,
-                    stopAtCompositionBoundary,
-                    visitedLocals,
-                    out matchedMethod))
+                out matchedMethod))
             {
                 return true;
             }
@@ -707,6 +691,97 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         matchedMethod = null;
         return false;
+    }
+
+    private static bool FindInDefaultHandlingSegments(
+        IOperation? operation,
+        OperationAnalysisContext context,
+        Func<IInvocationOperation, bool> predicate,
+        KnownTypes knownTypes,
+        bool stopAtHandlingClause,
+        bool stopAtCompositionBoundary,
+        HashSet<ISymbol>? visitedLocals,
+        out string? matchedMethod)
+    {
+        operation = Unwrap(operation);
+        if (operation is ILocalReferenceOperation localReference)
+        {
+            visitedLocals ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+            if (!visitedLocals.Add(localReference.Local)
+                || !TryGetStableInitializer(localReference, context, out var initializer))
+            {
+                matchedMethod = null;
+                return false;
+            }
+
+            var found = FindInDefaultHandlingSegments(
+                initializer,
+                context,
+                predicate,
+                knownTypes,
+                stopAtHandlingClause,
+                stopAtCompositionBoundary,
+                visitedLocals,
+                out matchedMethod);
+            visitedLocals.Remove(localReference.Local);
+            return found;
+        }
+
+        if (operation is IConditionalAccessOperation conditionalAccess)
+        {
+            return FindInDefaultHandlingSegments(
+                conditionalAccess.Operation,
+                context,
+                predicate,
+                knownTypes,
+                stopAtHandlingClause,
+                stopAtCompositionBoundary,
+                visitedLocals,
+                out matchedMethod);
+        }
+
+        if (!TryGetAmbientClause(
+                operation,
+                context,
+                knownTypes,
+                visitedLocals,
+                out var ambientClause))
+        {
+            matchedMethod = null;
+            return false;
+        }
+
+        if (ambientClause is null
+            && FindInPipeline(
+                operation,
+                context,
+                predicate,
+                knownTypes,
+                stopAtHandlingClause,
+                stopAtCompositionBoundary,
+                visitedLocals,
+                out matchedMethod))
+        {
+            return true;
+        }
+
+        if (operation is not IInvocationOperation invocation
+            || !IsKevlarFluentMethod(invocation.TargetMethod, knownTypes)
+            || IsCompositionBoundary(Normalize(invocation.TargetMethod), knownTypes))
+        {
+            matchedMethod = null;
+            return false;
+        }
+
+        return FindInDefaultHandlingSegments(
+            GetReceiver(invocation),
+            context,
+            predicate,
+            knownTypes,
+            stopAtHandlingClause,
+            stopAtCompositionBoundary,
+            visitedLocals,
+            out matchedMethod);
     }
 
     private static void CollectCompositionOperands(
