@@ -31,7 +31,7 @@ Shield.Hedge(o =>
 | `OnHedgeAsync` | — | Awaited callback after `OnHedge` and before the attempt starts |
 | `ActionGenerator` | — | Select a different operation for each additional attempt; `null` uses the original |
 | `HandlesException` | — | Local exception predicate; replaces the ambient clause for this hedge |
-| `HandlesResult` (`HedgingOptions<T>`) | — | Local result predicate on `Shield<T>`; replaces the ambient clause together with `HandlesException` |
+| `HandlesResult` (`HedgeOptions<T>`) | — | Local result predicate on `Shield<T>`; replaces the ambient clause together with `HandlesException` |
 
 ### Selecting another target
 

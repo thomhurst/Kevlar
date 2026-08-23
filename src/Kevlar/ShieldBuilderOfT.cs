@@ -102,7 +102,7 @@ public sealed class ShieldBuilder<TResult>
     public Shield<TResult> Hedge(int maxAttempts, TimeSpan delay) => Seal().Hedge(maxAttempts, delay);
 
     /// <summary>Adds a hedging strategy configured via <paramref name="configure"/>.</summary>
-    public Shield<TResult> Hedge(Action<HedgingOptions<TResult>> configure) => Seal().Hedge(configure);
+    public Shield<TResult> Hedge(Action<HedgeOptions<TResult>> configure) => Seal().Hedge(configure);
 
     /// <summary>Creates and appends a custom strategy using the accumulated handling clause.</summary>
     public Shield<TResult> Use(Func<HandlingClause, Strategy> factory) => Seal().Use(factory);

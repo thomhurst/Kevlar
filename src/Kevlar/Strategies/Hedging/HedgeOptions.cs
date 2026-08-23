@@ -12,7 +12,7 @@ namespace Kevlar;
 /// <see cref="OnHedgeAsync"/>, then <see cref="ActionGenerator"/>. Caller cancellation is checked
 /// before callbacks and again before the generated operation starts.
 /// </remarks>
-public class HedgingOptions
+public class HedgeOptions
 {
     /// <summary>
     /// Locally selects exceptions handled by this hedging strategy. When set, this strategy

@@ -91,7 +91,7 @@ public sealed class ShieldBuilder
     /// concurrently, so the delegate must be idempotent. Prefer <c>Shield.For&lt;T&gt;()</c>, or
     /// confirm the action is safe to repeat.
     /// </remarks>
-    public Shield Hedge(Action<HedgingOptions> configure) => Seal().Hedge(configure);
+    public Shield Hedge(Action<HedgeOptions> configure) => Seal().Hedge(configure);
 
     /// <summary>Creates and appends a custom strategy using the accumulated handling clause.</summary>
     public Shield Use(Func<HandlingClause, Strategy> factory) => Seal().Use(factory);

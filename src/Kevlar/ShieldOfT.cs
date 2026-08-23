@@ -189,10 +189,10 @@ public sealed class Shield<TResult>
     });
 
     /// <summary>Adds a hedging strategy configured via <paramref name="configure"/>.</summary>
-    public Shield<TResult> Hedge(Action<HedgingOptions<TResult>> configure)
+    public Shield<TResult> Hedge(Action<HedgeOptions<TResult>> configure)
     {
         Throw.IfNull(configure, nameof(configure));
-        var options = new HedgingOptions<TResult>();
+        var options = new HedgeOptions<TResult>();
         configure(options);
         var judge = HandlingOverride.Resolve(options.HandlesException, options.HandlesResult, JudgeOrDefault);
         return Append(new HedgingStrategy(options, judge));

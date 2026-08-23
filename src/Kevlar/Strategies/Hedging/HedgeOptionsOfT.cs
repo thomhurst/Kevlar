@@ -3,7 +3,7 @@ namespace Kevlar;
 /// <summary>
 /// Result-typed configuration for a hedging strategy on a <see cref="Shield{TResult}"/>.
 /// </summary>
-public sealed class HedgingOptions<TResult> : HedgingOptions
+public sealed class HedgeOptions<TResult> : HedgeOptions
 {
     /// <summary>
     /// Locally selects results handled by this hedging strategy. When either local predicate is

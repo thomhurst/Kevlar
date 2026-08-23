@@ -116,7 +116,7 @@ public sealed class Shield
     /// concurrently, so the delegate must be idempotent. Prefer <see cref="For{TResult}"/>, or
     /// confirm the action is safe to repeat.
     /// </remarks>
-    public static Shield Hedge(Action<HedgingOptions> configure) => ShieldExtensions.Hedge(Empty, configure);
+    public static Shield Hedge(Action<HedgeOptions> configure) => ShieldExtensions.Hedge(Empty, configure);
 
     /// <summary>Starts a pipeline with a custom <see cref="Strategy"/> implementation.</summary>
     public static Shield Use(Strategy strategy) => ShieldExtensions.Use(Empty, strategy);

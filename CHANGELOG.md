@@ -28,7 +28,11 @@ not the default *handling* that the neighbouring `WhenAnyError()` restores.
   property names and defaults, but helpers that accepted `RetryOptions` must configure typed retry
   options separately. Typed callback getters now return the exact delegates assigned to them.
 - Typed circuit-breaker and hedging configuration now uses `CircuitBreakerOptions<TResult>` and
-  `HedgingOptions<TResult>` so result predicates remain strongly typed.
+  `HedgeOptions<TResult>` so result predicates remain strongly typed.
+- `HedgingOptions`/`HedgingOptions<TResult>` were renamed to `HedgeOptions`/`HedgeOptions<TResult>`
+  so the strategy method and its options type share a stem, like `Retry`/`RetryOptions` and
+  `Timeout`/`TimeoutOptions`. `Kevlar.Extensions.Http`'s `StandardHedgingShieldOptions` and
+  `AddStandardHedgingShield` are unchanged.
 
 ### Changed
 
