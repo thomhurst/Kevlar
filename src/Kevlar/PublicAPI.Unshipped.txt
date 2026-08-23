@@ -244,3 +244,8 @@ Kevlar.HedgeOptions.OnHedge.set -> void
 Kevlar.ShieldBuilder.Hedge(System.Action<Kevlar.HedgeOptions!>! configure) -> Kevlar.Shield!
 static Kevlar.Shield.Hedge(System.Action<Kevlar.HedgeOptions!>! configure) -> Kevlar.Shield!
 static Kevlar.ShieldExtensions.Hedge(this Kevlar.Shield! shield, System.Action<Kevlar.HedgeOptions!>! configure) -> Kevlar.Shield!
+static Kevlar.Shield.Fallback(System.Func<System.Exception!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback) -> Kevlar.Shield!
+static Kevlar.Shield.Fallback(System.Func<System.Exception!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback, System.Action<Kevlar.FallbackOptions!>! configure) -> Kevlar.Shield!
+static Kevlar.Shield.Fallback(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback) -> Kevlar.Shield!
+static Kevlar.Shield.Fallback(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback, System.Action<Kevlar.FallbackOptions!>! configure) -> Kevlar.Shield!
+static Kevlar.Shield<TResult>.Compose(params Kevlar.Shield<TResult>![]! shields) -> Kevlar.Shield<TResult>!

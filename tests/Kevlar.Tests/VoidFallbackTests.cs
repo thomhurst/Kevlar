@@ -127,4 +127,65 @@ public class VoidFallbackTests
 
         await Assert.That(fallbackRan).IsTrue();
     }
+
+    [Test]
+    public async Task The_Static_Factory_Starts_A_Pipeline_With_A_Fallback()
+    {
+        Exception? seenException = null;
+        var exceptionFree = false;
+        var notified = 0;
+
+        var withException = Shield.Fallback((exception, _) =>
+        {
+            seenException = exception;
+            return default;
+        });
+        var withoutException = Shield.Fallback(_ =>
+        {
+            exceptionFree = true;
+            return default;
+        });
+        var withExceptionAndOptions = Shield.Fallback(
+            static (_, _) => default,
+            options => options.OnFallback = _ => notified++);
+        var withoutExceptionAndOptions = Shield.Fallback(
+            static _ => default,
+            options => options.OnFallback = _ => notified++);
+
+        var original = new InvalidOperationException("boom");
+        await withException.ExecuteAsync(_ => throw original);
+        await withoutException.ExecuteAsync(_ => throw new InvalidOperationException());
+        await withExceptionAndOptions.ExecuteAsync(_ => throw new InvalidOperationException());
+        await withoutExceptionAndOptions.ExecuteAsync(_ => throw new InvalidOperationException());
+
+        await Assert.That(ReferenceEquals(seenException, original)).IsTrue();
+        await Assert.That(exceptionFree).IsTrue();
+        await Assert.That(notified).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task The_Static_Factory_Keeps_The_Fallback_Outermost()
+    {
+        var attempts = 0;
+        var recovered = false;
+
+        // Fallback first is the valid order: the retry runs inside it.
+        var shield = Shield
+            .Fallback((_, _) =>
+            {
+                recovered = true;
+                return default;
+            })
+            .Retry(2, Backoff.None);
+
+        await shield.ExecuteAsync(_ =>
+        {
+            attempts++;
+            throw new InvalidOperationException();
+        });
+
+        await Assert.That(shield.ToString()).StartsWith("Fallback");
+        await Assert.That(attempts).IsEqualTo(3);
+        await Assert.That(recovered).IsTrue();
+    }
 }

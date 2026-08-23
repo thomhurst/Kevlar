@@ -24,6 +24,15 @@ var shield = Shield
 await shield.ExecuteAsync(ct => bus.PublishAsync(message, ct));
 ```
 
+`Shield.Fallback(…)` is the static factory form, for when the fallback is the outermost strategy —
+which is the valid position for one, since it recovers what everything inside it could not:
+
+```csharp
+var shield = Shield
+    .Fallback((exception, ct) => deadLetter.PublishAsync(exception, ct))
+    .Retry(3);
+```
+
 A void fallback guards void executions only; executing a result-returning delegate through it fails
 with a descriptive error rather than inventing a default value. The optional analyzer reports this
 mistake as [`KEV005`](../analyzers.md#kev005-void-fallback-with-a-result) when the pipeline is visible

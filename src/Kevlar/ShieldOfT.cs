@@ -324,6 +324,33 @@ public sealed class Shield<TResult>
             Time ?? inner.Time);
     }
 
+    /// <summary>
+    /// Merges result-aware shields into one pipeline. The first shield is the outermost. Stateful
+    /// strategies keep their identity, so a shared circuit breaker shield shares its circuit here.
+    /// The result keeps the first non-null <see cref="Name"/> and <see cref="TimeProvider"/>
+    /// among the inputs. Composition seals handling clauses, so reactive strategies appended
+    /// afterwards use default handling unless a new clause is declared.
+    /// </summary>
+    public static Shield<TResult> Compose(params Shield<TResult>[] shields)
+    {
+        Throw.IfNull(shields, nameof(shields));
+
+        var parts = new Strategy[shields.Length][];
+        string? name = null;
+        TimeProvider? time = null;
+
+        for (var i = 0; i < shields.Length; i++)
+        {
+            var shield = shields[i];
+            Throw.IfNull(shield, nameof(shields));
+            parts[i] = shield.Strategies;
+            name ??= shield.Name;
+            time ??= shield.Time;
+        }
+
+        return new Shield<TResult>(Shield.Concat(parts), null, name, time);
+    }
+
     /// <summary>Returns a copy of this shield with a diagnostic name (surfaced as <see cref="KevlarContext.ShieldName"/>).</summary>
     public Shield<TResult> WithName(string name)
     {

@@ -40,6 +40,12 @@ not the default *handling* that the neighbouring `WhenAnyError()` restores.
 
 ### Added
 
+- `Shield.Fallback(…)` static factories, mirroring the four untyped `ShieldExtensions.Fallback`
+  overloads, so a fallback can start a chain like every other strategy. Fallback-first is the
+  valid order: it recovers what the strategies chained inside it could not.
+- `Shield<TResult>.Compose(params Shield<TResult>[])`, the result-aware counterpart of
+  `Shield.Compose`. Same semantics: first shield outermost, first non-null name and
+  `TimeProvider` win, ambient handling clauses sealed.
 - Reactive strategy options can replace ambient handling locally with `HandlesException` and, on
   typed options, `HandlesResult`. Testing descriptors expose `HasHandlingOverride`.
 - Context-only `ExecuteWithContext`/`ExecuteWithContextAsync` overloads that take just the

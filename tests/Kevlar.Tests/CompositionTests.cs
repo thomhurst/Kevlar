@@ -54,6 +54,56 @@ public class CompositionTests
     }
 
     [Test]
+    public async Task Typed_Compose_Merges_Policies_In_Order()
+    {
+        var log = new List<string>();
+        var first = Shield<int>.Empty.Use(new MarkerStrategy(log, "first"));
+        var second = Shield<int>.Empty.Use(new MarkerStrategy(log, "second"));
+
+        var composed = Shield<int>.Compose(first, second);
+
+        await composed.ExecuteAsync(_ => new ValueTask<int>(1));
+
+        await Assert.That(log).IsEquivalentTo(["first:enter", "second:enter", "second:exit", "first:exit"]);
+    }
+
+    [Test]
+    public async Task Typed_Compose_Keeps_The_First_Non_Null_Metadata_And_Seals_Clauses()
+    {
+        var time = new Microsoft.Extensions.Time.Testing.FakeTimeProvider();
+        var unnamed = Shield<int>.Empty;
+        var named = Shield<int>.Empty.WithName("first").WithTimeProvider(time);
+        var later = Shield<int>.Empty.WithName("second");
+
+        var composed = Shield<int>.Compose(unnamed, named, later);
+
+        await Assert.That(composed.Name).IsEqualTo("first");
+
+        // The composed shield's ambient clause is sealed, so the retry below handles any
+        // exception rather than only the ArgumentException clause declared before composing.
+        var clauseCarrier = Shield.For<int>().When<ArgumentException>();
+        var attempts = 0;
+        var sealedShield = Shield<int>.Compose(clauseCarrier.Timeout(TimeSpan.FromMinutes(1)))
+            .Retry(1, Backoff.None);
+
+        await Assert.That(async () => await sealedShield.ExecuteAsync<int>(_ =>
+        {
+            attempts++;
+            throw new InvalidOperationException();
+        })).Throws<InvalidOperationException>();
+
+        await Assert.That(attempts).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task Typed_Compose_Rejects_Null_Inputs()
+    {
+        await Assert.That(() => Shield<int>.Compose(null!)).Throws<ArgumentNullException>();
+        await Assert.That(() => Shield<int>.Compose(Shield<int>.Empty, null!)).Throws<ArgumentNullException>();
+        await Assert.That(Shield<int>.Compose().Strategies).IsEmpty();
+    }
+
+    [Test]
     public async Task Wrap_Places_The_Outer_Policy_First()
     {
         var log = new List<string>();

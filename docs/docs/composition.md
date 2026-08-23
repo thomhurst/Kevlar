@@ -48,6 +48,16 @@ var writes   = Shield.Timeout(TimeSpan.FromSeconds(5)).Wrap(breaker);
 var combined = Shield.Compose(timeoutShield, retryShield, breakerShield);  // first = outermost
 ```
 
+Result-aware shields compose the same way through `Shield<T>.Compose`, with the same metadata and
+clause-sealing rules:
+
+```csharp
+var typedTimeout = Shield.For<HttpResponseMessage>().Timeout(TimeSpan.FromSeconds(5));
+var typedRetry = Shield.For<HttpResponseMessage>().Retry(3);
+
+var typed = Shield<HttpResponseMessage>.Compose(typedTimeout, typedRetry);  // first = outermost
+```
+
 :::note What survives a merge
 `Wrap` and `Compose` carry the *strategies* (with their state) forward. Both keep the first non-null name and `TimeProvider` from outer to inner. Ambient [handling clauses](handling-failures.md) stop at the composition boundary, so reactive strategies appended to the merged shield use default handling unless you declare a new clause.
 

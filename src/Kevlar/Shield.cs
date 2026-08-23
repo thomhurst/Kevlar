@@ -118,6 +118,48 @@ public sealed class Shield
     /// </remarks>
     public static Shield Hedge(Action<HedgeOptions> configure) => ShieldExtensions.Hedge(Empty, configure);
 
+    /// <summary>
+    /// Starts a pipeline with a fallback that runs <paramref name="fallback"/> in place of handled
+    /// failures, receiving the handled exception. Applies to void executions only; result-returning
+    /// executions fail with a descriptive <see cref="InvalidOperationException"/> — use
+    /// <c>Shield.For&lt;T&gt;().Fallback(…)</c> for those.
+    /// </summary>
+    /// <remarks>
+    /// A fallback is legitimately the outermost strategy: it recovers what everything chained
+    /// inside it could not.
+    /// </remarks>
+    public static Shield Fallback(Func<Exception, CancellationToken, ValueTask> fallback) =>
+        ShieldExtensions.Fallback(Empty, fallback);
+
+    /// <summary>
+    /// Starts a pipeline with a fallback that runs <paramref name="fallback"/> in place of handled
+    /// failures and configures notifications. Applies to void executions only.
+    /// </summary>
+    /// <remarks>Runs <see cref="FallbackOptions.OnFallback"/>, then <see cref="FallbackOptions.OnFallbackAsync"/>, before recovery. A notification failure skips recovery.</remarks>
+    public static Shield Fallback(
+        Func<Exception, CancellationToken, ValueTask> fallback,
+        Action<FallbackOptions> configure) =>
+        ShieldExtensions.Fallback(Empty, fallback, configure);
+
+    /// <summary>
+    /// Starts a pipeline with a fallback that runs <paramref name="fallback"/> in place of handled
+    /// failures. Applies to void executions only; result-returning executions fail with a
+    /// descriptive <see cref="InvalidOperationException"/> — use <c>Shield.For&lt;T&gt;().Fallback(…)</c>
+    /// for those.
+    /// </summary>
+    public static Shield Fallback(Func<CancellationToken, ValueTask> fallback) =>
+        ShieldExtensions.Fallback(Empty, fallback);
+
+    /// <summary>
+    /// Starts a pipeline with a fallback that runs <paramref name="fallback"/> in place of handled
+    /// failures and configures notifications. Applies to void executions only.
+    /// </summary>
+    /// <remarks>Runs <see cref="FallbackOptions.OnFallback"/>, then <see cref="FallbackOptions.OnFallbackAsync"/>, before recovery. A notification failure skips recovery.</remarks>
+    public static Shield Fallback(
+        Func<CancellationToken, ValueTask> fallback,
+        Action<FallbackOptions> configure) =>
+        ShieldExtensions.Fallback(Empty, fallback, configure);
+
     /// <summary>Starts a pipeline with a custom <see cref="Strategy"/> implementation.</summary>
     public static Shield Use(Strategy strategy) => ShieldExtensions.Use(Empty, strategy);
 
@@ -154,27 +196,20 @@ public sealed class Shield
     {
         Throw.IfNull(shields, nameof(shields));
 
-        var total = 0;
+        var parts = new Strategy[shields.Length][];
         string? name = null;
         TimeProvider? time = null;
 
-        foreach (var shield in shields)
+        for (var i = 0; i < shields.Length; i++)
         {
+            var shield = shields[i];
             Throw.IfNull(shield, nameof(shields));
-            total += shield.Strategies.Length;
+            parts[i] = shield.Strategies;
             name ??= shield.Name;
             time ??= shield.Time;
         }
 
-        var strategies = new Strategy[total];
-        var offset = 0;
-        foreach (var shield in shields)
-        {
-            Array.Copy(shield.Strategies, 0, strategies, offset, shield.Strategies.Length);
-            offset += shield.Strategies.Length;
-        }
-
-        return new Shield(strategies, null, name, time);
+        return new Shield(Concat(parts), null, name, time);
     }
 
     // ── Execution ───────────────────────────────────────────────────────────────────────
@@ -535,6 +570,26 @@ public sealed class Shield
         var strategies = new Strategy[first.Length + second.Length];
         Array.Copy(first, strategies, first.Length);
         Array.Copy(second, 0, strategies, first.Length, second.Length);
+        return strategies;
+    }
+
+    /// <summary>Flattens the strategy arrays of composed shields, first shield outermost.</summary>
+    internal static Strategy[] Concat(Strategy[][] parts)
+    {
+        var total = 0;
+        foreach (var part in parts)
+        {
+            total += part.Length;
+        }
+
+        var strategies = new Strategy[total];
+        var offset = 0;
+        foreach (var part in parts)
+        {
+            Array.Copy(part, 0, strategies, offset, part.Length);
+            offset += part.Length;
+        }
+
         return strategies;
     }
 
