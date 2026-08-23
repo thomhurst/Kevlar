@@ -37,6 +37,9 @@ not the default *handling* that the neighbouring `WhenAnyError()` restores.
 ### Changed
 
 - **Breaking:** `Shield.Wrap(...)` and `Shield.Compose(...)` now seal ambient handling clauses. Reactive strategies appended after composition use default handling unless a new clause is declared. Existing strategies inside composed shields keep their original handling.
+- Setting both `CircuitBreakerOptions.ConsecutiveFailures` and `FailureRatio` still throws, but the
+  message now names both properties and states the fix. `ConsecutiveFailures` range errors report
+  that property as the parameter name instead of `options`.
 - `HandlesException`/`HandlesResult` documentation on every options type now leads with the fact
   that the property makes its strategy ignore the ambient `When…` clause, and points at
   `HandlingClause`. `ShieldBuilder`/`ShieldBuilder<TResult>` document the override from the clause side.

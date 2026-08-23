@@ -52,12 +52,18 @@ internal sealed class CircuitBreakerCore
 
     public CircuitBreakerCore(CircuitBreakerOptions options, Action<CircuitState> recordState)
     {
-        Throw.IfOutOfRange(options.ConsecutiveFailures is <= 0, nameof(options), "ConsecutiveFailures must be positive.");
+        Throw.IfOutOfRange(options.ConsecutiveFailures is <= 0, nameof(options.ConsecutiveFailures), "ConsecutiveFailures must be positive.");
         Throw.IfOutOfRange(
             options.FailureRatio is { } ratio && (double.IsNaN(ratio) || ratio <= 0 || ratio > 1),
             nameof(options.FailureRatio),
             "FailureRatio must be between 0 (exclusive) and 1 (inclusive).");
-        Throw.IfOutOfRange(options.ConsecutiveFailures is not null && options.FailureRatio is not null, nameof(options), "Configure either ConsecutiveFailures or FailureRatio, not both.");
+        Throw.IfOutOfRange(
+            options.ConsecutiveFailures is not null && options.FailureRatio is not null,
+            nameof(options),
+            "ConsecutiveFailures and FailureRatio select different trip modes and cannot both be set. " +
+            "Clear ConsecutiveFailures to trip on the failure ratio within SamplingWindow, clear " +
+            "FailureRatio to trip on consecutive failures, or leave both unset to trip after 5 " +
+            "consecutive failures.");
         Throw.IfOutOfRange(options.MinimumThroughput < 1, nameof(options), "MinimumThroughput must be at least 1.");
         Throw.IfOutOfRange(options.SamplingWindow <= TimeSpan.Zero, nameof(options), "SamplingWindow must be positive.");
         Throw.IfOutOfRange(options.BreakDuration <= TimeSpan.Zero, nameof(options), "BreakDuration must be positive.");

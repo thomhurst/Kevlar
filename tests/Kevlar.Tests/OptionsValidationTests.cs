@@ -50,11 +50,35 @@ public class OptionsValidationTests
     [Test]
     public async Task CircuitBreaker_Rejects_Configuring_Both_Trip_Modes()
     {
-        await Assert.That(() => Shield.CircuitBreaker(options =>
+        var untyped = await Assert.That(() => Shield.CircuitBreaker(options =>
         {
             options.ConsecutiveFailures = 3;
             options.FailureRatio = 0.5;
         })).Throws<ArgumentOutOfRangeException>();
+
+        var typed = await Assert.That(() => Shield.For<int>().CircuitBreaker(options =>
+        {
+            options.ConsecutiveFailures = 3;
+            options.FailureRatio = 0.5;
+        })).Throws<ArgumentOutOfRangeException>();
+
+        foreach (var message in new[] { untyped!.Message, typed!.Message })
+        {
+            await Assert.That(message).Contains("ConsecutiveFailures");
+            await Assert.That(message).Contains("FailureRatio");
+            await Assert.That(message).Contains("cannot both be set");
+            await Assert.That(message).Contains("Clear ConsecutiveFailures");
+            await Assert.That(message).Contains("clear FailureRatio");
+        }
+    }
+
+    [Test]
+    public async Task CircuitBreaker_With_Neither_Trip_Mode_Set_Trips_After_Five_Consecutive_Failures()
+    {
+        await Assert.That(Shield.CircuitBreaker(static _ => { }).ToString())
+            .IsEqualTo("CircuitBreaker(5 consecutive, break 15s)");
+        await Assert.That(Shield.For<int>().CircuitBreaker(static _ => { }).ToString())
+            .IsEqualTo("CircuitBreaker(5 consecutive, break 15s)");
     }
 
     [Test]
