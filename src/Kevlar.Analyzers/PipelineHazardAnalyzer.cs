@@ -10,8 +10,8 @@ namespace Kevlar.Analyzers;
 /// <summary>
 /// Diagnoses statically provable Kevlar pipeline hazards: synchronous multi-attempt hedging, reactive
 /// strategies made unreachable by an inner fallback, per-execution construction of stateful shields,
-/// void fallbacks used for result-returning executions, hedging on an untyped shield, and handling
-/// clauses that never reach a reactive strategy.
+/// void fallbacks used for result-returning executions, hedging on an untyped shield, handling
+/// clauses that never reach a reactive strategy, and fluent chaining results discarded as statements.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
@@ -76,6 +76,16 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         isEnabledByDefault: true,
         description: "A When/Or clause only changes behaviour once a reactive strategy consumes it. A clause whose builder is discarded, or that a later When clause replaces before any reactive strategy is added, silently does nothing.");
 
+    /// <summary>The KEV008 rule.</summary>
+    public static readonly DiagnosticDescriptor DiscardedChainResultRule = new(
+        id: "KEV008",
+        title: "Fluent chaining result is discarded",
+        messageFormat: "'{0}' returns a new shield instead of changing this one, and its result is discarded here, so this statement configures nothing. Assign the returned shield, or continue the chain from it.",
+        category: "Configuration",
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "Shield, Shield<TResult> and their builders are immutable: every fluent method returns a new instance and leaves its receiver untouched. A chaining call written as a statement therefore has no effect.");
+
     /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
         ImmutableArray.Create(
@@ -84,7 +94,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             EphemeralStatefulShieldRule,
             VoidFallbackResultExecutionRule,
             UntypedHedgingRule,
-            DeadHandlingClauseRule);
+            DeadHandlingClauseRule,
+            DiscardedChainResultRule);
 
     /// <inheritdoc />
     public override void Initialize(AnalysisContext context)
@@ -191,6 +202,47 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 invocation.Syntax.GetLocation(),
                 deadClauseReason));
         }
+
+        if (IsDiscardedChainResult(invocation, knownTypes))
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                DiscardedChainResultRule,
+                invocation.Syntax.GetLocation(),
+                Normalize(invocation.TargetMethod).Name));
+        }
+    }
+
+    /// <summary>
+    /// Reports a fluent call whose new shield is dropped where it stands. Calls that hand back a
+    /// clause builder are left to KEV007, which names that hazard precisely.
+    /// </summary>
+    private static bool IsDiscardedChainResult(IInvocationOperation invocation, KnownTypes knownTypes)
+    {
+        var method = Normalize(invocation.TargetMethod);
+        return IsKevlarFluentMethod(method, knownTypes)
+            && method.ReturnType is INamedTypeSymbol returnType
+            && knownTypes.IsShield(returnType)
+            && IsExpressionStatement(invocation);
+    }
+
+    private static bool IsExpressionStatement(IOperation operation)
+    {
+        for (var parent = operation.Parent; parent is not null; parent = parent.Parent)
+        {
+            switch (parent)
+            {
+                case IConversionOperation or IParenthesizedOperation:
+                    continue;
+
+                case IExpressionStatementOperation:
+                    return true;
+
+                default:
+                    return false;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>

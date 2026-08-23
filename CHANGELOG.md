@@ -43,6 +43,9 @@ not the default *handling* that the neighbouring `WhenAnyError()` restores.
 
 ### Added
 
+- `KEV008`: a fluent chaining call written as a statement, such as `shield.Retry(3);`. Shields are
+  immutable, so the new shield the call returns is thrown away and nothing is configured.
+  Discarded clause builders keep reporting as `KEV007`.
 - Pipeline descriptions show handling. `ToString()`/`Describe()` now prefixes each run of strategies
   sharing a non-default clause with `[when …]` — for example
   `[when HttpRequestException | TimeoutExceededException] Retry(3, no delay) → CircuitBreaker(5 consecutive, break 30s)`

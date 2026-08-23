@@ -1,6 +1,7 @@
 Kevlar.Analyzers.PipelineHazardAnalyzer
 Kevlar.Analyzers.PipelineHazardAnalyzer.PipelineHazardAnalyzer() -> void
 static readonly Kevlar.Analyzers.PipelineHazardAnalyzer.DeadHandlingClauseRule -> Microsoft.CodeAnalysis.DiagnosticDescriptor!
+static readonly Kevlar.Analyzers.PipelineHazardAnalyzer.DiscardedChainResultRule -> Microsoft.CodeAnalysis.DiagnosticDescriptor!
 static readonly Kevlar.Analyzers.PipelineHazardAnalyzer.EphemeralStatefulShieldRule -> Microsoft.CodeAnalysis.DiagnosticDescriptor!
 override Kevlar.Analyzers.PipelineHazardAnalyzer.Initialize(Microsoft.CodeAnalysis.Diagnostics.AnalysisContext! context) -> void
 override Kevlar.Analyzers.PipelineHazardAnalyzer.SupportedDiagnostics.get -> System.Collections.Immutable.ImmutableArray<Microsoft.CodeAnalysis.DiagnosticDescriptor!>
