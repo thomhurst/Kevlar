@@ -252,28 +252,30 @@ public sealed class Shield<TResult>
 
     /// <summary>
     /// Wraps <paramref name="inner"/> inside this shield: this shield's strategies run outermost.
-    /// The first non-null name and time provider win; the last handling clause stays ambient.
+    /// The first non-null name and time provider win. Composition seals handling clauses, so reactive
+    /// strategies appended afterwards use default handling unless a new clause is declared.
     /// </summary>
     public Shield<TResult> Wrap(Shield inner)
     {
         Throw.IfNull(inner, nameof(inner));
         return new Shield<TResult>(
             Shield.Concat(Strategies, inner.Strategies),
-            inner.Ambient ?? Ambient,
+            null,
             Name ?? inner.Name,
             Time ?? inner.Time);
     }
 
     /// <summary>
     /// Wraps <paramref name="inner"/> inside this shield: this shield's strategies run outermost.
-    /// The first non-null name and time provider win; the last handling clause stays ambient.
+    /// The first non-null name and time provider win. Composition seals handling clauses, so reactive
+    /// strategies appended afterwards use default handling unless a new clause is declared.
     /// </summary>
     public Shield<TResult> Wrap(Shield<TResult> inner)
     {
         Throw.IfNull(inner, nameof(inner));
         return new Shield<TResult>(
             Shield.Concat(Strategies, inner.Strategies),
-            inner.Ambient ?? Ambient,
+            null,
             Name ?? inner.Name,
             Time ?? inner.Time);
     }

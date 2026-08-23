@@ -87,25 +87,27 @@ public class CompositionContractTests
     [Arguments(WrapKind.UntypedTyped)]
     [Arguments(WrapKind.TypedUntyped)]
     [Arguments(WrapKind.TypedTyped)]
-    public async Task Every_Wrap_Form_Uses_Inner_Ambient_Clause_For_Appended_Strategies(WrapKind kind)
+    public async Task Every_Wrap_Form_Seals_The_Ambient_Clause_For_Appended_Strategies(WrapKind kind)
     {
-        var untypedOuter = Shield.When<InvalidOperationException>().Timeout(TimeSpan.FromMinutes(1));
-        var typedOuter = Shield.For<int>().When<InvalidOperationException>().Timeout(TimeSpan.FromMinutes(1));
+        var untypedOuter = Shield.When<TimeoutException>().Timeout(TimeSpan.FromMinutes(1));
+        var typedOuter = Shield.For<int>().When<TimeoutException>().Timeout(TimeSpan.FromMinutes(1));
         var untypedInner = Shield.When<ArgumentException>().Timeout(TimeSpan.FromMinutes(1));
         var typedInner = Shield.For<int>().When<ArgumentException>().Timeout(TimeSpan.FromMinutes(1));
 
         if (kind == WrapKind.UntypedUntyped)
         {
             var fallbackCalls = 0;
-            var wrapped = untypedOuter.Wrap(untypedInner).Fallback((_, _) =>
+            var composed = untypedOuter.Wrap(untypedInner);
+            var wrapped = composed.Fallback((_, _) =>
             {
                 fallbackCalls++;
                 return default;
             });
-            Func<CancellationToken, ValueTask> action = _ => throw new ArgumentException();
+            Func<CancellationToken, ValueTask> action = _ => throw new InvalidOperationException();
 
             await wrapped.ExecuteAsync(action);
 
+            await Assert.That(composed.Ambient).IsNull();
             await Assert.That(fallbackCalls).IsEqualTo(1);
             return;
         }
@@ -117,9 +119,44 @@ public class CompositionContractTests
             WrapKind.TypedTyped => typedOuter.Wrap(typedInner),
             _ => throw new ArgumentOutOfRangeException(nameof(kind)),
         };
-        var result = await typedWrapped.Fallback(42).ExecuteAsync(_ => throw new ArgumentException());
+        var result = await typedWrapped.Fallback(42).ExecuteAsync(_ => throw new InvalidOperationException());
 
+        await Assert.That(typedWrapped.Ambient).IsNull();
         await Assert.That(result).IsEqualTo(42);
+    }
+
+    [Test]
+    public async Task Strategies_Inside_Composed_Shields_Keep_Their_Original_Judges()
+    {
+        var retry = Shield.When<ArgumentException>().Retry(1, Backoff.None);
+        var breaker = Shield.When<InvalidOperationException>()
+            .CircuitBreaker(1, TimeSpan.FromMinutes(1));
+        var composed = Shield.Compose(retry, breaker);
+        var attempts = 0;
+
+        await Assert.That(async () => await composed.ExecuteAsync<int>(_ =>
+        {
+            attempts++;
+            throw attempts == 1 ? new ArgumentException() : new InvalidOperationException();
+        })).Throws<InvalidOperationException>();
+
+        await Assert.That(attempts).IsEqualTo(2);
+        await Assert.That(async () => await composed.ExecuteAsync(_ => new ValueTask<int>(42)))
+            .Throws<CircuitOpenException>();
+    }
+
+    [Test]
+    public async Task Non_Composition_Copies_Keep_The_Ambient_Clause()
+    {
+        var timeProvider = new FakeTimeProvider();
+        var untyped = Shield.When<ArgumentException>().Timeout(TimeSpan.FromMinutes(1));
+        var typed = Shield.For<int>().When<ArgumentException>().Timeout(TimeSpan.FromMinutes(1));
+
+        await Assert.That(ReferenceEquals(untyped.For<int>().Ambient, untyped.Ambient)).IsTrue();
+        await Assert.That(ReferenceEquals(untyped.WithName("named").Ambient, untyped.Ambient)).IsTrue();
+        await Assert.That(ReferenceEquals(untyped.WithTimeProvider(timeProvider).Ambient, untyped.Ambient)).IsTrue();
+        await Assert.That(ReferenceEquals(typed.WithName("named").Ambient, typed.Ambient)).IsTrue();
+        await Assert.That(ReferenceEquals(typed.WithTimeProvider(timeProvider).Ambient, typed.Ambient)).IsTrue();
     }
 
     [Test]

@@ -122,7 +122,8 @@ public sealed class Shield
     /// Merges shields into one pipeline. The first shield is the outermost. Stateful strategies
     /// keep their identity, so a shared circuit breaker shield shares its circuit here.
     /// The result keeps the first non-null <see cref="Name"/> and <see cref="TimeProvider"/>
-    /// among the inputs, and the last shield's handling clause stays ambient for further chaining.
+    /// among the inputs. Composition seals handling clauses, so reactive strategies appended
+    /// afterwards use default handling unless a new clause is declared.
     /// </summary>
     public static Shield Compose(params Shield[] shields)
     {
@@ -131,7 +132,6 @@ public sealed class Shield
         var total = 0;
         string? name = null;
         TimeProvider? time = null;
-        OutcomeJudge? ambient = null;
 
         foreach (var shield in shields)
         {
@@ -139,7 +139,6 @@ public sealed class Shield
             total += shield.Strategies.Length;
             name ??= shield.Name;
             time ??= shield.Time;
-            ambient = shield.Ambient ?? ambient;
         }
 
         var strategies = new Strategy[total];
@@ -150,7 +149,7 @@ public sealed class Shield
             offset += shield.Strategies.Length;
         }
 
-        return new Shield(strategies, ambient, name, time);
+        return new Shield(strategies, null, name, time);
     }
 
     // ── Execution ───────────────────────────────────────────────────────────────────────
