@@ -261,6 +261,11 @@ foreach ($packageId in $expectedDependencies.Keys)
         Assert-Equal "$packageId version" (Get-NodeText $metadata "*[local-name()='version']") $Version
         Assert-Equal "$packageId license" (Get-NodeText $metadata "*[local-name()='license']") 'MIT'
         Assert-Equal "$packageId README metadata" (Get-NodeText $metadata "*[local-name()='readme']") 'README.md'
+        Assert-Equal "$packageId icon metadata" (Get-NodeText $metadata "*[local-name()='icon']") 'icon.png'
+        Assert-Equal `
+            "$packageId release notes" `
+            (Get-NodeText $metadata "*[local-name()='releaseNotes']") `
+            'https://github.com/thomhurst/Kevlar/blob/main/CHANGELOG.md'
         Assert-Equal "$packageId repository URL" (Get-NodeText $metadata "*[local-name()='repository']/@url") 'https://github.com/thomhurst/Kevlar'
         Assert-Equal "$packageId repository type" (Get-NodeText $metadata "*[local-name()='repository']/@type") 'git'
         Assert-Equal "$packageId repository commit" (Get-NodeText $metadata "*[local-name()='repository']/@commit") $expectedRepositoryCommit
@@ -268,6 +273,26 @@ foreach ($packageId in $expectedDependencies.Keys)
         if ($entries -notcontains 'README.md')
         {
             throw "$packageId does not contain README.md."
+        }
+        if ($entries -notcontains 'icon.png')
+        {
+            throw "$packageId does not contain icon.png."
+        }
+
+        $readmeEntry = $archive.GetEntry('README.md')
+        $readmeReader = [System.IO.StreamReader]::new($readmeEntry.Open())
+        try
+        {
+            $embeddedReadme = $readmeReader.ReadToEnd()
+        }
+        finally
+        {
+            $readmeReader.Dispose()
+        }
+
+        if ($embeddedReadme -match '\]\((?!https?://|#|mailto:)[^)]+\)')
+        {
+            throw "$packageId README contains a relative Markdown link: '$($Matches[0])'."
         }
 
         $groups = @($metadata.SelectNodes("*[local-name()='dependencies']/*[local-name()='group']"))
@@ -296,6 +321,10 @@ foreach ($packageId in $expectedDependencies.Keys)
 
         if ($packageId -eq 'Kevlar.Analyzers')
         {
+            Assert-Equal `
+                "$packageId development dependency" `
+                (Get-NodeText $metadata "*[local-name()='developmentDependency']") `
+                'true'
             $assemblyEntries = @($entries | Where-Object { $_ -like '*.dll' })
             Assert-Set "$packageId assemblies" $assemblyEntries @('analyzers/dotnet/cs/Kevlar.Analyzers.dll')
             Assert-Set "$packageId analyzer assets" `
@@ -657,6 +686,64 @@ await Shield.Empty.ExecuteAsync(cancellationToken => ValueTask.CompletedTask);
     if ($unexpectedAnalyzerErrors.Count -gt 0)
     {
         throw "Analyzer consumer produced errors other than KEV001:`n$($unexpectedAnalyzerErrors -join [Environment]::NewLine)"
+    }
+
+    $analyzerFlowDirectory = Join-Path $temporaryRoot 'analyzer-flow'
+    $analyzerFlowProject = @"
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <PackageId>AnalyzerFlowConsumer</PackageId>
+  </PropertyGroup>
+</Project>
+"@
+    $analyzerFlowProjectPath = Join-Path $analyzerFlowDirectory 'AnalyzerFlowConsumer.csproj'
+    Write-TextFile $analyzerFlowProjectPath $analyzerFlowProject
+    Write-TextFile (Join-Path $analyzerFlowDirectory 'Library.cs') 'public sealed class Library;'
+    Invoke-DotNet @(
+        'add', $analyzerFlowProjectPath,
+        'package', 'Kevlar.Analyzers',
+        '--version', $Version,
+        '--source', $packageDirectory,
+        '--package-directory', $env:NUGET_PACKAGES)
+    $analyzerFlowPackages = Join-Path $analyzerFlowDirectory 'packages'
+    Invoke-DotNet @(
+        'pack', $analyzerFlowProjectPath,
+        '-c', 'Release',
+        '--no-restore',
+        '-p:PackageVersion=0.0.0-verification',
+        "-p:PackageOutputPath=$analyzerFlowPackages")
+
+    $analyzerFlowPackage = Join-Path $analyzerFlowPackages 'AnalyzerFlowConsumer.0.0.0-verification.nupkg'
+    $analyzerFlowArchive = [System.IO.Compression.ZipFile]::OpenRead($analyzerFlowPackage)
+    try
+    {
+        $analyzerFlowNuspecEntry = @(
+            $analyzerFlowArchive.Entries |
+                Where-Object { $_.FullName -like '*.nuspec' })
+        Assert-Equal 'analyzer-flow nuspec count' $analyzerFlowNuspecEntry.Count 1
+        $analyzerFlowReader = [System.IO.StreamReader]::new($analyzerFlowNuspecEntry[0].Open())
+        try
+        {
+            [xml]$analyzerFlowNuspec = $analyzerFlowReader.ReadToEnd()
+        }
+        finally
+        {
+            $analyzerFlowReader.Dispose()
+        }
+
+        $analyzerFlowDependencyIds = @(
+            $analyzerFlowNuspec.SelectNodes("//*[local-name()='dependency']") |
+                ForEach-Object { $_.GetAttribute('id') })
+        if ($analyzerFlowDependencyIds -contains 'Kevlar.Analyzers')
+        {
+            throw 'Kevlar.Analyzers flowed transitively from a consumer library package.'
+        }
+    }
+    finally
+    {
+        $analyzerFlowArchive.Dispose()
     }
 
     Write-Host 'All package layout, symbols, determinism, SourceLink, consumer, and analyzer checks passed.'

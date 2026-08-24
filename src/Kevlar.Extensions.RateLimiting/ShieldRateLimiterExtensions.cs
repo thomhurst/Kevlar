@@ -2,6 +2,8 @@ using System.Threading.RateLimiting;
 
 namespace Kevlar.Extensions.RateLimiting;
 
+#pragma warning disable RS0026 // Shield-family overload parity intentionally keeps configuration optional.
+
 /// <summary>Adds System.Threading.RateLimiting-backed strategies to Kevlar shields.</summary>
 public static class ShieldRateLimiterExtensions
 {
@@ -190,3 +192,5 @@ public static class ShieldRateLimiterExtensions
         return options;
     }
 }
+
+#pragma warning restore RS0026

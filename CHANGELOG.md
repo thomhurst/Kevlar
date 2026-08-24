@@ -45,6 +45,9 @@ build spelled these `WhenResultDefault`/`OrResultDefault`; the `Is` makes the re
   `AddStandardHedgingShield` are unchanged.
 ### Changed
 
+- Every NuGet package now embeds the canonical Kevlar icon, links release notes, and carries a
+  NuGet-safe README with status badges. `Kevlar.Analyzers` is marked as a development dependency
+  so it does not flow from a packed consumer library.
 - Custom strategies can override `Strategy.InvokesContinuationAtMostOnce`; the same aggregate
   value is now exposed on `Shield<TResult>` as well as `Shield` and `VoidShield`.
 - **Breaking:** `Shield.Wrap(...)` and `Shield.Compose(...)` now seal ambient handling clauses. Reactive strategies appended after composition use default handling unless a new clause is declared. Existing strategies inside composed shields keep their original handling.
