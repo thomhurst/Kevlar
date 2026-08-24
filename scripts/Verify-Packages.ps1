@@ -70,6 +70,10 @@ function Get-ExpectedSymbolAssets([string]$PackageId)
     {
         $frameworks += 'net8.0'
     }
+    elseif ($PackageId -eq 'Kevlar.Extensions.Grpc')
+    {
+        $frameworks += 'netstandard2.1'
+    }
 
     return @($frameworks | ForEach-Object { "lib/$_/$PackageId.pdb" })
 }
