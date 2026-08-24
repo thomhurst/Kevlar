@@ -12,6 +12,8 @@ namespace Kevlar;
 /// <typeparam name="T">The result type of the execution.</typeparam>
 public readonly struct Outcome<T>
 {
+    private const string LegacyExceptionProxyDataKey =
+        "Kevlar.Internal.ExceptionProxy.6b21d876-5f0c-45d4-a873-cd6d83e9158b";
     private readonly T? _result;
     private readonly Exception? _exception;
 
@@ -22,9 +24,24 @@ public readonly struct Outcome<T>
     }
 
     /// <summary>The captured exception, or <see langword="null"/> if the execution produced a result.</summary>
-    public Exception? Exception => _exception is KevlarProxyException proxy
-        ? proxy.OriginalException
-        : _exception;
+    public Exception? Exception
+    {
+        get
+        {
+            if (_exception is KevlarProxyException proxy)
+            {
+                return proxy.OriginalException;
+            }
+
+            if (_exception is { InnerException: not null } legacyProxy &&
+                legacyProxy.GetType().Name == "AttemptFailureException")
+            {
+                return legacyProxy.Data[LegacyExceptionProxyDataKey] as Exception ?? legacyProxy;
+            }
+
+            return _exception;
+        }
+    }
 
     /// <summary>
     /// The result value. Only meaningful when <see cref="Exception"/> is <see langword="null"/>.

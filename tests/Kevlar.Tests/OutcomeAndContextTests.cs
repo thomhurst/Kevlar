@@ -2,6 +2,9 @@ namespace Kevlar.Tests;
 
 public class OutcomeAndContextTests
 {
+    private const string LegacyExceptionProxyDataKey =
+        "Kevlar.Internal.ExceptionProxy.6b21d876-5f0c-45d4-a873-cd6d83e9158b";
+
     [Test]
     public async Task FromResult_Is_Success()
     {
@@ -130,6 +133,16 @@ public class OutcomeAndContextTests
         await Assert.That(outcome.Exception).IsSameReferenceAs(original);
         await Assert.That(actual).IsSameReferenceAs(original);
         await Assert.That(actual!.StackTrace).Contains(nameof(ThrowOriginal));
+    }
+
+    [Test]
+    public async Task Legacy_Grpc_Proxy_Exception_Unwraps_To_Original()
+    {
+        var original = new InvalidOperationException("original");
+        var proxy = new AttemptFailureException(original);
+        var outcome = Outcome<int>.FromException(proxy);
+
+        await Assert.That(outcome.Exception).IsSameReferenceAs(original);
     }
 
     [Test]
@@ -359,6 +372,15 @@ public class OutcomeAndContextTests
     private sealed class CustomValue
     {
         public override string ToString() => "custom-value";
+    }
+
+    private sealed class AttemptFailureException : Exception
+    {
+        public AttemptFailureException(Exception originalException)
+            : base(originalException.Message, originalException)
+        {
+            Data[LegacyExceptionProxyDataKey] = originalException;
+        }
     }
 }
 
