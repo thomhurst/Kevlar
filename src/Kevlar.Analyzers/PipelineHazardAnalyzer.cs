@@ -14,7 +14,8 @@ namespace Kevlar.Analyzers;
 /// chaining results discarded as statements.
 /// It also reports, at hint severity, the strategies that inherit a handling clause declared
 /// earlier in their chain, so the clause's span is visible where it applies, and the default-result
-/// clauses written for a value type, whose default is usually a legitimate result.
+/// clauses written for a value type, whose default is usually a legitimate result, plus reactive
+/// strategies that implicitly accept default handling.
 /// </summary>
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
@@ -99,6 +100,16 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         isEnabledByDefault: true,
         description: "WhenResultIsDefault and OrResultIsDefault were named for reference types, where default(TResult) is null and a missing value is usually the failure. On a value type the same clause treats a zero, a false, or an empty struct as a failure worth retrying, hedging, or falling back from. Reference-type shields can say so explicitly with WhenResultIsNull and OrResultIsNull.");
 
+    /// <summary>The KEV011 rule.</summary>
+    public static readonly DiagnosticDescriptor ImplicitDefaultHandlingRule = new(
+        id: "KEV011",
+        title: "Reactive strategy uses implicit default handling",
+        messageFormat: "'{0}' uses Kevlar's default handling, which includes programming errors. Declare a When clause or local HandlesException override when only expected failures should be handled.",
+        category: "Configuration",
+        defaultSeverity: DiagnosticSeverity.Info,
+        isEnabledByDefault: true,
+        description: "Without an explicit handling clause, reactive strategies handle ordinary exceptions, including programming errors such as ArgumentException and InvalidOperationException. This hint makes that implicit policy visible so transient-failure pipelines can narrow it deliberately.");
+
     /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
         ImmutableArray.Create(
@@ -109,7 +120,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             DeadHandlingClauseRule,
             DiscardedChainResultRule,
             InheritedHandlingClauseRule,
-            DefaultResultClauseOnValueTypeRule);
+            DefaultResultClauseOnValueTypeRule,
+            ImplicitDefaultHandlingRule);
 
     /// <inheritdoc />
     public override void Initialize(AnalysisContext context)
@@ -226,6 +238,93 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 clauseMethod,
                 resultType));
         }
+
+        if (UsesImplicitDefaultHandling(invocation, context, knownTypes))
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                ImplicitDefaultHandlingRule,
+                GetMethodNameLocation(invocation),
+                Normalize(invocation.TargetMethod).Name));
+        }
+    }
+
+    private static bool UsesImplicitDefaultHandling(
+        IInvocationOperation invocation,
+        OperationAnalysisContext context,
+        KnownTypes knownTypes)
+    {
+        var method = Normalize(invocation.TargetMethod);
+        if (!IsClauseConsumingStrategy(method, knownTypes)
+            || HasLocalHandlingOverride(invocation, context) is not false
+            || !TryGetAmbientClause(invocation, context, knownTypes, visitedLocals: null, out var clause)
+            || clause is not null)
+        {
+            return false;
+        }
+
+        return !HasExplicitDefaultResetInCurrentSegment(
+            GetReceiver(invocation),
+            context,
+            knownTypes,
+            visitedLocals: null);
+    }
+
+    private static bool HasExplicitDefaultResetInCurrentSegment(
+        IOperation? operation,
+        OperationAnalysisContext context,
+        KnownTypes knownTypes,
+        HashSet<ISymbol>? visitedLocals)
+    {
+        operation = Unwrap(operation);
+        if (operation is ILocalReferenceOperation localReference)
+        {
+            visitedLocals ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+            if (!visitedLocals.Add(localReference.Local)
+                || !TryGetStableInitializer(localReference, context, out var initializer))
+            {
+                return false;
+            }
+
+            var found = HasExplicitDefaultResetInCurrentSegment(
+                initializer,
+                context,
+                knownTypes,
+                visitedLocals);
+            visitedLocals.Remove(localReference.Local);
+            return found;
+        }
+
+        if (operation is IConditionalAccessOperation conditionalAccess)
+        {
+            return HasExplicitDefaultResetInCurrentSegment(
+                conditionalAccess.Operation,
+                context,
+                knownTypes,
+                visitedLocals);
+        }
+
+        if (operation is not IInvocationOperation invocation)
+        {
+            return false;
+        }
+
+        var method = Normalize(invocation.TargetMethod);
+        if (IsCompositionBoundary(method, knownTypes))
+        {
+            return false;
+        }
+
+        if (method.Name == "WhenAnyError" && StartsHandlingClause(method, knownTypes))
+        {
+            return true;
+        }
+
+        return IsKevlarFluentMethod(method, knownTypes)
+            && HasExplicitDefaultResetInCurrentSegment(
+                GetReceiver(invocation),
+                context,
+                knownTypes,
+                visitedLocals);
     }
 
     /// <summary>

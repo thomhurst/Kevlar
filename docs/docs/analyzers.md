@@ -25,6 +25,7 @@ Generated code is ignored.
 | `KEV008` | Warning | fluent chaining result is discarded as a statement |
 | `KEV009` | Info | strategy inherits a handling clause declared earlier in the chain |
 | `KEV010` | Info | default-result clause is written for a value type, whose default is usually valid |
+| `KEV011` | Info | reactive strategy relies on implicit default handling, which includes programming errors |
 
 ## KEV001: ignored execution cancellation
 
@@ -281,6 +282,42 @@ The rule reads `TResult` from the shield being configured. `Nullable<T>` results
 their default *is* the missing value — and so is generic code, where `default(TResult)` is the only
 term available. Like `KEV009`, `KEV010` is `Info` and never fails a build; silence it per site with
 a pragma or project-wide with `dotnet_diagnostic.KEV010.severity = none`.
+
+## KEV011: implicit default handling
+
+A retry, circuit breaker, hedge, or fallback without an explicit clause uses Kevlar's
+[default handling](handling-failures.md#the-default). That default excludes cancellation,
+fail-fast rejections, and fatal runtime failures, but it still includes programming errors such as
+`ArgumentException`, `InvalidOperationException`, and `NullReferenceException`:
+
+```csharp
+var shield = Shield.Retry(3);
+//                  ^^^^^ KEV011 — programming errors are retried too
+```
+
+Declare the failures the strategy expects when it is intended for transient faults:
+
+```csharp
+var shield = Shield
+    .When<HttpRequestException>()
+    .Or<TimeoutExceededException>()
+    .Retry(3);
+```
+
+A local `HandlesException` or `HandlesResult` override also makes the policy explicit. The rule
+does not report proactive strategies, an explicit `WhenAnyError()` reset, or opaque configuration
+that the analyzer cannot prove still uses the default.
+
+`KEV011` is an informational design hint, not a warning. Keep the default when it is deliberate,
+and suppress the hint at that site with a reason:
+
+```csharp
+#pragma warning disable KEV011 // This boundary deliberately retries every ordinary exception.
+var shield = Shield.Retry(3);
+#pragma warning restore KEV011
+```
+
+Disable it project-wide with `dotnet_diagnostic.KEV011.severity = none`.
 
 ## Suppression
 

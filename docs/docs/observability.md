@@ -37,7 +37,8 @@ Console.WriteLine(shield);
 // [when HttpRequestException | TimeoutExceededException] Retry(3, no delay) → CircuitBreaker(5 consecutive, break 30s)
 ```
 
-Shields that use only the default handling — any exception except `OperationCanceledException` — print exactly as before, with no prefix.
+Shields that use only the default handling—ordinary exceptions, excluding cancellation, Kevlar's
+fail-fast rejections, and fatal runtime failures—print exactly as before, with no prefix.
 
 ## Metrics
 

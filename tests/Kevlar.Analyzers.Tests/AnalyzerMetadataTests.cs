@@ -14,7 +14,7 @@ public class AnalyzerMetadataTests
         await Assert.That(cancellationRules.Select(static rule => rule.Id).SequenceEqual(["KEV001"]))
             .IsTrue();
         await Assert.That(pipelineRules.Select(static rule => rule.Id).SequenceEqual(
-            ["KEV002", "KEV003", "KEV004", "KEV006", "KEV007", "KEV008", "KEV009", "KEV010"]))
+            ["KEV002", "KEV003", "KEV004", "KEV006", "KEV007", "KEV008", "KEV009", "KEV010", "KEV011"]))
             .IsTrue();
 
         var allRules = cancellationRules.Concat(pipelineRules).ToArray();
@@ -41,7 +41,7 @@ public class AnalyzerMetadataTests
             await Assert.That(rules[configurationRule].DefaultSeverity).IsEqualTo(DiagnosticSeverity.Warning);
         }
 
-        foreach (var informationalRule in new[] { "KEV009", "KEV010" })
+        foreach (var informationalRule in new[] { "KEV009", "KEV010", "KEV011" })
         {
             await Assert.That(rules[informationalRule].Category).IsEqualTo("Configuration");
             await Assert.That(rules[informationalRule].DefaultSeverity).IsEqualTo(DiagnosticSeverity.Info);

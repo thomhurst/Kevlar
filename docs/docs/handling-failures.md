@@ -8,7 +8,31 @@ Reactive strategies — [retry](strategies/retry.md), [circuit breaker](strategi
 
 ## The default
 
-With no handling clause, the default is: **any exception except `OperationCanceledException`**. Cancellation isn't a fault; retrying it would fight the caller.
+With no handling clause, reactive strategies handle ordinary exceptions. They deliberately let
+these outcomes propagate without retrying, opening a circuit, hedging, or falling back:
+
+| Not handled by default | Why |
+|---|---|
+| `OperationCanceledException` | Cancellation is not a fault; handling it would fight the caller. |
+| `CircuitOpenException`, `RateLimitExceededException`, `ConcurrencyLimitExceededException` | These are fail-fast rejections from another Kevlar strategy. Handling one can amplify overload or hide admission control. |
+| `OutOfMemoryException`, `InsufficientExecutionStackException`, `StackOverflowException`, `ThreadAbortException`, `AccessViolationException` | These fatal runtime failures are not safe recovery signals. |
+
+Other exceptions—including programming errors such as `NullReferenceException`, and
+`TimeoutExceededException`—remain handled by default for compatibility. Narrow expected failures
+with a clause in production pipelines. The optional analyzer reports implicit default handling as
+[`KEV011`](analyzers.md#kev011-implicit-default-handling).
+
+An explicit clause can opt into an excluded exception when recovery is intentional:
+
+```csharp
+var queuePressure = Shield
+    .When<RateLimitExceededException>()
+    .Retry(2);
+
+var allKevlarOutcomes = Shield.For<string>()
+    .When<KevlarException>()
+    .FallbackTo("unavailable");
+```
 
 When you execute with `ExecuteOutcomeAsync`, use `outcome.TryGetResult(out var result)` to
 consume a successful result without throwing. If it returns `false`, the final captured failure
@@ -110,14 +134,16 @@ A clause that never reaches a reactive strategy does nothing at all. The optiona
 
 ### Reset to default handling
 
-Call `WhenAnyError()` to clear the ambient clause. Reactive strategies chained after it return to Kevlar's default handling: any exception except `OperationCanceledException`.
+Call `WhenAnyError()` to clear the ambient clause. Reactive strategies chained after it return to
+Kevlar's default handling: ordinary exceptions, excluding cancellation, Kevlar's fail-fast
+rejections, and fatal runtime failures.
 
 ```csharp
 var shield = Shield
     .When<HttpRequestException>()
     .Retry(3)                                      // handles HttpRequestException only
     .WhenAnyError()
-    .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30)); // handles any non-cancellation exception
+    .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30)); // handles ordinary exceptions
 ```
 
 `WhenAnyError()` preserves existing strategies, the shield name, and its `TimeProvider`; it only changes handling for reactive strategies added afterwards. It is available on both `Shield` and `Shield<T>`.

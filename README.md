@@ -58,8 +58,8 @@ The core package targets `netstandard2.0` and `net10.0`.
 
 ## Choose what counts as failure
 
-Reactive strategies handle any exception except `OperationCanceledException` by default. A
-handling clause lets you be more precise:
+Reactive strategies handle ordinary exceptions by default, excluding cancellation, Kevlar's
+fail-fast rejections, and fatal runtime failures. A handling clause lets you be more precise:
 
 ```csharp
 var search = Shield.For<HttpResponseMessage>()

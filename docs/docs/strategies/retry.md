@@ -84,7 +84,8 @@ On an untyped `Shield`, the `RetryEvent` callbacks receive: `Attempt` (1-based r
 
 ## What gets retried
 
-Whatever the current [handling clause](../handling-failures.md) says is a failure — by default any exception except `OperationCanceledException`, or your `When`/`WhenResult` clause:
+Whatever the current [handling clause](../handling-failures.md) says is a failure—ordinary
+exceptions under the default, or the outcomes selected by your `When`/`WhenResult` clause:
 
 ```csharp
 Shield

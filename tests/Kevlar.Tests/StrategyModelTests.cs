@@ -34,7 +34,9 @@ public class StrategyModelTests
     public Task Retry_Matches_Attempt_Model_And_Backoff_Domains() => ModelRunner.RunAsync(
         "retry and backoff",
         commandCount: 20,
-        random => new RetryCommand(random.Next(4) == 0, random.Next(0, 6)),
+        random => new RetryCommand(
+            (RetryOutcomeKind)random.Next(Enum.GetValues<RetryOutcomeKind>().Length),
+            random.Next(0, 6)),
         ExecuteRetryModelAsync);
 
     [Test]
@@ -315,9 +317,16 @@ public class StrategyModelTests
         var expectedSuccess = false;
         for (; expectedAttempts <= maxRetries; expectedAttempts++)
         {
-            if (commands[Math.Min(expectedAttempts, commands.Count - 1)].Success)
+            var kind = commands[Math.Min(expectedAttempts, commands.Count - 1)].Kind;
+            if (kind == RetryOutcomeKind.Success)
             {
                 expectedSuccess = true;
+                expectedAttempts++;
+                break;
+            }
+
+            if (kind == RetryOutcomeKind.Rejection)
+            {
                 expectedAttempts++;
                 break;
             }
@@ -327,13 +336,29 @@ public class StrategyModelTests
         {
             var command = commands[Math.Min(attempts, commands.Count - 1)];
             attempts++;
-            return command.Success
-                ? new ValueTask<int>(42)
-                : throw new ModelFailureException();
+            return command.Kind switch
+            {
+                RetryOutcomeKind.Success => new ValueTask<int>(42),
+                RetryOutcomeKind.OrdinaryFailure => throw new ModelFailureException(),
+                RetryOutcomeKind.Rejection => throw new RateLimitExceededException(retryAfter: null),
+                _ => throw new ArgumentOutOfRangeException(nameof(command)),
+            };
         });
 
         Ensure(attempts == expectedAttempts, 0, "retry", "attempt count differs");
         Ensure(outcome.IsSuccess == expectedSuccess, 0, "retry", "final outcome differs");
+        var finalKind = commands[Math.Min(attempts - 1, commands.Count - 1)].Kind;
+        if (!expectedSuccess)
+        {
+            Ensure(
+                finalKind == RetryOutcomeKind.Rejection
+                    ? outcome.Exception is RateLimitExceededException
+                    : outcome.Exception is ModelFailureException,
+                0,
+                "retry",
+                "final exception differs");
+        }
+
         Ensure(delayAttempts.SequenceEqual(Enumerable.Range(1, Math.Max(0, attempts - 1))), 0, "retry", "delay attempt numbers differ");
 
         foreach (var command in commands)
@@ -404,7 +429,14 @@ public class StrategyModelTests
 
     private readonly record struct ConcurrencyCommand(ConcurrencyCommandKind Kind);
 
-    private readonly record struct RetryCommand(bool Success, int DelaySelector);
+    private enum RetryOutcomeKind
+    {
+        Success,
+        OrdinaryFailure,
+        Rejection,
+    }
+
+    private readonly record struct RetryCommand(RetryOutcomeKind Kind, int DelaySelector);
 
     private readonly record struct CompositionCommand(int Id, bool Fail);
 
