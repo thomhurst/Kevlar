@@ -137,7 +137,7 @@ public class PipelineDescriptorTests
 
         var voidFallback = Shield
             .When<InvalidOperationException>()
-            .FallbackAction(static (_, _) => default)
+            .Fallback(static (_, _) => default)
             .GetDescriptor()
             .AssertContainsSingle<FallbackStrategyDescriptor>();
         await Assert.That(voidFallback.ResultType).IsNull();
@@ -152,7 +152,7 @@ public class PipelineDescriptorTests
             .Retry(options => options.HandlesException = _ => true)
             .CircuitBreaker(options => options.HandlesException = _ => true)
             .Hedge(options => options.HandlesException = _ => true)
-            .FallbackAction(
+            .Fallback(
                 static (_, _) => default,
                 options => options.HandlesException = _ => true)
             .GetDescriptor();

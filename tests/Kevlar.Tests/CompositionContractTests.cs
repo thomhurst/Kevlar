@@ -98,7 +98,7 @@ public class CompositionContractTests
         {
             var fallbackCalls = 0;
             var composed = untypedOuter.Wrap(untypedInner);
-            var wrapped = composed.FallbackAction((_, _) =>
+            var wrapped = composed.Fallback((_, _) =>
             {
                 fallbackCalls++;
                 return default;

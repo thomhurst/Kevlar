@@ -52,8 +52,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     /// <summary>The KEV005 rule.</summary>
     public static readonly DiagnosticDescriptor VoidFallbackResultExecutionRule = new(
         id: "KEV005",
-        title: "FallbackAction applies only to void executions",
-        messageFormat: "FallbackAction applies only to void executions. For executions that return a value, build a result-aware shield with Shield.For<T>() and use its Fallback overloads.",
+        title: "Fallback on a non-generic Shield applies only to void executions",
+        messageFormat: "Fallback on a non-generic Shield applies only to void executions. For executions that return a value, build a result-aware shield with Shield.For<T>() and use its Fallback overloads.",
         category: "Configuration",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
@@ -155,7 +155,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 invocation.Syntax.GetLocation()));
         }
 
-        if (IsFallbackStrategy(invocation.TargetMethod, knownTypes)
+        if (IsKevlarFluentMethod(invocation.TargetMethod, knownTypes, "Fallback")
             && HasLocalHandlingOverride(invocation, context) is false
             && FindInPipeline(
                 GetReceiver(invocation),
@@ -387,7 +387,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     /// inherits is already spelled out at the call site.
     /// </summary>
     private static bool IsClauseConsumingStrategy(IMethodSymbol method, KnownTypes knownTypes) =>
-        (method.Name is "Retry" or "RetryForever" or "Hedge" or "CircuitBreaker" or "Fallback" or "FallbackAction")
+        (method.Name is "Retry" or "RetryForever" or "Hedge" or "CircuitBreaker" or "Fallback")
         && IsKevlarFluentMethod(method, knownTypes);
 
     /// <summary>Renders a clause declaration the way it was written, e.g. <c>When&lt;HttpRequestException&gt;…</c>.</summary>
@@ -1052,7 +1052,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             if (!FindInPipeline(
                 operands[fallbackIndex],
                 context,
-                candidate => IsFallbackStrategy(candidate.TargetMethod, knownTypes)
+                candidate => IsKevlarFluentMethod(candidate.TargetMethod, knownTypes, "Fallback")
                     && HasLocalHandlingOverride(candidate, context) is false,
                 knownTypes,
                 stopAtHandlingClause: true,
@@ -1791,21 +1791,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     private static bool IsVoidFallback(IMethodSymbol method, KnownTypes knownTypes)
     {
         method = Normalize(method);
-        return method.Name == "FallbackAction"
+        return method.Name == "Fallback"
             && method.ReturnType is INamedTypeSymbol returnType
             && knownTypes.IsUntypedShield(returnType)
-            && IsKevlarFluentMethod(method, knownTypes);
-    }
-
-    /// <summary>
-    /// Either fallback: <c>Fallback</c> on a result-aware shield, or <c>FallbackAction</c>, its
-    /// void-only counterpart on the untyped <see cref="Shield"/>. Both recover handled failures,
-    /// so both make an outer strategy sharing their clause unreachable.
-    /// </summary>
-    private static bool IsFallbackStrategy(IMethodSymbol method, KnownTypes knownTypes)
-    {
-        method = Normalize(method);
-        return (method.Name is "Fallback" or "FallbackAction")
             && IsKevlarFluentMethod(method, knownTypes);
     }
 

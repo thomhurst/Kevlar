@@ -117,7 +117,7 @@ Shield
     .Retry(3)                      // retries HttpRequestException
     .CircuitBreaker(consecutiveFailures: 5, breakDuration: breakDur)   // breaker also counts HttpRequestException
     .When<TimeoutExceededException>()
-    .FallbackAction(...);          // fallback reacts to TimeoutExceededException only
+    .Fallback(...);                // fallback reacts to TimeoutExceededException only
 ```
 
 `Wrap` and `Compose` are scope boundaries. A reactive strategy added afterwards uses Kevlar's default handling—any exception except `OperationCanceledException`—unless the new expression declares a clause locally:

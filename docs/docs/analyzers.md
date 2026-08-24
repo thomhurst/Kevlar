@@ -20,7 +20,7 @@ Generated code is ignored.
 | `KEV002` | Warning | known multi-attempt hedging pipeline is passed to synchronous `Execute` |
 | `KEV003` | Warning | inner fallback makes retry, hedging, or circuit breaker unreachable |
 | `KEV004` | Warning | stateful shield or partition provider is constructed for one execution |
-| `KEV005` | Warning | `FallbackAction` is executed with a result-returning delegate |
+| `KEV005` | Warning | void fallback is executed with a result-returning delegate |
 | `KEV006` | Warning | hedging is added to an untyped shield, whose action must be idempotent |
 | `KEV007` | Warning | handling clause never reaches a reactive strategy |
 | `KEV008` | Warning | fluent chaining result is discarded as a statement |
@@ -114,16 +114,15 @@ generated code, and assemblies ending in `.Test` or `.Tests` remain clean. Custo
 instances are not assumed to be stateful because that cannot be proven from their public contract.
 Test methods marked with standard TUnit, xUnit, NUnit, or MSTest attributes are also ignored.
 
-## KEV005: FallbackAction with a result
+## KEV005: void fallback with a result
 
-`FallbackAction` on non-generic `Shield` can recover void executions only — the name says so, and
-this rule catches the call sites where the name was not enough. If that shield executes a
+A fallback on non-generic `Shield` can recover void executions only. If that shield executes a
 result-returning delegate, the fallback cannot produce the required value and fails at runtime when
 it handles an outcome:
 
 ```csharp
 var voidShield = Shield.Retry(3)
-    .FallbackAction(static _ => ValueTask.CompletedTask);
+    .Fallback(static _ => ValueTask.CompletedTask);
 
 var value = await voidShield.ExecuteAsync(static _ => new ValueTask<int>(42)); // KEV005
 ```

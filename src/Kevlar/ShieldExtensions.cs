@@ -259,7 +259,7 @@ public static class ShieldExtensions
     /// exception. Applies to void executions only; result-returning executions fail with a
     /// descriptive <see cref="InvalidOperationException"/> — use <c>Shield.For&lt;T&gt;().Fallback(…)</c> for those.
     /// </summary>
-    public static Shield FallbackAction(this Shield shield, Func<Exception, CancellationToken, ValueTask> fallback)
+    public static Shield Fallback(this Shield shield, Func<Exception, CancellationToken, ValueTask> fallback)
     {
         Throw.IfNull(shield, nameof(shield));
         Throw.IfNull(fallback, nameof(fallback));
@@ -271,7 +271,7 @@ public static class ShieldExtensions
     /// Applies to void executions only.
     /// </summary>
     /// <remarks>Runs <see cref="FallbackOptions.OnFallback"/>, then <see cref="FallbackOptions.OnFallbackAsync"/>, before recovery. A notification failure skips recovery.</remarks>
-    public static Shield FallbackAction(
+    public static Shield Fallback(
         this Shield shield,
         Func<Exception, CancellationToken, ValueTask> fallback,
         Action<FallbackOptions> configure)
@@ -295,10 +295,10 @@ public static class ShieldExtensions
     /// only; result-returning executions fail with a descriptive
     /// <see cref="InvalidOperationException"/> — use <c>Shield.For&lt;T&gt;().Fallback(…)</c> for those.
     /// </summary>
-    public static Shield FallbackAction(this Shield shield, Func<CancellationToken, ValueTask> fallback)
+    public static Shield Fallback(this Shield shield, Func<CancellationToken, ValueTask> fallback)
     {
         Throw.IfNull(fallback, nameof(fallback));
-        return shield.FallbackAction((_, token) => fallback(token));
+        return shield.Fallback((_, token) => fallback(token));
     }
 
     /// <summary>
@@ -306,14 +306,14 @@ public static class ShieldExtensions
     /// Applies to void executions only.
     /// </summary>
     /// <remarks>Runs <see cref="FallbackOptions.OnFallback"/>, then <see cref="FallbackOptions.OnFallbackAsync"/>, before recovery. A notification failure skips recovery.</remarks>
-    public static Shield FallbackAction(
+    public static Shield Fallback(
         this Shield shield,
         Func<CancellationToken, ValueTask> fallback,
         Action<FallbackOptions> configure)
     {
         Throw.IfNull(fallback, nameof(fallback));
         Throw.IfNull(configure, nameof(configure));
-        return shield.FallbackAction((_, token) => fallback(token), configure);
+        return shield.Fallback((_, token) => fallback(token), configure);
     }
 
     /// <summary>Returns a copy of this shield with a diagnostic name (surfaced as <see cref="KevlarContext.ShieldName"/>).</summary>

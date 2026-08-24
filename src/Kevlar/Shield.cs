@@ -132,18 +132,18 @@ public sealed class Shield
     /// A fallback is legitimately the outermost strategy: it recovers what everything chained
     /// inside it could not.
     /// </remarks>
-    public static Shield FallbackAction(Func<Exception, CancellationToken, ValueTask> fallback) =>
-        ShieldExtensions.FallbackAction(Empty, fallback);
+    public static Shield Fallback(Func<Exception, CancellationToken, ValueTask> fallback) =>
+        ShieldExtensions.Fallback(Empty, fallback);
 
     /// <summary>
     /// Starts a pipeline with a fallback that runs <paramref name="fallback"/> in place of handled
     /// failures and configures notifications. Applies to void executions only.
     /// </summary>
     /// <remarks>Runs <see cref="FallbackOptions.OnFallback"/>, then <see cref="FallbackOptions.OnFallbackAsync"/>, before recovery. A notification failure skips recovery.</remarks>
-    public static Shield FallbackAction(
+    public static Shield Fallback(
         Func<Exception, CancellationToken, ValueTask> fallback,
         Action<FallbackOptions> configure) =>
-        ShieldExtensions.FallbackAction(Empty, fallback, configure);
+        ShieldExtensions.Fallback(Empty, fallback, configure);
 
     /// <summary>
     /// Starts a pipeline with a fallback that runs <paramref name="fallback"/> in place of handled
@@ -151,18 +151,18 @@ public sealed class Shield
     /// descriptive <see cref="InvalidOperationException"/> — use <c>Shield.For&lt;T&gt;().Fallback(…)</c>
     /// for those.
     /// </summary>
-    public static Shield FallbackAction(Func<CancellationToken, ValueTask> fallback) =>
-        ShieldExtensions.FallbackAction(Empty, fallback);
+    public static Shield Fallback(Func<CancellationToken, ValueTask> fallback) =>
+        ShieldExtensions.Fallback(Empty, fallback);
 
     /// <summary>
     /// Starts a pipeline with a fallback that runs <paramref name="fallback"/> in place of handled
     /// failures and configures notifications. Applies to void executions only.
     /// </summary>
     /// <remarks>Runs <see cref="FallbackOptions.OnFallback"/>, then <see cref="FallbackOptions.OnFallbackAsync"/>, before recovery. A notification failure skips recovery.</remarks>
-    public static Shield FallbackAction(
+    public static Shield Fallback(
         Func<CancellationToken, ValueTask> fallback,
         Action<FallbackOptions> configure) =>
-        ShieldExtensions.FallbackAction(Empty, fallback, configure);
+        ShieldExtensions.Fallback(Empty, fallback, configure);
 
     /// <summary>Starts a pipeline with a custom <see cref="Strategy"/> implementation.</summary>
     public static Shield Use(Strategy strategy) => ShieldExtensions.Use(Empty, strategy);

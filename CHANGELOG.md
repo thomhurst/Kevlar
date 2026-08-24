@@ -34,20 +34,6 @@ build spelled these `WhenResultDefault`/`OrResultDefault`; the `Is` makes the re
   so the strategy method and its options type share a stem, like `Retry`/`RetryOptions` and
   `Timeout`/`TimeoutOptions`. `Kevlar.Extensions.Http`'s `StandardHedgingShieldOptions` and
   `AddStandardHedgingShield` are unchanged.
-- The untyped fallback is now `FallbackAction`, with the same signatures on the static
-  `Shield.FallbackAction(…)` factories, the `ShieldExtensions.FallbackAction(this Shield, …)`
-  extensions and `ShieldBuilder.FallbackAction(…)`. It applies to void executions only and fails a
-  result-returning execution with `InvalidOperationException`, so the name now carries that contract
-  to callers `KEV005` cannot see — a shield handed across an assembly boundary, for instance.
-  `Shield<TResult>.Fallback(…)` and `ShieldBuilder<TResult>.Fallback(…)` are unchanged, and the
-  strategy still describes as `Fallback` in pipeline descriptions.
-
-| Before | After |
-|---|---|
-| `Shield.Fallback(action)` | `Shield.FallbackAction(action)` |
-| `shield.Fallback(action)` | `shield.FallbackAction(action)` |
-| `Shield.When<T>().Fallback(action)` | `Shield.When<T>().FallbackAction(action)` |
-
 ### Changed
 
 - **Breaking:** `Shield.Wrap(...)` and `Shield.Compose(...)` now seal ambient handling clauses. Reactive strategies appended after composition use default handling unless a new clause is declared. Existing strategies inside composed shields keep their original handling.

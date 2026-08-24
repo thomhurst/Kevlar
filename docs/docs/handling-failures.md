@@ -101,7 +101,7 @@ Shield
     .Retry(3)                            //   ← uses clause #1
     .CircuitBreaker(consecutiveFailures: 5, breakDuration: breakDuration)    //   ← also clause #1
     .When<TimeoutExceededException>()  // clause #2 replaces #1 from here on
-    .FallbackAction(...);                //   ← uses clause #2
+    .Fallback(...);                      //   ← uses clause #2
 ```
 
 This is why most chains only need one clause, written once at the top — and why you never repeat a `ShouldHandle` predicate per strategy like in Polly v8.

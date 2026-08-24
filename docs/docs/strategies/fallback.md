@@ -14,31 +14,29 @@ var shield = Shield.For<Config>()
     .Fallback(Config.Default);
 ```
 
-Void executions get their own fallback on the plain `Shield`, named `FallbackAction` because that is
-all it can do — run an alternative action instead of producing a value:
+Void executions get their own fallback on the plain `Shield` — run an alternative action instead of producing a value:
 
 ```csharp
 var shield = Shield
     .When<MessagingException>()
-    .FallbackAction((exception, ct) => deadLetter.PublishAsync(exception, ct));
+    .Fallback((exception, ct) => deadLetter.PublishAsync(exception, ct));
 
 await shield.ExecuteAsync(ct => bus.PublishAsync(message, ct));
 ```
 
-`Shield.FallbackAction(…)` is the static factory form, for when the fallback is the outermost strategy —
+`Shield.Fallback(…)` is the static factory form, for when the fallback is the outermost strategy —
 which is the valid position for one, since it recovers what everything inside it could not:
 
 ```csharp
 var shield = Shield
-    .FallbackAction((exception, ct) => deadLetter.PublishAsync(exception, ct))
+    .Fallback((exception, ct) => deadLetter.PublishAsync(exception, ct))
     .Retry(3);
 ```
 
-`FallbackAction` guards void executions only; executing a result-returning delegate through it fails
-with a descriptive error rather than inventing a default value. The name carries that contract for
-callers the analyzer cannot see — a shield handed across an assembly boundary, say — and the optional
-analyzer reports the mistake as [`KEV005`](../analyzers.md#kev005-fallbackaction-with-a-result) when
-the pipeline is visible in the same expression or a stable local.
+A void fallback guards void executions only; executing a result-returning delegate through it fails
+with a descriptive error rather than inventing a default value. The optional analyzer reports this
+mistake as [`KEV005`](../analyzers.md#kev005-void-fallback-with-a-result) when the pipeline is visible
+in the same expression or a stable local.
 
 ## Three shapes
 

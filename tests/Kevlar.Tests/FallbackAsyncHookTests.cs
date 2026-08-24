@@ -202,7 +202,7 @@ public class FallbackAsyncHookTests
         var order = new List<string>();
         Exception? syncException = null;
         Exception? asyncException = null;
-        var shield = Shield.Empty.FallbackAction(
+        var shield = Shield.Empty.Fallback(
             (exception, _) =>
             {
                 order.Add("fallback");
@@ -237,7 +237,7 @@ public class FallbackAsyncHookTests
         var fallbackCalls = 0;
         var shield = Shield
             .When<InvalidOperationException>()
-            .FallbackAction(
+            .Fallback(
                 (_, _) =>
                 {
                     fallbackCalls++;
@@ -264,7 +264,7 @@ public class FallbackAsyncHookTests
     {
         var notificationCalls = 0;
         var fallbackCalls = 0;
-        var shield = Shield.Empty.FallbackAction(
+        var shield = Shield.Empty.Fallback(
             _ =>
             {
                 fallbackCalls++;

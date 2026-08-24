@@ -129,15 +129,15 @@ public sealed class ShieldBuilder
     /// Runs <paramref name="fallback"/> in place of handled failures. Applies to void executions
     /// only; result-returning executions need <c>Shield.For&lt;T&gt;().Fallback(…)</c>.
     /// </summary>
-    public Shield FallbackAction(Func<Exception, CancellationToken, ValueTask> fallback) => Seal().FallbackAction(fallback);
+    public Shield Fallback(Func<Exception, CancellationToken, ValueTask> fallback) => Seal().Fallback(fallback);
 
     /// <summary>
     /// Runs <paramref name="fallback"/> in place of handled failures and configures notifications.
     /// Applies to void executions only.
     /// </summary>
-    public Shield FallbackAction(
+    public Shield Fallback(
         Func<Exception, CancellationToken, ValueTask> fallback,
-        Action<FallbackOptions> configure) => Seal().FallbackAction(fallback, configure);
+        Action<FallbackOptions> configure) => Seal().Fallback(fallback, configure);
 
     /// <summary>Cancels executions that exceed <paramref name="timeout"/>. The handling clauses remain ambient for later strategies.</summary>
     public Shield Timeout(TimeSpan timeout) => Seal().Timeout(timeout);
