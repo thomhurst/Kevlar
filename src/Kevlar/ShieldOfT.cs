@@ -32,6 +32,13 @@ public sealed class Shield<TResult>
     /// <summary>A shield with no strategies: executions pass straight through.</summary>
     public static Shield<TResult> Empty { get; } = new([], null, null, null);
 
+    /// <summary>
+    /// Gets whether every strategy guarantees invoking the execution continuation at most once.
+    /// Custom strategies may opt in through <see cref="Strategy.InvokesContinuationAtMostOnce"/>.
+    /// </summary>
+    public bool InvokesContinuationAtMostOnce =>
+        Strategies.All(static strategy => strategy.InvokesContinuationAtMostOnce);
+
     internal OutcomeJudge JudgeOrDefault => Ambient ?? OutcomeJudge.Default;
 
     internal TimeProvider TimeOrSystem => Time ?? TimeProvider.System;

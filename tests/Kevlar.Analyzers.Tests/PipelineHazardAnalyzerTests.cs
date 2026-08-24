@@ -9,6 +9,23 @@ namespace Kevlar.Analyzers.Tests;
 public class PipelineHazardAnalyzerTests
 {
     [Test]
+    public async Task Custom_Strategy_Can_Declare_Single_Invocation_Without_Diagnostics()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class SingleInvocationStrategy : Strategy
+            {
+                protected override bool InvokesContinuationAtMostOnce => true;
+
+                public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+                    Continuation<T, TState> next,
+                    KevlarContext context) => next.InvokeAsync(context);
+            }
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
     public async Task Typed_Fallback_Keeps_Only_The_Bare_And_Configure_Tiers()
     {
         var supported = CreateCompilation(CreateSource("""

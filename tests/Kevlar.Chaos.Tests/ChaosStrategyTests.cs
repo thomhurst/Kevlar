@@ -7,6 +7,15 @@ namespace Kevlar.Chaos.Tests;
 public class ChaosStrategyTests
 {
     [Test]
+    public async Task Chaos_Strategies_Report_At_Most_One_Continuation_Invocation()
+    {
+        await Assert.That(ChaosShield.Fault(_ => { }).InvokesContinuationAtMostOnce).IsTrue();
+        await Assert.That(ChaosShield.Latency(_ => { }).InvokesContinuationAtMostOnce).IsTrue();
+        await Assert.That(ChaosShield.Behavior(_ => { }).InvokesContinuationAtMostOnce).IsTrue();
+        await Assert.That(ChaosShield.Outcome<int>(_ => { }).InvokesContinuationAtMostOnce).IsTrue();
+    }
+
+    [Test]
     public async Task Chaos_Is_Disabled_By_Default_For_Every_Injection_Type()
     {
         var behaviorCalls = 0;

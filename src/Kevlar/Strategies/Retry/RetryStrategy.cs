@@ -89,7 +89,7 @@ internal sealed class RetryStrategy : Strategy
 
     internal bool HasNotification => _onRetry is not null || _onRetryAsync is not null;
 
-    internal override bool InvokesContinuationAtMostOnce => _maxRetries == 0;
+    protected internal override bool InvokesContinuationAtMostOnce => _maxRetries == 0;
 
     public override string Describe()
     {

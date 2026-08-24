@@ -13,7 +13,7 @@ namespace Kevlar.Strategies;
 /// </summary>
 internal sealed class RateLimitStrategy : Strategy
 {
-    internal override bool InvokesContinuationAtMostOnce => true;
+    protected internal override bool InvokesContinuationAtMostOnce => true;
 
     private static readonly double SecondsPerSystemTimestamp = 1d / Stopwatch.Frequency;
 

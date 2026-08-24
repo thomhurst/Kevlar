@@ -33,6 +33,8 @@ Override `Describe()` so `shield.ToString()` names your strategy meaningfully in
 <!-- doc-test-strategy-member -->
 ```csharp
 public override string Describe() => "Logging";
+
+protected override bool InvokesContinuationAtMostOnce => true;
 ```
 
 ## The contract
@@ -57,6 +59,11 @@ The power is in how many times you call `next`:
 | zero | short-circuit | circuit breaker (open), rate limit, concurrency limit rejection |
 | one | decorator | timeout, fallback, logging, metrics |
 | many | repeater | retry, hedging |
+
+Override `InvokesContinuationAtMostOnce` with `true` only when every execution path calls `next`
+zero or one time. This lets consumers such as the gRPC interceptors safely expose response headers
+before the response completes. Keep the conservative `false` default for retry, hedging, loops, or
+any strategy that may call `next` more than once.
 
 ## Failures are outcomes, not throws
 

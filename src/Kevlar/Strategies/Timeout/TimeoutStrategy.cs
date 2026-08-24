@@ -10,7 +10,7 @@ namespace Kevlar.Strategies;
 /// </summary>
 internal sealed class TimeoutStrategy : Strategy
 {
-    internal override bool InvokesContinuationAtMostOnce => true;
+    protected internal override bool InvokesContinuationAtMostOnce => true;
 
     private readonly TimeSpan _timeout;
     private readonly Func<KevlarContext, ValueTask<TimeSpan>>? _timeoutGenerator;

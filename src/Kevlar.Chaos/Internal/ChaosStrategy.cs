@@ -17,6 +17,8 @@ internal abstract class ChaosStrategy : Strategy
     private readonly Action<ChaosEvent>? _onInjected;
     private long _randomState;
 
+    protected override bool InvokesContinuationAtMostOnce => true;
+
     protected ChaosStrategy(ChaosOptions options)
     {
         if (options is null)
