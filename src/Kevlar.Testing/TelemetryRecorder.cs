@@ -74,13 +74,13 @@ public sealed class TelemetryRecorder : IDisposable
 
     /// <summary>Records an untyped retry callback.</summary>
     public void Record(RetryEvent item) => AddCallback(new CallbackRecord(
-        0, CallbackKind.Retry, item.Context.ShieldName, item.Attempt,
-        item.Delay, exception: item.Exception, result: item.Result));
+        0, CallbackKind.Retry, item.Context.ShieldName, retryNumber: item.RetryNumber,
+        delay: item.Delay, exception: item.Exception, result: item.Result));
 
     /// <summary>Records a typed retry callback.</summary>
     public void Record<TResult>(RetryEvent<TResult> item) => AddCallback(new CallbackRecord(
-        0, CallbackKind.Retry, item.Context.ShieldName, item.Attempt,
-        item.Delay, exception: item.Outcome.Exception, result: item.Outcome.Result));
+        0, CallbackKind.Retry, item.Context.ShieldName, retryNumber: item.RetryNumber,
+        delay: item.Delay, exception: item.Outcome.Exception, result: item.Outcome.Result));
 
     /// <summary>Records a timeout callback.</summary>
     public void Record(TimeoutEvent item) => AddCallback(new CallbackRecord(
@@ -88,7 +88,7 @@ public sealed class TelemetryRecorder : IDisposable
 
     /// <summary>Records a hedge callback.</summary>
     public void Record(HedgeEvent item) => AddCallback(new CallbackRecord(
-        0, CallbackKind.Hedge, item.Context.ShieldName, item.Attempt));
+        0, CallbackKind.Hedge, item.Context.ShieldName, attemptNumber: item.AttemptNumber));
 
     /// <summary>Records an untyped fallback callback.</summary>
     public void Record(FallbackEvent item) => AddCallback(new CallbackRecord(

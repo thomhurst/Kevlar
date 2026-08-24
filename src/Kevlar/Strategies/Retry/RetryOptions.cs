@@ -144,9 +144,9 @@ public sealed class RetryOptions<TResult>
 /// <summary>Describes a retry that is about to happen.</summary>
 public readonly struct RetryEvent
 {
-    internal RetryEvent(int attempt, TimeSpan delay, Exception? exception, object? result, KevlarContext context)
+    internal RetryEvent(int retryNumber, TimeSpan delay, Exception? exception, object? result, KevlarContext context)
     {
-        Attempt = attempt;
+        RetryNumber = retryNumber;
         Delay = delay;
         Exception = exception;
         Result = result;
@@ -154,7 +154,7 @@ public readonly struct RetryEvent
     }
 
     /// <summary>The 1-based number of the retry about to be made (1 = first retry, i.e. second execution).</summary>
-    public int Attempt { get; }
+    public int RetryNumber { get; }
 
     /// <summary>The delay that will be waited before the retry.</summary>
     public TimeSpan Delay { get; }
@@ -191,7 +191,7 @@ public readonly struct RetryEvent<TResult>
     internal RetryEvent(RetryEvent inner) => _inner = inner;
 
     /// <summary>The 1-based number of the retry about to be made (1 = first retry, i.e. second execution).</summary>
-    public int Attempt => _inner.Attempt;
+    public int RetryNumber => _inner.RetryNumber;
 
     /// <summary>The delay that will be waited before the retry.</summary>
     public TimeSpan Delay => _inner.Delay;

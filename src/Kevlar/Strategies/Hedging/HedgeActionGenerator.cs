@@ -66,7 +66,7 @@ public sealed class HedgeActionGenerator
         {
             var original = new VoidOriginalActionAdapter(hedgeEvent.OriginalAction);
             var action = generator(new HedgeActionGeneratorEvent(
-                hedgeEvent.Attempt,
+                hedgeEvent.AttemptNumber,
                 hedgeEvent.Context,
                 original.Invoke));
             return action is null ? null : new VoidActionAdapter(action).Invoke;

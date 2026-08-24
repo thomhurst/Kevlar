@@ -57,14 +57,14 @@ public sealed class HedgeOptions
 /// <summary>Describes a hedged attempt being launched.</summary>
 public readonly struct HedgeEvent
 {
-    internal HedgeEvent(int attempt, KevlarContext context)
+    internal HedgeEvent(int attemptNumber, KevlarContext context)
     {
-        Attempt = attempt;
+        AttemptNumber = attemptNumber;
         Context = context;
     }
 
     /// <summary>The 1-based number of the attempt being launched (2 = first hedge).</summary>
-    public int Attempt { get; }
+    public int AttemptNumber { get; }
 
     /// <summary>
     /// The ambient execution context. It is pooled; do not retain it after synchronous and

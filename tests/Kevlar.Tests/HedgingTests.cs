@@ -88,7 +88,7 @@ public class HedgingTests
             {
                 options.MaxAttempts = 2;
                 options.Delay = TimeSpan.FromSeconds(1);
-                options.OnHedge = hedge => hedges.Add(hedge.Attempt);
+                options.OnHedge = hedge => hedges.Add(hedge.AttemptNumber);
             })
             .WithTimeProvider(fakeTime);
 

@@ -3,14 +3,14 @@ namespace Kevlar.Tests;
 public class HedgingEdgeCaseTests
 {
     [Test]
-    public async Task OnHedge_Fires_For_Each_Extra_Attempt()
+    public async Task Hedge_Event_Numbers_Are_One_Based_Execution_Counts()
     {
         var hedges = new List<int>();
         var shield = Shield.Hedge(options =>
         {
             options.MaxAttempts = 3;
             options.Delay = System.Threading.Timeout.InfiniteTimeSpan;
-            options.OnHedge = hedge => hedges.Add(hedge.Attempt);
+            options.OnHedge = hedge => hedges.Add(hedge.AttemptNumber);
         });
 
         await Assert.That(async () => await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()))

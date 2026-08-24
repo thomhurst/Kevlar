@@ -138,12 +138,12 @@ static Kevlar.ShieldExtensions.Fallback(this Kevlar.Shield! shield, System.Func<
 Kevlar.HedgeActionGenerator
 Kevlar.HedgeActionGeneratorEvent
 Kevlar.HedgeActionGeneratorEvent.HedgeActionGeneratorEvent() -> void
-Kevlar.HedgeActionGeneratorEvent.Attempt.get -> int
+Kevlar.HedgeActionGeneratorEvent.AttemptNumber.get -> int
 Kevlar.HedgeActionGeneratorEvent.Context.get -> Kevlar.KevlarContext!
 Kevlar.HedgeActionGeneratorEvent.OriginalAction.get -> System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>!
 Kevlar.HedgeActionGeneratorEvent<TResult>
 Kevlar.HedgeActionGeneratorEvent<TResult>.HedgeActionGeneratorEvent() -> void
-Kevlar.HedgeActionGeneratorEvent<TResult>.Attempt.get -> int
+Kevlar.HedgeActionGeneratorEvent<TResult>.AttemptNumber.get -> int
 Kevlar.HedgeActionGeneratorEvent<TResult>.Context.get -> Kevlar.KevlarContext!
 Kevlar.HedgeActionGeneratorEvent<TResult>.OriginalAction.get -> System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>!
 Kevlar.HedgeOptions.ActionGenerator.get -> Kevlar.HedgeActionGenerator?
@@ -424,3 +424,9 @@ Kevlar.ShieldBuilder.ConcurrencyLimit(int maxConcurrency, int queueLimit = 0) ->
 Kevlar.ShieldBuilder<TResult>.ConcurrencyLimit(int maxConcurrency, int queueLimit = 0) -> Kevlar.Shield<TResult>!
 static Kevlar.Shield.ConcurrencyLimit(int maxConcurrency, int queueLimit = 0) -> Kevlar.Shield!
 static Kevlar.ShieldExtensions.ConcurrencyLimit(this Kevlar.Shield! shield, int maxConcurrency, int queueLimit = 0) -> Kevlar.Shield!
+*REMOVED*Kevlar.HedgeEvent.Attempt.get -> int
+*REMOVED*Kevlar.RetryEvent.Attempt.get -> int
+*REMOVED*Kevlar.RetryEvent<TResult>.Attempt.get -> int
+Kevlar.HedgeEvent.AttemptNumber.get -> int
+Kevlar.RetryEvent.RetryNumber.get -> int
+Kevlar.RetryEvent<TResult>.RetryNumber.get -> int
