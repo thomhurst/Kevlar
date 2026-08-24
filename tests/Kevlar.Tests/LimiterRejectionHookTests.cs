@@ -61,7 +61,7 @@ public class LimiterRejectionHookTests
             .ConcurrencyLimit(options =>
             {
                 options.MaxConcurrency = 1;
-                options.MaxQueue = 0;
+                options.QueueLimit = 0;
                 options.OnRejected = rejection =>
                 {
                     observed = rejection;
@@ -90,7 +90,7 @@ public class LimiterRejectionHookTests
 
         await Assert.That(order.SequenceEqual(["sync", "async"])).IsTrue();
         await Assert.That(observed.MaxConcurrency).IsEqualTo(1);
-        await Assert.That(observed.MaxQueue).IsEqualTo(0);
+        await Assert.That(observed.QueueLimit).IsEqualTo(0);
         await Assert.That(observed.StrategyIndex).IsEqualTo(0);
         await Assert.That(observedShieldName).IsEqualTo("bulkhead");
 
@@ -185,7 +185,7 @@ public class LimiterRejectionHookTests
         var shield = Shield.ConcurrencyLimit(options =>
         {
             options.MaxConcurrency = 1;
-            options.MaxQueue = 1;
+            options.QueueLimit = 1;
             options.OnRejected = _ => rejections++;
         });
         using var cancellation = new CancellationTokenSource();

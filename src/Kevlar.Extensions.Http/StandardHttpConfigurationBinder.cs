@@ -24,12 +24,13 @@ internal static class StandardHttpConfigurationBinder
     {
         var options = new StandardHedgingShieldOptions();
 
+        RejectLegacyQueueKey(configuration);
         SetTimeSpan(configuration, nameof(options.TotalTimeout), value => options.TotalTimeout = value);
         SetInt(configuration, nameof(options.MaxAttempts), value => options.MaxAttempts = value);
         SetTimeSpan(configuration, nameof(options.HedgeDelay), value => options.HedgeDelay = value);
         SetTimeSpan(configuration, nameof(options.AttemptTimeout), value => options.AttemptTimeout = value);
         SetInt(configuration, nameof(options.MaxConcurrency), value => options.MaxConcurrency = value);
-        SetInt(configuration, nameof(options.MaxQueue), value => options.MaxQueue = value);
+        SetInt(configuration, nameof(options.QueueLimit), value => options.QueueLimit = value);
         SetNullableInt(configuration, nameof(options.ConsecutiveFailures), value => options.ConsecutiveFailures = value);
         SetNullableDouble(configuration, nameof(options.FailureRatio), value => options.FailureRatio = value);
         if (configuration[nameof(options.ConsecutiveFailures)] is not null
@@ -149,9 +150,10 @@ internal static class StandardHttpConfigurationBinder
             return;
         }
 
+        RejectLegacyQueueKey(section);
         var options = standard.ConcurrencyLimit ?? new ConcurrencyLimitOptions();
         SetInt(section, nameof(options.MaxConcurrency), value => options.MaxConcurrency = value);
-        SetInt(section, nameof(options.MaxQueue), value => options.MaxQueue = value);
+        SetInt(section, nameof(options.QueueLimit), value => options.QueueLimit = value);
         standard.ConcurrencyLimit = options;
     }
 
@@ -206,6 +208,19 @@ internal static class StandardHttpConfigurationBinder
         }
     }
 
+    private static void RejectLegacyQueueKey(IConfiguration configuration)
+    {
+        const string legacyKey = "MaxQueue";
+        if (configuration[legacyKey] is not null)
+        {
+            var path = configuration is IConfigurationSection { Path.Length: > 0 } section
+                ? ConfigurationPath.Combine(section.Path, legacyKey)
+                : legacyKey;
+            throw new InvalidOperationException(
+                $"Configuration key '{path}' is not supported; use 'QueueLimit'.");
+        }
+    }
+
     private static void ValidateStandard(
         IConfiguration configuration,
         StandardHttpShieldOptions options)
@@ -217,7 +232,7 @@ internal static class StandardHttpConfigurationBinder
         if (options.ConcurrencyLimit is { } concurrency)
         {
             Ensure(concurrency.MaxConcurrency > 0, configuration.GetSection("ConcurrencyLimit:MaxConcurrency"), "must be positive");
-            Ensure(concurrency.MaxQueue >= 0, configuration.GetSection("ConcurrencyLimit:MaxQueue"), "must not be negative");
+            Ensure(concurrency.QueueLimit >= 0, configuration.GetSection("ConcurrencyLimit:QueueLimit"), "must not be negative");
         }
 
         Ensure(options.AttemptTimeout.Timeout > TimeSpan.Zero, TimeoutSection(configuration, nameof(options.AttemptTimeout)), "must be positive");
@@ -243,7 +258,7 @@ internal static class StandardHttpConfigurationBinder
             "must be non-negative or Timeout.InfiniteTimeSpan");
         Ensure(options.AttemptTimeout > TimeSpan.Zero, configuration.GetSection(nameof(options.AttemptTimeout)), "must be positive");
         Ensure(options.MaxConcurrency > 0, configuration.GetSection(nameof(options.MaxConcurrency)), "must be positive");
-        Ensure(options.MaxQueue >= 0, configuration.GetSection(nameof(options.MaxQueue)), "must not be negative");
+        Ensure(options.QueueLimit >= 0, configuration.GetSection(nameof(options.QueueLimit)), "must not be negative");
         ValidateCircuitBreaker(configuration, options.ConsecutiveFailures, options.FailureRatio, options.MinimumThroughput, options.SamplingWindow, options.BreakDuration);
         Ensure(options.MaximumBufferSize > 0, configuration.GetSection(nameof(options.MaximumBufferSize)), "must be positive");
         Ensure(

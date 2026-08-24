@@ -26,13 +26,13 @@ public class BulkheadTests
             .Throws<ArgumentOutOfRangeException>()
             .WithMessage("MaxConcurrency must be positive. (Parameter 'options')");
 
-        await Assert.That(() => Shield.ConcurrencyLimit(maxConcurrency: 1, maxQueue: -1))
+        await Assert.That(() => Shield.ConcurrencyLimit(maxConcurrency: 1, queueLimit: -1))
             .Throws<ArgumentOutOfRangeException>()
-            .WithMessage("MaxQueue must not be negative. (Parameter 'options')");
+            .WithMessage("QueueLimit must not be negative. (Parameter 'options')");
     }
 
     [Test]
-    public async Task Rejects_When_Concurrency_And_Queue_Are_Full()
+    public async Task ConcurrencyLimit_Zero_QueueLimit_Rejects_Immediately()
     {
         var shield = Shield.ConcurrencyLimit(maxConcurrency: 1);
         var gate = new TaskCompletionSource();
@@ -58,9 +58,9 @@ public class BulkheadTests
     }
 
     [Test]
-    public async Task Queued_Executions_Run_When_A_Slot_Frees()
+    public async Task ConcurrencyLimit_QueueLimit_Admits_Exactly_N_Waiters()
     {
-        var shield = Shield.ConcurrencyLimit(maxConcurrency: 1, maxQueue: 1);
+        var shield = Shield.ConcurrencyLimit(maxConcurrency: 1, queueLimit: 1);
         var gate = new TaskCompletionSource();
         var started = new TaskCompletionSource();
 

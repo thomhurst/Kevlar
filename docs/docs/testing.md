@@ -84,7 +84,7 @@ Stateless strategies are omitted.
 
 <!-- doc-test-ignore: The executable documentation harness owns Main; this TUnit example is compiled by Kevlar.Testing.Tests. -->
 ```csharp
-var shield = Shield.ConcurrencyLimit(1, maxQueue: 1);
+var shield = Shield.ConcurrencyLimit(1, queueLimit: 1);
 var probe = new ExecutionProbe();
 
 await shield.ExecuteAsync(probe.Wrap(static _ => ValueTask.CompletedTask));

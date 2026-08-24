@@ -299,14 +299,15 @@ public static class KevlarServiceCollectionExtensions
         var concurrency = configuration.GetSection(nameof(ShieldDefinition.ConcurrencyLimit));
         if (HasChildren(concurrency))
         {
+            RejectLegacyQueueKey(concurrency);
             var concurrencyDefinition = new ConcurrencyLimitDefinition();
             if (ReadInt(concurrency, nameof(ConcurrencyLimitDefinition.MaxConcurrency)) is { } maxConcurrency)
             {
                 concurrencyDefinition.MaxConcurrency = maxConcurrency;
             }
-            if (ReadInt(concurrency, nameof(ConcurrencyLimitDefinition.MaxQueue)) is { } maxQueue)
+            if (ReadInt(concurrency, nameof(ConcurrencyLimitDefinition.QueueLimit)) is { } queueLimit)
             {
-                concurrencyDefinition.MaxQueue = maxQueue;
+                concurrencyDefinition.QueueLimit = queueLimit;
             }
 
             definition.ConcurrencyLimit = concurrencyDefinition;
@@ -316,6 +317,16 @@ public static class KevlarServiceCollectionExtensions
     }
 
     private static bool HasChildren(IConfigurationSection section) => section.GetChildren().Any();
+
+    private static void RejectLegacyQueueKey(IConfigurationSection section)
+    {
+        const string legacyKey = "MaxQueue";
+        if (section[legacyKey] is not null)
+        {
+            throw new InvalidOperationException(
+                $"Configuration key '{ConfigurationPath.Combine(section.Path, legacyKey)}' is not supported; use 'QueueLimit'.");
+        }
+    }
 
     private static string? Read(IConfiguration configuration, string key) =>
         configuration[key];

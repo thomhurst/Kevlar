@@ -642,7 +642,7 @@ public class HttpReplayTests
             options.Endpoints.Add(new HttpEndpoint(new Uri("https://second.example")));
             options.HedgeDelay = Timeout.InfiniteTimeSpan;
             options.MaxConcurrency = 1;
-            options.MaxQueue = 0;
+            options.QueueLimit = 0;
             options.TotalTimeout = TimeSpan.FromMinutes(1);
             options.AttemptTimeout = TimeSpan.FromMinutes(1);
         });

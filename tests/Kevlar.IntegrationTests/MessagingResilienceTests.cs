@@ -110,7 +110,7 @@ public class MessagingResilienceTests
         var maxObserved = 0;
         var handled = 0;
 
-        var consumer = Shield.ConcurrencyLimit(maxConcurrency: 4, maxQueue: 16);
+        var consumer = Shield.ConcurrencyLimit(maxConcurrency: 4, queueLimit: 16);
 
         var workers = new List<Task>();
         while (broker.TryConsume(out _))

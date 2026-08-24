@@ -76,7 +76,7 @@ public class HttpConfigurationReloadTests
             ("CircuitBreaker:SamplingWindow", "00:00:08"),
             ("CircuitBreaker:BreakDuration", "00:00:04"),
             ("ConcurrencyLimit:MaxConcurrency", "3"),
-            ("ConcurrencyLimit:MaxQueue", "4"),
+            ("ConcurrencyLimit:QueueLimit", "4"),
             ("AttemptTimeout", "00:00:02"),
             ("Handler:ContentReplayPolicy", "Buffer"),
             ("Handler:MaximumBufferSize", "4096"),
@@ -109,7 +109,7 @@ public class HttpConfigurationReloadTests
         await Assert.That(bound.CircuitBreaker.SamplingWindow).IsEqualTo(TimeSpan.FromSeconds(8));
         await Assert.That(bound.CircuitBreaker.BreakDuration).IsEqualTo(TimeSpan.FromSeconds(4));
         await Assert.That(bound.ConcurrencyLimit!.MaxConcurrency).IsEqualTo(3);
-        await Assert.That(bound.ConcurrencyLimit.MaxQueue).IsEqualTo(4);
+        await Assert.That(bound.ConcurrencyLimit.QueueLimit).IsEqualTo(4);
         await Assert.That(bound.AttemptTimeout.Timeout).IsEqualTo(TimeSpan.FromSeconds(2));
         await Assert.That(bound.Handler.ContentReplayPolicy).IsEqualTo(HttpContentReplayPolicy.Buffer);
         await Assert.That(bound.Handler.MaximumBufferSize).IsEqualTo(4096);
@@ -155,7 +155,7 @@ public class HttpConfigurationReloadTests
             ("HedgeDelay", "00:00:00.250"),
             ("AttemptTimeout", "00:00:02"),
             ("MaxConcurrency", "4"),
-            ("MaxQueue", "5"),
+            ("QueueLimit", "5"),
             ("ConsecutiveFailures", "2"),
             ("FailureRatio", ""),
             ("MinimumThroughput", "6"),
@@ -181,7 +181,7 @@ public class HttpConfigurationReloadTests
         await Assert.That(bound.HedgeDelay).IsEqualTo(TimeSpan.FromMilliseconds(250));
         await Assert.That(bound.AttemptTimeout).IsEqualTo(TimeSpan.FromSeconds(2));
         await Assert.That(bound.MaxConcurrency).IsEqualTo(4);
-        await Assert.That(bound.MaxQueue).IsEqualTo(5);
+        await Assert.That(bound.QueueLimit).IsEqualTo(5);
         await Assert.That(bound.ConsecutiveFailures).IsEqualTo(2);
         await Assert.That(bound.FailureRatio).IsNull();
         await Assert.That(bound.MinimumThroughput).IsEqualTo(6);
@@ -232,7 +232,7 @@ public class HttpConfigurationReloadTests
     [Arguments("CircuitBreaker:SamplingWindow", "00:00:00", "must be positive")]
     [Arguments("CircuitBreaker:BreakDuration", "00:00:00", "must be positive")]
     [Arguments("ConcurrencyLimit:MaxConcurrency", "0", "must be positive")]
-    [Arguments("ConcurrencyLimit:MaxQueue", "-1", "must not be negative")]
+    [Arguments("ConcurrencyLimit:QueueLimit", "-1", "must not be negative")]
     [Arguments("AttemptTimeout", "00:00:00", "must be positive")]
     [Arguments("Handler:MaximumBufferSize", "0", "must be positive")]
     [Arguments("Handler:Routing:Endpoints:0:Weight", "0", "must be positive")]
@@ -280,6 +280,25 @@ public class HttpConfigurationReloadTests
             .Throws<InvalidOperationException>()
             .WithMessage(
                 "Configuration value 'many' for 'Clients:GitHub:Retry:MaxRetries' is not an integer.");
+    }
+
+    [Test]
+    public async Task Legacy_MaxQueue_Keys_Are_Rejected_With_Their_Full_Path()
+    {
+        var builder = new ServiceCollection().AddHttpClient("legacy");
+        var standard = BuildConfiguration(("Clients:GitHub:ConcurrencyLimit:MaxQueue", "5"))
+            .GetSection("Clients:GitHub");
+        var hedging = BuildConfiguration(("Clients:GitHub:MaxQueue", "5"))
+            .GetSection("Clients:GitHub");
+
+        await Assert.That(() => builder.AddStandardShield(standard))
+            .Throws<InvalidOperationException>()
+            .WithMessage(
+                "Configuration key 'Clients:GitHub:ConcurrencyLimit:MaxQueue' is not supported; use 'QueueLimit'.");
+        await Assert.That(() => builder.AddStandardHedgingShield(hedging))
+            .Throws<InvalidOperationException>()
+            .WithMessage(
+                "Configuration key 'Clients:GitHub:MaxQueue' is not supported; use 'QueueLimit'.");
     }
 
     [Test]

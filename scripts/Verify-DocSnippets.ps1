@@ -347,7 +347,7 @@ if ($observableSnippetIndex -lt 0 `
 [void]$builder.AppendLine('            Console.SetOut(original);')
 [void]$builder.AppendLine('        }')
 [void]$builder.AppendLine('        var actual = output.ToString().Trim();')
-[void]$builder.AppendLine('        const string expected = "github: Timeout(30s) → Retry(3, exponential 250ms ×2 +jitter ≤30s) → CircuitBreaker(5 consecutive, break 30s)";')
+[void]$builder.AppendLine('        const string expected = "github: Timeout(30s) → Retry(3, exponential 250ms ×2 +jitter ≤30s) → CircuitBreaker(5 consecutive, break 30s) → ConcurrencyLimit(10, queue 5)";')
 [void]$builder.AppendLine('        if (!string.Equals(actual, expected, StringComparison.Ordinal))')
 [void]$builder.AppendLine('        {')
 [void]$builder.AppendLine('            throw new InvalidOperationException($"Documented pipeline output changed. Expected: {expected}; actual: {actual}");')

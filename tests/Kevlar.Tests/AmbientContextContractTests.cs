@@ -120,7 +120,7 @@ public class AmbientContextContractTests
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var runningStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var observations = new List<Observation>();
-        var shield = Shield.ConcurrencyLimit(maxConcurrency: 1, maxQueue: 1);
+        var shield = Shield.ConcurrencyLimit(maxConcurrency: 1, queueLimit: 1);
 
         var running = shield.ExecuteAsync(async _ =>
         {

@@ -111,10 +111,10 @@ public static class ShieldExtensions
     }
 
     /// <summary>Appends a concurrency limit capping concurrency at <paramref name="maxConcurrency"/> with an optional wait queue.</summary>
-    public static Shield ConcurrencyLimit(this Shield shield, int maxConcurrency, int maxQueue = 0) => shield.ConcurrencyLimit(options =>
+    public static Shield ConcurrencyLimit(this Shield shield, int maxConcurrency, int queueLimit = 0) => shield.ConcurrencyLimit(options =>
     {
         options.MaxConcurrency = maxConcurrency;
-        options.MaxQueue = maxQueue;
+        options.QueueLimit = queueLimit;
     });
 
     /// <summary>Appends a concurrency limit strategy configured via <paramref name="configure"/>.</summary>

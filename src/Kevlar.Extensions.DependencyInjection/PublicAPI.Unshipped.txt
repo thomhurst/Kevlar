@@ -15,3 +15,7 @@ Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryGetVoidShield(string! n
 static Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedVoidShield<TKey>(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! name, System.Func<System.IServiceProvider!, TKey, Kevlar.VoidShield!>! factory, System.Action<Kevlar.PartitionedShieldOptions!>? configure = null, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! name, Kevlar.VoidShield! shield) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddVoidShield(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! name, System.Func<System.IServiceProvider!, Kevlar.VoidShield!>! factory) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+*REMOVED*Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxQueue.get -> int
+*REMOVED*Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxQueue.set -> void
+Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.QueueLimit.get -> int
+Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.QueueLimit.set -> void

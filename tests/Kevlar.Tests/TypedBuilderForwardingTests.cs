@@ -65,7 +65,7 @@ public class TypedBuilderForwardingTests
             {
                 concurrencyConfigured = true;
                 options.MaxConcurrency = 2;
-                options.MaxQueue = 3;
+                options.QueueLimit = 3;
             }), typeof(ConcurrencyLimitStrategy)),
         };
 

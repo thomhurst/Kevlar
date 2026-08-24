@@ -89,8 +89,8 @@ public sealed class VoidShield
     public VoidShield RateLimit(Action<RateLimitOptions> configure) => new(_pipeline.RateLimit(configure));
 
     /// <summary>Adds a concurrency limit.</summary>
-    public VoidShield ConcurrencyLimit(int maxConcurrency, int maxQueue = 0) =>
-        new(_pipeline.ConcurrencyLimit(maxConcurrency, maxQueue));
+    public VoidShield ConcurrencyLimit(int maxConcurrency, int queueLimit = 0) =>
+        new(_pipeline.ConcurrencyLimit(maxConcurrency, queueLimit));
 
     /// <summary>Adds a configured concurrency limit.</summary>
     public VoidShield ConcurrencyLimit(Action<ConcurrencyLimitOptions> configure) =>

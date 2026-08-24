@@ -402,7 +402,7 @@ public static class ShieldHttpClientBuilderExtensions
         StandardHedgingShieldOptions options)
     {
         var maxConcurrency = options.MaxConcurrency;
-        var maxQueue = options.MaxQueue;
+        var queueLimit = options.QueueLimit;
         var consecutiveFailures = options.ConsecutiveFailures;
         var failureRatio = options.FailureRatio;
         var minimumThroughput = options.MinimumThroughput;
@@ -412,7 +412,7 @@ public static class ShieldHttpClientBuilderExtensions
 
         Shield<HttpResponseMessage> CreateEndpointShield(Uri _) =>
             HttpShield.WhenTransient()
-                .ConcurrencyLimit(maxConcurrency, maxQueue)
+                .ConcurrencyLimit(maxConcurrency, queueLimit)
                 .CircuitBreaker(circuitBreaker =>
                 {
                     circuitBreaker.ConsecutiveFailures = consecutiveFailures;

@@ -48,6 +48,25 @@ public class ApiShapeTests
     }
 
     [Test]
+    public async Task No_Public_Member_Named_MaxQueue_Remains()
+    {
+        var assemblies = new[]
+        {
+            typeof(Shield).Assembly,
+            typeof(Extensions.DependencyInjection.ShieldDefinition).Assembly,
+            typeof(Extensions.Http.StandardHedgingShieldOptions).Assembly,
+        };
+        var legacyMembers = assemblies
+            .SelectMany(static assembly => assembly.GetExportedTypes())
+            .SelectMany(static type => type.GetMembers())
+            .Where(static member => member.Name == "MaxQueue")
+            .Select(static member => $"{member.DeclaringType}.{member.Name}")
+            .ToArray();
+
+        await Assert.That(legacyMembers).IsEmpty();
+    }
+
+    [Test]
     public async Task Typed_CircuitBreaker_Requires_Typed_Options_Configurator()
     {
         var compilation = CreateCompilation(

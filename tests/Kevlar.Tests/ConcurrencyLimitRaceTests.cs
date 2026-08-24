@@ -6,9 +6,9 @@ public class ConcurrencyLimitRaceTests
     public async Task Exact_Capacity_Is_Admitted_And_Overflow_Is_Rejected()
     {
         const int MaxConcurrency = 3;
-        const int MaxQueue = 5;
+        const int QueueLimit = 5;
         const int Overflow = 7;
-        var shield = Shield.ConcurrencyLimit(MaxConcurrency, MaxQueue);
+        var shield = Shield.ConcurrencyLimit(MaxConcurrency, QueueLimit);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var runningStarted = new AsyncCounter("running concurrency-limit calls");
         var queuedStarted = new AsyncCounter("queued concurrency-limit calls");
@@ -34,7 +34,7 @@ public class ConcurrencyLimitRaceTests
 
         await runningStarted.WaitForAsync(MaxConcurrency);
 
-        var queued = Enumerable.Range(0, MaxQueue)
+        var queued = Enumerable.Range(0, QueueLimit)
             .Select(index => shield.ExecuteAsync(_ =>
             {
                 Enter(ref inFlight, ref peak, MaxConcurrency);
@@ -54,7 +54,7 @@ public class ConcurrencyLimitRaceTests
         release.SetResult();
         await Task.WhenAll(running);
         await Task.WhenAll(queued);
-        await queuedStarted.WaitForAsync(MaxQueue);
+        await queuedStarted.WaitForAsync(QueueLimit);
 
         await Assert.That(Volatile.Read(ref peak)).IsEqualTo(MaxConcurrency);
         await Assert.That(Volatile.Read(ref inFlight)).IsEqualTo(0);
@@ -66,7 +66,7 @@ public class ConcurrencyLimitRaceTests
     [Arguments(GrantCancellationOrder.Concurrent)]
     public async Task Grant_And_Queued_Cancellation_Decrement_Accounting_Once(GrantCancellationOrder order)
     {
-        var shield = Shield.ConcurrencyLimit(maxConcurrency: 1, maxQueue: 1);
+        var shield = Shield.ConcurrencyLimit(maxConcurrency: 1, queueLimit: 1);
         var releaseRunning = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var runningStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var queuedStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -163,7 +163,7 @@ public class ConcurrencyLimitRaceTests
     {
         const int MaxConcurrency = 2;
         const int Rounds = 32;
-        var shield = Shield.ConcurrencyLimit(MaxConcurrency, maxQueue: 3);
+        var shield = Shield.ConcurrencyLimit(MaxConcurrency, queueLimit: 3);
         var inFlight = 0;
         var peak = 0;
 
@@ -228,7 +228,7 @@ public class ConcurrencyLimitRaceTests
     [Test]
     public async Task Derived_And_Composed_Copies_Share_Running_And_Queue_Accounting()
     {
-        var limiter = Shield.ConcurrencyLimit(maxConcurrency: 1, maxQueue: 1);
+        var limiter = Shield.ConcurrencyLimit(maxConcurrency: 1, queueLimit: 1);
         var named = limiter.WithName("named");
         var composed = Shield.Retry(0, Backoff.None).Wrap(limiter);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -258,9 +258,9 @@ public class ConcurrencyLimitRaceTests
     [Arguments(int.MaxValue, 1)]
     public async Task Accepted_Capacity_Arithmetic_Near_Int_MaxValue_Remains_Usable(
         int maxConcurrency,
-        int maxQueue)
+        int queueLimit)
     {
-        var shield = Shield.ConcurrencyLimit(maxConcurrency, maxQueue);
+        var shield = Shield.ConcurrencyLimit(maxConcurrency, queueLimit);
 
         var result = await shield.ExecuteAsync(_ => new ValueTask<int>(42));
 

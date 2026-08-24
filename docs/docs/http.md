@@ -41,7 +41,7 @@ services.AddHttpClient("api")
         options.ConcurrencyLimit = new ConcurrencyLimitOptions
         {
             MaxConcurrency = 100,
-            MaxQueue = 20,
+            QueueLimit = 20,
         };
         options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(5);
         options.Handler.ContentReplayPolicy = HttpContentReplayPolicy.Buffer;
@@ -60,7 +60,7 @@ For dependency-aware setup, use the service-provider overload:
 services.AddSingleton(new ConcurrencyLimitOptions
 {
     MaxConcurrency = 100,
-    MaxQueue = 20,
+    QueueLimit = 20,
 });
 services.AddHttpClient("api")
     .AddStandardShield((serviceProvider, options) =>
@@ -260,7 +260,7 @@ services.AddHttpClient("routed")
 `AddStandardHedgingShield` installs a 30s total timeout and up to two hedged attempts. Each endpoint
 gets its own 10-concurrent/zero-queue limiter, 50%-over-30s circuit breaker (minimum 10 attempts,
 15s break), and 10s attempt timeout. Configure those defaults through `TotalTimeout`, `MaxAttempts`,
-`HedgeDelay`, `MaxConcurrency`, `MaxQueue`, `FailureRatio` or `ConsecutiveFailures`,
+`HedgeDelay`, `MaxConcurrency`, `QueueLimit`, `FailureRatio` or `ConsecutiveFailures`,
 `MinimumThroughput`, `SamplingWindow`, `BreakDuration`, and `AttemptTimeout`.
 
 The registration also exposes `ContentReplayPolicy`, `MaximumBufferSize`,

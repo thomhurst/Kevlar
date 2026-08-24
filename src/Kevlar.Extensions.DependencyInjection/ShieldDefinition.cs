@@ -92,7 +92,7 @@ public sealed class ShieldDefinition
 
         if (ConcurrencyLimit is { } concurrency)
         {
-            shield = shield.ConcurrencyLimit(concurrency.MaxConcurrency, concurrency.MaxQueue);
+            shield = shield.ConcurrencyLimit(concurrency.MaxConcurrency, concurrency.QueueLimit);
         }
 
         if (AttemptTimeout is { } attempt)
@@ -189,5 +189,5 @@ public sealed class ConcurrencyLimitDefinition
     public int MaxConcurrency { get; set; } = 10;
 
     /// <summary>Executions allowed to wait for a slot. Default 0.</summary>
-    public int MaxQueue { get; set; }
+    public int QueueLimit { get; set; }
 }

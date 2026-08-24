@@ -55,8 +55,8 @@ Kevlar.Extensions.Http.StandardHedgingShieldOptions.MaxConcurrency.get -> int
 Kevlar.Extensions.Http.StandardHedgingShieldOptions.MaxConcurrency.set -> void
 Kevlar.Extensions.Http.StandardHedgingShieldOptions.MaximumBufferSize.get -> long
 Kevlar.Extensions.Http.StandardHedgingShieldOptions.MaximumBufferSize.set -> void
-Kevlar.Extensions.Http.StandardHedgingShieldOptions.MaxQueue.get -> int
-Kevlar.Extensions.Http.StandardHedgingShieldOptions.MaxQueue.set -> void
+Kevlar.Extensions.Http.StandardHedgingShieldOptions.QueueLimit.get -> int
+Kevlar.Extensions.Http.StandardHedgingShieldOptions.QueueLimit.set -> void
 Kevlar.Extensions.Http.StandardHedgingShieldOptions.MinimumThroughput.get -> int
 Kevlar.Extensions.Http.StandardHedgingShieldOptions.MinimumThroughput.set -> void
 Kevlar.Extensions.Http.StandardHedgingShieldOptions.RequestFactory.get -> System.Func<System.Net.Http.HttpRequestMessage!, int, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<System.Net.Http.HttpRequestMessage!>>?

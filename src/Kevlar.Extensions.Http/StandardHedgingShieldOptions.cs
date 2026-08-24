@@ -19,7 +19,7 @@ public sealed class StandardHedgingShieldOptions
     public int MaxConcurrency { get; set; } = 10;
 
     /// <summary>Maximum attempts queued per endpoint. Default 0.</summary>
-    public int MaxQueue { get; set; }
+    public int QueueLimit { get; set; }
 
     /// <summary>Trips each endpoint circuit after this many consecutive transient failures.</summary>
     public int? ConsecutiveFailures { get; set; }
