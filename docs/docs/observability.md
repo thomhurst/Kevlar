@@ -43,11 +43,17 @@ Shields that use only the default handling — any exception except `OperationCa
 
 Kevlar publishes core metrics through a `System.Diagnostics.Metrics.Meter` named `Kevlar`, version `1.0`. The current core package contains instrumented code in its `net10.0` asset; `net8.0` and `net9.0` applications resolve its inert `netstandard2.0` asset. `Kevlar.Chaos` separately publishes its injection counter from its `net8.0` and `net10.0` assets through a meter named `Kevlar.Chaos`, version `1.0`.
 
-Register the meters that your application uses with OpenTelemetry:
+Register the core meter with OpenTelemetry:
 
 ```csharp
 services.AddOpenTelemetry().WithMetrics(metrics => metrics
-    .AddMeter(KevlarDiagnostics.MeterName)
+    .AddMeter(KevlarDiagnostics.MeterName));
+```
+
+Applications that reference the optional `Kevlar.Chaos` package can register its meter separately:
+
+```csharp
+services.AddOpenTelemetry().WithMetrics(metrics => metrics
     .AddMeter(ChaosDiagnostics.MeterName));
 ```
 
