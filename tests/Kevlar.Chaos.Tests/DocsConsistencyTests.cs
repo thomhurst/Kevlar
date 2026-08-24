@@ -27,8 +27,7 @@ public class DocsConsistencyTests
             var row = available[name];
             await Assert.That(row.Type).IsEqualTo(InstrumentType(instrument));
             await Assert.That(row.Unit).IsEqualTo(instrument.Unit);
-            await Assert.That(row.MinimumTarget).IsEqualTo(
-                instrument.Meter.Name == ChaosDiagnostics.MeterName ? "net8.0" : "net10.0");
+            await Assert.That(row.MinimumTarget).IsEqualTo(MinimumTarget(instrument));
             await Assert.That(row.Tags).IsEquivalentTo(observer.Tags[name].Keys);
         }
     }
@@ -233,6 +232,9 @@ public class DocsConsistencyTests
 #endif
         _ => throw new InvalidOperationException($"Unsupported instrument type {instrument.GetType()}"),
     };
+
+    private static string MinimumTarget(Instrument instrument) =>
+        instrument is Counter<long> or Histogram<double> ? "net8.0" : "net10.0";
 
     private static bool IsAvailableOnCurrentTarget(string minimumTarget) =>
 #if NET10_0_OR_GREATER
