@@ -75,8 +75,10 @@ Closed ──(threshold crossed)──► Open ──(BreakDuration elapses)─�
 - **HalfOpen** — after the break duration, exactly **one** probe execution is allowed through. Success closes the circuit and resets metrics; failure re-opens it for another `BreakDuration`. Concurrent callers during the probe are rejected (`RetryAfter == null`).
 - **Isolated** — manually forced open via the monitor; rejected until `Reset()`.
 
-:::info Cancellation doesn't move the circuit
-A cancelled execution says nothing about downstream health — it counts as neither success nor failure.
+:::info Unhandled exceptions don't move the circuit
+An exception outside the breaker's handling clause says nothing about downstream health — it counts
+as neither success nor failure. This includes caller cancellation unless the clause explicitly
+handles it. An unhandled half-open probe releases the probe slot without closing the circuit.
 :::
 
 ## Observing and controlling: `CircuitBreakerMonitor`

@@ -50,12 +50,15 @@ public class StrategyModelTests
     {
         var timeProvider = new ModelTimeProvider();
         var monitor = new CircuitBreakerMonitor();
-        var shield = Shield.CircuitBreaker(options =>
-        {
-            options.ConsecutiveFailures = 2;
-            options.BreakDuration = TimeSpan.FromSeconds(3);
-            options.Monitor = monitor;
-        }).WithTimeProvider(timeProvider);
+        var shield = Shield
+            .When<ModelFailureException>()
+            .CircuitBreaker(options =>
+            {
+                options.ConsecutiveFailures = 2;
+                options.BreakDuration = TimeSpan.FromSeconds(3);
+                options.Monitor = monitor;
+            })
+            .WithTimeProvider(timeProvider);
         var state = CircuitState.Closed;
         var consecutiveFailures = 0;
         var elapsedSeconds = 0;
@@ -92,6 +95,7 @@ public class StrategyModelTests
 
                 case CircuitCommandKind.Succeed:
                 case CircuitCommandKind.Fail:
+                case CircuitCommandKind.Unhandled:
                     var shouldSucceed = command.Kind == CircuitCommandKind.Succeed;
                     var invoked = false;
                     var outcome = await shield.ExecuteOutcomeAsync<int>(_ =>
@@ -99,10 +103,13 @@ public class StrategyModelTests
                         invoked = true;
                         return shouldSucceed
                             ? new ValueTask<int>(42)
-                            : throw new ModelFailureException();
+                            : command.Kind == CircuitCommandKind.Fail
+                                ? throw new ModelFailureException()
+                                : throw new ArgumentException("unhandled");
                     });
 
                     var expectedInvocation = state == CircuitState.Closed
+                        || state == CircuitState.HalfOpen
                         || (state == CircuitState.Open && elapsedSeconds >= openUntil);
                     Ensure(invoked == expectedInvocation, index, command, "delegate admission differs");
 
@@ -118,10 +125,11 @@ public class StrategyModelTests
                         consecutiveFailures = 0;
                         Ensure(outcome.IsSuccess && outcome.Result == 42, index, command, "success outcome differs");
                     }
-                    else
+                    else if (command.Kind == CircuitCommandKind.Fail)
                     {
-                        if (state == CircuitState.Open)
+                        if (state is CircuitState.Open or CircuitState.HalfOpen)
                         {
+                            state = CircuitState.Open;
                             openUntil = elapsedSeconds + 3;
                         }
                         else if (++consecutiveFailures >= 2)
@@ -131,6 +139,15 @@ public class StrategyModelTests
                         }
 
                         Ensure(outcome.Exception is ModelFailureException, index, command, "failure outcome differs");
+                    }
+                    else
+                    {
+                        if (state == CircuitState.Open)
+                        {
+                            state = CircuitState.HalfOpen;
+                        }
+
+                        Ensure(outcome.Exception is ArgumentException, index, command, "unhandled outcome differs");
                     }
 
                     break;
@@ -404,6 +421,7 @@ public class StrategyModelTests
     {
         Succeed,
         Fail,
+        Unhandled,
         Advance,
         MoveUtcBackward,
         Isolate,
