@@ -37,6 +37,56 @@ jobs:
           dotnet run --project tests/Kevlar.AllocationTests -c Release -f net8.0 -- --timeout 5m --minimum-expected-tests 3 --zero-tests-policy strict
           dotnet run --project tests/Kevlar.AllocationTests -c Release -f net10.0 -- --timeout 5m --minimum-expected-tests 3 --zero-tests-policy strict
 
+  docs:
+    name: Documentation site
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: docs/package-lock.json
+
+      - name: Verify documentation structure
+        shell: pwsh
+        run: ./scripts/Verify-Docs.ps1
+
+      - name: Check Markdown links
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          args: >-
+            --root-dir "${{ github.workspace }}" --no-progress
+            --max-retries 3 --retry-wait-time 2
+            README.md "docs/docs/**/*.md"
+          fail: true
+          failIfEmpty: true
+          token: ${{ github.token }}
+
+      - name: Install documentation dependencies
+        run: npm ci
+        working-directory: docs
+
+      - name: Build documentation
+        run: npm run build
+        working-directory: docs
+
+      - name: Upload documentation site
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: docs-site
+          path: docs/build
+          if-no-files-found: error
+          retention-days: 7
+
   build-and-test:
     strategy:
       fail-fast: false
@@ -148,22 +198,6 @@ jobs:
           PACKAGE_VERSION: ${{ steps.gitversion.outputs.semVer }}
         run: ./scripts/Verify-Packages.ps1 -PackagesPath artifacts/package/release -Version $env:PACKAGE_VERSION
 
-      - name: Verify documentation structure
-        if: matrix.os == 'ubuntu-latest'
-        shell: pwsh
-        run: ./scripts/Verify-Docs.ps1
-
-      - name: Check Markdown links
-        if: matrix.os == 'ubuntu-latest'
-        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
-        with:
-          args: >-
-            --root-dir "${{ github.workspace }}" --no-progress
-            README.md "docs/docs/**/*.md"
-          fail: true
-          failIfEmpty: true
-          token: ${{ github.token }}
-
       - name: Compile and execute documentation snippets
         if: matrix.os == 'ubuntu-latest'
         shell: pwsh
@@ -250,7 +284,7 @@ jobs:
   # checkbox ticked, and only after tests, coverage, and allocation gates are green.
   publish:
     name: Publish NuGet
-    needs: [allocation-gates, build-and-test, coverage]
+    needs: [allocation-gates, docs, build-and-test, coverage]
     if: github.event_name == 'workflow_dispatch' && inputs.publish_nuget == true
     runs-on: ubuntu-latest
     permissions:
