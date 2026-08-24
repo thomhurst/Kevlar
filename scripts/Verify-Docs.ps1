@@ -38,8 +38,7 @@ $timeoutExceptionAllowMarker = '<!-- doc-lint: allow-TimeoutException -->'
 
 $lintDocuments = @(
     Get-Item -LiteralPath (Join-Path $repositoryRoot 'README.md')
-    Get-ChildItem -LiteralPath (Join-Path $repositoryRoot 'docs/docs') -Recurse -File |
-        Where-Object Extension -in '.md', '.mdx'
+    $documents
     Get-ChildItem -LiteralPath (Join-Path $repositoryRoot 'docs/src') -Recurse -File -Filter '*.tsx'
 )
 
