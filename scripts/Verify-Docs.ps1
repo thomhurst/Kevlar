@@ -33,7 +33,7 @@ $documents = Get-ChildItem -LiteralPath $resolvedDocsPath -Recurse -File |
     Sort-Object FullName
 $visibleDocuments = [System.Collections.Generic.List[object]]::new()
 $errors = [System.Collections.Generic.List[string]]::new()
-$timeoutExceptionPattern = [regex]'(?:(?:When|Or)(?:<|&lt;)TimeoutException(?:>|&gt;)|\bis\s+TimeoutException\b)'
+$timeoutExceptionPattern = [regex]'(?:(?:When|Or)(?:<|&lt;)(?:(?:global::)?System\.)?TimeoutException(?:>|&gt;)|\bis\s+(?:(?:global::)?System\.)?TimeoutException\b|\bcatch\s*\(\s*(?:(?:global::)?System\.)?TimeoutException\b)'
 $timeoutExceptionAllowMarker = '<!-- doc-lint: allow-TimeoutException -->'
 
 $lintDocuments = @(

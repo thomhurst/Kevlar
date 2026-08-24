@@ -26,7 +26,7 @@ Kevlar's pipeline model translates 1:1 from Polly v8 — the "first strategy add
 
 `Kevlar.TimeoutExceededException` derives from `KevlarException`, not from `System.TimeoutException`.
 Polly set the same trap — `TimeoutRejectedException` derived from `ExecutionRejectedException`, never
-from `System.TimeoutException` — and the reflex is the same in both libraries: a `catch (TimeoutException)`
+from `System.TimeoutException` — and the reflex is the same in both libraries: a `catch (TimeoutException)` <!-- doc-lint: allow-TimeoutException -->
 carried over from application code still compiles, never matches, and lets the timeout escape as an
 unhandled exception.
 
