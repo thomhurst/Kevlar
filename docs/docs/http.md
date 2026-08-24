@@ -229,8 +229,9 @@ the original request and the returned response.
 Replay behavior depends on the request:
 
 - `NoBuffer` (default) reuses inherently re-readable content such as `ByteArrayContent`,
-  `StringContent`, `FormUrlEncodedContent`, and `JsonContent`. Content already loaded into its HTTP
-  buffer is also reusable. One-shot content such as `StreamContent` is sent once.
+  `StringContent`, and `FormUrlEncodedContent`. Positive-length content already loaded into its HTTP
+  buffer is also reusable. A fresh `JsonContent` or one-shot content such as `StreamContent` is sent
+  once; call `LoadIntoBufferAsync()` first, select `Buffer`, or provide a `RequestFactory` to replay it.
 - `Buffer` serializes content once before sending, bounded by `MaximumBufferSize`, then gives each
   attempt its own `ByteArrayContent`. Oversize or partial serialization fails before attempt 1.
 - `RequestFactory` creates a complete fresh request per attempt. Use it for one-shot streams,

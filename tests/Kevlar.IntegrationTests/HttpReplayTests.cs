@@ -151,10 +151,11 @@ public class HttpReplayTests
     [Test]
     public async Task False_Zero_ContentLength_Does_Not_Make_Content_Replayable()
     {
+        var bodies = new List<byte[]>();
         var originalResponse = new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
         var transport = new RecordingHandler(async (_, request, _) =>
         {
-            _ = await request.Content!.ReadAsByteArrayAsync();
+            bodies.Add(await request.Content!.ReadAsByteArrayAsync());
             return originalResponse;
         });
         using var invoker = CreateInvoker(
@@ -171,6 +172,7 @@ public class HttpReplayTests
 
         await Assert.That(ReferenceEquals(response, originalResponse)).IsTrue();
         await Assert.That(transport.Attempts).IsEqualTo(1);
+        await Assert.That(bodies.Single().SequenceEqual(new byte[] { 1, 2, 3 })).IsTrue();
     }
 
     [Test]
