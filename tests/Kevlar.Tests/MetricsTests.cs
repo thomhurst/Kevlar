@@ -456,6 +456,22 @@ public class MetricsTests
     }
 
     [Test]
+    public async Task Rejected_Result_Execution_Does_Not_Record_A_Void_Fallback()
+    {
+        using var listener = new KevlarMeterListener();
+        const string name = "metrics-invalid-void-fallback";
+        var shield = Shield.Empty
+            .Fallback(static _ => ValueTask.CompletedTask)
+            .WithName(name);
+
+        var outcome = await shield.ExecuteOutcomeAsync<int>(
+            static _ => ValueTask.FromException<int>(new InvalidOperationException()));
+
+        await Assert.That(outcome.Exception).IsTypeOf<InvalidOperationException>();
+        await Assert.That(listener.Total("kevlar.fallbacks", name)).IsEqualTo(0);
+    }
+
+    [Test]
     public async Task Concurrent_Execution_Totals_Are_Exact_And_Isolated_By_Name()
     {
         using var listener = new KevlarMeterListener();

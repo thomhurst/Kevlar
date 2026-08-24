@@ -423,6 +423,16 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV005_Follows_The_Rate_Limiter_Adapter()
+    {
+        var diagnostics = await AnalyzeBodyAsync(
+            "_ = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask)" +
+            ".RateLimit((System.Threading.RateLimiting.RateLimiter)null!).Execute(static _ => 1);");
+
+        await AssertRuleAsync(Without(diagnostics, "KEV004"), "KEV005");
+    }
+
+    [Test]
     public async Task KEV005_Skips_Typed_Fallbacks_And_Void_Executions()
     {
         var cases = new[]
@@ -1347,6 +1357,7 @@ public class PipelineHazardAnalyzerTests
             using System.Threading;
             using System.Threading.Tasks;
             using Kevlar;
+            using Kevlar.Extensions.RateLimiting;
 
             {{declarations}}
             """;
@@ -1358,7 +1369,9 @@ public class PipelineHazardAnalyzerTests
         var references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)
             .Split(Path.PathSeparator)
             .Select(path => (MetadataReference)MetadataReference.CreateFromFile(path))
-            .Append(MetadataReference.CreateFromFile(typeof(Shield).Assembly.Location));
+            .Append(MetadataReference.CreateFromFile(typeof(Shield).Assembly.Location))
+            .Append(MetadataReference.CreateFromFile(
+                typeof(Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions).Assembly.Location));
         return CSharpCompilation.Create(
             assemblyName,
             [CSharpSyntaxTree.ParseText(source)],

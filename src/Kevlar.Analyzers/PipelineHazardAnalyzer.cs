@@ -2208,7 +2208,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         return (expectedName is null || method.Name == expectedName)
             && (knownTypes.IsShield(method.ContainingType)
                 || knownTypes.IsShieldBuilder(method.ContainingType)
-                || knownTypes.IsShieldExtensions(method.ContainingType));
+                || knownTypes.IsShieldExtensions(method.ContainingType)
+                || knownTypes.IsShieldRateLimiterExtensions(method.ContainingType));
     }
 
     private sealed class KnownTypes
@@ -2220,6 +2221,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         private readonly INamedTypeSymbol? _shieldExtensions;
         private readonly INamedTypeSymbol? _shieldResultExtensions;
         private readonly INamedTypeSymbol? _shieldTaskExtensions;
+        private readonly INamedTypeSymbol? _shieldRateLimiterExtensions;
         private readonly INamedTypeSymbol? _partitionedShield;
         private readonly INamedTypeSymbol? _partitionedShieldOfT;
         private readonly INamedTypeSymbol? _valueTask;
@@ -2233,6 +2235,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             _shieldExtensions = compilation.GetTypeByMetadataName("Kevlar.ShieldExtensions");
             _shieldResultExtensions = compilation.GetTypeByMetadataName("Kevlar.ShieldResultExtensions");
             _shieldTaskExtensions = compilation.GetTypeByMetadataName("Kevlar.ShieldTaskExtensions");
+            _shieldRateLimiterExtensions = compilation.GetTypeByMetadataName(
+                "Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions");
             _partitionedShield = compilation.GetTypeByMetadataName("Kevlar.PartitionedShield`1");
             _partitionedShieldOfT = compilation.GetTypeByMetadataName("Kevlar.PartitionedShield`2");
             _valueTask = compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask");
@@ -2256,6 +2260,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             Is(type, _shieldExtensions) || Is(type, _shieldResultExtensions);
 
         internal bool IsShieldTaskExtensions(INamedTypeSymbol type) => Is(type, _shieldTaskExtensions);
+
+        internal bool IsShieldRateLimiterExtensions(INamedTypeSymbol type) =>
+            Is(type, _shieldRateLimiterExtensions);
 
         internal bool IsPartitionedShield(INamedTypeSymbol type) =>
             Is(type, _partitionedShield) || Is(type, _partitionedShieldOfT);
