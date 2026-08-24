@@ -6,6 +6,8 @@ sidebar_position: 4
 
 A token-bucket limiter: `Permits` executions per `Window`, with bursts and optional queueing.
 
+See the [exceptions reference](../exceptions.md) for `RateLimitExceededException` and `RetryAfter`.
+
 ```csharp
 Shield.RateLimit(100, perWindow: TimeSpan.FromSeconds(1));   // 100/s, burst = 100
 

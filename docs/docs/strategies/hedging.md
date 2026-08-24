@@ -6,6 +6,8 @@ sidebar_position: 6
 
 Race parallel attempts against tail latency: if the first attempt hasn't answered within the hedge delay, fire a second one. Fastest success wins; losers are cancelled.
 
+See the [exceptions reference](../exceptions.md) for how failures and cancellation surface.
+
 Unlike a [retry](retry.md), hedging doesn't wait for the first attempt to *fail* — it launches a backup while the original is still running. The pattern goes by several names: **backup requests** (Google's [Tail at Scale](https://research.google/pubs/the-tail-at-scale/) calls them *hedged requests*), **speculative retry** (Cassandra), or **speculative execution**. Same idea everywhere: spend a little duplicate work to cut p99 latency.
 
 ```csharp

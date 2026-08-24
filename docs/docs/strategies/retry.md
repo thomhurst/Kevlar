@@ -6,6 +6,8 @@ sidebar_position: 1
 
 Re-execute the delegate when it fails, waiting between attempts.
 
+See the [exceptions reference](../exceptions.md) for failures the default retry clause handles.
+
 ## Quick forms
 
 ```csharp

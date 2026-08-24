@@ -6,6 +6,8 @@ sidebar_position: 7
 
 When all else fails, degrade gracefully instead of throwing: return a default, a cached value, or anything you can compute from the failure.
 
+See the [exceptions reference](../exceptions.md) for failures the default fallback clause handles.
+
 Result-producing fallbacks live on **typed** shields — reach one via `Shield.For<T>()`:
 
 ```csharp

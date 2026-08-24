@@ -173,6 +173,32 @@ foreach ($document in $visibleDocuments)
     }
 }
 
+$exceptionReferencePages = @(
+    $visibleDocuments | Where-Object Directory -eq 'strategies'
+    $visibleDocuments | Where-Object Path -in @(
+        'getting-started.md',
+        'handling-failures.md',
+        'polly-migration.md')
+)
+
+foreach ($document in $exceptionReferencePages)
+{
+    $expectedTarget = if ($document.Directory -eq 'strategies')
+    {
+        '../exceptions.md'
+    }
+    else
+    {
+        'exceptions.md'
+    }
+
+    $linkPattern = [regex]::Escape("($expectedTarget)")
+    if (($document.Lines -join "`n") -notmatch $linkPattern)
+    {
+        $errors.Add("Documentation page '$($document.Path)' must link to '$expectedTarget'.")
+    }
+}
+
 if ($errors.Count -gt 0)
 {
     $errors | ForEach-Object { Write-Error $_ -ErrorAction Continue }
