@@ -119,6 +119,7 @@ public class HttpReplayTests
     [Test]
     public async Task Put_With_StreamContent_NoBuffer_Returns_Original_Response()
     {
+        var bodies = new List<byte[]>();
         var responseContent = new TrackingContent("original");
         var originalResponse = new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)
         {
@@ -126,7 +127,7 @@ public class HttpReplayTests
         };
         var transport = new RecordingHandler(async (_, request, _) =>
         {
-            _ = await request.Content!.ReadAsByteArrayAsync();
+            bodies.Add(await request.Content!.ReadAsByteArrayAsync());
             return originalResponse;
         });
         using var invoker = CreateInvoker(
@@ -135,7 +136,7 @@ public class HttpReplayTests
             transport);
         using var request = new HttpRequestMessage(HttpMethod.Put, "https://origin.example/upload")
         {
-            Content = new StreamContent(new MemoryStream([1, 2, 3])),
+            Content = new StreamContent(new NonSeekableStream([1, 2, 3])),
         };
         request.Content.Headers.ContentLength = 3;
 
@@ -145,6 +146,7 @@ public class HttpReplayTests
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.ServiceUnavailable);
         await Assert.That(await response.Content.ReadAsStringAsync()).IsEqualTo("original");
         await Assert.That(transport.Attempts).IsEqualTo(1);
+        await Assert.That(bodies.Single().SequenceEqual(new byte[] { 1, 2, 3 })).IsTrue();
         await Assert.That(responseContent.DisposeCount).IsEqualTo(0);
     }
 
@@ -164,7 +166,7 @@ public class HttpReplayTests
             transport);
         using var request = new HttpRequestMessage(HttpMethod.Put, "https://origin.example/upload")
         {
-            Content = new StreamContent(new MemoryStream([1, 2, 3])),
+            Content = new StreamContent(new NonSeekableStream([1, 2, 3])),
         };
         request.Content.Headers.ContentLength = 0;
 
@@ -1227,6 +1229,11 @@ public class HttpReplayTests
             _ = await next.InvokeAsync(context).ConfigureAwait(false);
             return await next.InvokeAsync(context).ConfigureAwait(false);
         }
+    }
+
+    private sealed class NonSeekableStream(byte[] bytes) : MemoryStream(bytes)
+    {
+        public override bool CanSeek => false;
     }
 
     private sealed class TrackingContent(string value) : HttpContent
