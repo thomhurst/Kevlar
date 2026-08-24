@@ -3,11 +3,28 @@ using Kevlar.Analyzers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
+using System.Reflection;
 
 namespace Kevlar.Analyzers.Tests;
 
 public class PipelineHazardAnalyzerTests
 {
+    [Test]
+    public async Task Public_Surface_Uses_One_Hedge_Stem()
+    {
+        var legacyNames = typeof(PipelineHazardAnalyzer).Assembly.ExportedTypes
+            .SelectMany(static type => type
+                .GetMembers(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly)
+                .Select(static member => member.Name)
+                .Append(type.Name))
+            .Where(static name => name.Contains("Hedging", StringComparison.Ordinal))
+            .Distinct(StringComparer.Ordinal)
+            .Order()
+            .ToArray();
+
+        await Assert.That(legacyNames).IsEmpty();
+    }
+
     [Test]
     public async Task Custom_Strategy_Can_Declare_Single_Invocation_Without_Diagnostics()
     {

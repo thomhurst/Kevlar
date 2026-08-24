@@ -21,7 +21,7 @@ namespace Kevlar.Analyzers;
 public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 {
     /// <summary>The KEV002 rule.</summary>
-    public static readonly DiagnosticDescriptor SynchronousHedgingRule = new(
+    public static readonly DiagnosticDescriptor SynchronousHedgeRule = new(
         id: "KEV002",
         title: "Multi-attempt hedging requires asynchronous execution",
         messageFormat: "This shield contains multi-attempt hedging, which cannot run through synchronous 'Execute'. Use 'ExecuteAsync' or remove hedging.",
@@ -51,7 +51,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         description: "Circuit breakers, rate limiters, concurrency limiters, and partition providers must outlive individual executions so their resilience state is retained and shared.");
 
     /// <summary>The KEV006 rule.</summary>
-    public static readonly DiagnosticDescriptor UntypedHedgingRule = new(
+    public static readonly DiagnosticDescriptor UntypedHedgeRule = new(
         id: "KEV006",
         title: "Hedging on an untyped Shield requires an idempotent action",
         messageFormat: "Hedging on an untyped Shield runs the execution delegate more than once, concurrently. Build a result-aware shield with Shield.For<T>() so result clauses can select the winning attempt, or confirm the action is idempotent.",
@@ -113,10 +113,10 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
         ImmutableArray.Create(
-            SynchronousHedgingRule,
+            SynchronousHedgeRule,
             UnreachableReactiveStrategyRule,
             EphemeralStatefulShieldRule,
-            UntypedHedgingRule,
+            UntypedHedgeRule,
             DeadHandlingClauseRule,
             DiscardedChainResultRule,
             InheritedHandlingClauseRule,
@@ -152,7 +152,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 out _))
         {
             context.ReportDiagnostic(Diagnostic.Create(
-                SynchronousHedgingRule,
+                SynchronousHedgeRule,
                 invocation.Syntax.GetLocation()));
         }
 
@@ -202,7 +202,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         if (IsUntypedHedge(invocation.TargetMethod, knownTypes))
         {
             context.ReportDiagnostic(Diagnostic.Create(
-                UntypedHedgingRule,
+                UntypedHedgeRule,
                 invocation.Syntax.GetLocation()));
         }
 

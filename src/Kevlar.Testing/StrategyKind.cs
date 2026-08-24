@@ -22,7 +22,7 @@ public enum StrategyKind
     ConcurrencyLimit,
 
     /// <summary>A hedging strategy.</summary>
-    Hedging,
+    Hedge,
 
     /// <summary>A fallback strategy.</summary>
     Fallback,

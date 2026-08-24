@@ -22,10 +22,10 @@ Kevlar.Testing.FallbackStrategyDescriptor
 Kevlar.Testing.FallbackStrategyDescriptor.HasNotification.get -> bool
 Kevlar.Testing.FallbackStrategyDescriptor.IsVoid.get -> bool
 Kevlar.Testing.FallbackStrategyDescriptor.ResultType.get -> System.Type?
-Kevlar.Testing.HedgingStrategyDescriptor
-Kevlar.Testing.HedgingStrategyDescriptor.Delay.get -> System.TimeSpan
-Kevlar.Testing.HedgingStrategyDescriptor.HasNotification.get -> bool
-Kevlar.Testing.HedgingStrategyDescriptor.MaxAttempts.get -> int
+Kevlar.Testing.HedgeStrategyDescriptor
+Kevlar.Testing.HedgeStrategyDescriptor.Delay.get -> System.TimeSpan
+Kevlar.Testing.HedgeStrategyDescriptor.HasNotification.get -> bool
+Kevlar.Testing.HedgeStrategyDescriptor.MaxAttempts.get -> int
 Kevlar.Testing.RateLimitStrategyDescriptor
 Kevlar.Testing.RateLimitStrategyDescriptor.Burst.get -> int
 Kevlar.Testing.RateLimitStrategyDescriptor.Permits.get -> int
@@ -55,7 +55,7 @@ Kevlar.Testing.StrategyKind.CircuitBreaker = 3 -> Kevlar.Testing.StrategyKind
 Kevlar.Testing.StrategyKind.ConcurrencyLimit = 5 -> Kevlar.Testing.StrategyKind
 Kevlar.Testing.StrategyKind.Custom = 0 -> Kevlar.Testing.StrategyKind
 Kevlar.Testing.StrategyKind.Fallback = 7 -> Kevlar.Testing.StrategyKind
-Kevlar.Testing.StrategyKind.Hedging = 6 -> Kevlar.Testing.StrategyKind
+Kevlar.Testing.StrategyKind.Hedge = 6 -> Kevlar.Testing.StrategyKind
 Kevlar.Testing.StrategyKind.RateLimit = 4 -> Kevlar.Testing.StrategyKind
 Kevlar.Testing.StrategyKind.Retry = 1 -> Kevlar.Testing.StrategyKind
 Kevlar.Testing.StrategyKind.Timeout = 2 -> Kevlar.Testing.StrategyKind
@@ -71,7 +71,7 @@ static Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor(this Kevlar.Shiel
 static Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor<TResult>(this Kevlar.Shield<TResult>! shield) -> Kevlar.Testing.ShieldDescriptor!
 Kevlar.Testing.CircuitBreakerStrategyDescriptor.HasHandlingOverride.get -> bool
 Kevlar.Testing.FallbackStrategyDescriptor.HasHandlingOverride.get -> bool
-Kevlar.Testing.HedgingStrategyDescriptor.HasHandlingOverride.get -> bool
+Kevlar.Testing.HedgeStrategyDescriptor.HasHandlingOverride.get -> bool
 Kevlar.Testing.RetryStrategyDescriptor.HasHandlingOverride.get -> bool
 Kevlar.Testing.CircuitBreakerStateSnapshot
 Kevlar.Testing.CircuitBreakerStateSnapshot.State.get -> Kevlar.CircuitState

@@ -10,7 +10,7 @@ namespace Kevlar.Benchmarks;
 [MemoryDiagnoser]
 [GroupBenchmarksBy(BenchmarkLogicalGroupRule.ByCategory)]
 [CategoriesColumn]
-public class HttpStandardHedgingBenchmarks
+public class HttpStandardHedgeBenchmarks
 {
     private ServiceProvider _services = null!;
     private HttpClient _manual = null!;
@@ -25,7 +25,7 @@ public class HttpStandardHedgingBenchmarks
             .AddShield(CreateOuterShield(), CreateHandlerOptions());
         services.AddHttpClient("standard")
             .ConfigurePrimaryHttpMessageHandler(static () => new SuccessHandler())
-            .AddStandardHedgingShield(static options =>
+            .AddStandardHedgeShield(static options =>
             {
                 options.Endpoints.Add(new HttpEndpoint(new Uri("https://first.invalid")));
                 options.Endpoints.Add(new HttpEndpoint(new Uri("https://second.invalid")));
@@ -44,13 +44,13 @@ public class HttpStandardHedgingBenchmarks
         _services.Dispose();
     }
 
-    [BenchmarkCategory("HttpStandardHedgingHappy"), Benchmark(Baseline = true)]
+    [BenchmarkCategory("HttpStandardHedgeHappy"), Benchmark(Baseline = true)]
     public async Task ManualComposition()
     {
         using var response = await _manual.GetAsync("https://origin.invalid/");
     }
 
-    [BenchmarkCategory("HttpStandardHedgingHappy"), Benchmark]
+    [BenchmarkCategory("HttpStandardHedgeHappy"), Benchmark]
     public async Task StandardRegistration()
     {
         using var response = await _standard.GetAsync("https://origin.invalid/");

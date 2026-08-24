@@ -1,15 +1,15 @@
 namespace Kevlar.Testing;
 
 /// <summary>Read-only hedging configuration.</summary>
-public sealed class HedgingStrategyDescriptor : StrategyDescriptor
+public sealed class HedgeStrategyDescriptor : StrategyDescriptor
 {
-    internal HedgingStrategyDescriptor(
+    internal HedgeStrategyDescriptor(
         string description,
         int maxAttempts,
         TimeSpan delay,
         bool hasNotification,
         bool hasHandlingOverride)
-        : base(StrategyKind.Hedging, description)
+        : base(StrategyKind.Hedge, description)
     {
         MaxAttempts = maxAttempts;
         Delay = delay;

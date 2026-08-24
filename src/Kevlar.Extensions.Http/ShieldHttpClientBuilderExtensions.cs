@@ -248,9 +248,9 @@ public static class ShieldHttpClientBuilderExtensions
     /// Adds a standard endpoint-aware pipeline: total timeout, hedging, per-endpoint concurrency
     /// limit and circuit breaker, then per-attempt timeout.
     /// </summary>
-    public static IHttpClientBuilder AddStandardHedgingShield(
+    public static IHttpClientBuilder AddStandardHedgeShield(
         this IHttpClientBuilder builder,
-        Action<StandardHedgingShieldOptions> configure)
+        Action<StandardHedgeShieldOptions> configure)
     {
         if (builder is null)
         {
@@ -262,9 +262,9 @@ public static class ShieldHttpClientBuilderExtensions
             throw new ArgumentNullException(nameof(configure));
         }
 
-        var options = new StandardHedgingShieldOptions();
+        var options = new StandardHedgeShieldOptions();
         configure(options);
-        var shield = CreateHedgingShield(options);
+        var shield = CreateHedgeShield(options);
         var handlerOptions = CreateHandlerOptions(options);
 
         return UseStandardTimeout(builder).AddHttpMessageHandler(() =>
@@ -275,11 +275,11 @@ public static class ShieldHttpClientBuilderExtensions
     /// Adds a reload-aware standard hedging shield bound from a configuration section.
     /// A valid change replaces the complete pipeline and all endpoint-local state.
     /// </summary>
-    public static IHttpClientBuilder AddStandardHedgingShield(
+    public static IHttpClientBuilder AddStandardHedgeShield(
         this IHttpClientBuilder builder,
         IConfiguration configuration,
         Action<Exception>? onReloadFailure = null) =>
-        AddStandardHedgingShield(
+        AddStandardHedgeShield(
             builder,
             configuration,
             static (_, _) => { },
@@ -290,10 +290,10 @@ public static class ShieldHttpClientBuilderExtensions
     /// using the handler pipeline's service provider. The callback runs for every snapshot after
     /// configuration values have been applied.
     /// </summary>
-    public static IHttpClientBuilder AddStandardHedgingShield(
+    public static IHttpClientBuilder AddStandardHedgeShield(
         this IHttpClientBuilder builder,
         IConfiguration configuration,
-        Action<IServiceProvider, StandardHedgingShieldOptions> configure,
+        Action<IServiceProvider, StandardHedgeShieldOptions> configure,
         Action<Exception>? onReloadFailure = null)
     {
         if (builder is null)
@@ -311,15 +311,15 @@ public static class ShieldHttpClientBuilderExtensions
             throw new ArgumentNullException(nameof(configure));
         }
 
-        ValidateHedgingConfiguration(configuration);
+        ValidateHedgeConfiguration(configuration);
         return UseStandardTimeout(builder).AddHttpMessageHandler(services =>
         {
             HttpShieldPipeline CreatePipeline()
             {
-                var options = StandardHttpConfigurationBinder.BindHedging(configuration);
+                var options = StandardHttpConfigurationBinder.BindHedge(configuration);
                 configure(services, options);
                 return new HttpShieldPipeline(
-                    CreateHedgingShield(options),
+                    CreateHedgeShield(options),
                     CreateHandlerOptions(options));
             }
 
@@ -336,13 +336,13 @@ public static class ShieldHttpClientBuilderExtensions
         _ = new HttpShieldPipeline(HttpShield.Standard(options), Snapshot(options.Handler));
     }
 
-    private static void ValidateHedgingConfiguration(IConfiguration configuration)
+    private static void ValidateHedgeConfiguration(IConfiguration configuration)
     {
-        var options = StandardHttpConfigurationBinder.BindHedging(configuration);
-        _ = new HttpShieldPipeline(CreateHedgingShield(options), CreateHandlerOptions(options));
+        var options = StandardHttpConfigurationBinder.BindHedge(configuration);
+        _ = new HttpShieldPipeline(CreateHedgeShield(options), CreateHandlerOptions(options));
     }
 
-    private static Shield<HttpResponseMessage> CreateHedgingShield(StandardHedgingShieldOptions options) =>
+    private static Shield<HttpResponseMessage> CreateHedgeShield(StandardHedgeShieldOptions options) =>
         HttpShield.WhenTransient(
                 Shield.Timeout(options.TotalTimeout)
                     .For<HttpResponseMessage>())
@@ -350,7 +350,7 @@ public static class ShieldHttpClientBuilderExtensions
             .Or<CircuitOpenException>()
             .Hedge(options.MaxAttempts, options.HedgeDelay);
 
-    private static ShieldHttpHandlerOptions CreateHandlerOptions(StandardHedgingShieldOptions options)
+    private static ShieldHttpHandlerOptions CreateHandlerOptions(StandardHedgeShieldOptions options)
     {
         if (!Enum.IsDefined(typeof(HttpEndpointSelectionMode), options.SelectionMode))
         {
@@ -399,7 +399,7 @@ public static class ShieldHttpClientBuilderExtensions
     }
 
     private static Func<Uri, Shield<HttpResponseMessage>> CreateEndpointShieldFactory(
-        StandardHedgingShieldOptions options)
+        StandardHedgeShieldOptions options)
     {
         var maxConcurrency = options.MaxConcurrency;
         var queueLimit = options.QueueLimit;

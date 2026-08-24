@@ -201,7 +201,7 @@ public class HttpResilienceTests
     }
 
     [Test]
-    public async Task HttpClientFactory_Standard_Hedging_Routes_Across_Loopback_Endpoints()
+    public async Task HttpClientFactory_Standard_Hedge_Routes_Across_Loopback_Endpoints()
     {
         await using var failing = FlakyHttpServer.Start((_, context) =>
             FlakyHttpServer.Respond(context, 503));
@@ -209,7 +209,7 @@ public class HttpResilienceTests
             FlakyHttpServer.Respond(context, 200, "hedged ok"));
         using var services = new ServiceCollection()
             .AddHttpClient("hedged-backend")
-            .AddStandardHedgingShield(options =>
+            .AddStandardHedgeShield(options =>
             {
                 options.Endpoints.Add(new HttpEndpoint(new Uri(failing.Url)));
                 options.Endpoints.Add(new HttpEndpoint(new Uri(healthy.Url)));
