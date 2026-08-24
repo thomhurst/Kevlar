@@ -210,7 +210,7 @@ def build_page(classes, host_info, history, window, commit):
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     lines = [
         "---",
-        "sidebar_position: 12",
+        "sidebar_position: 17",
         "sidebar_label: Benchmarks",
         "---",
         "",
