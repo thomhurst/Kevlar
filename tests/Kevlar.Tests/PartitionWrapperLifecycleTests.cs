@@ -8,7 +8,7 @@ public class PartitionWrapperLifecycleTests
     public async Task Typed_Partition_Wrapper_Exposes_Complete_Cache_Lifecycle()
     {
         var provider = new PartitionedShield<string, int>(
-            static _ => Shield.For<int>().Fallback(42),
+            static _ => Shield.For<int>().FallbackTo(42),
             new PartitionedShieldOptions { MaximumPartitions = 2 });
 
         var first = provider.GetShield("first");
