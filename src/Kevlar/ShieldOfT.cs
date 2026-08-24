@@ -1,6 +1,8 @@
 using Kevlar.Internal;
 using Kevlar.Strategies;
 
+#pragma warning disable RS0026 // Execution overload parity intentionally keeps CancellationToken optional.
+
 namespace Kevlar;
 
 /// <summary>
@@ -77,7 +79,7 @@ public sealed class Shield<TResult>
 
     /// <summary>
     /// Resets the ambient handling clause. Subsequent reactive strategies use the default
-    /// handling: any exception except <see cref="OperationCanceledException"/>.
+    /// handling defined by <see cref="HandlingClause.Default"/>.
     /// </summary>
     public Shield<TResult> WhenAnyError() => new(Strategies, OutcomeJudge.Default, Name, Time);
 
@@ -521,3 +523,5 @@ public sealed class Shield<TResult>
         return new Shield<TResult>(strategies, ambient ?? Ambient, Name, Time);
     }
 }
+
+#pragma warning restore RS0026

@@ -219,8 +219,7 @@ internal sealed class TimeoutStrategy : Strategy
                 priorToken)));
         }
 
-        var timedOut = timeoutSource.IsCancellationRequested
-            && cancellationException.CancellationToken == timeoutSource.Token;
+        var timedOut = timeoutSource.IsCancellationRequested;
         timeoutSource.Dispose();
 
         if (timedOut)
@@ -234,14 +233,14 @@ internal sealed class TimeoutStrategy : Strategy
                 var notification = _onTimeoutAsync(timeoutEvent);
                 if (!notification.IsCompletedSuccessfully)
                 {
-                    return AwaitTimeoutNotificationAsync<T>(notification, timeout);
+                    return AwaitTimeoutNotificationAsync<T>(notification, timeout, cancellationException);
                 }
 
                 notification.GetAwaiter().GetResult();
             }
 
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(
-                new TimeoutExceededException(timeout)));
+                new TimeoutExceededException(timeout, cancellationException)));
         }
 
         return new ValueTask<Outcome<T>>(outcome);
@@ -249,10 +248,11 @@ internal sealed class TimeoutStrategy : Strategy
 
     private static async ValueTask<Outcome<T>> AwaitTimeoutNotificationAsync<T>(
         ValueTask notification,
-        TimeSpan timeout)
+        TimeSpan timeout,
+        OperationCanceledException cancellationException)
     {
         await notification.ConfigureAwait(false);
-        return Outcome<T>.FromException(new TimeoutExceededException(timeout));
+        return Outcome<T>.FromException(new TimeoutExceededException(timeout, cancellationException));
     }
 
     private static void ValidateGeneratedTimeout(TimeSpan timeout)

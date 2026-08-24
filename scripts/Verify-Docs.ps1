@@ -33,6 +33,31 @@ $documents = Get-ChildItem -LiteralPath $resolvedDocsPath -Recurse -File |
     Sort-Object FullName
 $visibleDocuments = [System.Collections.Generic.List[object]]::new()
 $errors = [System.Collections.Generic.List[string]]::new()
+$timeoutExceptionPattern = [regex]'(?:(?:When|Or)(?:<|&lt;)(?:(?:global::)?System\.)?TimeoutException(?:>|&gt;)|\bis\s+(?:(?:global::)?System\.)?TimeoutException\b|\bcatch\s*\(\s*(?:(?:global::)?System\.)?TimeoutException\b)'
+$timeoutExceptionAllowMarker = '<!-- doc-lint: allow-TimeoutException -->'
+
+$lintDocuments = @(
+    Get-Item -LiteralPath (Join-Path $repositoryRoot 'README.md')
+    $documents
+    Get-ChildItem -LiteralPath (Join-Path $repositoryRoot 'docs/src') -Recurse -File -Filter '*.tsx'
+)
+
+foreach ($lintDocument in $lintDocuments)
+{
+    $relativePath = [IO.Path]::GetRelativePath($repositoryRoot, $lintDocument.FullName).Replace('\', '/')
+    $lines = @(Get-Content -LiteralPath $lintDocument.FullName)
+    for ($lineIndex = 0; $lineIndex -lt $lines.Count; $lineIndex++)
+    {
+        $line = $lines[$lineIndex]
+        if ($timeoutExceptionPattern.IsMatch($line) -and -not $line.Contains($timeoutExceptionAllowMarker, [StringComparison]::Ordinal))
+        {
+            $location = "${relativePath}:$($lineIndex + 1)"
+            $errors.Add(
+                "Forbidden System.TimeoutException handling example at $location. " +
+                "Use TimeoutExceededException or add '$timeoutExceptionAllowMarker' when demonstrating the trap.")
+        }
+    }
+}
 
 foreach ($document in $documents)
 {
@@ -97,6 +122,9 @@ foreach ($duplicate in $duplicatePositions)
 
 $partitionLinkPattern = [regex]'\[[^\]]*(?:AddPartitionedShield|PartitionedVoidShield|PartitionedShield)[^\]]*\]\((?:\.\./)*partitioning\.md(?:#[^)]+)?\)'
 $partitionMentionPattern = [regex]'\b(?:AddPartitionedShield|PartitionedVoidShield|PartitionedShield)\b'
+$analyzerLinkPattern = [regex]'\[[^\]]*KEV\d{3}[^\]]*\]\((?:\.\./)*analyzers\.md(?:#[^)]+)?\)'
+$analyzerMentionPattern = [regex]'\bKEV\d{3}\b'
+$hardwareMentionPattern = [regex]'(?i)(?:\b(?:AMD\s+)?(?:Ryzen|EPYC)\b|\bIntel\s+(?:Core(?:\s+Ultra)?|Xeon)\b|\bApple\s+(?:silicon|M\d)\b|\b(?:Qualcomm\s+)?Snapdragon\b|\b(?:AWS\s+)?Graviton\d*\b|\bARM\s+Neoverse\b|\bi[3579](?:-\s*|\s+)?\d{4,5}[A-Z]*\b)'
 
 foreach ($document in $visibleDocuments | Where-Object Path -ne 'partitioning.md')
 {
@@ -124,10 +152,31 @@ foreach ($document in $visibleDocuments | Where-Object Path -ne 'partitioning.md
     }
 }
 
+foreach ($document in $visibleDocuments)
+{
+    for ($lineIndex = 0; $lineIndex -lt $document.Lines.Count; $lineIndex++)
+    {
+        $line = $document.Lines[$lineIndex]
+        if ($document.Path -ne 'analyzers.md')
+        {
+            $withoutAnalyzerLinks = $analyzerLinkPattern.Replace($line, '')
+            if ($analyzerMentionPattern.IsMatch($withoutAnalyzerLinks))
+            {
+                $errors.Add("Analyzer rule duplicated outside analyzers.md at $($document.Path):$($lineIndex + 1).")
+            }
+        }
+
+        if ($document.Path -ne 'benchmarks.md' -and $hardwareMentionPattern.IsMatch($line))
+        {
+            $errors.Add("Hardware-specific benchmark claim outside benchmarks.md at $($document.Path):$($lineIndex + 1).")
+        }
+    }
+}
+
 if ($errors.Count -gt 0)
 {
     $errors | ForEach-Object { Write-Error $_ -ErrorAction Continue }
     exit 1
 }
 
-Write-Host "Verified $($visibleDocuments.Count) documentation pages: sidebar coverage, positions, and partitioning links are valid."
+Write-Host "Verified $($visibleDocuments.Count) documentation pages: structure, canonical analyzer rules, and benchmark claims are valid."

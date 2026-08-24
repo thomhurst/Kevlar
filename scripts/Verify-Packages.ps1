@@ -109,6 +109,63 @@ function Assert-DeterministicAssembly(
     }
 }
 
+function Get-AssemblyDetails([System.IO.Compression.ZipArchiveEntry]$Entry)
+{
+    $assemblyPath = Join-Path ([System.IO.Path]::GetTempPath()) "$([guid]::NewGuid().ToString('N')).dll"
+    try
+    {
+        [System.IO.Compression.ZipFileExtensions]::ExtractToFile($Entry, $assemblyPath)
+        $assemblyName = [System.Reflection.AssemblyName]::GetAssemblyName($assemblyPath)
+        $versionInfo = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($assemblyPath)
+        return [pscustomobject]@{
+            AssemblyVersion = $assemblyName.Version.ToString()
+            FileVersion = $versionInfo.FileVersion
+            InformationalVersion = $versionInfo.ProductVersion
+            PublicKeyToken = [Convert]::ToHexString($assemblyName.GetPublicKeyToken()).ToLowerInvariant()
+        }
+    }
+    finally
+    {
+        Remove-Item -LiteralPath $assemblyPath -Force -ErrorAction SilentlyContinue
+    }
+}
+
+function Assert-TypeNotDefined(
+    [string]$Name,
+    [System.IO.Compression.ZipArchiveEntry]$Entry,
+    [string]$TypeName)
+{
+    $stream = $Entry.Open()
+    $buffer = [System.IO.MemoryStream]::new()
+    try
+    {
+        $stream.CopyTo($buffer)
+        $buffer.Position = 0
+        $reader = [System.Reflection.PortableExecutable.PEReader]::new($buffer)
+        try
+        {
+            $metadata = [System.Reflection.Metadata.PEReaderExtensions]::GetMetadataReader($reader)
+            foreach ($handle in $metadata.TypeDefinitions)
+            {
+                $definition = $metadata.GetTypeDefinition($handle)
+                if ($metadata.GetString($definition.Name) -eq $TypeName)
+                {
+                    throw "$Name defines duplicate type '$TypeName'."
+                }
+            }
+        }
+        finally
+        {
+            $reader.Dispose()
+        }
+    }
+    finally
+    {
+        $buffer.Dispose()
+        $stream.Dispose()
+    }
+}
+
 function Get-ArchiveEntryHash([string]$ArchivePath, [string]$EntryPath)
 {
     $archive = [System.IO.Compression.ZipFile]::OpenRead($ArchivePath)
@@ -143,7 +200,8 @@ $buildPropertiesJson = & dotnet msbuild `
     (Join-Path $repositoryRoot 'src/Kevlar/Kevlar.csproj') `
     -nologo `
     -p:CI=true `
-    -getProperty:Deterministic,ContinuousIntegrationBuild,DeterministicSourcePaths,PublishRepositoryUrl,EmbedUntrackedSources,IncludeSymbols,SymbolPackageFormat
+    "-p:Version=$Version" `
+    -getProperty:Deterministic,ContinuousIntegrationBuild,DeterministicSourcePaths,PublishRepositoryUrl,EmbedUntrackedSources,IncludeSymbols,SymbolPackageFormat,SignAssembly,AssemblyVersion,FileVersion,InformationalVersion
 if ($LASTEXITCODE -ne 0)
 {
     throw 'Unable to inspect deterministic build properties.'
@@ -157,6 +215,7 @@ Assert-Equal 'PublishRepositoryUrl' $buildProperties.PublishRepositoryUrl 'true'
 Assert-Equal 'EmbedUntrackedSources' $buildProperties.EmbedUntrackedSources 'true'
 Assert-Equal 'IncludeSymbols' $buildProperties.IncludeSymbols 'true'
 Assert-Equal 'SymbolPackageFormat' $buildProperties.SymbolPackageFormat 'snupkg'
+Assert-Equal 'SignAssembly' $buildProperties.SignAssembly 'false'
 
 $packageDirectory = (Resolve-Path -LiteralPath $PackagesPath).Path
 $expectedRepositoryCommit = (& git rev-parse HEAD).Trim()
@@ -164,6 +223,14 @@ if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($expectedRepositoryComm
 {
     throw 'Unable to determine the expected repository commit.'
 }
+
+$numericVersion = [Version](($Version -split '[-+]')[0])
+$expectedAssemblyVersion = "$($numericVersion.Major).0.0.0"
+$expectedFileVersion = "$($numericVersion.Major).$($numericVersion.Minor).$($numericVersion.Build).0"
+$expectedInformationalVersion = "$Version+$expectedRepositoryCommit"
+Assert-Equal 'AssemblyVersion build property' $buildProperties.AssemblyVersion $expectedAssemblyVersion
+Assert-Equal 'FileVersion build property' $buildProperties.FileVersion $expectedFileVersion
+Assert-Equal 'InformationalVersion build property' $buildProperties.InformationalVersion $Version
 
 $centralPackagesPath = Join-Path $PSScriptRoot '..\Directory.Packages.props'
 [xml]$centralPackages = Get-Content -LiteralPath $centralPackagesPath -Raw
@@ -261,6 +328,11 @@ foreach ($packageId in $expectedDependencies.Keys)
         Assert-Equal "$packageId version" (Get-NodeText $metadata "*[local-name()='version']") $Version
         Assert-Equal "$packageId license" (Get-NodeText $metadata "*[local-name()='license']") 'MIT'
         Assert-Equal "$packageId README metadata" (Get-NodeText $metadata "*[local-name()='readme']") 'README.md'
+        Assert-Equal "$packageId icon metadata" (Get-NodeText $metadata "*[local-name()='icon']") 'icon.png'
+        Assert-Equal `
+            "$packageId release notes" `
+            (Get-NodeText $metadata "*[local-name()='releaseNotes']") `
+            'https://github.com/thomhurst/Kevlar/blob/main/CHANGELOG.md'
         Assert-Equal "$packageId repository URL" (Get-NodeText $metadata "*[local-name()='repository']/@url") 'https://github.com/thomhurst/Kevlar'
         Assert-Equal "$packageId repository type" (Get-NodeText $metadata "*[local-name()='repository']/@type") 'git'
         Assert-Equal "$packageId repository commit" (Get-NodeText $metadata "*[local-name()='repository']/@commit") $expectedRepositoryCommit
@@ -268,6 +340,26 @@ foreach ($packageId in $expectedDependencies.Keys)
         if ($entries -notcontains 'README.md')
         {
             throw "$packageId does not contain README.md."
+        }
+        if ($entries -notcontains 'icon.png')
+        {
+            throw "$packageId does not contain icon.png."
+        }
+
+        $readmeEntry = $archive.GetEntry('README.md')
+        $readmeReader = [System.IO.StreamReader]::new($readmeEntry.Open())
+        try
+        {
+            $embeddedReadme = $readmeReader.ReadToEnd()
+        }
+        finally
+        {
+            $readmeReader.Dispose()
+        }
+
+        if ($embeddedReadme -match '\]\((?!https?://|#|mailto:)[^)]+\)')
+        {
+            throw "$packageId README contains a relative Markdown link: '$($Matches[0])'."
         }
 
         $groups = @($metadata.SelectNodes("*[local-name()='dependencies']/*[local-name()='group']"))
@@ -281,6 +373,15 @@ foreach ($packageId in $expectedDependencies.Keys)
             foreach ($dependency in $dependencies)
             {
                 Assert-Set "$packageId $framework $($dependency.GetAttribute('id')) excluded assets" ($dependency.GetAttribute('exclude') -split ',') @('Build', 'Analyzers')
+
+                if ($dependency.GetAttribute('id') -eq 'Kevlar' -and
+                    $packageId -in @('Kevlar.Testing', 'Kevlar.Extensions.RateLimiting'))
+                {
+                    Assert-Equal `
+                        "$packageId $framework Kevlar dependency version" `
+                        $dependency.GetAttribute('version') `
+                        "[$Version]"
+                }
             }
         }
 
@@ -296,6 +397,10 @@ foreach ($packageId in $expectedDependencies.Keys)
 
         if ($packageId -eq 'Kevlar.Analyzers')
         {
+            Assert-Equal `
+                "$packageId development dependency" `
+                (Get-NodeText $metadata "*[local-name()='developmentDependency']") `
+                'true'
             $assemblyEntries = @($entries | Where-Object { $_ -like '*.dll' })
             Assert-Set "$packageId assemblies" $assemblyEntries @('analyzers/dotnet/cs/Kevlar.Analyzers.dll')
             Assert-Set "$packageId analyzer assets" `
@@ -338,6 +443,15 @@ foreach ($packageId in $expectedDependencies.Keys)
         foreach ($assemblyEntry in $archive.Entries | Where-Object { $_.FullName -like '*.dll' })
         {
             Assert-DeterministicAssembly "$packageId $($assemblyEntry.FullName)" $assemblyEntry
+            $details = Get-AssemblyDetails $assemblyEntry
+            Assert-Equal "$packageId $($assemblyEntry.FullName) public key token" $details.PublicKeyToken ''
+            Assert-Equal "$packageId $($assemblyEntry.FullName) AssemblyVersion" $details.AssemblyVersion $expectedAssemblyVersion
+            Assert-Equal "$packageId $($assemblyEntry.FullName) FileVersion" $details.FileVersion $expectedFileVersion
+            Assert-Equal "$packageId $($assemblyEntry.FullName) InformationalVersion" $details.InformationalVersion $expectedInformationalVersion
+            if ($packageId -in @('Kevlar.Extensions.DependencyInjection', 'Kevlar.Testing'))
+            {
+                Assert-TypeNotDefined "$packageId $($assemblyEntry.FullName)" $assemblyEntry 'BackoffKind'
+            }
         }
     }
     finally
@@ -482,6 +596,54 @@ try
 "@
     $nugetConfigPath = Join-Path $temporaryRoot 'NuGet.Config'
     Write-TextFile $nugetConfigPath $nugetConfig
+
+    $skewVersion = '999.0.0-skew'
+    $skewFeed = Join-Path $temporaryRoot 'skew-feed'
+    [System.IO.Directory]::CreateDirectory($skewFeed) | Out-Null
+    Get-ChildItem -LiteralPath $packageDirectory -Filter '*.nupkg' -File |
+        Copy-Item -Destination $skewFeed
+    Invoke-DotNet @(
+        'pack', (Join-Path $repositoryRoot 'src/Kevlar/Kevlar.csproj'),
+        '-c', 'Release',
+        '--no-build',
+        "-p:Version=$skewVersion",
+        '-p:CI=true',
+        "-p:PackageOutputPath=$skewFeed")
+
+    $escapedSkewFeed = [System.Security.SecurityElement]::Escape($skewFeed)
+    $skewNugetConfig = $nugetConfig.Replace($escapedPackageDirectory, $escapedSkewFeed)
+    $skewNugetConfigPath = Join-Path $temporaryRoot 'NuGet.Skew.Config'
+    Write-TextFile $skewNugetConfigPath $skewNugetConfig
+    $skewConsumerDirectory = Join-Path $temporaryRoot 'version-skew'
+    $skewConsumerProject = @"
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Kevlar" Version="$skewVersion" />
+    <PackageReference Include="Kevlar.Testing" Version="$Version" />
+  </ItemGroup>
+</Project>
+"@
+    $skewConsumerProjectPath = Join-Path $skewConsumerDirectory 'VersionSkew.csproj'
+    Write-TextFile $skewConsumerProjectPath $skewConsumerProject
+    $skewRestoreOutput = (& dotnet restore `
+        $skewConsumerProjectPath `
+        --configfile $skewNugetConfigPath `
+        --no-cache `
+        --force-evaluate 2>&1 | Out-String)
+    if ($LASTEXITCODE -eq 0)
+    {
+        throw "NuGet accepted Kevlar.Testing $Version with incompatible Kevlar $skewVersion.`n$skewRestoreOutput"
+    }
+
+    if ($skewRestoreOutput -notmatch '\bNU1608\b' -or
+        $skewRestoreOutput -notmatch [regex]::Escape("Kevlar.Testing $Version"))
+    {
+        throw "Version-skew restore did not report the expected exact-dependency conflict.`n$skewRestoreOutput"
+    }
 
     $runtimeProgram = @'
 using Kevlar;
@@ -657,6 +819,64 @@ await Shield.Empty.ExecuteAsync(cancellationToken => ValueTask.CompletedTask);
     if ($unexpectedAnalyzerErrors.Count -gt 0)
     {
         throw "Analyzer consumer produced errors other than KEV001:`n$($unexpectedAnalyzerErrors -join [Environment]::NewLine)"
+    }
+
+    $analyzerFlowDirectory = Join-Path $temporaryRoot 'analyzer-flow'
+    $analyzerFlowProject = @"
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <PackageId>AnalyzerFlowConsumer</PackageId>
+  </PropertyGroup>
+</Project>
+"@
+    $analyzerFlowProjectPath = Join-Path $analyzerFlowDirectory 'AnalyzerFlowConsumer.csproj'
+    Write-TextFile $analyzerFlowProjectPath $analyzerFlowProject
+    Write-TextFile (Join-Path $analyzerFlowDirectory 'Library.cs') 'public sealed class Library;'
+    Invoke-DotNet @(
+        'add', $analyzerFlowProjectPath,
+        'package', 'Kevlar.Analyzers',
+        '--version', $Version,
+        '--source', $packageDirectory,
+        '--package-directory', $env:NUGET_PACKAGES)
+    $analyzerFlowPackages = Join-Path $analyzerFlowDirectory 'packages'
+    Invoke-DotNet @(
+        'pack', $analyzerFlowProjectPath,
+        '-c', 'Release',
+        '--no-restore',
+        '-p:PackageVersion=0.0.0-verification',
+        "-p:PackageOutputPath=$analyzerFlowPackages")
+
+    $analyzerFlowPackage = Join-Path $analyzerFlowPackages 'AnalyzerFlowConsumer.0.0.0-verification.nupkg'
+    $analyzerFlowArchive = [System.IO.Compression.ZipFile]::OpenRead($analyzerFlowPackage)
+    try
+    {
+        $analyzerFlowNuspecEntry = @(
+            $analyzerFlowArchive.Entries |
+                Where-Object { $_.FullName -like '*.nuspec' })
+        Assert-Equal 'analyzer-flow nuspec count' $analyzerFlowNuspecEntry.Count 1
+        $analyzerFlowReader = [System.IO.StreamReader]::new($analyzerFlowNuspecEntry[0].Open())
+        try
+        {
+            [xml]$analyzerFlowNuspec = $analyzerFlowReader.ReadToEnd()
+        }
+        finally
+        {
+            $analyzerFlowReader.Dispose()
+        }
+
+        $analyzerFlowDependencyIds = @(
+            $analyzerFlowNuspec.SelectNodes("//*[local-name()='dependency']") |
+                ForEach-Object { $_.GetAttribute('id') })
+        if ($analyzerFlowDependencyIds -contains 'Kevlar.Analyzers')
+        {
+            throw 'Kevlar.Analyzers flowed transitively from a consumer library package.'
+        }
+    }
+    finally
+    {
+        $analyzerFlowArchive.Dispose()
     }
 
     Write-Host 'All package layout, symbols, determinism, SourceLink, consumer, and analyzer checks passed.'

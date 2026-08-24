@@ -70,15 +70,20 @@ public abstract class Backoff
     /// <summary>Returns the delay before the given 1-based retry attempt.</summary>
     public abstract TimeSpan GetDelay(int attempt);
 
-    internal abstract BackoffConfigurationKind ConfigurationKind { get; }
+    /// <summary>The stable category of this backoff.</summary>
+    public abstract BackoffKind Kind { get; }
 
-    internal virtual TimeSpan? BaseDelay => null;
+    /// <summary>The constant delay, linear step, or exponential initial delay, when applicable.</summary>
+    public virtual TimeSpan? InitialDelay => null;
 
-    internal virtual double? Factor => null;
+    /// <summary>The exponential multiplier, when applicable.</summary>
+    public virtual double? Factor => null;
 
-    internal virtual TimeSpan? MaxDelay => null;
+    /// <summary>The linear or exponential delay cap, when configured.</summary>
+    public virtual TimeSpan? MaxDelay => null;
 
-    internal virtual bool? Jitter => null;
+    /// <summary>Whether exponential jitter is enabled, when applicable.</summary>
+    public virtual bool? Jitter => null;
 
     private protected static void ValidateAttempt(int attempt) =>
         Throw.IfOutOfRange(attempt < 1, nameof(attempt), "Attempt must be at least 1.");
@@ -117,10 +122,10 @@ public abstract class Backoff
             return _delay;
         }
 
-        internal override BackoffConfigurationKind ConfigurationKind =>
-            _delay == TimeSpan.Zero ? BackoffConfigurationKind.None : BackoffConfigurationKind.Constant;
+        public override BackoffKind Kind =>
+            _delay == TimeSpan.Zero ? BackoffKind.None : BackoffKind.Constant;
 
-        internal override TimeSpan? BaseDelay => _delay;
+        public override TimeSpan? InitialDelay => _delay;
 
         public override string ToString() =>
             _delay == TimeSpan.Zero ? "no delay" : $"constant {DescribeHelper.Time(_delay)}";
@@ -143,11 +148,11 @@ public abstract class Backoff
             return FromTicksClamped((double)_step.Ticks * attempt, _maxDelay);
         }
 
-        internal override BackoffConfigurationKind ConfigurationKind => BackoffConfigurationKind.Linear;
+        public override BackoffKind Kind => BackoffKind.Linear;
 
-        internal override TimeSpan? BaseDelay => _step;
+        public override TimeSpan? InitialDelay => _step;
 
-        internal override TimeSpan? MaxDelay => _maxDelay;
+        public override TimeSpan? MaxDelay => _maxDelay;
 
         public override string ToString()
         {
@@ -184,15 +189,15 @@ public abstract class Backoff
             return FromTicksClamped(ticks, _maxDelay);
         }
 
-        internal override BackoffConfigurationKind ConfigurationKind => BackoffConfigurationKind.Exponential;
+        public override BackoffKind Kind => BackoffKind.Exponential;
 
-        internal override TimeSpan? BaseDelay => _initialDelay;
+        public override TimeSpan? InitialDelay => _initialDelay;
 
-        internal override double? Factor => _factor;
+        public override double? Factor => _factor;
 
-        internal override TimeSpan? MaxDelay => _maxDelay;
+        public override TimeSpan? MaxDelay => _maxDelay;
 
-        internal override bool? Jitter => _jitter;
+        public override bool? Jitter => _jitter;
 
         public override string ToString()
         {
@@ -215,17 +220,8 @@ public abstract class Backoff
             return delay < TimeSpan.Zero ? TimeSpan.Zero : DelayHelper.Clamp(delay);
         }
 
-        internal override BackoffConfigurationKind ConfigurationKind => BackoffConfigurationKind.Custom;
+        public override BackoffKind Kind => BackoffKind.Custom;
 
         public override string ToString() => "custom backoff";
     }
-}
-
-internal enum BackoffConfigurationKind
-{
-    None,
-    Constant,
-    Linear,
-    Exponential,
-    Custom,
 }

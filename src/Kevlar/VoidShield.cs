@@ -1,5 +1,7 @@
 using Kevlar.Internal;
 
+#pragma warning disable RS0026 // Execution overload parity intentionally keeps CancellationToken optional.
+
 namespace Kevlar;
 
 /// <summary>
@@ -200,3 +202,5 @@ public sealed class VoidShield
     /// <summary>Describes the pipeline, outermost strategy first.</summary>
     public override string ToString() => _pipeline.ToString();
 }
+
+#pragma warning restore RS0026

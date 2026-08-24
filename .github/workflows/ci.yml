@@ -86,6 +86,9 @@ jobs:
       - name: Modern gRPC compatibility asset tests
         run: dotnet run --project tests/Kevlar.NetStandard21.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 4 --zero-tests-policy strict --report-trx --report-trx-filename netstandard21.trx --results-directory artifacts/test-results/netstandard21
 
+      - name: Observability contract (.NET 8)
+        run: dotnet run --project tests/Kevlar.Observability.Net8.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 2 --zero-tests-policy strict --report-trx --report-trx-filename observability-net8.trx --results-directory artifacts/test-results/observability-net8
+
       - name: Integration tests
         run: dotnet run --project tests/Kevlar.IntegrationTests -c Release --no-build -- --timeout 5m --minimum-expected-tests 100 --zero-tests-policy strict --report-trx --report-trx-filename integration.trx --results-directory artifacts/test-results/integration
 
@@ -129,6 +132,17 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         shell: pwsh
         run: ./scripts/Verify-Docs.ps1
+
+      - name: Check Markdown links
+        if: matrix.os == 'ubuntu-latest'
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          args: >-
+            --root-dir "${{ github.workspace }}" --no-progress
+            README.md "docs/docs/**/*.md"
+          fail: true
+          failIfEmpty: true
+          token: ${{ github.token }}
 
       - name: Compile and execute documentation snippets
         if: matrix.os == 'ubuntu-latest'

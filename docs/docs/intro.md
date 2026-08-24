@@ -22,7 +22,7 @@ Build a shield once, reuse it everywhere. Shields are **immutable and thread-saf
 
 ## Why Kevlar?
 
-- **Intuitive first.** `Shield.When<TimeoutException>().Retry(3)` reads like what it does. No context pooling ceremony, no predicate-builder classes, no options objects for the simple cases — and full options objects when you want them.
+- **Intuitive first.** `Shield.When<TimeoutExceededException>().Retry(3)` reads like what it does. No context pooling ceremony, no predicate-builder classes, no options objects for the simple cases — and full options objects when you want them.
 - **Fast.** Outcomes flow between pipeline layers as structs instead of thrown exceptions; contexts are pooled internally; state-passing overloads eliminate closures; `ValueTask` end to end.
 - **Production defaults.** `Shield.Retry(3)` gives you exponential backoff *with jitter* capped at 30s — the thing you'd have configured anyway.
 - **Hard to hold wrong.** `Task` and `ValueTask` delegates both flow straight in; impossible chain orders throw at build time with a fix in the message; the `Kevlar.Analyzers` package flags cancellation and pipeline hazards at compile time.

@@ -365,6 +365,21 @@ public class DependencyInjectionContractTests
     }
 
     [Test]
+    public async Task Custom_BackoffKind_Requires_The_Fluent_Api()
+    {
+        var definition = new ShieldDefinition
+        {
+            Retry = new RetryDefinition { Backoff = BackoffKind.Custom },
+        };
+
+        await Assert.That(() => definition.Build())
+            .Throws<InvalidOperationException>()
+            .WithMessage(
+                "RetryDefinition cannot construct BackoffKind.Custom; configure Backoff.Custom "
+                + "with the fluent API.");
+    }
+
+    [Test]
     public async Task Configuration_Is_Read_On_First_Resolution_Then_Remains_Stable()
     {
         var values = new Dictionary<string, string?>

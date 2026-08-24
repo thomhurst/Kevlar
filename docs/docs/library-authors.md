@@ -99,3 +99,17 @@ Each attempt the user's retries make still runs through your inner timeout — t
 ## Dependency injection
 
 Nothing extra is needed on your side: a `Shield` constructor parameter resolves like any other dependency. Users on `Microsoft.Extensions.DependencyInjection` can register named shields and bind them from configuration via [`Kevlar.Extensions.DependencyInjection`](dependency-injection.md), then pass them to your library as [keyed services](dependency-injection.md#consuming-as-a-keyed-service).
+
+## Assembly identity and strong naming
+
+Kevlar assemblies are intentionally not strong-named. The core package depends on Reservoir, which
+is not strong-named, and .NET Framework does not allow a strong-named assembly to reference an
+unsigned dependency. Consequently, a strong-named .NET Framework library cannot reference Kevlar.
+Applications and unsigned libraries on .NET Framework, plus all consumers on modern .NET, are not
+affected.
+
+Strong names establish assembly identity, not publisher trust or code security. Adding one would
+change Kevlar's assembly identity and therefore requires a major release. Assembly versions are
+pinned to the package major (`1.0.0.0` throughout the 1.x line), so minor and patch releases do not
+create binding-redirect churn if the signing decision changes in a future major release. See
+[Microsoft's strong-naming guidance](https://learn.microsoft.com/dotnet/standard/library-guidance/strong-naming).

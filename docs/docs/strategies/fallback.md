@@ -136,8 +136,9 @@ var http = Shield.For<HttpResponseMessage>()
 
 If the fallback delegate itself throws, that exception becomes the pipeline's outcome — fallbacks don't get fallbacks.
 
-As with every reactive strategy, the default clause bypasses `OperationCanceledException`.
-Cancellation can be recovered explicitly when that is intentional:
+As with every reactive strategy, the default clause bypasses cancellation, Kevlar's fail-fast
+rejections, and fatal runtime failures. An excluded exception can be recovered explicitly when
+that is intentional:
 
 ```csharp
 var shield = Shield.For<Config>()

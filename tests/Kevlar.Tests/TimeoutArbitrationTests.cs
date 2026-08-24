@@ -22,7 +22,7 @@ public class TimeoutArbitrationTests
             executionToken = token;
             started.SetResult();
             await release.Task;
-            throw new OperationCanceledException(token);
+            throw new OperationCanceledException("wrapped without token");
         }, callerCancellation.Token).AsTask();
 
         await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
@@ -111,25 +111,51 @@ public class TimeoutArbitrationTests
     }
 
     [Test]
-    public async Task Unrelated_Cancellation_After_Timer_Fires_Is_Not_Reclassified()
+    public async Task Timeout_Converts_OperationCanceledException_With_Foreign_Token()
     {
-        var timeProvider = new ManualTimeProvider();
         using var unrelatedCancellation = new CancellationTokenSource();
         var unrelated = new OperationCanceledException("unrelated", unrelatedCancellation.Token);
+
+        await AssertCancellationIsTimeoutAsync(unrelated);
+    }
+
+    [Test]
+    public async Task Timeout_Converts_OperationCanceledException_Without_Token() =>
+        await AssertCancellationIsTimeoutAsync(new OperationCanceledException("cancelled"));
+
+    [Test]
+    public async Task Timeout_Converts_TaskCanceledException_Without_Token() =>
+        await AssertCancellationIsTimeoutAsync(new TaskCanceledException("cancelled"));
+
+    [Test]
+    public async Task Dynamic_Timeout_Converts_OperationCanceledException_Without_Token() =>
+        await AssertCancellationIsTimeoutAsync(
+            new OperationCanceledException("cancelled"),
+            useTimeoutGenerator: true);
+
+    [Test]
+    public async Task Async_Timeout_Notification_Preserves_Original_Cancellation()
+    {
+        var timeProvider = new ManualTimeProvider();
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var cancellation = new OperationCanceledException("wrapped without token");
         var timeoutEvents = 0;
         var shield = Shield.Timeout(options =>
         {
             options.Timeout = TimeSpan.FromSeconds(1);
-            options.OnTimeout = _ => timeoutEvents++;
+            options.OnTimeoutAsync = async _ =>
+            {
+                await Task.Yield();
+                timeoutEvents++;
+            };
         }).WithTimeProvider(timeProvider);
 
         var execution = shield.ExecuteOutcomeAsync<int>(async _ =>
         {
             started.SetResult();
             await release.Task;
-            throw unrelated;
+            throw cancellation;
         }).AsTask();
 
         await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
@@ -137,8 +163,103 @@ public class TimeoutArbitrationTests
         release.SetResult();
         var outcome = await execution.WaitAsync(TimeSpan.FromSeconds(5));
 
-        await Assert.That(ReferenceEquals(outcome.Exception, unrelated)).IsTrue();
+        var timeout = outcome.Exception as TimeoutExceededException;
+        await Assert.That(timeout).IsNotNull();
+        await Assert.That(ReferenceEquals(timeout!.InnerException, cancellation)).IsTrue();
+        await Assert.That(timeoutEvents).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task OperationCanceledException_Before_Timeout_Fires_Is_Preserved()
+    {
+        var timeProvider = new ManualTimeProvider();
+        var cancellation = new OperationCanceledException("spontaneous");
+        var timeoutEvents = 0;
+        var shield = Shield.Timeout(options =>
+        {
+            options.Timeout = TimeSpan.FromSeconds(1);
+            options.OnTimeout = _ => timeoutEvents++;
+        }).WithTimeProvider(timeProvider);
+
+        var outcome = await shield.ExecuteOutcomeAsync<int>(_ => throw cancellation);
+
+        await Assert.That(ReferenceEquals(outcome.Exception, cancellation)).IsTrue();
         await Assert.That(timeoutEvents).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Timeout_Then_Retry_Retries_OperationCanceledException_Without_Token()
+    {
+        var timeProvider = new ManualTimeProvider();
+        var attempts = new AsyncCounter("foreign-token timeout attempts");
+        var shield = Shield
+            .When<TimeoutExceededException>()
+            .Retry(1, Backoff.None)
+            .Timeout(TimeSpan.FromSeconds(1))
+            .WithTimeProvider(timeProvider);
+
+        var execution = shield.ExecuteOutcomeAsync<int>(token =>
+            CancelWithoutTokenAsync(token, attempts)).AsTask();
+
+        await attempts.WaitForAsync(1);
+        timeProvider.Fire(0);
+        await attempts.WaitForAsync(2);
+        timeProvider.Fire(1);
+        var outcome = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+
+        await Assert.That(outcome.Exception).IsTypeOf<TimeoutExceededException>();
+        await Assert.That(attempts.Count).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task Timeout_Then_CircuitBreaker_Counts_OperationCanceledException_Without_Token()
+    {
+        var timeProvider = new ManualTimeProvider();
+        var attempts = new AsyncCounter("foreign-token breaker attempts");
+        var shield = Shield
+            .When<TimeoutExceededException>()
+            .CircuitBreaker(consecutiveFailures: 1, breakDuration: TimeSpan.FromMinutes(1))
+            .Timeout(TimeSpan.FromSeconds(1))
+            .WithTimeProvider(timeProvider);
+
+        var first = shield.ExecuteOutcomeAsync<int>(token =>
+            CancelWithoutTokenAsync(token, attempts)).AsTask();
+
+        await attempts.WaitForAsync(1);
+        timeProvider.Fire(0);
+        var firstOutcome = await first.WaitAsync(TimeSpan.FromSeconds(5));
+        var rejected = await shield.ExecuteOutcomeAsync(_ => new ValueTask<int>(42));
+
+        await Assert.That(firstOutcome.Exception).IsTypeOf<TimeoutExceededException>();
+        await Assert.That(rejected.Exception).IsTypeOf<CircuitOpenException>();
+    }
+
+    [Test]
+    public async Task Per_Attempt_Timeout_Retries_Then_Outer_Timeout_Wins()
+    {
+        var timeProvider = new ManualTimeProvider();
+        var attempts = new AsyncCounter("nested timeout attempts");
+        var shield = Shield
+            .Timeout(TimeSpan.FromSeconds(30))
+            .When<TimeoutExceededException>()
+            .Retry(3, Backoff.None)
+            .Timeout(TimeSpan.FromSeconds(5))
+            .WithTimeProvider(timeProvider);
+
+        var execution = shield.ExecuteOutcomeAsync<int>(token =>
+            CancelWithoutTokenAsync(token, attempts)).AsTask();
+
+        await attempts.WaitForAsync(1);
+        timeProvider.Fire(1);
+        await attempts.WaitForAsync(2);
+        timeProvider.Fire(0);
+        var outcome = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+
+        var timeout = outcome.Exception as TimeoutExceededException;
+        await Assert.That(timeout).IsNotNull();
+        await Assert.That(timeout!.Timeout).IsEqualTo(TimeSpan.FromSeconds(30));
+        await Assert.That(timeout.InnerException).IsTypeOf<OperationCanceledException>();
+        await Assert.That(attempts.Count).IsEqualTo(2);
     }
 
     [Test]
@@ -301,6 +422,56 @@ public class TimeoutArbitrationTests
                 Observations.Add(new TokenObservation(before, context.CancellationToken));
             }
         }
+    }
+
+    private static async Task AssertCancellationIsTimeoutAsync(
+        OperationCanceledException cancellationException,
+        bool useTimeoutGenerator = false)
+    {
+        var timeProvider = new ManualTimeProvider();
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var timeoutEvents = 0;
+        var shield = Shield.Timeout(options =>
+        {
+            options.Timeout = TimeSpan.FromSeconds(1);
+            if (useTimeoutGenerator)
+            {
+                options.TimeoutGenerator = static _ =>
+                    new ValueTask<TimeSpan>(TimeSpan.FromSeconds(1));
+            }
+
+            options.OnTimeout = _ => timeoutEvents++;
+        }).WithTimeProvider(timeProvider);
+
+        var execution = shield.ExecuteOutcomeAsync<int>(async _ =>
+        {
+            started.SetResult();
+            await release.Task;
+            throw cancellationException;
+        }).AsTask();
+
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        timeProvider.Fire(0);
+        release.SetResult();
+        var outcome = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+
+        var timeout = outcome.Exception as TimeoutExceededException;
+        await Assert.That(timeout).IsNotNull();
+        await Assert.That(ReferenceEquals(timeout!.InnerException, cancellationException)).IsTrue();
+        await Assert.That(timeoutEvents).IsEqualTo(1);
+    }
+
+    private static async ValueTask<int> CancelWithoutTokenAsync(
+        CancellationToken cancellationToken,
+        AsyncCounter attempts)
+    {
+        attempts.Signal();
+        var cancelled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var registration = cancellationToken.Register(static state =>
+            ((TaskCompletionSource)state!).TrySetResult(), cancelled);
+        await cancelled.Task;
+        throw new OperationCanceledException("wrapped without token");
     }
 
     private sealed class ManualTimeProvider : TimeProvider

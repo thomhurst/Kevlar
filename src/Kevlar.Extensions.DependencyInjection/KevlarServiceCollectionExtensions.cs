@@ -5,6 +5,8 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Kevlar.Extensions.DependencyInjection;
 
+#pragma warning disable RS0026 // Partitioned registration overload parity intentionally keeps optional arguments.
+
 /// <summary>Registers Kevlar shields with the service collection.</summary>
 public static class KevlarServiceCollectionExtensions
 {
@@ -231,7 +233,7 @@ public static class KevlarServiceCollectionExtensions
             {
                 retryDefinition.MaxRetries = maxRetries;
             }
-            if (ReadEnum<BackoffKind>(retry, nameof(RetryDefinition.Backoff)) is { } backoff)
+            if (ReadBackoffKind(retry, nameof(RetryDefinition.Backoff)) is { } backoff)
             {
                 retryDefinition.Backoff = backoff;
             }
@@ -357,6 +359,23 @@ public static class KevlarServiceCollectionExtensions
             ? ParseEnum<TEnum>(configuration, key, value)
             : null;
 
+    private static BackoffKind? ReadBackoffKind(IConfiguration configuration, string key)
+    {
+        if (Read(configuration, key) is not { } value)
+        {
+            return null;
+        }
+
+        var backoff = ParseEnum<BackoffKind>(configuration, key, value);
+        return backoff != BackoffKind.Custom
+            ? backoff
+            : throw InvalidValue(
+                configuration,
+                key,
+                value,
+                "a configurable BackoffKind (None, Constant, Linear, or Exponential)");
+    }
+
     private static string? ReadNullable(IConfiguration configuration, string key)
     {
         var value = Read(configuration, key);
@@ -402,3 +421,5 @@ public static class KevlarServiceCollectionExtensions
             $"Configuration value '{value}' for '{path}' is not {expected}.");
     }
 }
+
+#pragma warning restore RS0026

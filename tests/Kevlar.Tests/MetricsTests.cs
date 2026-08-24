@@ -311,6 +311,28 @@ public class MetricsTests
     }
 
     [Test]
+    public async Task Wrapped_Cancellations_Are_Counted_As_Timeouts()
+    {
+        using var listener = new KevlarMeterListener();
+        var shield = Shield.Timeout(TimeSpan.FromMilliseconds(20)).WithName("metrics-wrapped-timeouts");
+
+        var exception = await Assert.That(async () => await shield.ExecuteAsync(async cancellationToken =>
+        {
+            try
+            {
+                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                throw new TaskCanceledException("transport wrapper");
+            }
+        })).Throws<TimeoutExceededException>();
+
+        await Assert.That(exception!.InnerException).IsTypeOf<TaskCanceledException>();
+        await Assert.That(listener.Total("kevlar.timeouts", "metrics-wrapped-timeouts")).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Rate_Limit_Rejections_Are_Counted_With_Their_Kind()
     {
         using var listener = new KevlarMeterListener();

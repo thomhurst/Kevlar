@@ -18,7 +18,7 @@ Shield.Timeout(o =>
 ```
 
 Exceeding the budget surfaces `TimeoutExceededException` (with a `Timeout` property). It derives from
-`KevlarException`, **not** from `System.TimeoutException`, so a reflexive `catch (TimeoutException)`
+`KevlarException`, **not** from `System.TimeoutException`, so a reflexive `catch (TimeoutException)` <!-- doc-lint: allow-TimeoutException -->
 compiles but never matches — catch `TimeoutExceededException` (or `KevlarException` for any Kevlar
 rejection) instead.
 
@@ -43,10 +43,10 @@ Two behaviours worth knowing:
 When cancellation signals overlap, the outcome is decided after the delegate completes:
 
 1. If the caller's token is cancelled, caller cancellation wins. The resulting `OperationCanceledException` carries the caller's token.
-2. Otherwise, if the timeout fired and the delegate's `OperationCanceledException` carries the exact token handed to the delegate, the outcome becomes `TimeoutExceededException`.
-3. An `OperationCanceledException` for any other token is preserved unchanged.
+2. Otherwise, if the timeout fired, any `OperationCanceledException` from the delegate becomes `TimeoutExceededException`; the original cancellation is available as `InnerException`.
+3. If neither the caller nor timeout has fired, an `OperationCanceledException` is preserved unchanged.
 
-This token-identity rule also applies to nested timeouts. A cancelled outer timeout is treated as the inner timeout's caller, so only the winning scope reports `OnTimeout`. The strategy restores the prior context token and completes timer cleanup before invoking `OnTimeout`; if the callback throws, that exception is surfaced without contaminating later executions.
+This caller-first rule also applies to nested timeouts. A cancelled outer timeout is treated as the inner timeout's caller, so only the winning scope reports `OnTimeout`. The strategy restores the prior context token and completes timer cleanup before invoking `OnTimeout`; if the callback throws, that exception is surfaced without contaminating later executions.
 
 ## Dynamic timeouts and asynchronous notifications
 
@@ -91,6 +91,84 @@ Shield
 
 The inner timeout's `TimeoutExceededException` is a handleable failure, so the retry sees it and tries again:
 
+<!-- doc-test-run: timeout-exceeded-clause -->
 ```csharp
-Shield.When<TimeoutExceededException>().Retry(2).Timeout(TimeSpan.FromSeconds(5));
+var time = new FakeTimeProvider();
+var attempts = 0;
+var execution = Shield
+    .When<TimeoutExceededException>()
+    .Retry(1, Backoff.None)
+    .Timeout(TimeSpan.FromSeconds(1))
+    .WithTimeProvider(time)
+    .ExecuteAsync(async token =>
+    {
+        Interlocked.Increment(ref attempts);
+        var never = new TaskCompletionSource();
+        using var registration = token.Register(() => never.SetCanceled(token));
+        await never.Task;
+    })
+    .AsTask();
+
+await execution.WaitForPendingAsync(
+    () => Volatile.Read(ref attempts) == 1,
+    "the first timed attempt");
+await time.AdvanceUntilAsync(
+    TimeSpan.FromSeconds(1),
+    () => Volatile.Read(ref attempts) == 2,
+    "the retry attempt",
+    maxAdvances: 1);
+await time.AdvanceUntilAsync(
+    TimeSpan.FromSeconds(1),
+    () => execution.IsCompleted,
+    "the final timeout",
+    maxAdvances: 1);
+
+try
+{
+    await execution;
+    throw new InvalidOperationException("Expected the retry pipeline to time out.");
+}
+catch (TimeoutExceededException) when (attempts == 2)
+{
+    // The clause handled the first timeout, so Retry made two total attempts.
+}
+```
+
+The similar-looking `System.TimeoutException` clause does not handle Kevlar's timeout rejection:
+
+<!-- doc-test-run: system-timeout-clause-trap -->
+```csharp
+var time = new FakeTimeProvider();
+var attempts = 0;
+var shield = Shield
+    .When<TimeoutException>() // <!-- doc-lint: allow-TimeoutException -->
+    .Retry(1, Backoff.None)
+    .Timeout(TimeSpan.FromSeconds(1))
+    .WithTimeProvider(time);
+var execution = shield.ExecuteAsync(async token =>
+{
+    Interlocked.Increment(ref attempts);
+    var never = new TaskCompletionSource();
+    using var registration = token.Register(() => never.SetCanceled(token));
+    await never.Task;
+}).AsTask();
+
+await execution.WaitForPendingAsync(
+    () => Volatile.Read(ref attempts) == 1,
+    "the timed attempt");
+await time.AdvanceUntilAsync(
+    TimeSpan.FromSeconds(1),
+    () => execution.IsCompleted,
+    "the unhandled timeout",
+    maxAdvances: 1);
+
+try
+{
+    await execution;
+    throw new InvalidOperationException("Expected the timeout to propagate.");
+}
+catch (TimeoutExceededException) when (attempts == 1)
+{
+    // No retry: System.TimeoutException is the wrong clause for Kevlar timeouts.
+}
 ```

@@ -143,10 +143,12 @@ public class FallbackEdgeCaseTests
     }
 
     [Test]
-    public async Task Fallback_Around_A_Circuit_Breaker_Swallows_Rejections()
+    public async Task Explicit_Fallback_Around_A_Circuit_Breaker_Swallows_Rejections()
     {
         var shield = Shield.For<int>()
+            .When<Exception>()
             .FallbackTo(-1)
+            .WhenAnyError()
             .CircuitBreaker(1, TimeSpan.FromMinutes(1));
 
         // First execution trips the breaker; the fallback replaces the original failure.

@@ -107,6 +107,33 @@ public static class HttpShield
         return suggested is { } value && value > retry.Delay ? value : null;
     }
 
+    /// <summary>
+    /// Creates a <see cref="RetryOptions{TResult}.DelayGenerator"/> that honours
+    /// <c>Retry-After</c> while capping the server suggestion at <paramref name="maxDelay"/>.
+    /// The computed backoff is never shortened.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// <paramref name="maxDelay"/> is negative.
+    /// </exception>
+    public static Func<RetryEvent<HttpResponseMessage>, TimeSpan?> RetryAfter(TimeSpan maxDelay)
+    {
+        if (maxDelay < TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maxDelay), "maxDelay must not be negative.");
+        }
+
+        return retry =>
+        {
+            var suggested = RetryAfter(retry);
+            if (suggested is not { } value || value <= maxDelay)
+            {
+                return suggested;
+            }
+
+            return maxDelay > retry.Delay ? maxDelay : null;
+        };
+    }
+
     private static bool IsHttpClientTimeout(TaskCanceledException exception)
     {
         if (exception.InnerException is TimeoutException)

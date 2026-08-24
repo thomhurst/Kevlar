@@ -5,9 +5,16 @@ public sealed class TimeoutExceededException : KevlarException
 {
     /// <summary>Initializes the exception for the given timeout.</summary>
     public TimeoutExceededException(TimeSpan timeout)
-        : base($"The execution did not complete within the timeout of {timeout.TotalSeconds:0.###}s.")
+        : base(FormatMessage(timeout))
+        => Timeout = timeout;
+
+    internal TimeoutExceededException(TimeSpan timeout, OperationCanceledException innerException)
+        : base(FormatMessage(timeout), innerException)
         => Timeout = timeout;
 
     /// <summary>The timeout that was exceeded.</summary>
     public TimeSpan Timeout { get; }
+
+    private static string FormatMessage(TimeSpan timeout) =>
+        $"The execution did not complete within the timeout of {timeout.TotalSeconds:0.###}s.";
 }

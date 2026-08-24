@@ -34,7 +34,9 @@ public class StrategyModelTests
     public Task Retry_Matches_Attempt_Model_And_Backoff_Domains() => ModelRunner.RunAsync(
         "retry and backoff",
         commandCount: 20,
-        random => new RetryCommand(random.Next(4) == 0, random.Next(0, 6)),
+        random => new RetryCommand(
+            (RetryOutcomeKind)random.Next(Enum.GetValues<RetryOutcomeKind>().Length),
+            random.Next(0, 6)),
         ExecuteRetryModelAsync);
 
     [Test]
@@ -44,16 +46,113 @@ public class StrategyModelTests
         random => new CompositionCommand(random.Next(1, 1000), random.Next(3) == 0),
         ExecuteCompositionModelAsync);
 
+    [Test]
+    public Task Timeout_Matches_Cancellation_Arbitration_Model() => ModelRunner.RunAsync(
+        "timeout cancellation arbitration",
+        commandCount: 20,
+        random => new TimeoutCommand(
+            (TimeoutSignal)random.Next(Enum.GetValues<TimeoutSignal>().Length),
+            (CancellationShape)random.Next(Enum.GetValues<CancellationShape>().Length)),
+        ExecuteTimeoutModelAsync);
+
+    private static async Task ExecuteTimeoutModelAsync(IReadOnlyList<TimeoutCommand> commands)
+    {
+        var timeProvider = new FakeTimeProvider();
+        var shield = Shield.Timeout(TimeSpan.FromSeconds(1)).WithTimeProvider(timeProvider);
+
+        for (var index = 0; index < commands.Count; index++)
+        {
+            var command = commands[index];
+            using var callerCancellation = new CancellationTokenSource();
+            using var foreignCancellation = new CancellationTokenSource();
+            var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var cancellation = command.Shape switch
+            {
+                CancellationShape.ExecutionToken => null,
+                CancellationShape.ForeignToken => new OperationCanceledException(
+                    "foreign cancellation",
+                    foreignCancellation.Token),
+                CancellationShape.NoToken => new OperationCanceledException("unattributed cancellation"),
+                CancellationShape.TaskCanceled => new TaskCanceledException("wrapped cancellation"),
+                _ => throw new ArgumentOutOfRangeException(nameof(command)),
+            };
+
+            var execution = shield.ExecuteOutcomeAsync<int>(async token =>
+            {
+                started.TrySetResult();
+                if (command.Signal != TimeoutSignal.None)
+                {
+                    try
+                    {
+                        await Task.Delay(Timeout.InfiniteTimeSpan, token);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                    }
+                }
+
+                throw cancellation ?? new OperationCanceledException(token);
+            }, callerCancellation.Token).AsTask();
+
+            await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            if (command.Signal == TimeoutSignal.CallerAndTimeout)
+            {
+                callerCancellation.Cancel();
+            }
+
+            if (command.Signal != TimeoutSignal.None)
+            {
+                timeProvider.Advance(TimeSpan.FromSeconds(1));
+            }
+
+            var outcome = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+            if (command.Signal == TimeoutSignal.Timeout)
+            {
+                Ensure(outcome.Exception is TimeoutExceededException, index, command, "timeout outcome differs");
+                Ensure(
+                    outcome.Exception?.InnerException is OperationCanceledException,
+                    index,
+                    command,
+                    "timeout inner exception is missing");
+                Ensure(
+                    cancellation is null || ReferenceEquals(outcome.Exception?.InnerException, cancellation),
+                    index,
+                    command,
+                    "timeout inner exception identity differs");
+            }
+            else if (command.Signal == TimeoutSignal.CallerAndTimeout)
+            {
+                Ensure(
+                    outcome.Exception is OperationCanceledException caller
+                    && caller.CancellationToken == callerCancellation.Token,
+                    index,
+                    command,
+                    "caller cancellation did not win");
+            }
+            else
+            {
+                Ensure(outcome.Exception is OperationCanceledException, index, command, "cancellation outcome differs");
+                Ensure(cancellation is null || ReferenceEquals(outcome.Exception, cancellation),
+                    index,
+                    command,
+                    "spontaneous cancellation identity differs");
+            }
+        }
+    }
+
     private static async Task ExecuteCircuitModelAsync(IReadOnlyList<CircuitCommand> commands)
     {
         var timeProvider = new ModelTimeProvider();
         var monitor = new CircuitBreakerMonitor();
-        var shield = Shield.CircuitBreaker(options =>
-        {
-            options.ConsecutiveFailures = 2;
-            options.BreakDuration = TimeSpan.FromSeconds(3);
-            options.Monitor = monitor;
-        }).WithTimeProvider(timeProvider);
+        var shield = Shield
+            .When<ModelFailureException>()
+            .CircuitBreaker(options =>
+            {
+                options.ConsecutiveFailures = 2;
+                options.BreakDuration = TimeSpan.FromSeconds(3);
+                options.Monitor = monitor;
+            })
+            .WithTimeProvider(timeProvider);
         var state = CircuitState.Closed;
         var consecutiveFailures = 0;
         var elapsedSeconds = 0;
@@ -90,6 +189,7 @@ public class StrategyModelTests
 
                 case CircuitCommandKind.Succeed:
                 case CircuitCommandKind.Fail:
+                case CircuitCommandKind.Unhandled:
                     var shouldSucceed = command.Kind == CircuitCommandKind.Succeed;
                     var invoked = false;
                     var outcome = await shield.ExecuteOutcomeAsync<int>(_ =>
@@ -97,10 +197,13 @@ public class StrategyModelTests
                         invoked = true;
                         return shouldSucceed
                             ? new ValueTask<int>(42)
-                            : throw new ModelFailureException();
+                            : command.Kind == CircuitCommandKind.Fail
+                                ? throw new ModelFailureException()
+                                : throw new ArgumentException("unhandled");
                     });
 
                     var expectedInvocation = state == CircuitState.Closed
+                        || state == CircuitState.HalfOpen
                         || (state == CircuitState.Open && elapsedSeconds >= openUntil);
                     Ensure(invoked == expectedInvocation, index, command, "delegate admission differs");
 
@@ -116,10 +219,11 @@ public class StrategyModelTests
                         consecutiveFailures = 0;
                         Ensure(outcome.IsSuccess && outcome.Result == 42, index, command, "success outcome differs");
                     }
-                    else
+                    else if (command.Kind == CircuitCommandKind.Fail)
                     {
-                        if (state == CircuitState.Open)
+                        if (state is CircuitState.Open or CircuitState.HalfOpen)
                         {
+                            state = CircuitState.Open;
                             openUntil = elapsedSeconds + 3;
                         }
                         else if (++consecutiveFailures >= 2)
@@ -129,6 +233,15 @@ public class StrategyModelTests
                         }
 
                         Ensure(outcome.Exception is ModelFailureException, index, command, "failure outcome differs");
+                    }
+                    else
+                    {
+                        if (state == CircuitState.Open)
+                        {
+                            state = CircuitState.HalfOpen;
+                        }
+
+                        Ensure(outcome.Exception is ArgumentException, index, command, "unhandled outcome differs");
                     }
 
                     break;
@@ -315,9 +428,16 @@ public class StrategyModelTests
         var expectedSuccess = false;
         for (; expectedAttempts <= maxRetries; expectedAttempts++)
         {
-            if (commands[Math.Min(expectedAttempts, commands.Count - 1)].Success)
+            var kind = commands[Math.Min(expectedAttempts, commands.Count - 1)].Kind;
+            if (kind == RetryOutcomeKind.Success)
             {
                 expectedSuccess = true;
+                expectedAttempts++;
+                break;
+            }
+
+            if (kind == RetryOutcomeKind.Rejection)
+            {
                 expectedAttempts++;
                 break;
             }
@@ -327,13 +447,29 @@ public class StrategyModelTests
         {
             var command = commands[Math.Min(attempts, commands.Count - 1)];
             attempts++;
-            return command.Success
-                ? new ValueTask<int>(42)
-                : throw new ModelFailureException();
+            return command.Kind switch
+            {
+                RetryOutcomeKind.Success => new ValueTask<int>(42),
+                RetryOutcomeKind.OrdinaryFailure => throw new ModelFailureException(),
+                RetryOutcomeKind.Rejection => throw new RateLimitExceededException(retryAfter: null),
+                _ => throw new ArgumentOutOfRangeException(nameof(command)),
+            };
         });
 
         Ensure(attempts == expectedAttempts, 0, "retry", "attempt count differs");
         Ensure(outcome.IsSuccess == expectedSuccess, 0, "retry", "final outcome differs");
+        var finalKind = commands[Math.Min(attempts - 1, commands.Count - 1)].Kind;
+        if (!expectedSuccess)
+        {
+            Ensure(
+                finalKind == RetryOutcomeKind.Rejection
+                    ? outcome.Exception is RateLimitExceededException
+                    : outcome.Exception is ModelFailureException,
+                0,
+                "retry",
+                "final exception differs");
+        }
+
         Ensure(delayAttempts.SequenceEqual(Enumerable.Range(1, Math.Max(0, attempts - 1))), 0, "retry", "delay attempt numbers differ");
 
         foreach (var command in commands)
@@ -379,6 +515,7 @@ public class StrategyModelTests
     {
         Succeed,
         Fail,
+        Unhandled,
         Advance,
         MoveUtcBackward,
         Isolate,
@@ -404,9 +541,33 @@ public class StrategyModelTests
 
     private readonly record struct ConcurrencyCommand(ConcurrencyCommandKind Kind);
 
-    private readonly record struct RetryCommand(bool Success, int DelaySelector);
+    private enum RetryOutcomeKind
+    {
+        Success,
+        OrdinaryFailure,
+        Rejection,
+    }
+
+    private readonly record struct RetryCommand(RetryOutcomeKind Kind, int DelaySelector);
 
     private readonly record struct CompositionCommand(int Id, bool Fail);
+
+    private enum TimeoutSignal
+    {
+        None,
+        Timeout,
+        CallerAndTimeout,
+    }
+
+    private enum CancellationShape
+    {
+        ExecutionToken,
+        ForeignToken,
+        NoToken,
+        TaskCanceled,
+    }
+
+    private readonly record struct TimeoutCommand(TimeoutSignal Signal, CancellationShape Shape);
 
     private sealed class ModelFailureException : Exception;
 

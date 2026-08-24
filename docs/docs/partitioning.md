@@ -10,7 +10,7 @@ tenant, shard, authority, or operation while placing an explicit bound on retain
 
 ```csharp
 var endpoints = new PartitionedShield<string>(
-    endpoint => Shield.When<TimeoutException>()
+    endpoint => Shield.When<TimeoutExceededException>()
         .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30)),
     new PartitionedShieldOptions
     {
@@ -80,7 +80,7 @@ state per tenant while sharing one bounded provider:
 services.AddPartitionedShield<string, TenantResult>(
     "tenants",
     (serviceProvider, tenantId) => Shield.For<TenantResult>()
-        .When<TimeoutException>()
+        .When<TimeoutExceededException>()
         .CircuitBreaker(consecutiveFailures: 3, breakDuration: TimeSpan.FromSeconds(20))
         .WithName("tenant-operation"),
     options => options.MaximumPartitions = 5_000,

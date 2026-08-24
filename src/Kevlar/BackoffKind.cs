@@ -1,12 +1,12 @@
-namespace Kevlar.Testing;
+namespace Kevlar;
 
-/// <summary>Stable category for an inert backoff descriptor.</summary>
+/// <summary>The built-in and caller-defined backoff categories.</summary>
 public enum BackoffKind
 {
     /// <summary>No delay between attempts.</summary>
     None,
 
-    /// <summary>A constant delay.</summary>
+    /// <summary>The same delay before every attempt.</summary>
     Constant,
 
     /// <summary>A linearly increasing delay.</summary>
@@ -15,6 +15,6 @@ public enum BackoffKind
     /// <summary>An exponentially increasing delay.</summary>
     Exponential,
 
-    /// <summary>A caller-defined delay callback whose executable implementation is not exposed.</summary>
+    /// <summary>A caller-defined delay callback.</summary>
     Custom,
 }
