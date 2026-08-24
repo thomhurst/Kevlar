@@ -24,6 +24,11 @@ services.AddHttpClient("api")
 3. **Circuit breaker** — sampling mode: opens at a 50% failure ratio over a 30s window (minimum 10 calls), breaks for 15s
 4. **10s attempt timeout** per individual try
 
+The standard registration disables `HttpClient.Timeout`; its attempt and total timeout strategies
+own timeout behavior inside the retry boundary. Configure `AttemptTimeout` and `TotalTimeout`
+instead. If you configure `HttpClient.Timeout` on the same builder, call `AddStandardShield` after
+that configuration.
+
 Customize those stages without rebuilding the pipeline:
 
 ```csharp

@@ -179,31 +179,68 @@ public class HttpContractTests
             + "Retry(1, no delay)");
 
     [Test]
-    public async Task Standard_With_Long_Attempt_Timeout_Retries_HttpClient_Timeout()
+    public async Task WhenTransient_Retries_Real_HttpClient_Timeout()
     {
         var calls = 0;
-        using var inner = new DelegateHandler((_, _) =>
+        using var inner = new DelegateHandler(async (_, cancellationToken) =>
         {
             calls++;
-            return calls == 1
-                ? Task.FromException<HttpResponseMessage>(
-                    new TaskCanceledException("HttpClient timeout", new TimeoutException()))
-                : Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
-        });
-        var options = new StandardHttpShieldOptions
-        {
-            Retry = new RetryOptions<HttpResponseMessage>
+            if (calls == 1)
             {
-                MaxRetries = 1,
-                Backoff = Backoff.None,
-            },
-            AttemptTimeout = new TimeoutOptions { Timeout = TimeSpan.FromSeconds(200) },
+                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        });
+        using var client = new HttpClient(inner, disposeHandler: false)
+        {
+            Timeout = TimeSpan.FromMilliseconds(25),
         };
-        using var client = CreateClient(inner, HttpShield.Standard(options));
-        client.Timeout = TimeSpan.FromSeconds(1);
+        var shield = HttpShield.WhenTransient().Retry(1, Backoff.None);
+
+        using var response = await shield.ExecuteAsync(
+            cancellationToken => new ValueTask<HttpResponseMessage>(
+                client.GetAsync("http://localhost/test", cancellationToken)));
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(calls).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task Standard_Uses_Attempt_Timeout_Instead_Of_HttpClient_Timeout()
+    {
+        var calls = 0;
+        using var inner = new DelegateHandler(async (_, cancellationToken) =>
+        {
+            calls++;
+            if (calls == 1)
+            {
+                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        });
+        using var services = new ServiceCollection()
+            .AddHttpClient("standard-timeout", client =>
+                client.Timeout = TimeSpan.FromMilliseconds(10))
+            .ConfigurePrimaryHttpMessageHandler(() => inner)
+            .AddStandardShield(options =>
+            {
+                options.TotalTimeout.Timeout = TimeSpan.FromSeconds(2);
+                options.Retry.MaxRetries = 1;
+                options.Retry.Backoff = Backoff.None;
+                options.CircuitBreaker.ConsecutiveFailures = 100;
+                options.CircuitBreaker.FailureRatio = null;
+                options.AttemptTimeout.Timeout = TimeSpan.FromMilliseconds(50);
+            })
+            .Services
+            .BuildServiceProvider();
+        using var client = services.GetRequiredService<IHttpClientFactory>()
+            .CreateClient("standard-timeout");
 
         using var response = await client.GetAsync("http://localhost/test");
 
+        await Assert.That(client.Timeout).IsEqualTo(Timeout.InfiniteTimeSpan);
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         await Assert.That(calls).IsEqualTo(2);
     }
