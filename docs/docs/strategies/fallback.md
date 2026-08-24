@@ -38,7 +38,8 @@ var shield = Shield
 A void fallback keeps the chain's type as `Shield`, so it can be stored, passed, and composed like
 any other untyped shield. It can recover void executions only. If a result-returning execution
 reaches the fallback, Kevlar throws an `InvalidOperationException` because the fallback cannot
-produce the required value. The `KEV005` analyzer catches statically visible cases.
+produce the required value. The [KEV005 analyzer](../analyzers.md#kev005-void-fallback-with-a-result)
+catches statically visible cases.
 
 ```csharp
 Shield shield = Shield
@@ -47,7 +48,7 @@ Shield shield = Shield
     .Timeout(TimeSpan.FromSeconds(10));
 
 await shield.ExecuteAsync(static _ => ValueTask.CompletedTask); // valid
-// await shield.ExecuteAsync(static _ => new ValueTask<int>(42)); // KEV005
+// await shield.ExecuteAsync(static _ => new ValueTask<int>(42)); // analyzer warning
 ```
 
 For result-producing recovery, build a typed shield with `Shield.For<TResult>()` and use its typed
