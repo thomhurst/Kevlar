@@ -181,7 +181,6 @@ public class HttpReplayTests
         [
             static () => new StringContent("payload"),
             static () => new FormUrlEncodedContent([new("name", "value")]),
-            static () => JsonContent.Create(new { Name = "value" }),
         ];
 
         foreach (var factory in factories)
@@ -208,6 +207,60 @@ public class HttpReplayTests
             await Assert.That(transport.Attempts).IsEqualTo(2);
             await Assert.That(bodies[1]).IsEqualTo(bodies[0]);
         }
+    }
+
+    [Test]
+    public async Task JsonContent_With_Consumable_Value_NoBuffer_Returns_Original_Response()
+    {
+        var values = new SingleUseAsyncEnumerable();
+        var originalResponse = new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+        var transport = new RecordingHandler(async (_, request, _) =>
+        {
+            await request.Content!.CopyToAsync(Stream.Null);
+            return originalResponse;
+        });
+        using var invoker = CreateInvoker(
+            HttpShield.WhenTransient().Retry(1, Backoff.None),
+            new ShieldHttpHandlerOptions(),
+            transport);
+        using var request = new HttpRequestMessage(HttpMethod.Put, "https://origin.example/upload")
+        {
+            Content = JsonContent.Create<IAsyncEnumerable<int>>(values),
+        };
+
+        using var response = await invoker.SendAsync(request, CancellationToken.None);
+
+        await Assert.That(ReferenceEquals(response, originalResponse)).IsTrue();
+        await Assert.That(transport.Attempts).IsEqualTo(1);
+        await Assert.That(values.Enumerations).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Buffered_JsonContent_NoBuffer_Is_Retried()
+    {
+        var bodies = new List<string>();
+        var transport = new RecordingHandler(async (attempt, request, _) =>
+        {
+            bodies.Add(await request.Content!.ReadAsStringAsync());
+            return new HttpResponseMessage(
+                attempt == 1 ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.OK);
+        });
+        using var invoker = CreateInvoker(
+            HttpShield.WhenTransient().Retry(1, Backoff.None),
+            new ShieldHttpHandlerOptions(),
+            transport);
+        using var content = JsonContent.Create(new { Name = "value" });
+        await content.LoadIntoBufferAsync();
+        using var request = new HttpRequestMessage(HttpMethod.Put, "https://origin.example/upload")
+        {
+            Content = content,
+        };
+
+        using var response = await invoker.SendAsync(request, CancellationToken.None);
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(transport.Attempts).IsEqualTo(2);
+        await Assert.That(bodies[1]).IsEqualTo(bodies[0]);
     }
 
     [Test]
@@ -1097,6 +1150,27 @@ public class HttpReplayTests
             HttpRequestMessage request,
             CancellationToken cancellationToken) =>
             send(Interlocked.Increment(ref _attempts), request, cancellationToken);
+    }
+
+    private sealed class SingleUseAsyncEnumerable : IAsyncEnumerable<int>
+    {
+        private int _enumerations;
+
+        public int Enumerations => Volatile.Read(ref _enumerations);
+
+        public async IAsyncEnumerator<int> GetAsyncEnumerator(
+            CancellationToken cancellationToken = default)
+        {
+            if (Interlocked.Increment(ref _enumerations) != 1)
+            {
+                throw new InvalidOperationException("The sequence can only be consumed once.");
+            }
+
+            yield return 1;
+            await Task.Yield();
+            cancellationToken.ThrowIfCancellationRequested();
+            yield return 2;
+        }
     }
 
     private sealed class TrackingContent(string value) : HttpContent
