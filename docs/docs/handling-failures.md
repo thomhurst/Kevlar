@@ -6,6 +6,8 @@ sidebar_position: 3
 
 Reactive strategies — [retry](strategies/retry.md), [circuit breaker](strategies/circuit-breaker.md), [hedging](strategies/hedging.md), [fallback](strategies/fallback.md) — act on failures. Handling clauses tell them what a failure *is*.
 
+The [exceptions reference](exceptions.md) lists every Kevlar exception and whether this default handles it.
+
 ## The default
 
 With no handling clause, reactive strategies handle ordinary exceptions. They deliberately let

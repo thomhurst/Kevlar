@@ -51,6 +51,7 @@ catch (KevlarException exception)               // CircuitOpenException, RateLim
 
 The same applies to `CircuitOpenException`, `RateLimitExceededException` and
 `ConcurrencyLimitExceededException`: every rejection Kevlar raises derives from `KevlarException`.
+The [exceptions reference](exceptions.md) covers every core and satellite exception in one place.
 
 :::
 

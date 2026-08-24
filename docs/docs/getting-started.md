@@ -4,6 +4,8 @@ sidebar_position: 2
 
 # Getting Started
 
+For failures raised by strategies and satellite packages, see the [exceptions reference](exceptions.md).
+
 ## Install
 
 ```bash

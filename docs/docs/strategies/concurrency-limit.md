@@ -6,6 +6,8 @@ sidebar_position: 5
 
 Concurrency isolation: cap how many executions run at once, so one misbehaving dependency can't drain your whole thread pool or connection pool.
 
+See the [exceptions reference](../exceptions.md) for `ConcurrencyLimitExceededException`.
+
 ```csharp
 Shield.ConcurrencyLimit(maxConcurrency: 10, queueLimit: 20);
 
