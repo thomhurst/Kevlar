@@ -10,6 +10,16 @@
     <DeterministicSourcePaths Condition="'$(ContinuousIntegrationBuild)' == 'true'">true</DeterministicSourcePaths>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <!-- Keep binary identity stable within a package major; regexes strip prerelease labels. -->
+    <_KevlarVersionForAssembly Condition="'$(Version)' != ''">$(Version)</_KevlarVersionForAssembly>
+    <_KevlarVersionForAssembly Condition="'$(_KevlarVersionForAssembly)' == '' and '$(VersionPrefix)' != ''">$(VersionPrefix)</_KevlarVersionForAssembly>
+    <_KevlarVersionForAssembly Condition="'$(_KevlarVersionForAssembly)' == ''">1.0.0</_KevlarVersionForAssembly>
+    <_KevlarAssemblyMajor>$([System.Text.RegularExpressions.Regex]::Match('$(_KevlarVersionForAssembly)', '^[0-9]+').Value)</_KevlarAssemblyMajor>
+    <_KevlarFileVersion>$([System.Text.RegularExpressions.Regex]::Match('$(_KevlarVersionForAssembly)', '^[0-9]+\.[0-9]+\.[0-9]+').Value).0</_KevlarFileVersion>
+    <AssemblyVersion>$(_KevlarAssemblyMajor).0.0.0</AssemblyVersion>
+    <FileVersion>$(_KevlarFileVersion)</FileVersion>
+    <!-- Ignore GitVersion's richer build metadata so SourceLink appends the commit exactly once. -->
+    <InformationalVersion Condition="'$(Version)' != ''">$(Version)</InformationalVersion>
     <UseArtifactsOutput>true</UseArtifactsOutput>
     <ArtifactsPath>$(MSBuildThisFileDirectory)artifacts</ArtifactsPath>
   </PropertyGroup>
