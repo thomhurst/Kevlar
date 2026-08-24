@@ -24,6 +24,11 @@ services.AddHttpClient("api")
 3. **Circuit breaker** — sampling mode: opens at a 50% failure ratio over a 30s window (minimum 10 calls), breaks for 15s
 4. **10s attempt timeout** per individual try
 
+The standard registration disables `HttpClient.Timeout`; its attempt and total timeout strategies
+own timeout behavior inside the retry boundary. Configure `AttemptTimeout` and `TotalTimeout`
+instead. If you configure `HttpClient.Timeout` on the same builder, call `AddStandardShield` after
+that configuration.
+
 Customize those stages without rebuilding the pipeline:
 
 ```csharp
@@ -177,12 +182,17 @@ You can also grab that exact shield directly with `HttpShield.Standard()`.
 Starts a typed `Shield<HttpResponseMessage>` builder with the standard transient-fault handling clause:
 
 - `HttpRequestException`
+- `HttpClient.Timeout` (`TaskCanceledException` with an inner `TimeoutException`)
 - attempt timeouts (`TimeoutExceededException`)
 - HTTP 500–599 responses (numeric status codes outside that range are not treated as 5xx)
 - HTTP 408 (Request Timeout)
 - HTTP 429 (Too Many Requests)
 
-(The status-code test on its own is available as `HttpShield.IsTransient(response)`.)
+Use `HttpShield.IsTransient(response)` for the status-code test alone. Use
+`HttpShield.IsTransientException(exception, callerCancellationToken)` when classifying an exception
+outside a shield; caller cancellation is never transient. On the `netstandard2.0` asset, a bare
+`TaskCanceledException` with no cancellable token is treated as the legacy `HttpClient.Timeout`
+shape.
 
 ### `HttpShield.RetryAfter`
 

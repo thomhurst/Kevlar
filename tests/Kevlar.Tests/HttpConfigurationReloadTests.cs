@@ -597,7 +597,8 @@ public class HttpConfigurationReloadTests
             return Task.FromResult(new HttpResponseMessage(status));
         });
         var serviceCollection = new ServiceCollection();
-        serviceCollection.AddHttpClient("hedged")
+        serviceCollection.AddHttpClient("hedged", client =>
+                client.Timeout = TimeSpan.FromMilliseconds(10))
             .ConfigurePrimaryHttpMessageHandler(() => transport)
             .AddStandardHedgingShield(configuration);
         using var services = serviceCollection.BuildServiceProvider();
@@ -605,6 +606,7 @@ public class HttpConfigurationReloadTests
 
         using var response = await client.GetAsync("https://origin.example/path");
 
+        await Assert.That(client.Timeout).IsEqualTo(Timeout.InfiniteTimeSpan);
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         await Assert.That(hosts).Contains("one.example");
         await Assert.That(hosts).Contains("two.example");

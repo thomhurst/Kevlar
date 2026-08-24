@@ -6,6 +6,23 @@ namespace Kevlar.NetStandard.Tests;
 public class HttpPropertiesReplayTests
 {
     [Test]
+    public async Task Transient_Classifier_Handles_NetStandard_Timeout_Shape()
+    {
+        using var callerCancellation = new CancellationTokenSource();
+        callerCancellation.Cancel();
+
+        await Assert.That(HttpShield.IsTransientException(
+            new TaskCanceledException(),
+            CancellationToken.None)).IsTrue();
+        await Assert.That(HttpShield.IsTransientException(
+            new TaskCanceledException("HttpClient timeout", new TimeoutException()),
+            CancellationToken.None)).IsTrue();
+        await Assert.That(HttpShield.IsTransientException(
+            new TaskCanceledException("caller", null, callerCancellation.Token),
+            callerCancellation.Token)).IsFalse();
+    }
+
+    [Test]
     public async Task Buffered_Retry_Preserves_NetStandard_Request_Properties()
     {
         var marker = new object();

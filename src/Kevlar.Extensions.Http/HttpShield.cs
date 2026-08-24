@@ -14,13 +14,32 @@ public static class HttpShield
             || (int)response.StatusCode == 429);
 
     /// <summary>
+    /// Returns <see langword="true"/> for transient HTTP exceptions, including an
+    /// <see cref="HttpClient.Timeout"/> cancellation when <paramref name="callerCancellationToken"/>
+    /// was not cancelled.
+    /// </summary>
+    public static bool IsTransientException(
+        Exception? exception,
+        CancellationToken callerCancellationToken) =>
+        !callerCancellationToken.IsCancellationRequested
+        && (exception is HttpRequestException or TimeoutExceededException
+            || exception is TaskCanceledException cancellation
+                && IsHttpClientTimeout(cancellation));
+
+    /// <summary>
     /// Starts a shield that handles the usual transient HTTP failures:
-    /// <see cref="HttpRequestException"/>, Kevlar attempt timeouts, 5xx, 408 and 429.
+    /// <see cref="HttpRequestException"/>, <see cref="HttpClient.Timeout"/> cancellations,
+    /// Kevlar attempt timeouts, 5xx, 408 and 429.
     /// Chain your strategies onto the returned builder.
     /// </summary>
     public static ShieldBuilder<HttpResponseMessage> WhenTransient() =>
-        Shield.For<HttpResponseMessage>()
+        WhenTransient(Shield.For<HttpResponseMessage>());
+
+    internal static ShieldBuilder<HttpResponseMessage> WhenTransient(
+        Shield<HttpResponseMessage> shield) =>
+        shield
             .When<HttpRequestException>()
+            .Or<TaskCanceledException>(IsHttpClientTimeout)
             .Or<TimeoutExceededException>()
             .OrResult(IsTransient);
 
@@ -42,11 +61,9 @@ public static class HttpShield
 
         Validate(options);
 
-        var shield = Shield.Timeout(timeout => Copy(options.TotalTimeout, timeout))
-            .For<HttpResponseMessage>()
-            .When<HttpRequestException>()
-            .Or<TimeoutExceededException>()
-            .OrResult(IsTransient)
+        var shield = WhenTransient(
+                Shield.Timeout(timeout => Copy(options.TotalTimeout, timeout))
+                    .For<HttpResponseMessage>())
             .Retry(retry => Copy(options.Retry, retry))
             .CircuitBreaker(circuitBreaker => Copy(options.CircuitBreaker, circuitBreaker));
 
@@ -115,6 +132,20 @@ public static class HttpShield
 
             return maxDelay > retry.Delay ? maxDelay : null;
         };
+    }
+
+    private static bool IsHttpClientTimeout(TaskCanceledException exception)
+    {
+        if (exception.InnerException is TimeoutException)
+        {
+            return true;
+        }
+
+#if NETSTANDARD2_0
+        return !exception.CancellationToken.CanBeCanceled;
+#else
+        return false;
+#endif
     }
 
     private static void Validate(StandardHttpShieldOptions options)

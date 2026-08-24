@@ -66,6 +66,7 @@ public class HttpContractTests
 
     [Test]
     [Arguments(typeof(HttpRequestException))]
+    [Arguments(typeof(TaskCanceledException))]
     [Arguments(typeof(TimeoutExceededException))]
     public async Task WhenTransient_Retries_Documented_Exceptions(Type exceptionType)
     {
@@ -77,7 +78,9 @@ public class HttpContractTests
             {
                 throw exceptionType == typeof(HttpRequestException)
                     ? new HttpRequestException("transient")
-                    : new TimeoutExceededException(TimeSpan.FromSeconds(1));
+                    : exceptionType == typeof(TaskCanceledException)
+                        ? new TaskCanceledException("HttpClient timeout", new TimeoutException())
+                        : new TimeoutExceededException(TimeSpan.FromSeconds(1));
             }
 
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
@@ -88,6 +91,174 @@ public class HttpContractTests
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         await Assert.That(calls).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task IsTransientException_Distinguishes_Timeouts_From_Caller_Cancellation()
+    {
+        using var callerCancellation = new CancellationTokenSource();
+        callerCancellation.Cancel();
+
+        await Assert.That(HttpShield.IsTransientException(
+            new HttpRequestException("socket", new System.Net.Sockets.SocketException()),
+            CancellationToken.None)).IsTrue();
+        await Assert.That(HttpShield.IsTransientException(
+            new TaskCanceledException("HttpClient timeout", new TimeoutException()),
+            CancellationToken.None)).IsTrue();
+        await Assert.That(HttpShield.IsTransientException(
+            new TaskCanceledException(),
+            CancellationToken.None)).IsFalse();
+        await Assert.That(HttpShield.IsTransientException(
+            new TimeoutExceededException(TimeSpan.FromSeconds(1)),
+            CancellationToken.None)).IsTrue();
+        await Assert.That(HttpShield.IsTransientException(
+            new TaskCanceledException("caller", null, callerCancellation.Token),
+            callerCancellation.Token)).IsFalse();
+        await Assert.That(HttpShield.IsTransientException(
+            new OperationCanceledException(callerCancellation.Token),
+            callerCancellation.Token)).IsFalse();
+        await Assert.That(HttpShield.IsTransientException(
+            new InvalidOperationException(),
+            CancellationToken.None)).IsFalse();
+    }
+
+    [Test]
+    public async Task WhenTransient_Does_Not_Retry_Caller_Cancellation()
+    {
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        var calls = 0;
+        var retries = 0;
+        using var inner = new DelegateHandler((_, _) =>
+        {
+            calls++;
+            throw new TaskCanceledException("caller", null, cancellation.Token);
+        });
+        var shield = HttpShield.WhenTransient().Retry(options =>
+        {
+            options.MaxRetries = 1;
+            options.Backoff = Backoff.None;
+            options.OnRetry = _ => retries++;
+        });
+        using var client = CreateClient(inner, shield);
+
+        _ = await Assert.That(async () => await client.GetAsync("http://localhost/test"))
+            .Throws<TaskCanceledException>();
+
+        await Assert.That(calls).IsEqualTo(1);
+        await Assert.That(retries).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task WhenTransient_Breaker_Counts_HttpClient_Timeouts()
+    {
+        var calls = 0;
+        var shield = HttpShield.WhenTransient()
+            .CircuitBreaker(consecutiveFailures: 2, breakDuration: TimeSpan.FromMinutes(1));
+
+        for (var attempt = 0; attempt < 2; attempt++)
+        {
+            var outcome = await shield.ExecuteOutcomeAsync<HttpResponseMessage>(_ =>
+            {
+                calls++;
+                throw new TaskCanceledException("HttpClient timeout", new TimeoutException());
+            });
+            await Assert.That(outcome.Exception).IsTypeOf<TaskCanceledException>();
+        }
+
+        var rejected = await shield.ExecuteOutcomeAsync(
+            _ => new ValueTask<HttpResponseMessage>(new HttpResponseMessage(HttpStatusCode.OK)));
+        await Assert.That(rejected.Exception).IsTypeOf<CircuitOpenException>();
+        await Assert.That(calls).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task WhenTransient_Describes_HttpClient_Timeouts() =>
+        await Assert.That(HttpShield.WhenTransient().Retry(1, Backoff.None).ToString()).IsEqualTo(
+            "[when HttpRequestException | TaskCanceledException matching predicate | TimeoutExceededException | result predicate] "
+            + "Retry(1, no delay)");
+
+    [Test]
+    public async Task WhenTransient_Retries_Real_HttpClient_Timeout()
+    {
+        var calls = 0;
+        using var inner = new DelegateHandler(async (_, cancellationToken) =>
+        {
+            calls++;
+            if (calls == 1)
+            {
+                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        });
+        using var client = new HttpClient(inner, disposeHandler: false)
+        {
+            Timeout = TimeSpan.FromMilliseconds(25),
+        };
+        var shield = HttpShield.WhenTransient().Retry(1, Backoff.None);
+
+        using var response = await shield.ExecuteAsync(
+            cancellationToken => new ValueTask<HttpResponseMessage>(
+                client.GetAsync("http://localhost/test", cancellationToken)));
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(calls).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task Standard_Uses_Attempt_Timeout_Instead_Of_HttpClient_Timeout()
+    {
+        var calls = 0;
+        using var inner = new DelegateHandler(async (_, cancellationToken) =>
+        {
+            calls++;
+            if (calls == 1)
+            {
+                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        });
+        using var services = new ServiceCollection()
+            .AddHttpClient("standard-timeout", client =>
+                client.Timeout = TimeSpan.FromMilliseconds(10))
+            .ConfigurePrimaryHttpMessageHandler(() => inner)
+            .AddStandardShield(options =>
+            {
+                options.TotalTimeout.Timeout = TimeSpan.FromSeconds(2);
+                options.Retry.MaxRetries = 1;
+                options.Retry.Backoff = Backoff.None;
+                options.CircuitBreaker.ConsecutiveFailures = 100;
+                options.CircuitBreaker.FailureRatio = null;
+                options.AttemptTimeout.Timeout = TimeSpan.FromMilliseconds(50);
+            })
+            .Services
+            .BuildServiceProvider();
+        using var client = services.GetRequiredService<IHttpClientFactory>()
+            .CreateClient("standard-timeout");
+
+        using var response = await client.GetAsync("http://localhost/test");
+
+        await Assert.That(client.Timeout).IsEqualTo(Timeout.InfiniteTimeSpan);
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(calls).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task Standard_Hedging_Uses_Shield_Timeout_Instead_Of_HttpClient_Timeout()
+    {
+        using var services = new ServiceCollection()
+            .AddHttpClient("standard-hedging-timeout", client =>
+                client.Timeout = TimeSpan.FromMilliseconds(10))
+            .AddStandardHedgingShield(options =>
+                options.Endpoints.Add(new HttpEndpoint(new Uri("https://example.test"))))
+            .Services
+            .BuildServiceProvider();
+        using var client = services.GetRequiredService<IHttpClientFactory>()
+            .CreateClient("standard-hedging-timeout");
+
+        await Assert.That(client.Timeout).IsEqualTo(Timeout.InfiniteTimeSpan);
     }
 
     [Test]
@@ -202,7 +373,7 @@ public class HttpContractTests
     [Test]
     public async Task Standard_Has_The_Documented_Pipeline() =>
         await Assert.That(HttpShield.Standard().ToString()).IsEqualTo(
-            "Timeout(30s) → [when HttpRequestException | TimeoutExceededException | result predicate] "
+            "Timeout(30s) → [when HttpRequestException | TaskCanceledException matching predicate | TimeoutExceededException | result predicate] "
             + "Retry(3, exponential 250ms ×2 +jitter ≤30s, ≤10s) → CircuitBreaker(50% over 30s, min 10, break 15s) → Timeout(10s)");
 
     [Test]
@@ -231,7 +402,7 @@ public class HttpContractTests
         };
 
         await Assert.That(HttpShield.Standard(options).ToString()).IsEqualTo(
-            "Timeout(20s) → [when HttpRequestException | TimeoutExceededException | result predicate] "
+            "Timeout(20s) → [when HttpRequestException | TaskCanceledException matching predicate | TimeoutExceededException | result predicate] "
             + "Retry(1, no delay) → CircuitBreaker(8 consecutive, break 5s) → ConcurrencyLimit(12, queue 4) → Timeout(3s)");
     }
 

@@ -89,11 +89,17 @@ public static class ShieldHttpClientBuilderExtensions
             new ShieldDelegatingHandler(shieldFactory(services), optionsFactory(services)));
     }
 
-    /// <summary>Sends this client's requests through <see cref="HttpShield.Standard()"/>.</summary>
+    /// <summary>
+    /// Sends this client's requests through <see cref="HttpShield.Standard()"/> and uses its
+    /// attempt timeout instead of <see cref="HttpClient.Timeout"/>.
+    /// </summary>
     public static IHttpClientBuilder AddStandardShield(this IHttpClientBuilder builder)
         => AddStandardShield(builder, static _ => { });
 
-    /// <summary>Configures and adds one shared standard shield for this client registration.</summary>
+    /// <summary>
+    /// Configures and adds one shared standard shield for this client registration. The standard
+    /// attempt timeout replaces <see cref="HttpClient.Timeout"/>.
+    /// </summary>
     public static IHttpClientBuilder AddStandardShield(
         this IHttpClientBuilder builder,
         Action<StandardHttpShieldOptions> configure)
@@ -112,7 +118,8 @@ public static class ShieldHttpClientBuilderExtensions
         configure(options);
         var shield = HttpShield.Standard(options);
         var handlerOptions = Snapshot(options.Handler);
-        return builder.AddHttpMessageHandler(() => new ShieldDelegatingHandler(shield, handlerOptions));
+        return UseStandardTimeout(builder)
+            .AddHttpMessageHandler(() => new ShieldDelegatingHandler(shield, handlerOptions));
     }
 
     /// <summary>
@@ -133,7 +140,7 @@ public static class ShieldHttpClientBuilderExtensions
             throw new ArgumentNullException(nameof(configure));
         }
 
-        return builder.AddHttpMessageHandler(services =>
+        return UseStandardTimeout(builder).AddHttpMessageHandler(services =>
         {
             var options = new StandardHttpShieldOptions();
             configure(services, options);
@@ -182,7 +189,7 @@ public static class ShieldHttpClientBuilderExtensions
         }
 
         ValidateStandardConfiguration(configuration);
-        return builder.AddHttpMessageHandler(services =>
+        return UseStandardTimeout(builder).AddHttpMessageHandler(services =>
         {
             HttpShieldPipeline CreatePipeline()
             {
@@ -199,6 +206,9 @@ public static class ShieldHttpClientBuilderExtensions
                 onReloadFailure));
         });
     }
+
+    private static IHttpClientBuilder UseStandardTimeout(IHttpClientBuilder builder) =>
+        builder.ConfigureHttpClient(static client => client.Timeout = Timeout.InfiniteTimeSpan);
 
     private static ShieldHttpHandlerOptions Snapshot(ShieldHttpHandlerOptions source)
     {
@@ -257,7 +267,7 @@ public static class ShieldHttpClientBuilderExtensions
         var shield = CreateHedgingShield(options);
         var handlerOptions = CreateHandlerOptions(options);
 
-        return builder.AddHttpMessageHandler(() =>
+        return UseStandardTimeout(builder).AddHttpMessageHandler(() =>
             new ShieldDelegatingHandler(shield, handlerOptions));
     }
 
@@ -302,7 +312,7 @@ public static class ShieldHttpClientBuilderExtensions
         }
 
         ValidateHedgingConfiguration(configuration);
-        return builder.AddHttpMessageHandler(services =>
+        return UseStandardTimeout(builder).AddHttpMessageHandler(services =>
         {
             HttpShieldPipeline CreatePipeline()
             {
@@ -333,13 +343,11 @@ public static class ShieldHttpClientBuilderExtensions
     }
 
     private static Shield<HttpResponseMessage> CreateHedgingShield(StandardHedgingShieldOptions options) =>
-        Shield.Timeout(options.TotalTimeout)
-            .For<HttpResponseMessage>()
-            .When<HttpRequestException>()
-            .Or<TimeoutExceededException>()
+        HttpShield.WhenTransient(
+                Shield.Timeout(options.TotalTimeout)
+                    .For<HttpResponseMessage>())
             .Or<ConcurrencyLimitExceededException>()
             .Or<CircuitOpenException>()
-            .OrResult(HttpShield.IsTransient)
             .Hedge(options.MaxAttempts, options.HedgeDelay);
 
     private static ShieldHttpHandlerOptions CreateHandlerOptions(StandardHedgingShieldOptions options)
