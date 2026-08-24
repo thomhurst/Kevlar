@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Bcl.TimeProvider" VersionOverride="10.0.11" />
+    <PackageReference Include="Microsoft.Bcl.TimeProvider" VersionOverride="$(TestBclTimeProviderVersion)" />
     <PackageReference Include="TUnit" Condition="'$(TargetFramework)' != 'net48'" />
   </ItemGroup>
 

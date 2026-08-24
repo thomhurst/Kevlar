@@ -2,6 +2,10 @@
 
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <TestBclTimeProviderVersion>10.0.11</TestBclTimeProviderVersion>
+    <TestExtensionsHttpVersion>10.0.11</TestExtensionsHttpVersion>
+    <TestExtensionsTimeProviderVersion>10.9.0</TestExtensionsTimeProviderVersion>
+    <TestRateLimitingVersion>10.0.11</TestRateLimitingVersion>
   </PropertyGroup>
 
   <ItemGroup>
