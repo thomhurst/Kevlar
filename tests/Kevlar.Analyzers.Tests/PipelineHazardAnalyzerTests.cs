@@ -1118,6 +1118,8 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.Empty.Hedge(2, TimeSpan.Zero);",
             "_ = Shield.For<int>().FallbackTo(0);",
             "var baseline = Shield.Empty; _ = baseline.RetryForever();",
+            "_ = Shield.Empty.WhenAnyError().Wrap(Shield.Empty).Retry(1);",
+            "_ = Shield.Compose(Shield.Empty.WhenAnyError(), Shield.Empty).Retry(1);",
         };
 
         foreach (var body in cases)

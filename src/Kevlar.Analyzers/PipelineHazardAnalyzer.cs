@@ -262,15 +262,69 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        return !FindInPipeline(
+        return !HasExplicitDefaultResetInCurrentSegment(
             GetReceiver(invocation),
             context,
-            candidate => Normalize(candidate.TargetMethod).Name == "WhenAnyError"
-                && StartsHandlingClause(Normalize(candidate.TargetMethod), knownTypes),
             knownTypes,
-            stopAtHandlingClause: false,
-            stopAtCompositionBoundary: true,
-            out _);
+            visitedLocals: null);
+    }
+
+    private static bool HasExplicitDefaultResetInCurrentSegment(
+        IOperation? operation,
+        OperationAnalysisContext context,
+        KnownTypes knownTypes,
+        HashSet<ISymbol>? visitedLocals)
+    {
+        operation = Unwrap(operation);
+        if (operation is ILocalReferenceOperation localReference)
+        {
+            visitedLocals ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+            if (!visitedLocals.Add(localReference.Local)
+                || !TryGetStableInitializer(localReference, context, out var initializer))
+            {
+                return false;
+            }
+
+            var found = HasExplicitDefaultResetInCurrentSegment(
+                initializer,
+                context,
+                knownTypes,
+                visitedLocals);
+            visitedLocals.Remove(localReference.Local);
+            return found;
+        }
+
+        if (operation is IConditionalAccessOperation conditionalAccess)
+        {
+            return HasExplicitDefaultResetInCurrentSegment(
+                conditionalAccess.Operation,
+                context,
+                knownTypes,
+                visitedLocals);
+        }
+
+        if (operation is not IInvocationOperation invocation)
+        {
+            return false;
+        }
+
+        var method = Normalize(invocation.TargetMethod);
+        if (IsCompositionBoundary(method, knownTypes))
+        {
+            return false;
+        }
+
+        if (method.Name == "WhenAnyError" && StartsHandlingClause(method, knownTypes))
+        {
+            return true;
+        }
+
+        return IsKevlarFluentMethod(method, knownTypes)
+            && HasExplicitDefaultResetInCurrentSegment(
+                GetReceiver(invocation),
+                context,
+                knownTypes,
+                visitedLocals);
     }
 
     /// <summary>
