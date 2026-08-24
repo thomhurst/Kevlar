@@ -76,6 +76,10 @@ public class AllocationBudgetTests
     private readonly Shield<int> _primaryWinsHedge = Shield.For<int>()
         .Hedge(2, TimeSpan.FromMinutes(1));
     private readonly PartitionedShield<int> _partitioned = new(static _ => Shield.Empty);
+    private readonly Dictionary<KevlarKey<int>, int> _keyDictionary = new()
+    {
+        [MetadataValue] = 42,
+    };
 
     private readonly Shield _recoveryRetry = Shield.Retry(3, Backoff.None);
     private readonly Shield _recoveryAsyncDelayRetry = Shield.Retry(options =>
@@ -168,6 +172,8 @@ public class AllocationBudgetTests
             test._primaryWinsHedge.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("warm partition lookup", this, static test =>
             _ = test._partitioned.GetShield(42));
+        AssertZero("typed key dictionary lookup", this, static test =>
+            _ = test._keyDictionary[MetadataValue]);
     }
 
     [Test]

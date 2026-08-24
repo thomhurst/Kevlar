@@ -354,3 +354,11 @@ static Kevlar.ShieldTaskExtensions.ExecuteAsync(this Kevlar.VoidShield! shield, 
 static Kevlar.ShieldTaskExtensions.ExecuteAsync<TState>(this Kevlar.VoidShield! shield, TState state, System.Func<TState, System.Threading.CancellationToken, System.Threading.Tasks.Task!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
 static Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(this Kevlar.VoidShield! shield, System.Func<Kevlar.KevlarContext!, System.Threading.Tasks.Task!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
 static Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync<TState>(this Kevlar.VoidShield! shield, TState state, System.Action<TState, Kevlar.KevlarProperties!>! initializeProperties, System.Func<TState, Kevlar.KevlarContext!, System.Threading.Tasks.Task!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Kevlar.KevlarKey<T>.Equals(Kevlar.KevlarKey<T> other) -> bool
+Kevlar.KevlarProperties.Contains<T>(Kevlar.KevlarKey<T> key) -> bool
+Kevlar.KevlarProperties.Count.get -> int
+Kevlar.KevlarProperties.Remove<T>(Kevlar.KevlarKey<T> key) -> bool
+override Kevlar.KevlarKey<T>.Equals(object? obj) -> bool
+override Kevlar.KevlarKey<T>.GetHashCode() -> int
+static Kevlar.KevlarKey<T>.operator !=(Kevlar.KevlarKey<T> left, Kevlar.KevlarKey<T> right) -> bool
+static Kevlar.KevlarKey<T>.operator ==(Kevlar.KevlarKey<T> left, Kevlar.KevlarKey<T> right) -> bool

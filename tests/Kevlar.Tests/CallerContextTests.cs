@@ -80,6 +80,8 @@ public class CallerContextTests
             async (state, context) =>
             {
                 var currentAttempt = Interlocked.Increment(ref attempt);
+                await Assert.That(context.Properties.Contains(AttemptValue)).IsTrue();
+                await Assert.That(context.Properties.Count).IsEqualTo(1);
                 var initial = context.Properties.GetOrDefault(AttemptValue);
                 context.Properties.Set(AttemptValue, currentAttempt);
                 state.Add((context, initial, context.Properties.GetOrDefault(AttemptValue)));
