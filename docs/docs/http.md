@@ -226,10 +226,11 @@ clones that preserve method, URI, HTTP version and version policy, request heade
 and content headers. The handler owns every clone and every nonselected response; the caller owns
 the original request and the returned response.
 
-Content replay is explicit:
+Replay behavior depends on the request:
 
-- `NoBuffer` (default) does no up-front body work. A request with content may be sent once; another
-  attempt throws `HttpRequestReplayException` before reaching the transport.
+- `NoBuffer` (default) reuses inherently re-readable content such as `ByteArrayContent`,
+  `StringContent`, `FormUrlEncodedContent`, and `JsonContent`. Content already loaded into its HTTP
+  buffer is also reusable. One-shot content such as `StreamContent` is sent once.
 - `Buffer` serializes content once before sending, bounded by `MaximumBufferSize`, then gives each
   attempt its own `ByteArrayContent`. Oversize or partial serialization fails before attempt 1.
 - `RequestFactory` creates a complete fresh request per attempt. Use it for one-shot streams,
@@ -238,7 +239,12 @@ Content replay is explicit:
 
 GET, HEAD, OPTIONS, TRACE, PUT, and DELETE can replay automatically. POST, PATCH, and custom methods
 require `AllowUnsafeMethodReplay = true` or a `RequestFactory`; only opt in when the operation is
-actually idempotent. Timeouts and caller cancellation flow to every attempt and request factory.
+actually idempotent. If method or content cannot be replayed safely, retry and hedging remain
+single-attempt: the original response is returned or the original exception is rethrown without a
+retry delay or callback. Other stages, including timeout, circuit breaker, and concurrency limiting,
+still observe that attempt. `HttpRequestReplayException` is reserved for configuration failures such
+as a null factory result or content exceeding the requested buffer limit. Timeouts and caller
+cancellation flow to every attempt and request factory.
 
 ## Endpoint-aware hedging
 

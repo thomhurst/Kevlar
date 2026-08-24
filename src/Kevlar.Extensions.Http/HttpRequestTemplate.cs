@@ -7,6 +7,7 @@ internal sealed class HttpRequestTemplate
     private readonly Version _version;
     private readonly List<KeyValuePair<string, IEnumerable<string>>> _headers;
     private readonly byte[]? _content;
+    private readonly HttpContent? _reusableContent;
     private readonly List<KeyValuePair<string, IEnumerable<string>>>? _contentHeaders;
 #if NETSTANDARD2_0
     private readonly List<KeyValuePair<string, object?>> _properties;
@@ -15,7 +16,10 @@ internal sealed class HttpRequestTemplate
     private readonly HttpVersionPolicy _versionPolicy;
 #endif
 
-    private HttpRequestTemplate(HttpRequestMessage request, byte[]? content)
+    private HttpRequestTemplate(
+        HttpRequestMessage request,
+        byte[]? content,
+        HttpContent? reusableContent)
     {
         _method = request.Method;
         _requestUri = request.RequestUri;
@@ -23,6 +27,7 @@ internal sealed class HttpRequestTemplate
         _headers = request.Headers.Select(static header =>
             new KeyValuePair<string, IEnumerable<string>>(header.Key, header.Value)).ToList();
         _content = content;
+        _reusableContent = reusableContent;
         _contentHeaders = request.Content?.Headers.Select(static header =>
             new KeyValuePair<string, IEnumerable<string>>(header.Key, header.Value)).ToList();
 #if NETSTANDARD2_0
@@ -38,6 +43,7 @@ internal sealed class HttpRequestTemplate
         HttpRequestMessage request,
         HttpContentReplayPolicy policy,
         long maximumBufferSize,
+        bool canReplay,
         CancellationToken cancellationToken)
     {
         byte[]? content = null;
@@ -81,7 +87,10 @@ internal sealed class HttpRequestTemplate
             }
         }
 
-        return new HttpRequestTemplate(request, content);
+        var reusableContent = policy == HttpContentReplayPolicy.NoBuffer && canReplay
+            ? request.Content
+            : null;
+        return new HttpRequestTemplate(request, content, reusableContent);
     }
 
     public HttpRequestMessage CreateRequest(HttpContent? firstAttemptContent = null)
@@ -102,7 +111,8 @@ internal sealed class HttpRequestTemplate
         {
             if (_content is null)
             {
-                if (firstAttemptContent is null)
+                var replayContent = firstAttemptContent ?? _reusableContent;
+                if (replayContent is null)
                 {
                     request.Dispose();
                     throw new HttpRequestReplayException(
@@ -110,7 +120,7 @@ internal sealed class HttpRequestTemplate
                         "Use Buffer with a bounded MaximumBufferSize, or provide RequestFactory.");
                 }
 
-                request.Content = firstAttemptContent;
+                request.Content = replayContent;
             }
             else
             {
@@ -139,6 +149,40 @@ internal sealed class HttpRequestTemplate
     private static HttpRequestReplayException TooLarge(long maximumBufferSize) => new(
         $"Request content exceeds the {maximumBufferSize}-byte replay buffer limit. " +
         "Increase MaximumBufferSize or provide RequestFactory.");
+
+    internal static bool IsInherentlyReplayable(HttpContent content)
+    {
+        var contentType = content.GetType();
+        return contentType == typeof(ByteArrayContent)
+            || contentType == typeof(StringContent)
+            || contentType == typeof(FormUrlEncodedContent);
+    }
+
+    internal static async ValueTask<bool> IsAlreadyBufferedAsync(HttpContent content)
+    {
+        if (content.Headers.ContentLength is not { } contentLength)
+        {
+            return false;
+        }
+
+        if (contentLength == 0)
+        {
+            return false;
+        }
+
+        try
+        {
+            // HttpContent returns immediately when its buffer already exists. Otherwise the known,
+            // positive length exceeds this zero-byte probe before serialization begins. A declared
+            // zero is not probed because a false header could let serialization consume source bytes.
+            await content.LoadIntoBufferAsync(0).ConfigureAwait(false);
+            return true;
+        }
+        catch (HttpRequestException)
+        {
+            return false;
+        }
+    }
 
 #if !NET9_0_OR_GREATER
     private static async Task<T> AwaitWithCancellationAsync<T>(

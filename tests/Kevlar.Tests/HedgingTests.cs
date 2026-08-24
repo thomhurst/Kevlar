@@ -1,9 +1,38 @@
+using Kevlar.Internal;
 using Microsoft.Extensions.Time.Testing;
 
 namespace Kevlar.Tests;
 
 public class HedgingTests
 {
+    [Test]
+    public async Task SuppressAdditionalAttempts_Skips_Hedges_And_Notification()
+    {
+        var attempts = 0;
+        var notifications = 0;
+        var shield = Shield.Hedge(options =>
+        {
+            options.MaxAttempts = 3;
+            options.Delay = TimeSpan.Zero;
+            options.OnHedge = _ => notifications++;
+        });
+
+        var exception = await Assert.That(async () => await shield.ExecuteWithContextAsync<int, int>(
+                0,
+                static (_, properties) =>
+                    properties.Set(ExecutionPropertyKeys.SuppressAdditionalAttempts, true),
+                (_, _) =>
+                {
+                    attempts++;
+                    throw new InvalidOperationException("original");
+                }))
+            .Throws<InvalidOperationException>();
+
+        await Assert.That(exception!.Message).IsEqualTo("original");
+        await Assert.That(attempts).IsEqualTo(1);
+        await Assert.That(notifications).IsEqualTo(0);
+    }
+
     [Test]
     public async Task Handled_Failure_Launches_The_Next_Attempt_Immediately()
     {

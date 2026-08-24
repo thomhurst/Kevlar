@@ -56,6 +56,10 @@ build spelled these `WhenResultDefault`/`OrResultDefault`; the `Is` makes the re
 - `Outcome<T>.Exception` now recognizes `KevlarProxyException` with a type check instead of reading
   `Exception.Data` on every access. Adapter packages can preserve internal transport bookkeeping
   while exposing the original failure without allocating an exception data dictionary.
+- HTTP retry and hedging now stop after the first outcome when a request method or body cannot be
+  replayed safely. The original response or exception is preserved without a retry delay or
+  callback, while timeout, circuit-breaker, and concurrency stages still observe the attempt.
+  `NoBuffer` can replay inherently re-readable and already-buffered content.
 - Custom strategies can override `Strategy.InvokesContinuationAtMostOnce`; the same aggregate
   value is now exposed on `Shield<TResult>` as well as `Shield` and `VoidShield`.
 - **Breaking:** `Shield.Wrap(...)` and `Shield.Compose(...)` now seal ambient handling clauses. Reactive strategies appended after composition use default handling unless a new clause is declared. Existing strategies inside composed shields keep their original handling.

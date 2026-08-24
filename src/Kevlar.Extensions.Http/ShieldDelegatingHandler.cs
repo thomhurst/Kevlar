@@ -1,3 +1,5 @@
+using Kevlar.Internal;
+
 namespace Kevlar.Extensions.Http;
 
 /// <summary>A <see cref="DelegatingHandler"/> with safe per-attempt request replay.</summary>
@@ -44,17 +46,21 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
     {
         if (request is null) { throw new ArgumentNullException(nameof(request)); }
 
+        cancellationToken.ThrowIfCancellationRequested();
         var pipeline = _reloadingPipeline?.Current ?? _pipeline;
+        var canReplay = await CanReplayAsync(request, pipeline.Options).ConfigureAwait(false);
         var execution = new RequestExecution(
             this,
             request,
             pipeline,
+            canReplay,
             cancellationToken);
         try
         {
-            var response = await pipeline.Policy.ExecuteAsync(
+            var response = await pipeline.Policy.ExecuteWithContextAsync(
                 execution,
-                static (state, token) => state.SendAttemptAsync(token),
+                static (state, properties) => state.InitializeProperties(properties),
+                static (state, context) => state.SendAttemptAsync(context.CancellationToken),
                 cancellationToken).ConfigureAwait(false);
             execution.Complete(response);
             return response;
@@ -64,6 +70,31 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             execution.Complete(terminalResponse: null);
             throw;
         }
+    }
+
+    private static async ValueTask<bool> CanReplayAsync(
+        HttpRequestMessage request,
+        ShieldHttpHandlerOptions options)
+    {
+        if (options.RequestFactory is not null)
+        {
+            return true;
+        }
+
+        if (!RequestExecution.IsReplaySafeMethod(request.Method)
+            && !options.AllowUnsafeMethodReplay)
+        {
+            return false;
+        }
+
+        if (request.Content is not { } content
+            || options.ContentReplayPolicy == HttpContentReplayPolicy.Buffer
+            || HttpRequestTemplate.IsInherentlyReplayable(content))
+        {
+            return true;
+        }
+
+        return await HttpRequestTemplate.IsAlreadyBufferedAsync(content).ConfigureAwait(false);
     }
 
     private Task<HttpResponseMessage> BaseSendAsync(
@@ -88,6 +119,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         private readonly ShieldDelegatingHandler _handler;
         private readonly HttpShieldPipeline _pipeline;
         private readonly HttpRequestMessage _original;
+        private readonly bool _canReplay;
         private readonly CancellationToken _executionCancellationToken;
         private readonly List<HttpResponseMessage> _responses = [];
         private readonly Uri[]? _endpointOrder;
@@ -104,23 +136,33 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             ShieldDelegatingHandler handler,
             HttpRequestMessage original,
             HttpShieldPipeline pipeline,
+            bool canReplay,
             CancellationToken executionCancellationToken)
         {
             _handler = handler;
             _pipeline = pipeline;
             _original = original;
+            _canReplay = canReplay;
             _executionCancellationToken = executionCancellationToken;
             _endpointOrder = pipeline.CreateEndpointOrder();
         }
 
         private ShieldHttpHandlerOptions Options => _pipeline.Options;
 
+        public void InitializeProperties(KevlarProperties properties)
+        {
+            if (!_canReplay)
+            {
+                properties.Set(ExecutionPropertyKeys.SuppressAdditionalAttempts, true);
+            }
+        }
+
         private ValueTask PrepareAsync(CancellationToken cancellationToken)
         {
             if (Options.RequestFactory is null
                 && (_endpointOrder is not null
                     || (_original.Content is not null
-                        && Options.ContentReplayPolicy == HttpContentReplayPolicy.Buffer)))
+                        && _canReplay)))
             {
                 return new ValueTask(GetTemplateAsync(cancellationToken));
             }
@@ -145,16 +187,6 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             if (attempt > 0 && isSequentialReplay)
             {
                 DisposePriorResponses();
-            }
-
-            if (attempt > 0
-                && !IsReplaySafeMethod(_original.Method)
-                && !Options.AllowUnsafeMethodReplay
-                && Options.RequestFactory is null)
-            {
-                throw new HttpRequestReplayException(
-                    $"HTTP {_original.Method} is not replayed automatically. Set AllowUnsafeMethodReplay " +
-                    "only when the operation is idempotent, or provide RequestFactory.");
             }
 
             HttpRequestMessage request;
@@ -186,10 +218,11 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
                 var endpointShield = endpoint is null ? null : _pipeline.GetEndpointShield(endpoint);
                 var response = endpointShield is null
                     ? await _handler.BaseSendAsync(request, cancellationToken).ConfigureAwait(false)
-                    : await endpointShield.ExecuteAsync(
-                        (Handler: _handler, Request: request),
-                        static (state, token) => new ValueTask<HttpResponseMessage>(
-                            state.Handler.BaseSendAsync(state.Request, token)),
+                    : await endpointShield.ExecuteWithContextAsync(
+                        (Execution: this, Handler: _handler, Request: request),
+                        static (state, properties) => state.Execution.InitializeProperties(properties),
+                        static (state, context) => new ValueTask<HttpResponseMessage>(
+                            state.Handler.BaseSendAsync(state.Request, context.CancellationToken)),
                         cancellationToken).ConfigureAwait(false);
                 RegisterResponse(response);
                 return response;
@@ -294,6 +327,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
                     _original,
                     Options.ContentReplayPolicy,
                     Options.MaximumBufferSize,
+                    _canReplay,
                     creationCancellation.Token).ConfigureAwait(false);
                 creation.TrySetResult(template);
             }
@@ -390,7 +424,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             request.RequestUri = routed.Uri;
         }
 
-        private static bool IsReplaySafeMethod(HttpMethod method) =>
+        internal static bool IsReplaySafeMethod(HttpMethod method) =>
             method.Method is "GET" or "HEAD" or "OPTIONS" or "TRACE" or "PUT" or "DELETE";
 
         private static void DisposeResponses(List<HttpResponseMessage>? responses)
