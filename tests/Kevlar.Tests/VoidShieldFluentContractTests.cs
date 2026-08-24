@@ -54,7 +54,7 @@ public class VoidShieldFluentContractTests
             {
                 concurrencyConfigured = true;
                 options.MaxConcurrency = 2;
-                options.MaxQueue = 3;
+                options.QueueLimit = 3;
             }), typeof(ConcurrencyLimitStrategy)),
             (baseline.Hedge(2, TimeSpan.Zero), typeof(HedgingStrategy)),
             (baseline.Hedge(options =>
@@ -217,7 +217,7 @@ public class VoidShieldFluentContractTests
             {
                 concurrencyConfigured = true;
                 options.MaxConcurrency = 2;
-                options.MaxQueue = 3;
+                options.QueueLimit = 3;
             }), typeof(ConcurrencyLimitStrategy)),
         };
 

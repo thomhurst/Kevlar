@@ -171,7 +171,7 @@ public class ConfigurationBindingTests
             ("RateLimit:Burst", "7"),
             ("RateLimit:QueueLimit", "2"),
             ("ConcurrencyLimit:MaxConcurrency", "3"),
-            ("ConcurrencyLimit:MaxQueue", "4"),
+            ("ConcurrencyLimit:QueueLimit", "4"),
             ("AttemptTimeout", "00:00:01"));
         var services = new ServiceCollection();
         services.AddShield("complete", configuration);
@@ -184,13 +184,44 @@ public class ConfigurationBindingTests
     }
 
     [Test]
+    public async Task ConcurrencyLimit_Definition_Binds_QueueLimit_From_Configuration()
+    {
+        var configuration = BuildConfiguration(
+            ("ConcurrencyLimit:MaxConcurrency", "3"),
+            ("ConcurrencyLimit:QueueLimit", "5"));
+        var services = new ServiceCollection();
+        services.AddShield("queue", configuration);
+        using var provider = services.BuildServiceProvider();
+
+        var shield = provider.GetRequiredService<IKevlarRegistry>().GetShield("queue");
+
+        await Assert.That(shield.ToString()).IsEqualTo("queue: ConcurrencyLimit(3, queue 5)");
+    }
+
+    [Test]
+    public async Task Unknown_Key_MaxQueue_Is_Rejected_With_Configuration_Path()
+    {
+        var configuration = BuildConfiguration(("ConcurrencyLimit:MaxQueue", "5"));
+        var services = new ServiceCollection();
+        services.AddShield("legacy", configuration);
+        using var provider = services.BuildServiceProvider();
+
+        var exception = await Assert.That(
+                () => provider.GetRequiredService<IKevlarRegistry>().GetShield("legacy"))
+            .Throws<InvalidOperationException>();
+
+        await Assert.That(exception!.Message).Contains("ConcurrencyLimit:MaxQueue");
+        await Assert.That(exception.Message).Contains("QueueLimit");
+    }
+
+    [Test]
     public async Task Configuration_Preserves_Definition_Defaults_For_Absent_Keys()
     {
         var configuration = BuildConfiguration(
             ("Retry:MaxRetries", "3"),
             ("CircuitBreaker:FailureRatio", "0.5"),
             ("RateLimit:Burst", "100"),
-            ("ConcurrencyLimit:MaxQueue", "0"));
+            ("ConcurrencyLimit:QueueLimit", "0"));
         var services = new ServiceCollection();
         services.AddShield("defaults", configuration);
         using var provider = services.BuildServiceProvider();

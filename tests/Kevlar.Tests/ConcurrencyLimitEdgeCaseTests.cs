@@ -36,7 +36,7 @@ public class BulkheadEdgeCaseTests
     [Test]
     public async Task Cancelling_A_Queued_Execution_Frees_Its_Queue_Slot()
     {
-        var shield = Shield.ConcurrencyLimit(maxConcurrency: 1, maxQueue: 1);
+        var shield = Shield.ConcurrencyLimit(maxConcurrency: 1, queueLimit: 1);
         var gate = new TaskCompletionSource();
         var started = new TaskCompletionSource();
         using var cancellation = new CancellationTokenSource();
@@ -73,7 +73,7 @@ public class BulkheadEdgeCaseTests
     public async Task Concurrency_Is_Never_Exceeded_Under_Parallel_Load()
     {
         const int MaxConcurrency = 3;
-        var shield = Shield.ConcurrencyLimit(MaxConcurrency, maxQueue: 50);
+        var shield = Shield.ConcurrencyLimit(MaxConcurrency, queueLimit: 50);
         var current = 0;
         var peak = 0;
         var barrier = new AsyncBarrier("maximum concurrent executions", MaxConcurrency);
@@ -98,7 +98,7 @@ public class BulkheadEdgeCaseTests
     [Test]
     public async Task Overload_Beyond_Capacity_Rejects_Exactly_The_Overflow()
     {
-        var shield = Shield.ConcurrencyLimit(maxConcurrency: 2, maxQueue: 3);
+        var shield = Shield.ConcurrencyLimit(maxConcurrency: 2, queueLimit: 3);
         var barrier = new AsyncBarrier("both concurrency slots", 2);
 
         // Fill both concurrency slots.

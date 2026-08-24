@@ -6,12 +6,12 @@ public sealed class ConcurrencyLimitStrategyDescriptor : StrategyDescriptor
     internal ConcurrencyLimitStrategyDescriptor(
         string description,
         int maxConcurrency,
-        int maxQueue,
+        int queueLimit,
         bool hasNotification)
         : base(StrategyKind.ConcurrencyLimit, description)
     {
         MaxConcurrency = maxConcurrency;
-        MaxQueue = maxQueue;
+        QueueLimit = queueLimit;
         HasNotification = hasNotification;
     }
 
@@ -19,7 +19,7 @@ public sealed class ConcurrencyLimitStrategyDescriptor : StrategyDescriptor
     public int MaxConcurrency { get; }
 
     /// <summary>The maximum wait queue size.</summary>
-    public int MaxQueue { get; }
+    public int QueueLimit { get; }
 
     /// <summary>Whether synchronous or asynchronous rejection notifications are configured.</summary>
     public bool HasNotification { get; }

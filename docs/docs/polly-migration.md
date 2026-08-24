@@ -17,7 +17,7 @@ Kevlar's pipeline model translates 1:1 from Polly v8 — the "first strategy add
 | `BrokenCircuitException` | `CircuitOpenException` (with `RetryAfter`) |
 | `TimeoutRejectedException` | `TimeoutExceededException` |
 | `CircuitBreakerManualControl` + `StateProvider` | one `CircuitBreakerMonitor` |
-| `AddConcurrencyLimiter(10, 20)` | `Shield.ConcurrencyLimit(10, maxQueue: 20)` |
+| `AddConcurrencyLimiter(10, 20)` | `Shield.ConcurrencyLimit(10, queueLimit: 20)` |
 | Delegates must return `ValueTask` | `Task`-returning methods flow straight in: `shield.ExecuteAsync(ct => client.GetAsync(url, ct))` |
 | Retry default: constant 2s, no jitter | exponential + jitter, 30s cap |
 | First strategy added is outermost | same rule — pipelines translate 1:1 |

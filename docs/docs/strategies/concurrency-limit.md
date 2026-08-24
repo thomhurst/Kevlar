@@ -7,12 +7,12 @@ sidebar_position: 5
 Concurrency isolation: cap how many executions run at once, so one misbehaving dependency can't drain your whole thread pool or connection pool.
 
 ```csharp
-Shield.ConcurrencyLimit(maxConcurrency: 10, maxQueue: 20);
+Shield.ConcurrencyLimit(maxConcurrency: 10, queueLimit: 20);
 
 Shield.ConcurrencyLimit(o =>
 {
     o.MaxConcurrency = 10;   // default 10
-    o.MaxQueue = 20;         // default 0 — reject immediately when full
+    o.QueueLimit = 20;         // default 0 — reject immediately when full
     o.OnRejected = rejection =>
         logger.LogWarning("Concurrency limit {Limit} rejected work", rejection.MaxConcurrency);
     o.OnRejectedAsync = static _ => ValueTask.CompletedTask;
@@ -24,11 +24,11 @@ Shield.ConcurrencyLimit(o =>
 | Option | Default | What it does |
 |---|---|---|
 | `MaxConcurrency` | `10` | Executions allowed to run simultaneously |
-| `MaxQueue` | `0` | Executions allowed to wait for a slot; `0` = reject immediately when all slots are busy |
+| `QueueLimit` | `0` | Executions allowed to wait for a slot; `0` = reject immediately when all slots are busy |
 | `OnRejected` | — | Synchronous notification for an actual rejection |
 | `OnRejectedAsync` | — | Awaited notification after `OnRejected` |
 
-Total capacity is `MaxConcurrency + MaxQueue`. Anything beyond that fails **immediately** with `ConcurrencyLimitExceededException` — the overflow check happens before any waiting, so rejection is instant and allocation-light.
+Total capacity is `MaxConcurrency + QueueLimit`. Anything beyond that fails **immediately** with `ConcurrencyLimitExceededException` — the overflow check happens before any waiting, so rejection is instant and allocation-light.
 
 For an actual rejection, Kevlar publishes current limiter state and rejection metrics, invokes
 `OnRejected`, awaits `OnRejectedAsync`, then surfaces `ConcurrencyLimitExceededException`. The
@@ -51,7 +51,7 @@ This is the classic *bulkhead* pattern, named after ship compartments: a breach 
 
 ```csharp
 // Each dependency gets its own compartment:
-var searchShield  = Shield.ConcurrencyLimit(10, maxQueue: 20).Timeout(TimeSpan.FromSeconds(2));
+var searchShield  = Shield.ConcurrencyLimit(10, queueLimit: 20).Timeout(TimeSpan.FromSeconds(2));
 var paymentShield = Shield.ConcurrencyLimit(5).Timeout(TimeSpan.FromSeconds(10));
 ```
 
@@ -71,5 +71,5 @@ Shield.Retry(3).ConcurrencyLimit(10);   // retry wraps the concurrency limit:
 Retry-outside is usually what you want: slots are freed during backoff delays instead of being held while sleeping.
 
 :::warning Sync callers block while queueing
-With `MaxQueue > 0`, synchronous `Execute` waits on the semaphore with a blocking wait. Prefer async execution when queueing is enabled.
+With `QueueLimit > 0`, synchronous `Execute` waits on the semaphore with a blocking wait. Prefer async execution when queueing is enabled.
 :::

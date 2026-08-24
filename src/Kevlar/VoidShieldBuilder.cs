@@ -81,8 +81,8 @@ public sealed class VoidShieldBuilder
     public VoidShield RateLimit(Action<RateLimitOptions> configure) => new(_builder.RateLimit(configure));
 
     /// <summary>Adds a concurrency limit while preserving the clause.</summary>
-    public VoidShield ConcurrencyLimit(int maxConcurrency, int maxQueue = 0) =>
-        new(_builder.ConcurrencyLimit(maxConcurrency, maxQueue));
+    public VoidShield ConcurrencyLimit(int maxConcurrency, int queueLimit = 0) =>
+        new(_builder.ConcurrencyLimit(maxConcurrency, queueLimit));
 
     /// <summary>Adds a configured concurrency limit while preserving the clause.</summary>
     public VoidShield ConcurrencyLimit(Action<ConcurrencyLimitOptions> configure) =>

@@ -101,7 +101,7 @@ public sealed class Shield
     public static Shield RateLimit(Action<RateLimitOptions> configure) => ShieldExtensions.RateLimit(Empty, configure);
 
     /// <summary>Caps concurrent executions at <paramref name="maxConcurrency"/> with an optional wait queue.</summary>
-    public static Shield ConcurrencyLimit(int maxConcurrency, int maxQueue = 0) => ShieldExtensions.ConcurrencyLimit(Empty, maxConcurrency, maxQueue);
+    public static Shield ConcurrencyLimit(int maxConcurrency, int queueLimit = 0) => ShieldExtensions.ConcurrencyLimit(Empty, maxConcurrency, queueLimit);
 
     /// <summary>Adds a concurrency limit strategy configured via <paramref name="configure"/>.</summary>
     public static Shield ConcurrencyLimit(Action<ConcurrencyLimitOptions> configure) => ShieldExtensions.ConcurrencyLimit(Empty, configure);

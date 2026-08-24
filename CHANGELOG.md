@@ -28,6 +28,7 @@ Handling clauses now use one spelling per position. `When…` starts a clause on
 | `Shield.For<T>().WhenDefault()` | `Shield.For<T>().WhenResultIsDefault()` |
 | `builder.OrDefault()` | `builder.OrResultIsDefault()` |
 | `Shield.For<T>().Fallback(value)` | `Shield.For<T>().FallbackTo(value)` |
+| `ConcurrencyLimit(..., maxQueue: n)` / `options.MaxQueue` | `ConcurrencyLimit(..., queueLimit: n)` / `options.QueueLimit` |
 
 `OrWhen` is gone: `Or(Func<Exception, bool>)` now mirrors `When(Func<Exception, bool>)`, so the
 untyped predicate has the same spelling in both clause positions. `WhenDefault`/`OrDefault` were

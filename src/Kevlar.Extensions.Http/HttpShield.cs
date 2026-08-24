@@ -231,6 +231,6 @@ public static class HttpShield
     private static void Copy(ConcurrencyLimitOptions source, ConcurrencyLimitOptions target)
     {
         target.MaxConcurrency = source.MaxConcurrency;
-        target.MaxQueue = source.MaxQueue;
+        target.QueueLimit = source.QueueLimit;
     }
 }

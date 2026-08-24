@@ -20,8 +20,8 @@ Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition
 Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.ConcurrencyLimitDefinition() -> void
 Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxConcurrency.get -> int
 Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxConcurrency.set -> void
-Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxQueue.get -> int
-Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxQueue.set -> void
+Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.QueueLimit.get -> int
+Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.QueueLimit.set -> void
 Kevlar.Extensions.DependencyInjection.IKevlarRegistry
 Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetShield(string! name) -> Kevlar.Shield!
 Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetShield<TResult>(string! name) -> Kevlar.Shield<TResult>!

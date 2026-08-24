@@ -396,7 +396,7 @@ public class HttpContractTests
             ConcurrencyLimit = new ConcurrencyLimitOptions
             {
                 MaxConcurrency = 12,
-                MaxQueue = 4,
+                QueueLimit = 4,
             },
             AttemptTimeout = new TimeoutOptions { Timeout = TimeSpan.FromSeconds(3) },
         };
@@ -533,7 +533,7 @@ public class HttpContractTests
                 options.ConcurrencyLimit = new ConcurrencyLimitOptions
                 {
                     MaxConcurrency = 1,
-                    MaxQueue = 0,
+                    QueueLimit = 0,
                 };
             })
             .Services

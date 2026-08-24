@@ -320,7 +320,7 @@ public class DependencyInjectionContractTests
                 Burst = 7,
                 QueueLimit = 2,
             },
-            ConcurrencyLimit = new ConcurrencyLimitDefinition { MaxConcurrency = 3, MaxQueue = 4 },
+            ConcurrencyLimit = new ConcurrencyLimitDefinition { MaxConcurrency = 3, QueueLimit = 4 },
             AttemptTimeout = TimeSpan.FromSeconds(1),
         };
 

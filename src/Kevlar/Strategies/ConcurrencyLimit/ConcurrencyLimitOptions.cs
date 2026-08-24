@@ -2,7 +2,7 @@ namespace Kevlar;
 
 /// <summary>
 /// Configuration for a concurrency limit (concurrency limiter) strategy: at most
-/// <see cref="MaxConcurrency"/> executions run at once, with up to <see cref="MaxQueue"/>
+/// <see cref="MaxConcurrency"/> executions run at once, with up to <see cref="QueueLimit"/>
 /// more waiting; anything beyond that is rejected immediately.
 /// </summary>
 /// <remarks>
@@ -16,7 +16,7 @@ public sealed class ConcurrencyLimitOptions
     public int MaxConcurrency { get; set; } = 10;
 
     /// <summary>Maximum executions allowed to wait for a slot. Default 0 (reject immediately when full).</summary>
-    public int MaxQueue { get; set; }
+    public int QueueLimit { get; set; }
 
     /// <summary>Invoked synchronously when an execution is rejected.</summary>
     public Action<ConcurrencyLimitRejectedEvent>? OnRejected { get; set; }

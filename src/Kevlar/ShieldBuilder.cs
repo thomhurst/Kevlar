@@ -150,7 +150,7 @@ public sealed class ShieldBuilder
     public Shield RateLimit(Action<RateLimitOptions> configure) => Seal().RateLimit(configure);
 
     /// <summary>Caps concurrency. The handling clauses remain ambient for later strategies.</summary>
-    public Shield ConcurrencyLimit(int maxConcurrency, int maxQueue = 0) => Seal().ConcurrencyLimit(maxConcurrency, maxQueue);
+    public Shield ConcurrencyLimit(int maxConcurrency, int queueLimit = 0) => Seal().ConcurrencyLimit(maxConcurrency, queueLimit);
 
     /// <summary>Adds a configured concurrency limit. The handling clauses remain ambient for later strategies.</summary>
     public Shield ConcurrencyLimit(Action<ConcurrencyLimitOptions> configure) => Seal().ConcurrencyLimit(configure);

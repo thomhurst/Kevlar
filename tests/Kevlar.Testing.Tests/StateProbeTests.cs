@@ -23,7 +23,7 @@ public class StateProbeTests
                 options.Window = TimeSpan.FromSeconds(1);
                 options.QueueLimit = 1;
             })
-            .ConcurrencyLimit(2, maxQueue: 1)
+            .ConcurrencyLimit(2, queueLimit: 1)
             .WithTimeProvider(timeProvider);
 
         monitor.Isolate();
@@ -81,7 +81,7 @@ public class StateProbeTests
     {
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var shared = Shield.ConcurrencyLimit(1, maxQueue: 1);
+        var shared = Shield.ConcurrencyLimit(1, queueLimit: 1);
         var firstAlias = Shield.Compose(shared).WithName("first");
         var secondAlias = Shield.Compose(shared).WithName("second");
 
@@ -160,7 +160,7 @@ public class StateProbeTests
     [Test]
     public async Task StateSnapshot_Supports_Typed_Shields_And_Immutable_Collections()
     {
-        var shield = Shield.For<int>().ConcurrencyLimit(3, maxQueue: 2);
+        var shield = Shield.For<int>().ConcurrencyLimit(3, queueLimit: 2);
 
         var snapshot = shield.GetStateSnapshot();
         var concurrency = snapshot.Strategies.OfType<ConcurrencyLimitStateSnapshot>().Single();

@@ -10,7 +10,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
     // Atomic permits serve the uncontended path; the semaphore carries permits only to registered waiters.
     private readonly SemaphoreSlim _semaphore;
     private readonly int _maxConcurrency;
-    private readonly int _maxQueue;
+    private readonly int _queueLimit;
     private readonly long _capacity;
     private readonly Action<ConcurrencyLimitRejectedEvent>? _onRejected;
     private readonly Func<ConcurrencyLimitRejectedEvent, ValueTask>? _onRejectedAsync;
@@ -26,7 +26,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
 
     internal int MaxConcurrency => _maxConcurrency;
 
-    internal int MaxQueue => _maxQueue;
+    internal int QueueLimit => _queueLimit;
 
     internal bool HasNotification => _onRejected is not null || _onRejectedAsync is not null;
 
@@ -41,18 +41,18 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
     public ConcurrencyLimitStrategy(ConcurrencyLimitOptions options)
     {
         Throw.IfOutOfRange(options.MaxConcurrency <= 0, nameof(options), "MaxConcurrency must be positive.");
-        Throw.IfOutOfRange(options.MaxQueue < 0, nameof(options), "MaxQueue must not be negative.");
+        Throw.IfOutOfRange(options.QueueLimit < 0, nameof(options), "QueueLimit must not be negative.");
         _semaphore = new SemaphoreSlim(0, options.MaxConcurrency);
         _maxConcurrency = options.MaxConcurrency;
-        _maxQueue = options.MaxQueue;
-        _capacity = options.MaxConcurrency + (long)options.MaxQueue;
+        _queueLimit = options.QueueLimit;
+        _capacity = options.MaxConcurrency + (long)options.QueueLimit;
         _available = options.MaxConcurrency;
         _onRejected = options.OnRejected;
         _onRejectedAsync = options.OnRejectedAsync;
     }
 
     public override string Describe() =>
-        _maxQueue > 0 ? $"ConcurrencyLimit({_maxConcurrency}, queue {_maxQueue})" : $"ConcurrencyLimit({_maxConcurrency})";
+        _queueLimit > 0 ? $"ConcurrencyLimit({_maxConcurrency}, queue {_queueLimit})" : $"ConcurrencyLimit({_maxConcurrency})";
 
     public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
@@ -93,7 +93,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
 
         var rejectedEvent = new ConcurrencyLimitRejectedEvent(
             _maxConcurrency,
-            _maxQueue,
+            _queueLimit,
             context.StrategyIndex,
             context);
         try

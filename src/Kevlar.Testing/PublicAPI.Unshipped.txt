@@ -14,7 +14,7 @@ Kevlar.Testing.CircuitBreakerStrategyDescriptor.MinimumThroughput.get -> int
 Kevlar.Testing.CircuitBreakerStrategyDescriptor.SamplingWindow.get -> System.TimeSpan
 Kevlar.Testing.ConcurrencyLimitStrategyDescriptor
 Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.MaxConcurrency.get -> int
-Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.MaxQueue.get -> int
+Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.QueueLimit.get -> int
 Kevlar.Testing.CustomStrategyDescriptor
 Kevlar.Testing.CustomStrategyDescriptor.Handling.get -> Kevlar.HandlingClause?
 Kevlar.Testing.CustomStrategyDescriptor.StrategyType.get -> System.Type!

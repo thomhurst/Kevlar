@@ -184,10 +184,10 @@ public sealed class Shield<TResult>
     }
 
     /// <summary>Caps concurrent executions at <paramref name="maxConcurrency"/> with an optional wait queue.</summary>
-    public Shield<TResult> ConcurrencyLimit(int maxConcurrency, int maxQueue = 0) => ConcurrencyLimit(options =>
+    public Shield<TResult> ConcurrencyLimit(int maxConcurrency, int queueLimit = 0) => ConcurrencyLimit(options =>
     {
         options.MaxConcurrency = maxConcurrency;
-        options.MaxQueue = maxQueue;
+        options.QueueLimit = queueLimit;
     });
 
     /// <summary>Adds a concurrency limit strategy configured via <paramref name="configure"/>.</summary>

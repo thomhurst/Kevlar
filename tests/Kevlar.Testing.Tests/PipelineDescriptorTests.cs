@@ -42,7 +42,7 @@ public class PipelineDescriptorTests
             .ConcurrencyLimit(options =>
             {
                 options.MaxConcurrency = 6;
-                options.MaxQueue = 2;
+                options.QueueLimit = 2;
                 options.OnRejected = _ => { };
             })
             .Hedge(options =>
@@ -97,7 +97,7 @@ public class PipelineDescriptorTests
 
         var concurrency = descriptor.AssertContainsSingle<ConcurrencyLimitStrategyDescriptor>();
         await Assert.That(concurrency.MaxConcurrency).IsEqualTo(6);
-        await Assert.That(concurrency.MaxQueue).IsEqualTo(2);
+        await Assert.That(concurrency.QueueLimit).IsEqualTo(2);
         await Assert.That(concurrency.HasNotification).IsTrue();
 
         var hedge = descriptor.AssertContainsSingle<HedgingStrategyDescriptor>();

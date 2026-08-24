@@ -157,7 +157,7 @@ Kevlar.ConcurrencyLimitRejectedEvent
 Kevlar.ConcurrencyLimitRejectedEvent.ConcurrencyLimitRejectedEvent() -> void
 Kevlar.ConcurrencyLimitRejectedEvent.Context.get -> Kevlar.KevlarContext!
 Kevlar.ConcurrencyLimitRejectedEvent.MaxConcurrency.get -> int
-Kevlar.ConcurrencyLimitRejectedEvent.MaxQueue.get -> int
+Kevlar.ConcurrencyLimitRejectedEvent.QueueLimit.get -> int
 Kevlar.ConcurrencyLimitRejectedEvent.StrategyIndex.get -> int
 Kevlar.RateLimitOptions.OnRejected.get -> System.Action<Kevlar.RateLimitRejectedEvent>?
 Kevlar.RateLimitOptions.OnRejected.set -> void
@@ -299,7 +299,7 @@ Kevlar.ShieldBuilder.Fallback(System.Func<System.Exception!, System.Threading.Ca
 Kevlar.VoidShield
 Kevlar.VoidShield.CircuitBreaker(int consecutiveFailures, System.TimeSpan breakDuration) -> Kevlar.VoidShield!
 Kevlar.VoidShield.CircuitBreaker(System.Action<Kevlar.CircuitBreakerOptions!>! configure) -> Kevlar.VoidShield!
-Kevlar.VoidShield.ConcurrencyLimit(int maxConcurrency, int maxQueue = 0) -> Kevlar.VoidShield!
+Kevlar.VoidShield.ConcurrencyLimit(int maxConcurrency, int queueLimit = 0) -> Kevlar.VoidShield!
 Kevlar.VoidShield.ConcurrencyLimit(System.Action<Kevlar.ConcurrencyLimitOptions!>! configure) -> Kevlar.VoidShield!
 Kevlar.VoidShield.Execute(System.Action<System.Threading.CancellationToken>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> void
 Kevlar.VoidShield.Execute<TState>(TState state, System.Action<TState, System.Threading.CancellationToken>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> void
@@ -340,7 +340,7 @@ Kevlar.VoidShield.Wrap(Kevlar.VoidShield! inner) -> Kevlar.VoidShield!
 Kevlar.VoidShieldBuilder
 Kevlar.VoidShieldBuilder.CircuitBreaker(int consecutiveFailures, System.TimeSpan breakDuration) -> Kevlar.VoidShield!
 Kevlar.VoidShieldBuilder.CircuitBreaker(System.Action<Kevlar.CircuitBreakerOptions!>! configure) -> Kevlar.VoidShield!
-Kevlar.VoidShieldBuilder.ConcurrencyLimit(int maxConcurrency, int maxQueue = 0) -> Kevlar.VoidShield!
+Kevlar.VoidShieldBuilder.ConcurrencyLimit(int maxConcurrency, int queueLimit = 0) -> Kevlar.VoidShield!
 Kevlar.VoidShieldBuilder.ConcurrencyLimit(System.Action<Kevlar.ConcurrencyLimitOptions!>! configure) -> Kevlar.VoidShield!
 Kevlar.VoidShieldBuilder.Fallback(System.Func<System.Exception!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback, System.Action<Kevlar.FallbackOptions!>! configure) -> Kevlar.VoidShield!
 Kevlar.VoidShieldBuilder.Fallback(System.Func<System.Exception!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback) -> Kevlar.VoidShield!

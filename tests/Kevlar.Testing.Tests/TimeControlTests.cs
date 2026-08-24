@@ -134,7 +134,7 @@ public class TimeControlTests
         using var admission = new QueueAdmissionSignal("kevlar.concurrency_limit.queued", ShieldName);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var shield = Shield.ConcurrencyLimit(1, maxQueue: 1).WithName(ShieldName);
+        var shield = Shield.ConcurrencyLimit(1, queueLimit: 1).WithName(ShieldName);
         var first = shield.ExecuteAsync<int>(async _ =>
         {
             started.TrySetResult();

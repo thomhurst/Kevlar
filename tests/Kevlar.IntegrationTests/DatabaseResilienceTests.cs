@@ -31,7 +31,7 @@ public class DatabaseResilienceTests
 
         // Same load through a concurrency limit sized to the pool: everything succeeds.
         var guarded = new FlakyDatabase { MaxConnections = 5, Latency = TimeSpan.FromMilliseconds(50) };
-        var shield = Shield.ConcurrencyLimit(maxConcurrency: 5, maxQueue: 15);
+        var shield = Shield.ConcurrencyLimit(maxConcurrency: 5, queueLimit: 15);
 
         var results = await Task.WhenAll(Enumerable.Range(0, 20)
             .Select(_ => shield.ExecuteAsync(ct => new ValueTask<string>(guarded.QueryAsync("select 1", ct))).AsTask()));
@@ -101,7 +101,7 @@ public class DatabaseResilienceTests
             .When<TransientDatabaseException>()
             .Retry(3, Backoff.Constant(TimeSpan.FromMilliseconds(5)))
             .CircuitBreaker(10, TimeSpan.FromSeconds(30))
-            .ConcurrencyLimit(maxConcurrency: 5, maxQueue: 20);
+            .ConcurrencyLimit(maxConcurrency: 5, queueLimit: 20);
 
         var result = await shield.ExecuteAsync(ct => new ValueTask<string>(database.QueryAsync("insert order", ct)));
 

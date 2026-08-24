@@ -5,12 +5,12 @@ public readonly struct ConcurrencyLimitRejectedEvent
 {
     internal ConcurrencyLimitRejectedEvent(
         int maxConcurrency,
-        int maxQueue,
+        int queueLimit,
         int strategyIndex,
         KevlarContext context)
     {
         MaxConcurrency = maxConcurrency;
-        MaxQueue = maxQueue;
+        QueueLimit = queueLimit;
         StrategyIndex = strategyIndex;
         Context = context;
     }
@@ -19,7 +19,7 @@ public readonly struct ConcurrencyLimitRejectedEvent
     public int MaxConcurrency { get; }
 
     /// <summary>The configured maximum wait queue size.</summary>
-    public int MaxQueue { get; }
+    public int QueueLimit { get; }
 
     /// <summary>The zero-based position of this strategy in the executing shield.</summary>
     public int StrategyIndex { get; }
