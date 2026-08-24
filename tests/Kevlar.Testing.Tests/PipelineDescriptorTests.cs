@@ -111,7 +111,7 @@ public class PipelineDescriptorTests
     {
         var outer = Shield.For<int>()
             .WhenResult(-1)
-            .Fallback(42)
+            .FallbackTo(42)
             .Retry(2, Backoff.None)
             .WithName("typed");
         var composed = outer.Wrap(Shield.Timeout(TimeSpan.FromSeconds(3)));
@@ -130,7 +130,7 @@ public class PipelineDescriptorTests
         await Assert.That(fallback.HasNotification).IsFalse();
 
         var configuredFallback = Shield.For<int>()
-            .Fallback(42, static options => options.OnFallback = static _ => { })
+            .FallbackTo(42, static options => options.OnFallback = static _ => { })
             .GetDescriptor()
             .AssertContainsSingle<FallbackStrategyDescriptor>();
         await Assert.That(configuredFallback.HasNotification).IsTrue();

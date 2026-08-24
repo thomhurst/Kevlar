@@ -9,21 +9,21 @@ public class ChainValidationTests
     [Test]
     public async Task Fallback_Inside_A_Retry_With_The_Same_Clause_Throws()
     {
-        await Assert.That(() => { _ = Shield.For<int>().When<InvalidOperationException>().Retry(2, Backoff.None).Fallback(-1); })
+        await Assert.That(() => { _ = Shield.For<int>().When<InvalidOperationException>().Retry(2, Backoff.None).FallbackTo(-1); })
             .Throws<InvalidOperationException>();
     }
 
     [Test]
     public async Task Fallback_Inside_A_Default_Clause_Retry_Throws()
     {
-        await Assert.That(() => { _ = Shield.For<int>().Retry(2, Backoff.None).Fallback(-1); })
+        await Assert.That(() => { _ = Shield.For<int>().Retry(2, Backoff.None).FallbackTo(-1); })
             .Throws<InvalidOperationException>();
     }
 
     [Test]
     public async Task Fallback_Inside_A_Breaker_With_The_Same_Clause_Throws()
     {
-        await Assert.That(() => { _ = Shield.For<int>().CircuitBreaker(5, TimeSpan.FromSeconds(30)).Fallback(-1); })
+        await Assert.That(() => { _ = Shield.For<int>().CircuitBreaker(5, TimeSpan.FromSeconds(30)).FallbackTo(-1); })
             .Throws<InvalidOperationException>();
     }
 
@@ -40,7 +40,7 @@ public class ChainValidationTests
         InvalidOperationException? error = null;
         try
         {
-            _ = Shield.For<int>().Retry(2, Backoff.None).Fallback(-1);
+            _ = Shield.For<int>().Retry(2, Backoff.None).FallbackTo(-1);
         }
         catch (InvalidOperationException caught)
         {
@@ -56,7 +56,7 @@ public class ChainValidationTests
     public async Task Fallback_Before_The_Retry_Is_The_Valid_Order()
     {
         var attempts = 0;
-        var shield = Shield.For<int>().Fallback(-1).Retry(2, Backoff.None);
+        var shield = Shield.For<int>().FallbackTo(-1).Retry(2, Backoff.None);
 
         var recovered = await shield.ExecuteAsync(_ =>
         {
@@ -77,7 +77,7 @@ public class ChainValidationTests
             .When<TimeoutExceededException>()
             .Retry(2, Backoff.None)
             .When<ArgumentException>()
-            .Fallback(-1);
+            .FallbackTo(-1);
 
         // The fallback recovers ArgumentException; the retry only ever sees timeouts.
         var recovered = await shield.ExecuteAsync(_ =>
@@ -95,7 +95,7 @@ public class ChainValidationTests
     {
         var withClause = Shield.For<int>().WhenResult(0).Timeout(TimeSpan.FromMinutes(1));
         var retryPart = withClause.Retry(1, Backoff.None);
-        var fallbackPart = withClause.Fallback(-1);
+        var fallbackPart = withClause.FallbackTo(-1);
 
         await Assert.That(() => { _ = retryPart.Wrap(fallbackPart); }).Throws<InvalidOperationException>();
     }

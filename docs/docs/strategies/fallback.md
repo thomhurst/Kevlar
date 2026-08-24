@@ -11,7 +11,7 @@ Result-producing fallbacks live on **typed** shields — reach one via `Shield.F
 ```csharp
 var shield = Shield.For<Config>()
     .When<HttpRequestException>()
-    .Fallback(Config.Default);
+    .FallbackTo(Config.Default);
 ```
 
 Void executions get their own fallback on the plain `Shield` — run an alternative action instead of producing a value:
@@ -52,8 +52,8 @@ await shield.ExecuteAsync(static _ => ValueTask.CompletedTask); // valid
 
 <!-- doc-test-ignore: Alternative fluent fragments require the typed builder introduced by the surrounding prose. -->
 ```csharp
-// 1. A constant value:
-.Fallback(Config.Default)
+// 1. A constant value (FallbackTo avoids null/delegate overload ambiguity):
+.FallbackTo(Config.Default)
 
 // 2. Computed (async), no failure context needed:
 .Fallback(ct => new ValueTask<Config>(cache.Get()))
@@ -66,16 +66,18 @@ await shield.ExecuteAsync(static _ => ValueTask.CompletedTask); // valid
 })
 ```
 
-Every overload also has an options configurator for fallback notifications:
+Every value and factory shape also has an options configurator for fallback notifications:
 
 <!-- doc-test-ignore: Fluent fragment requires the typed builder introduced by the surrounding prose. -->
 ```csharp
-.Fallback(Config.Default,
+.FallbackTo(Config.Default,
     options => options.OnFallback = e => metrics.Increment("config.fallback"))
 ```
 
-Each shape has exactly two overloads — bare and `configure`. There is no positional `onFallback`
-parameter: assign the callback to `options.OnFallback` as shown above.
+`FallbackTo` handles constant values; `Fallback` handles computed and outcome-aware factories. Each
+shape has bare and `configure` overloads. This split means `.FallbackTo(null)` binds unambiguously
+for reference and nullable result types. There is no positional `onFallback` parameter: assign the
+callback to `options.OnFallback` as shown above.
 
 The `FallbackEvent<T>` carries the failure that triggered it as a typed `Outcome<T>` — `Outcome.Exception` when an exception was handled, `Outcome.Result` when a result value was. No casting, no boxing.
 
@@ -91,7 +93,7 @@ Configure both synchronous and awaited notification work in the same lambda:
 ```csharp
 var shield = Shield.For<Config>()
     .When<HttpRequestException>()
-    .Fallback(
+    .FallbackTo(
         Config.Default,
         options =>
         {
@@ -140,7 +142,7 @@ Cancellation can be recovered explicitly when that is intentional:
 ```csharp
 var shield = Shield.For<Config>()
     .When<OperationCanceledException>()
-    .Fallback(Config.Default);
+    .FallbackTo(Config.Default);
 ```
 
 Async typed and void fallback delegates receive the active `CancellationToken`. Caller
@@ -157,7 +159,7 @@ Fallback is usually **outermost** — the last line of defence after retries and
 var shield = Shield.For<Quote>()
     .When<HttpRequestException>()
     .Or<CircuitOpenException>()      // catch the breaker's rejection too
-    .Fallback(Quote.Unavailable)
+    .FallbackTo(Quote.Unavailable)
     .Retry(3)
     .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30));
 ```

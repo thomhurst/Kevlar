@@ -19,21 +19,21 @@ public class FallbackBenchmarks
 
     private static readonly Shield<int> KevlarFallback = Shield.For<int>()
         .When<InvalidOperationException>()
-        .Fallback(7);
+        .FallbackTo(7);
 
     private static readonly Shield<int> KevlarSyncNotification = Shield.For<int>()
         .When<InvalidOperationException>()
-        .Fallback(7, static options => options.OnFallback = static _ => { });
+        .FallbackTo(7, static options => options.OnFallback = static _ => { });
 
     private static readonly Shield<int> KevlarCompletedAsyncNotification = Shield.For<int>()
         .When<InvalidOperationException>()
-        .Fallback(
+        .FallbackTo(
             7,
             static options => options.OnFallbackAsync = static _ => ValueTask.CompletedTask);
 
     private static readonly Shield<int> KevlarYieldingAsyncNotification = Shield.For<int>()
         .When<InvalidOperationException>()
-        .Fallback(
+        .FallbackTo(
             7,
             static options => options.OnFallbackAsync = static async _ => await Task.Yield());
 

@@ -61,7 +61,7 @@ public class CustomStrategyContractTests
         var actionCalls = 0;
         var shield = Shield.For<int>()
             .When<InvalidOperationException>()
-            .Fallback(42, options => options.OnFallback = fallback => observed = fallback.Outcome.Exception)
+            .FallbackTo(42, options => options.OnFallback = fallback => observed = fallback.Outcome.Exception)
             .Use(new ThrowingStrategy(failure));
 
         var result = await shield.ExecuteAsync(_ =>
@@ -103,7 +103,7 @@ public class CustomStrategyContractTests
         Exception? observed = null;
         var shield = Shield.For<int>()
             .When<InvalidOperationException>()
-            .Fallback(42, options => options.OnFallback = fallback => observed = fallback.Outcome.Exception)
+            .FallbackTo(42, options => options.OnFallback = fallback => observed = fallback.Outcome.Exception)
             .Use(new AsynchronouslyFaultingStrategy(failure));
 
         var result = await shield.ExecuteAsync(_ => new ValueTask<int>(0));
@@ -119,7 +119,7 @@ public class CustomStrategyContractTests
         Exception? observed = null;
         var shield = Shield.For<int>()
             .When<InvalidOperationException>()
-            .Fallback(42, options => options.OnFallback = fallback => observed = fallback.Outcome.Exception)
+            .FallbackTo(42, options => options.OnFallback = fallback => observed = fallback.Outcome.Exception)
             .Use(new FailureStrategy(failure));
 
         var result = await shield.ExecuteAsync(_ => new ValueTask<int>(0));
@@ -284,7 +284,7 @@ public class CustomStrategyContractTests
             _ = Shield.For<int>()
                 .When<ArgumentException>()
                 .Use(clause => new HandlingAwareStrategy(clause))
-                .Fallback(0);
+                .FallbackTo(0);
         }).Throws<InvalidOperationException>();
     }
 

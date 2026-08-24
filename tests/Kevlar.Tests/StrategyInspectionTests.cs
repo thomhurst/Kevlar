@@ -82,11 +82,11 @@ public class StrategyInspectionTests
         await Assert.That(fixedCircuit.Core.HasMonitor).IsFalse();
         await Assert.That(fixedCircuit.Core.HasNotification).IsFalse();
 
-        var notifiedFallback = GetInspection(Shield.For<int>().Fallback(42, static options => options.OnFallback = static _ => { }));
-        var asyncNotifiedFallback = GetInspection(Shield.For<int>().Fallback(
+        var notifiedFallback = GetInspection(Shield.For<int>().FallbackTo(42, static options => options.OnFallback = static _ => { }));
+        var asyncNotifiedFallback = GetInspection(Shield.For<int>().FallbackTo(
             42,
             static options => options.OnFallbackAsync = static _ => default));
-        var fixedFallback = GetInspection(Shield.For<int>().Fallback(42));
+        var fixedFallback = GetInspection(Shield.For<int>().FallbackTo(42));
         var voidFallback = GetInspection(
             Shield.When<InvalidOperationException>().Fallback(static (_, _) => default));
         var notifiedVoidFallback = GetInspection(

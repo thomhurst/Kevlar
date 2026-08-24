@@ -62,7 +62,7 @@ public class FallbackEdgeCaseTests
     [Test]
     public async Task Cancellation_Is_Not_Replaced_By_The_Fallback()
     {
-        var shield = Shield.For<int>().Fallback(99);
+        var shield = Shield.For<int>().FallbackTo(99);
 
         // The default handling ignores OperationCanceledException, so the fallback stays out of it.
         await Assert.That(async () => await shield.ExecuteAsync(_ => throw new OperationCanceledException()))
@@ -92,7 +92,7 @@ public class FallbackEdgeCaseTests
         Exception? seenException = null;
         var shield = Shield.For<int>()
             .WhenResult(-1)
-            .Fallback(0, options => options.OnFallback = fallback =>
+            .FallbackTo(0, options => options.OnFallback = fallback =>
             {
                 seenResult = fallback.Outcome.Result;
                 seenException = fallback.Outcome.Exception;
@@ -110,7 +110,7 @@ public class FallbackEdgeCaseTests
     {
         var original = new InvalidOperationException("original");
         Exception? seenException = null;
-        var shield = Shield.For<int>().Fallback(
+        var shield = Shield.For<int>().FallbackTo(
             0,
             options => options.OnFallback = fallback => seenException = fallback.Outcome.Exception);
 
@@ -135,7 +135,7 @@ public class FallbackEdgeCaseTests
     [Test]
     public async Task Fallback_Works_On_The_Synchronous_Path()
     {
-        var shield = Shield.For<string>().Fallback("fell-back");
+        var shield = Shield.For<string>().FallbackTo("fell-back");
 
         var result = shield.Execute(_ => throw new InvalidOperationException());
 
@@ -146,7 +146,7 @@ public class FallbackEdgeCaseTests
     public async Task Fallback_Around_A_Circuit_Breaker_Swallows_Rejections()
     {
         var shield = Shield.For<int>()
-            .Fallback(-1)
+            .FallbackTo(-1)
             .CircuitBreaker(1, TimeSpan.FromMinutes(1));
 
         // First execution trips the breaker; the fallback replaces the original failure.

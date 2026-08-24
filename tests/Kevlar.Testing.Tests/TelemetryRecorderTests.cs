@@ -30,7 +30,7 @@ public class TelemetryRecorderTests
         using var recorder = new TelemetryRecorder(captureMetrics: false);
         var typed = Shield.For<int>()
             .WhenResult(static result => result < 0)
-            .Fallback(42, options => options.OnFallback = recorder.Record)
+            .FallbackTo(42, options => options.OnFallback = recorder.Record)
             .Retry(options =>
             {
                 options.MaxRetries = 1;
@@ -219,7 +219,7 @@ public class TelemetryRecorderTests
 
         await Shield.Hedge(2, TimeSpan.Zero).WithName(name).ExecuteOutcomeAsync<int>(static _ =>
             ValueTask.FromException<int>(new InvalidOperationException()));
-        await Shield.For<int>().When<InvalidOperationException>().Fallback(42).WithName(name)
+        await Shield.For<int>().When<InvalidOperationException>().FallbackTo(42).WithName(name)
             .ExecuteAsync<int>(static _ => throw new InvalidOperationException());
 
         var breaker = Shield.CircuitBreaker(1, TimeSpan.FromMinutes(1)).WithName(name);

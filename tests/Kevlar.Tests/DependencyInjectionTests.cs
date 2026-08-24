@@ -66,7 +66,7 @@ public class DependencyInjectionTests
     {
         var services = new ServiceCollection()
             .AddShield("shared", Shield.Retry(1, Backoff.None))
-            .AddShield("shared", Shield.For<int>().WhenResult(-1).Fallback(0))
+            .AddShield("shared", Shield.For<int>().WhenResult(-1).FallbackTo(0))
             .BuildServiceProvider();
 
         var registry = services.GetRequiredService<IKevlarRegistry>();
@@ -143,7 +143,7 @@ public class DependencyInjectionTests
             .AddPartitionedShield<string>("shared", (_, _) => Shield.Empty)
             .AddPartitionedShield<string, int>(
                 "shared",
-                (_, _) => Shield.For<int>().WhenResult(-1).Fallback(0));
+                (_, _) => Shield.For<int>().WhenResult(-1).FallbackTo(0));
         using var provider = services.BuildServiceProvider();
 
         var untyped = provider.GetRequiredKeyedService<PartitionedShield<string>>("shared");

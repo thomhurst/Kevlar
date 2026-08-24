@@ -5,7 +5,7 @@ public class FallbackTests
     [Test]
     public async Task Fallback_Value_Replaces_Exceptions()
     {
-        var shield = Shield.For<string>().When<InvalidOperationException>().Fallback("fallback");
+        var shield = Shield.For<string>().When<InvalidOperationException>().FallbackTo("fallback");
 
         var result = await shield.ExecuteAsync(_ => throw new InvalidOperationException());
 
@@ -33,7 +33,7 @@ public class FallbackTests
     [Test]
     public async Task Fallback_Applies_To_Handled_Results()
     {
-        var shield = Shield.For<int>().WhenResult(-1).Fallback(0);
+        var shield = Shield.For<int>().WhenResult(-1).FallbackTo(0);
 
         var result = await shield.ExecuteAsync(_ => new ValueTask<int>(-1));
 
@@ -43,7 +43,7 @@ public class FallbackTests
     [Test]
     public async Task Fallback_Is_Not_Used_On_Success()
     {
-        var shield = Shield.For<int>().WhenResult(-1).Fallback(0);
+        var shield = Shield.For<int>().WhenResult(-1).FallbackTo(0);
 
         var result = await shield.ExecuteAsync(_ => new ValueTask<int>(42));
 
@@ -53,7 +53,7 @@ public class FallbackTests
     [Test]
     public async Task Unhandled_Exceptions_Bypass_The_Fallback()
     {
-        var shield = Shield.For<string>().When<InvalidOperationException>().Fallback("fallback");
+        var shield = Shield.For<string>().When<InvalidOperationException>().FallbackTo("fallback");
 
         await Assert.That(async () => await shield.ExecuteAsync(_ => throw new ArgumentException()))
             .Throws<ArgumentException>();
@@ -65,7 +65,7 @@ public class FallbackTests
         var fired = false;
         var shield = Shield.For<int>()
             .WhenResult(-1)
-            .Fallback(0, options => options.OnFallback = _ => fired = true);
+            .FallbackTo(0, options => options.OnFallback = _ => fired = true);
 
         await shield.ExecuteAsync(_ => new ValueTask<int>(-1));
 
@@ -78,7 +78,7 @@ public class FallbackTests
         var attempts = 0;
         var shield = Shield.For<string>()
             .When<InvalidOperationException>()
-            .Fallback("gave up")
+            .FallbackTo("gave up")
             .Retry(2, Backoff.None);
 
         var result = await shield.ExecuteAsync(_ =>

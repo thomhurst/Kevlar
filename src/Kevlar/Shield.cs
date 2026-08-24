@@ -126,7 +126,7 @@ public sealed class Shield
     /// Starts a pipeline with a fallback that runs <paramref name="fallback"/> in place of handled
     /// failures, receiving the handled exception. Applies to void executions only; result-returning
     /// executions fail with a descriptive <see cref="InvalidOperationException"/> — use
-    /// <c>Shield.For&lt;T&gt;().Fallback(…)</c> for those.
+    /// <c>Shield.For&lt;T&gt;().FallbackTo(…)</c> for constant values or its typed <c>Fallback(…)</c> overloads for factories.
     /// </summary>
     /// <remarks>
     /// A fallback is legitimately the outermost strategy: it recovers what everything chained
@@ -148,7 +148,7 @@ public sealed class Shield
     /// <summary>
     /// Starts a pipeline with a fallback that runs <paramref name="fallback"/> in place of handled
     /// failures. Returns a <see cref="VoidShield"/>, which exposes only void execution overloads.
-    /// Use <c>Shield.For&lt;T&gt;().Fallback(…)</c> for result-producing recovery.
+    /// Use <c>Shield.For&lt;T&gt;().FallbackTo(…)</c> for constant values or its typed <c>Fallback(…)</c> overloads for factories.
     /// </summary>
     public static VoidShield Fallback(Func<CancellationToken, ValueTask> fallback) =>
         ShieldExtensions.Fallback(Empty, fallback);

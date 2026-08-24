@@ -63,7 +63,7 @@ time. Put fallback first so it wraps the reactive strategy:
 
 ```csharp
 var shield = Shield.For<int>()
-    .Fallback(-1)
+    .FallbackTo(-1)
     .Retry(3);
 ```
 
@@ -74,7 +74,7 @@ is intentional:
 var shield = Shield.For<int>()
     .Retry(3)
     .When<TimeoutExceededException>()
-    .Fallback(-1);
+    .FallbackTo(-1);
 ```
 
 No automatic code fix is supplied for `KEV002` or `KEV003`: changing sync control flow or strategy

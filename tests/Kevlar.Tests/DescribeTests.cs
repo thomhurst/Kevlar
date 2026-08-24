@@ -78,9 +78,9 @@ public class DescribeTests
     [Test]
     public async Task Typed_Shields_And_Fallbacks_Describe_Themselves()
     {
-        var shield = Shield.For<int>().WhenResult(0).Fallback(-1).Retry(1, Backoff.None);
+        var shield = Shield.For<int>().WhenResult(0).FallbackTo(-1).Retry(1, Backoff.None);
 
-        await Assert.That(shield.ToString()).IsEqualTo("[when result 0] Fallback → Retry(1, no delay)");
+        await Assert.That(shield.ToString()).IsEqualTo("[when result 0] Fallback(value) → Retry(1, no delay)");
     }
 
     [Test]

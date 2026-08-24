@@ -89,7 +89,7 @@ public class CompositionEdgeCaseTests
     public async Task Wrapping_A_Typed_Policy_Seals_Its_Result_Handling_For_Later_Strategies()
     {
         var typed = Shield.For<int>().WhenResult(value => value < 0).Timeout(TimeSpan.FromMinutes(1));
-        var combined = Shield.Timeout(TimeSpan.FromMinutes(1)).Wrap(typed).Fallback(99);
+        var combined = Shield.Timeout(TimeSpan.FromMinutes(1)).Wrap(typed).FallbackTo(99);
 
         // Composition sealed the result clause, so the default fallback ignores successful results.
         var result = await combined.ExecuteAsync(_ => new ValueTask<int>(-5));
@@ -104,7 +104,7 @@ public class CompositionEdgeCaseTests
             .When<ArgumentException>()
             .Timeout(TimeSpan.FromMinutes(1))
             .For<string>()
-            .Fallback("recovered");
+            .FallbackTo("recovered");
 
         // The ArgumentException clause carries across For<T>(): the fallback recovers matching
         // exceptions and lets everything else surface untouched.
@@ -208,7 +208,7 @@ public class CompositionEdgeCaseTests
     {
         var shield = Shield.For<int>()
             .When<InvalidOperationException>()
-            .Fallback(-1)
+            .FallbackTo(-1)
             .Retry(2, Backoff.None)
             .CircuitBreaker(10, TimeSpan.FromMinutes(1))
             .Timeout(TimeSpan.FromMinutes(1))

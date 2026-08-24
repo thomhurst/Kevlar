@@ -119,7 +119,7 @@ public class CompositionContractTests
             WrapKind.TypedTyped => typedOuter.Wrap(typedInner),
             _ => throw new ArgumentOutOfRangeException(nameof(kind)),
         };
-        var result = await typedWrapped.Fallback(42).ExecuteAsync(_ => throw new InvalidOperationException());
+        var result = await typedWrapped.FallbackTo(42).ExecuteAsync(_ => throw new InvalidOperationException());
 
         await Assert.That(typedWrapped.Ambient).IsNull();
         await Assert.That(result).IsEqualTo(42);
@@ -229,8 +229,8 @@ public class CompositionContractTests
     {
         string? nullValue = null;
         var defaultValue = default(int);
-        var nullShield = Shield.For<string?>().WhenResult(nullValue).Fallback("null");
-        var defaultShield = Shield.For<int>().WhenResult(defaultValue).Fallback(42);
+        var nullShield = Shield.For<string?>().WhenResult(nullValue).FallbackTo("null");
+        var defaultShield = Shield.For<int>().WhenResult(defaultValue).FallbackTo(42);
 
         var nullResult = await nullShield.ExecuteAsync(_ => new ValueTask<string?>((string?)null));
         var defaultResult = await defaultShield.ExecuteAsync(_ => new ValueTask<int>(0));
