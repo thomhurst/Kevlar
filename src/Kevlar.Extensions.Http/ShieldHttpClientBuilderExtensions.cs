@@ -3,6 +3,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Kevlar.Extensions.Http;
 
+#pragma warning disable RS0026 // Named/configured HttpClient overload parity intentionally keeps optional arguments.
+
 /// <summary>Adds Kevlar resilience to <see cref="IHttpClientBuilder"/> pipelines.</summary>
 public static class ShieldHttpClientBuilderExtensions
 {
@@ -417,3 +419,5 @@ public static class ShieldHttpClientBuilderExtensions
         return CreateEndpointShield;
     }
 }
+
+#pragma warning restore RS0026

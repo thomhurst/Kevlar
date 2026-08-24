@@ -1,5 +1,10 @@
 # Kevlar
 
+[![NuGet version](https://img.shields.io/nuget/v/Kevlar.svg)](https://www.nuget.org/packages/Kevlar)
+[![NuGet downloads](https://img.shields.io/nuget/dt/Kevlar.svg)](https://www.nuget.org/packages/Kevlar)
+[![CI](https://github.com/thomhurst/Kevlar/actions/workflows/ci.yml/badge.svg)](https://github.com/thomhurst/Kevlar/actions/workflows/ci.yml)
+[![License](https://img.shields.io/github/license/thomhurst/Kevlar.svg)](https://github.com/thomhurst/Kevlar/blob/main/LICENSE)
+
 **Fast, allocation-conscious resilience for .NET.** Kevlar brings retries, circuit breakers,
 timeouts, rate limiting, concurrency limiting, hedging and fallbacks together in a fluent API.
 
@@ -48,7 +53,7 @@ stateful strategies: calls made through the same shield share its circuit breake
   retain independent breaker, limiter, and queue state per tenant, endpoint, or other bounded key.
 - **It is designed for hot paths.** Struct outcomes, pooled contexts, state-passing overloads and
   `ValueTask` keep overhead and allocations low. Browse the
-  [benchmark suite](benchmarks/Kevlar.Benchmarks) or the published comparative
+  [benchmark suite](https://github.com/thomhurst/Kevlar/tree/main/benchmarks/Kevlar.Benchmarks) or the published comparative
   [BenchmarkDotNet results](https://thomhurst.github.io/Kevlar/docs/benchmarks).
 - **Production concerns are built in.** Shields support `TimeProvider`, describe their own pipeline,
   and publish metrics through the `Kevlar` meter on .NET 8 and later. An optional analyzer catches

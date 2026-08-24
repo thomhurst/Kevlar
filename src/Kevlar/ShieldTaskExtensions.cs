@@ -2,6 +2,8 @@ using Kevlar.Internal;
 
 namespace Kevlar;
 
+#pragma warning disable RS0026 // Task/ValueTask overload parity intentionally keeps CancellationToken optional.
+
 /// <summary>
 /// <see cref="Task"/>-based execution overloads. Most application code returns
 /// <see cref="Task{T}"/> rather than <see cref="ValueTask{T}"/>; these overloads let such
@@ -263,3 +265,5 @@ public static class ShieldTaskExtensions
         return shield.ExecuteOutcomeAsync((state, action), static (s, token) => new ValueTask<TResult>(s.action(s.state, token)), cancellationToken);
     }
 }
+
+#pragma warning restore RS0026

@@ -5,6 +5,8 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Kevlar.Extensions.DependencyInjection;
 
+#pragma warning disable RS0026 // Partitioned registration overload parity intentionally keeps optional arguments.
+
 /// <summary>Registers Kevlar shields with the service collection.</summary>
 public static class KevlarServiceCollectionExtensions
 {
@@ -419,3 +421,5 @@ public static class KevlarServiceCollectionExtensions
             $"Configuration value '{value}' for '{path}' is not {expected}.");
     }
 }
+
+#pragma warning restore RS0026

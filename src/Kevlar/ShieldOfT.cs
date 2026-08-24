@@ -1,6 +1,8 @@
 using Kevlar.Internal;
 using Kevlar.Strategies;
 
+#pragma warning disable RS0026 // Execution overload parity intentionally keeps CancellationToken optional.
+
 namespace Kevlar;
 
 /// <summary>
@@ -521,3 +523,5 @@ public sealed class Shield<TResult>
         return new Shield<TResult>(strategies, ambient ?? Ambient, Name, Time);
     }
 }
+
+#pragma warning restore RS0026

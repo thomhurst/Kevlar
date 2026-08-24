@@ -45,6 +45,9 @@ build spelled these `WhenResultDefault`/`OrResultDefault`; the `Is` makes the re
   `AddStandardHedgingShield` are unchanged.
 ### Changed
 
+- Every NuGet package now embeds the canonical Kevlar icon, links release notes, and carries a
+  NuGet-safe README with status badges. `Kevlar.Analyzers` is marked as a development dependency
+  so it does not flow from a packed consumer library.
 - `Kevlar.Testing` and `Kevlar.Extensions.RateLimiting` now require the exact matching `Kevlar`
   package version. These packages still use core implementation details for structured inspection
   and metrics, so NuGet now reports unsafe version-skew combinations as `NU1608` (and rejects them

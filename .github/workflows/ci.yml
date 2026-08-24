@@ -133,6 +133,17 @@ jobs:
         shell: pwsh
         run: ./scripts/Verify-Docs.ps1
 
+      - name: Check Markdown links
+        if: matrix.os == 'ubuntu-latest'
+        uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          args: >-
+            --root-dir "${{ github.workspace }}" --no-progress
+            README.md "docs/docs/**/*.md"
+          fail: true
+          failIfEmpty: true
+          token: ${{ github.token }}
+
       - name: Compile and execute documentation snippets
         if: matrix.os == 'ubuntu-latest'
         shell: pwsh

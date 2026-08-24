@@ -1,6 +1,8 @@
 using Kevlar.Internal;
 using Kevlar.Strategies;
 
+#pragma warning disable RS0026 // Execution overload parity intentionally keeps CancellationToken optional.
+
 namespace Kevlar;
 
 /// <summary>
@@ -649,3 +651,5 @@ public sealed class Shield
         return new ValueTask(pipeline.AsTask());
     }
 }
+
+#pragma warning restore RS0026
