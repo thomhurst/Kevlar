@@ -35,11 +35,10 @@ renamed to `WhenResultIsDefault`/`OrResultIsDefault` because their "default" is 
 not the default *handling* that the neighbouring `WhenAnyError()` restores. (An earlier pre-release
 build spelled these `WhenResultDefault`/`OrResultDefault`; the `Is` makes the reading unambiguous.)
 
-- `RetryOptions<TResult>` no longer inherits `RetryOptions`. Both types retain the same scalar
-  property names and defaults, but helpers that accepted `RetryOptions` must configure typed retry
-  options separately. Typed callback getters now return the exact delegates assigned to them.
-- Typed circuit-breaker and hedging configuration now uses `CircuitBreakerOptions<TResult>` and
-  `HedgeOptions<TResult>` so result predicates remain strongly typed.
+- Retry, circuit-breaker, hedge, and fallback options are sealed sibling types. Each typed/untyped
+  pair retains the same shared property names and scalar defaults, but helpers that accept an
+  untyped options type must configure typed options separately. Typed callbacks and result
+  predicates keep their exact compile-time types.
 - `HedgingOptions`/`HedgingOptions<TResult>` were renamed to `HedgeOptions`/`HedgeOptions<TResult>`
   so the strategy method and its options type share a stem, like `Retry`/`RetryOptions` and
   `Timeout`/`TimeoutOptions`. `Kevlar.Extensions.Http`'s `StandardHedgingShieldOptions` and

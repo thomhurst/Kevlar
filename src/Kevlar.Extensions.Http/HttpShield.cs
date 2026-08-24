@@ -154,7 +154,9 @@ public static class HttpShield
         target.OnRetryAsync = source.OnRetryAsync;
     }
 
-    private static void Copy(CircuitBreakerOptions source, CircuitBreakerOptions target)
+    private static void Copy(
+        CircuitBreakerOptions source,
+        CircuitBreakerOptions<HttpResponseMessage> target)
     {
         target.ConsecutiveFailures = source.ConsecutiveFailures;
         target.FailureRatio = source.FailureRatio;
