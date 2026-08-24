@@ -12,6 +12,11 @@ on:
         type: boolean
         required: false
         default: false
+      release_dry_run:
+        description: 'Validate the release without creating a tag, publishing packages, or creating a release'
+        type: boolean
+        required: false
+        default: true
 
 jobs:
   allocation-gates:
@@ -120,6 +125,13 @@ jobs:
       - name: Determine Version
         id: gitversion
         uses: gittools/actions/gitversion/execute@7417b1089e2c7de93510f1901d656ddf60bb024f # v4.7.0
+
+      - name: Verify release workflow and versioning
+        if: matrix.os == 'ubuntu-latest'
+        shell: pwsh
+        run: |
+          ./scripts/Verify-ReleaseWorkflow.ps1
+          ./scripts/Verify-Versioning.ps1
 
       - name: Build
         run: dotnet build Kevlar.slnx -c Release -p:Version=${{ steps.gitversion.outputs.semVer }}
@@ -289,8 +301,9 @@ jobs:
   publish:
     name: Publish NuGet
     needs: [allocation-gates, docs, build-and-test, coverage]
-    if: github.event_name == 'workflow_dispatch' && inputs.publish_nuget == true
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.publish_nuget == true
     runs-on: ubuntu-latest
+    environment: nuget
     permissions:
       id-token: write  # Request a NuGet trusted publishing token
       contents: write  # Create the release tag so GitVersion advances past this version
@@ -331,16 +344,40 @@ jobs:
             throw "Expected 8 matching nupkg/snupkg artifacts; got nupkg=[$($packageIds -join ', ')], snupkg=[$($symbolPackageIds -join ', ')]."
           }
 
+      - name: Extract release notes
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ steps.gitversion.outputs.semVer }}
+        run: |
+          $notesPath = Join-Path $env:RUNNER_TEMP 'release-notes.md'
+          ./scripts/Get-ReleaseNotes.ps1 -Version $env:RELEASE_VERSION -OutputPath $notesPath
+          "RELEASE_NOTES_PATH=$notesPath" >> $env:GITHUB_ENV
+
+      - name: Create and push release tag
+        if: inputs.release_dry_run != true
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ steps.gitversion.outputs.semVer }}
+        run: |
+          $tag = "v$env:RELEASE_VERSION"
+          git tag $tag $env:GITHUB_SHA
+          git push origin "refs/tags/$tag"
+
       - name: NuGet login
+        if: inputs.release_dry_run != true
         uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1
         id: login
         with:
           user: ${{ secrets.NUGET_USER }}
 
       - name: Push to NuGet
-        run: dotnet nuget push packages/*.nupkg --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+        if: inputs.release_dry_run != true
+        run: |
+          dotnet nuget push packages/*.nupkg --no-symbols --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
+          dotnet nuget push packages/*.snupkg --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
 
       - name: Create GitHub release
+        if: inputs.release_dry_run != true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release create "v${{ steps.gitversion.outputs.semVer }}" --target ${{ github.sha }} --generate-notes packages/*.nupkg packages/*.snupkg
+        run: gh release create "v${{ steps.gitversion.outputs.semVer }}" --verify-tag --notes-file "$RELEASE_NOTES_PATH" packages/*.nupkg packages/*.snupkg
