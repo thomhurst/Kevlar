@@ -121,15 +121,8 @@ public static class ShieldDescriptorExtensions
             strategy.HasHandlingOverride);
 
     private static BackoffDescriptor DescribeBackoff(Backoff backoff) => new(
-        backoff.ConfigurationKind switch
-        {
-            BackoffConfigurationKind.None => BackoffKind.None,
-            BackoffConfigurationKind.Constant => BackoffKind.Constant,
-            BackoffConfigurationKind.Linear => BackoffKind.Linear,
-            BackoffConfigurationKind.Exponential => BackoffKind.Exponential,
-            _ => BackoffKind.Custom,
-        },
-        backoff.BaseDelay,
+        backoff.Kind,
+        backoff.InitialDelay,
         backoff.Factor,
         backoff.MaxDelay,
         backoff.Jitter);

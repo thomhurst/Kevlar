@@ -142,22 +142,6 @@ public sealed class RetryDefinition
     };
 }
 
-/// <summary>The backoff curves a <see cref="RetryDefinition"/> can declare.</summary>
-public enum BackoffKind
-{
-    /// <summary>No delay between attempts.</summary>
-    None,
-
-    /// <summary>The same delay before every attempt.</summary>
-    Constant,
-
-    /// <summary>Linearly increasing delay.</summary>
-    Linear,
-
-    /// <summary>Exponentially increasing delay (the default).</summary>
-    Exponential,
-}
-
 /// <summary>The circuit breaker section of a <see cref="ShieldDefinition"/>.</summary>
 public sealed class CircuitBreakerDefinition
 {

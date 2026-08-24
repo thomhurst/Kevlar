@@ -2,14 +2,8 @@ Kevlar.Testing.BackoffDescriptor
 Kevlar.Testing.BackoffDescriptor.BaseDelay.get -> System.TimeSpan?
 Kevlar.Testing.BackoffDescriptor.Factor.get -> double?
 Kevlar.Testing.BackoffDescriptor.Jitter.get -> bool?
-Kevlar.Testing.BackoffDescriptor.Kind.get -> Kevlar.Testing.BackoffKind
+Kevlar.Testing.BackoffDescriptor.Kind.get -> Kevlar.BackoffKind
 Kevlar.Testing.BackoffDescriptor.MaxDelay.get -> System.TimeSpan?
-Kevlar.Testing.BackoffKind
-Kevlar.Testing.BackoffKind.Constant = 1 -> Kevlar.Testing.BackoffKind
-Kevlar.Testing.BackoffKind.Custom = 4 -> Kevlar.Testing.BackoffKind
-Kevlar.Testing.BackoffKind.Exponential = 3 -> Kevlar.Testing.BackoffKind
-Kevlar.Testing.BackoffKind.Linear = 2 -> Kevlar.Testing.BackoffKind
-Kevlar.Testing.BackoffKind.None = 0 -> Kevlar.Testing.BackoffKind
 Kevlar.Testing.CircuitBreakerStrategyDescriptor
 Kevlar.Testing.CircuitBreakerStrategyDescriptor.BreakDuration.get -> System.TimeSpan
 Kevlar.Testing.CircuitBreakerStrategyDescriptor.ConsecutiveFailures.get -> int?

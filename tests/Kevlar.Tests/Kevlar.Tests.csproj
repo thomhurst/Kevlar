@@ -19,6 +19,7 @@
     <ProjectReference Include="..\..\src\Kevlar\Kevlar.csproj" />
     <ProjectReference Include="..\..\src\Kevlar.Extensions.DependencyInjection\Kevlar.Extensions.DependencyInjection.csproj" />
     <ProjectReference Include="..\..\src\Kevlar.Extensions.Http\Kevlar.Extensions.Http.csproj" />
+    <ProjectReference Include="..\..\src\Kevlar.Testing\Kevlar.Testing.csproj" />
   </ItemGroup>
 
 </Project>

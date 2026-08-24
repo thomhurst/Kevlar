@@ -1,3 +1,10 @@
+*REMOVED*Kevlar.Extensions.DependencyInjection.BackoffKind
+*REMOVED*Kevlar.Extensions.DependencyInjection.BackoffKind.Constant = 1 -> Kevlar.Extensions.DependencyInjection.BackoffKind
+*REMOVED*Kevlar.Extensions.DependencyInjection.BackoffKind.Exponential = 3 -> Kevlar.Extensions.DependencyInjection.BackoffKind
+*REMOVED*Kevlar.Extensions.DependencyInjection.BackoffKind.Linear = 2 -> Kevlar.Extensions.DependencyInjection.BackoffKind
+*REMOVED*Kevlar.Extensions.DependencyInjection.BackoffKind.None = 0 -> Kevlar.Extensions.DependencyInjection.BackoffKind
+*REMOVED*Kevlar.Extensions.DependencyInjection.RetryDefinition.Backoff.get -> Kevlar.Extensions.DependencyInjection.BackoffKind
+Kevlar.Extensions.DependencyInjection.RetryDefinition.Backoff.get -> Kevlar.BackoffKind
 Kevlar.Extensions.DependencyInjection.IShieldProvider
 Kevlar.Extensions.DependencyInjection.IShieldProvider.Current.get -> Kevlar.Shield!
 static Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! name, Microsoft.Extensions.Configuration.IConfiguration! configuration, System.Action<System.Exception!>? onReloadFailure = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!

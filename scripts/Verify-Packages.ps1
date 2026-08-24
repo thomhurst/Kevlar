@@ -130,6 +130,42 @@ function Get-AssemblyDetails([System.IO.Compression.ZipArchiveEntry]$Entry)
     }
 }
 
+function Assert-TypeNotDefined(
+    [string]$Name,
+    [System.IO.Compression.ZipArchiveEntry]$Entry,
+    [string]$TypeName)
+{
+    $stream = $Entry.Open()
+    $buffer = [System.IO.MemoryStream]::new()
+    try
+    {
+        $stream.CopyTo($buffer)
+        $buffer.Position = 0
+        $reader = [System.Reflection.PortableExecutable.PEReader]::new($buffer)
+        try
+        {
+            $metadata = [System.Reflection.Metadata.PEReaderExtensions]::GetMetadataReader($reader)
+            foreach ($handle in $metadata.TypeDefinitions)
+            {
+                $definition = $metadata.GetTypeDefinition($handle)
+                if ($metadata.GetString($definition.Name) -eq $TypeName)
+                {
+                    throw "$Name defines duplicate type '$TypeName'."
+                }
+            }
+        }
+        finally
+        {
+            $reader.Dispose()
+        }
+    }
+    finally
+    {
+        $buffer.Dispose()
+        $stream.Dispose()
+    }
+}
+
 function Get-ArchiveEntryHash([string]$ArchivePath, [string]$EntryPath)
 {
     $archive = [System.IO.Compression.ZipFile]::OpenRead($ArchivePath)
@@ -383,6 +419,10 @@ foreach ($packageId in $expectedDependencies.Keys)
             Assert-Equal "$packageId $($assemblyEntry.FullName) AssemblyVersion" $details.AssemblyVersion $expectedAssemblyVersion
             Assert-Equal "$packageId $($assemblyEntry.FullName) FileVersion" $details.FileVersion $expectedFileVersion
             Assert-Equal "$packageId $($assemblyEntry.FullName) InformationalVersion" $details.InformationalVersion $expectedInformationalVersion
+            if ($packageId -in @('Kevlar.Extensions.DependencyInjection', 'Kevlar.Testing'))
+            {
+                Assert-TypeNotDefined "$packageId $($assemblyEntry.FullName)" $assemblyEntry 'BackoffKind'
+            }
         }
     }
     finally

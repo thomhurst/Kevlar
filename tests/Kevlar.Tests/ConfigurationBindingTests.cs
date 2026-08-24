@@ -93,6 +93,41 @@ public class ConfigurationBindingTests
     }
 
     [Test]
+    [Arguments("none", "no delay")]
+    [Arguments("CONSTANT", "constant 1s")]
+    [Arguments("Linear", "linear 1s steps")]
+    [Arguments("eXpOnEnTiAl", "exponential 1s ×2 ≤30s")]
+    public async Task RetryDefinition_Binds_BackoffKind_From_Configuration(string value, string expected)
+    {
+        var configuration = BuildConfiguration(
+            ("Retry:MaxRetries", "1"),
+            ("Retry:Backoff", value),
+            ("Retry:BaseDelay", "00:00:01"),
+            ("Retry:Jitter", "false"),
+            ("Retry:MaxDelay", ""));
+        var services = new ServiceCollection();
+        services.AddShield("backoff", configuration);
+        using var provider = services.BuildServiceProvider();
+
+        var shield = provider.GetRequiredService<IKevlarRegistry>().GetShield("backoff");
+
+        await Assert.That(shield.ToString()).IsEqualTo($"backoff: Retry(1, {expected})");
+    }
+
+    [Test]
+    public async Task Invalid_BackoffKind_Throws_With_Path()
+    {
+        var configuration = BuildConfiguration(("Retry:Backoff", "quadratic"));
+        var services = new ServiceCollection();
+        services.AddShield("invalid", configuration);
+        using var provider = services.BuildServiceProvider();
+
+        await Assert.That(() => provider.GetRequiredService<IKevlarRegistry>().GetShield("invalid"))
+            .Throws<InvalidOperationException>()
+            .WithMessage("Configuration value 'quadratic' for 'Retry:Backoff' is not a BackoffKind.");
+    }
+
+    [Test]
     public async Task Exponential_Defaults_Match_The_Fluent_Api()
     {
         var definition = new ShieldDefinition { Retry = new RetryDefinition() };

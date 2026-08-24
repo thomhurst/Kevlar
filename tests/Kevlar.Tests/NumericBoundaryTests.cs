@@ -259,15 +259,6 @@ public class NumericBoundaryTests
         }
     }
 
-    public enum BackoffKind
-    {
-        None,
-        Constant,
-        Linear,
-        Exponential,
-        Custom,
-    }
-
     private sealed class FixedTimestampTimeProvider(long timestamp, long timestampFrequency) : TimeProvider
     {
         private long _timestamp = timestamp;
