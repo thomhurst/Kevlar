@@ -1,6 +1,13 @@
 name: Stress tests
 
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/Kevlar/**'
+      - 'benchmarks/Kevlar.StressTests/**'
+      - '.github/workflows/stress.yml'
+      - '.github/scripts/stress_docs.py'
   push:
     branches: [main]
     paths:
@@ -21,7 +28,7 @@ concurrency:
 
 jobs:
   run-stress-test:
-    name: Run 15-minute stress test
+    name: ${{ github.event_name == 'pull_request' && 'Run 30-second stress smoke test' || 'Run 15-minute stress test' }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
@@ -39,7 +46,8 @@ jobs:
       - name: Run stress test
         run: >-
           dotnet run --project benchmarks/Kevlar.StressTests -c Release --no-build --
-          --duration 00:15:00
+          --duration ${{ github.event_name == 'pull_request' && '00:00:30' || '00:15:00' }}
+          --warmup ${{ github.event_name == 'pull_request' && '00:00:01' || '00:00:02' }}
           --output artifacts/stress/stress-results.json
 
       - name: Generate run summary

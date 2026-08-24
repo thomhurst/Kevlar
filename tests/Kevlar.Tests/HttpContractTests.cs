@@ -10,6 +10,40 @@ namespace Kevlar.Tests;
 public class HttpContractTests
 {
     [Test]
+    public async Task Endpoint_Value_Object_Validates_And_Preserves_Inputs()
+    {
+        var uri = new Uri("https://api.example:8443/base");
+        var endpoint = new HttpEndpoint(uri, weight: 7);
+
+        await Assert.That(ReferenceEquals(endpoint.Uri, uri)).IsTrue();
+        await Assert.That(endpoint.Weight).IsEqualTo(7);
+
+        var nullUri = await Assert.That(() => new HttpEndpoint(null!))
+            .Throws<ArgumentNullException>();
+        var relativeUri = await Assert.That(() => new HttpEndpoint(new Uri("relative", UriKind.Relative)))
+            .Throws<ArgumentException>();
+        var zeroWeight = await Assert.That(() => new HttpEndpoint(uri, weight: 0))
+            .Throws<ArgumentOutOfRangeException>();
+
+        await Assert.That(nullUri!.ParamName).IsEqualTo("uri");
+        await Assert.That(relativeUri!.ParamName).IsEqualTo("uri");
+        await Assert.That(zeroWeight!.ParamName).IsEqualTo("weight");
+    }
+
+    [Test]
+    public async Task Replay_Exception_Constructors_Preserve_Message_And_Inner_Exception()
+    {
+        var inner = new IOException("serialization failed");
+        var simple = new HttpRequestReplayException("replay failed");
+        var wrapped = new HttpRequestReplayException("buffer failed", inner);
+
+        await Assert.That(simple.Message).IsEqualTo("replay failed");
+        await Assert.That(simple.InnerException).IsNull();
+        await Assert.That(wrapped.Message).IsEqualTo("buffer failed");
+        await Assert.That(ReferenceEquals(wrapped.InnerException, inner)).IsTrue();
+    }
+
+    [Test]
     [Arguments(200, false)]
     [Arguments(301, false)]
     [Arguments(400, false)]
@@ -641,7 +675,19 @@ public class HttpContractTests
             .Throws<ArgumentNullException>();
         await Assert.That(() => builder.AddShield((Shield<HttpResponseMessage>)null!))
             .Throws<ArgumentNullException>();
+        await Assert.That(() => builder.AddShield(
+                Shield<HttpResponseMessage>.Empty,
+                null!))
+            .Throws<ArgumentNullException>();
         await Assert.That(() => builder.AddShield((Func<IServiceProvider, Shield<HttpResponseMessage>>)null!))
+            .Throws<ArgumentNullException>();
+        await Assert.That(() => builder.AddShield(
+                static _ => Shield<HttpResponseMessage>.Empty,
+                null!))
+            .Throws<ArgumentNullException>();
+        await Assert.That(() => new ShieldDelegatingHandler(
+                Shield<HttpResponseMessage>.Empty,
+                null!))
             .Throws<ArgumentNullException>();
         await Assert.That(() => ShieldHttpClientBuilderExtensions.AddStandardShield(nullBuilder!))
             .Throws<ArgumentNullException>();

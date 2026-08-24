@@ -194,6 +194,57 @@ public class HttpReplayTests
     }
 
     [Test]
+    public async Task Declared_Content_Length_Over_Limit_Fails_Before_Serialization_Or_Transport()
+    {
+        var content = new SerializationTrackingContent(contentLength: 5);
+        var transport = new RecordingHandler((_, _, _) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)));
+        using var invoker = CreateInvoker(
+            Shield<HttpResponseMessage>.Empty,
+            new ShieldHttpHandlerOptions
+            {
+                ContentReplayPolicy = HttpContentReplayPolicy.Buffer,
+                MaximumBufferSize = 4,
+            },
+            transport);
+        using var request = new HttpRequestMessage(HttpMethod.Put, "https://origin.example/upload")
+        {
+            Content = content,
+        };
+
+        var exception = await Assert.That(async () =>
+                await invoker.SendAsync(request, CancellationToken.None))
+            .Throws<HttpRequestReplayException>();
+
+        await Assert.That(exception!.Message).Contains("4-byte replay buffer limit");
+        await Assert.That(content.SerializationAttempts).IsEqualTo(0);
+        await Assert.That(transport.Attempts).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Null_RequestFactory_Result_Fails_Actionably_Before_Transport()
+    {
+        var transport = new RecordingHandler((_, _, _) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)));
+        using var invoker = CreateInvoker(
+            Shield<HttpResponseMessage>.Empty,
+            new ShieldHttpHandlerOptions
+            {
+                RequestFactory = static (_, _, _) =>
+                    new ValueTask<HttpRequestMessage>((HttpRequestMessage)null!),
+            },
+            transport);
+        using var request = new HttpRequestMessage(HttpMethod.Get, "https://origin.example/api");
+
+        var exception = await Assert.That(async () =>
+                await invoker.SendAsync(request, CancellationToken.None))
+            .Throws<HttpRequestReplayException>();
+
+        await Assert.That(exception!.Message).Contains("RequestFactory returned null");
+        await Assert.That(transport.Attempts).IsEqualTo(0);
+    }
+
+    [Test]
     public async Task Caller_Cancellation_Interrupts_Request_Buffering()
     {
         using var cancellation = new CancellationTokenSource();
@@ -899,6 +950,25 @@ public class HttpReplayTests
             }
 
             base.Dispose(disposing);
+        }
+    }
+
+    private sealed class SerializationTrackingContent(long contentLength) : HttpContent
+    {
+        private int _serializationAttempts;
+
+        public int SerializationAttempts => Volatile.Read(ref _serializationAttempts);
+
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context)
+        {
+            Interlocked.Increment(ref _serializationAttempts);
+            return Task.CompletedTask;
+        }
+
+        protected override bool TryComputeLength(out long length)
+        {
+            length = contentLength;
+            return true;
         }
     }
 

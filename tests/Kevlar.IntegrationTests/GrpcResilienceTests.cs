@@ -325,10 +325,17 @@ public class GrpcResilienceTests
     [Test]
     public async Task Transient_Status_Set_Is_Explicit()
     {
-        await Assert.That(GrpcShield.IsTransient(StatusCode.Unavailable)).IsTrue();
-        await Assert.That(GrpcShield.IsTransient(StatusCode.DeadlineExceeded)).IsTrue();
-        await Assert.That(GrpcShield.IsTransient(StatusCode.ResourceExhausted)).IsTrue();
-        await Assert.That(GrpcShield.IsTransient(StatusCode.InvalidArgument)).IsFalse();
+        foreach (var statusCode in Enum.GetValues<StatusCode>())
+        {
+            var expected = statusCode is StatusCode.Unavailable
+                or StatusCode.DeadlineExceeded
+                or StatusCode.ResourceExhausted;
+
+            await Assert.That(GrpcShield.IsTransient(statusCode)).IsEqualTo(expected);
+            await Assert.That(GrpcShield.IsTransient(
+                new RpcException(new Status(statusCode, "status")))).IsEqualTo(expected);
+        }
+
         await Assert.That(GrpcShield.IsTransient((RpcException?)null)).IsFalse();
     }
 
@@ -337,6 +344,125 @@ public class GrpcResilienceTests
     {
         _ = await Assert.That(() => new ShieldUnaryClientInterceptor(null!))
             .Throws<ArgumentNullException>();
+    }
+
+    [Test]
+    public async Task Unary_Entry_Point_Rejects_Null_Request_And_Continuation()
+    {
+        var interceptor = new ShieldUnaryClientInterceptor(Shield.Empty);
+        var method = new Method<TestRequest, TestReply>(
+            MethodType.Unary,
+            "kevlar.tests.Guards",
+            "Unary",
+            Marshallers.Create(static _ => [], static _ => new TestRequest()),
+            Marshallers.Create(static _ => [], static _ => new TestReply()));
+        var context = new ClientInterceptorContext<TestRequest, TestReply>(
+            method,
+            host: null,
+            default);
+        Interceptor.AsyncUnaryCallContinuation<TestRequest, TestReply> continuation =
+            static (_, _) => throw new InvalidOperationException("must not run");
+
+        var requestError = await Assert.That(() => interceptor.AsyncUnaryCall(
+                null!,
+                context,
+                continuation))
+            .Throws<ArgumentNullException>();
+        var continuationError = await Assert.That(() => interceptor.AsyncUnaryCall(
+                new TestRequest(),
+                context,
+                null!))
+            .Throws<ArgumentNullException>();
+
+        await Assert.That(requestError!.ParamName).IsEqualTo("request");
+        await Assert.That(continuationError!.ParamName).IsEqualTo("continuation");
+    }
+
+    [Test]
+    public async Task Blocking_Unary_Calls_Pass_Through_Without_Applying_Shield()
+    {
+        var interceptor = new ShieldUnaryClientInterceptor(
+            GrpcShield.WhenTransient().Retry(3, Backoff.None));
+        var request = new TestRequest();
+        var expected = new TestReply { Attempt = 17 };
+        var method = new Method<TestRequest, TestReply>(
+            MethodType.Unary,
+            "kevlar.tests.PassThrough",
+            "Blocking",
+            Marshallers.Create(static _ => [], static _ => new TestRequest()),
+            Marshallers.Create(static _ => [], static _ => new TestReply()));
+        var context = new ClientInterceptorContext<TestRequest, TestReply>(
+            method,
+            host: "authority.test",
+            default);
+        var calls = 0;
+        TestRequest? observedRequest = null;
+        string? observedHost = null;
+
+        var actual = interceptor.BlockingUnaryCall(
+            request,
+            context,
+            (actualRequest, actualContext) =>
+            {
+                calls++;
+                observedRequest = actualRequest;
+                observedHost = actualContext.Host;
+                return expected;
+            });
+
+        await Assert.That(ReferenceEquals(actual, expected)).IsTrue();
+        await Assert.That(ReferenceEquals(observedRequest, request)).IsTrue();
+        await Assert.That(observedHost).IsEqualTo(context.Host);
+        await Assert.That(calls).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Grpc_Client_Builder_Overloads_Report_Exact_Null_Parameters()
+    {
+        var builder = new ServiceCollection().AddHttpClient("grpc-guards");
+        Func<IServiceProvider, Shield> factory = static _ => Shield.Empty;
+
+        await AssertNullParameterAsync(
+            () => ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor(
+                null!,
+                Shield.Empty),
+            "builder");
+        await AssertNullParameterAsync(
+            () => ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor(null!, factory),
+            "builder");
+        await AssertNullParameterAsync(
+            () => ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor(null!, "name"),
+            "builder");
+        await AssertNullParameterAsync(
+            () => builder.AddShieldUnaryInterceptor((Shield)null!),
+            "shield");
+        await AssertNullParameterAsync(
+            () => builder.AddShieldUnaryInterceptor((Func<IServiceProvider, Shield>)null!),
+            "shieldFactory");
+        await AssertNullParameterAsync(
+            () => builder.AddShieldUnaryInterceptor((string)null!),
+            "shieldName");
+        await AssertNullParameterAsync(
+            () => ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor(
+                null!,
+                Shield.Empty),
+            "builder");
+        await AssertNullParameterAsync(
+            () => ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor(null!, factory),
+            "builder");
+        await AssertNullParameterAsync(
+            () => ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor(null!, "name"),
+            "builder");
+        await AssertNullParameterAsync(
+            () => builder.AddShieldStreamingInterceptor((Shield)null!),
+            "shield");
+        await AssertNullParameterAsync(
+            () => builder.AddShieldStreamingInterceptor(
+                (Func<IServiceProvider, Shield>)null!),
+            "shieldFactory");
+        await AssertNullParameterAsync(
+            () => builder.AddShieldStreamingInterceptor((string)null!),
+            "shieldName");
     }
 
     [Test]
@@ -884,6 +1010,12 @@ public class GrpcResilienceTests
 
     private static void NoOp()
     {
+    }
+
+    private static async Task AssertNullParameterAsync(Action action, string parameterName)
+    {
+        var error = await Assert.That(action).Throws<ArgumentNullException>();
+        await Assert.That(error!.ParamName).IsEqualTo(parameterName);
     }
 
     private sealed class DelegateCallInvoker(
