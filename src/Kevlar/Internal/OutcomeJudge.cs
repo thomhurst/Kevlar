@@ -6,7 +6,7 @@ namespace Kevlar.Internal;
 /// </summary>
 internal abstract class OutcomeJudge
 {
-    /// <summary>The default: handle any exception except <see cref="OperationCanceledException"/>.</summary>
+    /// <summary>The default: handle ordinary errors, but not cancellation, rejections, or fatal exceptions.</summary>
     public static readonly OutcomeJudge Default = new DefaultJudge();
 
     /// <summary>
@@ -21,7 +21,18 @@ internal abstract class OutcomeJudge
     private sealed class DefaultJudge : OutcomeJudge
     {
         public override bool ShouldHandle<T>(in Outcome<T> outcome) =>
-            outcome.Exception is { } exception && exception is not OperationCanceledException;
+            outcome.Exception is { } exception && IsOrdinaryError(exception);
+
+        private static bool IsOrdinaryError(Exception exception) => exception is not (
+            OperationCanceledException
+            or CircuitOpenException
+            or RateLimitExceededException
+            or ConcurrencyLimitExceededException
+            or OutOfMemoryException
+            or InsufficientExecutionStackException
+            or StackOverflowException
+            or ThreadAbortException
+            or AccessViolationException);
     }
 }
 

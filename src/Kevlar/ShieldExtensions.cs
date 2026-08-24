@@ -182,7 +182,7 @@ public static class ShieldExtensions
 
     /// <summary>
     /// Resets the ambient handling clause. Subsequent reactive strategies use the default
-    /// handling: any exception except <see cref="OperationCanceledException"/>.
+    /// handling defined by <see cref="HandlingClause.Default"/>.
     /// </summary>
     public static Shield WhenAnyError(this Shield shield)
     {
