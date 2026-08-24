@@ -19,6 +19,7 @@ errors handled by a retry, breaker, hedge, or fallback.
 | Exception | Thrown by | Properties | Base class | Catch pattern | Default clause |
 |---|---|---|---|---|---|
 | `KevlarException` | Abstract base for core strategy rejections | Inherited `InnerException` carries a cause when the concrete rejection has one. | `Exception` | `catch (KevlarException)` | N/A |
+| `KevlarProxyException` | Abstract base for adapter-owned exception proxies | `OriginalException` is the failure exposed to handling clauses and public outcomes; inherited `InnerException` preserves the same cause. | `Exception` | `catch (KevlarProxyException e)` | N/A |
 | `TimeoutExceededException` | Timeout | `Timeout` is the winning budget; a strategy-produced timeout carries the delegate's cancellation exception in inherited `InnerException`. The public one-argument constructor leaves it `null`. | `KevlarException` | `catch (TimeoutExceededException e) when (e.Timeout == budget)` | Yes |
 | `CircuitOpenException` | Circuit breaker | `RetryAfter` is the remaining break duration; `IsIsolated` distinguishes manual isolation; inherited `InnerException` is the last failure when known. | `KevlarException` | `catch (CircuitOpenException e) when (e.RetryAfter is { } delay)` | No |
 | `RateLimitExceededException` | Rate limit | `RetryAfter` estimates when a permit may become available. | `KevlarException` | `catch (RateLimitExceededException e) when (e.RetryAfter is { } delay)` | No |
@@ -196,7 +197,7 @@ if (!caughtAssertion)
 ## Timeout is not `System.TimeoutException`
 
 `TimeoutExceededException` deliberately derives from `KevlarException`, not
-`System.TimeoutException`. A `catch (TimeoutException)` compiles but does not match a Kevlar timeout.
+`System.TimeoutException`. A `catch (TimeoutException)` compiles but does not match a Kevlar timeout. <!-- doc-lint: allow-TimeoutException -->
 This mirrors Polly's `TimeoutRejectedException` behavior. Catch `TimeoutExceededException` and inspect
 its `Timeout` property.
 
@@ -207,8 +208,9 @@ At the execution boundary Kevlar rethrows it with `ExceptionDispatchInfo`, prese
 throw site. `ExecuteOutcomeAsync` returns it instead through `Outcome<T>.Exception`.
 
 A rejection has its own stack trace because the strategy creates it. Only documented causal data is
-placed in `InnerException`: the last breaker failure, a wrapped chaos cause, or an HTTP replay content
-failure. Do not assume every Kevlar-created exception has an inner exception.
+placed in `InnerException`: the delegate's cancellation when a timeout fires, the last breaker
+failure, a wrapped chaos cause, or an HTTP replay content failure. Do not assume every Kevlar-created
+exception has an inner exception.
 
 ## Configuration failures
 
