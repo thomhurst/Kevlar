@@ -6,6 +6,34 @@ namespace Kevlar.Tests;
 public class ApiShapeTests
 {
     [Test]
+    public async Task Typed_CircuitBreaker_Requires_Typed_Options_Configurator()
+    {
+        var compilation = CreateCompilation(
+            """
+            using Kevlar;
+            using System;
+
+            public static class Consumer
+            {
+                public static void Build()
+                {
+                    Action<CircuitBreakerOptions> untyped = static options => options.ConsecutiveFailures = 2;
+                    Action<CircuitBreakerOptions<int>> typed = static options => options.ConsecutiveFailures = 2;
+                    _ = Shield.For<int>().CircuitBreaker(typed);
+                    _ = Shield.For<int>().CircuitBreaker(untyped);
+                }
+            }
+            """);
+
+        var errors = compilation.GetDiagnostics()
+            .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+            .ToArray();
+
+        await Assert.That(errors).HasSingleItem();
+        await Assert.That(errors[0].Id).IsEqualTo("CS1503");
+    }
+
+    [Test]
     public async Task FallbackTo_Accepts_Null_Without_Overload_Ambiguity()
     {
         var compilation = CreateCompilation(

@@ -4,10 +4,17 @@ namespace Kevlar;
 /// Result-typed configuration for a circuit breaker strategy on a
 /// <see cref="Shield{TResult}"/>.
 /// </summary>
-public sealed class CircuitBreakerOptions<TResult> : CircuitBreakerOptions
+/// <remarks>
+/// <see cref="CircuitBreakerOptions{TResult}"/> and <see cref="CircuitBreakerOptions"/> are
+/// standalone sibling types with matching shared property names and defaults.
+/// </remarks>
+public sealed class CircuitBreakerOptions<TResult>
 {
+    /// <inheritdoc cref="CircuitBreakerOptions.HandlesException"/>
+    public Func<Exception, bool>? HandlesException { get; set; }
+
     /// <summary>
-    /// Setting this — or <see cref="CircuitBreakerOptions.HandlesException"/> — makes this circuit
+    /// Setting this — or <see cref="HandlesException"/> — makes this circuit
     /// breaker ignore the ambient <c>When…</c> handling clause; this predicate then selects the
     /// results it handles.
     /// </summary>
@@ -19,6 +26,47 @@ public sealed class CircuitBreakerOptions<TResult> : CircuitBreakerOptions
     /// <seealso cref="HandlingClause"/>
     public Func<TResult, bool>? HandlesResult { get; set; }
 
-    internal override bool HasHandlingOverride =>
+    internal bool HasHandlingOverride =>
         HandlesException is not null || HandlesResult is not null;
+
+    /// <inheritdoc cref="CircuitBreakerOptions.ConsecutiveFailures"/>
+    public int? ConsecutiveFailures { get; set; }
+
+    /// <inheritdoc cref="CircuitBreakerOptions.FailureRatio"/>
+    public double? FailureRatio { get; set; }
+
+    /// <inheritdoc cref="CircuitBreakerOptions.MinimumThroughput"/>
+    public int MinimumThroughput { get; set; } = 10;
+
+    /// <inheritdoc cref="CircuitBreakerOptions.SamplingWindow"/>
+    public TimeSpan SamplingWindow { get; set; } = TimeSpan.FromSeconds(30);
+
+    /// <inheritdoc cref="CircuitBreakerOptions.BreakDuration"/>
+    public TimeSpan BreakDuration { get; set; } = TimeSpan.FromSeconds(15);
+
+    /// <inheritdoc cref="CircuitBreakerOptions.BreakDurationGenerator"/>
+    public Func<CircuitBreakerBreakDurationEvent, ValueTask<TimeSpan>>? BreakDurationGenerator { get; set; }
+
+    /// <inheritdoc cref="CircuitBreakerOptions.Monitor"/>
+    public CircuitBreakerMonitor? Monitor { get; set; }
+
+    /// <inheritdoc cref="CircuitBreakerOptions.OnStateChanged"/>
+    public Action<CircuitStateChangedEvent>? OnStateChanged { get; set; }
+
+    /// <inheritdoc cref="CircuitBreakerOptions.OnStateChangedAsync"/>
+    public Func<CircuitStateChangedEvent, ValueTask>? OnStateChangedAsync { get; set; }
+
+    internal CircuitBreakerOptions ToUntyped() => new()
+    {
+        HandlesException = HandlesException,
+        ConsecutiveFailures = ConsecutiveFailures,
+        FailureRatio = FailureRatio,
+        MinimumThroughput = MinimumThroughput,
+        SamplingWindow = SamplingWindow,
+        BreakDuration = BreakDuration,
+        BreakDurationGenerator = BreakDurationGenerator,
+        Monitor = Monitor,
+        OnStateChanged = OnStateChanged,
+        OnStateChangedAsync = OnStateChangedAsync,
+    };
 }

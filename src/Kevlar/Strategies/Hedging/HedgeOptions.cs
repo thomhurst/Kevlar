@@ -12,7 +12,7 @@ namespace Kevlar;
 /// <see cref="OnHedgeAsync"/>, then <see cref="ActionGenerator"/>. Caller cancellation is checked
 /// before callbacks and again before the generated operation starts.
 /// </remarks>
-public class HedgeOptions
+public sealed class HedgeOptions
 {
     /// <summary>
     /// Setting this — or, on <see cref="HedgeOptions{TResult}"/>, its <c>HandlesResult</c> — makes
@@ -27,7 +27,7 @@ public class HedgeOptions
     /// <seealso cref="HandlingClause"/>
     public Func<Exception, bool>? HandlesException { get; set; }
 
-    internal virtual bool HasHandlingOverride => HandlesException is not null;
+    internal bool HasHandlingOverride => HandlesException is not null;
 
     /// <summary>Total attempts including the original. Default 2.</summary>
     public int MaxAttempts { get; set; } = 2;

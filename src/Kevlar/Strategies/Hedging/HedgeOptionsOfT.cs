@@ -3,10 +3,17 @@ namespace Kevlar;
 /// <summary>
 /// Result-typed configuration for a hedging strategy on a <see cref="Shield{TResult}"/>.
 /// </summary>
-public sealed class HedgeOptions<TResult> : HedgeOptions
+/// <remarks>
+/// <see cref="HedgeOptions{TResult}"/> and <see cref="HedgeOptions"/> are standalone sibling types
+/// with matching shared property names and defaults.
+/// </remarks>
+public sealed class HedgeOptions<TResult>
 {
+    /// <inheritdoc cref="HedgeOptions.HandlesException"/>
+    public Func<Exception, bool>? HandlesException { get; set; }
+
     /// <summary>
-    /// Setting this — or <see cref="HedgeOptions.HandlesException"/> — makes this hedging strategy
+    /// Setting this — or <see cref="HandlesException"/> — makes this hedging strategy
     /// ignore the ambient <c>When…</c> handling clause; this predicate then selects the results it
     /// handles.
     /// </summary>
@@ -18,6 +25,31 @@ public sealed class HedgeOptions<TResult> : HedgeOptions
     /// <seealso cref="HandlingClause"/>
     public Func<TResult, bool>? HandlesResult { get; set; }
 
-    internal override bool HasHandlingOverride =>
+    internal bool HasHandlingOverride =>
         HandlesException is not null || HandlesResult is not null;
+
+    /// <inheritdoc cref="HedgeOptions.MaxAttempts"/>
+    public int MaxAttempts { get; set; } = 2;
+
+    /// <inheritdoc cref="HedgeOptions.Delay"/>
+    public TimeSpan Delay { get; set; } = TimeSpan.FromSeconds(1);
+
+    /// <inheritdoc cref="HedgeOptions.OnHedge"/>
+    public Action<HedgeEvent>? OnHedge { get; set; }
+
+    /// <inheritdoc cref="HedgeOptions.OnHedgeAsync"/>
+    public Func<HedgeEvent, ValueTask>? OnHedgeAsync { get; set; }
+
+    /// <inheritdoc cref="HedgeOptions.ActionGenerator"/>
+    public HedgeActionGenerator? ActionGenerator { get; set; }
+
+    internal HedgeOptions ToUntyped() => new()
+    {
+        HandlesException = HandlesException,
+        MaxAttempts = MaxAttempts,
+        Delay = Delay,
+        OnHedge = OnHedge,
+        OnHedgeAsync = OnHedgeAsync,
+        ActionGenerator = ActionGenerator,
+    };
 }

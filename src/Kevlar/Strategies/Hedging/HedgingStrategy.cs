@@ -13,6 +13,11 @@ internal sealed class HedgingStrategy : Strategy
     private readonly HedgeActionGenerator? _actionGenerator;
 
     public HedgingStrategy(HedgeOptions options, OutcomeJudge judge)
+        : this(options, judge, options.HasHandlingOverride)
+    {
+    }
+
+    private HedgingStrategy(HedgeOptions options, OutcomeJudge judge, bool hasHandlingOverride)
     {
         Throw.IfOutOfRange(options.MaxAttempts < 1, nameof(options), "MaxAttempts must be at least 1.");
         Throw.IfOutOfRange(options.Delay < TimeSpan.Zero && options.Delay != System.Threading.Timeout.InfiniteTimeSpan, nameof(options), "Delay must be non-negative or Timeout.InfiniteTimeSpan.");
@@ -24,8 +29,11 @@ internal sealed class HedgingStrategy : Strategy
         _onHedge = options.OnHedge;
         _onHedgeAsync = options.OnHedgeAsync;
         _actionGenerator = options.ActionGenerator;
-        HasHandlingOverride = options.HasHandlingOverride;
+        HasHandlingOverride = hasHandlingOverride;
     }
+
+    internal static HedgingStrategy Create<TResult>(HedgeOptions<TResult> options, OutcomeJudge judge) =>
+        new(options.ToUntyped(), judge, options.HasHandlingOverride);
 
     internal override OutcomeJudge? ReactiveJudge => _judge;
 

@@ -364,3 +364,35 @@ override Kevlar.KevlarKey<T>.Equals(object? obj) -> bool
 override Kevlar.KevlarKey<T>.GetHashCode() -> int
 static Kevlar.KevlarKey<T>.operator !=(Kevlar.KevlarKey<T> left, Kevlar.KevlarKey<T> right) -> bool
 static Kevlar.KevlarKey<T>.operator ==(Kevlar.KevlarKey<T> left, Kevlar.KevlarKey<T> right) -> bool
+Kevlar.CircuitBreakerOptions<TResult>.BreakDuration.get -> System.TimeSpan
+Kevlar.CircuitBreakerOptions<TResult>.BreakDuration.set -> void
+Kevlar.CircuitBreakerOptions<TResult>.BreakDurationGenerator.get -> System.Func<Kevlar.CircuitBreakerBreakDurationEvent, System.Threading.Tasks.ValueTask<System.TimeSpan>>?
+Kevlar.CircuitBreakerOptions<TResult>.BreakDurationGenerator.set -> void
+Kevlar.CircuitBreakerOptions<TResult>.ConsecutiveFailures.get -> int?
+Kevlar.CircuitBreakerOptions<TResult>.ConsecutiveFailures.set -> void
+Kevlar.CircuitBreakerOptions<TResult>.FailureRatio.get -> double?
+Kevlar.CircuitBreakerOptions<TResult>.FailureRatio.set -> void
+Kevlar.CircuitBreakerOptions<TResult>.HandlesException.get -> System.Func<System.Exception!, bool>?
+Kevlar.CircuitBreakerOptions<TResult>.HandlesException.set -> void
+Kevlar.CircuitBreakerOptions<TResult>.MinimumThroughput.get -> int
+Kevlar.CircuitBreakerOptions<TResult>.MinimumThroughput.set -> void
+Kevlar.CircuitBreakerOptions<TResult>.Monitor.get -> Kevlar.CircuitBreakerMonitor?
+Kevlar.CircuitBreakerOptions<TResult>.Monitor.set -> void
+Kevlar.CircuitBreakerOptions<TResult>.OnStateChanged.get -> System.Action<Kevlar.CircuitStateChangedEvent>?
+Kevlar.CircuitBreakerOptions<TResult>.OnStateChanged.set -> void
+Kevlar.CircuitBreakerOptions<TResult>.OnStateChangedAsync.get -> System.Func<Kevlar.CircuitStateChangedEvent, System.Threading.Tasks.ValueTask>?
+Kevlar.CircuitBreakerOptions<TResult>.OnStateChangedAsync.set -> void
+Kevlar.CircuitBreakerOptions<TResult>.SamplingWindow.get -> System.TimeSpan
+Kevlar.CircuitBreakerOptions<TResult>.SamplingWindow.set -> void
+Kevlar.HedgeOptions<TResult>.ActionGenerator.get -> Kevlar.HedgeActionGenerator?
+Kevlar.HedgeOptions<TResult>.ActionGenerator.set -> void
+Kevlar.HedgeOptions<TResult>.Delay.get -> System.TimeSpan
+Kevlar.HedgeOptions<TResult>.Delay.set -> void
+Kevlar.HedgeOptions<TResult>.HandlesException.get -> System.Func<System.Exception!, bool>?
+Kevlar.HedgeOptions<TResult>.HandlesException.set -> void
+Kevlar.HedgeOptions<TResult>.MaxAttempts.get -> int
+Kevlar.HedgeOptions<TResult>.MaxAttempts.set -> void
+Kevlar.HedgeOptions<TResult>.OnHedge.get -> System.Action<Kevlar.HedgeEvent>?
+Kevlar.HedgeOptions<TResult>.OnHedge.set -> void
+Kevlar.HedgeOptions<TResult>.OnHedgeAsync.get -> System.Func<Kevlar.HedgeEvent, System.Threading.Tasks.ValueTask>?
+Kevlar.HedgeOptions<TResult>.OnHedgeAsync.set -> void

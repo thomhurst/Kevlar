@@ -12,11 +12,24 @@ internal sealed class CircuitBreakerStrategy : Strategy
     private readonly OutcomeJudge _judge;
 
     public CircuitBreakerStrategy(CircuitBreakerOptions options, OutcomeJudge judge)
+        : this(options, judge, options.HasHandlingOverride)
+    {
+    }
+
+    private CircuitBreakerStrategy(
+        CircuitBreakerOptions options,
+        OutcomeJudge judge,
+        bool hasHandlingOverride)
     {
         _core = new CircuitBreakerCore(options, RecordTransitionState);
         _judge = judge;
-        HasHandlingOverride = options.HasHandlingOverride;
+        HasHandlingOverride = hasHandlingOverride;
     }
+
+    internal static CircuitBreakerStrategy Create<TResult>(
+        CircuitBreakerOptions<TResult> options,
+        OutcomeJudge judge) =>
+        new(options.ToUntyped(), judge, options.HasHandlingOverride);
 
     internal override OutcomeJudge? ReactiveJudge => _judge;
 

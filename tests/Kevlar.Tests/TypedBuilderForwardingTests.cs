@@ -42,8 +42,8 @@ public class TypedBuilderForwardingTests
                 options.Delay = TimeSpan.Zero;
             }), typeof(HedgingStrategy)),
             (builder.Use(_ => PassThroughStrategy.Instance), typeof(PassThroughStrategy)),
-            (builder.Fallback(42), typeof(FallbackStrategy<int>)),
-            (builder.Fallback(42, _ => fallbackConfigured++), typeof(FallbackStrategy<int>)),
+            (builder.FallbackTo(42), typeof(FallbackStrategy<int>)),
+            (builder.FallbackTo(42, _ => fallbackConfigured++), typeof(FallbackStrategy<int>)),
             (builder.Fallback(static _ => new ValueTask<int>(42)), typeof(FallbackStrategy<int>)),
             (builder.Fallback(
                 static _ => new ValueTask<int>(42),
@@ -105,7 +105,7 @@ public class TypedBuilderForwardingTests
                 calls.Add("third");
                 throw new InvalidOperationException($"predicate must not run for {value}");
             })
-            .Fallback(42);
+            .FallbackTo(42);
 
         var result = await shield.ExecuteAsync(static _ => new ValueTask<int>(2));
 
@@ -130,7 +130,7 @@ public class TypedBuilderForwardingTests
                 calls.Add(2);
                 return value == 0;
             })
-            .Fallback(42);
+            .FallbackTo(42);
 
         var result = await shield.ExecuteAsync(static _ => new ValueTask<int>(7));
 

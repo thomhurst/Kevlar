@@ -7,7 +7,7 @@ namespace Kevlar;
 /// If the caller's cancellation token is cancelled by the time the callbacks complete, the retry
 /// stops and surfaces caller cancellation.
 /// </remarks>
-public class RetryOptions
+public sealed class RetryOptions
 {
     /// <summary>
     /// Setting this makes this retry ignore the ambient <c>When…</c> handling clause and handle

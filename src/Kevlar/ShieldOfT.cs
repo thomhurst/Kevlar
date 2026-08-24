@@ -162,7 +162,7 @@ public sealed class Shield<TResult>
         var options = new CircuitBreakerOptions<TResult>();
         configure(options);
         var judge = HandlingOverride.Resolve(options.HandlesException, options.HandlesResult, JudgeOrDefault);
-        return Append(new CircuitBreakerStrategy(options, judge));
+        return Append(CircuitBreakerStrategy.Create(options, judge));
     }
 
     /// <summary>Limits throughput to <paramref name="permits"/> executions per <paramref name="perWindow"/> (token bucket).</summary>
@@ -211,7 +211,7 @@ public sealed class Shield<TResult>
         var options = new HedgeOptions<TResult>();
         configure(options);
         var judge = HandlingOverride.Resolve(options.HandlesException, options.HandlesResult, JudgeOrDefault);
-        return Append(new HedgingStrategy(options, judge));
+        return Append(HedgingStrategy.Create(options, judge));
     }
 
     /// <summary>Replaces handled outcomes with <paramref name="fallbackValue"/>.</summary>
