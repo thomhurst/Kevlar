@@ -27,7 +27,11 @@ public class GrpcStreamingCancellationTests
         await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
         _ = await Assert.That(async () => await write.WaitAsync(TimeSpan.FromSeconds(5)))
+#if NETSTANDARD21_ASSET
             .Throws<TimeoutExceededException>();
+#else
+            .Throws<OperationCanceledException>();
+#endif
 
         await cancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
     }
@@ -65,6 +69,7 @@ public class GrpcStreamingCancellationTests
         await lifetimeCancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
     }
 
+#if NETSTANDARD21_ASSET
     [Test]
     public async Task Per_Write_Cancellation_Preserves_The_Operation_Token()
     {
@@ -97,6 +102,7 @@ public class GrpcStreamingCancellationTests
         await Assert.That(exception!.CancellationToken).IsEqualTo(cancellation.Token);
         await lifetimeCancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
     }
+#endif
 
     private static ClientInterceptorContext<Request, Reply> Context(
         CancellationToken cancellationToken = default)
@@ -122,9 +128,14 @@ public class GrpcStreamingCancellationTests
 
         public Task CompleteAsync() => Task.CompletedTask;
 
-        public Task WriteAsync(Request message) => WriteAsync(message, lifetimeToken);
+        public Task WriteAsync(Request message) => WriteCoreAsync(message, lifetimeToken);
 
-        public async Task WriteAsync(Request message, CancellationToken cancellationToken)
+#if NETSTANDARD21_ASSET
+        public Task WriteAsync(Request message, CancellationToken cancellationToken) =>
+            WriteCoreAsync(message, cancellationToken);
+#endif
+
+        private async Task WriteCoreAsync(Request message, CancellationToken cancellationToken)
         {
             var completion = new TaskCompletionSource(
                 TaskCreationOptions.RunContinuationsAsynchronously);

@@ -81,10 +81,12 @@ public class NumericBoundaryTests
     {
         await AssertOutOfRangeAsync(
             () => Shield.Retry(options => options.MaxDelay = TimeSpan.FromTicks(-1)),
-            "MaxDelay");
+            "MaxDelay",
+            "MaxDelay must not be negative.");
         await AssertOutOfRangeAsync(
             () => Shield.Retry(options => options.MaxDelay = TimeSpan.MaxValue),
-            "MaxDelay");
+            "MaxDelay",
+            "MaxDelay exceeds the runtime timer limit.");
         await AssertOutOfRangeAsync(
             () => Shield.Timeout(TimeSpan.MaxValue),
             "Timeout");
@@ -244,10 +246,17 @@ public class NumericBoundaryTests
             .Throws<RateLimitExceededException>();
     }
 
-    private static async Task AssertOutOfRangeAsync(Action action, string paramName)
+    private static async Task AssertOutOfRangeAsync(
+        Action action,
+        string paramName,
+        string? expectedMessage = null)
     {
         var exception = await Assert.That(action).Throws<ArgumentOutOfRangeException>();
         await Assert.That(exception!.ParamName).IsEqualTo(paramName);
+        if (expectedMessage is not null)
+        {
+            await Assert.That(exception.Message).Contains(expectedMessage);
+        }
     }
 
     public enum BackoffKind

@@ -5,8 +5,13 @@ public class OptionsValidationTests
     [Test]
     public async Task Retry_Rejects_Invalid_Options()
     {
-        await Assert.That(() => Shield.Retry(-1)).Throws<ArgumentOutOfRangeException>();
-        await Assert.That(() => Shield.Retry(options => options.Backoff = null!)).Throws<ArgumentNullException>();
+        var retries = await Assert.That(() => Shield.Retry(-1)).Throws<ArgumentOutOfRangeException>();
+        await Assert.That(retries!.ParamName).IsEqualTo("options");
+        await Assert.That(retries.Message).Contains("MaxRetries must not be negative.");
+
+        var backoff = await Assert.That(() => Shield.Retry(options => options.Backoff = null!))
+            .Throws<ArgumentNullException>();
+        await Assert.That(backoff!.ParamName).IsEqualTo("options");
     }
 
     [Test]
@@ -159,12 +164,15 @@ public class OptionsValidationTests
             options.Monitor = monitor;
         });
 
-        await Assert.That(() => Shield.CircuitBreaker(options =>
+        var exception = await Assert.That(() => Shield.CircuitBreaker(options =>
         {
             options.ConsecutiveFailures = 1;
             options.BreakDuration = TimeSpan.FromSeconds(1);
             options.Monitor = monitor;
         })).Throws<InvalidOperationException>();
+
+        await Assert.That(exception!.Message)
+            .IsEqualTo("This CircuitBreakerMonitor is already bound to another circuit breaker.");
     }
 
     [Test]
@@ -172,8 +180,41 @@ public class OptionsValidationTests
     {
         var monitor = new CircuitBreakerMonitor();
 
-        await Assert.That(() => monitor.State).Throws<InvalidOperationException>();
+        var exception = await Assert.That(() => monitor.State).Throws<InvalidOperationException>();
+        await Assert.That(exception!.Message).IsEqualTo(
+            "This CircuitBreakerMonitor has not been bound. Assign it to CircuitBreakerOptions.Monitor when building the shield.");
         await Assert.That(() => monitor.Isolate()).Throws<InvalidOperationException>();
         await Assert.That(() => monitor.Reset()).Throws<InvalidOperationException>();
+    }
+
+    [Test]
+    public async Task Typed_Handling_Overrides_Report_Each_Predicate_Independently()
+    {
+        var retry = new RetryOptions<int>();
+        var breaker = new CircuitBreakerOptions<int>();
+        var hedge = new HedgeOptions<int>();
+
+        await Assert.That(retry.HasHandlingOverride).IsFalse();
+        await Assert.That(breaker.HasHandlingOverride).IsFalse();
+        await Assert.That(hedge.HasHandlingOverride).IsFalse();
+
+        retry.HandlesException = static _ => true;
+        breaker.HandlesException = static _ => true;
+        hedge.HandlesException = static _ => true;
+
+        await Assert.That(retry.HasHandlingOverride).IsTrue();
+        await Assert.That(breaker.HasHandlingOverride).IsTrue();
+        await Assert.That(hedge.HasHandlingOverride).IsTrue();
+
+        retry.HandlesException = null;
+        breaker.HandlesException = null;
+        hedge.HandlesException = null;
+        retry.HandlesResult = static _ => true;
+        breaker.HandlesResult = static _ => true;
+        hedge.HandlesResult = static _ => true;
+
+        await Assert.That(retry.HasHandlingOverride).IsTrue();
+        await Assert.That(breaker.HasHandlingOverride).IsTrue();
+        await Assert.That(hedge.HasHandlingOverride).IsTrue();
     }
 }

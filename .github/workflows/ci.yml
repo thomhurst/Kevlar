@@ -83,6 +83,9 @@ jobs:
       - name: Compatibility asset tests
         run: dotnet run --project tests/Kevlar.NetStandard.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 10 --zero-tests-policy strict --report-trx --report-trx-filename netstandard.trx --results-directory artifacts/test-results/netstandard
 
+      - name: Modern gRPC compatibility asset tests
+        run: dotnet run --project tests/Kevlar.NetStandard21.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 4 --zero-tests-policy strict --report-trx --report-trx-filename netstandard21.trx --results-directory artifacts/test-results/netstandard21
+
       - name: Integration tests
         run: dotnet run --project tests/Kevlar.IntegrationTests -c Release --no-build -- --timeout 5m --minimum-expected-tests 100 --zero-tests-policy strict --report-trx --report-trx-filename integration.trx --results-directory artifacts/test-results/integration
 
@@ -165,6 +168,9 @@ jobs:
 
       - name: Collect compatibility asset coverage
         run: dotnet run --project tests/Kevlar.NetStandard.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 10 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/netstandard.cobertura.xml --coverage-output-format cobertura
+
+      - name: Collect modern gRPC compatibility asset coverage
+        run: dotnet run --project tests/Kevlar.NetStandard21.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 4 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/netstandard21.cobertura.xml --coverage-output-format cobertura
 
       - name: Collect integration coverage
         run: dotnet run --project tests/Kevlar.IntegrationTests -c Release --no-build -- --timeout 5m --minimum-expected-tests 100 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/integration.cobertura.xml --coverage-output-format cobertura

@@ -13,7 +13,7 @@ public class CompatibilityTargetTests
         {
             (Assembly: typeof(Shield).Assembly, Framework: ".NETStandard,Version=v2.0"),
             (Assembly: typeof(ShieldDelegatingHandler).Assembly, Framework: ".NETStandard,Version=v2.0"),
-            (Assembly: typeof(ShieldStreamingClientInterceptor).Assembly, Framework: ".NETStandard,Version=v2.1"),
+            (Assembly: typeof(ShieldStreamingClientInterceptor).Assembly, Framework: ".NETStandard,Version=v2.0"),
             (Assembly: typeof(ChaosShield).Assembly, Framework: ".NETStandard,Version=v2.0"),
         };
 
