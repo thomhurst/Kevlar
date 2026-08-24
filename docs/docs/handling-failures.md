@@ -82,7 +82,7 @@ empty struct are usually legitimate results rather than failures. The optional a
 question as the informational hint [`KEV010`](analyzers.md#kev010-default-result-clause-on-a-value-type):
 
 ```csharp
-Shield.For<int>().WhenResultIsDefault().Retry(2);     // KEV010: is 0 really the failure?
+Shield.For<int>().WhenResultIsDefault().Retry(2);     // Is 0 really the failure?
 Shield.For<int>().WhenResult(-1).Retry(2);            // clean: the failing value, spelled out
 ```
 

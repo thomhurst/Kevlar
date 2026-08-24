@@ -281,10 +281,14 @@ public class ReloadingShieldTests
             .AddReloadingShield("dynamic", configuration)
             .BuildServiceProvider();
         var shieldProvider = services.GetRequiredKeyedService<IShieldProvider>("dynamic");
-        _ = shieldProvider.Current;
+        const int Iterations = 10_000;
+        for (var iteration = 0; iteration < Iterations; iteration++)
+        {
+            _ = shieldProvider.Current;
+        }
 
         var before = GC.GetAllocatedBytesForCurrentThread();
-        for (var iteration = 0; iteration < 10_000; iteration++)
+        for (var iteration = 0; iteration < Iterations; iteration++)
         {
             _ = shieldProvider.Current;
         }
