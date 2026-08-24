@@ -6,6 +6,8 @@ sidebar_position: 2
 
 Stop hammering a dependency that's already failing. The breaker measures failures and, once a threshold is crossed, rejects executions outright for a break duration — giving the dependency room to recover.
 
+See the [exceptions reference](../exceptions.md) for `CircuitOpenException` and its recovery metadata.
+
 ## Two modes
 
 ```csharp

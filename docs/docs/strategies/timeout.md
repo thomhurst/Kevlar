@@ -6,6 +6,8 @@ sidebar_position: 3
 
 Bound how long an execution may take.
 
+See the [exceptions reference](../exceptions.md) for the exact timeout catch contract.
+
 ```csharp
 Shield.Timeout(TimeSpan.FromSeconds(10));
 

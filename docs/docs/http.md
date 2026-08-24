@@ -136,7 +136,7 @@ full configuration path. A successful reload starts fresh breaker, limiter, and 
 state. `HttpClientFactory` handler rotation also creates fresh state and reruns the
 service-provider callback; disposed handlers unsubscribe from configuration changes.
 
-Hedging uses the same reload contract. Its scalar keys match `StandardHedgingShieldOptions`, and
+Hedging uses the same reload contract. Its scalar keys match `StandardHedgeShieldOptions`, and
 `Endpoints` is required:
 
 ```csharp
@@ -153,7 +153,7 @@ var configuration = new ConfigurationBuilder()
     .Build();
 
 services.AddHttpClient("routed")
-    .AddStandardHedgingShield(configuration);
+    .AddStandardHedgeShield(configuration);
 ```
 
 ## Bring your own pipeline
@@ -254,7 +254,7 @@ path and query:
 
 ```csharp
 services.AddHttpClient("routed")
-    .AddStandardHedgingShield(options =>
+    .AddStandardHedgeShield(options =>
     {
         options.Endpoints.Add(new HttpEndpoint(new Uri("https://api-a.example"), weight: 3));
         options.Endpoints.Add(new HttpEndpoint(new Uri("https://api-b.example"), weight: 1));
@@ -264,7 +264,7 @@ services.AddHttpClient("routed")
     });
 ```
 
-`AddStandardHedgingShield` installs a 30s total timeout and up to two hedged attempts. Each endpoint
+`AddStandardHedgeShield` installs a 30s total timeout and up to two hedged attempts. Each endpoint
 gets its own 10-concurrent/zero-queue limiter, 50%-over-30s circuit breaker (minimum 10 attempts,
 15s break), and 10s attempt timeout. Configure those defaults through `TotalTimeout`, `MaxAttempts`,
 `HedgeDelay`, `MaxConcurrency`, `QueueLimit`, `FailureRatio` or `ConsecutiveFailures`,
@@ -305,7 +305,7 @@ shield so every additional send goes through safe replay and routing.
 - **Redirects remain transport-owned.** Each Kevlar attempt begins with the original absolute URI (or its routed authority). Normal `HttpClientHandler` redirect policy runs inside that attempt.
 - **State sharing depends on registration form.** Parameterless `AddStandardShield()`, its one-argument options callback, and `AddShield(shield)` build/capture one shield for that named client, so state survives handler rotation. Service-provider callbacks run once per `HttpClientFactory` handler lifetime and create fresh state unless they resolve and return shared state from DI.
 - **Configuration-backed state is replaced, not mutated.** Reload and handler rotation publish fresh complete pipelines. Requests already executing retain the snapshot they captured at send start.
-- **Standard hedging state is endpoint-local.** `AddStandardHedgingShield` creates one limiter and breaker per authority in each `HttpClientFactory` handler pipeline and reuses them across requests for that handler's lifetime.
+- **Standard hedging state is endpoint-local.** `AddStandardHedgeShield` creates one limiter and breaker per authority in each `HttpClientFactory` handler pipeline and reuses them across requests for that handler's lifetime.
 - **Compose with other handlers normally.** The Kevlar handler is a regular `DelegatingHandler`; ordering relative to your own handlers follows the usual `AddHttpMessageHandler` rules.
 
 :::tip Handling clause already done

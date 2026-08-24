@@ -368,9 +368,16 @@ if ($observableSnippetIndex -lt 0 `
 [void]$builder.AppendLine('        catch (InvalidOperationException exception) when (exception.Message.Contains("Fallback", StringComparison.Ordinal))')
 [void]$builder.AppendLine('        {')
 [void]$builder.AppendLine('        }')
-[void]$builder.AppendLine("        await Snippet$timeoutExceededClauseSnippetIndex.RunAsync();")
-[void]$builder.AppendLine("        await Snippet$systemTimeoutClauseTrapSnippetIndex.RunAsync();")
-[void]$builder.AppendLine("        await Snippet$metricsSnippetIndex.RunAsync();")
+
+for ($snippetIndex = 0; $snippetIndex -lt $snippets.Count; $snippetIndex++)
+{
+    $runName = $snippets[$snippetIndex].RunName
+    if ($null -ne $runName -and $runName -notin @('pipeline-description', 'invalid-composition'))
+    {
+        [void]$builder.AppendLine("        await Snippet$snippetIndex.RunAsync();")
+    }
+}
+
 [void]$builder.AppendLine('        Console.WriteLine("Executed documented pipeline behavior successfully.");')
 [void]$builder.AppendLine('    }')
 [void]$builder.AppendLine('}')

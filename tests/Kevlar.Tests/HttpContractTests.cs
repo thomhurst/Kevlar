@@ -246,17 +246,17 @@ public class HttpContractTests
     }
 
     [Test]
-    public async Task Standard_Hedging_Uses_Shield_Timeout_Instead_Of_HttpClient_Timeout()
+    public async Task Standard_Hedge_Uses_Shield_Timeout_Instead_Of_HttpClient_Timeout()
     {
         using var services = new ServiceCollection()
-            .AddHttpClient("standard-hedging-timeout", client =>
+            .AddHttpClient("standard-hedge-timeout", client =>
                 client.Timeout = TimeSpan.FromMilliseconds(10))
-            .AddStandardHedgingShield(options =>
+            .AddStandardHedgeShield(options =>
                 options.Endpoints.Add(new HttpEndpoint(new Uri("https://example.test"))))
             .Services
             .BuildServiceProvider();
         using var client = services.GetRequiredService<IHttpClientFactory>()
-            .CreateClient("standard-hedging-timeout");
+            .CreateClient("standard-hedge-timeout");
 
         await Assert.That(client.Timeout).IsEqualTo(Timeout.InfiniteTimeSpan);
     }
@@ -977,12 +977,12 @@ public class HttpContractTests
         await Assert.That(() => builder.AddStandardShield(
                 (Action<IServiceProvider, StandardHttpShieldOptions>)null!))
             .Throws<ArgumentNullException>();
-        await Assert.That(() => ShieldHttpClientBuilderExtensions.AddStandardHedgingShield(
+        await Assert.That(() => ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(
                 nullBuilder!, _ => { }))
             .Throws<ArgumentNullException>();
-        await Assert.That(() => builder.AddStandardHedgingShield(null!))
+        await Assert.That(() => builder.AddStandardHedgeShield(null!))
             .Throws<ArgumentNullException>();
-        await Assert.That(() => builder.AddStandardHedgingShield(_ => { }))
+        await Assert.That(() => builder.AddStandardHedgeShield(_ => { }))
             .Throws<ArgumentException>();
     }
 

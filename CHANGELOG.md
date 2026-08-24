@@ -29,6 +29,11 @@ Handling clauses now use one spelling per position. `When…` starts a clause on
 | `builder.OrDefault()` | `builder.OrResultIsDefault()` |
 | `Shield.For<T>().Fallback(value)` | `Shield.For<T>().FallbackTo(value)` |
 | `ConcurrencyLimit(..., maxQueue: n)` / `options.MaxQueue` | `ConcurrencyLimit(..., queueLimit: n)` / `options.QueueLimit` |
+| `HedgingOptions` | `HedgeOptions` |
+| `HedgingStrategyDescriptor` | `HedgeStrategyDescriptor` |
+| `StrategyKind.Hedging` | `StrategyKind.Hedge` |
+| `StandardHedgingShieldOptions` | `StandardHedgeShieldOptions` |
+| `AddStandardHedgingShield(...)` | `AddStandardHedgeShield(...)` |
 
 `OrWhen` is gone: `Or(Func<Exception, bool>)` now mirrors `When(Func<Exception, bool>)`, so the
 untyped predicate has the same spelling in both clause positions. `WhenDefault`/`OrDefault` were
@@ -40,10 +45,8 @@ build spelled these `WhenResultDefault`/`OrResultDefault`; the `Is` makes the re
   pair retains the same shared property names and scalar defaults, but helpers that accept an
   untyped options type must configure typed options separately. Typed callbacks and result
   predicates keep their exact compile-time types.
-- `HedgingOptions`/`HedgingOptions<TResult>` were renamed to `HedgeOptions`/`HedgeOptions<TResult>`
-  so the strategy method and its options type share a stem, like `Retry`/`RetryOptions` and
-  `Timeout`/`TimeoutOptions`. `Kevlar.Extensions.Http`'s `StandardHedgingShieldOptions` and
-  `AddStandardHedgingShield` are unchanged.
+- The `Hedge` method, options, testing descriptors, strategy kind, and standard HTTP registration
+  now share one `Hedge` stem, like `Retry`/`RetryOptions` and `Timeout`/`TimeoutOptions`.
 ### Changed
 
 - Every NuGet package now embeds the canonical Kevlar icon, links release notes, and carries a

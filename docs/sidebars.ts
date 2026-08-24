@@ -5,6 +5,7 @@ const sidebars: SidebarsConfig = {
     'intro',
     'getting-started',
     'handling-failures',
+    'exceptions',
     {
       type: 'category',
       label: 'Strategies',

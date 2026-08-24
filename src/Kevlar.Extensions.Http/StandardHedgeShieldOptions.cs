@@ -1,7 +1,7 @@
 namespace Kevlar.Extensions.Http;
 
 /// <summary>Configures the standard endpoint-aware HTTP hedging pipeline.</summary>
-public sealed class StandardHedgingShieldOptions
+public sealed class StandardHedgeShieldOptions
 {
     /// <summary>The maximum duration of the complete request. Default 30 seconds.</summary>
     public TimeSpan TotalTimeout { get; set; } = TimeSpan.FromSeconds(30);
