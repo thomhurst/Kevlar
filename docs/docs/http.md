@@ -188,6 +188,17 @@ Starts a typed `Shield<HttpResponseMessage>` builder with the standard transient
 
 A `DelayGenerator` for retry options: when the failed response carries a `Retry-After` header (delta or date form), the retry waits what the server asked for. The server's suggestion is used only when it's *longer* than the computed backoff; no header → normal backoff applies.
 
+The standard shield caps every retry delay at 10 seconds, so one excessive server suggestion cannot
+impose an unbounded wait. Custom shields can cap server-suggested delays directly:
+
+```csharp
+var shield = HttpShield.WhenTransient()
+    .Retry(options =>
+    {
+        options.DelayGenerator = HttpShield.RetryAfter(TimeSpan.FromSeconds(5));
+    });
+```
+
 ### Registering a shield built elsewhere
 
 ```csharp

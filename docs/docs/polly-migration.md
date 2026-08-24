@@ -100,6 +100,7 @@ Note the handling clause: written once, it covers the retry *and* the breaker. I
 ## Semantic differences worth knowing
 
 - **Retry defaults differ.** Polly's default is constant 2s delays with no jitter; Kevlar's is exponential-with-jitter from 250ms capped at 30s. If you relied on Polly's default timing, say so explicitly: `Shield.Retry(3, Backoff.Constant(TimeSpan.FromSeconds(2)))`.
+- **Standard HTTP retry delays are bounded.** `HttpShield.Standard()` honours `Retry-After` but caps every retry delay at 10 seconds by default. Set `StandardHttpShieldOptions.Retry.MaxDelay` to choose another bound.
 - **Handling clauses are ambient within one fluent chain.** A clause applies to every reactive strategy after it until replaced; call `WhenAnyError()` to return subsequent strategies to Kevlar's default. `Wrap` and `Compose` seal clauses at the composition boundary: strategies already inside keep their handling, while strategies appended afterwards use the default unless you declare a new local clause. For a Polly strategy with a distinct `ShouldHandle`, set that strategy's `HandlesException` / `HandlesResult` options; a local override fully replaces the ambient clause.
 - **Default handling excludes cancellation.** With no clause at all, Kevlar handles any exception except `OperationCanceledException` — same spirit as Polly's recommended predicate, but built in.
 - **One shield, every shape.** There's no separate sync/async pipeline type: `shield.Execute(...)` and `shield.ExecuteAsync(...)` are the same instance. (Hedging is async-only, as in Polly.)

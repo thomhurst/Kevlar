@@ -121,10 +121,89 @@ public class HttpContractTests
     }
 
     [Test]
+    public async Task RetryAfter_Max_Overload_Caps_Server_Delay()
+    {
+        var timeProvider = new FakeTimeProvider();
+        using var response = new HttpResponseMessage(HttpStatusCode.TooManyRequests);
+        response.Headers.RetryAfter = new RetryConditionHeaderValue(TimeSpan.FromSeconds(30));
+
+        var delay = await ObserveRetryDelay(
+            timeProvider,
+            () => response,
+            HttpShield.RetryAfter(TimeSpan.FromSeconds(5)));
+
+        await Assert.That(delay).IsEqualTo(TimeSpan.FromSeconds(5));
+    }
+
+    [Test]
+    public async Task RetryAfter_Max_Overload_Does_Not_Shorten_Backoff()
+    {
+        var timeProvider = new FakeTimeProvider();
+        using var response = new HttpResponseMessage(HttpStatusCode.TooManyRequests);
+        response.Headers.RetryAfter = new RetryConditionHeaderValue(TimeSpan.FromSeconds(30));
+
+        var delay = await ObserveRetryDelay(
+            timeProvider,
+            () => response,
+            HttpShield.RetryAfter(TimeSpan.FromSeconds(5)),
+            backoff: TimeSpan.FromSeconds(7));
+
+        await Assert.That(delay).IsEqualTo(TimeSpan.FromSeconds(7));
+    }
+
+    [Test]
+    public async Task RetryAfter_Max_Overload_Rejects_Negative_Cap()
+    {
+        var exception = await Assert.That(
+            () => HttpShield.RetryAfter(TimeSpan.FromTicks(-1)))
+            .Throws<ArgumentOutOfRangeException>();
+
+        await Assert.That(exception!.ParamName).IsEqualTo("maxDelay");
+    }
+
+    [Test]
+    public async Task Standard_Caps_RetryAfter_To_Ten_Seconds()
+    {
+        var timeProvider = new FakeTimeProvider();
+        var calls = 0;
+        TimeSpan? observed = null;
+        var options = new StandardHttpShieldOptions();
+        options.Retry.Backoff = Backoff.None;
+        options.Retry.OnRetry = retry => observed = retry.Delay;
+        var shield = HttpShield.Standard(options).WithTimeProvider(timeProvider);
+
+        var execution = shield.ExecuteAsync(_ =>
+        {
+            calls++;
+            var response = new HttpResponseMessage(
+                calls == 1 ? HttpStatusCode.TooManyRequests : HttpStatusCode.OK);
+            if (calls == 1)
+            {
+                response.Headers.RetryAfter = new RetryConditionHeaderValue(TimeSpan.FromSeconds(120));
+            }
+
+            return new ValueTask<HttpResponseMessage>(response);
+        }).AsTask();
+
+        await WaitUntilAsync(() => observed.HasValue);
+        await Assert.That(observed).IsEqualTo(TimeSpan.FromSeconds(10));
+        timeProvider.Advance(observed!.Value);
+
+        using var result = await execution;
+        await Assert.That(result.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(calls).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task Standard_Default_Retry_MaxDelay_Is_Ten_Seconds() =>
+        await Assert.That(new StandardHttpShieldOptions().Retry.MaxDelay)
+            .IsEqualTo(TimeSpan.FromSeconds(10));
+
+    [Test]
     public async Task Standard_Has_The_Documented_Pipeline() =>
         await Assert.That(HttpShield.Standard().ToString()).IsEqualTo(
             "Timeout(30s) → [when HttpRequestException | TimeoutExceededException | result predicate] "
-            + "Retry(3, exponential 250ms ×2 +jitter ≤30s) → CircuitBreaker(50% over 30s, min 10, break 15s) → Timeout(10s)");
+            + "Retry(3, exponential 250ms ×2 +jitter ≤30s, ≤10s) → CircuitBreaker(50% over 30s, min 10, break 15s) → Timeout(10s)");
 
     [Test]
     public async Task Configured_Standard_Has_Custom_Stages()
@@ -728,7 +807,9 @@ public class HttpContractTests
 
     private static async Task<TimeSpan> ObserveRetryDelay(
         FakeTimeProvider timeProvider,
-        Func<HttpResponseMessage> firstAttempt)
+        Func<HttpResponseMessage> firstAttempt,
+        Func<RetryEvent<HttpResponseMessage>, TimeSpan?>? delayGenerator = null,
+        TimeSpan? backoff = null)
     {
         TimeSpan? observed = null;
         var calls = 0;
@@ -736,8 +817,8 @@ public class HttpContractTests
             .Retry(options =>
             {
                 options.MaxRetries = 1;
-                options.Backoff = Backoff.Constant(TimeSpan.FromSeconds(3));
-                options.DelayGenerator = HttpShield.RetryAfter;
+                options.Backoff = Backoff.Constant(backoff ?? TimeSpan.FromSeconds(3));
+                options.DelayGenerator = delayGenerator ?? HttpShield.RetryAfter;
                 options.OnRetry = retry => observed = retry.Delay;
             })
             .WithTimeProvider(timeProvider);

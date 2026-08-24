@@ -13,6 +13,7 @@ public sealed class StandardHttpShieldOptions
     public RetryOptions<HttpResponseMessage> Retry { get; set; } = new()
     {
         DelayGenerator = HttpShield.RetryAfter,
+        MaxDelay = TimeSpan.FromSeconds(10),
     };
 
     /// <summary>
