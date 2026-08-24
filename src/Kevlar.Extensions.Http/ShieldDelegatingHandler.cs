@@ -94,7 +94,6 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
 
         private Task<HttpRequestTemplate>? _template;
         private CancellationTokenSource? _templateCancellation;
-        private int _templateWaiters;
         private HttpResponseMessage? _terminalResponse;
         private CancellationToken _lastAttemptToken;
         private int _attempt;
@@ -212,6 +211,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         public void Complete(HttpResponseMessage? terminalResponse)
         {
             List<HttpResponseMessage>? discarded = null;
+            CancellationTokenSource? templateCancellation = null;
             lock (_gate)
             {
                 if (_completed)
@@ -230,6 +230,15 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
                 }
 
                 _responses.Clear();
+                if (_template is { IsCompleted: false })
+                {
+                    templateCancellation = _templateCancellation;
+                }
+            }
+
+            if (templateCancellation is not null)
+            {
+                Cancel(templateCancellation);
             }
 
             DisposeResponses(discarded);
@@ -253,7 +262,6 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
                 }
 
                 template = _template;
-                _templateWaiters++;
             }
 
             if (creation is not null)
@@ -273,29 +281,6 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
                     exception.Message,
                     exception,
                     _executionCancellationToken);
-            }
-            finally
-            {
-                CancellationTokenSource? abandon = null;
-                lock (_gate)
-                {
-                    _templateWaiters--;
-#if !NETSTANDARD2_0
-                    if (_templateWaiters == 0
-                        && ReferenceEquals(_template, template)
-                        && !template.IsCompleted)
-                    {
-                        _template = null;
-                        abandon = _templateCancellation;
-                        _templateCancellation = null;
-                    }
-#endif
-                }
-
-                if (abandon is not null)
-                {
-                    Cancel(abandon);
-                }
             }
         }
 
@@ -429,7 +414,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             }
             catch (ObjectDisposedException)
             {
-                // Template completion may dispose the source as the last waiter exits.
+                // Template completion may dispose the source concurrently.
             }
         }
     }

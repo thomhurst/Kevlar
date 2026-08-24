@@ -305,7 +305,11 @@ public class HttpReplayTests
             {
                 options.MaxAttempts = 2;
                 options.Delay = TimeSpan.FromMilliseconds(250);
-                options.OnHedge = _ => hedgeLaunched.TrySetResult();
+                options.OnHedgeAsync = async _ =>
+                {
+                    hedgeLaunched.TrySetResult();
+                    await attemptTimedOut.Task;
+                };
             })
             .Timeout(options =>
             {
