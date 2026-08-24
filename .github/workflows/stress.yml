@@ -7,6 +7,7 @@ on:
       - 'src/Kevlar/**'
       - 'benchmarks/Kevlar.StressTests/**'
       - '.github/workflows/stress.yml'
+      - '.github/scripts/stress_docs.py'
   push:
     branches: [main]
     paths:
