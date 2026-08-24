@@ -229,12 +229,14 @@ public class MetricsTests
             ["kevlar.rejections"] = "{rejection}",
             ["kevlar.circuit_breaker.transitions"] = "{transition}",
             ["kevlar.execution.duration"] = "s",
+#if NET9_0_OR_GREATER
             ["kevlar.circuit_breaker.state"] = "{state}",
             ["kevlar.concurrency_limit.inflight"] = "{execution}",
             ["kevlar.concurrency_limit.queued"] = "{execution}",
             ["kevlar.concurrency_limit.capacity"] = "{execution}",
             ["kevlar.rate_limit.available"] = "{permit}",
             ["kevlar.rate_limit.queued"] = "{execution}",
+#endif
         };
 
         await Assert.That(listener.Instruments.Select(instrument => instrument.Name))
@@ -620,6 +622,7 @@ public class MetricsTests
             .IsLessThan(0.05);
     }
 
+#if NET9_0_OR_GREATER
     [Test]
     public async Task Circuit_State_Gauge_Reports_Every_State()
     {
@@ -1449,6 +1452,7 @@ public class MetricsTests
 
         await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
     }
+#endif
 
     private static Dictionary<(CircuitState From, CircuitState To), long> CircuitTransitionTotals(
         KevlarMeterListener listener) =>

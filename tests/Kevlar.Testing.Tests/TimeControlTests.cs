@@ -87,6 +87,7 @@ public class TimeControlTests
         await Assert.That(shield.Execute(static _ => 42)).IsEqualTo(42);
     }
 
+#if NET9_0_OR_GREATER
     [Test]
     public async Task Rate_Limit_Replenishment_Completes_Queued_Execution()
     {
@@ -126,7 +127,9 @@ public class TimeControlTests
 
         await Assert.That(await queued).IsEqualTo(2);
     }
+#endif
 
+#if NET9_0_OR_GREATER
     [Test]
     public async Task Concurrency_Queue_Completes_After_Permit_Release()
     {
@@ -151,6 +154,7 @@ public class TimeControlTests
 
         await Assert.That(await queued).IsEqualTo(2);
     }
+#endif
 
     [Test]
     public async Task Hedging_Stagger_Advances_To_The_Next_Attempt()

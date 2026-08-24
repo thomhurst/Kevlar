@@ -65,10 +65,10 @@ function Get-ExpectedSymbolAssets([string]$PackageId)
         return @('analyzers/dotnet/cs/Kevlar.Analyzers.pdb')
     }
 
-    $frameworks = @('net10.0', 'netstandard2.0')
-    if ($PackageId -in @('Kevlar.Chaos', 'Kevlar.Testing'))
+    $frameworks = @('net10.0', 'net8.0', 'netstandard2.0')
+    if ($PackageId -eq 'Kevlar.Extensions.Grpc')
     {
-        $frameworks += 'net8.0'
+        $frameworks += 'netstandard2.1'
     }
     elseif ($PackageId -eq 'Kevlar.Extensions.Grpc')
     {
@@ -244,18 +244,22 @@ if ($null -eq $configurationVersion -or $null -eq $dependencyInjectionVersion)
 $expectedDependencies = @{
     'Kevlar' = @{
         'net10.0' = @('Reservoir')
+        'net8.0' = @('Reservoir')
         '.NETStandard2.0' = @('Microsoft.Bcl.TimeProvider', 'Reservoir', 'System.Threading.Tasks.Extensions')
     }
     'Kevlar.Extensions.DependencyInjection' = @{
         'net10.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.DependencyInjection.Abstractions', 'Microsoft.Extensions.Primitives')
+        'net8.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.DependencyInjection.Abstractions', 'Microsoft.Extensions.Primitives')
         '.NETStandard2.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.DependencyInjection.Abstractions', 'Microsoft.Extensions.Primitives')
     }
     'Kevlar.Extensions.Http' = @{
         'net10.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.Http', 'Microsoft.Extensions.Primitives')
+        'net8.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.Http', 'Microsoft.Extensions.Primitives')
         '.NETStandard2.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.Http', 'Microsoft.Extensions.Primitives')
     }
     'Kevlar.Extensions.RateLimiting' = @{
         'net10.0' = @('Kevlar', 'System.Threading.RateLimiting')
+        'net8.0' = @('Kevlar', 'System.Threading.RateLimiting')
         '.NETStandard2.0' = @('Kevlar', 'System.Threading.RateLimiting')
     }
     'Kevlar.Chaos' = @{
@@ -274,6 +278,7 @@ $expectedDependencies = @{
     }
     'Kevlar.Extensions.Grpc' = @{
         'net10.0' = @('Grpc.Core.Api', 'Grpc.Net.ClientFactory', 'Kevlar', 'Kevlar.Extensions.DependencyInjection')
+        'net8.0' = @('Grpc.Core.Api', 'Grpc.Net.ClientFactory', 'Kevlar', 'Kevlar.Extensions.DependencyInjection')
         '.NETStandard2.1' = @('Grpc.Core.Api', 'Grpc.Net.ClientFactory', 'Kevlar', 'Kevlar.Extensions.DependencyInjection')
         '.NETStandard2.0' = @('Grpc.Core.Api', 'Grpc.Net.ClientFactory', 'Kevlar', 'Kevlar.Extensions.DependencyInjection')
     }
@@ -416,17 +421,12 @@ foreach ($packageId in $expectedDependencies.Keys)
             $expectedAssets = @(
                 "lib/net10.0/$packageId.dll",
                 "lib/net10.0/$packageId.xml",
+                "lib/net8.0/$packageId.dll",
+                "lib/net8.0/$packageId.xml",
                 "lib/netstandard2.0/$packageId.dll",
                 "lib/netstandard2.0/$packageId.xml"
             )
-            if ($packageId -in @('Kevlar.Chaos', 'Kevlar.Testing'))
-            {
-                $expectedAssets += @(
-                    "lib/net8.0/$packageId.dll",
-                    "lib/net8.0/$packageId.xml"
-                )
-            }
-            elseif ($packageId -eq 'Kevlar.Extensions.Grpc')
+            if ($packageId -eq 'Kevlar.Extensions.Grpc')
             {
                 $expectedAssets += @(
                     "lib/netstandard2.1/$packageId.dll",
@@ -681,18 +681,54 @@ catch (ExpectedConsumerException exception)
     }
 }
 
+var executions = 0;
+var retries = 0;
 var injections = 0;
 using var listener = new MeterListener();
 listener.InstrumentPublished = (instrument, activeListener) =>
 {
-    if (instrument.Meter.Name == ChaosDiagnostics.MeterName
-        && instrument.Name == "kevlar.chaos.injections")
+    if (instrument.Meter.Name is KevlarDiagnostics.MeterName or ChaosDiagnostics.MeterName)
     {
         activeListener.EnableMeasurementEvents(instrument);
     }
 };
-listener.SetMeasurementEventCallback<long>((_, measurement, _, _) => injections += (int)measurement);
+listener.SetMeasurementEventCallback<long>((instrument, measurement, _, _) =>
+{
+    if (instrument.Name == "kevlar.executions")
+    {
+        executions += (int)measurement;
+    }
+    else if (instrument.Name == "kevlar.retries")
+    {
+        retries += (int)measurement;
+    }
+    else if (instrument.Name == "kevlar.chaos.injections")
+    {
+        injections += (int)measurement;
+    }
+});
 listener.Start();
+
+using var recorder = new TelemetryRecorder();
+var attempts = 0;
+var retried = await Shield.Retry(1, Backoff.None).ExecuteAsync<int>(_ =>
+{
+    if (Interlocked.Increment(ref attempts) == 1)
+    {
+        throw new InvalidOperationException("retry once");
+    }
+
+    return new ValueTask<int>(42);
+});
+if (retried != 42 || executions != 1 || retries != 1)
+{
+    throw new InvalidOperationException(
+        $"Core package metrics failed: result {retried}, executions {executions}, retries {retries}.");
+}
+if (!recorder.Metrics.Any(record => record.InstrumentName == "kevlar.executions"))
+{
+    throw new InvalidOperationException("Kevlar.Testing did not capture a core instrument.");
+}
 
 var chaos = ChaosShield.Outcome<int>(options =>
 {
@@ -759,7 +795,7 @@ sealed class ExpectedConsumerException : Exception;
         Write-TextFile (Join-Path $consumerDirectory 'Program.cs') $runtimeProgram
         Invoke-DotNet @('restore', $projectPath, '--configfile', $nugetConfigPath, '--no-cache', '--force-evaluate')
         Invoke-DotNet @('build', $projectPath, '-c', 'Release', '--no-restore')
-        $kevlarPdbFramework = if ($framework -eq 'net10.0') { 'net10.0' } else { 'netstandard2.0' }
+        $kevlarPdbFramework = $framework
         Copy-Item `
             -LiteralPath (Join-Path $symbolRoot "lib/$kevlarPdbFramework/Kevlar.pdb") `
             -Destination (Join-Path $consumerDirectory "bin/Release/$framework/Kevlar.pdb")

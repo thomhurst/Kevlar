@@ -391,11 +391,14 @@ if ($LASTEXITCODE -ne 0)
     throw "Documentation snippet restore failed with exit code $LASTEXITCODE."
 }
 
-& dotnet run --project $projectPath -c Release --no-restore `
-    "-p:KevlarPackageVersion=$Version" `
-    "-p:GeneratedSnippetsPath=$generatedPath"
-
-if ($LASTEXITCODE -ne 0)
+foreach ($framework in @('net8.0', 'net10.0'))
 {
-    throw "Documentation snippet project failed with exit code $LASTEXITCODE."
+    & dotnet run --project $projectPath -c Release --framework $framework --no-restore `
+        "-p:KevlarPackageVersion=$Version" `
+        "-p:GeneratedSnippetsPath=$generatedPath"
+
+    if ($LASTEXITCODE -ne 0)
+    {
+        throw "Documentation snippet project failed for $framework with exit code $LASTEXITCODE."
+    }
 }

@@ -43,7 +43,7 @@ fail-fast rejections, and fatal runtime failures—print exactly as before, with
 
 ## Metrics
 
-Kevlar publishes core metrics through a `System.Diagnostics.Metrics.Meter` named `Kevlar`, version `1.0`. The current core package contains instrumented code in its `net10.0` asset; `net8.0` and `net9.0` applications resolve its inert `netstandard2.0` asset. `Kevlar.Chaos` separately publishes its injection counter from its `net8.0` and `net10.0` assets through a meter named `Kevlar.Chaos`, version `1.0`.
+Kevlar publishes core metrics through a `System.Diagnostics.Metrics.Meter` named `Kevlar`, version `1.0`. The core and runtime extension packages contain instrumented `net8.0` and `net10.0` assets; only `netstandard2.0` consumers receive inert metric implementations. `Kevlar.Chaos` separately publishes its injection counter from its `net8.0` and `net10.0` assets through a meter named `Kevlar.Chaos`, version `1.0`.
 
 Register the core meter with OpenTelemetry:
 
@@ -61,14 +61,14 @@ services.AddOpenTelemetry().WithMetrics(metrics => metrics
 
 | Instrument | Type | Unit | Minimum target | Measures | Attributes |
 |---|---|---|---|---|---|
-| `kevlar.executions` | Counter | `{execution}` | `net10.0` | completed public execution calls, including empty shields and pre-cancelled calls | `kevlar.shield.name`, `kevlar.execution.outcome` (`success`/`failure`) |
-| `kevlar.retries` | Counter | `{retry}` | `net10.0` | retry attempts | `kevlar.shield.name` |
-| `kevlar.timeouts` | Counter | `{timeout}` | `net10.0` | executions cancelled by a timeout strategy | `kevlar.shield.name` |
-| `kevlar.hedges` | Counter | `{hedge}` | `net10.0` | extra hedged attempts launched | `kevlar.shield.name` |
-| `kevlar.fallbacks` | Counter | `{fallback}` | `net10.0` | outcomes replaced by a fallback | `kevlar.shield.name` |
-| `kevlar.rejections` | Counter | `{rejection}` | `net10.0` | fail-fast rejections | `kevlar.shield.name`, `kevlar.rejection.type` (`circuit_open`/`rate_limit`/`concurrency_limit`) |
-| `kevlar.circuit_breaker.transitions` | Counter | `{transition}` | `net10.0` | circuit state changes | `kevlar.circuit_breaker.state.from`, `kevlar.circuit_breaker.state.to` (`closed`/`open`/`half_open`/`isolated`) |
-| `kevlar.execution.duration` | Histogram | `s` | `net10.0` | completed public execution duration | `kevlar.shield.name`, `kevlar.execution.outcome` (`success`/`failure`) |
+| `kevlar.executions` | Counter | `{execution}` | `net8.0` | completed public execution calls, including empty shields and pre-cancelled calls | `kevlar.shield.name`, `kevlar.execution.outcome` (`success`/`failure`) |
+| `kevlar.retries` | Counter | `{retry}` | `net8.0` | retry attempts | `kevlar.shield.name` |
+| `kevlar.timeouts` | Counter | `{timeout}` | `net8.0` | executions cancelled by a timeout strategy | `kevlar.shield.name` |
+| `kevlar.hedges` | Counter | `{hedge}` | `net8.0` | extra hedged attempts launched | `kevlar.shield.name` |
+| `kevlar.fallbacks` | Counter | `{fallback}` | `net8.0` | outcomes replaced by a fallback | `kevlar.shield.name` |
+| `kevlar.rejections` | Counter | `{rejection}` | `net8.0` | fail-fast rejections | `kevlar.shield.name`, `kevlar.rejection.type` (`circuit_open`/`rate_limit`/`concurrency_limit`) |
+| `kevlar.circuit_breaker.transitions` | Counter | `{transition}` | `net8.0` | circuit state changes | `kevlar.circuit_breaker.state.from`, `kevlar.circuit_breaker.state.to` (`closed`/`open`/`half_open`/`isolated`) |
+| `kevlar.execution.duration` | Histogram | `s` | `net8.0` | completed public execution duration | `kevlar.shield.name`, `kevlar.execution.outcome` (`success`/`failure`) |
 | `kevlar.circuit_breaker.state` | Gauge | `{state}` | `net10.0` | last observed circuit state: closed `0`, open `1`, half-open `2`, isolated `3` | `kevlar.shield.name`, `kevlar.strategy.index` |
 | `kevlar.concurrency_limit.inflight` | Gauge | `{execution}` | `net10.0` | executions holding a permit | `kevlar.shield.name`, `kevlar.strategy.index` |
 | `kevlar.concurrency_limit.queued` | Gauge | `{execution}` | `net10.0` | executions waiting for a permit | `kevlar.shield.name`, `kevlar.strategy.index` |
@@ -79,7 +79,7 @@ services.AddOpenTelemetry().WithMetrics(metrics => metrics
 
 Each public execution call records exactly one `kevlar.executions` measurement after its final outcome: recovery through fallback is `success`; exceptions, caller cancellation, timeout, and strategy rejection are `failure`. Retry and hedge attempts do not add execution measurements of their own.
 
-The `kevlar.shield.name` attribute appears only for shields named via `WithName` — name the shields you plan to chart. Optional chaos scope attributes are also omitted when unset. Instrument and attribute names use the product-specific `kevlar` namespace; count units use singular UCUM annotations.
+The `kevlar.shield.name` attribute appears only for shields named via `WithName` — name the shields you plan to chart. `WithName("")` emits the attribute with an empty value; an unnamed shield omits it. Optional chaos scope attributes are also omitted when unset. Instrument and attribute names use the product-specific `kevlar` namespace; count units use singular UCUM annotations. Counters and the duration histogram are active in the native `net8.0` and `net10.0` assets; the shipped state gauges require `net10.0`. On `netstandard2.0` targets the instruments are inert because the metrics API is not available in-box.
 
 The gauges are synchronous last-value measurements emitted when strategy state changes. They aggregate by shield name and carry a bounded `kevlar.strategy.index` attribute (the strategy's zero-based pipeline position), so independent stateful strategies in one named pipeline remain distinct. Shared strategies update up to 64 observed name/index aliases; additional aliases omit state-gauge measurements to bound memory, transition work, and series growth. The gauges do not use observable callbacks or global strategy registries, so telemetry never keeps an abandoned shield alive.
 

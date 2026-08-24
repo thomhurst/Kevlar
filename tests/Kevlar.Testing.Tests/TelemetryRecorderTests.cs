@@ -246,12 +246,14 @@ public class TelemetryRecorderTests
             "kevlar.hedges",
             "kevlar.fallbacks",
             "kevlar.rejections",
+#if NET9_0_OR_GREATER
             "kevlar.circuit_breaker.state",
             "kevlar.concurrency_limit.inflight",
             "kevlar.concurrency_limit.queued",
             "kevlar.concurrency_limit.capacity",
             "kevlar.rate_limit.available",
             "kevlar.rate_limit.queued",
+#endif
         };
 
         await Assert.That(expectedNamed.All(namedInstruments.Contains)).IsTrue();
