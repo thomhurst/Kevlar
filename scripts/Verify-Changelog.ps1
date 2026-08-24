@@ -37,8 +37,9 @@ if ($unreleasedIndex -lt 0)
     $errors.Add('Missing ## [Unreleased] heading.')
 }
 
-$releasePattern = [regex]'^## \[(?<version>[0-9]+\.[0-9]+\.[0-9]+)\] - (?<date>[0-9]{4}-[0-9]{2}-[0-9]{2})$'
-$versionHeadingCandidatePattern = [regex]'^##\s*\[[0-9]+\.[0-9]+\.[0-9]+'
+$versionComponentPattern = '(?:0|[1-9][0-9]*)'
+$releasePattern = [regex]"^## \[(?<version>$versionComponentPattern\.$versionComponentPattern\.$versionComponentPattern)\] - (?<date>[0-9]{4}-[0-9]{2}-[0-9]{2})$"
+$versionHeadingCandidatePattern = [regex]'^##\s*\[?\s*[0-9]+\.[0-9]+\.[0-9]+'
 $releases = [System.Collections.Generic.List[object]]::new()
 for ($index = 0; $index -lt $lines.Count; $index++)
 {
@@ -77,6 +78,16 @@ if ($releases.Count -eq 0)
 elseif ($unreleasedIndex -gt $releases[0].Index)
 {
     $errors.Add('## [Unreleased] must precede every versioned release.')
+}
+
+for ($index = 1; $index -lt $releases.Count; $index++)
+{
+    $newerVersion = [Version]$releases[$index - 1].Version
+    $olderVersion = [Version]$releases[$index].Version
+    if ($newerVersion -le $olderVersion)
+    {
+        $errors.Add("Release versions must be strictly descending; $newerVersion appears before $olderVersion.")
+    }
 }
 
 $tags = @(& git -C $repositoryRoot tag --list 'v*')
