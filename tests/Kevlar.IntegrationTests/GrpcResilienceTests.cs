@@ -1,3 +1,4 @@
+using System.Text;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 using Grpc.Net.Client;
@@ -14,6 +15,20 @@ namespace Kevlar.IntegrationTests;
 [NotInParallel]
 public class GrpcResilienceTests
 {
+    [Test]
+    public async Task Grpc_Assembly_Does_Not_Contain_The_Legacy_Exception_Data_Key()
+    {
+        const string legacyKey =
+            "Kevlar.Internal.ExceptionProxy.6b21d876-5f0c-45d4-a873-cd6d83e9158b";
+        var utf8 = Encoding.UTF8.GetBytes(legacyKey);
+        var utf16 = Encoding.Unicode.GetBytes(legacyKey);
+        var assembly = typeof(ShieldUnaryClientInterceptor).Assembly;
+        var bytes = await File.ReadAllBytesAsync(assembly.Location);
+
+        await Assert.That(bytes.AsSpan().IndexOf(utf8)).IsEqualTo(-1);
+        await Assert.That(bytes.AsSpan().IndexOf(utf16)).IsEqualTo(-1);
+    }
+
     [Test]
     public async Task Unary_Success_Preserves_Response_And_Metadata()
     {
@@ -717,6 +732,7 @@ public class GrpcResilienceTests
         await Assert.That(ReferenceEquals(actual, expected)).IsTrue();
         await Assert.That(attempts).IsEqualTo(3);
         await Assert.That((await call.ResponseHeadersAsync).GetValue("attempt")).IsEqualTo("3");
+        await Assert.That(expected.Data.Count).IsEqualTo(0);
     }
 
     [Test]

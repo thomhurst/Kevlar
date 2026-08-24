@@ -11,6 +11,9 @@ virtual Kevlar.Backoff.Jitter.get -> bool?
 virtual Kevlar.Backoff.MaxDelay.get -> System.TimeSpan?
 Kevlar.HandlingClause
 *REMOVED*Kevlar.StrategyNode
+Kevlar.KevlarProxyException
+Kevlar.KevlarProxyException.KevlarProxyException(System.Exception! originalException) -> void
+Kevlar.KevlarProxyException.OriginalException.get -> System.Exception!
 Kevlar.HandlingClause.HandlingClause() -> void
 Kevlar.HandlingClause.ShouldHandle<T>(in Kevlar.Outcome<T> outcome) -> bool
 static Kevlar.HandlingClause.Default.get -> Kevlar.HandlingClause

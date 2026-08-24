@@ -559,20 +559,8 @@ public sealed class ShieldUnaryClientInterceptor : Interceptor
             public void MarkDisposed() => Disposed = true;
         }
 
-        private sealed class AttemptFailureException : Exception
-        {
-            private const string ExceptionProxyDataKey =
-                "Kevlar.Internal.ExceptionProxy.6b21d876-5f0c-45d4-a873-cd6d83e9158b";
-
-            public AttemptFailureException(Exception original)
-                : base(original.Message, original)
-            {
-                OriginalException = original;
-                Data[ExceptionProxyDataKey] = original;
-            }
-
-            public Exception OriginalException { get; }
-        }
+        private sealed class AttemptFailureException(Exception original)
+            : KevlarProxyException(original);
 
         private sealed class ExpiredDeadlineRpcException(RpcException original)
             : Exception(original.Message, original)
