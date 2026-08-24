@@ -1,3 +1,14 @@
+Kevlar.BackoffKind
+Kevlar.BackoffKind.Constant = 1 -> Kevlar.BackoffKind
+Kevlar.BackoffKind.Custom = 4 -> Kevlar.BackoffKind
+Kevlar.BackoffKind.Exponential = 3 -> Kevlar.BackoffKind
+Kevlar.BackoffKind.Linear = 2 -> Kevlar.BackoffKind
+Kevlar.BackoffKind.None = 0 -> Kevlar.BackoffKind
+abstract Kevlar.Backoff.Kind.get -> Kevlar.BackoffKind
+virtual Kevlar.Backoff.Factor.get -> double?
+virtual Kevlar.Backoff.InitialDelay.get -> System.TimeSpan?
+virtual Kevlar.Backoff.Jitter.get -> bool?
+virtual Kevlar.Backoff.MaxDelay.get -> System.TimeSpan?
 Kevlar.HandlingClause
 *REMOVED*Kevlar.StrategyNode
 Kevlar.HandlingClause.HandlingClause() -> void

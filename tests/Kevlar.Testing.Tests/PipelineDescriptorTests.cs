@@ -264,6 +264,27 @@ public class PipelineDescriptorTests
     }
 
     [Test]
+    public async Task Retry_Descriptor_Reports_Core_BackoffKind()
+    {
+        await Assert.That(typeof(BackoffDescriptor).GetProperty(nameof(BackoffDescriptor.Kind))!.PropertyType)
+            .IsEqualTo(typeof(BackoffKind));
+
+        var cases = new[]
+        {
+            Backoff.None,
+            Backoff.Constant(TimeSpan.FromMilliseconds(10)),
+            Backoff.Linear(TimeSpan.FromMilliseconds(10)),
+            Backoff.Exponential(TimeSpan.FromMilliseconds(10), jitter: false),
+            Backoff.Custom(_ => TimeSpan.Zero),
+        };
+
+        foreach (var backoff in cases)
+        {
+            await Assert.That(DescribeBackoff(backoff).Kind).IsEqualTo(backoff.Kind);
+        }
+    }
+
+    [Test]
     public async Task Assertion_Failures_Explain_Expected_And_Actual_Shape()
     {
         var descriptor = Shield.Timeout(TimeSpan.FromSeconds(1)).GetDescriptor();
