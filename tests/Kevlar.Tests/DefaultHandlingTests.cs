@@ -105,9 +105,9 @@ public class DefaultHandlingTests
             .FallbackTo(42);
 
         var unhandled = await defaultFallback.ExecuteOutcomeAsync(_ =>
-            throw new RateLimitExceededException(null));
+            throw new RateLimitExceededException(retryAfter: null));
         var handled = await explicitFallback.ExecuteAsync(_ =>
-            throw new RateLimitExceededException(null));
+            throw new RateLimitExceededException(retryAfter: null));
 
         await Assert.That(unhandled.Exception).IsTypeOf<RateLimitExceededException>();
         await Assert.That(handled).IsEqualTo(42);

@@ -47,6 +47,11 @@ build spelled these `WhenResultDefault`/`OrResultDefault`; the `Is` makes the re
   predicates keep their exact compile-time types.
 - The `Hedge` method, options, testing descriptors, strategy kind, and standard HTTP registration
   now share one `Hedge` stem, like `Retry`/`RetryOptions` and `Timeout`/`TimeoutOptions`.
+- Circuit-open, rate-limit, concurrency-limit, and timeout rejections now derive from
+  `ExecutionRejectedException`, which provides their common `RetryAfter` property. Concrete public
+  exception types expose the conventional `()`, `(string)`, and `(string, Exception)` constructors;
+  the metadata-specific constructors remain available.
+
 ### Changed
 
 - Every NuGet package now embeds the canonical Kevlar icon, links release notes, and carries a

@@ -23,16 +23,17 @@ internal abstract class OutcomeJudge
         public override bool ShouldHandle<T>(in Outcome<T> outcome) =>
             outcome.Exception is { } exception && IsOrdinaryError(exception);
 
-        private static bool IsOrdinaryError(Exception exception) => exception is not (
-            OperationCanceledException
-            or CircuitOpenException
-            or RateLimitExceededException
-            or ConcurrencyLimitExceededException
-            or OutOfMemoryException
-            or InsufficientExecutionStackException
-            or StackOverflowException
-            or ThreadAbortException
-            or AccessViolationException);
+        private static bool IsOrdinaryError(Exception exception) =>
+            // A timeout is a recoverable attempt outcome; other execution rejections are fail-fast.
+            exception is TimeoutExceededException
+            || exception is not (
+                OperationCanceledException
+                or ExecutionRejectedException
+                or OutOfMemoryException
+                or InsufficientExecutionStackException
+                or StackOverflowException
+                or ThreadAbortException
+                or AccessViolationException);
     }
 }
 
