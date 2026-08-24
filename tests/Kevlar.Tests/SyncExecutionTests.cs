@@ -128,7 +128,7 @@ public class SyncExecutionTests
         // fallback replaces the final failure.
         var shield = Shield.For<string>()
             .When<InvalidOperationException>()
-            .Fallback("fallback")
+            .FallbackTo("fallback")
             .Retry(2, Backoff.None);
 
         var result = shield.Execute(_ =>

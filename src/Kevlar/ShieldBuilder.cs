@@ -128,7 +128,7 @@ public sealed class ShieldBuilder
     /// <summary>
     /// Runs <paramref name="fallback"/> in place of handled failures and returns a
     /// <see cref="VoidShield"/> exposing only void execution overloads. Result-producing recovery
-    /// needs <c>Shield.For&lt;T&gt;().Fallback(…)</c>.
+    /// needs <c>Shield.For&lt;T&gt;().FallbackTo(…)</c> for a constant value or a typed <c>Fallback(…)</c> factory.
     /// </summary>
     public VoidShield Fallback(Func<Exception, CancellationToken, ValueTask> fallback) => Seal().Fallback(fallback);
 

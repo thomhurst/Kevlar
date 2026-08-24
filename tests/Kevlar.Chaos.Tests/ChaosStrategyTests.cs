@@ -144,7 +144,7 @@ public class ChaosStrategyTests
         });
         var shield = Shield.For<Payload>()
             .WhenResult(value => ReferenceEquals(value, injected))
-            .Fallback(recovered)
+            .FallbackTo(recovered)
             .Wrap(chaos);
 
         var chaosOutcome = await chaos.ExecuteOutcomeAsync(_ => new ValueTask<Payload>(new Payload("real")));

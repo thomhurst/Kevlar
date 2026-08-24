@@ -208,12 +208,12 @@ public sealed class Shield<TResult>
     }
 
     /// <summary>Replaces handled outcomes with <paramref name="fallbackValue"/>.</summary>
-    public Shield<TResult> Fallback(TResult fallbackValue) =>
+    public Shield<TResult> FallbackTo(TResult fallbackValue) =>
         Append(new FallbackStrategy<TResult>((_, _) => new ValueTask<TResult>(fallbackValue), JudgeOrDefault, null, null));
 
     /// <summary>Replaces handled outcomes with <paramref name="fallbackValue"/> and configures notifications.</summary>
     /// <remarks>Runs <see cref="FallbackOptions{TResult}.OnFallback"/>, then <see cref="FallbackOptions{TResult}.OnFallbackAsync"/>, before recovery. A notification failure skips recovery.</remarks>
-    public Shield<TResult> Fallback(TResult fallbackValue, Action<FallbackOptions<TResult>> configure)
+    public Shield<TResult> FallbackTo(TResult fallbackValue, Action<FallbackOptions<TResult>> configure)
     {
         Throw.IfNull(configure, nameof(configure));
         var options = new FallbackOptions<TResult>();

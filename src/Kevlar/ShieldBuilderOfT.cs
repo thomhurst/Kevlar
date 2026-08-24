@@ -142,11 +142,11 @@ public sealed class ShieldBuilder<TResult>
     public Shield<TResult> Use(Func<HandlingClause, Strategy> factory) => Seal().Use(factory);
 
     /// <summary>Replaces handled outcomes with <paramref name="fallbackValue"/>.</summary>
-    public Shield<TResult> Fallback(TResult fallbackValue) => Seal().Fallback(fallbackValue);
+    public Shield<TResult> FallbackTo(TResult fallbackValue) => Seal().FallbackTo(fallbackValue);
 
     /// <summary>Replaces handled outcomes with <paramref name="fallbackValue"/> and configures notifications.</summary>
-    public Shield<TResult> Fallback(TResult fallbackValue, Action<FallbackOptions<TResult>> configure) =>
-        Seal().Fallback(fallbackValue, configure);
+    public Shield<TResult> FallbackTo(TResult fallbackValue, Action<FallbackOptions<TResult>> configure) =>
+        Seal().FallbackTo(fallbackValue, configure);
 
     /// <summary>Replaces handled outcomes with the result of <paramref name="fallback"/>.</summary>
     public Shield<TResult> Fallback(Func<CancellationToken, ValueTask<TResult>> fallback) => Seal().Fallback(fallback);

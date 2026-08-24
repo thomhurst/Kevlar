@@ -97,7 +97,7 @@ public class DependencyInjectionContractTests
         var first = Shield.Retry(1, Backoff.None);
         var last = Shield.Timeout(TimeSpan.FromSeconds(1));
         var firstTyped = Shield<int>.Empty;
-        var lastTyped = Shield.For<int>().Fallback(42);
+        var lastTyped = Shield.For<int>().FallbackTo(42);
         var firstVoid = Shield.Fallback(static _ => ValueTask.CompletedTask);
         var lastVoid = Shield.Fallback(static _ => ValueTask.FromException(
             new InvalidOperationException("last")));

@@ -134,7 +134,7 @@ public class CompositionTests
     public async Task NonGeneric_Policy_Wraps_A_Typed_Policy()
     {
         var attempts = 0;
-        var typed = Shield.For<string>().When<InvalidOperationException>().Fallback("fallback");
+        var typed = Shield.For<string>().When<InvalidOperationException>().FallbackTo("fallback");
         var combined = Shield.Retry(1, Backoff.None).Wrap(typed);
 
         // Fallback is inner, so it recovers before the outer retry ever sees a failure.

@@ -139,11 +139,11 @@ One ordering is always a bug: a `Fallback` chained *after* (inside) a retry, hed
 
 <!-- doc-test-run: invalid-composition -->
 ```csharp
-Shield.For<int>().Retry(3).Fallback(-1);
+Shield.For<int>().Retry(3).FallbackTo(-1);
 // InvalidOperationException: … makes Retry(3, …) unreachable.
 // Chain the Fallback first (the first strategy is the outermost) …
 
-Shield.For<int>().Fallback(-1).Retry(3);   // ✔ retry runs inside, fallback recovers after it gives up
+Shield.For<int>().FallbackTo(-1).Retry(3);   // ✔ retry runs inside, fallback recovers after it gives up
 ```
 
 A fallback with its own *narrower* clause is still allowed inside — that's a deliberate layered recovery, not a mistake.

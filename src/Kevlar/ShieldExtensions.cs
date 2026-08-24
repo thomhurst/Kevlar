@@ -273,7 +273,7 @@ public static class ShieldExtensions
     /// <summary>
     /// Runs <paramref name="fallback"/> in place of handled failures, receiving the handled
     /// exception. Returns a <see cref="VoidShield"/>, which exposes only void execution overloads.
-    /// Use <c>Shield.For&lt;T&gt;().Fallback(…)</c> for result-producing recovery.
+    /// Use <c>Shield.For&lt;T&gt;().FallbackTo(…)</c> for constant values or its typed <c>Fallback(…)</c> overloads for factories.
     /// </summary>
     public static VoidShield Fallback(this Shield shield, Func<Exception, CancellationToken, ValueTask> fallback)
     {
@@ -309,7 +309,7 @@ public static class ShieldExtensions
     /// <summary>
     /// Runs <paramref name="fallback"/> in place of handled failures. Returns a
     /// <see cref="VoidShield"/>, which exposes only void execution overloads. Use
-    /// <c>Shield.For&lt;T&gt;().Fallback(…)</c> for result-producing recovery.
+    /// <c>Shield.For&lt;T&gt;().FallbackTo(…)</c> for constant values or its typed <c>Fallback(…)</c> overloads for factories.
     /// </summary>
     public static VoidShield Fallback(this Shield shield, Func<CancellationToken, ValueTask> fallback)
     {

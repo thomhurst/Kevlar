@@ -130,7 +130,7 @@ public class StrategyHandlingOverrideTests
         var attempts = 0;
         var shield = Shield.For<int>()
             .When<InvalidOperationException>()
-            .Fallback(42)
+            .FallbackTo(42)
             .Retry(options =>
             {
                 options.MaxRetries = 1;
@@ -160,7 +160,7 @@ public class StrategyHandlingOverrideTests
     {
         var shield = Shield.For<int>()
             .When<InvalidOperationException>()
-            .Fallback(0, options =>
+            .FallbackTo(0, options =>
             {
                 options.HandlesResult = result => result < 0;
             });
@@ -175,7 +175,7 @@ public class StrategyHandlingOverrideTests
     {
         var shield = Shield.For<int>()
             .Retry(options => options.HandlesException = exception => exception is InvalidOperationException)
-            .Fallback(0, options =>
+            .FallbackTo(0, options =>
             {
                 options.HandlesException = exception => exception is InvalidOperationException;
             });
@@ -183,7 +183,7 @@ public class StrategyHandlingOverrideTests
         await Assert.That(shield).IsNotNull();
         await Assert.That(() => Shield.For<int>()
             .Retry(1)
-            .Fallback(0))
+            .FallbackTo(0))
             .Throws<InvalidOperationException>();
     }
 }

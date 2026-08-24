@@ -63,7 +63,7 @@ var unavailable = ChaosShield.Outcome<int>(options =>
 
 var shield = Shield.For<int>()
     .WhenResult(-1)
-    .Fallback(0)
+    .FallbackTo(0)
     .Wrap(unavailable);
 
 var value = await shield.ExecuteAsync(static _ => new ValueTask<int>(42));

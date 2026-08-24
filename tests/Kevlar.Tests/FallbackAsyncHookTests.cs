@@ -111,7 +111,7 @@ public class FallbackAsyncHookTests
     {
         using var cancellation = new CancellationTokenSource();
         var hookCancellation = new OperationCanceledException("hook cancelled", cancellation.Token);
-        var shield = Shield.For<int>().Fallback(
+        var shield = Shield.For<int>().FallbackTo(
             42,
             options => options.OnFallbackAsync = _ => ValueTask.FromException(hookCancellation));
 
@@ -166,7 +166,7 @@ public class FallbackAsyncHookTests
         Shield<int>? shield = null;
         shield = Shield<int>.Empty
             .WithName("fallback-hook")
-            .Fallback(
+            .FallbackTo(
                 42,
                 options =>
                 {
@@ -283,7 +283,7 @@ public class FallbackAsyncHookTests
     {
         var configureCalls = 0;
         var firstCalls = 0;
-        var shield = Shield.For<int>().Fallback(
+        var shield = Shield.For<int>().FallbackTo(
             42,
             options =>
             {

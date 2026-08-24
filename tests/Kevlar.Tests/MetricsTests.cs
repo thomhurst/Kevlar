@@ -385,7 +385,7 @@ public class MetricsTests
         var attempts = 0;
         var shield = Shield.For<int>()
             .When<InvalidOperationException>()
-            .Fallback(42)
+            .FallbackTo(42)
             .Retry(2, Backoff.None)
             .WithName(name);
 
@@ -411,7 +411,7 @@ public class MetricsTests
         var asyncObservedMetric = false;
         var shield = Shield.For<int>()
             .When<InvalidOperationException>()
-            .Fallback(
+            .FallbackTo(
                 42,
                 options =>
                 {
@@ -497,7 +497,7 @@ public class MetricsTests
         using var listener = new KevlarMeterListener();
         var shield = Shield.For<int>()
             .When<InvalidOperationException>()
-            .Fallback(-1)
+            .FallbackTo(-1)
             .CircuitBreaker(1, TimeSpan.FromMinutes(1))
             .WithName("metrics-fallback");
 

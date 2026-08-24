@@ -48,7 +48,7 @@ public class AllocationBudgetTests
     });
     private readonly Shield<int> _fallback = Shield.For<int>()
         .When<InvalidOperationException>()
-        .Fallback(7);
+        .FallbackTo(7);
     private readonly Shield _rateLimit = Shield.RateLimit(1_000_000_000, TimeSpan.FromSeconds(1));
     private readonly Shield _rateLimitWithRejectionHooks = Shield.RateLimit(options =>
     {
@@ -87,13 +87,13 @@ public class AllocationBudgetTests
     private readonly Shield _openBreaker = Shield.CircuitBreaker(1, TimeSpan.FromDays(1));
     private readonly Shield<int> _triggeredFallback = Shield.For<int>()
         .When<InvalidOperationException>()
-        .Fallback(7);
+        .FallbackTo(7);
     private readonly Shield<int> _fallbackWithSyncNotification = Shield.For<int>()
         .When<InvalidOperationException>()
-        .Fallback(7, static options => options.OnFallback = static _ => { });
+        .FallbackTo(7, static options => options.OnFallback = static _ => { });
     private readonly Shield<int> _fallbackWithAsyncNotification = Shield.For<int>()
         .When<InvalidOperationException>()
-        .Fallback(
+        .FallbackTo(
             7,
             static options => options.OnFallbackAsync = static _ => ValueTask.CompletedTask);
     private readonly Shield _parallelHedge = Shield.Hedge(2, TimeSpan.Zero);

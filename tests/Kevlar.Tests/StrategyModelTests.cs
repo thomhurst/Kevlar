@@ -357,7 +357,7 @@ public class StrategyModelTests
         var shouldFail = commands.Count > 0 && commands[^1].Fail;
         var shield = Shield.For<int>()
             .When<ModelFailureException>()
-            .Fallback(99)
+            .FallbackTo(99)
             .Wrap(observers);
         var result = await shield.ExecuteAsync(_ => shouldFail
             ? throw new ModelFailureException()

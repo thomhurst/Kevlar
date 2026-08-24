@@ -239,7 +239,7 @@ public class FallbackContractTests
     {
         await Assert.That(() =>
         {
-            _ = Shield.For<int>().Hedge(2, TimeSpan.Zero).Fallback(-1);
+            _ = Shield.For<int>().Hedge(2, TimeSpan.Zero).FallbackTo(-1);
         }).Throws<InvalidOperationException>();
         await Assert.That(() =>
         {
@@ -311,7 +311,7 @@ public class FallbackContractTests
     {
         var shield = Shield.For<int>()
             .When<InvalidOperationException>()
-            .Fallback(42);
+            .FallbackTo(42);
 
         var synchronous = shield.Execute(_ => throw new InvalidOperationException());
         var asynchronous = await shield.ExecuteAsync<int>(_ =>

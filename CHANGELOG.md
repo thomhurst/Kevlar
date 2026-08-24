@@ -11,6 +11,9 @@
   `ShieldBuilder.Fallback(...)` similarly returns `VoidShield`; its later `When...` clauses use
   `VoidShieldBuilder`. Use `Shield.For<TResult>().Fallback(...)` for result-producing recovery.
 - Configure fallback notifications through `Fallback(..., configure)`. The pre-release `FallbackWithNotifications` methods and typed `onFallback` parameters were removed, including the migration-only error overloads that briefly replaced them. Every fallback shape now has exactly two overloads — bare and `Action<FallbackOptions>`/`Action<FallbackOptions<TResult>>` — on `Shield`, `Shield<TResult>`, `ShieldBuilder` and `ShieldBuilder<TResult>`.
+- Typed constant-value `Fallback(value)` is now `FallbackTo(value)` on `Shield<TResult>` and
+  `ShieldBuilder<TResult>`. Delegate factories remain `Fallback(...)`. This makes null fallback
+  values explicit and avoids ambiguity between value and delegate overloads.
 
 Handling clauses now use one spelling per position. `When…` starts a clause on `Shield` or
 `Shield<TResult>`; only `Or…` continues it on a builder. `Shield.For<TResult>()` now returns
@@ -24,6 +27,7 @@ Handling clauses now use one spelling per position. `When…` starts a clause on
 | `builder.OrWhen(predicate)` | `builder.Or(predicate)` |
 | `Shield.For<T>().WhenDefault()` | `Shield.For<T>().WhenResultIsDefault()` |
 | `builder.OrDefault()` | `builder.OrResultIsDefault()` |
+| `Shield.For<T>().Fallback(value)` | `Shield.For<T>().FallbackTo(value)` |
 
 `OrWhen` is gone: `Or(Func<Exception, bool>)` now mirrors `When(Func<Exception, bool>)`, so the
 untyped predicate has the same spelling in both clause positions. `WhenDefault`/`OrDefault` were

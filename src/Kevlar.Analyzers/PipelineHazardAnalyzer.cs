@@ -144,7 +144,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 invocation.Syntax.GetLocation()));
         }
 
-        if (IsKevlarFluentMethod(invocation.TargetMethod, knownTypes, "Fallback")
+        if (IsFallbackMethod(invocation.TargetMethod, knownTypes)
             && HasLocalHandlingOverride(invocation, context) is false
             && FindInPipeline(
                 GetReceiver(invocation),
@@ -361,8 +361,13 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     /// inherits is already spelled out at the call site.
     /// </summary>
     private static bool IsClauseConsumingStrategy(IMethodSymbol method, KnownTypes knownTypes) =>
-        (method.Name is "Retry" or "RetryForever" or "Hedge" or "CircuitBreaker" or "Fallback")
-        && IsKevlarFluentMethod(method, knownTypes);
+        IsFallbackMethod(method, knownTypes)
+        || ((method.Name is "Retry" or "RetryForever" or "Hedge" or "CircuitBreaker")
+            && IsKevlarFluentMethod(method, knownTypes));
+
+    private static bool IsFallbackMethod(IMethodSymbol method, KnownTypes knownTypes) =>
+        IsKevlarFluentMethod(method, knownTypes, "Fallback")
+        || IsKevlarFluentMethod(method, knownTypes, "FallbackTo");
 
     /// <summary>Renders a clause declaration the way it was written, e.g. <c>When&lt;HttpRequestException&gt;…</c>.</summary>
     private static string DescribeClause(IInvocationOperation invocation) =>
@@ -1026,7 +1031,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             if (!FindInPipeline(
                 operands[fallbackIndex],
                 context,
-                candidate => IsKevlarFluentMethod(candidate.TargetMethod, knownTypes, "Fallback")
+                candidate => IsFallbackMethod(candidate.TargetMethod, knownTypes)
                     && HasLocalHandlingOverride(candidate, context) is false,
                 knownTypes,
                 stopAtHandlingClause: true,

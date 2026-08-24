@@ -37,7 +37,14 @@ internal sealed class FallbackStrategy<TResult> : Strategy, IFallbackStrategyIns
     bool IFallbackStrategyInspection.HasNotification =>
         _onFallback is not null || _onFallbackAsync is not null;
 
-    public override string Describe() => "Fallback";
+    public override string Describe()
+    {
+        // Keep FallbackTo's execution delegate identical to the original captured-lambda fast path.
+        // Description runs off-path, so identifying its compiler-generated method adds no execution cost.
+        return _fallback.Method.Name.StartsWith("<FallbackTo>", StringComparison.Ordinal)
+            ? "Fallback(value)"
+            : "Fallback";
+    }
 
     public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
