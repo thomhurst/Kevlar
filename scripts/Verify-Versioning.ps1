@@ -44,10 +44,32 @@ function Assert-Version([string]$Name, [string]$CommitMessage, [string]$Expected
     Invoke-Git $scenarioPath @('add', 'content.txt')
     Invoke-Git $scenarioPath @('commit', '-m', $CommitMessage)
 
-    $output = (& $GitVersionCommand $scenarioPath /showvariable SemVer 2>&1 | Out-String).Trim()
-    if ($LASTEXITCODE -ne 0)
+    $githubActions = $env:GITHUB_ACTIONS
+    $githubRef = $env:GITHUB_REF
+    $githubHeadRef = $env:GITHUB_HEAD_REF
+    $githubBaseRef = $env:GITHUB_BASE_REF
+    $output = ''
+    $exitCode = -1
+    try
     {
-        throw "$GitVersionCommand failed for $Name with exit code $LASTEXITCODE.`n$output"
+        $env:GITHUB_ACTIONS = $null
+        $env:GITHUB_REF = $null
+        $env:GITHUB_HEAD_REF = $null
+        $env:GITHUB_BASE_REF = $null
+        $output = (& $GitVersionCommand $scenarioPath /showvariable SemVer 2>&1 | Out-String).Trim()
+        $exitCode = $LASTEXITCODE
+    }
+    finally
+    {
+        $env:GITHUB_ACTIONS = $githubActions
+        $env:GITHUB_REF = $githubRef
+        $env:GITHUB_HEAD_REF = $githubHeadRef
+        $env:GITHUB_BASE_REF = $githubBaseRef
+    }
+
+    if ($exitCode -ne 0)
+    {
+        throw "$GitVersionCommand failed for $Name with exit code $exitCode.`n$output"
     }
 
     if ($output -ne $ExpectedVersion)
