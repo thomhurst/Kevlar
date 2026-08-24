@@ -33,10 +33,20 @@ var shield = Shield
     .Retry(3);
 ```
 
-A void fallback guards void executions only; executing a result-returning delegate through it fails
-with a descriptive error rather than inventing a default value. The optional analyzer reports this
-mistake as [`KEV005`](../analyzers.md#kev005-void-fallback-with-a-result) when the pipeline is visible
-in the same expression or a stable local.
+A void fallback changes the chain's type to `VoidShield`. That type exposes only void execution
+overloads, and later fluent methods keep returning `VoidShield`, so a result-returning execution is
+rejected by the compiler. It also cannot be lifted with `For<TResult>()`, wrapped into a typed
+shield, or passed to mixed `Shield.Compose(...)`. Use `Wrap(...)` when composing around a void
+shield; the result remains `VoidShield`.
+
+```csharp
+var shield = Shield.Retry(3)
+    .Fallback(static _ => ValueTask.CompletedTask)
+    .Timeout(TimeSpan.FromSeconds(10)); // still VoidShield
+
+await shield.ExecuteAsync(static _ => ValueTask.CompletedTask); // valid
+// shield.ExecuteAsync(static _ => new ValueTask<int>(42));      // does not compile
+```
 
 ## Three shapes
 

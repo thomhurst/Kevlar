@@ -2,8 +2,8 @@ namespace Kevlar.Tests;
 
 /// <summary>
 /// Guards the non-generic void fallback: it recovers void executions, receives the handled
-/// exception, respects handling clauses, and refuses result-returning executions with a
-/// descriptive error instead of inventing a default value.
+/// exception, and respects handling clauses. Compile-time API tests separately verify that the
+/// resulting <see cref="VoidShield"/> cannot execute result-returning delegates.
 /// </summary>
 public class VoidFallbackTests
 {
@@ -65,41 +65,6 @@ public class VoidFallbackTests
 
         await Assert.That(async () => await shield.ExecuteAsync(_ => throw new InvalidOperationException()))
             .Throws<InvalidOperationException>();
-        await Assert.That(fallbackRan).IsFalse();
-    }
-
-    [Test]
-    public async Task A_Result_Returning_Execution_Is_Refused_With_Guidance()
-    {
-        var shield = Shield.When<InvalidOperationException>().Fallback((_, _) => default);
-
-        InvalidOperationException? error = null;
-        try
-        {
-            _ = await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException());
-        }
-        catch (InvalidOperationException caught)
-        {
-            error = caught;
-        }
-
-        await Assert.That(error).IsNotNull();
-        await Assert.That(error!.Message).Contains("Shield.For<T>()");
-    }
-
-    [Test]
-    public async Task Successful_Result_Executions_Are_Untouched()
-    {
-        var fallbackRan = false;
-        var shield = Shield.When<InvalidOperationException>().Fallback((_, _) =>
-        {
-            fallbackRan = true;
-            return default;
-        });
-
-        var result = await shield.ExecuteAsync(_ => new ValueTask<int>(42));
-
-        await Assert.That(result).IsEqualTo(42);
         await Assert.That(fallbackRan).IsFalse();
     }
 

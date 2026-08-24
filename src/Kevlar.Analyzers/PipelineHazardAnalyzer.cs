@@ -10,8 +10,8 @@ namespace Kevlar.Analyzers;
 /// <summary>
 /// Diagnoses statically provable Kevlar pipeline hazards: synchronous multi-attempt hedging, reactive
 /// strategies made unreachable by an inner fallback, per-execution construction of stateful shields,
-/// void fallbacks used for result-returning executions, hedging on an untyped shield, handling
-/// clauses that never reach a reactive strategy, and fluent chaining results discarded as statements.
+/// hedging on an untyped shield, handling clauses that never reach a reactive strategy, and fluent
+/// chaining results discarded as statements.
 /// It also reports, at hint severity, the strategies that inherit a handling clause declared
 /// earlier in their chain, so the clause's span is visible where it applies, and the default-result
 /// clauses written for a value type, whose default is usually a legitimate result.
@@ -48,16 +48,6 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         description: "Circuit breakers, rate limiters, concurrency limiters, and partition providers must outlive individual executions so their resilience state is retained and shared.");
-
-    /// <summary>The KEV005 rule.</summary>
-    public static readonly DiagnosticDescriptor VoidFallbackResultExecutionRule = new(
-        id: "KEV005",
-        title: "Fallback on a non-generic Shield applies only to void executions",
-        messageFormat: "Fallback on a non-generic Shield applies only to void executions. For executions that return a value, build a result-aware shield with Shield.For<T>() and use its Fallback overloads.",
-        category: "Configuration",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
-        description: "A void fallback cannot produce a value for a result-returning execution and fails at runtime when it handles an outcome.");
 
     /// <summary>The KEV006 rule.</summary>
     public static readonly DiagnosticDescriptor UntypedHedgingRule = new(
@@ -115,7 +105,6 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             SynchronousHedgingRule,
             UnreachableReactiveStrategyRule,
             EphemeralStatefulShieldRule,
-            VoidFallbackResultExecutionRule,
             UntypedHedgingRule,
             DeadHandlingClauseRule,
             DiscardedChainResultRule,
@@ -202,21 +191,6 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 UntypedHedgingRule,
-                invocation.Syntax.GetLocation()));
-        }
-
-        if (IsResultReturningExecution(invocation.TargetMethod, knownTypes)
-            && FindInPipeline(
-                GetReceiver(invocation),
-                context,
-                candidate => IsVoidFallback(candidate.TargetMethod, knownTypes),
-                knownTypes,
-                stopAtHandlingClause: false,
-                stopAtCompositionBoundary: false,
-                out _))
-        {
-            context.ReportDiagnostic(Diagnostic.Create(
-                VoidFallbackResultExecutionRule,
                 invocation.Syntax.GetLocation()));
         }
 
@@ -1780,23 +1754,6 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 || knownTypes.IsShieldTaskExtensions(method.ContainingType));
     }
 
-    private static bool IsResultReturningExecution(IMethodSymbol method, KnownTypes knownTypes)
-    {
-        method = Normalize(method);
-        return IsExecution(method, knownTypes)
-            && !method.ReturnsVoid
-            && !knownTypes.IsNonGenericValueTask(method.ReturnType);
-    }
-
-    private static bool IsVoidFallback(IMethodSymbol method, KnownTypes knownTypes)
-    {
-        method = Normalize(method);
-        return method.Name == "Fallback"
-            && method.ReturnType is INamedTypeSymbol returnType
-            && knownTypes.IsUntypedShield(returnType)
-            && IsKevlarFluentMethod(method, knownTypes);
-    }
-
     private static bool IsUntypedHedge(IMethodSymbol method, KnownTypes knownTypes)
     {
         method = Normalize(method);
@@ -2111,27 +2068,31 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     {
         private readonly INamedTypeSymbol? _shield;
         private readonly INamedTypeSymbol? _shieldOfT;
+        private readonly INamedTypeSymbol? _voidShield;
         private readonly INamedTypeSymbol? _shieldBuilder;
         private readonly INamedTypeSymbol? _shieldBuilderOfT;
+        private readonly INamedTypeSymbol? _voidShieldBuilder;
         private readonly INamedTypeSymbol? _shieldExtensions;
         private readonly INamedTypeSymbol? _shieldResultExtensions;
         private readonly INamedTypeSymbol? _shieldTaskExtensions;
         private readonly INamedTypeSymbol? _partitionedShield;
         private readonly INamedTypeSymbol? _partitionedShieldOfT;
-        private readonly INamedTypeSymbol? _valueTask;
+        private readonly INamedTypeSymbol? _partitionedVoidShield;
 
         internal KnownTypes(Compilation compilation)
         {
             _shield = compilation.GetTypeByMetadataName("Kevlar.Shield");
             _shieldOfT = compilation.GetTypeByMetadataName("Kevlar.Shield`1");
+            _voidShield = compilation.GetTypeByMetadataName("Kevlar.VoidShield");
             _shieldBuilder = compilation.GetTypeByMetadataName("Kevlar.ShieldBuilder");
             _shieldBuilderOfT = compilation.GetTypeByMetadataName("Kevlar.ShieldBuilder`1");
+            _voidShieldBuilder = compilation.GetTypeByMetadataName("Kevlar.VoidShieldBuilder");
             _shieldExtensions = compilation.GetTypeByMetadataName("Kevlar.ShieldExtensions");
             _shieldResultExtensions = compilation.GetTypeByMetadataName("Kevlar.ShieldResultExtensions");
             _shieldTaskExtensions = compilation.GetTypeByMetadataName("Kevlar.ShieldTaskExtensions");
             _partitionedShield = compilation.GetTypeByMetadataName("Kevlar.PartitionedShield`1");
             _partitionedShieldOfT = compilation.GetTypeByMetadataName("Kevlar.PartitionedShield`2");
-            _valueTask = compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask");
+            _partitionedVoidShield = compilation.GetTypeByMetadataName("Kevlar.PartitionedVoidShield`1");
             var assemblyName = compilation.AssemblyName;
             IsTestAssembly = assemblyName is not null
                 && (assemblyName.EndsWith(".Test", StringComparison.OrdinalIgnoreCase)
@@ -2141,12 +2102,12 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         internal bool IsTestAssembly { get; }
 
         internal bool IsShield(INamedTypeSymbol type) =>
-            Is(type, _shield) || Is(type, _shieldOfT);
+            Is(type, _shield) || Is(type, _shieldOfT) || Is(type, _voidShield);
 
-        internal bool IsUntypedShield(INamedTypeSymbol type) => Is(type, _shield);
+        internal bool IsUntypedShield(INamedTypeSymbol type) => Is(type, _shield) || Is(type, _voidShield);
 
         internal bool IsShieldBuilder(INamedTypeSymbol type) =>
-            Is(type, _shieldBuilder) || Is(type, _shieldBuilderOfT);
+            Is(type, _shieldBuilder) || Is(type, _shieldBuilderOfT) || Is(type, _voidShieldBuilder);
 
         internal bool IsShieldExtensions(INamedTypeSymbol type) =>
             Is(type, _shieldExtensions) || Is(type, _shieldResultExtensions);
@@ -2154,10 +2115,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         internal bool IsShieldTaskExtensions(INamedTypeSymbol type) => Is(type, _shieldTaskExtensions);
 
         internal bool IsPartitionedShield(INamedTypeSymbol type) =>
-            Is(type, _partitionedShield) || Is(type, _partitionedShieldOfT);
-
-        internal bool IsNonGenericValueTask(ITypeSymbol type) =>
-            type is INamedTypeSymbol namedType && Is(namedType, _valueTask);
+            Is(type, _partitionedShield) || Is(type, _partitionedShieldOfT) || Is(type, _partitionedVoidShield);
 
         private static bool Is(INamedTypeSymbol type, INamedTypeSymbol? expected) =>
             expected is not null

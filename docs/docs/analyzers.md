@@ -20,7 +20,6 @@ Generated code is ignored.
 | `KEV002` | Warning | known multi-attempt hedging pipeline is passed to synchronous `Execute` |
 | `KEV003` | Warning | inner fallback makes retry, hedging, or circuit breaker unreachable |
 | `KEV004` | Warning | stateful shield or partition provider is constructed for one execution |
-| `KEV005` | Warning | void fallback is executed with a result-returning delegate |
 | `KEV006` | Warning | hedging is added to an untyped shield, whose action must be idempotent |
 | `KEV007` | Warning | handling clause never reaches a reactive strategy |
 | `KEV008` | Warning | fluent chaining result is discarded as a statement |
@@ -104,8 +103,9 @@ await _dependencyShield.ExecuteAsync(static _ => ValueTask.CompletedTask);
 ```
 
 Store stateful shields in a field, singleton or keyed dependency-injection registration, or registry.
-Store `PartitionedShield<TKey>` and `PartitionedShield<TKey, TResult>` providers for the same reason:
-their retained per-key shields disappear when the provider is constructed per call.
+Store `PartitionedShield<TKey>`, `PartitionedVoidShield<TKey>`, and
+`PartitionedShield<TKey, TResult>` providers for the same reason: their retained per-key shields
+disappear when the provider is constructed per call.
 
 The rule is deliberately conservative. It reports inline construction and a stable local or local
 alias that has exactly one use in the same method or lambda. Fields, parameters, opaque factory
@@ -113,34 +113,6 @@ results, locals with multiple uses, locals captured by nested lambdas, stateless
 generated code, and assemblies ending in `.Test` or `.Tests` remain clean. Custom `Strategy`
 instances are not assumed to be stateful because that cannot be proven from their public contract.
 Test methods marked with standard TUnit, xUnit, NUnit, or MSTest attributes are also ignored.
-
-## KEV005: void fallback with a result
-
-A fallback on non-generic `Shield` can recover void executions only. If that shield executes a
-result-returning delegate, the fallback cannot produce the required value and fails at runtime when
-it handles an outcome:
-
-```csharp
-var voidShield = Shield.Retry(3)
-    .Fallback(static _ => ValueTask.CompletedTask);
-
-var value = await voidShield.ExecuteAsync(static _ => new ValueTask<int>(42)); // KEV005
-```
-
-Build a result-aware shield and use its typed fallback overload instead:
-
-```csharp
-var resultShield = Shield.For<int>()
-    .Retry(3)
-    .Fallback(-1);
-
-var value = await resultShield.ExecuteAsync(static _ => new ValueTask<int>(42));
-```
-
-The rule recognizes same-expression chains and stable local aliases for synchronous, asynchronous,
-outcome-returning, context-aware, and `Task<T>` execution overloads. It deliberately skips
-parameters, returned shields, reassigned locals, and fields because their construction cannot be
-proved by the current intraprocedural analysis.
 
 ## KEV006: hedging on an untyped shield
 

@@ -228,6 +228,22 @@ public static class ShieldExtensions
     }
 
     /// <summary>
+    /// Wraps a void-only <paramref name="inner"/> shield inside <paramref name="outer"/>. Because
+    /// the resulting pipeline contains a void fallback, it remains restricted to void executions.
+    /// </summary>
+    public static VoidShield Wrap(this Shield outer, VoidShield inner)
+    {
+        Throw.IfNull(outer, nameof(outer));
+        Throw.IfNull(inner, nameof(inner));
+        var pipeline = inner.Pipeline;
+        return new VoidShield(new Shield(
+            Shield.Concat(outer.Strategies, pipeline.Strategies),
+            null,
+            outer.Name ?? pipeline.Name,
+            outer.Time ?? pipeline.Time));
+    }
+
+    /// <summary>
     /// Wraps a result-aware <paramref name="inner"/> shield inside <paramref name="outer"/>, producing
     /// a result-aware shield. The first non-null name and time provider win. Composition seals handling
     /// clauses, so reactive strategies appended afterwards use default handling unless a new clause is declared.
@@ -256,14 +272,14 @@ public static class ShieldExtensions
 
     /// <summary>
     /// Runs <paramref name="fallback"/> in place of handled failures, receiving the handled
-    /// exception. Applies to void executions only; result-returning executions fail with a
-    /// descriptive <see cref="InvalidOperationException"/> — use <c>Shield.For&lt;T&gt;().Fallback(…)</c> for those.
+    /// exception. Returns a <see cref="VoidShield"/>, which exposes only void execution overloads.
+    /// Use <c>Shield.For&lt;T&gt;().Fallback(…)</c> for result-producing recovery.
     /// </summary>
-    public static Shield Fallback(this Shield shield, Func<Exception, CancellationToken, ValueTask> fallback)
+    public static VoidShield Fallback(this Shield shield, Func<Exception, CancellationToken, ValueTask> fallback)
     {
         Throw.IfNull(shield, nameof(shield));
         Throw.IfNull(fallback, nameof(fallback));
-        return shield.Append(new VoidFallbackStrategy(fallback, shield.JudgeOrDefault, null, null));
+        return new VoidShield(shield.Append(new VoidFallbackStrategy(fallback, shield.JudgeOrDefault, null, null)));
     }
 
     /// <summary>
@@ -271,7 +287,7 @@ public static class ShieldExtensions
     /// Applies to void executions only.
     /// </summary>
     /// <remarks>Runs <see cref="FallbackOptions.OnFallback"/>, then <see cref="FallbackOptions.OnFallbackAsync"/>, before recovery. A notification failure skips recovery.</remarks>
-    public static Shield Fallback(
+    public static VoidShield Fallback(
         this Shield shield,
         Func<Exception, CancellationToken, ValueTask> fallback,
         Action<FallbackOptions> configure)
@@ -282,20 +298,20 @@ public static class ShieldExtensions
         var options = new FallbackOptions();
         configure(options);
         var judge = HandlingOverride.Resolve(options.HandlesException, shield.JudgeOrDefault);
-        return shield.Append(new VoidFallbackStrategy(
+        return new VoidShield(shield.Append(new VoidFallbackStrategy(
             fallback,
             judge,
             options.OnFallback,
             options.OnFallbackAsync,
-            options.HandlesException is not null));
+            options.HandlesException is not null)));
     }
 
     /// <summary>
-    /// Runs <paramref name="fallback"/> in place of handled failures. Applies to void executions
-    /// only; result-returning executions fail with a descriptive
-    /// <see cref="InvalidOperationException"/> — use <c>Shield.For&lt;T&gt;().Fallback(…)</c> for those.
+    /// Runs <paramref name="fallback"/> in place of handled failures. Returns a
+    /// <see cref="VoidShield"/>, which exposes only void execution overloads. Use
+    /// <c>Shield.For&lt;T&gt;().Fallback(…)</c> for result-producing recovery.
     /// </summary>
-    public static Shield Fallback(this Shield shield, Func<CancellationToken, ValueTask> fallback)
+    public static VoidShield Fallback(this Shield shield, Func<CancellationToken, ValueTask> fallback)
     {
         Throw.IfNull(fallback, nameof(fallback));
         return shield.Fallback((_, token) => fallback(token));
@@ -306,7 +322,7 @@ public static class ShieldExtensions
     /// Applies to void executions only.
     /// </summary>
     /// <remarks>Runs <see cref="FallbackOptions.OnFallback"/>, then <see cref="FallbackOptions.OnFallbackAsync"/>, before recovery. A notification failure skips recovery.</remarks>
-    public static Shield Fallback(
+    public static VoidShield Fallback(
         this Shield shield,
         Func<CancellationToken, ValueTask> fallback,
         Action<FallbackOptions> configure)

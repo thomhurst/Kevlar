@@ -5,6 +5,46 @@ namespace Kevlar.Tests;
 
 public class DependencyInjectionTests
 {
+    [Test]
+    public async Task Void_Shields_Register_Without_Escaping_To_Shield()
+    {
+        var fallbackCalls = 0;
+        var services = new ServiceCollection()
+            .AddShield("shared", Shield.Retry(1))
+            .AddShield("shared", Shield.Fallback(_ =>
+            {
+                fallbackCalls++;
+                return ValueTask.CompletedTask;
+            }));
+        using var provider = services.BuildServiceProvider();
+        var registry = provider.GetRequiredService<IKevlarRegistry>();
+        var voidShield = registry.GetVoidShield("shared");
+
+        await voidShield.ExecuteAsync(_ => throw new InvalidOperationException());
+
+        await Assert.That(registry.GetShield("shared")).IsTypeOf<Shield>();
+        await Assert.That(voidShield).IsTypeOf<VoidShield>();
+        await Assert.That(provider.GetRequiredKeyedService<VoidShield>("shared"))
+            .IsSameReferenceAs(voidShield);
+        await Assert.That(fallbackCalls).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Partitioned_Void_Shields_Resolve_As_Keyed_Singletons()
+    {
+        var services = new ServiceCollection()
+            .AddPartitionedVoidShield<string>(
+                "void-tenants",
+                (_, _) => Shield.Fallback(static _ => ValueTask.CompletedTask));
+        using var provider = services.BuildServiceProvider();
+
+        var first = provider.GetRequiredKeyedService<PartitionedVoidShield<string>>("void-tenants");
+        var second = provider.GetRequiredKeyedService<PartitionedVoidShield<string>>("void-tenants");
+
+        await Assert.That(first).IsSameReferenceAs(second);
+        await Assert.That(first.GetShield("acme")).IsSameReferenceAs(second.GetShield("acme"));
+    }
+
     private sealed record TimeoutSetting(TimeSpan Value);
 
     [Test]

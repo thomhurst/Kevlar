@@ -12,7 +12,6 @@ public class ShieldInvocationSemanticsTests
             Shield.CircuitBreaker(1, TimeSpan.FromSeconds(1)),
             Shield.ConcurrencyLimit(1),
             Shield.RateLimit(1, TimeSpan.FromSeconds(1)),
-            Shield.Empty.Fallback(_ => ValueTask.CompletedTask),
             Shield.Retry(0, Backoff.None),
             Shield.Hedge(1, TimeSpan.Zero),
         ];
@@ -21,6 +20,9 @@ public class ShieldInvocationSemanticsTests
         {
             await Assert.That(shield.InvokesContinuationAtMostOnce).IsTrue();
         }
+
+        await Assert.That(Shield.Empty.Fallback(_ => ValueTask.CompletedTask).InvokesContinuationAtMostOnce)
+            .IsTrue();
     }
 
     [Test]

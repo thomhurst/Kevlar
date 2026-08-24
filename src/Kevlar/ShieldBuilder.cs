@@ -126,16 +126,17 @@ public sealed class ShieldBuilder
     public Shield Use(Func<HandlingClause, Strategy> factory) => Seal().Use(factory);
 
     /// <summary>
-    /// Runs <paramref name="fallback"/> in place of handled failures. Applies to void executions
-    /// only; result-returning executions need <c>Shield.For&lt;T&gt;().Fallback(…)</c>.
+    /// Runs <paramref name="fallback"/> in place of handled failures and returns a
+    /// <see cref="VoidShield"/> exposing only void execution overloads. Result-producing recovery
+    /// needs <c>Shield.For&lt;T&gt;().Fallback(…)</c>.
     /// </summary>
-    public Shield Fallback(Func<Exception, CancellationToken, ValueTask> fallback) => Seal().Fallback(fallback);
+    public VoidShield Fallback(Func<Exception, CancellationToken, ValueTask> fallback) => Seal().Fallback(fallback);
 
     /// <summary>
     /// Runs <paramref name="fallback"/> in place of handled failures and configures notifications.
     /// Applies to void executions only.
     /// </summary>
-    public Shield Fallback(
+    public VoidShield Fallback(
         Func<Exception, CancellationToken, ValueTask> fallback,
         Action<FallbackOptions> configure) => Seal().Fallback(fallback, configure);
 
