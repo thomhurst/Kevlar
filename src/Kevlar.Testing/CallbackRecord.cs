@@ -7,7 +7,8 @@ public sealed class CallbackRecord
         long sequence,
         CallbackKind kind,
         string? shieldName = null,
-        int? attempt = null,
+        int? retryNumber = null,
+        int? attemptNumber = null,
         TimeSpan? delay = null,
         TimeSpan? timeout = null,
         Exception? exception = null,
@@ -18,7 +19,8 @@ public sealed class CallbackRecord
         Sequence = sequence;
         Kind = kind;
         ShieldName = shieldName;
-        Attempt = attempt;
+        RetryNumber = retryNumber;
+        AttemptNumber = attemptNumber;
         Delay = delay;
         Timeout = timeout;
         Exception = exception;
@@ -36,8 +38,11 @@ public sealed class CallbackRecord
     /// <summary>The shield name copied from the callback context, when available.</summary>
     public string? ShieldName { get; }
 
-    /// <summary>The retry or hedge attempt number, when applicable.</summary>
-    public int? Attempt { get; }
+    /// <summary>The 1-based retry number, when this is a retry callback.</summary>
+    public int? RetryNumber { get; }
+
+    /// <summary>The 1-based execution number, when this is a hedge callback.</summary>
+    public int? AttemptNumber { get; }
 
     /// <summary>The retry delay, when applicable.</summary>
     public TimeSpan? Delay { get; }
@@ -58,5 +63,15 @@ public sealed class CallbackRecord
     public CircuitState? To { get; }
 
     internal CallbackRecord WithSequence(long sequence) => new(
-        sequence, Kind, ShieldName, Attempt, Delay, Timeout, Exception, Result, From, To);
+        sequence,
+        Kind,
+        ShieldName,
+        retryNumber: RetryNumber,
+        attemptNumber: AttemptNumber,
+        delay: Delay,
+        timeout: Timeout,
+        exception: Exception,
+        result: Result,
+        from: From,
+        to: To);
 }

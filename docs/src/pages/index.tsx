@@ -33,7 +33,7 @@ const advancedSample = `var search = Shield.For<HttpResponseMessage>()
         o.DelayGenerator = e =>
             e.Outcome.Result?.Headers.RetryAfter?.Delta;
         o.OnRetry = e => logger.LogWarning(
-            "retry {Attempt} in {Delay}", e.Attempt, e.Delay);
+            "retry {RetryNumber} in {Delay}", e.RetryNumber, e.Delay);
     })
     .CircuitBreaker(o =>
     {

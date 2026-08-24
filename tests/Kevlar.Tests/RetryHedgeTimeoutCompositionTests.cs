@@ -19,7 +19,7 @@ public class RetryHedgeTimeoutCompositionTests
             {
                 options.MaxAttempts = 3;
                 options.Delay = System.Threading.Timeout.InfiniteTimeSpan;
-                options.OnHedge = hedge => events.Add($"hedge-{hedge.Attempt}");
+                options.OnHedge = hedge => events.Add($"hedge-{hedge.AttemptNumber}");
             });
 
         await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
@@ -48,7 +48,7 @@ public class RetryHedgeTimeoutCompositionTests
             {
                 options.MaxAttempts = 3;
                 options.Delay = System.Threading.Timeout.InfiniteTimeSpan;
-                options.OnHedge = hedge => events.Add($"hedge-{hedge.Attempt}");
+                options.OnHedge = hedge => events.Add($"hedge-{hedge.AttemptNumber}");
             })
             .Retry(options =>
             {

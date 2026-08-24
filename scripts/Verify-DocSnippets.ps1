@@ -303,6 +303,7 @@ $invalidCompositionSnippetIndex = -1
 $timeoutExceededClauseSnippetIndex = -1
 $systemTimeoutClauseTrapSnippetIndex = -1
 $metricsSnippetIndex = -1
+$retryNumbersSnippetIndex = -1
 for ($snippetIndex = 0; $snippetIndex -lt $snippets.Count; $snippetIndex++)
 {
     if ($snippets[$snippetIndex].RunName -eq 'pipeline-description')
@@ -329,28 +330,35 @@ for ($snippetIndex = 0; $snippetIndex -lt $snippets.Count; $snippetIndex++)
     {
         $metricsSnippetIndex = $snippetIndex
     }
+
+    if ($snippets[$snippetIndex].RunName -eq 'retry-numbers')
+    {
+        $retryNumbersSnippetIndex = $snippetIndex
+    }
 }
 
 if ($observableSnippetIndex -lt 0 `
     -or $invalidCompositionSnippetIndex -lt 0 `
     -or $timeoutExceededClauseSnippetIndex -lt 0 `
     -or $systemTimeoutClauseTrapSnippetIndex -lt 0 `
-    -or $metricsSnippetIndex -lt 0)
+    -or $metricsSnippetIndex -lt 0 `
+    -or $retryNumbersSnippetIndex -lt 0)
 {
     throw 'A required executable documentation snippet is missing.'
 }
 
 [void]$builder.AppendLine("            await Snippet$observableSnippetIndex.RunAsync();")
+[void]$builder.AppendLine("            await Snippet$retryNumbersSnippetIndex.RunAsync();")
 [void]$builder.AppendLine('        }')
 [void]$builder.AppendLine('        finally')
 [void]$builder.AppendLine('        {')
 [void]$builder.AppendLine('            Console.SetOut(original);')
 [void]$builder.AppendLine('        }')
 [void]$builder.AppendLine('        var actual = output.ToString().Trim();')
-[void]$builder.AppendLine('        const string expected = "github: Timeout(30s) → Retry(3, exponential 250ms ×2 +jitter ≤30s) → CircuitBreaker(5 consecutive, break 30s) → ConcurrencyLimit(10, queue 5)";')
+[void]$builder.AppendLine('        var expected = "github: Timeout(30s) → Retry(3, exponential 250ms ×2 +jitter ≤30s) → CircuitBreaker(5 consecutive, break 30s) → ConcurrencyLimit(10, queue 5)" + Environment.NewLine + "1,2,3";')
 [void]$builder.AppendLine('        if (!string.Equals(actual, expected, StringComparison.Ordinal))')
 [void]$builder.AppendLine('        {')
-[void]$builder.AppendLine('            throw new InvalidOperationException($"Documented pipeline output changed. Expected: {expected}; actual: {actual}");')
+[void]$builder.AppendLine('            throw new InvalidOperationException($"Documented executable output changed. Expected: {expected}; actual: {actual}");')
 [void]$builder.AppendLine('        }')
 [void]$builder.AppendLine('        try')
 [void]$builder.AppendLine('        {')

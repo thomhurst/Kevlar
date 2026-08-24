@@ -57,7 +57,7 @@ await telemetry.WaitForCallbackCountAsync(1);
 
 var retry = telemetry.Callbacks.Single();
 await TUnit.Assertions.Assert.That(retry.Kind).IsEqualTo(CallbackKind.Retry);
-await TUnit.Assertions.Assert.That(retry.Attempt).IsEqualTo(1);
+await TUnit.Assertions.Assert.That(retry.RetryNumber).IsEqualTo(1);
 await TUnit.Assertions.Assert.That(retry.ShieldName).IsEqualTo("catalog");
 
 var execution = telemetry.Metrics.Single(record =>

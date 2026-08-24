@@ -13,13 +13,13 @@ public class AsyncRetryDelayGeneratorTests
             options.Backoff = Backoff.Constant(TimeSpan.FromHours(1));
             options.DelayGeneratorAsync = retry =>
             {
-                order.Add($"generator:{retry.Delay.TotalHours}");
+                order.Add($"generator:{retry.RetryNumber}:{retry.Delay.TotalHours}");
                 return new ValueTask<TimeSpan?>(TimeSpan.Zero);
             };
-            options.OnRetry = retry => order.Add($"sync:{retry.Delay.TotalSeconds}");
+            options.OnRetry = retry => order.Add($"sync:{retry.RetryNumber}:{retry.Delay.TotalSeconds}");
             options.OnRetryAsync = retry =>
             {
-                order.Add($"async:{retry.Delay.TotalSeconds}");
+                order.Add($"async:{retry.RetryNumber}:{retry.Delay.TotalSeconds}");
                 return default;
             };
         });
@@ -34,7 +34,7 @@ public class AsyncRetryDelayGeneratorTests
 
         await Assert.That(result).IsEqualTo(42);
         await Assert.That(order).IsEquivalentTo(
-            ["attempt:1", "generator:1", "sync:0", "async:0", "attempt:2"],
+            ["attempt:1", "generator:1:1", "sync:1:0", "async:1:0", "attempt:2"],
             TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
@@ -215,7 +215,7 @@ public class AsyncRetryDelayGeneratorTests
                 {
                     lock (events)
                     {
-                        events.Add((retry.Attempt, retry.Outcome.Result));
+                        events.Add((retry.RetryNumber, retry.Outcome.Result));
                     }
 
                     return new ValueTask<TimeSpan?>(TimeSpan.Zero);

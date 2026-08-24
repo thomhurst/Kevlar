@@ -16,7 +16,7 @@ Shield.Hedge(o =>
 {
     o.MaxAttempts = 2;                        // default 2 (total attempts, incl. the first)
     o.Delay = TimeSpan.FromSeconds(1);        // default 1s
-    o.OnHedge = e => logger.LogInformation("Hedge attempt {Attempt}", e.Attempt);
+    o.OnHedge = e => logger.LogInformation("Hedge attempt {AttemptNumber}", e.AttemptNumber);
     o.OnHedgeAsync = static _ => ValueTask.CompletedTask;
 });
 ```
@@ -27,7 +27,7 @@ Shield.Hedge(o =>
 |---|---|---|
 | `MaxAttempts` | `2` | Total attempts, including the first |
 | `Delay` | `1s` | Wait before launching the next attempt (see special values below) |
-| `OnHedge` | — | Callback when a hedge launches — `e.Attempt` is 1-based, so `2` = first hedge |
+| `OnHedge` | — | Callback when a hedge launches — `e.AttemptNumber` is a 1-based execution number, so `2` = first hedge |
 | `OnHedgeAsync` | — | Awaited callback after `OnHedge` and before the attempt starts |
 | `ActionGenerator` | — | Select a different operation for each additional attempt; `null` uses the original |
 | `HandlesException` | — | Local exception predicate; replaces the ambient clause for this hedge |
@@ -52,7 +52,7 @@ var shield = Shield.For<string>().Hedge(o =>
     o.MaxAttempts = replicas.Length;
     o.Delay = TimeSpan.FromMilliseconds(100);
     o.ActionGenerator = HedgeActionGenerator.Create<string>(hedge =>
-        ct => replicas[hedge.Attempt - 1](ct));
+        ct => replicas[hedge.AttemptNumber - 1](ct));
 });
 
 // The original callback is attempt 1; generated callbacks are attempts 2 and 3.

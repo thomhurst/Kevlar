@@ -128,24 +128,46 @@ public class RetryTests
     }
 
     [Test]
-    public async Task OnRetry_Receives_Event_Data()
+    public async Task Retry_Event_Numbers_Are_One_Based_Retry_Counts()
     {
-        var events = new List<(int Attempt, TimeSpan Delay, Exception? Exception)>();
+        var events = new List<(int RetryNumber, TimeSpan Delay, Exception? Exception)>();
         var shield = Shield.Retry(options =>
         {
-            options.MaxRetries = 2;
+            options.MaxRetries = 3;
             options.Backoff = Backoff.None;
-            options.OnRetry = retry => events.Add((retry.Attempt, retry.Delay, retry.Exception));
+            options.OnRetry = retry => events.Add((retry.RetryNumber, retry.Delay, retry.Exception));
         });
 
         await Assert.That(async () => await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
             .Throws<InvalidOperationException>();
 
-        await Assert.That(events.Count).IsEqualTo(2);
-        await Assert.That(events[0].Attempt).IsEqualTo(1);
-        await Assert.That(events[1].Attempt).IsEqualTo(2);
+        await Assert.That(events.Select(retry => retry.RetryNumber).SequenceEqual([1, 2, 3])).IsTrue();
         await Assert.That(events[0].Delay).IsEqualTo(TimeSpan.Zero);
         await Assert.That(events[0].Exception).IsTypeOf<InvalidOperationException>();
+    }
+
+    [Test]
+    public async Task DelayGenerator_And_OnRetry_Receive_The_Same_Retry_Number_During_Sync_Execution()
+    {
+        var generated = new List<int>();
+        var notified = new List<int>();
+        var shield = Shield.Retry(options =>
+        {
+            options.MaxRetries = 3;
+            options.Backoff = Backoff.None;
+            options.DelayGenerator = retry =>
+            {
+                generated.Add(retry.RetryNumber);
+                return TimeSpan.Zero;
+            };
+            options.OnRetry = retry => notified.Add(retry.RetryNumber);
+        });
+
+        await Assert.That(() => shield.Execute<int>(static _ => throw new InvalidOperationException()))
+            .Throws<InvalidOperationException>();
+
+        await Assert.That(generated.SequenceEqual([1, 2, 3])).IsTrue();
+        await Assert.That(notified.SequenceEqual(generated)).IsTrue();
     }
 
     [Test]

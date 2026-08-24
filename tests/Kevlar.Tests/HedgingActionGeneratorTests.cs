@@ -15,8 +15,8 @@ public class HedgingActionGeneratorTests
             options.Delay = Timeout.InfiniteTimeSpan;
             options.ActionGenerator = HedgeActionGenerator.Create<int>(hedge =>
             {
-                generatedAttempts.Add(hedge.Attempt);
-                return _ => new ValueTask<int>(hedge.Attempt * 10);
+                generatedAttempts.Add(hedge.AttemptNumber);
+                return _ => new ValueTask<int>(hedge.AttemptNumber * 10);
             });
         });
 
@@ -43,7 +43,7 @@ public class HedgingActionGeneratorTests
                 options.Delay = Timeout.InfiniteTimeSpan;
                 options.ActionGenerator = HedgeActionGenerator.Create<int>(hedge =>
                 {
-                    hedge.Context.Properties.Set(key, hedge.Attempt);
+                    hedge.Context.Properties.Set(key, hedge.AttemptNumber);
                     return null;
                 });
             })
@@ -74,7 +74,7 @@ public class HedgingActionGeneratorTests
             {
                 return _ =>
                 {
-                    generatedCalls += hedge.Attempt;
+                    generatedCalls += hedge.AttemptNumber;
                     return ValueTask.CompletedTask;
                 };
             });
@@ -220,7 +220,7 @@ public class HedgingActionGeneratorTests
             options.MaxAttempts = 3;
             options.Delay = Timeout.InfiniteTimeSpan;
             options.ActionGenerator = HedgeActionGenerator.Create<int>(hedge =>
-                hedge.Attempt == 2
+                hedge.AttemptNumber == 2
                     ? _ => ValueTask.FromException<int>(expected)
                     : _ => new ValueTask<int>(42));
         });
@@ -289,10 +289,10 @@ public class HedgingActionGeneratorTests
             options.Delay = TimeSpan.Zero;
             options.ActionGenerator = HedgeActionGenerator.Create<int>(hedge =>
             {
-                contexts[hedge.Attempt] = hedge.Context;
+                contexts[hedge.AttemptNumber] = hedge.Context;
                 return async token =>
                 {
-                    if (hedge.Attempt == 2)
+                    if (hedge.AttemptNumber == 2)
                     {
                         attemptTwoStarted.TrySetResult();
                         try
@@ -404,7 +404,7 @@ public class HedgingActionGeneratorTests
             options.Delay = Timeout.InfiniteTimeSpan;
             options.ActionGenerator = HedgeActionGenerator.Create(hedge =>
             {
-                generatedAttempts.Add(hedge.Attempt);
+                generatedAttempts.Add(hedge.AttemptNumber);
                 return null;
             });
         });

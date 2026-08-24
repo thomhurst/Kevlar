@@ -135,12 +135,12 @@ static Kevlar.ShieldExtensions.Fallback(this Kevlar.Shield! shield, System.Func<
 Kevlar.HedgeActionGenerator
 Kevlar.HedgeActionGeneratorEvent
 Kevlar.HedgeActionGeneratorEvent.HedgeActionGeneratorEvent() -> void
-Kevlar.HedgeActionGeneratorEvent.Attempt.get -> int
+Kevlar.HedgeActionGeneratorEvent.AttemptNumber.get -> int
 Kevlar.HedgeActionGeneratorEvent.Context.get -> Kevlar.KevlarContext!
 Kevlar.HedgeActionGeneratorEvent.OriginalAction.get -> System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>!
 Kevlar.HedgeActionGeneratorEvent<TResult>
 Kevlar.HedgeActionGeneratorEvent<TResult>.HedgeActionGeneratorEvent() -> void
-Kevlar.HedgeActionGeneratorEvent<TResult>.Attempt.get -> int
+Kevlar.HedgeActionGeneratorEvent<TResult>.AttemptNumber.get -> int
 Kevlar.HedgeActionGeneratorEvent<TResult>.Context.get -> Kevlar.KevlarContext!
 Kevlar.HedgeActionGeneratorEvent<TResult>.OriginalAction.get -> System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>!
 Kevlar.HedgeOptions.ActionGenerator.get -> Kevlar.HedgeActionGenerator?

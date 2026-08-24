@@ -125,7 +125,7 @@ services.AddHttpClient("api")
             .GetRequiredService<ILoggerFactory>()
             .CreateLogger("HttpResilience");
         options.Retry.OnRetry = retry =>
-            logger.LogWarning("Retry {Attempt}", retry.Attempt);
+            logger.LogWarning("Retry {RetryNumber}", retry.RetryNumber);
     });
 ```
 

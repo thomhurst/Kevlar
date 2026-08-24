@@ -49,7 +49,7 @@ Shield.Retry(o =>
     o.Backoff = Backoff.Custom(attempt => TimeSpan.FromMilliseconds(100 * attempt));
     o.MaxDelay = TimeSpan.FromSeconds(10);
     o.OnRetry = e => logger.LogWarning(e.Exception,
-        "Retry {Attempt} after {Delay}", e.Attempt, e.Delay);
+        "Retry {RetryNumber} after {Delay}", e.RetryNumber, e.Delay);
     o.DelayGenerator = e => /* return a TimeSpan to override the computed delay, or null */ null;
     o.DelayGeneratorAsync = e => new ValueTask<TimeSpan?>(TimeSpan.Zero);
 });
@@ -80,7 +80,28 @@ next attempt is suppressed and caller cancellation surfaces. A generator excepti
 its original identity and skips later hooks. `RetryEvent.Context` is pooled execution state: use it
 only before the returned `ValueTask` completes; never retain it or its property bag.
 
-On an untyped `Shield`, the `RetryEvent` callbacks receive: `Attempt` (1-based retry number), `Delay`, `Exception` (null when a handled *result* triggered the retry), `Result` (the handled result, boxed as `object?`) and `Context`. On a typed `Shield<T>`, the events are `RetryEvent<T>` instead: same `Attempt`/`Delay`/`Context`, plus the handled failure as a typed `Outcome<T>` — `e.Outcome.Result` is your `T`, no casting.
+On an untyped `Shield`, the `RetryEvent` callbacks receive: `RetryNumber` (1-based, so `1` is the first retry after the initial execution), `Delay`, `Exception` (null when a handled *result* triggered the retry), `Result` (the handled result, boxed as `object?`) and `Context`. On a typed `Shield<T>`, the events are `RetryEvent<T>` instead: same `RetryNumber`/`Delay`/`Context`, plus the handled failure as a typed `Outcome<T>` — `e.Outcome.Result` is your `T`, no casting.
+
+<!-- doc-test-run: retry-numbers -->
+```csharp
+var retryNumbers = new List<int>();
+var numberedRetry = Shield.Retry(options =>
+{
+    options.MaxRetries = 3;
+    options.Backoff = Backoff.None;
+    options.OnRetry = retry => retryNumbers.Add(retry.RetryNumber);
+});
+
+try
+{
+    numberedRetry.Execute(static _ => throw new InvalidOperationException());
+}
+catch (InvalidOperationException)
+{
+}
+
+Console.WriteLine(string.Join(",", retryNumbers)); // 1,2,3
+```
 
 ## What gets retried
 

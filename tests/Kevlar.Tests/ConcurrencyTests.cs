@@ -74,7 +74,7 @@ public class ConcurrencyTests
                 options.Backoff = Backoff.None;
                 options.OnRetry = retry =>
                 {
-                    if (retry.Attempt == 1)
+                    if (retry.RetryNumber == 1)
                     {
                         retry.Context.Properties.Set(key, retry.Outcome.Result);
                     }

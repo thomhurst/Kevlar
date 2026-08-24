@@ -245,7 +245,7 @@ public class RetryHookCancellationTests
         using var cancellation = new CancellationTokenSource();
         var failure = new InvalidOperationException("retry me");
         var order = new List<string>();
-        var events = new List<(int Attempt, TimeSpan Delay, Exception? Exception, object? Result, CancellationToken Token)>();
+        var events = new List<(int RetryNumber, TimeSpan Delay, Exception? Exception, object? Result, CancellationToken Token)>();
         var attempts = 0;
         var shield = Shield.Retry(options =>
         {
@@ -254,18 +254,18 @@ public class RetryHookCancellationTests
             options.DelayGenerator = retry =>
             {
                 order.Add("delay");
-                events.Add((retry.Attempt, retry.Delay, retry.Exception, retry.Result, retry.Context.CancellationToken));
+                events.Add((retry.RetryNumber, retry.Delay, retry.Exception, retry.Result, retry.Context.CancellationToken));
                 return TimeSpan.Zero;
             };
             options.OnRetry = retry =>
             {
                 order.Add("sync");
-                events.Add((retry.Attempt, retry.Delay, retry.Exception, retry.Result, retry.Context.CancellationToken));
+                events.Add((retry.RetryNumber, retry.Delay, retry.Exception, retry.Result, retry.Context.CancellationToken));
             };
             options.OnRetryAsync = retry =>
             {
                 order.Add("async");
-                events.Add((retry.Attempt, retry.Delay, retry.Exception, retry.Result, retry.Context.CancellationToken));
+                events.Add((retry.RetryNumber, retry.Delay, retry.Exception, retry.Result, retry.Context.CancellationToken));
                 return default;
             };
         });
@@ -284,7 +284,7 @@ public class RetryHookCancellationTests
         await Assert.That(events.Count).IsEqualTo(3);
         foreach (var retryEvent in events)
         {
-            await Assert.That(retryEvent.Attempt).IsEqualTo(1);
+            await Assert.That(retryEvent.RetryNumber).IsEqualTo(1);
             await Assert.That(retryEvent.Delay).IsEqualTo(TimeSpan.Zero);
             await Assert.That(ReferenceEquals(retryEvent.Exception, failure)).IsTrue();
             await Assert.That(retryEvent.Result).IsNull();

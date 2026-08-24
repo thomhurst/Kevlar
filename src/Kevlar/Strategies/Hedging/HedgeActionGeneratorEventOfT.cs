@@ -4,17 +4,17 @@ namespace Kevlar;
 public readonly struct HedgeActionGeneratorEvent<TResult>
 {
     internal HedgeActionGeneratorEvent(
-        int attempt,
+        int attemptNumber,
         KevlarContext context,
         Func<CancellationToken, ValueTask<TResult>> originalAction)
     {
-        Attempt = attempt;
+        AttemptNumber = attemptNumber;
         Context = context;
         OriginalAction = originalAction;
     }
 
-    /// <summary>The 1-based attempt number (2 = first hedge).</summary>
-    public int Attempt { get; }
+    /// <summary>The 1-based execution number (2 = first hedge).</summary>
+    public int AttemptNumber { get; }
 
     /// <summary>The isolated context that belongs to this attempt.</summary>
     public KevlarContext Context { get; }

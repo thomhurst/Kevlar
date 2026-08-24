@@ -111,11 +111,12 @@ Kevlar.Testing.CallbackKind.Hedge = 2 -> Kevlar.Testing.CallbackKind
 Kevlar.Testing.CallbackKind.Retry = 0 -> Kevlar.Testing.CallbackKind
 Kevlar.Testing.CallbackKind.Timeout = 1 -> Kevlar.Testing.CallbackKind
 Kevlar.Testing.CallbackRecord
-Kevlar.Testing.CallbackRecord.Attempt.get -> int?
+Kevlar.Testing.CallbackRecord.AttemptNumber.get -> int?
 Kevlar.Testing.CallbackRecord.Delay.get -> System.TimeSpan?
 Kevlar.Testing.CallbackRecord.Exception.get -> System.Exception?
 Kevlar.Testing.CallbackRecord.From.get -> Kevlar.CircuitState?
 Kevlar.Testing.CallbackRecord.Kind.get -> Kevlar.Testing.CallbackKind
+Kevlar.Testing.CallbackRecord.RetryNumber.get -> int?
 Kevlar.Testing.CallbackRecord.Result.get -> object?
 Kevlar.Testing.CallbackRecord.Sequence.get -> long
 Kevlar.Testing.CallbackRecord.ShieldName.get -> string?
