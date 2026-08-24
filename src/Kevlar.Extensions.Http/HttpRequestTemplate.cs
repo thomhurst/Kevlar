@@ -51,15 +51,18 @@ internal sealed class HttpRequestTemplate
             cancellationToken.ThrowIfCancellationRequested();
             try
             {
-#if NETSTANDARD2_0
+#if NET9_0_OR_GREATER
+                await request.Content.LoadIntoBufferAsync(maximumBufferSize, cancellationToken).ConfigureAwait(false);
+#else
                 await AwaitWithCancellationAsync(
                     request.Content.LoadIntoBufferAsync(maximumBufferSize),
                     cancellationToken).ConfigureAwait(false);
+#endif
+#if NETSTANDARD2_0
                 content = await AwaitWithCancellationAsync(
                     request.Content.ReadAsByteArrayAsync(),
                     cancellationToken).ConfigureAwait(false);
 #else
-                await request.Content.LoadIntoBufferAsync(maximumBufferSize, cancellationToken).ConfigureAwait(false);
                 content = await request.Content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
 #endif
             }
@@ -137,7 +140,7 @@ internal sealed class HttpRequestTemplate
         $"Request content exceeds the {maximumBufferSize}-byte replay buffer limit. " +
         "Increase MaximumBufferSize or provide RequestFactory.");
 
-#if NETSTANDARD2_0
+#if !NET9_0_OR_GREATER
     private static async Task<T> AwaitWithCancellationAsync<T>(
         Task<T> operation,
         CancellationToken cancellationToken)
