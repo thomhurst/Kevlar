@@ -1,0 +1,226 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Testing.StrategyKind
+  commentId: T:Kevlar.Testing.StrategyKind
+  id: StrategyKind
+  parent: Kevlar.Testing
+  children:
+  - Kevlar.Testing.StrategyKind.CircuitBreaker
+  - Kevlar.Testing.StrategyKind.ConcurrencyLimit
+  - Kevlar.Testing.StrategyKind.Custom
+  - Kevlar.Testing.StrategyKind.Fallback
+  - Kevlar.Testing.StrategyKind.Hedging
+  - Kevlar.Testing.StrategyKind.RateLimit
+  - Kevlar.Testing.StrategyKind.Retry
+  - Kevlar.Testing.StrategyKind.Timeout
+  langs:
+  - csharp
+  - vb
+  name: StrategyKind
+  nameWithType: StrategyKind
+  fullName: Kevlar.Testing.StrategyKind
+  type: Enum
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Stable category for a strategy in a shield descriptor.
+  example: []
+  syntax:
+    content: public enum StrategyKind
+    content.vb: Public Enum StrategyKind
+- uid: Kevlar.Testing.StrategyKind.Custom
+  commentId: F:Kevlar.Testing.StrategyKind.Custom
+  id: Custom
+  parent: Kevlar.Testing.StrategyKind
+  langs:
+  - csharp
+  - vb
+  name: Custom
+  nameWithType: StrategyKind.Custom
+  fullName: Kevlar.Testing.StrategyKind.Custom
+  type: Field
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: A caller-defined strategy.
+  example: []
+  syntax:
+    content: Custom = 0
+    return:
+      type: Kevlar.Testing.StrategyKind
+- uid: Kevlar.Testing.StrategyKind.Retry
+  commentId: F:Kevlar.Testing.StrategyKind.Retry
+  id: Retry
+  parent: Kevlar.Testing.StrategyKind
+  langs:
+  - csharp
+  - vb
+  name: Retry
+  nameWithType: StrategyKind.Retry
+  fullName: Kevlar.Testing.StrategyKind.Retry
+  type: Field
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: A retry strategy.
+  example: []
+  syntax:
+    content: Retry = 1
+    return:
+      type: Kevlar.Testing.StrategyKind
+- uid: Kevlar.Testing.StrategyKind.Timeout
+  commentId: F:Kevlar.Testing.StrategyKind.Timeout
+  id: Timeout
+  parent: Kevlar.Testing.StrategyKind
+  langs:
+  - csharp
+  - vb
+  name: Timeout
+  nameWithType: StrategyKind.Timeout
+  fullName: Kevlar.Testing.StrategyKind.Timeout
+  type: Field
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: A timeout strategy.
+  example: []
+  syntax:
+    content: Timeout = 2
+    return:
+      type: Kevlar.Testing.StrategyKind
+- uid: Kevlar.Testing.StrategyKind.CircuitBreaker
+  commentId: F:Kevlar.Testing.StrategyKind.CircuitBreaker
+  id: CircuitBreaker
+  parent: Kevlar.Testing.StrategyKind
+  langs:
+  - csharp
+  - vb
+  name: CircuitBreaker
+  nameWithType: StrategyKind.CircuitBreaker
+  fullName: Kevlar.Testing.StrategyKind.CircuitBreaker
+  type: Field
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: A circuit breaker strategy.
+  example: []
+  syntax:
+    content: CircuitBreaker = 3
+    return:
+      type: Kevlar.Testing.StrategyKind
+- uid: Kevlar.Testing.StrategyKind.RateLimit
+  commentId: F:Kevlar.Testing.StrategyKind.RateLimit
+  id: RateLimit
+  parent: Kevlar.Testing.StrategyKind
+  langs:
+  - csharp
+  - vb
+  name: RateLimit
+  nameWithType: StrategyKind.RateLimit
+  fullName: Kevlar.Testing.StrategyKind.RateLimit
+  type: Field
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: A rate limiter strategy.
+  example: []
+  syntax:
+    content: RateLimit = 4
+    return:
+      type: Kevlar.Testing.StrategyKind
+- uid: Kevlar.Testing.StrategyKind.ConcurrencyLimit
+  commentId: F:Kevlar.Testing.StrategyKind.ConcurrencyLimit
+  id: ConcurrencyLimit
+  parent: Kevlar.Testing.StrategyKind
+  langs:
+  - csharp
+  - vb
+  name: ConcurrencyLimit
+  nameWithType: StrategyKind.ConcurrencyLimit
+  fullName: Kevlar.Testing.StrategyKind.ConcurrencyLimit
+  type: Field
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: A concurrency limiter strategy.
+  example: []
+  syntax:
+    content: ConcurrencyLimit = 5
+    return:
+      type: Kevlar.Testing.StrategyKind
+- uid: Kevlar.Testing.StrategyKind.Hedging
+  commentId: F:Kevlar.Testing.StrategyKind.Hedging
+  id: Hedging
+  parent: Kevlar.Testing.StrategyKind
+  langs:
+  - csharp
+  - vb
+  name: Hedging
+  nameWithType: StrategyKind.Hedging
+  fullName: Kevlar.Testing.StrategyKind.Hedging
+  type: Field
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: A hedging strategy.
+  example: []
+  syntax:
+    content: Hedging = 6
+    return:
+      type: Kevlar.Testing.StrategyKind
+- uid: Kevlar.Testing.StrategyKind.Fallback
+  commentId: F:Kevlar.Testing.StrategyKind.Fallback
+  id: Fallback
+  parent: Kevlar.Testing.StrategyKind
+  langs:
+  - csharp
+  - vb
+  name: Fallback
+  nameWithType: StrategyKind.Fallback
+  fullName: Kevlar.Testing.StrategyKind.Fallback
+  type: Field
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: A fallback strategy.
+  example: []
+  syntax:
+    content: Fallback = 7
+    return:
+      type: Kevlar.Testing.StrategyKind
+references:
+- uid: Kevlar.Testing
+  commentId: N:Kevlar.Testing
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar.Testing
+  nameWithType: Kevlar.Testing
+  fullName: Kevlar.Testing
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Testing
+    name: Testing
+    isExternal: true
+    href: Kevlar.Testing.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Testing
+    name: Testing
+    isExternal: true
+    href: Kevlar.Testing.html
+- uid: Kevlar.Testing.StrategyKind
+  commentId: T:Kevlar.Testing.StrategyKind
+  parent: Kevlar.Testing
+  isExternal: true
+  href: Kevlar.Testing.StrategyKind.html
+  name: StrategyKind
+  nameWithType: StrategyKind
+  fullName: Kevlar.Testing.StrategyKind

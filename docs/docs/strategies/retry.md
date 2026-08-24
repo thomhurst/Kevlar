@@ -48,6 +48,8 @@ _ = Backoff.Default;                             // what bare Retry(n) uses
 
 ## Full options
 
+API reference: [`RetryOptions`](pathname:///api/Kevlar.RetryOptions.html) and [`RetryOptions<T>`](pathname:///api/Kevlar.RetryOptions-1.html).
+
 ```csharp
 Shield.Retry(o =>
 {

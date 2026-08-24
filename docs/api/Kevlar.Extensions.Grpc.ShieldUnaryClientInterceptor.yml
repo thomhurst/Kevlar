@@ -1,0 +1,2371 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor
+  commentId: T:Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor
+  id: ShieldUnaryClientInterceptor
+  parent: Kevlar.Extensions.Grpc
+  children:
+  - Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor.#ctor(Kevlar.Shield)
+  - Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor.AsyncUnaryCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation{``0,``1})
+  langs:
+  - csharp
+  - vb
+  name: ShieldUnaryClientInterceptor
+  nameWithType: ShieldUnaryClientInterceptor
+  fullName: Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor
+  type: Class
+  assemblies:
+  - Kevlar.Extensions.Grpc
+  namespace: Kevlar.Extensions.Grpc
+  summary: >-
+    Runs asynchronous unary gRPC client calls through a shared <xref href="Kevlar.Shield" data-throw-if-not-resolved="false"></xref>. Streaming,
+
+    blocking unary, and server calls pass through unchanged.
+  remarks: >-
+    Each retry or hedge invokes the underlying call continuation again. Only use strategies that
+
+    can make multiple attempts for idempotent RPC methods. The original absolute gRPC deadline is
+
+    preserved on every attempt; Kevlar timeout strategies additionally cancel their attempt token,
+
+    and whichever limit expires first determines the surfaced exception.
+  example: []
+  syntax:
+    content: 'public sealed class ShieldUnaryClientInterceptor : Interceptor'
+    content.vb: Public NotInheritable Class ShieldUnaryClientInterceptor Inherits Interceptor
+  inheritance:
+  - System.Object
+  - Grpc.Core.Interceptors.Interceptor
+  inheritedMembers:
+  - Grpc.Core.Interceptors.Interceptor.BlockingUnaryCall``2({TRequest},Grpc.Core.Interceptors.ClientInterceptorContext{{TRequest},{TResponse}},Grpc.Core.Interceptors.Interceptor.BlockingUnaryCallContinuation{{TRequest},{TResponse}})
+  - Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCall``2({TRequest},Grpc.Core.Interceptors.ClientInterceptorContext{{TRequest},{TResponse}},Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCallContinuation{{TRequest},{TResponse}})
+  - Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCall``2(Grpc.Core.Interceptors.ClientInterceptorContext{{TRequest},{TResponse}},Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCallContinuation{{TRequest},{TResponse}})
+  - Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCall``2(Grpc.Core.Interceptors.ClientInterceptorContext{{TRequest},{TResponse}},Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCallContinuation{{TRequest},{TResponse}})
+  - Grpc.Core.Interceptors.Interceptor.UnaryServerHandler``2({TRequest},Grpc.Core.ServerCallContext,Grpc.Core.UnaryServerMethod{{TRequest},{TResponse}})
+  - Grpc.Core.Interceptors.Interceptor.ClientStreamingServerHandler``2(Grpc.Core.IAsyncStreamReader{{TRequest}},Grpc.Core.ServerCallContext,Grpc.Core.ClientStreamingServerMethod{{TRequest},{TResponse}})
+  - Grpc.Core.Interceptors.Interceptor.ServerStreamingServerHandler``2({TRequest},Grpc.Core.IServerStreamWriter{{TResponse}},Grpc.Core.ServerCallContext,Grpc.Core.ServerStreamingServerMethod{{TRequest},{TResponse}})
+  - Grpc.Core.Interceptors.Interceptor.DuplexStreamingServerHandler``2(Grpc.Core.IAsyncStreamReader{{TRequest}},Grpc.Core.IServerStreamWriter{{TResponse}},Grpc.Core.ServerCallContext,Grpc.Core.DuplexStreamingServerMethod{{TRequest},{TResponse}})
+  - System.Object.GetType
+  - System.Object.ToString
+  - System.Object.Equals(System.Object)
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  - System.Object.GetHashCode
+- uid: Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor.#ctor(Kevlar.Shield)
+  commentId: M:Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor.#ctor(Kevlar.Shield)
+  id: '#ctor(Kevlar.Shield)'
+  parent: Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor
+  langs:
+  - csharp
+  - vb
+  name: ShieldUnaryClientInterceptor(Shield)
+  nameWithType: ShieldUnaryClientInterceptor.ShieldUnaryClientInterceptor(Shield)
+  fullName: Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor.ShieldUnaryClientInterceptor(Kevlar.Shield)
+  type: Constructor
+  assemblies:
+  - Kevlar.Extensions.Grpc
+  namespace: Kevlar.Extensions.Grpc
+  summary: Creates an interceptor that shares the supplied immutable shield.
+  example: []
+  syntax:
+    content: public ShieldUnaryClientInterceptor(Shield shield)
+    parameters:
+    - id: shield
+      type: Kevlar.Shield
+    content.vb: Public Sub New(shield As Shield)
+  overload: Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor.#ctor*
+  nameWithType.vb: ShieldUnaryClientInterceptor.New(Shield)
+  fullName.vb: Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor.New(Kevlar.Shield)
+  name.vb: New(Shield)
+- uid: Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor.AsyncUnaryCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation{``0,``1})
+  commentId: M:Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor.AsyncUnaryCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation{``0,``1})
+  id: AsyncUnaryCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation{``0,``1})
+  parent: Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor
+  langs:
+  - csharp
+  - vb
+  name: AsyncUnaryCall<TRequest, TResponse>(TRequest, ClientInterceptorContext<TRequest, TResponse>, AsyncUnaryCallContinuation<TRequest, TResponse>)
+  nameWithType: ShieldUnaryClientInterceptor.AsyncUnaryCall<TRequest, TResponse>(TRequest, ClientInterceptorContext<TRequest, TResponse>, Interceptor.AsyncUnaryCallContinuation<TRequest, TResponse>)
+  fullName: Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor.AsyncUnaryCall<TRequest, TResponse>(TRequest, Grpc.Core.Interceptors.ClientInterceptorContext<TRequest, TResponse>, Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation<TRequest, TResponse>)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Grpc
+  namespace: Kevlar.Extensions.Grpc
+  summary: Intercepts an asynchronous invocation of a simple remote call.
+  example: []
+  syntax:
+    content: 'public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(TRequest request, ClientInterceptorContext<TRequest, TResponse> context, Interceptor.AsyncUnaryCallContinuation<TRequest, TResponse> continuation) where TRequest : class where TResponse : class'
+    parameters:
+    - id: request
+      type: '{TRequest}'
+      description: The request message of the invocation.
+    - id: context
+      type: Grpc.Core.Interceptors.ClientInterceptorContext{{TRequest},{TResponse}}
+      description: >-
+        The <xref href="Grpc.Core.Interceptors.ClientInterceptorContext%602" data-throw-if-not-resolved="false"></xref>
+
+        associated with the current invocation.
+    - id: continuation
+      type: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation{{TRequest},{TResponse}}
+      description: >-
+        The callback that continues the invocation process.
+
+        This can be invoked zero or more times by the interceptor.
+
+        The interceptor can invoke the continuation passing the given
+
+        request value and context arguments, or substitute them as it sees fit.
+    typeParameters:
+    - id: TRequest
+    - id: TResponse
+    return:
+      type: Grpc.Core.AsyncUnaryCall{{TResponse}}
+      description: >-
+        An instance of <xref href="Grpc.Core.AsyncUnaryCall%601" data-throw-if-not-resolved="false"></xref>
+
+        representing an asynchronous unary invocation.
+
+        The interceptor can simply return the return value of the
+
+        continuation delegate passed to it intact, or construct its
+
+        own substitute as it sees fit.
+    content.vb: Public Overrides Function AsyncUnaryCall(Of TRequest As Class, TResponse As Class)(request As TRequest, context As ClientInterceptorContext(Of TRequest, TResponse), continuation As Interceptor.AsyncUnaryCallContinuation(Of TRequest, TResponse)) As AsyncUnaryCall(Of TResponse)
+  overridden: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCall``2({TRequest},Grpc.Core.Interceptors.ClientInterceptorContext{{TRequest},{TResponse}},Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation{{TRequest},{TResponse}})
+  overload: Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor.AsyncUnaryCall*
+  nameWithType.vb: ShieldUnaryClientInterceptor.AsyncUnaryCall(Of TRequest, TResponse)(TRequest, ClientInterceptorContext(Of TRequest, TResponse), Interceptor.AsyncUnaryCallContinuation(Of TRequest, TResponse))
+  fullName.vb: Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor.AsyncUnaryCall(Of TRequest, TResponse)(TRequest, Grpc.Core.Interceptors.ClientInterceptorContext(Of TRequest, TResponse), Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation(Of TRequest, TResponse))
+  name.vb: AsyncUnaryCall(Of TRequest, TResponse)(TRequest, ClientInterceptorContext(Of TRequest, TResponse), AsyncUnaryCallContinuation(Of TRequest, TResponse))
+references:
+- uid: Kevlar.Shield
+  commentId: T:Kevlar.Shield
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Shield.html
+  name: Shield
+  nameWithType: Shield
+  fullName: Kevlar.Shield
+- uid: Kevlar.Extensions.Grpc
+  commentId: N:Kevlar.Extensions.Grpc
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar.Extensions.Grpc
+  nameWithType: Kevlar.Extensions.Grpc
+  fullName: Kevlar.Extensions.Grpc
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+    href: Kevlar.Extensions.html
+  - name: .
+  - uid: Kevlar.Extensions.Grpc
+    name: Grpc
+    isExternal: true
+    href: Kevlar.Extensions.Grpc.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+    href: Kevlar.Extensions.html
+  - name: .
+  - uid: Kevlar.Extensions.Grpc
+    name: Grpc
+    isExternal: true
+    href: Kevlar.Extensions.Grpc.html
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: Grpc.Core.Interceptors.Interceptor
+  commentId: T:Grpc.Core.Interceptors.Interceptor
+  parent: Grpc.Core.Interceptors
+  isExternal: true
+  href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  name: Interceptor
+  nameWithType: Interceptor
+  fullName: Grpc.Core.Interceptors.Interceptor
+- uid: Grpc.Core.Interceptors.Interceptor.BlockingUnaryCall``2({TRequest},Grpc.Core.Interceptors.ClientInterceptorContext{{TRequest},{TResponse}},Grpc.Core.Interceptors.Interceptor.BlockingUnaryCallContinuation{{TRequest},{TResponse}})
+  commentId: M:Grpc.Core.Interceptors.Interceptor.BlockingUnaryCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.BlockingUnaryCallContinuation{``0,``1})
+  parent: Grpc.Core.Interceptors.Interceptor
+  definition: Grpc.Core.Interceptors.Interceptor.BlockingUnaryCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.BlockingUnaryCallContinuation{``0,``1})
+  href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  name: BlockingUnaryCall<TRequest, TResponse>(TRequest, ClientInterceptorContext<TRequest, TResponse>, BlockingUnaryCallContinuation<TRequest, TResponse>)
+  nameWithType: Interceptor.BlockingUnaryCall<TRequest, TResponse>(TRequest, ClientInterceptorContext<TRequest, TResponse>, Interceptor.BlockingUnaryCallContinuation<TRequest, TResponse>)
+  fullName: Grpc.Core.Interceptors.Interceptor.BlockingUnaryCall<TRequest, TResponse>(TRequest, Grpc.Core.Interceptors.ClientInterceptorContext<TRequest, TResponse>, Grpc.Core.Interceptors.Interceptor.BlockingUnaryCallContinuation<TRequest, TResponse>)
+  nameWithType.vb: Interceptor.BlockingUnaryCall(Of TRequest, TResponse)(TRequest, ClientInterceptorContext(Of TRequest, TResponse), Interceptor.BlockingUnaryCallContinuation(Of TRequest, TResponse))
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.BlockingUnaryCall(Of TRequest, TResponse)(TRequest, Grpc.Core.Interceptors.ClientInterceptorContext(Of TRequest, TResponse), Grpc.Core.Interceptors.Interceptor.BlockingUnaryCallContinuation(Of TRequest, TResponse))
+  name.vb: BlockingUnaryCall(Of TRequest, TResponse)(TRequest, ClientInterceptorContext(Of TRequest, TResponse), BlockingUnaryCallContinuation(Of TRequest, TResponse))
+  spec.csharp:
+  - uid: Grpc.Core.Interceptors.Interceptor.BlockingUnaryCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.BlockingUnaryCallContinuation{``0,``1})
+    name: BlockingUnaryCall
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: (
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.Interceptors.ClientInterceptorContext`2
+    name: ClientInterceptorContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/ClientInterceptorContext.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.Interceptors.Interceptor.BlockingUnaryCallContinuation`2
+    name: BlockingUnaryCallContinuation
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: )
+  spec.vb:
+  - uid: Grpc.Core.Interceptors.Interceptor.BlockingUnaryCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.BlockingUnaryCallContinuation{``0,``1})
+    name: BlockingUnaryCall
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: (
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.Interceptors.ClientInterceptorContext`2
+    name: ClientInterceptorContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/ClientInterceptorContext.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.Interceptors.Interceptor.BlockingUnaryCallContinuation`2
+    name: BlockingUnaryCallContinuation
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: )
+- uid: Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCall``2({TRequest},Grpc.Core.Interceptors.ClientInterceptorContext{{TRequest},{TResponse}},Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCallContinuation{{TRequest},{TResponse}})
+  commentId: M:Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCallContinuation{``0,``1})
+  parent: Grpc.Core.Interceptors.Interceptor
+  definition: Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCallContinuation{``0,``1})
+  href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  name: AsyncServerStreamingCall<TRequest, TResponse>(TRequest, ClientInterceptorContext<TRequest, TResponse>, AsyncServerStreamingCallContinuation<TRequest, TResponse>)
+  nameWithType: Interceptor.AsyncServerStreamingCall<TRequest, TResponse>(TRequest, ClientInterceptorContext<TRequest, TResponse>, Interceptor.AsyncServerStreamingCallContinuation<TRequest, TResponse>)
+  fullName: Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCall<TRequest, TResponse>(TRequest, Grpc.Core.Interceptors.ClientInterceptorContext<TRequest, TResponse>, Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCallContinuation<TRequest, TResponse>)
+  nameWithType.vb: Interceptor.AsyncServerStreamingCall(Of TRequest, TResponse)(TRequest, ClientInterceptorContext(Of TRequest, TResponse), Interceptor.AsyncServerStreamingCallContinuation(Of TRequest, TResponse))
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCall(Of TRequest, TResponse)(TRequest, Grpc.Core.Interceptors.ClientInterceptorContext(Of TRequest, TResponse), Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCallContinuation(Of TRequest, TResponse))
+  name.vb: AsyncServerStreamingCall(Of TRequest, TResponse)(TRequest, ClientInterceptorContext(Of TRequest, TResponse), AsyncServerStreamingCallContinuation(Of TRequest, TResponse))
+  spec.csharp:
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCallContinuation{``0,``1})
+    name: AsyncServerStreamingCall
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: (
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.Interceptors.ClientInterceptorContext`2
+    name: ClientInterceptorContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/ClientInterceptorContext.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCallContinuation`2
+    name: AsyncServerStreamingCallContinuation
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: )
+  spec.vb:
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCallContinuation{``0,``1})
+    name: AsyncServerStreamingCall
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: (
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.Interceptors.ClientInterceptorContext`2
+    name: ClientInterceptorContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/ClientInterceptorContext.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCallContinuation`2
+    name: AsyncServerStreamingCallContinuation
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: )
+- uid: Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCall``2(Grpc.Core.Interceptors.ClientInterceptorContext{{TRequest},{TResponse}},Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCallContinuation{{TRequest},{TResponse}})
+  commentId: M:Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCall``2(Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCallContinuation{``0,``1})
+  parent: Grpc.Core.Interceptors.Interceptor
+  definition: Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCall``2(Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCallContinuation{``0,``1})
+  href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  name: AsyncClientStreamingCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse>, AsyncClientStreamingCallContinuation<TRequest, TResponse>)
+  nameWithType: Interceptor.AsyncClientStreamingCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse>, Interceptor.AsyncClientStreamingCallContinuation<TRequest, TResponse>)
+  fullName: Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCall<TRequest, TResponse>(Grpc.Core.Interceptors.ClientInterceptorContext<TRequest, TResponse>, Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCallContinuation<TRequest, TResponse>)
+  nameWithType.vb: Interceptor.AsyncClientStreamingCall(Of TRequest, TResponse)(ClientInterceptorContext(Of TRequest, TResponse), Interceptor.AsyncClientStreamingCallContinuation(Of TRequest, TResponse))
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCall(Of TRequest, TResponse)(Grpc.Core.Interceptors.ClientInterceptorContext(Of TRequest, TResponse), Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCallContinuation(Of TRequest, TResponse))
+  name.vb: AsyncClientStreamingCall(Of TRequest, TResponse)(ClientInterceptorContext(Of TRequest, TResponse), AsyncClientStreamingCallContinuation(Of TRequest, TResponse))
+  spec.csharp:
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCall``2(Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCallContinuation{``0,``1})
+    name: AsyncClientStreamingCall
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: (
+  - uid: Grpc.Core.Interceptors.ClientInterceptorContext`2
+    name: ClientInterceptorContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/ClientInterceptorContext.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCallContinuation`2
+    name: AsyncClientStreamingCallContinuation
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: )
+  spec.vb:
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCall``2(Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCallContinuation{``0,``1})
+    name: AsyncClientStreamingCall
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: (
+  - uid: Grpc.Core.Interceptors.ClientInterceptorContext`2
+    name: ClientInterceptorContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/ClientInterceptorContext.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCallContinuation`2
+    name: AsyncClientStreamingCallContinuation
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: )
+- uid: Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCall``2(Grpc.Core.Interceptors.ClientInterceptorContext{{TRequest},{TResponse}},Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCallContinuation{{TRequest},{TResponse}})
+  commentId: M:Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCall``2(Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCallContinuation{``0,``1})
+  parent: Grpc.Core.Interceptors.Interceptor
+  definition: Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCall``2(Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCallContinuation{``0,``1})
+  href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  name: AsyncDuplexStreamingCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse>, AsyncDuplexStreamingCallContinuation<TRequest, TResponse>)
+  nameWithType: Interceptor.AsyncDuplexStreamingCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse>, Interceptor.AsyncDuplexStreamingCallContinuation<TRequest, TResponse>)
+  fullName: Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCall<TRequest, TResponse>(Grpc.Core.Interceptors.ClientInterceptorContext<TRequest, TResponse>, Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCallContinuation<TRequest, TResponse>)
+  nameWithType.vb: Interceptor.AsyncDuplexStreamingCall(Of TRequest, TResponse)(ClientInterceptorContext(Of TRequest, TResponse), Interceptor.AsyncDuplexStreamingCallContinuation(Of TRequest, TResponse))
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCall(Of TRequest, TResponse)(Grpc.Core.Interceptors.ClientInterceptorContext(Of TRequest, TResponse), Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCallContinuation(Of TRequest, TResponse))
+  name.vb: AsyncDuplexStreamingCall(Of TRequest, TResponse)(ClientInterceptorContext(Of TRequest, TResponse), AsyncDuplexStreamingCallContinuation(Of TRequest, TResponse))
+  spec.csharp:
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCall``2(Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCallContinuation{``0,``1})
+    name: AsyncDuplexStreamingCall
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: (
+  - uid: Grpc.Core.Interceptors.ClientInterceptorContext`2
+    name: ClientInterceptorContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/ClientInterceptorContext.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCallContinuation`2
+    name: AsyncDuplexStreamingCallContinuation
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: )
+  spec.vb:
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCall``2(Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCallContinuation{``0,``1})
+    name: AsyncDuplexStreamingCall
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: (
+  - uid: Grpc.Core.Interceptors.ClientInterceptorContext`2
+    name: ClientInterceptorContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/ClientInterceptorContext.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCallContinuation`2
+    name: AsyncDuplexStreamingCallContinuation
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: )
+- uid: Grpc.Core.Interceptors.Interceptor.UnaryServerHandler``2({TRequest},Grpc.Core.ServerCallContext,Grpc.Core.UnaryServerMethod{{TRequest},{TResponse}})
+  commentId: M:Grpc.Core.Interceptors.Interceptor.UnaryServerHandler``2(``0,Grpc.Core.ServerCallContext,Grpc.Core.UnaryServerMethod{``0,``1})
+  parent: Grpc.Core.Interceptors.Interceptor
+  definition: Grpc.Core.Interceptors.Interceptor.UnaryServerHandler``2(``0,Grpc.Core.ServerCallContext,Grpc.Core.UnaryServerMethod{``0,``1})
+  href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  name: UnaryServerHandler<TRequest, TResponse>(TRequest, ServerCallContext, UnaryServerMethod<TRequest, TResponse>)
+  nameWithType: Interceptor.UnaryServerHandler<TRequest, TResponse>(TRequest, ServerCallContext, UnaryServerMethod<TRequest, TResponse>)
+  fullName: Grpc.Core.Interceptors.Interceptor.UnaryServerHandler<TRequest, TResponse>(TRequest, Grpc.Core.ServerCallContext, Grpc.Core.UnaryServerMethod<TRequest, TResponse>)
+  nameWithType.vb: Interceptor.UnaryServerHandler(Of TRequest, TResponse)(TRequest, ServerCallContext, UnaryServerMethod(Of TRequest, TResponse))
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.UnaryServerHandler(Of TRequest, TResponse)(TRequest, Grpc.Core.ServerCallContext, Grpc.Core.UnaryServerMethod(Of TRequest, TResponse))
+  name.vb: UnaryServerHandler(Of TRequest, TResponse)(TRequest, ServerCallContext, UnaryServerMethod(Of TRequest, TResponse))
+  spec.csharp:
+  - uid: Grpc.Core.Interceptors.Interceptor.UnaryServerHandler``2(``0,Grpc.Core.ServerCallContext,Grpc.Core.UnaryServerMethod{``0,``1})
+    name: UnaryServerHandler
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: (
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.ServerCallContext
+    name: ServerCallContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/ServerCallContext.cs
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.UnaryServerMethod`2
+    name: UnaryServerMethod
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/ServerMethods.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: )
+  spec.vb:
+  - uid: Grpc.Core.Interceptors.Interceptor.UnaryServerHandler``2(``0,Grpc.Core.ServerCallContext,Grpc.Core.UnaryServerMethod{``0,``1})
+    name: UnaryServerHandler
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: (
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.ServerCallContext
+    name: ServerCallContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/ServerCallContext.cs
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.UnaryServerMethod`2
+    name: UnaryServerMethod
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/ServerMethods.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: )
+- uid: Grpc.Core.Interceptors.Interceptor.ClientStreamingServerHandler``2(Grpc.Core.IAsyncStreamReader{{TRequest}},Grpc.Core.ServerCallContext,Grpc.Core.ClientStreamingServerMethod{{TRequest},{TResponse}})
+  commentId: M:Grpc.Core.Interceptors.Interceptor.ClientStreamingServerHandler``2(Grpc.Core.IAsyncStreamReader{``0},Grpc.Core.ServerCallContext,Grpc.Core.ClientStreamingServerMethod{``0,``1})
+  parent: Grpc.Core.Interceptors.Interceptor
+  definition: Grpc.Core.Interceptors.Interceptor.ClientStreamingServerHandler``2(Grpc.Core.IAsyncStreamReader{``0},Grpc.Core.ServerCallContext,Grpc.Core.ClientStreamingServerMethod{``0,``1})
+  href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  name: ClientStreamingServerHandler<TRequest, TResponse>(IAsyncStreamReader<TRequest>, ServerCallContext, ClientStreamingServerMethod<TRequest, TResponse>)
+  nameWithType: Interceptor.ClientStreamingServerHandler<TRequest, TResponse>(IAsyncStreamReader<TRequest>, ServerCallContext, ClientStreamingServerMethod<TRequest, TResponse>)
+  fullName: Grpc.Core.Interceptors.Interceptor.ClientStreamingServerHandler<TRequest, TResponse>(Grpc.Core.IAsyncStreamReader<TRequest>, Grpc.Core.ServerCallContext, Grpc.Core.ClientStreamingServerMethod<TRequest, TResponse>)
+  nameWithType.vb: Interceptor.ClientStreamingServerHandler(Of TRequest, TResponse)(IAsyncStreamReader(Of TRequest), ServerCallContext, ClientStreamingServerMethod(Of TRequest, TResponse))
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.ClientStreamingServerHandler(Of TRequest, TResponse)(Grpc.Core.IAsyncStreamReader(Of TRequest), Grpc.Core.ServerCallContext, Grpc.Core.ClientStreamingServerMethod(Of TRequest, TResponse))
+  name.vb: ClientStreamingServerHandler(Of TRequest, TResponse)(IAsyncStreamReader(Of TRequest), ServerCallContext, ClientStreamingServerMethod(Of TRequest, TResponse))
+  spec.csharp:
+  - uid: Grpc.Core.Interceptors.Interceptor.ClientStreamingServerHandler``2(Grpc.Core.IAsyncStreamReader{``0},Grpc.Core.ServerCallContext,Grpc.Core.ClientStreamingServerMethod{``0,``1})
+    name: ClientStreamingServerHandler
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: (
+  - uid: Grpc.Core.IAsyncStreamReader`1
+    name: IAsyncStreamReader
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/IAsyncStreamReader.cs
+  - name: <
+  - name: TRequest
+  - name: '>'
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.ServerCallContext
+    name: ServerCallContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/ServerCallContext.cs
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.ClientStreamingServerMethod`2
+    name: ClientStreamingServerMethod
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/ServerMethods.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: )
+  spec.vb:
+  - uid: Grpc.Core.Interceptors.Interceptor.ClientStreamingServerHandler``2(Grpc.Core.IAsyncStreamReader{``0},Grpc.Core.ServerCallContext,Grpc.Core.ClientStreamingServerMethod{``0,``1})
+    name: ClientStreamingServerHandler
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: (
+  - uid: Grpc.Core.IAsyncStreamReader`1
+    name: IAsyncStreamReader
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/IAsyncStreamReader.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: )
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.ServerCallContext
+    name: ServerCallContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/ServerCallContext.cs
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.ClientStreamingServerMethod`2
+    name: ClientStreamingServerMethod
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/ServerMethods.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: )
+- uid: Grpc.Core.Interceptors.Interceptor.ServerStreamingServerHandler``2({TRequest},Grpc.Core.IServerStreamWriter{{TResponse}},Grpc.Core.ServerCallContext,Grpc.Core.ServerStreamingServerMethod{{TRequest},{TResponse}})
+  commentId: M:Grpc.Core.Interceptors.Interceptor.ServerStreamingServerHandler``2(``0,Grpc.Core.IServerStreamWriter{``1},Grpc.Core.ServerCallContext,Grpc.Core.ServerStreamingServerMethod{``0,``1})
+  parent: Grpc.Core.Interceptors.Interceptor
+  definition: Grpc.Core.Interceptors.Interceptor.ServerStreamingServerHandler``2(``0,Grpc.Core.IServerStreamWriter{``1},Grpc.Core.ServerCallContext,Grpc.Core.ServerStreamingServerMethod{``0,``1})
+  href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  name: ServerStreamingServerHandler<TRequest, TResponse>(TRequest, IServerStreamWriter<TResponse>, ServerCallContext, ServerStreamingServerMethod<TRequest, TResponse>)
+  nameWithType: Interceptor.ServerStreamingServerHandler<TRequest, TResponse>(TRequest, IServerStreamWriter<TResponse>, ServerCallContext, ServerStreamingServerMethod<TRequest, TResponse>)
+  fullName: Grpc.Core.Interceptors.Interceptor.ServerStreamingServerHandler<TRequest, TResponse>(TRequest, Grpc.Core.IServerStreamWriter<TResponse>, Grpc.Core.ServerCallContext, Grpc.Core.ServerStreamingServerMethod<TRequest, TResponse>)
+  nameWithType.vb: Interceptor.ServerStreamingServerHandler(Of TRequest, TResponse)(TRequest, IServerStreamWriter(Of TResponse), ServerCallContext, ServerStreamingServerMethod(Of TRequest, TResponse))
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.ServerStreamingServerHandler(Of TRequest, TResponse)(TRequest, Grpc.Core.IServerStreamWriter(Of TResponse), Grpc.Core.ServerCallContext, Grpc.Core.ServerStreamingServerMethod(Of TRequest, TResponse))
+  name.vb: ServerStreamingServerHandler(Of TRequest, TResponse)(TRequest, IServerStreamWriter(Of TResponse), ServerCallContext, ServerStreamingServerMethod(Of TRequest, TResponse))
+  spec.csharp:
+  - uid: Grpc.Core.Interceptors.Interceptor.ServerStreamingServerHandler``2(``0,Grpc.Core.IServerStreamWriter{``1},Grpc.Core.ServerCallContext,Grpc.Core.ServerStreamingServerMethod{``0,``1})
+    name: ServerStreamingServerHandler
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: (
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.IServerStreamWriter`1
+    name: IServerStreamWriter
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/IServerStreamWriter.cs
+  - name: <
+  - name: TResponse
+  - name: '>'
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.ServerCallContext
+    name: ServerCallContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/ServerCallContext.cs
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.ServerStreamingServerMethod`2
+    name: ServerStreamingServerMethod
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/ServerMethods.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: )
+  spec.vb:
+  - uid: Grpc.Core.Interceptors.Interceptor.ServerStreamingServerHandler``2(``0,Grpc.Core.IServerStreamWriter{``1},Grpc.Core.ServerCallContext,Grpc.Core.ServerStreamingServerMethod{``0,``1})
+    name: ServerStreamingServerHandler
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: (
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.IServerStreamWriter`1
+    name: IServerStreamWriter
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/IServerStreamWriter.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.ServerCallContext
+    name: ServerCallContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/ServerCallContext.cs
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.ServerStreamingServerMethod`2
+    name: ServerStreamingServerMethod
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/ServerMethods.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: )
+- uid: Grpc.Core.Interceptors.Interceptor.DuplexStreamingServerHandler``2(Grpc.Core.IAsyncStreamReader{{TRequest}},Grpc.Core.IServerStreamWriter{{TResponse}},Grpc.Core.ServerCallContext,Grpc.Core.DuplexStreamingServerMethod{{TRequest},{TResponse}})
+  commentId: M:Grpc.Core.Interceptors.Interceptor.DuplexStreamingServerHandler``2(Grpc.Core.IAsyncStreamReader{``0},Grpc.Core.IServerStreamWriter{``1},Grpc.Core.ServerCallContext,Grpc.Core.DuplexStreamingServerMethod{``0,``1})
+  parent: Grpc.Core.Interceptors.Interceptor
+  definition: Grpc.Core.Interceptors.Interceptor.DuplexStreamingServerHandler``2(Grpc.Core.IAsyncStreamReader{``0},Grpc.Core.IServerStreamWriter{``1},Grpc.Core.ServerCallContext,Grpc.Core.DuplexStreamingServerMethod{``0,``1})
+  href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  name: DuplexStreamingServerHandler<TRequest, TResponse>(IAsyncStreamReader<TRequest>, IServerStreamWriter<TResponse>, ServerCallContext, DuplexStreamingServerMethod<TRequest, TResponse>)
+  nameWithType: Interceptor.DuplexStreamingServerHandler<TRequest, TResponse>(IAsyncStreamReader<TRequest>, IServerStreamWriter<TResponse>, ServerCallContext, DuplexStreamingServerMethod<TRequest, TResponse>)
+  fullName: Grpc.Core.Interceptors.Interceptor.DuplexStreamingServerHandler<TRequest, TResponse>(Grpc.Core.IAsyncStreamReader<TRequest>, Grpc.Core.IServerStreamWriter<TResponse>, Grpc.Core.ServerCallContext, Grpc.Core.DuplexStreamingServerMethod<TRequest, TResponse>)
+  nameWithType.vb: Interceptor.DuplexStreamingServerHandler(Of TRequest, TResponse)(IAsyncStreamReader(Of TRequest), IServerStreamWriter(Of TResponse), ServerCallContext, DuplexStreamingServerMethod(Of TRequest, TResponse))
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.DuplexStreamingServerHandler(Of TRequest, TResponse)(Grpc.Core.IAsyncStreamReader(Of TRequest), Grpc.Core.IServerStreamWriter(Of TResponse), Grpc.Core.ServerCallContext, Grpc.Core.DuplexStreamingServerMethod(Of TRequest, TResponse))
+  name.vb: DuplexStreamingServerHandler(Of TRequest, TResponse)(IAsyncStreamReader(Of TRequest), IServerStreamWriter(Of TResponse), ServerCallContext, DuplexStreamingServerMethod(Of TRequest, TResponse))
+  spec.csharp:
+  - uid: Grpc.Core.Interceptors.Interceptor.DuplexStreamingServerHandler``2(Grpc.Core.IAsyncStreamReader{``0},Grpc.Core.IServerStreamWriter{``1},Grpc.Core.ServerCallContext,Grpc.Core.DuplexStreamingServerMethod{``0,``1})
+    name: DuplexStreamingServerHandler
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: (
+  - uid: Grpc.Core.IAsyncStreamReader`1
+    name: IAsyncStreamReader
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/IAsyncStreamReader.cs
+  - name: <
+  - name: TRequest
+  - name: '>'
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.IServerStreamWriter`1
+    name: IServerStreamWriter
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/IServerStreamWriter.cs
+  - name: <
+  - name: TResponse
+  - name: '>'
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.ServerCallContext
+    name: ServerCallContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/ServerCallContext.cs
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.DuplexStreamingServerMethod`2
+    name: DuplexStreamingServerMethod
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/ServerMethods.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: )
+  spec.vb:
+  - uid: Grpc.Core.Interceptors.Interceptor.DuplexStreamingServerHandler``2(Grpc.Core.IAsyncStreamReader{``0},Grpc.Core.IServerStreamWriter{``1},Grpc.Core.ServerCallContext,Grpc.Core.DuplexStreamingServerMethod{``0,``1})
+    name: DuplexStreamingServerHandler
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: (
+  - uid: Grpc.Core.IAsyncStreamReader`1
+    name: IAsyncStreamReader
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/IAsyncStreamReader.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: )
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.IServerStreamWriter`1
+    name: IServerStreamWriter
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/IServerStreamWriter.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.ServerCallContext
+    name: ServerCallContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/ServerCallContext.cs
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.DuplexStreamingServerMethod`2
+    name: DuplexStreamingServerMethod
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/ServerMethods.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: )
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.ToString
+  commentId: M:System.Object.ToString
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  name: ToString()
+  nameWithType: object.ToString()
+  fullName: object.ToString()
+  nameWithType.vb: Object.ToString()
+  fullName.vb: Object.ToString()
+  spec.csharp:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object)
+  commentId: M:System.Object.Equals(System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  name: Equals(object)
+  nameWithType: object.Equals(object)
+  fullName: object.Equals(object)
+  nameWithType.vb: Object.Equals(Object)
+  fullName.vb: Object.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetHashCode
+  commentId: M:System.Object.GetHashCode
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  name: GetHashCode()
+  nameWithType: object.GetHashCode()
+  fullName: object.GetHashCode()
+  nameWithType.vb: Object.GetHashCode()
+  fullName.vb: Object.GetHashCode()
+  spec.csharp:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Grpc.Core.Interceptors
+  commentId: N:Grpc.Core.Interceptors
+  isExternal: true
+  name: Grpc.Core.Interceptors
+  nameWithType: Grpc.Core.Interceptors
+  fullName: Grpc.Core.Interceptors
+  spec.csharp:
+  - uid: Grpc
+    name: Grpc
+    isExternal: true
+  - name: .
+  - uid: Grpc.Core
+    name: Core
+    isExternal: true
+  - name: .
+  - uid: Grpc.Core.Interceptors
+    name: Interceptors
+    isExternal: true
+  spec.vb:
+  - uid: Grpc
+    name: Grpc
+    isExternal: true
+  - name: .
+  - uid: Grpc.Core
+    name: Core
+    isExternal: true
+  - name: .
+  - uid: Grpc.Core.Interceptors
+    name: Interceptors
+    isExternal: true
+- uid: Grpc.Core.Interceptors.Interceptor.BlockingUnaryCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.BlockingUnaryCallContinuation{``0,``1})
+  commentId: M:Grpc.Core.Interceptors.Interceptor.BlockingUnaryCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.BlockingUnaryCallContinuation{``0,``1})
+  isExternal: true
+  href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  name: BlockingUnaryCall<TRequest, TResponse>(TRequest, ClientInterceptorContext<TRequest, TResponse>, BlockingUnaryCallContinuation<TRequest, TResponse>)
+  nameWithType: Interceptor.BlockingUnaryCall<TRequest, TResponse>(TRequest, ClientInterceptorContext<TRequest, TResponse>, Interceptor.BlockingUnaryCallContinuation<TRequest, TResponse>)
+  fullName: Grpc.Core.Interceptors.Interceptor.BlockingUnaryCall<TRequest, TResponse>(TRequest, Grpc.Core.Interceptors.ClientInterceptorContext<TRequest, TResponse>, Grpc.Core.Interceptors.Interceptor.BlockingUnaryCallContinuation<TRequest, TResponse>)
+  nameWithType.vb: Interceptor.BlockingUnaryCall(Of TRequest, TResponse)(TRequest, ClientInterceptorContext(Of TRequest, TResponse), Interceptor.BlockingUnaryCallContinuation(Of TRequest, TResponse))
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.BlockingUnaryCall(Of TRequest, TResponse)(TRequest, Grpc.Core.Interceptors.ClientInterceptorContext(Of TRequest, TResponse), Grpc.Core.Interceptors.Interceptor.BlockingUnaryCallContinuation(Of TRequest, TResponse))
+  name.vb: BlockingUnaryCall(Of TRequest, TResponse)(TRequest, ClientInterceptorContext(Of TRequest, TResponse), BlockingUnaryCallContinuation(Of TRequest, TResponse))
+  spec.csharp:
+  - uid: Grpc.Core.Interceptors.Interceptor.BlockingUnaryCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.BlockingUnaryCallContinuation{``0,``1})
+    name: BlockingUnaryCall
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: (
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.Interceptors.ClientInterceptorContext`2
+    name: ClientInterceptorContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/ClientInterceptorContext.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.Interceptors.Interceptor.BlockingUnaryCallContinuation`2
+    name: BlockingUnaryCallContinuation
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: )
+  spec.vb:
+  - uid: Grpc.Core.Interceptors.Interceptor.BlockingUnaryCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.BlockingUnaryCallContinuation{``0,``1})
+    name: BlockingUnaryCall
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: (
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.Interceptors.ClientInterceptorContext`2
+    name: ClientInterceptorContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/ClientInterceptorContext.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.Interceptors.Interceptor.BlockingUnaryCallContinuation`2
+    name: BlockingUnaryCallContinuation
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: )
+- uid: Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCallContinuation{``0,``1})
+  commentId: M:Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCallContinuation{``0,``1})
+  isExternal: true
+  href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  name: AsyncServerStreamingCall<TRequest, TResponse>(TRequest, ClientInterceptorContext<TRequest, TResponse>, AsyncServerStreamingCallContinuation<TRequest, TResponse>)
+  nameWithType: Interceptor.AsyncServerStreamingCall<TRequest, TResponse>(TRequest, ClientInterceptorContext<TRequest, TResponse>, Interceptor.AsyncServerStreamingCallContinuation<TRequest, TResponse>)
+  fullName: Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCall<TRequest, TResponse>(TRequest, Grpc.Core.Interceptors.ClientInterceptorContext<TRequest, TResponse>, Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCallContinuation<TRequest, TResponse>)
+  nameWithType.vb: Interceptor.AsyncServerStreamingCall(Of TRequest, TResponse)(TRequest, ClientInterceptorContext(Of TRequest, TResponse), Interceptor.AsyncServerStreamingCallContinuation(Of TRequest, TResponse))
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCall(Of TRequest, TResponse)(TRequest, Grpc.Core.Interceptors.ClientInterceptorContext(Of TRequest, TResponse), Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCallContinuation(Of TRequest, TResponse))
+  name.vb: AsyncServerStreamingCall(Of TRequest, TResponse)(TRequest, ClientInterceptorContext(Of TRequest, TResponse), AsyncServerStreamingCallContinuation(Of TRequest, TResponse))
+  spec.csharp:
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCallContinuation{``0,``1})
+    name: AsyncServerStreamingCall
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: (
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.Interceptors.ClientInterceptorContext`2
+    name: ClientInterceptorContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/ClientInterceptorContext.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCallContinuation`2
+    name: AsyncServerStreamingCallContinuation
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: )
+  spec.vb:
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCallContinuation{``0,``1})
+    name: AsyncServerStreamingCall
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: (
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.Interceptors.ClientInterceptorContext`2
+    name: ClientInterceptorContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/ClientInterceptorContext.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCallContinuation`2
+    name: AsyncServerStreamingCallContinuation
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: )
+- uid: Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCall``2(Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCallContinuation{``0,``1})
+  commentId: M:Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCall``2(Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCallContinuation{``0,``1})
+  isExternal: true
+  href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  name: AsyncClientStreamingCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse>, AsyncClientStreamingCallContinuation<TRequest, TResponse>)
+  nameWithType: Interceptor.AsyncClientStreamingCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse>, Interceptor.AsyncClientStreamingCallContinuation<TRequest, TResponse>)
+  fullName: Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCall<TRequest, TResponse>(Grpc.Core.Interceptors.ClientInterceptorContext<TRequest, TResponse>, Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCallContinuation<TRequest, TResponse>)
+  nameWithType.vb: Interceptor.AsyncClientStreamingCall(Of TRequest, TResponse)(ClientInterceptorContext(Of TRequest, TResponse), Interceptor.AsyncClientStreamingCallContinuation(Of TRequest, TResponse))
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCall(Of TRequest, TResponse)(Grpc.Core.Interceptors.ClientInterceptorContext(Of TRequest, TResponse), Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCallContinuation(Of TRequest, TResponse))
+  name.vb: AsyncClientStreamingCall(Of TRequest, TResponse)(ClientInterceptorContext(Of TRequest, TResponse), AsyncClientStreamingCallContinuation(Of TRequest, TResponse))
+  spec.csharp:
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCall``2(Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCallContinuation{``0,``1})
+    name: AsyncClientStreamingCall
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: (
+  - uid: Grpc.Core.Interceptors.ClientInterceptorContext`2
+    name: ClientInterceptorContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/ClientInterceptorContext.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCallContinuation`2
+    name: AsyncClientStreamingCallContinuation
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: )
+  spec.vb:
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCall``2(Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCallContinuation{``0,``1})
+    name: AsyncClientStreamingCall
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: (
+  - uid: Grpc.Core.Interceptors.ClientInterceptorContext`2
+    name: ClientInterceptorContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/ClientInterceptorContext.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCallContinuation`2
+    name: AsyncClientStreamingCallContinuation
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: )
+- uid: Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCall``2(Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCallContinuation{``0,``1})
+  commentId: M:Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCall``2(Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCallContinuation{``0,``1})
+  isExternal: true
+  href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  name: AsyncDuplexStreamingCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse>, AsyncDuplexStreamingCallContinuation<TRequest, TResponse>)
+  nameWithType: Interceptor.AsyncDuplexStreamingCall<TRequest, TResponse>(ClientInterceptorContext<TRequest, TResponse>, Interceptor.AsyncDuplexStreamingCallContinuation<TRequest, TResponse>)
+  fullName: Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCall<TRequest, TResponse>(Grpc.Core.Interceptors.ClientInterceptorContext<TRequest, TResponse>, Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCallContinuation<TRequest, TResponse>)
+  nameWithType.vb: Interceptor.AsyncDuplexStreamingCall(Of TRequest, TResponse)(ClientInterceptorContext(Of TRequest, TResponse), Interceptor.AsyncDuplexStreamingCallContinuation(Of TRequest, TResponse))
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCall(Of TRequest, TResponse)(Grpc.Core.Interceptors.ClientInterceptorContext(Of TRequest, TResponse), Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCallContinuation(Of TRequest, TResponse))
+  name.vb: AsyncDuplexStreamingCall(Of TRequest, TResponse)(ClientInterceptorContext(Of TRequest, TResponse), AsyncDuplexStreamingCallContinuation(Of TRequest, TResponse))
+  spec.csharp:
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCall``2(Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCallContinuation{``0,``1})
+    name: AsyncDuplexStreamingCall
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: (
+  - uid: Grpc.Core.Interceptors.ClientInterceptorContext`2
+    name: ClientInterceptorContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/ClientInterceptorContext.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCallContinuation`2
+    name: AsyncDuplexStreamingCallContinuation
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: )
+  spec.vb:
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCall``2(Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCallContinuation{``0,``1})
+    name: AsyncDuplexStreamingCall
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: (
+  - uid: Grpc.Core.Interceptors.ClientInterceptorContext`2
+    name: ClientInterceptorContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/ClientInterceptorContext.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCallContinuation`2
+    name: AsyncDuplexStreamingCallContinuation
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: )
+- uid: Grpc.Core.Interceptors.Interceptor.UnaryServerHandler``2(``0,Grpc.Core.ServerCallContext,Grpc.Core.UnaryServerMethod{``0,``1})
+  commentId: M:Grpc.Core.Interceptors.Interceptor.UnaryServerHandler``2(``0,Grpc.Core.ServerCallContext,Grpc.Core.UnaryServerMethod{``0,``1})
+  isExternal: true
+  href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  name: UnaryServerHandler<TRequest, TResponse>(TRequest, ServerCallContext, UnaryServerMethod<TRequest, TResponse>)
+  nameWithType: Interceptor.UnaryServerHandler<TRequest, TResponse>(TRequest, ServerCallContext, UnaryServerMethod<TRequest, TResponse>)
+  fullName: Grpc.Core.Interceptors.Interceptor.UnaryServerHandler<TRequest, TResponse>(TRequest, Grpc.Core.ServerCallContext, Grpc.Core.UnaryServerMethod<TRequest, TResponse>)
+  nameWithType.vb: Interceptor.UnaryServerHandler(Of TRequest, TResponse)(TRequest, ServerCallContext, UnaryServerMethod(Of TRequest, TResponse))
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.UnaryServerHandler(Of TRequest, TResponse)(TRequest, Grpc.Core.ServerCallContext, Grpc.Core.UnaryServerMethod(Of TRequest, TResponse))
+  name.vb: UnaryServerHandler(Of TRequest, TResponse)(TRequest, ServerCallContext, UnaryServerMethod(Of TRequest, TResponse))
+  spec.csharp:
+  - uid: Grpc.Core.Interceptors.Interceptor.UnaryServerHandler``2(``0,Grpc.Core.ServerCallContext,Grpc.Core.UnaryServerMethod{``0,``1})
+    name: UnaryServerHandler
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: (
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.ServerCallContext
+    name: ServerCallContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/ServerCallContext.cs
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.UnaryServerMethod`2
+    name: UnaryServerMethod
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/ServerMethods.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: )
+  spec.vb:
+  - uid: Grpc.Core.Interceptors.Interceptor.UnaryServerHandler``2(``0,Grpc.Core.ServerCallContext,Grpc.Core.UnaryServerMethod{``0,``1})
+    name: UnaryServerHandler
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: (
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.ServerCallContext
+    name: ServerCallContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/ServerCallContext.cs
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.UnaryServerMethod`2
+    name: UnaryServerMethod
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/ServerMethods.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: )
+- uid: Grpc.Core.Interceptors.Interceptor.ClientStreamingServerHandler``2(Grpc.Core.IAsyncStreamReader{``0},Grpc.Core.ServerCallContext,Grpc.Core.ClientStreamingServerMethod{``0,``1})
+  commentId: M:Grpc.Core.Interceptors.Interceptor.ClientStreamingServerHandler``2(Grpc.Core.IAsyncStreamReader{``0},Grpc.Core.ServerCallContext,Grpc.Core.ClientStreamingServerMethod{``0,``1})
+  isExternal: true
+  href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  name: ClientStreamingServerHandler<TRequest, TResponse>(IAsyncStreamReader<TRequest>, ServerCallContext, ClientStreamingServerMethod<TRequest, TResponse>)
+  nameWithType: Interceptor.ClientStreamingServerHandler<TRequest, TResponse>(IAsyncStreamReader<TRequest>, ServerCallContext, ClientStreamingServerMethod<TRequest, TResponse>)
+  fullName: Grpc.Core.Interceptors.Interceptor.ClientStreamingServerHandler<TRequest, TResponse>(Grpc.Core.IAsyncStreamReader<TRequest>, Grpc.Core.ServerCallContext, Grpc.Core.ClientStreamingServerMethod<TRequest, TResponse>)
+  nameWithType.vb: Interceptor.ClientStreamingServerHandler(Of TRequest, TResponse)(IAsyncStreamReader(Of TRequest), ServerCallContext, ClientStreamingServerMethod(Of TRequest, TResponse))
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.ClientStreamingServerHandler(Of TRequest, TResponse)(Grpc.Core.IAsyncStreamReader(Of TRequest), Grpc.Core.ServerCallContext, Grpc.Core.ClientStreamingServerMethod(Of TRequest, TResponse))
+  name.vb: ClientStreamingServerHandler(Of TRequest, TResponse)(IAsyncStreamReader(Of TRequest), ServerCallContext, ClientStreamingServerMethod(Of TRequest, TResponse))
+  spec.csharp:
+  - uid: Grpc.Core.Interceptors.Interceptor.ClientStreamingServerHandler``2(Grpc.Core.IAsyncStreamReader{``0},Grpc.Core.ServerCallContext,Grpc.Core.ClientStreamingServerMethod{``0,``1})
+    name: ClientStreamingServerHandler
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: (
+  - uid: Grpc.Core.IAsyncStreamReader`1
+    name: IAsyncStreamReader
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/IAsyncStreamReader.cs
+  - name: <
+  - name: TRequest
+  - name: '>'
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.ServerCallContext
+    name: ServerCallContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/ServerCallContext.cs
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.ClientStreamingServerMethod`2
+    name: ClientStreamingServerMethod
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/ServerMethods.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: )
+  spec.vb:
+  - uid: Grpc.Core.Interceptors.Interceptor.ClientStreamingServerHandler``2(Grpc.Core.IAsyncStreamReader{``0},Grpc.Core.ServerCallContext,Grpc.Core.ClientStreamingServerMethod{``0,``1})
+    name: ClientStreamingServerHandler
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: (
+  - uid: Grpc.Core.IAsyncStreamReader`1
+    name: IAsyncStreamReader
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/IAsyncStreamReader.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: )
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.ServerCallContext
+    name: ServerCallContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/ServerCallContext.cs
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.ClientStreamingServerMethod`2
+    name: ClientStreamingServerMethod
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/ServerMethods.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: )
+- uid: Grpc.Core.Interceptors.Interceptor.ServerStreamingServerHandler``2(``0,Grpc.Core.IServerStreamWriter{``1},Grpc.Core.ServerCallContext,Grpc.Core.ServerStreamingServerMethod{``0,``1})
+  commentId: M:Grpc.Core.Interceptors.Interceptor.ServerStreamingServerHandler``2(``0,Grpc.Core.IServerStreamWriter{``1},Grpc.Core.ServerCallContext,Grpc.Core.ServerStreamingServerMethod{``0,``1})
+  isExternal: true
+  href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  name: ServerStreamingServerHandler<TRequest, TResponse>(TRequest, IServerStreamWriter<TResponse>, ServerCallContext, ServerStreamingServerMethod<TRequest, TResponse>)
+  nameWithType: Interceptor.ServerStreamingServerHandler<TRequest, TResponse>(TRequest, IServerStreamWriter<TResponse>, ServerCallContext, ServerStreamingServerMethod<TRequest, TResponse>)
+  fullName: Grpc.Core.Interceptors.Interceptor.ServerStreamingServerHandler<TRequest, TResponse>(TRequest, Grpc.Core.IServerStreamWriter<TResponse>, Grpc.Core.ServerCallContext, Grpc.Core.ServerStreamingServerMethod<TRequest, TResponse>)
+  nameWithType.vb: Interceptor.ServerStreamingServerHandler(Of TRequest, TResponse)(TRequest, IServerStreamWriter(Of TResponse), ServerCallContext, ServerStreamingServerMethod(Of TRequest, TResponse))
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.ServerStreamingServerHandler(Of TRequest, TResponse)(TRequest, Grpc.Core.IServerStreamWriter(Of TResponse), Grpc.Core.ServerCallContext, Grpc.Core.ServerStreamingServerMethod(Of TRequest, TResponse))
+  name.vb: ServerStreamingServerHandler(Of TRequest, TResponse)(TRequest, IServerStreamWriter(Of TResponse), ServerCallContext, ServerStreamingServerMethod(Of TRequest, TResponse))
+  spec.csharp:
+  - uid: Grpc.Core.Interceptors.Interceptor.ServerStreamingServerHandler``2(``0,Grpc.Core.IServerStreamWriter{``1},Grpc.Core.ServerCallContext,Grpc.Core.ServerStreamingServerMethod{``0,``1})
+    name: ServerStreamingServerHandler
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: (
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.IServerStreamWriter`1
+    name: IServerStreamWriter
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/IServerStreamWriter.cs
+  - name: <
+  - name: TResponse
+  - name: '>'
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.ServerCallContext
+    name: ServerCallContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/ServerCallContext.cs
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.ServerStreamingServerMethod`2
+    name: ServerStreamingServerMethod
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/ServerMethods.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: )
+  spec.vb:
+  - uid: Grpc.Core.Interceptors.Interceptor.ServerStreamingServerHandler``2(``0,Grpc.Core.IServerStreamWriter{``1},Grpc.Core.ServerCallContext,Grpc.Core.ServerStreamingServerMethod{``0,``1})
+    name: ServerStreamingServerHandler
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: (
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.IServerStreamWriter`1
+    name: IServerStreamWriter
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/IServerStreamWriter.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.ServerCallContext
+    name: ServerCallContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/ServerCallContext.cs
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.ServerStreamingServerMethod`2
+    name: ServerStreamingServerMethod
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/ServerMethods.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: )
+- uid: Grpc.Core.Interceptors.Interceptor.DuplexStreamingServerHandler``2(Grpc.Core.IAsyncStreamReader{``0},Grpc.Core.IServerStreamWriter{``1},Grpc.Core.ServerCallContext,Grpc.Core.DuplexStreamingServerMethod{``0,``1})
+  commentId: M:Grpc.Core.Interceptors.Interceptor.DuplexStreamingServerHandler``2(Grpc.Core.IAsyncStreamReader{``0},Grpc.Core.IServerStreamWriter{``1},Grpc.Core.ServerCallContext,Grpc.Core.DuplexStreamingServerMethod{``0,``1})
+  isExternal: true
+  href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  name: DuplexStreamingServerHandler<TRequest, TResponse>(IAsyncStreamReader<TRequest>, IServerStreamWriter<TResponse>, ServerCallContext, DuplexStreamingServerMethod<TRequest, TResponse>)
+  nameWithType: Interceptor.DuplexStreamingServerHandler<TRequest, TResponse>(IAsyncStreamReader<TRequest>, IServerStreamWriter<TResponse>, ServerCallContext, DuplexStreamingServerMethod<TRequest, TResponse>)
+  fullName: Grpc.Core.Interceptors.Interceptor.DuplexStreamingServerHandler<TRequest, TResponse>(Grpc.Core.IAsyncStreamReader<TRequest>, Grpc.Core.IServerStreamWriter<TResponse>, Grpc.Core.ServerCallContext, Grpc.Core.DuplexStreamingServerMethod<TRequest, TResponse>)
+  nameWithType.vb: Interceptor.DuplexStreamingServerHandler(Of TRequest, TResponse)(IAsyncStreamReader(Of TRequest), IServerStreamWriter(Of TResponse), ServerCallContext, DuplexStreamingServerMethod(Of TRequest, TResponse))
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.DuplexStreamingServerHandler(Of TRequest, TResponse)(Grpc.Core.IAsyncStreamReader(Of TRequest), Grpc.Core.IServerStreamWriter(Of TResponse), Grpc.Core.ServerCallContext, Grpc.Core.DuplexStreamingServerMethod(Of TRequest, TResponse))
+  name.vb: DuplexStreamingServerHandler(Of TRequest, TResponse)(IAsyncStreamReader(Of TRequest), IServerStreamWriter(Of TResponse), ServerCallContext, DuplexStreamingServerMethod(Of TRequest, TResponse))
+  spec.csharp:
+  - uid: Grpc.Core.Interceptors.Interceptor.DuplexStreamingServerHandler``2(Grpc.Core.IAsyncStreamReader{``0},Grpc.Core.IServerStreamWriter{``1},Grpc.Core.ServerCallContext,Grpc.Core.DuplexStreamingServerMethod{``0,``1})
+    name: DuplexStreamingServerHandler
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: (
+  - uid: Grpc.Core.IAsyncStreamReader`1
+    name: IAsyncStreamReader
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/IAsyncStreamReader.cs
+  - name: <
+  - name: TRequest
+  - name: '>'
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.IServerStreamWriter`1
+    name: IServerStreamWriter
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/IServerStreamWriter.cs
+  - name: <
+  - name: TResponse
+  - name: '>'
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.ServerCallContext
+    name: ServerCallContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/ServerCallContext.cs
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.DuplexStreamingServerMethod`2
+    name: DuplexStreamingServerMethod
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/ServerMethods.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: )
+  spec.vb:
+  - uid: Grpc.Core.Interceptors.Interceptor.DuplexStreamingServerHandler``2(Grpc.Core.IAsyncStreamReader{``0},Grpc.Core.IServerStreamWriter{``1},Grpc.Core.ServerCallContext,Grpc.Core.DuplexStreamingServerMethod{``0,``1})
+    name: DuplexStreamingServerHandler
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: (
+  - uid: Grpc.Core.IAsyncStreamReader`1
+    name: IAsyncStreamReader
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/IAsyncStreamReader.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: )
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.IServerStreamWriter`1
+    name: IServerStreamWriter
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/IServerStreamWriter.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.ServerCallContext
+    name: ServerCallContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/ServerCallContext.cs
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.DuplexStreamingServerMethod`2
+    name: DuplexStreamingServerMethod
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/ServerMethods.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: )
+- uid: Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor.#ctor*
+  commentId: Overload:Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor.#ctor
+  isExternal: true
+  href: Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor.html#Kevlar_Extensions_Grpc_ShieldUnaryClientInterceptor__ctor_Kevlar_Shield_
+  name: ShieldUnaryClientInterceptor
+  nameWithType: ShieldUnaryClientInterceptor.ShieldUnaryClientInterceptor
+  fullName: Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor.ShieldUnaryClientInterceptor
+  nameWithType.vb: ShieldUnaryClientInterceptor.New
+  fullName.vb: Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor.New
+  name.vb: New
+- uid: Grpc.Core.Interceptors.ClientInterceptorContext`2
+  commentId: T:Grpc.Core.Interceptors.ClientInterceptorContext`2
+  isExternal: true
+  href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/ClientInterceptorContext.cs
+  name: ClientInterceptorContext<TRequest, TResponse>
+  nameWithType: ClientInterceptorContext<TRequest, TResponse>
+  fullName: Grpc.Core.Interceptors.ClientInterceptorContext<TRequest, TResponse>
+  nameWithType.vb: ClientInterceptorContext(Of TRequest, TResponse)
+  fullName.vb: Grpc.Core.Interceptors.ClientInterceptorContext(Of TRequest, TResponse)
+  name.vb: ClientInterceptorContext(Of TRequest, TResponse)
+  spec.csharp:
+  - uid: Grpc.Core.Interceptors.ClientInterceptorContext`2
+    name: ClientInterceptorContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/ClientInterceptorContext.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  spec.vb:
+  - uid: Grpc.Core.Interceptors.ClientInterceptorContext`2
+    name: ClientInterceptorContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/ClientInterceptorContext.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+- uid: Grpc.Core.AsyncUnaryCall`1
+  commentId: T:Grpc.Core.AsyncUnaryCall`1
+  isExternal: true
+  href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/AsyncUnaryCall.cs
+  name: AsyncUnaryCall<TResponse>
+  nameWithType: AsyncUnaryCall<TResponse>
+  fullName: Grpc.Core.AsyncUnaryCall<TResponse>
+  nameWithType.vb: AsyncUnaryCall(Of TResponse)
+  fullName.vb: Grpc.Core.AsyncUnaryCall(Of TResponse)
+  name.vb: AsyncUnaryCall(Of TResponse)
+  spec.csharp:
+  - uid: Grpc.Core.AsyncUnaryCall`1
+    name: AsyncUnaryCall
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/AsyncUnaryCall.cs
+  - name: <
+  - name: TResponse
+  - name: '>'
+  spec.vb:
+  - uid: Grpc.Core.AsyncUnaryCall`1
+    name: AsyncUnaryCall
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/AsyncUnaryCall.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResponse
+  - name: )
+- uid: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCall``2({TRequest},Grpc.Core.Interceptors.ClientInterceptorContext{{TRequest},{TResponse}},Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation{{TRequest},{TResponse}})
+  commentId: M:Grpc.Core.Interceptors.Interceptor.AsyncUnaryCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation{``0,``1})
+  parent: Grpc.Core.Interceptors.Interceptor
+  definition: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation{``0,``1})
+  href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  name: AsyncUnaryCall<TRequest, TResponse>(TRequest, ClientInterceptorContext<TRequest, TResponse>, AsyncUnaryCallContinuation<TRequest, TResponse>)
+  nameWithType: Interceptor.AsyncUnaryCall<TRequest, TResponse>(TRequest, ClientInterceptorContext<TRequest, TResponse>, Interceptor.AsyncUnaryCallContinuation<TRequest, TResponse>)
+  fullName: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCall<TRequest, TResponse>(TRequest, Grpc.Core.Interceptors.ClientInterceptorContext<TRequest, TResponse>, Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation<TRequest, TResponse>)
+  nameWithType.vb: Interceptor.AsyncUnaryCall(Of TRequest, TResponse)(TRequest, ClientInterceptorContext(Of TRequest, TResponse), Interceptor.AsyncUnaryCallContinuation(Of TRequest, TResponse))
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCall(Of TRequest, TResponse)(TRequest, Grpc.Core.Interceptors.ClientInterceptorContext(Of TRequest, TResponse), Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation(Of TRequest, TResponse))
+  name.vb: AsyncUnaryCall(Of TRequest, TResponse)(TRequest, ClientInterceptorContext(Of TRequest, TResponse), AsyncUnaryCallContinuation(Of TRequest, TResponse))
+  spec.csharp:
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation{``0,``1})
+    name: AsyncUnaryCall
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: (
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.Interceptors.ClientInterceptorContext`2
+    name: ClientInterceptorContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/ClientInterceptorContext.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation`2
+    name: AsyncUnaryCallContinuation
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: )
+  spec.vb:
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation{``0,``1})
+    name: AsyncUnaryCall
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: (
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.Interceptors.ClientInterceptorContext`2
+    name: ClientInterceptorContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/ClientInterceptorContext.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation`2
+    name: AsyncUnaryCallContinuation
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: )
+- uid: Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor.AsyncUnaryCall*
+  commentId: Overload:Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor.AsyncUnaryCall
+  isExternal: true
+  href: Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor.html#Kevlar_Extensions_Grpc_ShieldUnaryClientInterceptor_AsyncUnaryCall__2___0_Grpc_Core_Interceptors_ClientInterceptorContext___0___1__Grpc_Core_Interceptors_Interceptor_AsyncUnaryCallContinuation___0___1__
+  name: AsyncUnaryCall
+  nameWithType: ShieldUnaryClientInterceptor.AsyncUnaryCall
+  fullName: Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor.AsyncUnaryCall
+- uid: '{TRequest}'
+  commentId: '!:TRequest'
+  definition: TRequest
+  name: TRequest
+  nameWithType: TRequest
+  fullName: TRequest
+- uid: Grpc.Core.Interceptors.ClientInterceptorContext{{TRequest},{TResponse}}
+  commentId: T:Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1}
+  parent: Grpc.Core.Interceptors
+  definition: Grpc.Core.Interceptors.ClientInterceptorContext`2
+  href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/ClientInterceptorContext.cs
+  name: ClientInterceptorContext<TRequest, TResponse>
+  nameWithType: ClientInterceptorContext<TRequest, TResponse>
+  fullName: Grpc.Core.Interceptors.ClientInterceptorContext<TRequest, TResponse>
+  nameWithType.vb: ClientInterceptorContext(Of TRequest, TResponse)
+  fullName.vb: Grpc.Core.Interceptors.ClientInterceptorContext(Of TRequest, TResponse)
+  name.vb: ClientInterceptorContext(Of TRequest, TResponse)
+  spec.csharp:
+  - uid: Grpc.Core.Interceptors.ClientInterceptorContext`2
+    name: ClientInterceptorContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/ClientInterceptorContext.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  spec.vb:
+  - uid: Grpc.Core.Interceptors.ClientInterceptorContext`2
+    name: ClientInterceptorContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/ClientInterceptorContext.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+- uid: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation{{TRequest},{TResponse}}
+  commentId: T:Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation{``0,``1}
+  parent: Grpc.Core.Interceptors
+  definition: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation`2
+  href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  name: Interceptor.AsyncUnaryCallContinuation<TRequest, TResponse>
+  nameWithType: Interceptor.AsyncUnaryCallContinuation<TRequest, TResponse>
+  fullName: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation<TRequest, TResponse>
+  nameWithType.vb: Interceptor.AsyncUnaryCallContinuation(Of TRequest, TResponse)
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation(Of TRequest, TResponse)
+  name.vb: Interceptor.AsyncUnaryCallContinuation(Of TRequest, TResponse)
+  spec.csharp:
+  - uid: Grpc.Core.Interceptors.Interceptor
+    name: Interceptor
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: .
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation`2
+    name: AsyncUnaryCallContinuation
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  spec.vb:
+  - uid: Grpc.Core.Interceptors.Interceptor
+    name: Interceptor
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: .
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation`2
+    name: AsyncUnaryCallContinuation
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+- uid: Grpc.Core.AsyncUnaryCall{{TResponse}}
+  commentId: T:Grpc.Core.AsyncUnaryCall{``1}
+  parent: Grpc.Core
+  definition: Grpc.Core.AsyncUnaryCall`1
+  href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/AsyncUnaryCall.cs
+  name: AsyncUnaryCall<TResponse>
+  nameWithType: AsyncUnaryCall<TResponse>
+  fullName: Grpc.Core.AsyncUnaryCall<TResponse>
+  nameWithType.vb: AsyncUnaryCall(Of TResponse)
+  fullName.vb: Grpc.Core.AsyncUnaryCall(Of TResponse)
+  name.vb: AsyncUnaryCall(Of TResponse)
+  spec.csharp:
+  - uid: Grpc.Core.AsyncUnaryCall`1
+    name: AsyncUnaryCall
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/AsyncUnaryCall.cs
+  - name: <
+  - name: TResponse
+  - name: '>'
+  spec.vb:
+  - uid: Grpc.Core.AsyncUnaryCall`1
+    name: AsyncUnaryCall
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/AsyncUnaryCall.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResponse
+  - name: )
+- uid: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation{``0,``1})
+  commentId: M:Grpc.Core.Interceptors.Interceptor.AsyncUnaryCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation{``0,``1})
+  isExternal: true
+  href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  name: AsyncUnaryCall<TRequest, TResponse>(TRequest, ClientInterceptorContext<TRequest, TResponse>, AsyncUnaryCallContinuation<TRequest, TResponse>)
+  nameWithType: Interceptor.AsyncUnaryCall<TRequest, TResponse>(TRequest, ClientInterceptorContext<TRequest, TResponse>, Interceptor.AsyncUnaryCallContinuation<TRequest, TResponse>)
+  fullName: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCall<TRequest, TResponse>(TRequest, Grpc.Core.Interceptors.ClientInterceptorContext<TRequest, TResponse>, Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation<TRequest, TResponse>)
+  nameWithType.vb: Interceptor.AsyncUnaryCall(Of TRequest, TResponse)(TRequest, ClientInterceptorContext(Of TRequest, TResponse), Interceptor.AsyncUnaryCallContinuation(Of TRequest, TResponse))
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCall(Of TRequest, TResponse)(TRequest, Grpc.Core.Interceptors.ClientInterceptorContext(Of TRequest, TResponse), Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation(Of TRequest, TResponse))
+  name.vb: AsyncUnaryCall(Of TRequest, TResponse)(TRequest, ClientInterceptorContext(Of TRequest, TResponse), AsyncUnaryCallContinuation(Of TRequest, TResponse))
+  spec.csharp:
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation{``0,``1})
+    name: AsyncUnaryCall
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: (
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.Interceptors.ClientInterceptorContext`2
+    name: ClientInterceptorContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/ClientInterceptorContext.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation`2
+    name: AsyncUnaryCallContinuation
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  - name: )
+  spec.vb:
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCall``2(``0,Grpc.Core.Interceptors.ClientInterceptorContext{``0,``1},Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation{``0,``1})
+    name: AsyncUnaryCall
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: (
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.Interceptors.ClientInterceptorContext`2
+    name: ClientInterceptorContext
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/ClientInterceptorContext.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: ','
+  - name: " "
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation`2
+    name: AsyncUnaryCallContinuation
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+  - name: )
+- uid: TRequest
+  name: TRequest
+  nameWithType: TRequest
+  fullName: TRequest
+- uid: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation`2
+  commentId: T:Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation`2
+  isExternal: true
+  href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  name: Interceptor.AsyncUnaryCallContinuation<TRequest, TResponse>
+  nameWithType: Interceptor.AsyncUnaryCallContinuation<TRequest, TResponse>
+  fullName: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation<TRequest, TResponse>
+  nameWithType.vb: Interceptor.AsyncUnaryCallContinuation(Of TRequest, TResponse)
+  fullName.vb: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation(Of TRequest, TResponse)
+  name.vb: Interceptor.AsyncUnaryCallContinuation(Of TRequest, TResponse)
+  spec.csharp:
+  - uid: Grpc.Core.Interceptors.Interceptor
+    name: Interceptor
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: .
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation`2
+    name: AsyncUnaryCallContinuation
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: <
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: '>'
+  spec.vb:
+  - uid: Grpc.Core.Interceptors.Interceptor
+    name: Interceptor
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: .
+  - uid: Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation`2
+    name: AsyncUnaryCallContinuation
+    isExternal: true
+    href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/Interceptors/Interceptor.cs
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TRequest
+  - name: ','
+  - name: " "
+  - name: TResponse
+  - name: )
+- uid: Grpc.Core
+  commentId: N:Grpc.Core
+  isExternal: true
+  name: Grpc.Core
+  nameWithType: Grpc.Core
+  fullName: Grpc.Core
+  spec.csharp:
+  - uid: Grpc
+    name: Grpc
+    isExternal: true
+  - name: .
+  - uid: Grpc.Core
+    name: Core
+    isExternal: true
+  spec.vb:
+  - uid: Grpc
+    name: Grpc
+    isExternal: true
+  - name: .
+  - uid: Grpc.Core
+    name: Core
+    isExternal: true

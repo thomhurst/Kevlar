@@ -61,6 +61,12 @@ const config: Config = {
           label: 'Documentation',
         },
         {
+          href: 'pathname:///api/index.html',
+          label: 'API',
+          position: 'left',
+          target: '_self',
+        },
+        {
           href: 'https://www.nuget.org/packages/Kevlar',
           label: 'NuGet',
           position: 'right',
@@ -85,6 +91,7 @@ const config: Config = {
           items: [
             { label: 'Getting Started', to: '/docs/getting-started' },
             { label: 'Strategies', to: '/docs/category/strategies' },
+            { label: 'API Reference', href: 'pathname:///api/index.html' },
             { label: 'Coming from Polly?', to: '/docs/polly-migration' },
             { label: 'FAQ', to: '/docs/faq' },
           ],

@@ -1,0 +1,86 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Extensions.RateLimiting
+  commentId: N:Kevlar.Extensions.RateLimiting
+  id: Kevlar.Extensions.RateLimiting
+  children:
+  - Kevlar.Extensions.RateLimiting.RateLimitLeaseAcquirer
+  - Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions
+  - Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent
+  - Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions
+  langs:
+  - csharp
+  - vb
+  name: Kevlar.Extensions.RateLimiting
+  nameWithType: Kevlar.Extensions.RateLimiting
+  fullName: Kevlar.Extensions.RateLimiting
+  type: Namespace
+  assemblies:
+  - Kevlar.Extensions.RateLimiting
+references:
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions
+  commentId: T:Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions
+  isExternal: true
+  href: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.html
+  name: RateLimiterAdapterOptions
+  nameWithType: RateLimiterAdapterOptions
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent
+  commentId: T:Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent
+  isExternal: true
+  href: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.html
+  name: RateLimiterRejectedEvent
+  nameWithType: RateLimiterRejectedEvent
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent
+- uid: Kevlar.Extensions.RateLimiting.RateLimitLeaseAcquirer
+  commentId: T:Kevlar.Extensions.RateLimiting.RateLimitLeaseAcquirer
+  parent: Kevlar.Extensions.RateLimiting
+  isExternal: true
+  href: Kevlar.Extensions.RateLimiting.RateLimitLeaseAcquirer.html
+  name: RateLimitLeaseAcquirer
+  nameWithType: RateLimitLeaseAcquirer
+  fullName: Kevlar.Extensions.RateLimiting.RateLimitLeaseAcquirer
+- uid: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions
+  commentId: T:Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions
+  isExternal: true
+  href: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.html
+  name: ShieldRateLimiterExtensions
+  nameWithType: ShieldRateLimiterExtensions
+  fullName: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions
+- uid: Kevlar.Extensions.RateLimiting
+  commentId: N:Kevlar.Extensions.RateLimiting
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar.Extensions.RateLimiting
+  nameWithType: Kevlar.Extensions.RateLimiting
+  fullName: Kevlar.Extensions.RateLimiting
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+    href: Kevlar.Extensions.html
+  - name: .
+  - uid: Kevlar.Extensions.RateLimiting
+    name: RateLimiting
+    isExternal: true
+    href: Kevlar.Extensions.RateLimiting.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+    href: Kevlar.Extensions.html
+  - name: .
+  - uid: Kevlar.Extensions.RateLimiting
+    name: RateLimiting
+    isExternal: true
+    href: Kevlar.Extensions.RateLimiting.html

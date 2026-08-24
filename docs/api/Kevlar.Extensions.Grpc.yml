@@ -1,0 +1,48 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Extensions.Grpc
+  commentId: N:Kevlar.Extensions.Grpc
+  id: Kevlar.Extensions.Grpc
+  children:
+  - Kevlar.Extensions.Grpc.GrpcShield
+  - Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions
+  - Kevlar.Extensions.Grpc.ShieldStreamingClientInterceptor
+  - Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor
+  langs:
+  - csharp
+  - vb
+  name: Kevlar.Extensions.Grpc
+  nameWithType: Kevlar.Extensions.Grpc
+  fullName: Kevlar.Extensions.Grpc
+  type: Namespace
+  assemblies:
+  - Kevlar.Extensions.Grpc
+references:
+- uid: Kevlar.Extensions.Grpc.GrpcShield
+  commentId: T:Kevlar.Extensions.Grpc.GrpcShield
+  isExternal: true
+  href: Kevlar.Extensions.Grpc.GrpcShield.html
+  name: GrpcShield
+  nameWithType: GrpcShield
+  fullName: Kevlar.Extensions.Grpc.GrpcShield
+- uid: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions
+  commentId: T:Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions
+  isExternal: true
+  href: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.html
+  name: ShieldGrpcClientBuilderExtensions
+  nameWithType: ShieldGrpcClientBuilderExtensions
+  fullName: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions
+- uid: Kevlar.Extensions.Grpc.ShieldStreamingClientInterceptor
+  commentId: T:Kevlar.Extensions.Grpc.ShieldStreamingClientInterceptor
+  isExternal: true
+  href: Kevlar.Extensions.Grpc.ShieldStreamingClientInterceptor.html
+  name: ShieldStreamingClientInterceptor
+  nameWithType: ShieldStreamingClientInterceptor
+  fullName: Kevlar.Extensions.Grpc.ShieldStreamingClientInterceptor
+- uid: Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor
+  commentId: T:Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor
+  isExternal: true
+  href: Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor.html
+  name: ShieldUnaryClientInterceptor
+  nameWithType: ShieldUnaryClientInterceptor
+  fullName: Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor

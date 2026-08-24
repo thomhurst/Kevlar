@@ -1,0 +1,12 @@
+<Project>
+  <Import Project="..\Directory.Build.props" />
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <UsePackedPackages Condition="'$(UsePackedPackages)' == ''">false</UsePackedPackages>
+    <KevlarSamplePackageVersion Condition="'$(KevlarSamplePackageVersion)' == ''">1.0.0</KevlarSamplePackageVersion>
+    <RestoreAdditionalProjectSources Condition="'$(UsePackedPackages)' == 'true'">$(RestoreAdditionalProjectSources);$(MSBuildThisFileDirectory)..\artifacts\package\release</RestoreAdditionalProjectSources>
+  </PropertyGroup>
+</Project>

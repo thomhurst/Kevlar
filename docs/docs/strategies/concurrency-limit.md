@@ -23,6 +23,8 @@ Shield.ConcurrencyLimit(o =>
 
 ## Options
 
+API reference: [`ConcurrencyLimitOptions`](pathname:///api/Kevlar.ConcurrencyLimitOptions.html).
+
 | Option | Default | What it does |
 |---|---|---|
 | `MaxConcurrency` | `10` | Executions allowed to run simultaneously |

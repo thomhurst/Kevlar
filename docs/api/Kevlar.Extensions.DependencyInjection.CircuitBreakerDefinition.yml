@@ -1,0 +1,569 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition
+  commentId: T:Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition
+  id: CircuitBreakerDefinition
+  parent: Kevlar.Extensions.DependencyInjection
+  children:
+  - Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.#ctor
+  - Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.BreakDuration
+  - Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.ConsecutiveFailures
+  - Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.FailureRatio
+  - Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.MinimumThroughput
+  - Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.SamplingWindow
+  langs:
+  - csharp
+  - vb
+  name: CircuitBreakerDefinition
+  nameWithType: CircuitBreakerDefinition
+  fullName: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition
+  type: Class
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: The circuit breaker section of a <xref href="Kevlar.Extensions.DependencyInjection.ShieldDefinition" data-throw-if-not-resolved="false"></xref>.
+  example: []
+  syntax:
+    content: public sealed class CircuitBreakerDefinition
+    content.vb: Public NotInheritable Class CircuitBreakerDefinition
+  inheritance:
+  - System.Object
+  inheritedMembers:
+  - System.Object.GetType
+  - System.Object.ToString
+  - System.Object.Equals(System.Object)
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  - System.Object.GetHashCode
+- uid: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.#ctor
+  commentId: M:Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.#ctor
+  id: '#ctor'
+  parent: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition
+  langs:
+  - csharp
+  - vb
+  name: CircuitBreakerDefinition()
+  nameWithType: CircuitBreakerDefinition.CircuitBreakerDefinition()
+  fullName: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.CircuitBreakerDefinition()
+  type: Constructor
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  syntax:
+    content: public CircuitBreakerDefinition()
+    content.vb: Public Sub New()
+  overload: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.#ctor*
+  nameWithType.vb: CircuitBreakerDefinition.New()
+  fullName.vb: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.New()
+  name.vb: New()
+- uid: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.ConsecutiveFailures
+  commentId: P:Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.ConsecutiveFailures
+  id: ConsecutiveFailures
+  parent: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition
+  langs:
+  - csharp
+  - vb
+  name: ConsecutiveFailures
+  nameWithType: CircuitBreakerDefinition.ConsecutiveFailures
+  fullName: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.ConsecutiveFailures
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: Trip after this many consecutive failures (simple mode).
+  example: []
+  syntax:
+    content: public int? ConsecutiveFailures { get; set; }
+    parameters: []
+    return:
+      type: System.Nullable{System.Int32}
+    content.vb: Public Property ConsecutiveFailures As Integer?
+  overload: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.ConsecutiveFailures*
+- uid: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.FailureRatio
+  commentId: P:Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.FailureRatio
+  id: FailureRatio
+  parent: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition
+  langs:
+  - csharp
+  - vb
+  name: FailureRatio
+  nameWithType: CircuitBreakerDefinition.FailureRatio
+  fullName: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.FailureRatio
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: Trip at this failure ratio within the sampling window (sampling mode).
+  example: []
+  syntax:
+    content: public double? FailureRatio { get; set; }
+    parameters: []
+    return:
+      type: System.Nullable{System.Double}
+    content.vb: Public Property FailureRatio As Double?
+  overload: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.FailureRatio*
+- uid: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.MinimumThroughput
+  commentId: P:Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.MinimumThroughput
+  id: MinimumThroughput
+  parent: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition
+  langs:
+  - csharp
+  - vb
+  name: MinimumThroughput
+  nameWithType: CircuitBreakerDefinition.MinimumThroughput
+  fullName: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.MinimumThroughput
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: Minimum executions in the window before the ratio can trip. Default 10.
+  example: []
+  syntax:
+    content: public int MinimumThroughput { get; set; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public Property MinimumThroughput As Integer
+  overload: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.MinimumThroughput*
+- uid: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.SamplingWindow
+  commentId: P:Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.SamplingWindow
+  id: SamplingWindow
+  parent: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition
+  langs:
+  - csharp
+  - vb
+  name: SamplingWindow
+  nameWithType: CircuitBreakerDefinition.SamplingWindow
+  fullName: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.SamplingWindow
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: The rolling ratio window. Default 30 seconds.
+  example: []
+  syntax:
+    content: public TimeSpan SamplingWindow { get; set; }
+    parameters: []
+    return:
+      type: System.TimeSpan
+    content.vb: Public Property SamplingWindow As TimeSpan
+  overload: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.SamplingWindow*
+- uid: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.BreakDuration
+  commentId: P:Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.BreakDuration
+  id: BreakDuration
+  parent: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition
+  langs:
+  - csharp
+  - vb
+  name: BreakDuration
+  nameWithType: CircuitBreakerDefinition.BreakDuration
+  fullName: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.BreakDuration
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: How long the circuit stays open. Default 15 seconds.
+  example: []
+  syntax:
+    content: public TimeSpan BreakDuration { get; set; }
+    parameters: []
+    return:
+      type: System.TimeSpan
+    content.vb: Public Property BreakDuration As TimeSpan
+  overload: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.BreakDuration*
+references:
+- uid: Kevlar.Extensions.DependencyInjection.ShieldDefinition
+  commentId: T:Kevlar.Extensions.DependencyInjection.ShieldDefinition
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.ShieldDefinition.html
+  name: ShieldDefinition
+  nameWithType: ShieldDefinition
+  fullName: Kevlar.Extensions.DependencyInjection.ShieldDefinition
+- uid: Kevlar.Extensions.DependencyInjection
+  commentId: N:Kevlar.Extensions.DependencyInjection
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar.Extensions.DependencyInjection
+  nameWithType: Kevlar.Extensions.DependencyInjection
+  fullName: Kevlar.Extensions.DependencyInjection
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+    href: Kevlar.Extensions.html
+  - name: .
+  - uid: Kevlar.Extensions.DependencyInjection
+    name: DependencyInjection
+    isExternal: true
+    href: Kevlar.Extensions.DependencyInjection.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+    href: Kevlar.Extensions.html
+  - name: .
+  - uid: Kevlar.Extensions.DependencyInjection
+    name: DependencyInjection
+    isExternal: true
+    href: Kevlar.Extensions.DependencyInjection.html
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.ToString
+  commentId: M:System.Object.ToString
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  name: ToString()
+  nameWithType: object.ToString()
+  fullName: object.ToString()
+  nameWithType.vb: Object.ToString()
+  fullName.vb: Object.ToString()
+  spec.csharp:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object)
+  commentId: M:System.Object.Equals(System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  name: Equals(object)
+  nameWithType: object.Equals(object)
+  fullName: object.Equals(object)
+  nameWithType.vb: Object.Equals(Object)
+  fullName.vb: Object.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetHashCode
+  commentId: M:System.Object.GetHashCode
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  name: GetHashCode()
+  nameWithType: object.GetHashCode()
+  fullName: object.GetHashCode()
+  nameWithType.vb: Object.GetHashCode()
+  fullName.vb: Object.GetHashCode()
+  spec.csharp:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.#ctor*
+  commentId: Overload:Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.#ctor
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.html#Kevlar_Extensions_DependencyInjection_CircuitBreakerDefinition__ctor
+  name: CircuitBreakerDefinition
+  nameWithType: CircuitBreakerDefinition.CircuitBreakerDefinition
+  fullName: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.CircuitBreakerDefinition
+  nameWithType.vb: CircuitBreakerDefinition.New
+  fullName.vb: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.New
+  name.vb: New
+- uid: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.ConsecutiveFailures*
+  commentId: Overload:Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.ConsecutiveFailures
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.html#Kevlar_Extensions_DependencyInjection_CircuitBreakerDefinition_ConsecutiveFailures
+  name: ConsecutiveFailures
+  nameWithType: CircuitBreakerDefinition.ConsecutiveFailures
+  fullName: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.ConsecutiveFailures
+- uid: System.Nullable{System.Int32}
+  commentId: T:System.Nullable{System.Int32}
+  parent: System
+  definition: System.Nullable`1
+  href: https://learn.microsoft.com/dotnet/api/system.int32
+  name: int?
+  nameWithType: int?
+  fullName: int?
+  nameWithType.vb: Integer?
+  fullName.vb: Integer?
+  name.vb: Integer?
+  spec.csharp:
+  - uid: System.Int32
+    name: int
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: '?'
+  spec.vb:
+  - uid: System.Int32
+    name: Integer
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: '?'
+- uid: System.Nullable`1
+  commentId: T:System.Nullable`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  name: Nullable<T>
+  nameWithType: Nullable<T>
+  fullName: System.Nullable<T>
+  nameWithType.vb: Nullable(Of T)
+  fullName.vb: System.Nullable(Of T)
+  name.vb: Nullable(Of T)
+  spec.csharp:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.FailureRatio*
+  commentId: Overload:Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.FailureRatio
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.html#Kevlar_Extensions_DependencyInjection_CircuitBreakerDefinition_FailureRatio
+  name: FailureRatio
+  nameWithType: CircuitBreakerDefinition.FailureRatio
+  fullName: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.FailureRatio
+- uid: System.Nullable{System.Double}
+  commentId: T:System.Nullable{System.Double}
+  parent: System
+  definition: System.Nullable`1
+  href: https://learn.microsoft.com/dotnet/api/system.double
+  name: double?
+  nameWithType: double?
+  fullName: double?
+  nameWithType.vb: Double?
+  fullName.vb: Double?
+  name.vb: Double?
+  spec.csharp:
+  - uid: System.Double
+    name: double
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.double
+  - name: '?'
+  spec.vb:
+  - uid: System.Double
+    name: Double
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.double
+  - name: '?'
+- uid: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.MinimumThroughput*
+  commentId: Overload:Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.MinimumThroughput
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.html#Kevlar_Extensions_DependencyInjection_CircuitBreakerDefinition_MinimumThroughput
+  name: MinimumThroughput
+  nameWithType: CircuitBreakerDefinition.MinimumThroughput
+  fullName: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.MinimumThroughput
+- uid: System.Int32
+  commentId: T:System.Int32
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.int32
+  name: int
+  nameWithType: int
+  fullName: int
+  nameWithType.vb: Integer
+  fullName.vb: Integer
+  name.vb: Integer
+- uid: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.SamplingWindow*
+  commentId: Overload:Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.SamplingWindow
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.html#Kevlar_Extensions_DependencyInjection_CircuitBreakerDefinition_SamplingWindow
+  name: SamplingWindow
+  nameWithType: CircuitBreakerDefinition.SamplingWindow
+  fullName: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.SamplingWindow
+- uid: System.TimeSpan
+  commentId: T:System.TimeSpan
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.timespan
+  name: TimeSpan
+  nameWithType: TimeSpan
+  fullName: System.TimeSpan
+- uid: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.BreakDuration*
+  commentId: Overload:Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.BreakDuration
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.html#Kevlar_Extensions_DependencyInjection_CircuitBreakerDefinition_BreakDuration
+  name: BreakDuration
+  nameWithType: CircuitBreakerDefinition.BreakDuration
+  fullName: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.BreakDuration

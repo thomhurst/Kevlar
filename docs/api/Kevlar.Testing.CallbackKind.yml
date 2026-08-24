@@ -1,0 +1,170 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Testing.CallbackKind
+  commentId: T:Kevlar.Testing.CallbackKind
+  id: CallbackKind
+  parent: Kevlar.Testing
+  children:
+  - Kevlar.Testing.CallbackKind.CircuitTransition
+  - Kevlar.Testing.CallbackKind.Fallback
+  - Kevlar.Testing.CallbackKind.Hedge
+  - Kevlar.Testing.CallbackKind.Retry
+  - Kevlar.Testing.CallbackKind.Timeout
+  langs:
+  - csharp
+  - vb
+  name: CallbackKind
+  nameWithType: CallbackKind
+  fullName: Kevlar.Testing.CallbackKind
+  type: Enum
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Identifies a Kevlar strategy callback captured by <xref href="Kevlar.Testing.TelemetryRecorder" data-throw-if-not-resolved="false"></xref>.
+  example: []
+  syntax:
+    content: public enum CallbackKind
+    content.vb: Public Enum CallbackKind
+- uid: Kevlar.Testing.CallbackKind.Retry
+  commentId: F:Kevlar.Testing.CallbackKind.Retry
+  id: Retry
+  parent: Kevlar.Testing.CallbackKind
+  langs:
+  - csharp
+  - vb
+  name: Retry
+  nameWithType: CallbackKind.Retry
+  fullName: Kevlar.Testing.CallbackKind.Retry
+  type: Field
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: A retry callback.
+  example: []
+  syntax:
+    content: Retry = 0
+    return:
+      type: Kevlar.Testing.CallbackKind
+- uid: Kevlar.Testing.CallbackKind.Timeout
+  commentId: F:Kevlar.Testing.CallbackKind.Timeout
+  id: Timeout
+  parent: Kevlar.Testing.CallbackKind
+  langs:
+  - csharp
+  - vb
+  name: Timeout
+  nameWithType: CallbackKind.Timeout
+  fullName: Kevlar.Testing.CallbackKind.Timeout
+  type: Field
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: A timeout callback.
+  example: []
+  syntax:
+    content: Timeout = 1
+    return:
+      type: Kevlar.Testing.CallbackKind
+- uid: Kevlar.Testing.CallbackKind.Hedge
+  commentId: F:Kevlar.Testing.CallbackKind.Hedge
+  id: Hedge
+  parent: Kevlar.Testing.CallbackKind
+  langs:
+  - csharp
+  - vb
+  name: Hedge
+  nameWithType: CallbackKind.Hedge
+  fullName: Kevlar.Testing.CallbackKind.Hedge
+  type: Field
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: A hedge callback.
+  example: []
+  syntax:
+    content: Hedge = 2
+    return:
+      type: Kevlar.Testing.CallbackKind
+- uid: Kevlar.Testing.CallbackKind.Fallback
+  commentId: F:Kevlar.Testing.CallbackKind.Fallback
+  id: Fallback
+  parent: Kevlar.Testing.CallbackKind
+  langs:
+  - csharp
+  - vb
+  name: Fallback
+  nameWithType: CallbackKind.Fallback
+  fullName: Kevlar.Testing.CallbackKind.Fallback
+  type: Field
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: A fallback callback.
+  example: []
+  syntax:
+    content: Fallback = 3
+    return:
+      type: Kevlar.Testing.CallbackKind
+- uid: Kevlar.Testing.CallbackKind.CircuitTransition
+  commentId: F:Kevlar.Testing.CallbackKind.CircuitTransition
+  id: CircuitTransition
+  parent: Kevlar.Testing.CallbackKind
+  langs:
+  - csharp
+  - vb
+  name: CircuitTransition
+  nameWithType: CallbackKind.CircuitTransition
+  fullName: Kevlar.Testing.CallbackKind.CircuitTransition
+  type: Field
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: A circuit-breaker transition callback.
+  example: []
+  syntax:
+    content: CircuitTransition = 4
+    return:
+      type: Kevlar.Testing.CallbackKind
+references:
+- uid: Kevlar.Testing.TelemetryRecorder
+  commentId: T:Kevlar.Testing.TelemetryRecorder
+  isExternal: true
+  href: Kevlar.Testing.TelemetryRecorder.html
+  name: TelemetryRecorder
+  nameWithType: TelemetryRecorder
+  fullName: Kevlar.Testing.TelemetryRecorder
+- uid: Kevlar.Testing
+  commentId: N:Kevlar.Testing
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar.Testing
+  nameWithType: Kevlar.Testing
+  fullName: Kevlar.Testing
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Testing
+    name: Testing
+    isExternal: true
+    href: Kevlar.Testing.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Testing
+    name: Testing
+    isExternal: true
+    href: Kevlar.Testing.html
+- uid: Kevlar.Testing.CallbackKind
+  commentId: T:Kevlar.Testing.CallbackKind
+  parent: Kevlar.Testing
+  isExternal: true
+  href: Kevlar.Testing.CallbackKind.html
+  name: CallbackKind
+  nameWithType: CallbackKind
+  fullName: Kevlar.Testing.CallbackKind

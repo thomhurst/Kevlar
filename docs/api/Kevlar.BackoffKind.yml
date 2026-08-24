@@ -1,0 +1,143 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.BackoffKind
+  commentId: T:Kevlar.BackoffKind
+  id: BackoffKind
+  parent: Kevlar
+  children:
+  - Kevlar.BackoffKind.Constant
+  - Kevlar.BackoffKind.Custom
+  - Kevlar.BackoffKind.Exponential
+  - Kevlar.BackoffKind.Linear
+  - Kevlar.BackoffKind.None
+  langs:
+  - csharp
+  - vb
+  name: BackoffKind
+  nameWithType: BackoffKind
+  fullName: Kevlar.BackoffKind
+  type: Enum
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The built-in and caller-defined backoff categories.
+  example: []
+  syntax:
+    content: public enum BackoffKind
+    content.vb: Public Enum BackoffKind
+- uid: Kevlar.BackoffKind.None
+  commentId: F:Kevlar.BackoffKind.None
+  id: None
+  parent: Kevlar.BackoffKind
+  langs:
+  - csharp
+  - vb
+  name: None
+  nameWithType: BackoffKind.None
+  fullName: Kevlar.BackoffKind.None
+  type: Field
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: No delay between attempts.
+  example: []
+  syntax:
+    content: None = 0
+    return:
+      type: Kevlar.BackoffKind
+- uid: Kevlar.BackoffKind.Constant
+  commentId: F:Kevlar.BackoffKind.Constant
+  id: Constant
+  parent: Kevlar.BackoffKind
+  langs:
+  - csharp
+  - vb
+  name: Constant
+  nameWithType: BackoffKind.Constant
+  fullName: Kevlar.BackoffKind.Constant
+  type: Field
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The same delay before every attempt.
+  example: []
+  syntax:
+    content: Constant = 1
+    return:
+      type: Kevlar.BackoffKind
+- uid: Kevlar.BackoffKind.Linear
+  commentId: F:Kevlar.BackoffKind.Linear
+  id: Linear
+  parent: Kevlar.BackoffKind
+  langs:
+  - csharp
+  - vb
+  name: Linear
+  nameWithType: BackoffKind.Linear
+  fullName: Kevlar.BackoffKind.Linear
+  type: Field
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: A linearly increasing delay.
+  example: []
+  syntax:
+    content: Linear = 2
+    return:
+      type: Kevlar.BackoffKind
+- uid: Kevlar.BackoffKind.Exponential
+  commentId: F:Kevlar.BackoffKind.Exponential
+  id: Exponential
+  parent: Kevlar.BackoffKind
+  langs:
+  - csharp
+  - vb
+  name: Exponential
+  nameWithType: BackoffKind.Exponential
+  fullName: Kevlar.BackoffKind.Exponential
+  type: Field
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: An exponentially increasing delay.
+  example: []
+  syntax:
+    content: Exponential = 3
+    return:
+      type: Kevlar.BackoffKind
+- uid: Kevlar.BackoffKind.Custom
+  commentId: F:Kevlar.BackoffKind.Custom
+  id: Custom
+  parent: Kevlar.BackoffKind
+  langs:
+  - csharp
+  - vb
+  name: Custom
+  nameWithType: BackoffKind.Custom
+  fullName: Kevlar.BackoffKind.Custom
+  type: Field
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: A caller-defined delay callback.
+  example: []
+  syntax:
+    content: Custom = 4
+    return:
+      type: Kevlar.BackoffKind
+references:
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: Kevlar.BackoffKind
+  commentId: T:Kevlar.BackoffKind
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.BackoffKind.html
+  name: BackoffKind
+  nameWithType: BackoffKind
+  fullName: Kevlar.BackoffKind

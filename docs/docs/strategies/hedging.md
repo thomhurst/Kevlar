@@ -25,6 +25,8 @@ Shield.Hedge(o =>
 
 ## Options
 
+API reference: [`HedgeOptions`](pathname:///api/Kevlar.HedgeOptions.html) and [`HedgeOptions<T>`](pathname:///api/Kevlar.HedgeOptions-1.html).
+
 | Option | Default | What it does |
 |---|---|---|
 | `MaxAttempts` | `2` | Total attempts, including the first |

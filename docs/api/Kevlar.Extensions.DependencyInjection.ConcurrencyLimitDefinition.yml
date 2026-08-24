@@ -1,0 +1,394 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition
+  commentId: T:Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition
+  id: ConcurrencyLimitDefinition
+  parent: Kevlar.Extensions.DependencyInjection
+  children:
+  - Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.#ctor
+  - Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxConcurrency
+  - Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxQueue
+  langs:
+  - csharp
+  - vb
+  name: ConcurrencyLimitDefinition
+  nameWithType: ConcurrencyLimitDefinition
+  fullName: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition
+  type: Class
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: The concurrency limit section of a <xref href="Kevlar.Extensions.DependencyInjection.ShieldDefinition" data-throw-if-not-resolved="false"></xref>.
+  example: []
+  syntax:
+    content: public sealed class ConcurrencyLimitDefinition
+    content.vb: Public NotInheritable Class ConcurrencyLimitDefinition
+  inheritance:
+  - System.Object
+  inheritedMembers:
+  - System.Object.GetType
+  - System.Object.ToString
+  - System.Object.Equals(System.Object)
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  - System.Object.GetHashCode
+- uid: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.#ctor
+  commentId: M:Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.#ctor
+  id: '#ctor'
+  parent: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition
+  langs:
+  - csharp
+  - vb
+  name: ConcurrencyLimitDefinition()
+  nameWithType: ConcurrencyLimitDefinition.ConcurrencyLimitDefinition()
+  fullName: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.ConcurrencyLimitDefinition()
+  type: Constructor
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  syntax:
+    content: public ConcurrencyLimitDefinition()
+    content.vb: Public Sub New()
+  overload: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.#ctor*
+  nameWithType.vb: ConcurrencyLimitDefinition.New()
+  fullName.vb: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.New()
+  name.vb: New()
+- uid: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxConcurrency
+  commentId: P:Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxConcurrency
+  id: MaxConcurrency
+  parent: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition
+  langs:
+  - csharp
+  - vb
+  name: MaxConcurrency
+  nameWithType: ConcurrencyLimitDefinition.MaxConcurrency
+  fullName: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxConcurrency
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: Maximum concurrent executions. Default 10.
+  example: []
+  syntax:
+    content: public int MaxConcurrency { get; set; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public Property MaxConcurrency As Integer
+  overload: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxConcurrency*
+- uid: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxQueue
+  commentId: P:Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxQueue
+  id: MaxQueue
+  parent: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition
+  langs:
+  - csharp
+  - vb
+  name: MaxQueue
+  nameWithType: ConcurrencyLimitDefinition.MaxQueue
+  fullName: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxQueue
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: Executions allowed to wait for a slot. Default 0.
+  example: []
+  syntax:
+    content: public int MaxQueue { get; set; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public Property MaxQueue As Integer
+  overload: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxQueue*
+references:
+- uid: Kevlar.Extensions.DependencyInjection.ShieldDefinition
+  commentId: T:Kevlar.Extensions.DependencyInjection.ShieldDefinition
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.ShieldDefinition.html
+  name: ShieldDefinition
+  nameWithType: ShieldDefinition
+  fullName: Kevlar.Extensions.DependencyInjection.ShieldDefinition
+- uid: Kevlar.Extensions.DependencyInjection
+  commentId: N:Kevlar.Extensions.DependencyInjection
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar.Extensions.DependencyInjection
+  nameWithType: Kevlar.Extensions.DependencyInjection
+  fullName: Kevlar.Extensions.DependencyInjection
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+    href: Kevlar.Extensions.html
+  - name: .
+  - uid: Kevlar.Extensions.DependencyInjection
+    name: DependencyInjection
+    isExternal: true
+    href: Kevlar.Extensions.DependencyInjection.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+    href: Kevlar.Extensions.html
+  - name: .
+  - uid: Kevlar.Extensions.DependencyInjection
+    name: DependencyInjection
+    isExternal: true
+    href: Kevlar.Extensions.DependencyInjection.html
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.ToString
+  commentId: M:System.Object.ToString
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  name: ToString()
+  nameWithType: object.ToString()
+  fullName: object.ToString()
+  nameWithType.vb: Object.ToString()
+  fullName.vb: Object.ToString()
+  spec.csharp:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object)
+  commentId: M:System.Object.Equals(System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  name: Equals(object)
+  nameWithType: object.Equals(object)
+  fullName: object.Equals(object)
+  nameWithType.vb: Object.Equals(Object)
+  fullName.vb: Object.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetHashCode
+  commentId: M:System.Object.GetHashCode
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  name: GetHashCode()
+  nameWithType: object.GetHashCode()
+  fullName: object.GetHashCode()
+  nameWithType.vb: Object.GetHashCode()
+  fullName.vb: Object.GetHashCode()
+  spec.csharp:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.#ctor*
+  commentId: Overload:Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.#ctor
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.html#Kevlar_Extensions_DependencyInjection_ConcurrencyLimitDefinition__ctor
+  name: ConcurrencyLimitDefinition
+  nameWithType: ConcurrencyLimitDefinition.ConcurrencyLimitDefinition
+  fullName: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.ConcurrencyLimitDefinition
+  nameWithType.vb: ConcurrencyLimitDefinition.New
+  fullName.vb: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.New
+  name.vb: New
+- uid: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxConcurrency*
+  commentId: Overload:Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxConcurrency
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.html#Kevlar_Extensions_DependencyInjection_ConcurrencyLimitDefinition_MaxConcurrency
+  name: MaxConcurrency
+  nameWithType: ConcurrencyLimitDefinition.MaxConcurrency
+  fullName: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxConcurrency
+- uid: System.Int32
+  commentId: T:System.Int32
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.int32
+  name: int
+  nameWithType: int
+  fullName: int
+  nameWithType.vb: Integer
+  fullName.vb: Integer
+  name.vb: Integer
+- uid: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxQueue*
+  commentId: Overload:Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxQueue
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.html#Kevlar_Extensions_DependencyInjection_ConcurrencyLimitDefinition_MaxQueue
+  name: MaxQueue
+  nameWithType: ConcurrencyLimitDefinition.MaxQueue
+  fullName: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxQueue

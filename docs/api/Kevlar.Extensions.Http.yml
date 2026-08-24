@@ -1,0 +1,146 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Extensions.Http
+  commentId: N:Kevlar.Extensions.Http
+  id: Kevlar.Extensions.Http
+  children:
+  - Kevlar.Extensions.Http.HttpContentReplayPolicy
+  - Kevlar.Extensions.Http.HttpEndpoint
+  - Kevlar.Extensions.Http.HttpEndpointRoutingOptions
+  - Kevlar.Extensions.Http.HttpEndpointSelectionMode
+  - Kevlar.Extensions.Http.HttpRequestReplayException
+  - Kevlar.Extensions.Http.HttpShield
+  - Kevlar.Extensions.Http.ShieldDelegatingHandler
+  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  - Kevlar.Extensions.Http.ShieldHttpHandlerOptions
+  - Kevlar.Extensions.Http.StandardHedgingShieldOptions
+  - Kevlar.Extensions.Http.StandardHttpShieldOptions
+  langs:
+  - csharp
+  - vb
+  name: Kevlar.Extensions.Http
+  nameWithType: Kevlar.Extensions.Http
+  fullName: Kevlar.Extensions.Http
+  type: Namespace
+  assemblies:
+  - Kevlar.Extensions.Http
+references:
+- uid: Kevlar.Extensions.Http.HttpContentReplayPolicy
+  commentId: T:Kevlar.Extensions.Http.HttpContentReplayPolicy
+  parent: Kevlar.Extensions.Http
+  isExternal: true
+  href: Kevlar.Extensions.Http.HttpContentReplayPolicy.html
+  name: HttpContentReplayPolicy
+  nameWithType: HttpContentReplayPolicy
+  fullName: Kevlar.Extensions.Http.HttpContentReplayPolicy
+- uid: Kevlar.Extensions.Http.HttpEndpoint
+  commentId: T:Kevlar.Extensions.Http.HttpEndpoint
+  isExternal: true
+  href: Kevlar.Extensions.Http.HttpEndpoint.html
+  name: HttpEndpoint
+  nameWithType: HttpEndpoint
+  fullName: Kevlar.Extensions.Http.HttpEndpoint
+- uid: Kevlar.Extensions.Http.HttpEndpointRoutingOptions
+  commentId: T:Kevlar.Extensions.Http.HttpEndpointRoutingOptions
+  parent: Kevlar.Extensions.Http
+  isExternal: true
+  href: Kevlar.Extensions.Http.HttpEndpointRoutingOptions.html
+  name: HttpEndpointRoutingOptions
+  nameWithType: HttpEndpointRoutingOptions
+  fullName: Kevlar.Extensions.Http.HttpEndpointRoutingOptions
+- uid: Kevlar.Extensions.Http.HttpEndpointSelectionMode
+  commentId: T:Kevlar.Extensions.Http.HttpEndpointSelectionMode
+  parent: Kevlar.Extensions.Http
+  isExternal: true
+  href: Kevlar.Extensions.Http.HttpEndpointSelectionMode.html
+  name: HttpEndpointSelectionMode
+  nameWithType: HttpEndpointSelectionMode
+  fullName: Kevlar.Extensions.Http.HttpEndpointSelectionMode
+- uid: Kevlar.Extensions.Http.HttpRequestReplayException
+  commentId: T:Kevlar.Extensions.Http.HttpRequestReplayException
+  isExternal: true
+  href: Kevlar.Extensions.Http.HttpRequestReplayException.html
+  name: HttpRequestReplayException
+  nameWithType: HttpRequestReplayException
+  fullName: Kevlar.Extensions.Http.HttpRequestReplayException
+- uid: Kevlar.Extensions.Http.HttpShield
+  commentId: T:Kevlar.Extensions.Http.HttpShield
+  isExternal: true
+  href: Kevlar.Extensions.Http.HttpShield.html
+  name: HttpShield
+  nameWithType: HttpShield
+  fullName: Kevlar.Extensions.Http.HttpShield
+- uid: Kevlar.Extensions.Http.ShieldDelegatingHandler
+  commentId: T:Kevlar.Extensions.Http.ShieldDelegatingHandler
+  isExternal: true
+  href: Kevlar.Extensions.Http.ShieldDelegatingHandler.html
+  name: ShieldDelegatingHandler
+  nameWithType: ShieldDelegatingHandler
+  fullName: Kevlar.Extensions.Http.ShieldDelegatingHandler
+- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  commentId: T:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  isExternal: true
+  href: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.html
+  name: ShieldHttpClientBuilderExtensions
+  nameWithType: ShieldHttpClientBuilderExtensions
+  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+- uid: Kevlar.Extensions.Http.ShieldHttpHandlerOptions
+  commentId: T:Kevlar.Extensions.Http.ShieldHttpHandlerOptions
+  parent: Kevlar.Extensions.Http
+  isExternal: true
+  href: Kevlar.Extensions.Http.ShieldHttpHandlerOptions.html
+  name: ShieldHttpHandlerOptions
+  nameWithType: ShieldHttpHandlerOptions
+  fullName: Kevlar.Extensions.Http.ShieldHttpHandlerOptions
+- uid: Kevlar.Extensions.Http.StandardHedgingShieldOptions
+  commentId: T:Kevlar.Extensions.Http.StandardHedgingShieldOptions
+  isExternal: true
+  href: Kevlar.Extensions.Http.StandardHedgingShieldOptions.html
+  name: StandardHedgingShieldOptions
+  nameWithType: StandardHedgingShieldOptions
+  fullName: Kevlar.Extensions.Http.StandardHedgingShieldOptions
+- uid: Kevlar.Extensions.Http.StandardHttpShieldOptions
+  commentId: T:Kevlar.Extensions.Http.StandardHttpShieldOptions
+  parent: Kevlar.Extensions.Http
+  isExternal: true
+  href: Kevlar.Extensions.Http.StandardHttpShieldOptions.html
+  name: StandardHttpShieldOptions
+  nameWithType: StandardHttpShieldOptions
+  fullName: Kevlar.Extensions.Http.StandardHttpShieldOptions
+- uid: Kevlar.Extensions.Http
+  commentId: N:Kevlar.Extensions.Http
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar.Extensions.Http
+  nameWithType: Kevlar.Extensions.Http
+  fullName: Kevlar.Extensions.Http
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+    href: Kevlar.Extensions.html
+  - name: .
+  - uid: Kevlar.Extensions.Http
+    name: Http
+    isExternal: true
+    href: Kevlar.Extensions.Http.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+    href: Kevlar.Extensions.html
+  - name: .
+  - uid: Kevlar.Extensions.Http
+    name: Http
+    isExternal: true
+    href: Kevlar.Extensions.Http.html

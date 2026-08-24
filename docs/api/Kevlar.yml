@@ -1,0 +1,811 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar
+  commentId: N:Kevlar
+  id: Kevlar
+  children:
+  - Kevlar.Backoff
+  - Kevlar.BackoffKind
+  - Kevlar.CircuitBreakerBreakDurationEvent
+  - Kevlar.CircuitBreakerMonitor
+  - Kevlar.CircuitBreakerOptions
+  - Kevlar.CircuitBreakerOptions`1
+  - Kevlar.CircuitOpenException
+  - Kevlar.CircuitState
+  - Kevlar.CircuitStateChangedEvent
+  - Kevlar.ConcurrencyLimitExceededException
+  - Kevlar.ConcurrencyLimitOptions
+  - Kevlar.ConcurrencyLimitRejectedEvent
+  - Kevlar.Continuation`2
+  - Kevlar.FallbackEvent
+  - Kevlar.FallbackEvent`1
+  - Kevlar.FallbackOptions
+  - Kevlar.FallbackOptions`1
+  - Kevlar.HandlingClause
+  - Kevlar.HedgeActionGenerator
+  - Kevlar.HedgeActionGeneratorEvent
+  - Kevlar.HedgeActionGeneratorEvent`1
+  - Kevlar.HedgeEvent
+  - Kevlar.HedgeOptions
+  - Kevlar.HedgeOptions`1
+  - Kevlar.KevlarContext
+  - Kevlar.KevlarDiagnostics
+  - Kevlar.KevlarException
+  - Kevlar.KevlarKey`1
+  - Kevlar.KevlarProperties
+  - Kevlar.Outcome`1
+  - Kevlar.PartitionedShieldOptions
+  - Kevlar.PartitionedShield`1
+  - Kevlar.PartitionedShield`2
+  - Kevlar.PartitionedVoidShield`1
+  - Kevlar.RateLimitExceededException
+  - Kevlar.RateLimitOptions
+  - Kevlar.RateLimitRejectedEvent
+  - Kevlar.RetryEvent
+  - Kevlar.RetryEvent`1
+  - Kevlar.RetryOptions
+  - Kevlar.RetryOptions`1
+  - Kevlar.Shield
+  - Kevlar.ShieldBuilder
+  - Kevlar.ShieldBuilder`1
+  - Kevlar.ShieldExtensions
+  - Kevlar.ShieldResultExtensions
+  - Kevlar.ShieldTaskExtensions
+  - Kevlar.Shield`1
+  - Kevlar.Strategy
+  - Kevlar.TimeoutEvent
+  - Kevlar.TimeoutExceededException
+  - Kevlar.TimeoutOptions
+  - Kevlar.VoidShield
+  - Kevlar.VoidShieldBuilder
+  langs:
+  - csharp
+  - vb
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+  type: Namespace
+  assemblies:
+  - Kevlar
+references:
+- uid: Kevlar.Backoff
+  commentId: T:Kevlar.Backoff
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Backoff.html
+  name: Backoff
+  nameWithType: Backoff
+  fullName: Kevlar.Backoff
+- uid: Kevlar.BackoffKind
+  commentId: T:Kevlar.BackoffKind
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.BackoffKind.html
+  name: BackoffKind
+  nameWithType: BackoffKind
+  fullName: Kevlar.BackoffKind
+- uid: Kevlar.CircuitOpenException
+  commentId: T:Kevlar.CircuitOpenException
+  isExternal: true
+  href: Kevlar.CircuitOpenException.html
+  name: CircuitOpenException
+  nameWithType: CircuitOpenException
+  fullName: Kevlar.CircuitOpenException
+- uid: Kevlar.ConcurrencyLimitExceededException
+  commentId: T:Kevlar.ConcurrencyLimitExceededException
+  isExternal: true
+  href: Kevlar.ConcurrencyLimitExceededException.html
+  name: ConcurrencyLimitExceededException
+  nameWithType: ConcurrencyLimitExceededException
+  fullName: Kevlar.ConcurrencyLimitExceededException
+- uid: Kevlar.KevlarException
+  commentId: T:Kevlar.KevlarException
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.KevlarException.html
+  name: KevlarException
+  nameWithType: KevlarException
+  fullName: Kevlar.KevlarException
+- uid: Kevlar.RateLimitExceededException
+  commentId: T:Kevlar.RateLimitExceededException
+  isExternal: true
+  href: Kevlar.RateLimitExceededException.html
+  name: RateLimitExceededException
+  nameWithType: RateLimitExceededException
+  fullName: Kevlar.RateLimitExceededException
+- uid: Kevlar.TimeoutExceededException
+  commentId: T:Kevlar.TimeoutExceededException
+  isExternal: true
+  href: Kevlar.TimeoutExceededException.html
+  name: TimeoutExceededException
+  nameWithType: TimeoutExceededException
+  fullName: Kevlar.TimeoutExceededException
+- uid: Kevlar.HandlingClause
+  commentId: T:Kevlar.HandlingClause
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.HandlingClause.html
+  name: HandlingClause
+  nameWithType: HandlingClause
+  fullName: Kevlar.HandlingClause
+- uid: Kevlar.KevlarContext
+  commentId: T:Kevlar.KevlarContext
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.KevlarContext.html
+  name: KevlarContext
+  nameWithType: KevlarContext
+  fullName: Kevlar.KevlarContext
+- uid: Kevlar.KevlarDiagnostics
+  commentId: T:Kevlar.KevlarDiagnostics
+  isExternal: true
+  href: Kevlar.KevlarDiagnostics.html
+  name: KevlarDiagnostics
+  nameWithType: KevlarDiagnostics
+  fullName: Kevlar.KevlarDiagnostics
+- uid: Kevlar.KevlarKey`1
+  commentId: T:Kevlar.KevlarKey`1
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.KevlarKey-1.html
+  name: KevlarKey<T>
+  nameWithType: KevlarKey<T>
+  fullName: Kevlar.KevlarKey<T>
+  nameWithType.vb: KevlarKey(Of T)
+  fullName.vb: Kevlar.KevlarKey(Of T)
+  name.vb: KevlarKey(Of T)
+  spec.csharp:
+  - uid: Kevlar.KevlarKey`1
+    name: KevlarKey
+    isExternal: true
+    href: Kevlar.KevlarKey-1.html
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.KevlarKey`1
+    name: KevlarKey
+    isExternal: true
+    href: Kevlar.KevlarKey-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Kevlar.KevlarProperties
+  commentId: T:Kevlar.KevlarProperties
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.KevlarProperties.html
+  name: KevlarProperties
+  nameWithType: KevlarProperties
+  fullName: Kevlar.KevlarProperties
+- uid: Kevlar.Outcome`1
+  commentId: T:Kevlar.Outcome`1
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Outcome-1.html
+  name: Outcome<T>
+  nameWithType: Outcome<T>
+  fullName: Kevlar.Outcome<T>
+  nameWithType.vb: Outcome(Of T)
+  fullName.vb: Kevlar.Outcome(Of T)
+  name.vb: Outcome(Of T)
+  spec.csharp:
+  - uid: Kevlar.Outcome`1
+    name: Outcome
+    isExternal: true
+    href: Kevlar.Outcome-1.html
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Outcome`1
+    name: Outcome
+    isExternal: true
+    href: Kevlar.Outcome-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Kevlar.PartitionedShield`1
+  commentId: T:Kevlar.PartitionedShield`1
+  isExternal: true
+  href: Kevlar.PartitionedShield-1.html
+  name: PartitionedShield<TKey>
+  nameWithType: PartitionedShield<TKey>
+  fullName: Kevlar.PartitionedShield<TKey>
+  nameWithType.vb: PartitionedShield(Of TKey)
+  fullName.vb: Kevlar.PartitionedShield(Of TKey)
+  name.vb: PartitionedShield(Of TKey)
+  spec.csharp:
+  - uid: Kevlar.PartitionedShield`1
+    name: PartitionedShield
+    isExternal: true
+    href: Kevlar.PartitionedShield-1.html
+  - name: <
+  - name: TKey
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.PartitionedShield`1
+    name: PartitionedShield
+    isExternal: true
+    href: Kevlar.PartitionedShield-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TKey
+  - name: )
+- uid: Kevlar.PartitionedShield`2
+  commentId: T:Kevlar.PartitionedShield`2
+  isExternal: true
+  href: Kevlar.PartitionedShield-2.html
+  name: PartitionedShield<TKey, TResult>
+  nameWithType: PartitionedShield<TKey, TResult>
+  fullName: Kevlar.PartitionedShield<TKey, TResult>
+  nameWithType.vb: PartitionedShield(Of TKey, TResult)
+  fullName.vb: Kevlar.PartitionedShield(Of TKey, TResult)
+  name.vb: PartitionedShield(Of TKey, TResult)
+  spec.csharp:
+  - uid: Kevlar.PartitionedShield`2
+    name: PartitionedShield
+    isExternal: true
+    href: Kevlar.PartitionedShield-2.html
+  - name: <
+  - name: TKey
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.PartitionedShield`2
+    name: PartitionedShield
+    isExternal: true
+    href: Kevlar.PartitionedShield-2.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TKey
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.PartitionedShieldOptions
+  commentId: T:Kevlar.PartitionedShieldOptions
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.PartitionedShieldOptions.html
+  name: PartitionedShieldOptions
+  nameWithType: PartitionedShieldOptions
+  fullName: Kevlar.PartitionedShieldOptions
+- uid: Kevlar.PartitionedVoidShield`1
+  commentId: T:Kevlar.PartitionedVoidShield`1
+  isExternal: true
+  href: Kevlar.PartitionedVoidShield-1.html
+  name: PartitionedVoidShield<TKey>
+  nameWithType: PartitionedVoidShield<TKey>
+  fullName: Kevlar.PartitionedVoidShield<TKey>
+  nameWithType.vb: PartitionedVoidShield(Of TKey)
+  fullName.vb: Kevlar.PartitionedVoidShield(Of TKey)
+  name.vb: PartitionedVoidShield(Of TKey)
+  spec.csharp:
+  - uid: Kevlar.PartitionedVoidShield`1
+    name: PartitionedVoidShield
+    isExternal: true
+    href: Kevlar.PartitionedVoidShield-1.html
+  - name: <
+  - name: TKey
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.PartitionedVoidShield`1
+    name: PartitionedVoidShield
+    isExternal: true
+    href: Kevlar.PartitionedVoidShield-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TKey
+  - name: )
+- uid: Kevlar.Shield
+  commentId: T:Kevlar.Shield
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Shield.html
+  name: Shield
+  nameWithType: Shield
+  fullName: Kevlar.Shield
+- uid: Kevlar.Shield`1
+  commentId: T:Kevlar.Shield`1
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Shield-1.html
+  name: Shield<TResult>
+  nameWithType: Shield<TResult>
+  fullName: Kevlar.Shield<TResult>
+  nameWithType.vb: Shield(Of TResult)
+  fullName.vb: Kevlar.Shield(Of TResult)
+  name.vb: Shield(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.ShieldBuilder
+  commentId: T:Kevlar.ShieldBuilder
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.ShieldBuilder.html
+  name: ShieldBuilder
+  nameWithType: ShieldBuilder
+  fullName: Kevlar.ShieldBuilder
+- uid: Kevlar.ShieldBuilder`1
+  commentId: T:Kevlar.ShieldBuilder`1
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.ShieldBuilder-1.html
+  name: ShieldBuilder<TResult>
+  nameWithType: ShieldBuilder<TResult>
+  fullName: Kevlar.ShieldBuilder<TResult>
+  nameWithType.vb: ShieldBuilder(Of TResult)
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult)
+  name.vb: ShieldBuilder(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.ShieldBuilder`1
+    name: ShieldBuilder
+    isExternal: true
+    href: Kevlar.ShieldBuilder-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.ShieldBuilder`1
+    name: ShieldBuilder
+    isExternal: true
+    href: Kevlar.ShieldBuilder-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.ShieldExtensions
+  commentId: T:Kevlar.ShieldExtensions
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.ShieldExtensions.html
+  name: ShieldExtensions
+  nameWithType: ShieldExtensions
+  fullName: Kevlar.ShieldExtensions
+- uid: Kevlar.ShieldResultExtensions
+  commentId: T:Kevlar.ShieldResultExtensions
+  isExternal: true
+  href: Kevlar.ShieldResultExtensions.html
+  name: ShieldResultExtensions
+  nameWithType: ShieldResultExtensions
+  fullName: Kevlar.ShieldResultExtensions
+- uid: Kevlar.ShieldTaskExtensions
+  commentId: T:Kevlar.ShieldTaskExtensions
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.ShieldTaskExtensions.html
+  name: ShieldTaskExtensions
+  nameWithType: ShieldTaskExtensions
+  fullName: Kevlar.ShieldTaskExtensions
+- uid: Kevlar.CircuitBreakerBreakDurationEvent
+  commentId: T:Kevlar.CircuitBreakerBreakDurationEvent
+  isExternal: true
+  href: Kevlar.CircuitBreakerBreakDurationEvent.html
+  name: CircuitBreakerBreakDurationEvent
+  nameWithType: CircuitBreakerBreakDurationEvent
+  fullName: Kevlar.CircuitBreakerBreakDurationEvent
+- uid: Kevlar.CircuitBreakerMonitor
+  commentId: T:Kevlar.CircuitBreakerMonitor
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.CircuitBreakerMonitor.html
+  name: CircuitBreakerMonitor
+  nameWithType: CircuitBreakerMonitor
+  fullName: Kevlar.CircuitBreakerMonitor
+- uid: Kevlar.CircuitBreakerOptions
+  commentId: T:Kevlar.CircuitBreakerOptions
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.CircuitBreakerOptions.html
+  name: CircuitBreakerOptions
+  nameWithType: CircuitBreakerOptions
+  fullName: Kevlar.CircuitBreakerOptions
+- uid: Kevlar.CircuitBreakerOptions`1
+  commentId: T:Kevlar.CircuitBreakerOptions`1
+  isExternal: true
+  href: Kevlar.CircuitBreakerOptions-1.html
+  name: CircuitBreakerOptions<TResult>
+  nameWithType: CircuitBreakerOptions<TResult>
+  fullName: Kevlar.CircuitBreakerOptions<TResult>
+  nameWithType.vb: CircuitBreakerOptions(Of TResult)
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult)
+  name.vb: CircuitBreakerOptions(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.CircuitBreakerOptions`1
+    name: CircuitBreakerOptions
+    isExternal: true
+    href: Kevlar.CircuitBreakerOptions-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.CircuitBreakerOptions`1
+    name: CircuitBreakerOptions
+    isExternal: true
+    href: Kevlar.CircuitBreakerOptions-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.CircuitState
+  commentId: T:Kevlar.CircuitState
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.CircuitState.html
+  name: CircuitState
+  nameWithType: CircuitState
+  fullName: Kevlar.CircuitState
+- uid: Kevlar.CircuitStateChangedEvent
+  commentId: T:Kevlar.CircuitStateChangedEvent
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.CircuitStateChangedEvent.html
+  name: CircuitStateChangedEvent
+  nameWithType: CircuitStateChangedEvent
+  fullName: Kevlar.CircuitStateChangedEvent
+- uid: Kevlar.ConcurrencyLimitOptions
+  commentId: T:Kevlar.ConcurrencyLimitOptions
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.ConcurrencyLimitOptions.html
+  name: ConcurrencyLimitOptions
+  nameWithType: ConcurrencyLimitOptions
+  fullName: Kevlar.ConcurrencyLimitOptions
+- uid: Kevlar.ConcurrencyLimitRejectedEvent
+  commentId: T:Kevlar.ConcurrencyLimitRejectedEvent
+  isExternal: true
+  href: Kevlar.ConcurrencyLimitRejectedEvent.html
+  name: ConcurrencyLimitRejectedEvent
+  nameWithType: ConcurrencyLimitRejectedEvent
+  fullName: Kevlar.ConcurrencyLimitRejectedEvent
+- uid: Kevlar.FallbackEvent
+  commentId: T:Kevlar.FallbackEvent
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.FallbackEvent.html
+  name: FallbackEvent
+  nameWithType: FallbackEvent
+  fullName: Kevlar.FallbackEvent
+- uid: Kevlar.FallbackEvent`1
+  commentId: T:Kevlar.FallbackEvent`1
+  isExternal: true
+  href: Kevlar.FallbackEvent-1.html
+  name: FallbackEvent<TResult>
+  nameWithType: FallbackEvent<TResult>
+  fullName: Kevlar.FallbackEvent<TResult>
+  nameWithType.vb: FallbackEvent(Of TResult)
+  fullName.vb: Kevlar.FallbackEvent(Of TResult)
+  name.vb: FallbackEvent(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.FallbackEvent`1
+    name: FallbackEvent
+    isExternal: true
+    href: Kevlar.FallbackEvent-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.FallbackEvent`1
+    name: FallbackEvent
+    isExternal: true
+    href: Kevlar.FallbackEvent-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.FallbackOptions
+  commentId: T:Kevlar.FallbackOptions
+  isExternal: true
+  href: Kevlar.FallbackOptions.html
+  name: FallbackOptions
+  nameWithType: FallbackOptions
+  fullName: Kevlar.FallbackOptions
+- uid: Kevlar.FallbackOptions`1
+  commentId: T:Kevlar.FallbackOptions`1
+  isExternal: true
+  href: Kevlar.FallbackOptions-1.html
+  name: FallbackOptions<TResult>
+  nameWithType: FallbackOptions<TResult>
+  fullName: Kevlar.FallbackOptions<TResult>
+  nameWithType.vb: FallbackOptions(Of TResult)
+  fullName.vb: Kevlar.FallbackOptions(Of TResult)
+  name.vb: FallbackOptions(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.FallbackOptions`1
+    name: FallbackOptions
+    isExternal: true
+    href: Kevlar.FallbackOptions-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.FallbackOptions`1
+    name: FallbackOptions
+    isExternal: true
+    href: Kevlar.FallbackOptions-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.HedgeActionGenerator
+  commentId: T:Kevlar.HedgeActionGenerator
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.HedgeActionGenerator.html
+  name: HedgeActionGenerator
+  nameWithType: HedgeActionGenerator
+  fullName: Kevlar.HedgeActionGenerator
+- uid: Kevlar.HedgeActionGeneratorEvent
+  commentId: T:Kevlar.HedgeActionGeneratorEvent
+  isExternal: true
+  href: Kevlar.HedgeActionGeneratorEvent.html
+  name: HedgeActionGeneratorEvent
+  nameWithType: HedgeActionGeneratorEvent
+  fullName: Kevlar.HedgeActionGeneratorEvent
+- uid: Kevlar.HedgeActionGeneratorEvent`1
+  commentId: T:Kevlar.HedgeActionGeneratorEvent`1
+  isExternal: true
+  href: Kevlar.HedgeActionGeneratorEvent-1.html
+  name: HedgeActionGeneratorEvent<TResult>
+  nameWithType: HedgeActionGeneratorEvent<TResult>
+  fullName: Kevlar.HedgeActionGeneratorEvent<TResult>
+  nameWithType.vb: HedgeActionGeneratorEvent(Of TResult)
+  fullName.vb: Kevlar.HedgeActionGeneratorEvent(Of TResult)
+  name.vb: HedgeActionGeneratorEvent(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.HedgeActionGeneratorEvent`1
+    name: HedgeActionGeneratorEvent
+    isExternal: true
+    href: Kevlar.HedgeActionGeneratorEvent-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.HedgeActionGeneratorEvent`1
+    name: HedgeActionGeneratorEvent
+    isExternal: true
+    href: Kevlar.HedgeActionGeneratorEvent-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.HedgeOptions
+  commentId: T:Kevlar.HedgeOptions
+  isExternal: true
+  href: Kevlar.HedgeOptions.html
+  name: HedgeOptions
+  nameWithType: HedgeOptions
+  fullName: Kevlar.HedgeOptions
+- uid: Kevlar.HedgeOptions`1
+  commentId: T:Kevlar.HedgeOptions`1
+  isExternal: true
+  href: Kevlar.HedgeOptions-1.html
+  name: HedgeOptions<TResult>
+  nameWithType: HedgeOptions<TResult>
+  fullName: Kevlar.HedgeOptions<TResult>
+  nameWithType.vb: HedgeOptions(Of TResult)
+  fullName.vb: Kevlar.HedgeOptions(Of TResult)
+  name.vb: HedgeOptions(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.HedgeOptions`1
+    name: HedgeOptions
+    isExternal: true
+    href: Kevlar.HedgeOptions-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.HedgeOptions`1
+    name: HedgeOptions
+    isExternal: true
+    href: Kevlar.HedgeOptions-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.HedgeEvent
+  commentId: T:Kevlar.HedgeEvent
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.HedgeEvent.html
+  name: HedgeEvent
+  nameWithType: HedgeEvent
+  fullName: Kevlar.HedgeEvent
+- uid: Kevlar.RateLimitOptions
+  commentId: T:Kevlar.RateLimitOptions
+  isExternal: true
+  href: Kevlar.RateLimitOptions.html
+  name: RateLimitOptions
+  nameWithType: RateLimitOptions
+  fullName: Kevlar.RateLimitOptions
+- uid: Kevlar.RateLimitRejectedEvent
+  commentId: T:Kevlar.RateLimitRejectedEvent
+  isExternal: true
+  href: Kevlar.RateLimitRejectedEvent.html
+  name: RateLimitRejectedEvent
+  nameWithType: RateLimitRejectedEvent
+  fullName: Kevlar.RateLimitRejectedEvent
+- uid: Kevlar.RetryOptions
+  commentId: T:Kevlar.RetryOptions
+  isExternal: true
+  href: Kevlar.RetryOptions.html
+  name: RetryOptions
+  nameWithType: RetryOptions
+  fullName: Kevlar.RetryOptions
+- uid: Kevlar.RetryOptions`1
+  commentId: T:Kevlar.RetryOptions`1
+  isExternal: true
+  href: Kevlar.RetryOptions-1.html
+  name: RetryOptions<TResult>
+  nameWithType: RetryOptions<TResult>
+  fullName: Kevlar.RetryOptions<TResult>
+  nameWithType.vb: RetryOptions(Of TResult)
+  fullName.vb: Kevlar.RetryOptions(Of TResult)
+  name.vb: RetryOptions(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.RetryOptions`1
+    name: RetryOptions
+    isExternal: true
+    href: Kevlar.RetryOptions-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.RetryOptions`1
+    name: RetryOptions
+    isExternal: true
+    href: Kevlar.RetryOptions-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.RetryEvent
+  commentId: T:Kevlar.RetryEvent
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.RetryEvent.html
+  name: RetryEvent
+  nameWithType: RetryEvent
+  fullName: Kevlar.RetryEvent
+- uid: Kevlar.RetryEvent`1
+  commentId: T:Kevlar.RetryEvent`1
+  isExternal: true
+  href: Kevlar.RetryEvent-1.html
+  name: RetryEvent<TResult>
+  nameWithType: RetryEvent<TResult>
+  fullName: Kevlar.RetryEvent<TResult>
+  nameWithType.vb: RetryEvent(Of TResult)
+  fullName.vb: Kevlar.RetryEvent(Of TResult)
+  name.vb: RetryEvent(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.RetryEvent`1
+    name: RetryEvent
+    isExternal: true
+    href: Kevlar.RetryEvent-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.RetryEvent`1
+    name: RetryEvent
+    isExternal: true
+    href: Kevlar.RetryEvent-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.TimeoutOptions
+  commentId: T:Kevlar.TimeoutOptions
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.TimeoutOptions.html
+  name: TimeoutOptions
+  nameWithType: TimeoutOptions
+  fullName: Kevlar.TimeoutOptions
+- uid: Kevlar.TimeoutEvent
+  commentId: T:Kevlar.TimeoutEvent
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.TimeoutEvent.html
+  name: TimeoutEvent
+  nameWithType: TimeoutEvent
+  fullName: Kevlar.TimeoutEvent
+- uid: Kevlar.Strategy
+  commentId: T:Kevlar.Strategy
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Strategy.html
+  name: Strategy
+  nameWithType: Strategy
+  fullName: Kevlar.Strategy
+- uid: Kevlar.Continuation`2
+  commentId: T:Kevlar.Continuation`2
+  isExternal: true
+  href: Kevlar.Continuation-2.html
+  name: Continuation<T, TState>
+  nameWithType: Continuation<T, TState>
+  fullName: Kevlar.Continuation<T, TState>
+  nameWithType.vb: Continuation(Of T, TState)
+  fullName.vb: Kevlar.Continuation(Of T, TState)
+  name.vb: Continuation(Of T, TState)
+  spec.csharp:
+  - uid: Kevlar.Continuation`2
+    name: Continuation
+    isExternal: true
+    href: Kevlar.Continuation-2.html
+  - name: <
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TState
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Continuation`2
+    name: Continuation
+    isExternal: true
+    href: Kevlar.Continuation-2.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TState
+  - name: )
+- uid: Kevlar.VoidShield
+  commentId: T:Kevlar.VoidShield
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.VoidShield.html
+  name: VoidShield
+  nameWithType: VoidShield
+  fullName: Kevlar.VoidShield
+- uid: Kevlar.VoidShieldBuilder
+  commentId: T:Kevlar.VoidShieldBuilder
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.VoidShieldBuilder.html
+  name: VoidShieldBuilder
+  nameWithType: VoidShieldBuilder
+  fullName: Kevlar.VoidShieldBuilder
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar

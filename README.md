@@ -72,6 +72,19 @@ stateful strategies: calls made through the same shield share its circuit breake
 
 The core package targets `netstandard2.0`, `net8.0`, and `net10.0`.
 
+## Runnable samples
+
+Every sample is a small `net8.0;net10.0` application with a `--smoke` mode used by CI:
+
+- [`samples/ConsoleRetry`](samples/ConsoleRetry) — minimal retry and recovery.
+- [`samples/WebApi`](samples/WebApi) — ASP.NET Core, named DI shields, `AddStandardShield`, and metrics.
+- [`samples/GrpcClient`](samples/GrpcClient) — transient gRPC unary retries.
+- [`samples/PartitionedWorker`](samples/PartitionedWorker) — bounded per-tenant shield state.
+- [`samples/ChaosTesting`](samples/ChaosTesting) — deterministic, operation-scoped fault injection.
+
+Build all samples with `dotnet build samples/Samples.slnx -c Release`, or follow the command in a
+sample's README to run one directly.
+
 ## Choose what counts as failure
 
 Reactive strategies handle ordinary exceptions by default, excluding cancellation, Kevlar's

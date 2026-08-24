@@ -1,0 +1,117 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Extensions.Http.HttpContentReplayPolicy
+  commentId: T:Kevlar.Extensions.Http.HttpContentReplayPolicy
+  id: HttpContentReplayPolicy
+  parent: Kevlar.Extensions.Http
+  children:
+  - Kevlar.Extensions.Http.HttpContentReplayPolicy.Buffer
+  - Kevlar.Extensions.Http.HttpContentReplayPolicy.NoBuffer
+  langs:
+  - csharp
+  - vb
+  name: HttpContentReplayPolicy
+  nameWithType: HttpContentReplayPolicy
+  fullName: Kevlar.Extensions.Http.HttpContentReplayPolicy
+  type: Enum
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: Controls how request content is made replayable for retries and hedges.
+  example: []
+  syntax:
+    content: public enum HttpContentReplayPolicy
+    content.vb: Public Enum HttpContentReplayPolicy
+- uid: Kevlar.Extensions.Http.HttpContentReplayPolicy.NoBuffer
+  commentId: F:Kevlar.Extensions.Http.HttpContentReplayPolicy.NoBuffer
+  id: NoBuffer
+  parent: Kevlar.Extensions.Http.HttpContentReplayPolicy
+  langs:
+  - csharp
+  - vb
+  name: NoBuffer
+  nameWithType: HttpContentReplayPolicy.NoBuffer
+  fullName: Kevlar.Extensions.Http.HttpContentReplayPolicy.NoBuffer
+  type: Field
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: Do not buffer content. A second send fails before reaching the transport.
+  example: []
+  syntax:
+    content: NoBuffer = 0
+    return:
+      type: Kevlar.Extensions.Http.HttpContentReplayPolicy
+- uid: Kevlar.Extensions.Http.HttpContentReplayPolicy.Buffer
+  commentId: F:Kevlar.Extensions.Http.HttpContentReplayPolicy.Buffer
+  id: Buffer
+  parent: Kevlar.Extensions.Http.HttpContentReplayPolicy
+  langs:
+  - csharp
+  - vb
+  name: Buffer
+  nameWithType: HttpContentReplayPolicy.Buffer
+  fullName: Kevlar.Extensions.Http.HttpContentReplayPolicy.Buffer
+  type: Field
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: Buffer content once, up to <xref href="Kevlar.Extensions.Http.ShieldHttpHandlerOptions.MaximumBufferSize" data-throw-if-not-resolved="false"></xref>.
+  example: []
+  syntax:
+    content: Buffer = 1
+    return:
+      type: Kevlar.Extensions.Http.HttpContentReplayPolicy
+references:
+- uid: Kevlar.Extensions.Http
+  commentId: N:Kevlar.Extensions.Http
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar.Extensions.Http
+  nameWithType: Kevlar.Extensions.Http
+  fullName: Kevlar.Extensions.Http
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+    href: Kevlar.Extensions.html
+  - name: .
+  - uid: Kevlar.Extensions.Http
+    name: Http
+    isExternal: true
+    href: Kevlar.Extensions.Http.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+    href: Kevlar.Extensions.html
+  - name: .
+  - uid: Kevlar.Extensions.Http
+    name: Http
+    isExternal: true
+    href: Kevlar.Extensions.Http.html
+- uid: Kevlar.Extensions.Http.HttpContentReplayPolicy
+  commentId: T:Kevlar.Extensions.Http.HttpContentReplayPolicy
+  parent: Kevlar.Extensions.Http
+  isExternal: true
+  href: Kevlar.Extensions.Http.HttpContentReplayPolicy.html
+  name: HttpContentReplayPolicy
+  nameWithType: HttpContentReplayPolicy
+  fullName: Kevlar.Extensions.Http.HttpContentReplayPolicy
+- uid: Kevlar.Extensions.Http.ShieldHttpHandlerOptions.MaximumBufferSize
+  commentId: P:Kevlar.Extensions.Http.ShieldHttpHandlerOptions.MaximumBufferSize
+  isExternal: true
+  href: Kevlar.Extensions.Http.ShieldHttpHandlerOptions.html#Kevlar_Extensions_Http_ShieldHttpHandlerOptions_MaximumBufferSize
+  name: MaximumBufferSize
+  nameWithType: ShieldHttpHandlerOptions.MaximumBufferSize
+  fullName: Kevlar.Extensions.Http.ShieldHttpHandlerOptions.MaximumBufferSize

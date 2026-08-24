@@ -1,0 +1,536 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Testing.BackoffDescriptor
+  commentId: T:Kevlar.Testing.BackoffDescriptor
+  id: BackoffDescriptor
+  parent: Kevlar.Testing
+  children:
+  - Kevlar.Testing.BackoffDescriptor.BaseDelay
+  - Kevlar.Testing.BackoffDescriptor.Factor
+  - Kevlar.Testing.BackoffDescriptor.Jitter
+  - Kevlar.Testing.BackoffDescriptor.Kind
+  - Kevlar.Testing.BackoffDescriptor.MaxDelay
+  langs:
+  - csharp
+  - vb
+  name: BackoffDescriptor
+  nameWithType: BackoffDescriptor
+  fullName: Kevlar.Testing.BackoffDescriptor
+  type: Class
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Immutable, callback-free description of retry backoff configuration.
+  example: []
+  syntax:
+    content: public sealed class BackoffDescriptor
+    content.vb: Public NotInheritable Class BackoffDescriptor
+  inheritance:
+  - System.Object
+  inheritedMembers:
+  - System.Object.GetType
+  - System.Object.ToString
+  - System.Object.Equals(System.Object)
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  - System.Object.GetHashCode
+- uid: Kevlar.Testing.BackoffDescriptor.Kind
+  commentId: P:Kevlar.Testing.BackoffDescriptor.Kind
+  id: Kind
+  parent: Kevlar.Testing.BackoffDescriptor
+  langs:
+  - csharp
+  - vb
+  name: Kind
+  nameWithType: BackoffDescriptor.Kind
+  fullName: Kevlar.Testing.BackoffDescriptor.Kind
+  type: Property
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: The stable backoff category.
+  example: []
+  syntax:
+    content: public BackoffKind Kind { get; }
+    parameters: []
+    return:
+      type: Kevlar.BackoffKind
+    content.vb: Public ReadOnly Property Kind As BackoffKind
+  overload: Kevlar.Testing.BackoffDescriptor.Kind*
+- uid: Kevlar.Testing.BackoffDescriptor.BaseDelay
+  commentId: P:Kevlar.Testing.BackoffDescriptor.BaseDelay
+  id: BaseDelay
+  parent: Kevlar.Testing.BackoffDescriptor
+  langs:
+  - csharp
+  - vb
+  name: BaseDelay
+  nameWithType: BackoffDescriptor.BaseDelay
+  fullName: Kevlar.Testing.BackoffDescriptor.BaseDelay
+  type: Property
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: The constant delay, linear step, or exponential initial delay, when applicable.
+  example: []
+  syntax:
+    content: public TimeSpan? BaseDelay { get; }
+    parameters: []
+    return:
+      type: System.Nullable{System.TimeSpan}
+    content.vb: Public ReadOnly Property BaseDelay As TimeSpan?
+  overload: Kevlar.Testing.BackoffDescriptor.BaseDelay*
+- uid: Kevlar.Testing.BackoffDescriptor.Factor
+  commentId: P:Kevlar.Testing.BackoffDescriptor.Factor
+  id: Factor
+  parent: Kevlar.Testing.BackoffDescriptor
+  langs:
+  - csharp
+  - vb
+  name: Factor
+  nameWithType: BackoffDescriptor.Factor
+  fullName: Kevlar.Testing.BackoffDescriptor.Factor
+  type: Property
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: The exponential multiplier, when applicable.
+  example: []
+  syntax:
+    content: public double? Factor { get; }
+    parameters: []
+    return:
+      type: System.Nullable{System.Double}
+    content.vb: Public ReadOnly Property Factor As Double?
+  overload: Kevlar.Testing.BackoffDescriptor.Factor*
+- uid: Kevlar.Testing.BackoffDescriptor.MaxDelay
+  commentId: P:Kevlar.Testing.BackoffDescriptor.MaxDelay
+  id: MaxDelay
+  parent: Kevlar.Testing.BackoffDescriptor
+  langs:
+  - csharp
+  - vb
+  name: MaxDelay
+  nameWithType: BackoffDescriptor.MaxDelay
+  fullName: Kevlar.Testing.BackoffDescriptor.MaxDelay
+  type: Property
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: The linear or exponential delay cap, when configured.
+  example: []
+  syntax:
+    content: public TimeSpan? MaxDelay { get; }
+    parameters: []
+    return:
+      type: System.Nullable{System.TimeSpan}
+    content.vb: Public ReadOnly Property MaxDelay As TimeSpan?
+  overload: Kevlar.Testing.BackoffDescriptor.MaxDelay*
+- uid: Kevlar.Testing.BackoffDescriptor.Jitter
+  commentId: P:Kevlar.Testing.BackoffDescriptor.Jitter
+  id: Jitter
+  parent: Kevlar.Testing.BackoffDescriptor
+  langs:
+  - csharp
+  - vb
+  name: Jitter
+  nameWithType: BackoffDescriptor.Jitter
+  fullName: Kevlar.Testing.BackoffDescriptor.Jitter
+  type: Property
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Whether exponential jitter is enabled, when applicable.
+  example: []
+  syntax:
+    content: public bool? Jitter { get; }
+    parameters: []
+    return:
+      type: System.Nullable{System.Boolean}
+    content.vb: Public ReadOnly Property Jitter As Boolean?
+  overload: Kevlar.Testing.BackoffDescriptor.Jitter*
+references:
+- uid: Kevlar.Testing
+  commentId: N:Kevlar.Testing
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar.Testing
+  nameWithType: Kevlar.Testing
+  fullName: Kevlar.Testing
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Testing
+    name: Testing
+    isExternal: true
+    href: Kevlar.Testing.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Testing
+    name: Testing
+    isExternal: true
+    href: Kevlar.Testing.html
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.ToString
+  commentId: M:System.Object.ToString
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  name: ToString()
+  nameWithType: object.ToString()
+  fullName: object.ToString()
+  nameWithType.vb: Object.ToString()
+  fullName.vb: Object.ToString()
+  spec.csharp:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object)
+  commentId: M:System.Object.Equals(System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  name: Equals(object)
+  nameWithType: object.Equals(object)
+  fullName: object.Equals(object)
+  nameWithType.vb: Object.Equals(Object)
+  fullName.vb: Object.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetHashCode
+  commentId: M:System.Object.GetHashCode
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  name: GetHashCode()
+  nameWithType: object.GetHashCode()
+  fullName: object.GetHashCode()
+  nameWithType.vb: Object.GetHashCode()
+  fullName.vb: Object.GetHashCode()
+  spec.csharp:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.Testing.BackoffDescriptor.Kind*
+  commentId: Overload:Kevlar.Testing.BackoffDescriptor.Kind
+  isExternal: true
+  href: Kevlar.Testing.BackoffDescriptor.html#Kevlar_Testing_BackoffDescriptor_Kind
+  name: Kind
+  nameWithType: BackoffDescriptor.Kind
+  fullName: Kevlar.Testing.BackoffDescriptor.Kind
+- uid: Kevlar.BackoffKind
+  commentId: T:Kevlar.BackoffKind
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.BackoffKind.html
+  name: BackoffKind
+  nameWithType: BackoffKind
+  fullName: Kevlar.BackoffKind
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: Kevlar.Testing.BackoffDescriptor.BaseDelay*
+  commentId: Overload:Kevlar.Testing.BackoffDescriptor.BaseDelay
+  isExternal: true
+  href: Kevlar.Testing.BackoffDescriptor.html#Kevlar_Testing_BackoffDescriptor_BaseDelay
+  name: BaseDelay
+  nameWithType: BackoffDescriptor.BaseDelay
+  fullName: Kevlar.Testing.BackoffDescriptor.BaseDelay
+- uid: System.Nullable{System.TimeSpan}
+  commentId: T:System.Nullable{System.TimeSpan}
+  parent: System
+  definition: System.Nullable`1
+  href: https://learn.microsoft.com/dotnet/api/system.timespan
+  name: TimeSpan?
+  nameWithType: TimeSpan?
+  fullName: System.TimeSpan?
+  spec.csharp:
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '?'
+  spec.vb:
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '?'
+- uid: System.Nullable`1
+  commentId: T:System.Nullable`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  name: Nullable<T>
+  nameWithType: Nullable<T>
+  fullName: System.Nullable<T>
+  nameWithType.vb: Nullable(Of T)
+  fullName.vb: System.Nullable(Of T)
+  name.vb: Nullable(Of T)
+  spec.csharp:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Kevlar.Testing.BackoffDescriptor.Factor*
+  commentId: Overload:Kevlar.Testing.BackoffDescriptor.Factor
+  isExternal: true
+  href: Kevlar.Testing.BackoffDescriptor.html#Kevlar_Testing_BackoffDescriptor_Factor
+  name: Factor
+  nameWithType: BackoffDescriptor.Factor
+  fullName: Kevlar.Testing.BackoffDescriptor.Factor
+- uid: System.Nullable{System.Double}
+  commentId: T:System.Nullable{System.Double}
+  parent: System
+  definition: System.Nullable`1
+  href: https://learn.microsoft.com/dotnet/api/system.double
+  name: double?
+  nameWithType: double?
+  fullName: double?
+  nameWithType.vb: Double?
+  fullName.vb: Double?
+  name.vb: Double?
+  spec.csharp:
+  - uid: System.Double
+    name: double
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.double
+  - name: '?'
+  spec.vb:
+  - uid: System.Double
+    name: Double
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.double
+  - name: '?'
+- uid: Kevlar.Testing.BackoffDescriptor.MaxDelay*
+  commentId: Overload:Kevlar.Testing.BackoffDescriptor.MaxDelay
+  isExternal: true
+  href: Kevlar.Testing.BackoffDescriptor.html#Kevlar_Testing_BackoffDescriptor_MaxDelay
+  name: MaxDelay
+  nameWithType: BackoffDescriptor.MaxDelay
+  fullName: Kevlar.Testing.BackoffDescriptor.MaxDelay
+- uid: Kevlar.Testing.BackoffDescriptor.Jitter*
+  commentId: Overload:Kevlar.Testing.BackoffDescriptor.Jitter
+  isExternal: true
+  href: Kevlar.Testing.BackoffDescriptor.html#Kevlar_Testing_BackoffDescriptor_Jitter
+  name: Jitter
+  nameWithType: BackoffDescriptor.Jitter
+  fullName: Kevlar.Testing.BackoffDescriptor.Jitter
+- uid: System.Nullable{System.Boolean}
+  commentId: T:System.Nullable{System.Boolean}
+  parent: System
+  definition: System.Nullable`1
+  href: https://learn.microsoft.com/dotnet/api/system.boolean
+  name: bool?
+  nameWithType: bool?
+  fullName: bool?
+  nameWithType.vb: Boolean?
+  fullName.vb: Boolean?
+  name.vb: Boolean?
+  spec.csharp:
+  - uid: System.Boolean
+    name: bool
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: '?'
+  spec.vb:
+  - uid: System.Boolean
+    name: Boolean
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: '?'

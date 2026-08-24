@@ -1,0 +1,927 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Chaos.ChaosOptions
+  commentId: T:Kevlar.Chaos.ChaosOptions
+  id: ChaosOptions
+  parent: Kevlar.Chaos
+  children:
+  - Kevlar.Chaos.ChaosOptions.#ctor
+  - Kevlar.Chaos.ChaosOptions.Enabled
+  - Kevlar.Chaos.ChaosOptions.EnabledGenerator
+  - Kevlar.Chaos.ChaosOptions.Environment
+  - Kevlar.Chaos.ChaosOptions.InjectionRate
+  - Kevlar.Chaos.ChaosOptions.InjectionRateGenerator
+  - Kevlar.Chaos.ChaosOptions.OnInjected
+  - Kevlar.Chaos.ChaosOptions.Operation
+  - Kevlar.Chaos.ChaosOptions.Predicate
+  - Kevlar.Chaos.ChaosOptions.Seed
+  langs:
+  - csharp
+  - vb
+  name: ChaosOptions
+  nameWithType: ChaosOptions
+  fullName: Kevlar.Chaos.ChaosOptions
+  type: Class
+  assemblies:
+  - Kevlar.Chaos
+  namespace: Kevlar.Chaos
+  summary: Common controls for explicitly enabling and bounding chaos injection.
+  example: []
+  syntax:
+    content: public abstract class ChaosOptions
+    content.vb: Public MustInherit Class ChaosOptions
+  inheritance:
+  - System.Object
+  derivedClasses:
+  - Kevlar.Chaos.ChaosBehaviorOptions
+  - Kevlar.Chaos.ChaosFaultOptions
+  - Kevlar.Chaos.ChaosLatencyOptions
+  - Kevlar.Chaos.ChaosOutcomeOptions`1
+  inheritedMembers:
+  - System.Object.GetType
+  - System.Object.MemberwiseClone
+  - System.Object.ToString
+  - System.Object.Equals(System.Object)
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  - System.Object.GetHashCode
+- uid: Kevlar.Chaos.ChaosOptions.#ctor
+  commentId: M:Kevlar.Chaos.ChaosOptions.#ctor
+  id: '#ctor'
+  parent: Kevlar.Chaos.ChaosOptions
+  langs:
+  - csharp
+  - vb
+  name: ChaosOptions()
+  nameWithType: ChaosOptions.ChaosOptions()
+  fullName: Kevlar.Chaos.ChaosOptions.ChaosOptions()
+  type: Constructor
+  assemblies:
+  - Kevlar.Chaos
+  namespace: Kevlar.Chaos
+  syntax:
+    content: protected ChaosOptions()
+    content.vb: Protected Sub New()
+  overload: Kevlar.Chaos.ChaosOptions.#ctor*
+  nameWithType.vb: ChaosOptions.New()
+  fullName.vb: Kevlar.Chaos.ChaosOptions.New()
+  name.vb: New()
+- uid: Kevlar.Chaos.ChaosOptions.Enabled
+  commentId: P:Kevlar.Chaos.ChaosOptions.Enabled
+  id: Enabled
+  parent: Kevlar.Chaos.ChaosOptions
+  langs:
+  - csharp
+  - vb
+  name: Enabled
+  nameWithType: ChaosOptions.Enabled
+  fullName: Kevlar.Chaos.ChaosOptions.Enabled
+  type: Property
+  assemblies:
+  - Kevlar.Chaos
+  namespace: Kevlar.Chaos
+  summary: Gets or sets whether injection is permitted. The default is <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.
+  example: []
+  syntax:
+    content: public bool Enabled { get; set; }
+    parameters: []
+    return:
+      type: System.Boolean
+    content.vb: Public Property Enabled As Boolean
+  overload: Kevlar.Chaos.ChaosOptions.Enabled*
+- uid: Kevlar.Chaos.ChaosOptions.InjectionRate
+  commentId: P:Kevlar.Chaos.ChaosOptions.InjectionRate
+  id: InjectionRate
+  parent: Kevlar.Chaos.ChaosOptions
+  langs:
+  - csharp
+  - vb
+  name: InjectionRate
+  nameWithType: ChaosOptions.InjectionRate
+  fullName: Kevlar.Chaos.ChaosOptions.InjectionRate
+  type: Property
+  assemblies:
+  - Kevlar.Chaos
+  namespace: Kevlar.Chaos
+  summary: Gets or sets the probability of injection, from zero through one. The default is one.
+  example: []
+  syntax:
+    content: public double InjectionRate { get; set; }
+    parameters: []
+    return:
+      type: System.Double
+    content.vb: Public Property InjectionRate As Double
+  overload: Kevlar.Chaos.ChaosOptions.InjectionRate*
+- uid: Kevlar.Chaos.ChaosOptions.InjectionRateGenerator
+  commentId: P:Kevlar.Chaos.ChaosOptions.InjectionRateGenerator
+  id: InjectionRateGenerator
+  parent: Kevlar.Chaos.ChaosOptions
+  langs:
+  - csharp
+  - vb
+  name: InjectionRateGenerator
+  nameWithType: ChaosOptions.InjectionRateGenerator
+  fullName: Kevlar.Chaos.ChaosOptions.InjectionRateGenerator
+  type: Property
+  assemblies:
+  - Kevlar.Chaos
+  namespace: Kevlar.Chaos
+  summary: Gets or sets a callback that computes the injection rate for each execution.
+  remarks: When set, this callback takes precedence over <xref href="Kevlar.Chaos.ChaosOptions.InjectionRate" data-throw-if-not-resolved="false"></xref>.
+  example: []
+  syntax:
+    content: public Func<KevlarContext, double>? InjectionRateGenerator { get; set; }
+    parameters: []
+    return:
+      type: System.Func{Kevlar.KevlarContext,System.Double}
+    content.vb: Public Property InjectionRateGenerator As Func(Of KevlarContext, Double)
+  overload: Kevlar.Chaos.ChaosOptions.InjectionRateGenerator*
+- uid: Kevlar.Chaos.ChaosOptions.EnabledGenerator
+  commentId: P:Kevlar.Chaos.ChaosOptions.EnabledGenerator
+  id: EnabledGenerator
+  parent: Kevlar.Chaos.ChaosOptions
+  langs:
+  - csharp
+  - vb
+  name: EnabledGenerator
+  nameWithType: ChaosOptions.EnabledGenerator
+  fullName: Kevlar.Chaos.ChaosOptions.EnabledGenerator
+  type: Property
+  assemblies:
+  - Kevlar.Chaos
+  namespace: Kevlar.Chaos
+  summary: Gets or sets a dynamic kill switch evaluated after <xref href="Kevlar.Chaos.ChaosOptions.Enabled" data-throw-if-not-resolved="false"></xref>.
+  example: []
+  syntax:
+    content: public Func<KevlarContext, bool>? EnabledGenerator { get; set; }
+    parameters: []
+    return:
+      type: System.Func{Kevlar.KevlarContext,System.Boolean}
+    content.vb: Public Property EnabledGenerator As Func(Of KevlarContext, Boolean)
+  overload: Kevlar.Chaos.ChaosOptions.EnabledGenerator*
+- uid: Kevlar.Chaos.ChaosOptions.Predicate
+  commentId: P:Kevlar.Chaos.ChaosOptions.Predicate
+  id: Predicate
+  parent: Kevlar.Chaos.ChaosOptions
+  langs:
+  - csharp
+  - vb
+  name: Predicate
+  nameWithType: ChaosOptions.Predicate
+  fullName: Kevlar.Chaos.ChaosOptions.Predicate
+  type: Property
+  assemblies:
+  - Kevlar.Chaos
+  namespace: Kevlar.Chaos
+  summary: Gets or sets an additional execution predicate that bounds the blast radius.
+  example: []
+  syntax:
+    content: public Func<KevlarContext, bool>? Predicate { get; set; }
+    parameters: []
+    return:
+      type: System.Func{Kevlar.KevlarContext,System.Boolean}
+    content.vb: Public Property Predicate As Func(Of KevlarContext, Boolean)
+  overload: Kevlar.Chaos.ChaosOptions.Predicate*
+- uid: Kevlar.Chaos.ChaosOptions.Operation
+  commentId: P:Kevlar.Chaos.ChaosOptions.Operation
+  id: Operation
+  parent: Kevlar.Chaos.ChaosOptions
+  langs:
+  - csharp
+  - vb
+  name: Operation
+  nameWithType: ChaosOptions.Operation
+  fullName: Kevlar.Chaos.ChaosOptions.Operation
+  type: Property
+  assemblies:
+  - Kevlar.Chaos
+  namespace: Kevlar.Chaos
+  summary: Gets or sets the required <xref href="Kevlar.Chaos.ChaosScope.Operation" data-throw-if-not-resolved="false"></xref> value.
+  example: []
+  syntax:
+    content: public string? Operation { get; set; }
+    parameters: []
+    return:
+      type: System.String
+    content.vb: Public Property Operation As String
+  overload: Kevlar.Chaos.ChaosOptions.Operation*
+- uid: Kevlar.Chaos.ChaosOptions.Environment
+  commentId: P:Kevlar.Chaos.ChaosOptions.Environment
+  id: Environment
+  parent: Kevlar.Chaos.ChaosOptions
+  langs:
+  - csharp
+  - vb
+  name: Environment
+  nameWithType: ChaosOptions.Environment
+  fullName: Kevlar.Chaos.ChaosOptions.Environment
+  type: Property
+  assemblies:
+  - Kevlar.Chaos
+  namespace: Kevlar.Chaos
+  summary: Gets or sets the required <xref href="Kevlar.Chaos.ChaosScope.Environment" data-throw-if-not-resolved="false"></xref> value.
+  example: []
+  syntax:
+    content: public string? Environment { get; set; }
+    parameters: []
+    return:
+      type: System.String
+    content.vb: Public Property Environment As String
+  overload: Kevlar.Chaos.ChaosOptions.Environment*
+- uid: Kevlar.Chaos.ChaosOptions.Seed
+  commentId: P:Kevlar.Chaos.ChaosOptions.Seed
+  id: Seed
+  parent: Kevlar.Chaos.ChaosOptions
+  langs:
+  - csharp
+  - vb
+  name: Seed
+  nameWithType: ChaosOptions.Seed
+  fullName: Kevlar.Chaos.ChaosOptions.Seed
+  type: Property
+  assemblies:
+  - Kevlar.Chaos
+  namespace: Kevlar.Chaos
+  summary: Gets or sets an optional deterministic random seed.
+  example: []
+  syntax:
+    content: public int? Seed { get; set; }
+    parameters: []
+    return:
+      type: System.Nullable{System.Int32}
+    content.vb: Public Property Seed As Integer?
+  overload: Kevlar.Chaos.ChaosOptions.Seed*
+- uid: Kevlar.Chaos.ChaosOptions.OnInjected
+  commentId: P:Kevlar.Chaos.ChaosOptions.OnInjected
+  id: OnInjected
+  parent: Kevlar.Chaos.ChaosOptions
+  langs:
+  - csharp
+  - vb
+  name: OnInjected
+  nameWithType: ChaosOptions.OnInjected
+  fullName: Kevlar.Chaos.ChaosOptions.OnInjected
+  type: Property
+  assemblies:
+  - Kevlar.Chaos
+  namespace: Kevlar.Chaos
+  summary: Gets or sets a synchronous callback invoked immediately before injection.
+  example: []
+  syntax:
+    content: public Action<ChaosEvent>? OnInjected { get; set; }
+    parameters: []
+    return:
+      type: System.Action{Kevlar.Chaos.ChaosEvent}
+    content.vb: Public Property OnInjected As Action(Of ChaosEvent)
+  overload: Kevlar.Chaos.ChaosOptions.OnInjected*
+references:
+- uid: Kevlar.Chaos
+  commentId: N:Kevlar.Chaos
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar.Chaos
+  nameWithType: Kevlar.Chaos
+  fullName: Kevlar.Chaos
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Chaos
+    name: Chaos
+    isExternal: true
+    href: Kevlar.Chaos.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Chaos
+    name: Chaos
+    isExternal: true
+    href: Kevlar.Chaos.html
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.MemberwiseClone
+  commentId: M:System.Object.MemberwiseClone
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  name: MemberwiseClone()
+  nameWithType: object.MemberwiseClone()
+  fullName: object.MemberwiseClone()
+  nameWithType.vb: Object.MemberwiseClone()
+  fullName.vb: Object.MemberwiseClone()
+  spec.csharp:
+  - uid: System.Object.MemberwiseClone
+    name: MemberwiseClone
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.MemberwiseClone
+    name: MemberwiseClone
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  - name: (
+  - name: )
+- uid: System.Object.ToString
+  commentId: M:System.Object.ToString
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  name: ToString()
+  nameWithType: object.ToString()
+  fullName: object.ToString()
+  nameWithType.vb: Object.ToString()
+  fullName.vb: Object.ToString()
+  spec.csharp:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object)
+  commentId: M:System.Object.Equals(System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  name: Equals(object)
+  nameWithType: object.Equals(object)
+  fullName: object.Equals(object)
+  nameWithType.vb: Object.Equals(Object)
+  fullName.vb: Object.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetHashCode
+  commentId: M:System.Object.GetHashCode
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  name: GetHashCode()
+  nameWithType: object.GetHashCode()
+  fullName: object.GetHashCode()
+  nameWithType.vb: Object.GetHashCode()
+  fullName.vb: Object.GetHashCode()
+  spec.csharp:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.Chaos.ChaosOptions.#ctor*
+  commentId: Overload:Kevlar.Chaos.ChaosOptions.#ctor
+  isExternal: true
+  href: Kevlar.Chaos.ChaosOptions.html#Kevlar_Chaos_ChaosOptions__ctor
+  name: ChaosOptions
+  nameWithType: ChaosOptions.ChaosOptions
+  fullName: Kevlar.Chaos.ChaosOptions.ChaosOptions
+  nameWithType.vb: ChaosOptions.New
+  fullName.vb: Kevlar.Chaos.ChaosOptions.New
+  name.vb: New
+- uid: Kevlar.Chaos.ChaosOptions.Enabled*
+  commentId: Overload:Kevlar.Chaos.ChaosOptions.Enabled
+  isExternal: true
+  href: Kevlar.Chaos.ChaosOptions.html#Kevlar_Chaos_ChaosOptions_Enabled
+  name: Enabled
+  nameWithType: ChaosOptions.Enabled
+  fullName: Kevlar.Chaos.ChaosOptions.Enabled
+- uid: System.Boolean
+  commentId: T:System.Boolean
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.boolean
+  name: bool
+  nameWithType: bool
+  fullName: bool
+  nameWithType.vb: Boolean
+  fullName.vb: Boolean
+  name.vb: Boolean
+- uid: Kevlar.Chaos.ChaosOptions.InjectionRate*
+  commentId: Overload:Kevlar.Chaos.ChaosOptions.InjectionRate
+  isExternal: true
+  href: Kevlar.Chaos.ChaosOptions.html#Kevlar_Chaos_ChaosOptions_InjectionRate
+  name: InjectionRate
+  nameWithType: ChaosOptions.InjectionRate
+  fullName: Kevlar.Chaos.ChaosOptions.InjectionRate
+- uid: System.Double
+  commentId: T:System.Double
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.double
+  name: double
+  nameWithType: double
+  fullName: double
+  nameWithType.vb: Double
+  fullName.vb: Double
+  name.vb: Double
+- uid: Kevlar.Chaos.ChaosOptions.InjectionRate
+  commentId: P:Kevlar.Chaos.ChaosOptions.InjectionRate
+  parent: Kevlar.Chaos.ChaosOptions
+  isExternal: true
+  href: Kevlar.Chaos.ChaosOptions.html#Kevlar_Chaos_ChaosOptions_InjectionRate
+  name: InjectionRate
+  nameWithType: ChaosOptions.InjectionRate
+  fullName: Kevlar.Chaos.ChaosOptions.InjectionRate
+- uid: Kevlar.Chaos.ChaosOptions.InjectionRateGenerator*
+  commentId: Overload:Kevlar.Chaos.ChaosOptions.InjectionRateGenerator
+  isExternal: true
+  href: Kevlar.Chaos.ChaosOptions.html#Kevlar_Chaos_ChaosOptions_InjectionRateGenerator
+  name: InjectionRateGenerator
+  nameWithType: ChaosOptions.InjectionRateGenerator
+  fullName: Kevlar.Chaos.ChaosOptions.InjectionRateGenerator
+- uid: System.Func{Kevlar.KevlarContext,System.Double}
+  commentId: T:System.Func{Kevlar.KevlarContext,System.Double}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<KevlarContext, double>
+  nameWithType: Func<KevlarContext, double>
+  fullName: System.Func<Kevlar.KevlarContext, double>
+  nameWithType.vb: Func(Of KevlarContext, Double)
+  fullName.vb: System.Func(Of Kevlar.KevlarContext, Double)
+  name.vb: Func(Of KevlarContext, Double)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.KevlarContext
+    name: KevlarContext
+    isExternal: true
+    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/KevlarContext.cs
+  - name: ','
+  - name: " "
+  - uid: System.Double
+    name: double
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.double
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.KevlarContext
+    name: KevlarContext
+    isExternal: true
+    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/KevlarContext.cs
+  - name: ','
+  - name: " "
+  - uid: System.Double
+    name: Double
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.double
+  - name: )
+- uid: Kevlar.Chaos.ChaosOptions
+  commentId: T:Kevlar.Chaos.ChaosOptions
+  parent: Kevlar.Chaos
+  isExternal: true
+  href: Kevlar.Chaos.ChaosOptions.html
+  name: ChaosOptions
+  nameWithType: ChaosOptions
+  fullName: Kevlar.Chaos.ChaosOptions
+- uid: System.Func`2
+  commentId: T:System.Func`2
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<T, TResult>
+  nameWithType: Func<T, TResult>
+  fullName: System.Func<T, TResult>
+  nameWithType.vb: Func(Of T, TResult)
+  fullName.vb: System.Func(Of T, TResult)
+  name.vb: Func(Of T, TResult)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.Chaos.ChaosOptions.Enabled
+  commentId: P:Kevlar.Chaos.ChaosOptions.Enabled
+  parent: Kevlar.Chaos.ChaosOptions
+  isExternal: true
+  href: Kevlar.Chaos.ChaosOptions.html#Kevlar_Chaos_ChaosOptions_Enabled
+  name: Enabled
+  nameWithType: ChaosOptions.Enabled
+  fullName: Kevlar.Chaos.ChaosOptions.Enabled
+- uid: Kevlar.Chaos.ChaosOptions.EnabledGenerator*
+  commentId: Overload:Kevlar.Chaos.ChaosOptions.EnabledGenerator
+  isExternal: true
+  href: Kevlar.Chaos.ChaosOptions.html#Kevlar_Chaos_ChaosOptions_EnabledGenerator
+  name: EnabledGenerator
+  nameWithType: ChaosOptions.EnabledGenerator
+  fullName: Kevlar.Chaos.ChaosOptions.EnabledGenerator
+- uid: System.Func{Kevlar.KevlarContext,System.Boolean}
+  commentId: T:System.Func{Kevlar.KevlarContext,System.Boolean}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<KevlarContext, bool>
+  nameWithType: Func<KevlarContext, bool>
+  fullName: System.Func<Kevlar.KevlarContext, bool>
+  nameWithType.vb: Func(Of KevlarContext, Boolean)
+  fullName.vb: System.Func(Of Kevlar.KevlarContext, Boolean)
+  name.vb: Func(Of KevlarContext, Boolean)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.KevlarContext
+    name: KevlarContext
+    isExternal: true
+    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/KevlarContext.cs
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: bool
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.KevlarContext
+    name: KevlarContext
+    isExternal: true
+    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/KevlarContext.cs
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: Boolean
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: )
+- uid: Kevlar.Chaos.ChaosOptions.Predicate*
+  commentId: Overload:Kevlar.Chaos.ChaosOptions.Predicate
+  isExternal: true
+  href: Kevlar.Chaos.ChaosOptions.html#Kevlar_Chaos_ChaosOptions_Predicate
+  name: Predicate
+  nameWithType: ChaosOptions.Predicate
+  fullName: Kevlar.Chaos.ChaosOptions.Predicate
+- uid: Kevlar.Chaos.ChaosScope.Operation
+  commentId: P:Kevlar.Chaos.ChaosScope.Operation
+  isExternal: true
+  href: Kevlar.Chaos.ChaosScope.html#Kevlar_Chaos_ChaosScope_Operation
+  name: Operation
+  nameWithType: ChaosScope.Operation
+  fullName: Kevlar.Chaos.ChaosScope.Operation
+- uid: Kevlar.Chaos.ChaosOptions.Operation*
+  commentId: Overload:Kevlar.Chaos.ChaosOptions.Operation
+  isExternal: true
+  href: Kevlar.Chaos.ChaosOptions.html#Kevlar_Chaos_ChaosOptions_Operation
+  name: Operation
+  nameWithType: ChaosOptions.Operation
+  fullName: Kevlar.Chaos.ChaosOptions.Operation
+- uid: System.String
+  commentId: T:System.String
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.string
+  name: string
+  nameWithType: string
+  fullName: string
+  nameWithType.vb: String
+  fullName.vb: String
+  name.vb: String
+- uid: Kevlar.Chaos.ChaosScope.Environment
+  commentId: P:Kevlar.Chaos.ChaosScope.Environment
+  isExternal: true
+  href: Kevlar.Chaos.ChaosScope.html#Kevlar_Chaos_ChaosScope_Environment
+  name: Environment
+  nameWithType: ChaosScope.Environment
+  fullName: Kevlar.Chaos.ChaosScope.Environment
+- uid: Kevlar.Chaos.ChaosOptions.Environment*
+  commentId: Overload:Kevlar.Chaos.ChaosOptions.Environment
+  isExternal: true
+  href: Kevlar.Chaos.ChaosOptions.html#Kevlar_Chaos_ChaosOptions_Environment
+  name: Environment
+  nameWithType: ChaosOptions.Environment
+  fullName: Kevlar.Chaos.ChaosOptions.Environment
+- uid: Kevlar.Chaos.ChaosOptions.Seed*
+  commentId: Overload:Kevlar.Chaos.ChaosOptions.Seed
+  isExternal: true
+  href: Kevlar.Chaos.ChaosOptions.html#Kevlar_Chaos_ChaosOptions_Seed
+  name: Seed
+  nameWithType: ChaosOptions.Seed
+  fullName: Kevlar.Chaos.ChaosOptions.Seed
+- uid: System.Nullable{System.Int32}
+  commentId: T:System.Nullable{System.Int32}
+  parent: System
+  definition: System.Nullable`1
+  href: https://learn.microsoft.com/dotnet/api/system.int32
+  name: int?
+  nameWithType: int?
+  fullName: int?
+  nameWithType.vb: Integer?
+  fullName.vb: Integer?
+  name.vb: Integer?
+  spec.csharp:
+  - uid: System.Int32
+    name: int
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: '?'
+  spec.vb:
+  - uid: System.Int32
+    name: Integer
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: '?'
+- uid: System.Nullable`1
+  commentId: T:System.Nullable`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  name: Nullable<T>
+  nameWithType: Nullable<T>
+  fullName: System.Nullable<T>
+  nameWithType.vb: Nullable(Of T)
+  fullName.vb: System.Nullable(Of T)
+  name.vb: Nullable(Of T)
+  spec.csharp:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Kevlar.Chaos.ChaosOptions.OnInjected*
+  commentId: Overload:Kevlar.Chaos.ChaosOptions.OnInjected
+  isExternal: true
+  href: Kevlar.Chaos.ChaosOptions.html#Kevlar_Chaos_ChaosOptions_OnInjected
+  name: OnInjected
+  nameWithType: ChaosOptions.OnInjected
+  fullName: Kevlar.Chaos.ChaosOptions.OnInjected
+- uid: System.Action{Kevlar.Chaos.ChaosEvent}
+  commentId: T:System.Action{Kevlar.Chaos.ChaosEvent}
+  parent: System
+  definition: System.Action`1
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<ChaosEvent>
+  nameWithType: Action<ChaosEvent>
+  fullName: System.Action<Kevlar.Chaos.ChaosEvent>
+  nameWithType.vb: Action(Of ChaosEvent)
+  fullName.vb: System.Action(Of Kevlar.Chaos.ChaosEvent)
+  name.vb: Action(Of ChaosEvent)
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - uid: Kevlar.Chaos.ChaosEvent
+    name: ChaosEvent
+    isExternal: true
+    href: Kevlar.Chaos.ChaosEvent.html
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.Chaos.ChaosEvent
+    name: ChaosEvent
+    isExternal: true
+    href: Kevlar.Chaos.ChaosEvent.html
+  - name: )
+- uid: System.Action`1
+  commentId: T:System.Action`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<T>
+  nameWithType: Action<T>
+  fullName: System.Action<T>
+  nameWithType.vb: Action(Of T)
+  fullName.vb: System.Action(Of T)
+  name.vb: Action(Of T)
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )

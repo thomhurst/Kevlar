@@ -1,0 +1,939 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.HedgeOptions`1
+  commentId: T:Kevlar.HedgeOptions`1
+  id: HedgeOptions`1
+  parent: Kevlar
+  children:
+  - Kevlar.HedgeOptions`1.#ctor
+  - Kevlar.HedgeOptions`1.ActionGenerator
+  - Kevlar.HedgeOptions`1.Delay
+  - Kevlar.HedgeOptions`1.HandlesException
+  - Kevlar.HedgeOptions`1.HandlesResult
+  - Kevlar.HedgeOptions`1.MaxAttempts
+  - Kevlar.HedgeOptions`1.OnHedge
+  - Kevlar.HedgeOptions`1.OnHedgeAsync
+  langs:
+  - csharp
+  - vb
+  name: HedgeOptions<TResult>
+  nameWithType: HedgeOptions<TResult>
+  fullName: Kevlar.HedgeOptions<TResult>
+  type: Class
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Result-typed configuration for a hedging strategy on a <xref href="Kevlar.Shield%601" data-throw-if-not-resolved="false"></xref>.
+  remarks: >-
+    <xref href="Kevlar.HedgeOptions%601" data-throw-if-not-resolved="false"></xref> and <xref href="Kevlar.HedgeOptions" data-throw-if-not-resolved="false"></xref> are standalone sibling types
+
+    with matching shared property names and defaults.
+  example: []
+  syntax:
+    content: public sealed class HedgeOptions<TResult>
+    typeParameters:
+    - id: TResult
+    content.vb: Public NotInheritable Class HedgeOptions(Of TResult)
+  inheritance:
+  - System.Object
+  inheritedMembers:
+  - System.Object.GetType
+  - System.Object.ToString
+  - System.Object.Equals(System.Object)
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  - System.Object.GetHashCode
+  nameWithType.vb: HedgeOptions(Of TResult)
+  fullName.vb: Kevlar.HedgeOptions(Of TResult)
+  name.vb: HedgeOptions(Of TResult)
+- uid: Kevlar.HedgeOptions`1.#ctor
+  commentId: M:Kevlar.HedgeOptions`1.#ctor
+  id: '#ctor'
+  parent: Kevlar.HedgeOptions`1
+  langs:
+  - csharp
+  - vb
+  name: HedgeOptions()
+  nameWithType: HedgeOptions<TResult>.HedgeOptions()
+  fullName: Kevlar.HedgeOptions<TResult>.HedgeOptions()
+  type: Constructor
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  syntax:
+    content: public HedgeOptions()
+    content.vb: Public Sub New()
+  overload: Kevlar.HedgeOptions`1.#ctor*
+  nameWithType.vb: HedgeOptions(Of TResult).New()
+  fullName.vb: Kevlar.HedgeOptions(Of TResult).New()
+  name.vb: New()
+- uid: Kevlar.HedgeOptions`1.HandlesException
+  commentId: P:Kevlar.HedgeOptions`1.HandlesException
+  id: HandlesException
+  parent: Kevlar.HedgeOptions`1
+  langs:
+  - csharp
+  - vb
+  name: HandlesException
+  nameWithType: HedgeOptions<TResult>.HandlesException
+  fullName: Kevlar.HedgeOptions<TResult>.HandlesException
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Setting this — or, on <xref href="Kevlar.HedgeOptions%601" data-throw-if-not-resolved="false"></xref>, its <code>HandlesResult</code> — makes
+
+    this hedging strategy ignore the ambient <code>When…</code> handling clause; this predicate then
+
+    selects the exceptions it handles.
+  remarks: >-
+    The ambient clause is started with <code>When…</code> on a shield and continued with <code>Or…</code> on
+
+    the builder it returns, and applies to every reactive strategy chained after it. These
+
+    properties replace that clause for this strategy alone; they do not narrow it.
+  example: []
+  syntax:
+    content: public Func<Exception, bool>? HandlesException { get; set; }
+    parameters: []
+    return:
+      type: System.Func{System.Exception,System.Boolean}
+    content.vb: Public Property HandlesException As Func(Of Exception, Boolean)
+  overload: Kevlar.HedgeOptions`1.HandlesException*
+  seealso:
+  - linkId: Kevlar.HandlingClause
+    commentId: T:Kevlar.HandlingClause
+  nameWithType.vb: HedgeOptions(Of TResult).HandlesException
+  fullName.vb: Kevlar.HedgeOptions(Of TResult).HandlesException
+- uid: Kevlar.HedgeOptions`1.HandlesResult
+  commentId: P:Kevlar.HedgeOptions`1.HandlesResult
+  id: HandlesResult
+  parent: Kevlar.HedgeOptions`1
+  langs:
+  - csharp
+  - vb
+  name: HandlesResult
+  nameWithType: HedgeOptions<TResult>.HandlesResult
+  fullName: Kevlar.HedgeOptions<TResult>.HandlesResult
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Setting this — or <xref href="Kevlar.HedgeOptions%601.HandlesException" data-throw-if-not-resolved="false"></xref> — makes this hedging strategy
+
+    ignore the ambient <code>When…</code> handling clause; this predicate then selects the results it
+
+    handles.
+  remarks: >-
+    The ambient clause is started with <code>When…</code>/<code>WhenResult…</code> on a shield and continued
+
+    with <code>Or…</code> on the builder it returns, and applies to every reactive strategy chained
+
+    after it. These properties replace that clause for this strategy alone; they do not narrow it.
+  example: []
+  syntax:
+    content: public Func<TResult, bool>? HandlesResult { get; set; }
+    parameters: []
+    return:
+      type: System.Func{{TResult},System.Boolean}
+    content.vb: Public Property HandlesResult As Func(Of TResult, Boolean)
+  overload: Kevlar.HedgeOptions`1.HandlesResult*
+  seealso:
+  - linkId: Kevlar.HandlingClause
+    commentId: T:Kevlar.HandlingClause
+  nameWithType.vb: HedgeOptions(Of TResult).HandlesResult
+  fullName.vb: Kevlar.HedgeOptions(Of TResult).HandlesResult
+- uid: Kevlar.HedgeOptions`1.MaxAttempts
+  commentId: P:Kevlar.HedgeOptions`1.MaxAttempts
+  id: MaxAttempts
+  parent: Kevlar.HedgeOptions`1
+  langs:
+  - csharp
+  - vb
+  name: MaxAttempts
+  nameWithType: HedgeOptions<TResult>.MaxAttempts
+  fullName: Kevlar.HedgeOptions<TResult>.MaxAttempts
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Total attempts including the original. Default 2.
+  example: []
+  syntax:
+    content: public int MaxAttempts { get; set; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public Property MaxAttempts As Integer
+  overload: Kevlar.HedgeOptions`1.MaxAttempts*
+  nameWithType.vb: HedgeOptions(Of TResult).MaxAttempts
+  fullName.vb: Kevlar.HedgeOptions(Of TResult).MaxAttempts
+- uid: Kevlar.HedgeOptions`1.Delay
+  commentId: P:Kevlar.HedgeOptions`1.Delay
+  id: Delay
+  parent: Kevlar.HedgeOptions`1
+  langs:
+  - csharp
+  - vb
+  name: Delay
+  nameWithType: HedgeOptions<TResult>.Delay
+  fullName: Kevlar.HedgeOptions<TResult>.Delay
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Time to wait before launching the next attempt while the current ones are still running.
+
+    <xref href="System.TimeSpan.Zero" data-throw-if-not-resolved="false"></xref> launches all attempts at once;
+
+    <xref href="System.Threading.Timeout.InfiniteTimeSpan" data-throw-if-not-resolved="false"></xref> hedges only on failure.
+
+    Default 1 second.
+  example: []
+  syntax:
+    content: public TimeSpan Delay { get; set; }
+    parameters: []
+    return:
+      type: System.TimeSpan
+    content.vb: Public Property Delay As TimeSpan
+  overload: Kevlar.HedgeOptions`1.Delay*
+  nameWithType.vb: HedgeOptions(Of TResult).Delay
+  fullName.vb: Kevlar.HedgeOptions(Of TResult).Delay
+- uid: Kevlar.HedgeOptions`1.OnHedge
+  commentId: P:Kevlar.HedgeOptions`1.OnHedge
+  id: OnHedge
+  parent: Kevlar.HedgeOptions`1
+  langs:
+  - csharp
+  - vb
+  name: OnHedge
+  nameWithType: HedgeOptions<TResult>.OnHedge
+  fullName: Kevlar.HedgeOptions<TResult>.OnHedge
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Invoked when an additional hedged attempt is launched.
+  example: []
+  syntax:
+    content: public Action<HedgeEvent>? OnHedge { get; set; }
+    parameters: []
+    return:
+      type: System.Action{Kevlar.HedgeEvent}
+    content.vb: Public Property OnHedge As Action(Of HedgeEvent)
+  overload: Kevlar.HedgeOptions`1.OnHedge*
+  nameWithType.vb: HedgeOptions(Of TResult).OnHedge
+  fullName.vb: Kevlar.HedgeOptions(Of TResult).OnHedge
+- uid: Kevlar.HedgeOptions`1.OnHedgeAsync
+  commentId: P:Kevlar.HedgeOptions`1.OnHedgeAsync
+  id: OnHedgeAsync
+  parent: Kevlar.HedgeOptions`1
+  langs:
+  - csharp
+  - vb
+  name: OnHedgeAsync
+  nameWithType: HedgeOptions<TResult>.OnHedgeAsync
+  fullName: Kevlar.HedgeOptions<TResult>.OnHedgeAsync
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Invoked and awaited after <xref href="Kevlar.HedgeOptions.OnHedge" data-throw-if-not-resolved="false"></xref> and before an additional attempt starts.
+  example: []
+  syntax:
+    content: public Func<HedgeEvent, ValueTask>? OnHedgeAsync { get; set; }
+    parameters: []
+    return:
+      type: System.Func{Kevlar.HedgeEvent,System.Threading.Tasks.ValueTask}
+    content.vb: Public Property OnHedgeAsync As Func(Of HedgeEvent, ValueTask)
+  overload: Kevlar.HedgeOptions`1.OnHedgeAsync*
+  nameWithType.vb: HedgeOptions(Of TResult).OnHedgeAsync
+  fullName.vb: Kevlar.HedgeOptions(Of TResult).OnHedgeAsync
+- uid: Kevlar.HedgeOptions`1.ActionGenerator
+  commentId: P:Kevlar.HedgeOptions`1.ActionGenerator
+  id: ActionGenerator
+  parent: Kevlar.HedgeOptions`1
+  langs:
+  - csharp
+  - vb
+  name: ActionGenerator
+  nameWithType: HedgeOptions<TResult>.ActionGenerator
+  fullName: Kevlar.HedgeOptions<TResult>.ActionGenerator
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Selects a replacement operation for each additional attempt. A <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>
+
+    result runs the original operation. Create the generator with the result type used to
+
+    execute the shield; use the void factory for void executions.
+  example: []
+  syntax:
+    content: public HedgeActionGenerator? ActionGenerator { get; set; }
+    parameters: []
+    return:
+      type: Kevlar.HedgeActionGenerator
+    content.vb: Public Property ActionGenerator As HedgeActionGenerator
+  overload: Kevlar.HedgeOptions`1.ActionGenerator*
+  nameWithType.vb: HedgeOptions(Of TResult).ActionGenerator
+  fullName.vb: Kevlar.HedgeOptions(Of TResult).ActionGenerator
+references:
+- uid: Kevlar.Shield`1
+  commentId: T:Kevlar.Shield`1
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Shield-1.html
+  name: Shield<TResult>
+  nameWithType: Shield<TResult>
+  fullName: Kevlar.Shield<TResult>
+  nameWithType.vb: Shield(Of TResult)
+  fullName.vb: Kevlar.Shield(Of TResult)
+  name.vb: Shield(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.HedgeOptions`1
+  commentId: T:Kevlar.HedgeOptions`1
+  isExternal: true
+  href: Kevlar.HedgeOptions-1.html
+  name: HedgeOptions<TResult>
+  nameWithType: HedgeOptions<TResult>
+  fullName: Kevlar.HedgeOptions<TResult>
+  nameWithType.vb: HedgeOptions(Of TResult)
+  fullName.vb: Kevlar.HedgeOptions(Of TResult)
+  name.vb: HedgeOptions(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.HedgeOptions`1
+    name: HedgeOptions
+    isExternal: true
+    href: Kevlar.HedgeOptions-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.HedgeOptions`1
+    name: HedgeOptions
+    isExternal: true
+    href: Kevlar.HedgeOptions-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.HedgeOptions
+  commentId: T:Kevlar.HedgeOptions
+  isExternal: true
+  href: Kevlar.HedgeOptions.html
+  name: HedgeOptions
+  nameWithType: HedgeOptions
+  fullName: Kevlar.HedgeOptions
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.ToString
+  commentId: M:System.Object.ToString
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  name: ToString()
+  nameWithType: object.ToString()
+  fullName: object.ToString()
+  nameWithType.vb: Object.ToString()
+  fullName.vb: Object.ToString()
+  spec.csharp:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object)
+  commentId: M:System.Object.Equals(System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  name: Equals(object)
+  nameWithType: object.Equals(object)
+  fullName: object.Equals(object)
+  nameWithType.vb: Object.Equals(Object)
+  fullName.vb: Object.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetHashCode
+  commentId: M:System.Object.GetHashCode
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  name: GetHashCode()
+  nameWithType: object.GetHashCode()
+  fullName: object.GetHashCode()
+  nameWithType.vb: Object.GetHashCode()
+  fullName.vb: Object.GetHashCode()
+  spec.csharp:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.HedgeOptions`1.#ctor*
+  commentId: Overload:Kevlar.HedgeOptions`1.#ctor
+  isExternal: true
+  href: Kevlar.HedgeOptions-1.html#Kevlar_HedgeOptions_1__ctor
+  name: HedgeOptions
+  nameWithType: HedgeOptions<TResult>.HedgeOptions
+  fullName: Kevlar.HedgeOptions<TResult>.HedgeOptions
+  nameWithType.vb: HedgeOptions(Of TResult).New
+  fullName.vb: Kevlar.HedgeOptions(Of TResult).New
+  name.vb: New
+- uid: Kevlar.HandlingClause
+  commentId: T:Kevlar.HandlingClause
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.HandlingClause.html
+  name: HandlingClause
+  nameWithType: HandlingClause
+  fullName: Kevlar.HandlingClause
+- uid: Kevlar.HedgeOptions`1.HandlesException*
+  commentId: Overload:Kevlar.HedgeOptions`1.HandlesException
+  isExternal: true
+  href: Kevlar.HedgeOptions-1.html#Kevlar_HedgeOptions_1_HandlesException
+  name: HandlesException
+  nameWithType: HedgeOptions<TResult>.HandlesException
+  fullName: Kevlar.HedgeOptions<TResult>.HandlesException
+  nameWithType.vb: HedgeOptions(Of TResult).HandlesException
+  fullName.vb: Kevlar.HedgeOptions(Of TResult).HandlesException
+- uid: System.Func{System.Exception,System.Boolean}
+  commentId: T:System.Func{System.Exception,System.Boolean}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<Exception, bool>
+  nameWithType: Func<Exception, bool>
+  fullName: System.Func<System.Exception, bool>
+  nameWithType.vb: Func(Of Exception, Boolean)
+  fullName.vb: System.Func(Of System.Exception, Boolean)
+  name.vb: Func(Of Exception, Boolean)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: System.Exception
+    name: Exception
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.exception
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: bool
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.Exception
+    name: Exception
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.exception
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: Boolean
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: )
+- uid: System.Func`2
+  commentId: T:System.Func`2
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<T, TResult>
+  nameWithType: Func<T, TResult>
+  fullName: System.Func<T, TResult>
+  nameWithType.vb: Func(Of T, TResult)
+  fullName.vb: System.Func(Of T, TResult)
+  name.vb: Func(Of T, TResult)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.HedgeOptions`1.HandlesException
+  commentId: P:Kevlar.HedgeOptions`1.HandlesException
+  isExternal: true
+  href: Kevlar.HedgeOptions-1.html#Kevlar_HedgeOptions_1_HandlesException
+  name: HandlesException
+  nameWithType: HedgeOptions<TResult>.HandlesException
+  fullName: Kevlar.HedgeOptions<TResult>.HandlesException
+  nameWithType.vb: HedgeOptions(Of TResult).HandlesException
+  fullName.vb: Kevlar.HedgeOptions(Of TResult).HandlesException
+- uid: Kevlar.HedgeOptions`1.HandlesResult*
+  commentId: Overload:Kevlar.HedgeOptions`1.HandlesResult
+  isExternal: true
+  href: Kevlar.HedgeOptions-1.html#Kevlar_HedgeOptions_1_HandlesResult
+  name: HandlesResult
+  nameWithType: HedgeOptions<TResult>.HandlesResult
+  fullName: Kevlar.HedgeOptions<TResult>.HandlesResult
+  nameWithType.vb: HedgeOptions(Of TResult).HandlesResult
+  fullName.vb: Kevlar.HedgeOptions(Of TResult).HandlesResult
+- uid: System.Func{{TResult},System.Boolean}
+  commentId: T:System.Func{`0,System.Boolean}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<TResult, bool>
+  nameWithType: Func<TResult, bool>
+  fullName: System.Func<TResult, bool>
+  nameWithType.vb: Func(Of TResult, Boolean)
+  fullName.vb: System.Func(Of TResult, Boolean)
+  name.vb: Func(Of TResult, Boolean)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - name: TResult
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: bool
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: Boolean
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: )
+- uid: Kevlar.HedgeOptions`1.MaxAttempts*
+  commentId: Overload:Kevlar.HedgeOptions`1.MaxAttempts
+  isExternal: true
+  href: Kevlar.HedgeOptions-1.html#Kevlar_HedgeOptions_1_MaxAttempts
+  name: MaxAttempts
+  nameWithType: HedgeOptions<TResult>.MaxAttempts
+  fullName: Kevlar.HedgeOptions<TResult>.MaxAttempts
+  nameWithType.vb: HedgeOptions(Of TResult).MaxAttempts
+  fullName.vb: Kevlar.HedgeOptions(Of TResult).MaxAttempts
+- uid: System.Int32
+  commentId: T:System.Int32
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.int32
+  name: int
+  nameWithType: int
+  fullName: int
+  nameWithType.vb: Integer
+  fullName.vb: Integer
+  name.vb: Integer
+- uid: System.TimeSpan.Zero
+  commentId: F:System.TimeSpan.Zero
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.timespan.zero
+  name: Zero
+  nameWithType: TimeSpan.Zero
+  fullName: System.TimeSpan.Zero
+- uid: System.Threading.Timeout.InfiniteTimeSpan
+  commentId: F:System.Threading.Timeout.InfiniteTimeSpan
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.threading.timeout.infinitetimespan
+  name: InfiniteTimeSpan
+  nameWithType: Timeout.InfiniteTimeSpan
+  fullName: System.Threading.Timeout.InfiniteTimeSpan
+- uid: Kevlar.HedgeOptions`1.Delay*
+  commentId: Overload:Kevlar.HedgeOptions`1.Delay
+  isExternal: true
+  href: Kevlar.HedgeOptions-1.html#Kevlar_HedgeOptions_1_Delay
+  name: Delay
+  nameWithType: HedgeOptions<TResult>.Delay
+  fullName: Kevlar.HedgeOptions<TResult>.Delay
+  nameWithType.vb: HedgeOptions(Of TResult).Delay
+  fullName.vb: Kevlar.HedgeOptions(Of TResult).Delay
+- uid: System.TimeSpan
+  commentId: T:System.TimeSpan
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.timespan
+  name: TimeSpan
+  nameWithType: TimeSpan
+  fullName: System.TimeSpan
+- uid: Kevlar.HedgeOptions`1.OnHedge*
+  commentId: Overload:Kevlar.HedgeOptions`1.OnHedge
+  isExternal: true
+  href: Kevlar.HedgeOptions-1.html#Kevlar_HedgeOptions_1_OnHedge
+  name: OnHedge
+  nameWithType: HedgeOptions<TResult>.OnHedge
+  fullName: Kevlar.HedgeOptions<TResult>.OnHedge
+  nameWithType.vb: HedgeOptions(Of TResult).OnHedge
+  fullName.vb: Kevlar.HedgeOptions(Of TResult).OnHedge
+- uid: System.Action{Kevlar.HedgeEvent}
+  commentId: T:System.Action{Kevlar.HedgeEvent}
+  parent: System
+  definition: System.Action`1
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<HedgeEvent>
+  nameWithType: Action<HedgeEvent>
+  fullName: System.Action<Kevlar.HedgeEvent>
+  nameWithType.vb: Action(Of HedgeEvent)
+  fullName.vb: System.Action(Of Kevlar.HedgeEvent)
+  name.vb: Action(Of HedgeEvent)
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - uid: Kevlar.HedgeEvent
+    name: HedgeEvent
+    isExternal: true
+    href: Kevlar.HedgeEvent.html
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.HedgeEvent
+    name: HedgeEvent
+    isExternal: true
+    href: Kevlar.HedgeEvent.html
+  - name: )
+- uid: System.Action`1
+  commentId: T:System.Action`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<T>
+  nameWithType: Action<T>
+  fullName: System.Action<T>
+  nameWithType.vb: Action(Of T)
+  fullName.vb: System.Action(Of T)
+  name.vb: Action(Of T)
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Kevlar.HedgeOptions.OnHedge
+  commentId: P:Kevlar.HedgeOptions.OnHedge
+  isExternal: true
+  href: Kevlar.HedgeOptions.html#Kevlar_HedgeOptions_OnHedge
+  name: OnHedge
+  nameWithType: HedgeOptions.OnHedge
+  fullName: Kevlar.HedgeOptions.OnHedge
+- uid: Kevlar.HedgeOptions`1.OnHedgeAsync*
+  commentId: Overload:Kevlar.HedgeOptions`1.OnHedgeAsync
+  isExternal: true
+  href: Kevlar.HedgeOptions-1.html#Kevlar_HedgeOptions_1_OnHedgeAsync
+  name: OnHedgeAsync
+  nameWithType: HedgeOptions<TResult>.OnHedgeAsync
+  fullName: Kevlar.HedgeOptions<TResult>.OnHedgeAsync
+  nameWithType.vb: HedgeOptions(Of TResult).OnHedgeAsync
+  fullName.vb: Kevlar.HedgeOptions(Of TResult).OnHedgeAsync
+- uid: System.Func{Kevlar.HedgeEvent,System.Threading.Tasks.ValueTask}
+  commentId: T:System.Func{Kevlar.HedgeEvent,System.Threading.Tasks.ValueTask}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<HedgeEvent, ValueTask>
+  nameWithType: Func<HedgeEvent, ValueTask>
+  fullName: System.Func<Kevlar.HedgeEvent, System.Threading.Tasks.ValueTask>
+  nameWithType.vb: Func(Of HedgeEvent, ValueTask)
+  fullName.vb: System.Func(Of Kevlar.HedgeEvent, System.Threading.Tasks.ValueTask)
+  name.vb: Func(Of HedgeEvent, ValueTask)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.HedgeEvent
+    name: HedgeEvent
+    isExternal: true
+    href: Kevlar.HedgeEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.HedgeEvent
+    name: HedgeEvent
+    isExternal: true
+    href: Kevlar.HedgeEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
+  - name: )
+- uid: Kevlar.HedgeOptions`1.ActionGenerator*
+  commentId: Overload:Kevlar.HedgeOptions`1.ActionGenerator
+  isExternal: true
+  href: Kevlar.HedgeOptions-1.html#Kevlar_HedgeOptions_1_ActionGenerator
+  name: ActionGenerator
+  nameWithType: HedgeOptions<TResult>.ActionGenerator
+  fullName: Kevlar.HedgeOptions<TResult>.ActionGenerator
+  nameWithType.vb: HedgeOptions(Of TResult).ActionGenerator
+  fullName.vb: Kevlar.HedgeOptions(Of TResult).ActionGenerator
+- uid: Kevlar.HedgeActionGenerator
+  commentId: T:Kevlar.HedgeActionGenerator
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.HedgeActionGenerator.html
+  name: HedgeActionGenerator
+  nameWithType: HedgeActionGenerator
+  fullName: Kevlar.HedgeActionGenerator

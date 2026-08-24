@@ -1,0 +1,770 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.KevlarKey`1
+  commentId: T:Kevlar.KevlarKey`1
+  id: KevlarKey`1
+  parent: Kevlar
+  children:
+  - Kevlar.KevlarKey`1.#ctor(System.String)
+  - Kevlar.KevlarKey`1.Equals(Kevlar.KevlarKey{`0})
+  - Kevlar.KevlarKey`1.Equals(System.Object)
+  - Kevlar.KevlarKey`1.GetHashCode
+  - Kevlar.KevlarKey`1.Name
+  - Kevlar.KevlarKey`1.ToString
+  - Kevlar.KevlarKey`1.op_Equality(Kevlar.KevlarKey{`0},Kevlar.KevlarKey{`0})
+  - Kevlar.KevlarKey`1.op_Inequality(Kevlar.KevlarKey{`0},Kevlar.KevlarKey{`0})
+  langs:
+  - csharp
+  - vb
+  name: KevlarKey<T>
+  nameWithType: KevlarKey<T>
+  fullName: Kevlar.KevlarKey<T>
+  type: Struct
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: A strongly typed key for storing values in <xref href="Kevlar.KevlarProperties" data-throw-if-not-resolved="false"></xref>.
+  example: []
+  syntax:
+    content: 'public readonly struct KevlarKey<T> : IEquatable<KevlarKey<T>>'
+    typeParameters:
+    - id: T
+      description: The type of the value stored under this key.
+    content.vb: Public Structure KevlarKey(Of T) Implements IEquatable(Of KevlarKey(Of T))
+  implements:
+  - System.IEquatable{Kevlar.KevlarKey`1}
+  inheritedMembers:
+  - System.Object.GetType
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  nameWithType.vb: KevlarKey(Of T)
+  fullName.vb: Kevlar.KevlarKey(Of T)
+  name.vb: KevlarKey(Of T)
+- uid: Kevlar.KevlarKey`1.#ctor(System.String)
+  commentId: M:Kevlar.KevlarKey`1.#ctor(System.String)
+  id: '#ctor(System.String)'
+  parent: Kevlar.KevlarKey`1
+  langs:
+  - csharp
+  - vb
+  name: KevlarKey(string)
+  nameWithType: KevlarKey<T>.KevlarKey(string)
+  fullName: Kevlar.KevlarKey<T>.KevlarKey(string)
+  type: Constructor
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Creates a key with the given name. Names are case-sensitive.
+  example: []
+  syntax:
+    content: public KevlarKey(string name)
+    parameters:
+    - id: name
+      type: System.String
+    content.vb: Public Sub New(name As String)
+  overload: Kevlar.KevlarKey`1.#ctor*
+  nameWithType.vb: KevlarKey(Of T).New(String)
+  fullName.vb: Kevlar.KevlarKey(Of T).New(String)
+  name.vb: New(String)
+- uid: Kevlar.KevlarKey`1.Equals(Kevlar.KevlarKey{`0})
+  commentId: M:Kevlar.KevlarKey`1.Equals(Kevlar.KevlarKey{`0})
+  id: Equals(Kevlar.KevlarKey{`0})
+  parent: Kevlar.KevlarKey`1
+  langs:
+  - csharp
+  - vb
+  name: Equals(KevlarKey<T>)
+  nameWithType: KevlarKey<T>.Equals(KevlarKey<T>)
+  fullName: Kevlar.KevlarKey<T>.Equals(Kevlar.KevlarKey<T>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  example: []
+  syntax:
+    content: public bool Equals(KevlarKey<T> other)
+    parameters:
+    - id: other
+      type: Kevlar.KevlarKey`1
+    return:
+      type: System.Boolean
+    content.vb: Public Function Equals(other As KevlarKey(Of T)) As Boolean
+  overload: Kevlar.KevlarKey`1.Equals*
+  implements:
+  - System.IEquatable{Kevlar.KevlarKey`1}.Equals(Kevlar.KevlarKey{{T}})
+  nameWithType.vb: KevlarKey(Of T).Equals(KevlarKey(Of T))
+  fullName.vb: Kevlar.KevlarKey(Of T).Equals(Kevlar.KevlarKey(Of T))
+  name.vb: Equals(KevlarKey(Of T))
+- uid: Kevlar.KevlarKey`1.Equals(System.Object)
+  commentId: M:Kevlar.KevlarKey`1.Equals(System.Object)
+  id: Equals(System.Object)
+  parent: Kevlar.KevlarKey`1
+  langs:
+  - csharp
+  - vb
+  name: Equals(object?)
+  nameWithType: KevlarKey<T>.Equals(object?)
+  fullName: Kevlar.KevlarKey<T>.Equals(object?)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  example: []
+  syntax:
+    content: public override bool Equals(object? obj)
+    parameters:
+    - id: obj
+      type: System.Object
+    return:
+      type: System.Boolean
+    content.vb: Public Overrides Function Equals(obj As Object) As Boolean
+  overridden: System.ValueType.Equals(System.Object)
+  overload: Kevlar.KevlarKey`1.Equals*
+  nameWithType.vb: KevlarKey(Of T).Equals(Object)
+  fullName.vb: Kevlar.KevlarKey(Of T).Equals(Object)
+  name.vb: Equals(Object)
+- uid: Kevlar.KevlarKey`1.GetHashCode
+  commentId: M:Kevlar.KevlarKey`1.GetHashCode
+  id: GetHashCode
+  parent: Kevlar.KevlarKey`1
+  langs:
+  - csharp
+  - vb
+  name: GetHashCode()
+  nameWithType: KevlarKey<T>.GetHashCode()
+  fullName: Kevlar.KevlarKey<T>.GetHashCode()
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  example: []
+  syntax:
+    content: public override int GetHashCode()
+    return:
+      type: System.Int32
+    content.vb: Public Overrides Function GetHashCode() As Integer
+  overridden: System.ValueType.GetHashCode
+  overload: Kevlar.KevlarKey`1.GetHashCode*
+  nameWithType.vb: KevlarKey(Of T).GetHashCode()
+  fullName.vb: Kevlar.KevlarKey(Of T).GetHashCode()
+- uid: Kevlar.KevlarKey`1.op_Equality(Kevlar.KevlarKey{`0},Kevlar.KevlarKey{`0})
+  commentId: M:Kevlar.KevlarKey`1.op_Equality(Kevlar.KevlarKey{`0},Kevlar.KevlarKey{`0})
+  id: op_Equality(Kevlar.KevlarKey{`0},Kevlar.KevlarKey{`0})
+  parent: Kevlar.KevlarKey`1
+  langs:
+  - csharp
+  - vb
+  name: operator ==(KevlarKey<T>, KevlarKey<T>)
+  nameWithType: KevlarKey<T>.operator ==(KevlarKey<T>, KevlarKey<T>)
+  fullName: Kevlar.KevlarKey<T>.operator ==(Kevlar.KevlarKey<T>, Kevlar.KevlarKey<T>)
+  type: Operator
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Returns whether two keys have the same case-sensitive name.
+  example: []
+  syntax:
+    content: public static bool operator ==(KevlarKey<T> left, KevlarKey<T> right)
+    parameters:
+    - id: left
+      type: Kevlar.KevlarKey`1
+    - id: right
+      type: Kevlar.KevlarKey`1
+    return:
+      type: System.Boolean
+    content.vb: Public Shared Operator =(left As KevlarKey(Of T), right As KevlarKey(Of T)) As Boolean
+  overload: Kevlar.KevlarKey`1.op_Equality*
+  nameWithType.vb: KevlarKey(Of T).=(KevlarKey(Of T), KevlarKey(Of T))
+  fullName.vb: Kevlar.KevlarKey(Of T).=(Kevlar.KevlarKey(Of T), Kevlar.KevlarKey(Of T))
+  name.vb: =(KevlarKey(Of T), KevlarKey(Of T))
+- uid: Kevlar.KevlarKey`1.op_Inequality(Kevlar.KevlarKey{`0},Kevlar.KevlarKey{`0})
+  commentId: M:Kevlar.KevlarKey`1.op_Inequality(Kevlar.KevlarKey{`0},Kevlar.KevlarKey{`0})
+  id: op_Inequality(Kevlar.KevlarKey{`0},Kevlar.KevlarKey{`0})
+  parent: Kevlar.KevlarKey`1
+  langs:
+  - csharp
+  - vb
+  name: operator !=(KevlarKey<T>, KevlarKey<T>)
+  nameWithType: KevlarKey<T>.operator !=(KevlarKey<T>, KevlarKey<T>)
+  fullName: Kevlar.KevlarKey<T>.operator !=(Kevlar.KevlarKey<T>, Kevlar.KevlarKey<T>)
+  type: Operator
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Returns whether two keys have different case-sensitive names.
+  example: []
+  syntax:
+    content: public static bool operator !=(KevlarKey<T> left, KevlarKey<T> right)
+    parameters:
+    - id: left
+      type: Kevlar.KevlarKey`1
+    - id: right
+      type: Kevlar.KevlarKey`1
+    return:
+      type: System.Boolean
+    content.vb: Public Shared Operator <>(left As KevlarKey(Of T), right As KevlarKey(Of T)) As Boolean
+  overload: Kevlar.KevlarKey`1.op_Inequality*
+  nameWithType.vb: KevlarKey(Of T).<>(KevlarKey(Of T), KevlarKey(Of T))
+  fullName.vb: Kevlar.KevlarKey(Of T).<>(Kevlar.KevlarKey(Of T), Kevlar.KevlarKey(Of T))
+  name.vb: <>(KevlarKey(Of T), KevlarKey(Of T))
+- uid: Kevlar.KevlarKey`1.ToString
+  commentId: M:Kevlar.KevlarKey`1.ToString
+  id: ToString
+  parent: Kevlar.KevlarKey`1
+  langs:
+  - csharp
+  - vb
+  name: ToString()
+  nameWithType: KevlarKey<T>.ToString()
+  fullName: Kevlar.KevlarKey<T>.ToString()
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  example: []
+  syntax:
+    content: public override string ToString()
+    return:
+      type: System.String
+    content.vb: Public Overrides Function ToString() As String
+  overridden: System.ValueType.ToString
+  overload: Kevlar.KevlarKey`1.ToString*
+  nameWithType.vb: KevlarKey(Of T).ToString()
+  fullName.vb: Kevlar.KevlarKey(Of T).ToString()
+- uid: Kevlar.KevlarKey`1.Name
+  commentId: P:Kevlar.KevlarKey`1.Name
+  id: Name
+  parent: Kevlar.KevlarKey`1
+  langs:
+  - csharp
+  - vb
+  name: Name
+  nameWithType: KevlarKey<T>.Name
+  fullName: Kevlar.KevlarKey<T>.Name
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The key's name.
+  example: []
+  syntax:
+    content: public string Name { get; }
+    parameters: []
+    return:
+      type: System.String
+    content.vb: Public ReadOnly Property Name As String
+  overload: Kevlar.KevlarKey`1.Name*
+  nameWithType.vb: KevlarKey(Of T).Name
+  fullName.vb: Kevlar.KevlarKey(Of T).Name
+references:
+- uid: Kevlar.KevlarProperties
+  commentId: T:Kevlar.KevlarProperties
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.KevlarProperties.html
+  name: KevlarProperties
+  nameWithType: KevlarProperties
+  fullName: Kevlar.KevlarProperties
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: System.IEquatable{Kevlar.KevlarKey`1}
+  commentId: T:System.IEquatable{Kevlar.KevlarKey`1}
+  parent: System
+  definition: System.IEquatable`1
+  href: https://learn.microsoft.com/dotnet/api/system.iequatable-1
+  name: IEquatable<KevlarKey<T>>
+  nameWithType: IEquatable<KevlarKey<T>>
+  fullName: System.IEquatable<Kevlar.KevlarKey<T>>
+  nameWithType.vb: IEquatable(Of KevlarKey(Of T))
+  fullName.vb: System.IEquatable(Of Kevlar.KevlarKey(Of T))
+  name.vb: IEquatable(Of KevlarKey(Of T))
+  spec.csharp:
+  - uid: System.IEquatable`1
+    name: IEquatable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iequatable-1
+  - name: <
+  - uid: Kevlar.KevlarKey`1
+    name: KevlarKey
+    isExternal: true
+    href: Kevlar.KevlarKey-1.html
+  - name: <
+  - name: T
+  - name: '>'
+  - name: '>'
+  spec.vb:
+  - uid: System.IEquatable`1
+    name: IEquatable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iequatable-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.KevlarKey`1
+    name: KevlarKey
+    isExternal: true
+    href: Kevlar.KevlarKey-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+  - name: )
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.IEquatable`1
+  commentId: T:System.IEquatable`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.iequatable-1
+  name: IEquatable<T>
+  nameWithType: IEquatable<T>
+  fullName: System.IEquatable<T>
+  nameWithType.vb: IEquatable(Of T)
+  fullName.vb: System.IEquatable(Of T)
+  name.vb: IEquatable(Of T)
+  spec.csharp:
+  - uid: System.IEquatable`1
+    name: IEquatable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iequatable-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.IEquatable`1
+    name: IEquatable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iequatable-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: Kevlar.KevlarKey`1.#ctor*
+  commentId: Overload:Kevlar.KevlarKey`1.#ctor
+  isExternal: true
+  href: Kevlar.KevlarKey-1.html#Kevlar_KevlarKey_1__ctor_System_String_
+  name: KevlarKey
+  nameWithType: KevlarKey<T>.KevlarKey
+  fullName: Kevlar.KevlarKey<T>.KevlarKey
+  nameWithType.vb: KevlarKey(Of T).New
+  fullName.vb: Kevlar.KevlarKey(Of T).New
+  name.vb: New
+- uid: System.String
+  commentId: T:System.String
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.string
+  name: string
+  nameWithType: string
+  fullName: string
+  nameWithType.vb: String
+  fullName.vb: String
+  name.vb: String
+- uid: Kevlar.KevlarKey`1.Equals*
+  commentId: Overload:Kevlar.KevlarKey`1.Equals
+  isExternal: true
+  href: Kevlar.KevlarKey-1.html#Kevlar_KevlarKey_1_Equals_Kevlar_KevlarKey__0__
+  name: Equals
+  nameWithType: KevlarKey<T>.Equals
+  fullName: Kevlar.KevlarKey<T>.Equals
+  nameWithType.vb: KevlarKey(Of T).Equals
+  fullName.vb: Kevlar.KevlarKey(Of T).Equals
+- uid: System.IEquatable{Kevlar.KevlarKey`1}.Equals(Kevlar.KevlarKey{{T}})
+  commentId: M:System.IEquatable{Kevlar.KevlarKey`1}.Equals(Kevlar.KevlarKey{`0})
+  parent: System.IEquatable{Kevlar.KevlarKey`1}
+  definition: System.IEquatable`1.Equals(`0)
+  href: https://learn.microsoft.com/dotnet/api/system.iequatable-1.equals
+  name: Equals(KevlarKey<T>)
+  nameWithType: IEquatable<KevlarKey<T>>.Equals(KevlarKey<T>)
+  fullName: System.IEquatable<Kevlar.KevlarKey<T>>.Equals(Kevlar.KevlarKey<T>)
+  nameWithType.vb: IEquatable(Of KevlarKey(Of T)).Equals(KevlarKey(Of T))
+  fullName.vb: System.IEquatable(Of Kevlar.KevlarKey(Of T)).Equals(Kevlar.KevlarKey(Of T))
+  name.vb: Equals(KevlarKey(Of T))
+  spec.csharp:
+  - uid: System.IEquatable{Kevlar.KevlarKey`1}.Equals(Kevlar.KevlarKey{`0})
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iequatable-1.equals
+  - name: (
+  - uid: Kevlar.KevlarKey`1
+    name: KevlarKey
+    isExternal: true
+    href: Kevlar.KevlarKey-1.html
+  - name: <
+  - name: T
+  - name: '>'
+  - name: )
+  spec.vb:
+  - uid: System.IEquatable{Kevlar.KevlarKey`1}.Equals(Kevlar.KevlarKey{`0})
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iequatable-1.equals
+  - name: (
+  - uid: Kevlar.KevlarKey`1
+    name: KevlarKey
+    isExternal: true
+    href: Kevlar.KevlarKey-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+  - name: )
+- uid: Kevlar.KevlarKey`1
+  commentId: T:Kevlar.KevlarKey`1
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.KevlarKey-1.html
+  name: KevlarKey<T>
+  nameWithType: KevlarKey<T>
+  fullName: Kevlar.KevlarKey<T>
+  nameWithType.vb: KevlarKey(Of T)
+  fullName.vb: Kevlar.KevlarKey(Of T)
+  name.vb: KevlarKey(Of T)
+  spec.csharp:
+  - uid: Kevlar.KevlarKey`1
+    name: KevlarKey
+    isExternal: true
+    href: Kevlar.KevlarKey-1.html
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.KevlarKey`1
+    name: KevlarKey
+    isExternal: true
+    href: Kevlar.KevlarKey-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: System.Boolean
+  commentId: T:System.Boolean
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.boolean
+  name: bool
+  nameWithType: bool
+  fullName: bool
+  nameWithType.vb: Boolean
+  fullName.vb: Boolean
+  name.vb: Boolean
+- uid: System.IEquatable`1.Equals(`0)
+  commentId: M:System.IEquatable`1.Equals(`0)
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.iequatable-1.equals
+  name: Equals(T)
+  nameWithType: IEquatable<T>.Equals(T)
+  fullName: System.IEquatable<T>.Equals(T)
+  nameWithType.vb: IEquatable(Of T).Equals(T)
+  fullName.vb: System.IEquatable(Of T).Equals(T)
+  spec.csharp:
+  - uid: System.IEquatable`1.Equals(`0)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iequatable-1.equals
+  - name: (
+  - name: T
+  - name: )
+  spec.vb:
+  - uid: System.IEquatable`1.Equals(`0)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iequatable-1.equals
+  - name: (
+  - name: T
+  - name: )
+- uid: System.ValueType.Equals(System.Object)
+  commentId: M:System.ValueType.Equals(System.Object)
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  name: Equals(object)
+  nameWithType: ValueType.Equals(object)
+  fullName: System.ValueType.Equals(object)
+  nameWithType.vb: ValueType.Equals(Object)
+  fullName.vb: System.ValueType.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.ValueType.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.ValueType
+  commentId: T:System.ValueType
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype
+  name: ValueType
+  nameWithType: ValueType
+  fullName: System.ValueType
+- uid: System.ValueType.GetHashCode
+  commentId: M:System.ValueType.GetHashCode
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  name: GetHashCode()
+  nameWithType: ValueType.GetHashCode()
+  fullName: System.ValueType.GetHashCode()
+  spec.csharp:
+  - uid: System.ValueType.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  - name: (
+  - name: )
+- uid: Kevlar.KevlarKey`1.GetHashCode*
+  commentId: Overload:Kevlar.KevlarKey`1.GetHashCode
+  isExternal: true
+  href: Kevlar.KevlarKey-1.html#Kevlar_KevlarKey_1_GetHashCode
+  name: GetHashCode
+  nameWithType: KevlarKey<T>.GetHashCode
+  fullName: Kevlar.KevlarKey<T>.GetHashCode
+  nameWithType.vb: KevlarKey(Of T).GetHashCode
+  fullName.vb: Kevlar.KevlarKey(Of T).GetHashCode
+- uid: System.Int32
+  commentId: T:System.Int32
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.int32
+  name: int
+  nameWithType: int
+  fullName: int
+  nameWithType.vb: Integer
+  fullName.vb: Integer
+  name.vb: Integer
+- uid: Kevlar.KevlarKey`1.op_Equality*
+  commentId: Overload:Kevlar.KevlarKey`1.op_Equality
+  isExternal: true
+  href: Kevlar.KevlarKey-1.html#Kevlar_KevlarKey_1_op_Equality_Kevlar_KevlarKey__0__Kevlar_KevlarKey__0__
+  name: operator ==
+  nameWithType: KevlarKey<T>.operator ==
+  fullName: Kevlar.KevlarKey<T>.operator ==
+  nameWithType.vb: KevlarKey(Of T).=
+  fullName.vb: Kevlar.KevlarKey(Of T).=
+  name.vb: =
+  spec.csharp:
+  - name: operator
+  - name: " "
+  - uid: Kevlar.KevlarKey`1.op_Equality*
+    name: ==
+    isExternal: true
+    href: Kevlar.KevlarKey-1.html#Kevlar_KevlarKey_1_op_Equality_Kevlar_KevlarKey__0__Kevlar_KevlarKey__0__
+- uid: Kevlar.KevlarKey`1.op_Inequality*
+  commentId: Overload:Kevlar.KevlarKey`1.op_Inequality
+  isExternal: true
+  href: Kevlar.KevlarKey-1.html#Kevlar_KevlarKey_1_op_Inequality_Kevlar_KevlarKey__0__Kevlar_KevlarKey__0__
+  name: operator !=
+  nameWithType: KevlarKey<T>.operator !=
+  fullName: Kevlar.KevlarKey<T>.operator !=
+  nameWithType.vb: KevlarKey(Of T).<>
+  fullName.vb: Kevlar.KevlarKey(Of T).<>
+  name.vb: <>
+  spec.csharp:
+  - name: operator
+  - name: " "
+  - uid: Kevlar.KevlarKey`1.op_Inequality*
+    name: '!='
+    isExternal: true
+    href: Kevlar.KevlarKey-1.html#Kevlar_KevlarKey_1_op_Inequality_Kevlar_KevlarKey__0__Kevlar_KevlarKey__0__
+- uid: System.ValueType.ToString
+  commentId: M:System.ValueType.ToString
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  name: ToString()
+  nameWithType: ValueType.ToString()
+  fullName: System.ValueType.ToString()
+  spec.csharp:
+  - uid: System.ValueType.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  - name: (
+  - name: )
+- uid: Kevlar.KevlarKey`1.ToString*
+  commentId: Overload:Kevlar.KevlarKey`1.ToString
+  isExternal: true
+  href: Kevlar.KevlarKey-1.html#Kevlar_KevlarKey_1_ToString
+  name: ToString
+  nameWithType: KevlarKey<T>.ToString
+  fullName: Kevlar.KevlarKey<T>.ToString
+  nameWithType.vb: KevlarKey(Of T).ToString
+  fullName.vb: Kevlar.KevlarKey(Of T).ToString
+- uid: Kevlar.KevlarKey`1.Name*
+  commentId: Overload:Kevlar.KevlarKey`1.Name
+  isExternal: true
+  href: Kevlar.KevlarKey-1.html#Kevlar_KevlarKey_1_Name
+  name: Name
+  nameWithType: KevlarKey<T>.Name
+  fullName: Kevlar.KevlarKey<T>.Name
+  nameWithType.vb: KevlarKey(Of T).Name
+  fullName.vb: Kevlar.KevlarKey(Of T).Name

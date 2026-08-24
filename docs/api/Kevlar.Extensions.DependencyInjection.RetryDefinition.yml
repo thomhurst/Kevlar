@@ -1,0 +1,616 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Extensions.DependencyInjection.RetryDefinition
+  commentId: T:Kevlar.Extensions.DependencyInjection.RetryDefinition
+  id: RetryDefinition
+  parent: Kevlar.Extensions.DependencyInjection
+  children:
+  - Kevlar.Extensions.DependencyInjection.RetryDefinition.#ctor
+  - Kevlar.Extensions.DependencyInjection.RetryDefinition.Backoff
+  - Kevlar.Extensions.DependencyInjection.RetryDefinition.BaseDelay
+  - Kevlar.Extensions.DependencyInjection.RetryDefinition.Factor
+  - Kevlar.Extensions.DependencyInjection.RetryDefinition.Jitter
+  - Kevlar.Extensions.DependencyInjection.RetryDefinition.MaxDelay
+  - Kevlar.Extensions.DependencyInjection.RetryDefinition.MaxRetries
+  langs:
+  - csharp
+  - vb
+  name: RetryDefinition
+  nameWithType: RetryDefinition
+  fullName: Kevlar.Extensions.DependencyInjection.RetryDefinition
+  type: Class
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: The retry section of a <xref href="Kevlar.Extensions.DependencyInjection.ShieldDefinition" data-throw-if-not-resolved="false"></xref>.
+  example: []
+  syntax:
+    content: public sealed class RetryDefinition
+    content.vb: Public NotInheritable Class RetryDefinition
+  inheritance:
+  - System.Object
+  inheritedMembers:
+  - System.Object.GetType
+  - System.Object.ToString
+  - System.Object.Equals(System.Object)
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  - System.Object.GetHashCode
+- uid: Kevlar.Extensions.DependencyInjection.RetryDefinition.#ctor
+  commentId: M:Kevlar.Extensions.DependencyInjection.RetryDefinition.#ctor
+  id: '#ctor'
+  parent: Kevlar.Extensions.DependencyInjection.RetryDefinition
+  langs:
+  - csharp
+  - vb
+  name: RetryDefinition()
+  nameWithType: RetryDefinition.RetryDefinition()
+  fullName: Kevlar.Extensions.DependencyInjection.RetryDefinition.RetryDefinition()
+  type: Constructor
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  syntax:
+    content: public RetryDefinition()
+    content.vb: Public Sub New()
+  overload: Kevlar.Extensions.DependencyInjection.RetryDefinition.#ctor*
+  nameWithType.vb: RetryDefinition.New()
+  fullName.vb: Kevlar.Extensions.DependencyInjection.RetryDefinition.New()
+  name.vb: New()
+- uid: Kevlar.Extensions.DependencyInjection.RetryDefinition.MaxRetries
+  commentId: P:Kevlar.Extensions.DependencyInjection.RetryDefinition.MaxRetries
+  id: MaxRetries
+  parent: Kevlar.Extensions.DependencyInjection.RetryDefinition
+  langs:
+  - csharp
+  - vb
+  name: MaxRetries
+  nameWithType: RetryDefinition.MaxRetries
+  fullName: Kevlar.Extensions.DependencyInjection.RetryDefinition.MaxRetries
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: Maximum retries after the initial attempt. Default 3.
+  example: []
+  syntax:
+    content: public int MaxRetries { get; set; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public Property MaxRetries As Integer
+  overload: Kevlar.Extensions.DependencyInjection.RetryDefinition.MaxRetries*
+- uid: Kevlar.Extensions.DependencyInjection.RetryDefinition.Backoff
+  commentId: P:Kevlar.Extensions.DependencyInjection.RetryDefinition.Backoff
+  id: Backoff
+  parent: Kevlar.Extensions.DependencyInjection.RetryDefinition
+  langs:
+  - csharp
+  - vb
+  name: Backoff
+  nameWithType: RetryDefinition.Backoff
+  fullName: Kevlar.Extensions.DependencyInjection.RetryDefinition.Backoff
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: >-
+    The backoff curve. Default <xref href="Kevlar.BackoffKind.Exponential" data-throw-if-not-resolved="false"></xref>. DI definitions support
+
+    None, Constant, Linear, and Exponential; custom callbacks require the fluent API.
+  example: []
+  syntax:
+    content: public BackoffKind Backoff { get; set; }
+    parameters: []
+    return:
+      type: Kevlar.BackoffKind
+    content.vb: Public Property Backoff As BackoffKind
+  overload: Kevlar.Extensions.DependencyInjection.RetryDefinition.Backoff*
+- uid: Kevlar.Extensions.DependencyInjection.RetryDefinition.BaseDelay
+  commentId: P:Kevlar.Extensions.DependencyInjection.RetryDefinition.BaseDelay
+  id: BaseDelay
+  parent: Kevlar.Extensions.DependencyInjection.RetryDefinition
+  langs:
+  - csharp
+  - vb
+  name: BaseDelay
+  nameWithType: RetryDefinition.BaseDelay
+  fullName: Kevlar.Extensions.DependencyInjection.RetryDefinition.BaseDelay
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: >-
+    The base delay: the constant delay, linear step, or exponential initial delay.
+
+    Defaults per kind: 1s constant, 500ms linear, 250ms exponential.
+  example: []
+  syntax:
+    content: public TimeSpan? BaseDelay { get; set; }
+    parameters: []
+    return:
+      type: System.Nullable{System.TimeSpan}
+    content.vb: Public Property BaseDelay As TimeSpan?
+  overload: Kevlar.Extensions.DependencyInjection.RetryDefinition.BaseDelay*
+- uid: Kevlar.Extensions.DependencyInjection.RetryDefinition.Factor
+  commentId: P:Kevlar.Extensions.DependencyInjection.RetryDefinition.Factor
+  id: Factor
+  parent: Kevlar.Extensions.DependencyInjection.RetryDefinition
+  langs:
+  - csharp
+  - vb
+  name: Factor
+  nameWithType: RetryDefinition.Factor
+  fullName: Kevlar.Extensions.DependencyInjection.RetryDefinition.Factor
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: Exponential growth factor. Default 2.
+  example: []
+  syntax:
+    content: public double Factor { get; set; }
+    parameters: []
+    return:
+      type: System.Double
+    content.vb: Public Property Factor As Double
+  overload: Kevlar.Extensions.DependencyInjection.RetryDefinition.Factor*
+- uid: Kevlar.Extensions.DependencyInjection.RetryDefinition.Jitter
+  commentId: P:Kevlar.Extensions.DependencyInjection.RetryDefinition.Jitter
+  id: Jitter
+  parent: Kevlar.Extensions.DependencyInjection.RetryDefinition
+  langs:
+  - csharp
+  - vb
+  name: Jitter
+  nameWithType: RetryDefinition.Jitter
+  fullName: Kevlar.Extensions.DependencyInjection.RetryDefinition.Jitter
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: Whether exponential delays are jittered. Default true.
+  example: []
+  syntax:
+    content: public bool Jitter { get; set; }
+    parameters: []
+    return:
+      type: System.Boolean
+    content.vb: Public Property Jitter As Boolean
+  overload: Kevlar.Extensions.DependencyInjection.RetryDefinition.Jitter*
+- uid: Kevlar.Extensions.DependencyInjection.RetryDefinition.MaxDelay
+  commentId: P:Kevlar.Extensions.DependencyInjection.RetryDefinition.MaxDelay
+  id: MaxDelay
+  parent: Kevlar.Extensions.DependencyInjection.RetryDefinition
+  langs:
+  - csharp
+  - vb
+  name: MaxDelay
+  nameWithType: RetryDefinition.MaxDelay
+  fullName: Kevlar.Extensions.DependencyInjection.RetryDefinition.MaxDelay
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: An absolute upper bound applied to every delay. Default 30s for exponential.
+  example: []
+  syntax:
+    content: public TimeSpan? MaxDelay { get; set; }
+    parameters: []
+    return:
+      type: System.Nullable{System.TimeSpan}
+    content.vb: Public Property MaxDelay As TimeSpan?
+  overload: Kevlar.Extensions.DependencyInjection.RetryDefinition.MaxDelay*
+references:
+- uid: Kevlar.Extensions.DependencyInjection.ShieldDefinition
+  commentId: T:Kevlar.Extensions.DependencyInjection.ShieldDefinition
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.ShieldDefinition.html
+  name: ShieldDefinition
+  nameWithType: ShieldDefinition
+  fullName: Kevlar.Extensions.DependencyInjection.ShieldDefinition
+- uid: Kevlar.Extensions.DependencyInjection
+  commentId: N:Kevlar.Extensions.DependencyInjection
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar.Extensions.DependencyInjection
+  nameWithType: Kevlar.Extensions.DependencyInjection
+  fullName: Kevlar.Extensions.DependencyInjection
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+    href: Kevlar.Extensions.html
+  - name: .
+  - uid: Kevlar.Extensions.DependencyInjection
+    name: DependencyInjection
+    isExternal: true
+    href: Kevlar.Extensions.DependencyInjection.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+    href: Kevlar.Extensions.html
+  - name: .
+  - uid: Kevlar.Extensions.DependencyInjection
+    name: DependencyInjection
+    isExternal: true
+    href: Kevlar.Extensions.DependencyInjection.html
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.ToString
+  commentId: M:System.Object.ToString
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  name: ToString()
+  nameWithType: object.ToString()
+  fullName: object.ToString()
+  nameWithType.vb: Object.ToString()
+  fullName.vb: Object.ToString()
+  spec.csharp:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object)
+  commentId: M:System.Object.Equals(System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  name: Equals(object)
+  nameWithType: object.Equals(object)
+  fullName: object.Equals(object)
+  nameWithType.vb: Object.Equals(Object)
+  fullName.vb: Object.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetHashCode
+  commentId: M:System.Object.GetHashCode
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  name: GetHashCode()
+  nameWithType: object.GetHashCode()
+  fullName: object.GetHashCode()
+  nameWithType.vb: Object.GetHashCode()
+  fullName.vb: Object.GetHashCode()
+  spec.csharp:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.Extensions.DependencyInjection.RetryDefinition.#ctor*
+  commentId: Overload:Kevlar.Extensions.DependencyInjection.RetryDefinition.#ctor
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.RetryDefinition.html#Kevlar_Extensions_DependencyInjection_RetryDefinition__ctor
+  name: RetryDefinition
+  nameWithType: RetryDefinition.RetryDefinition
+  fullName: Kevlar.Extensions.DependencyInjection.RetryDefinition.RetryDefinition
+  nameWithType.vb: RetryDefinition.New
+  fullName.vb: Kevlar.Extensions.DependencyInjection.RetryDefinition.New
+  name.vb: New
+- uid: Kevlar.Extensions.DependencyInjection.RetryDefinition.MaxRetries*
+  commentId: Overload:Kevlar.Extensions.DependencyInjection.RetryDefinition.MaxRetries
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.RetryDefinition.html#Kevlar_Extensions_DependencyInjection_RetryDefinition_MaxRetries
+  name: MaxRetries
+  nameWithType: RetryDefinition.MaxRetries
+  fullName: Kevlar.Extensions.DependencyInjection.RetryDefinition.MaxRetries
+- uid: System.Int32
+  commentId: T:System.Int32
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.int32
+  name: int
+  nameWithType: int
+  fullName: int
+  nameWithType.vb: Integer
+  fullName.vb: Integer
+  name.vb: Integer
+- uid: Kevlar.BackoffKind.Exponential
+  commentId: F:Kevlar.BackoffKind.Exponential
+  isExternal: true
+  href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/BackoffKind.cs
+  name: Exponential
+  nameWithType: BackoffKind.Exponential
+  fullName: Kevlar.BackoffKind.Exponential
+- uid: Kevlar.Extensions.DependencyInjection.RetryDefinition.Backoff*
+  commentId: Overload:Kevlar.Extensions.DependencyInjection.RetryDefinition.Backoff
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.RetryDefinition.html#Kevlar_Extensions_DependencyInjection_RetryDefinition_Backoff
+  name: Backoff
+  nameWithType: RetryDefinition.Backoff
+  fullName: Kevlar.Extensions.DependencyInjection.RetryDefinition.Backoff
+- uid: Kevlar.BackoffKind
+  commentId: T:Kevlar.BackoffKind
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.BackoffKind.html
+  name: BackoffKind
+  nameWithType: BackoffKind
+  fullName: Kevlar.BackoffKind
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: Kevlar.Extensions.DependencyInjection.RetryDefinition.BaseDelay*
+  commentId: Overload:Kevlar.Extensions.DependencyInjection.RetryDefinition.BaseDelay
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.RetryDefinition.html#Kevlar_Extensions_DependencyInjection_RetryDefinition_BaseDelay
+  name: BaseDelay
+  nameWithType: RetryDefinition.BaseDelay
+  fullName: Kevlar.Extensions.DependencyInjection.RetryDefinition.BaseDelay
+- uid: System.Nullable{System.TimeSpan}
+  commentId: T:System.Nullable{System.TimeSpan}
+  parent: System
+  definition: System.Nullable`1
+  href: https://learn.microsoft.com/dotnet/api/system.timespan
+  name: TimeSpan?
+  nameWithType: TimeSpan?
+  fullName: System.TimeSpan?
+  spec.csharp:
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '?'
+  spec.vb:
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '?'
+- uid: System.Nullable`1
+  commentId: T:System.Nullable`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  name: Nullable<T>
+  nameWithType: Nullable<T>
+  fullName: System.Nullable<T>
+  nameWithType.vb: Nullable(Of T)
+  fullName.vb: System.Nullable(Of T)
+  name.vb: Nullable(Of T)
+  spec.csharp:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Kevlar.Extensions.DependencyInjection.RetryDefinition.Factor*
+  commentId: Overload:Kevlar.Extensions.DependencyInjection.RetryDefinition.Factor
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.RetryDefinition.html#Kevlar_Extensions_DependencyInjection_RetryDefinition_Factor
+  name: Factor
+  nameWithType: RetryDefinition.Factor
+  fullName: Kevlar.Extensions.DependencyInjection.RetryDefinition.Factor
+- uid: System.Double
+  commentId: T:System.Double
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.double
+  name: double
+  nameWithType: double
+  fullName: double
+  nameWithType.vb: Double
+  fullName.vb: Double
+  name.vb: Double
+- uid: Kevlar.Extensions.DependencyInjection.RetryDefinition.Jitter*
+  commentId: Overload:Kevlar.Extensions.DependencyInjection.RetryDefinition.Jitter
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.RetryDefinition.html#Kevlar_Extensions_DependencyInjection_RetryDefinition_Jitter
+  name: Jitter
+  nameWithType: RetryDefinition.Jitter
+  fullName: Kevlar.Extensions.DependencyInjection.RetryDefinition.Jitter
+- uid: System.Boolean
+  commentId: T:System.Boolean
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.boolean
+  name: bool
+  nameWithType: bool
+  fullName: bool
+  nameWithType.vb: Boolean
+  fullName.vb: Boolean
+  name.vb: Boolean
+- uid: Kevlar.Extensions.DependencyInjection.RetryDefinition.MaxDelay*
+  commentId: Overload:Kevlar.Extensions.DependencyInjection.RetryDefinition.MaxDelay
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.RetryDefinition.html#Kevlar_Extensions_DependencyInjection_RetryDefinition_MaxDelay
+  name: MaxDelay
+  nameWithType: RetryDefinition.MaxDelay
+  fullName: Kevlar.Extensions.DependencyInjection.RetryDefinition.MaxDelay

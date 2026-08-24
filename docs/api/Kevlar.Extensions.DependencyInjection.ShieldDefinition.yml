@@ -1,0 +1,724 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Extensions.DependencyInjection.ShieldDefinition
+  commentId: T:Kevlar.Extensions.DependencyInjection.ShieldDefinition
+  id: ShieldDefinition
+  parent: Kevlar.Extensions.DependencyInjection
+  children:
+  - Kevlar.Extensions.DependencyInjection.ShieldDefinition.#ctor
+  - Kevlar.Extensions.DependencyInjection.ShieldDefinition.AttemptTimeout
+  - Kevlar.Extensions.DependencyInjection.ShieldDefinition.Build
+  - Kevlar.Extensions.DependencyInjection.ShieldDefinition.CircuitBreaker
+  - Kevlar.Extensions.DependencyInjection.ShieldDefinition.ConcurrencyLimit
+  - Kevlar.Extensions.DependencyInjection.ShieldDefinition.RateLimit
+  - Kevlar.Extensions.DependencyInjection.ShieldDefinition.Retry
+  - Kevlar.Extensions.DependencyInjection.ShieldDefinition.Timeout
+  langs:
+  - csharp
+  - vb
+  name: ShieldDefinition
+  nameWithType: ShieldDefinition
+  fullName: Kevlar.Extensions.DependencyInjection.ShieldDefinition
+  type: Class
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: >-
+    A declarative shield that can be bound from configuration (appsettings, environment,
+
+    key vault…), so retry counts, timeouts and breaker thresholds are tunable without a redeploy.
+  remarks: >-
+    <p>
+
+    <xref href="Kevlar.Extensions.DependencyInjection.ShieldDefinition.Build" data-throw-if-not-resolved="false"></xref> chains the sections in one fixed order, outermost first:
+
+    <xref href="Kevlar.Extensions.DependencyInjection.ShieldDefinition.Timeout" data-throw-if-not-resolved="false"></xref> → <xref href="Kevlar.Extensions.DependencyInjection.ShieldDefinition.Retry" data-throw-if-not-resolved="false"></xref> → <xref href="Kevlar.Extensions.DependencyInjection.ShieldDefinition.CircuitBreaker" data-throw-if-not-resolved="false"></xref> →
+
+    <xref href="Kevlar.Extensions.DependencyInjection.ShieldDefinition.RateLimit" data-throw-if-not-resolved="false"></xref> → <xref href="Kevlar.Extensions.DependencyInjection.ShieldDefinition.ConcurrencyLimit" data-throw-if-not-resolved="false"></xref> → <xref href="Kevlar.Extensions.DependencyInjection.ShieldDefinition.AttemptTimeout" data-throw-if-not-resolved="false"></xref>.
+
+    Only the sections present in configuration are added; the rest keep their relative order.
+
+    </p>
+
+    <p>
+
+    The order reads like any fluent chain: <xref href="Kevlar.Extensions.DependencyInjection.ShieldDefinition.Timeout" data-throw-if-not-resolved="false"></xref> is the total budget around
+
+    everything, retries happen inside it, every attempt passes through the breaker and the two
+
+    limiters, and <xref href="Kevlar.Extensions.DependencyInjection.ShieldDefinition.AttemptTimeout" data-throw-if-not-resolved="false"></xref> is the innermost per-attempt budget. Configuration
+
+    cannot reorder the chain — build the shield with the fluent API when a different shape is
+
+    needed.
+
+    </p>
+  example: []
+  syntax:
+    content: public sealed class ShieldDefinition
+    content.vb: Public NotInheritable Class ShieldDefinition
+  inheritance:
+  - System.Object
+  inheritedMembers:
+  - System.Object.GetType
+  - System.Object.ToString
+  - System.Object.Equals(System.Object)
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  - System.Object.GetHashCode
+- uid: Kevlar.Extensions.DependencyInjection.ShieldDefinition.Build
+  commentId: M:Kevlar.Extensions.DependencyInjection.ShieldDefinition.Build
+  id: Build
+  parent: Kevlar.Extensions.DependencyInjection.ShieldDefinition
+  langs:
+  - csharp
+  - vb
+  name: Build()
+  nameWithType: ShieldDefinition.Build()
+  fullName: Kevlar.Extensions.DependencyInjection.ShieldDefinition.Build()
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: >-
+    Builds the configured <xref href="Kevlar.Shield" data-throw-if-not-resolved="false"></xref>, chaining the declared sections outermost first:
+
+    <xref href="Kevlar.Extensions.DependencyInjection.ShieldDefinition.Timeout" data-throw-if-not-resolved="false"></xref> → <xref href="Kevlar.Extensions.DependencyInjection.ShieldDefinition.Retry" data-throw-if-not-resolved="false"></xref> → <xref href="Kevlar.Extensions.DependencyInjection.ShieldDefinition.CircuitBreaker" data-throw-if-not-resolved="false"></xref> →
+
+    <xref href="Kevlar.Extensions.DependencyInjection.ShieldDefinition.RateLimit" data-throw-if-not-resolved="false"></xref> → <xref href="Kevlar.Extensions.DependencyInjection.ShieldDefinition.ConcurrencyLimit" data-throw-if-not-resolved="false"></xref> → <xref href="Kevlar.Extensions.DependencyInjection.ShieldDefinition.AttemptTimeout" data-throw-if-not-resolved="false"></xref>.
+
+    Sections left null are skipped without changing the order of the rest.
+  example: []
+  syntax:
+    content: public Shield Build()
+    return:
+      type: Kevlar.Shield
+    content.vb: Public Function Build() As Shield
+  overload: Kevlar.Extensions.DependencyInjection.ShieldDefinition.Build*
+- uid: Kevlar.Extensions.DependencyInjection.ShieldDefinition.#ctor
+  commentId: M:Kevlar.Extensions.DependencyInjection.ShieldDefinition.#ctor
+  id: '#ctor'
+  parent: Kevlar.Extensions.DependencyInjection.ShieldDefinition
+  langs:
+  - csharp
+  - vb
+  name: ShieldDefinition()
+  nameWithType: ShieldDefinition.ShieldDefinition()
+  fullName: Kevlar.Extensions.DependencyInjection.ShieldDefinition.ShieldDefinition()
+  type: Constructor
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  syntax:
+    content: public ShieldDefinition()
+    content.vb: Public Sub New()
+  overload: Kevlar.Extensions.DependencyInjection.ShieldDefinition.#ctor*
+  nameWithType.vb: ShieldDefinition.New()
+  fullName.vb: Kevlar.Extensions.DependencyInjection.ShieldDefinition.New()
+  name.vb: New()
+- uid: Kevlar.Extensions.DependencyInjection.ShieldDefinition.Timeout
+  commentId: P:Kevlar.Extensions.DependencyInjection.ShieldDefinition.Timeout
+  id: Timeout
+  parent: Kevlar.Extensions.DependencyInjection.ShieldDefinition
+  langs:
+  - csharp
+  - vb
+  name: Timeout
+  nameWithType: ShieldDefinition.Timeout
+  fullName: Kevlar.Extensions.DependencyInjection.ShieldDefinition.Timeout
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: Total budget for the whole operation (outermost). Omit for none.
+  example: []
+  syntax:
+    content: public TimeSpan? Timeout { get; set; }
+    parameters: []
+    return:
+      type: System.Nullable{System.TimeSpan}
+    content.vb: Public Property Timeout As TimeSpan?
+  overload: Kevlar.Extensions.DependencyInjection.ShieldDefinition.Timeout*
+- uid: Kevlar.Extensions.DependencyInjection.ShieldDefinition.Retry
+  commentId: P:Kevlar.Extensions.DependencyInjection.ShieldDefinition.Retry
+  id: Retry
+  parent: Kevlar.Extensions.DependencyInjection.ShieldDefinition
+  langs:
+  - csharp
+  - vb
+  name: Retry
+  nameWithType: ShieldDefinition.Retry
+  fullName: Kevlar.Extensions.DependencyInjection.ShieldDefinition.Retry
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: Retry configuration. Omit for none.
+  example: []
+  syntax:
+    content: public RetryDefinition? Retry { get; set; }
+    parameters: []
+    return:
+      type: Kevlar.Extensions.DependencyInjection.RetryDefinition
+    content.vb: Public Property Retry As RetryDefinition
+  overload: Kevlar.Extensions.DependencyInjection.ShieldDefinition.Retry*
+- uid: Kevlar.Extensions.DependencyInjection.ShieldDefinition.CircuitBreaker
+  commentId: P:Kevlar.Extensions.DependencyInjection.ShieldDefinition.CircuitBreaker
+  id: CircuitBreaker
+  parent: Kevlar.Extensions.DependencyInjection.ShieldDefinition
+  langs:
+  - csharp
+  - vb
+  name: CircuitBreaker
+  nameWithType: ShieldDefinition.CircuitBreaker
+  fullName: Kevlar.Extensions.DependencyInjection.ShieldDefinition.CircuitBreaker
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: Circuit breaker configuration. Omit for none.
+  example: []
+  syntax:
+    content: public CircuitBreakerDefinition? CircuitBreaker { get; set; }
+    parameters: []
+    return:
+      type: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition
+    content.vb: Public Property CircuitBreaker As CircuitBreakerDefinition
+  overload: Kevlar.Extensions.DependencyInjection.ShieldDefinition.CircuitBreaker*
+- uid: Kevlar.Extensions.DependencyInjection.ShieldDefinition.RateLimit
+  commentId: P:Kevlar.Extensions.DependencyInjection.ShieldDefinition.RateLimit
+  id: RateLimit
+  parent: Kevlar.Extensions.DependencyInjection.ShieldDefinition
+  langs:
+  - csharp
+  - vb
+  name: RateLimit
+  nameWithType: ShieldDefinition.RateLimit
+  fullName: Kevlar.Extensions.DependencyInjection.ShieldDefinition.RateLimit
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: Rate limit configuration. Omit for none.
+  example: []
+  syntax:
+    content: public RateLimitDefinition? RateLimit { get; set; }
+    parameters: []
+    return:
+      type: Kevlar.Extensions.DependencyInjection.RateLimitDefinition
+    content.vb: Public Property RateLimit As RateLimitDefinition
+  overload: Kevlar.Extensions.DependencyInjection.ShieldDefinition.RateLimit*
+- uid: Kevlar.Extensions.DependencyInjection.ShieldDefinition.ConcurrencyLimit
+  commentId: P:Kevlar.Extensions.DependencyInjection.ShieldDefinition.ConcurrencyLimit
+  id: ConcurrencyLimit
+  parent: Kevlar.Extensions.DependencyInjection.ShieldDefinition
+  langs:
+  - csharp
+  - vb
+  name: ConcurrencyLimit
+  nameWithType: ShieldDefinition.ConcurrencyLimit
+  fullName: Kevlar.Extensions.DependencyInjection.ShieldDefinition.ConcurrencyLimit
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: Concurrency limit configuration. Omit for none.
+  example: []
+  syntax:
+    content: public ConcurrencyLimitDefinition? ConcurrencyLimit { get; set; }
+    parameters: []
+    return:
+      type: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition
+    content.vb: Public Property ConcurrencyLimit As ConcurrencyLimitDefinition
+  overload: Kevlar.Extensions.DependencyInjection.ShieldDefinition.ConcurrencyLimit*
+- uid: Kevlar.Extensions.DependencyInjection.ShieldDefinition.AttemptTimeout
+  commentId: P:Kevlar.Extensions.DependencyInjection.ShieldDefinition.AttemptTimeout
+  id: AttemptTimeout
+  parent: Kevlar.Extensions.DependencyInjection.ShieldDefinition
+  langs:
+  - csharp
+  - vb
+  name: AttemptTimeout
+  nameWithType: ShieldDefinition.AttemptTimeout
+  fullName: Kevlar.Extensions.DependencyInjection.ShieldDefinition.AttemptTimeout
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: Budget for each individual attempt (innermost). Omit for none.
+  example: []
+  syntax:
+    content: public TimeSpan? AttemptTimeout { get; set; }
+    parameters: []
+    return:
+      type: System.Nullable{System.TimeSpan}
+    content.vb: Public Property AttemptTimeout As TimeSpan?
+  overload: Kevlar.Extensions.DependencyInjection.ShieldDefinition.AttemptTimeout*
+references:
+- uid: Kevlar.Extensions.DependencyInjection.ShieldDefinition.Build
+  commentId: M:Kevlar.Extensions.DependencyInjection.ShieldDefinition.Build
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.ShieldDefinition.html#Kevlar_Extensions_DependencyInjection_ShieldDefinition_Build
+  name: Build()
+  nameWithType: ShieldDefinition.Build()
+  fullName: Kevlar.Extensions.DependencyInjection.ShieldDefinition.Build()
+  spec.csharp:
+  - uid: Kevlar.Extensions.DependencyInjection.ShieldDefinition.Build
+    name: Build
+    isExternal: true
+    href: Kevlar.Extensions.DependencyInjection.ShieldDefinition.html#Kevlar_Extensions_DependencyInjection_ShieldDefinition_Build
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: Kevlar.Extensions.DependencyInjection.ShieldDefinition.Build
+    name: Build
+    isExternal: true
+    href: Kevlar.Extensions.DependencyInjection.ShieldDefinition.html#Kevlar_Extensions_DependencyInjection_ShieldDefinition_Build
+  - name: (
+  - name: )
+- uid: Kevlar.Extensions.DependencyInjection.ShieldDefinition.Timeout
+  commentId: P:Kevlar.Extensions.DependencyInjection.ShieldDefinition.Timeout
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.ShieldDefinition.html#Kevlar_Extensions_DependencyInjection_ShieldDefinition_Timeout
+  name: Timeout
+  nameWithType: ShieldDefinition.Timeout
+  fullName: Kevlar.Extensions.DependencyInjection.ShieldDefinition.Timeout
+- uid: Kevlar.Extensions.DependencyInjection.ShieldDefinition.Retry
+  commentId: P:Kevlar.Extensions.DependencyInjection.ShieldDefinition.Retry
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.ShieldDefinition.html#Kevlar_Extensions_DependencyInjection_ShieldDefinition_Retry
+  name: Retry
+  nameWithType: ShieldDefinition.Retry
+  fullName: Kevlar.Extensions.DependencyInjection.ShieldDefinition.Retry
+- uid: Kevlar.Extensions.DependencyInjection.ShieldDefinition.CircuitBreaker
+  commentId: P:Kevlar.Extensions.DependencyInjection.ShieldDefinition.CircuitBreaker
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.ShieldDefinition.html#Kevlar_Extensions_DependencyInjection_ShieldDefinition_CircuitBreaker
+  name: CircuitBreaker
+  nameWithType: ShieldDefinition.CircuitBreaker
+  fullName: Kevlar.Extensions.DependencyInjection.ShieldDefinition.CircuitBreaker
+- uid: Kevlar.Extensions.DependencyInjection.ShieldDefinition.RateLimit
+  commentId: P:Kevlar.Extensions.DependencyInjection.ShieldDefinition.RateLimit
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.ShieldDefinition.html#Kevlar_Extensions_DependencyInjection_ShieldDefinition_RateLimit
+  name: RateLimit
+  nameWithType: ShieldDefinition.RateLimit
+  fullName: Kevlar.Extensions.DependencyInjection.ShieldDefinition.RateLimit
+- uid: Kevlar.Extensions.DependencyInjection.ShieldDefinition.ConcurrencyLimit
+  commentId: P:Kevlar.Extensions.DependencyInjection.ShieldDefinition.ConcurrencyLimit
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.ShieldDefinition.html#Kevlar_Extensions_DependencyInjection_ShieldDefinition_ConcurrencyLimit
+  name: ConcurrencyLimit
+  nameWithType: ShieldDefinition.ConcurrencyLimit
+  fullName: Kevlar.Extensions.DependencyInjection.ShieldDefinition.ConcurrencyLimit
+- uid: Kevlar.Extensions.DependencyInjection.ShieldDefinition.AttemptTimeout
+  commentId: P:Kevlar.Extensions.DependencyInjection.ShieldDefinition.AttemptTimeout
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.ShieldDefinition.html#Kevlar_Extensions_DependencyInjection_ShieldDefinition_AttemptTimeout
+  name: AttemptTimeout
+  nameWithType: ShieldDefinition.AttemptTimeout
+  fullName: Kevlar.Extensions.DependencyInjection.ShieldDefinition.AttemptTimeout
+- uid: Kevlar.Extensions.DependencyInjection
+  commentId: N:Kevlar.Extensions.DependencyInjection
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar.Extensions.DependencyInjection
+  nameWithType: Kevlar.Extensions.DependencyInjection
+  fullName: Kevlar.Extensions.DependencyInjection
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+    href: Kevlar.Extensions.html
+  - name: .
+  - uid: Kevlar.Extensions.DependencyInjection
+    name: DependencyInjection
+    isExternal: true
+    href: Kevlar.Extensions.DependencyInjection.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+    href: Kevlar.Extensions.html
+  - name: .
+  - uid: Kevlar.Extensions.DependencyInjection
+    name: DependencyInjection
+    isExternal: true
+    href: Kevlar.Extensions.DependencyInjection.html
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.ToString
+  commentId: M:System.Object.ToString
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  name: ToString()
+  nameWithType: object.ToString()
+  fullName: object.ToString()
+  nameWithType.vb: Object.ToString()
+  fullName.vb: Object.ToString()
+  spec.csharp:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object)
+  commentId: M:System.Object.Equals(System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  name: Equals(object)
+  nameWithType: object.Equals(object)
+  fullName: object.Equals(object)
+  nameWithType.vb: Object.Equals(Object)
+  fullName.vb: Object.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetHashCode
+  commentId: M:System.Object.GetHashCode
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  name: GetHashCode()
+  nameWithType: object.GetHashCode()
+  fullName: object.GetHashCode()
+  nameWithType.vb: Object.GetHashCode()
+  fullName.vb: Object.GetHashCode()
+  spec.csharp:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.Shield
+  commentId: T:Kevlar.Shield
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Shield.html
+  name: Shield
+  nameWithType: Shield
+  fullName: Kevlar.Shield
+- uid: Kevlar.Extensions.DependencyInjection.ShieldDefinition.Build*
+  commentId: Overload:Kevlar.Extensions.DependencyInjection.ShieldDefinition.Build
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.ShieldDefinition.html#Kevlar_Extensions_DependencyInjection_ShieldDefinition_Build
+  name: Build
+  nameWithType: ShieldDefinition.Build
+  fullName: Kevlar.Extensions.DependencyInjection.ShieldDefinition.Build
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: Kevlar.Extensions.DependencyInjection.ShieldDefinition.#ctor*
+  commentId: Overload:Kevlar.Extensions.DependencyInjection.ShieldDefinition.#ctor
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.ShieldDefinition.html#Kevlar_Extensions_DependencyInjection_ShieldDefinition__ctor
+  name: ShieldDefinition
+  nameWithType: ShieldDefinition.ShieldDefinition
+  fullName: Kevlar.Extensions.DependencyInjection.ShieldDefinition.ShieldDefinition
+  nameWithType.vb: ShieldDefinition.New
+  fullName.vb: Kevlar.Extensions.DependencyInjection.ShieldDefinition.New
+  name.vb: New
+- uid: Kevlar.Extensions.DependencyInjection.ShieldDefinition.Timeout*
+  commentId: Overload:Kevlar.Extensions.DependencyInjection.ShieldDefinition.Timeout
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.ShieldDefinition.html#Kevlar_Extensions_DependencyInjection_ShieldDefinition_Timeout
+  name: Timeout
+  nameWithType: ShieldDefinition.Timeout
+  fullName: Kevlar.Extensions.DependencyInjection.ShieldDefinition.Timeout
+- uid: System.Nullable{System.TimeSpan}
+  commentId: T:System.Nullable{System.TimeSpan}
+  parent: System
+  definition: System.Nullable`1
+  href: https://learn.microsoft.com/dotnet/api/system.timespan
+  name: TimeSpan?
+  nameWithType: TimeSpan?
+  fullName: System.TimeSpan?
+  spec.csharp:
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '?'
+  spec.vb:
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '?'
+- uid: System.Nullable`1
+  commentId: T:System.Nullable`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  name: Nullable<T>
+  nameWithType: Nullable<T>
+  fullName: System.Nullable<T>
+  nameWithType.vb: Nullable(Of T)
+  fullName.vb: System.Nullable(Of T)
+  name.vb: Nullable(Of T)
+  spec.csharp:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Kevlar.Extensions.DependencyInjection.ShieldDefinition.Retry*
+  commentId: Overload:Kevlar.Extensions.DependencyInjection.ShieldDefinition.Retry
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.ShieldDefinition.html#Kevlar_Extensions_DependencyInjection_ShieldDefinition_Retry
+  name: Retry
+  nameWithType: ShieldDefinition.Retry
+  fullName: Kevlar.Extensions.DependencyInjection.ShieldDefinition.Retry
+- uid: Kevlar.Extensions.DependencyInjection.RetryDefinition
+  commentId: T:Kevlar.Extensions.DependencyInjection.RetryDefinition
+  parent: Kevlar.Extensions.DependencyInjection
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.RetryDefinition.html
+  name: RetryDefinition
+  nameWithType: RetryDefinition
+  fullName: Kevlar.Extensions.DependencyInjection.RetryDefinition
+- uid: Kevlar.Extensions.DependencyInjection.ShieldDefinition.CircuitBreaker*
+  commentId: Overload:Kevlar.Extensions.DependencyInjection.ShieldDefinition.CircuitBreaker
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.ShieldDefinition.html#Kevlar_Extensions_DependencyInjection_ShieldDefinition_CircuitBreaker
+  name: CircuitBreaker
+  nameWithType: ShieldDefinition.CircuitBreaker
+  fullName: Kevlar.Extensions.DependencyInjection.ShieldDefinition.CircuitBreaker
+- uid: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition
+  commentId: T:Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition
+  parent: Kevlar.Extensions.DependencyInjection
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition.html
+  name: CircuitBreakerDefinition
+  nameWithType: CircuitBreakerDefinition
+  fullName: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition
+- uid: Kevlar.Extensions.DependencyInjection.ShieldDefinition.RateLimit*
+  commentId: Overload:Kevlar.Extensions.DependencyInjection.ShieldDefinition.RateLimit
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.ShieldDefinition.html#Kevlar_Extensions_DependencyInjection_ShieldDefinition_RateLimit
+  name: RateLimit
+  nameWithType: ShieldDefinition.RateLimit
+  fullName: Kevlar.Extensions.DependencyInjection.ShieldDefinition.RateLimit
+- uid: Kevlar.Extensions.DependencyInjection.RateLimitDefinition
+  commentId: T:Kevlar.Extensions.DependencyInjection.RateLimitDefinition
+  parent: Kevlar.Extensions.DependencyInjection
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.RateLimitDefinition.html
+  name: RateLimitDefinition
+  nameWithType: RateLimitDefinition
+  fullName: Kevlar.Extensions.DependencyInjection.RateLimitDefinition
+- uid: Kevlar.Extensions.DependencyInjection.ShieldDefinition.ConcurrencyLimit*
+  commentId: Overload:Kevlar.Extensions.DependencyInjection.ShieldDefinition.ConcurrencyLimit
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.ShieldDefinition.html#Kevlar_Extensions_DependencyInjection_ShieldDefinition_ConcurrencyLimit
+  name: ConcurrencyLimit
+  nameWithType: ShieldDefinition.ConcurrencyLimit
+  fullName: Kevlar.Extensions.DependencyInjection.ShieldDefinition.ConcurrencyLimit
+- uid: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition
+  commentId: T:Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition
+  parent: Kevlar.Extensions.DependencyInjection
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.html
+  name: ConcurrencyLimitDefinition
+  nameWithType: ConcurrencyLimitDefinition
+  fullName: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition
+- uid: Kevlar.Extensions.DependencyInjection.ShieldDefinition.AttemptTimeout*
+  commentId: Overload:Kevlar.Extensions.DependencyInjection.ShieldDefinition.AttemptTimeout
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.ShieldDefinition.html#Kevlar_Extensions_DependencyInjection_ShieldDefinition_AttemptTimeout
+  name: AttemptTimeout
+  nameWithType: ShieldDefinition.AttemptTimeout
+  fullName: Kevlar.Extensions.DependencyInjection.ShieldDefinition.AttemptTimeout

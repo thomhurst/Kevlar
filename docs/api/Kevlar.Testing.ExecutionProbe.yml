@@ -1,0 +1,774 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Testing.ExecutionProbe
+  commentId: T:Kevlar.Testing.ExecutionProbe
+  id: ExecutionProbe
+  parent: Kevlar.Testing
+  children:
+  - Kevlar.Testing.ExecutionProbe.#ctor
+  - Kevlar.Testing.ExecutionProbe.AttemptCount
+  - Kevlar.Testing.ExecutionProbe.CancellationCount
+  - Kevlar.Testing.ExecutionProbe.GetSnapshot
+  - Kevlar.Testing.ExecutionProbe.WaitForAttemptCountAsync(System.Int32,System.Threading.CancellationToken)
+  - Kevlar.Testing.ExecutionProbe.WaitForCancellationCountAsync(System.Int32,System.Threading.CancellationToken)
+  - Kevlar.Testing.ExecutionProbe.Wrap(System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask})
+  - Kevlar.Testing.ExecutionProbe.Wrap``1(System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{``0}})
+  langs:
+  - csharp
+  - vb
+  name: ExecutionProbe
+  nameWithType: ExecutionProbe
+  fullName: Kevlar.Testing.ExecutionProbe
+  type: Class
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Counts delegate attempts and cancellation requests without changing shield behavior.
+  example: []
+  syntax:
+    content: public sealed class ExecutionProbe
+    content.vb: Public NotInheritable Class ExecutionProbe
+  inheritance:
+  - System.Object
+  inheritedMembers:
+  - System.Object.GetType
+  - System.Object.ToString
+  - System.Object.Equals(System.Object)
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  - System.Object.GetHashCode
+- uid: Kevlar.Testing.ExecutionProbe.Wrap(System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask})
+  commentId: M:Kevlar.Testing.ExecutionProbe.Wrap(System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask})
+  id: Wrap(System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask})
+  parent: Kevlar.Testing.ExecutionProbe
+  langs:
+  - csharp
+  - vb
+  name: Wrap(Func<CancellationToken, ValueTask>)
+  nameWithType: ExecutionProbe.Wrap(Func<CancellationToken, ValueTask>)
+  fullName: Kevlar.Testing.ExecutionProbe.Wrap(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>)
+  type: Method
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Wraps an untyped asynchronous execution delegate.
+  example: []
+  syntax:
+    content: public Func<CancellationToken, ValueTask> Wrap(Func<CancellationToken, ValueTask> action)
+    parameters:
+    - id: action
+      type: System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask}
+    return:
+      type: System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask}
+    content.vb: Public Function Wrap(action As Func(Of CancellationToken, ValueTask)) As Func(Of CancellationToken, ValueTask)
+  overload: Kevlar.Testing.ExecutionProbe.Wrap*
+  nameWithType.vb: ExecutionProbe.Wrap(Func(Of CancellationToken, ValueTask))
+  fullName.vb: Kevlar.Testing.ExecutionProbe.Wrap(System.Func(Of System.Threading.CancellationToken, System.Threading.Tasks.ValueTask))
+  name.vb: Wrap(Func(Of CancellationToken, ValueTask))
+- uid: Kevlar.Testing.ExecutionProbe.Wrap``1(System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{``0}})
+  commentId: M:Kevlar.Testing.ExecutionProbe.Wrap``1(System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{``0}})
+  id: Wrap``1(System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{``0}})
+  parent: Kevlar.Testing.ExecutionProbe
+  langs:
+  - csharp
+  - vb
+  name: Wrap<TResult>(Func<CancellationToken, ValueTask<TResult>>)
+  nameWithType: ExecutionProbe.Wrap<TResult>(Func<CancellationToken, ValueTask<TResult>>)
+  fullName: Kevlar.Testing.ExecutionProbe.Wrap<TResult>(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>)
+  type: Method
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Wraps a typed asynchronous execution delegate.
+  example: []
+  syntax:
+    content: public Func<CancellationToken, ValueTask<TResult>> Wrap<TResult>(Func<CancellationToken, ValueTask<TResult>> action)
+    parameters:
+    - id: action
+      type: System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{{TResult}}}
+    typeParameters:
+    - id: TResult
+    return:
+      type: System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{{TResult}}}
+    content.vb: Public Function Wrap(Of TResult)(action As Func(Of CancellationToken, ValueTask(Of TResult))) As Func(Of CancellationToken, ValueTask(Of TResult))
+  overload: Kevlar.Testing.ExecutionProbe.Wrap*
+  nameWithType.vb: ExecutionProbe.Wrap(Of TResult)(Func(Of CancellationToken, ValueTask(Of TResult)))
+  fullName.vb: Kevlar.Testing.ExecutionProbe.Wrap(Of TResult)(System.Func(Of System.Threading.CancellationToken, System.Threading.Tasks.ValueTask(Of TResult)))
+  name.vb: Wrap(Of TResult)(Func(Of CancellationToken, ValueTask(Of TResult)))
+- uid: Kevlar.Testing.ExecutionProbe.GetSnapshot
+  commentId: M:Kevlar.Testing.ExecutionProbe.GetSnapshot
+  id: GetSnapshot
+  parent: Kevlar.Testing.ExecutionProbe
+  langs:
+  - csharp
+  - vb
+  name: GetSnapshot()
+  nameWithType: ExecutionProbe.GetSnapshot()
+  fullName: Kevlar.Testing.ExecutionProbe.GetSnapshot()
+  type: Method
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Gets an immutable snapshot of current counts.
+  example: []
+  syntax:
+    content: public ExecutionProbeSnapshot GetSnapshot()
+    return:
+      type: Kevlar.Testing.ExecutionProbeSnapshot
+    content.vb: Public Function GetSnapshot() As ExecutionProbeSnapshot
+  overload: Kevlar.Testing.ExecutionProbe.GetSnapshot*
+- uid: Kevlar.Testing.ExecutionProbe.WaitForAttemptCountAsync(System.Int32,System.Threading.CancellationToken)
+  commentId: M:Kevlar.Testing.ExecutionProbe.WaitForAttemptCountAsync(System.Int32,System.Threading.CancellationToken)
+  id: WaitForAttemptCountAsync(System.Int32,System.Threading.CancellationToken)
+  parent: Kevlar.Testing.ExecutionProbe
+  langs:
+  - csharp
+  - vb
+  name: WaitForAttemptCountAsync(int, CancellationToken)
+  nameWithType: ExecutionProbe.WaitForAttemptCountAsync(int, CancellationToken)
+  fullName: Kevlar.Testing.ExecutionProbe.WaitForAttemptCountAsync(int, System.Threading.CancellationToken)
+  type: Method
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Waits until at least <code class="paramref">count</code> attempts have started.
+  example: []
+  syntax:
+    content: public Task WaitForAttemptCountAsync(int count, CancellationToken cancellationToken = default)
+    parameters:
+    - id: count
+      type: System.Int32
+    - id: cancellationToken
+      type: System.Threading.CancellationToken
+    return:
+      type: System.Threading.Tasks.Task
+    content.vb: Public Function WaitForAttemptCountAsync(count As Integer, cancellationToken As CancellationToken = Nothing) As Task
+  overload: Kevlar.Testing.ExecutionProbe.WaitForAttemptCountAsync*
+  nameWithType.vb: ExecutionProbe.WaitForAttemptCountAsync(Integer, CancellationToken)
+  fullName.vb: Kevlar.Testing.ExecutionProbe.WaitForAttemptCountAsync(Integer, System.Threading.CancellationToken)
+  name.vb: WaitForAttemptCountAsync(Integer, CancellationToken)
+- uid: Kevlar.Testing.ExecutionProbe.WaitForCancellationCountAsync(System.Int32,System.Threading.CancellationToken)
+  commentId: M:Kevlar.Testing.ExecutionProbe.WaitForCancellationCountAsync(System.Int32,System.Threading.CancellationToken)
+  id: WaitForCancellationCountAsync(System.Int32,System.Threading.CancellationToken)
+  parent: Kevlar.Testing.ExecutionProbe
+  langs:
+  - csharp
+  - vb
+  name: WaitForCancellationCountAsync(int, CancellationToken)
+  nameWithType: ExecutionProbe.WaitForCancellationCountAsync(int, CancellationToken)
+  fullName: Kevlar.Testing.ExecutionProbe.WaitForCancellationCountAsync(int, System.Threading.CancellationToken)
+  type: Method
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Waits until at least <code class="paramref">count</code> active attempts observed cancellation.
+  example: []
+  syntax:
+    content: public Task WaitForCancellationCountAsync(int count, CancellationToken cancellationToken = default)
+    parameters:
+    - id: count
+      type: System.Int32
+    - id: cancellationToken
+      type: System.Threading.CancellationToken
+    return:
+      type: System.Threading.Tasks.Task
+    content.vb: Public Function WaitForCancellationCountAsync(count As Integer, cancellationToken As CancellationToken = Nothing) As Task
+  overload: Kevlar.Testing.ExecutionProbe.WaitForCancellationCountAsync*
+  nameWithType.vb: ExecutionProbe.WaitForCancellationCountAsync(Integer, CancellationToken)
+  fullName.vb: Kevlar.Testing.ExecutionProbe.WaitForCancellationCountAsync(Integer, System.Threading.CancellationToken)
+  name.vb: WaitForCancellationCountAsync(Integer, CancellationToken)
+- uid: Kevlar.Testing.ExecutionProbe.#ctor
+  commentId: M:Kevlar.Testing.ExecutionProbe.#ctor
+  id: '#ctor'
+  parent: Kevlar.Testing.ExecutionProbe
+  langs:
+  - csharp
+  - vb
+  name: ExecutionProbe()
+  nameWithType: ExecutionProbe.ExecutionProbe()
+  fullName: Kevlar.Testing.ExecutionProbe.ExecutionProbe()
+  type: Constructor
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  syntax:
+    content: public ExecutionProbe()
+    content.vb: Public Sub New()
+  overload: Kevlar.Testing.ExecutionProbe.#ctor*
+  nameWithType.vb: ExecutionProbe.New()
+  fullName.vb: Kevlar.Testing.ExecutionProbe.New()
+  name.vb: New()
+- uid: Kevlar.Testing.ExecutionProbe.AttemptCount
+  commentId: P:Kevlar.Testing.ExecutionProbe.AttemptCount
+  id: AttemptCount
+  parent: Kevlar.Testing.ExecutionProbe
+  langs:
+  - csharp
+  - vb
+  name: AttemptCount
+  nameWithType: ExecutionProbe.AttemptCount
+  fullName: Kevlar.Testing.ExecutionProbe.AttemptCount
+  type: Property
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Gets the number of delegate invocations observed so far.
+  example: []
+  syntax:
+    content: public int AttemptCount { get; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public ReadOnly Property AttemptCount As Integer
+  overload: Kevlar.Testing.ExecutionProbe.AttemptCount*
+- uid: Kevlar.Testing.ExecutionProbe.CancellationCount
+  commentId: P:Kevlar.Testing.ExecutionProbe.CancellationCount
+  id: CancellationCount
+  parent: Kevlar.Testing.ExecutionProbe
+  langs:
+  - csharp
+  - vb
+  name: CancellationCount
+  nameWithType: ExecutionProbe.CancellationCount
+  fullName: Kevlar.Testing.ExecutionProbe.CancellationCount
+  type: Property
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Gets the number of active attempt tokens that requested cancellation.
+  example: []
+  syntax:
+    content: public int CancellationCount { get; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public ReadOnly Property CancellationCount As Integer
+  overload: Kevlar.Testing.ExecutionProbe.CancellationCount*
+references:
+- uid: Kevlar.Testing
+  commentId: N:Kevlar.Testing
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar.Testing
+  nameWithType: Kevlar.Testing
+  fullName: Kevlar.Testing
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Testing
+    name: Testing
+    isExternal: true
+    href: Kevlar.Testing.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Testing
+    name: Testing
+    isExternal: true
+    href: Kevlar.Testing.html
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.ToString
+  commentId: M:System.Object.ToString
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  name: ToString()
+  nameWithType: object.ToString()
+  fullName: object.ToString()
+  nameWithType.vb: Object.ToString()
+  fullName.vb: Object.ToString()
+  spec.csharp:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object)
+  commentId: M:System.Object.Equals(System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  name: Equals(object)
+  nameWithType: object.Equals(object)
+  fullName: object.Equals(object)
+  nameWithType.vb: Object.Equals(Object)
+  fullName.vb: Object.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetHashCode
+  commentId: M:System.Object.GetHashCode
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  name: GetHashCode()
+  nameWithType: object.GetHashCode()
+  fullName: object.GetHashCode()
+  nameWithType.vb: Object.GetHashCode()
+  fullName.vb: Object.GetHashCode()
+  spec.csharp:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.Testing.ExecutionProbe.Wrap*
+  commentId: Overload:Kevlar.Testing.ExecutionProbe.Wrap
+  isExternal: true
+  href: Kevlar.Testing.ExecutionProbe.html#Kevlar_Testing_ExecutionProbe_Wrap_System_Func_System_Threading_CancellationToken_System_Threading_Tasks_ValueTask__
+  name: Wrap
+  nameWithType: ExecutionProbe.Wrap
+  fullName: Kevlar.Testing.ExecutionProbe.Wrap
+- uid: System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask}
+  commentId: T:System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<CancellationToken, ValueTask>
+  nameWithType: Func<CancellationToken, ValueTask>
+  fullName: System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>
+  nameWithType.vb: Func(Of CancellationToken, ValueTask)
+  fullName.vb: System.Func(Of System.Threading.CancellationToken, System.Threading.Tasks.ValueTask)
+  name.vb: Func(Of CancellationToken, ValueTask)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: System.Threading.CancellationToken
+    name: CancellationToken
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.Threading.CancellationToken
+    name: CancellationToken
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
+  - name: )
+- uid: System.Func`2
+  commentId: T:System.Func`2
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<T, TResult>
+  nameWithType: Func<T, TResult>
+  fullName: System.Func<T, TResult>
+  nameWithType.vb: Func(Of T, TResult)
+  fullName.vb: System.Func(Of T, TResult)
+  name.vb: Func(Of T, TResult)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{{TResult}}}
+  commentId: T:System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{`0}}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<CancellationToken, ValueTask<TResult>>
+  nameWithType: Func<CancellationToken, ValueTask<TResult>>
+  fullName: System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>
+  nameWithType.vb: Func(Of CancellationToken, ValueTask(Of TResult))
+  fullName.vb: System.Func(Of System.Threading.CancellationToken, System.Threading.Tasks.ValueTask(Of TResult))
+  name.vb: Func(Of CancellationToken, ValueTask(Of TResult))
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: System.Threading.CancellationToken
+    name: CancellationToken
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
+  - name: TResult
+  - name: '>'
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.Threading.CancellationToken
+    name: CancellationToken
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+  - name: )
+- uid: Kevlar.Testing.ExecutionProbe.GetSnapshot*
+  commentId: Overload:Kevlar.Testing.ExecutionProbe.GetSnapshot
+  isExternal: true
+  href: Kevlar.Testing.ExecutionProbe.html#Kevlar_Testing_ExecutionProbe_GetSnapshot
+  name: GetSnapshot
+  nameWithType: ExecutionProbe.GetSnapshot
+  fullName: Kevlar.Testing.ExecutionProbe.GetSnapshot
+- uid: Kevlar.Testing.ExecutionProbeSnapshot
+  commentId: T:Kevlar.Testing.ExecutionProbeSnapshot
+  parent: Kevlar.Testing
+  isExternal: true
+  href: Kevlar.Testing.ExecutionProbeSnapshot.html
+  name: ExecutionProbeSnapshot
+  nameWithType: ExecutionProbeSnapshot
+  fullName: Kevlar.Testing.ExecutionProbeSnapshot
+- uid: Kevlar.Testing.ExecutionProbe.WaitForAttemptCountAsync*
+  commentId: Overload:Kevlar.Testing.ExecutionProbe.WaitForAttemptCountAsync
+  isExternal: true
+  href: Kevlar.Testing.ExecutionProbe.html#Kevlar_Testing_ExecutionProbe_WaitForAttemptCountAsync_System_Int32_System_Threading_CancellationToken_
+  name: WaitForAttemptCountAsync
+  nameWithType: ExecutionProbe.WaitForAttemptCountAsync
+  fullName: Kevlar.Testing.ExecutionProbe.WaitForAttemptCountAsync
+- uid: System.Int32
+  commentId: T:System.Int32
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.int32
+  name: int
+  nameWithType: int
+  fullName: int
+  nameWithType.vb: Integer
+  fullName.vb: Integer
+  name.vb: Integer
+- uid: System.Threading.CancellationToken
+  commentId: T:System.Threading.CancellationToken
+  parent: System.Threading
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
+  name: CancellationToken
+  nameWithType: CancellationToken
+  fullName: System.Threading.CancellationToken
+- uid: System.Threading.Tasks.Task
+  commentId: T:System.Threading.Tasks.Task
+  parent: System.Threading.Tasks
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.task
+  name: Task
+  nameWithType: Task
+  fullName: System.Threading.Tasks.Task
+- uid: System.Threading
+  commentId: N:System.Threading
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System.Threading
+  nameWithType: System.Threading
+  fullName: System.Threading
+  spec.csharp:
+  - uid: System
+    name: System
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system
+  - name: .
+  - uid: System.Threading
+    name: Threading
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading
+  spec.vb:
+  - uid: System
+    name: System
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system
+  - name: .
+  - uid: System.Threading
+    name: Threading
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading
+- uid: System.Threading.Tasks
+  commentId: N:System.Threading.Tasks
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System.Threading.Tasks
+  nameWithType: System.Threading.Tasks
+  fullName: System.Threading.Tasks
+  spec.csharp:
+  - uid: System
+    name: System
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system
+  - name: .
+  - uid: System.Threading
+    name: Threading
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading
+  - name: .
+  - uid: System.Threading.Tasks
+    name: Tasks
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks
+  spec.vb:
+  - uid: System
+    name: System
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system
+  - name: .
+  - uid: System.Threading
+    name: Threading
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading
+  - name: .
+  - uid: System.Threading.Tasks
+    name: Tasks
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks
+- uid: Kevlar.Testing.ExecutionProbe.WaitForCancellationCountAsync*
+  commentId: Overload:Kevlar.Testing.ExecutionProbe.WaitForCancellationCountAsync
+  isExternal: true
+  href: Kevlar.Testing.ExecutionProbe.html#Kevlar_Testing_ExecutionProbe_WaitForCancellationCountAsync_System_Int32_System_Threading_CancellationToken_
+  name: WaitForCancellationCountAsync
+  nameWithType: ExecutionProbe.WaitForCancellationCountAsync
+  fullName: Kevlar.Testing.ExecutionProbe.WaitForCancellationCountAsync
+- uid: Kevlar.Testing.ExecutionProbe.#ctor*
+  commentId: Overload:Kevlar.Testing.ExecutionProbe.#ctor
+  isExternal: true
+  href: Kevlar.Testing.ExecutionProbe.html#Kevlar_Testing_ExecutionProbe__ctor
+  name: ExecutionProbe
+  nameWithType: ExecutionProbe.ExecutionProbe
+  fullName: Kevlar.Testing.ExecutionProbe.ExecutionProbe
+  nameWithType.vb: ExecutionProbe.New
+  fullName.vb: Kevlar.Testing.ExecutionProbe.New
+  name.vb: New
+- uid: Kevlar.Testing.ExecutionProbe.AttemptCount*
+  commentId: Overload:Kevlar.Testing.ExecutionProbe.AttemptCount
+  isExternal: true
+  href: Kevlar.Testing.ExecutionProbe.html#Kevlar_Testing_ExecutionProbe_AttemptCount
+  name: AttemptCount
+  nameWithType: ExecutionProbe.AttemptCount
+  fullName: Kevlar.Testing.ExecutionProbe.AttemptCount
+- uid: Kevlar.Testing.ExecutionProbe.CancellationCount*
+  commentId: Overload:Kevlar.Testing.ExecutionProbe.CancellationCount
+  isExternal: true
+  href: Kevlar.Testing.ExecutionProbe.html#Kevlar_Testing_ExecutionProbe_CancellationCount
+  name: CancellationCount
+  nameWithType: ExecutionProbe.CancellationCount
+  fullName: Kevlar.Testing.ExecutionProbe.CancellationCount

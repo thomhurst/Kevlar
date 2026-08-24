@@ -1,0 +1,1010 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.RetryOptions
+  commentId: T:Kevlar.RetryOptions
+  id: RetryOptions
+  parent: Kevlar
+  children:
+  - Kevlar.RetryOptions.#ctor
+  - Kevlar.RetryOptions.Backoff
+  - Kevlar.RetryOptions.DelayGenerator
+  - Kevlar.RetryOptions.DelayGeneratorAsync
+  - Kevlar.RetryOptions.HandlesException
+  - Kevlar.RetryOptions.MaxDelay
+  - Kevlar.RetryOptions.MaxRetries
+  - Kevlar.RetryOptions.OnRetry
+  - Kevlar.RetryOptions.OnRetryAsync
+  langs:
+  - csharp
+  - vb
+  name: RetryOptions
+  nameWithType: RetryOptions
+  fullName: Kevlar.RetryOptions
+  type: Class
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Configuration for a retry strategy.
+  remarks: >-
+    Before each retry, callbacks run in this order: <xref href="Kevlar.RetryOptions.DelayGenerator" data-throw-if-not-resolved="false"></xref>,
+
+    <xref href="Kevlar.RetryOptions.DelayGeneratorAsync" data-throw-if-not-resolved="false"></xref>, <xref href="Kevlar.RetryOptions.OnRetry" data-throw-if-not-resolved="false"></xref>, then <xref href="Kevlar.RetryOptions.OnRetryAsync" data-throw-if-not-resolved="false"></xref>.
+
+    If the caller's cancellation token is cancelled by the time the callbacks complete, the retry
+
+    stops and surfaces caller cancellation.
+  example: []
+  syntax:
+    content: public sealed class RetryOptions
+    content.vb: Public NotInheritable Class RetryOptions
+  inheritance:
+  - System.Object
+  inheritedMembers:
+  - System.Object.GetType
+  - System.Object.ToString
+  - System.Object.Equals(System.Object)
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  - System.Object.GetHashCode
+- uid: Kevlar.RetryOptions.#ctor
+  commentId: M:Kevlar.RetryOptions.#ctor
+  id: '#ctor'
+  parent: Kevlar.RetryOptions
+  langs:
+  - csharp
+  - vb
+  name: RetryOptions()
+  nameWithType: RetryOptions.RetryOptions()
+  fullName: Kevlar.RetryOptions.RetryOptions()
+  type: Constructor
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  syntax:
+    content: public RetryOptions()
+    content.vb: Public Sub New()
+  overload: Kevlar.RetryOptions.#ctor*
+  nameWithType.vb: RetryOptions.New()
+  fullName.vb: Kevlar.RetryOptions.New()
+  name.vb: New()
+- uid: Kevlar.RetryOptions.HandlesException
+  commentId: P:Kevlar.RetryOptions.HandlesException
+  id: HandlesException
+  parent: Kevlar.RetryOptions
+  langs:
+  - csharp
+  - vb
+  name: HandlesException
+  nameWithType: RetryOptions.HandlesException
+  fullName: Kevlar.RetryOptions.HandlesException
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Setting this makes this retry ignore the ambient <code>When…</code> handling clause and handle
+
+    only the exceptions this predicate selects.
+  remarks: >-
+    The ambient clause is started with <code>When…</code> on a shield and continued with <code>Or…</code> on
+
+    the builder it returns, and applies to every reactive strategy chained after it. This
+
+    property replaces that clause for this strategy alone; it does not narrow it.
+  example: []
+  syntax:
+    content: public Func<Exception, bool>? HandlesException { get; set; }
+    parameters: []
+    return:
+      type: System.Func{System.Exception,System.Boolean}
+    content.vb: Public Property HandlesException As Func(Of Exception, Boolean)
+  overload: Kevlar.RetryOptions.HandlesException*
+  seealso:
+  - linkId: Kevlar.HandlingClause
+    commentId: T:Kevlar.HandlingClause
+- uid: Kevlar.RetryOptions.MaxRetries
+  commentId: P:Kevlar.RetryOptions.MaxRetries
+  id: MaxRetries
+  parent: Kevlar.RetryOptions
+  langs:
+  - csharp
+  - vb
+  name: MaxRetries
+  nameWithType: RetryOptions.MaxRetries
+  fullName: Kevlar.RetryOptions.MaxRetries
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    The number of <em>retries</em> made after the initial attempt — not the number of attempts.
+
+    <code>MaxRetries = 3</code> (the default) makes up to 4 total attempts: the initial call plus
+
+    3 retries. Use <xref href="System.Int32.MaxValue" data-throw-if-not-resolved="false"></xref> to retry forever.
+  example: []
+  syntax:
+    content: public int MaxRetries { get; set; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public Property MaxRetries As Integer
+  overload: Kevlar.RetryOptions.MaxRetries*
+- uid: Kevlar.RetryOptions.Backoff
+  commentId: P:Kevlar.RetryOptions.Backoff
+  id: Backoff
+  parent: Kevlar.RetryOptions
+  langs:
+  - csharp
+  - vb
+  name: Backoff
+  nameWithType: RetryOptions.Backoff
+  fullName: Kevlar.RetryOptions.Backoff
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The delay computation between attempts. Defaults to <xref href="Kevlar.Backoff.Default" data-throw-if-not-resolved="false"></xref>.
+  example: []
+  syntax:
+    content: public Backoff Backoff { get; set; }
+    parameters: []
+    return:
+      type: Kevlar.Backoff
+    content.vb: Public Property Backoff As Backoff
+  overload: Kevlar.RetryOptions.Backoff*
+- uid: Kevlar.RetryOptions.MaxDelay
+  commentId: P:Kevlar.RetryOptions.MaxDelay
+  id: MaxDelay
+  parent: Kevlar.RetryOptions
+  langs:
+  - csharp
+  - vb
+  name: MaxDelay
+  nameWithType: RetryOptions.MaxDelay
+  fullName: Kevlar.RetryOptions.MaxDelay
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    An absolute upper bound applied to every delay, including delays produced by
+
+    <xref href="Kevlar.RetryOptions.DelayGenerator" data-throw-if-not-resolved="false"></xref> (so a huge <code>Retry-After</code> header cannot stall the pipeline).
+  example: []
+  syntax:
+    content: public TimeSpan? MaxDelay { get; set; }
+    parameters: []
+    return:
+      type: System.Nullable{System.TimeSpan}
+    content.vb: Public Property MaxDelay As TimeSpan?
+  overload: Kevlar.RetryOptions.MaxDelay*
+- uid: Kevlar.RetryOptions.OnRetry
+  commentId: P:Kevlar.RetryOptions.OnRetry
+  id: OnRetry
+  parent: Kevlar.RetryOptions
+  langs:
+  - csharp
+  - vb
+  name: OnRetry
+  nameWithType: RetryOptions.OnRetry
+  fullName: Kevlar.RetryOptions.OnRetry
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Invoked synchronously before each retry sleeps.
+  example: []
+  syntax:
+    content: public Action<RetryEvent>? OnRetry { get; set; }
+    parameters: []
+    return:
+      type: System.Action{Kevlar.RetryEvent}
+    content.vb: Public Property OnRetry As Action(Of RetryEvent)
+  overload: Kevlar.RetryOptions.OnRetry*
+- uid: Kevlar.RetryOptions.OnRetryAsync
+  commentId: P:Kevlar.RetryOptions.OnRetryAsync
+  id: OnRetryAsync
+  parent: Kevlar.RetryOptions
+  langs:
+  - csharp
+  - vb
+  name: OnRetryAsync
+  nameWithType: RetryOptions.OnRetryAsync
+  fullName: Kevlar.RetryOptions.OnRetryAsync
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Invoked and awaited before each retry sleeps.
+  example: []
+  syntax:
+    content: public Func<RetryEvent, ValueTask>? OnRetryAsync { get; set; }
+    parameters: []
+    return:
+      type: System.Func{Kevlar.RetryEvent,System.Threading.Tasks.ValueTask}
+    content.vb: Public Property OnRetryAsync As Func(Of RetryEvent, ValueTask)
+  overload: Kevlar.RetryOptions.OnRetryAsync*
+- uid: Kevlar.RetryOptions.DelayGenerator
+  commentId: P:Kevlar.RetryOptions.DelayGenerator
+  id: DelayGenerator
+  parent: Kevlar.RetryOptions
+  langs:
+  - csharp
+  - vb
+  name: DelayGenerator
+  nameWithType: RetryOptions.DelayGenerator
+  fullName: Kevlar.RetryOptions.DelayGenerator
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Overrides the computed delay for a specific retry. Receives the event with the
+
+    backoff-computed delay; return a non-null value to replace it (for example, from an
+
+    HTTP <code>Retry-After</code> header). <xref href="Kevlar.RetryOptions.MaxDelay" data-throw-if-not-resolved="false"></xref> still caps the returned value.
+  example: []
+  syntax:
+    content: public Func<RetryEvent, TimeSpan?>? DelayGenerator { get; set; }
+    parameters: []
+    return:
+      type: System.Func{Kevlar.RetryEvent,System.Nullable{System.TimeSpan}}
+    content.vb: Public Property DelayGenerator As Func(Of RetryEvent, TimeSpan?)
+  overload: Kevlar.RetryOptions.DelayGenerator*
+- uid: Kevlar.RetryOptions.DelayGeneratorAsync
+  commentId: P:Kevlar.RetryOptions.DelayGeneratorAsync
+  id: DelayGeneratorAsync
+  parent: Kevlar.RetryOptions
+  langs:
+  - csharp
+  - vb
+  name: DelayGeneratorAsync
+  nameWithType: RetryOptions.DelayGeneratorAsync
+  fullName: Kevlar.RetryOptions.DelayGeneratorAsync
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Asynchronously overrides the delay for a specific retry. Receives the delay after
+
+    <xref href="Kevlar.RetryOptions.DelayGenerator" data-throw-if-not-resolved="false"></xref> and <xref href="Kevlar.RetryOptions.MaxDelay" data-throw-if-not-resolved="false"></xref> have been applied; return a
+
+    non-null value to replace it. <xref href="Kevlar.RetryOptions.MaxDelay" data-throw-if-not-resolved="false"></xref> still caps the returned value.
+
+    The callback is awaited before retry notifications run. Do not retain its pooled
+
+    <xref href="Kevlar.RetryEvent.Context" data-throw-if-not-resolved="false"></xref> after the returned task completes.
+  example: []
+  syntax:
+    content: public Func<RetryEvent, ValueTask<TimeSpan?>>? DelayGeneratorAsync { get; set; }
+    parameters: []
+    return:
+      type: System.Func{Kevlar.RetryEvent,System.Threading.Tasks.ValueTask{System.Nullable{System.TimeSpan}}}
+    content.vb: Public Property DelayGeneratorAsync As Func(Of RetryEvent, ValueTask(Of TimeSpan?))
+  overload: Kevlar.RetryOptions.DelayGeneratorAsync*
+references:
+- uid: Kevlar.RetryOptions.DelayGenerator
+  commentId: P:Kevlar.RetryOptions.DelayGenerator
+  isExternal: true
+  href: Kevlar.RetryOptions.html#Kevlar_RetryOptions_DelayGenerator
+  name: DelayGenerator
+  nameWithType: RetryOptions.DelayGenerator
+  fullName: Kevlar.RetryOptions.DelayGenerator
+- uid: Kevlar.RetryOptions.DelayGeneratorAsync
+  commentId: P:Kevlar.RetryOptions.DelayGeneratorAsync
+  isExternal: true
+  href: Kevlar.RetryOptions.html#Kevlar_RetryOptions_DelayGeneratorAsync
+  name: DelayGeneratorAsync
+  nameWithType: RetryOptions.DelayGeneratorAsync
+  fullName: Kevlar.RetryOptions.DelayGeneratorAsync
+- uid: Kevlar.RetryOptions.OnRetry
+  commentId: P:Kevlar.RetryOptions.OnRetry
+  isExternal: true
+  href: Kevlar.RetryOptions.html#Kevlar_RetryOptions_OnRetry
+  name: OnRetry
+  nameWithType: RetryOptions.OnRetry
+  fullName: Kevlar.RetryOptions.OnRetry
+- uid: Kevlar.RetryOptions.OnRetryAsync
+  commentId: P:Kevlar.RetryOptions.OnRetryAsync
+  isExternal: true
+  href: Kevlar.RetryOptions.html#Kevlar_RetryOptions_OnRetryAsync
+  name: OnRetryAsync
+  nameWithType: RetryOptions.OnRetryAsync
+  fullName: Kevlar.RetryOptions.OnRetryAsync
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.ToString
+  commentId: M:System.Object.ToString
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  name: ToString()
+  nameWithType: object.ToString()
+  fullName: object.ToString()
+  nameWithType.vb: Object.ToString()
+  fullName.vb: Object.ToString()
+  spec.csharp:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object)
+  commentId: M:System.Object.Equals(System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  name: Equals(object)
+  nameWithType: object.Equals(object)
+  fullName: object.Equals(object)
+  nameWithType.vb: Object.Equals(Object)
+  fullName.vb: Object.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetHashCode
+  commentId: M:System.Object.GetHashCode
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  name: GetHashCode()
+  nameWithType: object.GetHashCode()
+  fullName: object.GetHashCode()
+  nameWithType.vb: Object.GetHashCode()
+  fullName.vb: Object.GetHashCode()
+  spec.csharp:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.RetryOptions.#ctor*
+  commentId: Overload:Kevlar.RetryOptions.#ctor
+  isExternal: true
+  href: Kevlar.RetryOptions.html#Kevlar_RetryOptions__ctor
+  name: RetryOptions
+  nameWithType: RetryOptions.RetryOptions
+  fullName: Kevlar.RetryOptions.RetryOptions
+  nameWithType.vb: RetryOptions.New
+  fullName.vb: Kevlar.RetryOptions.New
+  name.vb: New
+- uid: Kevlar.HandlingClause
+  commentId: T:Kevlar.HandlingClause
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.HandlingClause.html
+  name: HandlingClause
+  nameWithType: HandlingClause
+  fullName: Kevlar.HandlingClause
+- uid: Kevlar.RetryOptions.HandlesException*
+  commentId: Overload:Kevlar.RetryOptions.HandlesException
+  isExternal: true
+  href: Kevlar.RetryOptions.html#Kevlar_RetryOptions_HandlesException
+  name: HandlesException
+  nameWithType: RetryOptions.HandlesException
+  fullName: Kevlar.RetryOptions.HandlesException
+- uid: System.Func{System.Exception,System.Boolean}
+  commentId: T:System.Func{System.Exception,System.Boolean}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<Exception, bool>
+  nameWithType: Func<Exception, bool>
+  fullName: System.Func<System.Exception, bool>
+  nameWithType.vb: Func(Of Exception, Boolean)
+  fullName.vb: System.Func(Of System.Exception, Boolean)
+  name.vb: Func(Of Exception, Boolean)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: System.Exception
+    name: Exception
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.exception
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: bool
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.Exception
+    name: Exception
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.exception
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: Boolean
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: )
+- uid: System.Func`2
+  commentId: T:System.Func`2
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<T, TResult>
+  nameWithType: Func<T, TResult>
+  fullName: System.Func<T, TResult>
+  nameWithType.vb: Func(Of T, TResult)
+  fullName.vb: System.Func(Of T, TResult)
+  name.vb: Func(Of T, TResult)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: System.Int32.MaxValue
+  commentId: F:System.Int32.MaxValue
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.int32.maxvalue
+  name: MaxValue
+  nameWithType: int.MaxValue
+  fullName: int.MaxValue
+  nameWithType.vb: Integer.MaxValue
+  fullName.vb: Integer.MaxValue
+- uid: Kevlar.RetryOptions.MaxRetries*
+  commentId: Overload:Kevlar.RetryOptions.MaxRetries
+  isExternal: true
+  href: Kevlar.RetryOptions.html#Kevlar_RetryOptions_MaxRetries
+  name: MaxRetries
+  nameWithType: RetryOptions.MaxRetries
+  fullName: Kevlar.RetryOptions.MaxRetries
+- uid: System.Int32
+  commentId: T:System.Int32
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.int32
+  name: int
+  nameWithType: int
+  fullName: int
+  nameWithType.vb: Integer
+  fullName.vb: Integer
+  name.vb: Integer
+- uid: Kevlar.Backoff.Default
+  commentId: P:Kevlar.Backoff.Default
+  isExternal: true
+  href: Kevlar.Backoff.html#Kevlar_Backoff_Default
+  name: Default
+  nameWithType: Backoff.Default
+  fullName: Kevlar.Backoff.Default
+- uid: Kevlar.RetryOptions.Backoff*
+  commentId: Overload:Kevlar.RetryOptions.Backoff
+  isExternal: true
+  href: Kevlar.RetryOptions.html#Kevlar_RetryOptions_Backoff
+  name: Backoff
+  nameWithType: RetryOptions.Backoff
+  fullName: Kevlar.RetryOptions.Backoff
+- uid: Kevlar.Backoff
+  commentId: T:Kevlar.Backoff
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Backoff.html
+  name: Backoff
+  nameWithType: Backoff
+  fullName: Kevlar.Backoff
+- uid: Kevlar.RetryOptions.MaxDelay*
+  commentId: Overload:Kevlar.RetryOptions.MaxDelay
+  isExternal: true
+  href: Kevlar.RetryOptions.html#Kevlar_RetryOptions_MaxDelay
+  name: MaxDelay
+  nameWithType: RetryOptions.MaxDelay
+  fullName: Kevlar.RetryOptions.MaxDelay
+- uid: System.Nullable{System.TimeSpan}
+  commentId: T:System.Nullable{System.TimeSpan}
+  parent: System
+  definition: System.Nullable`1
+  href: https://learn.microsoft.com/dotnet/api/system.timespan
+  name: TimeSpan?
+  nameWithType: TimeSpan?
+  fullName: System.TimeSpan?
+  spec.csharp:
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '?'
+  spec.vb:
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '?'
+- uid: System.Nullable`1
+  commentId: T:System.Nullable`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  name: Nullable<T>
+  nameWithType: Nullable<T>
+  fullName: System.Nullable<T>
+  nameWithType.vb: Nullable(Of T)
+  fullName.vb: System.Nullable(Of T)
+  name.vb: Nullable(Of T)
+  spec.csharp:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Kevlar.RetryOptions.OnRetry*
+  commentId: Overload:Kevlar.RetryOptions.OnRetry
+  isExternal: true
+  href: Kevlar.RetryOptions.html#Kevlar_RetryOptions_OnRetry
+  name: OnRetry
+  nameWithType: RetryOptions.OnRetry
+  fullName: Kevlar.RetryOptions.OnRetry
+- uid: System.Action{Kevlar.RetryEvent}
+  commentId: T:System.Action{Kevlar.RetryEvent}
+  parent: System
+  definition: System.Action`1
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<RetryEvent>
+  nameWithType: Action<RetryEvent>
+  fullName: System.Action<Kevlar.RetryEvent>
+  nameWithType.vb: Action(Of RetryEvent)
+  fullName.vb: System.Action(Of Kevlar.RetryEvent)
+  name.vb: Action(Of RetryEvent)
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - uid: Kevlar.RetryEvent
+    name: RetryEvent
+    isExternal: true
+    href: Kevlar.RetryEvent.html
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.RetryEvent
+    name: RetryEvent
+    isExternal: true
+    href: Kevlar.RetryEvent.html
+  - name: )
+- uid: System.Action`1
+  commentId: T:System.Action`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<T>
+  nameWithType: Action<T>
+  fullName: System.Action<T>
+  nameWithType.vb: Action(Of T)
+  fullName.vb: System.Action(Of T)
+  name.vb: Action(Of T)
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Kevlar.RetryOptions.OnRetryAsync*
+  commentId: Overload:Kevlar.RetryOptions.OnRetryAsync
+  isExternal: true
+  href: Kevlar.RetryOptions.html#Kevlar_RetryOptions_OnRetryAsync
+  name: OnRetryAsync
+  nameWithType: RetryOptions.OnRetryAsync
+  fullName: Kevlar.RetryOptions.OnRetryAsync
+- uid: System.Func{Kevlar.RetryEvent,System.Threading.Tasks.ValueTask}
+  commentId: T:System.Func{Kevlar.RetryEvent,System.Threading.Tasks.ValueTask}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<RetryEvent, ValueTask>
+  nameWithType: Func<RetryEvent, ValueTask>
+  fullName: System.Func<Kevlar.RetryEvent, System.Threading.Tasks.ValueTask>
+  nameWithType.vb: Func(Of RetryEvent, ValueTask)
+  fullName.vb: System.Func(Of Kevlar.RetryEvent, System.Threading.Tasks.ValueTask)
+  name.vb: Func(Of RetryEvent, ValueTask)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.RetryEvent
+    name: RetryEvent
+    isExternal: true
+    href: Kevlar.RetryEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.RetryEvent
+    name: RetryEvent
+    isExternal: true
+    href: Kevlar.RetryEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
+  - name: )
+- uid: Kevlar.RetryOptions.MaxDelay
+  commentId: P:Kevlar.RetryOptions.MaxDelay
+  isExternal: true
+  href: Kevlar.RetryOptions.html#Kevlar_RetryOptions_MaxDelay
+  name: MaxDelay
+  nameWithType: RetryOptions.MaxDelay
+  fullName: Kevlar.RetryOptions.MaxDelay
+- uid: Kevlar.RetryOptions.DelayGenerator*
+  commentId: Overload:Kevlar.RetryOptions.DelayGenerator
+  isExternal: true
+  href: Kevlar.RetryOptions.html#Kevlar_RetryOptions_DelayGenerator
+  name: DelayGenerator
+  nameWithType: RetryOptions.DelayGenerator
+  fullName: Kevlar.RetryOptions.DelayGenerator
+- uid: System.Func{Kevlar.RetryEvent,System.Nullable{System.TimeSpan}}
+  commentId: T:System.Func{Kevlar.RetryEvent,System.Nullable{System.TimeSpan}}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<RetryEvent, TimeSpan?>
+  nameWithType: Func<RetryEvent, TimeSpan?>
+  fullName: System.Func<Kevlar.RetryEvent, System.TimeSpan?>
+  nameWithType.vb: Func(Of RetryEvent, TimeSpan?)
+  fullName.vb: System.Func(Of Kevlar.RetryEvent, System.TimeSpan?)
+  name.vb: Func(Of RetryEvent, TimeSpan?)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.RetryEvent
+    name: RetryEvent
+    isExternal: true
+    href: Kevlar.RetryEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '?'
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.RetryEvent
+    name: RetryEvent
+    isExternal: true
+    href: Kevlar.RetryEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '?'
+  - name: )
+- uid: Kevlar.RetryEvent.Context
+  commentId: P:Kevlar.RetryEvent.Context
+  isExternal: true
+  href: Kevlar.RetryEvent.html#Kevlar_RetryEvent_Context
+  name: Context
+  nameWithType: RetryEvent.Context
+  fullName: Kevlar.RetryEvent.Context
+- uid: Kevlar.RetryOptions.DelayGeneratorAsync*
+  commentId: Overload:Kevlar.RetryOptions.DelayGeneratorAsync
+  isExternal: true
+  href: Kevlar.RetryOptions.html#Kevlar_RetryOptions_DelayGeneratorAsync
+  name: DelayGeneratorAsync
+  nameWithType: RetryOptions.DelayGeneratorAsync
+  fullName: Kevlar.RetryOptions.DelayGeneratorAsync
+- uid: System.Func{Kevlar.RetryEvent,System.Threading.Tasks.ValueTask{System.Nullable{System.TimeSpan}}}
+  commentId: T:System.Func{Kevlar.RetryEvent,System.Threading.Tasks.ValueTask{System.Nullable{System.TimeSpan}}}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<RetryEvent, ValueTask<TimeSpan?>>
+  nameWithType: Func<RetryEvent, ValueTask<TimeSpan?>>
+  fullName: System.Func<Kevlar.RetryEvent, System.Threading.Tasks.ValueTask<System.TimeSpan?>>
+  nameWithType.vb: Func(Of RetryEvent, ValueTask(Of TimeSpan?))
+  fullName.vb: System.Func(Of Kevlar.RetryEvent, System.Threading.Tasks.ValueTask(Of System.TimeSpan?))
+  name.vb: Func(Of RetryEvent, ValueTask(Of TimeSpan?))
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.RetryEvent
+    name: RetryEvent
+    isExternal: true
+    href: Kevlar.RetryEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '?'
+  - name: '>'
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.RetryEvent
+    name: RetryEvent
+    isExternal: true
+    href: Kevlar.RetryEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '?'
+  - name: )
+  - name: )

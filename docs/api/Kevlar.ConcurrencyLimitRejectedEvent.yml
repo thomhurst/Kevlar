@@ -1,0 +1,400 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.ConcurrencyLimitRejectedEvent
+  commentId: T:Kevlar.ConcurrencyLimitRejectedEvent
+  id: ConcurrencyLimitRejectedEvent
+  parent: Kevlar
+  children:
+  - Kevlar.ConcurrencyLimitRejectedEvent.Context
+  - Kevlar.ConcurrencyLimitRejectedEvent.MaxConcurrency
+  - Kevlar.ConcurrencyLimitRejectedEvent.MaxQueue
+  - Kevlar.ConcurrencyLimitRejectedEvent.StrategyIndex
+  langs:
+  - csharp
+  - vb
+  name: ConcurrencyLimitRejectedEvent
+  nameWithType: ConcurrencyLimitRejectedEvent
+  fullName: Kevlar.ConcurrencyLimitRejectedEvent
+  type: Struct
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Describes an execution rejected by the built-in concurrency limiter.
+  example: []
+  syntax:
+    content: public readonly struct ConcurrencyLimitRejectedEvent
+    content.vb: Public Structure ConcurrencyLimitRejectedEvent
+  inheritedMembers:
+  - System.ValueType.Equals(System.Object)
+  - System.ValueType.GetHashCode
+  - System.ValueType.ToString
+  - System.Object.GetType
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+- uid: Kevlar.ConcurrencyLimitRejectedEvent.MaxConcurrency
+  commentId: P:Kevlar.ConcurrencyLimitRejectedEvent.MaxConcurrency
+  id: MaxConcurrency
+  parent: Kevlar.ConcurrencyLimitRejectedEvent
+  langs:
+  - csharp
+  - vb
+  name: MaxConcurrency
+  nameWithType: ConcurrencyLimitRejectedEvent.MaxConcurrency
+  fullName: Kevlar.ConcurrencyLimitRejectedEvent.MaxConcurrency
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The configured maximum concurrent executions.
+  example: []
+  syntax:
+    content: public int MaxConcurrency { get; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public ReadOnly Property MaxConcurrency As Integer
+  overload: Kevlar.ConcurrencyLimitRejectedEvent.MaxConcurrency*
+- uid: Kevlar.ConcurrencyLimitRejectedEvent.MaxQueue
+  commentId: P:Kevlar.ConcurrencyLimitRejectedEvent.MaxQueue
+  id: MaxQueue
+  parent: Kevlar.ConcurrencyLimitRejectedEvent
+  langs:
+  - csharp
+  - vb
+  name: MaxQueue
+  nameWithType: ConcurrencyLimitRejectedEvent.MaxQueue
+  fullName: Kevlar.ConcurrencyLimitRejectedEvent.MaxQueue
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The configured maximum wait queue size.
+  example: []
+  syntax:
+    content: public int MaxQueue { get; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public ReadOnly Property MaxQueue As Integer
+  overload: Kevlar.ConcurrencyLimitRejectedEvent.MaxQueue*
+- uid: Kevlar.ConcurrencyLimitRejectedEvent.StrategyIndex
+  commentId: P:Kevlar.ConcurrencyLimitRejectedEvent.StrategyIndex
+  id: StrategyIndex
+  parent: Kevlar.ConcurrencyLimitRejectedEvent
+  langs:
+  - csharp
+  - vb
+  name: StrategyIndex
+  nameWithType: ConcurrencyLimitRejectedEvent.StrategyIndex
+  fullName: Kevlar.ConcurrencyLimitRejectedEvent.StrategyIndex
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The zero-based position of this strategy in the executing shield.
+  example: []
+  syntax:
+    content: public int StrategyIndex { get; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public ReadOnly Property StrategyIndex As Integer
+  overload: Kevlar.ConcurrencyLimitRejectedEvent.StrategyIndex*
+- uid: Kevlar.ConcurrencyLimitRejectedEvent.Context
+  commentId: P:Kevlar.ConcurrencyLimitRejectedEvent.Context
+  id: Context
+  parent: Kevlar.ConcurrencyLimitRejectedEvent
+  langs:
+  - csharp
+  - vb
+  name: Context
+  nameWithType: ConcurrencyLimitRejectedEvent.Context
+  fullName: Kevlar.ConcurrencyLimitRejectedEvent.Context
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    The ambient execution context. It is pooled; do not retain it after synchronous and
+
+    asynchronous rejection callbacks complete.
+  example: []
+  syntax:
+    content: public KevlarContext Context { get; }
+    parameters: []
+    return:
+      type: Kevlar.KevlarContext
+    content.vb: Public ReadOnly Property Context As KevlarContext
+  overload: Kevlar.ConcurrencyLimitRejectedEvent.Context*
+references:
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: System.ValueType.Equals(System.Object)
+  commentId: M:System.ValueType.Equals(System.Object)
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  name: Equals(object)
+  nameWithType: ValueType.Equals(object)
+  fullName: System.ValueType.Equals(object)
+  nameWithType.vb: ValueType.Equals(Object)
+  fullName.vb: System.ValueType.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.ValueType.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.ValueType.GetHashCode
+  commentId: M:System.ValueType.GetHashCode
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  name: GetHashCode()
+  nameWithType: ValueType.GetHashCode()
+  fullName: System.ValueType.GetHashCode()
+  spec.csharp:
+  - uid: System.ValueType.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  - name: (
+  - name: )
+- uid: System.ValueType.ToString
+  commentId: M:System.ValueType.ToString
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  name: ToString()
+  nameWithType: ValueType.ToString()
+  fullName: System.ValueType.ToString()
+  spec.csharp:
+  - uid: System.ValueType.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  - name: (
+  - name: )
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.ValueType
+  commentId: T:System.ValueType
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype
+  name: ValueType
+  nameWithType: ValueType
+  fullName: System.ValueType
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.ConcurrencyLimitRejectedEvent.MaxConcurrency*
+  commentId: Overload:Kevlar.ConcurrencyLimitRejectedEvent.MaxConcurrency
+  isExternal: true
+  href: Kevlar.ConcurrencyLimitRejectedEvent.html#Kevlar_ConcurrencyLimitRejectedEvent_MaxConcurrency
+  name: MaxConcurrency
+  nameWithType: ConcurrencyLimitRejectedEvent.MaxConcurrency
+  fullName: Kevlar.ConcurrencyLimitRejectedEvent.MaxConcurrency
+- uid: System.Int32
+  commentId: T:System.Int32
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.int32
+  name: int
+  nameWithType: int
+  fullName: int
+  nameWithType.vb: Integer
+  fullName.vb: Integer
+  name.vb: Integer
+- uid: Kevlar.ConcurrencyLimitRejectedEvent.MaxQueue*
+  commentId: Overload:Kevlar.ConcurrencyLimitRejectedEvent.MaxQueue
+  isExternal: true
+  href: Kevlar.ConcurrencyLimitRejectedEvent.html#Kevlar_ConcurrencyLimitRejectedEvent_MaxQueue
+  name: MaxQueue
+  nameWithType: ConcurrencyLimitRejectedEvent.MaxQueue
+  fullName: Kevlar.ConcurrencyLimitRejectedEvent.MaxQueue
+- uid: Kevlar.ConcurrencyLimitRejectedEvent.StrategyIndex*
+  commentId: Overload:Kevlar.ConcurrencyLimitRejectedEvent.StrategyIndex
+  isExternal: true
+  href: Kevlar.ConcurrencyLimitRejectedEvent.html#Kevlar_ConcurrencyLimitRejectedEvent_StrategyIndex
+  name: StrategyIndex
+  nameWithType: ConcurrencyLimitRejectedEvent.StrategyIndex
+  fullName: Kevlar.ConcurrencyLimitRejectedEvent.StrategyIndex
+- uid: Kevlar.ConcurrencyLimitRejectedEvent.Context*
+  commentId: Overload:Kevlar.ConcurrencyLimitRejectedEvent.Context
+  isExternal: true
+  href: Kevlar.ConcurrencyLimitRejectedEvent.html#Kevlar_ConcurrencyLimitRejectedEvent_Context
+  name: Context
+  nameWithType: ConcurrencyLimitRejectedEvent.Context
+  fullName: Kevlar.ConcurrencyLimitRejectedEvent.Context
+- uid: Kevlar.KevlarContext
+  commentId: T:Kevlar.KevlarContext
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.KevlarContext.html
+  name: KevlarContext
+  nameWithType: KevlarContext
+  fullName: Kevlar.KevlarContext

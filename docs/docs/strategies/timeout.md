@@ -7,6 +7,7 @@ sidebar_position: 3
 Bound how long an execution may take.
 
 See the [exceptions reference](../exceptions.md) for the exact timeout catch contract.
+API reference: [`TimeoutOptions`](pathname:///api/Kevlar.TimeoutOptions.html).
 
 ```csharp
 Shield.Timeout(TimeSpan.FromSeconds(10));

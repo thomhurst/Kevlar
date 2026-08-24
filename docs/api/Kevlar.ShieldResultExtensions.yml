@@ -1,0 +1,610 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.ShieldResultExtensions
+  commentId: T:Kevlar.ShieldResultExtensions
+  id: ShieldResultExtensions
+  parent: Kevlar
+  children:
+  - Kevlar.ShieldResultExtensions.OrResultIsNull``1(Kevlar.ShieldBuilder{``0})
+  - Kevlar.ShieldResultExtensions.WhenResultIsNull``1(Kevlar.Shield{``0})
+  langs:
+  - csharp
+  - vb
+  name: ShieldResultExtensions
+  nameWithType: ShieldResultExtensions
+  fullName: Kevlar.ShieldResultExtensions
+  type: Class
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Result-handling clauses for <xref href="Kevlar.Shield%601" data-throw-if-not-resolved="false"></xref> chains whose result is a reference
+
+    type. They are extension methods because only an extension method can constrain
+
+    <code>TResult</code>: a method declared on <xref href="Kevlar.Shield%601" data-throw-if-not-resolved="false"></xref> itself inherits whatever
+
+    the shield was built for, so a null clause written there would compile for <code>int</code> too.
+  example: []
+  syntax:
+    content: public static class ShieldResultExtensions
+    content.vb: Public Module ShieldResultExtensions
+  inheritance:
+  - System.Object
+  inheritedMembers:
+  - System.Object.GetType
+  - System.Object.MemberwiseClone
+  - System.Object.ToString
+  - System.Object.Equals(System.Object)
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  - System.Object.GetHashCode
+- uid: Kevlar.ShieldResultExtensions.WhenResultIsNull``1(Kevlar.Shield{``0})
+  commentId: M:Kevlar.ShieldResultExtensions.WhenResultIsNull``1(Kevlar.Shield{``0})
+  id: WhenResultIsNull``1(Kevlar.Shield{``0})
+  isExtensionMethod: true
+  parent: Kevlar.ShieldResultExtensions
+  langs:
+  - csharp
+  - vb
+  name: WhenResultIsNull<TResult>(Shield<TResult>)
+  nameWithType: ShieldResultExtensions.WhenResultIsNull<TResult>(Shield<TResult>)
+  fullName: Kevlar.ShieldResultExtensions.WhenResultIsNull<TResult>(Kevlar.Shield<TResult>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Starts a handling clause for <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> results. Use
+
+    <xref href="Kevlar.Shield%601.WhenAnyError" data-throw-if-not-resolved="false"></xref> to return to default handling.
+  remarks: >-
+    Prefer this to <xref href="Kevlar.Shield%601.WhenResultIsDefault" data-throw-if-not-resolved="false"></xref> whenever the result is a
+
+    reference type: both match the same values, but this one cannot be written for a value type
+
+    whose <code>default</code> — <code>0</code>, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> — is usually a legitimate result
+
+    rather than a failure.
+  example: []
+  syntax:
+    content: 'public static ShieldBuilder<TResult> WhenResultIsNull<TResult>(this Shield<TResult> shield) where TResult : class?'
+    parameters:
+    - id: shield
+      type: Kevlar.Shield{{TResult}}
+    typeParameters:
+    - id: TResult
+    return:
+      type: Kevlar.ShieldBuilder{{TResult}}
+    content.vb: Public Shared Function WhenResultIsNull(Of TResult As Class)(shield As Shield(Of TResult)) As ShieldBuilder(Of TResult)
+  overload: Kevlar.ShieldResultExtensions.WhenResultIsNull*
+  nameWithType.vb: ShieldResultExtensions.WhenResultIsNull(Of TResult)(Shield(Of TResult))
+  fullName.vb: Kevlar.ShieldResultExtensions.WhenResultIsNull(Of TResult)(Kevlar.Shield(Of TResult))
+  name.vb: WhenResultIsNull(Of TResult)(Shield(Of TResult))
+- uid: Kevlar.ShieldResultExtensions.OrResultIsNull``1(Kevlar.ShieldBuilder{``0})
+  commentId: M:Kevlar.ShieldResultExtensions.OrResultIsNull``1(Kevlar.ShieldBuilder{``0})
+  id: OrResultIsNull``1(Kevlar.ShieldBuilder{``0})
+  isExtensionMethod: true
+  parent: Kevlar.ShieldResultExtensions
+  langs:
+  - csharp
+  - vb
+  name: OrResultIsNull<TResult>(ShieldBuilder<TResult>)
+  nameWithType: ShieldResultExtensions.OrResultIsNull<TResult>(ShieldBuilder<TResult>)
+  fullName: Kevlar.ShieldResultExtensions.OrResultIsNull<TResult>(Kevlar.ShieldBuilder<TResult>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Returns a new builder that also handles <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> results.
+  remarks: >-
+    Prefer this to <xref href="Kevlar.ShieldBuilder%601.OrResultIsDefault" data-throw-if-not-resolved="false"></xref> whenever the result is
+
+    a reference type; see <xref href="Kevlar.ShieldResultExtensions.WhenResultIsNull%60%601(Kevlar.Shield%7b%60%600%7d)" data-throw-if-not-resolved="false"></xref>.
+  example: []
+  syntax:
+    content: 'public static ShieldBuilder<TResult> OrResultIsNull<TResult>(this ShieldBuilder<TResult> builder) where TResult : class?'
+    parameters:
+    - id: builder
+      type: Kevlar.ShieldBuilder{{TResult}}
+    typeParameters:
+    - id: TResult
+    return:
+      type: Kevlar.ShieldBuilder{{TResult}}
+    content.vb: Public Shared Function OrResultIsNull(Of TResult As Class)(builder As ShieldBuilder(Of TResult)) As ShieldBuilder(Of TResult)
+  overload: Kevlar.ShieldResultExtensions.OrResultIsNull*
+  nameWithType.vb: ShieldResultExtensions.OrResultIsNull(Of TResult)(ShieldBuilder(Of TResult))
+  fullName.vb: Kevlar.ShieldResultExtensions.OrResultIsNull(Of TResult)(Kevlar.ShieldBuilder(Of TResult))
+  name.vb: OrResultIsNull(Of TResult)(ShieldBuilder(Of TResult))
+references:
+- uid: Kevlar.Shield`1
+  commentId: T:Kevlar.Shield`1
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Shield-1.html
+  name: Shield<TResult>
+  nameWithType: Shield<TResult>
+  fullName: Kevlar.Shield<TResult>
+  nameWithType.vb: Shield(Of TResult)
+  fullName.vb: Kevlar.Shield(Of TResult)
+  name.vb: Shield(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.MemberwiseClone
+  commentId: M:System.Object.MemberwiseClone
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  name: MemberwiseClone()
+  nameWithType: object.MemberwiseClone()
+  fullName: object.MemberwiseClone()
+  nameWithType.vb: Object.MemberwiseClone()
+  fullName.vb: Object.MemberwiseClone()
+  spec.csharp:
+  - uid: System.Object.MemberwiseClone
+    name: MemberwiseClone
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.MemberwiseClone
+    name: MemberwiseClone
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  - name: (
+  - name: )
+- uid: System.Object.ToString
+  commentId: M:System.Object.ToString
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  name: ToString()
+  nameWithType: object.ToString()
+  fullName: object.ToString()
+  nameWithType.vb: Object.ToString()
+  fullName.vb: Object.ToString()
+  spec.csharp:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object)
+  commentId: M:System.Object.Equals(System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  name: Equals(object)
+  nameWithType: object.Equals(object)
+  fullName: object.Equals(object)
+  nameWithType.vb: Object.Equals(Object)
+  fullName.vb: Object.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetHashCode
+  commentId: M:System.Object.GetHashCode
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  name: GetHashCode()
+  nameWithType: object.GetHashCode()
+  fullName: object.GetHashCode()
+  nameWithType.vb: Object.GetHashCode()
+  fullName.vb: Object.GetHashCode()
+  spec.csharp:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.Shield`1.WhenAnyError
+  commentId: M:Kevlar.Shield`1.WhenAnyError
+  isExternal: true
+  href: Kevlar.Shield-1.html#Kevlar_Shield_1_WhenAnyError
+  name: WhenAnyError()
+  nameWithType: Shield<TResult>.WhenAnyError()
+  fullName: Kevlar.Shield<TResult>.WhenAnyError()
+  nameWithType.vb: Shield(Of TResult).WhenAnyError()
+  fullName.vb: Kevlar.Shield(Of TResult).WhenAnyError()
+  spec.csharp:
+  - uid: Kevlar.Shield`1.WhenAnyError
+    name: WhenAnyError
+    isExternal: true
+    href: Kevlar.Shield-1.html#Kevlar_Shield_1_WhenAnyError
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: Kevlar.Shield`1.WhenAnyError
+    name: WhenAnyError
+    isExternal: true
+    href: Kevlar.Shield-1.html#Kevlar_Shield_1_WhenAnyError
+  - name: (
+  - name: )
+- uid: Kevlar.Shield`1.WhenResultIsDefault
+  commentId: M:Kevlar.Shield`1.WhenResultIsDefault
+  isExternal: true
+  href: Kevlar.Shield-1.html#Kevlar_Shield_1_WhenResultIsDefault
+  name: WhenResultIsDefault()
+  nameWithType: Shield<TResult>.WhenResultIsDefault()
+  fullName: Kevlar.Shield<TResult>.WhenResultIsDefault()
+  nameWithType.vb: Shield(Of TResult).WhenResultIsDefault()
+  fullName.vb: Kevlar.Shield(Of TResult).WhenResultIsDefault()
+  spec.csharp:
+  - uid: Kevlar.Shield`1.WhenResultIsDefault
+    name: WhenResultIsDefault
+    isExternal: true
+    href: Kevlar.Shield-1.html#Kevlar_Shield_1_WhenResultIsDefault
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: Kevlar.Shield`1.WhenResultIsDefault
+    name: WhenResultIsDefault
+    isExternal: true
+    href: Kevlar.Shield-1.html#Kevlar_Shield_1_WhenResultIsDefault
+  - name: (
+  - name: )
+- uid: Kevlar.ShieldResultExtensions.WhenResultIsNull*
+  commentId: Overload:Kevlar.ShieldResultExtensions.WhenResultIsNull
+  isExternal: true
+  href: Kevlar.ShieldResultExtensions.html#Kevlar_ShieldResultExtensions_WhenResultIsNull__1_Kevlar_Shield___0__
+  name: WhenResultIsNull
+  nameWithType: ShieldResultExtensions.WhenResultIsNull
+  fullName: Kevlar.ShieldResultExtensions.WhenResultIsNull
+- uid: Kevlar.Shield{{TResult}}
+  commentId: T:Kevlar.Shield{`1}
+  parent: Kevlar
+  definition: Kevlar.Shield`1
+  href: Kevlar.Shield-1.html
+  name: Shield<TResult>
+  nameWithType: Shield<TResult>
+  fullName: Kevlar.Shield<TResult>
+  nameWithType.vb: Shield(Of TResult)
+  fullName.vb: Kevlar.Shield(Of TResult)
+  name.vb: Shield(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.ShieldBuilder{{TResult}}
+  commentId: T:Kevlar.ShieldBuilder{`0}
+  parent: Kevlar
+  definition: Kevlar.ShieldBuilder`1
+  href: Kevlar.ShieldBuilder-1.html
+  name: ShieldBuilder<TResult>
+  nameWithType: ShieldBuilder<TResult>
+  fullName: Kevlar.ShieldBuilder<TResult>
+  nameWithType.vb: ShieldBuilder(Of TResult)
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult)
+  name.vb: ShieldBuilder(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.ShieldBuilder`1
+    name: ShieldBuilder
+    isExternal: true
+    href: Kevlar.ShieldBuilder-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.ShieldBuilder`1
+    name: ShieldBuilder
+    isExternal: true
+    href: Kevlar.ShieldBuilder-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.ShieldBuilder`1
+  commentId: T:Kevlar.ShieldBuilder`1
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.ShieldBuilder-1.html
+  name: ShieldBuilder<TResult>
+  nameWithType: ShieldBuilder<TResult>
+  fullName: Kevlar.ShieldBuilder<TResult>
+  nameWithType.vb: ShieldBuilder(Of TResult)
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult)
+  name.vb: ShieldBuilder(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.ShieldBuilder`1
+    name: ShieldBuilder
+    isExternal: true
+    href: Kevlar.ShieldBuilder-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.ShieldBuilder`1
+    name: ShieldBuilder
+    isExternal: true
+    href: Kevlar.ShieldBuilder-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.ShieldBuilder`1.OrResultIsDefault
+  commentId: M:Kevlar.ShieldBuilder`1.OrResultIsDefault
+  isExternal: true
+  href: Kevlar.ShieldBuilder-1.html#Kevlar_ShieldBuilder_1_OrResultIsDefault
+  name: OrResultIsDefault()
+  nameWithType: ShieldBuilder<TResult>.OrResultIsDefault()
+  fullName: Kevlar.ShieldBuilder<TResult>.OrResultIsDefault()
+  nameWithType.vb: ShieldBuilder(Of TResult).OrResultIsDefault()
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).OrResultIsDefault()
+  spec.csharp:
+  - uid: Kevlar.ShieldBuilder`1.OrResultIsDefault
+    name: OrResultIsDefault
+    isExternal: true
+    href: Kevlar.ShieldBuilder-1.html#Kevlar_ShieldBuilder_1_OrResultIsDefault
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: Kevlar.ShieldBuilder`1.OrResultIsDefault
+    name: OrResultIsDefault
+    isExternal: true
+    href: Kevlar.ShieldBuilder-1.html#Kevlar_ShieldBuilder_1_OrResultIsDefault
+  - name: (
+  - name: )
+- uid: Kevlar.ShieldResultExtensions.WhenResultIsNull``1(Kevlar.Shield{``0})
+  commentId: M:Kevlar.ShieldResultExtensions.WhenResultIsNull``1(Kevlar.Shield{``0})
+  isExternal: true
+  href: Kevlar.ShieldResultExtensions.html#Kevlar_ShieldResultExtensions_WhenResultIsNull__1_Kevlar_Shield___0__
+  name: WhenResultIsNull<TResult>(Shield<TResult>)
+  nameWithType: ShieldResultExtensions.WhenResultIsNull<TResult>(Shield<TResult>)
+  fullName: Kevlar.ShieldResultExtensions.WhenResultIsNull<TResult>(Kevlar.Shield<TResult>)
+  nameWithType.vb: ShieldResultExtensions.WhenResultIsNull(Of TResult)(Shield(Of TResult))
+  fullName.vb: Kevlar.ShieldResultExtensions.WhenResultIsNull(Of TResult)(Kevlar.Shield(Of TResult))
+  name.vb: WhenResultIsNull(Of TResult)(Shield(Of TResult))
+  spec.csharp:
+  - uid: Kevlar.ShieldResultExtensions.WhenResultIsNull``1(Kevlar.Shield{``0})
+    name: WhenResultIsNull
+    isExternal: true
+    href: Kevlar.ShieldResultExtensions.html#Kevlar_ShieldResultExtensions_WhenResultIsNull__1_Kevlar_Shield___0__
+  - name: <
+  - name: TResult
+  - name: '>'
+  - name: (
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  - name: )
+  spec.vb:
+  - uid: Kevlar.ShieldResultExtensions.WhenResultIsNull``1(Kevlar.Shield{``0})
+    name: WhenResultIsNull
+    isExternal: true
+    href: Kevlar.ShieldResultExtensions.html#Kevlar_ShieldResultExtensions_WhenResultIsNull__1_Kevlar_Shield___0__
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+  - name: (
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+  - name: )
+- uid: Kevlar.ShieldResultExtensions.OrResultIsNull*
+  commentId: Overload:Kevlar.ShieldResultExtensions.OrResultIsNull
+  isExternal: true
+  href: Kevlar.ShieldResultExtensions.html#Kevlar_ShieldResultExtensions_OrResultIsNull__1_Kevlar_ShieldBuilder___0__
+  name: OrResultIsNull
+  nameWithType: ShieldResultExtensions.OrResultIsNull
+  fullName: Kevlar.ShieldResultExtensions.OrResultIsNull

@@ -58,3 +58,8 @@ nunit-*.xml
 
 BenchmarkDotNet.Artifacts/
 BenchmarkResults/
+
+# Generated DocFX site (metadata under docs/api is tracked and consistency-tested)
+docs/static/api/
+docs/playwright-report/
+docs/test-results/

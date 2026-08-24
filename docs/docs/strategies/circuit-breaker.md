@@ -28,6 +28,8 @@ Configure either `ConsecutiveFailures` *or* `FailureRatio` — not both. When ne
 
 ## Options
 
+API reference: [`CircuitBreakerOptions`](pathname:///api/Kevlar.CircuitBreakerOptions.html) and [`CircuitBreakerOptions<T>`](pathname:///api/Kevlar.CircuitBreakerOptions-1.html).
+
 | Option | Default | What it does |
 |---|---|---|
 | `ConsecutiveFailures` | — | Simple mode: open after this many failures in a row |

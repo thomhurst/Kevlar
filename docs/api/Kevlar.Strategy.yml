@@ -1,0 +1,828 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Strategy
+  commentId: T:Kevlar.Strategy
+  id: Strategy
+  parent: Kevlar
+  children:
+  - Kevlar.Strategy.#ctor
+  - Kevlar.Strategy.Describe
+  - Kevlar.Strategy.ExecuteAsync``2(Kevlar.Continuation{``0,``1},Kevlar.KevlarContext)
+  - Kevlar.Strategy.Handling
+  - Kevlar.Strategy.InvokesContinuationAtMostOnce
+  - Kevlar.Strategy.IsDuplicateReferenceUnsafe
+  langs:
+  - csharp
+  - vb
+  name: Strategy
+  nameWithType: Strategy
+  fullName: Kevlar.Strategy
+  type: Class
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Base class for resilience strategies. A strategy is middleware: it receives a
+
+    <xref href="Kevlar.Continuation%602" data-throw-if-not-resolved="false"></xref> representing the rest of the pipeline and may invoke it
+
+    zero, one or many times.
+  remarks: >-
+    <p>
+
+    Implementations must be thread-safe: a single strategy instance is shared by every execution
+
+    of the shield that contains it, and by every shield it is composed into. Strategy-local state
+
+    (circuit breaker counters, rate limiter tokens, concurrency limit slots) is intentionally shared this way.
+
+    </p>
+
+    <p>
+
+    Strategies should communicate failures by returning <xref href="Kevlar.Outcome%601.FromException(System.Exception)" data-throw-if-not-resolved="false"></xref>
+
+    rather than throwing, so that outer strategies can observe and handle them. Exceptions that do
+
+    escape a strategy are converted to outcomes by the pipeline.
+
+    </p>
+  example: []
+  syntax:
+    content: public abstract class Strategy
+    content.vb: Public MustInherit Class Strategy
+  inheritance:
+  - System.Object
+  inheritedMembers:
+  - System.Object.GetType
+  - System.Object.MemberwiseClone
+  - System.Object.ToString
+  - System.Object.Equals(System.Object)
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  - System.Object.GetHashCode
+- uid: Kevlar.Strategy.ExecuteAsync``2(Kevlar.Continuation{``0,``1},Kevlar.KevlarContext)
+  commentId: M:Kevlar.Strategy.ExecuteAsync``2(Kevlar.Continuation{``0,``1},Kevlar.KevlarContext)
+  id: ExecuteAsync``2(Kevlar.Continuation{``0,``1},Kevlar.KevlarContext)
+  parent: Kevlar.Strategy
+  langs:
+  - csharp
+  - vb
+  name: ExecuteAsync<T, TState>(Continuation<T, TState>, KevlarContext)
+  nameWithType: Strategy.ExecuteAsync<T, TState>(Continuation<T, TState>, KevlarContext)
+  fullName: Kevlar.Strategy.ExecuteAsync<T, TState>(Kevlar.Continuation<T, TState>, Kevlar.KevlarContext)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Executes the strategy around the rest of the pipeline.
+  example: []
+  syntax:
+    content: public abstract ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
+    parameters:
+    - id: next
+      type: Kevlar.Continuation{{T},{TState}}
+      description: The remainder of the pipeline, ending in the user's delegate.
+    - id: context
+      type: Kevlar.KevlarContext
+      description: The ambient execution context.
+    typeParameters:
+    - id: T
+      description: The result type of the execution.
+    - id: TState
+      description: Caller-supplied state threaded through the pipeline without allocation.
+    return:
+      type: System.Threading.Tasks.ValueTask{Kevlar.Outcome{{T}}}
+    content.vb: Public MustOverride Function ExecuteAsync(Of T, TState)([next] As Continuation(Of T, TState), context As KevlarContext) As ValueTask(Of Outcome(Of T))
+  overload: Kevlar.Strategy.ExecuteAsync*
+  nameWithType.vb: Strategy.ExecuteAsync(Of T, TState)(Continuation(Of T, TState), KevlarContext)
+  fullName.vb: Kevlar.Strategy.ExecuteAsync(Of T, TState)(Kevlar.Continuation(Of T, TState), Kevlar.KevlarContext)
+  name.vb: ExecuteAsync(Of T, TState)(Continuation(Of T, TState), KevlarContext)
+- uid: Kevlar.Strategy.Describe
+  commentId: M:Kevlar.Strategy.Describe
+  id: Describe
+  parent: Kevlar.Strategy
+  langs:
+  - csharp
+  - vb
+  name: Describe()
+  nameWithType: Strategy.Describe()
+  fullName: Kevlar.Strategy.Describe()
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    A one-line human-readable summary of this strategy and its configuration, used by
+
+    <xref href="Kevlar.Shield.ToString" data-throw-if-not-resolved="false"></xref> to describe a whole pipeline. Defaults to the type name.
+  example: []
+  syntax:
+    content: public virtual string Describe()
+    return:
+      type: System.String
+    content.vb: Public Overridable Function Describe() As String
+  overload: Kevlar.Strategy.Describe*
+- uid: Kevlar.Strategy.#ctor
+  commentId: M:Kevlar.Strategy.#ctor
+  id: '#ctor'
+  parent: Kevlar.Strategy
+  langs:
+  - csharp
+  - vb
+  name: Strategy()
+  nameWithType: Strategy.Strategy()
+  fullName: Kevlar.Strategy.Strategy()
+  type: Constructor
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  syntax:
+    content: protected Strategy()
+    content.vb: Protected Sub New()
+  overload: Kevlar.Strategy.#ctor*
+  nameWithType.vb: Strategy.New()
+  fullName.vb: Kevlar.Strategy.New()
+  name.vb: New()
+- uid: Kevlar.Strategy.InvokesContinuationAtMostOnce
+  commentId: P:Kevlar.Strategy.InvokesContinuationAtMostOnce
+  id: InvokesContinuationAtMostOnce
+  parent: Kevlar.Strategy
+  langs:
+  - csharp
+  - vb
+  name: InvokesContinuationAtMostOnce
+  nameWithType: Strategy.InvokesContinuationAtMostOnce
+  fullName: Kevlar.Strategy.InvokesContinuationAtMostOnce
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Gets whether this strategy guarantees invoking its continuation at most once per execution.
+  remarks: >-
+    Override and return <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> only when every path invokes <code>next</code> zero or
+
+    one time. Strategies that retry, hedge, loop, or otherwise may invoke <code>next</code> more than
+
+    once must retain the conservative default.
+  example: []
+  syntax:
+    content: protected virtual bool InvokesContinuationAtMostOnce { get; }
+    parameters: []
+    return:
+      type: System.Boolean
+    content.vb: Protected Overridable ReadOnly Property InvokesContinuationAtMostOnce As Boolean
+  overload: Kevlar.Strategy.InvokesContinuationAtMostOnce*
+- uid: Kevlar.Strategy.Handling
+  commentId: P:Kevlar.Strategy.Handling
+  id: Handling
+  parent: Kevlar.Strategy
+  langs:
+  - csharp
+  - vb
+  name: Handling
+  nameWithType: Strategy.Handling
+  fullName: Kevlar.Strategy.Handling
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    The handling clause this reactive strategy acts on, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> for a
+
+    proactive strategy. Override this when the strategy receives a clause through a
+
+    <code>Use</code> factory so chain validation and testing descriptors can inspect it.
+  example: []
+  syntax:
+    content: protected virtual HandlingClause? Handling { get; }
+    parameters: []
+    return:
+      type: System.Nullable{Kevlar.HandlingClause}
+    content.vb: Protected Overridable ReadOnly Property Handling As HandlingClause?
+  overload: Kevlar.Strategy.Handling*
+- uid: Kevlar.Strategy.IsDuplicateReferenceUnsafe
+  commentId: P:Kevlar.Strategy.IsDuplicateReferenceUnsafe
+  id: IsDuplicateReferenceUnsafe
+  parent: Kevlar.Strategy
+  langs:
+  - csharp
+  - vb
+  name: IsDuplicateReferenceUnsafe
+  nameWithType: Strategy.IsDuplicateReferenceUnsafe
+  fullName: Kevlar.Strategy.IsDuplicateReferenceUnsafe
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Gets whether reusing this strategy instance within one chain is unsafe.
+
+    Stateful custom strategies should override this property and return <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a>
+
+    when duplicate use could deadlock or corrupt their accounting.
+  example: []
+  syntax:
+    content: protected virtual bool IsDuplicateReferenceUnsafe { get; }
+    parameters: []
+    return:
+      type: System.Boolean
+    content.vb: Protected Overridable ReadOnly Property IsDuplicateReferenceUnsafe As Boolean
+  overload: Kevlar.Strategy.IsDuplicateReferenceUnsafe*
+references:
+- uid: Kevlar.Continuation`2
+  commentId: T:Kevlar.Continuation`2
+  isExternal: true
+  href: Kevlar.Continuation-2.html
+  name: Continuation<T, TState>
+  nameWithType: Continuation<T, TState>
+  fullName: Kevlar.Continuation<T, TState>
+  nameWithType.vb: Continuation(Of T, TState)
+  fullName.vb: Kevlar.Continuation(Of T, TState)
+  name.vb: Continuation(Of T, TState)
+  spec.csharp:
+  - uid: Kevlar.Continuation`2
+    name: Continuation
+    isExternal: true
+    href: Kevlar.Continuation-2.html
+  - name: <
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TState
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Continuation`2
+    name: Continuation
+    isExternal: true
+    href: Kevlar.Continuation-2.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TState
+  - name: )
+- uid: Kevlar.Outcome`1.FromException(System.Exception)
+  commentId: M:Kevlar.Outcome`1.FromException(System.Exception)
+  isExternal: true
+  href: Kevlar.Outcome-1.html#Kevlar_Outcome_1_FromException_System_Exception_
+  name: FromException(Exception)
+  nameWithType: Outcome<T>.FromException(Exception)
+  fullName: Kevlar.Outcome<T>.FromException(System.Exception)
+  nameWithType.vb: Outcome(Of T).FromException(Exception)
+  fullName.vb: Kevlar.Outcome(Of T).FromException(System.Exception)
+  spec.csharp:
+  - uid: Kevlar.Outcome`1.FromException(System.Exception)
+    name: FromException
+    isExternal: true
+    href: Kevlar.Outcome-1.html#Kevlar_Outcome_1_FromException_System_Exception_
+  - name: (
+  - uid: System.Exception
+    name: Exception
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.exception
+  - name: )
+  spec.vb:
+  - uid: Kevlar.Outcome`1.FromException(System.Exception)
+    name: FromException
+    isExternal: true
+    href: Kevlar.Outcome-1.html#Kevlar_Outcome_1_FromException_System_Exception_
+  - name: (
+  - uid: System.Exception
+    name: Exception
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.exception
+  - name: )
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.MemberwiseClone
+  commentId: M:System.Object.MemberwiseClone
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  name: MemberwiseClone()
+  nameWithType: object.MemberwiseClone()
+  fullName: object.MemberwiseClone()
+  nameWithType.vb: Object.MemberwiseClone()
+  fullName.vb: Object.MemberwiseClone()
+  spec.csharp:
+  - uid: System.Object.MemberwiseClone
+    name: MemberwiseClone
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.MemberwiseClone
+    name: MemberwiseClone
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  - name: (
+  - name: )
+- uid: System.Object.ToString
+  commentId: M:System.Object.ToString
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  name: ToString()
+  nameWithType: object.ToString()
+  fullName: object.ToString()
+  nameWithType.vb: Object.ToString()
+  fullName.vb: Object.ToString()
+  spec.csharp:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object)
+  commentId: M:System.Object.Equals(System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  name: Equals(object)
+  nameWithType: object.Equals(object)
+  fullName: object.Equals(object)
+  nameWithType.vb: Object.Equals(Object)
+  fullName.vb: Object.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetHashCode
+  commentId: M:System.Object.GetHashCode
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  name: GetHashCode()
+  nameWithType: object.GetHashCode()
+  fullName: object.GetHashCode()
+  nameWithType.vb: Object.GetHashCode()
+  fullName.vb: Object.GetHashCode()
+  spec.csharp:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.Strategy.ExecuteAsync*
+  commentId: Overload:Kevlar.Strategy.ExecuteAsync
+  isExternal: true
+  href: Kevlar.Strategy.html#Kevlar_Strategy_ExecuteAsync__2_Kevlar_Continuation___0___1__Kevlar_KevlarContext_
+  name: ExecuteAsync
+  nameWithType: Strategy.ExecuteAsync
+  fullName: Kevlar.Strategy.ExecuteAsync
+- uid: Kevlar.Continuation{{T},{TState}}
+  commentId: T:Kevlar.Continuation{``0,``1}
+  parent: Kevlar
+  definition: Kevlar.Continuation`2
+  href: Kevlar.Continuation-2.html
+  name: Continuation<T, TState>
+  nameWithType: Continuation<T, TState>
+  fullName: Kevlar.Continuation<T, TState>
+  nameWithType.vb: Continuation(Of T, TState)
+  fullName.vb: Kevlar.Continuation(Of T, TState)
+  name.vb: Continuation(Of T, TState)
+  spec.csharp:
+  - uid: Kevlar.Continuation`2
+    name: Continuation
+    isExternal: true
+    href: Kevlar.Continuation-2.html
+  - name: <
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TState
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Continuation`2
+    name: Continuation
+    isExternal: true
+    href: Kevlar.Continuation-2.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TState
+  - name: )
+- uid: Kevlar.KevlarContext
+  commentId: T:Kevlar.KevlarContext
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.KevlarContext.html
+  name: KevlarContext
+  nameWithType: KevlarContext
+  fullName: Kevlar.KevlarContext
+- uid: System.Threading.Tasks.ValueTask{Kevlar.Outcome{{T}}}
+  commentId: T:System.Threading.Tasks.ValueTask{Kevlar.Outcome{``0}}
+  parent: System.Threading.Tasks
+  definition: System.Threading.Tasks.ValueTask`1
+  href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  name: ValueTask<Outcome<T>>
+  nameWithType: ValueTask<Outcome<T>>
+  fullName: System.Threading.Tasks.ValueTask<Kevlar.Outcome<T>>
+  nameWithType.vb: ValueTask(Of Outcome(Of T))
+  fullName.vb: System.Threading.Tasks.ValueTask(Of Kevlar.Outcome(Of T))
+  name.vb: ValueTask(Of Outcome(Of T))
+  spec.csharp:
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
+  - uid: Kevlar.Outcome`1
+    name: Outcome
+    isExternal: true
+    href: Kevlar.Outcome-1.html
+  - name: <
+  - name: T
+  - name: '>'
+  - name: '>'
+  spec.vb:
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.Outcome`1
+    name: Outcome
+    isExternal: true
+    href: Kevlar.Outcome-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+  - name: )
+- uid: System.Threading.Tasks.ValueTask`1
+  commentId: T:System.Threading.Tasks.ValueTask`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  name: ValueTask<TResult>
+  nameWithType: ValueTask<TResult>
+  fullName: System.Threading.Tasks.ValueTask<TResult>
+  nameWithType.vb: ValueTask(Of TResult)
+  fullName.vb: System.Threading.Tasks.ValueTask(Of TResult)
+  name.vb: ValueTask(Of TResult)
+  spec.csharp:
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: System.Threading.Tasks
+  commentId: N:System.Threading.Tasks
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System.Threading.Tasks
+  nameWithType: System.Threading.Tasks
+  fullName: System.Threading.Tasks
+  spec.csharp:
+  - uid: System
+    name: System
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system
+  - name: .
+  - uid: System.Threading
+    name: Threading
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading
+  - name: .
+  - uid: System.Threading.Tasks
+    name: Tasks
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks
+  spec.vb:
+  - uid: System
+    name: System
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system
+  - name: .
+  - uid: System.Threading
+    name: Threading
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading
+  - name: .
+  - uid: System.Threading.Tasks
+    name: Tasks
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks
+- uid: Kevlar.Shield.ToString
+  commentId: M:Kevlar.Shield.ToString
+  isExternal: true
+  href: Kevlar.Shield.html#Kevlar_Shield_ToString
+  name: ToString()
+  nameWithType: Shield.ToString()
+  fullName: Kevlar.Shield.ToString()
+  spec.csharp:
+  - uid: Kevlar.Shield.ToString
+    name: ToString
+    isExternal: true
+    href: Kevlar.Shield.html#Kevlar_Shield_ToString
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: Kevlar.Shield.ToString
+    name: ToString
+    isExternal: true
+    href: Kevlar.Shield.html#Kevlar_Shield_ToString
+  - name: (
+  - name: )
+- uid: Kevlar.Strategy.Describe*
+  commentId: Overload:Kevlar.Strategy.Describe
+  isExternal: true
+  href: Kevlar.Strategy.html#Kevlar_Strategy_Describe
+  name: Describe
+  nameWithType: Strategy.Describe
+  fullName: Kevlar.Strategy.Describe
+- uid: System.String
+  commentId: T:System.String
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.string
+  name: string
+  nameWithType: string
+  fullName: string
+  nameWithType.vb: String
+  fullName.vb: String
+  name.vb: String
+- uid: Kevlar.Strategy.#ctor*
+  commentId: Overload:Kevlar.Strategy.#ctor
+  isExternal: true
+  href: Kevlar.Strategy.html#Kevlar_Strategy__ctor
+  name: Strategy
+  nameWithType: Strategy.Strategy
+  fullName: Kevlar.Strategy.Strategy
+  nameWithType.vb: Strategy.New
+  fullName.vb: Kevlar.Strategy.New
+  name.vb: New
+- uid: Kevlar.Strategy.InvokesContinuationAtMostOnce*
+  commentId: Overload:Kevlar.Strategy.InvokesContinuationAtMostOnce
+  isExternal: true
+  href: Kevlar.Strategy.html#Kevlar_Strategy_InvokesContinuationAtMostOnce
+  name: InvokesContinuationAtMostOnce
+  nameWithType: Strategy.InvokesContinuationAtMostOnce
+  fullName: Kevlar.Strategy.InvokesContinuationAtMostOnce
+- uid: System.Boolean
+  commentId: T:System.Boolean
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.boolean
+  name: bool
+  nameWithType: bool
+  fullName: bool
+  nameWithType.vb: Boolean
+  fullName.vb: Boolean
+  name.vb: Boolean
+- uid: Kevlar.Strategy.Handling*
+  commentId: Overload:Kevlar.Strategy.Handling
+  isExternal: true
+  href: Kevlar.Strategy.html#Kevlar_Strategy_Handling
+  name: Handling
+  nameWithType: Strategy.Handling
+  fullName: Kevlar.Strategy.Handling
+- uid: System.Nullable{Kevlar.HandlingClause}
+  commentId: T:System.Nullable{Kevlar.HandlingClause}
+  parent: System
+  definition: System.Nullable`1
+  href: Kevlar.HandlingClause.html
+  name: HandlingClause?
+  nameWithType: HandlingClause?
+  fullName: Kevlar.HandlingClause?
+  spec.csharp:
+  - uid: Kevlar.HandlingClause
+    name: HandlingClause
+    isExternal: true
+    href: Kevlar.HandlingClause.html
+  - name: '?'
+  spec.vb:
+  - uid: Kevlar.HandlingClause
+    name: HandlingClause
+    isExternal: true
+    href: Kevlar.HandlingClause.html
+  - name: '?'
+- uid: System.Nullable`1
+  commentId: T:System.Nullable`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  name: Nullable<T>
+  nameWithType: Nullable<T>
+  fullName: System.Nullable<T>
+  nameWithType.vb: Nullable(Of T)
+  fullName.vb: System.Nullable(Of T)
+  name.vb: Nullable(Of T)
+  spec.csharp:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Kevlar.Strategy.IsDuplicateReferenceUnsafe*
+  commentId: Overload:Kevlar.Strategy.IsDuplicateReferenceUnsafe
+  isExternal: true
+  href: Kevlar.Strategy.html#Kevlar_Strategy_IsDuplicateReferenceUnsafe
+  name: IsDuplicateReferenceUnsafe
+  nameWithType: Strategy.IsDuplicateReferenceUnsafe
+  fullName: Kevlar.Strategy.IsDuplicateReferenceUnsafe
