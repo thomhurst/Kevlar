@@ -26,6 +26,7 @@ const sidebars: SidebarsConfig = {
       ],
     },
     'composition',
+    'partitioning',
     'executing',
     'dependency-injection',
     'http',

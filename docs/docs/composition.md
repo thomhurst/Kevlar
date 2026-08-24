@@ -1,5 +1,5 @@
 ---
-sidebar_position: 5
+sidebar_position: 4
 ---
 
 # Composition
@@ -81,6 +81,9 @@ That's the whole rule. Consequences:
 - Stateless custom strategy instances may appear more than once in one chain. Kevlar rejects duplicate references to built-in stateful breakers and limiters because nesting the same instance can deadlock or double-count. A stateful custom `Strategy` can opt into the same protection by overriding `IsDuplicateReferenceUnsafe` and returning `true`.
 
 This is deliberate. A circuit breaker that doesn't share state across the call sites hitting the same dependency isn't protecting anything; a rate limiter with per-call-site buckets isn't limiting anything.
+
+When one downstream dependency needs independent strategy state per endpoint, tenant, or other key,
+use a [partitioned shield](partitioning.md) to create and retain one shield instance per partition.
 
 ```csharp
 // One breaker guarding one downstream dependency, shared by two shaped pipelines:

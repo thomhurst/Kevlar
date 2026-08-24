@@ -120,6 +120,9 @@ var writes  = Shield.Timeout(TimeSpan.FromSeconds(5)).Wrap(breaker);
 
 See [Composition](../composition.md#the-state-sharing-rule).
 
+For independent breaker state per tenant or endpoint, create the breaker inside a
+[partitioned shield](../partitioning.md).
+
 ## What counts as a failure
 
 Whatever the current [handling clause](../handling-failures.md) says — including handled *results* on typed shields, so an HTTP breaker can trip on 5xx responses without a single exception being thrown.

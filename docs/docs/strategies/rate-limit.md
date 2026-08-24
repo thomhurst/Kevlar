@@ -91,7 +91,8 @@ await shield.ExecuteWithContextAsync(
 
 The partition callback receives the live pooled `KevlarContext`; read it only during the callback
 and never retain it. One `PartitionedRateLimiter<KevlarContext>` instance shares partition state
-across every shield using it, including shields returned by Kevlar's `PartitionedShield<TKey>`.
+across every shield using it, including shields returned by Kevlar's
+[`PartitionedShield<TKey>`](../partitioning.md).
 Partition retention follows the limiter implementation; keep attacker-controlled key cardinality
 bounded. The caller owns and disposes the partitioned limiter and its child limiters; Kevlar owns
 only each returned lease.

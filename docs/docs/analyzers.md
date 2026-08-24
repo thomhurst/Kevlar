@@ -1,5 +1,5 @@
 ---
-sidebar_position: 12
+sidebar_position: 13
 ---
 
 # Analyzers
@@ -103,9 +103,10 @@ await _dependencyShield.ExecuteAsync(static _ => ValueTask.CompletedTask);
 ```
 
 Store stateful shields in a field, singleton or keyed dependency-injection registration, or registry.
-Store `PartitionedShield<TKey>`, `PartitionedVoidShield<TKey>`, and
-`PartitionedShield<TKey, TResult>` providers for the same reason: their retained per-key shields
-disappear when the provider is constructed per call.
+Store [`PartitionedShield<TKey>`](partitioning.md),
+[`PartitionedVoidShield<TKey>`](partitioning.md), and
+[`PartitionedShield<TKey, TResult>`](partitioning.md) providers for the same reason: their retained
+per-key shields disappear when the provider is constructed per call.
 
 The rule is deliberately conservative. It reports inline construction and a stable local or local
 alias that has exactly one use in the same method or lambda. Fields, parameters, opaque factory

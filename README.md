@@ -44,6 +44,8 @@ stateful strategies: calls made through the same shield share its circuit breake
   or both, without changing the shape of the pipeline.
 - **Composition is explicit.** Chain strategies, or combine existing shields with `Wrap` and
   `Compose`. The first strategy is always the outermost.
+- **State can be isolated by key.** [Partitioned shields](https://thomhurst.github.io/Kevlar/docs/partitioning)
+  retain independent breaker, limiter, and queue state per tenant, endpoint, or other bounded key.
 - **It is designed for hot paths.** Struct outcomes, pooled contexts, state-passing overloads and
   `ValueTask` keep overhead and allocations low. Browse the
   [benchmark suite](benchmarks/Kevlar.Benchmarks) or the published comparative

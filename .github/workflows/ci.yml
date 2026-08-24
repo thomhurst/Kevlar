@@ -113,6 +113,11 @@ jobs:
           PACKAGE_VERSION: ${{ steps.gitversion.outputs.semVer }}
         run: ./scripts/Verify-Packages.ps1 -PackagesPath artifacts/package/release -Version $env:PACKAGE_VERSION
 
+      - name: Verify documentation structure
+        if: matrix.os == 'ubuntu-latest'
+        shell: pwsh
+        run: ./scripts/Verify-Docs.ps1
+
       - name: Compile and execute documentation snippets
         if: matrix.os == 'ubuntu-latest'
         shell: pwsh
