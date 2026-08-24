@@ -20,9 +20,9 @@ internal static class StandardHttpConfigurationBinder
         return options;
     }
 
-    public static StandardHedgingShieldOptions BindHedging(IConfiguration configuration)
+    public static StandardHedgeShieldOptions BindHedge(IConfiguration configuration)
     {
-        var options = new StandardHedgingShieldOptions();
+        var options = new StandardHedgeShieldOptions();
 
         RejectLegacyQueueKey(configuration);
         SetTimeSpan(configuration, nameof(options.TotalTimeout), value => options.TotalTimeout = value);
@@ -48,7 +48,7 @@ internal static class StandardHttpConfigurationBinder
         SetBool(configuration, nameof(options.AllowUnsafeMethodReplay), value => options.AllowUnsafeMethodReplay = value);
         BindEndpoints(configuration.GetSection(nameof(options.Endpoints)), options.Endpoints);
 
-        ValidateHedging(configuration, options);
+        ValidateHedge(configuration, options);
         return options;
     }
 
@@ -246,9 +246,9 @@ internal static class StandardHttpConfigurationBinder
         }
     }
 
-    private static void ValidateHedging(
+    private static void ValidateHedge(
         IConfiguration configuration,
-        StandardHedgingShieldOptions options)
+        StandardHedgeShieldOptions options)
     {
         Ensure(options.TotalTimeout > TimeSpan.Zero, configuration.GetSection(nameof(options.TotalTimeout)), "must be positive");
         Ensure(options.MaxAttempts >= 1, configuration.GetSection(nameof(options.MaxAttempts)), "must be at least 1");

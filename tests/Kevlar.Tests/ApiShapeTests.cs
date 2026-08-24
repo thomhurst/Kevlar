@@ -1,12 +1,38 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Kevlar.Extensions.DependencyInjection;
+using Kevlar.Extensions.Http;
 using Kevlar.Testing;
+using System.Reflection;
 
 namespace Kevlar.Tests;
 
 public class ApiShapeTests
 {
+    [Test]
+    public async Task Public_Surface_Uses_One_Hedge_Stem()
+    {
+        var assemblies = new[]
+        {
+            typeof(Shield).Assembly,
+            typeof(ShieldDefinition).Assembly,
+            typeof(StandardHedgeShieldOptions).Assembly,
+            typeof(ShieldDescriptor).Assembly,
+        };
+        var legacyNames = assemblies
+            .SelectMany(static assembly => assembly.ExportedTypes)
+            .SelectMany(static type => type
+                .GetMembers(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly)
+                .Select(static member => member.Name)
+                .Append(type.Name))
+            .Where(static name => name.Contains("Hedging", StringComparison.Ordinal))
+            .Distinct(StringComparer.Ordinal)
+            .Order()
+            .ToArray();
+
+        await Assert.That(legacyNames).IsEmpty();
+    }
+
     [Test]
     public async Task Exactly_One_Public_Type_Named_BackoffKind_Across_All_Assemblies()
     {
@@ -54,7 +80,7 @@ public class ApiShapeTests
         {
             typeof(Shield).Assembly,
             typeof(Extensions.DependencyInjection.ShieldDefinition).Assembly,
-            typeof(Extensions.Http.StandardHedgingShieldOptions).Assembly,
+            typeof(Extensions.Http.StandardHedgeShieldOptions).Assembly,
         };
         var legacyMembers = assemblies
             .SelectMany(static assembly => assembly.GetExportedTypes())

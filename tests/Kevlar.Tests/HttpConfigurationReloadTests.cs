@@ -23,13 +23,13 @@ public class HttpConfigurationReloadTests
                 configuration,
                 (Action<IServiceProvider, StandardHttpShieldOptions>)null!))
             .Throws<ArgumentNullException>();
-        var hedgingConfigurationError = await Assert.That(() => builder.AddStandardHedgingShield((IConfiguration)null!))
+        var hedgeConfigurationError = await Assert.That(() => builder.AddStandardHedgeShield((IConfiguration)null!))
             .Throws<ArgumentNullException>();
 
         await Assert.That(builderError!.ParamName).IsEqualTo("builder");
         await Assert.That(configurationError!.ParamName).IsEqualTo("configuration");
         await Assert.That(configureError!.ParamName).IsEqualTo("configure");
-        await Assert.That(hedgingConfigurationError!.ParamName).IsEqualTo("configuration");
+        await Assert.That(hedgeConfigurationError!.ParamName).IsEqualTo("configuration");
     }
 
     [Test]
@@ -147,7 +147,7 @@ public class HttpConfigurationReloadTests
     }
 
     [Test]
-    public async Task Hedging_Section_Binds_All_Supported_Values()
+    public async Task Hedge_Section_Binds_All_Supported_Values()
     {
         var configuration = BuildConfiguration(
             ("TotalTimeout", "00:00:20"),
@@ -167,10 +167,10 @@ public class HttpConfigurationReloadTests
             ("MaximumBufferSize", "8192"),
             ("AllowUnsafeMethodReplay", "true"),
             ("Endpoints:0", "https://one.example"));
-        StandardHedgingShieldOptions? bound = null;
+        StandardHedgeShieldOptions? bound = null;
         var services = new ServiceCollection();
         services.AddHttpClient("client")
-            .AddStandardHedgingShield(configuration, (_, options) => bound = options);
+            .AddStandardHedgeShield(configuration, (_, options) => bound = options);
         using var provider = services.BuildServiceProvider();
 
         _ = provider.GetRequiredService<IHttpClientFactory>().CreateClient("client");
@@ -295,7 +295,7 @@ public class HttpConfigurationReloadTests
             .Throws<InvalidOperationException>()
             .WithMessage(
                 "Configuration key 'Clients:GitHub:ConcurrencyLimit:MaxQueue' is not supported; use 'QueueLimit'.");
-        await Assert.That(() => builder.AddStandardHedgingShield(hedging))
+        await Assert.That(() => builder.AddStandardHedgeShield(hedging))
             .Throws<InvalidOperationException>()
             .WithMessage(
                 "Configuration key 'Clients:GitHub:MaxQueue' is not supported; use 'QueueLimit'.");
@@ -599,7 +599,7 @@ public class HttpConfigurationReloadTests
     }
 
     [Test]
-    public async Task Hedging_Section_Binds_Endpoints_And_Routes_Attempts()
+    public async Task Hedge_Section_Binds_Endpoints_And_Routes_Attempts()
     {
         var configuration = BuildConfiguration(
             ("MaxAttempts", "2"),
@@ -619,7 +619,7 @@ public class HttpConfigurationReloadTests
         serviceCollection.AddHttpClient("hedged", client =>
                 client.Timeout = TimeSpan.FromMilliseconds(10))
             .ConfigurePrimaryHttpMessageHandler(() => transport)
-            .AddStandardHedgingShield(configuration);
+            .AddStandardHedgeShield(configuration);
         using var services = serviceCollection.BuildServiceProvider();
         var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("hedged");
 

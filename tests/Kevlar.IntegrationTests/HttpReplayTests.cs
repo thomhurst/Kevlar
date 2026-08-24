@@ -442,7 +442,7 @@ public class HttpReplayTests
     }
 
     [Test]
-    public async Task Standard_Hedging_Routes_And_Isolates_Endpoint_Breakers()
+    public async Task Standard_Hedge_Routes_And_Isolates_Endpoint_Breakers()
     {
         var calls = new System.Collections.Concurrent.ConcurrentDictionary<string, int>(
             StringComparer.Ordinal);
@@ -453,7 +453,7 @@ public class HttpReplayTests
             return Task.FromResult(new HttpResponseMessage(
                 host == "first.example" ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.OK));
         });
-        using var services = CreateStandardHedgingServices(transport, options =>
+        using var services = CreateStandardHedgeServices(transport, options =>
         {
             options.Endpoints.Add(new HttpEndpoint(new Uri("https://first.example")));
             options.Endpoints.Add(new HttpEndpoint(new Uri("https://second.example")));
@@ -461,7 +461,7 @@ public class HttpReplayTests
             options.ConsecutiveFailures = 1;
             options.FailureRatio = null;
         });
-        using var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("standard-hedging");
+        using var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("standard-hedge");
 
         using var first = await client.GetAsync("https://origin.example/api");
         using var second = await client.GetAsync("https://origin.example/api");
@@ -473,7 +473,7 @@ public class HttpReplayTests
     }
 
     [Test]
-    public async Task Standard_Hedging_Attempt_Timeout_Advances_To_Next_Endpoint()
+    public async Task Standard_Hedge_Attempt_Timeout_Advances_To_Next_Endpoint()
     {
         var timedOut = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var transport = new RecordingHandler(async (_, request, cancellationToken) =>
@@ -493,14 +493,14 @@ public class HttpReplayTests
 
             return new HttpResponseMessage(HttpStatusCode.OK);
         });
-        using var services = CreateStandardHedgingServices(transport, options =>
+        using var services = CreateStandardHedgeServices(transport, options =>
         {
             options.Endpoints.Add(new HttpEndpoint(new Uri("https://first.example")));
             options.Endpoints.Add(new HttpEndpoint(new Uri("https://second.example")));
             options.HedgeDelay = Timeout.InfiniteTimeSpan;
             options.AttemptTimeout = TimeSpan.FromMilliseconds(20);
         });
-        using var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("standard-hedging");
+        using var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("standard-hedge");
 
         using var response = await client.GetAsync("https://origin.example/api")
             .WaitAsync(TimeSpan.FromSeconds(5));
@@ -511,14 +511,14 @@ public class HttpReplayTests
     }
 
     [Test]
-    public async Task Standard_Hedging_Propagates_Caller_Cancellation()
+    public async Task Standard_Hedge_Propagates_Caller_Cancellation()
     {
         var transport = new RecordingHandler(async (_, _, cancellationToken) =>
         {
             await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
             return new HttpResponseMessage(HttpStatusCode.OK);
         });
-        using var services = CreateStandardHedgingServices(transport, options =>
+        using var services = CreateStandardHedgeServices(transport, options =>
         {
             options.Endpoints.Add(new HttpEndpoint(new Uri("https://first.example")));
             options.Endpoints.Add(new HttpEndpoint(new Uri("https://second.example")));
@@ -526,7 +526,7 @@ public class HttpReplayTests
             options.TotalTimeout = TimeSpan.FromMinutes(1);
             options.AttemptTimeout = TimeSpan.FromMinutes(1);
         });
-        using var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("standard-hedging");
+        using var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("standard-hedge");
         using var cancellation = new CancellationTokenSource();
 
         var send = client.GetAsync("https://origin.example/api", cancellation.Token);
@@ -538,14 +538,14 @@ public class HttpReplayTests
     }
 
     [Test]
-    public async Task Standard_Hedging_Total_Timeout_Covers_All_Attempts()
+    public async Task Standard_Hedge_Total_Timeout_Covers_All_Attempts()
     {
         var transport = new RecordingHandler(async (_, _, cancellationToken) =>
         {
             await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
             return new HttpResponseMessage(HttpStatusCode.OK);
         });
-        using var services = CreateStandardHedgingServices(transport, options =>
+        using var services = CreateStandardHedgeServices(transport, options =>
         {
             options.Endpoints.Add(new HttpEndpoint(new Uri("https://first.example")));
             options.Endpoints.Add(new HttpEndpoint(new Uri("https://second.example")));
@@ -553,7 +553,7 @@ public class HttpReplayTests
             options.TotalTimeout = TimeSpan.FromSeconds(1);
             options.AttemptTimeout = TimeSpan.FromMinutes(1);
         });
-        using var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("standard-hedging");
+        using var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("standard-hedge");
 
         _ = await Assert.That(async () => await client.GetAsync("https://origin.example/api"))
             .Throws<TimeoutExceededException>();
@@ -562,7 +562,7 @@ public class HttpReplayTests
     }
 
     [Test]
-    public async Task Standard_Hedging_Explicitly_Replays_Unsafe_Content_And_Disposes_Failure()
+    public async Task Standard_Hedge_Explicitly_Replays_Unsafe_Content_And_Disposes_Failure()
     {
         var failedContent = new TrackingContent("failed");
         var bodies = new List<string>();
@@ -573,7 +573,7 @@ public class HttpReplayTests
                 ? new HttpResponseMessage(HttpStatusCode.ServiceUnavailable) { Content = failedContent }
                 : new HttpResponseMessage(HttpStatusCode.OK);
         });
-        using var services = CreateStandardHedgingServices(transport, options =>
+        using var services = CreateStandardHedgeServices(transport, options =>
         {
             options.Endpoints.Add(new HttpEndpoint(new Uri("https://first.example")));
             options.Endpoints.Add(new HttpEndpoint(new Uri("https://second.example")));
@@ -581,7 +581,7 @@ public class HttpReplayTests
             options.ContentReplayPolicy = HttpContentReplayPolicy.Buffer;
             options.AllowUnsafeMethodReplay = true;
         });
-        using var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("standard-hedging");
+        using var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("standard-hedge");
         using var request = new HttpRequestMessage(HttpMethod.Post, "https://origin.example/upload")
         {
             Content = new StringContent("payload"),
@@ -595,18 +595,18 @@ public class HttpReplayTests
     }
 
     [Test]
-    public async Task Standard_Hedging_Rejects_Unsafe_Replay_Without_Explicit_Opt_In()
+    public async Task Standard_Hedge_Rejects_Unsafe_Replay_Without_Explicit_Opt_In()
     {
         var failedContent = new TrackingContent("failed");
         var transport = new RecordingHandler((_, _, _) => Task.FromResult(
             new HttpResponseMessage(HttpStatusCode.ServiceUnavailable) { Content = failedContent }));
-        using var services = CreateStandardHedgingServices(transport, options =>
+        using var services = CreateStandardHedgeServices(transport, options =>
         {
             options.Endpoints.Add(new HttpEndpoint(new Uri("https://first.example")));
             options.Endpoints.Add(new HttpEndpoint(new Uri("https://second.example")));
             options.HedgeDelay = Timeout.InfiniteTimeSpan;
         });
-        using var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("standard-hedging");
+        using var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("standard-hedge");
         using var request = new HttpRequestMessage(HttpMethod.Post, "https://origin.example/upload")
         {
             Content = new StringContent("payload"),
@@ -620,7 +620,7 @@ public class HttpReplayTests
     }
 
     [Test]
-    public async Task Standard_Hedging_Uses_Second_Endpoint_When_First_Is_Concurrency_Limited()
+    public async Task Standard_Hedge_Uses_Second_Endpoint_When_First_Is_Concurrency_Limited()
     {
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var firstStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -636,7 +636,7 @@ public class HttpReplayTests
 
             return new HttpResponseMessage(HttpStatusCode.OK);
         });
-        using var services = CreateStandardHedgingServices(transport, options =>
+        using var services = CreateStandardHedgeServices(transport, options =>
         {
             options.Endpoints.Add(new HttpEndpoint(new Uri("https://first.example")));
             options.Endpoints.Add(new HttpEndpoint(new Uri("https://second.example")));
@@ -646,7 +646,7 @@ public class HttpReplayTests
             options.TotalTimeout = TimeSpan.FromMinutes(1);
             options.AttemptTimeout = TimeSpan.FromMinutes(1);
         });
-        using var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("standard-hedging");
+        using var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("standard-hedge");
 
         var holding = client.GetAsync("https://origin.example/holding");
         await firstStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
@@ -662,7 +662,7 @@ public class HttpReplayTests
     }
 
     [Test]
-    public async Task Standard_Hedging_Uses_Weighted_Endpoint_Selection()
+    public async Task Standard_Hedge_Uses_Weighted_Endpoint_Selection()
     {
         var hosts = new List<string>();
         var transport = new RecordingHandler((_, request, _) =>
@@ -670,7 +670,7 @@ public class HttpReplayTests
             hosts.Add(request.RequestUri!.Host);
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
         });
-        using var services = CreateStandardHedgingServices(transport, options =>
+        using var services = CreateStandardHedgeServices(transport, options =>
         {
             options.Endpoints.Add(new HttpEndpoint(new Uri("https://first.example"), 5));
             options.Endpoints.Add(new HttpEndpoint(new Uri("https://second.example"), 1));
@@ -678,7 +678,7 @@ public class HttpReplayTests
             options.Seed = 1729;
             options.MaxAttempts = 1;
         });
-        using var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("standard-hedging");
+        using var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("standard-hedge");
 
         for (var index = 0; index < 32; index++)
         {
@@ -896,14 +896,14 @@ public class HttpReplayTests
         return new ShieldHttpHandlerOptions { Routing = routing };
     }
 
-    private static ServiceProvider CreateStandardHedgingServices(
+    private static ServiceProvider CreateStandardHedgeServices(
         HttpMessageHandler transport,
-        Action<StandardHedgingShieldOptions> configure)
+        Action<StandardHedgeShieldOptions> configure)
     {
         var services = new ServiceCollection();
-        services.AddHttpClient("standard-hedging")
+        services.AddHttpClient("standard-hedge")
             .ConfigurePrimaryHttpMessageHandler(() => transport)
-            .AddStandardHedgingShield(configure);
+            .AddStandardHedgeShield(configure);
         return services.BuildServiceProvider();
     }
 

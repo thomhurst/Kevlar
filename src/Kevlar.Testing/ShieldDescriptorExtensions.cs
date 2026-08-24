@@ -89,7 +89,7 @@ public static class ShieldDescriptorExtensions
                 concurrency.MaxConcurrency,
                 concurrency.QueueLimit,
                 concurrency.HasNotification),
-            HedgingStrategy hedging => new HedgingStrategyDescriptor(
+            HedgingStrategy hedging => new HedgeStrategyDescriptor(
                 description,
                 hedging.MaxAttempts,
                 hedging.Delay,
