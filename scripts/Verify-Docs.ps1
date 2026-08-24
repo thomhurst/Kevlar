@@ -33,6 +33,31 @@ $documents = Get-ChildItem -LiteralPath $resolvedDocsPath -Recurse -File |
     Sort-Object FullName
 $visibleDocuments = [System.Collections.Generic.List[object]]::new()
 $errors = [System.Collections.Generic.List[string]]::new()
+$timeoutExceptionPattern = [regex]'(?:(?:When|Or)(?:<|&lt;)(?:(?:global::)?System\.)?TimeoutException(?:>|&gt;)|\bis\s+(?:(?:global::)?System\.)?TimeoutException\b|\bcatch\s*\(\s*(?:(?:global::)?System\.)?TimeoutException\b)'
+$timeoutExceptionAllowMarker = '<!-- doc-lint: allow-TimeoutException -->'
+
+$lintDocuments = @(
+    Get-Item -LiteralPath (Join-Path $repositoryRoot 'README.md')
+    $documents
+    Get-ChildItem -LiteralPath (Join-Path $repositoryRoot 'docs/src') -Recurse -File -Filter '*.tsx'
+)
+
+foreach ($lintDocument in $lintDocuments)
+{
+    $relativePath = [IO.Path]::GetRelativePath($repositoryRoot, $lintDocument.FullName).Replace('\', '/')
+    $lines = @(Get-Content -LiteralPath $lintDocument.FullName)
+    for ($lineIndex = 0; $lineIndex -lt $lines.Count; $lineIndex++)
+    {
+        $line = $lines[$lineIndex]
+        if ($timeoutExceptionPattern.IsMatch($line) -and -not $line.Contains($timeoutExceptionAllowMarker, [StringComparison]::Ordinal))
+        {
+            $location = "${relativePath}:$($lineIndex + 1)"
+            $errors.Add(
+                "Forbidden System.TimeoutException handling example at $location. " +
+                "Use TimeoutExceededException or add '$timeoutExceptionAllowMarker' when demonstrating the trap.")
+        }
+    }
+}
 
 foreach ($document in $documents)
 {

@@ -10,7 +10,8 @@
     "deploy": "docusaurus deploy",
     "clear": "docusaurus clear",
     "serve": "docusaurus serve",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@docusaurus/core": "^3.10.2",
@@ -25,6 +26,7 @@
     "@docusaurus/module-type-aliases": "^3.10.2",
     "@docusaurus/tsconfig": "^3.10.2",
     "@docusaurus/types": "^3.10.2",
+    "@playwright/test": "1.62.1",
     "typescript": "~7.0.2"
   },
   "browserslist": {
@@ -40,6 +42,6 @@
     ]
   },
   "engines": {
-    "node": ">=18.0"
+    "node": ">=20.0"
   }
 }
