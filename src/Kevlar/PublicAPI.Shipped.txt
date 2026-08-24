@@ -55,7 +55,7 @@ Kevlar.FallbackEvent<TResult>.Context.get -> Kevlar.KevlarContext!
 Kevlar.FallbackEvent<TResult>.FallbackEvent() -> void
 Kevlar.FallbackEvent<TResult>.Outcome.get -> Kevlar.Outcome<TResult>
 Kevlar.HedgeEvent
-Kevlar.HedgeEvent.AttemptNumber.get -> int
+Kevlar.HedgeEvent.Attempt.get -> int
 Kevlar.HedgeEvent.Context.get -> Kevlar.KevlarContext!
 Kevlar.HedgeEvent.HedgeEvent() -> void
 Kevlar.HedgingOptions
@@ -104,14 +104,14 @@ Kevlar.RateLimitOptions.RateLimitOptions() -> void
 Kevlar.RateLimitOptions.Window.get -> System.TimeSpan
 Kevlar.RateLimitOptions.Window.set -> void
 Kevlar.RetryEvent
-Kevlar.RetryEvent.RetryNumber.get -> int
+Kevlar.RetryEvent.Attempt.get -> int
 Kevlar.RetryEvent.Context.get -> Kevlar.KevlarContext!
 Kevlar.RetryEvent.Delay.get -> System.TimeSpan
 Kevlar.RetryEvent.Exception.get -> System.Exception?
 Kevlar.RetryEvent.Result.get -> object?
 Kevlar.RetryEvent.RetryEvent() -> void
 Kevlar.RetryEvent<TResult>
-Kevlar.RetryEvent<TResult>.RetryNumber.get -> int
+Kevlar.RetryEvent<TResult>.Attempt.get -> int
 Kevlar.RetryEvent<TResult>.Context.get -> Kevlar.KevlarContext!
 Kevlar.RetryEvent<TResult>.Delay.get -> System.TimeSpan
 Kevlar.RetryEvent<TResult>.Outcome.get -> Kevlar.Outcome<TResult>

@@ -421,3 +421,9 @@ Kevlar.ShieldBuilder.ConcurrencyLimit(int maxConcurrency, int queueLimit = 0) ->
 Kevlar.ShieldBuilder<TResult>.ConcurrencyLimit(int maxConcurrency, int queueLimit = 0) -> Kevlar.Shield<TResult>!
 static Kevlar.Shield.ConcurrencyLimit(int maxConcurrency, int queueLimit = 0) -> Kevlar.Shield!
 static Kevlar.ShieldExtensions.ConcurrencyLimit(this Kevlar.Shield! shield, int maxConcurrency, int queueLimit = 0) -> Kevlar.Shield!
+*REMOVED*Kevlar.HedgeEvent.Attempt.get -> int
+*REMOVED*Kevlar.RetryEvent.Attempt.get -> int
+*REMOVED*Kevlar.RetryEvent<TResult>.Attempt.get -> int
+Kevlar.HedgeEvent.AttemptNumber.get -> int
+Kevlar.RetryEvent.RetryNumber.get -> int
+Kevlar.RetryEvent<TResult>.RetryNumber.get -> int
