@@ -109,15 +109,15 @@ Kevlar.Shield<TResult>.Fallback(System.Func<System.Threading.CancellationToken, 
 Kevlar.Shield<TResult>.Fallback(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! fallback, System.Action<Kevlar.FallbackOptions<TResult>!>! configure) -> Kevlar.Shield<TResult>!
 Kevlar.Shield<TResult>.Fallback(TResult fallbackValue) -> Kevlar.Shield<TResult>!
 Kevlar.Shield<TResult>.Fallback(TResult fallbackValue, System.Action<Kevlar.FallbackOptions<TResult>!>! configure) -> Kevlar.Shield<TResult>!
-Kevlar.ShieldBuilder.Fallback(System.Func<System.Exception!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback, System.Action<Kevlar.FallbackOptions!>! configure) -> Kevlar.Shield!
+Kevlar.ShieldBuilder.Fallback(System.Func<System.Exception!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback, System.Action<Kevlar.FallbackOptions!>! configure) -> Kevlar.VoidShield!
 Kevlar.ShieldBuilder<TResult>.Fallback(System.Func<Kevlar.Outcome<TResult>, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! fallback) -> Kevlar.Shield<TResult>!
 Kevlar.ShieldBuilder<TResult>.Fallback(System.Func<Kevlar.Outcome<TResult>, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! fallback, System.Action<Kevlar.FallbackOptions<TResult>!>! configure) -> Kevlar.Shield<TResult>!
 Kevlar.ShieldBuilder<TResult>.Fallback(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! fallback) -> Kevlar.Shield<TResult>!
 Kevlar.ShieldBuilder<TResult>.Fallback(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! fallback, System.Action<Kevlar.FallbackOptions<TResult>!>! configure) -> Kevlar.Shield<TResult>!
 Kevlar.ShieldBuilder<TResult>.Fallback(TResult fallbackValue) -> Kevlar.Shield<TResult>!
 Kevlar.ShieldBuilder<TResult>.Fallback(TResult fallbackValue, System.Action<Kevlar.FallbackOptions<TResult>!>! configure) -> Kevlar.Shield<TResult>!
-static Kevlar.ShieldExtensions.Fallback(this Kevlar.Shield! shield, System.Func<System.Exception!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback, System.Action<Kevlar.FallbackOptions!>! configure) -> Kevlar.Shield!
-static Kevlar.ShieldExtensions.Fallback(this Kevlar.Shield! shield, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback, System.Action<Kevlar.FallbackOptions!>! configure) -> Kevlar.Shield!
+static Kevlar.ShieldExtensions.Fallback(this Kevlar.Shield! shield, System.Func<System.Exception!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback, System.Action<Kevlar.FallbackOptions!>! configure) -> Kevlar.VoidShield!
+static Kevlar.ShieldExtensions.Fallback(this Kevlar.Shield! shield, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback, System.Action<Kevlar.FallbackOptions!>! configure) -> Kevlar.VoidShield!
 Kevlar.HedgeActionGenerator
 Kevlar.HedgeActionGeneratorEvent
 Kevlar.HedgeActionGeneratorEvent.HedgeActionGeneratorEvent() -> void
@@ -244,10 +244,10 @@ Kevlar.HedgeOptions.OnHedge.set -> void
 Kevlar.ShieldBuilder.Hedge(System.Action<Kevlar.HedgeOptions!>! configure) -> Kevlar.Shield!
 static Kevlar.Shield.Hedge(System.Action<Kevlar.HedgeOptions!>! configure) -> Kevlar.Shield!
 static Kevlar.ShieldExtensions.Hedge(this Kevlar.Shield! shield, System.Action<Kevlar.HedgeOptions!>! configure) -> Kevlar.Shield!
-static Kevlar.Shield.Fallback(System.Func<System.Exception!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback) -> Kevlar.Shield!
-static Kevlar.Shield.Fallback(System.Func<System.Exception!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback, System.Action<Kevlar.FallbackOptions!>! configure) -> Kevlar.Shield!
-static Kevlar.Shield.Fallback(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback) -> Kevlar.Shield!
-static Kevlar.Shield.Fallback(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback, System.Action<Kevlar.FallbackOptions!>! configure) -> Kevlar.Shield!
+static Kevlar.Shield.Fallback(System.Func<System.Exception!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback) -> Kevlar.VoidShield!
+static Kevlar.Shield.Fallback(System.Func<System.Exception!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback, System.Action<Kevlar.FallbackOptions!>! configure) -> Kevlar.VoidShield!
+static Kevlar.Shield.Fallback(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback) -> Kevlar.VoidShield!
+static Kevlar.Shield.Fallback(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback, System.Action<Kevlar.FallbackOptions!>! configure) -> Kevlar.VoidShield!
 static Kevlar.Shield<TResult>.Compose(params Kevlar.Shield<TResult>![]! shields) -> Kevlar.Shield<TResult>!
 *REMOVED*Kevlar.Shield<TResult>.RetryForever(Kevlar.Backoff? backoff = null) -> Kevlar.Shield<TResult>!
 *REMOVED*Kevlar.ShieldBuilder.RetryForever(Kevlar.Backoff? backoff = null) -> Kevlar.Shield!
@@ -264,3 +264,92 @@ static Kevlar.Shield.RetryForever() -> Kevlar.Shield!
 static Kevlar.Shield.RetryForever(Kevlar.Backoff! backoff) -> Kevlar.Shield!
 static Kevlar.ShieldExtensions.RetryForever(this Kevlar.Shield! shield) -> Kevlar.Shield!
 static Kevlar.ShieldExtensions.RetryForever(this Kevlar.Shield! shield, Kevlar.Backoff! backoff) -> Kevlar.Shield!
+Kevlar.ShieldResultExtensions
+static Kevlar.ShieldResultExtensions.OrResultIsNull<TResult>(this Kevlar.ShieldBuilder<TResult>! builder) -> Kevlar.ShieldBuilder<TResult>!
+static Kevlar.ShieldResultExtensions.WhenResultIsNull<TResult>(this Kevlar.Shield<TResult>! shield) -> Kevlar.ShieldBuilder<TResult>!
+*REMOVED*Kevlar.ShieldBuilder.Fallback(System.Func<System.Exception!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback) -> Kevlar.Shield!
+*REMOVED*static Kevlar.ShieldExtensions.Fallback(this Kevlar.Shield! shield, System.Func<System.Exception!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback) -> Kevlar.Shield!
+*REMOVED*static Kevlar.ShieldExtensions.Fallback(this Kevlar.Shield! shield, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback) -> Kevlar.Shield!
+Kevlar.PartitionedVoidShield<TKey>
+Kevlar.PartitionedVoidShield<TKey>.CapacityEvictionCount.get -> long
+Kevlar.PartitionedVoidShield<TKey>.Clear() -> void
+Kevlar.PartitionedVoidShield<TKey>.Count.get -> int
+Kevlar.PartitionedVoidShield<TKey>.CreatedCount.get -> long
+Kevlar.PartitionedVoidShield<TKey>.ExpirationEvictionCount.get -> long
+Kevlar.PartitionedVoidShield<TKey>.GetShield(TKey key) -> Kevlar.VoidShield!
+Kevlar.PartitionedVoidShield<TKey>.PartitionedVoidShield(System.Func<TKey, Kevlar.VoidShield!>! factory, Kevlar.PartitionedShieldOptions? options = null, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> void
+Kevlar.PartitionedVoidShield<TKey>.PruneExpired() -> int
+Kevlar.PartitionedVoidShield<TKey>.Remove(TKey key) -> bool
+Kevlar.PartitionedVoidShield<TKey>.TryGetShield(TKey key, out Kevlar.VoidShield? shield) -> bool
+Kevlar.ShieldBuilder.Fallback(System.Func<System.Exception!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback) -> Kevlar.VoidShield!
+Kevlar.VoidShield
+Kevlar.VoidShield.CircuitBreaker(int consecutiveFailures, System.TimeSpan breakDuration) -> Kevlar.VoidShield!
+Kevlar.VoidShield.CircuitBreaker(System.Action<Kevlar.CircuitBreakerOptions!>! configure) -> Kevlar.VoidShield!
+Kevlar.VoidShield.ConcurrencyLimit(int maxConcurrency, int maxQueue = 0) -> Kevlar.VoidShield!
+Kevlar.VoidShield.ConcurrencyLimit(System.Action<Kevlar.ConcurrencyLimitOptions!>! configure) -> Kevlar.VoidShield!
+Kevlar.VoidShield.Execute(System.Action<System.Threading.CancellationToken>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> void
+Kevlar.VoidShield.Execute<TState>(TState state, System.Action<TState, System.Threading.CancellationToken>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> void
+Kevlar.VoidShield.ExecuteAsync(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Kevlar.VoidShield.ExecuteAsync<TState>(TState state, System.Func<TState, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Kevlar.VoidShield.ExecuteWithContext(System.Action<Kevlar.KevlarContext!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> void
+Kevlar.VoidShield.ExecuteWithContext<TState>(TState state, System.Action<TState, Kevlar.KevlarProperties!>! initializeProperties, System.Action<TState, Kevlar.KevlarContext!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> void
+Kevlar.VoidShield.ExecuteWithContextAsync(System.Func<Kevlar.KevlarContext!, System.Threading.Tasks.ValueTask>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Kevlar.VoidShield.ExecuteWithContextAsync<TState>(TState state, System.Action<TState, Kevlar.KevlarProperties!>! initializeProperties, System.Func<TState, Kevlar.KevlarContext!, System.Threading.Tasks.ValueTask>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Kevlar.VoidShield.Fallback(System.Func<System.Exception!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback, System.Action<Kevlar.FallbackOptions!>! configure) -> Kevlar.VoidShield!
+Kevlar.VoidShield.Fallback(System.Func<System.Exception!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback) -> Kevlar.VoidShield!
+Kevlar.VoidShield.Fallback(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback, System.Action<Kevlar.FallbackOptions!>! configure) -> Kevlar.VoidShield!
+Kevlar.VoidShield.Fallback(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback) -> Kevlar.VoidShield!
+Kevlar.VoidShield.Hedge(int maxAttempts, System.TimeSpan delay) -> Kevlar.VoidShield!
+Kevlar.VoidShield.Hedge(System.Action<Kevlar.HedgeOptions!>! configure) -> Kevlar.VoidShield!
+Kevlar.VoidShield.InvokesContinuationAtMostOnce.get -> bool
+Kevlar.VoidShield.Name.get -> string?
+Kevlar.VoidShield.RateLimit(int permits, System.TimeSpan perWindow) -> Kevlar.VoidShield!
+Kevlar.VoidShield.RateLimit(System.Action<Kevlar.RateLimitOptions!>! configure) -> Kevlar.VoidShield!
+Kevlar.VoidShield.Retry() -> Kevlar.VoidShield!
+Kevlar.VoidShield.Retry(int maxRetries, Kevlar.Backoff! backoff) -> Kevlar.VoidShield!
+Kevlar.VoidShield.Retry(int maxRetries) -> Kevlar.VoidShield!
+Kevlar.VoidShield.Retry(System.Action<Kevlar.RetryOptions!>! configure) -> Kevlar.VoidShield!
+Kevlar.VoidShield.RetryForever() -> Kevlar.VoidShield!
+Kevlar.VoidShield.RetryForever(Kevlar.Backoff! backoff) -> Kevlar.VoidShield!
+Kevlar.VoidShield.Timeout(System.Action<Kevlar.TimeoutOptions!>! configure) -> Kevlar.VoidShield!
+Kevlar.VoidShield.Timeout(System.TimeSpan timeout) -> Kevlar.VoidShield!
+Kevlar.VoidShield.Use(Kevlar.Strategy! strategy) -> Kevlar.VoidShield!
+Kevlar.VoidShield.Use(System.Func<Kevlar.HandlingClause, Kevlar.Strategy!>! factory) -> Kevlar.VoidShield!
+Kevlar.VoidShield.When(System.Func<System.Exception!, bool>! predicate) -> Kevlar.VoidShieldBuilder!
+Kevlar.VoidShield.When<TException>() -> Kevlar.VoidShieldBuilder!
+Kevlar.VoidShield.When<TException>(System.Func<TException!, bool>! predicate) -> Kevlar.VoidShieldBuilder!
+Kevlar.VoidShield.WhenAnyError() -> Kevlar.VoidShield!
+Kevlar.VoidShield.WithName(string! name) -> Kevlar.VoidShield!
+Kevlar.VoidShield.WithTimeProvider(System.TimeProvider! timeProvider) -> Kevlar.VoidShield!
+Kevlar.VoidShield.Wrap(Kevlar.Shield! inner) -> Kevlar.VoidShield!
+Kevlar.VoidShield.Wrap(Kevlar.VoidShield! inner) -> Kevlar.VoidShield!
+Kevlar.VoidShieldBuilder
+Kevlar.VoidShieldBuilder.CircuitBreaker(int consecutiveFailures, System.TimeSpan breakDuration) -> Kevlar.VoidShield!
+Kevlar.VoidShieldBuilder.CircuitBreaker(System.Action<Kevlar.CircuitBreakerOptions!>! configure) -> Kevlar.VoidShield!
+Kevlar.VoidShieldBuilder.ConcurrencyLimit(int maxConcurrency, int maxQueue = 0) -> Kevlar.VoidShield!
+Kevlar.VoidShieldBuilder.ConcurrencyLimit(System.Action<Kevlar.ConcurrencyLimitOptions!>! configure) -> Kevlar.VoidShield!
+Kevlar.VoidShieldBuilder.Fallback(System.Func<System.Exception!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback, System.Action<Kevlar.FallbackOptions!>! configure) -> Kevlar.VoidShield!
+Kevlar.VoidShieldBuilder.Fallback(System.Func<System.Exception!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback) -> Kevlar.VoidShield!
+Kevlar.VoidShieldBuilder.Hedge(int maxAttempts, System.TimeSpan delay) -> Kevlar.VoidShield!
+Kevlar.VoidShieldBuilder.Hedge(System.Action<Kevlar.HedgeOptions!>! configure) -> Kevlar.VoidShield!
+Kevlar.VoidShieldBuilder.Or(System.Func<System.Exception!, bool>! predicate) -> Kevlar.VoidShieldBuilder!
+Kevlar.VoidShieldBuilder.Or<TException>() -> Kevlar.VoidShieldBuilder!
+Kevlar.VoidShieldBuilder.Or<TException>(System.Func<TException!, bool>! predicate) -> Kevlar.VoidShieldBuilder!
+Kevlar.VoidShieldBuilder.RateLimit(int permits, System.TimeSpan perWindow) -> Kevlar.VoidShield!
+Kevlar.VoidShieldBuilder.RateLimit(System.Action<Kevlar.RateLimitOptions!>! configure) -> Kevlar.VoidShield!
+Kevlar.VoidShieldBuilder.Retry() -> Kevlar.VoidShield!
+Kevlar.VoidShieldBuilder.Retry(int maxRetries, Kevlar.Backoff! backoff) -> Kevlar.VoidShield!
+Kevlar.VoidShieldBuilder.Retry(int maxRetries) -> Kevlar.VoidShield!
+Kevlar.VoidShieldBuilder.Retry(System.Action<Kevlar.RetryOptions!>! configure) -> Kevlar.VoidShield!
+Kevlar.VoidShieldBuilder.RetryForever() -> Kevlar.VoidShield!
+Kevlar.VoidShieldBuilder.RetryForever(Kevlar.Backoff! backoff) -> Kevlar.VoidShield!
+Kevlar.VoidShieldBuilder.Timeout(System.TimeSpan timeout) -> Kevlar.VoidShield!
+Kevlar.VoidShieldBuilder.Use(System.Func<Kevlar.HandlingClause, Kevlar.Strategy!>! factory) -> Kevlar.VoidShield!
+override Kevlar.VoidShield.ToString() -> string!
+static Kevlar.ShieldExtensions.Fallback(this Kevlar.Shield! shield, System.Func<System.Exception!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback) -> Kevlar.VoidShield!
+static Kevlar.ShieldExtensions.Fallback(this Kevlar.Shield! shield, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback) -> Kevlar.VoidShield!
+static Kevlar.ShieldExtensions.Wrap(this Kevlar.Shield! outer, Kevlar.VoidShield! inner) -> Kevlar.VoidShield!
+static Kevlar.ShieldTaskExtensions.ExecuteAsync(this Kevlar.VoidShield! shield, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+static Kevlar.ShieldTaskExtensions.ExecuteAsync<TState>(this Kevlar.VoidShield! shield, TState state, System.Func<TState, System.Threading.CancellationToken, System.Threading.Tasks.Task!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+static Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(this Kevlar.VoidShield! shield, System.Func<Kevlar.KevlarContext!, System.Threading.Tasks.Task!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+static Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync<TState>(this Kevlar.VoidShield! shield, TState state, System.Action<TState, Kevlar.KevlarProperties!>! initializeProperties, System.Func<TState, Kevlar.KevlarContext!, System.Threading.Tasks.Task!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask

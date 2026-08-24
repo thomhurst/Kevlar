@@ -39,6 +39,29 @@ public static class KevlarServiceCollectionExtensions
         return services;
     }
 
+    /// <summary>Registers a named void-only shield.</summary>
+    public static IServiceCollection AddShield(this IServiceCollection services, string name, VoidShield shield)
+    {
+        if (shield is null) { throw new ArgumentNullException(nameof(shield)); }
+        return services.AddVoidShield(name, _ => shield);
+    }
+
+    /// <summary>Registers a named void-only shield built from the service provider.</summary>
+    public static IServiceCollection AddVoidShield(
+        this IServiceCollection services,
+        string name,
+        Func<IServiceProvider, VoidShield> factory)
+    {
+        if (services is null) { throw new ArgumentNullException(nameof(services)); }
+        if (name is null) { throw new ArgumentNullException(nameof(name)); }
+        if (factory is null) { throw new ArgumentNullException(nameof(factory)); }
+
+        services.AddKevlar();
+        services.AddSingleton(new ShieldRegistration(name, typeof(VoidShield), factory));
+        services.AddKeyedSingleton(name, (sp, _) => sp.GetRequiredService<IKevlarRegistry>().GetVoidShield(name));
+        return services;
+    }
+
     /// <summary>
     /// Registers a named shield bound from <paramref name="configuration"/> (see
     /// <see cref="ShieldDefinition"/> for the schema), so its retry counts, timeouts and breaker
@@ -134,6 +157,29 @@ public static class KevlarServiceCollectionExtensions
         configure?.Invoke(options);
         services.AddKeyedSingleton<PartitionedShield<TKey>>(name, (serviceProvider, _) =>
             new PartitionedShield<TKey>(
+                key => factory(serviceProvider, key),
+                options,
+                comparer));
+        return services;
+    }
+
+    /// <summary>Registers a named, bounded void-only partition provider as a keyed singleton.</summary>
+    public static IServiceCollection AddPartitionedVoidShield<TKey>(
+        this IServiceCollection services,
+        string name,
+        Func<IServiceProvider, TKey, VoidShield> factory,
+        Action<PartitionedShieldOptions>? configure = null,
+        IEqualityComparer<TKey>? comparer = null)
+        where TKey : notnull
+    {
+        if (services is null) { throw new ArgumentNullException(nameof(services)); }
+        if (name is null) { throw new ArgumentNullException(nameof(name)); }
+        if (factory is null) { throw new ArgumentNullException(nameof(factory)); }
+
+        var options = new PartitionedShieldOptions();
+        configure?.Invoke(options);
+        services.AddKeyedSingleton<PartitionedVoidShield<TKey>>(name, (serviceProvider, _) =>
+            new PartitionedVoidShield<TKey>(
                 key => factory(serviceProvider, key),
                 options,
                 comparer));

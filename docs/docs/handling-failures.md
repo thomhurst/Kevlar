@@ -69,13 +69,25 @@ Now a 503 response triggers a retry exactly as a thrown `HttpRequestException` w
 Typed builders add result alternatives with `OrResult(predicate)` / `OrResult(value)`, and two shorthands for the most common check of all:
 
 ```csharp
-Shield.For<User?>().WhenResultIsDefault().Retry(2);   // retry when the result is null / default
-// mid-chain: .OrResultIsDefault() adds the same check to an existing clause
+Shield.For<User?>().WhenResultIsNull().Retry(2);      // retry when the result is null
+// mid-chain: .OrResultIsNull() adds the same check to an existing clause
 ```
 
-`WhenResultIsDefault` / `OrResultIsDefault` mean "the result equals `default(T)`". They are named after
-the `WhenResult` / `OrResult` family precisely so they cannot be confused with `WhenAnyError()`,
-which resets *handling* to Kevlar's default.
+`WhenResultIsNull` / `OrResultIsNull` are constrained to reference types, which is the point: they
+say what they match and cannot be written where they would surprise you.
+
+For a value type or for generic code, `WhenResultIsDefault` / `OrResultIsDefault` match
+`default(T)` instead — and there the check needs a second thought, because `0`, `false`, and an
+empty struct are usually legitimate results rather than failures. The optional analyzer raises that
+question as the informational hint [`KEV010`](analyzers.md#kev010-default-result-clause-on-a-value-type):
+
+```csharp
+Shield.For<int>().WhenResultIsDefault().Retry(2);     // KEV010: is 0 really the failure?
+Shield.For<int>().WhenResult(-1).Retry(2);            // clean: the failing value, spelled out
+```
+
+All four are named after the `WhenResult` / `OrResult` family precisely so they cannot be confused
+with `WhenAnyError()`, which resets *handling* to Kevlar's default.
 
 ## Clauses are ambient
 

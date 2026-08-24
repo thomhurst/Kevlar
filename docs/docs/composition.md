@@ -48,6 +48,11 @@ var writes   = Shield.Timeout(TimeSpan.FromSeconds(5)).Wrap(breaker);
 var combined = Shield.Compose(timeoutShield, retryShield, breakerShield);  // first = outermost
 ```
 
+The two are the same operation, so there is no semantic difference to hunt for: `outer.Wrap(inner)`
+and `Shield.Compose(outer, inner)` produce the same strategy order, keep the same first non-null
+name and `TimeProvider`, and seal the ambient clause identically. Write `Wrap` when one shield
+reads as the scope around another, and `Compose` when several stack as peers.
+
 Result-aware shields compose the same way through `Shield<T>.Compose`, with the same metadata and
 clause-sealing rules:
 

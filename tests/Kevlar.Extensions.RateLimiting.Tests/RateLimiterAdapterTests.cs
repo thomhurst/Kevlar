@@ -527,6 +527,26 @@ public class RateLimiterAdapterTests
     }
 
     [Test]
+    public async Task VoidShield_Adapter_Overloads_Preserve_VoidOnly_State()
+    {
+        using var limiter = new StubLimiter(static _ =>
+            new ValueTask<RateLimitLease>(new TrackingLease(true)));
+        using var partitionedLimiter = new StubPartitionedLimiter(static (_, _) =>
+            new ValueTask<RateLimitLease>(new TrackingLease(true)));
+        RateLimitLeaseAcquirer acquire = static (_, _) =>
+            new ValueTask<RateLimitLease>(new TrackingLease(true));
+        var fallback = Shield.Fallback(static _ => ValueTask.CompletedTask);
+
+        VoidShield framework = fallback.RateLimit(limiter);
+        VoidShield partitioned = fallback.RateLimit(partitionedLimiter);
+        VoidShield delegated = fallback.RateLimit(acquire);
+
+        await framework.ExecuteAsync(static _ => ValueTask.CompletedTask);
+        await partitioned.ExecuteAsync(static _ => ValueTask.CompletedTask);
+        await delegated.ExecuteAsync(static _ => ValueTask.CompletedTask);
+    }
+
+    [Test]
     public async Task Null_Public_Arguments_Are_Rejected()
     {
         using var limiter = new StubLimiter(static _ =>
@@ -536,17 +556,23 @@ public class RateLimiterAdapterTests
         using var partitionedLimiter = new StubPartitionedLimiter(static (_, _) =>
             new ValueTask<RateLimitLease>(new TrackingLease(true)));
 
-        await Assert.That(() => ShieldRateLimiterExtensions.RateLimit(null!, limiter))
+        await Assert.That(() => ShieldRateLimiterExtensions.RateLimit((Shield)null!, limiter))
             .Throws<ArgumentNullException>();
-        await Assert.That(() => ShieldRateLimiterExtensions.RateLimit(null!, acquire))
+        await Assert.That(() => ShieldRateLimiterExtensions.RateLimit((Shield)null!, acquire))
             .Throws<ArgumentNullException>();
         await Assert.That(() => ShieldRateLimiterExtensions.RateLimit<int>(null!, limiter))
             .Throws<ArgumentNullException>();
         await Assert.That(() => ShieldRateLimiterExtensions.RateLimit<int>(null!, acquire))
             .Throws<ArgumentNullException>();
-        await Assert.That(() => ShieldRateLimiterExtensions.RateLimit(null!, partitionedLimiter))
+        await Assert.That(() => ShieldRateLimiterExtensions.RateLimit((Shield)null!, partitionedLimiter))
             .Throws<ArgumentNullException>();
         await Assert.That(() => ShieldRateLimiterExtensions.RateLimit<int>(null!, partitionedLimiter))
+            .Throws<ArgumentNullException>();
+        await Assert.That(() => ShieldRateLimiterExtensions.RateLimit((VoidShield)null!, limiter))
+            .Throws<ArgumentNullException>();
+        await Assert.That(() => ShieldRateLimiterExtensions.RateLimit((VoidShield)null!, acquire))
+            .Throws<ArgumentNullException>();
+        await Assert.That(() => ShieldRateLimiterExtensions.RateLimit((VoidShield)null!, partitionedLimiter))
             .Throws<ArgumentNullException>();
         await Assert.That(() => Shield.Empty.RateLimit((RateLimiter)null!))
             .Throws<ArgumentNullException>();

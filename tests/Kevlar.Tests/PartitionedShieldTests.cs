@@ -143,6 +143,26 @@ public class PartitionedShieldTests
     }
 
     [Test]
+    public async Task Void_Partitions_Preserve_The_Void_Only_Type_And_State()
+    {
+        var fallbackCalls = 0;
+        var provider = new PartitionedVoidShield<string>(_ =>
+            Shield.When<InvalidOperationException>().Fallback((_, _) =>
+            {
+                fallbackCalls++;
+                return ValueTask.CompletedTask;
+            }));
+
+        await provider.GetShield("void").ExecuteAsync(static _ =>
+            ValueTask.FromException(new InvalidOperationException()));
+
+        await Assert.That(fallbackCalls).IsEqualTo(1);
+        await Assert.That(provider.TryGetShield("void", out var retained)).IsTrue();
+        await Assert.That(ReferenceEquals(retained, provider.GetShield("void"))).IsTrue();
+        await Assert.That(provider.CreatedCount).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Evicting_An_Active_Partition_Does_Not_Cancel_Its_Execution()
     {
         var provider = new PartitionedShield<string>(

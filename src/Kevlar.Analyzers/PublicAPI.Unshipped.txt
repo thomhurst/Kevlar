@@ -1,6 +1,7 @@
 Kevlar.Analyzers.PipelineHazardAnalyzer
 Kevlar.Analyzers.PipelineHazardAnalyzer.PipelineHazardAnalyzer() -> void
 static readonly Kevlar.Analyzers.PipelineHazardAnalyzer.DeadHandlingClauseRule -> Microsoft.CodeAnalysis.DiagnosticDescriptor!
+static readonly Kevlar.Analyzers.PipelineHazardAnalyzer.DefaultResultClauseOnValueTypeRule -> Microsoft.CodeAnalysis.DiagnosticDescriptor!
 static readonly Kevlar.Analyzers.PipelineHazardAnalyzer.DiscardedChainResultRule -> Microsoft.CodeAnalysis.DiagnosticDescriptor!
 static readonly Kevlar.Analyzers.PipelineHazardAnalyzer.EphemeralStatefulShieldRule -> Microsoft.CodeAnalysis.DiagnosticDescriptor!
 static readonly Kevlar.Analyzers.PipelineHazardAnalyzer.InheritedHandlingClauseRule -> Microsoft.CodeAnalysis.DiagnosticDescriptor!
@@ -9,4 +10,3 @@ override Kevlar.Analyzers.PipelineHazardAnalyzer.SupportedDiagnostics.get -> Sys
 static readonly Kevlar.Analyzers.PipelineHazardAnalyzer.SynchronousHedgingRule -> Microsoft.CodeAnalysis.DiagnosticDescriptor!
 static readonly Kevlar.Analyzers.PipelineHazardAnalyzer.UnreachableReactiveStrategyRule -> Microsoft.CodeAnalysis.DiagnosticDescriptor!
 static readonly Kevlar.Analyzers.PipelineHazardAnalyzer.UntypedHedgingRule -> Microsoft.CodeAnalysis.DiagnosticDescriptor!
-static readonly Kevlar.Analyzers.PipelineHazardAnalyzer.VoidFallbackResultExecutionRule -> Microsoft.CodeAnalysis.DiagnosticDescriptor!

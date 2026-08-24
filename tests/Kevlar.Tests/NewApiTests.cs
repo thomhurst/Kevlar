@@ -122,6 +122,38 @@ public class NewApiTests
     }
 
     [Test]
+    public async Task WhenResultIsNull_Retries_Null_Results()
+    {
+        var attempts = 0;
+        var shield = Shield.For<string?>().WhenResultIsNull().Retry(2, Backoff.None);
+
+        var result = await shield.ExecuteAsync(_ => new ValueTask<string?>(attempts++ < 2 ? null : "loaded"));
+
+        await Assert.That(result).IsEqualTo("loaded");
+        await Assert.That(attempts).IsEqualTo(3);
+    }
+
+    [Test]
+    public async Task OrResultIsNull_Extends_An_Exception_Clause()
+    {
+        var attempts = 0;
+        var shield = Shield.For<string?>()
+            .When<InvalidOperationException>()
+            .OrResultIsNull()
+            .Retry(2, Backoff.None);
+
+        var result = await shield.ExecuteAsync(_ => attempts++ switch
+        {
+            0 => throw new InvalidOperationException(),
+            1 => new ValueTask<string?>((string?)null),
+            _ => new ValueTask<string?>("loaded"),
+        });
+
+        await Assert.That(result).IsEqualTo("loaded");
+        await Assert.That(attempts).IsEqualTo(3);
+    }
+
+    [Test]
     public async Task WhenResultIsDefault_Matches_Default_Value_Types()
     {
         var attempts = 0;

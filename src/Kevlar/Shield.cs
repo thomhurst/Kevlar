@@ -132,7 +132,7 @@ public sealed class Shield
     /// A fallback is legitimately the outermost strategy: it recovers what everything chained
     /// inside it could not.
     /// </remarks>
-    public static Shield Fallback(Func<Exception, CancellationToken, ValueTask> fallback) =>
+    public static VoidShield Fallback(Func<Exception, CancellationToken, ValueTask> fallback) =>
         ShieldExtensions.Fallback(Empty, fallback);
 
     /// <summary>
@@ -140,18 +140,17 @@ public sealed class Shield
     /// failures and configures notifications. Applies to void executions only.
     /// </summary>
     /// <remarks>Runs <see cref="FallbackOptions.OnFallback"/>, then <see cref="FallbackOptions.OnFallbackAsync"/>, before recovery. A notification failure skips recovery.</remarks>
-    public static Shield Fallback(
+    public static VoidShield Fallback(
         Func<Exception, CancellationToken, ValueTask> fallback,
         Action<FallbackOptions> configure) =>
         ShieldExtensions.Fallback(Empty, fallback, configure);
 
     /// <summary>
     /// Starts a pipeline with a fallback that runs <paramref name="fallback"/> in place of handled
-    /// failures. Applies to void executions only; result-returning executions fail with a
-    /// descriptive <see cref="InvalidOperationException"/> — use <c>Shield.For&lt;T&gt;().Fallback(…)</c>
-    /// for those.
+    /// failures. Returns a <see cref="VoidShield"/>, which exposes only void execution overloads.
+    /// Use <c>Shield.For&lt;T&gt;().Fallback(…)</c> for result-producing recovery.
     /// </summary>
-    public static Shield Fallback(Func<CancellationToken, ValueTask> fallback) =>
+    public static VoidShield Fallback(Func<CancellationToken, ValueTask> fallback) =>
         ShieldExtensions.Fallback(Empty, fallback);
 
     /// <summary>
@@ -159,7 +158,7 @@ public sealed class Shield
     /// failures and configures notifications. Applies to void executions only.
     /// </summary>
     /// <remarks>Runs <see cref="FallbackOptions.OnFallback"/>, then <see cref="FallbackOptions.OnFallbackAsync"/>, before recovery. A notification failure skips recovery.</remarks>
-    public static Shield Fallback(
+    public static VoidShield Fallback(
         Func<CancellationToken, ValueTask> fallback,
         Action<FallbackOptions> configure) =>
         ShieldExtensions.Fallback(Empty, fallback, configure);

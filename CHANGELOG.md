@@ -4,6 +4,12 @@
 
 ### Breaking changes
 
+- Untyped `Fallback(...)` now changes the fluent chain's static type from `Shield` to `VoidShield`.
+  `VoidShield` exposes only void execution overloads, and every later fluent method preserves that
+  type. Result-returning execution, `For<TResult>()`, typed wrapping, and mixed static composition
+  therefore fail at compile time instead of reaching a void fallback that cannot produce a value.
+  `ShieldBuilder.Fallback(...)` similarly returns `VoidShield`; its later `When...` clauses use
+  `VoidShieldBuilder`. Use `Shield.For<TResult>().Fallback(...)` for result-producing recovery.
 - Configure fallback notifications through `Fallback(..., configure)`. The pre-release `FallbackWithNotifications` methods and typed `onFallback` parameters were removed, including the migration-only error overloads that briefly replaced them. Every fallback shape now has exactly two overloads — bare and `Action<FallbackOptions>`/`Action<FallbackOptions<TResult>>` — on `Shield`, `Shield<TResult>`, `ShieldBuilder` and `ShieldBuilder<TResult>`.
 
 Handling clauses now use one spelling per position. `When…` starts a clause on `Shield` or
@@ -34,10 +40,15 @@ build spelled these `WhenResultDefault`/`OrResultDefault`; the `Is` makes the re
   so the strategy method and its options type share a stem, like `Retry`/`RetryOptions` and
   `Timeout`/`TimeoutOptions`. `Kevlar.Extensions.Http`'s `StandardHedgingShieldOptions` and
   `AddStandardHedgingShield` are unchanged.
-
 ### Changed
 
 - **Breaking:** `Shield.Wrap(...)` and `Shield.Compose(...)` now seal ambient handling clauses. Reactive strategies appended after composition use default handling unless a new clause is declared. Existing strategies inside composed shields keep their original handling.
+- `Backoff.Custom` documents the clamping the retry path already applied to its delegate's result: a
+  negative delay becomes zero, a delay above the runtime timer limit becomes that limit, and the
+  retry's own `MaxDelay` caps what is left.
+- The composition guide states that `outer.Wrap(inner)` and `Shield.Compose(outer, inner)` are the
+  same operation — same strategy order, same first non-null name and `TimeProvider`, same sealed
+  clause — so there is no semantic difference to hunt for.
 - Setting both `CircuitBreakerOptions.ConsecutiveFailures` and `FailureRatio` still throws, but the
   message now names both properties and states the fix. `ConsecutiveFailures` range errors report
   that property as the parameter name instead of `options`.
@@ -58,6 +69,19 @@ build spelled these `WhenResultDefault`/`OrResultDefault`; the `Is` makes the re
 
 ### Added
 
+- `VoidShield` and `PartitionedVoidShield<TKey>`, plus void-aware dependency-injection registry,
+  rate-limiter adapter, inspection, and state-snapshot overloads. `outer.Wrap(voidShield)` and
+  `voidShield.Wrap(inner)` preserve the void-only type. The former `KEV005` analyzer is removed
+  because invalid result execution is now rejected by the C# compiler.
+- `WhenResultIsNull()` / `OrResultIsNull()` on `ShieldResultExtensions`: the null-result clause
+  `WhenResultIsDefault`/`OrResultIsDefault` was really written for, constrained to reference types
+  (`where TResult : class?`) so it cannot be written where `default` is an ordinary value. They
+  render as `[when null result]`. `WhenResultIsDefault`/`OrResultIsDefault` stay, for value types
+  and generic code.
+- `KEV010`: an informational hint on `WhenResultIsDefault`/`OrResultIsDefault` written for a
+  non-nullable value type, where `default(T)` — `0`, `false`, an empty struct — is as often a
+  legitimate result as a failure. `Nullable<T>` results and generic code are not flagged, and like
+  `KEV009` the hint never fails a build.
 - `KEV009`: an informational hint marking each reactive strategy that inherits a handling clause
   declared earlier in its chain, so the clause's span is visible in the editor. It is `Info`
   severity — the inheritance is by design, and the hint never fails a build. Proactive strategies
