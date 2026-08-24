@@ -97,8 +97,8 @@ foreach ($duplicate in $duplicatePositions)
 
 $partitionLinkPattern = [regex]'\[[^\]]*(?:AddPartitionedShield|PartitionedVoidShield|PartitionedShield)[^\]]*\]\((?:\.\./)*partitioning\.md(?:#[^)]+)?\)'
 $partitionMentionPattern = [regex]'\b(?:AddPartitionedShield|PartitionedVoidShield|PartitionedShield)\b'
-$analyzerLinkPattern = [regex]'\[[^\]]*KEV00\d[^\]]*\]\((?:\.\./)*analyzers\.md(?:#[^)]+)?\)'
-$analyzerMentionPattern = [regex]'\bKEV00\d\b'
+$analyzerLinkPattern = [regex]'\[[^\]]*KEV\d{3}[^\]]*\]\((?:\.\./)*analyzers\.md(?:#[^)]+)?\)'
+$analyzerMentionPattern = [regex]'\bKEV\d{3}\b'
 $processorMentionPattern = [regex]'\bi[3579]-\d'
 
 foreach ($document in $visibleDocuments | Where-Object Path -ne 'partitioning.md')

@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.Metrics;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Kevlar.Chaos;
 
@@ -248,8 +247,17 @@ public class DocsConsistencyTests
         "docs",
         "observability.md");
 
-    private static string RepositoryRoot([CallerFilePath] string sourcePath = "") =>
-        Path.GetFullPath(Path.Combine(Path.GetDirectoryName(sourcePath)!, "..", ".."));
+    private static string RepositoryRoot()
+    {
+        var directory = new DirectoryInfo(Directory.GetCurrentDirectory());
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "Kevlar.slnx")))
+        {
+            directory = directory.Parent;
+        }
+
+        return directory?.FullName
+            ?? throw new InvalidOperationException("Could not locate the Kevlar repository root.");
+    }
 
     private sealed record InstrumentRow(
         string Type,
