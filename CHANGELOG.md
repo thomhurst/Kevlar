@@ -30,9 +30,9 @@ All notable changes to this project are documented here. The format follows
   result-aware pipelines.
 - Context-only synchronous and asynchronous execution overloads expose `KevlarContext` without
   requiring seeded state.
-- Analyzer rules KEV001–KEV004 and KEV006–KEV010 cover ignored cancellation, ineffective handling,
-  unsafe timeout matching, invalid ordering, untyped hedging, discarded builders and fluent calls,
-  inherited handling, and suspicious default-value matching.
+- Analyzer rules KEV001–KEV004 and KEV006–KEV011 cover ignored cancellation, ineffective handling,
+  invalid ordering, untyped hedging, discarded builders and fluent calls, inherited handling,
+  implicit default handling, and suspicious default-value matching.
 
 ### Changed
 
@@ -44,14 +44,25 @@ All notable changes to this project are documented here. The format follows
 - Handling clauses use `When...` to start and `Or...` to continue. `Shield.For<TResult>()` returns a
   `Shield<TResult>` directly.
 - Typed and untyped retry, circuit-breaker, hedge, and fallback options are sealed sibling types
-  with matching shared properties instead of inheritance.
+  with matching shared properties instead of inheritance. Shared configurator helpers need a
+  separate typed counterpart such as `Action<RetryOptions<TResult>>`.
 - `Shield.Wrap(...)` and `Shield.Compose(...)` seal ambient handling. Strategies appended after
   composition use default handling until another clause is declared.
 - `RetryForever` has explicit parameterless and `Backoff` overloads; explicit `null` is rejected.
 - Clause builders are immutable. Each `Or...` call returns a new builder and leaves the source
   builder unchanged.
 - Debug builds reject access to a pooled `KevlarContext` after it has been returned.
-- Backoff factories validate timer limits, and custom backoff results are clamped to safe bounds.
+- `Backoff.Constant` and explicit `maxDelay` values validate timer limits. Linear and exponential
+  base delays are accepted beyond that limit, then computed delays clamp to their configured cap or
+  the default one-day cap; custom delays clamp to the runtime timer limit.
+- Custom strategies can declare `InvokesContinuationAtMostOnce`; the aggregate is exposed on
+  `Shield`, `Shield<TResult>`, and `VoidShield`.
+- Every NuGet package embeds the canonical icon, links release notes, and carries a package README
+  with status badges. `Kevlar.Analyzers` is a development dependency.
+- Queue capacity uses `QueueLimit` consistently across core strategies, adapters, dependency
+  injection, and testing descriptors; shorthand parameters use `queueLimit`.
+- `Outcome<T>.Exception` recognizes `KevlarProxyException` by type instead of reading
+  `Exception.Data` on ordinary exception access.
 
 **Upgrading from 0.x**
 
@@ -62,8 +73,11 @@ All notable changes to this project are documented here. The format follows
 | `OrWhen(predicate)` | `Or(predicate)` |
 | `HedgingOptions` | `HedgeOptions` |
 | untyped `Fallback(...)` returned `Shield` | untyped `Fallback(...)` returns `VoidShield` |
+| `FallbackWithNotifications(...)` or typed `onFallback` parameters | `Fallback(..., configure)` with `OnFallback` / `OnFallbackAsync` |
+| shared `Action<RetryOptions>` used by typed shields | separate `Action<RetryOptions<TResult>>` configurator |
 | `RetryForever(backoff: null)` | `RetryForever()` |
 | ambient handling flowed past `Wrap`/`Compose` | `Wrap`/`Compose` seals the clause |
+| `maxQueue` / `MaxQueue` | `queueLimit` / `QueueLimit` |
 <!-- upgrade-from-0.x:end -->
 
 The replacement forms compile together:
@@ -87,8 +101,8 @@ _ = Shield.Empty.Wrap(Shield.Retry(1));
 
 - Circuit-breaker validation identifies the conflicting properties and reports public parameter
   names.
-- Fallback ordering and result compatibility failures are rejected at compile time through the
-  void-only pipeline type.
+- Invalid fallback ordering is rejected at pipeline construction time; the void-only pipeline type
+  rejects incompatible result-returning calls at compile time.
 - Custom backoff arithmetic cannot create negative or unbounded runtime delays.
 
 [Unreleased]: https://github.com/thomhurst/Kevlar/compare/v1.0.0...HEAD

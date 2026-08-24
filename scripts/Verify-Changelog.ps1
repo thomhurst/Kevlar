@@ -38,12 +38,18 @@ if ($unreleasedIndex -lt 0)
 }
 
 $releasePattern = [regex]'^## \[(?<version>[0-9]+\.[0-9]+\.[0-9]+)\] - (?<date>[0-9]{4}-[0-9]{2}-[0-9]{2})$'
+$versionHeadingCandidatePattern = [regex]'^##\s*\[[0-9]+\.[0-9]+\.[0-9]+'
 $releases = [System.Collections.Generic.List[object]]::new()
 for ($index = 0; $index -lt $lines.Count; $index++)
 {
     $match = $releasePattern.Match($lines[$index])
     if (-not $match.Success)
     {
+        if ($versionHeadingCandidatePattern.IsMatch($lines[$index]))
+        {
+            $errors.Add("Malformed versioned release heading '$($lines[$index])'. Expected '## [x.y.z] - yyyy-MM-dd'.")
+        }
+
         continue
     }
 
@@ -79,6 +85,16 @@ if ($LASTEXITCODE -ne 0)
     throw 'Unable to read git tags.'
 }
 
+$stableTags = @($tags | ForEach-Object {
+    if ($_ -match '^v(?<version>[0-9]+\.[0-9]+\.[0-9]+)$')
+    {
+        [pscustomobject]@{
+            Name = $_
+            Version = [Version]$Matches['version']
+        }
+    }
+})
+
 for ($index = 0; $index -lt $releases.Count; $index++)
 {
     $release = $releases[$index]
@@ -87,10 +103,32 @@ for ($index = 0; $index -lt $releases.Count; $index++)
         $errors.Add("Release $($release.Version) has no matching v$($release.Version) tag.")
     }
 
-    $linkPattern = "^\[$([regex]::Escape($release.Version))\]: https://github\.com/thomhurst/Kevlar/compare/\S+$"
-    if (-not ($lines | Where-Object { $_ -match $linkPattern }))
+    $previousTag = if ($index + 1 -lt $releases.Count)
     {
-        $errors.Add("Release $($release.Version) has no compare-link footer.")
+        "v$($releases[$index + 1].Version)"
+    }
+    else
+    {
+        $currentVersion = [Version]$release.Version
+        $previousStableTag = $stableTags |
+            Where-Object Version -lt $currentVersion |
+            Sort-Object Version -Descending |
+            Select-Object -First 1
+        if ($null -eq $previousStableTag) { $null } else { $previousStableTag.Name }
+    }
+
+    if ([string]::IsNullOrWhiteSpace($previousTag))
+    {
+        $errors.Add("Release $($release.Version) has no earlier stable tag for its compare link.")
+    }
+    else
+    {
+        $expectedLink = "[$($release.Version)]: https://github.com/thomhurst/Kevlar/compare/$previousTag...v$($release.Version)"
+        $actualLinks = @($lines | Where-Object { $_.StartsWith("[$($release.Version)]:", [StringComparison]::Ordinal) })
+        if ($actualLinks.Count -ne 1 -or $actualLinks[0] -ne $expectedLink)
+        {
+            $errors.Add("Release $($release.Version) compare link must be '$expectedLink'.")
+        }
     }
 
     if ([string]::IsNullOrWhiteSpace((Get-ReleaseNotes $release $lines)))
@@ -99,9 +137,14 @@ for ($index = 0; $index -lt $releases.Count; $index++)
     }
 }
 
-if (-not ($lines | Where-Object { $_ -match '^\[Unreleased\]: https://github\.com/thomhurst/Kevlar/compare/\S+$' }))
+if ($releases.Count -gt 0)
 {
-    $errors.Add('Unreleased has no compare-link footer.')
+    $expectedUnreleasedLink = "[Unreleased]: https://github.com/thomhurst/Kevlar/compare/v$($releases[0].Version)...HEAD"
+    $actualUnreleasedLinks = @($lines | Where-Object { $_.StartsWith('[Unreleased]:', [StringComparison]::Ordinal) })
+    if ($actualUnreleasedLinks.Count -ne 1 -or $actualUnreleasedLinks[0] -ne $expectedUnreleasedLink)
+    {
+        $errors.Add("Unreleased compare link must be '$expectedUnreleasedLink'.")
+    }
 }
 
 $allowedSections = @('Added', 'Changed', 'Deprecated', 'Removed', 'Fixed', 'Security')
@@ -115,7 +158,7 @@ foreach ($line in $lines | Where-Object { $_ -match '^### ' })
 }
 
 $deadApiPattern = [regex]'FallbackWithNotifications|\bWhenDefault\(|\bOrDefault\(|\bOrWhen\(|WhenResultDefault|OrResultDefault|\bKEV005\b|\bHedgingOptions\b'
-$documents = @($changelogPath) + @(
+$documents = @($changelogPath, (Join-Path $repositoryRoot 'README.md')) + @(
     Get-ChildItem -LiteralPath (Join-Path $repositoryRoot 'docs') -Recurse -File -Include '*.md', '*.mdx' |
         ForEach-Object FullName)
 foreach ($document in $documents)
