@@ -109,6 +109,27 @@ function Assert-DeterministicAssembly(
     }
 }
 
+function Get-AssemblyDetails([System.IO.Compression.ZipArchiveEntry]$Entry)
+{
+    $assemblyPath = Join-Path ([System.IO.Path]::GetTempPath()) "$([guid]::NewGuid().ToString('N')).dll"
+    try
+    {
+        [System.IO.Compression.ZipFileExtensions]::ExtractToFile($Entry, $assemblyPath)
+        $assemblyName = [System.Reflection.AssemblyName]::GetAssemblyName($assemblyPath)
+        $versionInfo = [System.Diagnostics.FileVersionInfo]::GetVersionInfo($assemblyPath)
+        return [pscustomobject]@{
+            AssemblyVersion = $assemblyName.Version.ToString()
+            FileVersion = $versionInfo.FileVersion
+            InformationalVersion = $versionInfo.ProductVersion
+            PublicKeyToken = [Convert]::ToHexString($assemblyName.GetPublicKeyToken()).ToLowerInvariant()
+        }
+    }
+    finally
+    {
+        Remove-Item -LiteralPath $assemblyPath -Force -ErrorAction SilentlyContinue
+    }
+}
+
 function Get-ArchiveEntryHash([string]$ArchivePath, [string]$EntryPath)
 {
     $archive = [System.IO.Compression.ZipFile]::OpenRead($ArchivePath)
@@ -143,7 +164,8 @@ $buildPropertiesJson = & dotnet msbuild `
     (Join-Path $repositoryRoot 'src/Kevlar/Kevlar.csproj') `
     -nologo `
     -p:CI=true `
-    -getProperty:Deterministic,ContinuousIntegrationBuild,DeterministicSourcePaths,PublishRepositoryUrl,EmbedUntrackedSources,IncludeSymbols,SymbolPackageFormat
+    "-p:Version=$Version" `
+    -getProperty:Deterministic,ContinuousIntegrationBuild,DeterministicSourcePaths,PublishRepositoryUrl,EmbedUntrackedSources,IncludeSymbols,SymbolPackageFormat,SignAssembly,AssemblyVersion,FileVersion,InformationalVersion
 if ($LASTEXITCODE -ne 0)
 {
     throw 'Unable to inspect deterministic build properties.'
@@ -157,6 +179,7 @@ Assert-Equal 'PublishRepositoryUrl' $buildProperties.PublishRepositoryUrl 'true'
 Assert-Equal 'EmbedUntrackedSources' $buildProperties.EmbedUntrackedSources 'true'
 Assert-Equal 'IncludeSymbols' $buildProperties.IncludeSymbols 'true'
 Assert-Equal 'SymbolPackageFormat' $buildProperties.SymbolPackageFormat 'snupkg'
+Assert-Equal 'SignAssembly' $buildProperties.SignAssembly 'false'
 
 $packageDirectory = (Resolve-Path -LiteralPath $PackagesPath).Path
 $expectedRepositoryCommit = (& git rev-parse HEAD).Trim()
@@ -164,6 +187,14 @@ if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($expectedRepositoryComm
 {
     throw 'Unable to determine the expected repository commit.'
 }
+
+$numericVersion = [Version](($Version -split '[-+]')[0])
+$expectedAssemblyVersion = "$($numericVersion.Major).0.0.0"
+$expectedFileVersion = "$($numericVersion.Major).$($numericVersion.Minor).$($numericVersion.Build).0"
+$expectedInformationalVersion = "$Version+$expectedRepositoryCommit"
+Assert-Equal 'AssemblyVersion build property' $buildProperties.AssemblyVersion $expectedAssemblyVersion
+Assert-Equal 'FileVersion build property' $buildProperties.FileVersion $expectedFileVersion
+Assert-Equal 'InformationalVersion build property' $buildProperties.InformationalVersion $Version
 
 $centralPackagesPath = Join-Path $PSScriptRoot '..\Directory.Packages.props'
 [xml]$centralPackages = Get-Content -LiteralPath $centralPackagesPath -Raw
@@ -338,6 +369,11 @@ foreach ($packageId in $expectedDependencies.Keys)
         foreach ($assemblyEntry in $archive.Entries | Where-Object { $_.FullName -like '*.dll' })
         {
             Assert-DeterministicAssembly "$packageId $($assemblyEntry.FullName)" $assemblyEntry
+            $details = Get-AssemblyDetails $assemblyEntry
+            Assert-Equal "$packageId $($assemblyEntry.FullName) public key token" $details.PublicKeyToken ''
+            Assert-Equal "$packageId $($assemblyEntry.FullName) AssemblyVersion" $details.AssemblyVersion $expectedAssemblyVersion
+            Assert-Equal "$packageId $($assemblyEntry.FullName) FileVersion" $details.FileVersion $expectedFileVersion
+            Assert-Equal "$packageId $($assemblyEntry.FullName) InformationalVersion" $details.InformationalVersion $expectedInformationalVersion
         }
     }
     finally

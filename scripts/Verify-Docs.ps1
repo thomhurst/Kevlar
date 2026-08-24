@@ -122,6 +122,9 @@ foreach ($duplicate in $duplicatePositions)
 
 $partitionLinkPattern = [regex]'\[[^\]]*(?:AddPartitionedShield|PartitionedVoidShield|PartitionedShield)[^\]]*\]\((?:\.\./)*partitioning\.md(?:#[^)]+)?\)'
 $partitionMentionPattern = [regex]'\b(?:AddPartitionedShield|PartitionedVoidShield|PartitionedShield)\b'
+$analyzerLinkPattern = [regex]'\[[^\]]*KEV\d{3}[^\]]*\]\((?:\.\./)*analyzers\.md(?:#[^)]+)?\)'
+$analyzerMentionPattern = [regex]'\bKEV\d{3}\b'
+$hardwareMentionPattern = [regex]'(?i)(?:\b(?:AMD\s+)?(?:Ryzen|EPYC)\b|\bIntel\s+(?:Core(?:\s+Ultra)?|Xeon)\b|\bApple\s+(?:silicon|M\d)\b|\b(?:Qualcomm\s+)?Snapdragon\b|\b(?:AWS\s+)?Graviton\d*\b|\bARM\s+Neoverse\b|\bi[3579](?:-\s*|\s+)?\d{4,5}[A-Z]*\b)'
 
 foreach ($document in $visibleDocuments | Where-Object Path -ne 'partitioning.md')
 {
@@ -149,10 +152,31 @@ foreach ($document in $visibleDocuments | Where-Object Path -ne 'partitioning.md
     }
 }
 
+foreach ($document in $visibleDocuments)
+{
+    for ($lineIndex = 0; $lineIndex -lt $document.Lines.Count; $lineIndex++)
+    {
+        $line = $document.Lines[$lineIndex]
+        if ($document.Path -ne 'analyzers.md')
+        {
+            $withoutAnalyzerLinks = $analyzerLinkPattern.Replace($line, '')
+            if ($analyzerMentionPattern.IsMatch($withoutAnalyzerLinks))
+            {
+                $errors.Add("Analyzer rule duplicated outside analyzers.md at $($document.Path):$($lineIndex + 1).")
+            }
+        }
+
+        if ($document.Path -ne 'benchmarks.md' -and $hardwareMentionPattern.IsMatch($line))
+        {
+            $errors.Add("Hardware-specific benchmark claim outside benchmarks.md at $($document.Path):$($lineIndex + 1).")
+        }
+    }
+}
+
 if ($errors.Count -gt 0)
 {
     $errors | ForEach-Object { Write-Error $_ -ErrorAction Continue }
     exit 1
 }
 
-Write-Host "Verified $($visibleDocuments.Count) documentation pages: sidebar coverage, positions, and partitioning links are valid."
+Write-Host "Verified $($visibleDocuments.Count) documentation pages: structure, canonical analyzer rules, and benchmark claims are valid."
