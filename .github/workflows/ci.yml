@@ -102,6 +102,10 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: dotnet pack Kevlar.slnx -c Release --no-build -p:Version=${{ steps.gitversion.outputs.semVer }}
 
+      - name: Restore local tools
+        if: matrix.os == 'ubuntu-latest'
+        run: dotnet tool restore
+
       - name: Install NativeAOT prerequisites
         if: matrix.os == 'ubuntu-latest'
         run: sudo apt-get update && sudo apt-get install --yes clang zlib1g-dev
@@ -125,7 +129,10 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: nuget-packages
-          path: artifacts/package/release/*.nupkg
+          path: |
+            artifacts/package/release/*.nupkg
+            artifacts/package/release/*.snupkg
+          if-no-files-found: error
 
   coverage:
     name: Coverage
@@ -227,6 +234,15 @@ jobs:
           name: nuget-packages
           path: packages
 
+      - name: Verify publish artifacts
+        shell: pwsh
+        run: |
+          $packageIds = @(Get-ChildItem packages -Filter *.nupkg | ForEach-Object { $_.BaseName -replace '\.[0-9].*$', '' } | Sort-Object)
+          $symbolPackageIds = @(Get-ChildItem packages -Filter *.snupkg | ForEach-Object { $_.BaseName -replace '\.[0-9].*$', '' } | Sort-Object)
+          if ($packageIds.Count -ne 8 -or ($packageIds -join ',') -ne ($symbolPackageIds -join ',')) {
+            throw "Expected 8 matching nupkg/snupkg artifacts; got nupkg=[$($packageIds -join ', ')], snupkg=[$($symbolPackageIds -join ', ')]."
+          }
+
       - name: NuGet login
         uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1
         id: login
@@ -239,4 +255,4 @@ jobs:
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release create "v${{ steps.gitversion.outputs.semVer }}" --target ${{ github.sha }} --generate-notes packages/*.nupkg
+        run: gh release create "v${{ steps.gitversion.outputs.semVer }}" --target ${{ github.sha }} --generate-notes packages/*.nupkg packages/*.snupkg

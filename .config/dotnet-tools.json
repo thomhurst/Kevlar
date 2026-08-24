@@ -15,6 +15,13 @@
         "dotnet-stryker"
       ],
       "rollForward": false
+    },
+    "sourcelink": {
+      "version": "3.1.1",
+      "commands": [
+        "sourcelink"
+      ],
+      "rollForward": false
     }
   }
 }
