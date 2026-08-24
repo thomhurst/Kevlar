@@ -42,6 +42,8 @@ build spelled these `WhenResultDefault`/`OrResultDefault`; the `Is` makes the re
   `AddStandardHedgingShield` are unchanged.
 ### Changed
 
+- Custom strategies can override `Strategy.InvokesContinuationAtMostOnce`; the same aggregate
+  value is now exposed on `Shield<TResult>` as well as `Shield` and `VoidShield`.
 - **Breaking:** `Shield.Wrap(...)` and `Shield.Compose(...)` now seal ambient handling clauses. Reactive strategies appended after composition use default handling unless a new clause is declared. Existing strategies inside composed shields keep their original handling.
 - `Backoff.Custom` documents the clamping the retry path already applied to its delegate's result: a
   negative delay becomes zero, a delay above the runtime timer limit becomes that limit, and the

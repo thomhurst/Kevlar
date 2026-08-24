@@ -21,7 +21,15 @@ namespace Kevlar;
 /// </remarks>
 public abstract class Strategy
 {
-    internal virtual bool InvokesContinuationAtMostOnce => false;
+    /// <summary>
+    /// Gets whether this strategy guarantees invoking its continuation at most once per execution.
+    /// </summary>
+    /// <remarks>
+    /// Override and return <see langword="true"/> only when every path invokes <c>next</c> zero or
+    /// one time. Strategies that retry, hedge, loop, or otherwise may invoke <c>next</c> more than
+    /// once must retain the conservative default.
+    /// </remarks>
+    protected internal virtual bool InvokesContinuationAtMostOnce => false;
 
     /// <summary>
     /// The handling clause this reactive strategy acts on, or <see langword="null"/> for a

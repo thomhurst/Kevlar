@@ -15,7 +15,7 @@ internal sealed class RateLimiterStrategy : Strategy
     private readonly Func<RateLimiterRejectedEvent, ValueTask>? _onRejectedAsync;
     private readonly string _kind;
 
-    internal override bool InvokesContinuationAtMostOnce => true;
+    protected internal override bool InvokesContinuationAtMostOnce => true;
 
     protected internal override bool IsDuplicateReferenceUnsafe => true;
 

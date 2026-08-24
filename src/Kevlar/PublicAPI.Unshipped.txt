@@ -9,6 +9,8 @@ Kevlar.Shield<TResult>.Use(System.Func<Kevlar.HandlingClause, Kevlar.Strategy!>!
 Kevlar.ShieldBuilder.Use(System.Func<Kevlar.HandlingClause, Kevlar.Strategy!>! factory) -> Kevlar.Shield!
 Kevlar.ShieldBuilder<TResult>.Use(System.Func<Kevlar.HandlingClause, Kevlar.Strategy!>! factory) -> Kevlar.Shield<TResult>!
 virtual Kevlar.Strategy.Handling.get -> Kevlar.HandlingClause?
+virtual Kevlar.Strategy.InvokesContinuationAtMostOnce.get -> bool
+Kevlar.Shield<TResult>.InvokesContinuationAtMostOnce.get -> bool
 Kevlar.CircuitBreakerBreakDurationEvent
 Kevlar.CircuitBreakerBreakDurationEvent.CircuitBreakerBreakDurationEvent() -> void
 Kevlar.CircuitBreakerBreakDurationEvent.Context.get -> Kevlar.KevlarContext!

@@ -27,7 +27,7 @@ public sealed class VoidShield
 
     /// <summary>
     /// Gets whether every strategy guarantees invoking the execution continuation at most once.
-    /// Custom strategies are treated conservatively as potentially multi-attempt.
+    /// Custom strategies may opt in through <see cref="Strategy.InvokesContinuationAtMostOnce"/>.
     /// </summary>
     public bool InvokesContinuationAtMostOnce => _pipeline.InvokesContinuationAtMostOnce;
 

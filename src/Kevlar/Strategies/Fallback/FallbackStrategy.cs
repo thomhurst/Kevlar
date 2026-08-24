@@ -5,7 +5,7 @@ namespace Kevlar.Strategies;
 
 internal sealed class FallbackStrategy<TResult> : Strategy, IFallbackStrategyInspection
 {
-    internal override bool InvokesContinuationAtMostOnce => true;
+    protected internal override bool InvokesContinuationAtMostOnce => true;
 
     private readonly Func<Outcome<TResult>, KevlarContext, ValueTask<TResult>> _fallback;
     private readonly OutcomeJudge _judge;
@@ -130,7 +130,7 @@ internal sealed class FallbackStrategy<TResult> : Strategy, IFallbackStrategyIns
 /// </summary>
 internal sealed class VoidFallbackStrategy : Strategy, IFallbackStrategyInspection
 {
-    internal override bool InvokesContinuationAtMostOnce => true;
+    protected internal override bool InvokesContinuationAtMostOnce => true;
 
     private readonly Func<Exception, CancellationToken, ValueTask> _fallback;
     private readonly OutcomeJudge _judge;

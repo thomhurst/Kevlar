@@ -64,6 +64,23 @@ public class GrpcResilienceTests
     }
 
     [Test]
+    public async Task Custom_Single_Invoke_Strategy_Keeps_Early_Header_Forwarding()
+    {
+        await using var server = await GrpcTestServer.StartAsync();
+        var shield = Shield.Use(new SingleInvocationStrategy())
+            .Timeout(TimeSpan.FromMinutes(1));
+        using var call = server.Client(shield).UnaryAsync(
+            new TestRequest { Scenario = "headers_wait" });
+
+        var headers = await call.ResponseHeadersAsync.WaitAsync(TimeSpan.FromSeconds(5));
+        await Assert.That(headers.GetValue("attempt")).IsEqualTo("1");
+
+        server.State.Release();
+        var response = await call.ResponseAsync.WaitAsync(TimeSpan.FromSeconds(5));
+        await Assert.That(response.Attempt).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Transient_Helper_Retries_Only_Opted_In_Statuses()
     {
         await using var server = await GrpcTestServer.StartAsync();
@@ -1076,6 +1093,15 @@ public class GrpcResilienceTests
             _ = await next.InvokeAsync(context).ConfigureAwait(false);
             return first;
         }
+    }
+
+    private sealed class SingleInvocationStrategy : Strategy
+    {
+        protected override bool InvokesContinuationAtMostOnce => true;
+
+        public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+            Continuation<T, TState> next,
+            KevlarContext context) => next.InvokeAsync(context);
     }
 
     private sealed class GrpcTestServer : IAsyncDisposable

@@ -20,7 +20,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
     private long _pending;
     private long _metricsState;
 
-    internal override bool InvokesContinuationAtMostOnce => true;
+    protected internal override bool InvokesContinuationAtMostOnce => true;
 
     protected internal override bool IsDuplicateReferenceUnsafe => true;
 
