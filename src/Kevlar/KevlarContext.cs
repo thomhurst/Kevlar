@@ -147,6 +147,7 @@ public sealed class KevlarContext
     {
 #if DEBUG
         context._returnedToPool = false;
+        context._properties.MarkRented();
 #endif
     }
 
@@ -155,6 +156,7 @@ public sealed class KevlarContext
     {
 #if DEBUG
         context._returnedToPool = true;
+        context._properties.MarkReturned();
 #endif
     }
 

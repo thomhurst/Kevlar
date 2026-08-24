@@ -78,7 +78,14 @@ var user = await shield.ExecuteWithContextAsync(
     static (state, properties) =>
         properties.Set(state.requestIdKey, state.requestId),
     static (state, context) =>
-        state.client.GetUserAsync(state.id, context.CancellationToken),
+    {
+        if (context.Properties.Contains(state.requestIdKey))
+        {
+            context.Properties.Remove(state.requestIdKey);
+        }
+
+        return state.client.GetUserAsync(state.id, context.CancellationToken);
+    },
     cancellationToken);
 ```
 
@@ -87,6 +94,10 @@ strategy and retry attempt sees the same logical properties. Hedged attempts cop
 properties when each fork launches; later mutations stay isolated between attempts. The action's
 `context.CancellationToken` is the effective token for that attempt, including timeout and hedge
 cancellation.
+
+Use `Contains` and `Remove` when metadata is optional or should not flow to later strategies.
+`Count` reports the entries in the current execution. `KevlarProperties` is not thread-safe; each
+parallel hedge attempt receives its own snapshot, so mutations remain local to that attempt.
 
 When you only need to *read* the context — the shield name, the effective token, the ambient
 `TimeProvider` — there is a shorter overload that skips the state and initializer entirely:

@@ -149,9 +149,9 @@ public class OutcomeAndContextTests
     {
         var properties = CapturedProperties();
 
-        await Assert.That(() => properties.Set(default(KevlarKey<int>), 1)).Throws<ArgumentNullException>();
-        await Assert.That(() => properties.TryGet(default(KevlarKey<int>), out _)).Throws<ArgumentNullException>();
-        await Assert.That(() => properties.GetOrDefault(default(KevlarKey<int>))).Throws<ArgumentNullException>();
+        await Assert.That(() => properties.Set(default(KevlarKey<int>), 1)).Throws<InvalidOperationException>();
+        await Assert.That(() => properties.TryGet(default(KevlarKey<int>), out _)).Throws<InvalidOperationException>();
+        await Assert.That(() => properties.GetOrDefault(default(KevlarKey<int>))).Throws<InvalidOperationException>();
     }
 
     [Test]
