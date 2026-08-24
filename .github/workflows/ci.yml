@@ -198,6 +198,10 @@ jobs:
           PACKAGE_VERSION: ${{ steps.gitversion.outputs.semVer }}
         run: ./scripts/Verify-Packages.ps1 -PackagesPath artifacts/package/release -Version $env:PACKAGE_VERSION
 
+      - name: Validate Renovate configuration
+        if: matrix.os == 'ubuntu-latest'
+        run: npx --yes --package renovate -- renovate-config-validator renovate.json
+
       - name: Compile and execute documentation snippets
         if: matrix.os == 'ubuntu-latest'
         shell: pwsh

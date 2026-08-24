@@ -8,7 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="TUnit" />
-    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" VersionOverride="10.9.0" />
   </ItemGroup>
 
   <ItemGroup>

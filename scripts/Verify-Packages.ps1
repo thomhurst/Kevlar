@@ -43,6 +43,17 @@ function Get-NodeText([System.Xml.XmlNode]$Node, [string]$XPath)
     return $match.InnerText
 }
 
+function Get-CentralPackageVersion([System.Xml.XmlNode]$Project, [string]$PackageId)
+{
+    $version = Get-NodeText $Project "/Project/ItemGroup/PackageVersion[@Include='$PackageId']/@Version"
+    if ([string]::IsNullOrWhiteSpace($version))
+    {
+        throw "Could not resolve $PackageId from Directory.Packages.props."
+    }
+
+    return $version
+}
+
 function Write-TextFile([string]$Path, [string]$Contents)
 {
     [System.IO.Directory]::CreateDirectory([System.IO.Path]::GetDirectoryName($Path)) | Out-Null
@@ -234,12 +245,8 @@ Assert-Equal 'InformationalVersion build property' $buildProperties.Informationa
 
 $centralPackagesPath = Join-Path $PSScriptRoot '..\Directory.Packages.props'
 [xml]$centralPackages = Get-Content -LiteralPath $centralPackagesPath -Raw
-$configurationVersion = Get-NodeText $centralPackages "/Project/ItemGroup/PackageVersion[@Include='Microsoft.Extensions.Configuration']/@Version"
-$dependencyInjectionVersion = Get-NodeText $centralPackages "/Project/ItemGroup/PackageVersion[@Include='Microsoft.Extensions.DependencyInjection']/@Version"
-if ($null -eq $configurationVersion -or $null -eq $dependencyInjectionVersion)
-{
-    throw 'Could not resolve Microsoft.Extensions package versions from Directory.Packages.props.'
-}
+$configurationVersion = Get-CentralPackageVersion $centralPackages 'Microsoft.Extensions.Configuration'
+$dependencyInjectionVersion = Get-CentralPackageVersion $centralPackages 'Microsoft.Extensions.DependencyInjection'
 
 $expectedDependencies = @{
     'Kevlar' = @{
@@ -285,6 +292,21 @@ $expectedDependencies = @{
     'Kevlar.Analyzers' = @{
         '.NETStandard2.0' = @()
     }
+}
+
+$expectedDependencyVersions = @{}
+foreach ($dependencyId in @(
+    'Microsoft.Bcl.TimeProvider',
+    'Microsoft.Extensions.Configuration.Abstractions',
+    'Microsoft.Extensions.DependencyInjection.Abstractions',
+    'Microsoft.Extensions.Http',
+    'Microsoft.Extensions.Primitives',
+    'Microsoft.Extensions.TimeProvider.Testing',
+    'Reservoir',
+    'System.Threading.RateLimiting'))
+{
+    $expectedDependencyVersions[$dependencyId] =
+        (Get-CentralPackageVersion $centralPackages $dependencyId) -replace ',\s*', ', '
 }
 
 $packageFiles = @(Get-ChildItem -LiteralPath $packageDirectory -Filter '*.nupkg' -File)
@@ -378,14 +400,21 @@ foreach ($packageId in $expectedDependencies.Keys)
             foreach ($dependency in $dependencies)
             {
                 Assert-Set "$packageId $framework $($dependency.GetAttribute('id')) excluded assets" ($dependency.GetAttribute('exclude') -split ',') @('Build', 'Analyzers')
-
-                if ($dependency.GetAttribute('id') -eq 'Kevlar' -and
+                $dependencyId = $dependency.GetAttribute('id')
+                if ($dependencyId -eq 'Kevlar' -and
                     $packageId -in @('Kevlar.Testing', 'Kevlar.Extensions.RateLimiting'))
                 {
                     Assert-Equal `
                         "$packageId $framework Kevlar dependency version" `
                         $dependency.GetAttribute('version') `
                         "[$Version]"
+                }
+                elseif ($expectedDependencyVersions.ContainsKey($dependencyId))
+                {
+                    Assert-Equal `
+                        "$packageId $framework $dependencyId version" `
+                        $dependency.GetAttribute('version') `
+                        $expectedDependencyVersions[$dependencyId]
                 }
             }
         }
@@ -653,6 +682,7 @@ using Kevlar.Extensions.Grpc;
 using Kevlar.Extensions.Http;
 using Kevlar.Extensions.RateLimiting;
 using Kevlar.Testing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics.Metrics;
 using System.Runtime.CompilerServices;
@@ -747,6 +777,21 @@ if (injections != 1)
 IServiceCollection services = new ServiceCollection();
 services.AddShield("consumer", shield);
 services.AddHttpClient("consumer").AddStandardShield();
+var configuration = new ConfigurationBuilder()
+    .AddInMemoryCollection(new Dictionary<string, string?>
+    {
+        ["Retry:MaxRetries"] = "0",
+        ["Retry:Backoff"] = "None",
+    })
+    .Build();
+services.AddReloadingShield("reloading", configuration);
+using var provider = services.BuildServiceProvider();
+var registry = provider.GetRequiredService<IKevlarRegistry>();
+if (!ReferenceEquals(registry.GetShield("consumer"), shield)
+    || registry.GetShield("reloading").ToString() != "reloading: Retry(0, no delay)")
+{
+    throw new InvalidOperationException("Dependency injection package execution failed.");
+}
 _ = new ShieldUnaryClientInterceptor(GrpcShield.WhenTransient().Retry(1));
 using var limiter = new ConcurrencyLimiter(new ConcurrencyLimiterOptions
 {
@@ -778,6 +823,7 @@ sealed class ExpectedConsumerException : Exception;
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors>`$(WarningsAsErrors);NU1605;NU1608</WarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Kevlar" Version="$Version" />
@@ -787,6 +833,10 @@ sealed class ExpectedConsumerException : Exception;
     <PackageReference Include="Kevlar.Extensions.RateLimiting" Version="$Version" />
     <PackageReference Include="Kevlar.Testing" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.Grpc" Version="$Version" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
+    <PackageReference Include="System.Threading.RateLimiting" Version="8.0.0" />
   </ItemGroup>
 </Project>
 "@

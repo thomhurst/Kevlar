@@ -16,7 +16,7 @@
     <PackageReference Include="Kevlar.Extensions.RateLimiting" VersionOverride="$(KevlarPackageVersion)" />
     <PackageReference Include="Kevlar.Testing" VersionOverride="$(KevlarPackageVersion)" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
-    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" VersionOverride="10.9.0" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
     <PackageReference Include="Polly" />
   </ItemGroup>
