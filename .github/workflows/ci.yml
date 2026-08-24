@@ -75,13 +75,17 @@ jobs:
         run: dotnet build Kevlar.slnx -c Release -p:Version=${{ steps.gitversion.outputs.semVer }}
 
       - name: Unit tests
+        shell: pwsh
         run: |
           dotnet run --project tests/Kevlar.Tests -c Release -f net8.0 --no-build -- --timeout 5m --minimum-expected-tests 750 --zero-tests-policy strict --report-trx --report-trx-filename unit-net8.trx --results-directory artifacts/test-results/unit
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           dotnet run --project tests/Kevlar.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 750 --zero-tests-policy strict --report-trx --report-trx-filename unit-net10.trx --results-directory artifacts/test-results/unit
 
       - name: Chaos tests
+        shell: pwsh
         run: |
           dotnet run --project tests/Kevlar.Chaos.Tests -c Release -f net8.0 --no-build -- --timeout 5m --minimum-expected-tests 25 --zero-tests-policy strict --report-trx --report-trx-filename chaos-net8.trx --results-directory artifacts/test-results/chaos
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           dotnet run --project tests/Kevlar.Chaos.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 25 --zero-tests-policy strict --report-trx --report-trx-filename chaos-net10.trx --results-directory artifacts/test-results/chaos
 
       - name: Compatibility asset tests
@@ -104,13 +108,17 @@ jobs:
         run: dotnet run --project tests/Kevlar.Analyzers.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 65 --zero-tests-policy strict --report-trx --report-trx-filename analyzers.trx --results-directory artifacts/test-results/analyzers
 
       - name: Testing package tests
+        shell: pwsh
         run: |
           dotnet run --project tests/Kevlar.Testing.Tests -c Release -f net8.0 --no-build -- --timeout 5m --minimum-expected-tests 45 --zero-tests-policy strict --report-trx --report-trx-filename testing-net8.trx --results-directory artifacts/test-results/testing
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           dotnet run --project tests/Kevlar.Testing.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 45 --zero-tests-policy strict --report-trx --report-trx-filename testing-net10.trx --results-directory artifacts/test-results/testing
 
       - name: Rate limiting adapter tests
+        shell: pwsh
         run: |
           dotnet run --project tests/Kevlar.Extensions.RateLimiting.Tests -c Release -f net8.0 --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --report-trx --report-trx-filename rate-limiting-net8.trx --results-directory artifacts/test-results/rate-limiting
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           dotnet run --project tests/Kevlar.Extensions.RateLimiting.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --report-trx --report-trx-filename rate-limiting-net10.trx --results-directory artifacts/test-results/rate-limiting
 
       - name: Upload test reports
