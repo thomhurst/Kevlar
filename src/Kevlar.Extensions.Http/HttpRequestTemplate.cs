@@ -174,7 +174,17 @@ internal sealed class HttpRequestTemplate
 
     internal static async ValueTask<bool> IsAlreadyBufferedAsync(HttpContent content)
     {
-        if (content.Headers.ContentLength is not { } contentLength)
+        long? declaredLength;
+        try
+        {
+            declaredLength = content.Headers.ContentLength;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+
+        if (declaredLength is not { } contentLength)
         {
             return false;
         }

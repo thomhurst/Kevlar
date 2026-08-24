@@ -178,6 +178,34 @@ public class HttpReplayTests
     }
 
     [Test]
+    public async Task Throwing_ContentLength_Probe_Allows_One_Shielded_Attempt()
+    {
+        var fallback = new HttpResponseMessage(HttpStatusCode.OK);
+        var transport = new RecordingHandler((_, attemptRequest, _) =>
+        {
+            _ = attemptRequest.Content!.Headers.ContentLength;
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+        });
+        using var invoker = CreateInvoker(
+            Shield.For<HttpResponseMessage>().When<InvalidOperationException>().Fallback(
+                (_, _) => new ValueTask<HttpResponseMessage>(fallback)),
+            new ShieldHttpHandlerOptions
+            {
+                AllowUnsafeMethodReplay = true,
+            },
+            transport);
+        using var request = new HttpRequestMessage(HttpMethod.Put, "https://origin.example/upload")
+        {
+            Content = new ThrowingLengthContent(),
+        };
+
+        using var response = await invoker.SendAsync(request, CancellationToken.None);
+
+        await Assert.That(ReferenceEquals(response, fallback)).IsTrue();
+        await Assert.That(transport.Attempts).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Custom_MultiInvocation_Strategy_Cannot_Replay_Unsafe_Method()
     {
         var originalResponse = new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
@@ -1416,6 +1444,17 @@ public class HttpReplayTests
         {
             length = 0;
             return false;
+        }
+    }
+
+    private sealed class ThrowingLengthContent : HttpContent
+    {
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context) =>
+            Task.CompletedTask;
+
+        protected override bool TryComputeLength(out long length)
+        {
+            throw new InvalidOperationException("Length is unavailable.");
         }
     }
 
