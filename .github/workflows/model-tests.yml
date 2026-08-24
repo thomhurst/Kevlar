@@ -43,4 +43,4 @@ jobs:
         run: dotnet build Kevlar.slnx -c Release
 
       - name: Run deterministic model sweep
-        run: dotnet run --project tests/Kevlar.Tests -c Release --no-build -- --timeout 10m --minimum-expected-tests 5 --zero-tests-policy strict --treenode-filter "/*/*/StrategyModelTests/*"
+        run: dotnet run --project tests/Kevlar.Tests -c Release -f net10.0 --no-build -- --timeout 10m --minimum-expected-tests 5 --zero-tests-policy strict --treenode-filter "/*/*/StrategyModelTests/*"
