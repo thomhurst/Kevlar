@@ -20,13 +20,13 @@ internal static class ShieldEngine
 
         if (head is null)
         {
-            if (!KevlarMetrics.ExecutionEnabled && !KevlarMetrics.DurationEnabled)
-            {
-                return action(state, cancellationToken);
-            }
-
             try
             {
+                if (!KevlarMetrics.ExecutionEnabled && !KevlarMetrics.DurationEnabled)
+                {
+                    return action(state, cancellationToken);
+                }
+
                 var execution = action(state, cancellationToken);
                 if (execution.IsCompletedSuccessfully)
                 {
@@ -36,10 +36,10 @@ internal static class ShieldEngine
 
                 return AwaitDirectAsync(execution, shieldName, startedAt);
             }
-            catch
+            catch (Exception exception)
             {
                 RecordExecution(startedAt, shieldName, success: false);
-                throw;
+                return Rethrow<T>(Outcome<T>.FromException(exception));
             }
         }
 
