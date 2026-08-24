@@ -35,7 +35,7 @@ jobs:
       - name: Run allocation gates
         run: >-
           dotnet run --project tests/Kevlar.AllocationTests -c Release --
-          --timeout 5m --minimum-expected-tests 2 --zero-tests-policy strict
+          --timeout 5m --minimum-expected-tests 3 --zero-tests-policy strict
 
   build-and-test:
     strategy:
@@ -57,6 +57,11 @@ jobs:
             8.0.x
             10.0.x
 
+      - name: Verify test suite registration
+        if: matrix.os == 'ubuntu-latest'
+        shell: pwsh
+        run: ./.github/scripts/Assert-TestSuiteRegistration.ps1
+
       - name: Install GitVersion
         uses: gittools/actions/gitversion/setup@7417b1089e2c7de93510f1901d656ddf60bb024f # v4.7.0
         with:
@@ -70,25 +75,25 @@ jobs:
         run: dotnet build Kevlar.slnx -c Release -p:Version=${{ steps.gitversion.outputs.semVer }}
 
       - name: Unit tests
-        run: dotnet run --project tests/Kevlar.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --report-trx --report-trx-filename unit.trx --results-directory artifacts/test-results/unit
+        run: dotnet run --project tests/Kevlar.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 750 --zero-tests-policy strict --report-trx --report-trx-filename unit.trx --results-directory artifacts/test-results/unit
 
       - name: Chaos tests
-        run: dotnet run --project tests/Kevlar.Chaos.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --report-trx --report-trx-filename chaos.trx --results-directory artifacts/test-results/chaos
+        run: dotnet run --project tests/Kevlar.Chaos.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 25 --zero-tests-policy strict --report-trx --report-trx-filename chaos.trx --results-directory artifacts/test-results/chaos
 
-      - name: netstandard2.0 asset tests
-        run: dotnet run --project tests/Kevlar.NetStandard.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --report-trx --report-trx-filename netstandard.trx --results-directory artifacts/test-results/netstandard
+      - name: Compatibility asset tests
+        run: dotnet run --project tests/Kevlar.NetStandard.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 10 --zero-tests-policy strict --report-trx --report-trx-filename netstandard.trx --results-directory artifacts/test-results/netstandard
 
       - name: Integration tests
-        run: dotnet run --project tests/Kevlar.IntegrationTests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --report-trx --report-trx-filename integration.trx --results-directory artifacts/test-results/integration
+        run: dotnet run --project tests/Kevlar.IntegrationTests -c Release --no-build -- --timeout 5m --minimum-expected-tests 100 --zero-tests-policy strict --report-trx --report-trx-filename integration.trx --results-directory artifacts/test-results/integration
 
       - name: Analyzer tests
-        run: dotnet run --project tests/Kevlar.Analyzers.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --report-trx --report-trx-filename analyzers.trx --results-directory artifacts/test-results/analyzers
+        run: dotnet run --project tests/Kevlar.Analyzers.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 65 --zero-tests-policy strict --report-trx --report-trx-filename analyzers.trx --results-directory artifacts/test-results/analyzers
 
       - name: Testing package tests
-        run: dotnet run --project tests/Kevlar.Testing.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --report-trx --report-trx-filename testing.trx --results-directory artifacts/test-results/testing
+        run: dotnet run --project tests/Kevlar.Testing.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 45 --zero-tests-policy strict --report-trx --report-trx-filename testing.trx --results-directory artifacts/test-results/testing
 
       - name: Rate limiting adapter tests
-        run: dotnet run --project tests/Kevlar.Extensions.RateLimiting.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --report-trx --report-trx-filename rate-limiting.trx --results-directory artifacts/test-results/rate-limiting
+        run: dotnet run --project tests/Kevlar.Extensions.RateLimiting.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --report-trx --report-trx-filename rate-limiting.trx --results-directory artifacts/test-results/rate-limiting
 
       - name: Upload test reports
         if: always()
@@ -153,32 +158,32 @@ jobs:
         run: mkdir -p artifacts/coverage/raw
 
       - name: Collect unit coverage
-        run: dotnet run --project tests/Kevlar.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/unit.cobertura.xml --coverage-output-format cobertura
+        run: dotnet run --project tests/Kevlar.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 750 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/unit.cobertura.xml --coverage-output-format cobertura
 
       - name: Collect chaos coverage
-        run: dotnet run --project tests/Kevlar.Chaos.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/chaos.cobertura.xml --coverage-output-format cobertura
+        run: dotnet run --project tests/Kevlar.Chaos.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 25 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/chaos.cobertura.xml --coverage-output-format cobertura
 
-      - name: Collect netstandard2.0 asset coverage
-        run: dotnet run --project tests/Kevlar.NetStandard.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/netstandard.cobertura.xml --coverage-output-format cobertura
+      - name: Collect compatibility asset coverage
+        run: dotnet run --project tests/Kevlar.NetStandard.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 10 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/netstandard.cobertura.xml --coverage-output-format cobertura
 
       - name: Collect integration coverage
-        run: dotnet run --project tests/Kevlar.IntegrationTests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/integration.cobertura.xml --coverage-output-format cobertura
+        run: dotnet run --project tests/Kevlar.IntegrationTests -c Release --no-build -- --timeout 5m --minimum-expected-tests 100 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/integration.cobertura.xml --coverage-output-format cobertura
 
       - name: Collect analyzer coverage
-        run: dotnet run --project tests/Kevlar.Analyzers.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/analyzers.cobertura.xml --coverage-output-format cobertura
+        run: dotnet run --project tests/Kevlar.Analyzers.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 65 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/analyzers.cobertura.xml --coverage-output-format cobertura
 
       - name: Collect testing package coverage
-        run: dotnet run --project tests/Kevlar.Testing.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/testing.cobertura.xml --coverage-output-format cobertura
+        run: dotnet run --project tests/Kevlar.Testing.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 45 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/testing.cobertura.xml --coverage-output-format cobertura
 
       - name: Collect rate limiting adapter coverage
-        run: dotnet run --project tests/Kevlar.Extensions.RateLimiting.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 1 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/rate-limiting.cobertura.xml --coverage-output-format cobertura
+        run: dotnet run --project tests/Kevlar.Extensions.RateLimiting.Tests -c Release --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/rate-limiting.cobertura.xml --coverage-output-format cobertura
 
       - name: Merge coverage reports
         run: dotnet reportgenerator '-reports:artifacts/coverage/raw/*.cobertura.xml' '-targetdir:artifacts/coverage/report' '-reporttypes:Cobertura;Html'
 
       - name: Enforce coverage baseline
         shell: pwsh
-        run: ./.github/scripts/Assert-Coverage.ps1 -Report artifacts/coverage/report/Cobertura.xml -MinimumLinePercent 92 -MinimumBranchPercent 86
+        run: ./.github/scripts/Assert-Coverage.ps1 -Report artifacts/coverage/report/Cobertura.xml -MinimumLinePercent 94 -MinimumBranchPercent 89
 
       - name: Upload coverage report
         if: always()

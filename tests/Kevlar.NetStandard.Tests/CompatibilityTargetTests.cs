@@ -7,22 +7,22 @@ namespace Kevlar.NetStandard.Tests;
 public class CompatibilityTargetTests
 {
     [Test]
-    public async Task Compatibility_Suite_Loads_NetStandard20_Assemblies()
+    public async Task Compatibility_Suite_Loads_Configured_NetStandard_Assemblies()
     {
-        var assemblies = new[]
+        var targets = new[]
         {
-            typeof(Shield).Assembly,
-            typeof(ShieldDelegatingHandler).Assembly,
-            typeof(ShieldStreamingClientInterceptor).Assembly,
-            typeof(ChaosShield).Assembly,
+            (Assembly: typeof(Shield).Assembly, Framework: ".NETStandard,Version=v2.0"),
+            (Assembly: typeof(ShieldDelegatingHandler).Assembly, Framework: ".NETStandard,Version=v2.0"),
+            (Assembly: typeof(ShieldStreamingClientInterceptor).Assembly, Framework: ".NETStandard,Version=v2.1"),
+            (Assembly: typeof(ChaosShield).Assembly, Framework: ".NETStandard,Version=v2.0"),
         };
 
-        foreach (var assembly in assemblies)
+        foreach (var (assembly, framework) in targets)
         {
             var target = (System.Runtime.Versioning.TargetFrameworkAttribute)assembly
                 .GetCustomAttributes(typeof(System.Runtime.Versioning.TargetFrameworkAttribute), false)
                 .Single();
-            await Assert.That(target.FrameworkName).IsEqualTo(".NETStandard,Version=v2.0");
+            await Assert.That(target.FrameworkName).IsEqualTo(framework);
         }
     }
 }

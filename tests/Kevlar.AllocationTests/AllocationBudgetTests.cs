@@ -35,6 +35,10 @@ public class AllocationBudgetTests
         options.OnStateChangedAsync = static _ => default;
     });
     private readonly Shield _timeout = Shield.Timeout(TimeSpan.FromMinutes(1));
+    private readonly Shield _dynamicTimeout = Shield.Timeout(static options =>
+    {
+        options.TimeoutGenerator = static _ => new ValueTask<TimeSpan>(TimeSpan.FromMinutes(1));
+    });
     private readonly Shield _disabledChaos = ChaosShield.Fault(static _ => { });
     private readonly Shield _excludedChaos = ChaosShield.Fault(static options =>
     {
@@ -96,6 +100,9 @@ public class AllocationBudgetTests
         .Fallback(
             7,
             static options => options.OnFallbackAsync = static _ => ValueTask.CompletedTask);
+    private readonly VoidShield _voidFallback = Shield
+        .When<InvalidOperationException>()
+        .Fallback(static (_, _) => ValueTask.CompletedTask);
     private readonly Shield _parallelHedge = Shield.Hedge(2, TimeSpan.Zero);
     private readonly Counter _retryCounter = new();
     private readonly Counter _asyncDelayRetryCounter = new();
@@ -113,6 +120,12 @@ public class AllocationBudgetTests
             test._empty.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("empty async state", this, static test =>
             test._empty.ExecuteAsync(42, static (state, _) => new ValueTask<int>(state)).GetAwaiter().GetResult());
+        AssertZero("empty async outcome state", this, static test =>
+            _ = test._empty.ExecuteOutcomeAsync(
+                    42,
+                    static (state, _) => new ValueTask<int>(state))
+                .GetAwaiter()
+                .GetResult());
         AssertZero("empty async context state", this, static test =>
             test._empty.ExecuteWithContextAsync(
                 test,
@@ -142,6 +155,8 @@ public class AllocationBudgetTests
             test._asyncTransitionBreaker.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("timeout happy path", this, static test =>
             test._timeout.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
+        AssertZero("dynamic timeout happy path", this, static test =>
+            test._dynamicTimeout.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("chaos disabled", this, static test =>
             test._disabledChaos.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("chaos excluded by rate", this, static test =>
@@ -152,6 +167,8 @@ public class AllocationBudgetTests
             test._fallback.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("fallback async notification pass-through", this, static test =>
             test._fallbackWithAsyncNotification.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
+        AssertZero("void fallback pass-through", this, static test =>
+            test._voidFallback.ExecuteAsync(static _ => ValueTask.CompletedTask).GetAwaiter().GetResult());
         AssertZero("rate limit uncontended", this, static test =>
             test._rateLimit.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("rate limit with rejection hooks uncontended", this, static test =>
@@ -227,6 +244,8 @@ public class AllocationBudgetTests
             test._fallbackWithSyncNotification.ExecuteAsync(static _ => throw RecoverableFailure).GetAwaiter().GetResult());
         AssertBudget("fallback completed async notification", 512, this, static test =>
             test._fallbackWithAsyncNotification.ExecuteAsync(static _ => throw RecoverableFailure).GetAwaiter().GetResult());
+        AssertBudget("void fallback triggered", 1_536, this, static test =>
+            test._voidFallback.ExecuteAsync(static _ => throw RecoverableFailure).GetAwaiter().GetResult());
         AssertBudget("open circuit rejection", 2_048, this, static test =>
         {
             try

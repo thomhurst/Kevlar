@@ -74,7 +74,7 @@ The operation shield must be at-most-once. The two-shield constructor rejects re
 
 A Kevlar operation timeout is not an idle-stream timer. Use the gRPC deadline when the entire stream needs one absolute budget; its timestamp is preserved across server-establishment attempts.
 
-`WriteAsync(message, cancellationToken)` uses the operation token on modern gRPC APIs. On the `netstandard2.0` compatibility target, where gRPC exposes only `WriteAsync(message)`, operation cancellation cancels the call lifetime so a blocked write can complete. A gRPC deadline remains in the original `CallOptions` for every server-streaming establishment attempt.
+`WriteAsync(message, cancellationToken)` uses the operation token on the `netstandard2.1` and `net10.0` targets. On the `netstandard2.0` compatibility target, where gRPC exposes only `WriteAsync(message)`, operation cancellation cancels the call lifetime so a blocked write can complete. A gRPC deadline remains in the original `CallOptions` for every server-streaming establishment attempt.
 
 ## Dependency injection and named shields
 
@@ -123,4 +123,4 @@ For server streaming, retry and hedge only operations that are safe to repeat be
 
 ## Trimming and NativeAOT
 
-The interceptor uses no runtime code generation or reflection and targets `netstandard2.0` and `net10.0`. It is trimming- and NativeAOT-compatible when the generated gRPC client and its serializer are compatible. Generated protobuf clients are the supported baseline. Validate the complete application's transport, TLS, serializer, and DI configuration with your publish target; the repository package smoke tests cover trimmed, single-file, and NativeAOT consumers where the platform supports them.
+The interceptor uses no runtime code generation or reflection and targets `netstandard2.0`, `netstandard2.1`, and `net10.0`. The `netstandard2.1` asset preserves per-write cancellation when modern applications resolve gRPC's cancellable streaming interface. It is trimming- and NativeAOT-compatible when the generated gRPC client and its serializer are compatible. Generated protobuf clients are the supported baseline. Validate the complete application's transport, TLS, serializer, and DI configuration with your publish target; the repository package smoke tests cover trimmed, single-file, and NativeAOT consumers where the platform supports them.

@@ -361,19 +361,37 @@ public class ChaosStrategyTests
     [Test]
     public async Task Invalid_Fixed_And_Generated_Values_Are_Rejected()
     {
-        await Assert.That(() => ChaosShield.Fault(options => options.InjectionRate = 1.1))
-            .Throws<ArgumentOutOfRangeException>();
-        await Assert.That(() => ChaosShield.Latency(options => options.Delay = TimeSpan.FromMilliseconds(-1)))
-            .Throws<ArgumentOutOfRangeException>();
-
-        var generated = ChaosShield.Fault(options =>
+        var invalidRates = new[]
         {
-            options.Enabled = true;
-            options.InjectionRateGenerator = _ => double.NaN;
-        });
-        var outcome = await generated.ExecuteOutcomeAsync(_ => new ValueTask<int>(42));
+            -double.Epsilon,
+            1.1,
+            double.NegativeInfinity,
+            double.PositiveInfinity,
+            double.NaN,
+        };
+        foreach (var invalidRate in invalidRates)
+        {
+            await Assert.That(() => ChaosShield.Fault(options => options.InjectionRate = invalidRate))
+                .Throws<ArgumentOutOfRangeException>();
+        }
 
-        await Assert.That(outcome.Exception).IsTypeOf<ArgumentOutOfRangeException>();
+        foreach (var invalidDelay in new[] { TimeSpan.FromTicks(-1), TimeSpan.FromDays(100) })
+        {
+            await Assert.That(() => ChaosShield.Latency(options => options.Delay = invalidDelay))
+                .Throws<ArgumentOutOfRangeException>();
+        }
+
+        foreach (var invalidRate in invalidRates)
+        {
+            var generated = ChaosShield.Fault(options =>
+            {
+                options.Enabled = true;
+                options.InjectionRateGenerator = _ => invalidRate;
+            });
+            var outcome = await generated.ExecuteOutcomeAsync(_ => new ValueTask<int>(42));
+
+            await Assert.That(outcome.Exception).IsTypeOf<ArgumentOutOfRangeException>();
+        }
     }
 
     [Test]
@@ -498,9 +516,15 @@ public class ChaosStrategyTests
     {
         using (ChaosScope.Begin(operation: "outer-operation", environment: "outer-environment"))
         {
-            var inner = ChaosScope.Begin(operation: "inner-operation");
-            await Assert.That(ChaosScope.Operation).IsEqualTo("inner-operation");
-            await Assert.That(ChaosScope.Environment).IsEqualTo("outer-environment");
+            using (ChaosScope.Begin(operation: "inner-operation"))
+            {
+                await Assert.That(ChaosScope.Operation).IsEqualTo("inner-operation");
+                await Assert.That(ChaosScope.Environment).IsEqualTo("outer-environment");
+            }
+
+            var inner = ChaosScope.Begin(environment: "inner-environment");
+            await Assert.That(ChaosScope.Operation).IsEqualTo("outer-operation");
+            await Assert.That(ChaosScope.Environment).IsEqualTo("inner-environment");
             inner.Dispose();
             inner.Dispose();
 
@@ -510,6 +534,20 @@ public class ChaosStrategyTests
 
         await Assert.That(ChaosScope.Operation).IsNull();
         await Assert.That(ChaosScope.Environment).IsNull();
+    }
+
+    [Test]
+    public async Task Fixed_Chaos_Strategies_Describe_Their_Effective_Behavior()
+    {
+        var latency = ChaosShield.Latency(options => options.Delay = TimeSpan.FromMilliseconds(1.25));
+        var fault = ChaosShield.Fault(options => options.Exception = new TestException("fixed"));
+        var outcome = ChaosShield.Outcome<int>(options => options.Result = 42);
+        var behavior = ChaosShield.Behavior(options => options.Behavior = static _ => default);
+
+        await Assert.That(latency.ToString()).Contains("ChaosLatency(1.25ms)");
+        await Assert.That(fault.ToString()).Contains("ChaosFault(TestException)");
+        await Assert.That(outcome.ToString()).Contains("ChaosOutcome");
+        await Assert.That(behavior.ToString()).Contains("ChaosBehavior");
     }
 
     [Test]

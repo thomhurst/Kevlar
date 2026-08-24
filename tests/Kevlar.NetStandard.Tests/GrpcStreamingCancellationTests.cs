@@ -27,7 +27,7 @@ public class GrpcStreamingCancellationTests
         await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
 
         _ = await Assert.That(async () => await write.WaitAsync(TimeSpan.FromSeconds(5)))
-            .Throws<OperationCanceledException>();
+            .Throws<TimeoutExceededException>();
 
         await cancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
     }
@@ -65,6 +65,39 @@ public class GrpcStreamingCancellationTests
         await lifetimeCancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
     }
 
+    [Test]
+    public async Task Per_Write_Cancellation_Preserves_The_Operation_Token()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var lifetimeCancelled = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var interceptor = new ShieldStreamingClientInterceptor(Shield.Empty);
+        using var call = interceptor.AsyncClientStreamingCall(
+            Context(),
+            context => new AsyncClientStreamingCall<Request, Reply>(
+                new BlockingWriter(
+                    context.Options.CancellationToken,
+                    started,
+                    lifetimeCancelled),
+                Task.FromResult(new Reply()),
+                Task.FromResult(new Metadata()),
+                static () => Status.DefaultSuccess,
+                static () => new Metadata(),
+                static () => { }));
+
+        var write = call.RequestStream.WriteAsync(new Request(), cancellation.Token);
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        cancellation.Cancel();
+
+        var exception = await Assert.That(async () =>
+                await write.WaitAsync(TimeSpan.FromSeconds(5)))
+            .Throws<OperationCanceledException>();
+
+        await Assert.That(exception!.CancellationToken).IsEqualTo(cancellation.Token);
+        await lifetimeCancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
+    }
+
     private static ClientInterceptorContext<Request, Reply> Context(
         CancellationToken cancellationToken = default)
     {
@@ -89,11 +122,13 @@ public class GrpcStreamingCancellationTests
 
         public Task CompleteAsync() => Task.CompletedTask;
 
-        public async Task WriteAsync(Request message)
+        public Task WriteAsync(Request message) => WriteAsync(message, lifetimeToken);
+
+        public async Task WriteAsync(Request message, CancellationToken cancellationToken)
         {
             var completion = new TaskCompletionSource(
                 TaskCreationOptions.RunContinuationsAsynchronously);
-            using var registration = lifetimeToken.Register(() =>
+            using var registration = cancellationToken.Register(() =>
             {
                 cancelled.TrySetResult();
                 completion.TrySetException(

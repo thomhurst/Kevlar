@@ -17,7 +17,7 @@
     <ProjectReference Include="..\..\src\Kevlar.Extensions.Http\Kevlar.Extensions.Http.csproj"
                       SetTargetFramework="TargetFramework=netstandard2.0" />
     <ProjectReference Include="..\..\src\Kevlar.Extensions.Grpc\Kevlar.Extensions.Grpc.csproj"
-                      SetTargetFramework="TargetFramework=netstandard2.0" />
+                      SetTargetFramework="TargetFramework=netstandard2.1" />
     <ProjectReference Include="..\..\src\Kevlar.Chaos\Kevlar.Chaos.csproj"
                       SetTargetFramework="TargetFramework=netstandard2.0" />
   </ItemGroup>
