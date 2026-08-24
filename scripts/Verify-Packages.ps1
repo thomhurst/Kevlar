@@ -312,6 +312,15 @@ foreach ($packageId in $expectedDependencies.Keys)
             foreach ($dependency in $dependencies)
             {
                 Assert-Set "$packageId $framework $($dependency.GetAttribute('id')) excluded assets" ($dependency.GetAttribute('exclude') -split ',') @('Build', 'Analyzers')
+
+                if ($dependency.GetAttribute('id') -eq 'Kevlar' -and
+                    $packageId -in @('Kevlar.Testing', 'Kevlar.Extensions.RateLimiting'))
+                {
+                    Assert-Equal `
+                        "$packageId $framework Kevlar dependency version" `
+                        $dependency.GetAttribute('version') `
+                        "[$Version]"
+                }
             }
         }
 
@@ -518,6 +527,54 @@ try
 "@
     $nugetConfigPath = Join-Path $temporaryRoot 'NuGet.Config'
     Write-TextFile $nugetConfigPath $nugetConfig
+
+    $skewVersion = '999.0.0-skew'
+    $skewFeed = Join-Path $temporaryRoot 'skew-feed'
+    [System.IO.Directory]::CreateDirectory($skewFeed) | Out-Null
+    Get-ChildItem -LiteralPath $packageDirectory -Filter '*.nupkg' -File |
+        Copy-Item -Destination $skewFeed
+    Invoke-DotNet @(
+        'pack', (Join-Path $repositoryRoot 'src/Kevlar/Kevlar.csproj'),
+        '-c', 'Release',
+        '--no-build',
+        "-p:Version=$skewVersion",
+        '-p:CI=true',
+        "-p:PackageOutputPath=$skewFeed")
+
+    $escapedSkewFeed = [System.Security.SecurityElement]::Escape($skewFeed)
+    $skewNugetConfig = $nugetConfig.Replace($escapedPackageDirectory, $escapedSkewFeed)
+    $skewNugetConfigPath = Join-Path $temporaryRoot 'NuGet.Skew.Config'
+    Write-TextFile $skewNugetConfigPath $skewNugetConfig
+    $skewConsumerDirectory = Join-Path $temporaryRoot 'version-skew'
+    $skewConsumerProject = @"
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Kevlar" Version="$skewVersion" />
+    <PackageReference Include="Kevlar.Testing" Version="$Version" />
+  </ItemGroup>
+</Project>
+"@
+    $skewConsumerProjectPath = Join-Path $skewConsumerDirectory 'VersionSkew.csproj'
+    Write-TextFile $skewConsumerProjectPath $skewConsumerProject
+    $skewRestoreOutput = (& dotnet restore `
+        $skewConsumerProjectPath `
+        --configfile $skewNugetConfigPath `
+        --no-cache `
+        --force-evaluate 2>&1 | Out-String)
+    if ($LASTEXITCODE -eq 0)
+    {
+        throw "NuGet accepted Kevlar.Testing $Version with incompatible Kevlar $skewVersion.`n$skewRestoreOutput"
+    }
+
+    if ($skewRestoreOutput -notmatch '\bNU1608\b' -or
+        $skewRestoreOutput -notmatch [regex]::Escape("Kevlar.Testing $Version"))
+    {
+        throw "Version-skew restore did not report the expected exact-dependency conflict.`n$skewRestoreOutput"
+    }
 
     $runtimeProgram = @'
 using Kevlar;
