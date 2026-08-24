@@ -69,7 +69,7 @@ const features: FeatureItem[] = [
     accent: 'API',
     description: (
       <>
-        <code>Shield.When&lt;TimeoutException&gt;().Retry(3)</code> reads like
+        <code>Shield.When&lt;TimeoutExceededException&gt;().Retry(3)</code> reads like
         intent, not infrastructure. Use concise defaults or take full control
         with options objects.
       </>

@@ -35,8 +35,16 @@ jobs:
         run: npm ci
         working-directory: docs
 
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+        working-directory: docs
+
       - name: Build documentation
         run: npm run build
+        working-directory: docs
+
+      - name: Test documentation UI
+        run: npm run test:e2e
         working-directory: docs
 
       - name: Setup Pages

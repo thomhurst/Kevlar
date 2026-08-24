@@ -299,6 +299,8 @@ for ($snippetIndex = 0; $snippetIndex -lt $snippets.Count; $snippetIndex++)
 
 $observableSnippetIndex = -1
 $invalidCompositionSnippetIndex = -1
+$timeoutExceededClauseSnippetIndex = -1
+$systemTimeoutClauseTrapSnippetIndex = -1
 for ($snippetIndex = 0; $snippetIndex -lt $snippets.Count; $snippetIndex++)
 {
     if ($snippets[$snippetIndex].RunName -eq 'pipeline-description')
@@ -310,9 +312,22 @@ for ($snippetIndex = 0; $snippetIndex -lt $snippets.Count; $snippetIndex++)
     {
         $invalidCompositionSnippetIndex = $snippetIndex
     }
+
+    if ($snippets[$snippetIndex].RunName -eq 'timeout-exceeded-clause')
+    {
+        $timeoutExceededClauseSnippetIndex = $snippetIndex
+    }
+
+    if ($snippets[$snippetIndex].RunName -eq 'system-timeout-clause-trap')
+    {
+        $systemTimeoutClauseTrapSnippetIndex = $snippetIndex
+    }
 }
 
-if ($observableSnippetIndex -lt 0 -or $invalidCompositionSnippetIndex -lt 0)
+if ($observableSnippetIndex -lt 0 `
+    -or $invalidCompositionSnippetIndex -lt 0 `
+    -or $timeoutExceededClauseSnippetIndex -lt 0 `
+    -or $systemTimeoutClauseTrapSnippetIndex -lt 0)
 {
     throw 'A required executable documentation snippet is missing.'
 }
@@ -337,6 +352,8 @@ if ($observableSnippetIndex -lt 0 -or $invalidCompositionSnippetIndex -lt 0)
 [void]$builder.AppendLine('        catch (InvalidOperationException exception) when (exception.Message.Contains("Fallback", StringComparison.Ordinal))')
 [void]$builder.AppendLine('        {')
 [void]$builder.AppendLine('        }')
+[void]$builder.AppendLine("        await Snippet$timeoutExceededClauseSnippetIndex.RunAsync();")
+[void]$builder.AppendLine("        await Snippet$systemTimeoutClauseTrapSnippetIndex.RunAsync();")
 [void]$builder.AppendLine('        Console.WriteLine("Executed documented pipeline behavior successfully.");')
 [void]$builder.AppendLine('    }')
 [void]$builder.AppendLine('}')

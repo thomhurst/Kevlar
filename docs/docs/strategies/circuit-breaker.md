@@ -52,7 +52,7 @@ var breaker = Shield.CircuitBreaker(o =>
     {
         await Task.Yield(); // for example, fetch a dependency recovery hint
         trip.Context.CancellationToken.ThrowIfCancellationRequested();
-        return trip.Exception is TimeoutException
+        return trip.Exception is TimeoutExceededException
             ? TimeSpan.FromMinutes(1)
             : TimeSpan.FromSeconds(30);
     };
