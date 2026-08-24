@@ -96,8 +96,9 @@ public class VoidFallbackTests
     }
 
     [Test]
-    public async Task Successful_Result_Executions_Are_Untouched()
+    public async Task Successful_Result_Execution_Is_Refused_Without_Invoking_The_Action()
     {
+        var actionRan = false;
         var fallbackRan = false;
         var shield = Shield.When<InvalidOperationException>().Fallback((_, _) =>
         {
@@ -105,10 +106,40 @@ public class VoidFallbackTests
             return default;
         });
 
-        var result = await shield.ExecuteAsync(static _ => new ValueTask<int>(42));
+        await Assert.That(async () => await shield.ExecuteAsync(_ =>
+            {
+                actionRan = true;
+                return new ValueTask<int>(42);
+            }))
+            .Throws<InvalidOperationException>();
 
-        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(actionRan).IsFalse();
         await Assert.That(fallbackRan).IsFalse();
+    }
+
+    [Test]
+    public async Task Result_Execution_Is_Refused_Before_Outer_Retry_With_A_Different_Clause()
+    {
+        var attempts = 0;
+        var fallbackRuns = 0;
+        var shield = Shield
+            .Retry(1, Backoff.None)
+            .When<IOException>()
+            .Fallback((_, _) =>
+            {
+                fallbackRuns++;
+                return default;
+            });
+
+        await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
+            {
+                attempts++;
+                throw new IOException();
+            }))
+            .Throws<InvalidOperationException>();
+
+        await Assert.That(attempts).IsEqualTo(0);
+        await Assert.That(fallbackRuns).IsEqualTo(0);
     }
 
     [Test]

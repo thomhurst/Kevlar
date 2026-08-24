@@ -22,6 +22,7 @@ public sealed class Shield
     internal readonly StrategyNode? Head;
     internal readonly OutcomeJudge? Ambient;
     internal readonly TimeProvider? Time;
+    private readonly bool _hasVoidFallback;
 
     internal Shield(Strategy[] strategies, OutcomeJudge? ambient, string? name, TimeProvider? timeProvider)
     {
@@ -31,6 +32,15 @@ public sealed class Shield
         Ambient = ambient;
         Name = name;
         Time = timeProvider;
+
+        foreach (var strategy in strategies)
+        {
+            if (strategy is VoidFallbackStrategy)
+            {
+                _hasVoidFallback = true;
+                break;
+            }
+        }
     }
 
     /// <summary>The shield's diagnostic name, if assigned via <c>WithName</c>.</summary>
@@ -225,6 +235,7 @@ public sealed class Shield
     public ValueTask<T> ExecuteAsync<T>(Func<CancellationToken, ValueTask<T>> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
+        ThrowIfVoidFallbackResultExecution();
         return ShieldEngine.ExecuteAsync(Head, TimeOrSystem, Name, action, static (a, token) => a(token), cancellationToken);
     }
 
@@ -232,6 +243,7 @@ public sealed class Shield
     public ValueTask<T> ExecuteAsync<T, TState>(TState state, Func<TState, CancellationToken, ValueTask<T>> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
+        ThrowIfVoidFallbackResultExecution();
         return ShieldEngine.ExecuteAsync(Head, TimeOrSystem, Name, state, action, cancellationToken);
     }
 
@@ -247,6 +259,7 @@ public sealed class Shield
     {
         Throw.IfNull(initializeProperties, nameof(initializeProperties));
         Throw.IfNull(action, nameof(action));
+        ThrowIfVoidFallbackResultExecution();
         return ShieldEngine.ExecuteWithContextAsync(
             Head,
             TimeOrSystem,
@@ -355,6 +368,7 @@ public sealed class Shield
     public ValueTask<Outcome<T>> ExecuteOutcomeAsync<T>(Func<CancellationToken, ValueTask<T>> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
+        ThrowIfVoidFallbackResultExecution();
         return ShieldEngine.ExecuteOutcomeAsync(Head, TimeOrSystem, Name, action, static (a, token) => a(token), cancellationToken);
     }
 
@@ -365,6 +379,7 @@ public sealed class Shield
     public ValueTask<Outcome<T>> ExecuteOutcomeAsync<T, TState>(TState state, Func<TState, CancellationToken, ValueTask<T>> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
+        ThrowIfVoidFallbackResultExecution();
         return ShieldEngine.ExecuteOutcomeAsync(Head, TimeOrSystem, Name, state, action, cancellationToken);
     }
 
@@ -375,6 +390,7 @@ public sealed class Shield
     public T Execute<T>(Func<CancellationToken, T> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
+        ThrowIfVoidFallbackResultExecution();
         return ShieldEngine.ExecuteSync(Head, TimeOrSystem, Name, action, static (a, token) => a(token), cancellationToken);
     }
 
@@ -382,6 +398,7 @@ public sealed class Shield
     public T Execute<T, TState>(TState state, Func<TState, CancellationToken, T> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
+        ThrowIfVoidFallbackResultExecution();
         return ShieldEngine.ExecuteSync(Head, TimeOrSystem, Name, state, action, cancellationToken);
     }
 
@@ -397,6 +414,7 @@ public sealed class Shield
     {
         Throw.IfNull(initializeProperties, nameof(initializeProperties));
         Throw.IfNull(action, nameof(action));
+        ThrowIfVoidFallbackResultExecution();
         return ShieldEngine.ExecuteWithContextSync(
             Head,
             TimeOrSystem,
@@ -492,6 +510,17 @@ public sealed class Shield
     public override string ToString() => Describe(Name, Strategies);
 
     // ── Internals ───────────────────────────────────────────────────────────────────────
+
+    private void ThrowIfVoidFallbackResultExecution()
+    {
+        if (_hasVoidFallback)
+        {
+            throw new InvalidOperationException(
+                "Fallback on a non-generic Shield applies only to void executions. " +
+                "For executions that return a value, build a result-aware shield with " +
+                "Shield.For<T>() and use its Fallback overloads.");
+        }
+    }
 
     internal static string Describe(string? name, Strategy[] strategies)
     {

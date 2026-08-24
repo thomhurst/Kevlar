@@ -464,10 +464,10 @@ public class MetricsTests
             .Fallback(static _ => ValueTask.CompletedTask)
             .WithName(name);
 
-        var outcome = await shield.ExecuteOutcomeAsync<int>(
-            static _ => ValueTask.FromException<int>(new InvalidOperationException()));
+        await Assert.That(async () => await shield.ExecuteOutcomeAsync<int>(
+                static _ => ValueTask.FromException<int>(new InvalidOperationException())))
+            .Throws<InvalidOperationException>();
 
-        await Assert.That(outcome.Exception).IsTypeOf<InvalidOperationException>();
         await Assert.That(listener.Total("kevlar.fallbacks", name)).IsEqualTo(0);
     }
 
