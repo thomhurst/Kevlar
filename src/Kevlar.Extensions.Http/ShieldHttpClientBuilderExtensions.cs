@@ -265,7 +265,7 @@ public static class ShieldHttpClientBuilderExtensions
         var shield = CreateHedgingShield(options);
         var handlerOptions = CreateHandlerOptions(options);
 
-        return builder.AddHttpMessageHandler(() =>
+        return UseStandardTimeout(builder).AddHttpMessageHandler(() =>
             new ShieldDelegatingHandler(shield, handlerOptions));
     }
 
@@ -310,7 +310,7 @@ public static class ShieldHttpClientBuilderExtensions
         }
 
         ValidateHedgingConfiguration(configuration);
-        return builder.AddHttpMessageHandler(services =>
+        return UseStandardTimeout(builder).AddHttpMessageHandler(services =>
         {
             HttpShieldPipeline CreatePipeline()
             {

@@ -246,6 +246,22 @@ public class HttpContractTests
     }
 
     [Test]
+    public async Task Standard_Hedging_Uses_Shield_Timeout_Instead_Of_HttpClient_Timeout()
+    {
+        using var services = new ServiceCollection()
+            .AddHttpClient("standard-hedging-timeout", client =>
+                client.Timeout = TimeSpan.FromMilliseconds(10))
+            .AddStandardHedgingShield(options =>
+                options.Endpoints.Add(new HttpEndpoint(new Uri("https://example.test"))))
+            .Services
+            .BuildServiceProvider();
+        using var client = services.GetRequiredService<IHttpClientFactory>()
+            .CreateClient("standard-hedging-timeout");
+
+        await Assert.That(client.Timeout).IsEqualTo(Timeout.InfiniteTimeSpan);
+    }
+
+    [Test]
     [Arguments(RetryAfterKind.Absent, 3)]
     [Arguments(RetryAfterKind.ShorterDelta, 3)]
     [Arguments(RetryAfterKind.EqualDelta, 3)]
