@@ -1,4 +1,5 @@
 Kevlar.HandlingClause
+*REMOVED*Kevlar.StrategyNode
 Kevlar.HandlingClause.HandlingClause() -> void
 Kevlar.HandlingClause.ShouldHandle<T>(in Kevlar.Outcome<T> outcome) -> bool
 static Kevlar.HandlingClause.Default.get -> Kevlar.HandlingClause
