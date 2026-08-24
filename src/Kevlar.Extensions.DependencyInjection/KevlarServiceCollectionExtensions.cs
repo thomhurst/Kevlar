@@ -231,7 +231,7 @@ public static class KevlarServiceCollectionExtensions
             {
                 retryDefinition.MaxRetries = maxRetries;
             }
-            if (ReadEnum<BackoffKind>(retry, nameof(RetryDefinition.Backoff)) is { } backoff)
+            if (ReadBackoffKind(retry, nameof(RetryDefinition.Backoff)) is { } backoff)
             {
                 retryDefinition.Backoff = backoff;
             }
@@ -356,6 +356,23 @@ public static class KevlarServiceCollectionExtensions
         Read(configuration, key) is { } value
             ? ParseEnum<TEnum>(configuration, key, value)
             : null;
+
+    private static BackoffKind? ReadBackoffKind(IConfiguration configuration, string key)
+    {
+        if (Read(configuration, key) is not { } value)
+        {
+            return null;
+        }
+
+        var backoff = ParseEnum<BackoffKind>(configuration, key, value);
+        return backoff != BackoffKind.Custom
+            ? backoff
+            : throw InvalidValue(
+                configuration,
+                key,
+                value,
+                "a configurable BackoffKind (None, Constant, Linear, or Exponential)");
+    }
 
     private static string? ReadNullable(IConfiguration configuration, string key)
     {

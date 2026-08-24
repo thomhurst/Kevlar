@@ -110,7 +110,10 @@ public sealed class RetryDefinition
     /// <summary>Maximum retries after the initial attempt. Default 3.</summary>
     public int MaxRetries { get; set; } = 3;
 
-    /// <summary>The backoff curve. Default <see cref="BackoffKind.Exponential"/>.</summary>
+    /// <summary>
+    /// The backoff curve. Default <see cref="BackoffKind.Exponential"/>. DI definitions support
+    /// None, Constant, Linear, and Exponential; custom callbacks require the fluent API.
+    /// </summary>
     public BackoffKind Backoff { get; set; } = BackoffKind.Exponential;
 
     /// <summary>
@@ -138,6 +141,8 @@ public sealed class RetryDefinition
             Factor,
             MaxDelay ?? TimeSpan.FromSeconds(30),
             Jitter),
+        BackoffKind.Custom => throw new InvalidOperationException(
+            "RetryDefinition cannot construct BackoffKind.Custom; configure Backoff.Custom with the fluent API."),
         _ => throw new ArgumentOutOfRangeException(nameof(Backoff), Backoff, "Unknown backoff kind."),
     };
 }

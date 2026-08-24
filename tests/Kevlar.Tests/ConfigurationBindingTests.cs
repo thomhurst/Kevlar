@@ -128,6 +128,21 @@ public class ConfigurationBindingTests
     }
 
     [Test]
+    public async Task Custom_BackoffKind_Throws_With_Path()
+    {
+        var configuration = BuildConfiguration(("Retry:Backoff", "Custom"));
+        var services = new ServiceCollection();
+        services.AddShield("invalid", configuration);
+        using var provider = services.BuildServiceProvider();
+
+        await Assert.That(() => provider.GetRequiredService<IKevlarRegistry>().GetShield("invalid"))
+            .Throws<InvalidOperationException>()
+            .WithMessage(
+                "Configuration value 'Custom' for 'Retry:Backoff' is not a configurable "
+                + "BackoffKind (None, Constant, Linear, or Exponential).");
+    }
+
+    [Test]
     public async Task Exponential_Defaults_Match_The_Fluent_Api()
     {
         var definition = new ShieldDefinition { Retry = new RetryDefinition() };
