@@ -11,17 +11,18 @@ fault, or reports a testing assertion failure.
 ## Reference
 
 The **default clause** column says whether a reactive strategy handles the exception when no custom
-[`When` clause](handling-failures.md) is present. Today the default is every exception except
-`OperationCanceledException`, so it includes Kevlar's own rejections. Use an explicit clause when a
-retry, breaker, hedge, or fallback must exclude them.
+[`When` clause](handling-failures.md) is present. The default handles ordinary errors but excludes
+`OperationCanceledException`, circuit-open, rate-limit, and concurrency-limit rejections, and fatal
+runtime exceptions. Use an explicit clause to include an excluded rejection or narrow the ordinary
+errors handled by a retry, breaker, hedge, or fallback.
 
 | Exception | Thrown by | Properties | Base class | Catch pattern | Default clause |
 |---|---|---|---|---|---|
 | `KevlarException` | Abstract base for core strategy rejections | Inherited `InnerException` carries a cause when the concrete rejection has one. | `Exception` | `catch (KevlarException)` | N/A |
-| `TimeoutExceededException` | Timeout | `Timeout` is the winning budget; inherited `InnerException` is currently `null`. | `KevlarException` | `catch (TimeoutExceededException e) when (e.Timeout == budget)` | Yes |
-| `CircuitOpenException` | Circuit breaker | `RetryAfter` is the remaining break duration; `IsIsolated` distinguishes manual isolation; inherited `InnerException` is the last failure when known. | `KevlarException` | `catch (CircuitOpenException e) when (e.RetryAfter is { } delay)` | Yes |
-| `RateLimitExceededException` | Rate limit | `RetryAfter` estimates when a permit may become available. | `KevlarException` | `catch (RateLimitExceededException e) when (e.RetryAfter is { } delay)` | Yes |
-| `ConcurrencyLimitExceededException` | Concurrency limit | Inherited `InnerException` is `null`; the rejection means both execution and queue capacity are full. | `KevlarException` | `catch (ConcurrencyLimitExceededException)` | Yes |
+| `TimeoutExceededException` | Timeout | `Timeout` is the winning budget; a strategy-produced timeout carries the delegate's cancellation exception in inherited `InnerException`. The public one-argument constructor leaves it `null`. | `KevlarException` | `catch (TimeoutExceededException e) when (e.Timeout == budget)` | Yes |
+| `CircuitOpenException` | Circuit breaker | `RetryAfter` is the remaining break duration; `IsIsolated` distinguishes manual isolation; inherited `InnerException` is the last failure when known. | `KevlarException` | `catch (CircuitOpenException e) when (e.RetryAfter is { } delay)` | No |
+| `RateLimitExceededException` | Rate limit | `RetryAfter` estimates when a permit may become available. | `KevlarException` | `catch (RateLimitExceededException e) when (e.RetryAfter is { } delay)` | No |
+| `ConcurrencyLimitExceededException` | Concurrency limit | Inherited `InnerException` is `null`; the rejection means both execution and queue capacity are full. | `KevlarException` | `catch (ConcurrencyLimitExceededException)` | No |
 | `HttpRequestReplayException` | HTTP request replay and endpoint routing | Inherited `InnerException` is the content failure when serialization or buffering caused the replay failure. | `InvalidOperationException` | `catch (HttpRequestReplayException e)` | Yes |
 | `ChaosInjectedException` | Chaos fault injection | Inherited `InnerException` is populated only when the configured injected fault wraps a cause. | `Exception` | `catch (ChaosInjectedException e)` | Yes |
 | `ShieldAssertionException` | Kevlar.Testing assertions and bounded waits | Inherited `InnerException` is `null`; `Message` explains the failed assertion or unmet condition. | `Exception` | `catch (ShieldAssertionException e)` | Yes |
