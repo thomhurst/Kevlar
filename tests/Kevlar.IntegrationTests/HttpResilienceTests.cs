@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Net;
 using Kevlar.Extensions.Http;
 using Kevlar.IntegrationTests.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
@@ -73,6 +74,26 @@ public class HttpResilienceTests
         await Assert.That(await response.Content.ReadAsStringAsync()).IsEqualTo("recovered");
         await Assert.That(stopwatch.Elapsed < TimeSpan.FromSeconds(4)).IsTrue();
         await Assert.That(server.CallCount).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task Attempt_Timeout_Retries_A_Transport_Wrapped_Cancellation()
+    {
+        var handler = new WrappedCancellationHandler();
+        using var client = new HttpClient(handler)
+        {
+            Timeout = System.Threading.Timeout.InfiniteTimeSpan,
+        };
+        var shield = Shield.For<HttpResponseMessage>()
+            .When<TimeoutExceededException>()
+            .Retry(1, Backoff.None)
+            .Timeout(TimeSpan.FromMilliseconds(20));
+
+        using var response = await shield.ExecuteAsync(cancellationToken =>
+            new ValueTask<HttpResponseMessage>(client.GetAsync("http://localhost/", cancellationToken)));
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(handler.Attempts).IsEqualTo(2);
     }
 
     [Test]
@@ -275,4 +296,29 @@ public class HttpResilienceTests
     }
 
     private sealed class FactoryMarker;
+
+    private sealed class WrappedCancellationHandler : HttpMessageHandler
+    {
+        public int Attempts { get; private set; }
+
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            Attempts++;
+            if (Attempts == 1)
+            {
+                try
+                {
+                    await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw new TaskCanceledException("transport wrapper");
+                }
+            }
+
+            return new HttpResponseMessage(HttpStatusCode.OK);
+        }
+    }
 }
