@@ -126,6 +126,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         private readonly Uri[]? _endpointOrder;
 
         private Task<HttpRequestTemplate>? _template;
+        private Task<HttpResponseMessage>? _singleAttempt;
         private CancellationTokenSource? _templateCancellation;
         private HttpResponseMessage? _terminalResponse;
         private CancellationToken _lastAttemptToken;
@@ -171,7 +172,24 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             return default;
         }
 
-        public async ValueTask<HttpResponseMessage> SendAttemptAsync(CancellationToken cancellationToken)
+        public ValueTask<HttpResponseMessage> SendAttemptAsync(CancellationToken cancellationToken)
+        {
+            if (_canReplay)
+            {
+                return SendAttemptCoreAsync(cancellationToken);
+            }
+
+            Task<HttpResponseMessage> singleAttempt;
+            lock (_gate)
+            {
+                singleAttempt = _singleAttempt ??= SendAttemptCoreAsync(cancellationToken).AsTask();
+            }
+
+            return new ValueTask<HttpResponseMessage>(singleAttempt);
+        }
+
+        private async ValueTask<HttpResponseMessage> SendAttemptCoreAsync(
+            CancellationToken cancellationToken)
         {
             await PrepareAsync(cancellationToken).ConfigureAwait(false);
             int attempt;

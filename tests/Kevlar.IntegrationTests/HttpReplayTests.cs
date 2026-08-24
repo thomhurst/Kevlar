@@ -149,6 +149,49 @@ public class HttpReplayTests
     }
 
     [Test]
+    public async Task False_Zero_ContentLength_Does_Not_Make_Content_Replayable()
+    {
+        var originalResponse = new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+        var transport = new RecordingHandler(async (_, request, _) =>
+        {
+            _ = await request.Content!.ReadAsByteArrayAsync();
+            return originalResponse;
+        });
+        using var invoker = CreateInvoker(
+            HttpShield.WhenTransient().Retry(1, Backoff.None),
+            new ShieldHttpHandlerOptions(),
+            transport);
+        using var request = new HttpRequestMessage(HttpMethod.Put, "https://origin.example/upload")
+        {
+            Content = new StreamContent(new MemoryStream([1, 2, 3])),
+        };
+        request.Content.Headers.ContentLength = 0;
+
+        using var response = await invoker.SendAsync(request, CancellationToken.None);
+
+        await Assert.That(ReferenceEquals(response, originalResponse)).IsTrue();
+        await Assert.That(transport.Attempts).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Custom_MultiInvocation_Strategy_Cannot_Replay_Unsafe_Method()
+    {
+        var originalResponse = new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+        var transport = new RecordingHandler((attempt, _, _) => Task.FromResult(
+            attempt == 1 ? originalResponse : new HttpResponseMessage(HttpStatusCode.OK)));
+        using var invoker = CreateInvoker(
+            Shield.For<HttpResponseMessage>().Use(new ReturnSecondStrategy()),
+            new ShieldHttpHandlerOptions(),
+            transport);
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://origin.example/api");
+
+        using var response = await invoker.SendAsync(request, CancellationToken.None);
+
+        await Assert.That(ReferenceEquals(response, originalResponse)).IsTrue();
+        await Assert.That(transport.Attempts).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Put_With_ByteArrayContent_NoBuffer_Is_Retried()
     {
         var bodies = new List<byte[]>();
@@ -1170,6 +1213,17 @@ public class HttpReplayTests
             await Task.Yield();
             cancellationToken.ThrowIfCancellationRequested();
             yield return 2;
+        }
+    }
+
+    private sealed class ReturnSecondStrategy : Strategy
+    {
+        public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+            Continuation<T, TState> next,
+            KevlarContext context)
+        {
+            _ = await next.InvokeAsync(context).ConfigureAwait(false);
+            return await next.InvokeAsync(context).ConfigureAwait(false);
         }
     }
 
