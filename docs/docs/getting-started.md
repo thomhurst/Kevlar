@@ -58,7 +58,9 @@ This matters for stateful strategies: a circuit breaker's state lives with the s
 
 ## Deciding what counts as a failure
 
-Reactive strategies (retry, circuit breaker, hedging, fallback) act on failures. By default that's **any exception except `OperationCanceledException`**. Narrow it with a handling clause:
+Reactive strategies (retry, circuit breaker, hedging, fallback) act on failures. By default that
+means ordinary exceptions, excluding cancellation, Kevlar's fail-fast rejections, and fatal
+runtime failures. Narrow it with a handling clause:
 
 ```csharp
 var shield = Shield

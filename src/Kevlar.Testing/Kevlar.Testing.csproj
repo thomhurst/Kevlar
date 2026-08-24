@@ -7,6 +7,7 @@
     <IsPackable>true</IsPackable>
     <Description>Pipeline inspection, assertions, and deterministic time helpers for testing Kevlar shields.</Description>
     <PackageTags>resilience;testing;assertions;pipeline-inspection;fake-time;kevlar</PackageTags>
+    <PinKevlarDependencyVersion>true</PinKevlarDependencyVersion>
   </PropertyGroup>
 
   <ItemGroup>

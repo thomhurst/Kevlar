@@ -79,7 +79,7 @@ public sealed class Shield<TResult>
 
     /// <summary>
     /// Resets the ambient handling clause. Subsequent reactive strategies use the default
-    /// handling: any exception except <see cref="OperationCanceledException"/>.
+    /// handling defined by <see cref="HandlingClause.Default"/>.
     /// </summary>
     public Shield<TResult> WhenAnyError() => new(Strategies, OutcomeJudge.Default, Name, Time);
 

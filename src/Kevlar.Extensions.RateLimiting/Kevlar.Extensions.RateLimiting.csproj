@@ -7,6 +7,7 @@
     <IsPackable>true</IsPackable>
     <Description>System.Threading.RateLimiting adapters for Kevlar shields, including partitioned and custom asynchronous lease acquisition.</Description>
     <PackageTags>resilience;rate-limiting;system-threading-ratelimiting;kevlar</PackageTags>
+    <PinKevlarDependencyVersion>true</PinKevlarDependencyVersion>
   </PropertyGroup>
 
   <ItemGroup>

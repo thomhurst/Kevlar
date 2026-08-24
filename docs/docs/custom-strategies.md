@@ -113,7 +113,10 @@ var shield = Shield
     .Use(clause => new RetryOnceStrategy(clause));
 ```
 
-`ShouldHandle` works with exception and typed-result outcomes. The default handles any exception except `OperationCanceledException`. The existing `Use(Strategy)` overload remains the simpler choice for proactive strategies that do not inspect failures.
+`ShouldHandle` works with exception and typed-result outcomes. The default handles ordinary
+exceptions, excluding cancellation, Kevlar's fail-fast rejections, and fatal runtime failures. The
+existing `Use(Strategy)` overload remains the simpler choice for proactive strategies that do not
+inspect failures.
 
 Override `Strategy.Handling` when retaining the supplied clause, as above. This declaration lets Kevlar's unreachable-fallback validation and `Kevlar.Testing` custom strategy descriptors see the strategy's handling. A strategy with intentionally local rules may ignore the factory argument and implement those rules itself.
 
