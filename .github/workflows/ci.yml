@@ -219,6 +219,17 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: npx --yes --package renovate -- renovate-config-validator renovate.json
 
+      - name: Verify changelog and release notes
+        if: matrix.os == 'ubuntu-latest'
+        shell: pwsh
+        run: |
+          ./scripts/Verify-Changelog.ps1
+          $heading = Select-String CHANGELOG.md -Pattern '^## \[([0-9]+\.[0-9]+\.[0-9]+)\]' | Select-Object -First 1
+          if ($null -eq $heading) { throw 'No release heading found.' }
+          $version = $heading.Matches[0].Groups[1].Value
+          $notes = ./scripts/Verify-Changelog.ps1 -ReleaseVersion $version
+          if ([string]::IsNullOrWhiteSpace(($notes | Out-String))) { throw "$version release notes are empty." }
+
       - name: Compile and execute documentation snippets
         if: matrix.os == 'ubuntu-latest'
         shell: pwsh

@@ -19,6 +19,7 @@ $nugetConfigPath = Join-Path $generatedDirectory 'NuGet.config'
 $projectPath = Join-Path $repositoryRoot 'tests/Kevlar.DocTests/Kevlar.DocTests.csproj'
 $documentPaths = @(
     (Join-Path $repositoryRoot 'README.md')
+    (Join-Path $repositoryRoot 'CHANGELOG.md')
     Get-ChildItem (Join-Path $repositoryRoot 'docs/docs') -Recurse -File -Include '*.md', '*.mdx' |
         Sort-Object FullName |
         ForEach-Object FullName
