@@ -23,7 +23,7 @@ public class ShieldInvocationSemanticsTests
 
         await Assert.That(Shield.Empty.Fallback(_ => ValueTask.CompletedTask).InvokesContinuationAtMostOnce)
             .IsTrue();
-        await Assert.That(Shield.For<int>().Fallback(0).InvokesContinuationAtMostOnce).IsTrue();
+        await Assert.That(Shield.For<int>().FallbackTo(0).InvokesContinuationAtMostOnce).IsTrue();
         await Assert.That(Shield.For<int>().Retry(0, Backoff.None).InvokesContinuationAtMostOnce).IsTrue();
         await Assert.That(Shield.For<int>().Hedge(1, TimeSpan.Zero).InvokesContinuationAtMostOnce).IsTrue();
     }
