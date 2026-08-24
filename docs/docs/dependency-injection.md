@@ -52,6 +52,9 @@ Registry semantics worth knowing:
 - Ordinary factory registrations run lazily on first resolve and the result is cached — so every consumer shares one instance (and its strategy state), exactly like instance registrations.
 - `AddShield` registers the `IKevlarRegistry` for you (`AddKevlar()` exists if you ever need just the registry).
 
+Use [`AddPartitionedShield`](partitioning.md#dependency-injection) when one registration must retain
+independent shield state per tenant, endpoint, or other key while remaining bounded.
+
 ## Binding shields from configuration
 
 `AddShield(name, IConfiguration)` builds a shield from a configuration section, so retry counts, timeouts and breaker thresholds are tunable per environment without a redeploy:

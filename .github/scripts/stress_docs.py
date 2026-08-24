@@ -55,7 +55,7 @@ def build_page(data, commit):
 
     lines = [
         "---",
-        "sidebar_position: 13",
+        "sidebar_position: 18",
         "sidebar_label: Stress Tests",
         "---",
         "",
