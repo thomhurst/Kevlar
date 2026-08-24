@@ -136,6 +136,23 @@ public class OutcomeAndContextTests
     }
 
     [Test]
+    public async Task Hedging_Preserves_Proxy_Exception_For_Outer_Strategies()
+    {
+        var original = new InvalidOperationException("original");
+        var observer = new ProxyObserverStrategy();
+        var shield = Shield
+            .Use(observer)
+            .Hedge(2, TimeSpan.Zero);
+
+        var actual = await Assert.That(async () => await shield.ExecuteAsync<int>(
+                _ => throw new TestProxyException(original)))
+            .Throws<TestProxyException>();
+
+        await Assert.That(observer.SawProxy).IsTrue();
+        await Assert.That(actual!.OriginalException).IsSameReferenceAs(original);
+    }
+
+    [Test]
     public async Task Legacy_Grpc_Proxy_Exception_Unwraps_To_Original()
     {
         var original = new InvalidOperationException("original");
@@ -380,6 +397,28 @@ public class OutcomeAndContextTests
             : base(originalException.Message, originalException)
         {
             Data[LegacyExceptionProxyDataKey] = originalException;
+        }
+    }
+
+    private sealed class ProxyObserverStrategy : Strategy
+    {
+        public bool SawProxy { get; private set; }
+
+        public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+            Continuation<T, TState> next,
+            KevlarContext context)
+        {
+            var outcome = await next.InvokeAsync(context);
+            try
+            {
+                _ = outcome.GetResultOrRethrowInternal();
+            }
+            catch (TestProxyException)
+            {
+                SawProxy = true;
+            }
+
+            return outcome;
         }
     }
 }
