@@ -6,7 +6,7 @@ namespace Kevlar.Tests;
 public class DependencyInjectionTests
 {
     [Test]
-    public async Task Void_Shields_Register_Without_Escaping_To_Shield()
+    public async Task Fallback_Shields_Register_As_Ordinary_Shields()
     {
         var fallbackCalls = 0;
         var services = new ServiceCollection()
@@ -18,28 +18,28 @@ public class DependencyInjectionTests
             }));
         using var provider = services.BuildServiceProvider();
         var registry = provider.GetRequiredService<IKevlarRegistry>();
-        var voidShield = registry.GetVoidShield("shared");
+        var fallbackShield = registry.GetShield("shared");
 
-        await voidShield.ExecuteAsync(_ => throw new InvalidOperationException());
+        await fallbackShield.ExecuteAsync(_ => throw new InvalidOperationException());
 
         await Assert.That(registry.GetShield("shared")).IsTypeOf<Shield>();
-        await Assert.That(voidShield).IsTypeOf<VoidShield>();
-        await Assert.That(provider.GetRequiredKeyedService<VoidShield>("shared"))
-            .IsSameReferenceAs(voidShield);
+        await Assert.That(fallbackShield).IsTypeOf<Shield>();
+        await Assert.That(provider.GetRequiredKeyedService<Shield>("shared"))
+            .IsSameReferenceAs(fallbackShield);
         await Assert.That(fallbackCalls).IsEqualTo(1);
     }
 
     [Test]
-    public async Task Partitioned_Void_Shields_Resolve_As_Keyed_Singletons()
+    public async Task Partitioned_Fallback_Shields_Resolve_As_Keyed_Singletons()
     {
         var services = new ServiceCollection()
-            .AddPartitionedVoidShield<string>(
+            .AddPartitionedShield<string>(
                 "void-tenants",
                 (_, _) => Shield.Fallback(static _ => ValueTask.CompletedTask));
         using var provider = services.BuildServiceProvider();
 
-        var first = provider.GetRequiredKeyedService<PartitionedVoidShield<string>>("void-tenants");
-        var second = provider.GetRequiredKeyedService<PartitionedVoidShield<string>>("void-tenants");
+        var first = provider.GetRequiredKeyedService<PartitionedShield<string>>("void-tenants");
+        var second = provider.GetRequiredKeyedService<PartitionedShield<string>>("void-tenants");
 
         await Assert.That(first).IsSameReferenceAs(second);
         await Assert.That(first.GetShield("acme")).IsSameReferenceAs(second.GetShield("acme"));

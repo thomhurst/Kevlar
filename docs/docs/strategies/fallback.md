@@ -35,20 +35,23 @@ var shield = Shield
     .Retry(3);
 ```
 
-A void fallback changes the chain's type to `VoidShield`. That type exposes only void execution
-overloads, and later fluent methods keep returning `VoidShield`, so a result-returning execution is
-rejected by the compiler. It also cannot be lifted with `For<TResult>()`, wrapped into a typed
-shield, or passed to mixed `Shield.Compose(...)`. Use `Wrap(...)` when composing around a void
-shield; the result remains `VoidShield`.
+A void fallback keeps the chain's type as `Shield`, so it can be stored, passed, and composed like
+any other untyped shield. It can recover void executions only. If a result-returning execution
+reaches the fallback, Kevlar throws an `InvalidOperationException` because the fallback cannot
+produce the required value. The `KEV005` analyzer catches statically visible cases.
 
 ```csharp
-var shield = Shield.Retry(3)
+Shield shield = Shield
     .Fallback(static _ => ValueTask.CompletedTask)
-    .Timeout(TimeSpan.FromSeconds(10)); // still VoidShield
+    .Retry(3)
+    .Timeout(TimeSpan.FromSeconds(10));
 
 await shield.ExecuteAsync(static _ => ValueTask.CompletedTask); // valid
-// shield.ExecuteAsync(static _ => new ValueTask<int>(42));      // does not compile
+// await shield.ExecuteAsync(static _ => new ValueTask<int>(42)); // KEV005
 ```
+
+For result-producing recovery, build a typed shield with `Shield.For<TResult>()` and use its typed
+`Fallback(...)` or `FallbackTo(...)` overloads.
 
 ## Three shapes
 

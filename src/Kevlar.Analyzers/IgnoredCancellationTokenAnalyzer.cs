@@ -89,7 +89,6 @@ public sealed class IgnoredCancellationTokenAnalyzer : DiagnosticAnalyzer
         var containingType = method.ContainingType.OriginalDefinition;
         return IsType(containingType, compilation.GetTypeByMetadataName("Kevlar.Shield"))
             || IsType(containingType, compilation.GetTypeByMetadataName("Kevlar.Shield`1"))
-            || IsType(containingType, compilation.GetTypeByMetadataName("Kevlar.VoidShield"))
             || IsType(containingType, compilation.GetTypeByMetadataName("Kevlar.ShieldTaskExtensions"));
     }
 

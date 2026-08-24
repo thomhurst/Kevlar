@@ -16,18 +16,6 @@ public static class ShieldDescriptorExtensions
         return Create(shield.Name, resultType: null, shield.Time is not null, shield.Strategies);
     }
 
-    /// <summary>Describes a void-only shield without executing it.</summary>
-    public static ShieldDescriptor GetDescriptor(this VoidShield shield)
-    {
-        if (shield is null)
-        {
-            throw new ArgumentNullException(nameof(shield));
-        }
-
-        var pipeline = shield.Pipeline;
-        return Create(pipeline.Name, resultType: null, pipeline.Time is not null, pipeline.Strategies);
-    }
-
     /// <summary>Describes a typed shield without executing it.</summary>
     public static ShieldDescriptor GetDescriptor<TResult>(this Shield<TResult> shield)
     {
