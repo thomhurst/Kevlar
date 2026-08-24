@@ -45,8 +45,8 @@ Kevlar.ConcurrencyLimitOptions
 Kevlar.ConcurrencyLimitOptions.ConcurrencyLimitOptions() -> void
 Kevlar.ConcurrencyLimitOptions.MaxConcurrency.get -> int
 Kevlar.ConcurrencyLimitOptions.MaxConcurrency.set -> void
-Kevlar.ConcurrencyLimitOptions.QueueLimit.get -> int
-Kevlar.ConcurrencyLimitOptions.QueueLimit.set -> void
+Kevlar.ConcurrencyLimitOptions.MaxQueue.get -> int
+Kevlar.ConcurrencyLimitOptions.MaxQueue.set -> void
 Kevlar.Continuation<T, TState>
 Kevlar.Continuation<T, TState>.Continuation() -> void
 Kevlar.Continuation<T, TState>.InvokeAsync(Kevlar.KevlarContext! context) -> System.Threading.Tasks.ValueTask<Kevlar.Outcome<T>>
@@ -152,7 +152,7 @@ Kevlar.Shield.Name.get -> string?
 Kevlar.Shield<TResult>
 Kevlar.Shield<TResult>.CircuitBreaker(int consecutiveFailures, System.TimeSpan breakDuration) -> Kevlar.Shield<TResult>!
 Kevlar.Shield<TResult>.CircuitBreaker(System.Action<Kevlar.CircuitBreakerOptions!>! configure) -> Kevlar.Shield<TResult>!
-Kevlar.Shield<TResult>.ConcurrencyLimit(int maxConcurrency, int queueLimit = 0) -> Kevlar.Shield<TResult>!
+Kevlar.Shield<TResult>.ConcurrencyLimit(int maxConcurrency, int maxQueue = 0) -> Kevlar.Shield<TResult>!
 Kevlar.Shield<TResult>.ConcurrencyLimit(System.Action<Kevlar.ConcurrencyLimitOptions!>! configure) -> Kevlar.Shield<TResult>!
 Kevlar.Shield<TResult>.Execute(System.Func<System.Threading.CancellationToken, TResult>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> TResult
 Kevlar.Shield<TResult>.Execute<TState>(TState state, System.Func<TState, System.Threading.CancellationToken, TResult>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> TResult
@@ -187,7 +187,7 @@ Kevlar.Shield<TResult>.Wrap(Kevlar.Shield<TResult>! inner) -> Kevlar.Shield<TRes
 Kevlar.ShieldBuilder
 Kevlar.ShieldBuilder.CircuitBreaker(int consecutiveFailures, System.TimeSpan breakDuration) -> Kevlar.Shield!
 Kevlar.ShieldBuilder.CircuitBreaker(System.Action<Kevlar.CircuitBreakerOptions!>! configure) -> Kevlar.Shield!
-Kevlar.ShieldBuilder.ConcurrencyLimit(int maxConcurrency, int queueLimit = 0) -> Kevlar.Shield!
+Kevlar.ShieldBuilder.ConcurrencyLimit(int maxConcurrency, int maxQueue = 0) -> Kevlar.Shield!
 Kevlar.ShieldBuilder.Fallback(System.Func<System.Exception!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback) -> Kevlar.Shield!
 Kevlar.ShieldBuilder.Hedge(int maxAttempts, System.TimeSpan delay) -> Kevlar.Shield!
 Kevlar.ShieldBuilder.Hedge(System.Action<Kevlar.HedgingOptions!>! configure) -> Kevlar.Shield!
@@ -206,7 +206,7 @@ Kevlar.ShieldBuilder.When<TException>(System.Func<TException!, bool>! predicate)
 Kevlar.ShieldBuilder<TResult>
 Kevlar.ShieldBuilder<TResult>.CircuitBreaker(int consecutiveFailures, System.TimeSpan breakDuration) -> Kevlar.Shield<TResult>!
 Kevlar.ShieldBuilder<TResult>.CircuitBreaker(System.Action<Kevlar.CircuitBreakerOptions!>! configure) -> Kevlar.Shield<TResult>!
-Kevlar.ShieldBuilder<TResult>.ConcurrencyLimit(int maxConcurrency, int queueLimit = 0) -> Kevlar.Shield<TResult>!
+Kevlar.ShieldBuilder<TResult>.ConcurrencyLimit(int maxConcurrency, int maxQueue = 0) -> Kevlar.Shield<TResult>!
 Kevlar.ShieldBuilder<TResult>.Fallback(System.Func<Kevlar.Outcome<TResult>, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! fallback, System.Action<Kevlar.FallbackEvent<TResult>>? onFallback = null) -> Kevlar.Shield<TResult>!
 Kevlar.ShieldBuilder<TResult>.Fallback(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! fallback, System.Action<Kevlar.FallbackEvent<TResult>>? onFallback = null) -> Kevlar.Shield<TResult>!
 Kevlar.ShieldBuilder<TResult>.Fallback(TResult fallbackValue, System.Action<Kevlar.FallbackEvent<TResult>>? onFallback = null) -> Kevlar.Shield<TResult>!
@@ -263,7 +263,7 @@ static Kevlar.Outcome<T>.FromResult(T result) -> Kevlar.Outcome<T>
 static Kevlar.Shield.CircuitBreaker(int consecutiveFailures, System.TimeSpan breakDuration) -> Kevlar.Shield!
 static Kevlar.Shield.CircuitBreaker(System.Action<Kevlar.CircuitBreakerOptions!>! configure) -> Kevlar.Shield!
 static Kevlar.Shield.Compose(params Kevlar.Shield![]! shields) -> Kevlar.Shield!
-static Kevlar.Shield.ConcurrencyLimit(int maxConcurrency, int queueLimit = 0) -> Kevlar.Shield!
+static Kevlar.Shield.ConcurrencyLimit(int maxConcurrency, int maxQueue = 0) -> Kevlar.Shield!
 static Kevlar.Shield.ConcurrencyLimit(System.Action<Kevlar.ConcurrencyLimitOptions!>! configure) -> Kevlar.Shield!
 static Kevlar.Shield.Empty.get -> Kevlar.Shield!
 static Kevlar.Shield.For<TResult>() -> Kevlar.ShieldBuilder<TResult>!
@@ -284,7 +284,7 @@ static Kevlar.Shield.When<TException>(System.Func<TException!, bool>! predicate)
 static Kevlar.Shield<TResult>.Empty.get -> Kevlar.Shield<TResult>!
 static Kevlar.ShieldExtensions.CircuitBreaker(this Kevlar.Shield! shield, int consecutiveFailures, System.TimeSpan breakDuration) -> Kevlar.Shield!
 static Kevlar.ShieldExtensions.CircuitBreaker(this Kevlar.Shield! shield, System.Action<Kevlar.CircuitBreakerOptions!>! configure) -> Kevlar.Shield!
-static Kevlar.ShieldExtensions.ConcurrencyLimit(this Kevlar.Shield! shield, int maxConcurrency, int queueLimit = 0) -> Kevlar.Shield!
+static Kevlar.ShieldExtensions.ConcurrencyLimit(this Kevlar.Shield! shield, int maxConcurrency, int maxQueue = 0) -> Kevlar.Shield!
 static Kevlar.ShieldExtensions.ConcurrencyLimit(this Kevlar.Shield! shield, System.Action<Kevlar.ConcurrencyLimitOptions!>! configure) -> Kevlar.Shield!
 static Kevlar.ShieldExtensions.Fallback(this Kevlar.Shield! shield, System.Func<System.Exception!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback) -> Kevlar.Shield!
 static Kevlar.ShieldExtensions.Fallback(this Kevlar.Shield! shield, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback) -> Kevlar.Shield!
