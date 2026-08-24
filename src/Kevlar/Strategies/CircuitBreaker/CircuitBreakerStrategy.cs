@@ -105,14 +105,14 @@ internal sealed class CircuitBreakerStrategy : Strategy
         {
             _core.RecordFailure(context.TimeProvider, outcome.Exception);
         }
-        else if (outcome.Exception is OperationCanceledException && context.CancellationToken.IsCancellationRequested)
+        else if (outcome.Exception is null)
         {
-            // A cancelled execution says nothing about downstream health; don't move the circuit.
-            _core.AbandonProbe(admittedProbeGeneration);
+            _core.RecordSuccess(context.TimeProvider);
         }
         else
         {
-            _core.RecordSuccess(context.TimeProvider);
+            // An unhandled exception says nothing about downstream health; don't move the circuit.
+            _core.AbandonProbe(admittedProbeGeneration);
         }
 
         if (recordState)
@@ -308,14 +308,14 @@ internal sealed class CircuitBreakerStrategy : Strategy
         {
             recording = _core.RecordFailureAsync(context.TimeProvider, in outcome, context);
         }
-        else if (outcome.Exception is OperationCanceledException && context.CancellationToken.IsCancellationRequested)
+        else if (outcome.Exception is null)
         {
-            _core.AbandonProbe(admittedProbeGeneration);
-            recording = default;
+            recording = _core.RecordSuccessAsync(context.TimeProvider);
         }
         else
         {
-            recording = _core.RecordSuccessAsync(context.TimeProvider);
+            _core.AbandonProbe(admittedProbeGeneration);
+            recording = default;
         }
 
         if (!recording.IsCompletedSuccessfully)

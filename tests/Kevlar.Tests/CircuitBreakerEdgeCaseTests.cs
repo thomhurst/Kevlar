@@ -181,7 +181,28 @@ public class CircuitBreakerEdgeCaseTests
     }
 
     [Test]
-    public async Task Unhandled_Exceptions_Count_As_Successes_For_The_Circuit()
+    public async Task Unhandled_Exception_Does_Not_Reset_Consecutive_Failures()
+    {
+        var monitor = new CircuitBreakerMonitor();
+        var shield = Shield
+            .When<InvalidOperationException>()
+            .CircuitBreaker(options =>
+            {
+                options.ConsecutiveFailures = 3;
+                options.BreakDuration = TimeSpan.FromMinutes(1);
+                options.Monitor = monitor;
+            });
+
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new ArgumentException());
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+
+        await Assert.That(monitor.State).IsEqualTo(CircuitState.Open);
+    }
+
+    [Test]
+    public async Task Sync_Unhandled_Exception_Does_Not_Reset_Consecutive_Failures()
     {
         var monitor = new CircuitBreakerMonitor();
         var shield = Shield
@@ -193,20 +214,85 @@ public class CircuitBreakerEdgeCaseTests
                 options.Monitor = monitor;
             });
 
-        // Handled, unhandled, handled, unhandled... the unhandled ArgumentException resets
-        // the consecutive count each time, so the circuit never opens.
-        for (var i = 0; i < 3; i++)
-        {
-            await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
-            await shield.ExecuteOutcomeAsync<int>(_ => throw new ArgumentException());
-        }
+        await Assert.That(() => shield.Execute<int>(_ => throw new InvalidOperationException()))
+            .Throws<InvalidOperationException>();
+        await Assert.That(() => shield.Execute<int>(_ => throw new ArgumentException()))
+            .Throws<ArgumentException>();
+        await Assert.That(() => shield.Execute<int>(_ => throw new InvalidOperationException()))
+            .Throws<InvalidOperationException>();
 
-        await Assert.That(monitor.State).IsEqualTo(CircuitState.Closed);
+        await Assert.That(monitor.State).IsEqualTo(CircuitState.Open);
+    }
+
+    [Test]
+    public async Task Async_Configured_Unhandled_Exception_Does_Not_Reset_Failures()
+    {
+        var monitor = new CircuitBreakerMonitor();
+        var shield = Shield
+            .When<InvalidOperationException>()
+            .CircuitBreaker(options =>
+            {
+                options.ConsecutiveFailures = 2;
+                options.BreakDuration = TimeSpan.FromMinutes(1);
+                options.Monitor = monitor;
+                options.OnStateChangedAsync = static _ => default;
+            });
 
         await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new ArgumentException());
         await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
 
         await Assert.That(monitor.State).IsEqualTo(CircuitState.Open);
+    }
+
+    [Test]
+    public async Task Unhandled_Exception_Does_Not_Count_Toward_Ratio_Throughput()
+    {
+        var monitor = new CircuitBreakerMonitor();
+        var shield = Shield
+            .When<InvalidOperationException>()
+            .CircuitBreaker(options =>
+            {
+                options.FailureRatio = 0.8;
+                options.MinimumThroughput = 3;
+                options.SamplingWindow = TimeSpan.FromMinutes(1);
+                options.BreakDuration = TimeSpan.FromMinutes(1);
+                options.Monitor = monitor;
+            });
+
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new ArgumentException());
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+
+        await Assert.That(monitor.State).IsEqualTo(CircuitState.Open);
+    }
+
+    [Test]
+    public async Task Unhandled_HalfOpen_Exception_Releases_The_Probe_Slot()
+    {
+        var fakeTime = new FakeTimeProvider();
+        var monitor = new CircuitBreakerMonitor();
+        var shield = Shield
+            .When<InvalidOperationException>()
+            .CircuitBreaker(options =>
+            {
+                options.ConsecutiveFailures = 1;
+                options.BreakDuration = TimeSpan.FromSeconds(1);
+                options.Monitor = monitor;
+            })
+            .WithTimeProvider(fakeTime);
+
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+        fakeTime.Advance(TimeSpan.FromSeconds(1));
+
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new ArgumentException());
+        await Assert.That(monitor.State).IsEqualTo(CircuitState.HalfOpen);
+
+        var result = await shield.ExecuteAsync(_ => new ValueTask<int>(42));
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(monitor.State).IsEqualTo(CircuitState.Closed);
     }
 
     [Test]
