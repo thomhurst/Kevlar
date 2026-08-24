@@ -88,6 +88,7 @@ Kevlar.Extensions.Http.StandardHttpShieldOptions.StandardHttpShieldOptions() -> 
 Kevlar.Extensions.Http.StandardHttpShieldOptions.TotalTimeout.get -> Kevlar.TimeoutOptions!
 Kevlar.Extensions.Http.StandardHttpShieldOptions.TotalTimeout.set -> void
 static Kevlar.Extensions.Http.HttpShield.Standard(Kevlar.Extensions.Http.StandardHttpShieldOptions! options) -> Kevlar.Shield<System.Net.Http.HttpResponseMessage!>!
+static Kevlar.Extensions.Http.HttpShield.RetryAfter(System.TimeSpan maxDelay) -> System.Func<Kevlar.RetryEvent<System.Net.Http.HttpResponseMessage!>, System.TimeSpan?>!
 static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, System.Action<Kevlar.Extensions.Http.StandardHttpShieldOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
 static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, System.Action<System.IServiceProvider!, Kevlar.Extensions.Http.StandardHttpShieldOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
 static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, Microsoft.Extensions.Configuration.IConfiguration! configuration, System.Action<System.Exception!>? onReloadFailure = null) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
