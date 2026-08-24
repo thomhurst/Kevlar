@@ -73,19 +73,55 @@ public class DependencyInjectionContractTests
     }
 
     [Test]
-    public async Task Last_Duplicate_Registration_Wins_On_Every_Path()
+    public async Task Void_Registry_TryGet_And_Keyed_Paths_Return_The_Same_Singleton()
+    {
+        var expected = Shield.Fallback(static _ => ValueTask.CompletedTask);
+        using var services = new ServiceCollection()
+            .AddShield("void", expected)
+            .BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+
+        var direct = registry.GetVoidShield("void");
+        var found = registry.TryGetVoidShield("void", out var tried);
+        var keyed = services.GetRequiredKeyedService<VoidShield>("void");
+
+        await Assert.That(found).IsTrue();
+        await Assert.That(ReferenceEquals(direct, expected)).IsTrue();
+        await Assert.That(ReferenceEquals(tried, expected)).IsTrue();
+        await Assert.That(ReferenceEquals(keyed, expected)).IsTrue();
+    }
+
+    [Test]
+    public async Task Last_Duplicate_Registration_Wins_For_Every_Shield_Kind()
     {
         var first = Shield.Retry(1, Backoff.None);
         var last = Shield.Timeout(TimeSpan.FromSeconds(1));
+        var firstTyped = Shield<int>.Empty;
+        var lastTyped = Shield.For<int>().Fallback(42);
+        var firstVoid = Shield.Fallback(static _ => ValueTask.CompletedTask);
+        var lastVoid = Shield.Fallback(static _ => ValueTask.FromException(
+            new InvalidOperationException("last")));
         using var provider = new ServiceCollection()
             .AddShield("duplicate", first)
             .AddShield("duplicate", last)
+            .AddShield("duplicate", firstTyped)
+            .AddShield("duplicate", lastTyped)
+            .AddShield("duplicate", firstVoid)
+            .AddShield("duplicate", lastVoid)
             .BuildServiceProvider();
 
         var registry = provider.GetRequiredService<IKevlarRegistry>();
 
         await Assert.That(ReferenceEquals(registry.GetShield("duplicate"), last)).IsTrue();
         await Assert.That(ReferenceEquals(provider.GetRequiredKeyedService<Shield>("duplicate"), last)).IsTrue();
+        await Assert.That(ReferenceEquals(registry.GetShield<int>("duplicate"), lastTyped)).IsTrue();
+        await Assert.That(ReferenceEquals(
+            provider.GetRequiredKeyedService<Shield<int>>("duplicate"),
+            lastTyped)).IsTrue();
+        await Assert.That(ReferenceEquals(registry.GetVoidShield("duplicate"), lastVoid)).IsTrue();
+        await Assert.That(ReferenceEquals(
+            provider.GetRequiredKeyedService<VoidShield>("duplicate"),
+            lastVoid)).IsTrue();
     }
 
     [Test]
@@ -122,6 +158,100 @@ public class DependencyInjectionContractTests
         await AssertNullNameAsync(() => registry.GetShield<int>(null!));
         await AssertNullNameAsync(() => registry.TryGetShield(null!, out _));
         await AssertNullNameAsync(() => registry.TryGetShield<int>(null!, out _));
+        await AssertNullNameAsync(() => registry.GetVoidShield(null!));
+        await AssertNullNameAsync(() => registry.TryGetVoidShield(null!, out _));
+    }
+
+    [Test]
+    public async Task Registration_Overloads_Reject_Null_Inputs_With_Exact_Parameter_Names()
+    {
+        var services = new ServiceCollection();
+        var configuration = new ConfigurationBuilder().Build();
+        Func<IServiceProvider, Shield> shieldFactory = static _ => Shield.Empty;
+        Func<IServiceProvider, Shield<int>> typedFactory = static _ => Shield<int>.Empty;
+        Func<IServiceProvider, VoidShield> voidFactory = static _ =>
+            Shield.Fallback(static _ => ValueTask.CompletedTask);
+        Func<IServiceProvider, string, Shield> partitionedFactory = static (_, _) => Shield.Empty;
+        Func<IServiceProvider, string, Shield<int>> typedPartitionedFactory =
+            static (_, _) => Shield<int>.Empty;
+        Func<IServiceProvider, string, VoidShield> voidPartitionedFactory = static (_, _) =>
+            Shield.Fallback(static _ => ValueTask.CompletedTask);
+
+        await AssertNullParameterAsync(
+            () => KevlarServiceCollectionExtensions.AddKevlar(null!),
+            "services");
+        await AssertNullParameterAsync(
+            () => KevlarServiceCollectionExtensions.AddShield(null!, "name", shieldFactory),
+            "services");
+        await AssertNullParameterAsync(() => services.AddShield(null!, shieldFactory), "name");
+        await AssertNullParameterAsync(
+            () => services.AddShield("name", (Func<IServiceProvider, Shield>)null!),
+            "factory");
+        await AssertNullParameterAsync(
+            () => services.AddShield("name", (Shield)null!),
+            "shield");
+        await AssertNullParameterAsync(
+            () => KevlarServiceCollectionExtensions.AddShield(null!, "name", configuration),
+            "services");
+        await AssertNullParameterAsync(
+            () => services.AddShield("name", (IConfiguration)null!),
+            "configuration");
+        await AssertNullParameterAsync(
+            () => KevlarServiceCollectionExtensions.AddVoidShield(null!, "name", voidFactory),
+            "services");
+        await AssertNullParameterAsync(() => services.AddVoidShield(null!, voidFactory), "name");
+        await AssertNullParameterAsync(
+            () => services.AddVoidShield("name", (Func<IServiceProvider, VoidShield>)null!),
+            "factory");
+        await AssertNullParameterAsync(
+            () => services.AddShield("name", (VoidShield)null!),
+            "shield");
+        await AssertNullParameterAsync(
+            () => services.AddShield<int>("name", (Func<IServiceProvider, Shield<int>>)null!),
+            "factory");
+        await AssertNullParameterAsync(
+            () => services.AddShield<int>("name", (Shield<int>)null!),
+            "shield");
+        await AssertNullParameterAsync(
+            () => KevlarServiceCollectionExtensions.AddShield<int>(null!, "name", typedFactory),
+            "services");
+        await AssertNullParameterAsync(() => services.AddShield<int>(null!, typedFactory), "name");
+        await AssertNullParameterAsync(
+            () => KevlarServiceCollectionExtensions.AddPartitionedShield(
+                null!,
+                "name",
+                partitionedFactory),
+            "services");
+        await AssertNullParameterAsync(
+            () => services.AddPartitionedShield<string>(null!, partitionedFactory),
+            "name");
+        await AssertNullParameterAsync(
+            () => services.AddPartitionedShield<string>("name", null!),
+            "factory");
+        await AssertNullParameterAsync(
+            () => KevlarServiceCollectionExtensions.AddPartitionedVoidShield(
+                null!,
+                "name",
+                voidPartitionedFactory),
+            "services");
+        await AssertNullParameterAsync(
+            () => services.AddPartitionedVoidShield<string>(null!, voidPartitionedFactory),
+            "name");
+        await AssertNullParameterAsync(
+            () => services.AddPartitionedVoidShield<string>("name", null!),
+            "factory");
+        await AssertNullParameterAsync(
+            () => KevlarServiceCollectionExtensions.AddPartitionedShield(
+                null!,
+                "name",
+                typedPartitionedFactory),
+            "services");
+        await AssertNullParameterAsync(
+            () => services.AddPartitionedShield<string, int>(null!, typedPartitionedFactory),
+            "name");
+        await AssertNullParameterAsync(
+            () => services.AddPartitionedShield<string, int>("name", null!),
+            "factory");
     }
 
     [Test]
@@ -261,7 +391,12 @@ public class DependencyInjectionContractTests
 
     private static async Task AssertNullNameAsync(Action action)
     {
+        await AssertNullParameterAsync(action, "name");
+    }
+
+    private static async Task AssertNullParameterAsync(Action action, string parameterName)
+    {
         var error = await Assert.That(action).Throws<ArgumentNullException>();
-        await Assert.That(error!.ParamName).IsEqualTo("name");
+        await Assert.That(error!.ParamName).IsEqualTo(parameterName);
     }
 }

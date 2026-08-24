@@ -151,6 +151,54 @@ public class TelemetryRecorderTests
     }
 
     [Test]
+    public async Task Disposal_Releases_Pending_Waiters_With_ObjectDisposedException()
+    {
+        var recorder = new TelemetryRecorder(captureMetrics: false);
+        var callbackWait = recorder.WaitForCallbackCountAsync(1);
+        var metricWait = recorder.WaitForMetricCountAsync(1);
+
+        recorder.Dispose();
+
+        await Assert.That(async () => await callbackWait)
+            .Throws<ObjectDisposedException>();
+        await Assert.That(async () => await metricWait)
+            .Throws<ObjectDisposedException>();
+    }
+
+    [Test]
+    public async Task Disposed_Recorder_Rejects_Callbacks_And_New_Waiters()
+    {
+        var recorder = new TelemetryRecorder(captureMetrics: false);
+        recorder.Dispose();
+        var shield = Shield.Retry(options =>
+        {
+            options.MaxRetries = 1;
+            options.Backoff = Backoff.None;
+            options.OnRetry = recorder.Record;
+        });
+
+        var outcome = await shield.ExecuteOutcomeAsync<int>(
+            static _ => throw new InvalidOperationException());
+
+        await Assert.That(outcome.Exception).IsTypeOf<ObjectDisposedException>();
+        await Assert.That(() => recorder.WaitForCallbackCountAsync(0))
+            .Throws<ObjectDisposedException>();
+        await Assert.That(() => recorder.WaitForMetricCountAsync(0))
+            .Throws<ObjectDisposedException>();
+    }
+
+    [Test]
+    public async Task Waiters_Reject_Negative_Counts()
+    {
+        using var recorder = new TelemetryRecorder(captureMetrics: false);
+
+        await Assert.That(() => recorder.WaitForCallbackCountAsync(-1))
+            .Throws<ArgumentOutOfRangeException>();
+        await Assert.That(() => recorder.WaitForMetricCountAsync(-1))
+            .Throws<ArgumentOutOfRangeException>();
+    }
+
+    [Test]
     public async Task Records_Every_Documented_Metric_Family()
     {
         using var recorder = new TelemetryRecorder();

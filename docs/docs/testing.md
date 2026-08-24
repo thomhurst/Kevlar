@@ -108,7 +108,7 @@ capturing replenished availability.
 
 ## Repository quality gates
 
-Pull requests build on Windows and Linux, then run the unit, chaos, netstandard2.0 asset, integration, analyzer, testing-package, and rate-limiting-adapter suites independently with a five-minute timeout. Every suite requires at least one discovered test, so a runner or discovery regression cannot pass as an empty run.
+Pull requests build on Windows and Linux, then run the unit, chaos, netstandard2.0 asset, integration, analyzer, testing-package, and rate-limiting-adapter suites independently with a five-minute timeout. Every suite requires at least one discovered test, so a runner or discovery regression cannot pass as an empty run. Changes to core sources also run the expanded deterministic model sweep and a 30-second concurrency stress smoke test before merge; scheduled stress runs retain the full 15-minute duration.
 
 The Linux coverage job merges all seven suites into Cobertura XML and an HTML report. It excludes test assemblies, benchmarks, generated code, and code marked with `ExcludeFromCodeCoverageAttribute`, then enforces the measured baselines of 92% line coverage and 86% branch coverage. Download the `coverage-report` workflow artifact to inspect either format.
 

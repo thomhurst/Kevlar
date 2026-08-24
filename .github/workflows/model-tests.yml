@@ -1,6 +1,13 @@
 name: Model tests
 
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/Kevlar/**'
+      - 'tests/Kevlar.Tests/StrategyModelTests.cs'
+      - 'tests/Kevlar.Tests/Infrastructure/ModelRunner.cs'
+      - '.github/workflows/model-tests.yml'
   schedule:
     - cron: '17 3 * * 1-5'
   workflow_dispatch:
@@ -16,6 +23,7 @@ permissions:
 
 jobs:
   model-sweep:
+    name: Deterministic model sweep
     runs-on: ubuntu-latest
     timeout-minutes: 15
     env:

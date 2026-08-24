@@ -276,6 +276,42 @@ public class RateLimiterAdapterTests
     }
 
     [Test]
+    public async Task Async_Execution_Failure_Preserves_Identity_And_Releases_Lease()
+    {
+        var failure = new InvalidOperationException("operation failed");
+        var lease = new TrackingLease(isAcquired: true);
+        var shield = Shield.Empty.RateLimit(
+            (_, _) => new ValueTask<RateLimitLease>(lease));
+
+        var outcome = await shield.ExecuteOutcomeAsync<int>(async _ =>
+        {
+            await Task.Yield();
+            throw failure;
+        });
+
+        await Assert.That(ReferenceEquals(outcome.Exception, failure)).IsTrue();
+        await Assert.That(lease.DisposeCount).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Async_Execution_Surfaces_Lease_Disposal_Failure()
+    {
+        var disposalFailure = new InvalidOperationException("lease disposal");
+        var lease = new TrackingLease(isAcquired: true) { DisposalFailure = disposalFailure };
+        var shield = Shield.Empty.RateLimit(
+            (_, _) => new ValueTask<RateLimitLease>(lease));
+
+        var outcome = await shield.ExecuteOutcomeAsync(async _ =>
+        {
+            await Task.Yield();
+            return 42;
+        });
+
+        await Assert.That(ReferenceEquals(outcome.Exception, disposalFailure)).IsTrue();
+        await Assert.That(lease.DisposeCount).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Rejected_Custom_Lease_Snapshots_Metadata_Before_Disposal()
     {
         var retryAfter = TimeSpan.FromSeconds(7);
@@ -298,6 +334,27 @@ public class RateLimiterAdapterTests
         await Assert.That(observed.Metadata["tenant"]).IsEqualTo("alpha");
         await Assert.That(lease.DisposeCount).IsEqualTo(1);
         await Assert.That(lease.MetadataReadAfterDispose).IsFalse();
+    }
+
+    [Test]
+    public async Task Rejection_Metadata_Is_An_Immutable_Point_In_Time_Snapshot()
+    {
+        var source = new Dictionary<string, object?> { ["tenant"] = "alpha" };
+        var lease = new TrackingLease(isAcquired: false, source);
+        RateLimiterRejectedEvent observed = default;
+        var shield = Shield.Empty.RateLimit(
+            (_, _) => new ValueTask<RateLimitLease>(lease),
+            options => options.OnRejected = rejection => observed = rejection);
+
+        _ = await shield.ExecuteOutcomeAsync(static _ => new ValueTask<int>(42));
+        source["tenant"] = "beta";
+        source["added-later"] = true;
+
+        await Assert.That(observed.Metadata["tenant"]).IsEqualTo("alpha");
+        await Assert.That(observed.Metadata.ContainsKey("added-later")).IsFalse();
+        await Assert.That(() => ((IDictionary<string, object?>)observed.Metadata)
+                .Add("mutation", 1))
+            .Throws<NotSupportedException>();
     }
 
     [Test]
