@@ -331,13 +331,11 @@ public static class ShieldHttpClientBuilderExtensions
     }
 
     private static Shield<HttpResponseMessage> CreateHedgingShield(StandardHedgingShieldOptions options) =>
-        Shield.Timeout(options.TotalTimeout)
-            .For<HttpResponseMessage>()
-            .When<HttpRequestException>()
-            .Or<TimeoutExceededException>()
+        HttpShield.WhenTransient(
+                Shield.Timeout(options.TotalTimeout)
+                    .For<HttpResponseMessage>())
             .Or<ConcurrencyLimitExceededException>()
             .Or<CircuitOpenException>()
-            .OrResult(HttpShield.IsTransient)
             .Hedge(options.MaxAttempts, options.HedgeDelay);
 
     private static ShieldHttpHandlerOptions CreateHandlerOptions(StandardHedgingShieldOptions options)
