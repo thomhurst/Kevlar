@@ -121,4 +121,21 @@ public class TimeoutTests
 #pragma warning restore CS0162
         })).Throws<TimeoutExceededException>();
     }
+
+    [Test]
+    public async Task Sync_Execution_Converts_OperationCanceledException_Without_Token()
+    {
+        var shield = Shield.Timeout(TimeSpan.FromMilliseconds(20));
+
+        var exception = await Assert.That(() => shield.Execute(WaitThenCancelWithoutToken))
+            .Throws<TimeoutExceededException>();
+
+        await Assert.That(exception!.InnerException).IsTypeOf<OperationCanceledException>();
+    }
+
+    private static int WaitThenCancelWithoutToken(CancellationToken cancellationToken)
+    {
+        cancellationToken.WaitHandle.WaitOne();
+        throw new OperationCanceledException("wrapped without token");
+    }
 }

@@ -44,6 +44,100 @@ public class StrategyModelTests
         random => new CompositionCommand(random.Next(1, 1000), random.Next(3) == 0),
         ExecuteCompositionModelAsync);
 
+    [Test]
+    public Task Timeout_Matches_Cancellation_Arbitration_Model() => ModelRunner.RunAsync(
+        "timeout cancellation arbitration",
+        commandCount: 20,
+        random => new TimeoutCommand(
+            (TimeoutSignal)random.Next(Enum.GetValues<TimeoutSignal>().Length),
+            (CancellationShape)random.Next(Enum.GetValues<CancellationShape>().Length)),
+        ExecuteTimeoutModelAsync);
+
+    private static async Task ExecuteTimeoutModelAsync(IReadOnlyList<TimeoutCommand> commands)
+    {
+        var timeProvider = new FakeTimeProvider();
+        var shield = Shield.Timeout(TimeSpan.FromSeconds(1)).WithTimeProvider(timeProvider);
+
+        for (var index = 0; index < commands.Count; index++)
+        {
+            var command = commands[index];
+            using var callerCancellation = new CancellationTokenSource();
+            using var foreignCancellation = new CancellationTokenSource();
+            var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var cancellation = command.Shape switch
+            {
+                CancellationShape.ExecutionToken => null,
+                CancellationShape.ForeignToken => new OperationCanceledException(
+                    "foreign cancellation",
+                    foreignCancellation.Token),
+                CancellationShape.NoToken => new OperationCanceledException("unattributed cancellation"),
+                CancellationShape.TaskCanceled => new TaskCanceledException("wrapped cancellation"),
+                _ => throw new ArgumentOutOfRangeException(nameof(command)),
+            };
+
+            var execution = shield.ExecuteOutcomeAsync<int>(async token =>
+            {
+                started.TrySetResult();
+                if (command.Signal != TimeoutSignal.None)
+                {
+                    try
+                    {
+                        await Task.Delay(Timeout.InfiniteTimeSpan, token);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                    }
+                }
+
+                throw cancellation ?? new OperationCanceledException(token);
+            }, callerCancellation.Token).AsTask();
+
+            await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            if (command.Signal == TimeoutSignal.CallerAndTimeout)
+            {
+                callerCancellation.Cancel();
+            }
+
+            if (command.Signal != TimeoutSignal.None)
+            {
+                timeProvider.Advance(TimeSpan.FromSeconds(1));
+            }
+
+            var outcome = await execution.WaitAsync(TimeSpan.FromSeconds(5));
+            if (command.Signal == TimeoutSignal.Timeout)
+            {
+                Ensure(outcome.Exception is TimeoutExceededException, index, command, "timeout outcome differs");
+                Ensure(
+                    outcome.Exception?.InnerException is OperationCanceledException,
+                    index,
+                    command,
+                    "timeout inner exception is missing");
+                Ensure(
+                    cancellation is null || ReferenceEquals(outcome.Exception?.InnerException, cancellation),
+                    index,
+                    command,
+                    "timeout inner exception identity differs");
+            }
+            else if (command.Signal == TimeoutSignal.CallerAndTimeout)
+            {
+                Ensure(
+                    outcome.Exception is OperationCanceledException caller
+                    && caller.CancellationToken == callerCancellation.Token,
+                    index,
+                    command,
+                    "caller cancellation did not win");
+            }
+            else
+            {
+                Ensure(outcome.Exception is OperationCanceledException, index, command, "cancellation outcome differs");
+                Ensure(cancellation is null || ReferenceEquals(outcome.Exception, cancellation),
+                    index,
+                    command,
+                    "spontaneous cancellation identity differs");
+            }
+        }
+    }
+
     private static async Task ExecuteCircuitModelAsync(IReadOnlyList<CircuitCommand> commands)
     {
         var timeProvider = new ModelTimeProvider();
@@ -407,6 +501,23 @@ public class StrategyModelTests
     private readonly record struct RetryCommand(bool Success, int DelaySelector);
 
     private readonly record struct CompositionCommand(int Id, bool Fail);
+
+    private enum TimeoutSignal
+    {
+        None,
+        Timeout,
+        CallerAndTimeout,
+    }
+
+    private enum CancellationShape
+    {
+        ExecutionToken,
+        ForeignToken,
+        NoToken,
+        TaskCanceled,
+    }
+
+    private readonly record struct TimeoutCommand(TimeoutSignal Signal, CancellationShape Shape);
 
     private sealed class ModelFailureException : Exception;
 
