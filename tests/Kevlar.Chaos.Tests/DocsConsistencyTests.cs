@@ -74,7 +74,7 @@ public class DocsConsistencyTests
             .ExecuteAsync(_ => new ValueTask<int>(1));
 
         await Shield.For<int>()
-            .Fallback(42)
+            .FallbackTo(42)
             .WithName("docs-fallback")
             .ExecuteAsync<int>(_ => throw new InvalidOperationException());
 
