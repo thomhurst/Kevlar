@@ -6,9 +6,6 @@ namespace Kevlar.Tests;
 [NotInParallel]
 public class ExecutionContextPlumbingTests
 {
-    private const string ExceptionProxyDataKey =
-        "Kevlar.Internal.ExceptionProxy.6b21d876-5f0c-45d4-a873-cd6d83e9158b";
-
     [Test]
     public async Task Every_Context_Initializer_Has_An_Exact_Null_Guard()
     {
@@ -145,8 +142,7 @@ public class ExecutionContextPlumbingTests
     public async Task Exception_Proxy_Never_Leaks_From_Public_Outcome_Members()
     {
         var original = new InvalidOperationException("original");
-        var proxy = new Exception("transport proxy");
-        proxy.Data[ExceptionProxyDataKey] = original;
+        var proxy = new TestProxyException(original);
         var outcome = Outcome<int>.FromException(proxy);
 
         var failure = await Assert.That(() => outcome.GetResultOrRethrow())

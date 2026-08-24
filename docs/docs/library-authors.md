@@ -57,6 +57,21 @@ var shield = Shield.When<HttpRequestException>()
 
 Store the supplied `HandlingClause`, consult it for each `Outcome<T>`, and override `Strategy.Handling` so chain validation and `Kevlar.Testing` can inspect the declaration. Proactive custom strategies can keep using `Use(Strategy)`.
 
+## Adapter exception proxies
+
+An adapter may need a private exception wrapper to retain transport bookkeeping while a strategy
+chooses an attempt. Derive that wrapper from `KevlarProxyException` so handling clauses and public
+`Outcome<T>` APIs see the original failure without using `Exception.Data`:
+
+<!-- doc-test-declaration -->
+```csharp
+public sealed class TransportAttemptException(Exception originalException)
+    : KevlarProxyException(originalException);
+```
+
+Kevlar keeps the wrapper inside pipeline execution, but `Outcome<T>.Exception`,
+`GetResultOrRethrow()`, and reactive predicates expose `OriginalException`.
+
 ## Result-aware parameters
 
 If callers should be able to react to *result values* — retry on `null`, hedge on an error status — accept a `Shield<T>` instead:

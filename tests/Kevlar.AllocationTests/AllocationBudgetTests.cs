@@ -14,6 +14,8 @@ public class AllocationBudgetTests
     private static readonly InvalidOperationException RecoverableFailure = new("recoverable");
     private static readonly KevlarKey<AllocationBudgetTests> MetadataState = new("metadata-state");
     private static readonly KevlarKey<int> MetadataValue = new("metadata-value");
+    private static readonly Outcome<int> FailureOutcome =
+        Outcome<int>.FromException(RecoverableFailure);
 
     private readonly Shield _empty = Shield.Empty;
     private readonly Shield _retry = Shield.Retry(3, Backoff.None);
@@ -191,6 +193,8 @@ public class AllocationBudgetTests
             _ = test._partitioned.GetShield(42));
         AssertZero("typed key dictionary lookup", this, static test =>
             _ = test._keyDictionary[MetadataValue]);
+        AssertZero("outcome exception access", FailureOutcome, static outcome =>
+            GC.KeepAlive(outcome.Exception));
     }
 
     [Test]

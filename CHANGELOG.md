@@ -52,6 +52,9 @@ build spelled these `WhenResultDefault`/`OrResultDefault`; the `Is` makes the re
   package version. These packages still use core implementation details for structured inspection
   and metrics, so NuGet now reports unsafe version-skew combinations as `NU1608` (and rejects them
   when NuGet warnings are errors) instead of silently allowing runtime compatibility failures.
+- `Outcome<T>.Exception` now recognizes `KevlarProxyException` with a type check instead of reading
+  `Exception.Data` on every access. Adapter packages can preserve internal transport bookkeeping
+  while exposing the original failure without allocating an exception data dictionary.
 - Custom strategies can override `Strategy.InvokesContinuationAtMostOnce`; the same aggregate
   value is now exposed on `Shield<TResult>` as well as `Shield` and `VoidShield`.
 - **Breaking:** `Shield.Wrap(...)` and `Shield.Compose(...)` now seal ambient handling clauses. Reactive strategies appended after composition use default handling unless a new clause is declared. Existing strategies inside composed shields keep their original handling.

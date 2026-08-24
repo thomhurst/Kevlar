@@ -2,9 +2,6 @@ namespace Kevlar.Tests;
 
 public class OutcomeAndContextTests
 {
-    private const string ExceptionProxyDataKey =
-        "Kevlar.Internal.ExceptionProxy.6b21d876-5f0c-45d4-a873-cd6d83e9158b";
-
     [Test]
     public async Task FromResult_Is_Success()
     {
@@ -29,13 +26,32 @@ public class OutcomeAndContextTests
     }
 
     [Test]
-    public async Task FromException_Is_Failure()
+    public async Task FromException_Preserves_Exception_Reference()
     {
         var exception = new InvalidOperationException("boom");
         var outcome = Outcome<int>.FromException(exception);
 
         await Assert.That(outcome.IsSuccess).IsFalse();
-        await Assert.That(outcome.Exception).IsEqualTo(exception);
+        await Assert.That(outcome.Exception).IsSameReferenceAs(exception);
+    }
+
+    [Test]
+    public async Task Exception_Access_Does_Not_Materialize_Exception_Data()
+    {
+        var exception = new InvalidOperationException("boom");
+        var outcome = Outcome<int>.FromException(exception);
+
+        for (var access = 0; access < 100; access++)
+        {
+            _ = outcome.Exception;
+        }
+
+        var dataField = typeof(Exception).GetField(
+            "_data",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        await Assert.That(dataField).IsNotNull();
+        await Assert.That(dataField!.GetValue(exception)).IsNull();
+        await Assert.That(exception.Data.Count).IsEqualTo(0);
     }
 
     [Test]
@@ -94,13 +110,55 @@ public class OutcomeAndContextTests
     public async Task TryGetResult_Preserves_Proxy_Exception_Unwrapping()
     {
         var original = new InvalidOperationException("original");
-        var proxy = new Exception("proxy");
-        proxy.Data[ExceptionProxyDataKey] = original;
+        var proxy = new TestProxyException(original);
         var outcome = Outcome<int>.FromException(proxy);
 
         await Assert.That(outcome.TryGetResult(out var result)).IsFalse();
         await Assert.That(result).IsEqualTo(default);
         await Assert.That(outcome.Exception).IsSameReferenceAs(original);
+    }
+
+    [Test]
+    public async Task Proxy_Exception_Unwraps_To_Original()
+    {
+        var original = CaptureOriginalException();
+        var outcome = Outcome<int>.FromException(new TestProxyException(original));
+
+        var actual = await Assert.That(() => outcome.GetResultOrRethrow())
+            .Throws<InvalidOperationException>();
+
+        await Assert.That(outcome.Exception).IsSameReferenceAs(original);
+        await Assert.That(actual).IsSameReferenceAs(original);
+        await Assert.That(actual!.StackTrace).Contains(nameof(ThrowOriginal));
+    }
+
+    [Test]
+    public async Task Proxy_Exception_Rejects_Null_Original()
+    {
+        var exception = await Assert.That(() => new TestProxyException(null!))
+            .Throws<ArgumentNullException>();
+
+        await Assert.That(exception!.ParamName).IsEqualTo("originalException");
+    }
+
+    [Test]
+    public async Task Judge_Sees_Unwrapped_Proxy_Exception()
+    {
+        var attempts = 0;
+        var shield = Shield.When<HttpRequestException>().Retry(1, Backoff.None);
+
+        var result = await shield.ExecuteAsync(_ =>
+        {
+            if (++attempts == 1)
+            {
+                throw new TestProxyException(new HttpRequestException("transient"));
+            }
+
+            return new ValueTask<int>(42);
+        });
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(attempts).IsEqualTo(2);
     }
 
     [Test]
@@ -303,3 +361,6 @@ public class OutcomeAndContextTests
         public override string ToString() => "custom-value";
     }
 }
+
+internal sealed class TestProxyException(Exception originalException)
+    : KevlarProxyException(originalException);
