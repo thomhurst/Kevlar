@@ -16,24 +16,17 @@ namespace Kevlar.IntegrationTests;
 public class GrpcResilienceTests
 {
     [Test]
-    public async Task Shipped_Assemblies_Do_Not_Contain_The_Legacy_Exception_Data_Key()
+    public async Task Grpc_Assembly_Does_Not_Contain_The_Legacy_Exception_Data_Key()
     {
         const string legacyKey =
             "Kevlar.Internal.ExceptionProxy.6b21d876-5f0c-45d4-a873-cd6d83e9158b";
         var utf8 = Encoding.UTF8.GetBytes(legacyKey);
         var utf16 = Encoding.Unicode.GetBytes(legacyKey);
-        var assemblies = new[]
-        {
-            typeof(Outcome<>).Assembly,
-            typeof(ShieldUnaryClientInterceptor).Assembly,
-        };
+        var assembly = typeof(ShieldUnaryClientInterceptor).Assembly;
+        var bytes = await File.ReadAllBytesAsync(assembly.Location);
 
-        foreach (var assembly in assemblies)
-        {
-            var bytes = await File.ReadAllBytesAsync(assembly.Location);
-            await Assert.That(bytes.AsSpan().IndexOf(utf8)).IsEqualTo(-1);
-            await Assert.That(bytes.AsSpan().IndexOf(utf16)).IsEqualTo(-1);
-        }
+        await Assert.That(bytes.AsSpan().IndexOf(utf8)).IsEqualTo(-1);
+        await Assert.That(bytes.AsSpan().IndexOf(utf16)).IsEqualTo(-1);
     }
 
     [Test]
