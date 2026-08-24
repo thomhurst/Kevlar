@@ -1,5 +1,3 @@
-using Kevlar.Internal;
-
 namespace Kevlar.Extensions.Http;
 
 /// <summary>A <see cref="DelegatingHandler"/> with safe per-attempt request replay.</summary>
@@ -9,6 +7,9 @@ namespace Kevlar.Extensions.Http;
 /// </remarks>
 public sealed class ShieldDelegatingHandler : DelegatingHandler
 {
+    private static readonly KevlarKey<bool> SuppressAdditionalAttempts =
+        new("Kevlar.SuppressAdditionalAttempts");
+
     private readonly HttpShieldPipeline _pipeline;
     private readonly ReloadingHttpShieldPipeline? _reloadingPipeline;
 
@@ -153,7 +154,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         {
             if (!_canReplay)
             {
-                properties.Set(ExecutionPropertyKeys.SuppressAdditionalAttempts, true);
+                properties.Set(SuppressAdditionalAttempts, true);
             }
         }
 

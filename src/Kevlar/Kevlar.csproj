@@ -22,7 +22,6 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Kevlar.Tests" />
     <InternalsVisibleTo Include="Kevlar.Testing" />
-    <InternalsVisibleTo Include="Kevlar.Extensions.Http" />
     <InternalsVisibleTo Include="Kevlar.Extensions.RateLimiting" />
   </ItemGroup>
 
