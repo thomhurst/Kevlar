@@ -141,8 +141,7 @@ public readonly struct Continuation<T, TState>
     }
 }
 
-/// <summary>A node in a shield's immutable strategy chain.</summary>
-public sealed class StrategyNode
+internal sealed class StrategyNode
 {
     internal StrategyNode(Strategy strategy, StrategyNode? next, int index)
     {
