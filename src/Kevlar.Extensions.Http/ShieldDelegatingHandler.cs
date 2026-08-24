@@ -7,9 +7,6 @@ namespace Kevlar.Extensions.Http;
 /// </remarks>
 public sealed class ShieldDelegatingHandler : DelegatingHandler
 {
-    private static readonly KevlarKey<bool> SuppressAdditionalAttempts =
-        new("Kevlar.SuppressAdditionalAttempts");
-
     private readonly HttpShieldPipeline _pipeline;
     private readonly ReloadingHttpShieldPipeline? _reloadingPipeline;
 
@@ -121,6 +118,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         private readonly HttpShieldPipeline _pipeline;
         private readonly HttpRequestMessage _original;
         private readonly bool _canReplay;
+        private readonly bool _hadInitialContent;
         private readonly CancellationToken _executionCancellationToken;
         private readonly List<HttpResponseMessage> _responses = [];
         private readonly Uri[]? _endpointOrder;
@@ -145,6 +143,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             _pipeline = pipeline;
             _original = original;
             _canReplay = canReplay;
+            _hadInitialContent = original.Content is not null;
             _executionCancellationToken = executionCancellationToken;
             _endpointOrder = pipeline.CreateEndpointOrder();
         }
@@ -155,7 +154,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         {
             if (!_canReplay)
             {
-                properties.Set(SuppressAdditionalAttempts, true);
+                properties.SuppressAdditionalAttempts = true;
             }
         }
 
@@ -163,8 +162,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         {
             if (Options.RequestFactory is null
                 && (_endpointOrder is not null
-                    || (_original.Content is not null
-                        && _canReplay)))
+                    || (_hadInitialContent && _canReplay)))
             {
                 return new ValueTask(GetTemplateAsync(cancellationToken));
             }
@@ -347,6 +345,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
                     Options.ContentReplayPolicy,
                     Options.MaximumBufferSize,
                     _canReplay,
+                    _hadInitialContent,
                     creationCancellation.Token).ConfigureAwait(false);
                 creation.TrySetResult(template);
             }

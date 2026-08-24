@@ -52,7 +52,7 @@ internal sealed class HedgingStrategy : Strategy
     public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
         if (_maxAttempts == 1
-            || context.Properties.GetOrDefault(ExecutionPropertyKeys.SuppressAdditionalAttempts))
+            || context.Properties.SuppressAdditionalAttempts)
         {
             return next.InvokeAsync(context);
         }

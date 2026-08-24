@@ -1,4 +1,3 @@
-using Kevlar.Internal;
 using Microsoft.Extensions.Time.Testing;
 
 namespace Kevlar.Tests;
@@ -20,7 +19,7 @@ public class RetryTests
         var exception = await Assert.That(async () => await shield.ExecuteWithContextAsync<int, int>(
                 0,
                 static (_, properties) =>
-                    properties.Set(ExecutionPropertyKeys.SuppressAdditionalAttempts, true),
+                    properties.SuppressAdditionalAttempts = true,
                 (_, _) =>
                 {
                     attempts++;
@@ -31,6 +30,22 @@ public class RetryTests
         await Assert.That(exception!.Message).IsEqualTo("original");
         await Assert.That(attempts).IsEqualTo(1);
         await Assert.That(notifications).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Public_Named_Property_Cannot_Suppress_Retry()
+    {
+        var attempts = 0;
+        var result = await Shield.Retry(1, Backoff.None).ExecuteWithContextAsync<int, int>(
+            0,
+            static (_, properties) =>
+                properties.Set(new KevlarKey<bool>("Kevlar.SuppressAdditionalAttempts"), true),
+            (_, _) => new ValueTask<int>(++attempts == 1
+                ? throw new InvalidOperationException("retry")
+                : 42));
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(attempts).IsEqualTo(2);
     }
 
     [Test]

@@ -19,17 +19,20 @@ internal sealed class HttpRequestTemplate
     private HttpRequestTemplate(
         HttpRequestMessage request,
         byte[]? content,
-        HttpContent? reusableContent)
+        HttpContent? reusableContent,
+        bool includeContent)
     {
         _method = request.Method;
         _requestUri = request.RequestUri;
         _version = request.Version;
         _headers = request.Headers.Select(static header =>
-            new KeyValuePair<string, IEnumerable<string>>(header.Key, header.Value)).ToList();
+            new KeyValuePair<string, IEnumerable<string>>(header.Key, header.Value.ToArray())).ToList();
         _content = content;
         _reusableContent = reusableContent;
-        _contentHeaders = request.Content?.Headers.Select(static header =>
-            new KeyValuePair<string, IEnumerable<string>>(header.Key, header.Value)).ToList();
+        _contentHeaders = includeContent
+            ? request.Content?.Headers.Select(static header =>
+                new KeyValuePair<string, IEnumerable<string>>(header.Key, header.Value.ToArray())).ToList()
+            : null;
 #if NETSTANDARD2_0
         _properties = request.Properties.ToList();
 #else
@@ -44,10 +47,13 @@ internal sealed class HttpRequestTemplate
         HttpContentReplayPolicy policy,
         long maximumBufferSize,
         bool canReplay,
+        bool includeContent,
         CancellationToken cancellationToken)
     {
         byte[]? content = null;
-        if (request.Content is not null && policy == HttpContentReplayPolicy.Buffer)
+        if (includeContent
+            && request.Content is not null
+            && policy == HttpContentReplayPolicy.Buffer)
         {
             if (request.Content.Headers.ContentLength is { } length && length > maximumBufferSize)
             {
@@ -87,10 +93,18 @@ internal sealed class HttpRequestTemplate
             }
         }
 
-        var reusableContent = policy == HttpContentReplayPolicy.NoBuffer && canReplay
-            ? request.Content
-            : null;
-        return new HttpRequestTemplate(request, content, reusableContent);
+        HttpContent? reusableContent = null;
+        if (policy == HttpContentReplayPolicy.NoBuffer
+            && canReplay
+            && includeContent
+            && request.Content is { } requestContent
+            && (IsInherentlyReplayable(requestContent)
+                || await IsAlreadyBufferedAsync(requestContent).ConfigureAwait(false)))
+        {
+            reusableContent = requestContent;
+        }
+
+        return new HttpRequestTemplate(request, content, reusableContent, includeContent);
     }
 
     public HttpRequestMessage CreateRequest(HttpContent? firstAttemptContent = null)
@@ -120,7 +134,7 @@ internal sealed class HttpRequestTemplate
                         "Use Buffer with a bounded MaximumBufferSize, or provide RequestFactory.");
                 }
 
-                request.Content = replayContent;
+                request.Content = new ReplayableContent(replayContent, _contentHeaders);
             }
             else
             {
@@ -180,6 +194,47 @@ internal sealed class HttpRequestTemplate
         }
         catch (HttpRequestException)
         {
+            return false;
+        }
+    }
+
+    private sealed class ReplayableContent : HttpContent
+    {
+        private readonly HttpContent _content;
+
+        public ReplayableContent(
+            HttpContent content,
+            IEnumerable<KeyValuePair<string, IEnumerable<string>>> headers)
+        {
+            _content = content;
+            foreach (var header in headers)
+            {
+                _ = Headers.TryAddWithoutValidation(header.Key, header.Value);
+            }
+        }
+
+        protected override Task SerializeToStreamAsync(
+            Stream stream,
+            System.Net.TransportContext? context) =>
+            _content.CopyToAsync(stream);
+
+#if NET8_0_OR_GREATER
+        protected override Task SerializeToStreamAsync(
+            Stream stream,
+            System.Net.TransportContext? context,
+            CancellationToken cancellationToken) =>
+            _content.CopyToAsync(stream, cancellationToken);
+#endif
+
+        protected override bool TryComputeLength(out long length)
+        {
+            if (_content.Headers.ContentLength is { } contentLength)
+            {
+                length = contentLength;
+                return true;
+            }
+
+            length = 0;
             return false;
         }
     }

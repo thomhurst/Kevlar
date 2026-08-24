@@ -1,4 +1,3 @@
-using Kevlar.Internal;
 using Microsoft.Extensions.Time.Testing;
 
 namespace Kevlar.Tests;
@@ -20,7 +19,7 @@ public class HedgingTests
         var exception = await Assert.That(async () => await shield.ExecuteWithContextAsync<int, int>(
                 0,
                 static (_, properties) =>
-                    properties.Set(ExecutionPropertyKeys.SuppressAdditionalAttempts, true),
+                    properties.SuppressAdditionalAttempts = true,
                 (_, _) =>
                 {
                     attempts++;
