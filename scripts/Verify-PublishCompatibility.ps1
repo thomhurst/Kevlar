@@ -172,7 +172,7 @@ var broken = await Shield.CircuitBreaker(2, TimeSpan.FromSeconds(1)).ExecuteAsyn
 var limited = await Shield.RateLimit(1, TimeSpan.FromSeconds(1)).ExecuteAsync(static _ => new ValueTask<int>(42));
 var isolated = await Shield.ConcurrencyLimit(1).ExecuteAsync(static _ => new ValueTask<int>(42));
 var hedged = await Shield.Hedge(2, TimeSpan.FromSeconds(1)).ExecuteAsync(static _ => new ValueTask<int>(42));
-var fallback = await Shield.For<int>().When<InvalidOperationException>().Fallback(42)
+var fallback = await Shield.For<int>().When<InvalidOperationException>().FallbackTo(42)
     .ExecuteAsync<int>(static _ => throw new InvalidOperationException());
 using var frameworkLimiter = new ConcurrencyLimiter(new ConcurrencyLimiterOptions
 {
