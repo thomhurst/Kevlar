@@ -272,7 +272,7 @@ internal sealed class HedgingStrategy : Strategy
         // Stryker disable once all: Route selection is performance-only; both branches unwrap the outcome.
         if (execution.IsCompletedSuccessfully)
         {
-            return new ValueTask<T>(execution.Result.GetResultOrRethrow());
+            return new ValueTask<T>(execution.Result.GetResultOrRethrowInternal());
         }
 
         return AwaitOriginalResultAsync(execution);
@@ -302,7 +302,7 @@ internal sealed class HedgingStrategy : Strategy
 
         try
         {
-            return new ValueTask<T>(execution.Result.GetResultOrRethrow());
+            return new ValueTask<T>(execution.Result.GetResultOrRethrowInternal());
         }
         finally
         {
@@ -313,7 +313,7 @@ internal sealed class HedgingStrategy : Strategy
     private static async ValueTask<T> AwaitOriginalResultAsync<T>(ValueTask<Outcome<T>> execution)
     {
         // Stryker disable once all: ConfigureAwait is execution-context policy, not outcome behavior.
-        return (await execution.ConfigureAwait(false)).GetResultOrRethrow();
+        return (await execution.ConfigureAwait(false)).GetResultOrRethrowInternal();
     }
 
     private static async ValueTask<T> AwaitOriginalResultAsync<T>(
@@ -323,7 +323,7 @@ internal sealed class HedgingStrategy : Strategy
         try
         {
             // Stryker disable once all: ConfigureAwait is execution-context policy, not outcome behavior.
-            return (await execution.ConfigureAwait(false)).GetResultOrRethrow();
+            return (await execution.ConfigureAwait(false)).GetResultOrRethrowInternal();
         }
         finally
         {
