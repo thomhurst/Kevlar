@@ -17,6 +17,7 @@
     <Project Path="tests/Kevlar.Chaos.Tests/Kevlar.Chaos.Tests.csproj" />
     <Project Path="tests/Kevlar.AllocationTests/Kevlar.AllocationTests.csproj" />
     <Project Path="tests/Kevlar.IntegrationTests/Kevlar.IntegrationTests.csproj" />
+    <Project Path="tests/Kevlar.NetStandard21.Tests/Kevlar.NetStandard21.Tests.csproj" />
     <Project Path="tests/Kevlar.Extensions.RateLimiting.Tests/Kevlar.Extensions.RateLimiting.Tests.csproj" />
     <Project Path="tests/Kevlar.NetStandard.Tests/Kevlar.NetStandard.Tests.csproj" />
     <Project Path="tests/Kevlar.Tests/Kevlar.Tests.csproj" />

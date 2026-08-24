@@ -668,6 +668,32 @@ public class GrpcResilienceTests
     }
 
     [Test]
+    public async Task NonRpc_Failure_Snapshots_Fallback_Metadata_When_Transport_State_Is_Unavailable()
+    {
+        var expected = new IOException("transport failed");
+        var headersFailure = new InvalidOperationException("headers unavailable");
+        var invoker = new DelegateCallInvoker((_, _) => Call(
+            Task.FromException<TestReply>(expected),
+            responseHeaders: Task.FromException<Metadata>(headersFailure),
+            getStatus: static () => throw new InvalidOperationException("status unavailable"),
+            getTrailers: static () => throw new InvalidOperationException("trailers unavailable")))
+            .Intercept(new ShieldUnaryClientInterceptor(Shield.Empty));
+        var client = new Resilience.ResilienceClient(invoker);
+        using var call = client.UnaryAsync(new TestRequest());
+
+        var actual = await Assert.That(async () => await call.ResponseAsync)
+            .Throws<IOException>();
+        var actualHeadersFailure = await Assert.That(async () => await call.ResponseHeadersAsync)
+            .Throws<InvalidOperationException>();
+
+        await Assert.That(ReferenceEquals(actual, expected)).IsTrue();
+        await Assert.That(ReferenceEquals(actualHeadersFailure, headersFailure)).IsTrue();
+        await Assert.That(call.GetStatus().StatusCode).IsEqualTo(StatusCode.Unknown);
+        await Assert.That(call.GetStatus().Detail).IsEqualTo(expected.Message);
+        await Assert.That(call.GetTrailers().Count).IsEqualTo(0);
+    }
+
+    [Test]
     public async Task Retry_Predicate_Sees_The_Original_Reused_RpcException()
     {
         var expected = new RpcException(new Status(StatusCode.Unavailable, "shared"));
@@ -1017,12 +1043,15 @@ public class GrpcResilienceTests
         Action? dispose = null,
         Status? status = null,
         Metadata? headers = null,
-        Metadata? trailers = null) =>
+        Metadata? trailers = null,
+        Task<Metadata>? responseHeaders = null,
+        Func<Status>? getStatus = null,
+        Func<Metadata>? getTrailers = null) =>
         new(
             response,
-            Task.FromResult(headers ?? new Metadata()),
-            () => status ?? Status.DefaultSuccess,
-            () => trailers ?? new Metadata(),
+            responseHeaders ?? Task.FromResult(headers ?? new Metadata()),
+            getStatus ?? (() => status ?? Status.DefaultSuccess),
+            getTrailers ?? (() => trailers ?? new Metadata()),
             dispose ?? NoOp);
 
     private static void NoOp()

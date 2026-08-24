@@ -203,6 +203,7 @@ $expectedDependencies = @{
     }
     'Kevlar.Extensions.Grpc' = @{
         'net10.0' = @('Grpc.Core.Api', 'Grpc.Net.ClientFactory', 'Kevlar', 'Kevlar.Extensions.DependencyInjection')
+        '.NETStandard2.1' = @('Grpc.Core.Api', 'Grpc.Net.ClientFactory', 'Kevlar', 'Kevlar.Extensions.DependencyInjection')
         '.NETStandard2.0' = @('Grpc.Core.Api', 'Grpc.Net.ClientFactory', 'Kevlar', 'Kevlar.Extensions.DependencyInjection')
     }
     'Kevlar.Analyzers' = @{
@@ -314,6 +315,13 @@ foreach ($packageId in $expectedDependencies.Keys)
                 $expectedAssets += @(
                     "lib/net8.0/$packageId.dll",
                     "lib/net8.0/$packageId.xml"
+                )
+            }
+            elseif ($packageId -eq 'Kevlar.Extensions.Grpc')
+            {
+                $expectedAssets += @(
+                    "lib/netstandard2.1/$packageId.dll",
+                    "lib/netstandard2.1/$packageId.xml"
                 )
             }
             Assert-Set "$packageId library assets" ($entries | Where-Object { $_ -like 'lib/*' }) $expectedAssets

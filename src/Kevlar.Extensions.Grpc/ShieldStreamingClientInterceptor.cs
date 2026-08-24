@@ -1050,14 +1050,15 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
             {
                 await shield.ExecuteAsync(
                     (Writer: writer, Message: message, Lifetime: lifetime),
-#if NET6_0_OR_GREATER
-                    static (state, token) => AwaitGrpcOperationAsync(
-                        state.Writer.WriteAsync(state.Message, token),
-                        token),
-#else
+#if NETSTANDARD2_0
+                    // Grpc.Core's netstandard2.0 contract has no cancellable WriteAsync overload.
                     static (state, token) => AwaitWithCancellationAsync(
                         state.Writer.WriteAsync(state.Message),
                         state.Lifetime,
+                        token),
+#else
+                    static (state, token) => AwaitGrpcOperationAsync(
+                        state.Writer.WriteAsync(state.Message, token),
                         token),
 #endif
                     operation.Token).ConfigureAwait(false);
@@ -1218,7 +1219,7 @@ public sealed class ShieldStreamingClientInterceptor : Interceptor
         }
     }
 
-#if !NET6_0_OR_GREATER
+#if NETSTANDARD2_0
     private static async ValueTask AwaitWithCancellationAsync(
         Task task,
         CancellationTokenSource lifetime,

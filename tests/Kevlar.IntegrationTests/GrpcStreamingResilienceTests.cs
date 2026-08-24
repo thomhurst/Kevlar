@@ -514,6 +514,32 @@ public class GrpcStreamingResilienceTests
     }
 
     [Test]
+    public async Task Server_Stream_Retry_Surfaces_Later_Construction_Failure_And_Disposes_First_Call()
+    {
+        var expected = new InvalidOperationException("second construction failed");
+        var attempts = 0;
+        var firstDisposed = 0;
+        var interceptor = new ShieldStreamingClientInterceptor(
+            GrpcShield.WhenTransient().Retry(1, Backoff.None));
+        using var call = interceptor.AsyncServerStreamingCall(
+            new StreamRequest(),
+            Context(ServerStreamingMethod),
+            (_, _) => Interlocked.Increment(ref attempts) == 1
+                ? ServerCall(
+                    Reader((_, _) => Task.FromException<(bool, StreamReply?)>(Transient())),
+                    () => Interlocked.Increment(ref firstDisposed))
+                : throw expected);
+
+        var actual = await Assert.That(async () =>
+                await call.ResponseStream.MoveNext(CancellationToken.None))
+            .Throws<InvalidOperationException>();
+
+        await Assert.That(ReferenceEquals(actual, expected)).IsTrue();
+        await Assert.That(attempts).IsEqualTo(2);
+        await Assert.That(firstDisposed).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Server_Stream_Failure_Snapshots_Missing_Status_And_Trailers()
     {
         var expected = new InvalidOperationException("stream-failure");
@@ -722,6 +748,8 @@ public class GrpcStreamingResilienceTests
         await Assert.That(call.ResponseStream.Current.Attempt).IsEqualTo(7);
         await Assert.That(writes).IsEqualTo(1);
         await Assert.That(moves).IsEqualTo(1);
+        await Assert.That(call.GetStatus()).IsEqualTo(Status.DefaultSuccess);
+        await Assert.That(call.GetTrailers().Count).IsEqualTo(0);
     }
 
     [Test]

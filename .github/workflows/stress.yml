@@ -6,6 +6,8 @@ on:
     paths:
       - 'src/Kevlar/**'
       - 'benchmarks/Kevlar.StressTests/**'
+      - 'Directory.Build.props'
+      - 'Directory.Packages.props'
       - '.github/workflows/stress.yml'
       - '.github/scripts/stress_docs.py'
   push:
@@ -13,6 +15,8 @@ on:
     paths:
       - 'src/Kevlar/**'
       - 'benchmarks/Kevlar.StressTests/**'
+      - 'Directory.Build.props'
+      - 'Directory.Packages.props'
       - '.github/workflows/stress.yml'
       - '.github/scripts/stress_docs.py'
   schedule:

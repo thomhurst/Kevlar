@@ -187,6 +187,89 @@ public class MessagingResilienceTests
         await Assert.That(deadLetters.ToArray()).IsEquivalentTo(["m7"]);
     }
 
+    [Test]
+    public async Task Caller_Cancellation_During_Backoff_Stops_Publish_Retries()
+    {
+        var broker = new InMemoryBroker();
+        broker.FailNextPublishes(100);
+        var retryScheduled = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var publisher = Shield
+            .When<BrokerUnavailableException>()
+            .Retry(options =>
+            {
+                options.MaxRetries = 99;
+                options.Backoff = Backoff.Constant(TimeSpan.FromSeconds(30));
+                options.OnRetry = _ => retryScheduled.TrySetResult();
+            });
+        using var cancellation = new CancellationTokenSource();
+
+        var publish = publisher.ExecuteAsync(
+            ct => broker.PublishAsync(new BrokerMessage("cancelled", "payload"), ct),
+            cancellation.Token).AsTask();
+        await retryScheduled.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        cancellation.Cancel();
+        var exception = await Assert.That(async () => await publish)
+            .Throws<OperationCanceledException>();
+
+        await Assert.That(exception!.CancellationToken).IsEqualTo(cancellation.Token);
+        await Assert.That(broker.PublishAttempts).IsEqualTo(1);
+        await Assert.That(broker.PublishedCount).IsEqualTo(0);
+        await Assert.That(broker.TryConsume(out _)).IsFalse();
+    }
+
+    [Test]
+    public async Task Concurrent_Retries_Deliver_Each_Message_Exactly_Once()
+    {
+        const int messageCount = 20;
+        const int transientFailures = 10;
+        var broker = new InMemoryBroker();
+        broker.FailNextPublishes(transientFailures);
+        var publisher = Shield
+            .When<BrokerUnavailableException>()
+            .Retry(transientFailures, Backoff.None);
+        var firstAttemptsReady = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseFirstAttempts = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var firstAttemptCount = 0;
+
+        var publishes = Enumerable.Range(0, messageCount).Select(index =>
+        {
+            var isFirstAttempt = true;
+            return publisher.ExecuteAsync(async ct =>
+            {
+                if (isFirstAttempt)
+                {
+                    isFirstAttempt = false;
+                    if (Interlocked.Increment(ref firstAttemptCount) == messageCount)
+                    {
+                        firstAttemptsReady.TrySetResult();
+                    }
+
+                    await releaseFirstAttempts.Task.WaitAsync(ct);
+                }
+
+                await broker.PublishAsync(new BrokerMessage($"m{index}", "payload"), ct);
+            }).AsTask();
+        }).ToArray();
+        await firstAttemptsReady.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        releaseFirstAttempts.TrySetResult();
+        await Task.WhenAll(publishes);
+
+        var delivered = new List<string>();
+        while (broker.TryConsume(out var message))
+        {
+            delivered.Add(message.Id);
+        }
+
+        await Assert.That(broker.PublishAttempts).IsEqualTo(messageCount + transientFailures);
+        await Assert.That(broker.PublishedCount).IsEqualTo(messageCount);
+        await Assert.That(delivered.Order().ToArray()).IsEquivalentTo(
+            Enumerable.Range(0, messageCount).Select(static index => $"m{index}").ToArray());
+    }
+
     private static void InterlockedMax(ref int target, int value)
     {
         int seen;

@@ -136,4 +136,31 @@ public class DatabaseResilienceTests
         await Assert.That(result).IsEqualTo("replica-2");
         await slowStarted.Task; // the degraded replica really was attempted and then abandoned
     }
+
+    [Test]
+    public async Task Caller_Cancellation_Stops_Retry_And_Releases_The_Connection()
+    {
+        var database = new FlakyDatabase
+        {
+            MaxConnections = 1,
+            Latency = Timeout.InfiniteTimeSpan,
+        };
+        var shield = Shield
+            .When(static _ => true)
+            .RetryForever(Backoff.None);
+        using var cancellation = new CancellationTokenSource();
+
+        var query = shield.ExecuteAsync(
+            ct => new ValueTask<string>(database.QueryAsync("select blocked", ct)),
+            cancellation.Token).AsTask();
+        await database.FirstQueryStarted.WaitAsync(TimeSpan.FromSeconds(5));
+
+        cancellation.Cancel();
+        var exception = await Assert.That(async () => await query)
+            .Throws<OperationCanceledException>();
+
+        await Assert.That(exception!.CancellationToken).IsEqualTo(cancellation.Token);
+        await Assert.That(database.QueryCount).IsEqualTo(1);
+        await Assert.That(database.ActiveConnections).IsEqualTo(0);
+    }
 }

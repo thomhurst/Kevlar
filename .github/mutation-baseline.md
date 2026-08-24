@@ -2,7 +2,7 @@
 
 The initial baseline was measured on 21 August 2026 with `dotnet-stryker` 4.16.0, the Release `net10.0` build, and all 289 unit tests. Of 435 score-eligible core-strategy mutants, 304 were killed, 19 timed out, 101 survived, and 11 had no coverage, producing a 74.25% score. Stryker also classified 154 mutants as compile errors and 490 as ignored; neither status enters the score.
 
-The aggregate score is informational rather than a CI break threshold. Repeated CI runs with identical strategy sources and tests produced scores from 73.50% to 74.05% because timing-sensitive mutants changed between killed, survived, and timed-out states. A hard 74% threshold therefore rejected unchanged mutation inputs. CI retains 74% as the report's low/high reference, publishes the complete reports, and fails only when Stryker cannot complete successfully. Stryker runs at its recommended maximum of two concurrent test sessions, and superseded runs are cancelled.
+Repeated CI runs with identical strategy sources and tests produced scores from 73.50% to 74.05% because timing-sensitive mutants changed between killed, survived, and timed-out states. A hard 74% threshold therefore rejected unchanged mutation inputs. CI retains 74% as the report's low/high reference and enforces a 72% break threshold. This margin stays below every observed unchanged run while still blocking material mutation-coverage regressions. Stryker runs at its recommended maximum of two concurrent test sessions, and superseded runs are cancelled.
 
 Within the configured `Strategies/**/*.cs` scope, no mutation category or source file is excluded by repository configuration. The HTML and JSON artifacts retain every survivor for review. The initial survivors fall into these audited groups:
 

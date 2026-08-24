@@ -204,4 +204,75 @@ public class HttpResilienceTests
         await Assert.That(failing.CallCount).IsEqualTo(1);
         await Assert.That(healthy.CallCount).IsEqualTo(1);
     }
+
+    [Test]
+    public async Task Caller_Cancellation_Stops_Loopback_Retry_And_Preserves_The_Token()
+    {
+        var requestStarted = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        await using var server = FlakyHttpServer.Start(async (_, context) =>
+        {
+            requestStarted.TrySetResult();
+            await release.Task;
+            await FlakyHttpServer.Respond(context, 200, "late");
+        });
+        var shield = HttpShield.WhenTransient().Retry(3, Backoff.None);
+        using var cancellation = new CancellationTokenSource();
+
+        var send = shield.ExecuteAsync(
+            ct => new ValueTask<HttpResponseMessage>(Client.GetAsync(server.Url, ct)),
+            cancellation.Token).AsTask();
+        await requestStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        cancellation.Cancel();
+        var exception = await Assert.That(async () => await send)
+            .Throws<OperationCanceledException>();
+        release.TrySetResult();
+
+        await Assert.That(exception!.CancellationToken).IsEqualTo(cancellation.Token);
+        await Assert.That(server.CallCount).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task HttpClientFactory_Factories_Resolve_Services_And_Apply_Handler_Options()
+    {
+        await using var server = FlakyHttpServer.Start((call, context) => call == 1
+            ? FlakyHttpServer.Respond(context, 503)
+            : FlakyHttpServer.Respond(context, 200, "factory options ok"));
+        var marker = new FactoryMarker();
+        var shieldFactoryCalls = 0;
+        var optionsFactoryCalls = 0;
+        using var services = new ServiceCollection()
+            .AddSingleton(marker)
+            .AddHttpClient("factory-options")
+            .AddShield(
+                provider =>
+                {
+                    _ = provider.GetRequiredService<FactoryMarker>();
+                    Interlocked.Increment(ref shieldFactoryCalls);
+                    return HttpShield.WhenTransient().Retry(1, Backoff.None);
+                },
+                provider =>
+                {
+                    _ = provider.GetRequiredService<FactoryMarker>();
+                    Interlocked.Increment(ref optionsFactoryCalls);
+                    return new ShieldHttpHandlerOptions();
+                })
+            .Services
+            .BuildServiceProvider();
+        using var client = services.GetRequiredService<IHttpClientFactory>()
+            .CreateClient("factory-options");
+
+        using var response = await client.GetAsync(server.Url);
+
+        await Assert.That(await response.Content.ReadAsStringAsync())
+            .IsEqualTo("factory options ok");
+        await Assert.That(server.CallCount).IsEqualTo(2);
+        await Assert.That(shieldFactoryCalls).IsEqualTo(1);
+        await Assert.That(optionsFactoryCalls).IsEqualTo(1);
+    }
+
+    private sealed class FactoryMarker;
 }

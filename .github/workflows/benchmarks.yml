@@ -6,6 +6,8 @@ on:
     paths:
       - 'src/**'
       - 'benchmarks/**'
+      - 'Directory.Build.props'
+      - 'Directory.Packages.props'
       - '.github/workflows/benchmarks.yml'
       - '.github/scripts/benchmark_docs.py'
   schedule:

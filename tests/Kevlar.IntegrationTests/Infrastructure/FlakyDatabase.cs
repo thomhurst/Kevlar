@@ -27,6 +27,8 @@ internal sealed class FlakyDatabase
     private int _active;
     private int _maxObservedConcurrency;
     private int _queries;
+    private readonly TaskCompletionSource _queryStarted = new(
+        TaskCreationOptions.RunContinuationsAsynchronously);
 
     public int MaxConnections { get; init; } = 5;
 
@@ -34,7 +36,11 @@ internal sealed class FlakyDatabase
 
     public int QueryCount => Volatile.Read(ref _queries);
 
+    public int ActiveConnections => Volatile.Read(ref _active);
+
     public int MaxObservedConcurrency => Volatile.Read(ref _maxObservedConcurrency);
+
+    public Task FirstQueryStarted => _queryStarted.Task;
 
     /// <summary>Makes the next <paramref name="count"/> queries fail with <see cref="TransientDatabaseException"/>.</summary>
     public void FailNextQueries(int count) => Volatile.Write(ref _transientFailuresRemaining, count);
@@ -46,6 +52,7 @@ internal sealed class FlakyDatabase
     {
         Interlocked.Increment(ref _queries);
         var active = Interlocked.Increment(ref _active);
+        _queryStarted.TrySetResult();
 
         try
         {

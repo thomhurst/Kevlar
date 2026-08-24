@@ -294,6 +294,21 @@ public class RateLimiterAdapterTests
     }
 
     [Test]
+    public async Task Synchronous_Downstream_Strategy_Failure_Releases_Lease()
+    {
+        var failure = new InvalidOperationException("downstream strategy failed");
+        var lease = new TrackingLease(isAcquired: true);
+        var shield = Shield.Empty
+            .RateLimit((_, _) => new ValueTask<RateLimitLease>(lease))
+            .Use(new SynchronouslyThrowingStrategy(failure));
+
+        var outcome = await shield.ExecuteOutcomeAsync(static _ => new ValueTask<int>(42));
+
+        await Assert.That(ReferenceEquals(outcome.Exception, failure)).IsTrue();
+        await Assert.That(lease.DisposeCount).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Async_Execution_Surfaces_Lease_Disposal_Failure()
     {
         var disposalFailure = new InvalidOperationException("lease disposal");
@@ -751,6 +766,13 @@ public class RateLimiterAdapterTests
                 throw DisposalFailure;
             }
         }
+    }
+
+    private sealed class SynchronouslyThrowingStrategy(Exception failure) : Strategy
+    {
+        public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+            Continuation<T, TState> next,
+            KevlarContext context) => throw failure;
     }
 
     private sealed class RejectionListener : IDisposable
