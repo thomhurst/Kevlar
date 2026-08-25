@@ -173,7 +173,7 @@ internal static class KevlarMetrics
             eventName: "timeout",
             KevlarTelemetrySeverity.Warning,
             context.StrategyIndex,
-            attemptNumber: 0,
+            context.AttemptNumber,
             isSuccess: false,
             exception);
     }

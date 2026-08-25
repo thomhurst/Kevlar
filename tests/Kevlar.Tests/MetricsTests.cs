@@ -556,6 +556,60 @@ public class MetricsTests
     }
 
     [Test]
+    public async Task Timeout_Telemetry_Uses_The_Surfaced_Exception()
+    {
+        using var meterListener = new KevlarMeterListener();
+        KevlarTelemetryEvent observed = default;
+        using var subscription = KevlarDiagnostics.Listen(new CallbackTelemetryListener(telemetryEvent =>
+        {
+            if (telemetryEvent.EventName == "timeout")
+            {
+                observed = telemetryEvent;
+            }
+        }));
+        var shield = Shield.Timeout(TimeSpan.FromMilliseconds(20))
+            .WithName("metrics-timeout-exception");
+
+        var exception = await Assert.That(async () => await shield.ExecuteAsync(
+                async token => await Task.Delay(Timeout.InfiniteTimeSpan, token)))
+            .Throws<TimeoutExceededException>();
+
+        await Assert.That(ReferenceEquals(observed.Exception, exception)).IsTrue();
+        var tags = meterListener.Measurements("kevlar.strategy.events", "metrics-timeout-exception")
+            .Single();
+        await Assert.That(tags["exception.type"])
+            .IsEqualTo(typeof(TimeoutExceededException).FullName);
+    }
+
+    [Test]
+    public async Task Nested_Timeout_Telemetry_Uses_The_Retry_Attempt()
+    {
+        KevlarTelemetryEvent observed = default;
+        using var subscription = KevlarDiagnostics.Listen(new CallbackTelemetryListener(telemetryEvent =>
+        {
+            if (telemetryEvent.EventName == "timeout")
+            {
+                observed = telemetryEvent;
+            }
+        }));
+        var attempts = 0;
+        var shield = Shield.Retry(1, Backoff.None)
+            .Timeout(TimeSpan.FromMilliseconds(20));
+
+        _ = await Assert.That(async () => await shield.ExecuteAsync(async token =>
+        {
+            if (Interlocked.Increment(ref attempts) == 1)
+            {
+                throw new InvalidOperationException("retry");
+            }
+
+            await Task.Delay(Timeout.InfiniteTimeSpan, token);
+        })).Throws<TimeoutExceededException>();
+
+        await Assert.That(observed.AttemptNumber).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Wrapped_Cancellations_Are_Counted_As_Timeouts()
     {
         using var listener = new KevlarMeterListener();

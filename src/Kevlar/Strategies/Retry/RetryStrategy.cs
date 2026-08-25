@@ -130,31 +130,43 @@ internal sealed class RetryStrategy : Strategy
     public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
         var strategyIndex = context.StrategyIndex;
+        var previousAttemptNumber = context.AttemptNumber;
+        context.AttemptNumber = 0;
         var recordAttempts = KevlarTelemetry.AttemptEnabled;
         var attemptStartedAt = recordAttempts ? context.TimeProvider.GetTimestamp() : 0;
-        var execution = next.InvokeAsync(context);
-        var firstOutcomeShouldRetry = false;
-        if (execution.IsCompletedSuccessfully)
+        try
         {
-            var outcome = execution.Result;
-            RecordAttempt(context, strategyIndex, attempt: 0, attemptStartedAt, recordAttempts, in outcome);
-            if (!ShouldRetry(in outcome, retriesUsed: 0, context, strategyIndex))
+            var execution = next.InvokeAsync(context);
+            var firstOutcomeShouldRetry = false;
+            if (execution.IsCompletedSuccessfully)
             {
-                return new ValueTask<Outcome<T>>(outcome);
+                var outcome = execution.Result;
+                RecordAttempt(context, strategyIndex, attempt: 0, attemptStartedAt, recordAttempts, in outcome);
+                if (!ShouldRetry(in outcome, retriesUsed: 0, context, strategyIndex))
+                {
+                    context.AttemptNumber = previousAttemptNumber;
+                    return new ValueTask<Outcome<T>>(outcome);
+                }
+
+                execution = new ValueTask<Outcome<T>>(outcome);
+                firstOutcomeShouldRetry = true;
             }
 
-            execution = new ValueTask<Outcome<T>>(outcome);
-            firstOutcomeShouldRetry = true;
+            return ExecuteCoreAsync(
+                next,
+                context,
+                execution,
+                firstOutcomeShouldRetry,
+                strategyIndex,
+                attemptStartedAt,
+                recordAttempts,
+                previousAttemptNumber);
         }
-
-        return ExecuteCoreAsync(
-            next,
-            context,
-            execution,
-            firstOutcomeShouldRetry,
-            strategyIndex,
-            attemptStartedAt,
-            recordAttempts);
+        catch
+        {
+            context.AttemptNumber = previousAttemptNumber;
+            throw;
+        }
     }
 
     private async ValueTask<Outcome<T>> ExecuteCoreAsync<T, TState>(
@@ -164,125 +176,134 @@ internal sealed class RetryStrategy : Strategy
         bool firstOutcomeShouldRetry,
         int strategyIndex,
         long attemptStartedAt,
-        bool recordAttempts)
+        bool recordAttempts,
+        int previousAttemptNumber)
     {
-        var previousBackoffDelay = TimeSpan.Zero;
-        for (var retriesUsed = 0; ; retriesUsed++)
+        try
         {
-            var outcome = await execution.ConfigureAwait(false);
-            if (!firstOutcomeShouldRetry)
+            var previousBackoffDelay = TimeSpan.Zero;
+            for (var retriesUsed = 0; ; retriesUsed++)
             {
-                RecordAttempt(
+                var outcome = await execution.ConfigureAwait(false);
+                if (!firstOutcomeShouldRetry)
+                {
+                    RecordAttempt(
+                        context,
+                        strategyIndex,
+                        retriesUsed,
+                        attemptStartedAt,
+                        recordAttempts,
+                        in outcome);
+                }
+
+                if (!firstOutcomeShouldRetry && !ShouldRetry(in outcome, retriesUsed, context, strategyIndex))
+                {
+                    return outcome;
+                }
+
+                firstOutcomeShouldRetry = false;
+
+                var attempt = retriesUsed + 1;
+                KevlarMetrics.Retry(context.ShieldName);
+                KevlarTelemetry.Record(
                     context,
+                    strategyName: _telemetryName,
+                    eventName: "retry",
+                    KevlarTelemetrySeverity.Warning,
                     strategyIndex,
-                    retriesUsed,
-                    attemptStartedAt,
-                    recordAttempts,
-                    in outcome);
-            }
+                    attempt,
+                    isSuccess: outcome.IsSuccess,
+                    outcome.Exception);
+                var delay = _backoff.GetDelay(attempt, previousBackoffDelay);
 
-            if (!firstOutcomeShouldRetry && !ShouldRetry(in outcome, retriesUsed, context, strategyIndex))
-            {
-                return outcome;
-            }
-
-            firstOutcomeShouldRetry = false;
-
-            var attempt = retriesUsed + 1;
-            KevlarMetrics.Retry(context.ShieldName);
-            KevlarTelemetry.Record(
-                context,
-                strategyName: _telemetryName,
-                eventName: "retry",
-                KevlarTelemetrySeverity.Warning,
-                strategyIndex,
-                attempt,
-                isSuccess: outcome.IsSuccess,
-                outcome.Exception);
-            var delay = _backoff.GetDelay(attempt, previousBackoffDelay);
-
-            if (_maxDelay is { } cap && delay > cap)
-            {
-                delay = cap;
-            }
-
-            previousBackoffDelay = delay;
-
-            if (_delayGenerator is not null
-                || _delayGeneratorAsync is not null
-                || _onRetry is not null
-                || _onRetryAsync is not null)
-            {
-                if (_delayGenerator is not null)
+                if (_maxDelay is { } cap && delay > cap)
                 {
-                    var generated = InvokeDelayGenerator(
-                        _delayGenerator,
-                        attempt,
-                        delay,
-                        in outcome,
-                        context);
-                    delay = ApplyGeneratedDelay(delay, generated);
+                    delay = cap;
                 }
 
-                if (_delayGeneratorAsync is not null)
-                {
-                    var generated = await InvokeDelayGeneratorAsync(
-                        _delayGeneratorAsync,
-                        attempt,
-                        delay,
-                        outcome,
-                        context)
-                        .ConfigureAwait(false);
-                    delay = ApplyGeneratedDelay(delay, generated);
-                }
+                previousBackoffDelay = delay;
 
-                if (_onRetry is not null || _onRetryAsync is not null)
+                if (_delayGenerator is not null
+                    || _delayGeneratorAsync is not null
+                    || _onRetry is not null
+                    || _onRetryAsync is not null)
                 {
-                    if (_onRetry is not null)
+                    if (_delayGenerator is not null)
                     {
-                        try
-                        {
-                            InvokeOnRetry(_onRetry, attempt, delay, in outcome, context);
-                        }
-                        catch (Exception exception)
-                        {
-                            KevlarDiagnostics.ReportCallbackError(CallbackErrorKind.Retry, context, exception);
-                        }
+                        var generated = InvokeDelayGenerator(
+                            _delayGenerator,
+                            attempt,
+                            delay,
+                            in outcome,
+                            context);
+                        delay = ApplyGeneratedDelay(delay, generated);
                     }
 
-                    if (_onRetryAsync is not null)
+                    if (_delayGeneratorAsync is not null)
                     {
-                        try
+                        var generated = await InvokeDelayGeneratorAsync(
+                            _delayGeneratorAsync,
+                            attempt,
+                            delay,
+                            outcome,
+                            context)
+                            .ConfigureAwait(false);
+                        delay = ApplyGeneratedDelay(delay, generated);
+                    }
+
+                    if (_onRetry is not null || _onRetryAsync is not null)
+                    {
+                        if (_onRetry is not null)
                         {
-                            await InvokeOnRetryAsync(
-                                _onRetryAsync,
-                                attempt,
-                                delay,
-                                outcome,
-                                context).ConfigureAwait(false);
+                            try
+                            {
+                                InvokeOnRetry(_onRetry, attempt, delay, in outcome, context);
+                            }
+                            catch (Exception exception)
+                            {
+                                KevlarDiagnostics.ReportCallbackError(CallbackErrorKind.Retry, context, exception);
+                            }
                         }
-                        catch (Exception exception)
+
+                        if (_onRetryAsync is not null)
                         {
-                            KevlarDiagnostics.ReportCallbackError(CallbackErrorKind.Retry, context, exception);
+                            try
+                            {
+                                await InvokeOnRetryAsync(
+                                    _onRetryAsync,
+                                    attempt,
+                                    delay,
+                                    outcome,
+                                    context).ConfigureAwait(false);
+                            }
+                            catch (Exception exception)
+                            {
+                                KevlarDiagnostics.ReportCallbackError(CallbackErrorKind.Retry, context, exception);
+                            }
                         }
                     }
                 }
-            }
 
-            if (delay > TimeSpan.Zero || context.CancellationToken.IsCancellationRequested)
-            {
-                try
+                if (delay > TimeSpan.Zero || context.CancellationToken.IsCancellationRequested)
                 {
-                    await DelayHelper.DelayAsync(context, delay).ConfigureAwait(false);
+                    try
+                    {
+                        await DelayHelper.DelayAsync(context, delay).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException cancelled)
+                    {
+                        return Outcome<T>.FromException(cancelled);
+                    }
                 }
-                catch (OperationCanceledException cancelled)
-                {
-                    return Outcome<T>.FromException(cancelled);
-                }
-            }
 
-            attemptStartedAt = recordAttempts ? context.TimeProvider.GetTimestamp() : 0;
-            execution = next.InvokeAsync(context);
+                attemptStartedAt = recordAttempts ? context.TimeProvider.GetTimestamp() : 0;
+                context.AttemptNumber = attempt;
+                execution = next.InvokeAsync(context);
+            }
+        }
+        finally
+        {
+            context.AttemptNumber = previousAttemptNumber;
         }
     }
 

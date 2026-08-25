@@ -236,7 +236,8 @@ internal sealed class TimeoutStrategy : Strategy
 
         if (timedOut)
         {
-            KevlarMetrics.Timeout(context, _telemetryName, cancellationException);
+            var timeoutException = new TimeoutExceededException(timeout, cancellationException);
+            KevlarMetrics.Timeout(context, _telemetryName, timeoutException);
             var timeoutEvent = new TimeoutEvent(timeout, context);
             CallbackInvoker.Invoke(_onTimeout, timeoutEvent, CallbackErrorKind.Timeout, context);
             var notification = CallbackInvoker.InvokeAsync(
@@ -246,11 +247,10 @@ internal sealed class TimeoutStrategy : Strategy
                 context);
             if (!notification.IsCompletedSuccessfully)
             {
-                return AwaitTimeoutNotificationAsync<T>(notification, timeout, cancellationException);
+                return AwaitTimeoutNotificationAsync<T>(notification, timeoutException);
             }
 
-            return new ValueTask<Outcome<T>>(Outcome<T>.FromException(
-                new TimeoutExceededException(timeout, cancellationException)));
+            return new ValueTask<Outcome<T>>(Outcome<T>.FromException(timeoutException));
         }
 
         return new ValueTask<Outcome<T>>(outcome);
@@ -258,11 +258,10 @@ internal sealed class TimeoutStrategy : Strategy
 
     private static async ValueTask<Outcome<T>> AwaitTimeoutNotificationAsync<T>(
         ValueTask notification,
-        TimeSpan timeout,
-        OperationCanceledException cancellationException)
+        TimeoutExceededException timeoutException)
     {
         await notification.ConfigureAwait(false);
-        return Outcome<T>.FromException(new TimeoutExceededException(timeout, cancellationException));
+        return Outcome<T>.FromException(timeoutException);
     }
 
     private static void ValidateGeneratedTimeout(TimeSpan timeout)
