@@ -170,6 +170,7 @@ internal sealed class PartitionCache<TKey, TShield>
     {
         Creation creation;
         var creates = false;
+        var createsUnretained = false;
         TShield? retained = null;
         List<Entry>? expired;
 
@@ -186,7 +187,11 @@ internal sealed class PartitionCache<TKey, TShield>
                     retained = existing.Shield;
                     creation = null!;
                 }
-                else if (!_creations.TryGetValue(key, out creation!))
+                else if (_creations.TryGetValue(key, out creation!))
+                {
+                    createsUnretained = _evictionCallback.Value?.Active == true;
+                }
+                else
                 {
                     creation = new Creation();
                     _creations.Add(key, creation);
@@ -208,7 +213,7 @@ internal sealed class PartitionCache<TKey, TShield>
             return retained;
         }
 
-        if (!creates)
+        if (!creates && !createsUnretained)
         {
             return await creation.Task.ConfigureAwait(false);
         }
@@ -221,8 +226,17 @@ internal sealed class PartitionCache<TKey, TShield>
         }
         catch (Exception exception)
         {
-            FailCreation(key, creation, exception);
+            if (creates)
+            {
+                FailCreation(key, creation, exception);
+            }
+
             throw;
+        }
+
+        if (createsUnretained)
+        {
+            return shield;
         }
 
         try

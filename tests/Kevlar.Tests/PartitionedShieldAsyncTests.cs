@@ -269,6 +269,94 @@ public class PartitionedShieldAsyncTests
     }
 
     [Test]
+    public async Task Eviction_Callback_Does_Not_Join_The_Creation_Waiting_On_It()
+    {
+        PartitionedShield<string>? provider = null;
+        Shield? nested = null;
+        var factoryCalls = 0;
+        provider = new PartitionedShield<string>(
+            key => Shield.Empty.WithName($"{key}-{Interlocked.Increment(ref factoryCalls)}"),
+            new PartitionedShieldOptions
+            {
+                MaximumPartitions = 1,
+                OnEvictedAsync = async item =>
+                {
+                    if ((string)item.Key == "first")
+                    {
+                        nested = await provider!.GetShieldAsync("second");
+                    }
+                },
+            });
+        _ = provider.GetShield("first");
+
+        var second = await provider.GetShieldAsync("second")
+            .AsTask()
+            .WaitAsync(TimeSpan.FromSeconds(5));
+
+        await Assert.That(nested).IsNotNull();
+        await Assert.That(nested).IsNotSameReferenceAs(second);
+        await Assert.That(provider.TryGetShield("second", out var retained)).IsTrue();
+        await Assert.That(retained).IsSameReferenceAs(second);
+        await Assert.That(factoryCalls).IsEqualTo(3);
+        await Assert.That(provider.Count).IsEqualTo(1);
+        await Assert.That(provider.CreatedCount).IsEqualTo(2);
+        await Assert.That(provider.CapacityEvictionCount).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Eviction_Callback_Does_Not_Join_A_Publisher_Waiting_On_Its_Reservation()
+    {
+        var callbackEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var continueCallback = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var nestedFactoryEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        PartitionedShield<string>? provider = null;
+        Shield? callbackShield = null;
+        var nestedFactoryCalls = 0;
+        provider = new PartitionedShield<string>(
+            key =>
+            {
+                if (key == "nested")
+                {
+                    Interlocked.Increment(ref nestedFactoryCalls);
+                    nestedFactoryEntered.TrySetResult();
+                }
+
+                return Shield.Empty.WithName($"{key}-{nestedFactoryCalls}");
+            },
+            new PartitionedShieldOptions
+            {
+                MaximumPartitions = 1,
+                OnEvictedAsync = async item =>
+                {
+                    if ((string)item.Key == "first")
+                    {
+                        callbackEntered.TrySetResult();
+                        await continueCallback.Task;
+                        callbackShield = await provider!.GetShieldAsync("nested");
+                    }
+                },
+            });
+        _ = provider.GetShield("first");
+
+        var second = provider.GetShieldAsync("second").AsTask();
+        await callbackEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        var nested = provider.GetShieldAsync("nested").AsTask();
+        await nestedFactoryEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await Assert.That(nested.IsCompleted).IsFalse();
+
+        continueCallback.TrySetResult();
+        _ = await second.WaitAsync(TimeSpan.FromSeconds(5));
+        var retainedNested = await nested.WaitAsync(TimeSpan.FromSeconds(5));
+
+        await Assert.That(callbackShield).IsNotNull();
+        await Assert.That(callbackShield).IsNotSameReferenceAs(retainedNested);
+        await Assert.That(nestedFactoryCalls).IsEqualTo(2);
+        await Assert.That(provider.TryGetShield("nested", out var retained)).IsTrue();
+        await Assert.That(retained).IsSameReferenceAs(retainedNested);
+        await Assert.That(provider.Count).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Evicted_Resources_Can_Be_Disposed_By_Key()
     {
         var resources = new ConcurrentDictionary<string, DisposableResource>();
