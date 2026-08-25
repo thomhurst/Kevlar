@@ -1689,30 +1689,27 @@ public class MetricsTests
     }
 
     [Test]
-    public async Task Concurrency_State_Uses_Atomic_Running_Count_During_Permit_Transfer()
+    public async Task Concurrency_Queued_Permit_Transition_Updates_State_Atomically()
     {
         var strategy = new ConcurrencyLimitStrategy(new ConcurrencyLimitOptions
         {
             MaxConcurrency = 2,
             QueueLimit = 1,
         });
-        var available = typeof(ConcurrencyLimitStrategy).GetField(
-            "_available",
+        var state = typeof(ConcurrencyLimitStrategy).GetField(
+            "_state",
             System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
-        var running = typeof(ConcurrencyLimitStrategy).GetField(
-            "_running",
-            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
-        var semaphore = typeof(ConcurrencyLimitStrategy).GetField(
-            "_semaphore",
+        var acquireQueued = typeof(ConcurrencyLimitStrategy).GetMethod(
+            "TryAcquireQueuedPermit",
             System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
 
-        available.SetValue(strategy, 1);
-        running.SetValue(strategy, 1);
-        ((SemaphoreSlim)semaphore.GetValue(strategy)!).Release();
+        state.SetValue(strategy, 1L);
+        await Assert.That((bool)acquireQueued.Invoke(strategy, [false])!).IsTrue();
 
-        var state = strategy.CaptureState();
-        await Assert.That(state.Available).IsEqualTo(1);
-        await Assert.That(state.Running).IsEqualTo(1);
+        var snapshot = strategy.CaptureState();
+        await Assert.That(snapshot.Available).IsEqualTo(1);
+        await Assert.That(snapshot.Running).IsEqualTo(1);
+        await Assert.That(snapshot.Queued).IsEqualTo(0);
     }
 
     [Test]

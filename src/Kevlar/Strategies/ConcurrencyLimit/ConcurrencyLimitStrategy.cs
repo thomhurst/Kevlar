@@ -4,7 +4,11 @@ namespace Kevlar.Strategies;
 
 internal sealed class ConcurrencyLimitStrategy : Strategy
 {
-    // Atomic permits serve the uncontended path; the semaphore carries permits only to registered waiters.
+    private const long RunningIncrement = 1L << 32;
+    private const long QueuedIncrement = 1;
+
+    // The high 32 bits track running executions and the low 32 bits track queued executions.
+    // The semaphore is only a wake-up signal; permit ownership lives in _state.
     private readonly SemaphoreSlim _semaphore;
     private readonly int _maxConcurrency;
     private readonly int _queueLimit;
@@ -31,8 +35,9 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
 
     internal (int Available, int Running, int Queued) CaptureState()
     {
-        var running = Math.Min(_maxConcurrency, Math.Max(0, Volatile.Read(ref _running)));
-        var queued = Math.Min(_queueLimit, Math.Max(0, Volatile.Read(ref _queued)));
+        var state = Volatile.Read(ref _state);
+        var running = Math.Min(_maxConcurrency, Math.Max(0, (int)(state >> 32)));
+        var queued = Math.Min(_queueLimit, Math.Max(0, (int)(state & uint.MaxValue)));
         return (_maxConcurrency - running, running, queued);
     }
 
@@ -54,7 +59,6 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
         _maxConcurrency = options.MaxConcurrency;
         _queueLimit = options.QueueLimit;
         _capacity = options.MaxConcurrency + (long)options.QueueLimit;
-        _available = options.MaxConcurrency;
         _onRejected = options.OnRejected;
         _onRejectedAsync = options.OnRejectedAsync;
         _telemetryName = options.Name ?? "ConcurrencyLimit";
@@ -79,7 +83,6 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
             context.CancellationToken.ThrowIfCancellationRequested();
             if (TryAcquirePermit())
             {
-                Interlocked.Increment(ref _running);
                 return ExecuteAcquired(next, context);
             }
         }
@@ -135,33 +138,35 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
         Continuation<T, TState> next,
         KevlarContext context)
     {
-        Interlocked.Increment(ref _queued);
+        Interlocked.Add(ref _state, QueuedIncrement);
         Interlocked.Increment(ref _waiters);
         try
         {
-            if (!TryAcquirePermit())
+            if (!TryAcquireQueuedPermit(drainSignal: true))
             {
-                if (context.IsSynchronous)
+                do
                 {
-                    _semaphore.Wait(context.CancellationToken);
+                    if (context.IsSynchronous)
+                    {
+                        _semaphore.Wait(context.CancellationToken);
+                    }
+                    else
+                    {
+                        await _semaphore.WaitAsync(context.CancellationToken).ConfigureAwait(false);
+                    }
                 }
-                else
-                {
-                    await _semaphore.WaitAsync(context.CancellationToken).ConfigureAwait(false);
-                }
+                while (!TryAcquireQueuedPermit(drainSignal: false));
             }
-
-            Interlocked.Increment(ref _running);
         }
         catch (OperationCanceledException cancelled)
         {
+            Interlocked.Add(ref _state, -QueuedIncrement);
             Interlocked.Decrement(ref _pending);
             return Outcome<T>.FromException(NormalizeCancellation(cancelled, context));
         }
         finally
         {
             Interlocked.Decrement(ref _waiters);
-            Interlocked.Decrement(ref _queued);
         }
 
         return await ExecuteAcquired(next, context).ConfigureAwait(false);
@@ -196,7 +201,6 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
 
     private void CompleteExecution()
     {
-        Interlocked.Decrement(ref _running);
         Interlocked.Decrement(ref _pending);
         ReleasePermit();
     }
@@ -213,17 +217,30 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
             : cancelled;
 
     private bool TryAcquirePermit()
+        => TryAcquirePermitCore(isQueued: false, drainSignal: true);
+
+    private bool TryAcquireQueuedPermit(bool drainSignal)
+        => TryAcquirePermitCore(isQueued: true, drainSignal);
+
+    private bool TryAcquirePermitCore(bool isQueued, bool drainSignal)
     {
         while (true)
         {
-            var available = Volatile.Read(ref _available);
-            if (available == 0)
+            var state = Volatile.Read(ref _state);
+            var running = (int)(state >> 32);
+            if (running >= _maxConcurrency)
             {
                 return false;
             }
 
-            if (Interlocked.CompareExchange(ref _available, available - 1, available) == available)
+            var updated = state + RunningIncrement - (isQueued ? QueuedIncrement : 0);
+            if (Interlocked.CompareExchange(ref _state, updated, state) == state)
             {
+                if (drainSignal)
+                {
+                    _ = _semaphore.Wait(0);
+                }
+
                 return true;
             }
         }
@@ -248,10 +265,8 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
 
     private void ReleasePermit()
     {
-        // Publish first. A waiter that registers concurrently either claims this permit on its
-        // atomic retry, or leaves it here for this release to transfer to the semaphore.
-        Interlocked.Increment(ref _available);
-        if (Volatile.Read(ref _waiters) > 0 && TryAcquirePermit())
+        Interlocked.Add(ref _state, -RunningIncrement);
+        if (Volatile.Read(ref _waiters) > 0)
         {
             _semaphore.Release();
         }
