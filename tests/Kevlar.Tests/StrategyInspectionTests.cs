@@ -115,7 +115,4 @@ public class StrategyInspectionTests
 
     private static IFallbackStrategyInspection GetInspection(Shield shield) =>
         (IFallbackStrategyInspection)shield.Strategies.Single();
-
-    private static IFallbackStrategyInspection GetInspection(VoidShield shield) =>
-        (IFallbackStrategyInspection)shield.Strategies.Single();
 }

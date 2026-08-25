@@ -51,48 +51,6 @@ public static class ShieldRateLimiterExtensions
         return shield.Use(CreateStrategy(acquireLease, configure));
     }
 
-    /// <summary>Appends a strategy backed by <paramref name="limiter"/> while preserving void-only execution.</summary>
-    public static VoidShield RateLimit(
-        this VoidShield shield,
-        RateLimiter limiter,
-        Action<RateLimiterAdapterOptions>? configure = null)
-    {
-        if (shield is null)
-        {
-            throw new ArgumentNullException(nameof(shield));
-        }
-
-        return shield.Use(CreateStrategy(limiter, configure));
-    }
-
-    /// <summary>Appends a context-aware limiter while preserving void-only execution.</summary>
-    public static VoidShield RateLimit(
-        this VoidShield shield,
-        PartitionedRateLimiter<KevlarContext> limiter,
-        Action<RateLimiterAdapterOptions>? configure = null)
-    {
-        if (shield is null)
-        {
-            throw new ArgumentNullException(nameof(shield));
-        }
-
-        return shield.Use(CreateStrategy(limiter, configure));
-    }
-
-    /// <summary>Appends caller-provided lease acquisition while preserving void-only execution.</summary>
-    public static VoidShield RateLimit(
-        this VoidShield shield,
-        RateLimitLeaseAcquirer acquireLease,
-        Action<RateLimiterAdapterOptions>? configure = null)
-    {
-        if (shield is null)
-        {
-            throw new ArgumentNullException(nameof(shield));
-        }
-
-        return shield.Use(CreateStrategy(acquireLease, configure));
-    }
-
     /// <summary>Appends a strategy backed by <paramref name="limiter"/>.</summary>
     public static Shield<TResult> RateLimit<TResult>(
         this Shield<TResult> shield,

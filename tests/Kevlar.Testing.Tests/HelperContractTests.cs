@@ -53,7 +53,7 @@ public class HelperContractTests
     }
 
     [Test]
-    public async Task StateSnapshot_Supports_VoidShield_And_Preserves_Pipeline_Indexes()
+    public async Task StateSnapshot_Supports_Fallback_Shields_And_Preserves_Pipeline_Indexes()
     {
         var shield = Shield
             .Fallback(static _ => ValueTask.CompletedTask)
@@ -67,15 +67,6 @@ public class HelperContractTests
         await Assert.That(concurrency).IsTypeOf<ConcurrencyLimitStateSnapshot>();
         await Assert.That(concurrency.Kind).IsEqualTo(StrategyKind.ConcurrencyLimit);
         await Assert.That(concurrency.StrategyIndex).IsEqualTo(2);
-    }
-
-    [Test]
-    public async Task StateSnapshot_Rejects_Null_VoidShield()
-    {
-        VoidShield? shield = null;
-
-        await Assert.That(() => shield!.GetStateSnapshot())
-            .Throws<ArgumentNullException>();
     }
 
     [Test]

@@ -11,3 +11,4 @@ override Kevlar.Analyzers.PipelineHazardAnalyzer.SupportedDiagnostics.get -> Sys
 static readonly Kevlar.Analyzers.PipelineHazardAnalyzer.SynchronousHedgeRule -> Microsoft.CodeAnalysis.DiagnosticDescriptor!
 static readonly Kevlar.Analyzers.PipelineHazardAnalyzer.UnreachableReactiveStrategyRule -> Microsoft.CodeAnalysis.DiagnosticDescriptor!
 static readonly Kevlar.Analyzers.PipelineHazardAnalyzer.UntypedHedgeRule -> Microsoft.CodeAnalysis.DiagnosticDescriptor!
+static readonly Kevlar.Analyzers.PipelineHazardAnalyzer.VoidFallbackResultExecutionRule -> Microsoft.CodeAnalysis.DiagnosticDescriptor!

@@ -599,7 +599,7 @@ public class RateLimiterAdapterTests
     }
 
     [Test]
-    public async Task VoidShield_Adapter_Overloads_Preserve_VoidOnly_State()
+    public async Task Fallback_Shield_Adapter_Overloads_Preserve_The_Pipeline()
     {
         using var limiter = new StubLimiter(static _ =>
             new ValueTask<RateLimitLease>(new TrackingLease(true)));
@@ -609,9 +609,9 @@ public class RateLimiterAdapterTests
             new ValueTask<RateLimitLease>(new TrackingLease(true));
         var fallback = Shield.Fallback(static _ => ValueTask.CompletedTask);
 
-        VoidShield framework = fallback.RateLimit(limiter);
-        VoidShield partitioned = fallback.RateLimit(partitionedLimiter);
-        VoidShield delegated = fallback.RateLimit(acquire);
+        Shield framework = fallback.RateLimit(limiter);
+        Shield partitioned = fallback.RateLimit(partitionedLimiter);
+        Shield delegated = fallback.RateLimit(acquire);
 
         await framework.ExecuteAsync(static _ => ValueTask.CompletedTask);
         await partitioned.ExecuteAsync(static _ => ValueTask.CompletedTask);
@@ -639,12 +639,6 @@ public class RateLimiterAdapterTests
         await Assert.That(() => ShieldRateLimiterExtensions.RateLimit((Shield)null!, partitionedLimiter))
             .Throws<ArgumentNullException>();
         await Assert.That(() => ShieldRateLimiterExtensions.RateLimit<int>(null!, partitionedLimiter))
-            .Throws<ArgumentNullException>();
-        await Assert.That(() => ShieldRateLimiterExtensions.RateLimit((VoidShield)null!, limiter))
-            .Throws<ArgumentNullException>();
-        await Assert.That(() => ShieldRateLimiterExtensions.RateLimit((VoidShield)null!, acquire))
-            .Throws<ArgumentNullException>();
-        await Assert.That(() => ShieldRateLimiterExtensions.RateLimit((VoidShield)null!, partitionedLimiter))
             .Throws<ArgumentNullException>();
         await Assert.That(() => Shield.Empty.RateLimit((RateLimiter)null!))
             .Throws<ArgumentNullException>();

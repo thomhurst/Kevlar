@@ -143,10 +143,10 @@ public class PartitionedShieldTests
     }
 
     [Test]
-    public async Task Void_Partitions_Preserve_The_Void_Only_Type_And_State()
+    public async Task Fallback_Partitions_Preserve_The_Shield_And_State()
     {
         var fallbackCalls = 0;
-        var provider = new PartitionedVoidShield<string>(_ =>
+        var provider = new PartitionedShield<string>(_ =>
             Shield.When<InvalidOperationException>().Fallback((_, _) =>
             {
                 fallbackCalls++;
