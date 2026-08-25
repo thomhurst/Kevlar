@@ -92,6 +92,53 @@ public class DynamicRegistryTests
     }
 
     [Test]
+    public async Task Shield_Factory_Can_Resolve_Another_Registered_Shield()
+    {
+        var dependency = Shield.Retry(0, Backoff.None);
+        using var services = new ServiceCollection()
+            .AddShield("dependency", dependency)
+            .BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+
+        var composed = registry.GetOrAdd(
+            "composed",
+            serviceProvider => serviceProvider
+                .GetRequiredService<IKevlarRegistry>()
+                .GetShield("dependency"));
+
+        await Assert.That(ReferenceEquals(composed, dependency)).IsTrue();
+    }
+
+    [Test]
+    public async Task Concurrent_GetOrAdd_And_Remove_Do_Not_Expose_Partial_Entries()
+    {
+        using var services = new ServiceCollection().AddKevlar().BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        var failures = new ConcurrentQueue<Exception>();
+
+        Parallel.For(0, 10_000, operation =>
+        {
+            try
+            {
+                if ((operation & 1) == 0)
+                {
+                    _ = registry.GetOrAdd("contended", _ => Shield.Empty);
+                }
+                else
+                {
+                    registry.Remove("contended");
+                }
+            }
+            catch (Exception exception)
+            {
+                failures.Enqueue(exception);
+            }
+        });
+
+        await Assert.That(failures).IsEmpty();
+    }
+
+    [Test]
     public async Task TryAdd_Remove_And_GetOrAdd_Have_Pinned_Lifetime_Semantics()
     {
         using var services = new ServiceCollection().AddKevlar().BuildServiceProvider();

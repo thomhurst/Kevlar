@@ -21,12 +21,59 @@ internal sealed class ShieldRegistration
     public Func<IServiceProvider, object> Factory { get; }
 }
 
+internal sealed class RegistryEntry
+{
+    private readonly IServiceProvider _serviceProvider;
+    private readonly ShieldRegistration _registration;
+    private Lazy<object> _value;
+
+    public RegistryEntry(IServiceProvider serviceProvider, ShieldRegistration registration)
+    {
+        _serviceProvider = serviceProvider;
+        _registration = registration;
+        _value = CreateValue();
+    }
+
+    public object Resolve()
+    {
+        var value = Volatile.Read(ref _value);
+        try
+        {
+            return value.Value;
+        }
+        catch
+        {
+            Interlocked.CompareExchange(ref _value, CreateValue(), value);
+            throw;
+        }
+    }
+
+    public bool TryGetResolved([NotNullWhen(true)] out object? resolved)
+    {
+        var value = Volatile.Read(ref _value);
+        if (!value.IsValueCreated)
+        {
+            resolved = null;
+            return false;
+        }
+
+        resolved = value.Value;
+        return true;
+    }
+
+    private Lazy<object> CreateValue() => new(
+        () => _registration.Factory(_serviceProvider)
+            ?? throw new InvalidOperationException(
+                $"The factory for shield '{_registration.Name}' returned null."),
+        LazyThreadSafetyMode.ExecutionAndPublication);
+}
+
 internal sealed class KevlarRegistry : IKevlarRegistry
 {
     private readonly IServiceProvider _serviceProvider;
-    private readonly ConcurrentDictionary<(string Name, Type? ResultType), ShieldRegistration> _registrations = new();
-    private readonly ConcurrentDictionary<(string Name, Type? ResultType), Lazy<object>> _resolved = new();
-    private readonly ReaderWriterLockSlim _lifecycleLock = new();
+    private readonly ConcurrentDictionary<(string Name, Type? ResultType), RegistryEntry> _entries = new();
+    private readonly object _lifecycleLock = new();
+    private int _activeOperations;
     private bool _disposed;
 
     public KevlarRegistry(IServiceProvider serviceProvider, IEnumerable<ShieldRegistration> registrations)
@@ -34,7 +81,9 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         _serviceProvider = serviceProvider;
         foreach (var registration in registrations)
         {
-            _registrations.Add((registration.Name, registration.ResultType), registration);
+            // Last registration for a given name wins, matching standard DI override behaviour.
+            _entries[(registration.Name, registration.ResultType)] =
+                new RegistryEntry(_serviceProvider, registration);
         }
     }
 
@@ -69,8 +118,12 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         ThrowIfNull(name, nameof(name));
         ThrowIfNull(factory, nameof(factory));
         var key = (name, (Type?)null);
-        _registrations.GetOrAdd(key, _ => new ShieldRegistration(name, null, services => factory(services)));
-        return TryResolve(name, resultType: null, out Shield? shield)
+        var entry = _entries.GetOrAdd(
+            key,
+            _ => new RegistryEntry(
+                _serviceProvider,
+                new ShieldRegistration(name, null, services => factory(services))));
+        return TryResolve(entry, out Shield? shield)
             ? shield
             : throw new InvalidOperationException($"The factory for shield '{name}' returned an incompatible value.");
     });
@@ -83,10 +136,12 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         ThrowIfNull(factory, nameof(factory));
         var resultType = typeof(TResult);
         var key = (name, (Type?)resultType);
-        _registrations.GetOrAdd(
+        var entry = _entries.GetOrAdd(
             key,
-            _ => new ShieldRegistration(name, resultType, services => factory(services)));
-        return TryResolve(name, resultType, out Shield<TResult>? shield)
+            _ => new RegistryEntry(
+                _serviceProvider,
+                new ShieldRegistration(name, resultType, services => factory(services))));
+        return TryResolve(entry, out Shield<TResult>? shield)
             ? shield
             : throw new InvalidOperationException(
                 $"The factory for shield '{name}' and result type {resultType.Name} returned an incompatible value.");
@@ -96,9 +151,11 @@ internal sealed class KevlarRegistry : IKevlarRegistry
     {
         ThrowIfNull(name, nameof(name));
         ThrowIfNull(factory, nameof(factory));
-        return _registrations.TryAdd(
+        return _entries.TryAdd(
             (name, null),
-            new ShieldRegistration(name, null, services => factory(services)));
+            new RegistryEntry(
+                _serviceProvider,
+                new ShieldRegistration(name, null, services => factory(services))));
     });
 
     public bool TryAdd<TResult>(string name, Func<IServiceProvider, Shield<TResult>> factory) => Read(() =>
@@ -106,9 +163,11 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         ThrowIfNull(name, nameof(name));
         ThrowIfNull(factory, nameof(factory));
         var resultType = typeof(TResult);
-        return _registrations.TryAdd(
+        return _entries.TryAdd(
             (name, resultType),
-            new ShieldRegistration(name, resultType, services => factory(services)));
+            new RegistryEntry(
+                _serviceProvider,
+                new ShieldRegistration(name, resultType, services => factory(services))));
     });
 
     public bool Remove(string name) => Remove(name, resultType: null);
@@ -177,9 +236,7 @@ internal sealed class KevlarRegistry : IKevlarRegistry
     {
         ThrowIfNull(name, nameof(name));
         var key = (name, resultType);
-        var removed = _registrations.TryRemove(key, out _);
-        _resolved.TryRemove(key, out _);
-        return removed;
+        return _entries.TryRemove(key, out _);
     });
 
     private bool TryResolve<TResult>(
@@ -188,7 +245,20 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         [NotNullWhen(true)] out Shield<TResult>? shield)
     {
         ThrowIfNull(name, nameof(name));
-        var value = Resolve(name, resultType);
+        if (_entries.TryGetValue((name, resultType), out var entry))
+        {
+            return TryResolve(entry, out shield);
+        }
+
+        shield = null;
+        return false;
+    }
+
+    private static bool TryResolve<TResult>(
+        RegistryEntry entry,
+        [NotNullWhen(true)] out Shield<TResult>? shield)
+    {
+        var value = entry.Resolve();
         if (value is Shield<TResult> direct)
         {
             shield = direct;
@@ -208,7 +278,20 @@ internal sealed class KevlarRegistry : IKevlarRegistry
     private bool TryResolve(string name, Type? resultType, [NotNullWhen(true)] out Shield? shield)
     {
         ThrowIfNull(name, nameof(name));
-        var value = Resolve(name, resultType);
+        if (_entries.TryGetValue((name, resultType), out var entry))
+        {
+            return TryResolve(entry, out shield);
+        }
+
+        shield = null;
+        return false;
+    }
+
+    private static bool TryResolve(
+        RegistryEntry entry,
+        [NotNullWhen(true)] out Shield? shield)
+    {
+        var value = entry.Resolve();
         if (value is Shield direct)
         {
             shield = direct;
@@ -225,54 +308,38 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         return false;
     }
 
-    private object? Resolve(string name, Type? resultType)
-    {
-        var key = (name, resultType);
-        if (!_registrations.TryGetValue(key, out var registration))
-        {
-            return null;
-        }
-
-        var lazy = _resolved.GetOrAdd(
-            key,
-            _ => new Lazy<object>(
-                () => registration.Factory(_serviceProvider)
-                    ?? throw new InvalidOperationException($"The factory for shield '{name}' returned null."),
-                LazyThreadSafetyMode.ExecutionAndPublication));
-        try
-        {
-            return lazy.Value;
-        }
-        catch
-        {
-            _ = ((ICollection<KeyValuePair<(string Name, Type? ResultType), Lazy<object>>>)_resolved)
-                .Remove(new(key, lazy));
-            throw;
-        }
-    }
-
     private TResult Read<TResult>(Func<TResult> action)
     {
-        _lifecycleLock.EnterReadLock();
-        try
+        lock (_lifecycleLock)
         {
             if (_disposed)
             {
                 throw new ObjectDisposedException(nameof(IKevlarRegistry));
             }
 
+            _activeOperations++;
+        }
+
+        try
+        {
             return action();
         }
         finally
         {
-            _lifecycleLock.ExitReadLock();
+            lock (_lifecycleLock)
+            {
+                _activeOperations--;
+                if (_activeOperations == 0)
+                {
+                    Monitor.PulseAll(_lifecycleLock);
+                }
+            }
         }
     }
 
     private List<object>? BeginDispose()
     {
-        _lifecycleLock.EnterWriteLock();
-        try
+        lock (_lifecycleLock)
         {
             if (_disposed)
             {
@@ -280,20 +347,21 @@ internal sealed class KevlarRegistry : IKevlarRegistry
             }
 
             _disposed = true;
-            var values = new List<object>();
-            foreach (var lazy in _resolved.Values)
+            while (_activeOperations > 0)
             {
-                if (lazy.IsValueCreated)
+                Monitor.Wait(_lifecycleLock);
+            }
+
+            var values = new List<object>();
+            foreach (var entry in _entries.Values)
+            {
+                if (entry.TryGetResolved(out var value))
                 {
-                    values.Add(lazy.Value);
+                    values.Add(value);
                 }
             }
 
             return values;
-        }
-        finally
-        {
-            _lifecycleLock.ExitWriteLock();
         }
     }
 
