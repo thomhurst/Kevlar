@@ -41,7 +41,7 @@ public class FallbackBenchmarks
         .AddFallback(new FallbackStrategyOptions<int>
         {
             ShouldHandle = new PredicateBuilder<int>().Handle<InvalidOperationException>(),
-            FallbackAction = static _ => Outcome.FromResultAsValueTask(7),
+            FallbackAction = static _ => Polly.Outcome.FromResultAsValueTask(7),
         })
         .Build();
 

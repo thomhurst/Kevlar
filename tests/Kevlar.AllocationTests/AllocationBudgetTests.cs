@@ -152,6 +152,14 @@ public class AllocationBudgetTests
                     static (state, _) => new ValueTask<int>(state))
                 .GetAwaiter()
                 .GetResult());
+        AssertZero("empty async void outcome state", this, static test =>
+            _ = test._empty.ExecuteOutcomeAsync(
+                    42,
+                    static (_, _) => ValueTask.CompletedTask)
+                .GetAwaiter()
+                .GetResult());
+        AssertZero("empty sync outcome state", this, static test =>
+            _ = test._empty.ExecuteOutcome(42, static (state, _) => state));
         AssertZero("empty async context state", this, static test =>
             test._empty.ExecuteWithContextAsync(
                 test,
@@ -165,6 +173,14 @@ public class AllocationBudgetTests
                 test._metadataValue,
                 static (state, properties) => properties.Set(MetadataValue, state),
                 static (_, context) => new ValueTask<int>(context.Properties.GetOrDefault(MetadataValue)))
+                .GetAwaiter()
+                .GetResult());
+        AssertZero("empty async context completion state", this, static test =>
+            test._empty.ExecuteWithContextAsync(
+                    test._metadataValue,
+                    static (state, properties) => properties.Set(MetadataValue, state),
+                    static (_, context) => new ValueTask<int>(context.Properties.GetOrDefault(MetadataValue)),
+                    static (_, properties) => _ = properties.GetOrDefault(MetadataValue))
                 .GetAwaiter()
                 .GetResult());
         AssertZero("retry sync happy path", this, static test =>

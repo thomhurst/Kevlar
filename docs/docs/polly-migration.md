@@ -50,7 +50,7 @@ await migrationShield.ExecuteAsync(static _ => ValueTask.CompletedTask, cancella
 | `AddStrategy(strategy)` | `Use(strategy)` |
 | `AddPipeline(pipeline)` | `Wrap` or `Compose` |
 | `Execute` / `ExecuteAsync` | same names |
-| `ExecuteOutcomeAsync` / `Outcome<T>` | same names |
+| `ExecuteOutcomeAsync` / `Outcome<T>` | same names; void work returns non-generic `Outcome` |
 | `ResiliencePipelineBuilder.TimeProvider` | `WithTimeProvider(timeProvider)` |
 
 Kevlar accepts both `Task`- and `ValueTask`-returning delegates. One `Shield` supports synchronous,
@@ -142,6 +142,9 @@ await contextShield.ExecuteWithContextAsync(
 | `ContinueOnCapturedContext` | no equivalent; Kevlar library awaits do not capture the caller's context |
 
 Do not retain either library's pooled context beyond the current callback or execution delegate.
+
+Use the `onCompleted` overload of `ExecuteWithContextAsync` to copy final
+`KevlarProperties` into caller-owned state before the context returns to the pool.
 
 ## Registry and dependency injection
 

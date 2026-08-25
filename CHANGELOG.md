@@ -110,6 +110,12 @@ build spelled these `WhenResultDefault`/`OrResultDefault`; the `Is` makes the re
 
 ### Added
 
+- Non-generic `Outcome` and void `ExecuteOutcomeAsync` overloads make no-throw execution available
+  to operations without a result. Synchronous `ExecuteOutcome` overloads now cover void and typed
+  work on `Shield` and `Shield<TResult>`; `Task`, `ValueTask`, and state-passing forms stay aligned.
+- `ExecuteWithContextAsync` can invoke an `onCompleted` callback with final `KevlarProperties`
+  before its pooled context is returned. The callback runs on success and failure without masking
+  the execution outcome, and hedged executions expose the winning attempt's isolated properties.
 - `WhenResultIsNull()` / `OrResultIsNull()` on `ShieldResultExtensions`: the null-result clause
   `WhenResultIsDefault`/`OrResultIsDefault` was really written for, constrained to reference types
   (`where TResult : class?`) so it cannot be written where `default` is an ordinary value. They

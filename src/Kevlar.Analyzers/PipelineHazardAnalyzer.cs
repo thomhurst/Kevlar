@@ -1880,7 +1880,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     private static bool IsExecution(IMethodSymbol method, KnownTypes knownTypes)
     {
         method = Normalize(method);
-        return (method.Name is "Execute" or "ExecuteAsync" or "ExecuteOutcomeAsync"
+        return (method.Name is "Execute" or "ExecuteAsync" or "ExecuteOutcome" or "ExecuteOutcomeAsync"
                 or "ExecuteWithContext" or "ExecuteWithContextAsync")
             && (knownTypes.IsShield(method.ContainingType)
                 || knownTypes.IsShieldTaskExtensions(method.ContainingType));

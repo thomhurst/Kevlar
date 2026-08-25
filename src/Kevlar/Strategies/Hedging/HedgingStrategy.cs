@@ -90,15 +90,15 @@ internal sealed class HedgingStrategy : Strategy
         try
         {
             outcome = primary.Execution.Result;
+            if (!_judge.ShouldHandle(in outcome))
+            {
+                CopyAttemptProperties(primary.Context, context);
+                return new ValueTask<Outcome<T>>(NormalizeCancellation(outcome, context));
+            }
         }
         finally
         {
             primary.Dispose();
-        }
-
-        if (!_judge.ShouldHandle(in outcome))
-        {
-            return new ValueTask<Outcome<T>>(NormalizeCancellation(outcome, context));
         }
 
         return ExecuteCoreAsync(next, context, initial: null, launched: 1, outcome, startedAt);
@@ -175,23 +175,31 @@ internal sealed class HedgingStrategy : Strategy
                 }
 
                 var outcome = NormalizeCancellation(await completed.ConfigureAwait(false), context);
-                Remove(pending, completed);
-
-                if (!_judge.ShouldHandle(in outcome))
+                var completedAttempt = Take(pending, completed);
+                try
                 {
-                    return outcome;
+                    if (!_judge.ShouldHandle(in outcome))
+                    {
+                        CopyAttemptProperties(completedAttempt.Context, context);
+                        return outcome;
+                    }
+
+                    lastOutcome = outcome;
+
+                    if (launched < _maxAttempts)
+                    {
+                        pending.Add(await StartHedgeAttemptAsync(next, context, launched + 1, lastOutcome).ConfigureAwait(false));
+                        launched++;
+                    }
+                    else if (pending.Count == 0)
+                    {
+                        CopyAttemptProperties(completedAttempt.Context, context);
+                        return lastOutcome.Value;
+                    }
                 }
-
-                lastOutcome = outcome;
-
-                if (launched < _maxAttempts)
+                finally
                 {
-                    pending.Add(await StartHedgeAttemptAsync(next, context, launched + 1, lastOutcome).ConfigureAwait(false));
-                    launched++;
-                }
-                else if (pending.Count == 0)
-                {
-                    return lastOutcome!.Value;
+                    completedAttempt.Dispose();
                 }
             }
         }
@@ -509,17 +517,24 @@ internal sealed class HedgingStrategy : Strategy
         return null;
     }
 
-    private static void Remove<T>(List<HedgeAttempt<T>> pending, Task<Outcome<T>> task)
+    private static HedgeAttempt<T> Take<T>(List<HedgeAttempt<T>> pending, Task<Outcome<T>> task)
     {
         for (var i = 0; i < pending.Count; i++)
         {
             if (ReferenceEquals(pending[i].Task, task))
             {
-                pending[i].Dispose();
+                var attempt = pending[i];
                 pending.RemoveAt(i);
-                return;
+                return attempt;
             }
         }
+
+        throw new InvalidOperationException("The completed hedge attempt was not pending.");
+    }
+
+    private static void CopyAttemptProperties(KevlarContext source, KevlarContext target)
+    {
+        target.CaptureCompletionProperties(source.Properties);
     }
 
     private static void Cleanup<T>(HedgeAttempt<T> attempt)
@@ -588,7 +603,7 @@ internal sealed class HedgingStrategy : Strategy
 
         private CancellationTokenSource Cancellation { get; }
 
-        private KevlarContext Context { get; }
+        public KevlarContext Context { get; }
 
         public HedgeAttempt<T> AsPending() => new(Execution.AsTask(), Cancellation, Context);
 

@@ -23,6 +23,8 @@ public sealed class KevlarContext
     private static readonly ObjectPool<KevlarContext, PoolPolicy> Pool = new(maxCapacity: PoolCapacity);
 
     private readonly KevlarProperties _properties = new();
+    private KevlarProperties? _completionProperties;
+    private bool _hasCompletionProperties;
 
     private CancellationToken _cancellationToken;
     private bool _isSynchronous;
@@ -104,6 +106,17 @@ public sealed class KevlarContext
         }
     }
 
+    internal KevlarProperties PropertiesForCompletion =>
+        _hasCompletionProperties ? _completionProperties! : _properties;
+
+    internal void CaptureCompletionProperties(KevlarProperties properties)
+    {
+        _completionProperties ??= new KevlarProperties();
+        _completionProperties.Clear();
+        properties.CopyTo(_completionProperties);
+        _hasCompletionProperties = true;
+    }
+
     internal static KevlarContext Rent(CancellationToken cancellationToken, bool isSynchronous, TimeProvider timeProvider, string? shieldName)
     {
         var context = Pool.Rent();
@@ -148,6 +161,7 @@ public sealed class KevlarContext
 #if DEBUG
         context._returnedToPool = false;
         context._properties.MarkRented();
+        context._completionProperties?.MarkRented();
 #endif
     }
 
@@ -157,6 +171,7 @@ public sealed class KevlarContext
 #if DEBUG
         context._returnedToPool = true;
         context._properties.MarkReturned();
+        context._completionProperties?.MarkReturned();
 #endif
     }
 
@@ -186,6 +201,8 @@ public sealed class KevlarContext
             context.StrategyIndex = -1;
             context.TimeProvider = TimeProvider.System;
             context._properties.Clear();
+            context._completionProperties?.Clear();
+            context._hasCompletionProperties = false;
             return true;
         }
     }

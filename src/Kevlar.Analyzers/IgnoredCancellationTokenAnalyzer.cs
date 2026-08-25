@@ -80,7 +80,7 @@ public sealed class IgnoredCancellationTokenAnalyzer : DiagnosticAnalyzer
 
     private static bool IsKevlarExecutionMethod(IMethodSymbol method, Compilation compilation)
     {
-        if (method.Name is not ("Execute" or "ExecuteAsync" or "ExecuteOutcomeAsync"
+        if (method.Name is not ("Execute" or "ExecuteAsync" or "ExecuteOutcome" or "ExecuteOutcomeAsync"
             or "ExecuteWithContext" or "ExecuteWithContextAsync"))
         {
             return false;

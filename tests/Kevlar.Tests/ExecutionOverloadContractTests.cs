@@ -12,11 +12,19 @@ public class ExecutionOverloadContractTests
         new("Shield.ExecuteAsync:ValueTaskVoid", true, false, InvokeShieldValueTaskVoid),
         new("Shield.ExecuteAsync:ValueTaskVoid:state", true, true, InvokeShieldValueTaskVoidState),
         new("Shield.ExecuteWithContextAsync:ValueTaskResult:state", true, true, InvokeShieldContextValueTaskResultState),
+        new("Shield.ExecuteWithContextAsync:ValueTaskResult:state", true, true, InvokeShieldContextValueTaskResultStateCompleted),
         new("Shield.ExecuteWithContextAsync:ValueTaskVoid:state", true, true, InvokeShieldContextValueTaskVoidState),
+        new("Shield.ExecuteWithContextAsync:ValueTaskVoid:state", true, true, InvokeShieldContextValueTaskVoidStateCompleted),
         new("Shield.ExecuteWithContextAsync:ValueTaskResult", true, false, InvokeShieldContextValueTaskResult),
         new("Shield.ExecuteWithContextAsync:ValueTaskVoid", true, false, InvokeShieldContextValueTaskVoid),
         new("Shield.ExecuteOutcomeAsync:ValueTaskResult", true, false, InvokeShieldValueTaskOutcome, CapturesOutcome: true),
         new("Shield.ExecuteOutcomeAsync:ValueTaskResult:state", true, true, InvokeShieldValueTaskOutcomeState, CapturesOutcome: true),
+        new("Shield.ExecuteOutcomeAsync:ValueTaskVoid", true, false, InvokeShieldValueTaskVoidOutcome, CapturesOutcome: true),
+        new("Shield.ExecuteOutcomeAsync:ValueTaskVoid:state", true, true, InvokeShieldValueTaskVoidOutcomeState, CapturesOutcome: true),
+        new("Shield.ExecuteOutcome:SyncResult", false, false, InvokeShieldSyncResultOutcome, CapturesOutcome: true),
+        new("Shield.ExecuteOutcome:SyncResult:state", false, true, InvokeShieldSyncResultOutcomeState, CapturesOutcome: true),
+        new("Shield.ExecuteOutcome:SyncVoid", false, false, InvokeShieldSyncVoidOutcome, CapturesOutcome: true),
+        new("Shield.ExecuteOutcome:SyncVoid:state", false, true, InvokeShieldSyncVoidOutcomeState, CapturesOutcome: true),
         new("Shield.Execute:SyncResult", false, false, InvokeShieldSyncResult),
         new("Shield.Execute:SyncResult:state", false, true, InvokeShieldSyncResultState),
         new("Shield.Execute:SyncVoid", false, false, InvokeShieldSyncVoid),
@@ -29,9 +37,12 @@ public class ExecutionOverloadContractTests
         new("Shield<TResult>.ExecuteAsync:ValueTaskResult", true, false, InvokeTypedValueTaskResult),
         new("Shield<TResult>.ExecuteAsync:ValueTaskResult:state", true, true, InvokeTypedValueTaskResultState),
         new("Shield<TResult>.ExecuteWithContextAsync:ValueTaskResult:state", true, true, InvokeTypedContextValueTaskResultState),
+        new("Shield<TResult>.ExecuteWithContextAsync:ValueTaskResult:state", true, true, InvokeTypedContextValueTaskResultStateCompleted),
         new("Shield<TResult>.ExecuteWithContextAsync:ValueTaskResult", true, false, InvokeTypedContextValueTaskResult),
         new("Shield<TResult>.ExecuteOutcomeAsync:ValueTaskResult", true, false, InvokeTypedValueTaskOutcome, CapturesOutcome: true),
         new("Shield<TResult>.ExecuteOutcomeAsync:ValueTaskResult:state", true, true, InvokeTypedValueTaskOutcomeState, CapturesOutcome: true),
+        new("Shield<TResult>.ExecuteOutcome:SyncResult", false, false, InvokeTypedSyncResultOutcome, CapturesOutcome: true),
+        new("Shield<TResult>.ExecuteOutcome:SyncResult:state", false, true, InvokeTypedSyncResultOutcomeState, CapturesOutcome: true),
         new("Shield<TResult>.Execute:SyncResult", false, false, InvokeTypedSyncResult),
         new("Shield<TResult>.Execute:SyncResult:state", false, true, InvokeTypedSyncResultState),
         new("Shield<TResult>.ExecuteWithContext:SyncResult:state", false, true, InvokeTypedContextSyncResultState),
@@ -42,15 +53,20 @@ public class ExecutionOverloadContractTests
         new("ShieldTaskExtensions[Shield].ExecuteAsync:TaskVoid", true, false, InvokeShieldTaskVoid),
         new("ShieldTaskExtensions[Shield].ExecuteAsync:TaskVoid:state", true, true, InvokeShieldTaskVoidState),
         new("ShieldTaskExtensions[Shield].ExecuteWithContextAsync:TaskResult:state", true, true, InvokeShieldContextTaskResultState),
+        new("ShieldTaskExtensions[Shield].ExecuteWithContextAsync:TaskResult:state", true, true, InvokeShieldContextTaskResultStateCompleted),
         new("ShieldTaskExtensions[Shield].ExecuteWithContextAsync:TaskVoid:state", true, true, InvokeShieldContextTaskVoidState),
+        new("ShieldTaskExtensions[Shield].ExecuteWithContextAsync:TaskVoid:state", true, true, InvokeShieldContextTaskVoidStateCompleted),
         new("ShieldTaskExtensions[Shield].ExecuteWithContextAsync:TaskResult", true, false, InvokeShieldContextTaskResult),
         new("ShieldTaskExtensions[Shield].ExecuteWithContextAsync:TaskVoid", true, false, InvokeShieldContextTaskVoid),
         new("ShieldTaskExtensions[Shield].ExecuteOutcomeAsync:TaskResult", true, false, InvokeShieldTaskOutcome, CapturesOutcome: true),
         new("ShieldTaskExtensions[Shield].ExecuteOutcomeAsync:TaskResult:state", true, true, InvokeShieldTaskOutcomeState, CapturesOutcome: true),
+        new("ShieldTaskExtensions[Shield].ExecuteOutcomeAsync:TaskVoid", true, false, InvokeShieldTaskVoidOutcome, CapturesOutcome: true),
+        new("ShieldTaskExtensions[Shield].ExecuteOutcomeAsync:TaskVoid:state", true, true, InvokeShieldTaskVoidOutcomeState, CapturesOutcome: true),
 
         new("ShieldTaskExtensions[Shield<TResult>].ExecuteAsync:TaskResult", true, false, InvokeTypedTaskResult),
         new("ShieldTaskExtensions[Shield<TResult>].ExecuteAsync:TaskResult:state", true, true, InvokeTypedTaskResultState),
         new("ShieldTaskExtensions[Shield<TResult>].ExecuteWithContextAsync:TaskResult:state", true, true, InvokeTypedContextTaskResultState),
+        new("ShieldTaskExtensions[Shield<TResult>].ExecuteWithContextAsync:TaskResult:state", true, true, InvokeTypedContextTaskResultStateCompleted),
         new("ShieldTaskExtensions[Shield<TResult>].ExecuteWithContextAsync:TaskResult", true, false, InvokeTypedContextTaskResult),
         new("ShieldTaskExtensions[Shield<TResult>].ExecuteOutcomeAsync:TaskResult", true, false, InvokeTypedTaskOutcome, CapturesOutcome: true),
         new("ShieldTaskExtensions[Shield<TResult>].ExecuteOutcomeAsync:TaskResult:state", true, true, InvokeTypedTaskOutcomeState, CapturesOutcome: true),
@@ -252,7 +268,7 @@ public class ExecutionOverloadContractTests
         typeof(Shield).GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
             .Concat(typeof(Shield<int>).GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
             .Concat(typeof(ShieldTaskExtensions).GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly))
-            .Where(static method => method.Name is "Execute" or "ExecuteAsync" or "ExecuteOutcomeAsync"
+            .Where(static method => method.Name is "Execute" or "ExecuteAsync" or "ExecuteOutcome" or "ExecuteOutcomeAsync"
                 or "ExecuteWithContext" or "ExecuteWithContextAsync");
 
     private static string Describe(MethodInfo method)
@@ -441,11 +457,28 @@ public class ExecutionOverloadContractTests
             static (state, cancellationToken) => state.Probe.ValueTaskResultState(state, cancellationToken),
             token));
 
+    private static async ValueTask<InvocationResult> InvokeShieldValueTaskVoidOutcome(bool pipelined, ExecutionProbe probe, CancellationToken token) =>
+        InvocationResult.FromOutcome(await GetShield(pipelined).ExecuteOutcomeAsync(probe.ValueTaskVoid, token));
+
+    private static async ValueTask<InvocationResult> InvokeShieldValueTaskVoidOutcomeState(bool pipelined, ExecutionProbe probe, CancellationToken token) =>
+        InvocationResult.FromOutcome(await GetShield(pipelined).ExecuteOutcomeAsync(
+            probe.State,
+            static (state, cancellationToken) => state.Probe.ValueTaskVoidState(state, cancellationToken),
+            token));
+
     private static async ValueTask<InvocationResult> InvokeShieldContextValueTaskResultState(bool pipelined, ExecutionProbe probe, CancellationToken token) =>
         InvocationResult.Success(await GetShield(pipelined).ExecuteWithContextAsync(
             probe.State,
             static (_, _) => { },
             static (state, context) => state.Probe.ValueTaskResultState(state, context.CancellationToken),
+            token));
+
+    private static async ValueTask<InvocationResult> InvokeShieldContextValueTaskResultStateCompleted(bool pipelined, ExecutionProbe probe, CancellationToken token) =>
+        InvocationResult.Success(await GetShield(pipelined).ExecuteWithContextAsync(
+            probe.State,
+            static (_, _) => { },
+            static (state, context) => state.Probe.ValueTaskResultState(state, context.CancellationToken),
+            static (_, _) => { },
             token));
 
     private static async ValueTask<InvocationResult> InvokeShieldContextValueTaskVoidState(bool pipelined, ExecutionProbe probe, CancellationToken token)
@@ -454,6 +487,17 @@ public class ExecutionOverloadContractTests
             probe.State,
             static (_, _) => { },
             static (state, context) => state.Probe.ValueTaskVoidState(state, context.CancellationToken),
+            token);
+        return InvocationResult.Success(ExecutionProbe.ExpectedResult);
+    }
+
+    private static async ValueTask<InvocationResult> InvokeShieldContextValueTaskVoidStateCompleted(bool pipelined, ExecutionProbe probe, CancellationToken token)
+    {
+        await GetShield(pipelined).ExecuteWithContextAsync(
+            probe.State,
+            static (_, _) => { },
+            static (state, context) => state.Probe.ValueTaskVoidState(state, context.CancellationToken),
+            static (_, _) => { },
             token);
         return InvocationResult.Success(ExecutionProbe.ExpectedResult);
     }
@@ -536,6 +580,24 @@ public class ExecutionOverloadContractTests
         return new ValueTask<InvocationResult>(InvocationResult.Success(ExecutionProbe.ExpectedResult));
     }
 
+    private static ValueTask<InvocationResult> InvokeShieldSyncResultOutcome(bool pipelined, ExecutionProbe probe, CancellationToken token) =>
+        new(InvocationResult.FromOutcome(GetShield(pipelined).ExecuteOutcome(probe.SyncResult, token)));
+
+    private static ValueTask<InvocationResult> InvokeShieldSyncResultOutcomeState(bool pipelined, ExecutionProbe probe, CancellationToken token) =>
+        new(InvocationResult.FromOutcome(GetShield(pipelined).ExecuteOutcome(
+            probe.State,
+            static (state, cancellationToken) => state.Probe.SyncResultState(state, cancellationToken),
+            token)));
+
+    private static ValueTask<InvocationResult> InvokeShieldSyncVoidOutcome(bool pipelined, ExecutionProbe probe, CancellationToken token) =>
+        new(InvocationResult.FromOutcome(GetShield(pipelined).ExecuteOutcome(probe.SyncVoid, token)));
+
+    private static ValueTask<InvocationResult> InvokeShieldSyncVoidOutcomeState(bool pipelined, ExecutionProbe probe, CancellationToken token) =>
+        new(InvocationResult.FromOutcome(GetShield(pipelined).ExecuteOutcome(
+            probe.State,
+            static (state, cancellationToken) => state.Probe.SyncVoidState(state, cancellationToken),
+            token)));
+
     private static ValueTask<InvocationResult> InvokeShieldContextSyncResultState(bool pipelined, ExecutionProbe probe, CancellationToken token) =>
         new(InvocationResult.Success(GetShield(pipelined).ExecuteWithContext(
             probe.State,
@@ -578,11 +640,28 @@ public class ExecutionOverloadContractTests
             static (state, context) => state.Probe.ValueTaskResultState(state, context.CancellationToken),
             token));
 
+    private static async ValueTask<InvocationResult> InvokeTypedContextValueTaskResultStateCompleted(bool pipelined, ExecutionProbe probe, CancellationToken token) =>
+        InvocationResult.Success(await GetTypedShield(pipelined).ExecuteWithContextAsync(
+            probe.State,
+            static (_, _) => { },
+            static (state, context) => state.Probe.ValueTaskResultState(state, context.CancellationToken),
+            static (_, _) => { },
+            token));
+
     private static ValueTask<InvocationResult> InvokeTypedSyncResult(bool pipelined, ExecutionProbe probe, CancellationToken token) =>
         new(InvocationResult.Success(GetTypedShield(pipelined).Execute(probe.SyncResult, token)));
 
     private static ValueTask<InvocationResult> InvokeTypedSyncResultState(bool pipelined, ExecutionProbe probe, CancellationToken token) =>
         new(InvocationResult.Success(GetTypedShield(pipelined).Execute(
+            probe.State,
+            static (state, cancellationToken) => state.Probe.SyncResultState(state, cancellationToken),
+            token)));
+
+    private static ValueTask<InvocationResult> InvokeTypedSyncResultOutcome(bool pipelined, ExecutionProbe probe, CancellationToken token) =>
+        new(InvocationResult.FromOutcome(GetTypedShield(pipelined).ExecuteOutcome(probe.SyncResult, token)));
+
+    private static ValueTask<InvocationResult> InvokeTypedSyncResultOutcomeState(bool pipelined, ExecutionProbe probe, CancellationToken token) =>
+        new(InvocationResult.FromOutcome(GetTypedShield(pipelined).ExecuteOutcome(
             probe.State,
             static (state, cancellationToken) => state.Probe.SyncResultState(state, cancellationToken),
             token)));
@@ -627,11 +706,28 @@ public class ExecutionOverloadContractTests
             static (state, cancellationToken) => state.Probe.TaskResultState(state, cancellationToken),
             token));
 
+    private static async ValueTask<InvocationResult> InvokeShieldTaskVoidOutcome(bool pipelined, ExecutionProbe probe, CancellationToken token) =>
+        InvocationResult.FromOutcome(await GetShield(pipelined).ExecuteOutcomeAsync(probe.TaskVoid, token));
+
+    private static async ValueTask<InvocationResult> InvokeShieldTaskVoidOutcomeState(bool pipelined, ExecutionProbe probe, CancellationToken token) =>
+        InvocationResult.FromOutcome(await GetShield(pipelined).ExecuteOutcomeAsync(
+            probe.State,
+            static (state, cancellationToken) => state.Probe.TaskVoidState(state, cancellationToken),
+            token));
+
     private static async ValueTask<InvocationResult> InvokeShieldContextTaskResultState(bool pipelined, ExecutionProbe probe, CancellationToken token) =>
         InvocationResult.Success(await GetShield(pipelined).ExecuteWithContextAsync(
             probe.State,
             static (_, _) => { },
             static (state, context) => state.Probe.TaskResultState(state, context.CancellationToken),
+            token));
+
+    private static async ValueTask<InvocationResult> InvokeShieldContextTaskResultStateCompleted(bool pipelined, ExecutionProbe probe, CancellationToken token) =>
+        InvocationResult.Success(await GetShield(pipelined).ExecuteWithContextAsync(
+            probe.State,
+            static (_, _) => { },
+            static (state, context) => state.Probe.TaskResultState(state, context.CancellationToken),
+            static (_, _) => { },
             token));
 
     private static async ValueTask<InvocationResult> InvokeShieldContextTaskVoidState(bool pipelined, ExecutionProbe probe, CancellationToken token)
@@ -640,6 +736,17 @@ public class ExecutionOverloadContractTests
             probe.State,
             static (_, _) => { },
             static (state, context) => state.Probe.TaskVoidState(state, context.CancellationToken),
+            token);
+        return InvocationResult.Success(ExecutionProbe.ExpectedResult);
+    }
+
+    private static async ValueTask<InvocationResult> InvokeShieldContextTaskVoidStateCompleted(bool pipelined, ExecutionProbe probe, CancellationToken token)
+    {
+        await GetShield(pipelined).ExecuteWithContextAsync(
+            probe.State,
+            static (_, _) => { },
+            static (state, context) => state.Probe.TaskVoidState(state, context.CancellationToken),
+            static (_, _) => { },
             token);
         return InvocationResult.Success(ExecutionProbe.ExpectedResult);
     }
@@ -669,6 +776,14 @@ public class ExecutionOverloadContractTests
             static (state, context) => state.Probe.TaskResultState(state, context.CancellationToken),
             token));
 
+    private static async ValueTask<InvocationResult> InvokeTypedContextTaskResultStateCompleted(bool pipelined, ExecutionProbe probe, CancellationToken token) =>
+        InvocationResult.Success(await GetTypedShield(pipelined).ExecuteWithContextAsync(
+            probe.State,
+            static (_, _) => { },
+            static (state, context) => state.Probe.TaskResultState(state, context.CancellationToken),
+            static (_, _) => { },
+            token));
+
     private static readonly bool[] PipelineModes = [false, true];
 
     private sealed record ExecutionCase(
@@ -686,6 +801,10 @@ public class ExecutionOverloadContractTests
 
         public static InvocationResult FromOutcome(Outcome<int> outcome) => outcome.IsSuccess
             ? Success(outcome.Result)
+            : new InvocationResult(default, outcome.Exception);
+
+        public static InvocationResult FromOutcome(Outcome outcome) => outcome.IsSuccess
+            ? Success(ExecutionProbe.ExpectedResult)
             : new InvocationResult(default, outcome.Exception);
     }
 
