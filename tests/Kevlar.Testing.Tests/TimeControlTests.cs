@@ -316,7 +316,14 @@ public class TimeControlTests
             _listener.Start();
         }
 
-        public bool WasObserved => Volatile.Read(ref _wasObserved) != 0;
+        public bool WasObserved
+        {
+            get
+            {
+                _listener.RecordObservableInstruments();
+                return Volatile.Read(ref _wasObserved) != 0;
+            }
+        }
 
         public void Dispose() => _listener.Dispose();
 

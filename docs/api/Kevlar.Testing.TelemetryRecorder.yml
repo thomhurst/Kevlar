@@ -353,7 +353,10 @@ items:
   assemblies:
   - Kevlar.Testing
   namespace: Kevlar.Testing
-  summary: Waits until at least <code class="paramref">count</code> metrics have been captured.
+  summary: >-
+    Waits until at least <code class="paramref">count</code> metrics have been captured, collecting
+
+    observable instruments while waiting.
   example: []
   syntax:
     content: public Task WaitForMetricCountAsync(int count, CancellationToken cancellationToken = default)

@@ -52,6 +52,42 @@ public class TelemetryRecorderTests
         await Assert.That(executions[1].Tags["kevlar.execution.outcome"]).IsEqualTo("failure");
     }
 
+#if NET9_0_OR_GREATER
+    [Test]
+    public async Task Metric_Wait_Collects_Observable_Gauges()
+    {
+        using var recorder = new TelemetryRecorder();
+        var baseline = recorder.Metrics.Count;
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var execution = Shield.ConcurrencyLimit(1)
+            .WithName("observable-wait")
+            .ExecuteAsync(async _ =>
+            {
+                started.SetResult();
+                await release.Task;
+            }).AsTask();
+        await started.Task;
+
+        try
+        {
+            await recorder.WaitForMetricCountAsync(baseline + 1)
+                .WaitAsync(TimeSpan.FromSeconds(5));
+            await Assert.That(recorder.Metrics.Any(metric =>
+                    metric.InstrumentName == "kevlar.concurrency_limit.inflight"
+                    && metric.Value == 1
+                    && Equals(metric.Tags["kevlar.shield.name"], "observable-wait")))
+                .IsTrue();
+        }
+        finally
+        {
+            release.TrySetResult();
+        }
+
+        await execution;
+    }
+#endif
+
     [Test]
     public async Task Records_Typed_And_Untyped_Callbacks_In_Order()
     {

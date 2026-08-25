@@ -5,7 +5,7 @@ namespace Kevlar.Benchmarks;
 
 /// <summary>
 /// Telemetry overhead on representative synchronously-completing happy paths. The disabled
-/// parameter measures the normal no-listener path; the enabled parameter records every
+/// parameter measures the normal no-listener path; the enabled parameter subscribes every
 /// instrument through a minimal <see cref="MeterListener"/>.
 /// </summary>
 [MemoryDiagnoser]
