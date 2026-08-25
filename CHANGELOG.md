@@ -14,6 +14,22 @@ All notable changes to this project are documented here. The format follows
   manual monitor transitions carry a detached context at index `-1`. Typed circuit-breaker
   duration generators receive `CircuitBreakerBreakDurationEvent<TResult>` with a directly stored
   outcome and failure statistics. Typed retry events likewise store their outcome without boxing.
+- `HedgeOptions<TResult>.ActionGenerator` is now a strongly typed delegate. Assign the generator
+  directly instead of wrapping it with `HedgeActionGenerator.Create<TResult>(...)`; the erased
+  wrapper remains available on untyped `HedgeOptions`. Typed generator events now expose the latest
+  available `Outcome<TResult>`.
+- Untyped `Fallback(...)` continues to return `Shield`. The pre-release untyped shield type family
+  and its satellite overloads were removed. Result-returning execution through a void fallback is
+  guarded by the restored `KEV005` analyzer; use `Shield.For<TResult>().Fallback(...)` for
+  result-producing recovery.
+- Configure fallback notifications through `Fallback(..., configure)`. The pre-release
+  notification-specific methods and typed `onFallback` parameters were removed, including the
+  migration-only error overloads that briefly replaced them. Every fallback shape now has exactly
+  two overloads — bare and `Action<FallbackOptions>`/`Action<FallbackOptions<TResult>>` — on
+  `Shield`, `Shield<TResult>`, `ShieldBuilder`, and `ShieldBuilder<TResult>`.
+- Typed constant-value `Fallback(value)` is now `FallbackTo(value)` on `Shield<TResult>` and
+  `ShieldBuilder<TResult>`. Delegate factories remain `Fallback(...)`. This makes null fallback
+  values explicit and avoids ambiguity between value and delegate overloads.
 
 ## [1.0.0] - 2026-08-24
 
@@ -85,6 +101,8 @@ All notable changes to this project are documented here. The format follows
 | `StrategyKind.Hedging` | `StrategyKind.Hedge` |
 | `StandardHedgingShieldOptions` | `StandardHedgeShieldOptions` |
 | `AddStandardHedgingShield(...)` | `AddStandardHedgeShield(...)` |
+| `VoidShield` / `VoidShieldBuilder` | `Shield` / `ShieldBuilder`; use `Shield.For<TResult>()` when recovery produces a result |
+| `PartitionedVoidShield<TKey>` | `PartitionedShield<TKey>` |
 | `FallbackWithNotifications(...)` or typed `onFallback` parameters | `Fallback(..., configure)` with `OnFallback` / `OnFallbackAsync` |
 | shared `Action<RetryOptions>` used by typed shields | separate `Action<RetryOptions<TResult>>` configurator |
 | `RetryForever(backoff: null)` | `RetryForever()` |

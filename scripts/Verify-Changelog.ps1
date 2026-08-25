@@ -58,10 +58,11 @@ function Test-ReleaseHasEntry([object]$Release, [string[]]$ChangelogLines)
     return $false
 }
 
+$unreleasedHeadingCount = @($lines | Where-Object { $_ -eq '## [Unreleased]' }).Count
 $unreleasedIndex = [Array]::IndexOf($lines, '## [Unreleased]')
-if ($unreleasedIndex -lt 0)
+if ($unreleasedHeadingCount -ne 1)
 {
-    $errors.Add('Missing ## [Unreleased] heading.')
+    $errors.Add("CHANGELOG.md must contain exactly one ## [Unreleased] heading; found $unreleasedHeadingCount.")
 }
 
 $versionComponentPattern = '(?:0|[1-9][0-9]*)'
@@ -193,7 +194,7 @@ foreach ($line in $lines | Where-Object { $_ -match '^### ' })
     }
 }
 
-$deadApiPattern = [regex]'FallbackWithNotifications|\bWhenDefault\(|\bOrDefault\(|\bOrWhen\(|WhenResultDefault|OrResultDefault|\bHedgingOptions\b|\bHedgingStrategyDescriptor\b|\bStrategyKind\.Hedging\b|\bStandardHedgingShieldOptions\b|\bAddStandardHedgingShield\b'
+$deadApiPattern = [regex]'FallbackWithNotifications|\bWhenDefault\(|\bOrDefault\(|\bOrWhen\(|WhenResultDefault|OrResultDefault|\bHedgingOptions\b|\bHedgingStrategyDescriptor\b|\bStrategyKind\.Hedging\b|\bStandardHedgingShieldOptions\b|\bAddStandardHedgingShield\b|\bVoidShield\b|\bVoidShieldBuilder\b|\bPartitionedVoidShield\b'
 $documents = @($changelogPath, (Join-Path $repositoryRoot 'README.md')) + @(
     Get-ChildItem -LiteralPath (Join-Path $repositoryRoot 'docs') -Recurse -File -Include '*.md', '*.mdx' |
         ForEach-Object FullName)
