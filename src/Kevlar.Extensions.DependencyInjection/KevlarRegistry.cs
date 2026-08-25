@@ -534,6 +534,7 @@ internal sealed class KevlarRegistry : IKevlarRegistry
             return;
         }
 
+        List<IAsyncDisposable>? deferredAsyncDisposals = null;
         try
         {
             List<ShieldRetirement>? reclaimable = null;
@@ -551,12 +552,15 @@ internal sealed class KevlarRegistry : IKevlarRegistry
                 return;
             }
 
-            ReclaimRetirementsCore(reclaimable);
+            deferredAsyncDisposals = [];
+            ReclaimRetirementsCore(reclaimable, deferredAsyncDisposals);
         }
         finally
         {
             EndReclamation();
         }
+
+        CompleteDeferredDisposals(deferredAsyncDisposals);
     }
 
     private void ReclaimRetirements(IReadOnlyList<ShieldRetirement> reclaimable)
@@ -569,7 +573,9 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         ScavengeRetirements();
     }
 
-    private void ReclaimRetirementsCore(IReadOnlyList<ShieldRetirement> reclaimable)
+    private void ReclaimRetirementsCore(
+        IReadOnlyList<ShieldRetirement> reclaimable,
+        List<IAsyncDisposable> deferredAsyncDisposals)
     {
         var retainedOrClaimed = ShieldRetirement.CreateStrategySet();
         AddPublishedStrategies(retainedOrClaimed);
@@ -586,7 +592,8 @@ internal sealed class KevlarRegistry : IKevlarRegistry
                 retirement.Reclaim(
                     _retirementFailures.Enqueue,
                     retainedOrClaimed,
-                    _strategyDisposals);
+                    _strategyDisposals,
+                    deferredAsyncDisposals);
             }
         }
         finally
@@ -594,6 +601,21 @@ internal sealed class KevlarRegistry : IKevlarRegistry
             lock (_lifecycleLock)
             {
                 _reclamationRetainedStrategies = null;
+            }
+        }
+    }
+
+    private void CompleteDeferredDisposals(List<IAsyncDisposable> deferredAsyncDisposals)
+    {
+        foreach (var disposable in deferredAsyncDisposals)
+        {
+            try
+            {
+                disposable.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            }
+            catch (Exception exception)
+            {
+                _retirementFailures.Enqueue(exception);
             }
         }
     }

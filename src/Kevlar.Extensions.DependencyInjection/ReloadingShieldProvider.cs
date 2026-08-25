@@ -285,27 +285,32 @@ internal abstract class ReloadingProvider<TShield> : IReloadingProvider
         Exception? failure = null;
         List<ShieldRetirement>? reclaimable = null;
 
+        void PublishUnderLock()
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            try
+            {
+                var replacement = _factory();
+                ShieldRetirement.Track(replacement);
+                _retiredSnapshots.Add(new ShieldRetirement(_current, _current));
+                Volatile.Write(ref _current, replacement);
+                reclaimable = CollectReclaimableSnapshots();
+            }
+            catch (Exception exception)
+            {
+                failure = exception;
+            }
+        }
+
         void Publish()
         {
             lock (_reloadLock)
             {
-                if (_disposed)
-                {
-                    return;
-                }
-
-                try
-                {
-                    var replacement = _factory();
-                    ShieldRetirement.Track(replacement);
-                    _retiredSnapshots.Add(new ShieldRetirement(_current, _current));
-                    Volatile.Write(ref _current, replacement);
-                    reclaimable = CollectReclaimableSnapshots();
-                }
-                catch (Exception exception)
-                {
-                    failure = exception;
-                }
+                PublishUnderLock();
             }
 
             Reclaim(reclaimable);
@@ -315,11 +320,15 @@ internal abstract class ReloadingProvider<TShield> : IReloadingProvider
         lock (_reloadLock)
         {
             publicationGuard = _publicationGuard;
+            if (publicationGuard is null)
+            {
+                PublishUnderLock();
+            }
         }
 
         if (publicationGuard is null)
         {
-            Publish();
+            Reclaim(reclaimable);
         }
         else
         {

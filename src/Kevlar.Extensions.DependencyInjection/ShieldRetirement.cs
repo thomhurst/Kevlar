@@ -36,7 +36,8 @@ internal sealed class ShieldRetirement
     public void Reclaim(
         Action<Exception> reportFailure,
         HashSet<Strategy> retainedOrClaimed,
-        StrategyDisposalTracker disposalTracker)
+        StrategyDisposalTracker disposalTracker,
+        List<IAsyncDisposable>? deferredAsyncDisposals = null)
     {
         for (var index = Strategies.Length - 1; index >= 0; index--)
         {
@@ -48,7 +49,7 @@ internal sealed class ShieldRetirement
 
             try
             {
-                Dispose(strategy);
+                Dispose(strategy, deferredAsyncDisposals);
             }
             catch (Exception exception)
             {
@@ -77,7 +78,9 @@ internal sealed class ShieldRetirement
         return strategies.ToArray();
     }
 
-    private static void Dispose(Strategy strategy)
+    private static void Dispose(
+        Strategy strategy,
+        List<IAsyncDisposable>? deferredAsyncDisposals)
     {
         if (strategy is IDisposable disposable)
         {
@@ -85,6 +88,12 @@ internal sealed class ShieldRetirement
         }
         else if (strategy is IAsyncDisposable asyncDisposable)
         {
+            if (deferredAsyncDisposals is not null)
+            {
+                deferredAsyncDisposals.Add(asyncDisposable);
+                return;
+            }
+
             asyncDisposable.DisposeAsync().AsTask().GetAwaiter().GetResult();
         }
     }

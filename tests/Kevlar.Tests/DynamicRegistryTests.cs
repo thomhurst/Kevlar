@@ -508,6 +508,25 @@ public class DynamicRegistryTests
     }
 
     [Test]
+    public async Task Async_Retirement_Can_Reenter_Registry_After_Yielding()
+    {
+        using var services = new ServiceCollection().AddKevlar().BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        var strategy = new ReentrantAsyncDisposableStrategy(() =>
+            _ = registry.GetOrAdd("async-disposal-reentry", _ => Shield.Empty));
+        var retired = ResolveAndRemove(registry, "async-retired", strategy);
+        Collect(retired);
+
+        var scavenging = Task.Run(() =>
+            registry.GetOrAdd("async-scavenge", _ => Shield.Empty));
+
+        _ = await scavenging.WaitAsync(TimeSpan.FromSeconds(5));
+        await strategy.Disposed.WaitAsync(TimeSpan.FromSeconds(5));
+        await Assert.That(retired.IsAlive).IsFalse();
+        await Assert.That(strategy.DisposeCount).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Derived_Shields_Keep_Retired_Strategies_Alive()
     {
         Func<Shield, Shield>[] derivations =
@@ -773,6 +792,18 @@ public class DynamicRegistryTests
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static WeakReference ResolveAndRemove(
         IKevlarRegistry registry,
+        string name,
+        Strategy strategy)
+    {
+        var shield = registry.GetOrAdd(name, _ => Shield.Use(strategy));
+        var reference = new WeakReference(shield);
+        registry.Remove(name);
+        return reference;
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static WeakReference ResolveAndRemove(
+        IKevlarRegistry registry,
         DisposableStrategy shared,
         CallbackDisposableStrategy callback)
     {
@@ -853,6 +884,29 @@ public class DynamicRegistryTests
         {
             Interlocked.Increment(ref _disposeCount);
             return default;
+        }
+
+        public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+            Continuation<T, TState> next,
+            KevlarContext context) => next.InvokeAsync(context);
+    }
+
+    private sealed class ReentrantAsyncDisposableStrategy(Action callback) : Strategy, IAsyncDisposable
+    {
+        private readonly TaskCompletionSource _disposed =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private int _disposeCount;
+
+        public int DisposeCount => Volatile.Read(ref _disposeCount);
+
+        public Task Disposed => _disposed.Task;
+
+        public async ValueTask DisposeAsync()
+        {
+            await Task.Yield();
+            callback();
+            Interlocked.Increment(ref _disposeCount);
+            _disposed.TrySetResult();
         }
 
         public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
