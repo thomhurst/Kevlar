@@ -496,6 +496,8 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.Compose([.. new[] { Shield.Hedge(2, TimeSpan.Zero) }]).Execute(_ => 1);",
             "var parts = new[] { Shield.Hedge(2, TimeSpan.Zero) }; _ = Shield.Compose(parts).Execute(_ => 1);",
             "_ = Shield<int>.Empty.Wrap(Shield.Hedge(2, TimeSpan.Zero)).Execute(_ => 1);",
+            "_ = Shield.Hedge(2, TimeSpan.Zero).ExecuteOutcome(_ => 1);",
+            "_ = Shield.For<int>().Hedge(2, TimeSpan.Zero).ExecuteOutcome(_ => 1);",
         };
 
         await AssertEachAsync(cases, "KEV002", "KEV006");

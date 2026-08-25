@@ -1941,7 +1941,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     private static bool IsSynchronousExecute(IMethodSymbol method, KnownTypes knownTypes)
     {
         method = Normalize(method);
-        return method.Name == "Execute" && knownTypes.IsShield(method.ContainingType);
+        return method.Name is "Execute" or "ExecuteOutcome"
+            && knownTypes.IsShield(method.ContainingType);
     }
 
     private static bool IsReactiveStrategy(IMethodSymbol method, KnownTypes knownTypes) =>
