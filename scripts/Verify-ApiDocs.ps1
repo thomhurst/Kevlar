@@ -36,6 +36,7 @@ $publicApiFiles = Get-ChildItem -LiteralPath (Join-Path $repositoryRoot 'src') -
     Where-Object { $_.FullName -notmatch '[\\/]Kevlar\.Analyzers[\\/]' }
 $publicTypes = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
 $removedTypes = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+$removedApiPrefix = '*REMOVED*'
 
 function ConvertTo-DocFxTypeUid([string]$typeDeclaration)
 {
@@ -52,15 +53,21 @@ foreach ($publicApiFile in $publicApiFiles)
 {
     foreach ($line in Get-Content -LiteralPath $publicApiFile.FullName)
     {
-        if ($line -match '^\*REMOVED\*(?<type>[^ ]+)$')
+        if ($line.StartsWith($removedApiPrefix, [StringComparison]::Ordinal))
         {
-            [void]$removedTypes.Add((ConvertTo-DocFxTypeUid $Matches.type))
+            $removedDeclaration = $line.Substring($removedApiPrefix.Length)
+            if ($removedDeclaration -and
+                -not $removedDeclaration.Contains(' -> ', [StringComparison]::Ordinal) -and
+                -not $removedDeclaration.Contains(' = ', [StringComparison]::Ordinal))
+            {
+                [void]$removedTypes.Add((ConvertTo-DocFxTypeUid $removedDeclaration))
+            }
+
             continue
         }
 
         if (-not $line -or
             $line.StartsWith('#', [StringComparison]::Ordinal) -or
-            $line.StartsWith('*REMOVED*', [StringComparison]::Ordinal) -or
             $line.Contains(' -> ', [StringComparison]::Ordinal) -or
             $line.Contains(' = ', [StringComparison]::Ordinal))
         {

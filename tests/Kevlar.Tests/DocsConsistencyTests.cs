@@ -175,8 +175,8 @@ public partial class DocsConsistencyTests
             .SelectMany(File.ReadLines)
             .ToArray();
         var removedTypes = publicApiLines
-            .Where(line => line.StartsWith("*REMOVED*", StringComparison.Ordinal) && !line.Contains(' '))
-            .Select(line => NormalizeTypeUid(line["*REMOVED*".Length..]))
+            .Where(IsRemovedTypeDeclaration)
+            .Select(line => NormalizeTypeUid(line[RemovedApiPrefix.Length..]))
             .ToHashSet(StringComparer.Ordinal);
         var publicTypes = publicApiLines
             .Where(IsTypeDeclaration)
@@ -189,6 +189,18 @@ public partial class DocsConsistencyTests
             .ToArray();
 
         await Assert.That(missingTypes).IsEmpty();
+    }
+
+    [Test]
+    public async Task Removed_Multi_Parameter_Generic_Types_Are_Recognized()
+    {
+        const string declaration = "*REMOVED*Kevlar.PartitionedShield<TKey, TResult>";
+
+        await Assert.That(IsRemovedTypeDeclaration(declaration)).IsTrue();
+        await Assert.That(NormalizeTypeUid(declaration[RemovedApiPrefix.Length..]))
+            .IsEqualTo("Kevlar.PartitionedShield`2");
+        await Assert.That(IsRemovedTypeDeclaration(
+            "*REMOVED*Kevlar.PartitionedShield<TKey, TResult>.Execute() -> void")).IsFalse();
     }
 
     [Test]
@@ -311,6 +323,12 @@ public partial class DocsConsistencyTests
         return directory?.FullName
             ?? throw new InvalidOperationException("Could not locate the Kevlar repository root.");
     }
+
+    private const string RemovedApiPrefix = "*REMOVED*";
+
+    private static bool IsRemovedTypeDeclaration(string line) =>
+        line.StartsWith(RemovedApiPrefix, StringComparison.Ordinal) &&
+        IsTypeDeclaration(line[RemovedApiPrefix.Length..]);
 
     private static bool IsTypeDeclaration(string line) =>
         line.Length > 0 &&
