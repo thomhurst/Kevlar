@@ -105,42 +105,30 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
             _maxConcurrency,
             _queueLimit,
             context);
-        try
+        CallbackInvoker.Invoke(
+            _onRejected,
+            rejectedEvent,
+            CallbackErrorKind.ConcurrencyLimitRejected,
+            context);
+        var notification = CallbackInvoker.InvokeAsync(
+            _onRejectedAsync,
+            rejectedEvent,
+            CallbackErrorKind.ConcurrencyLimitRejected,
+            context);
+        if (notification.IsCompletedSuccessfully)
         {
-            _onRejected?.Invoke(rejectedEvent);
-            if (_onRejectedAsync is null)
-            {
-                return new ValueTask<Outcome<T>>(Outcome<T>.FromException(rejection));
-            }
-
-            var notification = _onRejectedAsync(rejectedEvent);
-            if (notification.IsCompletedSuccessfully)
-            {
-                notification.GetAwaiter().GetResult();
-                return new ValueTask<Outcome<T>>(Outcome<T>.FromException(rejection));
-            }
-
-            return AwaitRejectionAsync<T>(notification, rejection);
+            return new ValueTask<Outcome<T>>(Outcome<T>.FromException(rejection));
         }
-        catch (Exception callbackFailure)
-        {
-            return new ValueTask<Outcome<T>>(Outcome<T>.FromException(callbackFailure));
-        }
+
+        return AwaitRejectionAsync<T>(notification, rejection);
     }
 
     private static async ValueTask<Outcome<T>> AwaitRejectionAsync<T>(
         ValueTask notification,
         ConcurrencyLimitExceededException rejection)
     {
-        try
-        {
-            await notification.ConfigureAwait(false);
-            return Outcome<T>.FromException(rejection);
-        }
-        catch (Exception callbackFailure)
-        {
-            return Outcome<T>.FromException(callbackFailure);
-        }
+        await notification.ConfigureAwait(false);
+        return Outcome<T>.FromException(rejection);
     }
 
     private async ValueTask<Outcome<T>> ExecuteQueuedAsync<T, TState>(

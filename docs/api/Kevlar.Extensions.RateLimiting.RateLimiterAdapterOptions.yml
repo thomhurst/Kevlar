@@ -23,9 +23,9 @@ items:
   remarks: >-
     Rejections record the standard Kevlar rejection metric, invoke <xref href="Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejected" data-throw-if-not-resolved="false"></xref>, then
 
-    invoke and await <xref href="Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejectedAsync" data-throw-if-not-resolved="false"></xref>. A callback failure replaces the
+    invoke and await <xref href="Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejectedAsync" data-throw-if-not-resolved="false"></xref>. Callback failures are reported through
 
-    <xref href="Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException" data-throw-if-not-resolved="false"></xref> that would otherwise be returned.
+    <xref href="Kevlar.KevlarDiagnostics.OnCallbackError" data-throw-if-not-resolved="false"></xref> and do not replace the rejection.
   example: []
   syntax:
     content: public sealed class RateLimiterAdapterOptions
@@ -144,13 +144,13 @@ references:
   name: OnRejectedAsync
   nameWithType: RateLimiterAdapterOptions.OnRejectedAsync
   fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejectedAsync
-- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException
-  commentId: T:Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException
+- uid: Kevlar.KevlarDiagnostics.OnCallbackError
+  commentId: E:Kevlar.KevlarDiagnostics.OnCallbackError
   isExternal: true
-  href: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.html
-  name: RateLimiterAdapterRejectedException
-  nameWithType: RateLimiterAdapterRejectedException
-  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException
+  href: Kevlar.KevlarDiagnostics.html#Kevlar_KevlarDiagnostics_OnCallbackError
+  name: OnCallbackError
+  nameWithType: KevlarDiagnostics.OnCallbackError
+  fullName: Kevlar.KevlarDiagnostics.OnCallbackError
 - uid: Kevlar.Extensions.RateLimiting
   commentId: N:Kevlar.Extensions.RateLimiting
   isExternal: true

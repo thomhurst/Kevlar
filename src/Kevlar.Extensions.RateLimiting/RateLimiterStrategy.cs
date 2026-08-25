@@ -170,27 +170,22 @@ internal sealed class RateLimiterStrategy : Strategy
             metadata,
             _permitCount,
             context);
-        try
+        CallbackInvoker.Invoke(
+            _onRejected,
+            rejectedEvent,
+            CallbackErrorKind.RateLimiterAdapterRejected,
+            context);
+        var notification = CallbackInvoker.InvokeAsync(
+            _onRejectedAsync,
+            rejectedEvent,
+            CallbackErrorKind.RateLimiterAdapterRejected,
+            context);
+        if (notification.IsCompletedSuccessfully)
         {
-            _onRejected?.Invoke(rejectedEvent);
-            if (_onRejectedAsync is null)
-            {
-                return new ValueTask<Outcome<T>>(Outcome<T>.FromException(rejection));
-            }
-
-            var notification = _onRejectedAsync(rejectedEvent);
-            if (notification.IsCompletedSuccessfully)
-            {
-                notification.GetAwaiter().GetResult();
-                return new ValueTask<Outcome<T>>(Outcome<T>.FromException(rejection));
-            }
-
-            return AwaitRejectionAsync<T>(notification, rejection);
+            return new ValueTask<Outcome<T>>(Outcome<T>.FromException(rejection));
         }
-        catch (Exception callbackFailure)
-        {
-            return Failure<T>(callbackFailure);
-        }
+
+        return AwaitRejectionAsync<T>(notification, rejection);
     }
 
     private static IReadOnlyDictionary<string, object?> SnapshotMetadata(RateLimitLease lease)
@@ -224,15 +219,8 @@ internal sealed class RateLimiterStrategy : Strategy
         ValueTask notification,
         RateLimiterAdapterRejectedException rejection)
     {
-        try
-        {
-            await notification.ConfigureAwait(false);
-            return Outcome<T>.FromException(rejection);
-        }
-        catch (Exception callbackFailure)
-        {
-            return Outcome<T>.FromException(callbackFailure);
-        }
+        await notification.ConfigureAwait(false);
+        return Outcome<T>.FromException(rejection);
     }
 
     private static ValueTask<Outcome<T>> DisposeWithFailure<T>(

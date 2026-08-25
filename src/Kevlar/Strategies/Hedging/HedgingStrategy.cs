@@ -342,22 +342,20 @@ internal sealed class HedgingStrategy : Strategy
     {
         context.CancellationToken.ThrowIfCancellationRequested();
         var hedgeEvent = new HedgeEvent(attemptNumber, context);
-        _onHedge?.Invoke(hedgeEvent);
+        CallbackInvoker.Invoke(_onHedge, hedgeEvent, CallbackErrorKind.Hedge, context);
         context.CancellationToken.ThrowIfCancellationRequested();
 
-        if (_onHedgeAsync is { } onHedgeAsync)
+        var notification = CallbackInvoker.InvokeAsync(
+            _onHedgeAsync,
+            hedgeEvent,
+            CallbackErrorKind.Hedge,
+            context);
+        if (!notification.IsCompletedSuccessfully)
         {
-            var notification = onHedgeAsync(hedgeEvent);
-            // Stryker disable once all: Route selection is performance-only; both branches await the hook.
-            if (!notification.IsCompletedSuccessfully)
-            {
-                return AwaitHedgeNotificationAsync(notification, next, context, attemptNumber, outcome);
-            }
-
-            notification.GetAwaiter().GetResult();
-            context.CancellationToken.ThrowIfCancellationRequested();
+            return AwaitHedgeNotificationAsync(notification, next, context, attemptNumber, outcome);
         }
 
+        context.CancellationToken.ThrowIfCancellationRequested();
         return new ValueTask<HedgeAttempt<T>>(
             StartHedgeAttempt(next, context, attemptNumber, outcome).AsPending());
     }

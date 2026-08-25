@@ -165,6 +165,28 @@ public class TelemetryRecorderTests
     }
 
     [Test]
+    public async Task Records_Callback_Errors_From_Diagnostics()
+    {
+        using var recorder = new TelemetryRecorder(captureMetrics: false);
+        var callbackFailure = new IOException("callback");
+        var shield = Shield.Retry(options =>
+        {
+            options.MaxRetries = 1;
+            options.Backoff = Backoff.None;
+            options.OnRetry = _ => throw callbackFailure;
+        }).WithName("recorded-callback-error");
+
+        _ = await shield.ExecuteOutcomeAsync<int>(static _ => throw new InvalidOperationException("operation"));
+
+        var record = recorder.Callbacks.Single();
+        await Assert.That(record.Kind).IsEqualTo(CallbackKind.CallbackError);
+        await Assert.That(record.ErrorKind).IsEqualTo(CallbackErrorKind.Retry);
+        await Assert.That(record.ShieldName).IsEqualTo("recorded-callback-error");
+        await Assert.That(record.StrategyIndex).IsEqualTo(0);
+        await Assert.That(ReferenceEquals(record.Exception, callbackFailure)).IsTrue();
+    }
+
+    [Test]
     public async Task Waiters_Honor_Cancellation()
     {
         using var recorder = new TelemetryRecorder(captureMetrics: false);
@@ -194,7 +216,7 @@ public class TelemetryRecorderTests
     }
 
     [Test]
-    public async Task Disposed_Recorder_Rejects_Callbacks_And_New_Waiters()
+    public async Task Disposed_Recorder_Callback_Does_Not_Replace_The_Outcome()
     {
         var recorder = new TelemetryRecorder(captureMetrics: false);
         recorder.Dispose();
@@ -208,7 +230,7 @@ public class TelemetryRecorderTests
         var outcome = await shield.ExecuteOutcomeAsync<int>(
             static _ => throw new InvalidOperationException());
 
-        await Assert.That(outcome.Exception).IsTypeOf<ObjectDisposedException>();
+        await Assert.That(outcome.Exception).IsTypeOf<InvalidOperationException>();
         await Assert.That(() => recorder.WaitForCallbackCountAsync(0))
             .Throws<ObjectDisposedException>();
         await Assert.That(() => recorder.WaitForMetricCountAsync(0))
@@ -233,7 +255,12 @@ public class TelemetryRecorderTests
         var name = $"metric-families-{Guid.NewGuid():N}";
 
         var retryAttempts = 0;
-        await Shield.Retry(1, Backoff.None).WithName(name).ExecuteAsync(_ =>
+        await Shield.Retry(options =>
+        {
+            options.MaxRetries = 1;
+            options.Backoff = Backoff.None;
+            options.OnRetry = _ => throw new IOException("telemetry callback");
+        }).WithName(name).ExecuteAsync(_ =>
             Interlocked.Increment(ref retryAttempts) == 1
                 ? ValueTask.FromException(new InvalidOperationException())
                 : ValueTask.CompletedTask);
@@ -274,6 +301,7 @@ public class TelemetryRecorderTests
             "kevlar.hedges",
             "kevlar.fallbacks",
             "kevlar.rejections",
+            "kevlar.callback_errors",
 #if NET9_0_OR_GREATER
             "kevlar.circuit_breaker.state",
             "kevlar.concurrency_limit.inflight",

@@ -74,6 +74,7 @@ services.AddOpenTelemetry().WithMetrics(metrics => metrics
 | `kevlar.rejections` | Counter | `{rejection}` | `net8.0` | fail-fast rejections | `kevlar.shield.name`, `kevlar.rejection.type` (`circuit_open`/`rate_limit`/`rate_limiter_adapter`/`concurrency_limit`) |
 | `kevlar.circuit_breaker.transitions` | Counter | `{transition}` | `net8.0` | circuit state changes | `kevlar.circuit_breaker.state.from`, `kevlar.circuit_breaker.state.to` (`closed`/`open`/`half_open`/`isolated`) |
 | `kevlar.partitions.evictions` | Counter | `{partition}` | `net8.0` | partitions removed from bounded providers | `kevlar.partition.reason` (`capacity`/`idle`/`cleared`) |
+| `kevlar.callback_errors` | Counter | `{error}` | `net8.0` | exceptions thrown by strategy notifications or observers | `kevlar.shield.name`, `kevlar.callback.kind` |
 | `kevlar.execution.duration` | Histogram | `s` | `net8.0` | completed public execution duration | `kevlar.shield.name`, `kevlar.execution.outcome` (`success`/`failure`) |
 | `kevlar.circuit_breaker.state` | Gauge | `{state}` | `net10.0` | last observed circuit state: closed `0`, open `1`, half-open `2`, isolated `3` | `kevlar.shield.name`, `kevlar.strategy.index` |
 | `kevlar.concurrency_limit.inflight` | Gauge | `{execution}` | `net10.0` | executions holding a permit | `kevlar.shield.name`, `kevlar.strategy.index` |
@@ -161,6 +162,49 @@ Strategy callbacks expose request-level events. Every async callback is awaited 
 | Chaos | `OnInjected` | — |
 
 The event payloads and timing are documented on each [strategy page](/docs/category/strategies). Metrics answer aggregate questions; callbacks add request-specific details.
+
+### Callback failures
+
+Notification and observer exceptions never replace the protected operation's result, failure,
+timeout, rejection, or fallback. Kevlar awaits asynchronous callbacks, reports each exception
+through `KevlarDiagnostics.OnCallbackError`, increments `kevlar.callback_errors`, and continues.
+Each diagnostics subscriber is isolated too: one throwing subscriber cannot prevent later
+subscribers from receiving the error.
+
+`CallbackErrorEvent` is detached from the pooled execution context. It carries the callback kind,
+shield name, strategy index, and original exception, so it can safely be retained or queued.
+
+<!-- doc-test-run: callback-failures -->
+```csharp
+var errors = new List<CallbackErrorEvent>();
+Action<CallbackErrorEvent> handler = errors.Add;
+KevlarDiagnostics.OnCallbackError += handler;
+
+try
+{
+    var attempts = 0;
+    var shield = Shield.Retry(options =>
+    {
+        options.MaxRetries = 1;
+        options.Backoff = Backoff.None;
+        options.OnRetry = _ => throw new IOException("logger unavailable");
+    }).WithName("catalog");
+
+    var result = await shield.ExecuteAsync(_ =>
+        new ValueTask<int>(++attempts == 1
+            ? throw new HttpRequestException("transient")
+            : 42));
+
+    if (result != 42 || errors is not [{ Kind: CallbackErrorKind.Retry }])
+    {
+        throw new InvalidOperationException("Callback isolation was not observed.");
+    }
+}
+finally
+{
+    KevlarDiagnostics.OnCallbackError -= handler;
+}
+```
 
 ## Logging and tracing
 

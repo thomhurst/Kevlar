@@ -365,7 +365,7 @@ public class TimeoutArbitrationTests
         var failed = await firstExecution.WaitAsync(TimeSpan.FromSeconds(5));
         var recovered = await shield.ExecuteAsync(_ => new ValueTask<int>(42), callerCancellation.Token);
 
-        await Assert.That(ReferenceEquals(failed.Exception, callbackFailure)).IsTrue();
+        await Assert.That(failed.Exception).IsTypeOf<TimeoutExceededException>();
         await Assert.That(recovered).IsEqualTo(42);
         await Assert.That(callbackCalls).IsEqualTo(1);
         await Assert.That(observer.Observations.Count).IsEqualTo(2);

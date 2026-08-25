@@ -204,17 +204,31 @@ internal sealed class RetryStrategy : Strategy
                 {
                     if (_onRetry is not null)
                     {
-                        InvokeOnRetry(_onRetry, attempt, delay, in outcome, context);
+                        try
+                        {
+                            InvokeOnRetry(_onRetry, attempt, delay, in outcome, context);
+                        }
+                        catch (Exception exception)
+                        {
+                            KevlarDiagnostics.ReportCallbackError(CallbackErrorKind.Retry, context, exception);
+                        }
                     }
 
                     if (_onRetryAsync is not null)
                     {
-                        await InvokeOnRetryAsync(
-                            _onRetryAsync,
-                            attempt,
-                            delay,
-                            outcome,
-                            context).ConfigureAwait(false);
+                        try
+                        {
+                            await InvokeOnRetryAsync(
+                                _onRetryAsync,
+                                attempt,
+                                delay,
+                                outcome,
+                                context).ConfigureAwait(false);
+                        }
+                        catch (Exception exception)
+                        {
+                            KevlarDiagnostics.ReportCallbackError(CallbackErrorKind.Retry, context, exception);
+                        }
                     }
                 }
             }

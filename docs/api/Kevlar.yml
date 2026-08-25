@@ -6,6 +6,8 @@ items:
   children:
   - Kevlar.Backoff
   - Kevlar.BackoffKind
+  - Kevlar.CallbackErrorEvent
+  - Kevlar.CallbackErrorKind
   - Kevlar.CircuitBreakerBreakDurationEvent
   - Kevlar.CircuitBreakerBreakDurationEvent`1
   - Kevlar.CircuitBreakerMonitor
@@ -93,6 +95,22 @@ references:
   name: BackoffKind
   nameWithType: BackoffKind
   fullName: Kevlar.BackoffKind
+- uid: Kevlar.CallbackErrorEvent
+  commentId: T:Kevlar.CallbackErrorEvent
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.CallbackErrorEvent.html
+  name: CallbackErrorEvent
+  nameWithType: CallbackErrorEvent
+  fullName: Kevlar.CallbackErrorEvent
+- uid: Kevlar.CallbackErrorKind
+  commentId: T:Kevlar.CallbackErrorKind
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.CallbackErrorKind.html
+  name: CallbackErrorKind
+  nameWithType: CallbackErrorKind
+  fullName: Kevlar.CallbackErrorKind
 - uid: Kevlar.CircuitOpenException
   commentId: T:Kevlar.CircuitOpenException
   isExternal: true

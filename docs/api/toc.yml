@@ -10,6 +10,12 @@ items:
   - uid: Kevlar.BackoffKind
     name: BackoffKind
     type: Enum
+  - uid: Kevlar.CallbackErrorEvent
+    name: CallbackErrorEvent
+    type: Struct
+  - uid: Kevlar.CallbackErrorKind
+    name: CallbackErrorKind
+    type: Enum
   - uid: Kevlar.CircuitBreakerBreakDurationEvent
     name: CircuitBreakerBreakDurationEvent
     type: Struct

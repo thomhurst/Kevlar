@@ -236,17 +236,15 @@ internal sealed class TimeoutStrategy : Strategy
         {
             KevlarMetrics.Timeout(context.ShieldName);
             var timeoutEvent = new TimeoutEvent(timeout, context);
-            _onTimeout?.Invoke(timeoutEvent);
-
-            if (_onTimeoutAsync is not null)
+            CallbackInvoker.Invoke(_onTimeout, timeoutEvent, CallbackErrorKind.Timeout, context);
+            var notification = CallbackInvoker.InvokeAsync(
+                _onTimeoutAsync,
+                timeoutEvent,
+                CallbackErrorKind.Timeout,
+                context);
+            if (!notification.IsCompletedSuccessfully)
             {
-                var notification = _onTimeoutAsync(timeoutEvent);
-                if (!notification.IsCompletedSuccessfully)
-                {
-                    return AwaitTimeoutNotificationAsync<T>(notification, timeout, cancellationException);
-                }
-
-                notification.GetAwaiter().GetResult();
+                return AwaitTimeoutNotificationAsync<T>(notification, timeout, cancellationException);
             }
 
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(

@@ -9,6 +9,7 @@ items:
   - Kevlar.Testing.TelemetryRecorder.Callbacks
   - Kevlar.Testing.TelemetryRecorder.Dispose
   - Kevlar.Testing.TelemetryRecorder.Metrics
+  - Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CallbackErrorEvent)
   - Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CircuitBreakerBreakDurationEvent,System.TimeSpan)
   - Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CircuitBreakerStateChangedEvent)
   - Kevlar.Testing.TelemetryRecorder.Record(Kevlar.FallbackEvent)
@@ -245,6 +246,29 @@ items:
     - id: item
       type: Kevlar.CircuitBreakerStateChangedEvent
     content.vb: Public Sub Record(item As CircuitBreakerStateChangedEvent)
+  overload: Kevlar.Testing.TelemetryRecorder.Record*
+- uid: Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CallbackErrorEvent)
+  commentId: M:Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CallbackErrorEvent)
+  id: Record(Kevlar.CallbackErrorEvent)
+  parent: Kevlar.Testing.TelemetryRecorder
+  langs:
+  - csharp
+  - vb
+  name: Record(CallbackErrorEvent)
+  nameWithType: TelemetryRecorder.Record(CallbackErrorEvent)
+  fullName: Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CallbackErrorEvent)
+  type: Method
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Records a callback failure reported by Kevlar diagnostics.
+  example: []
+  syntax:
+    content: public void Record(CallbackErrorEvent item)
+    parameters:
+    - id: item
+      type: Kevlar.CallbackErrorEvent
+    content.vb: Public Sub Record(item As CallbackErrorEvent)
   overload: Kevlar.Testing.TelemetryRecorder.Record*
 - uid: Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CircuitBreakerBreakDurationEvent,System.TimeSpan)
   commentId: M:Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CircuitBreakerBreakDurationEvent,System.TimeSpan)
@@ -899,6 +923,14 @@ references:
   name: CircuitBreakerStateChangedEvent
   nameWithType: CircuitBreakerStateChangedEvent
   fullName: Kevlar.CircuitBreakerStateChangedEvent
+- uid: Kevlar.CallbackErrorEvent
+  commentId: T:Kevlar.CallbackErrorEvent
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.CallbackErrorEvent.html
+  name: CallbackErrorEvent
+  nameWithType: CallbackErrorEvent
+  fullName: Kevlar.CallbackErrorEvent
 - uid: Kevlar.CircuitBreakerBreakDurationEvent
   commentId: T:Kevlar.CircuitBreakerBreakDurationEvent
   parent: Kevlar

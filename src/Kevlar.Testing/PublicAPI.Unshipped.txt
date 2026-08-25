@@ -1,3 +1,6 @@
+Kevlar.Testing.CallbackKind.CallbackError = 6 -> Kevlar.Testing.CallbackKind
+Kevlar.Testing.CallbackRecord.ErrorKind.get -> Kevlar.CallbackErrorKind?
+Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CallbackErrorEvent item) -> void
 Kevlar.Testing.BackoffDescriptor
 Kevlar.Testing.BackoffDescriptor.BaseDelay.get -> System.TimeSpan?
 Kevlar.Testing.BackoffDescriptor.Factor.get -> double?

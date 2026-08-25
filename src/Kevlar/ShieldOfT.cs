@@ -298,7 +298,7 @@ public sealed class Shield<TResult>
         Append(new FallbackStrategy<TResult>((_, _) => new ValueTask<TResult>(fallbackValue), JudgeOrDefault, null, null));
 
     /// <summary>Replaces handled outcomes with <paramref name="fallbackValue"/> and configures notifications.</summary>
-    /// <remarks>Runs <see cref="FallbackOptions{TResult}.OnFallback"/>, then <see cref="FallbackOptions{TResult}.OnFallbackAsync"/>, before recovery. A notification failure skips recovery.</remarks>
+    /// <remarks>Runs <see cref="FallbackOptions{TResult}.OnFallback"/>, then <see cref="FallbackOptions{TResult}.OnFallbackAsync"/>, before recovery. Notification failures are reported and recovery continues.</remarks>
     public Shield<TResult> FallbackTo(TResult fallbackValue, Action<FallbackOptions<TResult>> configure)
     {
         Throw.IfNull(configure, nameof(configure));
@@ -326,7 +326,7 @@ public sealed class Shield<TResult>
     }
 
     /// <summary>Replaces handled outcomes with the result of <paramref name="fallback"/> and configures notifications.</summary>
-    /// <remarks>Runs <see cref="FallbackOptions{TResult}.OnFallback"/>, then <see cref="FallbackOptions{TResult}.OnFallbackAsync"/>, before recovery. A notification failure skips recovery.</remarks>
+    /// <remarks>Runs <see cref="FallbackOptions{TResult}.OnFallback"/>, then <see cref="FallbackOptions{TResult}.OnFallbackAsync"/>, before recovery. Notification failures are reported and recovery continues.</remarks>
     public Shield<TResult> Fallback(
         Func<CancellationToken, ValueTask<TResult>> fallback,
         Action<FallbackOptions<TResult>> configure)
@@ -360,7 +360,7 @@ public sealed class Shield<TResult>
     /// Replaces handled outcomes with the result of <paramref name="fallback"/>, which receives
     /// the handled outcome, and configures notifications.
     /// </summary>
-    /// <remarks>Runs <see cref="FallbackOptions{TResult}.OnFallback"/>, then <see cref="FallbackOptions{TResult}.OnFallbackAsync"/>, before recovery. A notification failure skips recovery.</remarks>
+    /// <remarks>Runs <see cref="FallbackOptions{TResult}.OnFallback"/>, then <see cref="FallbackOptions{TResult}.OnFallbackAsync"/>, before recovery. Notification failures are reported and recovery continues.</remarks>
     public Shield<TResult> Fallback(
         Func<Outcome<TResult>, CancellationToken, ValueTask<TResult>> fallback,
         Action<FallbackOptions<TResult>> configure)

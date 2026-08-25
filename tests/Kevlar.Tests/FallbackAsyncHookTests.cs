@@ -78,7 +78,7 @@ public class FallbackAsyncHookTests
     }
 
     [Test]
-    public async Task Async_Hook_Failure_Surfaces_Exact_Exception_And_Skips_Recovery()
+    public async Task Async_Hook_Failure_Does_Not_Skip_Recovery()
     {
         var original = new InvalidOperationException("original");
         var hookFailure = new ApplicationException("hook failed");
@@ -102,12 +102,12 @@ public class FallbackAsyncHookTests
         var outcome = await shield.ExecuteOutcomeAsync<int>(_ => throw original);
 
         await Assert.That(ReferenceEquals(observed, original)).IsTrue();
-        await Assert.That(ReferenceEquals(outcome.Exception, hookFailure)).IsTrue();
-        await Assert.That(factoryCalls).IsEqualTo(0);
+        await Assert.That(outcome.Result).IsEqualTo(42);
+        await Assert.That(factoryCalls).IsEqualTo(1);
     }
 
     [Test]
-    public async Task Async_Hook_Cancellation_Surfaces_Exact_Exception()
+    public async Task Async_Hook_Cancellation_Does_Not_Skip_Recovery()
     {
         using var cancellation = new CancellationTokenSource();
         var hookCancellation = new OperationCanceledException("hook cancelled", cancellation.Token);
@@ -117,7 +117,7 @@ public class FallbackAsyncHookTests
 
         var outcome = await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
 
-        await Assert.That(ReferenceEquals(outcome.Exception, hookCancellation)).IsTrue();
+        await Assert.That(outcome.Result).IsEqualTo(42);
     }
 
     [Test]
@@ -231,7 +231,7 @@ public class FallbackAsyncHookTests
     }
 
     [Test]
-    public async Task Untyped_Async_Hook_Failure_Is_Preserved_And_Skips_Recovery()
+    public async Task Untyped_Async_Hook_Failure_Does_Not_Skip_Recovery()
     {
         var hookFailure = new ApplicationException("hook failed");
         var fallbackCalls = 0;
@@ -245,18 +245,9 @@ public class FallbackAsyncHookTests
                 },
                 options => options.OnFallbackAsync = _ => ValueTask.FromException(hookFailure));
 
-        Exception? caught = null;
-        try
-        {
-            await shield.ExecuteAsync(_ => throw new InvalidOperationException());
-        }
-        catch (Exception exception)
-        {
-            caught = exception;
-        }
+        await shield.ExecuteAsync(_ => throw new InvalidOperationException());
 
-        await Assert.That(ReferenceEquals(caught, hookFailure)).IsTrue();
-        await Assert.That(fallbackCalls).IsEqualTo(0);
+        await Assert.That(fallbackCalls).IsEqualTo(1);
     }
 
     [Test]

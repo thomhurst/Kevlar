@@ -180,7 +180,7 @@ public class TimeoutDynamicOptionsTests
     }
 
     [Test]
-    public async Task Async_Timeout_Hook_Failure_Surfaces_The_Exact_Exception()
+    public async Task Async_Timeout_Hook_Failure_Does_Not_Replace_The_Timeout()
     {
         var fakeTime = new FakeTimeProvider();
         var callbackFailure = new ApplicationException("async timeout callback failed");
@@ -200,7 +200,7 @@ public class TimeoutDynamicOptionsTests
         fakeTime.Advance(TimeSpan.FromSeconds(1));
         var outcome = await execution;
 
-        await Assert.That(ReferenceEquals(outcome.Exception, callbackFailure)).IsTrue();
+        await Assert.That(outcome.Exception).IsTypeOf<TimeoutExceededException>();
     }
 
     [Test]

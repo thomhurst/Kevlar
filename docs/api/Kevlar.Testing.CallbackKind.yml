@@ -5,6 +5,7 @@ items:
   id: CallbackKind
   parent: Kevlar.Testing
   children:
+  - Kevlar.Testing.CallbackKind.CallbackError
   - Kevlar.Testing.CallbackKind.CircuitBreakDuration
   - Kevlar.Testing.CallbackKind.CircuitTransition
   - Kevlar.Testing.CallbackKind.Fallback
@@ -144,6 +145,26 @@ items:
   example: []
   syntax:
     content: CircuitBreakDuration = 5
+    return:
+      type: Kevlar.Testing.CallbackKind
+- uid: Kevlar.Testing.CallbackKind.CallbackError
+  commentId: F:Kevlar.Testing.CallbackKind.CallbackError
+  id: CallbackError
+  parent: Kevlar.Testing.CallbackKind
+  langs:
+  - csharp
+  - vb
+  name: CallbackError
+  nameWithType: CallbackKind.CallbackError
+  fullName: Kevlar.Testing.CallbackKind.CallbackError
+  type: Field
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: A failed strategy notification reported by Kevlar diagnostics.
+  example: []
+  syntax:
+    content: CallbackError = 6
     return:
       type: Kevlar.Testing.CallbackKind
 references:

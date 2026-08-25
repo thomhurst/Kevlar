@@ -78,17 +78,15 @@ internal sealed class FallbackStrategy<TResult> : Strategy, IFallbackStrategyIns
         if (_onFallback is not null || _onFallbackAsync is not null)
         {
             var fallbackEvent = new FallbackEvent<TResult>(typedOutcome, context);
-            _onFallback?.Invoke(fallbackEvent);
-
-            if (_onFallbackAsync is not null)
+            CallbackInvoker.Invoke(_onFallback, fallbackEvent, CallbackErrorKind.Fallback, context);
+            var notification = CallbackInvoker.InvokeAsync(
+                _onFallbackAsync,
+                fallbackEvent,
+                CallbackErrorKind.Fallback,
+                context);
+            if (!notification.IsCompletedSuccessfully)
             {
-                var notification = _onFallbackAsync(fallbackEvent);
-                if (!notification.IsCompletedSuccessfully)
-                {
-                    return AwaitNotificationAsync(notification, outcome, context);
-                }
-
-                notification.GetAwaiter().GetResult();
+                return AwaitNotificationAsync(notification, outcome, context);
             }
         }
 
@@ -199,12 +197,12 @@ internal sealed class VoidFallbackStrategy : Strategy, IFallbackStrategyInspecti
         if (_onFallback is not null || _onFallbackAsync is not null)
         {
             var fallbackEvent = new FallbackEvent(exception, context);
-            _onFallback?.Invoke(fallbackEvent);
-
-            if (_onFallbackAsync is not null)
-            {
-                await _onFallbackAsync(fallbackEvent).ConfigureAwait(false);
-            }
+            CallbackInvoker.Invoke(_onFallback, fallbackEvent, CallbackErrorKind.Fallback, context);
+            await CallbackInvoker.InvokeAsync(
+                _onFallbackAsync,
+                fallbackEvent,
+                CallbackErrorKind.Fallback,
+                context).ConfigureAwait(false);
         }
 
         try

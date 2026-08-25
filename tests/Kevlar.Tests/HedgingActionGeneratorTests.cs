@@ -224,7 +224,7 @@ public class HedgingActionGeneratorTests
     }
 
     [Test]
-    public async Task Async_Hook_Failure_Preserves_Identity_And_Cancels_Primary()
+    public async Task Async_Hook_Failure_Does_Not_Block_The_Hedge()
     {
         var expected = new ApplicationException("hook");
         var primaryCancelled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -239,19 +239,25 @@ public class HedgingActionGeneratorTests
             };
         });
 
-        var outcome = await shield.ExecuteOutcomeAsync<int>(async token =>
+        var attempts = 0;
+        var result = await shield.ExecuteAsync<int>(async token =>
         {
+            if (Interlocked.Increment(ref attempts) != 1)
+            {
+                return 42;
+            }
+
             using var registration = token.Register(() => primaryCancelled.TrySetResult());
             await Task.Delay(Timeout.InfiniteTimeSpan, token);
             return 1;
         });
 
         await primaryCancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
-        await Assert.That(ReferenceEquals(outcome.Exception, expected)).IsTrue();
+        await Assert.That(result).IsEqualTo(42);
     }
 
     [Test]
-    public async Task Synchronously_Faulted_Async_Hook_Preserves_Identity()
+    public async Task Synchronously_Faulted_Async_Hook_Preserves_Action_Failure()
     {
         var expected = new ApplicationException("hook");
         var shield = Shield.Hedge(options =>
@@ -264,7 +270,7 @@ public class HedgingActionGeneratorTests
         var outcome = await shield.ExecuteOutcomeAsync<int>(static _ =>
             ValueTask.FromException<int>(new InvalidOperationException("primary")));
 
-        await Assert.That(ReferenceEquals(outcome.Exception, expected)).IsTrue();
+        await Assert.That(outcome.Exception).IsTypeOf<InvalidOperationException>();
     }
 
     [Test]

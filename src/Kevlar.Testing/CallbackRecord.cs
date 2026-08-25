@@ -18,7 +18,8 @@ public sealed class CallbackRecord
         CircuitState? to = null,
         double? failureRate = null,
         long? failureCount = null,
-        int? consecutiveFailures = null)
+        int? consecutiveFailures = null,
+        CallbackErrorKind? errorKind = null)
     {
         Sequence = sequence;
         Kind = kind;
@@ -35,6 +36,7 @@ public sealed class CallbackRecord
         FailureRate = failureRate;
         FailureCount = failureCount;
         ConsecutiveFailures = consecutiveFailures;
+        ErrorKind = errorKind;
     }
 
     /// <summary>The recorder-wide sequence number.</summary>
@@ -82,6 +84,9 @@ public sealed class CallbackRecord
     /// <summary>The consecutive circuit failure count, when this is a break-duration callback.</summary>
     public int? ConsecutiveFailures { get; }
 
+    /// <summary>The failed callback family, when this is a callback-error record.</summary>
+    public CallbackErrorKind? ErrorKind { get; }
+
     internal CallbackRecord WithSequence(long sequence) => new(
         sequence,
         Kind,
@@ -97,5 +102,6 @@ public sealed class CallbackRecord
         to: To,
         failureRate: FailureRate,
         failureCount: FailureCount,
-        consecutiveFailures: ConsecutiveFailures);
+        consecutiveFailures: ConsecutiveFailures,
+        errorKind: ErrorKind);
 }

@@ -110,8 +110,8 @@ var shield = Shield.For<Config>()
 ```
 
 Kevlar records its fallback metric, invokes `OnFallback`, awaits `OnFallbackAsync`, then runs
-the fallback value or factory. A notification exception or cancellation is preserved as the exact
-pipeline outcome and skips recovery. Caller cancellation is exposed through `e.Context` and the
+the fallback value or factory. Notification failures are reported through
+`KevlarDiagnostics.OnCallbackError` and do not skip recovery. Caller cancellation is exposed through `e.Context` and the
 token passed to the recovery factory; Kevlar does not forcibly stop either callback when user code
 chooses not to observe that token.
 

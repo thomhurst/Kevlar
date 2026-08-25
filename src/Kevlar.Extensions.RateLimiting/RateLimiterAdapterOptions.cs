@@ -3,8 +3,8 @@ namespace Kevlar.Extensions.RateLimiting;
 /// <summary>Configuration for a framework or delegate-backed rate-limiter adapter.</summary>
 /// <remarks>
 /// Rejections record the standard Kevlar rejection metric, invoke <see cref="OnRejected"/>, then
-/// invoke and await <see cref="OnRejectedAsync"/>. A callback failure replaces the
-/// <see cref="RateLimiterAdapterRejectedException"/> that would otherwise be returned.
+/// invoke and await <see cref="OnRejectedAsync"/>. Callback failures are reported through
+/// <see cref="KevlarDiagnostics.OnCallbackError"/> and do not replace the rejection.
 /// </remarks>
 public sealed class RateLimiterAdapterOptions
 {

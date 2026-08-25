@@ -46,6 +46,7 @@ public sealed class TelemetryRecorder : IDisposable
 #else
         _ = captureMetrics;
 #endif
+        KevlarDiagnostics.OnCallbackError += Record;
     }
 
     /// <summary>Gets a stable snapshot of captured metric measurements.</summary>
@@ -112,6 +113,15 @@ public sealed class TelemetryRecorder : IDisposable
         exception: item.LastException,
         from: item.From, to: item.To));
 
+    /// <summary>Records a callback failure reported by Kevlar diagnostics.</summary>
+    public void Record(CallbackErrorEvent item) => AddCallback(new CallbackRecord(
+        0,
+        CallbackKind.CallbackError,
+        item.ShieldName,
+        strategyIndex: item.StrategyIndex,
+        exception: item.Exception,
+        errorKind: item.Kind));
+
     /// <summary>Records an untyped circuit-breaker break-duration callback.</summary>
     public ValueTask<TimeSpan> Record(
         CircuitBreakerBreakDurationEvent item,
@@ -160,6 +170,8 @@ public sealed class TelemetryRecorder : IDisposable
             _disposed = true;
             signal = _changed;
         }
+
+        KevlarDiagnostics.OnCallbackError -= Record;
 
 #if NET8_0_OR_GREATER
         _listener?.Dispose();

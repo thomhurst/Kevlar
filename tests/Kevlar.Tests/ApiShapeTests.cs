@@ -49,7 +49,9 @@ public class ApiShapeTests
     [Test]
     public async Task Strategy_Event_Structs_Have_One_Context_Contract()
     {
-        var eventTypes = GetStrategyEventTypes();
+        var eventTypes = GetStrategyEventTypes()
+            .Where(static type => type != typeof(CallbackErrorEvent))
+            .ToArray();
 
         await Assert.That(eventTypes.Length).IsGreaterThan(0);
         foreach (var eventType in eventTypes)
@@ -86,6 +88,7 @@ public class ApiShapeTests
         var prefixes = new[]
         {
             "CircuitBreaker",
+            "Callback",
             "Chaos",
             "ConcurrencyLimit",
             "Fallback",

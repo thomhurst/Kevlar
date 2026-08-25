@@ -97,13 +97,23 @@ internal abstract class ChaosStrategy : Strategy
 
     protected void Notify(ChaosInjectionKind kind, KevlarContext context, ChaosDecision decision)
     {
-        _onInjected?.Invoke(new ChaosEvent(
-            kind,
-            context,
-            decision.Operation,
-            decision.Environment,
-            decision.Rate,
-            decision.Sample));
+        if (_onInjected is not null)
+        {
+            try
+            {
+                _onInjected(new ChaosEvent(
+                    kind,
+                    context,
+                    decision.Operation,
+                    decision.Environment,
+                    decision.Rate,
+                    decision.Sample));
+            }
+            catch (Exception exception)
+            {
+                KevlarDiagnostics.ReportCallbackError(CallbackErrorKind.ChaosInjected, context, exception);
+            }
+        }
         ChaosMetrics.Injection(kind, context.ShieldName, decision.Operation, decision.Environment);
     }
 

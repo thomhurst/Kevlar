@@ -56,6 +56,10 @@ internal static class KevlarMetrics
         "kevlar.partitions.evictions",
         "{partition}",
         "Partitions removed from partitioned shield providers.");
+    private static readonly Counter<long> CallbackErrors = Meter.CreateCounter<long>(
+        "kevlar.callback_errors",
+        "{error}",
+        "Exceptions thrown by strategy notifications or observers.");
     private static readonly Histogram<double> ExecutionDuration = Meter.CreateHistogram<double>(
         "kevlar.execution.duration",
         "s",
@@ -202,6 +206,18 @@ internal static class KevlarMetrics
 #endif
     }
 
+    public static void CallbackError(string? shieldName, CallbackErrorKind kind)
+    {
+#if NET8_0_OR_GREATER
+        if (CallbackErrors.Enabled)
+        {
+            var tags = NameTags(shieldName);
+            tags.Add("kevlar.callback.kind", CallbackKindName(kind));
+            CallbackErrors.Add(1, tags);
+        }
+#endif
+    }
+
     public static long StartDuration() =>
 #if NET8_0_OR_GREATER
         Stopwatch.GetTimestamp();
@@ -334,6 +350,21 @@ internal static class KevlarMetrics
         PartitionEvictionReason.Idle => "idle",
         PartitionEvictionReason.Cleared => "cleared",
         _ => throw new ArgumentOutOfRangeException(nameof(reason)),
+    };
+
+    private static string CallbackKindName(CallbackErrorKind kind) => kind switch
+    {
+        CallbackErrorKind.Retry => "retry",
+        CallbackErrorKind.Timeout => "timeout",
+        CallbackErrorKind.CircuitStateChanged => "circuit_state_changed",
+        CallbackErrorKind.CircuitMonitor => "circuit_monitor",
+        CallbackErrorKind.Hedge => "hedge",
+        CallbackErrorKind.Fallback => "fallback",
+        CallbackErrorKind.ConcurrencyLimitRejected => "concurrency_limit_rejected",
+        CallbackErrorKind.RateLimitRejected => "rate_limit_rejected",
+        CallbackErrorKind.RateLimiterAdapterRejected => "rate_limiter_adapter_rejected",
+        CallbackErrorKind.ChaosInjected => "chaos_injected",
+        _ => throw new ArgumentOutOfRangeException(nameof(kind)),
     };
 
     private static long StateValue(CircuitState state) => state switch

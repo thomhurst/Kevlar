@@ -20,4 +20,7 @@ public enum CallbackKind
 
     /// <summary>A circuit-breaker break-duration callback.</summary>
     CircuitBreakDuration,
+
+    /// <summary>A failed strategy notification reported by Kevlar diagnostics.</summary>
+    CallbackError,
 }

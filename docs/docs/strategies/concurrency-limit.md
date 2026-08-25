@@ -40,8 +40,8 @@ Total capacity is `MaxConcurrency + QueueLimit`. Anything beyond that fails **im
 For an actual rejection, Kevlar publishes current limiter state and rejection metrics, invokes
 `OnRejected`, awaits `OnRejectedAsync`, then surfaces `ConcurrencyLimitExceededException`. The
 event includes the configured concurrency/queue limits, strategy index, and `KevlarContext`.
-A synchronous callback failure skips the asynchronous callback; either callback's failure replaces
-the limiter exception and preserves its exception instance.
+Callback failures are reported through `KevlarDiagnostics.OnCallbackError`; both callbacks still
+run and `ConcurrencyLimitExceededException` remains the rejection outcome.
 
 Callback contexts are pooled. Do not retain `ConcurrencyLimitRejectedEvent.Context` after the
 synchronous callback or returned `ValueTask` completes. Hooks run outside limiter locks and may run

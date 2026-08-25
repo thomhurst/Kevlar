@@ -6,8 +6,8 @@ namespace Kevlar;
 /// </summary>
 /// <remarks>
 /// When an execution is rejected, rejection metrics are recorded, <see cref="OnRejected"/> runs,
-/// and then <see cref="OnRejectedAsync"/> runs and is awaited. A callback failure replaces the
-/// <see cref="RateLimitExceededException"/> that would otherwise be returned.
+/// and then <see cref="OnRejectedAsync"/> runs and is awaited. Callback failures are reported
+/// through <see cref="KevlarDiagnostics.OnCallbackError"/> and do not replace the rejection.
 /// </remarks>
 public sealed class RateLimitOptions
 {

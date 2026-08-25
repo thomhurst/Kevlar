@@ -4,7 +4,8 @@ namespace Kevlar;
 /// <remarks>
 /// After a failure is selected for recovery, Kevlar records the fallback metric, invokes
 /// <see cref="OnFallback"/>, awaits <see cref="OnFallbackAsync"/>, and then runs the recovery
-/// action. A notification failure skips recovery and becomes the execution outcome.
+/// action. Notification failures are reported through <see cref="KevlarDiagnostics.OnCallbackError"/>
+/// and do not skip recovery.
 /// </remarks>
 public sealed class FallbackOptions
 {

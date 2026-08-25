@@ -103,7 +103,7 @@ public class LimiterRejectionHookTests
     }
 
     [Test]
-    public async Task Synchronous_Rejection_Hook_Failure_Skips_Async_Hook()
+    public async Task Synchronous_Rejection_Hook_Failure_Does_Not_Skip_Async_Hook()
     {
         var callbackFailure = new InvalidOperationException("sync rejection callback failed");
         var asyncHooks = 0;
@@ -120,15 +120,14 @@ public class LimiterRejectionHookTests
         });
 
         shield.Execute(static _ => 1);
-        var exception = await Assert.That(() => shield.Execute(static _ => 2))
-            .Throws<InvalidOperationException>();
+        await Assert.That(() => shield.Execute(static _ => 2))
+            .Throws<RateLimitExceededException>();
 
-        await Assert.That(ReferenceEquals(exception, callbackFailure)).IsTrue();
-        await Assert.That(asyncHooks).IsEqualTo(0);
+        await Assert.That(asyncHooks).IsEqualTo(1);
     }
 
     [Test]
-    public async Task Asynchronous_Rejection_Hook_Failure_Preserves_Exception()
+    public async Task Asynchronous_Rejection_Hook_Failure_Preserves_Rejection()
     {
         var callbackFailure = new InvalidOperationException("async rejection callback failed");
         var shield = Shield.ConcurrencyLimit(options =>
@@ -148,7 +147,7 @@ public class LimiterRejectionHookTests
 
         var outcome = await shield.ExecuteOutcomeAsync(static _ => new ValueTask<int>(2));
 
-        await Assert.That(ReferenceEquals(outcome.Exception, callbackFailure)).IsTrue();
+        await Assert.That(outcome.Exception).IsTypeOf<ConcurrencyLimitExceededException>();
         release.SetResult();
         await running;
     }

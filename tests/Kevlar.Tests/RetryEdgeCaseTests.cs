@@ -294,7 +294,7 @@ public class RetryEdgeCaseTests
     }
 
     [Test]
-    public async Task An_OnRetry_Callback_That_Throws_Surfaces_Its_Exception()
+    public async Task An_OnRetry_Callback_That_Throws_Does_Not_Replace_The_Action_Failure()
     {
         var attempts = 0;
         var shield = Shield.Retry(options =>
@@ -308,9 +308,9 @@ public class RetryEdgeCaseTests
         {
             attempts++;
             throw new InvalidOperationException();
-        })).Throws<DataMisalignedException>();
+        })).Throws<InvalidOperationException>();
 
-        await Assert.That(attempts).IsEqualTo(1);
+        await Assert.That(attempts).IsEqualTo(4);
     }
 
     [Test]

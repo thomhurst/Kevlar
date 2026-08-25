@@ -1,3 +1,5 @@
+using Kevlar.Internal;
+
 namespace Kevlar;
 
 /// <summary>
@@ -18,6 +20,7 @@ namespace Kevlar;
 /// <item><c>kevlar.fallbacks</c> — outcomes replaced by a fallback; attribute <c>kevlar.shield.name</c></item>
 /// <item><c>kevlar.rejections</c> — fail-fast rejections; attributes <c>kevlar.shield.name</c>, <c>kevlar.rejection.type</c> (<c>circuit_open</c>/<c>rate_limit</c>/<c>rate_limiter_adapter</c>/<c>concurrency_limit</c>)</item>
 /// <item><c>kevlar.circuit_breaker.transitions</c> — circuit state changes; attributes <c>kevlar.circuit_breaker.state.from</c>, <c>kevlar.circuit_breaker.state.to</c></item>
+/// <item><c>kevlar.callback_errors</c> — exceptions thrown by notifications or observers; attributes <c>kevlar.shield.name</c>, <c>kevlar.callback.kind</c></item>
 /// <item><c>kevlar.execution.duration</c> — execution duration histogram in seconds; attributes <c>kevlar.shield.name</c>, <c>kevlar.execution.outcome</c></item>
 /// <item><c>kevlar.circuit_breaker.state</c> — current state gauge (<c>closed=0</c>, <c>open=1</c>, <c>half_open=2</c>, <c>isolated=3</c>)</item>
 /// <item><c>kevlar.concurrency_limit.inflight</c>, <c>kevlar.concurrency_limit.queued</c>, and <c>kevlar.concurrency_limit.capacity</c> — concurrency-limit state gauges</item>
@@ -31,4 +34,62 @@ public static class KevlarDiagnostics
 {
     /// <summary>The name of Kevlar's <c>Meter</c>.</summary>
     public const string MeterName = "Kevlar";
+
+    /// <summary>
+    /// Raised when a strategy notification or observer throws. Each subscriber is isolated:
+    /// subscriber failures are swallowed and do not prevent later subscribers from running.
+    /// </summary>
+    public static event Action<CallbackErrorEvent>? OnCallbackError;
+
+    /// <summary>
+    /// Reports a callback failure without allowing diagnostics subscribers to affect execution.
+    /// Custom strategies can use this method to follow Kevlar's callback-isolation contract.
+    /// </summary>
+    public static void ReportCallbackError(
+        CallbackErrorKind kind,
+        KevlarContext context,
+        Exception exception)
+    {
+        if (context is null)
+        {
+            throw new ArgumentNullException(nameof(context));
+        }
+
+        if (exception is null)
+        {
+            throw new ArgumentNullException(nameof(exception));
+        }
+
+        try
+        {
+            KevlarMetrics.CallbackError(context.ShieldName, kind);
+        }
+        catch
+        {
+            // Telemetry listeners are diagnostics too and cannot affect execution.
+        }
+
+        var callbackError = new CallbackErrorEvent(
+            kind,
+            context.ShieldName,
+            context.StrategyIndex,
+            exception);
+        var handlers = OnCallbackError;
+        if (handlers is null)
+        {
+            return;
+        }
+
+        foreach (Action<CallbackErrorEvent> handler in handlers.GetInvocationList())
+        {
+            try
+            {
+                handler(callbackError);
+            }
+            catch
+            {
+                // Diagnostic handlers cannot recursively become callback errors.
+            }
+        }
+    }
 }

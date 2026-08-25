@@ -183,7 +183,7 @@ public class HedgingRaceTests
     }
 
     [Test]
-    public async Task OnHedge_Failure_Cancels_Primary_And_Next_Execution_Is_Healthy()
+    public async Task OnHedge_Failure_Does_Not_Block_The_Next_Attempt()
     {
         var callbackFailure = new ApplicationException("hedge callback failed");
         var callbackCalls = 0;
@@ -203,9 +203,13 @@ public class HedgingRaceTests
             };
         });
 
-        var failed = await shield.ExecuteOutcomeAsync<int>(async token =>
+        var result = await shield.ExecuteAsync<int>(async token =>
         {
-            Interlocked.Increment(ref attempts);
+            if (Interlocked.Increment(ref attempts) != 1)
+            {
+                return 42;
+            }
+
             using var registration = token.Register(() => primaryCancelled.TrySetResult());
             primaryStarted.TrySetResult();
             await Task.Delay(System.Threading.Timeout.InfiniteTimeSpan, token);
@@ -214,11 +218,8 @@ public class HedgingRaceTests
 
         await primaryStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
         await primaryCancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
-        var recovered = await shield.ExecuteAsync(_ => new ValueTask<int>(42));
-
-        await Assert.That(ReferenceEquals(failed.Exception, callbackFailure)).IsTrue();
-        await Assert.That(attempts).IsEqualTo(1);
-        await Assert.That(recovered).IsEqualTo(42);
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(attempts).IsEqualTo(2);
     }
 
     [Test]
