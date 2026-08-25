@@ -686,6 +686,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         HashSet<string> retainedNames) => expression switch
     {
         IdentifierNameSyntax identifier => retainedNames.Contains(identifier.Identifier.ValueText),
+        MemberAccessExpressionSyntax memberAccess
+            when memberAccess.Name.Identifier.ValueText is "Context" or "Properties" =>
+            IsRetainedAliasExpression(memberAccess.Expression, retainedNames),
         ParenthesizedExpressionSyntax parenthesized =>
             IsRetainedAliasExpression(parenthesized.Expression, retainedNames),
         CastExpressionSyntax cast => IsRetainedAliasExpression(cast.Expression, retainedNames),
@@ -1034,8 +1037,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             || semanticModel.GetDeclaredSymbol(
                 declarator,
                 cancellationToken) is not ILocalSymbol local
-            || declarator.FirstAncestorOrSelf<LocalDeclarationStatementSyntax>()?.Parent
-                is not BlockSyntax block)
+            || declarator.FirstAncestorOrSelf<LocalDeclarationStatementSyntax>()
+                is not { Parent: BlockSyntax block } declarationStatement)
         {
             return false;
         }
@@ -1044,10 +1047,12 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                      node is not AnonymousFunctionExpressionSyntax
                          and not LocalFunctionStatementSyntax)
                  .OfType<IdentifierNameSyntax>()
-                 .Where(reference => reference.SpanStart > declarator.SpanStart
-                     && reference.FirstAncestorOrSelf<StatementSyntax>()?.Parent == block))
+                 .Where(reference => reference.SpanStart > declarator.SpanStart))
         {
-            if (!SymbolEqualityComparer.Default.Equals(
+            if (reference.FirstAncestorOrSelf<StatementSyntax>()
+                    is not { Parent: BlockSyntax observationBlock } observationStatement
+                || observationBlock != block
+                || !SymbolEqualityComparer.Default.Equals(
                     semanticModel.GetSymbolInfo(reference, cancellationToken).Symbol,
                     local)
                 || !TryGetStableLocalInitializer(
@@ -1060,7 +1065,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 || !IsSynchronouslyObservedCore(
                     reference,
                     semanticModel,
-                    cancellationToken))
+                    cancellationToken)
+                || semanticModel.AnalyzeControlFlow(
+                        declarationStatement,
+                        observationStatement)
+                    ?.ExitPoints.Any() != false)
             {
                 continue;
             }

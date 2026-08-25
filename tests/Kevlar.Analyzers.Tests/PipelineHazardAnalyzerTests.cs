@@ -258,6 +258,33 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Follows_Async_Event_Context_Aliases_After_Await()
+    {
+        var expressions = new[]
+        {
+            (Initializer: "item.Context", Use: "retained.ShieldName"),
+            (Initializer: "item.Context.Properties", Use: "retained.Count"),
+        };
+        foreach (var (initializer, use) in expressions)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = async item =>
+                {
+                    var retained = {{initializer}};
+                    await Task.Yield();
+                    _ = {{use}};
+                });
+                """);
+
+            await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+            await AssertRuleAsync(
+                Without(diagnostics, "KEV013"),
+                "KEV014",
+                DiagnosticSeverity.Warning);
+        }
+    }
+
+    [Test]
     public async Task KEV014_Follows_Assigned_Event_Fields_After_Await()
     {
         var diagnostics = await AnalyzeSourceAsync("""
@@ -553,6 +580,31 @@ public class PipelineHazardAnalyzerTests
 
                 private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
             }
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV013_Rejects_Task_Local_Joins_After_Early_Returns()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var pending = AuditAsync(item);
+                if (Environment.TickCount == 0)
+                {
+                    return;
+                }
+
+                pending.GetAwaiter().GetResult();
+            });
+
+            static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
             """);
 
         await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
