@@ -295,6 +295,39 @@ public class DynamicRegistryTests
     }
 
     [Test]
+    public async Task Removed_Resolved_Shield_Is_Disposed_With_Registry()
+    {
+        using var services = new ServiceCollection().AddKevlar().BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        var strategy = new DisposableStrategy();
+        _ = registry.GetOrAdd("removed", _ => Shield.Use(strategy));
+
+        await Assert.That(registry.Remove("removed")).IsTrue();
+        services.Dispose();
+
+        await Assert.That(strategy.DisposeCount).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Direct_Reloading_Provider_Resolution_Registers_Snapshots_For_Disposal()
+    {
+        var monitor = new MutableOptionsMonitor<ReloadOptions>();
+        monitor.Set("direct", new ReloadOptions(), notify: false);
+        var strategy = new DisposableStrategy();
+        using var services = new ServiceCollection()
+            .AddSingleton<IOptionsMonitor<ReloadOptions>>(monitor)
+            .AddReloadingShield<ReloadOptions>(
+                "direct",
+                (_, _) => Shield.Use(strategy))
+            .BuildServiceProvider();
+
+        _ = services.GetRequiredKeyedService<IShieldProvider>("direct");
+        services.Dispose();
+
+        await Assert.That(strategy.DisposeCount).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Registry_DisposeAsync_Prefers_Async_Strategy_Disposal()
     {
         await using var services = new ServiceCollection().AddKevlar().BuildServiceProvider();

@@ -72,6 +72,9 @@ internal sealed class KevlarRegistry : IKevlarRegistry
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ConcurrentDictionary<(string Name, Type? ResultType), RegistryEntry> _entries = new();
+    private readonly ConcurrentQueue<RegistryEntry> _retiredEntries = new();
+    private readonly ConcurrentDictionary<IReloadingProvider, byte> _reloadingProviders =
+        new(ReferenceComparer<IReloadingProvider>.Instance);
     private readonly object _lifecycleLock = new();
     private int _activeOperations;
     private bool _disposed;
@@ -174,6 +177,14 @@ internal sealed class KevlarRegistry : IKevlarRegistry
 
     public bool Remove<TResult>(string name) => Remove(name, typeof(TResult));
 
+    internal TProvider CreateReloadingProvider<TProvider>(Func<TProvider> factory)
+        where TProvider : class, IReloadingProvider => Read(() =>
+    {
+        var provider = factory();
+        _reloadingProviders.TryAdd(provider, 0);
+        return provider;
+    });
+
     public void Dispose()
     {
         var values = BeginDispose();
@@ -236,7 +247,13 @@ internal sealed class KevlarRegistry : IKevlarRegistry
     {
         ThrowIfNull(name, nameof(name));
         var key = (name, resultType);
-        return _entries.TryRemove(key, out _);
+        if (!_entries.TryRemove(key, out var entry))
+        {
+            return false;
+        }
+
+        _retiredEntries.Enqueue(entry);
+        return true;
     });
 
     private bool TryResolve<TResult>(
@@ -352,8 +369,16 @@ internal sealed class KevlarRegistry : IKevlarRegistry
                 Monitor.Wait(_lifecycleLock);
             }
 
-            var values = new List<object>();
+            var values = new List<object>(_reloadingProviders.Keys);
             foreach (var entry in _entries.Values)
+            {
+                if (entry.TryGetResolved(out var value))
+                {
+                    values.Add(value);
+                }
+            }
+
+            foreach (var entry in _retiredEntries)
             {
                 if (entry.TryGetResolved(out var value))
                 {

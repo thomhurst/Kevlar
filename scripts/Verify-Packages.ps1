@@ -284,9 +284,9 @@ $expectedDependencies = @{
         '.NETStandard2.0' = @('Microsoft.Bcl.TimeProvider', 'Reservoir', 'System.Threading.Tasks.Extensions')
     }
     'Kevlar.Extensions.DependencyInjection' = @{
-        'net10.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.DependencyInjection.Abstractions', 'Microsoft.Extensions.Primitives')
-        'net8.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.DependencyInjection.Abstractions', 'Microsoft.Extensions.Primitives')
-        '.NETStandard2.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.DependencyInjection.Abstractions', 'Microsoft.Extensions.Primitives')
+        'net10.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.DependencyInjection.Abstractions', 'Microsoft.Extensions.Options', 'Microsoft.Extensions.Primitives')
+        'net8.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.DependencyInjection.Abstractions', 'Microsoft.Extensions.Options', 'Microsoft.Extensions.Primitives')
+        '.NETStandard2.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.DependencyInjection.Abstractions', 'Microsoft.Extensions.Options', 'Microsoft.Extensions.Primitives')
     }
     'Kevlar.Extensions.Http' = @{
         'net10.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.Http', 'Microsoft.Extensions.Primitives')
@@ -329,6 +329,7 @@ foreach ($dependencyId in @(
     'Microsoft.Extensions.Configuration.Abstractions',
     'Microsoft.Extensions.DependencyInjection.Abstractions',
     'Microsoft.Extensions.Http',
+    'Microsoft.Extensions.Options',
     'Microsoft.Extensions.Primitives',
     'Microsoft.Extensions.TimeProvider.Testing',
     'Reservoir',
