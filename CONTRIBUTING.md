@@ -52,13 +52,14 @@ the `coverage-report` workflow artifact to inspect either format. To reproduce t
 already-collected Cobertura files:
 
 ```powershell
+dotnet tool restore
 dotnet reportgenerator '-reports:artifacts/coverage/raw/*.cobertura.xml' '-targetdir:artifacts/coverage/report' '-reporttypes:Cobertura;Html'
 ./.github/scripts/Assert-Coverage.ps1 -Report artifacts/coverage/report/Cobertura.xml -MinimumLinePercent 94 -MinimumBranchPercent 89
 ```
 
-Core strategy mutation testing runs for relevant pull requests, on its scheduled workflow, and on
-demand. The Stryker configuration, report threshold, and break threshold live under `src/Kevlar`;
-the audited baseline and surviving mutations are documented in `.github/mutation-baseline.md`.
+Core strategy mutation testing runs on its scheduled workflow and on demand. The Stryker
+configuration, report threshold, and break threshold live under `src/Kevlar`; the audited baseline
+and surviving mutations are documented in `.github/mutation-baseline.md`.
 
 ```powershell
 dotnet tool restore
