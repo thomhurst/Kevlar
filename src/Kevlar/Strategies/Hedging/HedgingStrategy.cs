@@ -404,7 +404,7 @@ internal sealed class HedgingStrategy : Strategy
 
         if (!execution.IsCompletedSuccessfully)
         {
-            return AwaitOriginalResultAsync(execution, invocationContext);
+            return AwaitOriginalResultAsync(execution, invocationContext, attemptContext);
         }
 
         try
@@ -413,6 +413,7 @@ internal sealed class HedgingStrategy : Strategy
         }
         finally
         {
+            attemptContext.CaptureCompletionProperties(invocationContext.PropertiesForCompletion);
             KevlarContext.Return(invocationContext);
         }
     }
@@ -425,7 +426,8 @@ internal sealed class HedgingStrategy : Strategy
 
     private static async ValueTask<T> AwaitOriginalResultAsync<T>(
         ValueTask<Outcome<T>> execution,
-        KevlarContext invocationContext)
+        KevlarContext invocationContext,
+        KevlarContext attemptContext)
     {
         try
         {
@@ -434,6 +436,7 @@ internal sealed class HedgingStrategy : Strategy
         }
         finally
         {
+            attemptContext.CaptureCompletionProperties(invocationContext.PropertiesForCompletion);
             KevlarContext.Return(invocationContext);
         }
     }

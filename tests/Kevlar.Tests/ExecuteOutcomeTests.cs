@@ -320,6 +320,41 @@ public class ExecuteOutcomeTests
     }
 
     [Test]
+    public async Task OnCompleted_Sees_Properties_From_Generated_Original_Action()
+    {
+        var attempts = 0;
+        var observedWinner = -1;
+        var retainedRemovedKey = true;
+        var shield = Shield.For<int>().Hedge(options =>
+        {
+            options.MaxAttempts = 2;
+            options.Delay = Timeout.InfiniteTimeSpan;
+            options.ActionGenerator = hedge => token => hedge.OriginalAction(token);
+        });
+
+        _ = await shield.ExecuteWithContextAsync(
+            0,
+            static (_, properties) => properties.Set(RemovedByOuterStrategy, 1),
+            (_, context) =>
+            {
+                var attempt = Interlocked.Increment(ref attempts);
+                context.Properties.Set(WinningAttempt, attempt);
+                context.Properties.Remove(RemovedByOuterStrategy);
+                return attempt == 1
+                    ? ValueTask.FromException<int>(new InvalidOperationException())
+                    : new ValueTask<int>(42);
+            },
+            (_, properties) =>
+            {
+                observedWinner = properties.GetOrDefault(WinningAttempt, -1);
+                retainedRemovedKey = properties.Contains(RemovedByOuterStrategy);
+            });
+
+        await Assert.That(observedWinner).IsEqualTo(2);
+        await Assert.That(retainedRemovedKey).IsFalse();
+    }
+
+    [Test]
     public async Task OnCompleted_Sees_Post_Hedge_Strategy_Writes_And_Removals()
     {
         var attempts = 0;
