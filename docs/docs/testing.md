@@ -22,8 +22,13 @@ uses a `TimeProvider`. Start the execution, wait until it has scheduled work, th
 `FakeTimeProvider`. The test below performs three attempts and advances twenty seconds without
 sleeping.
 
+`FakeTimeProvider`, `WaitForPendingAsync`, and `AdvanceUntilAsync` require a test project targeting
+.NET 8 or later; they are not included in the `netstandard2.0` compatibility asset.
+
 <!-- doc-test-run: testing-fake-time-retry -->
 ```csharp
+using Kevlar.Testing;
+
 var timeProvider = new FakeTimeProvider();
 var startedAt = timeProvider.GetUtcNow();
 var attempts = 0;
@@ -66,6 +71,8 @@ so the executable documentation check cannot leak work.
 <!-- doc-test-run: testing-advance-before-schedule -->
 ```csharp
 #pragma warning disable CA2007 // Negative example deliberately uses Task.WhenAny as a test timeout.
+using Kevlar.Testing;
+
 var timeProvider = new FakeTimeProvider();
 var attempts = 0;
 using var cancellation = new CancellationTokenSource();
@@ -112,6 +119,8 @@ configuration properties; do not parse `Description`, which is diagnostic text.
 
 <!-- doc-test-run: testing-pipeline-shape -->
 ```csharp
+using Kevlar.Testing;
+
 var shield = Shield
     .Timeout(TimeSpan.FromSeconds(2))
     .Retry(3, Backoff.Constant(TimeSpan.FromMilliseconds(50)))
@@ -138,6 +147,8 @@ reservation: another execution may change the strategy immediately after capture
 
 <!-- doc-test-run: testing-state-snapshot -->
 ```csharp
+using Kevlar.Testing;
+
 var shield = Shield.ConcurrencyLimit(1, queueLimit: 1);
 await shield.ExecuteAsync(static _ => ValueTask.CompletedTask);
 
@@ -157,6 +168,8 @@ hedge, and circuit-transition callbacks.
 
 <!-- doc-test-run: testing-telemetry-recorder -->
 ```csharp
+using Kevlar.Testing;
+
 using var telemetry = new TelemetryRecorder(captureMetrics: false);
 var shield = Shield.Retry(options =>
 {
@@ -188,6 +201,9 @@ asserts that the server's three-second delay is observed, then succeeds.
 
 <!-- doc-test-run: testing-http-retry-after -->
 ```csharp
+using Kevlar.Extensions.Http;
+using Kevlar.Testing;
+
 var timeProvider = new FakeTimeProvider();
 var startedAt = timeProvider.GetUtcNow();
 var attempts = 0;
@@ -275,6 +291,8 @@ the expected fault is deterministic and the dependency delegate cannot run.
 
 <!-- doc-test-run: testing-chaos-fault -->
 ```csharp
+using Kevlar.Chaos;
+
 var dependencyCalls = 0;
 var shield = ChaosShield.Fault(options =>
 {
