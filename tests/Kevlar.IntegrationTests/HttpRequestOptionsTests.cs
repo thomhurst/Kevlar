@@ -256,7 +256,7 @@ public class HttpRequestOptionsTests
     {
         var observed = new ConcurrentQueue<string?>();
         var shield = Shield.For<HttpResponseMessage>()
-            .Hedge(maxAttempts: 2, delay: TimeSpan.Zero)
+            .Hedge(maxHedgedAttempts: 1, delay: TimeSpan.Zero)
             .Use(new PropertyObserverStrategy(TenantKey, observed));
         using var client = CreateClient(shield, static async (_, token) =>
         {
