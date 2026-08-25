@@ -223,7 +223,7 @@ $deadApiPatterns = @(
     '\bRetryForever\s*\(\s*backoff\s*:\s*null\s*\)'
     '\bjitter\s*:\s*(?:true|false)\b'
     '\bJitter\s*=\s*(?:true|false)\b'
-    '(?i:\.RateLimit\s*\(\s*(?:limiter|[A-Za-z_][A-Za-z0-9_]*limiter)\s*\))'
+    '(?i:\.RateLimit\s*\(\s*(?:[A-Za-z_][A-Za-z0-9_]*)?(?:limiter|acquireLease)\s*(?:,|\)))'
     '\bRateLimiterRejectedEvent\b'
 )
 $deadApiPattern = [regex]($deadApiPatterns -join '|')

@@ -58,6 +58,8 @@ All notable changes to this project are documented here. The format follows
   result-aware pipelines.
 - Context-only synchronous and asynchronous execution overloads expose `KevlarContext` without
   requiring seeded state.
+- Handling-clause builders now match their shield counterparts for configured timeouts, direct
+  custom strategies, and void fallbacks that do not need the handled exception.
 - Analyzer rules KEV001–KEV011 cover ignored cancellation, ineffective handling, invalid ordering,
   state lifetime, void fallback/result mismatches, untyped hedging, discarded builders and fluent
   calls, inherited and implicit default handling, and suspicious default-value matching.
