@@ -725,6 +725,94 @@ public class HedgingActionGeneratorTests
     }
 
     [Test]
+    public async Task Incomplete_Original_Action_Keeps_The_Attempt_Context_Leased()
+    {
+        var observer = new ContextIdentityObserver();
+        var releaseOriginal = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        Task<int>? originalTask = null;
+        KevlarContext? hedgeContext = null;
+        var calls = 0;
+        var shield = Shield.For<int>().Hedge(options =>
+            {
+                options.MaxAttempts = 2;
+                options.Delay = Timeout.InfiniteTimeSpan;
+                options.ActionGenerator = hedge =>
+                {
+                    hedgeContext = hedge.Context;
+                    return token =>
+                    {
+                        originalTask = hedge.OriginalAction(token).AsTask();
+                        return new ValueTask<int>(42);
+                    };
+                };
+            })
+            .Use(observer);
+
+        var firstResult = await shield.ExecuteAsync(async _ =>
+        {
+            if (Interlocked.Increment(ref calls) == 1)
+            {
+                throw new InvalidOperationException("primary");
+            }
+
+            await releaseOriginal.Task;
+            return 21;
+        });
+
+        var secondResult = await shield.ExecuteAsync(static _ => new ValueTask<int>(7));
+        var secondExecutionContext = observer.Contexts.ToArray()[^1];
+
+        await Assert.That(firstResult).IsEqualTo(42);
+        await Assert.That(secondResult).IsEqualTo(7);
+        await Assert.That(ReferenceEquals(hedgeContext, secondExecutionContext)).IsFalse();
+
+        releaseOriginal.SetResult();
+        await Assert.That(await originalTask!).IsEqualTo(21);
+    }
+
+    [Test]
+    public async Task Retained_Original_Action_Cannot_Use_A_Recycled_Attempt_Context()
+    {
+        var secondGenerated = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseSecond = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        Func<CancellationToken, ValueTask<int>>? retainedOriginal = null;
+        var generatedActions = 0;
+        var shield = Shield.For<int>().Hedge(options =>
+        {
+            options.MaxAttempts = 2;
+            options.Delay = Timeout.InfiniteTimeSpan;
+            options.ActionGenerator = hedge =>
+            {
+                if (Interlocked.Increment(ref generatedActions) == 1)
+                {
+                    retainedOriginal = hedge.OriginalAction;
+                    return static _ => new ValueTask<int>(42);
+                }
+
+                secondGenerated.SetResult();
+                return async _ =>
+                {
+                    await releaseSecond.Task;
+                    return 43;
+                };
+            };
+        });
+
+        var firstResult = await shield.ExecuteAsync(static _ =>
+            ValueTask.FromException<int>(new InvalidOperationException("primary")));
+        var secondExecution = shield.ExecuteAsync(static _ =>
+            ValueTask.FromException<int>(new InvalidOperationException("primary"))).AsTask();
+        await secondGenerated.Task;
+
+        await Assert.That(async () => await retainedOriginal!(CancellationToken.None))
+            .Throws<ObjectDisposedException>();
+
+        releaseSecond.SetResult();
+        await Assert.That(await secondExecution).IsEqualTo(43);
+        await Assert.That(firstResult).IsEqualTo(42);
+    }
+
+    [Test]
     public async Task Void_Generated_Action_Is_Awaited_To_Completion()
     {
         var actionCompleted = false;

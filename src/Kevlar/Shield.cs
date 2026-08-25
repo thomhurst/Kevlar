@@ -199,6 +199,10 @@ public sealed class Shield
     /// <summary>Starts a handling clause for exceptions matching <paramref name="predicate"/>. Use <see cref="ShieldExtensions.WhenAnyError(Shield)"/> to return to default handling.</summary>
     public static ShieldBuilder When(Func<Exception, bool> predicate) => ShieldExtensions.When(Empty, predicate);
 
+    /// <summary>Starts a handling clause using the active execution and strategy context.</summary>
+    public static ShieldBuilder WhenContext(Func<HandlingEvent, bool> predicate) =>
+        ShieldExtensions.WhenContext(Empty, predicate);
+
     /// <summary>Starts a result-aware shield for executions returning <typeparamref name="TResult"/>.</summary>
     public static Shield<TResult> For<TResult>() => Shield<TResult>.Empty;
 

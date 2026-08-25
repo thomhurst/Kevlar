@@ -85,6 +85,18 @@ For a direct per-strategy translation, set `HandlesException` and `HandlesResult
 strategy's options. A local override replaces the ambient clause. `WhenAnyError()` returns later
 strategies to Kevlar's default handling.
 
+Polly predicates that inspect `args.AttemptNumber` or `args.Context.Properties` map to a
+context-aware clause:
+
+```csharp
+var attemptAware = Shield
+    .WhenContext(handling =>
+        handling.Exception is TimeoutExceededException && handling.Attempt < 2)
+    .Retry(3, Backoff.None);
+```
+
+`HandlingEvent.Attempt` is the direct zero-based counterpart to Polly's `AttemptNumber`.
+
 Polly's default predicate handles every exception except `OperationCanceledException`. Kevlar also
 lets execution-rejection exceptions and fatal runtime exceptions propagate by default. Use an
 explicit clause when a shield intentionally recovers `CircuitOpenException`,

@@ -2044,7 +2044,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 Target: IPropertyReferenceOperation propertyReference,
                 Value: { } value,
             }
-            && propertyReference.Property.Name is "HandlesException" or "HandlesResult"
+            && propertyReference.Property.Name is
+                "HandlesException"
+                or "HandlesResult"
+                or "HandlesExceptionWithContext"
+                or "HandlesResultWithContext"
             && propertyReference.Property.ContainingNamespace.ToDisplayString() == "Kevlar"
             && value.ConstantValue is not { HasValue: true, Value: null })
         {
@@ -2108,7 +2112,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         {
             if (current.ContainingNamespace.ToDisplayString() == "Kevlar"
                 && (current.GetMembers("HandlesException").Length > 0
-                    || current.GetMembers("HandlesResult").Length > 0))
+                    || current.GetMembers("HandlesResult").Length > 0
+                    || current.GetMembers("HandlesExceptionWithContext").Length > 0
+                    || current.GetMembers("HandlesResultWithContext").Length > 0))
             {
                 return true;
             }
@@ -2194,7 +2200,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     }
 
     private static bool StartsHandlingClause(IMethodSymbol method, KnownTypes knownTypes) =>
-        (method.Name is "When" or "WhenResult" or "WhenResultIsDefault" or "WhenResultIsNull" or "WhenAnyError")
+        (method.Name is "When" or "WhenContext" or "WhenResult" or "WhenResultContext"
+            or "WhenResultIsDefault" or "WhenResultIsNull" or "WhenAnyError")
         && (knownTypes.IsShield(method.ContainingType)
             || knownTypes.IsShieldExtensions(method.ContainingType));
 

@@ -124,12 +124,13 @@ internal sealed class RetryStrategy : Strategy
 
     public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
+        var strategyIndex = context.StrategyIndex;
         var execution = next.InvokeAsync(context);
         var firstOutcomeShouldRetry = false;
         if (execution.IsCompletedSuccessfully)
         {
             var outcome = execution.Result;
-            if (!ShouldRetry(in outcome, retriesUsed: 0, context))
+            if (!ShouldRetry(in outcome, retriesUsed: 0, context, strategyIndex))
             {
                 return new ValueTask<Outcome<T>>(outcome);
             }
@@ -138,21 +139,22 @@ internal sealed class RetryStrategy : Strategy
             firstOutcomeShouldRetry = true;
         }
 
-        return ExecuteCoreAsync(next, context, execution, firstOutcomeShouldRetry);
+        return ExecuteCoreAsync(next, context, execution, firstOutcomeShouldRetry, strategyIndex);
     }
 
     private async ValueTask<Outcome<T>> ExecuteCoreAsync<T, TState>(
         Continuation<T, TState> next,
         KevlarContext context,
         ValueTask<Outcome<T>> execution,
-        bool firstOutcomeShouldRetry)
+        bool firstOutcomeShouldRetry,
+        int strategyIndex)
     {
         var previousBackoffDelay = TimeSpan.Zero;
         for (var retriesUsed = 0; ; retriesUsed++)
         {
             var outcome = await execution.ConfigureAwait(false);
 
-            if (!firstOutcomeShouldRetry && !ShouldRetry(in outcome, retriesUsed, context))
+            if (!firstOutcomeShouldRetry && !ShouldRetry(in outcome, retriesUsed, context, strategyIndex))
             {
                 return outcome;
             }
@@ -233,10 +235,14 @@ internal sealed class RetryStrategy : Strategy
         }
     }
 
-    private bool ShouldRetry<T>(in Outcome<T> outcome, int retriesUsed, KevlarContext context) =>
+    private bool ShouldRetry<T>(
+        in Outcome<T> outcome,
+        int retriesUsed,
+        KevlarContext context,
+        int strategyIndex) =>
         retriesUsed < _maxRetries
         && !context.Properties.SuppressAdditionalAttempts
-        && _judge.ShouldHandle(in outcome)
+        && _judge.ShouldHandle(in outcome, context, retriesUsed, strategyIndex)
         && !context.CancellationToken.IsCancellationRequested;
 
     private TimeSpan? InvokeDelayGenerator<T>(

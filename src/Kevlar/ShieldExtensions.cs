@@ -52,7 +52,10 @@ public static class ShieldExtensions
         Throw.IfNull(configure, nameof(configure));
         var options = new RetryOptions();
         configure(options);
-        var judge = HandlingOverride.Resolve(options.HandlesException, shield.JudgeOrDefault);
+        var judge = HandlingOverride.Resolve(
+            options.HandlesException,
+            options.HandlesExceptionWithContext,
+            shield.JudgeOrDefault);
         return shield.Append(new RetryStrategy(options, judge));
     }
 
@@ -112,7 +115,10 @@ public static class ShieldExtensions
         Throw.IfNull(configure, nameof(configure));
         var options = new CircuitBreakerOptions();
         configure(options);
-        var judge = HandlingOverride.Resolve(options.HandlesException, shield.JudgeOrDefault);
+        var judge = HandlingOverride.Resolve(
+            options.HandlesException,
+            options.HandlesExceptionWithContext,
+            shield.JudgeOrDefault);
         return shield.Append(new CircuitBreakerStrategy(options, judge));
     }
 
@@ -198,7 +204,10 @@ public static class ShieldExtensions
         Throw.IfNull(configure, nameof(configure));
         var options = new HedgeOptions();
         configure(options);
-        var judge = HandlingOverride.Resolve(options.HandlesException, shield.JudgeOrDefault);
+        var judge = HandlingOverride.Resolve(
+            options.HandlesException,
+            options.HandlesExceptionWithContext,
+            shield.JudgeOrDefault);
         return shield.Append(new HedgingStrategy(options, judge));
     }
 
@@ -223,6 +232,13 @@ public static class ShieldExtensions
     {
         Throw.IfNull(shield, nameof(shield));
         return new ShieldBuilder(shield).Or(predicate);
+    }
+
+    /// <summary>Starts a handling clause using the active execution and strategy context.</summary>
+    public static ShieldBuilder WhenContext(this Shield shield, Func<HandlingEvent, bool> predicate)
+    {
+        Throw.IfNull(shield, nameof(shield));
+        return new ShieldBuilder(shield).OrContext(predicate);
     }
 
     /// <summary>
@@ -328,13 +344,16 @@ public static class ShieldExtensions
         Throw.IfNull(configure, nameof(configure));
         var options = new FallbackOptions();
         configure(options);
-        var judge = HandlingOverride.Resolve(options.HandlesException, shield.JudgeOrDefault);
+        var judge = HandlingOverride.Resolve(
+            options.HandlesException,
+            options.HandlesExceptionWithContext,
+            shield.JudgeOrDefault);
         return shield.Append(new VoidFallbackStrategy(
             fallback,
             judge,
             options.OnFallback,
             options.OnFallbackAsync,
-            options.HandlesException is not null));
+            options.HasHandlingOverride));
     }
 
     /// <summary>

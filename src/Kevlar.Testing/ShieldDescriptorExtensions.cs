@@ -53,7 +53,7 @@ public static class ShieldDescriptorExtensions
     private static StrategyDescriptor Describe(Strategy strategy)
     {
         var description = strategy.Describe();
-        return strategy switch
+        StrategyDescriptor descriptor = strategy switch
         {
             RetryStrategy retry => new RetryStrategyDescriptor(
                 description,
@@ -105,6 +105,11 @@ public static class ShieldDescriptorExtensions
                 strategy.GetType(),
                 strategy.ReactiveJudge is { } judge ? new HandlingClause(judge) : null),
         };
+
+        descriptor.SetHandlingClause(strategy.ReactiveJudge is { } handling
+            ? new HandlingClauseDescriptor(handling.Description, handling.IsContextAware)
+            : null);
+        return descriptor;
     }
 
     private static bool IsRateLimiterAdapterStrategy(Type strategyType) =>

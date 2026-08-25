@@ -21,5 +21,20 @@ public readonly struct HandlingClause
     internal OutcomeJudge Judge => _judge ?? OutcomeJudge.Default;
 
     /// <summary>Returns whether <paramref name="outcome"/> is a handled failure.</summary>
-    public bool ShouldHandle<T>(in Outcome<T> outcome) => Judge.ShouldHandle(in outcome);
+    public bool ShouldHandle<T>(in Outcome<T> outcome) =>
+        Judge.ShouldHandle(in outcome, context: null, attempt: 0, strategyIndex: -1);
+
+    /// <summary>Returns whether an outcome is handled for the active execution and strategy.</summary>
+    public bool ShouldHandle<T>(
+        in Outcome<T> outcome,
+        KevlarContext context,
+        int attempt = 0,
+        int strategyIndex = -1)
+    {
+        Throw.IfNull(context, nameof(context));
+        return Judge.ShouldHandle(in outcome, context, attempt, strategyIndex);
+    }
+
+    /// <summary>Whether this clause consults execution or strategy context.</summary>
+    public bool IsContextAware => Judge.IsContextAware;
 }

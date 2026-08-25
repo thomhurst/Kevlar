@@ -125,7 +125,7 @@ internal sealed class CircuitBreakerStrategy : Strategy
         StrategyMetricAlias alias,
         bool recordState)
     {
-        if (_judge.ShouldHandle(in outcome))
+        if (_judge.ShouldHandle(in outcome, context, attempt: 0, alias.StrategyIndex))
         {
             _core.RecordFailure(context.TimeProvider, outcome.Exception, context);
         }
@@ -328,7 +328,7 @@ internal sealed class CircuitBreakerStrategy : Strategy
         bool recordState)
     {
         ValueTask recording;
-        if (_judge.ShouldHandle(in outcome))
+        if (_judge.ShouldHandle(in outcome, context, attempt: 0, alias.StrategyIndex))
         {
             recording = _core.RecordFailureAsync(context.TimeProvider, in outcome, context);
         }

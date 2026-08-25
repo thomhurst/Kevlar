@@ -14,4 +14,10 @@ public abstract class StrategyDescriptor
 
     /// <summary>A human-readable diagnostic description. Do not parse this value as a contract.</summary>
     public string Description { get; }
+
+    /// <summary>The strategy's handling metadata, or <see langword="null"/> when proactive.</summary>
+    public HandlingClauseDescriptor? HandlingClause { get; private set; }
+
+    internal void SetHandlingClause(HandlingClauseDescriptor? handlingClause) =>
+        HandlingClause = handlingClause;
 }
