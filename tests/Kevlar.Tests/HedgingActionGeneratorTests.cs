@@ -4,6 +4,8 @@ namespace Kevlar.Tests;
 
 public class HedgingActionGeneratorTests
 {
+    private static readonly KevlarKey<int> ConcurrentOriginalAction = new("concurrent-original-action");
+
     [Test]
     public async Task Typed_Generator_Selects_A_Distinct_Action()
     {
@@ -699,29 +701,40 @@ public class HedgingActionGeneratorTests
     {
         var observer = new ContextIdentityObserver();
         var attempts = 0;
+        var observedProperty = 0;
         var shield = Shield.For<int>().Hedge(options =>
             {
                 options.MaxAttempts = 2;
                 options.Delay = Timeout.InfiniteTimeSpan;
                 options.ActionGenerator = hedge => async token =>
                 {
-                    var first = hedge.OriginalAction(token).AsTask();
-                    var second = hedge.OriginalAction(token).AsTask();
-                    var results = await Task.WhenAll(first, second);
+                    var executions = Enumerable.Range(0, 8)
+                        .Select(_ => hedge.OriginalAction(token).AsTask());
+                    var results = await Task.WhenAll(executions);
                     return results.Sum();
                 };
             })
             .Use(observer);
 
-        var result = await shield.ExecuteAsync(_ =>
-            Interlocked.Increment(ref attempts) == 1
-                ? ValueTask.FromException<int>(new InvalidOperationException("primary"))
-                : new ValueTask<int>(21));
+        var result = await shield.ExecuteWithContextAsync(
+            0,
+            static (_, _) => { },
+            (_, context) =>
+            {
+                var attempt = Interlocked.Increment(ref attempts);
+                context.Properties.Set(ConcurrentOriginalAction, attempt);
+                return attempt == 1
+                    ? ValueTask.FromException<int>(new InvalidOperationException("primary"))
+                    : new ValueTask<int>(21);
+            },
+            (_, properties) => observedProperty =
+                properties.GetOrDefault(ConcurrentOriginalAction));
 
         var contexts = observer.Contexts.ToArray();
-        await Assert.That(result).IsEqualTo(42);
-        await Assert.That(contexts.Length).IsEqualTo(3);
+        await Assert.That(result).IsEqualTo(168);
+        await Assert.That(contexts.Length).IsEqualTo(9);
         await Assert.That(ReferenceEquals(contexts[1], contexts[2])).IsFalse();
+        await Assert.That(observedProperty).IsBetween(2, 9);
     }
 
     [Test]

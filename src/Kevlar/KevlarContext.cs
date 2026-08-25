@@ -24,6 +24,7 @@ public sealed class KevlarContext
 
     private readonly KevlarProperties _properties = new();
     private KevlarProperties? _completionProperties;
+    private readonly object _completionPropertiesLock = new();
     private bool _hasCompletionProperties;
 
     private CancellationToken _cancellationToken;
@@ -111,11 +112,14 @@ public sealed class KevlarContext
 
     internal void CaptureCompletionProperties(KevlarProperties properties)
     {
-        _completionProperties ??= new KevlarProperties();
-        _completionProperties.Clear();
-        properties.CopyTo(_completionProperties);
-        _properties.MirrorMutationsTo(_completionProperties);
-        _hasCompletionProperties = true;
+        lock (_completionPropertiesLock)
+        {
+            _completionProperties ??= new KevlarProperties();
+            _completionProperties.Clear();
+            properties.CopyTo(_completionProperties);
+            _properties.MirrorMutationsTo(_completionProperties);
+            _hasCompletionProperties = true;
+        }
     }
 
     internal static KevlarContext Rent(CancellationToken cancellationToken, bool isSynchronous, TimeProvider timeProvider, string? shieldName)

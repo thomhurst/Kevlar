@@ -90,11 +90,7 @@ public sealed class KevlarProperties
         ThrowIfReturnedToPool();
         var identity = GetIdentity(key);
         var removed = Remove(identity);
-        if (removed)
-        {
-            _mutationTarget?.Remove(identity);
-        }
-
+        _mutationTarget?.Remove(identity);
         return removed;
     }
 

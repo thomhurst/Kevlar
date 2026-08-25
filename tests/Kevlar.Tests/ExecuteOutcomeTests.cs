@@ -367,11 +367,12 @@ public class ExecuteOutcomeTests
 
         _ = await shield.ExecuteWithContextAsync(
             0,
-            static (_, properties) => properties.Set(RemovedByOuterStrategy, 1),
+            static (_, _) => { },
             async (_, context) =>
             {
                 var attempt = Interlocked.Increment(ref attempts);
                 context.Properties.Set(WinningAttempt, attempt);
+                context.Properties.Set(RemovedByOuterStrategy, 1);
                 if (attempt == 1)
                 {
                     await Task.Delay(Timeout.InfiniteTimeSpan, context.CancellationToken);
