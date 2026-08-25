@@ -2078,6 +2078,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         }
 
         int? maxRetries = null;
+        var lastDirectAssignmentStart = -1;
         foreach (var statement in block.Operations)
         {
             var operation = statement is IExpressionStatementOperation expressionStatement
@@ -2095,10 +2096,49 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 maxRetries = value.ConstantValue is { HasValue: true, Value: int configured }
                     ? configured
                     : null;
+                lastDirectAssignmentStart = operation.Syntax.SpanStart;
             }
         }
 
-        return maxRetries == 0;
+        return maxRetries == 0
+            && !HasMaxRetriesAssignmentAfter(
+                block,
+                configuratorParameter,
+                lastDirectAssignmentStart,
+                context);
+    }
+
+    private static bool HasMaxRetriesAssignmentAfter(
+        IOperation operation,
+        IParameterSymbol configuratorParameter,
+        int position,
+        OperationAnalysisContext context)
+    {
+        if (operation.Syntax.SpanStart > position
+            && operation is IAssignmentOperation
+            {
+                Target: IPropertyReferenceOperation { Property.Name: "MaxRetries" } property,
+            }
+            && property.Instance is { } instance
+            && ReferencesConfiguratorParameter(instance, configuratorParameter, context))
+        {
+            return true;
+        }
+
+        foreach (var child in operation.ChildOperations)
+        {
+            if (child is not IAnonymousFunctionOperation
+                && HasMaxRetriesAssignmentAfter(
+                    child,
+                    configuratorParameter,
+                    position,
+                    context))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool TryFindAsyncConfiguration(
