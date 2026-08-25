@@ -256,10 +256,23 @@ telemetryServices.AddOpenTelemetry()
     .WithMetrics(metrics => metrics.AddMeter(KevlarDiagnostics.MeterName));
 ```
 
+For Polly's `ConfigureTelemetry(loggerFactory)` logging behavior, add the logging package and
+decorate a shield directly or register it once for every DI, reloading, and HTTP shield:
+
+```csharp
+using Kevlar.Extensions.Logging;
+
+var loggedShield = Shield.Retry(3)
+    .WithLogging(logger);
+
+services.AddKevlarLogging();
+```
+
 Polly's `resilience.polly.strategy.events`, `resilience.polly.pipeline.duration`, and
 `resilience.polly.attempt.duration` map to the instruments in the
 [observability table](observability.md#metrics). Kevlar's `KevlarDiagnostics.Listen` is the
-event-stream equivalent; there is no built-in `ILogger` integration today.
+low-level event-stream equivalent; `Kevlar.Extensions.Logging` maps built-in events to stable
+`EventId` values and structured fields.
 
 ## Testing
 

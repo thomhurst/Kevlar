@@ -21,7 +21,8 @@ public static class ShieldHttpClientBuilderExtensions
             throw new ArgumentNullException(nameof(shield));
         }
 
-        return builder.AddHttpMessageHandler(() => new ShieldDelegatingHandler(shield));
+        return builder.AddHttpMessageHandler(services =>
+            new ShieldDelegatingHandler(Decorate(services, shield, builder.Name)));
     }
 
     /// <summary>Sends this client's requests through the given shield with replay and routing options.</summary>
@@ -45,7 +46,8 @@ public static class ShieldHttpClientBuilderExtensions
             throw new ArgumentNullException(nameof(options));
         }
 
-        return builder.AddHttpMessageHandler(() => new ShieldDelegatingHandler(shield, options));
+        return builder.AddHttpMessageHandler(services =>
+            new ShieldDelegatingHandler(Decorate(services, shield, builder.Name), options));
     }
 
     /// <summary>Sends this client's requests through a shield built from the service provider.</summary>
@@ -61,7 +63,8 @@ public static class ShieldHttpClientBuilderExtensions
             throw new ArgumentNullException(nameof(shieldFactory));
         }
 
-        return builder.AddHttpMessageHandler(services => new ShieldDelegatingHandler(shieldFactory(services)));
+        return builder.AddHttpMessageHandler(services => new ShieldDelegatingHandler(
+            Decorate(services, shieldFactory(services), builder.Name)));
     }
 
     /// <summary>Selects one shield for each request using the request and service provider.</summary>
@@ -133,7 +136,9 @@ public static class ShieldHttpClientBuilderExtensions
         }
 
         return builder.AddHttpMessageHandler(services =>
-            new ShieldDelegatingHandler(shieldFactory(services), optionsFactory(services)));
+            new ShieldDelegatingHandler(
+                Decorate(services, shieldFactory(services), builder.Name),
+                optionsFactory(services)));
     }
 
     /// <summary>
@@ -166,7 +171,9 @@ public static class ShieldHttpClientBuilderExtensions
         var shield = HttpShield.Standard(options);
         var handlerOptions = Snapshot(options.Handler);
         return UseStandardTimeout(builder)
-            .AddHttpMessageHandler(() => new ShieldDelegatingHandler(shield, handlerOptions));
+            .AddHttpMessageHandler(services => new ShieldDelegatingHandler(
+                Decorate(services, shield, builder.Name),
+                handlerOptions));
     }
 
     /// <summary>
@@ -191,7 +198,9 @@ public static class ShieldHttpClientBuilderExtensions
         {
             var options = new StandardHttpShieldOptions();
             configure(services, options);
-            return new ShieldDelegatingHandler(HttpShield.Standard(options), Snapshot(options.Handler));
+            return new ShieldDelegatingHandler(
+                Decorate(services, HttpShield.Standard(options), builder.Name),
+                Snapshot(options.Handler));
         });
     }
 
@@ -243,7 +252,7 @@ public static class ShieldHttpClientBuilderExtensions
                 var options = StandardHttpConfigurationBinder.BindStandard(configuration);
                 configure(services, options);
                 return new HttpShieldPipeline(
-                    HttpShield.Standard(options),
+                    Decorate(services, HttpShield.Standard(options), builder.Name),
                     Snapshot(options.Handler));
             }
 
@@ -314,8 +323,10 @@ public static class ShieldHttpClientBuilderExtensions
         var shield = CreateHedgeShield(options);
         var handlerOptions = CreateHandlerOptions(options);
 
-        return UseStandardTimeout(builder).AddHttpMessageHandler(() =>
-            new ShieldDelegatingHandler(shield, handlerOptions));
+        return UseStandardTimeout(builder).AddHttpMessageHandler(services =>
+            new ShieldDelegatingHandler(
+                Decorate(services, shield, builder.Name),
+                handlerOptions));
     }
 
     /// <summary>
@@ -366,7 +377,7 @@ public static class ShieldHttpClientBuilderExtensions
                 var options = StandardHttpConfigurationBinder.BindHedge(configuration);
                 configure(services, options);
                 return new HttpShieldPipeline(
-                    CreateHedgeShield(options),
+                    Decorate(services, CreateHedgeShield(options), builder.Name),
                     CreateHandlerOptions(options));
             }
 
@@ -381,6 +392,19 @@ public static class ShieldHttpClientBuilderExtensions
     {
         var options = StandardHttpConfigurationBinder.BindStandard(configuration);
         _ = new HttpShieldPipeline(HttpShield.Standard(options), Snapshot(options.Handler));
+    }
+
+    private static Shield<TResult> Decorate<TResult>(
+        IServiceProvider serviceProvider,
+        Shield<TResult> shield,
+        string? name)
+    {
+        foreach (var decorator in serviceProvider.GetServices<IShieldDecorator>())
+        {
+            shield = decorator.Decorate(shield, name);
+        }
+
+        return shield;
     }
 
     private static void ValidateHedgeConfiguration(IConfiguration configuration)

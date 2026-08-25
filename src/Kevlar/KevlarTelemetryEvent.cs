@@ -16,6 +16,12 @@ public readonly struct KevlarTelemetryEvent
         Exception? exception,
         TimeSpan duration,
         string? operationKey,
+        object? result,
+        TimeSpan delay,
+        CircuitState? fromState,
+        CircuitState? toState,
+        TimeSpan? retryAfter,
+        CallbackErrorKind? callbackKind,
         KevlarContext context)
     {
         EventName = eventName;
@@ -28,6 +34,12 @@ public readonly struct KevlarTelemetryEvent
         Exception = exception;
         Duration = duration;
         OperationKey = operationKey;
+        Result = result;
+        Delay = delay;
+        FromState = fromState;
+        ToState = toState;
+        RetryAfter = retryAfter;
+        CallbackKind = callbackKind;
         _context = context;
     }
 
@@ -60,6 +72,24 @@ public readonly struct KevlarTelemetryEvent
 
     /// <summary>The bounded logical operation key supplied through <see cref="KevlarKeys.OperationKey"/>.</summary>
     public string? OperationKey { get; }
+
+    /// <summary>The handled result for result-aware events, when available.</summary>
+    public object? Result { get; }
+
+    /// <summary>The computed retry, hedge, or break delay, when applicable.</summary>
+    public TimeSpan Delay { get; }
+
+    /// <summary>The circuit state left by a transition, when applicable.</summary>
+    public CircuitState? FromState { get; }
+
+    /// <summary>The circuit state entered by a transition, when applicable.</summary>
+    public CircuitState? ToState { get; }
+
+    /// <summary>The estimated time until a rejected execution may be retried.</summary>
+    public TimeSpan? RetryAfter { get; }
+
+    /// <summary>The callback family that failed, when this is a callback-error event.</summary>
+    public CallbackErrorKind? CallbackKind { get; }
 
     /// <summary>The active execution context. It is valid only during the listener callback.</summary>
     public KevlarContext Context => _context

@@ -15,6 +15,7 @@ internal sealed class CircuitBreakerCore
     private static readonly double SecondsPerSystemTimestamp = 1d / Stopwatch.Frequency;
 
     private readonly Lock _gate = new();
+    private readonly Lock _telemetryGate = new();
     private readonly ConditionalWeakTable<TimeProvider, TimestampOrigin> _timestampOrigins = new();
     private readonly int? _consecutiveFailureLimit;
     private readonly double? _failureRatio;
@@ -51,6 +52,41 @@ internal sealed class CircuitBreakerCore
     private bool _isPublishing;
     private int _publishingThreadId;
     private TransitionPublication? _activePublication;
+    private CircuitTelemetryRegistration[] _telemetryRegistrations = [];
+
+    internal void AttachTelemetryListener(
+        IKevlarTelemetryListener? previous,
+        IKevlarTelemetryListener listener,
+        string? shieldName,
+        int strategyIndex)
+    {
+        lock (_telemetryGate)
+        {
+            var registrations = _telemetryRegistrations;
+            if (previous is not null)
+            {
+                for (var index = 0; index < registrations.Length; index++)
+                {
+                    if (registrations[index].Listener.TryGetTarget(out var registered)
+                        && ReferenceEquals(registered, previous))
+                    {
+                        var replacement = (CircuitTelemetryRegistration[])registrations.Clone();
+                        replacement[index] = new CircuitTelemetryRegistration(
+                            listener,
+                            shieldName,
+                            strategyIndex);
+                        Volatile.Write(ref _telemetryRegistrations, replacement);
+                        return;
+                    }
+                }
+            }
+
+            var updated = new CircuitTelemetryRegistration[registrations.Length + 1];
+            Array.Copy(registrations, updated, registrations.Length);
+            updated[^1] = new CircuitTelemetryRegistration(listener, shieldName, strategyIndex);
+            Volatile.Write(ref _telemetryRegistrations, updated);
+        }
+    }
 
     public CircuitBreakerCore(
         CircuitBreakerOptions options,
@@ -1183,21 +1219,89 @@ internal sealed class CircuitBreakerCore
         KevlarTelemetry.Record(
             context,
             _telemetryName,
-            stateChange.To switch
-            {
-                CircuitState.Open => "circuit_opened",
-                CircuitState.HalfOpen => "circuit_half_opened",
-                CircuitState.Closed => "circuit_closed",
-                CircuitState.Isolated => "circuit_isolated",
-                _ => "circuit_changed",
-            },
-            stateChange.To is CircuitState.Open or CircuitState.Isolated
-                ? KevlarTelemetrySeverity.Warning
-                : KevlarTelemetrySeverity.Information,
+            TelemetryEventName(stateChange.To),
+            TelemetrySeverity(stateChange.To),
             context.StrategyIndex,
             context.AttemptNumber,
             isSuccess: stateChange.To == CircuitState.Closed,
-            stateChange.LastException);
+            stateChange.LastException,
+            delay: stateChange.To == CircuitState.Open ? _breakDuration : default,
+            fromState: stateChange.From,
+            toState: stateChange.To);
+
+        if (context.TelemetryListener is null)
+        {
+            RecordAttachedTelemetry(stateChange);
+        }
+    }
+
+    private void RecordAttachedTelemetry(CircuitBreakerStateChangedEvent stateChange)
+    {
+        var registrations = Volatile.Read(ref _telemetryRegistrations);
+        var context = stateChange.Context;
+        var previousShieldName = context.ShieldName;
+        var previousStrategyIndex = context.StrategyIndex;
+        try
+        {
+            foreach (var registration in registrations)
+            {
+                if (!registration.Listener.TryGetTarget(out var listener))
+                {
+                    continue;
+                }
+
+                context.ShieldName = registration.ShieldName;
+                context.StrategyIndex = registration.StrategyIndex;
+                context.TelemetryListener = listener;
+                KevlarTelemetry.Record(
+                    context,
+                    _telemetryName,
+                    TelemetryEventName(stateChange.To),
+                    TelemetrySeverity(stateChange.To),
+                    registration.StrategyIndex,
+                    context.AttemptNumber,
+                    isSuccess: stateChange.To == CircuitState.Closed,
+                    stateChange.LastException,
+                    delay: stateChange.To == CircuitState.Open ? _breakDuration : default,
+                    fromState: stateChange.From,
+                    toState: stateChange.To,
+                    localOnly: true);
+            }
+        }
+        finally
+        {
+            context.ShieldName = previousShieldName;
+            context.StrategyIndex = previousStrategyIndex;
+            context.TelemetryListener = null;
+        }
+    }
+
+    private static string TelemetryEventName(CircuitState state) => state switch
+    {
+        CircuitState.Open => "circuit_opened",
+        CircuitState.HalfOpen => "circuit_half_opened",
+        CircuitState.Closed => "circuit_closed",
+        CircuitState.Isolated => "circuit_isolated",
+        _ => "circuit_changed",
+    };
+
+    private static KevlarTelemetrySeverity TelemetrySeverity(CircuitState state) =>
+        state is CircuitState.Open or CircuitState.Isolated
+            ? KevlarTelemetrySeverity.Warning
+            : KevlarTelemetrySeverity.Information;
+
+    private readonly record struct CircuitTelemetryRegistration(
+        WeakReference<IKevlarTelemetryListener> Listener,
+        string? ShieldName,
+        int StrategyIndex)
+    {
+        public CircuitTelemetryRegistration(
+            IKevlarTelemetryListener listener,
+            string? shieldName,
+            int strategyIndex)
+            : this(new WeakReference<IKevlarTelemetryListener>(listener), shieldName, strategyIndex)
+        {
+        }
     }
 
     private static void AddFailure(ref Exception? failure, Exception next)

@@ -272,10 +272,34 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         public void InitializeProperties(KevlarProperties properties)
         {
             _requestOptions?.ConfigureProperties?.Invoke(properties);
+            properties.Set(KevlarKeys.HttpRequestMethod, _original.Method.Method);
+            if (_original.RequestUri is { } requestUri)
+            {
+                properties.Set(KevlarKeys.HttpRequestUri, WithoutQueryOrFragment(requestUri));
+            }
             if (!_canReplay)
             {
                 properties.SuppressAdditionalAttempts = true;
             }
+        }
+
+        private static string WithoutQueryOrFragment(Uri uri)
+        {
+            if (uri.IsAbsoluteUri)
+            {
+                return uri.GetLeftPart(UriPartial.Path);
+            }
+
+            var value = uri.OriginalString;
+            for (var index = 0; index < value.Length; index++)
+            {
+                if (value[index] is '?' or '#')
+                {
+                    return value[..index];
+                }
+            }
+
+            return value;
         }
 
         private ValueTask PrepareAsync(CancellationToken cancellationToken)

@@ -15,6 +15,7 @@
     <PackageReference Include="Grpc.Tools" PrivateAssets="all" />
     <PackageReference Include="Microsoft.AspNetCore.TestHost" />
     <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
     <PackageReference Include="Polly" />
   </ItemGroup>
 
@@ -22,6 +23,7 @@
     <ProjectReference Include="..\..\src\Kevlar\Kevlar.csproj" />
     <ProjectReference Include="..\..\src\Kevlar.Extensions.DependencyInjection\Kevlar.Extensions.DependencyInjection.csproj" />
     <ProjectReference Include="..\..\src\Kevlar.Extensions.Http\Kevlar.Extensions.Http.csproj" />
+    <ProjectReference Include="..\..\src\Kevlar.Extensions.Logging\Kevlar.Extensions.Logging.csproj" />
     <ProjectReference Include="..\..\src\Kevlar.Extensions.Grpc\Kevlar.Extensions.Grpc.csproj" />
   </ItemGroup>
 

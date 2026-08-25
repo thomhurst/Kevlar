@@ -166,7 +166,11 @@ internal static class KevlarMetrics
 #endif
     }
 
-    public static void Timeout(KevlarContext context, string strategyName, Exception? exception)
+    public static void Timeout(
+        KevlarContext context,
+        string strategyName,
+        TimeSpan timeout,
+        Exception? exception)
     {
 #if NET8_0_OR_GREATER
         if (Timeouts.Enabled)
@@ -174,7 +178,7 @@ internal static class KevlarMetrics
             Timeouts.Add(1, NameTags(context.ShieldName));
         }
 #endif
-        if (!KevlarTelemetry.EventEnabled)
+        if (!KevlarTelemetry.IsEventEnabled(context))
         {
             return;
         }
@@ -187,7 +191,8 @@ internal static class KevlarMetrics
             context.StrategyIndex,
             context.AttemptNumber,
             isSuccess: false,
-            exception);
+            exception,
+            duration: timeout);
     }
 
     public static void Hedge(
@@ -202,7 +207,7 @@ internal static class KevlarMetrics
             Hedges.Add(1, NameTags(context.ShieldName));
         }
 #endif
-        if (!KevlarTelemetry.EventEnabled)
+        if (!KevlarTelemetry.IsEventEnabled(context))
         {
             return;
         }
@@ -220,11 +225,10 @@ internal static class KevlarMetrics
             exception);
     }
 
-    public static void Fallback(
+    public static void Fallback<T>(
         KevlarContext context,
         string strategyName,
-        bool isSuccess,
-        Exception? exception)
+        in Outcome<T> outcome)
     {
 #if NET8_0_OR_GREATER
         if (Fallbacks.Enabled)
@@ -232,7 +236,7 @@ internal static class KevlarMetrics
             Fallbacks.Add(1, NameTags(context.ShieldName));
         }
 #endif
-        if (!KevlarTelemetry.EventEnabled)
+        if (!KevlarTelemetry.IsEventEnabled(context))
         {
             return;
         }
@@ -244,8 +248,11 @@ internal static class KevlarMetrics
             KevlarTelemetrySeverity.Warning,
             context.StrategyIndex,
             context.AttemptNumber,
-            isSuccess,
-            exception);
+            outcome.IsSuccess,
+            outcome.Exception,
+            result: KevlarTelemetry.IsListenerEnabled(context) && outcome.IsSuccess
+                ? outcome.Result
+                : null);
     }
 
     public static void Rejection(
@@ -262,7 +269,7 @@ internal static class KevlarMetrics
             Rejections.Add(1, tags);
         }
 #endif
-        if (!KevlarTelemetry.EventEnabled)
+        if (!KevlarTelemetry.IsEventEnabled(context))
         {
             return;
         }
@@ -275,7 +282,8 @@ internal static class KevlarMetrics
             context.StrategyIndex,
             context.AttemptNumber,
             isSuccess: false,
-            exception);
+            exception,
+            retryAfter: (exception as ExecutionRejectedException)?.RetryAfter);
     }
 
     public static void CircuitTransition(CircuitState from, CircuitState to)

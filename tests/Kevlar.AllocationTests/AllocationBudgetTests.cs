@@ -1,5 +1,8 @@
 using System.Diagnostics.Metrics;
 using Kevlar.Chaos;
+using Kevlar.Extensions.Logging;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Kevlar.AllocationTests;
 
@@ -156,6 +159,15 @@ public class AllocationBudgetTests
                 ? static _ => new ValueTask<int>(42)
                 : throw new InvalidOperationException("Expected the primary outcome.");
     });
+    private readonly Shield<string> _disabledLogging = Shield.For<string>()
+        .WhenResult("retry")
+        .Retry(1, Backoff.None)
+        .WithLogging(NullLogger.Instance, static options =>
+        {
+            options.SeverityProvider = static _ => LogLevel.None;
+            options.ResultFormatter = static _ => throw new InvalidOperationException(
+                "Disabled logging must not format results.");
+        });
     private readonly Counter _retryCounter = new();
     private readonly Counter _asyncDelayRetryCounter = new();
     private readonly ParallelHedgeState _parallelHedgeState = new();
@@ -279,6 +291,8 @@ public class AllocationBudgetTests
             _ = test._keyDictionary[MetadataValue]);
         AssertZero("outcome exception access", FailureOutcome, static outcome =>
             GC.KeepAlive(outcome.Exception));
+        AssertZero("disabled structured logging", this, static test =>
+            _ = test._disabledLogging.ExecuteOutcome(static _ => "retry"));
     }
 
     [Test]

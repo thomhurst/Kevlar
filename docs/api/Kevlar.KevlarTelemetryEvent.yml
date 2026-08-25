@@ -6,16 +6,22 @@ items:
   parent: Kevlar
   children:
   - Kevlar.KevlarTelemetryEvent.AttemptNumber
+  - Kevlar.KevlarTelemetryEvent.CallbackKind
   - Kevlar.KevlarTelemetryEvent.Context
+  - Kevlar.KevlarTelemetryEvent.Delay
   - Kevlar.KevlarTelemetryEvent.Duration
   - Kevlar.KevlarTelemetryEvent.EventName
   - Kevlar.KevlarTelemetryEvent.Exception
+  - Kevlar.KevlarTelemetryEvent.FromState
   - Kevlar.KevlarTelemetryEvent.IsSuccess
   - Kevlar.KevlarTelemetryEvent.OperationKey
+  - Kevlar.KevlarTelemetryEvent.Result
+  - Kevlar.KevlarTelemetryEvent.RetryAfter
   - Kevlar.KevlarTelemetryEvent.Severity
   - Kevlar.KevlarTelemetryEvent.ShieldName
   - Kevlar.KevlarTelemetryEvent.StrategyIndex
   - Kevlar.KevlarTelemetryEvent.StrategyName
+  - Kevlar.KevlarTelemetryEvent.ToState
   langs:
   - csharp
   - vb
@@ -268,6 +274,144 @@ items:
       type: System.String
     content.vb: Public ReadOnly Property OperationKey As String
   overload: Kevlar.KevlarTelemetryEvent.OperationKey*
+- uid: Kevlar.KevlarTelemetryEvent.Result
+  commentId: P:Kevlar.KevlarTelemetryEvent.Result
+  id: Result
+  parent: Kevlar.KevlarTelemetryEvent
+  langs:
+  - csharp
+  - vb
+  name: Result
+  nameWithType: KevlarTelemetryEvent.Result
+  fullName: Kevlar.KevlarTelemetryEvent.Result
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The handled result for result-aware events, when available.
+  example: []
+  syntax:
+    content: public object? Result { get; }
+    parameters: []
+    return:
+      type: System.Object
+    content.vb: Public ReadOnly Property Result As Object
+  overload: Kevlar.KevlarTelemetryEvent.Result*
+- uid: Kevlar.KevlarTelemetryEvent.Delay
+  commentId: P:Kevlar.KevlarTelemetryEvent.Delay
+  id: Delay
+  parent: Kevlar.KevlarTelemetryEvent
+  langs:
+  - csharp
+  - vb
+  name: Delay
+  nameWithType: KevlarTelemetryEvent.Delay
+  fullName: Kevlar.KevlarTelemetryEvent.Delay
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The computed retry, hedge, or break delay, when applicable.
+  example: []
+  syntax:
+    content: public TimeSpan Delay { get; }
+    parameters: []
+    return:
+      type: System.TimeSpan
+    content.vb: Public ReadOnly Property Delay As TimeSpan
+  overload: Kevlar.KevlarTelemetryEvent.Delay*
+- uid: Kevlar.KevlarTelemetryEvent.FromState
+  commentId: P:Kevlar.KevlarTelemetryEvent.FromState
+  id: FromState
+  parent: Kevlar.KevlarTelemetryEvent
+  langs:
+  - csharp
+  - vb
+  name: FromState
+  nameWithType: KevlarTelemetryEvent.FromState
+  fullName: Kevlar.KevlarTelemetryEvent.FromState
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The circuit state left by a transition, when applicable.
+  example: []
+  syntax:
+    content: public CircuitState? FromState { get; }
+    parameters: []
+    return:
+      type: System.Nullable{Kevlar.CircuitState}
+    content.vb: Public ReadOnly Property FromState As CircuitState?
+  overload: Kevlar.KevlarTelemetryEvent.FromState*
+- uid: Kevlar.KevlarTelemetryEvent.ToState
+  commentId: P:Kevlar.KevlarTelemetryEvent.ToState
+  id: ToState
+  parent: Kevlar.KevlarTelemetryEvent
+  langs:
+  - csharp
+  - vb
+  name: ToState
+  nameWithType: KevlarTelemetryEvent.ToState
+  fullName: Kevlar.KevlarTelemetryEvent.ToState
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The circuit state entered by a transition, when applicable.
+  example: []
+  syntax:
+    content: public CircuitState? ToState { get; }
+    parameters: []
+    return:
+      type: System.Nullable{Kevlar.CircuitState}
+    content.vb: Public ReadOnly Property ToState As CircuitState?
+  overload: Kevlar.KevlarTelemetryEvent.ToState*
+- uid: Kevlar.KevlarTelemetryEvent.RetryAfter
+  commentId: P:Kevlar.KevlarTelemetryEvent.RetryAfter
+  id: RetryAfter
+  parent: Kevlar.KevlarTelemetryEvent
+  langs:
+  - csharp
+  - vb
+  name: RetryAfter
+  nameWithType: KevlarTelemetryEvent.RetryAfter
+  fullName: Kevlar.KevlarTelemetryEvent.RetryAfter
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The estimated time until a rejected execution may be retried.
+  example: []
+  syntax:
+    content: public TimeSpan? RetryAfter { get; }
+    parameters: []
+    return:
+      type: System.Nullable{System.TimeSpan}
+    content.vb: Public ReadOnly Property RetryAfter As TimeSpan?
+  overload: Kevlar.KevlarTelemetryEvent.RetryAfter*
+- uid: Kevlar.KevlarTelemetryEvent.CallbackKind
+  commentId: P:Kevlar.KevlarTelemetryEvent.CallbackKind
+  id: CallbackKind
+  parent: Kevlar.KevlarTelemetryEvent
+  langs:
+  - csharp
+  - vb
+  name: CallbackKind
+  nameWithType: KevlarTelemetryEvent.CallbackKind
+  fullName: Kevlar.KevlarTelemetryEvent.CallbackKind
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The callback family that failed, when this is a callback-error event.
+  example: []
+  syntax:
+    content: public CallbackErrorKind? CallbackKind { get; }
+    parameters: []
+    return:
+      type: System.Nullable{Kevlar.CallbackErrorKind}
+    content.vb: Public ReadOnly Property CallbackKind As CallbackErrorKind?
+  overload: Kevlar.KevlarTelemetryEvent.CallbackKind*
 - uid: Kevlar.KevlarTelemetryEvent.Context
   commentId: P:Kevlar.KevlarTelemetryEvent.Context
   id: Context
@@ -657,6 +801,136 @@ references:
   name: OperationKey
   nameWithType: KevlarTelemetryEvent.OperationKey
   fullName: Kevlar.KevlarTelemetryEvent.OperationKey
+- uid: Kevlar.KevlarTelemetryEvent.Result*
+  commentId: Overload:Kevlar.KevlarTelemetryEvent.Result
+  isExternal: true
+  href: Kevlar.KevlarTelemetryEvent.html#Kevlar_KevlarTelemetryEvent_Result
+  name: Result
+  nameWithType: KevlarTelemetryEvent.Result
+  fullName: Kevlar.KevlarTelemetryEvent.Result
+- uid: Kevlar.KevlarTelemetryEvent.Delay*
+  commentId: Overload:Kevlar.KevlarTelemetryEvent.Delay
+  isExternal: true
+  href: Kevlar.KevlarTelemetryEvent.html#Kevlar_KevlarTelemetryEvent_Delay
+  name: Delay
+  nameWithType: KevlarTelemetryEvent.Delay
+  fullName: Kevlar.KevlarTelemetryEvent.Delay
+- uid: Kevlar.KevlarTelemetryEvent.FromState*
+  commentId: Overload:Kevlar.KevlarTelemetryEvent.FromState
+  isExternal: true
+  href: Kevlar.KevlarTelemetryEvent.html#Kevlar_KevlarTelemetryEvent_FromState
+  name: FromState
+  nameWithType: KevlarTelemetryEvent.FromState
+  fullName: Kevlar.KevlarTelemetryEvent.FromState
+- uid: System.Nullable{Kevlar.CircuitState}
+  commentId: T:System.Nullable{Kevlar.CircuitState}
+  parent: System
+  definition: System.Nullable`1
+  href: Kevlar.CircuitState.html
+  name: CircuitState?
+  nameWithType: CircuitState?
+  fullName: Kevlar.CircuitState?
+  spec.csharp:
+  - uid: Kevlar.CircuitState
+    name: CircuitState
+    isExternal: true
+    href: Kevlar.CircuitState.html
+  - name: '?'
+  spec.vb:
+  - uid: Kevlar.CircuitState
+    name: CircuitState
+    isExternal: true
+    href: Kevlar.CircuitState.html
+  - name: '?'
+- uid: System.Nullable`1
+  commentId: T:System.Nullable`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  name: Nullable<T>
+  nameWithType: Nullable<T>
+  fullName: System.Nullable<T>
+  nameWithType.vb: Nullable(Of T)
+  fullName.vb: System.Nullable(Of T)
+  name.vb: Nullable(Of T)
+  spec.csharp:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Kevlar.KevlarTelemetryEvent.ToState*
+  commentId: Overload:Kevlar.KevlarTelemetryEvent.ToState
+  isExternal: true
+  href: Kevlar.KevlarTelemetryEvent.html#Kevlar_KevlarTelemetryEvent_ToState
+  name: ToState
+  nameWithType: KevlarTelemetryEvent.ToState
+  fullName: Kevlar.KevlarTelemetryEvent.ToState
+- uid: Kevlar.KevlarTelemetryEvent.RetryAfter*
+  commentId: Overload:Kevlar.KevlarTelemetryEvent.RetryAfter
+  isExternal: true
+  href: Kevlar.KevlarTelemetryEvent.html#Kevlar_KevlarTelemetryEvent_RetryAfter
+  name: RetryAfter
+  nameWithType: KevlarTelemetryEvent.RetryAfter
+  fullName: Kevlar.KevlarTelemetryEvent.RetryAfter
+- uid: System.Nullable{System.TimeSpan}
+  commentId: T:System.Nullable{System.TimeSpan}
+  parent: System
+  definition: System.Nullable`1
+  href: https://learn.microsoft.com/dotnet/api/system.timespan
+  name: TimeSpan?
+  nameWithType: TimeSpan?
+  fullName: System.TimeSpan?
+  spec.csharp:
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '?'
+  spec.vb:
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '?'
+- uid: Kevlar.KevlarTelemetryEvent.CallbackKind*
+  commentId: Overload:Kevlar.KevlarTelemetryEvent.CallbackKind
+  isExternal: true
+  href: Kevlar.KevlarTelemetryEvent.html#Kevlar_KevlarTelemetryEvent_CallbackKind
+  name: CallbackKind
+  nameWithType: KevlarTelemetryEvent.CallbackKind
+  fullName: Kevlar.KevlarTelemetryEvent.CallbackKind
+- uid: System.Nullable{Kevlar.CallbackErrorKind}
+  commentId: T:System.Nullable{Kevlar.CallbackErrorKind}
+  parent: System
+  definition: System.Nullable`1
+  href: Kevlar.CallbackErrorKind.html
+  name: CallbackErrorKind?
+  nameWithType: CallbackErrorKind?
+  fullName: Kevlar.CallbackErrorKind?
+  spec.csharp:
+  - uid: Kevlar.CallbackErrorKind
+    name: CallbackErrorKind
+    isExternal: true
+    href: Kevlar.CallbackErrorKind.html
+  - name: '?'
+  spec.vb:
+  - uid: Kevlar.CallbackErrorKind
+    name: CallbackErrorKind
+    isExternal: true
+    href: Kevlar.CallbackErrorKind.html
+  - name: '?'
 - uid: Kevlar.KevlarTelemetryEvent.Context*
   commentId: Overload:Kevlar.KevlarTelemetryEvent.Context
   isExternal: true

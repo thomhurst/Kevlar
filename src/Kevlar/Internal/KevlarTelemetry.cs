@@ -11,6 +11,12 @@ internal static class KevlarTelemetry
 
     public static bool AttemptEnabled => EventEnabled || KevlarMetrics.AttemptDurationEnabled;
 
+    public static bool IsEventEnabled(KevlarContext context) =>
+        EventEnabled || context.TelemetryListener is not null;
+
+    public static bool IsListenerEnabled(KevlarContext context) =>
+        Volatile.Read(ref _listeners).Length != 0 || context.TelemetryListener is not null;
+
     public static IDisposable Subscribe(IKevlarTelemetryListener listener)
     {
         lock (Sync)
@@ -35,12 +41,22 @@ internal static class KevlarTelemetry
         bool isSuccess,
         Exception? exception = null,
         TimeSpan duration = default,
-        bool recordAttemptDuration = false)
+        bool recordAttemptDuration = false,
+        object? result = null,
+        TimeSpan delay = default,
+        CircuitState? fromState = null,
+        CircuitState? toState = null,
+        TimeSpan? retryAfter = null,
+        CallbackErrorKind? callbackKind = null,
+        bool localOnly = false)
     {
-        var listeners = Volatile.Read(ref _listeners);
+        var listeners = localOnly ? [] : Volatile.Read(ref _listeners);
+        var contextListener = context.TelemetryListener;
         if (listeners.Length == 0
-            && !KevlarMetrics.StrategyEventsEnabled
-            && (!recordAttemptDuration || !KevlarMetrics.AttemptDurationEnabled))
+            && contextListener is null
+            && (localOnly
+                || (!KevlarMetrics.StrategyEventsEnabled
+                    && (!recordAttemptDuration || !KevlarMetrics.AttemptDurationEnabled))))
         {
             return;
         }
@@ -57,14 +73,35 @@ internal static class KevlarTelemetry
             exception,
             duration,
             operationKey,
+            result,
+            delay,
+            fromState,
+            toState,
+            retryAfter,
+            callbackKind,
             context);
 
-        KevlarMetrics.StrategyEvent(in telemetryEvent, recordAttemptDuration);
+        if (!localOnly)
+        {
+            KevlarMetrics.StrategyEvent(in telemetryEvent, recordAttemptDuration);
+        }
         foreach (var listener in listeners)
         {
             try
             {
                 listener.OnEvent(in telemetryEvent);
+            }
+            catch
+            {
+                // Telemetry listeners must not change execution behavior.
+            }
+        }
+
+        if (contextListener is not null)
+        {
+            try
+            {
+                contextListener.OnEvent(in telemetryEvent);
             }
             catch
             {

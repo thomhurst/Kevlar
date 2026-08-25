@@ -1,0 +1,41 @@
+#nullable enable
+Kevlar.Extensions.Logging.KevlarLogEvent
+Kevlar.Extensions.Logging.KevlarLogEvent.Attempt.get -> int
+Kevlar.Extensions.Logging.KevlarLogEvent.CallbackKind.get -> Kevlar.CallbackErrorKind?
+Kevlar.Extensions.Logging.KevlarLogEvent.Delay.get -> System.TimeSpan
+Kevlar.Extensions.Logging.KevlarLogEvent.Duration.get -> System.TimeSpan
+Kevlar.Extensions.Logging.KevlarLogEvent.EventName.get -> string!
+Kevlar.Extensions.Logging.KevlarLogEvent.Exception.get -> System.Exception?
+Kevlar.Extensions.Logging.KevlarLogEvent.FromState.get -> Kevlar.CircuitState?
+Kevlar.Extensions.Logging.KevlarLogEvent.KevlarLogEvent() -> void
+Kevlar.Extensions.Logging.KevlarLogEvent.Kind.get -> Kevlar.Extensions.Logging.KevlarLogEventKind
+Kevlar.Extensions.Logging.KevlarLogEvent.Result.get -> object?
+Kevlar.Extensions.Logging.KevlarLogEvent.RetryAfter.get -> System.TimeSpan?
+Kevlar.Extensions.Logging.KevlarLogEvent.ShieldName.get -> string?
+Kevlar.Extensions.Logging.KevlarLogEvent.StrategyIndex.get -> int
+Kevlar.Extensions.Logging.KevlarLogEvent.StrategyName.get -> string!
+Kevlar.Extensions.Logging.KevlarLogEvent.ToState.get -> Kevlar.CircuitState?
+Kevlar.Extensions.Logging.KevlarLogEventKind
+Kevlar.Extensions.Logging.KevlarLogEventKind.CallbackError = 7 -> Kevlar.Extensions.Logging.KevlarLogEventKind
+Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitState = 2 -> Kevlar.Extensions.Logging.KevlarLogEventKind
+Kevlar.Extensions.Logging.KevlarLogEventKind.ConcurrencyLimitRejected = 6 -> Kevlar.Extensions.Logging.KevlarLogEventKind
+Kevlar.Extensions.Logging.KevlarLogEventKind.Fallback = 4 -> Kevlar.Extensions.Logging.KevlarLogEventKind
+Kevlar.Extensions.Logging.KevlarLogEventKind.Hedge = 3 -> Kevlar.Extensions.Logging.KevlarLogEventKind
+Kevlar.Extensions.Logging.KevlarLogEventKind.RateLimitRejected = 5 -> Kevlar.Extensions.Logging.KevlarLogEventKind
+Kevlar.Extensions.Logging.KevlarLogEventKind.Retry = 0 -> Kevlar.Extensions.Logging.KevlarLogEventKind
+Kevlar.Extensions.Logging.KevlarLogEventKind.Timeout = 1 -> Kevlar.Extensions.Logging.KevlarLogEventKind
+Kevlar.Extensions.Logging.KevlarLoggingOptions
+Kevlar.Extensions.Logging.KevlarLoggingServiceCollectionExtensions
+Kevlar.Extensions.Logging.KevlarLoggingOptions.IncludeScopes.get -> bool
+Kevlar.Extensions.Logging.KevlarLoggingOptions.IncludeScopes.set -> void
+Kevlar.Extensions.Logging.KevlarLoggingOptions.KevlarLoggingOptions() -> void
+Kevlar.Extensions.Logging.KevlarLoggingOptions.MaxLogsPerSecond.get -> int?
+Kevlar.Extensions.Logging.KevlarLoggingOptions.MaxLogsPerSecond.set -> void
+Kevlar.Extensions.Logging.KevlarLoggingOptions.ResultFormatter.get -> System.Func<object?, string?>?
+Kevlar.Extensions.Logging.KevlarLoggingOptions.ResultFormatter.set -> void
+Kevlar.Extensions.Logging.KevlarLoggingOptions.SeverityProvider.get -> System.Func<Kevlar.Extensions.Logging.KevlarLogEvent, Microsoft.Extensions.Logging.LogLevel>?
+Kevlar.Extensions.Logging.KevlarLoggingOptions.SeverityProvider.set -> void
+Kevlar.Extensions.Logging.ShieldLoggingExtensions
+static Kevlar.Extensions.Logging.KevlarLoggingServiceCollectionExtensions.AddKevlarLogging(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Kevlar.Extensions.Logging.KevlarLoggingOptions!>? configure = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Kevlar.Extensions.Logging.ShieldLoggingExtensions.WithLogging(this Kevlar.Shield! shield, Microsoft.Extensions.Logging.ILogger! logger, System.Action<Kevlar.Extensions.Logging.KevlarLoggingOptions!>? configure = null) -> Kevlar.Shield!
+static Kevlar.Extensions.Logging.ShieldLoggingExtensions.WithLogging<TResult>(this Kevlar.Shield<TResult>! shield, Microsoft.Extensions.Logging.ILogger! logger, System.Action<Kevlar.Extensions.Logging.KevlarLoggingOptions!>? configure = null) -> Kevlar.Shield<TResult>!

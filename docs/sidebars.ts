@@ -37,6 +37,7 @@ const sidebars: SidebarsConfig = {
     'custom-strategies',
     'library-authors',
     'analyzers',
+    'logging',
     'observability',
     'testing',
     'performance',

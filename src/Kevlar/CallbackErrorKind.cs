@@ -32,4 +32,7 @@ public enum CallbackErrorKind
 
     /// <summary>A chaos-injection notification.</summary>
     ChaosInjected,
+
+    /// <summary>A logging formatter or severity callback.</summary>
+    Logging,
 }

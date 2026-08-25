@@ -1,0 +1,678 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Extensions.Logging.KevlarLoggingOptions
+  commentId: T:Kevlar.Extensions.Logging.KevlarLoggingOptions
+  id: KevlarLoggingOptions
+  parent: Kevlar.Extensions.Logging
+  children:
+  - Kevlar.Extensions.Logging.KevlarLoggingOptions.#ctor
+  - Kevlar.Extensions.Logging.KevlarLoggingOptions.IncludeScopes
+  - Kevlar.Extensions.Logging.KevlarLoggingOptions.MaxLogsPerSecond
+  - Kevlar.Extensions.Logging.KevlarLoggingOptions.ResultFormatter
+  - Kevlar.Extensions.Logging.KevlarLoggingOptions.SeverityProvider
+  langs:
+  - csharp
+  - vb
+  name: KevlarLoggingOptions
+  nameWithType: KevlarLoggingOptions
+  fullName: Kevlar.Extensions.Logging.KevlarLoggingOptions
+  type: Class
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: Controls how Kevlar strategy events are written to an <xref href="Microsoft.Extensions.Logging.ILogger" data-throw-if-not-resolved="false"></xref>.
+  example: []
+  syntax:
+    content: public sealed class KevlarLoggingOptions
+    content.vb: Public NotInheritable Class KevlarLoggingOptions
+  inheritance:
+  - System.Object
+  inheritedMembers:
+  - System.Object.GetType
+  - System.Object.ToString
+  - System.Object.Equals(System.Object)
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  - System.Object.GetHashCode
+- uid: Kevlar.Extensions.Logging.KevlarLoggingOptions.#ctor
+  commentId: M:Kevlar.Extensions.Logging.KevlarLoggingOptions.#ctor
+  id: '#ctor'
+  parent: Kevlar.Extensions.Logging.KevlarLoggingOptions
+  langs:
+  - csharp
+  - vb
+  name: KevlarLoggingOptions()
+  nameWithType: KevlarLoggingOptions.KevlarLoggingOptions()
+  fullName: Kevlar.Extensions.Logging.KevlarLoggingOptions.KevlarLoggingOptions()
+  type: Constructor
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  syntax:
+    content: public KevlarLoggingOptions()
+    content.vb: Public Sub New()
+  overload: Kevlar.Extensions.Logging.KevlarLoggingOptions.#ctor*
+  nameWithType.vb: KevlarLoggingOptions.New()
+  fullName.vb: Kevlar.Extensions.Logging.KevlarLoggingOptions.New()
+  name.vb: New()
+- uid: Kevlar.Extensions.Logging.KevlarLoggingOptions.SeverityProvider
+  commentId: P:Kevlar.Extensions.Logging.KevlarLoggingOptions.SeverityProvider
+  id: SeverityProvider
+  parent: Kevlar.Extensions.Logging.KevlarLoggingOptions
+  langs:
+  - csharp
+  - vb
+  name: SeverityProvider
+  nameWithType: KevlarLoggingOptions.SeverityProvider
+  fullName: Kevlar.Extensions.Logging.KevlarLoggingOptions.SeverityProvider
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: Overrides the default level for an event. Return <xref href="Microsoft.Extensions.Logging.LogLevel.None" data-throw-if-not-resolved="false"></xref> to suppress it.
+  example: []
+  syntax:
+    content: public Func<KevlarLogEvent, LogLevel>? SeverityProvider { get; set; }
+    parameters: []
+    return:
+      type: System.Func{Kevlar.Extensions.Logging.KevlarLogEvent,Microsoft.Extensions.Logging.LogLevel}
+    content.vb: Public Property SeverityProvider As Func(Of KevlarLogEvent, LogLevel)
+  overload: Kevlar.Extensions.Logging.KevlarLoggingOptions.SeverityProvider*
+- uid: Kevlar.Extensions.Logging.KevlarLoggingOptions.ResultFormatter
+  commentId: P:Kevlar.Extensions.Logging.KevlarLoggingOptions.ResultFormatter
+  id: ResultFormatter
+  parent: Kevlar.Extensions.Logging.KevlarLoggingOptions
+  langs:
+  - csharp
+  - vb
+  name: ResultFormatter
+  nameWithType: KevlarLoggingOptions.ResultFormatter
+  fullName: Kevlar.Extensions.Logging.KevlarLoggingOptions.ResultFormatter
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: Formats a handled result for the structured <code>Outcome</code> field.
+  example: []
+  syntax:
+    content: public Func<object?, string?>? ResultFormatter { get; set; }
+    parameters: []
+    return:
+      type: System.Func{System.Object,System.String}
+    content.vb: Public Property ResultFormatter As Func(Of Object, String)
+  overload: Kevlar.Extensions.Logging.KevlarLoggingOptions.ResultFormatter*
+- uid: Kevlar.Extensions.Logging.KevlarLoggingOptions.IncludeScopes
+  commentId: P:Kevlar.Extensions.Logging.KevlarLoggingOptions.IncludeScopes
+  id: IncludeScopes
+  parent: Kevlar.Extensions.Logging.KevlarLoggingOptions
+  langs:
+  - csharp
+  - vb
+  name: IncludeScopes
+  nameWithType: KevlarLoggingOptions.IncludeScopes
+  fullName: Kevlar.Extensions.Logging.KevlarLoggingOptions.IncludeScopes
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: Gets or sets whether executions create a structured shield-name scope.
+  example: []
+  syntax:
+    content: public bool IncludeScopes { get; set; }
+    parameters: []
+    return:
+      type: System.Boolean
+    content.vb: Public Property IncludeScopes As Boolean
+  overload: Kevlar.Extensions.Logging.KevlarLoggingOptions.IncludeScopes*
+- uid: Kevlar.Extensions.Logging.KevlarLoggingOptions.MaxLogsPerSecond
+  commentId: P:Kevlar.Extensions.Logging.KevlarLoggingOptions.MaxLogsPerSecond
+  id: MaxLogsPerSecond
+  parent: Kevlar.Extensions.Logging.KevlarLoggingOptions
+  langs:
+  - csharp
+  - vb
+  name: MaxLogsPerSecond
+  nameWithType: KevlarLoggingOptions.MaxLogsPerSecond
+  fullName: Kevlar.Extensions.Logging.KevlarLoggingOptions.MaxLogsPerSecond
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: Gets or sets an optional per-configuration log limit per one-second window.
+  example: []
+  syntax:
+    content: public int? MaxLogsPerSecond { get; set; }
+    parameters: []
+    return:
+      type: System.Nullable{System.Int32}
+    content.vb: Public Property MaxLogsPerSecond As Integer?
+  overload: Kevlar.Extensions.Logging.KevlarLoggingOptions.MaxLogsPerSecond*
+references:
+- uid: Microsoft.Extensions.Logging.ILogger
+  commentId: T:Microsoft.Extensions.Logging.ILogger
+  parent: Microsoft.Extensions.Logging
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/microsoft.extensions.logging.ilogger
+  name: ILogger
+  nameWithType: ILogger
+  fullName: Microsoft.Extensions.Logging.ILogger
+- uid: Kevlar.Extensions.Logging
+  commentId: N:Kevlar.Extensions.Logging
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar.Extensions.Logging
+  nameWithType: Kevlar.Extensions.Logging
+  fullName: Kevlar.Extensions.Logging
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+  - name: .
+  - uid: Kevlar.Extensions.Logging
+    name: Logging
+    isExternal: true
+    href: Kevlar.Extensions.Logging.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+  - name: .
+  - uid: Kevlar.Extensions.Logging
+    name: Logging
+    isExternal: true
+    href: Kevlar.Extensions.Logging.html
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.ToString
+  commentId: M:System.Object.ToString
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  name: ToString()
+  nameWithType: object.ToString()
+  fullName: object.ToString()
+  nameWithType.vb: Object.ToString()
+  fullName.vb: Object.ToString()
+  spec.csharp:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object)
+  commentId: M:System.Object.Equals(System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  name: Equals(object)
+  nameWithType: object.Equals(object)
+  fullName: object.Equals(object)
+  nameWithType.vb: Object.Equals(Object)
+  fullName.vb: Object.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetHashCode
+  commentId: M:System.Object.GetHashCode
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  name: GetHashCode()
+  nameWithType: object.GetHashCode()
+  fullName: object.GetHashCode()
+  nameWithType.vb: Object.GetHashCode()
+  fullName.vb: Object.GetHashCode()
+  spec.csharp:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+- uid: Microsoft.Extensions.Logging
+  commentId: N:Microsoft.Extensions.Logging
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/microsoft
+  name: Microsoft.Extensions.Logging
+  nameWithType: Microsoft.Extensions.Logging
+  fullName: Microsoft.Extensions.Logging
+  spec.csharp:
+  - uid: Microsoft
+    name: Microsoft
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft
+  - name: .
+  - uid: Microsoft.Extensions
+    name: Extensions
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions
+  - name: .
+  - uid: Microsoft.Extensions.Logging
+    name: Logging
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions.logging
+  spec.vb:
+  - uid: Microsoft
+    name: Microsoft
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft
+  - name: .
+  - uid: Microsoft.Extensions
+    name: Extensions
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions
+  - name: .
+  - uid: Microsoft.Extensions.Logging
+    name: Logging
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions.logging
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.Extensions.Logging.KevlarLoggingOptions.#ctor*
+  commentId: Overload:Kevlar.Extensions.Logging.KevlarLoggingOptions.#ctor
+  isExternal: true
+  href: Kevlar.Extensions.Logging.KevlarLoggingOptions.html#Kevlar_Extensions_Logging_KevlarLoggingOptions__ctor
+  name: KevlarLoggingOptions
+  nameWithType: KevlarLoggingOptions.KevlarLoggingOptions
+  fullName: Kevlar.Extensions.Logging.KevlarLoggingOptions.KevlarLoggingOptions
+  nameWithType.vb: KevlarLoggingOptions.New
+  fullName.vb: Kevlar.Extensions.Logging.KevlarLoggingOptions.New
+  name.vb: New
+- uid: Microsoft.Extensions.Logging.LogLevel.None
+  commentId: F:Microsoft.Extensions.Logging.LogLevel.None
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/microsoft.extensions.logging.loglevel#microsoft-extensions-logging-loglevel-none
+  name: None
+  nameWithType: LogLevel.None
+  fullName: Microsoft.Extensions.Logging.LogLevel.None
+- uid: Kevlar.Extensions.Logging.KevlarLoggingOptions.SeverityProvider*
+  commentId: Overload:Kevlar.Extensions.Logging.KevlarLoggingOptions.SeverityProvider
+  isExternal: true
+  href: Kevlar.Extensions.Logging.KevlarLoggingOptions.html#Kevlar_Extensions_Logging_KevlarLoggingOptions_SeverityProvider
+  name: SeverityProvider
+  nameWithType: KevlarLoggingOptions.SeverityProvider
+  fullName: Kevlar.Extensions.Logging.KevlarLoggingOptions.SeverityProvider
+- uid: System.Func{Kevlar.Extensions.Logging.KevlarLogEvent,Microsoft.Extensions.Logging.LogLevel}
+  commentId: T:System.Func{Kevlar.Extensions.Logging.KevlarLogEvent,Microsoft.Extensions.Logging.LogLevel}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<KevlarLogEvent, LogLevel>
+  nameWithType: Func<KevlarLogEvent, LogLevel>
+  fullName: System.Func<Kevlar.Extensions.Logging.KevlarLogEvent, Microsoft.Extensions.Logging.LogLevel>
+  nameWithType.vb: Func(Of KevlarLogEvent, LogLevel)
+  fullName.vb: System.Func(Of Kevlar.Extensions.Logging.KevlarLogEvent, Microsoft.Extensions.Logging.LogLevel)
+  name.vb: Func(Of KevlarLogEvent, LogLevel)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.Extensions.Logging.KevlarLogEvent
+    name: KevlarLogEvent
+    isExternal: true
+    href: Kevlar.Extensions.Logging.KevlarLogEvent.html
+  - name: ','
+  - name: " "
+  - uid: Microsoft.Extensions.Logging.LogLevel
+    name: LogLevel
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions.logging.loglevel
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.Extensions.Logging.KevlarLogEvent
+    name: KevlarLogEvent
+    isExternal: true
+    href: Kevlar.Extensions.Logging.KevlarLogEvent.html
+  - name: ','
+  - name: " "
+  - uid: Microsoft.Extensions.Logging.LogLevel
+    name: LogLevel
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions.logging.loglevel
+  - name: )
+- uid: System.Func`2
+  commentId: T:System.Func`2
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<T, TResult>
+  nameWithType: Func<T, TResult>
+  fullName: System.Func<T, TResult>
+  nameWithType.vb: Func(Of T, TResult)
+  fullName.vb: System.Func(Of T, TResult)
+  name.vb: Func(Of T, TResult)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.Extensions.Logging.KevlarLoggingOptions.ResultFormatter*
+  commentId: Overload:Kevlar.Extensions.Logging.KevlarLoggingOptions.ResultFormatter
+  isExternal: true
+  href: Kevlar.Extensions.Logging.KevlarLoggingOptions.html#Kevlar_Extensions_Logging_KevlarLoggingOptions_ResultFormatter
+  name: ResultFormatter
+  nameWithType: KevlarLoggingOptions.ResultFormatter
+  fullName: Kevlar.Extensions.Logging.KevlarLoggingOptions.ResultFormatter
+- uid: System.Func{System.Object,System.String}
+  commentId: T:System.Func{System.Object,System.String}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<object, string>
+  nameWithType: Func<object, string>
+  fullName: System.Func<object, string>
+  nameWithType.vb: Func(Of Object, String)
+  fullName.vb: System.Func(Of Object, String)
+  name.vb: Func(Of Object, String)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.String
+    name: string
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.string
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.String
+    name: String
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.string
+  - name: )
+- uid: Kevlar.Extensions.Logging.KevlarLoggingOptions.IncludeScopes*
+  commentId: Overload:Kevlar.Extensions.Logging.KevlarLoggingOptions.IncludeScopes
+  isExternal: true
+  href: Kevlar.Extensions.Logging.KevlarLoggingOptions.html#Kevlar_Extensions_Logging_KevlarLoggingOptions_IncludeScopes
+  name: IncludeScopes
+  nameWithType: KevlarLoggingOptions.IncludeScopes
+  fullName: Kevlar.Extensions.Logging.KevlarLoggingOptions.IncludeScopes
+- uid: System.Boolean
+  commentId: T:System.Boolean
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.boolean
+  name: bool
+  nameWithType: bool
+  fullName: bool
+  nameWithType.vb: Boolean
+  fullName.vb: Boolean
+  name.vb: Boolean
+- uid: Kevlar.Extensions.Logging.KevlarLoggingOptions.MaxLogsPerSecond*
+  commentId: Overload:Kevlar.Extensions.Logging.KevlarLoggingOptions.MaxLogsPerSecond
+  isExternal: true
+  href: Kevlar.Extensions.Logging.KevlarLoggingOptions.html#Kevlar_Extensions_Logging_KevlarLoggingOptions_MaxLogsPerSecond
+  name: MaxLogsPerSecond
+  nameWithType: KevlarLoggingOptions.MaxLogsPerSecond
+  fullName: Kevlar.Extensions.Logging.KevlarLoggingOptions.MaxLogsPerSecond
+- uid: System.Nullable{System.Int32}
+  commentId: T:System.Nullable{System.Int32}
+  parent: System
+  definition: System.Nullable`1
+  href: https://learn.microsoft.com/dotnet/api/system.int32
+  name: int?
+  nameWithType: int?
+  fullName: int?
+  nameWithType.vb: Integer?
+  fullName.vb: Integer?
+  name.vb: Integer?
+  spec.csharp:
+  - uid: System.Int32
+    name: int
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: '?'
+  spec.vb:
+  - uid: System.Int32
+    name: Integer
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: '?'
+- uid: System.Nullable`1
+  commentId: T:System.Nullable`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  name: Nullable<T>
+  nameWithType: Nullable<T>
+  fullName: System.Nullable<T>
+  nameWithType.vb: Nullable(Of T)
+  fullName.vb: System.Nullable(Of T)
+  name.vb: Nullable(Of T)
+  spec.csharp:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )

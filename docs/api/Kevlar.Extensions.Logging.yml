@@ -1,0 +1,92 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Extensions.Logging
+  commentId: N:Kevlar.Extensions.Logging
+  id: Kevlar.Extensions.Logging
+  children:
+  - Kevlar.Extensions.Logging.KevlarLogEvent
+  - Kevlar.Extensions.Logging.KevlarLogEventKind
+  - Kevlar.Extensions.Logging.KevlarLoggingOptions
+  - Kevlar.Extensions.Logging.KevlarLoggingServiceCollectionExtensions
+  - Kevlar.Extensions.Logging.ShieldLoggingExtensions
+  langs:
+  - csharp
+  - vb
+  name: Kevlar.Extensions.Logging
+  nameWithType: Kevlar.Extensions.Logging
+  fullName: Kevlar.Extensions.Logging
+  type: Namespace
+  assemblies:
+  - Kevlar.Extensions.Logging
+references:
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent
+  commentId: T:Kevlar.Extensions.Logging.KevlarLogEvent
+  isExternal: true
+  href: Kevlar.Extensions.Logging.KevlarLogEvent.html
+  name: KevlarLogEvent
+  nameWithType: KevlarLogEvent
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent
+- uid: Kevlar.Extensions.Logging.KevlarLogEventKind
+  commentId: T:Kevlar.Extensions.Logging.KevlarLogEventKind
+  parent: Kevlar.Extensions.Logging
+  isExternal: true
+  href: Kevlar.Extensions.Logging.KevlarLogEventKind.html
+  name: KevlarLogEventKind
+  nameWithType: KevlarLogEventKind
+  fullName: Kevlar.Extensions.Logging.KevlarLogEventKind
+- uid: Kevlar.Extensions.Logging.KevlarLoggingOptions
+  commentId: T:Kevlar.Extensions.Logging.KevlarLoggingOptions
+  isExternal: true
+  href: Kevlar.Extensions.Logging.KevlarLoggingOptions.html
+  name: KevlarLoggingOptions
+  nameWithType: KevlarLoggingOptions
+  fullName: Kevlar.Extensions.Logging.KevlarLoggingOptions
+- uid: Kevlar.Extensions.Logging.KevlarLoggingServiceCollectionExtensions
+  commentId: T:Kevlar.Extensions.Logging.KevlarLoggingServiceCollectionExtensions
+  isExternal: true
+  href: Kevlar.Extensions.Logging.KevlarLoggingServiceCollectionExtensions.html
+  name: KevlarLoggingServiceCollectionExtensions
+  nameWithType: KevlarLoggingServiceCollectionExtensions
+  fullName: Kevlar.Extensions.Logging.KevlarLoggingServiceCollectionExtensions
+- uid: Kevlar.Extensions.Logging.ShieldLoggingExtensions
+  commentId: T:Kevlar.Extensions.Logging.ShieldLoggingExtensions
+  isExternal: true
+  href: Kevlar.Extensions.Logging.ShieldLoggingExtensions.html
+  name: ShieldLoggingExtensions
+  nameWithType: ShieldLoggingExtensions
+  fullName: Kevlar.Extensions.Logging.ShieldLoggingExtensions
+- uid: Kevlar.Extensions.Logging
+  commentId: N:Kevlar.Extensions.Logging
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar.Extensions.Logging
+  nameWithType: Kevlar.Extensions.Logging
+  fullName: Kevlar.Extensions.Logging
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+  - name: .
+  - uid: Kevlar.Extensions.Logging
+    name: Logging
+    isExternal: true
+    href: Kevlar.Extensions.Logging.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+  - name: .
+  - uid: Kevlar.Extensions.Logging
+    name: Logging
+    isExternal: true
+    href: Kevlar.Extensions.Logging.html

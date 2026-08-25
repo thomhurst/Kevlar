@@ -142,6 +142,10 @@ internal interface IShieldLifecycle
     Strategy[] Strategies { get; }
 }
 
+internal interface ITransparentStrategy
+{
+}
+
 /// <summary>
 /// The rest of a shield pipeline, from a strategy's point of view. Invoking it runs every
 /// remaining strategy and finally the user's delegate. It may be invoked multiple times
@@ -188,7 +192,7 @@ public readonly struct Continuation<T, TState>
         }
 
         ValueTask<Outcome<T>> execution;
-        var previousStrategyIndex = node.Index - 1;
+        var previousStrategyIndex = node.PreviousIndex;
         var shieldOwner = node.GetShieldOwner();
         var executionTracker = node.Strategy.ExecutionTracker;
         executionTracker?.Enter();
@@ -289,12 +293,14 @@ internal sealed class StrategyNode
         Strategy strategy,
         StrategyNode? next,
         int index,
+        int previousIndex,
         bool requiresOverlapIsolation,
         WeakReference<StrategyOwnerSet> shieldOwners)
     {
         Strategy = strategy;
         Next = next;
         Index = index;
+        PreviousIndex = previousIndex;
         RequiresOverlapIsolation = requiresOverlapIsolation;
         _shieldOwners = shieldOwners;
         SynchronousExecutionUnsupportedReason =
@@ -307,6 +313,8 @@ internal sealed class StrategyNode
     internal StrategyNode? Next { get; }
 
     internal int Index { get; }
+
+    internal int PreviousIndex { get; }
 
     internal bool RequiresOverlapIsolation { get; }
 

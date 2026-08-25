@@ -24,6 +24,7 @@ target frameworks are also compatibility concerns even when a signature does not
 | `Kevlar.Extensions.DependencyInjection` | `netstandard2.0`, `net8.0`, `net10.0` |
 | `Kevlar.Extensions.Grpc` | `netstandard2.0`, `netstandard2.1`, `net8.0`, `net10.0` |
 | `Kevlar.Extensions.Http` | `netstandard2.0`, `net8.0`, `net10.0` |
+| `Kevlar.Extensions.Logging` | `netstandard2.0`, `net8.0`, `net10.0` |
 | `Kevlar.Extensions.RateLimiting` | `netstandard2.0`, `net8.0`, `net10.0` |
 | `Kevlar.Testing` | `netstandard2.0`, `net8.0`, `net10.0` |
 <!-- supported-tfms:end -->
