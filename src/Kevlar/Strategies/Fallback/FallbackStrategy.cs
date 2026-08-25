@@ -180,8 +180,6 @@ internal sealed class VoidFallbackStrategy : Strategy, IFallbackStrategyInspecti
             return outcome;
         }
 
-        KevlarMetrics.Fallback(context.ShieldName);
-
         if (typeof(T) != typeof(Nothing))
         {
             return Outcome<T>.FromException(new InvalidOperationException(
@@ -189,6 +187,8 @@ internal sealed class VoidFallbackStrategy : Strategy, IFallbackStrategyInspecti
                 "For executions that return a value, build a result-aware shield with " +
                 "Shield.For<T>() and use its Fallback overloads."));
         }
+
+        KevlarMetrics.Fallback(context.ShieldName);
 
         if (_onFallback is not null || _onFallbackAsync is not null)
         {

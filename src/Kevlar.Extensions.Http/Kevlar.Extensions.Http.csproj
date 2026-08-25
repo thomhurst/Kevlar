@@ -7,6 +7,7 @@
     <IsPackable>true</IsPackable>
     <Description>HttpClientFactory integration for Kevlar: resilient HTTP handlers with transient-fault handling, Retry-After aware retries and a production-ready standard pipeline.</Description>
     <PackageTags>resilience;http;httpclient;httpclientfactory;kevlar</PackageTags>
+    <PinKevlarDependencyVersion>true</PinKevlarDependencyVersion>
   </PropertyGroup>
 
   <ItemGroup>

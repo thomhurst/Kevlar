@@ -374,7 +374,7 @@ public class HttpContractTests
     public async Task Standard_Has_The_Documented_Pipeline() =>
         await Assert.That(HttpShield.Standard().ToString()).IsEqualTo(
             "Timeout(30s) → [when HttpRequestException | TaskCanceledException matching predicate | TimeoutExceededException | result predicate] "
-            + "Retry(3, exponential 250ms ×2 +jitter ≤30s, ≤10s) → CircuitBreaker(50% over 30s, min 10, break 15s) → Timeout(10s)");
+            + "Retry(3, exponential 250ms ×2, equal jitter, cap 30s, ≤10s) → CircuitBreaker(50% over 30s, min 10, break 15s) → Timeout(10s)");
 
     [Test]
     public async Task Configured_Standard_Has_Custom_Stages()
@@ -480,6 +480,35 @@ public class HttpContractTests
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
         await Assert.That(calls).IsEqualTo(2);
         await Assert.That(bodies).IsEquivalentTo(["payload", "payload"]);
+    }
+
+    [Test]
+    public async Task Post_Without_OptIn_Returns_Original_Response_Without_Retry_Delay()
+    {
+        var now = new DateTimeOffset(2035, 4, 5, 6, 7, 8, TimeSpan.Zero);
+        var timeProvider = new FakeTimeProvider(now);
+        var retryCallbacks = 0;
+        var shield = HttpShield.WhenTransient()
+            .Retry(options =>
+            {
+                options.MaxRetries = 1;
+                options.Backoff = Backoff.Constant(TimeSpan.FromMinutes(1));
+                options.OnRetry = _ => retryCallbacks++;
+            })
+            .WithTimeProvider(timeProvider);
+        using var inner = new DelegateHandler((_, _) => Task.FromResult(
+            new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)));
+        using var client = CreateClient(inner, shield);
+        using var request = new HttpRequestMessage(HttpMethod.Post, "http://localhost/upload")
+        {
+            Content = new StringContent("payload"),
+        };
+
+        using var response = await client.SendAsync(request).WaitAsync(TimeSpan.FromSeconds(5));
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.ServiceUnavailable);
+        await Assert.That(retryCallbacks).IsEqualTo(0);
+        await Assert.That(timeProvider.GetUtcNow()).IsEqualTo(now);
     }
 
     [Test]
@@ -789,7 +818,7 @@ public class HttpContractTests
     }
 
     [Test]
-    public async Task Retry_Does_Not_Rewind_OneShot_Stream_Content()
+    public async Task Retry_Returns_First_Response_For_OneShot_Stream_Content()
     {
         var bodies = new List<byte[]>();
         using var inner = new DelegateHandler(async (request, token) =>
@@ -807,7 +836,9 @@ public class HttpContractTests
             Content = new StreamContent(source),
         };
 
-        await Assert.That(async () => await client.SendAsync(request)).Throws<InvalidOperationException>();
+        using var response = await client.SendAsync(request);
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.ServiceUnavailable);
         await Assert.That(bodies[0]).IsEquivalentTo(new byte[] { 1, 2, 3 });
         await Assert.That(bodies.Count).IsEqualTo(1);
     }

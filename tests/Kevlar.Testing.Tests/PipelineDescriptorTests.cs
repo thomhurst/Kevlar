@@ -249,7 +249,7 @@ public class PipelineDescriptorTests
             TimeSpan.FromMilliseconds(30),
             factor: 3,
             maxDelay: TimeSpan.FromSeconds(4),
-            jitter: false));
+            jitter: Jitter.None));
 
         await Assert.That(none.Kind).IsEqualTo(BackoffKind.None);
         await Assert.That(none.BaseDelay).IsEqualTo(TimeSpan.Zero);
@@ -260,7 +260,7 @@ public class PipelineDescriptorTests
         await Assert.That(exponential.BaseDelay).IsEqualTo(TimeSpan.FromMilliseconds(30));
         await Assert.That(exponential.Factor).IsEqualTo(3);
         await Assert.That(exponential.MaxDelay).IsEqualTo(TimeSpan.FromSeconds(4));
-        await Assert.That(exponential.Jitter).IsFalse();
+        await Assert.That(exponential.Jitter).IsEqualTo(Jitter.None);
     }
 
     [Test]
@@ -274,7 +274,7 @@ public class PipelineDescriptorTests
             Backoff.None,
             Backoff.Constant(TimeSpan.FromMilliseconds(10)),
             Backoff.Linear(TimeSpan.FromMilliseconds(10)),
-            Backoff.Exponential(TimeSpan.FromMilliseconds(10), jitter: false),
+            Backoff.Exponential(TimeSpan.FromMilliseconds(10), jitter: Jitter.None),
             Backoff.Custom(_ => TimeSpan.Zero),
         };
 

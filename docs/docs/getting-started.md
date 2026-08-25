@@ -29,7 +29,7 @@ using Kevlar;
 
 var shield = Shield
     .Timeout(TimeSpan.FromSeconds(30))   // total budget for the whole operation
-    .Retry(3)                            // exponential backoff + jitter, out of the box
+    .Retry(3)                            // exponential backoff + equal jitter, out of the box
     .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30));
 
 var user = await shield.ExecuteAsync(ct => LoadUserAsync(id, ct), cancellationToken);
@@ -38,7 +38,7 @@ var user = await shield.ExecuteAsync(ct => LoadUserAsync(id, ct), cancellationTo
 Three things to notice:
 
 1. **Reading order is execution order.** The first strategy in the chain is the outermost — the timeout wraps the retries, which wrap the circuit breaker. Same rule as ASP.NET middleware.
-2. **The defaults are the ones you'd have picked.** `Retry(3)` means exponential backoff with jitter, starting at 250ms and capped at 30s.
+2. **The defaults are the ones you'd have picked.** `Retry(3)` means exponential backoff with equal jitter, starting at 250ms and capped at 30s.
 3. **Your delegate gets a cancellation token.** Always use the token you're handed — it's how timeouts and hedging cancel abandoned work.
 
 ## Reuse it everywhere

@@ -12,37 +12,46 @@ public abstract class Backoff
     }
 
     /// <summary>No delay between attempts.</summary>
-    public static Backoff None { get; } = new ConstantBackoff(TimeSpan.Zero);
+    public static Backoff None { get; } = new ConstantBackoff(TimeSpan.Zero, global::Kevlar.Jitter.None);
 
     /// <summary>
-    /// Kevlar's default: exponential backoff starting at 250ms with a factor of 2, ±50% jitter,
+    /// Kevlar's default: exponential backoff starting at 250ms with a factor of 2, equal jitter,
     /// capped at 30 seconds.
     /// </summary>
     public static Backoff Default { get; } = Exponential(TimeSpan.FromMilliseconds(250), maxDelay: TimeSpan.FromSeconds(30));
 
-    /// <summary>The same delay before every attempt.</summary>
-    public static Backoff Constant(TimeSpan delay)
+    /// <summary>The same base delay before every attempt, with optional jitter.</summary>
+    public static Backoff Constant(TimeSpan delay, Jitter jitter = global::Kevlar.Jitter.None)
     {
         Throw.IfOutOfRange(delay < TimeSpan.Zero, nameof(delay), "Delay must not be negative.");
         Throw.IfOutOfRange(delay > DelayHelper.MaximumDelay, nameof(delay), "Delay exceeds the runtime timer limit.");
-        return new ConstantBackoff(delay);
+        ValidateJitter(jitter);
+        return new ConstantBackoff(delay, jitter);
     }
 
-    /// <summary>Linearly increasing delay: <paramref name="step"/>, 2×step, 3×step…</summary>
-    public static Backoff Linear(TimeSpan step, TimeSpan? maxDelay = null)
+    /// <summary>Linearly increasing base delay: <paramref name="step"/>, 2×step, 3×step…, with optional jitter.</summary>
+    public static Backoff Linear(
+        TimeSpan step,
+        TimeSpan? maxDelay = null,
+        Jitter jitter = global::Kevlar.Jitter.None)
     {
         Throw.IfOutOfRange(step < TimeSpan.Zero, nameof(step), "Step must not be negative.");
         ValidateMaxDelay(maxDelay);
-        return new LinearBackoff(step, maxDelay);
+        ValidateJitter(jitter);
+        return new LinearBackoff(step, maxDelay, jitter);
     }
 
     /// <summary>
     /// Exponentially increasing delay: <paramref name="initialDelay"/>, then multiplied by
-    /// <paramref name="factor"/> after each attempt. With <paramref name="jitter"/> enabled
-    /// (the default) each delay is scaled by a random factor in [0.5, 1.5) to avoid
-    /// synchronized retry storms.
+    /// <paramref name="factor"/> after each attempt. The default equal jitter scales each delay
+    /// by a random factor in [0.5, 1.5) to avoid synchronized retry storms. Decorrelated jitter
+    /// instead selects each delay between the initial delay and three times the preceding delay.
     /// </summary>
-    public static Backoff Exponential(TimeSpan initialDelay, double factor = 2.0, TimeSpan? maxDelay = null, bool jitter = true)
+    public static Backoff Exponential(
+        TimeSpan initialDelay,
+        double factor = 2.0,
+        TimeSpan? maxDelay = null,
+        Jitter jitter = global::Kevlar.Jitter.Equal)
     {
         Throw.IfOutOfRange(initialDelay < TimeSpan.Zero, nameof(initialDelay), "Initial delay must not be negative.");
         Throw.IfOutOfRange(
@@ -50,6 +59,7 @@ public abstract class Backoff
             nameof(factor),
             "Factor must be finite and at least 1.");
         ValidateMaxDelay(maxDelay);
+        ValidateJitter(jitter);
         return new ExponentialBackoff(initialDelay, factor, maxDelay, jitter);
     }
 
@@ -82,8 +92,14 @@ public abstract class Backoff
     /// <summary>The linear or exponential delay cap, when configured.</summary>
     public virtual TimeSpan? MaxDelay => null;
 
-    /// <summary>Whether exponential jitter is enabled, when applicable.</summary>
-    public virtual bool? Jitter => null;
+    /// <summary>The jitter mode for built-in backoffs, when applicable.</summary>
+    public virtual Jitter? Jitter => null;
+
+    /// <summary>
+    /// Returns the delay before the given retry attempt, using the preceding effective delay for
+    /// stateful jitter modes. Pass <see cref="TimeSpan.Zero"/> for the first decorrelated draw.
+    /// </summary>
+    public virtual TimeSpan GetDelay(int attempt, TimeSpan previousDelay) => GetDelay(attempt);
 
     private protected static void ValidateAttempt(int attempt) =>
         Throw.IfOutOfRange(attempt < 1, nameof(attempt), "Attempt must be at least 1.");
@@ -94,6 +110,12 @@ public abstract class Backoff
         Throw.IfOutOfRange(maxDelay > DelayHelper.MaximumDelay, nameof(maxDelay), "Maximum delay exceeds the runtime timer limit.");
     }
 
+    private static void ValidateJitter(Jitter jitter) =>
+        Throw.IfOutOfRange(
+            !Enum.IsDefined(typeof(Jitter), jitter),
+            nameof(jitter),
+            "Unknown jitter mode.");
+
     private static TimeSpan FromTicksClamped(double ticks, TimeSpan? maxDelay)
     {
         if (double.IsNaN(ticks))
@@ -101,7 +123,7 @@ public abstract class Backoff
             return TimeSpan.Zero;
         }
 
-        var max = maxDelay ?? TimeSpan.FromDays(1);
+        var max = maxDelay ?? DelayHelper.MaximumDelay;
         if (ticks >= max.Ticks)
         {
             return max;
@@ -110,16 +132,79 @@ public abstract class Backoff
         return ticks <= 0 ? TimeSpan.Zero : TimeSpan.FromTicks((long)ticks);
     }
 
+    private protected static double ApplyJitter(double ticks, Jitter jitter) => jitter switch
+    {
+        global::Kevlar.Jitter.None => ticks,
+        global::Kevlar.Jitter.Equal => ticks * (0.5 + SharedRandom.NextDouble()),
+        global::Kevlar.Jitter.Full => ticks * SharedRandom.NextDouble(),
+        _ => ticks,
+    };
+
+    private protected static TimeSpan GetDecorrelatedDelay(
+        int attempt,
+        TimeSpan initialDelay,
+        TimeSpan? maxDelay)
+    {
+        ValidateAttempt(attempt);
+        var previousDelay = initialDelay;
+        for (var currentAttempt = 0; currentAttempt < attempt; currentAttempt++)
+        {
+            previousDelay = GetDecorrelatedDelay(initialDelay, previousDelay, maxDelay);
+        }
+
+        return previousDelay;
+    }
+
+    private protected static TimeSpan GetDecorrelatedDelay(
+        TimeSpan initialDelay,
+        TimeSpan previousDelay,
+        TimeSpan? maxDelay)
+    {
+        var lowerTicks = (double)initialDelay.Ticks;
+        var previousTicks = previousDelay > TimeSpan.Zero ? previousDelay.Ticks : initialDelay.Ticks;
+        var upperTicks = Math.Max(lowerTicks, previousTicks * 3d);
+        return FromTicksClamped(
+            lowerTicks + (SharedRandom.NextDouble() * (upperTicks - lowerTicks)),
+            maxDelay);
+    }
+
+    private protected static string DescribeJitter(Jitter jitter) => jitter switch
+    {
+        global::Kevlar.Jitter.None => string.Empty,
+        global::Kevlar.Jitter.Equal => ", equal jitter",
+        global::Kevlar.Jitter.Full => ", full jitter",
+        global::Kevlar.Jitter.Decorrelated => ", decorrelated jitter",
+        _ => string.Empty,
+    };
+
+    private protected static string DescribeCap(TimeSpan? maxDelay) =>
+        maxDelay is { } max ? $", cap {DescribeHelper.Time(max)}" : string.Empty;
+
     private sealed class ConstantBackoff : Backoff
     {
         private readonly TimeSpan _delay;
+        private readonly Jitter _jitter;
 
-        public ConstantBackoff(TimeSpan delay) => _delay = delay;
+        public ConstantBackoff(TimeSpan delay, Jitter jitter)
+        {
+            _delay = delay;
+            _jitter = jitter;
+        }
 
         public override TimeSpan GetDelay(int attempt)
         {
             ValidateAttempt(attempt);
-            return _delay;
+            return _jitter == global::Kevlar.Jitter.Decorrelated
+                ? GetDecorrelatedDelay(attempt, _delay, maxDelay: null)
+                : FromTicksClamped(ApplyJitter(_delay.Ticks, _jitter), maxDelay: null);
+        }
+
+        public override TimeSpan GetDelay(int attempt, TimeSpan previousDelay)
+        {
+            ValidateAttempt(attempt);
+            return _jitter == global::Kevlar.Jitter.Decorrelated
+                ? GetDecorrelatedDelay(_delay, previousDelay, maxDelay: null)
+                : GetDelay(attempt);
         }
 
         public override BackoffKind Kind =>
@@ -127,25 +212,41 @@ public abstract class Backoff
 
         public override TimeSpan? InitialDelay => _delay;
 
+        public override Jitter? Jitter => _jitter;
+
         public override string ToString() =>
-            _delay == TimeSpan.Zero ? "no delay" : $"constant {DescribeHelper.Time(_delay)}";
+            _delay == TimeSpan.Zero
+                ? "no delay"
+                : $"constant {DescribeHelper.Time(_delay)}{DescribeJitter(_jitter)}";
     }
 
     private sealed class LinearBackoff : Backoff
     {
         private readonly TimeSpan _step;
         private readonly TimeSpan? _maxDelay;
+        private readonly Jitter _jitter;
 
-        public LinearBackoff(TimeSpan step, TimeSpan? maxDelay)
+        public LinearBackoff(TimeSpan step, TimeSpan? maxDelay, Jitter jitter)
         {
             _step = step;
             _maxDelay = maxDelay;
+            _jitter = jitter;
         }
 
         public override TimeSpan GetDelay(int attempt)
         {
             ValidateAttempt(attempt);
-            return FromTicksClamped((double)_step.Ticks * attempt, _maxDelay);
+            return _jitter == global::Kevlar.Jitter.Decorrelated
+                ? GetDecorrelatedDelay(attempt, _step, _maxDelay)
+                : FromTicksClamped(ApplyJitter((double)_step.Ticks * attempt, _jitter), _maxDelay);
+        }
+
+        public override TimeSpan GetDelay(int attempt, TimeSpan previousDelay)
+        {
+            ValidateAttempt(attempt);
+            return _jitter == global::Kevlar.Jitter.Decorrelated
+                ? GetDecorrelatedDelay(_step, previousDelay, _maxDelay)
+                : GetDelay(attempt);
         }
 
         public override BackoffKind Kind => BackoffKind.Linear;
@@ -154,11 +255,10 @@ public abstract class Backoff
 
         public override TimeSpan? MaxDelay => _maxDelay;
 
-        public override string ToString()
-        {
-            var cap = _maxDelay is { } max ? $" ≤{DescribeHelper.Time(max)}" : string.Empty;
-            return $"linear {DescribeHelper.Time(_step)} steps{cap}";
-        }
+        public override Jitter? Jitter => _jitter;
+
+        public override string ToString() =>
+            $"linear {DescribeHelper.Time(_step)} steps{DescribeJitter(_jitter)}{DescribeCap(_maxDelay)}";
     }
 
     private sealed class ExponentialBackoff : Backoff
@@ -166,9 +266,9 @@ public abstract class Backoff
         private readonly TimeSpan _initialDelay;
         private readonly double _factor;
         private readonly TimeSpan? _maxDelay;
-        private readonly bool _jitter;
+        private readonly Jitter _jitter;
 
-        public ExponentialBackoff(TimeSpan initialDelay, double factor, TimeSpan? maxDelay, bool jitter)
+        public ExponentialBackoff(TimeSpan initialDelay, double factor, TimeSpan? maxDelay, Jitter jitter)
         {
             _initialDelay = initialDelay;
             _factor = factor;
@@ -179,14 +279,21 @@ public abstract class Backoff
         public override TimeSpan GetDelay(int attempt)
         {
             ValidateAttempt(attempt);
-            var ticks = _initialDelay.Ticks * Math.Pow(_factor, attempt - 1);
-
-            if (_jitter)
+            if (_jitter == global::Kevlar.Jitter.Decorrelated)
             {
-                ticks *= 0.5 + SharedRandom.NextDouble();
+                return GetDecorrelatedDelay(attempt, _initialDelay, _maxDelay);
             }
 
-            return FromTicksClamped(ticks, _maxDelay);
+            var ticks = _initialDelay.Ticks * Math.Pow(_factor, attempt - 1);
+            return FromTicksClamped(ApplyJitter(ticks, _jitter), _maxDelay);
+        }
+
+        public override TimeSpan GetDelay(int attempt, TimeSpan previousDelay)
+        {
+            ValidateAttempt(attempt);
+            return _jitter == global::Kevlar.Jitter.Decorrelated
+                ? GetDecorrelatedDelay(_initialDelay, previousDelay, _maxDelay)
+                : GetDelay(attempt);
         }
 
         public override BackoffKind Kind => BackoffKind.Exponential;
@@ -197,14 +304,10 @@ public abstract class Backoff
 
         public override TimeSpan? MaxDelay => _maxDelay;
 
-        public override bool? Jitter => _jitter;
+        public override Jitter? Jitter => _jitter;
 
-        public override string ToString()
-        {
-            var jitter = _jitter ? " +jitter" : string.Empty;
-            var cap = _maxDelay is { } max ? $" ≤{DescribeHelper.Time(max)}" : string.Empty;
-            return FormattableString.Invariant($"exponential {DescribeHelper.Time(_initialDelay)} ×{_factor:0.#}{jitter}{cap}");
-        }
+        public override string ToString() => FormattableString.Invariant(
+            $"exponential {DescribeHelper.Time(_initialDelay)} ×{_factor:0.#}{DescribeJitter(_jitter)}{DescribeCap(_maxDelay)}");
     }
 
     private sealed class CustomBackoff : Backoff

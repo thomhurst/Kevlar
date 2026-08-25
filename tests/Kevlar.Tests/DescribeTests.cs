@@ -12,7 +12,7 @@ public class DescribeTests
     public async Task Default_Retry_Describes_Its_Backoff()
     {
         await Assert.That(Shield.Retry(3).ToString())
-            .IsEqualTo("Retry(3, exponential 250ms ×2 +jitter ≤30s)");
+            .IsEqualTo("Retry(3, exponential 250ms ×2, equal jitter, cap 30s)");
     }
 
     [Test]
@@ -30,7 +30,7 @@ public class DescribeTests
     public async Task RetryForever_Is_Named_As_Such()
     {
         await Assert.That(Shield.RetryForever().ToString())
-            .IsEqualTo("RetryForever(exponential 250ms ×2 +jitter ≤30s)");
+            .IsEqualTo("RetryForever(exponential 250ms ×2, equal jitter, cap 30s)");
     }
 
     [Test]

@@ -36,7 +36,7 @@ public class PartitionWrapperLifecycleTests
     public async Task Void_Partition_Wrapper_Exposes_Eviction_And_Clear_Counters()
     {
         var timeProvider = new FakeTimeProvider();
-        var provider = new PartitionedVoidShield<string>(
+        var provider = new PartitionedShield<string>(
             static _ => Shield.Fallback(static _ => ValueTask.CompletedTask),
             new PartitionedShieldOptions
             {

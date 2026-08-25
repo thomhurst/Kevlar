@@ -185,6 +185,42 @@ public class RetryEdgeCaseTests
     }
 
     [Test]
+    public async Task MaxDelay_Bounds_Decorrelated_Jitter_State()
+    {
+        var cap = TimeSpan.FromTicks(2);
+        var attempts = 0;
+        var seenDelays = new List<TimeSpan>();
+        var shield = Shield.Retry(options =>
+        {
+            options.MaxRetries = 1_000;
+            options.Backoff = Backoff.Exponential(
+                TimeSpan.FromTicks(1),
+                jitter: Jitter.Decorrelated);
+            options.MaxDelay = cap;
+            options.DelayGenerator = retry =>
+            {
+                seenDelays.Add(retry.Delay);
+                return TimeSpan.Zero;
+            };
+        });
+
+        var result = await shield.ExecuteAsync(_ =>
+        {
+            attempts++;
+            return attempts <= 1_000
+                ? throw new InvalidOperationException()
+                : new ValueTask<int>(attempts);
+        });
+
+        var uncappedTailDelays = seenDelays
+            .Skip(500)
+            .Count(delay => delay < cap);
+
+        await Assert.That(result).IsEqualTo(1_001);
+        await Assert.That(uncappedTailDelays).IsGreaterThan(50);
+    }
+
+    [Test]
     public async Task Negative_DelayGenerator_Values_Are_Ignored()
     {
         var seenDelays = new List<TimeSpan>();

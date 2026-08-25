@@ -161,7 +161,7 @@ public class PipelineHazardAnalyzerTests
         var cases = new[]
         {
             "_ = new PartitionedShield<string>(_ => Shield.Empty).GetShield(\"tenant\").Execute(_ => 1);",
-            "new PartitionedVoidShield<string>(_ => Shield.Fallback(static _ => ValueTask.CompletedTask)).GetShield(\"tenant\").Execute(static _ => { });",
+            "new PartitionedShield<string>(_ => Shield.Fallback(static _ => ValueTask.CompletedTask)).GetShield(\"tenant\").Execute(static _ => { });",
             "await new PartitionedShield<string, int>(_ => Shield<int>.Empty).GetShield(\"tenant\").ExecuteAsync(_ => new ValueTask<int>(1));",
             "var partitions = new PartitionedShield<string>(_ => Shield.Empty); await partitions.GetShield(\"tenant\").ExecuteOutcomeAsync(_ => new ValueTask<int>(1));",
             "var partitions = new PartitionedShield<string>(_ => Shield.Empty); var shield = partitions.GetShield(\"tenant\"); _ = shield.Execute(_ => 1);",
@@ -345,18 +345,18 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
-    public async Task Void_Fallback_Transitions_The_Chain_To_VoidShield()
+    public async Task Void_Fallback_Preserves_The_Shield_Type_And_Fluent_Surface()
     {
         var compilation = CreateCompilation(CreateSource("""
             public sealed class TestSubject
             {
                 public async Task Run()
                 {
-                    VoidShield fromFactory = Shield.Fallback(static _ => ValueTask.CompletedTask);
-                    VoidShield fromExtension = Shield.Retry(1).Fallback(static _ => ValueTask.CompletedTask);
-                    VoidShield fromBuilder = Shield.When<InvalidOperationException>()
+                    Shield fromFactory = Shield.Fallback(static _ => ValueTask.CompletedTask);
+                    Shield fromExtension = Shield.Retry(1).Fallback(static _ => ValueTask.CompletedTask);
+                    Shield fromBuilder = Shield.When<InvalidOperationException>()
                         .Fallback(static (_, _) => ValueTask.CompletedTask);
-                    VoidShield chained = fromExtension
+                    Shield chained = fromExtension
                         .Retry()
                         .Timeout(TimeSpan.FromSeconds(1))
                         .CircuitBreaker(2, TimeSpan.FromSeconds(1))
@@ -369,8 +369,8 @@ public class PipelineHazardAnalyzerTests
                         .WhenAnyError()
                         .WithName("void")
                         .WithTimeProvider(TimeProvider.System);
-                    VoidShield outer = Shield.Timeout(TimeSpan.FromSeconds(1)).Wrap(chained);
-                    VoidShield inner = chained.Wrap(Shield.Retry(1));
+                    Shield outer = Shield.Timeout(TimeSpan.FromSeconds(1)).Wrap(chained);
+                    Shield inner = chained.Wrap(Shield.Retry(1));
 
                     fromFactory.Execute(static _ => { });
                     fromBuilder.Execute(1, static (_, _) => { });
@@ -390,38 +390,87 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
-    public async Task VoidShield_Rejects_Result_Execution_Lifting_And_Result_Composition()
+    public async Task KEV005_Flags_Void_Fallback_For_Each_Result_Execution_Method()
     {
         var cases = new[]
         {
-            "Shield unrestricted = Shield.Fallback(static _ => ValueTask.CompletedTask);",
-            "_ = Shield.Fallback(static _ => ValueTask.CompletedTask).Execute(static _ => 1);",
-            "_ = await Shield.Fallback(static _ => ValueTask.CompletedTask).ExecuteAsync(static _ => new ValueTask<int>(1));",
-            "_ = await Shield.Fallback(static _ => ValueTask.CompletedTask).ExecuteOutcomeAsync(static _ => new ValueTask<int>(1));",
-            "_ = Shield.Fallback(static _ => ValueTask.CompletedTask).ExecuteWithContext(static _ => 1);",
-            "_ = await Shield.Fallback(static _ => ValueTask.CompletedTask).ExecuteWithContextAsync(static _ => new ValueTask<int>(1));",
-            "_ = Shield.Fallback(static _ => ValueTask.CompletedTask).For<int>();",
-            "_ = Shield.For<int>().Wrap(Shield.Fallback(static _ => ValueTask.CompletedTask));",
-            "_ = Shield.Compose(Shield.Empty, Shield.Fallback(static _ => ValueTask.CompletedTask));",
+            "_ = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).Execute(static _ => 1);",
+            "_ = await Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteAsync(static _ => new ValueTask<int>(1));",
+            "_ = await Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteOutcomeAsync(static _ => new ValueTask<int>(1));",
+            "_ = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteWithContext(0, static (_, _) => { }, static (_, _) => 1);",
+            "_ = await Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteWithContextAsync(0, static (_, _) => { }, static (_, _) => new ValueTask<int>(1));",
+            "_ = await Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteAsync(static _ => Task.FromResult(1));",
+            "_ = await Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteOutcomeAsync(static _ => Task.FromResult(1));",
+        };
+
+        await AssertEachAsync(cases, "KEV005");
+    }
+
+    [Test]
+    public async Task KEV005_Follows_Aliases_Builders_Result_Lifts_And_Composition()
+    {
+        var cases = new[]
+        {
+            "var shield = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask); _ = shield.Execute(static _ => 1);",
+            "var shield = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask); var alias = shield; _ = alias.Execute(static _ => 1);",
+            "var shield = Shield.When<InvalidOperationException>().Fallback(static (_, _) => ValueTask.CompletedTask); _ = shield.Execute(static _ => 1);",
+            "var shield = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask); _ = shield.For<int>().Execute(static _ => 1);",
+            "_ = Shield.Empty.Wrap(Shield.Empty.Fallback(static _ => ValueTask.CompletedTask)).Execute(static _ => 1);",
+            "var fallback = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask); _ = Shield.Compose(Shield.Empty, fallback).Execute(static _ => 1);",
+        };
+
+        await AssertEachAsync(cases, "KEV005");
+    }
+
+    [Test]
+    public async Task KEV005_Follows_The_Rate_Limiter_Adapter()
+    {
+        var diagnostics = await AnalyzeBodyAsync(
+            "_ = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask)" +
+            ".RateLimit((System.Threading.RateLimiting.RateLimiter)null!).Execute(static _ => 1);");
+
+        await AssertRuleAsync(Without(diagnostics, "KEV004"), "KEV005");
+    }
+
+    [Test]
+    public async Task KEV005_Skips_Typed_Fallbacks_And_Void_Executions()
+    {
+        var cases = new[]
+        {
+            "_ = Shield.For<int>().FallbackTo(0).Execute(static _ => 1);",
+            "Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).Execute(static _ => { });",
+            "await Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteAsync(static _ => ValueTask.CompletedTask);",
+            "Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteWithContext(0, static (_, _) => { }, static (_, _) => { });",
+            "await Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteWithContextAsync(0, static (_, _) => { }, static (_, _) => ValueTask.CompletedTask);",
         };
 
         foreach (var body in cases)
         {
-            var compilation = CreateCompilation(CreateSource($$"""
-                public sealed class TestSubject
-                {
-                    public async Task Run()
-                    {
-                        {{body}}
-                    }
-                }
-                """));
-            var errors = compilation.GetDiagnostics()
-                .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
-                .ToArray();
-
-            await Assert.That(errors).IsNotEmpty();
+            var diagnostics = await AnalyzeBodyAsync(body);
+            await Assert.That(diagnostics).IsEmpty();
         }
+    }
+
+    [Test]
+    public async Task KEV005_Diagnostic_Contract_And_Suppression_Are_Exact()
+    {
+        var diagnostics = await AnalyzeBodyAsync(
+            "_ = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).Execute(static _ => 1);");
+        var suppressed = await AnalyzeBodyAsync("""
+            #pragma warning disable KEV005 // Result use is validated elsewhere.
+            _ = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).Execute(static _ => 1);
+            #pragma warning restore KEV005
+            """);
+
+        await Assert.That(diagnostics.Length).IsEqualTo(1);
+        var diagnostic = diagnostics[0];
+        await Assert.That(diagnostic.Id).IsEqualTo("KEV005");
+        await Assert.That(diagnostic.Severity).IsEqualTo(DiagnosticSeverity.Warning);
+        await Assert.That(diagnostic.GetMessage()).IsEqualTo(
+            "Fallback on a non-generic Shield applies only to void executions. " +
+            "For executions that return a value, build a result-aware shield with " +
+            "Shield.For<T>() and use its Fallback overloads.");
+        await Assert.That(suppressed).IsEmpty();
     }
 
     [Test]
@@ -1308,6 +1357,7 @@ public class PipelineHazardAnalyzerTests
             using System.Threading;
             using System.Threading.Tasks;
             using Kevlar;
+            using Kevlar.Extensions.RateLimiting;
 
             {{declarations}}
             """;
@@ -1319,7 +1369,9 @@ public class PipelineHazardAnalyzerTests
         var references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)
             .Split(Path.PathSeparator)
             .Select(path => (MetadataReference)MetadataReference.CreateFromFile(path))
-            .Append(MetadataReference.CreateFromFile(typeof(Shield).Assembly.Location));
+            .Append(MetadataReference.CreateFromFile(typeof(Shield).Assembly.Location))
+            .Append(MetadataReference.CreateFromFile(
+                typeof(Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions).Assembly.Location));
         return CSharpCompilation.Create(
             assemblyName,
             [CSharpSyntaxTree.ParseText(source)],
