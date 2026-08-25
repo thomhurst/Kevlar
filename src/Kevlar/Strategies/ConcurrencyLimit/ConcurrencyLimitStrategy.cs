@@ -73,7 +73,6 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
         {
             Interlocked.Decrement(ref _pending);
             RecordState(alias);
-            KevlarMetrics.Rejection(context, "concurrency_limit", _telemetryName);
             return RejectAsync<T>(context);
         }
 
@@ -98,6 +97,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
     private ValueTask<Outcome<T>> RejectAsync<T>(KevlarContext context)
     {
         var rejection = new ConcurrencyLimitExceededException();
+        KevlarMetrics.Rejection(context, "concurrency_limit", rejection, _telemetryName);
         if (_onRejected is null && _onRejectedAsync is null)
         {
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(rejection));

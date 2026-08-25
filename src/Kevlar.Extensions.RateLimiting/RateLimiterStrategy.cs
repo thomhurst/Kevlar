@@ -160,8 +160,12 @@ internal sealed class RateLimiterStrategy : Strategy
             return Failure<T>(exception);
         }
 
-        KevlarMetrics.Rejection(context, "rate_limiter_adapter", _telemetryName);
         var rejection = new RateLimiterAdapterRejectedException(retryAfter);
+        KevlarMetrics.Rejection(
+            context,
+            "rate_limiter_adapter",
+            rejection,
+            _telemetryName);
         if (_onRejected is null && _onRejectedAsync is null)
         {
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(rejection));

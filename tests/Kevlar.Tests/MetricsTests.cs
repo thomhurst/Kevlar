@@ -594,14 +594,22 @@ public class MetricsTests
     public async Task Every_Rejection_Kind_Is_Counted_Exactly_Once()
     {
         using var listener = new KevlarMeterListener();
+        var rejectionEvents = new ConcurrentQueue<KevlarTelemetryEvent>();
+        using var subscription = KevlarDiagnostics.Listen(new CallbackTelemetryListener(telemetryEvent =>
+        {
+            if (telemetryEvent.EventName == "rejection")
+            {
+                rejectionEvents.Enqueue(telemetryEvent);
+            }
+        }));
         var rateLimit = Shield.RateLimit(1, TimeSpan.FromHours(1)).WithName("metrics-reject-rate");
         await rateLimit.ExecuteAsync(_ => new ValueTask<int>(1));
-        await Assert.That(async () => await rateLimit.ExecuteAsync(_ => new ValueTask<int>(2)))
+        var rateRejection = await Assert.That(async () => await rateLimit.ExecuteAsync(_ => new ValueTask<int>(2)))
             .Throws<RateLimitExceededException>();
 
         var circuit = Shield.CircuitBreaker(1, TimeSpan.FromHours(1)).WithName("metrics-reject-circuit");
         _ = await circuit.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
-        await Assert.That(async () => await circuit.ExecuteAsync(_ => new ValueTask<int>(1)))
+        var circuitRejection = await Assert.That(async () => await circuit.ExecuteAsync(_ => new ValueTask<int>(1)))
             .Throws<CircuitOpenException>();
 
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -614,9 +622,10 @@ public class MetricsTests
             return 1;
         }).AsTask();
         await entered.Task;
+        ConcurrencyLimitExceededException? concurrencyRejection = null;
         try
         {
-            await Assert.That(async () => await concurrency.ExecuteAsync(_ => new ValueTask<int>(2)))
+            concurrencyRejection = await Assert.That(async () => await concurrency.ExecuteAsync(_ => new ValueTask<int>(2)))
                 .Throws<ConcurrencyLimitExceededException>();
         }
         finally
@@ -642,6 +651,22 @@ public class MetricsTests
             .IsEqualTo(1);
         await Assert.That(listener.Total("kevlar.executions", "metrics-reject-concurrency", ("kevlar.execution.outcome", "failure")))
             .IsEqualTo(1);
+
+        var expectedExceptions = new Dictionary<string, Exception?>
+        {
+            ["metrics-reject-rate"] = rateRejection,
+            ["metrics-reject-circuit"] = circuitRejection,
+            ["metrics-reject-concurrency"] = concurrencyRejection,
+        };
+        foreach (var (shieldName, exception) in expectedExceptions)
+        {
+            var telemetryEvent = rejectionEvents.Single(item => item.ShieldName == shieldName);
+            await Assert.That(ReferenceEquals(telemetryEvent.Exception, exception)).IsTrue();
+            var tags = listener.Measurements("kevlar.strategy.events", shieldName).Single(item =>
+                item.TryGetValue("kevlar.event.name", out var eventName)
+                && Equals(eventName, "rejection"));
+            await Assert.That(tags["exception.type"]).IsEqualTo(exception!.GetType().FullName);
+        }
     }
 
     [Test]

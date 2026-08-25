@@ -236,7 +236,11 @@ internal static class KevlarMetrics
             exception);
     }
 
-    public static void Rejection(KevlarContext context, string kind, string? strategyName = null)
+    public static void Rejection(
+        KevlarContext context,
+        string kind,
+        Exception exception,
+        string? strategyName = null)
     {
 #if NET8_0_OR_GREATER
         if (Rejections.Enabled)
@@ -258,7 +262,8 @@ internal static class KevlarMetrics
             KevlarTelemetrySeverity.Warning,
             context.StrategyIndex,
             attemptNumber: 0,
-            isSuccess: false);
+            isSuccess: false,
+            exception);
     }
 
     public static void CircuitTransition(CircuitState from, CircuitState to)

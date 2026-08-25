@@ -102,7 +102,6 @@ internal sealed class RateLimitStrategy : Strategy
     {
         if (!TryAcquireAndRecord(context, out var reservation, out var retryAfter))
         {
-            KevlarMetrics.Rejection(context, "rate_limit", _telemetryName);
             return RejectAsync<T>(context, retryAfter);
         }
 
@@ -114,6 +113,7 @@ internal sealed class RateLimitStrategy : Strategy
     private ValueTask<Outcome<T>> RejectAsync<T>(KevlarContext context, TimeSpan? retryAfter)
     {
         var rejection = new RateLimitExceededException(retryAfter);
+        KevlarMetrics.Rejection(context, "rate_limit", rejection, _telemetryName);
         if (_onRejected is null && _onRejectedAsync is null)
         {
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(rejection));
