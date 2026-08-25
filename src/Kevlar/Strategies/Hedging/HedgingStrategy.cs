@@ -8,6 +8,8 @@ internal sealed class HedgingStrategy : Strategy
     private readonly OutcomeJudge _judge;
     private readonly int _maxAttempts;
     private readonly TimeSpan _delay;
+    private readonly Func<HedgeDelayEvent, TimeSpan>? _delayGenerator;
+    private readonly Func<HedgeDelayEvent, ValueTask<TimeSpan>>? _delayGeneratorAsync;
     private readonly Action<HedgeEvent>? _onHedge;
     private readonly Func<HedgeEvent, ValueTask>? _onHedgeAsync;
     private readonly HedgeActionGenerator? _actionGenerator;
@@ -26,6 +28,8 @@ internal sealed class HedgingStrategy : Strategy
         _judge = judge;
         _maxAttempts = options.MaxAttempts;
         _delay = options.Delay;
+        _delayGenerator = options.DelayGenerator;
+        _delayGeneratorAsync = options.DelayGeneratorAsync;
         _onHedge = options.OnHedge;
         _onHedgeAsync = options.OnHedgeAsync;
         _actionGenerator = options.ActionGenerator;
@@ -51,13 +55,16 @@ internal sealed class HedgingStrategy : Strategy
 
     internal TimeSpan Delay => _delay;
 
+    internal bool HasDelayGenerator => _delayGenerator is not null || _delayGeneratorAsync is not null;
+
     internal bool HasNotification => _onHedge is not null;
 
     internal bool HasActionGenerator => _actionGenerator is not null;
 
     protected internal override bool InvokesContinuationAtMostOnce => _maxAttempts == 1;
 
-    public override string Describe() => $"Hedge({_maxAttempts} attempts, delay {DescribeHelper.Time(_delay)})";
+    public override string Describe() =>
+        $"Hedge({_maxAttempts} attempts, delay {(HasDelayGenerator ? "generator" : DescribeHelper.Time(_delay))})";
 
     public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
@@ -72,10 +79,11 @@ internal sealed class HedgingStrategy : Strategy
             throw new NotSupportedException("Hedging requires asynchronous execution. Use ExecuteAsync instead of Execute.");
         }
 
+        var startedAt = HasDelayGenerator ? context.TimeProvider.GetTimestamp() : 0;
         var primary = StartPrimaryAttempt(next, context);
         if (_delay == TimeSpan.Zero || !primary.Execution.IsCompletedSuccessfully)
         {
-            return ExecuteCoreAsync(next, context, primary.AsPending(), launched: 1, default);
+            return ExecuteCoreAsync(next, context, primary.AsPending(), launched: 1, default, startedAt);
         }
 
         Outcome<T> outcome;
@@ -93,7 +101,7 @@ internal sealed class HedgingStrategy : Strategy
             return new ValueTask<Outcome<T>>(NormalizeCancellation(outcome, context));
         }
 
-        return ExecuteCoreAsync(next, context, initial: null, launched: 1, outcome);
+        return ExecuteCoreAsync(next, context, initial: null, launched: 1, outcome, startedAt);
     }
 
     private async ValueTask<Outcome<T>> ExecuteCoreAsync<T, TState>(
@@ -101,7 +109,8 @@ internal sealed class HedgingStrategy : Strategy
         KevlarContext context,
         HedgeAttempt<T>? initial,
         int launched,
-        Outcome<T>? lastOutcome)
+        Outcome<T>? lastOutcome,
+        long startedAt)
     {
         var pending = ListPool<HedgeAttempt<T>>.Shared.Rent();
 
@@ -119,19 +128,31 @@ internal sealed class HedgingStrategy : Strategy
 
             while (true)
             {
-                if (launched < _maxAttempts && _delay == TimeSpan.Zero)
+                // Preserve fixed zero-delay parallel mode: launch all configured hedges before
+                // selecting even an already-completed outcome. A generator, however, must not run
+                // after an acceptable outcome has already completed.
+                Task<Outcome<T>>? completed = HasDelayGenerator
+                    ? FindCompletedAttempt(pending)
+                    : null;
+                var delay = _delay;
+
+                if (completed is null && launched < _maxAttempts)
                 {
-                    pending.Add(await StartHedgeAttemptAsync(next, context, launched + 1, lastOutcome).ConfigureAwait(false));
-                    launched++;
-                    continue;
+                    delay = await GetDelayAsync(launched + 1, context, startedAt).ConfigureAwait(false);
+                    if (delay == TimeSpan.Zero)
+                    {
+                        pending.Add(await StartHedgeAttemptAsync(next, context, launched + 1, lastOutcome).ConfigureAwait(false));
+                        launched++;
+                        continue;
+                    }
                 }
 
-                Task<Outcome<T>> completed;
-
-                if (launched < _maxAttempts && _delay != System.Threading.Timeout.InfiniteTimeSpan)
+                if (completed is null
+                    && launched < _maxAttempts
+                    && delay != System.Threading.Timeout.InfiniteTimeSpan)
                 {
                     using var delayCancellation = CancellationTokenSourcePool.Shared.RentLinked(context.CancellationToken);
-                    var delayTask = DelayHelper.CreateDelayTask(context.TimeProvider, _delay, delayCancellation.Token);
+                    var delayTask = DelayHelper.CreateDelayTask(context.TimeProvider, delay, delayCancellation.Token);
                     var winner = await WhenAnyAttemptOr(pending, delayTask).ConfigureAwait(false);
 
                     if (winner == delayTask)
@@ -144,7 +165,7 @@ internal sealed class HedgingStrategy : Strategy
                     delayCancellation.Cancel();
                     completed = (Task<Outcome<T>>)winner;
                 }
-                else
+                else if (completed is null)
                 {
                     // A single pending attempt needs no WhenAny machinery; awaiting it directly
                     // is equivalent and skips the Task[] allocation.
@@ -184,6 +205,61 @@ internal sealed class HedgingStrategy : Strategy
 
             ListPool<HedgeAttempt<T>>.Shared.Return(pending);
         }
+    }
+
+    private ValueTask<TimeSpan> GetDelayAsync(
+        int attemptNumber,
+        KevlarContext context,
+        long startedAt)
+    {
+        if (!HasDelayGenerator)
+        {
+            return new ValueTask<TimeSpan>(_delay);
+        }
+
+        context.CancellationToken.ThrowIfCancellationRequested();
+        var delayEvent = new HedgeDelayEvent(
+            attemptNumber,
+            context,
+            context.TimeProvider.GetElapsedTime(startedAt));
+        var delay = _delayGenerator is null
+            ? _delay
+            : NormalizeGeneratedDelay(_delayGenerator(delayEvent));
+
+        context.CancellationToken.ThrowIfCancellationRequested();
+        if (_delayGeneratorAsync is not { } delayGeneratorAsync)
+        {
+            return new ValueTask<TimeSpan>(delay);
+        }
+
+        var generated = delayGeneratorAsync(delayEvent);
+        if (!generated.IsCompletedSuccessfully)
+        {
+            return AwaitGeneratedDelayAsync(generated, context);
+        }
+
+        delay = NormalizeGeneratedDelay(generated.Result);
+        context.CancellationToken.ThrowIfCancellationRequested();
+        return new ValueTask<TimeSpan>(delay);
+    }
+
+    private static async ValueTask<TimeSpan> AwaitGeneratedDelayAsync(
+        ValueTask<TimeSpan> generated,
+        KevlarContext context)
+    {
+        var delay = NormalizeGeneratedDelay(await generated.ConfigureAwait(false));
+        context.CancellationToken.ThrowIfCancellationRequested();
+        return delay;
+    }
+
+    private static TimeSpan NormalizeGeneratedDelay(TimeSpan delay)
+    {
+        if (delay == System.Threading.Timeout.InfiniteTimeSpan)
+        {
+            return delay;
+        }
+
+        return delay < TimeSpan.Zero ? TimeSpan.Zero : DelayHelper.Clamp(delay);
     }
 
     private ValueTask<HedgeAttempt<T>> StartHedgeAttemptAsync<T, TState>(
@@ -418,6 +494,19 @@ internal sealed class HedgingStrategy : Strategy
         }
 
         return Task.WhenAny(tasks);
+    }
+
+    private static Task<Outcome<T>>? FindCompletedAttempt<T>(List<HedgeAttempt<T>> pending)
+    {
+        for (var i = 0; i < pending.Count; i++)
+        {
+            if (pending[i].Task.IsCompleted)
+            {
+                return pending[i].Task;
+            }
+        }
+
+        return null;
     }
 
     private static void Remove<T>(List<HedgeAttempt<T>> pending, Task<Outcome<T>> task)

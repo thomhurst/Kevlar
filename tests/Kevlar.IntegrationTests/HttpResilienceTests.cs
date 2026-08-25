@@ -227,6 +227,45 @@ public class HttpResilienceTests
     }
 
     [Test]
+    public async Task HttpClientFactory_Standard_Hedge_Uses_Adaptive_Delay()
+    {
+        await using var slow = FlakyHttpServer.Start(async (_, context) =>
+        {
+            await Task.Delay(TimeSpan.FromSeconds(3));
+            await FlakyHttpServer.Respond(context, 200, "slow");
+        });
+        await using var healthy = FlakyHttpServer.Start((_, context) =>
+            FlakyHttpServer.Respond(context, 200, "adaptive hedge"));
+        var observedAttempt = 0;
+        using var services = new ServiceCollection()
+            .AddHttpClient("adaptive-hedge")
+            .AddStandardHedgeShield(options =>
+            {
+                options.Endpoints.Add(new HttpEndpoint(new Uri(slow.Url)));
+                options.Endpoints.Add(new HttpEndpoint(new Uri(healthy.Url)));
+                options.HedgeDelay = TimeSpan.FromMinutes(1);
+                options.HedgeDelayGenerator = hedge =>
+                {
+                    observedAttempt = hedge.AttemptNumber;
+                    return TimeSpan.Zero;
+                };
+            })
+            .Services
+            .BuildServiceProvider();
+        using var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("adaptive-hedge");
+
+        var stopwatch = Stopwatch.StartNew();
+        using var response = await client.GetAsync("http://origin.invalid/adaptive");
+        stopwatch.Stop();
+
+        await Assert.That(await response.Content.ReadAsStringAsync()).IsEqualTo("adaptive hedge");
+        await Assert.That(observedAttempt).IsEqualTo(2);
+        await Assert.That(stopwatch.Elapsed).IsLessThan(TimeSpan.FromSeconds(2.5));
+        await Assert.That(slow.CallCount).IsEqualTo(1);
+        await Assert.That(healthy.CallCount).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Caller_Cancellation_Stops_Loopback_Retry_And_Preserves_The_Token()
     {
         var requestStarted = new TaskCompletionSource(

@@ -12,6 +12,12 @@ public sealed class StandardHedgeShieldOptions
     /// <summary>The delay before another hedged attempt starts. Default 1 second.</summary>
     public TimeSpan HedgeDelay { get; set; } = TimeSpan.FromSeconds(1);
 
+    /// <summary>Selects the delay before each additional endpoint attempt.</summary>
+    public Func<HedgeDelayEvent, TimeSpan>? HedgeDelayGenerator { get; set; }
+
+    /// <summary>Asynchronously selects the delay before each additional endpoint attempt.</summary>
+    public Func<HedgeDelayEvent, ValueTask<TimeSpan>>? HedgeDelayGeneratorAsync { get; set; }
+
     /// <summary>The maximum duration of each endpoint attempt. Default 10 seconds.</summary>
     public TimeSpan AttemptTimeout { get; set; } = TimeSpan.FromSeconds(10);
 

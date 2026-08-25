@@ -494,7 +494,7 @@ if (pollyLimiterOptions.DefaultRateLimiterOptions.PermitLimit != 1000 ||
 | `TimeoutGenerator` | `TimeoutGenerator` |
 | hedging `ActionGenerator` | `HedgeActionGenerator.Create<T>` |
 | circuit `BreakDurationGenerator` | `BreakDurationGenerator` |
-| hedging `DelayGenerator` | no equivalent; hedging currently uses a fixed `Delay` |
+| hedging `DelayGenerator` | `HedgeOptions.DelayGenerator` or `DelayGeneratorAsync`; `HedgeDelayEvent` exposes `AttemptNumber`, `Context`, and `Elapsed` |
 | `OnOpened` / `OnClosed` / `OnHalfOpened` | one `OnStateChanged` callback |
 
 Polly's `CircuitBreakerManualControl` and `CircuitBreakerStateProvider` are separately shareable.

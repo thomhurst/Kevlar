@@ -7,6 +7,7 @@ public sealed class HedgeStrategyDescriptor : StrategyDescriptor
         string description,
         int maxAttempts,
         TimeSpan delay,
+        bool hasDelayGenerator,
         bool hasNotification,
         bool hasActionGenerator,
         bool hasHandlingOverride)
@@ -14,6 +15,7 @@ public sealed class HedgeStrategyDescriptor : StrategyDescriptor
     {
         MaxAttempts = maxAttempts;
         Delay = delay;
+        HasDelayGenerator = hasDelayGenerator;
         HasNotification = hasNotification;
         HasActionGenerator = hasActionGenerator;
         HasHandlingOverride = hasHandlingOverride;
@@ -24,6 +26,9 @@ public sealed class HedgeStrategyDescriptor : StrategyDescriptor
 
     /// <summary>The stagger delay between attempts.</summary>
     public TimeSpan Delay { get; }
+
+    /// <summary>Whether a per-attempt delay generator is configured.</summary>
+    public bool HasDelayGenerator { get; }
 
     /// <summary>Whether a hedge notification is configured.</summary>
     public bool HasNotification { get; }

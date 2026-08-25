@@ -29,6 +29,8 @@ Shield.Hedge(o =>
 |---|---|---|
 | `MaxAttempts` | `2` | Total attempts, including the first |
 | `Delay` | `1s` | Wait before launching the next attempt (see special values below) |
+| `DelayGenerator` | — | Select a delay for each pending hedge from its attempt number, context, and elapsed execution time |
+| `DelayGeneratorAsync` | — | Awaited delay selector; runs after `DelayGenerator` and determines the delay when both are set |
 | `OnHedge` | — | Callback when a hedge launches — `e.AttemptNumber` is a 1-based execution number, so `2` = first hedge |
 | `OnHedgeAsync` | — | Awaited callback after `OnHedge` and before the attempt starts |
 | `ActionGenerator` | — | Select a different operation for each additional attempt; `null` uses the original |
@@ -65,6 +67,32 @@ var response = await shield.ExecuteAsync(ct => replicas[0](ct));
 For an untyped or void shield, use `HedgeActionGenerator.Create`. Lifting an untyped generator into
 a shield with a different result type fails while that typed shield is built.
 
+### Adaptive delays
+
+Use a delay generator when each execution or hedge needs different timing. Generator delays are
+relative to the previous hedge launch, so `100ms` followed by `300ms` launches attempts 2 and 3 at
+approximately 100ms and 400ms. A handled failure still launches the next attempt immediately.
+
+```csharp
+var hedgeDelay = new KevlarKey<TimeSpan>("hedge-delay");
+var adaptiveHedge = Shield.Hedge(options =>
+{
+    options.MaxAttempts = 3;
+    options.DelayGenerator = hedge =>
+        hedge.Context.Properties.GetOrDefault(hedgeDelay, TimeSpan.FromMilliseconds(100));
+});
+
+var adaptiveResult = await adaptiveHedge.ExecuteWithContextAsync(
+    TimeSpan.FromMilliseconds(75),
+    (delay, properties) => properties.Set(hedgeDelay, delay),
+    static (_, _) => new ValueTask<int>(42));
+```
+
+`HedgeDelayEvent.AttemptNumber` is the 1-based execution number (`2` = first hedge), and `Elapsed`
+is measured from the primary attempt's start through the shield's `TimeProvider`. Generated
+negative delays become zero, values above the runtime timer limit are clamped, and the same special
+zero/infinite meanings apply. Generator exceptions fail the execution and cancel in-flight attempts.
+
 ### Special delay values
 
 - `TimeSpan.Zero` — race **all** attempts at once.
@@ -87,7 +115,7 @@ flags untyped `Hedge(...)` for exactly this reason.
 :::
 
 - Losing attempts are cancelled through their token (use the token you're handed!).
-- Caller cancellation prevents any later hedge delegate from running, even when it races a completed stagger delay or occurs inside `OnHedge`/`OnHedgeAsync`. A cancellation already observable at the launch boundary suppresses both callbacks.
+- Caller cancellation prevents any later hedge delegate from running, even when it races a completed stagger delay or occurs inside a delay generator, `OnHedge`, or `OnHedgeAsync`. A cancellation already observable at the launch boundary suppresses callbacks.
 - Launch ordering is `OnHedge`, awaited `OnHedgeAsync`, action generation, metrics, then the selected operation. Callback or generator failures preserve their exception identity, cancel in-flight attempts, and are not counted as launched hedges.
 - Each attempt gets a forked context — `Properties` are copied at launch time, so attempts don't see each other's writes.
 - Callback contexts are pooled. Do not retain them after the synchronous callback or returned `ValueTask` completes; a generated action's isolated context remains valid until that attempt completes.

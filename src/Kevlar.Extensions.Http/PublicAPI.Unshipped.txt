@@ -50,6 +50,10 @@ Kevlar.Extensions.Http.StandardHedgeShieldOptions.FailureRatio.get -> double?
 Kevlar.Extensions.Http.StandardHedgeShieldOptions.FailureRatio.set -> void
 Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelay.get -> System.TimeSpan
 Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelay.set -> void
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelayGenerator.get -> System.Func<Kevlar.HedgeDelayEvent, System.TimeSpan>?
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelayGenerator.set -> void
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelayGeneratorAsync.get -> System.Func<Kevlar.HedgeDelayEvent, System.Threading.Tasks.ValueTask<System.TimeSpan>>?
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelayGeneratorAsync.set -> void
 Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxAttempts.get -> int
 Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxAttempts.set -> void
 Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxConcurrency.get -> int

@@ -73,6 +73,11 @@ public class DescribeTests
             .IsEqualTo("ConcurrencyLimit(10)");
         await Assert.That(Shield.Hedge(2, TimeSpan.FromMilliseconds(100)).ToString())
             .IsEqualTo("Hedge(2 attempts, delay 100ms)");
+        await Assert.That(Shield.Hedge(options =>
+        {
+            options.MaxAttempts = 2;
+            options.DelayGenerator = static _ => TimeSpan.Zero;
+        }).ToString()).IsEqualTo("Hedge(2 attempts, delay generator)");
     }
 
     [Test]

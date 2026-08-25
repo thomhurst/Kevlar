@@ -267,13 +267,17 @@ services.AddHttpClient("routed")
         options.SelectionMode = HttpEndpointSelectionMode.Weighted;
         options.MaxAttempts = 2;
         options.HedgeDelay = TimeSpan.FromMilliseconds(500);
+        options.HedgeDelayGenerator = hedge => hedge.Elapsed < TimeSpan.FromSeconds(1)
+            ? TimeSpan.FromMilliseconds(100)
+            : TimeSpan.Zero;
     });
 ```
 
 `AddStandardHedgeShield` installs a 30s total timeout and up to two hedged attempts. Each endpoint
 gets its own 10-concurrent/zero-queue limiter, 50%-over-30s circuit breaker (minimum 10 attempts,
 15s break), and 10s attempt timeout. Configure those defaults through `TotalTimeout`, `MaxAttempts`,
-`HedgeDelay`, `MaxConcurrency`, `QueueLimit`, `FailureRatio` or `ConsecutiveFailures`,
+`HedgeDelay`, `HedgeDelayGenerator`, `HedgeDelayGeneratorAsync`, `MaxConcurrency`, `QueueLimit`,
+`FailureRatio` or `ConsecutiveFailures`,
 `MinimumThroughput`, `SamplingWindow`, `BreakDuration`, and `AttemptTimeout`.
 
 The registration also exposes `ContentReplayPolicy`, `MaximumBufferSize`,
