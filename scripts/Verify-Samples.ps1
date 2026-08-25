@@ -54,3 +54,4 @@ if ($errors.Count -gt 0)
 }
 
 Write-Host "Verified $($sampleDirectories.Count) runnable sample projects and README entries."
+exit 0
