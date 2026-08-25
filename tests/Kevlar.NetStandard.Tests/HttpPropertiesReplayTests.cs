@@ -23,6 +23,52 @@ public class HttpPropertiesReplayTests
     }
 
     [Test]
+    public async Task NonReplayable_Post_Returns_Original_Response()
+    {
+        var attempts = 0;
+        using var invoker = new HttpMessageInvoker(new ShieldDelegatingHandler(
+            HttpShield.WhenTransient().Retry(1, Backoff.None))
+        {
+            InnerHandler = new DelegateHandler((_, _) =>
+            {
+                attempts++;
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+            }),
+        });
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://example.test/upload")
+        {
+            Content = new StringContent("payload"),
+        };
+
+        using var response = await invoker.SendAsync(request, CancellationToken.None);
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.ServiceUnavailable);
+        await Assert.That(attempts).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task ReReadable_Put_Content_Retries_Without_Buffering()
+    {
+        var attempts = 0;
+        using var invoker = new HttpMessageInvoker(new ShieldDelegatingHandler(
+            HttpShield.WhenTransient().Retry(1, Backoff.None))
+        {
+            InnerHandler = new DelegateHandler((_, _) => Task.FromResult(
+                new HttpResponseMessage(
+                    ++attempts == 1 ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.OK))),
+        });
+        using var request = new HttpRequestMessage(HttpMethod.Put, "https://example.test/upload")
+        {
+            Content = new ByteArrayContent([1, 2, 3]),
+        };
+
+        using var response = await invoker.SendAsync(request, CancellationToken.None);
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(attempts).IsEqualTo(2);
+    }
+
+    [Test]
     public async Task Buffered_Retry_Preserves_NetStandard_Request_Properties()
     {
         var marker = new object();
@@ -69,5 +115,13 @@ public class HttpPropertiesReplayTests
                 : HttpStatusCode.OK;
             return Task.FromResult(new HttpResponseMessage(status));
         }
+    }
+
+    private sealed class DelegateHandler(
+        Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> send) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken) => send(request, cancellationToken);
     }
 }

@@ -196,6 +196,7 @@ internal sealed class RetryStrategy : Strategy
 
     private bool ShouldRetry<T>(in Outcome<T> outcome, int retriesUsed, KevlarContext context) =>
         retriesUsed < _maxRetries
+        && !context.Properties.SuppressAdditionalAttempts
         && _judge.ShouldHandle(in outcome)
         && !context.CancellationToken.IsCancellationRequested;
 
