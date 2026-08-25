@@ -37,19 +37,7 @@ if (-not $SkipMetadata)
         throw 'DocFX metadata generation failed.'
     }
 
-    $sourceLinkPattern = '(?m)^[ \t]*href: https://github\.com/thomhurst/Kevlar/blob/[^\r\n]*(?:\r?\n|$)'
-    foreach ($metadataFile in Get-ChildItem -LiteralPath $metadataPath -Filter '*.yml' -File)
-    {
-        $content = [IO.File]::ReadAllText($metadataFile.FullName)
-        $normalized = [regex]::Replace($content, $sourceLinkPattern, '')
-        if ($normalized -ne $content)
-        {
-            [IO.File]::WriteAllText(
-                $metadataFile.FullName,
-                $normalized,
-                [Text.UTF8Encoding]::new($false))
-        }
-    }
+    & (Join-Path $PSScriptRoot 'Normalize-ApiMetadata.ps1') -MetadataPath $metadataPath
 }
 
 Remove-Item -LiteralPath $outputPath -Recurse -Force -ErrorAction SilentlyContinue
