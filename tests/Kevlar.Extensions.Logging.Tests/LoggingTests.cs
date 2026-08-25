@@ -486,6 +486,25 @@ public class LoggingTests
 
     [Test]
     [NotInParallel]
+    public async Task Result_Based_SeverityProvider_Receives_The_Handled_Result()
+    {
+        var logger = new FakeLogger();
+        var shield = Shield.For<int>()
+            .WhenResult(-1)
+            .Retry(1, Backoff.None)
+            .WithLogging(logger, options => options.SeverityProvider = logEvent =>
+                logEvent.Result is int value && value < 0
+                    ? LogLevel.Warning
+                    : LogLevel.None);
+
+        _ = await shield.ExecuteOutcomeAsync(static _ => new ValueTask<int>(-1));
+
+        await Assert.That(logger.Collector.GetSnapshot().Count(record =>
+            record.Id == new EventId(1001, "Retry"))).IsEqualTo(1);
+    }
+
+    [Test]
+    [NotInParallel]
     public async Task Concurrent_Executions_Log_Every_Retry()
     {
         var logger = new FakeLogger();
@@ -591,6 +610,26 @@ public class LoggingTests
         await Assert.That(innerTransitions.All(record =>
             record.GetStructuredStateValue("ShieldName") == "composed")).IsTrue();
         GC.KeepAlive(composed);
+    }
+
+    [Test]
+    [NotInParallel]
+    public async Task Rejected_Composition_Does_Not_Change_Circuit_Listener_Metadata()
+    {
+        var logger = new FakeLogger();
+        var monitor = new CircuitBreakerMonitor();
+        var shield = Shield.CircuitBreaker(options => options.Monitor = monitor)
+            .WithLogging(logger);
+
+        await Assert.That(() => Shield.Compose(shield, shield))
+            .Throws<InvalidOperationException>();
+        monitor.Isolate();
+
+        var transition = logger.Collector.GetSnapshot()
+            .Single(record => record.Id == new EventId(1003, "CircuitState"));
+        await Assert.That(transition.GetStructuredStateValue("StrategyIndex"))
+            .IsEqualTo("0");
+        GC.KeepAlive(shield);
     }
 
     [Test]

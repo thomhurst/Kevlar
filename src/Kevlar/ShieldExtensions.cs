@@ -290,8 +290,7 @@ public static class ShieldExtensions
         Throw.IfNull(outer, nameof(outer));
         Throw.IfNull(inner, nameof(inner));
         var strategies = Shield.Concat(outer.Strategies, inner.Strategies);
-        StrategyAppendObserver.NotifyComposition(strategies, outer.Name ?? inner.Name);
-        return new Shield(
+        var wrapped = new Shield(
             strategies,
             null,
             outer.Name ?? inner.Name,
@@ -300,6 +299,8 @@ public static class ShieldExtensions
                 outer.AppliedDecorators,
                 ShieldDecoration.HasResilienceStrategies(outer.Strategies),
                 inner.AppliedDecorators));
+        StrategyAppendObserver.NotifyComposition(strategies, outer.Name ?? inner.Name);
+        return wrapped;
     }
 
     /// <summary>
@@ -312,8 +313,7 @@ public static class ShieldExtensions
         Throw.IfNull(outer, nameof(outer));
         Throw.IfNull(inner, nameof(inner));
         var strategies = Shield.Concat(outer.Strategies, inner.Strategies);
-        StrategyAppendObserver.NotifyComposition(strategies, outer.Name ?? inner.Name);
-        return new Shield<TResult>(
+        var wrapped = new Shield<TResult>(
             strategies,
             null,
             outer.Name ?? inner.Name,
@@ -322,6 +322,8 @@ public static class ShieldExtensions
                 outer.AppliedDecorators,
                 ShieldDecoration.HasResilienceStrategies(outer.Strategies),
                 inner.AppliedDecorators));
+        StrategyAppendObserver.NotifyComposition(strategies, outer.Name ?? inner.Name);
+        return wrapped;
     }
 
     /// <summary>

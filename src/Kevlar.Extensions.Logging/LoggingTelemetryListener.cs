@@ -23,6 +23,21 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
 
             try
             {
+                if (!current.Options.CanEvaluateSeverityWithoutResult)
+                {
+                    for (var enabledLevel = LogLevel.Trace;
+                         enabledLevel < LogLevel.None;
+                         enabledLevel++)
+                    {
+                        if (current.Logger.IsEnabled(enabledLevel))
+                        {
+                            return true;
+                        }
+                    }
+
+                    continue;
+                }
+
                 var level = current.Options.SeverityProvider?.Invoke(logEvent) ?? defaultLevel;
                 if (level != LogLevel.None && current.Logger.IsEnabled(level))
                 {

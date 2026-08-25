@@ -48,6 +48,9 @@ internal sealed class LoggingOptionsSnapshot(
 
     public Func<KevlarLogEvent, LogLevel>? SeverityProvider { get; } = severityProvider;
 
+    public bool CanEvaluateSeverityWithoutResult { get; } =
+        CanEvaluateWithoutEvent(severityProvider);
+
     public Func<object?, string?>? ResultFormatter { get; } = resultFormatter;
 
     public bool IncludeScopes { get; } = includeScopes;
@@ -95,5 +98,61 @@ internal sealed class LoggingOptionsSnapshot(
             _windowCount++;
             return true;
         }
+    }
+
+#if NET8_0_OR_GREATER
+    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage(
+        "Trimming",
+        "IL2026",
+        Justification = "Missing or altered method bodies conservatively retain result capture.")]
+#endif
+    private static bool CanEvaluateWithoutEvent(
+        Func<KevlarLogEvent, LogLevel>? severityProvider)
+    {
+        if (severityProvider is null)
+        {
+            return true;
+        }
+
+#if NET8_0_OR_GREATER
+        try
+        {
+            var body = severityProvider.Method.GetMethodBody()?.GetILAsByteArray();
+            if (body is null)
+            {
+                return false;
+            }
+
+            var argumentIndex = severityProvider.Method.IsStatic ? 0 : 1;
+            var shortLoad = (byte)(0x02 + argumentIndex);
+            for (var index = 0; index < body.Length; index++)
+            {
+                if (body[index] == shortLoad
+                    || body[index] is 0x0E or 0x0F
+                        && index + 1 < body.Length
+                        && body[index + 1] == argumentIndex
+                    || body[index] == 0xFE
+                        && index + 3 < body.Length
+                        && body[index + 1] is 0x09 or 0x0A
+                        && body[index + 2] == argumentIndex
+                        && body[index + 3] == 0)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+        catch (InvalidOperationException)
+        {
+            return false;
+        }
+        catch (NotSupportedException)
+        {
+            return false;
+        }
+#else
+        return false;
+#endif
     }
 }
