@@ -293,6 +293,18 @@ public class DynamicRegistryTests
     }
 
     [Test]
+    public async Task Reloading_Provider_Installs_Lifecycle_Handlers_Before_Validation()
+    {
+        using var services = new ServiceCollection().BuildServiceProvider();
+        using var registry = new KevlarRegistry(services, []);
+
+        var provider = registry.CreateReloadingProvider(
+            static () => new LifecycleOrderReloadingProvider());
+
+        await Assert.That(provider.HandlersInstalledBeforeValidation).IsTrue();
+    }
+
+    [Test]
     public async Task Superseded_Reload_Snapshot_Is_Reclaimed_After_Holders_Release_It()
     {
         var monitor = new MutableOptionsMonitor<ReloadOptions>();
@@ -527,6 +539,62 @@ public class DynamicRegistryTests
         await strategy.Disposed.WaitAsync(TimeSpan.FromSeconds(5));
         await Assert.That(retired.IsAlive).IsFalse();
         await Assert.That(strategy.DisposeCount).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Registry_Dispose_Can_Reenter_From_Deferred_Async_Retirement()
+    {
+        using var services = new ServiceCollection().AddKevlar().BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        var strategy = new ReentrantAsyncDisposableStrategy(registry.Dispose);
+        var retired = ResolveAndRemove(registry, "async-dispose-reentry", strategy);
+        Collect(retired);
+
+        var scavenging = Task.Run(() =>
+            registry.GetOrAdd("async-dispose-scavenge", _ => Shield.Empty));
+
+        _ = await scavenging.WaitAsync(TimeSpan.FromSeconds(5));
+        await strategy.Disposed.WaitAsync(TimeSpan.FromSeconds(5));
+        await Assert.That(strategy.DisposeCount).IsEqualTo(1);
+        await Assert.That(() => registry.GetShield("async-dispose-scavenge"))
+            .Throws<ObjectDisposedException>();
+    }
+
+    [Test]
+    public async Task Registry_Dispose_Can_Reenter_From_Synchronous_Reclamation()
+    {
+        using var services = new ServiceCollection().AddKevlar().BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        var strategy = new CallbackDisposableStrategy(registry.Dispose);
+        var retired = ResolveAndRemove(registry, "sync-dispose-reentry", strategy);
+        Collect(retired);
+
+        var scavenging = Task.Run(() =>
+            registry.GetOrAdd("sync-dispose-scavenge", _ => Shield.Empty));
+
+        _ = await scavenging.WaitAsync(TimeSpan.FromSeconds(5));
+        await Assert.That(strategy.DisposeCount).IsEqualTo(1);
+        await Assert.That(() => registry.GetShield("sync-dispose-scavenge"))
+            .Throws<ObjectDisposedException>();
+    }
+
+    [Test]
+    public async Task Registry_Dispose_Can_Reenter_From_A_Registry_Factory()
+    {
+        using var services = new ServiceCollection().AddKevlar().BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        var strategy = new DisposableStrategy();
+
+        var resolving = Task.Run(() => registry.GetOrAdd("factory-dispose-reentry", _ =>
+        {
+            registry.Dispose();
+            return Shield.Use(strategy);
+        }));
+
+        _ = await resolving.WaitAsync(TimeSpan.FromSeconds(5));
+        await Assert.That(strategy.DisposeCount).IsEqualTo(1);
+        await Assert.That(() => registry.GetShield("factory-dispose-reentry"))
+            .Throws<ObjectDisposedException>();
     }
 
     [Test]
@@ -1298,6 +1366,40 @@ public class DynamicRegistryTests
         public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
             Continuation<T, TState> next,
             KevlarContext context) => next.InvokeAsync(context);
+    }
+
+    private sealed class LifecycleOrderReloadingProvider : IReloadingProvider
+    {
+        private bool _handlersInstalled;
+        private bool _validationObserved;
+
+        public bool HandlersInstalledBeforeValidation { get; private set; }
+
+        public IReadOnlyList<Strategy> Strategies
+        {
+            get
+            {
+                if (!_validationObserved)
+                {
+                    _validationObserved = true;
+                    HandlersInstalledBeforeValidation = _handlersInstalled;
+                }
+
+                return [];
+            }
+        }
+
+        public void Dispose()
+        {
+        }
+
+        public (IReadOnlyList<ShieldRetirement> Retirements, Exception? CleanupFailure) Retire() =>
+            ([], null);
+
+        public void SetLifecycleHandlers(
+            Action<IReadOnlyList<ShieldRetirement>> retirementHandler,
+            Action<Action> publicationGuard,
+            Action<object> validatePublication) => _handlersInstalled = true;
     }
 
     private sealed class MutableOptionsMonitor<TOptions> : IOptionsMonitor<TOptions>

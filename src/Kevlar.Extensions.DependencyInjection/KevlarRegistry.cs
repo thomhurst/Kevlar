@@ -126,6 +126,11 @@ internal sealed class RegistryEntry
 
 internal sealed class KevlarRegistry : IKevlarRegistry
 {
+    private static readonly AsyncLocal<LifecycleScope?> _lifecycleScope = new();
+
+    [ThreadStatic]
+    private static List<KevlarRegistry>? _activeRegistryOperations;
+
     private readonly IServiceProvider _serviceProvider;
     private readonly ConcurrentDictionary<(string Name, Type? ResultType), RegistryEntry> _entries = new();
     private readonly ConcurrentDictionary<ShieldRetirement, byte> _retirements = new();
@@ -140,6 +145,9 @@ internal sealed class KevlarRegistry : IKevlarRegistry
     private int _reclamationThreadId;
     private bool _reclaiming;
     private bool _disposed;
+    private bool _disposalStarted;
+    private bool _disposalCompleted;
+    private Exception? _disposalFailure;
 
     public KevlarRegistry(IServiceProvider serviceProvider, IEnumerable<ShieldRegistration> registrations)
     {
@@ -253,12 +261,12 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         var provider = factory();
         try
         {
-            ValidatePublication(provider);
-            _reloadingProviders.TryAdd(provider, 0);
             provider.SetLifecycleHandlers(
                 ReclaimRetirements,
                 ProtectPublication,
                 ValidatePublication);
+            ValidatePublication(provider);
+            _reloadingProviders.TryAdd(provider, 0);
             return provider;
         }
         catch
@@ -270,25 +278,27 @@ internal sealed class KevlarRegistry : IKevlarRegistry
 
     public void Dispose()
     {
-        var values = BeginDispose();
+        var values = BeginDispose(out var completedFailure);
         if (values is null)
         {
+            if (completedFailure is not null)
+            {
+                throw completedFailure;
+            }
+
             return;
         }
 
         var failures = new List<Exception>();
-        DrainRetirementFailures(failures);
-        foreach (var provider in GetReloadingProviders(values))
+        var previousScope = EnterLifecycleScope();
+        try
         {
-            TryDispose(provider, failures);
+            DisposeSynchronously(values, failures);
         }
-
-        foreach (var strategy in GetStrategies(values))
+        finally
         {
-            if (_strategyDisposals.TryClaim(strategy))
-            {
-                TryDispose(strategy, failures);
-            }
+            ExitLifecycleScope(previousScope);
+            EndDispose(CreateDisposalFailure(failures));
         }
 
         ThrowDisposalFailures(failures);
@@ -296,41 +306,55 @@ internal sealed class KevlarRegistry : IKevlarRegistry
 
     public async ValueTask DisposeAsync()
     {
-        var values = BeginDispose();
+        var values = BeginDispose(out var completedFailure);
         if (values is null)
         {
+            if (completedFailure is not null)
+            {
+                throw completedFailure;
+            }
+
             return;
         }
 
         var failures = new List<Exception>();
-        DrainRetirementFailures(failures);
-        foreach (var provider in GetReloadingProviders(values))
+        var previousScope = EnterLifecycleScope();
+        try
         {
-            TryDispose(provider, failures);
+            DrainRetirementFailures(failures);
+            foreach (var provider in GetReloadingProviders(values))
+            {
+                TryDispose(provider, failures);
+            }
+
+            foreach (var strategy in GetStrategies(values))
+            {
+                if (!_strategyDisposals.TryClaim(strategy))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    if (strategy is IAsyncDisposable asyncDisposable)
+                    {
+                        await asyncDisposable.DisposeAsync().ConfigureAwait(false);
+                    }
+                    else if (strategy is IDisposable disposable)
+                    {
+                        disposable.Dispose();
+                    }
+                }
+                catch (Exception exception)
+                {
+                    failures.Add(exception);
+                }
+            }
         }
-
-        foreach (var strategy in GetStrategies(values))
+        finally
         {
-            if (!_strategyDisposals.TryClaim(strategy))
-            {
-                continue;
-            }
-
-            try
-            {
-                if (strategy is IAsyncDisposable asyncDisposable)
-                {
-                    await asyncDisposable.DisposeAsync().ConfigureAwait(false);
-                }
-                else if (strategy is IDisposable disposable)
-                {
-                    disposable.Dispose();
-                }
-            }
-            catch (Exception exception)
-            {
-                failures.Add(exception);
-            }
+            ExitLifecycleScope(previousScope);
+            EndDispose(CreateDisposalFailure(failures));
         }
 
         ThrowDisposalFailures(failures);
@@ -436,37 +460,169 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         }
     }
 
-    private List<object>? BeginDispose()
+    private List<object>? BeginDispose(out Exception? completedFailure)
+    {
+        completedFailure = null;
+        var waitedForCompletion = false;
+        lock (_lifecycleLock)
+        {
+            _disposed = true;
+            while (true)
+            {
+                if (_disposalCompleted)
+                {
+                    if (waitedForCompletion)
+                    {
+                        completedFailure = _disposalFailure;
+                    }
+
+                    return null;
+                }
+
+                if (_disposalStarted)
+                {
+                    if (IsLifecycleCaller())
+                    {
+                        return null;
+                    }
+
+                    Monitor.Wait(_lifecycleLock);
+                    waitedForCompletion = true;
+                    continue;
+                }
+
+                if (IsLifecycleCaller())
+                {
+                    return null;
+                }
+
+                if (_activeOperations == 0 && !_reclaiming && _pendingDeferredDisposals == 0)
+                {
+                    return StartDisposal();
+                }
+
+                Monitor.Wait(_lifecycleLock);
+                waitedForCompletion = true;
+            }
+        }
+    }
+
+    private List<object> StartDisposal()
+    {
+        _disposalStarted = true;
+        var values = new List<object>(_reloadingProviders.Keys);
+        foreach (var entry in _entries.Values)
+        {
+            if (entry.TryGetResolved(out var value))
+            {
+                values.Add(value);
+            }
+        }
+
+        foreach (var retirement in _retirements.Keys)
+        {
+            values.Add(retirement.Strategies);
+        }
+
+        return values;
+    }
+
+    private List<object>? TryStartDeferredDisposal()
+    {
+        if (!_disposed
+            || _disposalStarted
+            || _activeOperations != 0
+            || _reclaiming
+            || _pendingDeferredDisposals != 0)
+        {
+            return null;
+        }
+
+        return StartDisposal();
+    }
+
+    private void EndDispose(Exception? failure)
     {
         lock (_lifecycleLock)
         {
-            if (_disposed)
-            {
-                return null;
-            }
-
-            _disposed = true;
-            while (_activeOperations > 0 || _reclaiming || _pendingDeferredDisposals > 0)
-            {
-                Monitor.Wait(_lifecycleLock);
-            }
-
-            var values = new List<object>(_reloadingProviders.Keys);
-            foreach (var entry in _entries.Values)
-            {
-                if (entry.TryGetResolved(out var value))
-                {
-                    values.Add(value);
-                }
-            }
-
-            foreach (var retirement in _retirements.Keys)
-            {
-                values.Add(retirement.Strategies);
-            }
-
-            return values;
+            _disposalFailure = failure;
+            _disposalCompleted = true;
+            Monitor.PulseAll(_lifecycleLock);
         }
+    }
+
+    private void CompleteDeferredRegistryDisposal(List<object>? values)
+    {
+        if (values is null)
+        {
+            return;
+        }
+
+        var failures = new List<Exception>();
+        var previousScope = EnterLifecycleScope();
+        try
+        {
+            DisposeSynchronously(values, failures);
+        }
+        catch (Exception exception)
+        {
+            failures.Add(exception);
+        }
+        finally
+        {
+            ExitLifecycleScope(previousScope);
+            EndDispose(CreateDisposalFailure(failures));
+        }
+    }
+
+    private void DisposeSynchronously(IEnumerable<object> values, List<Exception> failures)
+    {
+        DrainRetirementFailures(failures);
+        foreach (var provider in GetReloadingProviders(values))
+        {
+            TryDispose(provider, failures);
+        }
+
+        foreach (var strategy in GetStrategies(values))
+        {
+            if (_strategyDisposals.TryClaim(strategy))
+            {
+                TryDispose(strategy, failures);
+            }
+        }
+    }
+
+    private LifecycleScope? EnterLifecycleScope()
+    {
+        var previous = _lifecycleScope.Value;
+        _lifecycleScope.Value = new LifecycleScope(this, previous);
+        return previous;
+    }
+
+    private static void ExitLifecycleScope(LifecycleScope? previous) =>
+        _lifecycleScope.Value = previous;
+
+    private bool IsLifecycleCaller()
+    {
+        if (_reclaiming && _reclamationThreadId == Environment.CurrentManagedThreadId)
+        {
+            return true;
+        }
+
+        if (_activeRegistryOperations?.Contains(this) == true)
+        {
+            return true;
+        }
+
+        for (var scope = _lifecycleScope.Value; scope is not null; scope = scope.Parent)
+        {
+            if (ReferenceEquals(scope.Registry, this))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static IEnumerable<IDisposable> GetReloadingProviders(IEnumerable<object> values)
@@ -661,6 +817,7 @@ internal sealed class KevlarRegistry : IKevlarRegistry
 
     private void CompleteDeferredDisposals(List<IAsyncDisposable> deferredAsyncDisposals)
     {
+        var previousScope = EnterLifecycleScope();
         try
         {
             foreach (var disposable in deferredAsyncDisposals)
@@ -677,6 +834,7 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         }
         finally
         {
+            ExitLifecycleScope(previousScope);
             EndDeferredDisposals();
         }
     }
@@ -691,11 +849,15 @@ internal sealed class KevlarRegistry : IKevlarRegistry
 
     private void EndDeferredDisposals()
     {
+        List<object>? deferredDisposal;
         lock (_lifecycleLock)
         {
             _pendingDeferredDisposals--;
+            deferredDisposal = TryStartDeferredDisposal();
             Monitor.PulseAll(_lifecycleLock);
         }
+
+        CompleteDeferredRegistryDisposal(deferredDisposal);
     }
 
     private void AddPublishedStrategies(HashSet<Strategy> retainedOrClaimed)
@@ -771,6 +933,7 @@ internal sealed class KevlarRegistry : IKevlarRegistry
             }
 
             _activeOperations++;
+            (_activeRegistryOperations ??= []).Add(this);
             return true;
         }
     }
@@ -779,6 +942,7 @@ internal sealed class KevlarRegistry : IKevlarRegistry
     {
         var scavenge = false;
         HashSet<Strategy>? retainedOrClaimed = null;
+        List<object>? deferredDisposal = null;
         lock (_lifecycleLock)
         {
             if (_reclaiming
@@ -789,9 +953,11 @@ internal sealed class KevlarRegistry : IKevlarRegistry
             }
 
             _activeOperations--;
+            _activeRegistryOperations!.RemoveAt(_activeRegistryOperations.LastIndexOf(this));
             if (_activeOperations == 0)
             {
                 scavenge = !_disposed;
+                deferredDisposal = TryStartDeferredDisposal();
                 Monitor.PulseAll(_lifecycleLock);
             }
         }
@@ -805,6 +971,8 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         {
             ScavengeRetirements();
         }
+
+        CompleteDeferredRegistryDisposal(deferredDisposal);
     }
 
     private bool TryBeginReclamation()
@@ -824,12 +992,16 @@ internal sealed class KevlarRegistry : IKevlarRegistry
 
     private void EndReclamation()
     {
+        List<object>? deferredDisposal;
         lock (_lifecycleLock)
         {
             _reclamationThreadId = 0;
             _reclaiming = false;
+            deferredDisposal = TryStartDeferredDisposal();
             Monitor.PulseAll(_lifecycleLock);
         }
+
+        CompleteDeferredRegistryDisposal(deferredDisposal);
     }
 
     private static void AddStrategies(object value, HashSet<Strategy> strategies)
@@ -846,16 +1018,19 @@ internal sealed class KevlarRegistry : IKevlarRegistry
 
     private static void ThrowDisposalFailures(List<Exception> failures)
     {
-        if (failures.Count == 1)
+        var failure = CreateDisposalFailure(failures);
+        if (failure is not null)
         {
-            throw failures[0];
-        }
-
-        if (failures.Count > 1)
-        {
-            throw new AggregateException(failures);
+            throw failure;
         }
     }
+
+    private static Exception? CreateDisposalFailure(List<Exception> failures) => failures.Count switch
+    {
+        0 => null,
+        1 => failures[0],
+        _ => new AggregateException(failures),
+    };
 
     private void DrainRetirementFailures(List<Exception> failures)
     {
@@ -888,5 +1063,12 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         public bool Equals(T? x, T? y) => ReferenceEquals(x, y);
 
         public int GetHashCode(T obj) => RuntimeHelpers.GetHashCode(obj);
+    }
+
+    private sealed class LifecycleScope(KevlarRegistry registry, LifecycleScope? parent)
+    {
+        public KevlarRegistry Registry { get; } = registry;
+
+        public LifecycleScope? Parent { get; } = parent;
     }
 }
