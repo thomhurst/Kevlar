@@ -1604,6 +1604,72 @@ public class MetricsTests
     }
 
     [Test]
+    public async Task Concurrency_Queued_Never_Includes_Rejected_Callers()
+    {
+        using var listener = new KevlarMeterListener();
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var shield = Shield.ConcurrencyLimit(1).WithName("metrics-concurrency-rejections");
+        var holder = shield.ExecuteAsync(async _ =>
+        {
+            entered.TrySetResult();
+            await release.Task;
+        }).AsTask();
+        await entered.Task;
+
+        var rejections = Enumerable.Range(0, 8)
+            .Select(worker => Task.Run(() =>
+            {
+                for (var attempt = 0; attempt < 5_000; attempt++)
+                {
+                    _ = shield.ExecuteOutcome(static _ => { });
+                }
+            }))
+            .ToArray();
+        while (rejections.Any(static task => !task.IsCompleted))
+        {
+            listener.RecordObservableInstruments();
+            await Task.Yield();
+        }
+
+        await Task.WhenAll(rejections);
+        listener.RecordObservableInstruments();
+        release.TrySetResult();
+        await holder;
+
+        await Assert.That(listener.Values(
+                "kevlar.concurrency_limit.queued",
+                "metrics-concurrency-rejections").All(static value => value == 0))
+            .IsTrue();
+    }
+
+    [Test]
+    public async Task State_Registry_Compaction_Tolerates_Collected_Entries()
+    {
+        var registry = new KevlarMetrics.StateMetricRegistry<object>();
+        var registration = registry.Register(new object());
+        var registrations = typeof(KevlarMetrics.StateMetricRegistry<object>).GetField(
+            "_registrations",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        registrations.SetValue(
+            registry,
+            new WeakReference<KevlarMetrics.StateMetricRegistration<object>>[] { null! });
+
+        registry.Publish(registration);
+        await Assert.That(((Array)registrations.GetValue(registry)!)
+                .Cast<object?>()
+                .All(static item => item is not null))
+            .IsTrue();
+
+        registrations.SetValue(
+            registry,
+            new WeakReference<KevlarMetrics.StateMetricRegistration<object>>[] { null! });
+        _ = registry.Observe(static (_, _) => 0).ToArray();
+
+        await Assert.That(((Array)registrations.GetValue(registry)!).Length).IsEqualTo(0);
+    }
+
+    [Test]
     public async Task Concurrency_Gauges_Track_Inflight_Queue_And_Cancellation()
     {
         using var listener = new KevlarMeterListener();

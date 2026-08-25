@@ -67,7 +67,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
     {
         var alias = new StrategyMetricAlias(context.ShieldName, context.StrategyIndex);
         RegisterMetricsAlias(alias);
-        if (Interlocked.Increment(ref _pending) > _capacity)
+        if (!TryReserveCapacity())
         {
             Interlocked.Decrement(ref _pending);
             RecordState(alias);
@@ -217,6 +217,23 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
             }
 
             if (Interlocked.CompareExchange(ref _available, available - 1, available) == available)
+            {
+                return true;
+            }
+        }
+    }
+
+    private bool TryReserveCapacity()
+    {
+        while (true)
+        {
+            var pending = Volatile.Read(ref _pending);
+            if (pending >= _capacity)
+            {
+                return false;
+            }
+
+            if (Interlocked.CompareExchange(ref _pending, pending + 1, pending) == pending)
             {
                 return true;
             }
