@@ -1374,6 +1374,29 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Inspects_Scheduled_Instance_Method_Bodies()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = item;
+                        _ = Task.Run(ProcessStored);
+                    });
+
+                private void ProcessStored() =>
+                    Console.WriteLine(_event.Context.ShieldName);
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
     public async Task KEV014_Flags_Pooled_Event_Property_In_Deferred_Work()
     {
         var diagnostics = await AnalyzeSourceAsync("""

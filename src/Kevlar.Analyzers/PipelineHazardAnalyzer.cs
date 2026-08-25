@@ -2271,10 +2271,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     visitedLocals,
                     out capturedContext);
             case IMethodReferenceOperation methodReference:
-                if (methodReference.Method.MethodKind == MethodKind.LocalFunction)
+                if (methodReference.Method.MethodKind is MethodKind.LocalFunction or MethodKind.Ordinary
+                    && methodReference.Method.DeclaringSyntaxReferences.Length > 0)
                 {
                     visitedLocals ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
-                    if (TryFindCapturedEventContextInLocalFunction(
+                    if (TryFindCapturedEventContextInMethod(
                         methodReference.Method,
                         context,
                         knownTypes,
@@ -2374,7 +2375,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static bool TryFindCapturedEventContextInLocalFunction(
+    private static bool TryFindCapturedEventContextInMethod(
         IMethodSymbol method,
         OperationAnalysisContext context,
         KnownTypes knownTypes,
@@ -2389,16 +2390,24 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         try
         {
-            var semanticModel = context.Operation.SemanticModel;
-            if (semanticModel is not null)
+            var currentSemanticModel = context.Operation.SemanticModel;
+            if (currentSemanticModel is not null)
             {
                 foreach (var syntaxReference in method.DeclaringSyntaxReferences)
                 {
                     var syntax = syntaxReference.GetSyntax(context.CancellationToken);
-                    if (semanticModel.GetOperation(syntax, context.CancellationToken)
-                            is ILocalFunctionOperation { Body: { } body }
+#pragma warning disable RS1030 // Source-backed method groups may be declared in another tree.
+                    var semanticModel = syntax.SyntaxTree == currentSemanticModel.SyntaxTree
+                        ? currentSemanticModel
+                        : currentSemanticModel.Compilation.GetSemanticModel(syntax.SyntaxTree);
+#pragma warning restore RS1030
+                    var body = GetFunctionBody(syntax);
+                    var bodyOperation = body is null
+                        ? null
+                        : semanticModel.GetOperation(body, context.CancellationToken);
+                    if (bodyOperation is not null
                         && TryFindCapturedEventContextInDelegate(
-                            body,
+                            bodyOperation,
                             context,
                             knownTypes,
                             visitedSymbols,
@@ -2454,10 +2463,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             }
 
             if (operation is IInvocationOperation invocation
-                && invocation.TargetMethod.MethodKind == MethodKind.LocalFunction)
+                && invocation.TargetMethod.MethodKind is MethodKind.LocalFunction or MethodKind.Ordinary
+                && invocation.TargetMethod.DeclaringSyntaxReferences.Length > 0)
             {
                 visitedLocals ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
-                if (TryFindCapturedEventContextInLocalFunction(
+                if (TryFindCapturedEventContextInMethod(
                     invocation.TargetMethod,
                     context,
                     knownTypes,
