@@ -657,7 +657,9 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.When<InvalidOperationException>().Timeout(static options => options.Timeout = TimeSpan.FromSeconds(1)).WhenAnyError().Retry(1);",
             "_ = Shield.When<InvalidOperationException>().Timeout(TimeSpan.FromSeconds(1)).When<TimeoutException>().Retry(1);",
             "_ = Shield.When<InvalidOperationException>().Or<TimeoutException>().RateLimit(1, TimeSpan.FromSeconds(1)).When<TimeoutException>().Retry(1);",
+            "_ = Shield.When<InvalidOperationException>().Use((Strategy)null!).When<TimeoutException>().Retry(1);",
             "_ = Shield.For<int>().When<InvalidOperationException>().Timeout(TimeSpan.FromSeconds(1)).WhenResult(static value => value < 0).Retry(1);",
+            "_ = Shield.For<int>().When<InvalidOperationException>().Use((Strategy)null!).WhenResult(static value => value < 0).Retry(1);",
         };
 
         await AssertEachAsync(cases, "KEV007", "KEV004");
@@ -673,7 +675,9 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.When<InvalidOperationException>().Timeout(TimeSpan.FromSeconds(1)).Retry(1);",
             "_ = Shield.When<InvalidOperationException>().Fallback(static (_, _) => default);",
             "_ = Shield.When<InvalidOperationException>().Fallback(static _ => default);",
+            "_ = Shield.When<InvalidOperationException>().Use(static clause => (Strategy)null!).When<TimeoutException>().Retry(1);",
             "_ = Shield.For<int>().WhenResult(static value => value < 0).FallbackTo(0);",
+            "_ = Shield.For<int>().When<InvalidOperationException>().Use(static clause => (Strategy)null!).WhenResult(static value => value < 0).Retry(1);",
             "_ = Shield.For<int>().When<InvalidOperationException>().Timeout(TimeSpan.FromSeconds(1)).Retry(1);",
             "var clause = Shield.When<InvalidOperationException>(); _ = clause.Retry(1);",
             "var clause = Shield.When<InvalidOperationException>(); _ = clause.Or<TimeoutException>().Retry(1);",
