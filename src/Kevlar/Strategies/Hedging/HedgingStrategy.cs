@@ -404,7 +404,7 @@ internal sealed class HedgingStrategy : Strategy
     {
         if (cancellation is HedgeAttemptLifetime lifetime)
         {
-            lifetime.Release();
+            lifetime.CompleteGeneratedAction();
             return;
         }
 
@@ -741,6 +741,12 @@ internal sealed class HedgingStrategy : Strategy
             }
 
             return false;
+        }
+
+        public void CompleteGeneratedAction()
+        {
+            Volatile.Write(ref _lease, null);
+            Release();
         }
 
         public void Release()

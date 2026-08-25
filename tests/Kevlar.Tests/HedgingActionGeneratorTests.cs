@@ -745,6 +745,7 @@ public class HedgingActionGeneratorTests
             TaskCreationOptions.RunContinuationsAsynchronously);
         var releaseOriginal = new TaskCompletionSource(
             TaskCreationOptions.RunContinuationsAsynchronously);
+        Func<CancellationToken, ValueTask<int>>? invokeOriginal = null;
         Task<int>? originalAction = null;
         KevlarContext? attemptContext = null;
         var attempts = 0;
@@ -755,9 +756,10 @@ public class HedgingActionGeneratorTests
             options.ActionGenerator = hedge =>
             {
                 attemptContext = hedge.Context;
+                invokeOriginal = hedge.OriginalAction;
                 return async token =>
                 {
-                    originalAction = hedge.OriginalAction(token).AsTask();
+                    originalAction = invokeOriginal!(token).AsTask();
                     await originalStarted.Task;
                     return 42;
                 };
@@ -777,6 +779,8 @@ public class HedgingActionGeneratorTests
         });
 
         await Assert.That(result).IsEqualTo(42);
+        await Assert.That(async () => await invokeOriginal!(CancellationToken.None))
+            .Throws<InvalidOperationException>();
 
         var rentedContexts = new ConcurrentBag<KevlarContext>();
         var allRented = new TaskCompletionSource(
