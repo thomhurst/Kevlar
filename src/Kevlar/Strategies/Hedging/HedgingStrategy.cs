@@ -95,16 +95,22 @@ internal sealed class HedgingStrategy : Strategy
         }
 
         Outcome<T> outcome;
+        bool shouldHandle;
         try
         {
             outcome = primary.Execution.Result;
+            shouldHandle = _judge.ShouldHandle(
+                in outcome,
+                primary.Context,
+                attempt: 0,
+                strategyIndex);
         }
         finally
         {
             primary.Dispose();
         }
 
-        if (!_judge.ShouldHandle(in outcome, context, attempt: 0, strategyIndex))
+        if (!shouldHandle)
         {
             return new ValueTask<Outcome<T>>(NormalizeCancellation(outcome, context));
         }
@@ -191,9 +197,22 @@ internal sealed class HedgingStrategy : Strategy
                 }
 
                 var outcome = NormalizeCancellation(await completed.ConfigureAwait(false), context);
-                var attempt = Remove(pending, completed);
+                var completedAttempt = Remove(pending, completed);
+                bool shouldHandle;
+                try
+                {
+                    shouldHandle = _judge.ShouldHandle(
+                        in outcome,
+                        completedAttempt.Context,
+                        completedAttempt.Attempt,
+                        strategyIndex);
+                }
+                finally
+                {
+                    completedAttempt.Dispose();
+                }
 
-                if (!_judge.ShouldHandle(in outcome, context, attempt, strategyIndex))
+                if (!shouldHandle)
                 {
                     return outcome;
                 }
@@ -526,14 +545,13 @@ internal sealed class HedgingStrategy : Strategy
         return null;
     }
 
-    private static int Remove<T>(List<HedgeAttempt<T>> pending, Task<Outcome<T>> task)
+    private static HedgeAttempt<T> Remove<T>(List<HedgeAttempt<T>> pending, Task<Outcome<T>> task)
     {
         for (var i = 0; i < pending.Count; i++)
         {
             if (ReferenceEquals(pending[i].Task, task))
             {
-                var attempt = pending[i].Attempt;
-                pending[i].Dispose();
+                var attempt = pending[i];
                 pending.RemoveAt(i);
                 return attempt;
             }
@@ -620,7 +638,7 @@ internal sealed class HedgingStrategy : Strategy
 
         private CancellationTokenSource Cancellation { get; }
 
-        private KevlarContext Context { get; }
+        public KevlarContext Context { get; }
 
         private int Attempt { get; }
 

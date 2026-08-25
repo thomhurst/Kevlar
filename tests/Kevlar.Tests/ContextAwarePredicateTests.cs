@@ -3,6 +3,7 @@ namespace Kevlar.Tests;
 public class ContextAwarePredicateTests
 {
     private static readonly KevlarKey<bool> IsRead = new("is-read");
+    private static readonly KevlarKey<int> HedgeAttempt = new("hedge-attempt");
 
     [Test]
     public async Task Predicate_Receives_Attempt_Number_In_Retry()
@@ -127,6 +128,31 @@ public class ContextAwarePredicateTests
 
         await Assert.That(result).IsEqualTo(42);
         await Assert.That(observedAttempts).IsEquivalentTo([0, 1]);
+    }
+
+    [Test]
+    public async Task Hedge_Predicate_Receives_Each_Attempts_Context()
+    {
+        var observedValues = new List<int>();
+        var executions = 0;
+        var shield = Shield.For<int>()
+            .WhenResult(handling =>
+            {
+                observedValues.Add(handling.Context.Properties.GetOrDefault(HedgeAttempt));
+                return handling.Outcome.TryGetResult(out var result) && result < 0;
+            })
+            .Hedge(maxAttempts: 2, delay: Timeout.InfiniteTimeSpan);
+
+        var result = await shield.ExecuteWithContextAsync(async context =>
+        {
+            await Task.Yield();
+            var execution = Interlocked.Increment(ref executions);
+            context.Properties.Set(HedgeAttempt, execution);
+            return execution == 1 ? -1 : 42;
+        });
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(observedValues).IsEquivalentTo([1, 2]);
     }
 
     [Test]
