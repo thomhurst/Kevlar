@@ -13,6 +13,9 @@ dotnet add package Kevlar.Extensions.Http
 ## The one-liner
 
 ```csharp
+using Kevlar.Extensions.Http;
+using Microsoft.Extensions.DependencyInjection;
+
 services.AddHttpClient("api")
     .AddStandardShield();
 ```
@@ -32,12 +35,16 @@ that configuration.
 Customize those stages without rebuilding the pipeline:
 
 ```csharp
+using Kevlar.Extensions.Http;
+
 services.AddHttpClient("api")
     .AddStandardShield(options =>
     {
         options.TotalTimeout.Timeout = TimeSpan.FromSeconds(20);
         options.Retry.MaxRetries = 2;
         options.CircuitBreaker.FailureRatio = 0.25;
+        options.CircuitBreaker.HandlesResult = response =>
+            response.StatusCode == HttpStatusCode.ServiceUnavailable;
         options.ConcurrencyLimit = new ConcurrencyLimitOptions
         {
             MaxConcurrency = 100,
@@ -49,14 +56,19 @@ services.AddHttpClient("api")
     });
 ```
 
-`StandardHttpShieldOptions` exposes the total timeout, typed retry options, circuit breaker,
+`StandardHttpShieldOptions` exposes the total timeout, typed retry and circuit-breaker options,
 optional concurrency limiter, attempt timeout, and handler replay/routing options. Invalid strategy
 values fail while the registration is built; handler replay/routing values fail when
 `HttpClientFactory` builds its handler pipeline, before a request is sent.
 
+The breaker is a `CircuitBreakerOptions<HttpResponseMessage>`, so `HandlesResult` can replace the
+standard transient-result clause for that stage without changing retry handling.
+
 For dependency-aware setup, use the service-provider overload:
 
 ```csharp
+using Kevlar.Extensions.Http;
+
 services.AddSingleton(new ConcurrencyLimitOptions
 {
     MaxConcurrency = 100,
@@ -80,6 +92,8 @@ Pass an `IConfiguration` section to bind the standard pipeline and reload it whe
 change token fires:
 
 ```csharp
+using Kevlar.Extensions.Http;
+
 var configuration = new ConfigurationBuilder()
     .AddInMemoryCollection(new Dictionary<string, string?>
     {
@@ -111,6 +125,8 @@ Configuration is applied first. The service-provider callback overload runs afte
 and delegates can deliberately override bound values:
 
 ```csharp
+using Kevlar.Extensions.Http;
+
 var configuration = new ConfigurationBuilder()
     .AddInMemoryCollection(new Dictionary<string, string?>
     {
@@ -141,6 +157,8 @@ Hedging uses the same reload contract. Its scalar keys match `StandardHedgeShiel
 `Endpoints` is required:
 
 ```csharp
+using Kevlar.Extensions.Http;
+
 var configuration = new ConfigurationBuilder()
     .AddInMemoryCollection(new Dictionary<string, string?>
     {
@@ -160,6 +178,8 @@ services.AddHttpClient("routed")
 ## Bring your own pipeline
 
 ```csharp
+using Kevlar.Extensions.Http;
+
 services.AddHttpClient("api")
     .AddShield(
         HttpShield.WhenTransient()
@@ -203,6 +223,8 @@ The standard shield caps every retry delay at 10 seconds, so one excessive serve
 impose an unbounded wait. Custom shields can cap server-suggested delays directly:
 
 ```csharp
+using Kevlar.Extensions.Http;
+
 var shield = HttpShield.WhenTransient()
     .Retry(options =>
     {
@@ -213,6 +235,9 @@ var shield = HttpShield.WhenTransient()
 ### Registering a shield built elsewhere
 
 ```csharp
+using Kevlar.Extensions.DependencyInjection;
+using Kevlar.Extensions.Http;
+
 services.AddHttpClient("api")
     .AddShield(sp => sp.GetRequiredService<IKevlarRegistry>()
         .GetShield<HttpResponseMessage>("downstream"));
@@ -254,6 +279,8 @@ Route attempt 1, attempt 2, and so on across alternate authorities while preserv
 path and query:
 
 ```csharp
+using Kevlar.Extensions.Http;
+
 services.AddHttpClient("routed")
     .AddStandardHedgeShield(options =>
     {
@@ -262,13 +289,17 @@ services.AddHttpClient("routed")
         options.SelectionMode = HttpEndpointSelectionMode.Weighted;
         options.MaxAttempts = 2;
         options.HedgeDelay = TimeSpan.FromMilliseconds(500);
+        options.HedgeDelayGenerator = hedge => hedge.Elapsed < TimeSpan.FromSeconds(1)
+            ? TimeSpan.FromMilliseconds(100)
+            : TimeSpan.Zero;
     });
 ```
 
 `AddStandardHedgeShield` installs a 30s total timeout and up to two hedged attempts. Each endpoint
 gets its own 10-concurrent/zero-queue limiter, 50%-over-30s circuit breaker (minimum 10 attempts,
 15s break), and 10s attempt timeout. Configure those defaults through `TotalTimeout`, `MaxAttempts`,
-`HedgeDelay`, `MaxConcurrency`, `QueueLimit`, `FailureRatio` or `ConsecutiveFailures`,
+`HedgeDelay`, `HedgeDelayGenerator`, `HedgeDelayGeneratorAsync`, `MaxConcurrency`, `QueueLimit`,
+`FailureRatio` or `ConsecutiveFailures`,
 `MinimumThroughput`, `SamplingWindow`, `BreakDuration`, and `AttemptTimeout`.
 
 The registration also exposes `ContentReplayPolicy`, `MaximumBufferSize`,
@@ -279,6 +310,8 @@ make an unsafe operation safe to repeat.
 For a fully custom endpoint-aware pipeline, compose the outer and endpoint shields directly:
 
 ```csharp
+using Kevlar.Extensions.Http;
+
 var routing = new HttpEndpointRoutingOptions
 {
     SelectionMode = HttpEndpointSelectionMode.Ordered,

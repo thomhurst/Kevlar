@@ -1,0 +1,70 @@
+name: Bug report
+description: Report incorrect or unexpected Kevlar behavior.
+title: "fix: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for reporting a bug. Do not include secrets or vulnerability details here.
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package
+      options:
+        - Kevlar
+        - Kevlar.Analyzers
+        - Kevlar.Chaos
+        - Kevlar.Extensions.DependencyInjection
+        - Kevlar.Extensions.Grpc
+        - Kevlar.Extensions.Http
+        - Kevlar.Extensions.RateLimiting
+        - Kevlar.Testing
+        - Multiple packages
+    validations:
+      required: true
+  - type: dropdown
+    id: target-framework
+    attributes:
+      label: Target framework
+      options: [netstandard2.0, netstandard2.1, net8.0, net10.0, .NET Framework consumer, Other]
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Kevlar version
+      placeholder: 1.0.0
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Include a small shield, execution delegate, and observed result or exception.
+      render: csharp
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, architecture, runtime/SDK version, and relevant dependency versions.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I searched existing issues and removed secrets from this report.
+          required: true

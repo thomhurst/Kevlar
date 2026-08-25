@@ -4,6 +4,12 @@
 
 ### Breaking changes
 
+- Strategy callback events now expose their position through public
+  `KevlarContext.StrategyIndex`; the duplicate properties on limiter rejection events were removed.
+  Circuit transitions use `CircuitBreakerStateChangedEvent` and carry execution context, while
+  manual monitor transitions carry a detached context at index `-1`. Typed circuit-breaker
+  duration generators receive `CircuitBreakerBreakDurationEvent<TResult>` with a directly stored
+  outcome and failure statistics. Typed retry events likewise store their outcome without boxing.
 - `HedgeOptions<TResult>.ActionGenerator` is now a strongly typed delegate. Assign the generator
   directly instead of wrapping it with `HedgeActionGenerator.Create<TResult>(...)`; the erased
   wrapper remains available on untyped `HedgeOptions`. Typed generator events now expose the latest
@@ -16,6 +22,12 @@
 - Typed constant-value `Fallback(value)` is now `FallbackTo(value)` on `Shield<TResult>` and
   `ShieldBuilder<TResult>`. Delegate factories remain `Fallback(...)`. This makes null fallback
   values explicit and avoids ambiguity between value and delegate overloads.
+- The System.Threading.RateLimiting adapter now uses `UseRateLimiter(...)`,
+  `RateLimiterAdapterRejectedEvent`, and `RateLimiterAdapterRejectedException`. The distinct names
+  separate adapter-backed strategies from Kevlar's built-in `RateLimit(...)` strategy.
+- `StandardHttpShieldOptions.CircuitBreaker` now uses
+  `CircuitBreakerOptions<HttpResponseMessage>`, exposing typed result predicates for the standard
+  HTTP breaker.
 
 Handling clauses now use one spelling per position. `When…` starts a clause on `Shield` or
 `Shield<TResult>`; only `Or…` continues it on a builder. `Shield.For<TResult>()` now returns
@@ -36,6 +48,10 @@ Handling clauses now use one spelling per position. `When…` starts a clause on
 | `StrategyKind.Hedging` | `StrategyKind.Hedge` |
 | `StandardHedgingShieldOptions` | `StandardHedgeShieldOptions` |
 | `AddStandardHedgingShield(...)` | `AddStandardHedgeShield(...)` |
+| adapter `.RateLimit(limiter)` | `.UseRateLimiter(limiter)` |
+| `RateLimiterRejectedEvent` | `RateLimiterAdapterRejectedEvent` |
+| adapter `RateLimitExceededException` | `RateLimiterAdapterRejectedException` |
+| `StandardHttpShieldOptions.CircuitBreaker` as `CircuitBreakerOptions` | `CircuitBreakerOptions<HttpResponseMessage>` |
 
 `OrWhen` is gone: `Or(Func<Exception, bool>)` now mirrors `When(Func<Exception, bool>)`, so the
 untyped predicate has the same spelling in both clause positions. `WhenDefault`/`OrDefault` were
@@ -56,6 +72,16 @@ build spelled these `WhenResultDefault`/`OrResultDefault`; the `Is` makes the re
 
 ### Changed
 
+- Hedging now supports synchronous and asynchronous per-attempt delay generators with access to
+  the attempt number, execution context, and elapsed time. Standard endpoint-aware HTTP hedging
+  exposes the same adaptive delay hooks, and `Kevlar.Testing` reports whether one is configured.
+- Invalid values supplied through strategy options now throw
+  `KevlarConfigurationException`, while direct shorthand overloads continue to throw
+  `ArgumentOutOfRangeException` with the invoked public parameter name.
+- Named DI registrations now expose symmetric configuration overloads, typed
+  `IShieldProvider<TResult>` snapshots, and `AddReloadingShield<TResult>`.
+- Handling-clause builders now match their shield counterparts for configured timeouts, direct
+  custom strategies, and void fallbacks that do not need the handled exception.
 - Every NuGet package now embeds the canonical Kevlar icon, links release notes, and carries a
   NuGet-safe README with status badges. `Kevlar.Analyzers` is marked as a development dependency
   so it does not flow from a packed consumer library.

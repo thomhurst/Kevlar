@@ -26,4 +26,7 @@ public enum StrategyKind
 
     /// <summary>A fallback strategy.</summary>
     Fallback,
+
+    /// <summary>A strategy backed by System.Threading.RateLimiting.</summary>
+    RateLimiterAdapter,
 }

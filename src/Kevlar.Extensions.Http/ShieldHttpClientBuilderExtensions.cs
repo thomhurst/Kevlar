@@ -348,7 +348,13 @@ public static class ShieldHttpClientBuilderExtensions
                     .For<HttpResponseMessage>())
             .Or<ConcurrencyLimitExceededException>()
             .Or<CircuitOpenException>()
-            .Hedge(options.MaxAttempts, options.HedgeDelay);
+            .Hedge(hedge =>
+            {
+                hedge.MaxAttempts = options.MaxAttempts;
+                hedge.Delay = options.HedgeDelay;
+                hedge.DelayGenerator = options.HedgeDelayGenerator;
+                hedge.DelayGeneratorAsync = options.HedgeDelayGeneratorAsync;
+            });
 
     private static ShieldHttpHandlerOptions CreateHandlerOptions(StandardHedgeShieldOptions options)
     {

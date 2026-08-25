@@ -11,6 +11,7 @@ public class LimiterRejectionHookTests
         var order = new List<string>();
         RateLimitRejectedEvent observed = default;
         string? observedShieldName = null;
+        var observedStrategyIndex = -1;
         var shield = Shield.For<int>()
             .RateLimit(options =>
             {
@@ -22,6 +23,7 @@ public class LimiterRejectionHookTests
                 {
                     observed = rejection;
                     observedShieldName = rejection.Context.ShieldName;
+                    observedStrategyIndex = rejection.Context.StrategyIndex;
                     order.Add("sync");
                 };
                 options.OnRejectedAsync = async rejection =>
@@ -44,7 +46,7 @@ public class LimiterRejectionHookTests
         await Assert.That(observed.Window).IsEqualTo(TimeSpan.FromSeconds(2));
         await Assert.That(observed.Burst).IsEqualTo(1);
         await Assert.That(observed.QueueLimit).IsEqualTo(0);
-        await Assert.That(observed.StrategyIndex).IsEqualTo(0);
+        await Assert.That(observedStrategyIndex).IsEqualTo(0);
         await Assert.That(observedShieldName).IsEqualTo("orders");
     }
 
@@ -54,6 +56,7 @@ public class LimiterRejectionHookTests
         var order = new List<string>();
         ConcurrencyLimitRejectedEvent observed = default;
         string? observedShieldName = null;
+        var observedStrategyIndex = -1;
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var shield = Shield
@@ -66,6 +69,7 @@ public class LimiterRejectionHookTests
                 {
                     observed = rejection;
                     observedShieldName = rejection.Context.ShieldName;
+                    observedStrategyIndex = rejection.Context.StrategyIndex;
                     order.Add("sync");
                 };
                 options.OnRejectedAsync = async rejection =>
@@ -91,7 +95,7 @@ public class LimiterRejectionHookTests
         await Assert.That(order.SequenceEqual(["sync", "async"])).IsTrue();
         await Assert.That(observed.MaxConcurrency).IsEqualTo(1);
         await Assert.That(observed.QueueLimit).IsEqualTo(0);
-        await Assert.That(observed.StrategyIndex).IsEqualTo(0);
+        await Assert.That(observedStrategyIndex).IsEqualTo(0);
         await Assert.That(observedShieldName).IsEqualTo("bulkhead");
 
         release.SetResult();

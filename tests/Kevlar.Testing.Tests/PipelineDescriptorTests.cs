@@ -49,6 +49,7 @@ public class PipelineDescriptorTests
             {
                 options.MaxAttempts = 3;
                 options.Delay = TimeSpan.FromMilliseconds(25);
+                options.DelayGenerator = static _ => TimeSpan.Zero;
                 options.OnHedge = _ => { };
                 options.ActionGenerator = HedgeActionGenerator.Create(static _ => null);
             })
@@ -104,6 +105,7 @@ public class PipelineDescriptorTests
         var hedge = descriptor.AssertContainsSingle<HedgeStrategyDescriptor>();
         await Assert.That(hedge.MaxAttempts).IsEqualTo(3);
         await Assert.That(hedge.Delay).IsEqualTo(TimeSpan.FromMilliseconds(25));
+        await Assert.That(hedge.HasDelayGenerator).IsTrue();
         await Assert.That(hedge.HasNotification).IsTrue();
         await Assert.That(hedge.HasActionGenerator).IsTrue();
     }
@@ -204,6 +206,18 @@ public class PipelineDescriptorTests
             Outcome<int>.FromException(new ArgumentException()))).IsTrue();
         await Assert.That(custom.Handling.Value.ShouldHandle(
             Outcome<int>.FromException(new InvalidOperationException()))).IsFalse();
+    }
+
+    [Test]
+    public async Task Adapter_Type_Name_In_Another_Assembly_Remains_Custom()
+    {
+        var custom = Shield.When<ArgumentException>()
+            .Use(clause => new global::Kevlar.Extensions.RateLimiting.RateLimiterStrategy(clause))
+            .GetDescriptor()
+            .AssertContainsSingle<CustomStrategyDescriptor>();
+
+        await Assert.That(custom.Kind).IsEqualTo(StrategyKind.Custom);
+        await Assert.That(custom.Handling.HasValue).IsTrue();
     }
 
     [Test]

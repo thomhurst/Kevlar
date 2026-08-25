@@ -19,8 +19,18 @@ internal sealed class TimeoutStrategy : Strategy
 
     public TimeoutStrategy(TimeoutOptions options)
     {
-        Throw.IfOutOfRange(options.Timeout <= TimeSpan.Zero, nameof(options), "Timeout must be positive.");
-        Throw.IfOutOfRange(options.Timeout > DelayHelper.MaximumDelay, nameof(options.Timeout), "Timeout exceeds the runtime timer limit.");
+        ConfigurationValidation.ThrowIf(
+            options.Timeout <= TimeSpan.Zero,
+            typeof(TimeoutOptions),
+            nameof(options.Timeout),
+            options.Timeout,
+            "must be positive");
+        ConfigurationValidation.ThrowIf(
+            options.Timeout > DelayHelper.MaximumDelay,
+            typeof(TimeoutOptions),
+            nameof(options.Timeout),
+            options.Timeout,
+            "must not exceed the runtime timer limit");
         _timeout = options.Timeout;
         _timeoutGenerator = options.TimeoutGenerator;
         _onTimeout = options.OnTimeout;
@@ -257,7 +267,17 @@ internal sealed class TimeoutStrategy : Strategy
 
     private static void ValidateGeneratedTimeout(TimeSpan timeout)
     {
-        Throw.IfOutOfRange(timeout <= TimeSpan.Zero, nameof(timeout), "Generated timeout must be positive.");
-        Throw.IfOutOfRange(timeout > DelayHelper.MaximumDelay, nameof(timeout), "Generated timeout exceeds the runtime timer limit.");
+        ConfigurationValidation.ThrowIf(
+            timeout <= TimeSpan.Zero,
+            typeof(TimeoutOptions),
+            nameof(TimeoutOptions.TimeoutGenerator),
+            timeout,
+            "must return a positive timeout");
+        ConfigurationValidation.ThrowIf(
+            timeout > DelayHelper.MaximumDelay,
+            typeof(TimeoutOptions),
+            nameof(TimeoutOptions.TimeoutGenerator),
+            timeout,
+            "must not return a timeout above the runtime timer limit");
     }
 }

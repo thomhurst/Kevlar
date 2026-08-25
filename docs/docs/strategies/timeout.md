@@ -74,6 +74,10 @@ in asynchronous work. If caller cancellation wins while generation runs, the exe
 not started. The context is pooled: inspect it only during the generator or callback and never retain
 it.
 
+Invalid `TimeoutOptions` values—and invalid durations returned by `TimeoutGenerator`—throw
+[`KevlarConfigurationException`](../exceptions.md#configuration-failures) naming the property and
+offending value.
+
 After a timeout wins, Kevlar records timeout metrics, restores the caller token, disposes timer state,
 then invokes `OnTimeout` followed by awaited `OnTimeoutAsync`. A callback exception or cancellation
 is surfaced unchanged instead of `TimeoutExceededException`. Hooks may run concurrently when a shield
@@ -95,6 +99,9 @@ The inner timeout's `TimeoutExceededException` is a handleable failure, so the r
 
 <!-- doc-test-run: timeout-exceeded-clause -->
 ```csharp
+using Kevlar.Testing;
+using Microsoft.Extensions.Time.Testing;
+
 var time = new FakeTimeProvider();
 var attempts = 0;
 var execution = Shield
@@ -140,6 +147,9 @@ The similar-looking `System.TimeoutException` clause does not handle Kevlar's ti
 
 <!-- doc-test-run: system-timeout-clause-trap -->
 ```csharp
+using Kevlar.Testing;
+using Microsoft.Extensions.Time.Testing;
+
 var time = new FakeTimeProvider();
 var attempts = 0;
 var shield = Shield

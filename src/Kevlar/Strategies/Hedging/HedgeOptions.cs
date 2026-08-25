@@ -40,6 +40,20 @@ public sealed class HedgeOptions
     /// </summary>
     public TimeSpan Delay { get; set; } = TimeSpan.FromSeconds(1);
 
+    /// <summary>
+    /// Selects the delay before each additional attempt while earlier attempts remain pending.
+    /// The generated value replaces <see cref="Delay"/> for that attempt. Negative values are
+    /// treated as <see cref="TimeSpan.Zero"/> and values above the runtime timer limit are clamped.
+    /// </summary>
+    public Func<HedgeDelayEvent, TimeSpan>? DelayGenerator { get; set; }
+
+    /// <summary>
+    /// Asynchronously selects the delay before each additional attempt while earlier attempts
+    /// remain pending. When both generators are configured, this generator runs second and its
+    /// value determines the delay.
+    /// </summary>
+    public Func<HedgeDelayEvent, ValueTask<TimeSpan>>? DelayGeneratorAsync { get; set; }
+
     /// <summary>Invoked when an additional hedged attempt is launched.</summary>
     public Action<HedgeEvent>? OnHedge { get; set; }
 
@@ -57,10 +71,12 @@ public sealed class HedgeOptions
 /// <summary>Describes a hedged attempt being launched.</summary>
 public readonly struct HedgeEvent
 {
+    private readonly KevlarContext? _context;
+
     internal HedgeEvent(int attemptNumber, KevlarContext context)
     {
         AttemptNumber = attemptNumber;
-        Context = context;
+        _context = context;
     }
 
     /// <summary>The 1-based number of the attempt being launched (2 = first hedge).</summary>
@@ -70,5 +86,5 @@ public readonly struct HedgeEvent
     /// The ambient execution context. It is pooled; do not retain it after synchronous and
     /// asynchronous hedge callbacks complete.
     /// </summary>
-    public KevlarContext Context { get; }
+    public KevlarContext Context => Internal.EventContext.Required(_context);
 }

@@ -2,12 +2,118 @@ using System.Diagnostics.Metrics;
 using System.Threading.RateLimiting;
 using Kevlar.Extensions.RateLimiting;
 using Kevlar.Testing;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace Kevlar.Extensions.RateLimiting.Tests;
 
 public class RateLimiterAdapterTests
 {
     private static readonly KevlarKey<string> TenantKey = new("tenant");
+
+    [Test]
+    public async Task UseRateLimiter_And_Core_RateLimit_Can_Coexist_In_One_Chain()
+    {
+        using var limiter = new FixedWindowRateLimiter(new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 1,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            AutoReplenishment = false,
+        });
+        using var recorder = new TelemetryRecorder();
+        var shield = Shield.Empty
+            .RateLimit(100, perWindow: TimeSpan.FromMinutes(1))
+            .UseRateLimiter(limiter)
+            .WithName("coexisting-rate-limiters");
+
+        await shield.ExecuteAsync(static _ => new ValueTask<int>(1));
+        var rejected = await shield.ExecuteOutcomeAsync(static _ => new ValueTask<int>(2));
+
+        await Assert.That(rejected.Exception).IsTypeOf<RateLimiterAdapterRejectedException>();
+        await Assert.That(recorder.Metrics.Any(metric =>
+            metric.InstrumentName == "kevlar.rejections" &&
+            metric.Tags.TryGetValue("kevlar.rejection.type", out var kind) &&
+            Equals(kind, "rate_limiter_adapter"))).IsTrue();
+        shield.GetDescriptor().AssertStrategyOrder(
+            StrategyKind.RateLimit,
+            StrategyKind.RateLimiterAdapter);
+    }
+
+    [Test]
+    public async Task Describe_Distinguishes_Adapter_From_Core()
+    {
+        using var limiter = new TokenBucketRateLimiter(new TokenBucketRateLimiterOptions
+        {
+            TokenLimit = 1,
+            TokensPerPeriod = 1,
+            ReplenishmentPeriod = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            AutoReplenishment = false,
+        });
+        var shield = Shield.Empty
+            .RateLimit(100, perWindow: TimeSpan.FromSeconds(1))
+            .UseRateLimiter(limiter);
+
+        await Assert.That(shield.ToString())
+            .IsEqualTo("RateLimit(100/1s) → RateLimiter(TokenBucket)");
+    }
+
+    [Test]
+    public async Task Adapter_Public_Types_Do_Not_Collide_With_Core_Limit_Names()
+    {
+        var coreNames = typeof(Shield).Assembly.ExportedTypes
+            .Select(static type => NormalizeLimiterName(type.Name))
+            .ToHashSet(StringComparer.Ordinal);
+        var collisions = typeof(ShieldRateLimiterExtensions).Assembly.ExportedTypes
+            .Where(type => coreNames.Contains(NormalizeLimiterName(type.Name)))
+            .Select(static type => type.Name)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+
+        await Assert.That(collisions).IsEmpty();
+    }
+
+    [Test]
+    public async Task Core_And_Adapter_Extension_Calls_Compile_Without_Ambiguity()
+    {
+        const string source = """
+            using System;
+            using System.Threading.RateLimiting;
+            using Kevlar;
+            using Kevlar.Extensions.RateLimiting;
+
+            internal static class Usage
+            {
+                public static Shield Build(Shield shield, RateLimiter limiter) => shield
+                    .RateLimit(100, TimeSpan.FromSeconds(1))
+                    .UseRateLimiter(limiter);
+            }
+            """;
+        var trustedAssemblies = ((string?)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES"))!
+            .Split(Path.PathSeparator)
+            .Append(typeof(Shield).Assembly.Location)
+            .Append(typeof(ShieldRateLimiterExtensions).Assembly.Location)
+            .Append(typeof(RateLimiter).Assembly.Location)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select(static path => MetadataReference.CreateFromFile(path));
+        var compilation = CSharpCompilation.Create(
+            "RateLimiterExtensionBinding",
+            [CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(LanguageVersion.Preview))],
+            trustedAssemblies,
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+        var errors = compilation.GetDiagnostics()
+            .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+            .Select(static diagnostic => diagnostic.ToString())
+            .ToArray();
+
+        await Assert.That(errors).IsEmpty();
+    }
+
+    private static string NormalizeLimiterName(string name) =>
+        name.Replace("RateLimiter", "RateLimit", StringComparison.Ordinal);
 
     [Test]
     public async Task Fixed_Window_Preserves_Retry_After_And_Hook_Order()
@@ -22,13 +128,15 @@ public class RateLimiterAdapterTests
         });
         using var listener = new RejectionListener("fixed-window");
         var order = new List<string>();
-        RateLimiterRejectedEvent observed = default;
+        RateLimiterAdapterRejectedEvent observed = default;
+        var observedStrategyIndex = -1;
         var shield = Shield.Empty
-            .RateLimit(limiter, options =>
+            .UseRateLimiter(limiter, options =>
             {
                 options.OnRejected = rejection =>
                 {
                     observed = rejection;
+                    observedStrategyIndex = rejection.Context.StrategyIndex;
                     order.Add(listener.Count == 1 ? "metric-sync" : "sync-before-metric");
                 };
                 options.OnRejectedAsync = async rejection =>
@@ -43,14 +151,14 @@ public class RateLimiterAdapterTests
         await shield.ExecuteAsync(static _ => new ValueTask<int>(1));
         var outcome = await shield.ExecuteOutcomeAsync(static _ => new ValueTask<int>(2));
 
-        var exception = outcome.Exception as RateLimitExceededException;
+        var exception = outcome.Exception as RateLimiterAdapterRejectedException;
         await Assert.That(exception).IsNotNull();
         await Assert.That(exception!.RetryAfter).IsNotNull();
         await Assert.That(exception.RetryAfter > TimeSpan.Zero).IsTrue();
         await Assert.That(observed.RetryAfter).IsEqualTo(exception.RetryAfter);
         await Assert.That(observed.Metadata.ContainsKey(MetadataName.RetryAfter.Name)).IsTrue();
         await Assert.That(observed.PermitCount).IsEqualTo(1);
-        await Assert.That(observed.StrategyIndex).IsEqualTo(0);
+        await Assert.That(observedStrategyIndex).IsEqualTo(0);
         await Assert.That(order.SequenceEqual(["metric-sync", "async"])).IsTrue();
     }
 
@@ -100,7 +208,7 @@ public class RateLimiterAdapterTests
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var rejected = 0;
-        var shield = Shield.Empty.RateLimit(limiter, options =>
+        var shield = Shield.Empty.UseRateLimiter(limiter, options =>
             options.OnRejected = _ => rejected++);
         var occupying = shield.ExecuteAsync(async _ =>
         {
@@ -127,7 +235,7 @@ public class RateLimiterAdapterTests
     public async Task Partitioned_Limiter_Isolates_Context_Partitions_And_Composes_With_Partitioned_Shields()
     {
         using var limiter = CreateTenantConcurrencyLimiter(queueLimit: 0);
-        var shields = new PartitionedShield<string>(_ => Shield.Empty.RateLimit(limiter));
+        var shields = new PartitionedShield<string>(_ => Shield.Empty.UseRateLimiter(limiter));
         var shield = shields.GetShield("pipeline");
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -142,7 +250,7 @@ public class RateLimiterAdapterTests
         await Assert.That(async () => await ExecuteForTenantAsync(
             shield,
             "alpha",
-            static _ => new ValueTask<int>(2))).Throws<RateLimitExceededException>();
+            static _ => new ValueTask<int>(2))).Throws<RateLimiterAdapterRejectedException>();
         await Assert.That(await ExecuteForTenantAsync(
             shield,
             "beta",
@@ -157,7 +265,7 @@ public class RateLimiterAdapterTests
     public async Task Partitioned_Limiter_Queue_Cancellation_Does_Not_Consume_Capacity()
     {
         using var limiter = CreateTenantConcurrencyLimiter(queueLimit: 1);
-        var shield = Shield.Empty.RateLimit(limiter);
+        var shield = Shield.Empty.UseRateLimiter(limiter);
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var occupying = ExecuteForTenantAsync(shield, "alpha", async _ =>
@@ -206,8 +314,8 @@ public class RateLimiterAdapterTests
             observedCancellation = cancellationToken;
             return new ValueTask<RateLimitLease>(lease);
         });
-        RateLimiterRejectedEvent observedRejection = default;
-        var shield = Shield.Empty.RateLimit(
+        RateLimiterAdapterRejectedEvent observedRejection = default;
+        var shield = Shield.Empty.UseRateLimiter(
             limiter,
             options =>
             {
@@ -220,7 +328,7 @@ public class RateLimiterAdapterTests
             shield,
             "alpha",
             static _ => new ValueTask<int>(42),
-            cancellation.Token)).Throws<RateLimitExceededException>();
+            cancellation.Token)).Throws<RateLimiterAdapterRejectedException>();
 
         await Assert.That(exception!.RetryAfter).IsEqualTo(retryAfter);
         await Assert.That(observedTenant).IsEqualTo("alpha");
@@ -238,7 +346,7 @@ public class RateLimiterAdapterTests
         int observedPermitCount = 0;
         string? observedName = null;
         var shield = Shield.Empty
-            .RateLimit((permitCount, context) =>
+            .UseRateLimiter((permitCount, context) =>
             {
                 observedPermitCount = permitCount;
                 observedName = context.ShieldName;
@@ -259,7 +367,7 @@ public class RateLimiterAdapterTests
         using var limiter = new StubLimiter(_ => new ValueTask<RateLimitLease>(lease));
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var shield = Shield<int>.Empty.RateLimit(limiter);
+        var shield = Shield<int>.Empty.UseRateLimiter(limiter);
 
         var execution = shield.ExecuteAsync(async _ =>
         {
@@ -280,7 +388,7 @@ public class RateLimiterAdapterTests
     {
         var failure = new InvalidOperationException("operation failed");
         var lease = new TrackingLease(isAcquired: true);
-        var shield = Shield.Empty.RateLimit(
+        var shield = Shield.Empty.UseRateLimiter(
             (_, _) => new ValueTask<RateLimitLease>(lease));
 
         var outcome = await shield.ExecuteOutcomeAsync<int>(async _ =>
@@ -299,7 +407,7 @@ public class RateLimiterAdapterTests
         var failure = new InvalidOperationException("downstream strategy failed");
         var lease = new TrackingLease(isAcquired: true);
         var shield = Shield.Empty
-            .RateLimit((_, _) => new ValueTask<RateLimitLease>(lease))
+            .UseRateLimiter((_, _) => new ValueTask<RateLimitLease>(lease))
             .Use(new SynchronouslyThrowingStrategy(failure));
 
         var outcome = await shield.ExecuteOutcomeAsync(static _ => new ValueTask<int>(42));
@@ -313,7 +421,7 @@ public class RateLimiterAdapterTests
     {
         var disposalFailure = new InvalidOperationException("lease disposal");
         var lease = new TrackingLease(isAcquired: true) { DisposalFailure = disposalFailure };
-        var shield = Shield.Empty.RateLimit(
+        var shield = Shield.Empty.UseRateLimiter(
             (_, _) => new ValueTask<RateLimitLease>(lease));
 
         var outcome = await shield.ExecuteOutcomeAsync(async _ =>
@@ -337,15 +445,15 @@ public class RateLimiterAdapterTests
                 [MetadataName.RetryAfter.Name] = retryAfter,
                 ["tenant"] = "alpha",
             });
-        RateLimiterRejectedEvent observed = default;
+        RateLimiterAdapterRejectedEvent observed = default;
         using var limiter = new StubLimiter(_ => new ValueTask<RateLimitLease>(lease));
-        var shield = Shield.Empty.RateLimit(limiter, options =>
+        var shield = Shield.Empty.UseRateLimiter(limiter, options =>
             options.OnRejected = rejection => observed = rejection);
 
         var outcome = await shield.ExecuteOutcomeAsync(static _ => new ValueTask<int>(42));
 
-        await Assert.That(outcome.Exception).IsTypeOf<RateLimitExceededException>();
-        await Assert.That(((RateLimitExceededException)outcome.Exception!).RetryAfter).IsEqualTo(retryAfter);
+        await Assert.That(outcome.Exception).IsTypeOf<RateLimiterAdapterRejectedException>();
+        await Assert.That(((RateLimiterAdapterRejectedException)outcome.Exception!).RetryAfter).IsEqualTo(retryAfter);
         await Assert.That(observed.Metadata["tenant"]).IsEqualTo("alpha");
         await Assert.That(lease.DisposeCount).IsEqualTo(1);
         await Assert.That(lease.MetadataReadAfterDispose).IsFalse();
@@ -356,8 +464,8 @@ public class RateLimiterAdapterTests
     {
         var source = new Dictionary<string, object?> { ["tenant"] = "alpha" };
         var lease = new TrackingLease(isAcquired: false, source);
-        RateLimiterRejectedEvent observed = default;
-        var shield = Shield.Empty.RateLimit(
+        RateLimiterAdapterRejectedEvent observed = default;
+        var shield = Shield.Empty.UseRateLimiter(
             (_, _) => new ValueTask<RateLimitLease>(lease),
             options => options.OnRejected = rejection => observed = rejection);
 
@@ -377,7 +485,7 @@ public class RateLimiterAdapterTests
     {
         var callbackFailure = new InvalidOperationException("callback failed");
         var asyncCalls = 0;
-        var shield = Shield.Empty.RateLimit(
+        var shield = Shield.Empty.UseRateLimiter(
             static (_, _) => new ValueTask<RateLimitLease>(new TrackingLease(false)),
             options =>
             {
@@ -399,7 +507,7 @@ public class RateLimiterAdapterTests
     public async Task Asynchronous_Callback_Failure_Replaces_Rejection()
     {
         var callbackFailure = new InvalidOperationException("async callback failed");
-        var shield = Shield.Empty.RateLimit(
+        var shield = Shield.Empty.UseRateLimiter(
             static (_, _) => new ValueTask<RateLimitLease>(new TrackingLease(false)),
             options => options.OnRejectedAsync = async _ =>
             {
@@ -415,13 +523,13 @@ public class RateLimiterAdapterTests
     [Test]
     public async Task Completed_Asynchronous_Callback_Preserves_Rejection()
     {
-        var shield = Shield.Empty.RateLimit(
+        var shield = Shield.Empty.UseRateLimiter(
             static (_, _) => new ValueTask<RateLimitLease>(new TrackingLease(false)),
             options => options.OnRejectedAsync = static _ => ValueTask.CompletedTask);
 
         var outcome = await shield.ExecuteOutcomeAsync(static _ => new ValueTask<int>(42));
 
-        await Assert.That(outcome.Exception).IsTypeOf<RateLimitExceededException>();
+        await Assert.That(outcome.Exception).IsTypeOf<RateLimiterAdapterRejectedException>();
     }
 
     [Test]
@@ -432,7 +540,7 @@ public class RateLimiterAdapterTests
         var lease = new TrackingLease(isAcquired: true);
         var invoked = false;
         var rejections = 0;
-        var shield = Shield.Empty.RateLimit(
+        var shield = Shield.Empty.UseRateLimiter(
             (_, _) => new ValueTask<RateLimitLease>(acquisition.Task),
             options => options.OnRejected = _ => rejections++);
         using var cancellation = new CancellationTokenSource();
@@ -459,7 +567,7 @@ public class RateLimiterAdapterTests
         const int executionCount = 64;
         var leases = new List<TrackingLease>();
         var gate = new object();
-        var shield = Shield.Empty.RateLimit((_, _) =>
+        var shield = Shield.Empty.UseRateLimiter((_, _) =>
         {
             var lease = new TrackingLease(isAcquired: true);
             lock (gate)
@@ -487,12 +595,12 @@ public class RateLimiterAdapterTests
     {
         using var limiter = new StubLimiter(static _ =>
             new ValueTask<RateLimitLease>(new TrackingLease(true)));
-        var frameworkShield = Shield.Empty.RateLimit(limiter, options => options.PermitCount = 2);
-        var delegateShield = Shield<int>.Empty.RateLimit(static (_, _) =>
+        var frameworkShield = Shield.Empty.UseRateLimiter(limiter, options => options.PermitCount = 2);
+        var delegateShield = Shield<int>.Empty.UseRateLimiter(static (_, _) =>
             new ValueTask<RateLimitLease>(new TrackingLease(true)));
         using var partitionedLimiter = new StubPartitionedLimiter(static (_, _) =>
             new ValueTask<RateLimitLease>(new TrackingLease(true)));
-        var partitionedShield = Shield<int>.Empty.RateLimit(partitionedLimiter);
+        var partitionedShield = Shield<int>.Empty.UseRateLimiter(partitionedLimiter);
 
         var frameworkDescriptor = frameworkShield.GetDescriptor()
             .AssertContainsSingle<CustomStrategyDescriptor>();
@@ -502,11 +610,12 @@ public class RateLimiterAdapterTests
             .AssertContainsSingle<CustomStrategyDescriptor>();
 
         await Assert.That(frameworkDescriptor.Description).IsEqualTo(
-            "RateLimitAdapter(framework, permits 2)");
+            "RateLimiter(StubLimiter)");
         await Assert.That(delegateDescriptor.Description).IsEqualTo(
-            "RateLimitAdapter(delegate, permits 1)");
+            "RateLimiter(Delegate)");
         await Assert.That(partitionedDescriptor.Description).IsEqualTo(
-            "RateLimitAdapter(partitioned-framework, permits 1)");
+            "RateLimiter(Partitioned)");
+        await Assert.That(frameworkDescriptor.Kind).IsEqualTo(StrategyKind.RateLimiterAdapter);
         await Assert.That(frameworkDescriptor.Description.Contains(limiter.GetType().FullName!)).IsFalse();
         await Assert.That(partitionedDescriptor.Description.Contains(
             partitionedLimiter.GetType().FullName!)).IsFalse();
@@ -516,13 +625,13 @@ public class RateLimiterAdapterTests
     public async Task Acquisition_And_Lease_Failures_Are_Outcomes_And_Dispose_Once()
     {
         var synchronousFailure = new InvalidOperationException("sync acquire");
-        var synchronous = Shield.Empty.RateLimit((_, _) => throw synchronousFailure);
+        var synchronous = Shield.Empty.UseRateLimiter((_, _) => throw synchronousFailure);
         var synchronousOutcome = await synchronous.ExecuteOutcomeAsync(
             static _ => new ValueTask<int>(42));
         await Assert.That(ReferenceEquals(synchronousOutcome.Exception, synchronousFailure)).IsTrue();
 
         var asynchronousFailure = new InvalidOperationException("async acquire");
-        var asynchronous = Shield.Empty.RateLimit((_, _) =>
+        var asynchronous = Shield.Empty.UseRateLimiter((_, _) =>
             ValueTask.FromException<RateLimitLease>(asynchronousFailure));
         var asynchronousOutcome = await asynchronous.ExecuteOutcomeAsync(
             static _ => new ValueTask<int>(42));
@@ -530,14 +639,14 @@ public class RateLimiterAdapterTests
 
         var stateFailure = new InvalidOperationException("lease state");
         var stateLease = new TrackingLease(true) { IsAcquiredFailure = stateFailure };
-        var stateShield = Shield.Empty.RateLimit((_, _) => new ValueTask<RateLimitLease>(stateLease));
+        var stateShield = Shield.Empty.UseRateLimiter((_, _) => new ValueTask<RateLimitLease>(stateLease));
         var stateOutcome = await stateShield.ExecuteOutcomeAsync(static _ => new ValueTask<int>(42));
         await Assert.That(ReferenceEquals(stateOutcome.Exception, stateFailure)).IsTrue();
         await Assert.That(stateLease.DisposeCount).IsEqualTo(1);
 
         var metadataFailure = new InvalidOperationException("lease metadata");
         var metadataLease = new TrackingLease(false) { MetadataFailure = metadataFailure };
-        var metadataShield = Shield.Empty.RateLimit((_, _) =>
+        var metadataShield = Shield.Empty.UseRateLimiter((_, _) =>
             new ValueTask<RateLimitLease>(metadataLease));
         var metadataOutcome = await metadataShield.ExecuteOutcomeAsync(
             static _ => new ValueTask<int>(42));
@@ -546,7 +655,7 @@ public class RateLimiterAdapterTests
 
         var disposalFailure = new InvalidOperationException("lease disposal");
         var acquiredLease = new TrackingLease(true) { DisposalFailure = disposalFailure };
-        var acquiredShield = Shield.Empty.RateLimit((_, _) =>
+        var acquiredShield = Shield.Empty.UseRateLimiter((_, _) =>
             new ValueTask<RateLimitLease>(acquiredLease));
         var acquiredOutcome = await acquiredShield.ExecuteOutcomeAsync(
             static _ => new ValueTask<int>(42));
@@ -554,7 +663,7 @@ public class RateLimiterAdapterTests
         await Assert.That(acquiredLease.DisposeCount).IsEqualTo(1);
 
         var rejectedLease = new TrackingLease(false) { DisposalFailure = disposalFailure };
-        var rejectedShield = Shield.Empty.RateLimit((_, _) =>
+        var rejectedShield = Shield.Empty.UseRateLimiter((_, _) =>
             new ValueTask<RateLimitLease>(rejectedLease));
         var rejectedOutcome = await rejectedShield.ExecuteOutcomeAsync(
             static _ => new ValueTask<int>(42));
@@ -572,7 +681,7 @@ public class RateLimiterAdapterTests
             IsAcquiredFailure = stateFailure,
             DisposalFailure = disposalFailure,
         };
-        var shield = Shield.Empty.RateLimit((_, _) => new ValueTask<RateLimitLease>(lease));
+        var shield = Shield.Empty.UseRateLimiter((_, _) => new ValueTask<RateLimitLease>(lease));
 
         var outcome = await shield.ExecuteOutcomeAsync(static _ => new ValueTask<int>(42));
 
@@ -589,11 +698,11 @@ public class RateLimiterAdapterTests
         using var limiter = new StubLimiter(static _ =>
             new ValueTask<RateLimitLease>(new TrackingLease(true)));
 
-        await Assert.That(() => Shield.Empty.RateLimit(
+        await Assert.That(() => Shield.Empty.UseRateLimiter(
             limiter,
             options => options.PermitCount = 0)).Throws<ArgumentOutOfRangeException>();
 
-        var shield = Shield.Empty.RateLimit(limiter);
+        var shield = Shield.Empty.UseRateLimiter(limiter);
         await Assert.That(shield.InvokesContinuationAtMostOnce).IsTrue();
         await Assert.That(() => Shield.Compose(shield, shield)).Throws<InvalidOperationException>();
     }
@@ -609,9 +718,9 @@ public class RateLimiterAdapterTests
             new ValueTask<RateLimitLease>(new TrackingLease(true));
         var fallback = Shield.Fallback(static _ => ValueTask.CompletedTask);
 
-        Shield framework = fallback.RateLimit(limiter);
-        Shield partitioned = fallback.RateLimit(partitionedLimiter);
-        Shield delegated = fallback.RateLimit(acquire);
+        Shield framework = fallback.UseRateLimiter(limiter);
+        Shield partitioned = fallback.UseRateLimiter(partitionedLimiter);
+        Shield delegated = fallback.UseRateLimiter(acquire);
 
         await framework.ExecuteAsync(static _ => ValueTask.CompletedTask);
         await partitioned.ExecuteAsync(static _ => ValueTask.CompletedTask);
@@ -628,23 +737,23 @@ public class RateLimiterAdapterTests
         using var partitionedLimiter = new StubPartitionedLimiter(static (_, _) =>
             new ValueTask<RateLimitLease>(new TrackingLease(true)));
 
-        await Assert.That(() => ShieldRateLimiterExtensions.RateLimit((Shield)null!, limiter))
+        await Assert.That(() => ShieldRateLimiterExtensions.UseRateLimiter((Shield)null!, limiter))
             .Throws<ArgumentNullException>();
-        await Assert.That(() => ShieldRateLimiterExtensions.RateLimit((Shield)null!, acquire))
+        await Assert.That(() => ShieldRateLimiterExtensions.UseRateLimiter((Shield)null!, acquire))
             .Throws<ArgumentNullException>();
-        await Assert.That(() => ShieldRateLimiterExtensions.RateLimit<int>(null!, limiter))
+        await Assert.That(() => ShieldRateLimiterExtensions.UseRateLimiter<int>(null!, limiter))
             .Throws<ArgumentNullException>();
-        await Assert.That(() => ShieldRateLimiterExtensions.RateLimit<int>(null!, acquire))
+        await Assert.That(() => ShieldRateLimiterExtensions.UseRateLimiter<int>(null!, acquire))
             .Throws<ArgumentNullException>();
-        await Assert.That(() => ShieldRateLimiterExtensions.RateLimit((Shield)null!, partitionedLimiter))
+        await Assert.That(() => ShieldRateLimiterExtensions.UseRateLimiter((Shield)null!, partitionedLimiter))
             .Throws<ArgumentNullException>();
-        await Assert.That(() => ShieldRateLimiterExtensions.RateLimit<int>(null!, partitionedLimiter))
+        await Assert.That(() => ShieldRateLimiterExtensions.UseRateLimiter<int>(null!, partitionedLimiter))
             .Throws<ArgumentNullException>();
-        await Assert.That(() => Shield.Empty.RateLimit((RateLimiter)null!))
+        await Assert.That(() => Shield.Empty.UseRateLimiter((RateLimiter)null!))
             .Throws<ArgumentNullException>();
-        await Assert.That(() => Shield.Empty.RateLimit((RateLimitLeaseAcquirer)null!))
+        await Assert.That(() => Shield.Empty.UseRateLimiter((RateLimitLeaseAcquirer)null!))
             .Throws<ArgumentNullException>();
-        await Assert.That(() => Shield.Empty.RateLimit((PartitionedRateLimiter<KevlarContext>)null!))
+        await Assert.That(() => Shield.Empty.UseRateLimiter((PartitionedRateLimiter<KevlarContext>)null!))
             .Throws<ArgumentNullException>();
     }
 
@@ -673,10 +782,10 @@ public class RateLimiterAdapterTests
 
     private static async Task AssertRejectsSecondExecution(RateLimiter limiter)
     {
-        var shield = Shield.Empty.RateLimit(limiter);
+        var shield = Shield.Empty.UseRateLimiter(limiter);
         await shield.ExecuteAsync(static _ => new ValueTask<int>(1));
         await Assert.That(async () => await shield.ExecuteAsync(static _ => new ValueTask<int>(2)))
-            .Throws<RateLimitExceededException>();
+            .Throws<RateLimiterAdapterRejectedException>();
     }
 
     private sealed class StubLimiter(
@@ -802,7 +911,7 @@ public class RateLimiterAdapterTests
                     }
                 }
 
-                if (name == _shieldName && kind == "rate_limit")
+                if (name == _shieldName && kind == "rate_limiter_adapter")
                 {
                     Interlocked.Add(ref _count, (int)measurement);
                 }

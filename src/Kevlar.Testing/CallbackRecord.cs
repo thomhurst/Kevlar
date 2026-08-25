@@ -7,6 +7,7 @@ public sealed class CallbackRecord
         long sequence,
         CallbackKind kind,
         string? shieldName = null,
+        int? strategyIndex = null,
         int? retryNumber = null,
         int? attemptNumber = null,
         TimeSpan? delay = null,
@@ -14,11 +15,15 @@ public sealed class CallbackRecord
         Exception? exception = null,
         object? result = null,
         CircuitState? from = null,
-        CircuitState? to = null)
+        CircuitState? to = null,
+        double? failureRate = null,
+        long? failureCount = null,
+        int? consecutiveFailures = null)
     {
         Sequence = sequence;
         Kind = kind;
         ShieldName = shieldName;
+        StrategyIndex = strategyIndex;
         RetryNumber = retryNumber;
         AttemptNumber = attemptNumber;
         Delay = delay;
@@ -27,6 +32,9 @@ public sealed class CallbackRecord
         Result = result;
         From = from;
         To = to;
+        FailureRate = failureRate;
+        FailureCount = failureCount;
+        ConsecutiveFailures = consecutiveFailures;
     }
 
     /// <summary>The recorder-wide sequence number.</summary>
@@ -37,6 +45,9 @@ public sealed class CallbackRecord
 
     /// <summary>The shield name copied from the callback context, when available.</summary>
     public string? ShieldName { get; }
+
+    /// <summary>The zero-based strategy position copied from the callback context.</summary>
+    public int? StrategyIndex { get; }
 
     /// <summary>The 1-based retry number, when this is a retry callback.</summary>
     public int? RetryNumber { get; }
@@ -62,10 +73,20 @@ public sealed class CallbackRecord
     /// <summary>The circuit state entered, when applicable.</summary>
     public CircuitState? To { get; }
 
+    /// <summary>The circuit failure ratio, when this is a break-duration callback.</summary>
+    public double? FailureRate { get; }
+
+    /// <summary>The circuit failure count, when this is a break-duration callback.</summary>
+    public long? FailureCount { get; }
+
+    /// <summary>The consecutive circuit failure count, when this is a break-duration callback.</summary>
+    public int? ConsecutiveFailures { get; }
+
     internal CallbackRecord WithSequence(long sequence) => new(
         sequence,
         Kind,
         ShieldName,
+        strategyIndex: StrategyIndex,
         retryNumber: RetryNumber,
         attemptNumber: AttemptNumber,
         delay: Delay,
@@ -73,5 +94,8 @@ public sealed class CallbackRecord
         exception: Exception,
         result: Result,
         from: From,
-        to: To);
+        to: To,
+        failureRate: FailureRate,
+        failureCount: FailureCount,
+        consecutiveFailures: ConsecutiveFailures);
 }

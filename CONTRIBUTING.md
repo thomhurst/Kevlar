@@ -40,8 +40,8 @@ dotnet run --project tests/Kevlar.Analyzers.Tests -c Release --no-build -- --tim
 ```
 
 Run other project-specific suites when their package changes. CI builds on Windows and Linux,
-enforces discovered-test floors, and runs deterministic model and stress checks for core changes.
-See `.github/workflows/ci.yml` for the authoritative matrix.
+enforces discovered-test floors, runs deterministic model and stress checks for core changes, and
+publishes coverage artifacts. See `.github/workflows/ci.yml` for the authoritative matrix.
 
 ### Coverage and mutation gates
 
@@ -89,6 +89,7 @@ gives a concrete reason. Use `doc-test-run` for safe behavioral samples.
 Push-Location docs
 npm ci
 Pop-Location
+./scripts/Verify-Repo.ps1
 ./scripts/Verify-Docs.ps1
 Push-Location docs
 npm run build

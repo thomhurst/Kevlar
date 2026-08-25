@@ -388,7 +388,7 @@ public class HttpContractTests
                 Backoff = Backoff.None,
                 DelayGenerator = HttpShield.RetryAfter,
             },
-            CircuitBreaker = new CircuitBreakerOptions
+            CircuitBreaker = new CircuitBreakerOptions<HttpResponseMessage>
             {
                 ConsecutiveFailures = 8,
                 BreakDuration = TimeSpan.FromSeconds(5),
@@ -445,6 +445,45 @@ public class HttpContractTests
                 _ => throw new HttpRequestException("not handled")))
                 .Throws<HttpRequestException>();
         }
+    }
+
+    [Test]
+    public async Task Standard_CircuitBreaker_Result_Override_Replaces_Transient_Clause()
+    {
+        var options = new StandardHttpShieldOptions();
+        options.Retry.MaxRetries = 0;
+        options.CircuitBreaker.ConsecutiveFailures = 1;
+        options.CircuitBreaker.FailureRatio = null;
+        options.CircuitBreaker.HandlesResult = static response =>
+            response.StatusCode == HttpStatusCode.ServiceUnavailable;
+        var shield = HttpShield.Standard(options);
+        var calls = 0;
+
+        for (var attempt = 0; attempt < 2; attempt++)
+        {
+            using var ignored = await shield.ExecuteAsync(_ =>
+            {
+                calls++;
+                return new ValueTask<HttpResponseMessage>(
+                    new HttpResponseMessage(HttpStatusCode.InternalServerError));
+            });
+        }
+
+        using (await shield.ExecuteAsync(_ =>
+               {
+                   calls++;
+                   return new ValueTask<HttpResponseMessage>(
+                       new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+               }))
+        {
+        }
+
+        await Assert.That(async () => await shield.ExecuteAsync(_ =>
+        {
+            calls++;
+            return new ValueTask<HttpResponseMessage>(new HttpResponseMessage(HttpStatusCode.OK));
+        })).Throws<CircuitOpenException>();
+        await Assert.That(calls).IsEqualTo(3);
     }
 
     [Test]

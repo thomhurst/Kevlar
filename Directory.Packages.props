@@ -21,6 +21,7 @@
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.2" />
     <PackageVersion Include="Microsoft.Extensions.Primitives" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Http" Version="8.0.1" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.9.0" />
     <PackageVersion Include="System.Threading.RateLimiting" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="8.0.0" />
     <PackageVersion Include="Grpc.Core.Api" Version="2.83.0" />
@@ -34,6 +35,7 @@
     <PackageVersion Include="TUnit" Version="1.65.51" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.11" />
     <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.11" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Json" Version="10.0.11" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.18.0" />
     <PackageVersion Include="Google.Protobuf" Version="3.36.0" />
     <PackageVersion Include="Grpc.AspNetCore" Version="2.83.0" />
@@ -44,7 +46,9 @@
     <!-- Benchmarks -->
     <PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
     <PackageVersion Include="Polly" Version="8.7.0" />
+    <PackageVersion Include="Polly.Extensions" Version="8.7.0" />
     <PackageVersion Include="Polly.RateLimiting" Version="8.7.0" />
+    <PackageVersion Include="Polly.Testing" Version="8.7.0" />
   </ItemGroup>
 
 </Project>

@@ -31,15 +31,17 @@ public sealed class TimeoutOptions
 /// <summary>Describes an execution that exceeded its timeout.</summary>
 public readonly struct TimeoutEvent
 {
+    private readonly KevlarContext? _context;
+
     internal TimeoutEvent(TimeSpan timeout, KevlarContext context)
     {
         Timeout = timeout;
-        Context = context;
+        _context = context;
     }
 
     /// <summary>The timeout that was exceeded.</summary>
     public TimeSpan Timeout { get; }
 
     /// <summary>The ambient execution context.</summary>
-    public KevlarContext Context { get; }
+    public KevlarContext Context => Internal.EventContext.Required(_context);
 }

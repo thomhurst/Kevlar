@@ -1,0 +1,49 @@
+name: Question
+description: Ask for help using or configuring Kevlar.
+title: "question: "
+labels: [question]
+body:
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package
+      options:
+        - Kevlar
+        - Kevlar.Analyzers
+        - Kevlar.Chaos
+        - Kevlar.Extensions.DependencyInjection
+        - Kevlar.Extensions.Grpc
+        - Kevlar.Extensions.Http
+        - Kevlar.Extensions.RateLimiting
+        - Kevlar.Testing
+        - Multiple packages
+    validations:
+      required: true
+  - type: dropdown
+    id: target-framework
+    attributes:
+      label: Target framework
+      options: [netstandard2.0, netstandard2.1, net8.0, net10.0, .NET Framework consumer, Other]
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Kevlar version
+      placeholder: 1.0.0
+    validations:
+      required: true
+  - type: textarea
+    id: goal
+    attributes:
+      label: What are you trying to do?
+    validations:
+      required: true
+  - type: textarea
+    id: attempted
+    attributes:
+      label: What have you tried?
+      description: Include the smallest useful code sample and the result you observed.
+      render: csharp
+    validations:
+      required: true

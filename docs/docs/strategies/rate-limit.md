@@ -44,7 +44,7 @@ using var limiter = new FixedWindowRateLimiter(new FixedWindowRateLimiterOptions
     QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
 });
 
-var shield = Shield.Empty.RateLimit(limiter, options =>
+var shield = Shield.Empty.UseRateLimiter(limiter, options =>
 {
     options.PermitCount = 1;
     options.OnRejected = rejection =>
@@ -57,15 +57,15 @@ await shield.ExecuteAsync(static _ => ValueTask.CompletedTask);
 The caller owns the `RateLimiter`; the adapter never disposes it. Every returned `RateLimitLease`
 is held until the protected execution completes and is then disposed exactly once. Rejected lease
 metadata is copied before disposal. `MetadataName.RetryAfter` becomes
-`RateLimitExceededException.RetryAfter`, and the complete immutable snapshot is available from
-`RateLimiterRejectedEvent.Metadata`.
+`RateLimiterAdapterRejectedException.RetryAfter`, and the complete immutable snapshot is available from
+`RateLimiterAdapterRejectedEvent.Metadata`.
 
 Fixed-window, sliding-window, concurrency, chained, and custom limiters all use the same adapter.
 For a limiter owned behind another abstraction, supply asynchronous acquisition directly:
 
 <!-- doc-test-ignore: AcquireTenantLeaseAsync is supplied by the application's limiter abstraction. -->
 ```csharp
-var shield = Shield.Empty.RateLimit(
+var shield = Shield.Empty.UseRateLimiter(
     static (permitCount, context) =>
         AcquireTenantLeaseAsync(permitCount, context.CancellationToken));
 ```
@@ -73,6 +73,8 @@ var shield = Shield.Empty.RateLimit(
 Use `PartitionedRateLimiter<KevlarContext>` when partition selection depends on execution metadata:
 
 ```csharp
+using Kevlar.Extensions.RateLimiting;
+
 var tenantKey = new KevlarKey<string>("tenant");
 using var limiter = PartitionedRateLimiter.Create<KevlarContext, string>(context =>
     RateLimitPartition.Get(
@@ -83,7 +85,7 @@ using var limiter = PartitionedRateLimiter.Create<KevlarContext, string>(context
             QueueLimit = 20,
             QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
         })));
-var shield = Shield.Empty.RateLimit(limiter);
+var shield = Shield.Empty.UseRateLimiter(limiter);
 
 await shield.ExecuteWithContextAsync(
     "tenant-42",
@@ -101,7 +103,7 @@ only each returned lease.
 
 The delegate must return a fresh acquired or rejected lease for each call. Rejection metrics and
 hooks follow the built-in contract: metric first, then `OnRejected`, then awaited
-`OnRejectedAsync`; a hook failure replaces `RateLimitExceededException`. Cancellation while
+`OnRejectedAsync`; a hook failure replaces `RateLimiterAdapterRejectedException`. Cancellation while
 queued is cancellation, not rejection, so hooks do not run.
 
 ## Options
@@ -114,6 +116,9 @@ queued is cancellation, not rejection, so hooks do not run.
 | `QueueLimit` | `0` | How many executions may *wait* for a permit instead of being rejected immediately |
 | `OnRejected` | — | Synchronous notification for an actual rejection |
 | `OnRejectedAsync` | — | Awaited notification after `OnRejected` |
+
+Invalid option values throw [`KevlarConfigurationException`](../exceptions.md#configuration-failures)
+and identify the options type, property, and offending value.
 
 ## Rejection vs queueing
 

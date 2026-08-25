@@ -586,7 +586,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     /// <summary>Whether a reactive strategy reads the ambient clause this method seals.</summary>
     private static bool ConsumesHandlingClause(IMethodSymbol method, KnownTypes knownTypes) =>
         IsClauseConsumingStrategy(method, knownTypes)
-        || (method.Name == "Use" && IsKevlarFluentMethod(method, knownTypes));
+        || (IsKevlarFluentMethod(method, knownTypes, "Use")
+            && method.Parameters.Length == 1
+            && method.Parameters[0].Type.TypeKind == TypeKind.Delegate);
 
     private static bool IsDiscardedClauseBuilder(
         IInvocationOperation invocation,
@@ -1911,7 +1913,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     }
 
     private static bool IsStatefulStrategy(IMethodSymbol method, KnownTypes knownTypes) =>
-        method.Name is "CircuitBreaker" or "RateLimit" or "ConcurrencyLimit"
+        method.Name is "CircuitBreaker" or "RateLimit" or "ConcurrencyLimit" or "UseRateLimiter"
         && IsKevlarFluentMethod(method, knownTypes);
 
     private static bool IsTestContext(ISymbol? symbol)

@@ -135,7 +135,7 @@ public class TimeoutDynamicOptionsTests
         });
 
         await Assert.That(actionStarted).IsFalse();
-        await Assert.That(outcome.Exception).IsTypeOf<ArgumentOutOfRangeException>();
+        await Assert.That(outcome.Exception).IsTypeOf<KevlarConfigurationException>();
     }
 
     [Test]

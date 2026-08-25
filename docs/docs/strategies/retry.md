@@ -73,6 +73,9 @@ Shield.Retry(o =>
 | `HandlesException` | — | Local exception predicate; replaces the ambient clause for this retry |
 | `HandlesResult` (`RetryOptions<T>`) | — | Local result predicate; replaces the ambient clause together with `HandlesException` |
 
+Invalid option values throw [`KevlarConfigurationException`](../exceptions.md#configuration-failures)
+and identify the options type, property, and offending value.
+
 Order per retry: retry metrics are recorded → backoff computes the delay → `MaxDelay` clamps it → `DelayGenerator` may override it → the awaited `DelayGeneratorAsync` may override that result → `OnRetry`/`OnRetryAsync` see the final delay → sleep. Both generators ignore `null` and negative results, and `MaxDelay` clamps each override.
 
 `RetryOptions` and `RetryOptions<T>` are standalone sibling types. Both expose the same
@@ -86,7 +89,7 @@ next attempt is suppressed and caller cancellation surfaces. A generator excepti
 its original identity and skips later hooks. `RetryEvent.Context` is pooled execution state: use it
 only before the returned `ValueTask` completes; never retain it or its property bag.
 
-On an untyped `Shield`, the `RetryEvent` callbacks receive: `RetryNumber` (1-based, so `1` is the first retry after the initial execution), `Delay`, `Exception` (null when a handled *result* triggered the retry), `Result` (the handled result, boxed as `object?`) and `Context`. On a typed `Shield<T>`, the events are `RetryEvent<T>` instead: same `RetryNumber`/`Delay`/`Context`, plus the handled failure as a typed `Outcome<T>` — `e.Outcome.Result` is your `T`, no casting.
+On an untyped `Shield`, the `RetryEvent` callbacks receive: `RetryNumber` (1-based, so `1` is the first retry after the initial execution), `Delay`, `Exception` (null when a handled *result* triggered the retry), `Result` (the handled result, boxed as `object?`) and `Context`. On a typed `Shield<T>`, the events are `RetryEvent<T>` instead: same `RetryNumber`/`Delay`/`Context`, plus the handled failure as a directly stored typed `Outcome<T>` — `e.Outcome.Result` is your `T`, with no boxing, reconstruction, or cast.
 
 <!-- doc-test-run: retry-numbers -->
 ```csharp

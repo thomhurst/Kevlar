@@ -77,6 +77,20 @@ public class AllocationBudgetTests
     private readonly Shield<int> _typedJudge = Shield.For<int>()
         .WhenResult(-1)
         .Retry(3, Backoff.None);
+    private readonly Shield<int> _typedRetryNotification = Shield.For<int>()
+        .WhenResult(-1)
+        .Retry(static options =>
+        {
+            options.MaxRetries = 1;
+            options.Backoff = Backoff.None;
+            options.OnRetry = static item =>
+            {
+                if (item.Outcome.Result == int.MinValue)
+                {
+                    throw new InvalidOperationException();
+                }
+            };
+        });
     private readonly Shield _composed = Shield
         .RateLimit(1_000_000_000, TimeSpan.FromSeconds(1))
         .Timeout(TimeSpan.FromMinutes(1))
@@ -114,6 +128,11 @@ public class AllocationBudgetTests
         .When<InvalidOperationException>()
         .Fallback(static (_, _) => ValueTask.CompletedTask);
     private readonly Shield _parallelHedge = Shield.Hedge(2, TimeSpan.Zero);
+    private readonly Shield _syncDelayGeneratedHedge = Shield.Hedge(options =>
+    {
+        options.MaxAttempts = 2;
+        options.DelayGenerator = static _ => TimeSpan.Zero;
+    });
     private readonly Shield<int> _typedGeneratedHedge = Shield.For<int>().Hedge(options =>
     {
         options.MaxAttempts = 2;
@@ -126,6 +145,7 @@ public class AllocationBudgetTests
     private readonly Counter _retryCounter = new();
     private readonly Counter _asyncDelayRetryCounter = new();
     private readonly ParallelHedgeState _parallelHedgeState = new();
+    private readonly ParallelHedgeState _syncDelayGeneratedHedgeState = new();
     private readonly int _metadataValue = 42;
 
     public AllocationBudgetTests() => _ = _partitioned.GetShield(42);
@@ -236,6 +256,13 @@ public class AllocationBudgetTests
             test._concurrencyLimit.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
     }
 
+    [Test]
+    public void RetryEvent_Typed_Outcome_Round_Trips_Without_Boxing() =>
+        AssertZero("typed retry notification", this, static test =>
+            test._typedRetryNotification.ExecuteAsync(static _ => new ValueTask<int>(-1))
+                .GetAwaiter()
+                .GetResult());
+
     /// <summary>Verifies bounded allocations for failure and parallel execution paths.</summary>
     [Test]
     public void Allocating_Paths_Stay_Within_Per_Operation_Budgets()
@@ -287,6 +314,14 @@ public class AllocationBudgetTests
                 static (state, cancellationToken) => state.ExecuteAsync(cancellationToken))
                 .GetAwaiter().GetResult();
             test._parallelHedgeState.WaitForLoserCompletion();
+        }, AllocationScope.AllThreads);
+        AssertBudget("sync delay generator launches second attempt", 3_072, this, static test =>
+        {
+            test._syncDelayGeneratedHedge.ExecuteAsync(
+                test._syncDelayGeneratedHedgeState,
+                static (state, cancellationToken) => state.ExecuteAsync(cancellationToken))
+                .GetAwaiter().GetResult();
+            test._syncDelayGeneratedHedgeState.WaitForLoserCompletion();
         }, AllocationScope.AllThreads);
         // The eight-byte margin catches boxing the typed Outcome<int> while allowing
         // the existing generator-path allocations.

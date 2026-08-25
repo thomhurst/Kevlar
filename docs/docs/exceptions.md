@@ -19,11 +19,13 @@ errors handled by a retry, breaker, hedge, or fallback.
 | Exception | Thrown by | Properties | Base class | Catch pattern | Default clause |
 |---|---|---|---|---|---|
 | `KevlarException` | Abstract base for exceptions raised by core strategies | Inherited `InnerException` carries a cause when the concrete exception has one. | `Exception` | `catch (KevlarException)` | N/A |
+| `KevlarConfigurationException` | Invalid values supplied through a strategy options callback or returned by a dynamic duration generator | `Message` names the options type, property, requirement, and offending value. | `KevlarException` | Catch during startup while building shields. | N/A |
 | `ExecutionRejectedException` | Abstract base for execution rejections | `RetryAfter` estimates when execution may be attempted again; inherited `InnerException` carries a cause when known. | `KevlarException` | `catch (ExecutionRejectedException e)` | N/A |
 | `KevlarProxyException` | Internal bookkeeping for adapter-owned exception proxies | `OriginalException` is the failure exposed to handling clauses, public outcomes, and adapter callers; inherited `InnerException` preserves the same cause. | `Exception` | Catch `OriginalException`'s concrete type, such as `RpcException`. | N/A |
 | `TimeoutExceededException` | Timeout | `Timeout` is the winning budget; a strategy-produced timeout carries the delegate's cancellation exception in inherited `InnerException`. `RetryAfter` is `null`. | `ExecutionRejectedException` | `catch (TimeoutExceededException e) when (e.Timeout == budget)` | Yes |
 | `CircuitOpenException` | Circuit breaker | Inherited `RetryAfter` is the remaining break duration; `IsIsolated` distinguishes manual isolation; inherited `InnerException` is the last failure when known. | `ExecutionRejectedException` | `catch (CircuitOpenException e) when (e.RetryAfter is { } delay)` | No |
 | `RateLimitExceededException` | Rate limit | Inherited `RetryAfter` estimates when a permit may become available. | `ExecutionRejectedException` | `catch (RateLimitExceededException e) when (e.RetryAfter is { } delay)` | No |
+| `RateLimiterAdapterRejectedException` | System.Threading.RateLimiting adapter | Inherited `RetryAfter` is copied from rejected lease metadata when supplied. | `ExecutionRejectedException` | `catch (RateLimiterAdapterRejectedException e) when (e.RetryAfter is { } delay)` | No |
 | `ConcurrencyLimitExceededException` | Concurrency limit | Inherited `RetryAfter` and `InnerException` are `null`; the rejection means both execution and queue capacity are full. | `ExecutionRejectedException` | `catch (ConcurrencyLimitExceededException)` | No |
 | `HttpRequestReplayException` | HTTP request replay and endpoint routing | Inherited `InnerException` is the content failure when serialization or buffering caused the replay failure. | `InvalidOperationException` | `catch (HttpRequestReplayException e)` | Yes |
 | `ChaosInjectedException` | Chaos fault injection | Inherited `InnerException` is populated only when the configured injected fault wraps a cause. | `Exception` | `catch (ChaosInjectedException e)` | Yes |
@@ -146,6 +148,8 @@ rejections.
 
 <!-- doc-test-run: catch-http-replay -->
 ```csharp
+using Kevlar.Extensions.Http;
+
 var caughtReplay = false;
 try
 {
@@ -165,6 +169,8 @@ if (!caughtReplay)
 
 <!-- doc-test-run: catch-chaos-injected -->
 ```csharp
+using Kevlar.Chaos;
+
 var caughtChaos = false;
 try
 {
@@ -183,6 +189,8 @@ if (!caughtChaos)
 
 <!-- doc-test-run: catch-shield-assertion -->
 ```csharp
+using Kevlar.Testing;
+
 var caughtAssertion = false;
 try
 {
@@ -221,7 +229,13 @@ exception has an inner exception.
 
 ## Configuration failures
 
-There is currently no public `KevlarConfigurationException`. Direct shorthand arguments report
-`ArgumentException` or `ArgumentOutOfRangeException`; invalid values supplied through an options
-callback currently use the same framework exception family. Catch configuration failures during
-startup, not around every execution.
+Invalid values supplied through an options callback throw `KevlarConfigurationException`. Its
+message names the options type, property, requirement, and offending value—for example,
+`RetryOptions.MaxRetries must not be negative (was -1)`. Invalid values returned later by
+`TimeoutGenerator` or `BreakDurationGenerator` use the same exception and name the generator
+property.
+
+Direct shorthand arguments keep the framework exception family and the public parameter name:
+`Shield.Retry(-1)` throws `ArgumentOutOfRangeException` with `ParamName == "maxRetries"`. Catch
+configuration failures while building shields at startup; a generator failure can surface during
+execution because its value is produced per call.

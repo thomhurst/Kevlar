@@ -86,6 +86,7 @@ const config: Config = {
             { label: 'Getting Started', to: '/docs/getting-started' },
             { label: 'Strategies', to: '/docs/category/strategies' },
             { label: 'Coming from Polly?', to: '/docs/polly-migration' },
+            { label: 'FAQ', to: '/docs/faq' },
           ],
         },
         {
@@ -93,6 +94,7 @@ const config: Config = {
           items: [
             { label: 'GitHub', href: 'https://github.com/thomhurst/Kevlar' },
             { label: 'NuGet', href: 'https://www.nuget.org/packages/Kevlar' },
+            { label: 'Support policy', to: '/docs/support-policy' },
           ],
         },
       ],

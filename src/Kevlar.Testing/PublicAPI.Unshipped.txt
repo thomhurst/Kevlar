@@ -58,6 +58,7 @@ Kevlar.Testing.StrategyKind.CircuitBreaker = 3 -> Kevlar.Testing.StrategyKind
 Kevlar.Testing.StrategyKind.ConcurrencyLimit = 5 -> Kevlar.Testing.StrategyKind
 Kevlar.Testing.StrategyKind.Custom = 0 -> Kevlar.Testing.StrategyKind
 Kevlar.Testing.StrategyKind.Fallback = 7 -> Kevlar.Testing.StrategyKind
+Kevlar.Testing.StrategyKind.RateLimiterAdapter = 8 -> Kevlar.Testing.StrategyKind
 Kevlar.Testing.StrategyKind.Hedge = 6 -> Kevlar.Testing.StrategyKind
 Kevlar.Testing.StrategyKind.RateLimit = 4 -> Kevlar.Testing.StrategyKind
 Kevlar.Testing.StrategyKind.Retry = 1 -> Kevlar.Testing.StrategyKind
@@ -75,6 +76,7 @@ static Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor<TResult>(this Kev
 Kevlar.Testing.CircuitBreakerStrategyDescriptor.HasHandlingOverride.get -> bool
 Kevlar.Testing.FallbackStrategyDescriptor.HasHandlingOverride.get -> bool
 Kevlar.Testing.HedgeStrategyDescriptor.HasHandlingOverride.get -> bool
+Kevlar.Testing.HedgeStrategyDescriptor.HasDelayGenerator.get -> bool
 Kevlar.Testing.RetryStrategyDescriptor.HasHandlingOverride.get -> bool
 Kevlar.Testing.CircuitBreakerStateSnapshot
 Kevlar.Testing.CircuitBreakerStateSnapshot.State.get -> Kevlar.CircuitState
@@ -109,6 +111,7 @@ static Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot(this Kevlar
 static Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot<TResult>(this Kevlar.Shield<TResult>! shield) -> Kevlar.Testing.ShieldStateSnapshot!
 Kevlar.Testing.CallbackKind
 Kevlar.Testing.CallbackKind.CircuitTransition = 4 -> Kevlar.Testing.CallbackKind
+Kevlar.Testing.CallbackKind.CircuitBreakDuration = 5 -> Kevlar.Testing.CallbackKind
 Kevlar.Testing.CallbackKind.Fallback = 3 -> Kevlar.Testing.CallbackKind
 Kevlar.Testing.CallbackKind.Hedge = 2 -> Kevlar.Testing.CallbackKind
 Kevlar.Testing.CallbackKind.Retry = 0 -> Kevlar.Testing.CallbackKind
@@ -119,6 +122,10 @@ Kevlar.Testing.CallbackRecord.Delay.get -> System.TimeSpan?
 Kevlar.Testing.CallbackRecord.Exception.get -> System.Exception?
 Kevlar.Testing.CallbackRecord.From.get -> Kevlar.CircuitState?
 Kevlar.Testing.CallbackRecord.Kind.get -> Kevlar.Testing.CallbackKind
+Kevlar.Testing.CallbackRecord.ConsecutiveFailures.get -> int?
+Kevlar.Testing.CallbackRecord.FailureCount.get -> long?
+Kevlar.Testing.CallbackRecord.FailureRate.get -> double?
+Kevlar.Testing.CallbackRecord.StrategyIndex.get -> int?
 Kevlar.Testing.CallbackRecord.RetryNumber.get -> int?
 Kevlar.Testing.CallbackRecord.Result.get -> object?
 Kevlar.Testing.CallbackRecord.Sequence.get -> long
@@ -134,12 +141,14 @@ Kevlar.Testing.TelemetryRecorder
 Kevlar.Testing.TelemetryRecorder.Callbacks.get -> System.Collections.Generic.IReadOnlyList<Kevlar.Testing.CallbackRecord!>!
 Kevlar.Testing.TelemetryRecorder.Dispose() -> void
 Kevlar.Testing.TelemetryRecorder.Metrics.get -> System.Collections.Generic.IReadOnlyList<Kevlar.Testing.MetricRecord!>!
-Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CircuitStateChangedEvent item) -> void
+Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CircuitBreakerStateChangedEvent item) -> void
+Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CircuitBreakerBreakDurationEvent item, System.TimeSpan breakDuration) -> System.Threading.Tasks.ValueTask<System.TimeSpan>
 Kevlar.Testing.TelemetryRecorder.Record(Kevlar.FallbackEvent item) -> void
 Kevlar.Testing.TelemetryRecorder.Record(Kevlar.HedgeEvent item) -> void
 Kevlar.Testing.TelemetryRecorder.Record(Kevlar.RetryEvent item) -> void
 Kevlar.Testing.TelemetryRecorder.Record(Kevlar.TimeoutEvent item) -> void
 Kevlar.Testing.TelemetryRecorder.Record<TResult>(Kevlar.FallbackEvent<TResult> item) -> void
+Kevlar.Testing.TelemetryRecorder.Record<TResult>(Kevlar.CircuitBreakerBreakDurationEvent<TResult> item, System.TimeSpan breakDuration) -> System.Threading.Tasks.ValueTask<System.TimeSpan>
 Kevlar.Testing.TelemetryRecorder.Record<TResult>(Kevlar.RetryEvent<TResult> item) -> void
 Kevlar.Testing.TelemetryRecorder.TelemetryRecorder(bool captureMetrics = true) -> void
 Kevlar.Testing.TelemetryRecorder.WaitForCallbackCountAsync(int count, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!

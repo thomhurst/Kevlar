@@ -71,7 +71,8 @@ jobs:
           args: >-
             --root-dir "${{ github.workspace }}" --no-progress
             --max-retries 3 --retry-wait-time 2
-            README.md "docs/docs/**/*.md"
+            --exclude 'https://github\.com/thomhurst/Kevlar/blob/main/(CONTRIBUTING|SECURITY|CODE_OF_CONDUCT)\.md'
+            README.md CONTRIBUTING.md SECURITY.md CODE_OF_CONDUCT.md "docs/docs/**/*.md"
           fail: true
           failIfEmpty: true
           token: ${{ github.token }}
@@ -79,6 +80,10 @@ jobs:
       - name: Install documentation dependencies
         run: npm ci
         working-directory: docs
+
+      - name: Verify repository community files
+        shell: pwsh
+        run: ./scripts/Verify-Repo.ps1
 
       - name: Build documentation
         run: npm run build
@@ -219,7 +224,7 @@ jobs:
         shell: pwsh
         env:
           PACKAGE_VERSION: ${{ steps.gitversion.outputs.semVer }}
-        run: ./scripts/Verify-DocSnippets.ps1 -PackagesPath artifacts/package/release -Version $env:PACKAGE_VERSION
+        run: ./scripts/Verify-DocSnippets.ps1 -PackagesPath artifacts/package/release -Version $env:PACKAGE_VERSION -NoImplicitUsings
 
       - name: Upload packages
         if: matrix.os == 'ubuntu-latest'

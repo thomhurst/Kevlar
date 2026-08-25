@@ -30,21 +30,53 @@ static Kevlar.Shield.Use(System.Func<Kevlar.HandlingClause, Kevlar.Strategy!>! f
 static Kevlar.ShieldExtensions.Use(this Kevlar.Shield! shield, System.Func<Kevlar.HandlingClause, Kevlar.Strategy!>! factory) -> Kevlar.Shield!
 Kevlar.Shield<TResult>.Use(System.Func<Kevlar.HandlingClause, Kevlar.Strategy!>! factory) -> Kevlar.Shield<TResult>!
 Kevlar.ShieldBuilder.Use(System.Func<Kevlar.HandlingClause, Kevlar.Strategy!>! factory) -> Kevlar.Shield!
+Kevlar.ShieldBuilder.Use(Kevlar.Strategy! strategy) -> Kevlar.Shield!
 Kevlar.ShieldBuilder<TResult>.Use(System.Func<Kevlar.HandlingClause, Kevlar.Strategy!>! factory) -> Kevlar.Shield<TResult>!
+Kevlar.ShieldBuilder<TResult>.Use(Kevlar.Strategy! strategy) -> Kevlar.Shield<TResult>!
+Kevlar.ShieldBuilder.Fallback(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback) -> Kevlar.Shield!
+Kevlar.ShieldBuilder.Fallback(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback, System.Action<Kevlar.FallbackOptions!>! configure) -> Kevlar.Shield!
+Kevlar.ShieldBuilder.Timeout(System.Action<Kevlar.TimeoutOptions!>! configure) -> Kevlar.Shield!
+Kevlar.ShieldBuilder<TResult>.Timeout(System.Action<Kevlar.TimeoutOptions!>! configure) -> Kevlar.Shield<TResult>!
 virtual Kevlar.Strategy.Handling.get -> Kevlar.HandlingClause?
 virtual Kevlar.Strategy.InvokesContinuationAtMostOnce.get -> bool
 Kevlar.Shield<TResult>.InvokesContinuationAtMostOnce.get -> bool
 Kevlar.CircuitBreakerBreakDurationEvent
 Kevlar.CircuitBreakerBreakDurationEvent.CircuitBreakerBreakDurationEvent() -> void
 Kevlar.CircuitBreakerBreakDurationEvent.Context.get -> Kevlar.KevlarContext!
+Kevlar.CircuitBreakerBreakDurationEvent.ConsecutiveFailures.get -> int
 Kevlar.CircuitBreakerBreakDurationEvent.Exception.get -> System.Exception?
+Kevlar.CircuitBreakerBreakDurationEvent.FailureCount.get -> long
+Kevlar.CircuitBreakerBreakDurationEvent.FailureRate.get -> double
 Kevlar.CircuitBreakerBreakDurationEvent.Result.get -> object?
+Kevlar.CircuitBreakerBreakDurationEvent<TResult>
+Kevlar.CircuitBreakerBreakDurationEvent<TResult>.CircuitBreakerBreakDurationEvent() -> void
+Kevlar.CircuitBreakerBreakDurationEvent<TResult>.ConsecutiveFailures.get -> int
+Kevlar.CircuitBreakerBreakDurationEvent<TResult>.Context.get -> Kevlar.KevlarContext!
+Kevlar.CircuitBreakerBreakDurationEvent<TResult>.FailureCount.get -> long
+Kevlar.CircuitBreakerBreakDurationEvent<TResult>.FailureRate.get -> double
+Kevlar.CircuitBreakerBreakDurationEvent<TResult>.Outcome.get -> Kevlar.Outcome<TResult>
+Kevlar.CircuitBreakerMonitor.StateChanged -> System.Action<Kevlar.CircuitBreakerStateChangedEvent>?
 Kevlar.CircuitBreakerMonitor.IsolateAsync() -> System.Threading.Tasks.ValueTask
 Kevlar.CircuitBreakerMonitor.ResetAsync() -> System.Threading.Tasks.ValueTask
 Kevlar.CircuitBreakerOptions.BreakDurationGenerator.get -> System.Func<Kevlar.CircuitBreakerBreakDurationEvent, System.Threading.Tasks.ValueTask<System.TimeSpan>>?
 Kevlar.CircuitBreakerOptions.BreakDurationGenerator.set -> void
-Kevlar.CircuitBreakerOptions.OnStateChangedAsync.get -> System.Func<Kevlar.CircuitStateChangedEvent, System.Threading.Tasks.ValueTask>?
+Kevlar.CircuitBreakerOptions.OnStateChanged.get -> System.Action<Kevlar.CircuitBreakerStateChangedEvent>?
+Kevlar.CircuitBreakerOptions.OnStateChangedAsync.get -> System.Func<Kevlar.CircuitBreakerStateChangedEvent, System.Threading.Tasks.ValueTask>?
 Kevlar.CircuitBreakerOptions.OnStateChangedAsync.set -> void
+Kevlar.CircuitBreakerStateChangedEvent
+Kevlar.CircuitBreakerStateChangedEvent.CircuitBreakerStateChangedEvent() -> void
+Kevlar.CircuitBreakerStateChangedEvent.Context.get -> Kevlar.KevlarContext!
+Kevlar.CircuitBreakerStateChangedEvent.From.get -> Kevlar.CircuitState
+Kevlar.CircuitBreakerStateChangedEvent.LastException.get -> System.Exception?
+Kevlar.CircuitBreakerStateChangedEvent.To.get -> Kevlar.CircuitState
+Kevlar.KevlarContext.StrategyIndex.get -> int
+*REMOVED*Kevlar.CircuitBreakerMonitor.StateChanged -> System.Action<Kevlar.CircuitStateChangedEvent>?
+*REMOVED*Kevlar.CircuitBreakerOptions.OnStateChanged.get -> System.Action<Kevlar.CircuitStateChangedEvent>?
+*REMOVED*Kevlar.CircuitStateChangedEvent
+*REMOVED*Kevlar.CircuitStateChangedEvent.CircuitStateChangedEvent() -> void
+*REMOVED*Kevlar.CircuitStateChangedEvent.From.get -> Kevlar.CircuitState
+*REMOVED*Kevlar.CircuitStateChangedEvent.LastException.get -> System.Exception?
+*REMOVED*Kevlar.CircuitStateChangedEvent.To.get -> Kevlar.CircuitState
 Kevlar.Outcome<T>.TryGetResult(out T result) -> bool
 Kevlar.Shield.ExecuteOutcomeAsync<T, TState>(TState state, System.Func<TState, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<T>>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Kevlar.Outcome<T>>
 Kevlar.Shield<TResult>.ExecuteOutcomeAsync<TState>(TState state, System.Func<TState, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Kevlar.Outcome<TResult>>
@@ -171,7 +203,7 @@ Kevlar.ConcurrencyLimitRejectedEvent.ConcurrencyLimitRejectedEvent() -> void
 Kevlar.ConcurrencyLimitRejectedEvent.Context.get -> Kevlar.KevlarContext!
 Kevlar.ConcurrencyLimitRejectedEvent.MaxConcurrency.get -> int
 Kevlar.ConcurrencyLimitRejectedEvent.QueueLimit.get -> int
-Kevlar.ConcurrencyLimitRejectedEvent.StrategyIndex.get -> int
+*REMOVED*Kevlar.ConcurrencyLimitRejectedEvent.StrategyIndex.get -> int
 Kevlar.RateLimitOptions.OnRejected.get -> System.Action<Kevlar.RateLimitRejectedEvent>?
 Kevlar.RateLimitOptions.OnRejected.set -> void
 Kevlar.RateLimitOptions.OnRejectedAsync.get -> System.Func<Kevlar.RateLimitRejectedEvent, System.Threading.Tasks.ValueTask>?
@@ -183,7 +215,7 @@ Kevlar.RateLimitRejectedEvent.Context.get -> Kevlar.KevlarContext!
 Kevlar.RateLimitRejectedEvent.Permits.get -> int
 Kevlar.RateLimitRejectedEvent.QueueLimit.get -> int
 Kevlar.RateLimitRejectedEvent.RetryAfter.get -> System.TimeSpan?
-Kevlar.RateLimitRejectedEvent.StrategyIndex.get -> int
+*REMOVED*Kevlar.RateLimitRejectedEvent.StrategyIndex.get -> int
 Kevlar.RateLimitRejectedEvent.Window.get -> System.TimeSpan
 Kevlar.ShieldBuilder.ConcurrencyLimit(System.Action<Kevlar.ConcurrencyLimitOptions!>! configure) -> Kevlar.Shield!
 Kevlar.ShieldBuilder.RateLimit(System.Action<Kevlar.RateLimitOptions!>! configure) -> Kevlar.Shield!
@@ -304,7 +336,7 @@ static Kevlar.KevlarKey<T>.operator !=(Kevlar.KevlarKey<T> left, Kevlar.KevlarKe
 static Kevlar.KevlarKey<T>.operator ==(Kevlar.KevlarKey<T> left, Kevlar.KevlarKey<T> right) -> bool
 Kevlar.CircuitBreakerOptions<TResult>.BreakDuration.get -> System.TimeSpan
 Kevlar.CircuitBreakerOptions<TResult>.BreakDuration.set -> void
-Kevlar.CircuitBreakerOptions<TResult>.BreakDurationGenerator.get -> System.Func<Kevlar.CircuitBreakerBreakDurationEvent, System.Threading.Tasks.ValueTask<System.TimeSpan>>?
+Kevlar.CircuitBreakerOptions<TResult>.BreakDurationGenerator.get -> System.Func<Kevlar.CircuitBreakerBreakDurationEvent<TResult>, System.Threading.Tasks.ValueTask<System.TimeSpan>>?
 Kevlar.CircuitBreakerOptions<TResult>.BreakDurationGenerator.set -> void
 Kevlar.CircuitBreakerOptions<TResult>.ConsecutiveFailures.get -> int?
 Kevlar.CircuitBreakerOptions<TResult>.ConsecutiveFailures.set -> void
@@ -316,14 +348,18 @@ Kevlar.CircuitBreakerOptions<TResult>.MinimumThroughput.get -> int
 Kevlar.CircuitBreakerOptions<TResult>.MinimumThroughput.set -> void
 Kevlar.CircuitBreakerOptions<TResult>.Monitor.get -> Kevlar.CircuitBreakerMonitor?
 Kevlar.CircuitBreakerOptions<TResult>.Monitor.set -> void
-Kevlar.CircuitBreakerOptions<TResult>.OnStateChanged.get -> System.Action<Kevlar.CircuitStateChangedEvent>?
+Kevlar.CircuitBreakerOptions<TResult>.OnStateChanged.get -> System.Action<Kevlar.CircuitBreakerStateChangedEvent>?
 Kevlar.CircuitBreakerOptions<TResult>.OnStateChanged.set -> void
-Kevlar.CircuitBreakerOptions<TResult>.OnStateChangedAsync.get -> System.Func<Kevlar.CircuitStateChangedEvent, System.Threading.Tasks.ValueTask>?
+Kevlar.CircuitBreakerOptions<TResult>.OnStateChangedAsync.get -> System.Func<Kevlar.CircuitBreakerStateChangedEvent, System.Threading.Tasks.ValueTask>?
 Kevlar.CircuitBreakerOptions<TResult>.OnStateChangedAsync.set -> void
 Kevlar.CircuitBreakerOptions<TResult>.SamplingWindow.get -> System.TimeSpan
 Kevlar.CircuitBreakerOptions<TResult>.SamplingWindow.set -> void
 Kevlar.HedgeOptions<TResult>.ActionGenerator.get -> System.Func<Kevlar.HedgeActionGeneratorEvent<TResult>, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>?>?
 Kevlar.HedgeOptions<TResult>.ActionGenerator.set -> void
+Kevlar.HedgeOptions<TResult>.DelayGenerator.get -> System.Func<Kevlar.HedgeDelayEvent, System.TimeSpan>?
+Kevlar.HedgeOptions<TResult>.DelayGenerator.set -> void
+Kevlar.HedgeOptions<TResult>.DelayGeneratorAsync.get -> System.Func<Kevlar.HedgeDelayEvent, System.Threading.Tasks.ValueTask<System.TimeSpan>>?
+Kevlar.HedgeOptions<TResult>.DelayGeneratorAsync.set -> void
 Kevlar.HedgeOptions<TResult>.Delay.get -> System.TimeSpan
 Kevlar.HedgeOptions<TResult>.Delay.set -> void
 Kevlar.HedgeOptions<TResult>.HandlesException.get -> System.Func<System.Exception!, bool>?
@@ -334,9 +370,22 @@ Kevlar.HedgeOptions<TResult>.OnHedge.get -> System.Action<Kevlar.HedgeEvent>?
 Kevlar.HedgeOptions<TResult>.OnHedge.set -> void
 Kevlar.HedgeOptions<TResult>.OnHedgeAsync.get -> System.Func<Kevlar.HedgeEvent, System.Threading.Tasks.ValueTask>?
 Kevlar.HedgeOptions<TResult>.OnHedgeAsync.set -> void
+Kevlar.HedgeDelayEvent
+Kevlar.HedgeDelayEvent.HedgeDelayEvent() -> void
+Kevlar.HedgeDelayEvent.AttemptNumber.get -> int
+Kevlar.HedgeDelayEvent.Context.get -> Kevlar.KevlarContext!
+Kevlar.HedgeDelayEvent.Elapsed.get -> System.TimeSpan
+Kevlar.HedgeOptions.DelayGenerator.get -> System.Func<Kevlar.HedgeDelayEvent, System.TimeSpan>?
+Kevlar.HedgeOptions.DelayGenerator.set -> void
+Kevlar.HedgeOptions.DelayGeneratorAsync.get -> System.Func<Kevlar.HedgeDelayEvent, System.Threading.Tasks.ValueTask<System.TimeSpan>>?
+Kevlar.HedgeOptions.DelayGeneratorAsync.set -> void
 Kevlar.KevlarProxyException
 Kevlar.KevlarProxyException.KevlarProxyException(System.Exception! originalException) -> void
 Kevlar.KevlarProxyException.OriginalException.get -> System.Exception!
+Kevlar.KevlarConfigurationException
+Kevlar.KevlarConfigurationException.KevlarConfigurationException() -> void
+Kevlar.KevlarConfigurationException.KevlarConfigurationException(string! message) -> void
+Kevlar.KevlarConfigurationException.KevlarConfigurationException(string! message, System.Exception? innerException) -> void
 *REMOVED*Kevlar.ConcurrencyLimitOptions.MaxQueue.get -> int
 *REMOVED*Kevlar.ConcurrencyLimitOptions.MaxQueue.set -> void
 *REMOVED*Kevlar.Shield<TResult>.ConcurrencyLimit(int maxConcurrency, int maxQueue = 0) -> Kevlar.Shield<TResult>!

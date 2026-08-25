@@ -15,10 +15,15 @@
     <PackageReference Include="Kevlar.Extensions.Http" VersionOverride="$(KevlarPackageVersion)" />
     <PackageReference Include="Kevlar.Extensions.RateLimiting" VersionOverride="$(KevlarPackageVersion)" />
     <PackageReference Include="Kevlar.Testing" VersionOverride="$(KevlarPackageVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
     <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" VersionOverride="$(TestExtensionsTimeProviderVersion)" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
     <PackageReference Include="Polly" />
+    <PackageReference Include="Polly.Extensions" />
+    <PackageReference Include="Polly.RateLimiting" />
+    <PackageReference Include="Polly.Testing" />
   </ItemGroup>
 
   <ItemGroup>

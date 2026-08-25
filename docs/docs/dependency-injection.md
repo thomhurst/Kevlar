@@ -13,6 +13,12 @@ dotnet add package Kevlar.Extensions.DependencyInjection
 ## Registering shields
 
 ```csharp
+using Kevlar;
+using Kevlar.Extensions.DependencyInjection;
+using Kevlar.Extensions.Http;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
 // A shield instance, under a name:
 services.AddShield("github",
     Shield.Timeout(TimeSpan.FromSeconds(10)).Retry(3));
@@ -57,7 +63,15 @@ independent shield state per tenant, endpoint, or other key while remaining boun
 
 ## Binding shields from configuration
 
-`AddShield(name, IConfiguration)` builds a shield from a configuration section, so retry counts, timeouts and breaker thresholds are tunable per environment without a redeploy:
+`AddShield(name, IConfiguration)` builds a shield from a configuration section, so retry counts,
+timeouts and breaker thresholds are tunable per environment without a redeploy. Use
+`AddShield<TResult>(name, configuration)` when consumers need a result-aware shield:
+
+The Generic Host already loads `appsettings.json`. A standalone application can add the same JSON provider explicitly:
+
+```bash
+dotnet add package Microsoft.Extensions.Configuration.Json
+```
 
 ```json
 // appsettings.json
@@ -74,7 +88,13 @@ independent shield state per tenant, endpoint, or other key while remaining boun
 ```
 
 ```csharp
-services.AddShield("github", builder.Configuration.GetSection("Resilience:GitHub"));
+using Kevlar.Extensions.DependencyInjection;
+
+var configuration = new ConfigurationBuilder()
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json")
+    .Build();
+services.AddShield("github", configuration.GetSection("Resilience:GitHub"));
 ```
 
 The schema is `ShieldDefinition`. `ShieldDefinition.Build()` always chains the sections it finds in one fixed order, outermost first:
@@ -93,9 +113,15 @@ Configuration cannot reorder that chain — the order is what makes a definition
 `AddReloadingShield` when future configuration reloads must affect new operations:
 
 ```csharp
+using Kevlar.Extensions.DependencyInjection;
+
+var configuration = new ConfigurationBuilder()
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .Build();
 services.AddReloadingShield(
     "github",
-    builder.Configuration.GetSection("Resilience:GitHub"),
+    configuration.GetSection("Resilience:GitHub"),
     error => logger.LogError(error, "Rejected GitHub shield configuration"));
 ```
 
@@ -120,6 +146,11 @@ Registry consumers can call `registry.GetShield("github")` once per operation to
 current snapshot. A keyed `Shield` resolved from DI is also one immutable snapshot; it does not
 change after a reload. Every ordinary `AddShield` registration exposes an `IShieldProvider` too,
 but its `Current` snapshot remains fixed.
+
+The generic forms are symmetric: `AddReloadingShield<TResult>` publishes through
+`IShieldProvider<TResult>`, `registry.GetShield<TResult>(name)`, and a keyed `Shield<TResult>`.
+The keyed shield remains the snapshot captured when it was resolved; read the typed provider's
+`Current` once per operation to observe reloads.
 
 On a valid change, Kevlar builds the entire replacement before one atomic publish. Operations
 already using the prior snapshot finish on it. Invalid configuration keeps the last known-good

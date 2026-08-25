@@ -52,10 +52,7 @@ public static class KevlarServiceCollectionExtensions
         if (configuration is null) { throw new ArgumentNullException(nameof(configuration)); }
 
         return services.AddShield(name, _ =>
-        {
-            var definition = BindDefinition(configuration);
-            return definition.Build().WithName(name);
-        });
+            BuildConfiguredShield(configuration).WithName(name));
     }
 
     /// <summary>
@@ -86,7 +83,7 @@ public static class KevlarServiceCollectionExtensions
         services.AddKeyedSingleton<IShieldProvider>(
             name,
             (_, _) => new ReloadingShieldProvider(
-                () => BindDefinition(configuration).Build().WithName(name),
+                () => BuildConfiguredShield(configuration).WithName(name),
                 configuration.GetReloadToken,
                 onReloadFailure));
         services.AddSingleton(new ShieldRegistration(
@@ -114,6 +111,64 @@ public static class KevlarServiceCollectionExtensions
         services.AddKevlar();
         services.AddSingleton(new ShieldRegistration(name, typeof(TResult), factory));
         services.AddKeyedSingleton(name, (sp, _) => sp.GetRequiredService<IKevlarRegistry>().GetShield<TResult>(name));
+        services.AddKeyedSingleton<IShieldProvider<TResult>>(
+            name,
+            (sp, _) => new FixedShieldProvider<TResult>(
+                sp.GetRequiredService<IKevlarRegistry>().GetShield<TResult>(name)));
+        return services;
+    }
+
+    /// <summary>
+    /// Registers a named result-aware shield bound from <paramref name="configuration"/>.
+    /// The shield carries <paramref name="name"/> as its diagnostic name.
+    /// </summary>
+    public static IServiceCollection AddShield<TResult>(
+        this IServiceCollection services,
+        string name,
+        IConfiguration configuration)
+    {
+        if (configuration is null) { throw new ArgumentNullException(nameof(configuration)); }
+
+        return services.AddShield<TResult>(name, _ =>
+            BuildConfiguredShield<TResult>(configuration).WithName(name));
+    }
+
+    /// <summary>
+    /// Registers a named, reload-aware result-aware shield bound from
+    /// <paramref name="configuration"/>. Invalid replacements retain the last known-good
+    /// snapshot and are reported to <paramref name="onReloadFailure"/> when supplied.
+    /// </summary>
+    /// <remarks>
+    /// Each successful replacement has fresh strategy state. Resolve the keyed
+    /// <see cref="IShieldProvider{TResult}"/> to observe future replacements, or call
+    /// <see cref="IKevlarRegistry.GetShield{TResult}(string)"/> once per operation. A keyed
+    /// <see cref="Shield{TResult}"/> is an immutable snapshot and does not update after resolution.
+    /// Exceptions thrown by <paramref name="onReloadFailure"/> are suppressed.
+    /// </remarks>
+    public static IServiceCollection AddReloadingShield<TResult>(
+        this IServiceCollection services,
+        string name,
+        IConfiguration configuration,
+        Action<Exception>? onReloadFailure = null)
+    {
+        if (services is null) { throw new ArgumentNullException(nameof(services)); }
+        if (name is null) { throw new ArgumentNullException(nameof(name)); }
+        if (configuration is null) { throw new ArgumentNullException(nameof(configuration)); }
+
+        services.AddKevlar();
+        services.AddKeyedSingleton<IShieldProvider<TResult>>(
+            name,
+            (_, _) => new ReloadingShieldProvider<TResult>(
+                () => BuildConfiguredShield<TResult>(configuration).WithName(name),
+                configuration.GetReloadToken,
+                onReloadFailure));
+        services.AddSingleton(new ShieldRegistration(
+            name,
+            typeof(TResult),
+            sp => sp.GetRequiredKeyedService<IShieldProvider<TResult>>(name)));
+        services.AddKeyedSingleton(
+            name,
+            (sp, _) => sp.GetRequiredService<IKevlarRegistry>().GetShield<TResult>(name));
         return services;
     }
 
@@ -269,6 +324,47 @@ public static class KevlarServiceCollectionExtensions
 
         return definition;
     }
+
+    private static Shield BuildConfiguredShield(IConfiguration configuration)
+    {
+        try
+        {
+            return BindDefinition(configuration).Build();
+        }
+        catch (Exception exception) when (IsConfigurationFailure(exception))
+        {
+            throw AddConfigurationPath(configuration, exception);
+        }
+    }
+
+    private static Shield<TResult> BuildConfiguredShield<TResult>(IConfiguration configuration)
+    {
+        try
+        {
+            return BindDefinition(configuration).Build<TResult>();
+        }
+        catch (Exception exception) when (IsConfigurationFailure(exception))
+        {
+            throw AddConfigurationPath(configuration, exception);
+        }
+    }
+
+    private static KevlarConfigurationException AddConfigurationPath(
+        IConfiguration configuration,
+        Exception exception)
+    {
+        var path = configuration is IConfigurationSection section && !string.IsNullOrEmpty(section.Path)
+            ? section.Path
+            : "<root>";
+        var configurationException = exception as KevlarConfigurationException
+            ?? new KevlarConfigurationException(exception.Message, exception);
+        return new KevlarConfigurationException(
+            $"Configuration section '{path}' is invalid: {configurationException.Message}",
+            configurationException);
+    }
+
+    private static bool IsConfigurationFailure(Exception exception) =>
+        exception is KevlarConfigurationException or ArgumentException or InvalidOperationException;
 
     private static bool HasChildren(IConfigurationSection section) => section.GetChildren().Any();
 

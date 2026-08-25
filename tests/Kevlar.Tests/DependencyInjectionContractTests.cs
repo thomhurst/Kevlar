@@ -188,6 +188,9 @@ public class DependencyInjectionContractTests
             () => services.AddShield<int>("name", (Shield<int>)null!),
             "shield");
         await AssertNullParameterAsync(
+            () => services.AddShield<int>("name", (IConfiguration)null!),
+            "configuration");
+        await AssertNullParameterAsync(
             () => KevlarServiceCollectionExtensions.AddShield<int>(null!, "name", typedFactory),
             "services");
         await AssertNullParameterAsync(() => services.AddShield<int>(null!, typedFactory), "name");
@@ -227,6 +230,19 @@ public class DependencyInjectionContractTests
         var shieldProvider = services.GetRequiredKeyedService<IShieldProvider>("static");
 
         await Assert.That(ReferenceEquals(shieldProvider.Current, registry.GetShield("static"))).IsTrue();
+    }
+
+    [Test]
+    public async Task Typed_Ordinary_Shield_Exposes_A_Fixed_Keyed_Provider()
+    {
+        using var services = new ServiceCollection()
+            .AddShield("static", Shield<int>.Empty)
+            .BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        var shieldProvider = services.GetRequiredKeyedService<IShieldProvider<int>>("static");
+
+        await Assert.That(ReferenceEquals(shieldProvider.Current, registry.GetShield<int>("static")))
+            .IsTrue();
     }
 
     [Test]
@@ -365,6 +381,75 @@ public class DependencyInjectionContractTests
         await Assert.That(first.ToString()).IsEqualTo("dynamic: Retry(4, no delay)");
         await Assert.That(ReferenceEquals(first, second)).IsTrue();
         await Assert.That(second.ToString()).IsEqualTo("dynamic: Retry(4, no delay)");
+    }
+
+    [Test]
+    public async Task Invalid_Configuration_Reports_Section_And_Property()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Resilience:Retry:MaxRetries"] = "-1",
+            })
+            .Build()
+            .GetSection("Resilience");
+        var services = new ServiceCollection();
+        services.AddShield("invalid", configuration);
+        using var provider = services.BuildServiceProvider();
+        var registry = provider.GetRequiredService<IKevlarRegistry>();
+
+        var exception = await Assert.That(() => registry.GetShield("invalid"))
+            .Throws<KevlarConfigurationException>();
+
+        await Assert.That(exception!.Message).Contains("Resilience");
+        await Assert.That(exception.Message).Contains("RetryOptions.MaxRetries");
+        await Assert.That(exception.Message).Contains("-1");
+        await Assert.That(exception.InnerException).IsTypeOf<KevlarConfigurationException>();
+    }
+
+    [Test]
+    public async Task Bound_Validation_Failures_Report_Configuration_Path()
+    {
+        (string Key, string Value, bool Typed)[] cases =
+        [
+            ("Timeout", "00:00:00", false),
+            ("AttemptTimeout", "00:00:00", true),
+            ("ConcurrencyLimit:MaxConcurrency", "0", false),
+            ("Retry:BaseDelay", "-00:00:01", false),
+            ("Retry:MaxRetries", "abc", true),
+            ("ConcurrencyLimit:MaxQueue", "5", false),
+        ];
+
+        foreach (var item in cases)
+        {
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    [$"Resilience:{item.Key}"] = item.Value,
+                })
+                .Build()
+                .GetSection("Resilience");
+            var services = new ServiceCollection();
+            if (item.Typed)
+            {
+                services.AddShield<int>("invalid", configuration);
+            }
+            else
+            {
+                services.AddShield("invalid", configuration);
+            }
+
+            using var provider = services.BuildServiceProvider();
+            var registry = provider.GetRequiredService<IKevlarRegistry>();
+            var exception = item.Typed
+                ? await Assert.That(() => registry.GetShield<int>("invalid"))
+                    .Throws<KevlarConfigurationException>()
+                : await Assert.That(() => registry.GetShield("invalid"))
+                    .Throws<KevlarConfigurationException>();
+
+            await Assert.That(exception!.Message).Contains("Resilience");
+            await Assert.That(exception.InnerException).IsTypeOf<KevlarConfigurationException>();
+        }
     }
 
     private static async Task AssertNullNameAsync(Action action)

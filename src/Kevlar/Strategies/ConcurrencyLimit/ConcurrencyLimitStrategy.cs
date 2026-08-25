@@ -40,8 +40,18 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
 
     public ConcurrencyLimitStrategy(ConcurrencyLimitOptions options)
     {
-        Throw.IfOutOfRange(options.MaxConcurrency <= 0, nameof(options), "MaxConcurrency must be positive.");
-        Throw.IfOutOfRange(options.QueueLimit < 0, nameof(options), "QueueLimit must not be negative.");
+        ConfigurationValidation.ThrowIf(
+            options.MaxConcurrency <= 0,
+            typeof(ConcurrencyLimitOptions),
+            nameof(options.MaxConcurrency),
+            options.MaxConcurrency,
+            "must be positive");
+        ConfigurationValidation.ThrowIf(
+            options.QueueLimit < 0,
+            typeof(ConcurrencyLimitOptions),
+            nameof(options.QueueLimit),
+            options.QueueLimit,
+            "must not be negative");
         _semaphore = new SemaphoreSlim(0, options.MaxConcurrency);
         _maxConcurrency = options.MaxConcurrency;
         _queueLimit = options.QueueLimit;
@@ -94,7 +104,6 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
         var rejectedEvent = new ConcurrencyLimitRejectedEvent(
             _maxConcurrency,
             _queueLimit,
-            context.StrategyIndex,
             context);
         try
         {
