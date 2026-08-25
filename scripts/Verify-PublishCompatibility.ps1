@@ -180,7 +180,7 @@ using var frameworkLimiter = new ConcurrencyLimiter(new ConcurrencyLimiterOption
     QueueLimit = 0,
     QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
 });
-var adapted = await Shield.Empty.RateLimit(frameworkLimiter)
+var adapted = await Shield.Empty.UseRateLimiter(frameworkLimiter)
     .ExecuteAsync(static _ => new ValueTask<int>(42));
 if (retried + timed + broken + limited + isolated + hedged + fallback + adapted != 336)
 {
