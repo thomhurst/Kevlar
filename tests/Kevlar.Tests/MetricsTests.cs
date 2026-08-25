@@ -472,6 +472,24 @@ public class MetricsTests
     }
 
     [Test]
+    public async Task Disposing_An_Equal_Listener_Removes_The_Exact_Subscription()
+    {
+        var firstEvents = 0;
+        var secondEvents = 0;
+        using var firstSubscription = KevlarDiagnostics.Listen(
+            new EqualTelemetryListener(() => firstEvents++));
+        var secondSubscription = KevlarDiagnostics.Listen(
+            new EqualTelemetryListener(() => secondEvents++));
+
+        secondSubscription.Dispose();
+        _ = await Shield.Retry(0, Backoff.None)
+            .ExecuteAsync(_ => new ValueTask<int>(42));
+
+        await Assert.That(firstEvents).IsGreaterThan(0);
+        await Assert.That(secondEvents).IsEqualTo(0);
+    }
+
+    [Test]
     public async Task Custom_Strategy_Can_Record_Into_Listener_And_Meter()
     {
         using var listener = new KevlarMeterListener();
@@ -607,6 +625,98 @@ public class MetricsTests
         })).Throws<TimeoutExceededException>();
 
         await Assert.That(observed.AttemptNumber).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Nested_Fallback_Telemetry_Uses_The_Retry_Attempt()
+    {
+        var attempts = new List<int>();
+        using var subscription = KevlarDiagnostics.Listen(new CallbackTelemetryListener(telemetryEvent =>
+        {
+            if (telemetryEvent.EventName == "fallback")
+            {
+                attempts.Add(telemetryEvent.AttemptNumber);
+            }
+        }));
+        var fallbackCalls = 0;
+        var shield = Shield.For<int>()
+            .When<ArgumentException>()
+            .Retry(1, Backoff.None)
+            .When<InvalidOperationException>()
+            .Fallback(_ => ++fallbackCalls == 1
+                ? ValueTask.FromException<int>(new ArgumentException("fallback"))
+                : new ValueTask<int>(42));
+
+        var result = await shield.ExecuteAsync(_ =>
+            ValueTask.FromException<int>(new InvalidOperationException("action")));
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(attempts).IsEquivalentTo([0, 1]);
+    }
+
+    [Test]
+    public async Task Nested_Rejection_Telemetry_Uses_The_Retry_Attempt()
+    {
+        KevlarTelemetryEvent observed = default;
+        using var subscription = KevlarDiagnostics.Listen(new CallbackTelemetryListener(telemetryEvent =>
+        {
+            if (telemetryEvent.EventName == "rejection")
+            {
+                observed = telemetryEvent;
+            }
+        }));
+        var shield = Shield.Retry(1, Backoff.None)
+            .RateLimit(1, TimeSpan.FromHours(1));
+
+        _ = await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
+            ValueTask.FromException<int>(new InvalidOperationException("action"))))
+            .Throws<RateLimitExceededException>();
+
+        await Assert.That(observed.AttemptNumber).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Nested_Circuit_Telemetry_Uses_The_Retry_Attempt()
+    {
+        KevlarTelemetryEvent observed = default;
+        using var subscription = KevlarDiagnostics.Listen(new CallbackTelemetryListener(telemetryEvent =>
+        {
+            if (telemetryEvent.EventName == "circuit_opened")
+            {
+                observed = telemetryEvent;
+            }
+        }));
+        var shield = Shield.Retry(1, Backoff.None)
+            .CircuitBreaker(2, TimeSpan.FromMinutes(1));
+
+        _ = await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
+            ValueTask.FromException<int>(new InvalidOperationException("action"))))
+            .Throws<InvalidOperationException>();
+
+        await Assert.That(observed.AttemptNumber).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Custom_Event_Defaults_To_The_Active_Retry_Attempt()
+    {
+        var attempts = new List<int>();
+        using var subscription = KevlarDiagnostics.Listen(new CallbackTelemetryListener(telemetryEvent =>
+        {
+            if (telemetryEvent.EventName == "custom_strategy_event")
+            {
+                attempts.Add(telemetryEvent.AttemptNumber);
+            }
+        }));
+        var calls = 0;
+        var shield = Shield.Retry(1, Backoff.None)
+            .Use(new TelemetryStrategy());
+
+        var result = await shield.ExecuteAsync(_ => ++calls == 1
+            ? ValueTask.FromException<int>(new InvalidOperationException("action"))
+            : new ValueTask<int>(42));
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(attempts).IsEquivalentTo([0, 1]);
     }
 
     [Test]
@@ -1960,6 +2070,15 @@ public class MetricsTests
         : IKevlarTelemetryListener
     {
         public void OnEvent(in KevlarTelemetryEvent telemetryEvent) => callback(telemetryEvent);
+    }
+
+    private sealed class EqualTelemetryListener(Action callback) : IKevlarTelemetryListener
+    {
+        public void OnEvent(in KevlarTelemetryEvent telemetryEvent) => callback();
+
+        public override bool Equals(object? obj) => obj is EqualTelemetryListener;
+
+        public override int GetHashCode() => 0;
     }
 
     private sealed class TelemetryStrategy : Strategy

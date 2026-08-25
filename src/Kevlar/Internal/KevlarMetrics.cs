@@ -231,7 +231,7 @@ internal static class KevlarMetrics
             eventName: "fallback",
             KevlarTelemetrySeverity.Warning,
             context.StrategyIndex,
-            attemptNumber: 0,
+            context.AttemptNumber,
             isSuccess,
             exception);
     }
@@ -261,7 +261,7 @@ internal static class KevlarMetrics
             eventName: "rejection",
             KevlarTelemetrySeverity.Warning,
             context.StrategyIndex,
-            attemptNumber: 0,
+            context.AttemptNumber,
             isSuccess: false,
             exception);
     }

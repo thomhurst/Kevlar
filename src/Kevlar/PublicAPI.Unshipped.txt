@@ -609,4 +609,4 @@ Kevlar.KevlarTelemetrySeverity.Information = 0 -> Kevlar.KevlarTelemetrySeverity
 Kevlar.KevlarTelemetrySeverity.Warning = 1 -> Kevlar.KevlarTelemetrySeverity
 static Kevlar.KevlarDiagnostics.Listen(Kevlar.IKevlarTelemetryListener! listener) -> System.IDisposable!
 static Kevlar.KevlarKeys.OperationKey.get -> Kevlar.KevlarKey<string!>
-Kevlar.KevlarContext.RecordEvent(string! eventName, Kevlar.KevlarTelemetrySeverity severity = Kevlar.KevlarTelemetrySeverity.Information, System.Exception? exception = null, int attemptNumber = 0, string? strategyName = null) -> void
+Kevlar.KevlarContext.RecordEvent(string! eventName, Kevlar.KevlarTelemetrySeverity severity = Kevlar.KevlarTelemetrySeverity.Information, System.Exception? exception = null, int? attemptNumber = null, string? strategyName = null) -> void

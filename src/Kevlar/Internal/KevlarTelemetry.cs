@@ -78,7 +78,15 @@ internal static class KevlarTelemetry
         lock (Sync)
         {
             var current = _listeners;
-            var index = Array.IndexOf(current, listener);
+            var index = -1;
+            for (var candidate = 0; candidate < current.Length; candidate++)
+            {
+                if (ReferenceEquals(current[candidate], listener))
+                {
+                    index = candidate;
+                    break;
+                }
+            }
             if (index < 0)
             {
                 return;

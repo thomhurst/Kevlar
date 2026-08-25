@@ -8,7 +8,7 @@ items:
   - Kevlar.KevlarContext.CancellationToken
   - Kevlar.KevlarContext.IsSynchronous
   - Kevlar.KevlarContext.Properties
-  - Kevlar.KevlarContext.RecordEvent(System.String,Kevlar.KevlarTelemetrySeverity,System.Exception,System.Int32,System.String)
+  - Kevlar.KevlarContext.RecordEvent(System.String,Kevlar.KevlarTelemetrySeverity,System.Exception,System.Nullable{System.Int32},System.String)
   - Kevlar.KevlarContext.ShieldName
   - Kevlar.KevlarContext.StrategyIndex
   - Kevlar.KevlarContext.TimeProvider
@@ -53,16 +53,16 @@ items:
   - System.Object.Equals(System.Object,System.Object)
   - System.Object.ReferenceEquals(System.Object,System.Object)
   - System.Object.GetHashCode
-- uid: Kevlar.KevlarContext.RecordEvent(System.String,Kevlar.KevlarTelemetrySeverity,System.Exception,System.Int32,System.String)
-  commentId: M:Kevlar.KevlarContext.RecordEvent(System.String,Kevlar.KevlarTelemetrySeverity,System.Exception,System.Int32,System.String)
-  id: RecordEvent(System.String,Kevlar.KevlarTelemetrySeverity,System.Exception,System.Int32,System.String)
+- uid: Kevlar.KevlarContext.RecordEvent(System.String,Kevlar.KevlarTelemetrySeverity,System.Exception,System.Nullable{System.Int32},System.String)
+  commentId: M:Kevlar.KevlarContext.RecordEvent(System.String,Kevlar.KevlarTelemetrySeverity,System.Exception,System.Nullable{System.Int32},System.String)
+  id: RecordEvent(System.String,Kevlar.KevlarTelemetrySeverity,System.Exception,System.Nullable{System.Int32},System.String)
   parent: Kevlar.KevlarContext
   langs:
   - csharp
   - vb
-  name: RecordEvent(string, KevlarTelemetrySeverity, Exception?, int, string?)
-  nameWithType: KevlarContext.RecordEvent(string, KevlarTelemetrySeverity, Exception?, int, string?)
-  fullName: Kevlar.KevlarContext.RecordEvent(string, Kevlar.KevlarTelemetrySeverity, System.Exception?, int, string?)
+  name: RecordEvent(string, KevlarTelemetrySeverity, Exception?, int?, string?)
+  nameWithType: KevlarContext.RecordEvent(string, KevlarTelemetrySeverity, Exception?, int?, string?)
+  fullName: Kevlar.KevlarContext.RecordEvent(string, Kevlar.KevlarTelemetrySeverity, System.Exception?, int?, string?)
   type: Method
   assemblies:
   - Kevlar
@@ -70,7 +70,7 @@ items:
   summary: Records a custom low-cardinality strategy event.
   example: []
   syntax:
-    content: public void RecordEvent(string eventName, KevlarTelemetrySeverity severity = KevlarTelemetrySeverity.Information, Exception? exception = null, int attemptNumber = 0, string? strategyName = null)
+    content: public void RecordEvent(string eventName, KevlarTelemetrySeverity severity = KevlarTelemetrySeverity.Information, Exception? exception = null, int? attemptNumber = null, string? strategyName = null)
     parameters:
     - id: eventName
       type: System.String
@@ -82,16 +82,16 @@ items:
       type: System.Exception
       description: An associated exception, if any. Exception messages are never metric tags.
     - id: attemptNumber
-      type: System.Int32
-      description: The zero-based attempt number.
+      type: System.Nullable{System.Int32}
+      description: The zero-based attempt number, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> to use the active retry attempt.
     - id: strategyName
       type: System.String
       description: A stable low-cardinality custom strategy name.
-    content.vb: Public Sub RecordEvent(eventName As String, severity As KevlarTelemetrySeverity = KevlarTelemetrySeverity.Information, exception As Exception = Nothing, attemptNumber As Integer = 0, strategyName As String = Nothing)
+    content.vb: Public Sub RecordEvent(eventName As String, severity As KevlarTelemetrySeverity = KevlarTelemetrySeverity.Information, exception As Exception = Nothing, attemptNumber As Integer? = Nothing, strategyName As String = Nothing)
   overload: Kevlar.KevlarContext.RecordEvent*
-  nameWithType.vb: KevlarContext.RecordEvent(String, KevlarTelemetrySeverity, Exception, Integer, String)
-  fullName.vb: Kevlar.KevlarContext.RecordEvent(String, Kevlar.KevlarTelemetrySeverity, System.Exception, Integer, String)
-  name.vb: RecordEvent(String, KevlarTelemetrySeverity, Exception, Integer, String)
+  nameWithType.vb: KevlarContext.RecordEvent(String, KevlarTelemetrySeverity, Exception, Integer?, String)
+  fullName.vb: Kevlar.KevlarContext.RecordEvent(String, Kevlar.KevlarTelemetrySeverity, System.Exception, Integer?, String)
+  name.vb: RecordEvent(String, KevlarTelemetrySeverity, Exception, Integer?, String)
 - uid: Kevlar.KevlarContext.CancellationToken
   commentId: P:Kevlar.KevlarContext.CancellationToken
   id: CancellationToken
@@ -473,7 +473,7 @@ references:
 - uid: Kevlar.KevlarContext.RecordEvent*
   commentId: Overload:Kevlar.KevlarContext.RecordEvent
   isExternal: true
-  href: Kevlar.KevlarContext.html#Kevlar_KevlarContext_RecordEvent_System_String_Kevlar_KevlarTelemetrySeverity_System_Exception_System_Int32_System_String_
+  href: Kevlar.KevlarContext.html#Kevlar_KevlarContext_RecordEvent_System_String_Kevlar_KevlarTelemetrySeverity_System_Exception_System_Nullable_System_Int32__System_String_
   name: RecordEvent
   nameWithType: KevlarContext.RecordEvent
   fullName: Kevlar.KevlarContext.RecordEvent
@@ -504,17 +504,57 @@ references:
   name: Exception
   nameWithType: Exception
   fullName: System.Exception
-- uid: System.Int32
-  commentId: T:System.Int32
+- uid: System.Nullable{System.Int32}
+  commentId: T:System.Nullable{System.Int32}
   parent: System
-  isExternal: true
+  definition: System.Nullable`1
   href: https://learn.microsoft.com/dotnet/api/system.int32
-  name: int
-  nameWithType: int
-  fullName: int
-  nameWithType.vb: Integer
-  fullName.vb: Integer
-  name.vb: Integer
+  name: int?
+  nameWithType: int?
+  fullName: int?
+  nameWithType.vb: Integer?
+  fullName.vb: Integer?
+  name.vb: Integer?
+  spec.csharp:
+  - uid: System.Int32
+    name: int
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: '?'
+  spec.vb:
+  - uid: System.Int32
+    name: Integer
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: '?'
+- uid: System.Nullable`1
+  commentId: T:System.Nullable`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  name: Nullable<T>
+  nameWithType: Nullable<T>
+  fullName: System.Nullable<T>
+  nameWithType.vb: Nullable(Of T)
+  fullName.vb: System.Nullable(Of T)
+  name.vb: Nullable(Of T)
+  spec.csharp:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
 - uid: Kevlar.KevlarContext.CancellationToken*
   commentId: Overload:Kevlar.KevlarContext.CancellationToken
   isExternal: true
@@ -589,6 +629,17 @@ references:
   name: StrategyIndex
   nameWithType: KevlarContext.StrategyIndex
   fullName: Kevlar.KevlarContext.StrategyIndex
+- uid: System.Int32
+  commentId: T:System.Int32
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.int32
+  name: int
+  nameWithType: int
+  fullName: int
+  nameWithType.vb: Integer
+  fullName.vb: Integer
+  name.vb: Integer
 - uid: Kevlar.KevlarContext.TimeProvider*
   commentId: Overload:Kevlar.KevlarContext.TimeProvider
   isExternal: true

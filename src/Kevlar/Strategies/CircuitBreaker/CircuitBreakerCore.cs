@@ -1176,7 +1176,7 @@ internal sealed class CircuitBreakerCore
                 ? KevlarTelemetrySeverity.Warning
                 : KevlarTelemetrySeverity.Information,
             context.StrategyIndex,
-            attemptNumber: 0,
+            context.AttemptNumber,
             isSuccess: stateChange.To == CircuitState.Closed,
             stateChange.LastException);
     }

@@ -469,7 +469,7 @@
   "Kevlar.KevlarContext.CancellationToken": "Kevlar.KevlarContext.yml",
   "Kevlar.KevlarContext.IsSynchronous": "Kevlar.KevlarContext.yml",
   "Kevlar.KevlarContext.Properties": "Kevlar.KevlarContext.yml",
-  "Kevlar.KevlarContext.RecordEvent(System.String,Kevlar.KevlarTelemetrySeverity,System.Exception,System.Int32,System.String)": "Kevlar.KevlarContext.yml",
+  "Kevlar.KevlarContext.RecordEvent(System.String,Kevlar.KevlarTelemetrySeverity,System.Exception,System.Nullable{System.Int32},System.String)": "Kevlar.KevlarContext.yml",
   "Kevlar.KevlarContext.ShieldName": "Kevlar.KevlarContext.yml",
   "Kevlar.KevlarContext.StrategyIndex": "Kevlar.KevlarContext.yml",
   "Kevlar.KevlarContext.TimeProvider": "Kevlar.KevlarContext.yml",

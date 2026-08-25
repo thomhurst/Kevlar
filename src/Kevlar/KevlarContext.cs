@@ -177,13 +177,15 @@ public sealed class KevlarContext
     /// <param name="eventName">A stable event name from a bounded vocabulary.</param>
     /// <param name="severity">The event severity.</param>
     /// <param name="exception">An associated exception, if any. Exception messages are never metric tags.</param>
-    /// <param name="attemptNumber">The zero-based attempt number.</param>
+    /// <param name="attemptNumber">
+    /// The zero-based attempt number, or <see langword="null"/> to use the active retry attempt.
+    /// </param>
     /// <param name="strategyName">A stable low-cardinality custom strategy name.</param>
     public void RecordEvent(
         string eventName,
         KevlarTelemetrySeverity severity = KevlarTelemetrySeverity.Information,
         Exception? exception = null,
-        int attemptNumber = 0,
+        int? attemptNumber = null,
         string? strategyName = null)
     {
         ThrowIfReturnedToPool();
@@ -194,7 +196,7 @@ public sealed class KevlarContext
             eventName,
             severity,
             StrategyIndex,
-            attemptNumber,
+            attemptNumber ?? AttemptNumber,
             isSuccess: exception is null,
             exception);
     }
