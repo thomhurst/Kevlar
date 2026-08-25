@@ -14,6 +14,7 @@ items:
   - Kevlar.CircuitBreakerOptions.HandlesExceptionWithContext
   - Kevlar.CircuitBreakerOptions.MinimumThroughput
   - Kevlar.CircuitBreakerOptions.Monitor
+  - Kevlar.CircuitBreakerOptions.Name
   - Kevlar.CircuitBreakerOptions.OnStateChanged
   - Kevlar.CircuitBreakerOptions.OnStateChangedAsync
   - Kevlar.CircuitBreakerOptions.SamplingWindow
@@ -67,6 +68,29 @@ items:
   nameWithType.vb: CircuitBreakerOptions.New()
   fullName.vb: Kevlar.CircuitBreakerOptions.New()
   name.vb: New()
+- uid: Kevlar.CircuitBreakerOptions.Name
+  commentId: P:Kevlar.CircuitBreakerOptions.Name
+  id: Name
+  parent: Kevlar.CircuitBreakerOptions
+  langs:
+  - csharp
+  - vb
+  name: Name
+  nameWithType: CircuitBreakerOptions.Name
+  fullName: Kevlar.CircuitBreakerOptions.Name
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: An optional low-cardinality name used by strategy telemetry.
+  example: []
+  syntax:
+    content: public string? Name { get; set; }
+    parameters: []
+    return:
+      type: System.String
+    content.vb: Public Property Name As String
+  overload: Kevlar.CircuitBreakerOptions.Name*
 - uid: Kevlar.CircuitBreakerOptions.HandlesException
   commentId: P:Kevlar.CircuitBreakerOptions.HandlesException
   id: HandlesException
@@ -608,6 +632,24 @@ references:
   nameWithType.vb: CircuitBreakerOptions.New
   fullName.vb: Kevlar.CircuitBreakerOptions.New
   name.vb: New
+- uid: Kevlar.CircuitBreakerOptions.Name*
+  commentId: Overload:Kevlar.CircuitBreakerOptions.Name
+  isExternal: true
+  href: Kevlar.CircuitBreakerOptions.html#Kevlar_CircuitBreakerOptions_Name
+  name: Name
+  nameWithType: CircuitBreakerOptions.Name
+  fullName: Kevlar.CircuitBreakerOptions.Name
+- uid: System.String
+  commentId: T:System.String
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.string
+  name: string
+  nameWithType: string
+  fullName: string
+  nameWithType.vb: String
+  fullName.vb: String
+  name.vb: String
 - uid: Kevlar.HandlingClause
   commentId: T:Kevlar.HandlingClause
   parent: Kevlar

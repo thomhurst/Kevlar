@@ -35,14 +35,18 @@ items:
   - Kevlar.HedgeEvent
   - Kevlar.HedgeOptions
   - Kevlar.HedgeOptions`1
+  - Kevlar.IKevlarTelemetryListener
   - Kevlar.Jitter
   - Kevlar.KevlarConfigurationException
   - Kevlar.KevlarContext
   - Kevlar.KevlarDiagnostics
   - Kevlar.KevlarException
   - Kevlar.KevlarKey`1
+  - Kevlar.KevlarKeys
   - Kevlar.KevlarProperties
   - Kevlar.KevlarProxyException
+  - Kevlar.KevlarTelemetryEvent
+  - Kevlar.KevlarTelemetrySeverity
   - Kevlar.Outcome
   - Kevlar.Outcome`1
   - Kevlar.PartitionCreatedNotification
@@ -212,6 +216,14 @@ references:
   - name: " "
   - name: TResult
   - name: )
+- uid: Kevlar.IKevlarTelemetryListener
+  commentId: T:Kevlar.IKevlarTelemetryListener
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.IKevlarTelemetryListener.html
+  name: IKevlarTelemetryListener
+  nameWithType: IKevlarTelemetryListener
+  fullName: Kevlar.IKevlarTelemetryListener
 - uid: Kevlar.Jitter
   commentId: T:Kevlar.Jitter
   parent: Kevlar
@@ -264,6 +276,13 @@ references:
   - name: " "
   - name: T
   - name: )
+- uid: Kevlar.KevlarKeys
+  commentId: T:Kevlar.KevlarKeys
+  isExternal: true
+  href: Kevlar.KevlarKeys.html
+  name: KevlarKeys
+  nameWithType: KevlarKeys
+  fullName: Kevlar.KevlarKeys
 - uid: Kevlar.KevlarProperties
   commentId: T:Kevlar.KevlarProperties
   parent: Kevlar
@@ -272,6 +291,22 @@ references:
   name: KevlarProperties
   nameWithType: KevlarProperties
   fullName: Kevlar.KevlarProperties
+ - uid: Kevlar.KevlarTelemetryEvent
+  commentId: T:Kevlar.KevlarTelemetryEvent
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.KevlarTelemetryEvent.html
+  name: KevlarTelemetryEvent
+  nameWithType: KevlarTelemetryEvent
+  fullName: Kevlar.KevlarTelemetryEvent
+- uid: Kevlar.KevlarTelemetrySeverity
+  commentId: T:Kevlar.KevlarTelemetrySeverity
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.KevlarTelemetrySeverity.html
+  name: KevlarTelemetrySeverity
+   nameWithType: KevlarTelemetrySeverity
+   fullName: Kevlar.KevlarTelemetrySeverity
 - uid: Kevlar.Outcome
   commentId: T:Kevlar.Outcome
   parent: Kevlar

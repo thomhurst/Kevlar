@@ -1,54 +1,26 @@
 ### YamlMime:ManagedReference
 items:
-- uid: Kevlar.KevlarDiagnostics
-  commentId: T:Kevlar.KevlarDiagnostics
-  id: KevlarDiagnostics
+- uid: Kevlar.KevlarKeys
+  commentId: T:Kevlar.KevlarKeys
+  id: KevlarKeys
   parent: Kevlar
   children:
-  - Kevlar.KevlarDiagnostics.Listen(Kevlar.IKevlarTelemetryListener)
-  - Kevlar.KevlarDiagnostics.MeterName
+  - Kevlar.KevlarKeys.OperationKey
   langs:
   - csharp
   - vb
-  name: KevlarDiagnostics
-  nameWithType: KevlarDiagnostics
-  fullName: Kevlar.KevlarDiagnostics
+  name: KevlarKeys
+  nameWithType: KevlarKeys
+  fullName: Kevlar.KevlarKeys
   type: Class
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: >-
-    Names for Kevlar's built-in telemetry. On .NET 8+ targets every shield publishes counters and
-
-    duration metrics; the shipped state gauges require .NET 10 or later. Metrics are published
-
-    through a <code>System.Diagnostics.Metrics.Meter</code> named <xref href="Kevlar.KevlarDiagnostics.MeterName" data-throw-if-not-resolved="false"></xref> with zero
-
-    configuration — subscribe with <code>AddMeter("Kevlar")</code> (OpenTelemetry) or a
-
-    <code>MeterListener</code>. On <code>netstandard2.0</code> the instruments are inert.
-  remarks: >-
-    The meter version is <code>1.0</code>. Instruments:
-
-
-    <ul><li><code>kevlar.executions</code> — completed public execution calls, including empty shields and
-
-    pre-cancelled calls; attributes <code>kevlar.shield.name</code>, <code>kevlar.execution.outcome</code> (<code>success</code>/<code>failure</code>)</li><li><code>kevlar.retries</code> — retry attempts; attribute <code>kevlar.shield.name</code></li><li><code>kevlar.timeouts</code> — executions cancelled by a timeout strategy; attribute <code>kevlar.shield.name</code></li><li><code>kevlar.hedges</code> — extra hedged attempts launched; attribute <code>kevlar.shield.name</code></li><li><code>kevlar.fallbacks</code> — outcomes replaced by a fallback; attribute <code>kevlar.shield.name</code></li><li><code>kevlar.rejections</code> — fail-fast rejections; attributes <code>kevlar.shield.name</code>, <code>kevlar.rejection.type</code> (<code>circuit_open</code>/<code>rate_limit</code>/<code>rate_limiter_adapter</code>/<code>concurrency_limit</code>)</li><li><code>kevlar.circuit_breaker.transitions</code> — circuit state changes; attributes <code>kevlar.circuit_breaker.state.from</code>, <code>kevlar.circuit_breaker.state.to</code></li><li><code>kevlar.execution.duration</code> — execution duration histogram in seconds; attributes <code>kevlar.shield.name</code>, <code>kevlar.execution.outcome</code></li><li><code>kevlar.strategy.events</code> — strategy and custom events; attributes include shield,
-
-    strategy, event, severity, attempt, exception type, and an optional bounded operation key</li><li><code>kevlar.attempt.duration</code> — retry-attempt duration histogram in milliseconds with
-
-    the strategy-event attributes</li><li><code>kevlar.circuit_breaker.state</code> — current state gauge (<code>closed=0</code>, <code>open=1</code>, <code>half_open=2</code>, <code>isolated=3</code>)</li><li><code>kevlar.concurrency_limit.inflight</code>, <code>kevlar.concurrency_limit.queued</code>, and <code>kevlar.concurrency_limit.capacity</code> — concurrency-limit state gauges</li><li><code>kevlar.rate_limit.available</code> and <code>kevlar.rate_limit.queued</code> — rate-limit state gauges</li></ul>
-
-
-    The <code>kevlar.shield.name</code> attribute is present only for shields named via <code>WithName</code>; an explicitly
-
-    empty name is emitted as an empty tag value. State gauges also carry the bounded
-
-    <code>kevlar.strategy.index</code> attribute so multiple stateful strategies in one pipeline remain distinct.
+  summary: Well-known property keys consumed by Kevlar integrations.
   example: []
   syntax:
-    content: public static class KevlarDiagnostics
-    content.vb: Public Module KevlarDiagnostics
+    content: public static class KevlarKeys
+    content.vb: Public Module KevlarKeys
   inheritance:
   - System.Object
   inheritedMembers:
@@ -59,61 +31,34 @@ items:
   - System.Object.Equals(System.Object,System.Object)
   - System.Object.ReferenceEquals(System.Object,System.Object)
   - System.Object.GetHashCode
-- uid: Kevlar.KevlarDiagnostics.MeterName
-  commentId: F:Kevlar.KevlarDiagnostics.MeterName
-  id: MeterName
-  parent: Kevlar.KevlarDiagnostics
+- uid: Kevlar.KevlarKeys.OperationKey
+  commentId: P:Kevlar.KevlarKeys.OperationKey
+  id: OperationKey
+  parent: Kevlar.KevlarKeys
   langs:
   - csharp
   - vb
-  name: MeterName
-  nameWithType: KevlarDiagnostics.MeterName
-  fullName: Kevlar.KevlarDiagnostics.MeterName
-  type: Field
+  name: OperationKey
+  nameWithType: KevlarKeys.OperationKey
+  fullName: Kevlar.KevlarKeys.OperationKey
+  type: Property
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: The name of Kevlar's <code>Meter</code>.
+  summary: A bounded logical operation identifier included in strategy telemetry when present.
+  remarks: >-
+    Use a small controlled vocabulary. Never store request IDs, URIs, partition keys, or other
+
+    unbounded values because metric dimensions must remain low-cardinality.
   example: []
   syntax:
-    content: public const string MeterName = "Kevlar"
+    content: public static KevlarKey<string> OperationKey { get; }
+    parameters: []
     return:
-      type: System.String
-    content.vb: Public Const MeterName As String = "Kevlar"
-- uid: Kevlar.KevlarDiagnostics.Listen(Kevlar.IKevlarTelemetryListener)
-  commentId: M:Kevlar.KevlarDiagnostics.Listen(Kevlar.IKevlarTelemetryListener)
-  id: Listen(Kevlar.IKevlarTelemetryListener)
-  parent: Kevlar.KevlarDiagnostics
-  langs:
-  - csharp
-  - vb
-  name: Listen(IKevlarTelemetryListener)
-  nameWithType: KevlarDiagnostics.Listen(IKevlarTelemetryListener)
-  fullName: Kevlar.KevlarDiagnostics.Listen(Kevlar.IKevlarTelemetryListener)
-  type: Method
-  assemblies:
-  - Kevlar
-  namespace: Kevlar
-  summary: Subscribes a listener to synchronous strategy telemetry.
-  example: []
-  syntax:
-    content: public static IDisposable Listen(IKevlarTelemetryListener listener)
-    parameters:
-    - id: listener
-      type: Kevlar.IKevlarTelemetryListener
-    return:
-      type: System.IDisposable
-      description: A subscription that removes the listener when disposed.
-    content.vb: Public Shared Function Listen(listener As IKevlarTelemetryListener) As IDisposable
-  overload: Kevlar.KevlarDiagnostics.Listen*
+      type: Kevlar.KevlarKey{System.String}
+    content.vb: Public Shared ReadOnly Property OperationKey As KevlarKey(Of String)
+  overload: Kevlar.KevlarKeys.OperationKey*
 references:
-- uid: Kevlar.KevlarDiagnostics.MeterName
-  commentId: F:Kevlar.KevlarDiagnostics.MeterName
-  isExternal: true
-  href: Kevlar.KevlarDiagnostics.html#Kevlar_KevlarDiagnostics_MeterName
-  name: MeterName
-  nameWithType: KevlarDiagnostics.MeterName
-  fullName: Kevlar.KevlarDiagnostics.MeterName
 - uid: Kevlar
   commentId: N:Kevlar
   isExternal: true
@@ -358,37 +303,74 @@ references:
   name: System
   nameWithType: System
   fullName: System
-- uid: System.String
-  commentId: T:System.String
-  parent: System
+- uid: Kevlar.KevlarKeys.OperationKey*
+  commentId: Overload:Kevlar.KevlarKeys.OperationKey
   isExternal: true
-  href: https://learn.microsoft.com/dotnet/api/system.string
-  name: string
-  nameWithType: string
-  fullName: string
-  nameWithType.vb: String
-  fullName.vb: String
-  name.vb: String
-- uid: Kevlar.KevlarDiagnostics.Listen*
-  commentId: Overload:Kevlar.KevlarDiagnostics.Listen
-  isExternal: true
-  href: Kevlar.KevlarDiagnostics.html#Kevlar_KevlarDiagnostics_Listen_Kevlar_IKevlarTelemetryListener_
-  name: Listen
-  nameWithType: KevlarDiagnostics.Listen
-  fullName: Kevlar.KevlarDiagnostics.Listen
-- uid: Kevlar.IKevlarTelemetryListener
-  commentId: T:Kevlar.IKevlarTelemetryListener
+  href: Kevlar.KevlarKeys.html#Kevlar_KevlarKeys_OperationKey
+  name: OperationKey
+  nameWithType: KevlarKeys.OperationKey
+  fullName: Kevlar.KevlarKeys.OperationKey
+- uid: Kevlar.KevlarKey{System.String}
+  commentId: T:Kevlar.KevlarKey{System.String}
+  parent: Kevlar
+  definition: Kevlar.KevlarKey`1
+  href: Kevlar.KevlarKey-1.html
+  name: KevlarKey<string>
+  nameWithType: KevlarKey<string>
+  fullName: Kevlar.KevlarKey<string>
+  nameWithType.vb: KevlarKey(Of String)
+  fullName.vb: Kevlar.KevlarKey(Of String)
+  name.vb: KevlarKey(Of String)
+  spec.csharp:
+  - uid: Kevlar.KevlarKey`1
+    name: KevlarKey
+    isExternal: true
+    href: Kevlar.KevlarKey-1.html
+  - name: <
+  - uid: System.String
+    name: string
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.string
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.KevlarKey`1
+    name: KevlarKey
+    isExternal: true
+    href: Kevlar.KevlarKey-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.String
+    name: String
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.string
+  - name: )
+- uid: Kevlar.KevlarKey`1
+  commentId: T:Kevlar.KevlarKey`1
   parent: Kevlar
   isExternal: true
-  href: Kevlar.IKevlarTelemetryListener.html
-  name: IKevlarTelemetryListener
-  nameWithType: IKevlarTelemetryListener
-  fullName: Kevlar.IKevlarTelemetryListener
-- uid: System.IDisposable
-  commentId: T:System.IDisposable
-  parent: System
-  isExternal: true
-  href: https://learn.microsoft.com/dotnet/api/system.idisposable
-  name: IDisposable
-  nameWithType: IDisposable
-  fullName: System.IDisposable
+  href: Kevlar.KevlarKey-1.html
+  name: KevlarKey<T>
+  nameWithType: KevlarKey<T>
+  fullName: Kevlar.KevlarKey<T>
+  nameWithType.vb: KevlarKey(Of T)
+  fullName.vb: Kevlar.KevlarKey(Of T)
+  name.vb: KevlarKey(Of T)
+  spec.csharp:
+  - uid: Kevlar.KevlarKey`1
+    name: KevlarKey
+    isExternal: true
+    href: Kevlar.KevlarKey-1.html
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.KevlarKey`1
+    name: KevlarKey
+    isExternal: true
+    href: Kevlar.KevlarKey-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )

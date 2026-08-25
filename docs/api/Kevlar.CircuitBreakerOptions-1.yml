@@ -16,6 +16,7 @@ items:
   - Kevlar.CircuitBreakerOptions`1.HandlesResultWithContext
   - Kevlar.CircuitBreakerOptions`1.MinimumThroughput
   - Kevlar.CircuitBreakerOptions`1.Monitor
+  - Kevlar.CircuitBreakerOptions`1.Name
   - Kevlar.CircuitBreakerOptions`1.OnStateChanged
   - Kevlar.CircuitBreakerOptions`1.OnStateChangedAsync
   - Kevlar.CircuitBreakerOptions`1.SamplingWindow
@@ -76,6 +77,31 @@ items:
   nameWithType.vb: CircuitBreakerOptions(Of TResult).New()
   fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).New()
   name.vb: New()
+- uid: Kevlar.CircuitBreakerOptions`1.Name
+  commentId: P:Kevlar.CircuitBreakerOptions`1.Name
+  id: Name
+  parent: Kevlar.CircuitBreakerOptions`1
+  langs:
+  - csharp
+  - vb
+  name: Name
+  nameWithType: CircuitBreakerOptions<TResult>.Name
+  fullName: Kevlar.CircuitBreakerOptions<TResult>.Name
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: An optional low-cardinality name used by strategy telemetry.
+  example: []
+  syntax:
+    content: public string? Name { get; set; }
+    parameters: []
+    return:
+      type: System.String
+    content.vb: Public Property Name As String
+  overload: Kevlar.CircuitBreakerOptions`1.Name*
+  nameWithType.vb: CircuitBreakerOptions(Of TResult).Name
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).Name
 - uid: Kevlar.CircuitBreakerOptions`1.HandlesException
   commentId: P:Kevlar.CircuitBreakerOptions`1.HandlesException
   id: HandlesException
@@ -753,6 +779,26 @@ references:
   nameWithType.vb: CircuitBreakerOptions(Of TResult).New
   fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).New
   name.vb: New
+- uid: Kevlar.CircuitBreakerOptions`1.Name*
+  commentId: Overload:Kevlar.CircuitBreakerOptions`1.Name
+  isExternal: true
+  href: Kevlar.CircuitBreakerOptions-1.html#Kevlar_CircuitBreakerOptions_1_Name
+  name: Name
+  nameWithType: CircuitBreakerOptions<TResult>.Name
+  fullName: Kevlar.CircuitBreakerOptions<TResult>.Name
+  nameWithType.vb: CircuitBreakerOptions(Of TResult).Name
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).Name
+- uid: System.String
+  commentId: T:System.String
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.string
+  name: string
+  nameWithType: string
+  fullName: string
+  nameWithType.vb: String
+  fullName.vb: String
+  name.vb: String
 - uid: Kevlar.HandlingClause
   commentId: T:Kevlar.HandlingClause
   parent: Kevlar

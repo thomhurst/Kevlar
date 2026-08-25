@@ -7,6 +7,7 @@ items:
   children:
   - Kevlar.ConcurrencyLimitOptions.#ctor
   - Kevlar.ConcurrencyLimitOptions.MaxConcurrency
+  - Kevlar.ConcurrencyLimitOptions.Name
   - Kevlar.ConcurrencyLimitOptions.OnRejected
   - Kevlar.ConcurrencyLimitOptions.OnRejectedAsync
   - Kevlar.ConcurrencyLimitOptions.QueueLimit
@@ -66,6 +67,29 @@ items:
   nameWithType.vb: ConcurrencyLimitOptions.New()
   fullName.vb: Kevlar.ConcurrencyLimitOptions.New()
   name.vb: New()
+- uid: Kevlar.ConcurrencyLimitOptions.Name
+  commentId: P:Kevlar.ConcurrencyLimitOptions.Name
+  id: Name
+  parent: Kevlar.ConcurrencyLimitOptions
+  langs:
+  - csharp
+  - vb
+  name: Name
+  nameWithType: ConcurrencyLimitOptions.Name
+  fullName: Kevlar.ConcurrencyLimitOptions.Name
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: An optional low-cardinality name used by strategy telemetry.
+  example: []
+  syntax:
+    content: public string? Name { get; set; }
+    parameters: []
+    return:
+      type: System.String
+    content.vb: Public Property Name As String
+  overload: Kevlar.ConcurrencyLimitOptions.Name*
 - uid: Kevlar.ConcurrencyLimitOptions.MaxConcurrency
   commentId: P:Kevlar.ConcurrencyLimitOptions.MaxConcurrency
   id: MaxConcurrency
@@ -424,6 +448,24 @@ references:
   nameWithType.vb: ConcurrencyLimitOptions.New
   fullName.vb: Kevlar.ConcurrencyLimitOptions.New
   name.vb: New
+- uid: Kevlar.ConcurrencyLimitOptions.Name*
+  commentId: Overload:Kevlar.ConcurrencyLimitOptions.Name
+  isExternal: true
+  href: Kevlar.ConcurrencyLimitOptions.html#Kevlar_ConcurrencyLimitOptions_Name
+  name: Name
+  nameWithType: ConcurrencyLimitOptions.Name
+  fullName: Kevlar.ConcurrencyLimitOptions.Name
+- uid: System.String
+  commentId: T:System.String
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.string
+  name: string
+  nameWithType: string
+  fullName: string
+  nameWithType.vb: String
+  fullName.vb: String
+  name.vb: String
 - uid: Kevlar.ConcurrencyLimitOptions.MaxConcurrency*
   commentId: Overload:Kevlar.ConcurrencyLimitOptions.MaxConcurrency
   isExternal: true

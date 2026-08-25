@@ -6,6 +6,7 @@ items:
   parent: Kevlar.Extensions.RateLimiting
   children:
   - Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.#ctor
+  - Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.Name
   - Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejected
   - Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejectedAsync
   - Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.PermitCount
@@ -60,6 +61,29 @@ items:
   nameWithType.vb: RateLimiterAdapterOptions.New()
   fullName.vb: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.New()
   name.vb: New()
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.Name
+  commentId: P:Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.Name
+  id: Name
+  parent: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions
+  langs:
+  - csharp
+  - vb
+  name: Name
+  nameWithType: RateLimiterAdapterOptions.Name
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.Name
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.RateLimiting
+  namespace: Kevlar.Extensions.RateLimiting
+  summary: An optional low-cardinality name used by strategy telemetry.
+  example: []
+  syntax:
+    content: public string? Name { get; set; }
+    parameters: []
+    return:
+      type: System.String
+    content.vb: Public Property Name As String
+  overload: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.Name*
 - uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.PermitCount
   commentId: P:Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.PermitCount
   id: PermitCount
@@ -409,6 +433,24 @@ references:
   nameWithType.vb: RateLimiterAdapterOptions.New
   fullName.vb: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.New
   name.vb: New
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.Name*
+  commentId: Overload:Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.Name
+  isExternal: true
+  href: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.html#Kevlar_Extensions_RateLimiting_RateLimiterAdapterOptions_Name
+  name: Name
+  nameWithType: RateLimiterAdapterOptions.Name
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.Name
+- uid: System.String
+  commentId: T:System.String
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.string
+  name: string
+  nameWithType: string
+  fullName: string
+  nameWithType.vb: String
+  fullName.vb: String
+  name.vb: String
 - uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.PermitCount*
   commentId: Overload:Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.PermitCount
   isExternal: true

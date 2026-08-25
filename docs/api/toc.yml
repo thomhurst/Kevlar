@@ -97,6 +97,9 @@ items:
   - uid: Kevlar.HedgeOptions`1
     name: HedgeOptions<TResult>
     type: Class
+  - uid: Kevlar.IKevlarTelemetryListener
+    name: IKevlarTelemetryListener
+    type: Interface
   - uid: Kevlar.Jitter
     name: Jitter
     type: Enum
@@ -115,12 +118,21 @@ items:
   - uid: Kevlar.KevlarKey`1
     name: KevlarKey<T>
     type: Struct
+  - uid: Kevlar.KevlarKeys
+    name: KevlarKeys
+    type: Class
   - uid: Kevlar.KevlarProperties
     name: KevlarProperties
     type: Class
   - uid: Kevlar.KevlarProxyException
     name: KevlarProxyException
     type: Class
+  - uid: Kevlar.KevlarTelemetryEvent
+    name: KevlarTelemetryEvent
+    type: Struct
+  - uid: Kevlar.KevlarTelemetrySeverity
+     name: KevlarTelemetrySeverity
+     type: Enum
   - uid: Kevlar.Outcome
     name: Outcome
     type: Struct
@@ -429,6 +441,9 @@ items:
     type: Enum
   - uid: Kevlar.Testing.StrategyStateSnapshot
     name: StrategyStateSnapshot
+    type: Class
+  - uid: Kevlar.Testing.TelemetryEventRecord
+    name: TelemetryEventRecord
     type: Class
   - uid: Kevlar.Testing.TelemetryRecorder
     name: TelemetryRecorder

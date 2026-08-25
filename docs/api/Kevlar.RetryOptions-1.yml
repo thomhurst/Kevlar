@@ -15,6 +15,7 @@ items:
   - Kevlar.RetryOptions`1.HandlesResultWithContext
   - Kevlar.RetryOptions`1.MaxDelay
   - Kevlar.RetryOptions`1.MaxRetries
+  - Kevlar.RetryOptions`1.Name
   - Kevlar.RetryOptions`1.OnRetry
   - Kevlar.RetryOptions`1.OnRetryAsync
   langs:
@@ -84,6 +85,31 @@ items:
   nameWithType.vb: RetryOptions(Of TResult).New()
   fullName.vb: Kevlar.RetryOptions(Of TResult).New()
   name.vb: New()
+- uid: Kevlar.RetryOptions`1.Name
+  commentId: P:Kevlar.RetryOptions`1.Name
+  id: Name
+  parent: Kevlar.RetryOptions`1
+  langs:
+  - csharp
+  - vb
+  name: Name
+  nameWithType: RetryOptions<TResult>.Name
+  fullName: Kevlar.RetryOptions<TResult>.Name
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: An optional low-cardinality name used by strategy telemetry.
+  example: []
+  syntax:
+    content: public string? Name { get; set; }
+    parameters: []
+    return:
+      type: System.String
+    content.vb: Public Property Name As String
+  overload: Kevlar.RetryOptions`1.Name*
+  nameWithType.vb: RetryOptions(Of TResult).Name
+  fullName.vb: Kevlar.RetryOptions(Of TResult).Name
 - uid: Kevlar.RetryOptions`1.MaxRetries
   commentId: P:Kevlar.RetryOptions`1.MaxRetries
   id: MaxRetries
@@ -761,6 +787,26 @@ references:
   nameWithType.vb: RetryOptions(Of TResult).New
   fullName.vb: Kevlar.RetryOptions(Of TResult).New
   name.vb: New
+- uid: Kevlar.RetryOptions`1.Name*
+  commentId: Overload:Kevlar.RetryOptions`1.Name
+  isExternal: true
+  href: Kevlar.RetryOptions-1.html#Kevlar_RetryOptions_1_Name
+  name: Name
+  nameWithType: RetryOptions<TResult>.Name
+  fullName: Kevlar.RetryOptions<TResult>.Name
+  nameWithType.vb: RetryOptions(Of TResult).Name
+  fullName.vb: Kevlar.RetryOptions(Of TResult).Name
+- uid: System.String
+  commentId: T:System.String
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.string
+  name: string
+  nameWithType: string
+  fullName: string
+  nameWithType.vb: String
+  fullName.vb: String
+  name.vb: String
 - uid: System.Int32.MaxValue
   commentId: F:System.Int32.MaxValue
   isExternal: true
