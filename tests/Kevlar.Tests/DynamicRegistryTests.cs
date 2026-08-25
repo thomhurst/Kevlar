@@ -407,6 +407,40 @@ public class DynamicRegistryTests
     }
 
     [Test]
+    public async Task Shared_Strategy_Is_Disposed_Once_Across_Retirement_Batches()
+    {
+        var strategy = new DisposableStrategy();
+        var firstShield = Shield.Use(strategy);
+        var secondShield = Shield.Use(strategy);
+        var first = new ShieldRetirement(firstShield, firstShield);
+        var second = new ShieldRetirement(secondShield, secondShield);
+        var disposalTracker = new StrategyDisposalTracker();
+
+        Parallel.Invoke(
+            () => first.Reclaim(
+                static exception => throw exception,
+                ShieldRetirement.CreateStrategySet(),
+                disposalTracker),
+            () => second.Reclaim(
+                static exception => throw exception,
+                ShieldRetirement.CreateStrategySet(),
+                disposalTracker));
+
+        await Assert.That(strategy.DisposeCount).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Disposal_Claims_Do_Not_Retain_Strategies()
+    {
+        var disposalTracker = new StrategyDisposalTracker();
+        var strategy = ClaimDisposableStrategy(disposalTracker);
+
+        Collect(strategy);
+
+        await Assert.That(strategy.IsAlive).IsFalse();
+    }
+
+    [Test]
     public async Task Direct_Reloading_Provider_Resolution_Registers_Snapshots_For_Disposal()
     {
         var monitor = new MutableOptionsMonitor<ReloadOptions>();
@@ -464,6 +498,14 @@ public class DynamicRegistryTests
         var reference = new WeakReference(shield);
         registry.Remove("retired");
         return reference;
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static WeakReference ClaimDisposableStrategy(StrategyDisposalTracker disposalTracker)
+    {
+        var strategy = new DisposableStrategy();
+        _ = disposalTracker.TryClaim(strategy);
+        return new WeakReference(strategy);
     }
 
     private static void Collect(WeakReference reference)

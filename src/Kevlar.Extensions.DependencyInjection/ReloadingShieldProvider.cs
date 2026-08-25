@@ -98,6 +98,7 @@ internal abstract class ReloadingProvider<TShield> : IReloadingProvider
     private readonly ITimer _reloadTimer;
     private readonly IDisposable? _subscription;
     private readonly List<ShieldRetirement> _retiredSnapshots = [];
+    private readonly StrategyDisposalTracker _strategyDisposals = new();
     private Action<IReadOnlyList<ShieldRetirement>>? _retirementHandler;
     private TShield _current = null!;
     private bool _disposed;
@@ -316,11 +317,11 @@ internal abstract class ReloadingProvider<TShield> : IReloadingProvider
             return;
         }
 
-        var retainedOrDisposed = ShieldRetirement.CreateStrategySet();
-        retainedOrDisposed.UnionWith(((IShieldLifecycle)_current).Strategies);
+        var retainedOrClaimed = ShieldRetirement.CreateStrategySet();
+        retainedOrClaimed.UnionWith(((IShieldLifecycle)_current).Strategies);
         foreach (var snapshot in reclaimable)
         {
-            snapshot.Reclaim(ReportFailure, retainedOrDisposed);
+            snapshot.Reclaim(ReportFailure, retainedOrClaimed, _strategyDisposals);
         }
     }
 

@@ -83,6 +83,7 @@ internal sealed class KevlarRegistry : IKevlarRegistry
     private readonly ConcurrentDictionary<(string Name, Type? ResultType), RegistryEntry> _entries = new();
     private readonly ConcurrentDictionary<ShieldRetirement, byte> _retirements = new();
     private readonly ConcurrentQueue<Exception> _retirementFailures = new();
+    private readonly StrategyDisposalTracker _strategyDisposals = new();
     private readonly ConcurrentDictionary<IReloadingProvider, byte> _reloadingProviders =
         new(ReferenceComparer<IReloadingProvider>.Instance);
     private readonly object _lifecycleLock = new();
@@ -526,14 +527,14 @@ internal sealed class KevlarRegistry : IKevlarRegistry
 
     private void ReclaimRetirements(IReadOnlyList<ShieldRetirement> reclaimable)
     {
-        var retainedOrDisposed = ShieldRetirement.CreateStrategySet();
+        var retainedOrClaimed = ShieldRetirement.CreateStrategySet();
         foreach (var entry in _entries.Values)
         {
             try
             {
                 if (entry.TryGetResolved(out var resolved))
                 {
-                    AddStrategies(resolved, retainedOrDisposed);
+                    AddStrategies(resolved, retainedOrClaimed);
                 }
             }
             catch
@@ -544,17 +545,20 @@ internal sealed class KevlarRegistry : IKevlarRegistry
 
         foreach (var provider in _reloadingProviders.Keys)
         {
-            retainedOrDisposed.UnionWith(provider.Strategies);
+            retainedOrClaimed.UnionWith(provider.Strategies);
         }
 
         foreach (var retirement in _retirements.Keys)
         {
-            retainedOrDisposed.UnionWith(retirement.Strategies);
+            retainedOrClaimed.UnionWith(retirement.Strategies);
         }
 
         foreach (var retirement in reclaimable)
         {
-            retirement.Reclaim(_retirementFailures.Enqueue, retainedOrDisposed);
+            retirement.Reclaim(
+                _retirementFailures.Enqueue,
+                retainedOrClaimed,
+                _strategyDisposals);
         }
     }
 

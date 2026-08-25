@@ -32,18 +32,22 @@ internal sealed class ShieldRetirement
         return true;
     }
 
-    public void Reclaim(Action<Exception> reportFailure, HashSet<Strategy> retainedOrDisposed)
+    public void Reclaim(
+        Action<Exception> reportFailure,
+        HashSet<Strategy> retainedOrClaimed,
+        StrategyDisposalTracker disposalTracker)
     {
         for (var index = Strategies.Length - 1; index >= 0; index--)
         {
-            if (!retainedOrDisposed.Add(Strategies[index]))
+            var strategy = Strategies[index];
+            if (!retainedOrClaimed.Add(strategy) || !disposalTracker.TryClaim(strategy))
             {
                 continue;
             }
 
             try
             {
-                Dispose(Strategies[index]);
+                Dispose(strategy);
             }
             catch (Exception exception)
             {
