@@ -656,6 +656,27 @@ public class DynamicRegistryTests
     }
 
     [Test]
+    public async Task Reentrant_Publication_During_Reclamation_Retains_Shared_Strategy()
+    {
+        using var services = new ServiceCollection().AddKevlar().BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        var shared = new DisposableStrategy();
+        var callback = new CallbackDisposableStrategy(() =>
+            _ = registry.GetOrAdd("reentrant-replacement", _ => Shield.Use(shared)));
+        var retired = ResolveAndRemove(registry, shared, callback);
+
+        Collect(retired);
+        _ = registry.GetOrAdd("reentrant-scavenge", _ => Shield.Empty);
+
+        await Assert.That(callback.DisposeCount).IsEqualTo(1);
+        await Assert.That(shared.DisposeCount).IsEqualTo(0);
+
+        registry.Dispose();
+
+        await Assert.That(shared.DisposeCount).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Shared_Strategy_Is_Disposed_Once_Across_Retirement_Batches()
     {
         var strategy = new DisposableStrategy();
@@ -750,6 +771,20 @@ public class DynamicRegistryTests
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
+    private static WeakReference ResolveAndRemove(
+        IKevlarRegistry registry,
+        DisposableStrategy shared,
+        CallbackDisposableStrategy callback)
+    {
+        var shield = registry.GetOrAdd(
+            "reentrant-retired",
+            _ => Shield.Compose(Shield.Use(shared), Shield.Use(callback)));
+        var reference = new WeakReference(shield);
+        registry.Remove("reentrant-retired");
+        return reference;
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
     private static (WeakReference Retired, WeakReference Released) ExerciseDerivedShield(
         IKevlarRegistry registry,
         DisposableStrategy strategy,
@@ -818,6 +853,23 @@ public class DynamicRegistryTests
         {
             Interlocked.Increment(ref _disposeCount);
             return default;
+        }
+
+        public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+            Continuation<T, TState> next,
+            KevlarContext context) => next.InvokeAsync(context);
+    }
+
+    private sealed class CallbackDisposableStrategy(Action callback) : Strategy, IDisposable
+    {
+        private int _disposeCount;
+
+        public int DisposeCount => Volatile.Read(ref _disposeCount);
+
+        public void Dispose()
+        {
+            Interlocked.Increment(ref _disposeCount);
+            callback();
         }
 
         public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(

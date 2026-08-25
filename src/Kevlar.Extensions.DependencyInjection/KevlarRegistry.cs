@@ -116,6 +116,7 @@ internal sealed class KevlarRegistry : IKevlarRegistry
     private readonly ConcurrentDictionary<IReloadingProvider, byte> _reloadingProviders =
         new(ReferenceComparer<IReloadingProvider>.Instance);
     private readonly object _lifecycleLock = new();
+    private HashSet<Strategy>? _reclamationRetainedStrategies;
     private int _activeOperations;
     private int _reclamationThreadId;
     private bool _reclaiming;
@@ -571,6 +572,34 @@ internal sealed class KevlarRegistry : IKevlarRegistry
     private void ReclaimRetirementsCore(IReadOnlyList<ShieldRetirement> reclaimable)
     {
         var retainedOrClaimed = ShieldRetirement.CreateStrategySet();
+        AddPublishedStrategies(retainedOrClaimed);
+
+        lock (_lifecycleLock)
+        {
+            _reclamationRetainedStrategies = retainedOrClaimed;
+        }
+
+        try
+        {
+            foreach (var retirement in reclaimable)
+            {
+                retirement.Reclaim(
+                    _retirementFailures.Enqueue,
+                    retainedOrClaimed,
+                    _strategyDisposals);
+            }
+        }
+        finally
+        {
+            lock (_lifecycleLock)
+            {
+                _reclamationRetainedStrategies = null;
+            }
+        }
+    }
+
+    private void AddPublishedStrategies(HashSet<Strategy> retainedOrClaimed)
+    {
         foreach (var entry in _entries.Values)
         {
             if (entry.TryGetResolved(out var resolved))
@@ -587,14 +616,6 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         foreach (var retirement in _retirements.Keys)
         {
             retainedOrClaimed.UnionWith(retirement.Strategies);
-        }
-
-        foreach (var retirement in reclaimable)
-        {
-            retirement.Reclaim(
-                _retirementFailures.Enqueue,
-                retainedOrClaimed,
-                _strategyDisposals);
         }
     }
 
@@ -638,14 +659,27 @@ internal sealed class KevlarRegistry : IKevlarRegistry
     private void EndOperation()
     {
         var scavenge = false;
+        HashSet<Strategy>? retainedOrClaimed = null;
         lock (_lifecycleLock)
         {
+            if (_reclaiming
+                && _reclamationThreadId == Environment.CurrentManagedThreadId
+                && _reclamationRetainedStrategies is { } reclamationStrategies)
+            {
+                retainedOrClaimed = reclamationStrategies;
+            }
+
             _activeOperations--;
             if (_activeOperations == 0)
             {
                 scavenge = !_disposed;
                 Monitor.PulseAll(_lifecycleLock);
             }
+        }
+
+        if (retainedOrClaimed is not null)
+        {
+            AddPublishedStrategies(retainedOrClaimed);
         }
 
         if (scavenge)
