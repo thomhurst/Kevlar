@@ -223,13 +223,12 @@ jobs:
       - name: Verify changelog and release notes
         if: matrix.os == 'ubuntu-latest'
         shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ steps.gitversion.outputs.semVer }}
         run: |
           ./scripts/Verify-Changelog.ps1
-          $heading = Select-String CHANGELOG.md -Pattern '^## \[([0-9]+\.[0-9]+\.[0-9]+)\]' | Select-Object -First 1
-          if ($null -eq $heading) { throw 'No release heading found.' }
-          $version = $heading.Matches[0].Groups[1].Value
-          $notes = ./scripts/Verify-Changelog.ps1 -ReleaseVersion $version
-          if ([string]::IsNullOrWhiteSpace(($notes | Out-String))) { throw "$version release notes are empty." }
+          $notes = ./scripts/Get-ReleaseNotes.ps1 -Version $env:RELEASE_VERSION
+          if ([string]::IsNullOrWhiteSpace(($notes | Out-String))) { throw "$env:RELEASE_VERSION release notes are empty." }
 
       - name: Compile and execute documentation snippets
         if: matrix.os == 'ubuntu-latest'
