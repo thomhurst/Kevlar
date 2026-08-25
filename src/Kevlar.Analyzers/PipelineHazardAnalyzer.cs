@@ -231,49 +231,14 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         ExpressionSyntax expression,
         SyntaxNodeAnalysisContext context)
     {
-        if (expression is ParenthesizedExpressionSyntax parenthesized)
+        var parts = GetCallbackExpressionParts(
+                expression,
+                context.SemanticModel,
+                context.CancellationToken)
+            .ToArray();
+        if (parts.Length > 0)
         {
-            return StartsAsynchronousWork(parenthesized.Expression, context);
-        }
-
-        if (expression is ConditionalExpressionSyntax conditional)
-        {
-            return StartsAsynchronousWork(conditional.WhenTrue, context)
-                || StartsAsynchronousWork(conditional.WhenFalse, context);
-        }
-
-        if (expression is BinaryExpressionSyntax coalesce
-            && coalesce.IsKind(SyntaxKind.CoalesceExpression))
-        {
-            return StartsAsynchronousWork(coalesce.Left, context)
-                || StartsAsynchronousWork(coalesce.Right, context);
-        }
-
-        if (expression is SwitchExpressionSyntax switchExpression)
-        {
-            return switchExpression.Arms.Any(arm =>
-                StartsAsynchronousWork(arm.Expression, context));
-        }
-
-        if (expression is CastExpressionSyntax cast)
-        {
-            return StartsAsynchronousWork(cast.Expression, context);
-        }
-
-        if (expression is PostfixUnaryExpressionSyntax postfix
-            && postfix.IsKind(SyntaxKind.SuppressNullableWarningExpression))
-        {
-            return StartsAsynchronousWork(postfix.Operand, context);
-        }
-
-        if (expression is BaseObjectCreationExpressionSyntax creation
-            && context.SemanticModel.GetTypeInfo(
-                creation,
-                context.CancellationToken).Type?.TypeKind == TypeKind.Delegate
-            && creation.ArgumentList is { } arguments)
-        {
-            return arguments.Arguments.Any(argument =>
-                StartsAsynchronousWork(argument.Expression, context));
+            return parts.Any(part => StartsAsynchronousWork(part, context));
         }
 
         if (expression is AnonymousFunctionExpressionSyntax anonymous)
@@ -323,6 +288,54 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 .Any(static candidate => StartsAsynchronousWork(candidate));
     }
 
+    private static IEnumerable<ExpressionSyntax> GetCallbackExpressionParts(
+        ExpressionSyntax expression,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        switch (expression)
+        {
+            case ParenthesizedExpressionSyntax parenthesized:
+                yield return parenthesized.Expression;
+                break;
+            case ConditionalExpressionSyntax conditional:
+                yield return conditional.WhenTrue;
+                yield return conditional.WhenFalse;
+                break;
+            case BinaryExpressionSyntax binary
+                when binary.IsKind(SyntaxKind.CoalesceExpression)
+                    || semanticModel.GetTypeInfo(binary, cancellationToken).Type?.TypeKind
+                        == TypeKind.Delegate:
+                yield return binary.Left;
+                yield return binary.Right;
+                break;
+            case SwitchExpressionSyntax switchExpression:
+                foreach (var arm in switchExpression.Arms)
+                {
+                    yield return arm.Expression;
+                }
+
+                break;
+            case CastExpressionSyntax cast:
+                yield return cast.Expression;
+                break;
+            case PostfixUnaryExpressionSyntax postfix
+                when postfix.IsKind(SyntaxKind.SuppressNullableWarningExpression):
+                yield return postfix.Operand;
+                break;
+            case BaseObjectCreationExpressionSyntax creation
+                when semanticModel.GetTypeInfo(creation, cancellationToken).Type?.TypeKind
+                    == TypeKind.Delegate
+                && creation.ArgumentList is { } arguments:
+                foreach (var argument in arguments.Arguments)
+                {
+                    yield return argument.Expression;
+                }
+
+                break;
+        }
+    }
+
     private static bool StartsAsynchronousWork(IMethodSymbol method) =>
         (method.IsAsync && method.ReturnsVoid) || IsTaskLike(method.ReturnType);
 
@@ -348,6 +361,29 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 context,
                 knownTypes,
                 out capturedContext);
+        }
+
+        var parts = GetCallbackExpressionParts(
+                expression,
+                context.SemanticModel,
+                context.CancellationToken)
+            .ToArray();
+        if (parts.Length > 0)
+        {
+            foreach (var part in parts)
+            {
+                if (TryFindDiscardedEventContext(
+                    part,
+                    context,
+                    knownTypes,
+                    out capturedContext))
+                {
+                    return true;
+                }
+            }
+
+            capturedContext = null!;
+            return false;
         }
 
         if (TryFindAsyncVoidMethodGroupContext(
@@ -513,14 +549,32 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             .DefaultIfEmpty(int.MaxValue)
             .Min();
         var retainedNames = new HashSet<string>(eventParameterNames, StringComparer.Ordinal);
-        foreach (var declarator in nodes.OfType<VariableDeclaratorSyntax>()
-                     .Where(declarator => declarator.SpanStart < firstAwait)
-                     .OrderBy(static declarator => declarator.SpanStart))
+        foreach (var alias in nodes
+                     .Where(node => node.SpanStart < firstAwait
+                         && node is VariableDeclaratorSyntax or AssignmentExpressionSyntax)
+                     .OrderBy(static node => node.SpanStart))
         {
-            if (declarator.Initializer?.Value is { } initializer
-                && IsRetainedAliasExpression(initializer, retainedNames))
+            var (name, value) = alias switch
             {
-                retainedNames.Add(declarator.Identifier.ValueText);
+                VariableDeclaratorSyntax declarator =>
+                    (declarator.Identifier.ValueText, declarator.Initializer?.Value),
+                AssignmentExpressionSyntax assignment
+                    when assignment.IsKind(SyntaxKind.SimpleAssignmentExpression) =>
+                    (GetAssignedName(assignment.Left), assignment.Right),
+                _ => (null, null),
+            };
+            if (name is null)
+            {
+                continue;
+            }
+
+            if (value is not null && IsRetainedAliasExpression(value, retainedNames))
+            {
+                retainedNames.Add(name);
+            }
+            else
+            {
+                retainedNames.Remove(name);
             }
         }
 
@@ -535,6 +589,13 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         capturedContext = null!;
         return false;
     }
+
+    private static string? GetAssignedName(ExpressionSyntax expression) => expression switch
+    {
+        IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
+        MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.ValueText,
+        _ => null,
+    };
 
     private static bool IsRetainedAliasExpression(
         ExpressionSyntax expression,

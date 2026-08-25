@@ -53,6 +53,26 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Inspects_Combined_Async_Delegates()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            Action<RetryEvent> existing = _ => { };
+            _ = Shield.Retry(options => options.OnRetry = existing
+                + (Action<RetryEvent>)(async item =>
+                {
+                    await Task.Yield();
+                    _ = item.Context.ShieldName;
+                }));
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
     public async Task KEV013_Allows_Awaited_And_Synchronous_Callbacks()
     {
         var diagnostics = await AnalyzeBodyAsync("""
@@ -168,6 +188,31 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Inspects_Constructed_Async_Void_Method_Groups()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry =
+                        new Action<RetryEvent>(RetryAsyncVoid));
+
+                private static async void RetryAsyncVoid(RetryEvent item)
+                {
+                    await Task.Yield();
+                    _ = item.Context.ShieldName;
+                }
+            }
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
     public async Task KEV014_Follows_Async_Void_Event_Aliases_After_Await()
     {
         var diagnostics = await AnalyzeSourceAsync("""
@@ -182,6 +227,31 @@ public class PipelineHazardAnalyzerTests
                     await Task.Yield();
                     _ = retained.Context.ShieldName;
                 }
+            }
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Follows_Assigned_Event_Fields_After_Await()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        _event = item;
+                        await Task.Yield();
+                        _ = _event.Context.ShieldName;
+                    });
             }
             """);
 
