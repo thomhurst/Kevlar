@@ -248,6 +248,7 @@ public class MetricsTests
             ["kevlar.fallbacks"] = "{fallback}",
             ["kevlar.rejections"] = "{rejection}",
             ["kevlar.circuit_breaker.transitions"] = "{transition}",
+            ["kevlar.partitions.evictions"] = "{partition}",
             ["kevlar.execution.duration"] = "s",
 #if NET9_0_OR_GREATER
             ["kevlar.circuit_breaker.state"] = "{state}",
@@ -273,6 +274,59 @@ public class MetricsTests
             .IsTrue();
         await Assert.That(listener.Instruments.All(instrument => !string.IsNullOrWhiteSpace(instrument.Description)))
             .IsTrue();
+    }
+
+    [Test]
+    public async Task Partition_Evictions_Include_Reason_But_Not_Key()
+    {
+        using var listener = new KevlarMeterListener();
+        var provider = new PartitionedShield<string>(
+            static _ => Shield.Empty,
+            new PartitionedShieldOptions { MaximumPartitions = 1 });
+        _ = provider.GetShield("sensitive-tenant-key");
+
+        _ = provider.GetShield("replacement");
+
+        var tags = listener.Measurements(
+            "kevlar.partitions.evictions",
+            shieldName: null,
+            requireName: false).Single();
+        await Assert.That(tags.Keys).IsEquivalentTo(["kevlar.partition.reason"]);
+        await Assert.That(tags["kevlar.partition.reason"]).IsEqualTo("capacity");
+        await Assert.That(tags.Values).DoesNotContain("sensitive-tenant-key");
+    }
+
+    [Test]
+    public async Task Partition_Eviction_Metric_Reentrancy_Uses_The_Active_Reservation()
+    {
+        PartitionedShield<string>? provider = null;
+        Shield? nested = null;
+        var handled = false;
+        var factoryCalls = 0;
+        using var listener = new KevlarMeterListener((instrument, _) =>
+        {
+            if (handled || instrument != "kevlar.partitions.evictions")
+            {
+                return;
+            }
+
+            handled = true;
+            nested = provider!.GetShield("nested");
+        });
+        provider = new PartitionedShield<string>(
+            key => Shield.Empty.WithName($"{key}-{Interlocked.Increment(ref factoryCalls)}"),
+            new PartitionedShieldOptions { MaximumPartitions = 1 });
+        _ = provider.GetShield("first");
+
+        var replacement = await Task.Run(() => provider.GetShield("replacement"))
+            .WaitAsync(TimeSpan.FromSeconds(5));
+
+        await Assert.That(nested).IsNotNull();
+        await Assert.That(provider.TryGetShield("nested", out _)).IsFalse();
+        await Assert.That(provider.TryGetShield("replacement", out var retained)).IsTrue();
+        await Assert.That(retained).IsSameReferenceAs(replacement);
+        await Assert.That(factoryCalls).IsEqualTo(3);
+        await Assert.That(provider.Count).IsEqualTo(1);
     }
 
     [Test]

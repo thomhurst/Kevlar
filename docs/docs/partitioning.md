@@ -24,6 +24,19 @@ var shield = endpoints.GetShield("inventory.internal");
 
 Calls with the same key receive the same immutable shield and share its strategy state. Different
 keys receive different shields. Concurrent first lookup runs the partition factory exactly once.
+For factories that perform asynchronous initialization, use `CreateAsync` and `GetShieldAsync` so
+same-key callers await the shared creation instead of blocking thread-pool threads:
+
+```csharp
+var asyncPartitions = PartitionedShield<string>.CreateAsync(async key =>
+{
+    await Task.Yield();
+    return Shield.Retry(2, Backoff.Exponential(TimeSpan.FromMilliseconds(20)));
+});
+
+var asyncShield = await asyncPartitions.GetShieldAsync("inventory.internal");
+```
+
 The typed `PartitionedShield<TKey, TResult>` variant returns `Shield<TResult>` and supports
 result-aware handling and fallbacks.
 
@@ -39,8 +52,30 @@ continues normally and is not cancelled. A later lookup of the evicted key creat
 with fresh breaker, limiter, and queue state. This makes capacity eviction deterministic without
 coupling cache lifetime to execution lifetime.
 
-`Count`, `CreatedCount`, `CapacityEvictionCount`, and `ExpirationEvictionCount` expose lifecycle
-status without retaining evicted keys or shields. `TryGetShield`, `Remove`, and `Clear` provide
+Lifecycle callbacks report both the key and shield. Callback failures are swallowed so telemetry
+or cleanup cannot fail a lookup. The async eviction callback is awaited before a capacity slot is
+reused. If that callback performs a cold lookup while its caller owns all available capacity, the
+nested lookup receives an unretained shield instead of waiting on its own reservation; a later
+lookup creates and retains the partition normally. Explicit `TryRemove` and `Clear` removals use the
+`Cleared` reason.
+
+```csharp
+var observed = new PartitionedShield<string>(
+    static _ => Shield.Empty,
+    new PartitionedShieldOptions
+    {
+        MaximumPartitions = 2,
+        OnCreated = item => Console.WriteLine($"Created {item.Key}"),
+        OnEvictedAsync = async item =>
+        {
+            await Task.Yield();
+            Console.WriteLine($"Evicted {item.Key}: {item.Reason}");
+        },
+    });
+```
+
+`Count`, `CreatedCount`, `EvictionCount`, and the reason-specific eviction counters expose
+lifecycle status. `TryGetShield`, `TryRemove`, `Clear`, and their async cleanup variants provide
 explicit cache control. If the factory throws, no existing partition is evicted and the failed key
 is not cached.
 
@@ -88,6 +123,9 @@ services.AddPartitionedShield<string, TenantResult>(
 ```
 
 ## Metrics cardinality
+
+`kevlar.partitions.evictions` counts removals with the bounded `kevlar.partition.reason` tag. The
+reason is `capacity`, `idle`, or `cleared`; the partition key is deliberately omitted.
 
 Partition keys are not copied into `Shield.Name`, `KevlarContext`, or metric tags. Give partitions
 one shared low-cardinality name when aggregate telemetry is useful. If a controlled key dimension

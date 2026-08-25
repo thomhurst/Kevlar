@@ -121,6 +121,15 @@ items:
   - uid: Kevlar.Outcome`1
     name: Outcome<T>
     type: Struct
+  - uid: Kevlar.PartitionCreatedNotification
+    name: PartitionCreatedNotification
+    type: Struct
+  - uid: Kevlar.PartitionEvictionNotification
+    name: PartitionEvictionNotification
+    type: Struct
+  - uid: Kevlar.PartitionEvictionReason
+    name: PartitionEvictionReason
+    type: Enum
   - uid: Kevlar.PartitionedShieldOptions
     name: PartitionedShieldOptions
     type: Class
@@ -372,6 +381,9 @@ items:
     type: Class
   - uid: Kevlar.Testing.MetricRecord
     name: MetricRecord
+    type: Class
+  - uid: Kevlar.Testing.PartitionedShieldStateSnapshot
+    name: PartitionedShieldStateSnapshot
     type: Class
   - uid: Kevlar.Testing.RateLimitStateSnapshot
     name: RateLimitStateSnapshot

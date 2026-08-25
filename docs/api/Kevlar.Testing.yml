@@ -19,6 +19,7 @@ items:
   - Kevlar.Testing.HandlingClauseDescriptor
   - Kevlar.Testing.HedgeStrategyDescriptor
   - Kevlar.Testing.MetricRecord
+  - Kevlar.Testing.PartitionedShieldStateSnapshot
   - Kevlar.Testing.RateLimitStateSnapshot
   - Kevlar.Testing.RateLimitStrategyDescriptor
   - Kevlar.Testing.RetryStrategyDescriptor
@@ -153,6 +154,14 @@ references:
   name: MetricRecord
   nameWithType: MetricRecord
   fullName: Kevlar.Testing.MetricRecord
+- uid: Kevlar.Testing.PartitionedShieldStateSnapshot
+  commentId: T:Kevlar.Testing.PartitionedShieldStateSnapshot
+  parent: Kevlar.Testing
+  isExternal: true
+  href: Kevlar.Testing.PartitionedShieldStateSnapshot.html
+  name: PartitionedShieldStateSnapshot
+  nameWithType: PartitionedShieldStateSnapshot
+  fullName: Kevlar.Testing.PartitionedShieldStateSnapshot
 - uid: Kevlar.Testing.RateLimitStateSnapshot
   commentId: T:Kevlar.Testing.RateLimitStateSnapshot
   isExternal: true

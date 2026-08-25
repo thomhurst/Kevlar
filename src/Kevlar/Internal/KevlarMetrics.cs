@@ -52,6 +52,10 @@ internal static class KevlarMetrics
         "kevlar.circuit_breaker.transitions",
         "{transition}",
         "Circuit-breaker state transitions.");
+    private static readonly Counter<long> PartitionEvictions = Meter.CreateCounter<long>(
+        "kevlar.partitions.evictions",
+        "{partition}",
+        "Partitions removed from partitioned shield providers.");
     private static readonly Histogram<double> ExecutionDuration = Meter.CreateHistogram<double>(
         "kevlar.execution.duration",
         "s",
@@ -186,6 +190,18 @@ internal static class KevlarMetrics
 #endif
     }
 
+    public static void PartitionEviction(PartitionEvictionReason reason)
+    {
+#if NET8_0_OR_GREATER
+        if (PartitionEvictions.Enabled)
+        {
+            PartitionEvictions.Add(1, new KeyValuePair<string, object?>(
+                "kevlar.partition.reason",
+                PartitionReasonName(reason)));
+        }
+#endif
+    }
+
     public static long StartDuration() =>
 #if NET8_0_OR_GREATER
         Stopwatch.GetTimestamp();
@@ -310,6 +326,14 @@ internal static class KevlarMetrics
         CircuitState.HalfOpen => "half_open",
         CircuitState.Isolated => "isolated",
         _ => throw new ArgumentOutOfRangeException(nameof(state)),
+    };
+
+    private static string PartitionReasonName(PartitionEvictionReason reason) => reason switch
+    {
+        PartitionEvictionReason.Capacity => "capacity",
+        PartitionEvictionReason.Idle => "idle",
+        PartitionEvictionReason.Cleared => "cleared",
+        _ => throw new ArgumentOutOfRangeException(nameof(reason)),
     };
 
     private static long StateValue(CircuitState state) => state switch
