@@ -63,8 +63,9 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         if (request is null) { throw new ArgumentNullException(nameof(request)); }
 
         cancellationToken.ThrowIfCancellationRequested();
-        var pipeline = _reloadingPipeline?.Current ?? _pipeline;
         _ = KevlarHttp.TryGetRequestOptions(request, out var requestOptions);
+        requestOptions?.CancellationToken.ThrowIfCancellationRequested();
+        var pipeline = _reloadingPipeline?.Current ?? _pipeline;
         var selectedShield = requestOptions?.Shield;
         if (selectedShield is null && _shieldSelector is not null)
         {
@@ -81,6 +82,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             cancellationToken,
             requestOptions?.CancellationToken ?? default);
         var executionCancellationToken = linkedCancellation?.Token ?? cancellationToken;
+        executionCancellationToken.ThrowIfCancellationRequested();
         var canReplay = await CanReplayAsync(
             request,
             pipeline.Options,

@@ -196,6 +196,36 @@ public class HttpRequestOptionsTests
     }
 
     [Test]
+    public async Task Pre_Canceled_Request_Token_Skips_Shield_Selection()
+    {
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        var selections = 0;
+        var sends = 0;
+        var handler = new ShieldDelegatingHandler(_ =>
+        {
+            Interlocked.Increment(ref selections);
+            return Shield<HttpResponseMessage>.Empty;
+        })
+        {
+            InnerHandler = new StubHandler((_, _) =>
+            {
+                Interlocked.Increment(ref sends);
+                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
+            }),
+        };
+        using var client = new HttpClient(handler);
+        using var request = new HttpRequestMessage(HttpMethod.Get, "https://example.test/canceled")
+            .WithKevlarCancellationToken(cancellation.Token);
+
+        _ = await Assert.That(async () => await client.SendAsync(request))
+            .Throws<OperationCanceledException>();
+
+        await Assert.That(selections).IsEqualTo(0);
+        await Assert.That(sends).IsEqualTo(0);
+    }
+
+    [Test]
     public async Task Replayed_Request_Carries_The_Same_Kevlar_Options()
     {
         var names = new ConcurrentQueue<string?>();
