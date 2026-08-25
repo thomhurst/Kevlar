@@ -103,7 +103,11 @@ items:
   summary: >-
     The original operation, including strategies nested inside the hedge. The supplied token
 
-    becomes the cancellation token for that nested execution.
+    becomes the cancellation token for that nested execution. Invoke it before the generated
+
+    action completes; invoking a retained delegate afterward throws
+
+    <xref href="System.InvalidOperationException" data-throw-if-not-resolved="false"></xref>.
   example: []
   syntax:
     content: public Func<CancellationToken, ValueTask<TResult>> OriginalAction { get; }
@@ -404,6 +408,14 @@ references:
   name: KevlarContext
   nameWithType: KevlarContext
   fullName: Kevlar.KevlarContext
+- uid: System.InvalidOperationException
+  commentId: T:System.InvalidOperationException
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.invalidoperationexception
+  name: InvalidOperationException
+  nameWithType: InvalidOperationException
+  fullName: System.InvalidOperationException
 - uid: Kevlar.HedgeActionGeneratorEvent`1.OriginalAction*
   commentId: Overload:Kevlar.HedgeActionGeneratorEvent`1.OriginalAction
   isExternal: true

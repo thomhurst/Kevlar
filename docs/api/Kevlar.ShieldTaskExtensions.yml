@@ -11,15 +11,20 @@ items:
   - Kevlar.ShieldTaskExtensions.ExecuteAsync``1(Kevlar.Shield{``0},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
   - Kevlar.ShieldTaskExtensions.ExecuteAsync``2(Kevlar.Shield,``1,System.Func{``1,System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
   - Kevlar.ShieldTaskExtensions.ExecuteAsync``2(Kevlar.Shield{``0},``1,System.Func{``1,System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
+  - Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync(Kevlar.Shield,System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task},System.Threading.CancellationToken)
   - Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync``1(Kevlar.Shield,System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
+  - Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync``1(Kevlar.Shield,``0,System.Func{``0,System.Threading.CancellationToken,System.Threading.Tasks.Task},System.Threading.CancellationToken)
   - Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync``1(Kevlar.Shield{``0},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
   - Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync``2(Kevlar.Shield,``1,System.Func{``1,System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
   - Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync``2(Kevlar.Shield{``0},``1,System.Func{``1,System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
   - Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task},System.Threading.CancellationToken)
   - Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
+  - Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,``0,System.Action{``0,Kevlar.KevlarProperties},System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.Task},System.Action{``0,Kevlar.KevlarProperties},System.Threading.CancellationToken)
   - Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,``0,System.Action{``0,Kevlar.KevlarProperties},System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.Task},System.Threading.CancellationToken)
   - Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield{``0},System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
+  - Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.Shield,``1,System.Action{``1,Kevlar.KevlarProperties},System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},System.Action{``1,Kevlar.KevlarProperties},System.Threading.CancellationToken)
   - Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.Shield,``1,System.Action{``1,Kevlar.KevlarProperties},System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
+  - Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.Shield{``0},``1,System.Action{``1,Kevlar.KevlarProperties},System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},System.Action{``1,Kevlar.KevlarProperties},System.Threading.CancellationToken)
   - Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.Shield{``0},``1,System.Action{``1,Kevlar.KevlarProperties},System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
   langs:
   - csharp
@@ -170,6 +175,51 @@ items:
   nameWithType.vb: ShieldTaskExtensions.ExecuteWithContextAsync(Of T, TState)(Shield, TState, Action(Of TState, KevlarProperties), Func(Of TState, KevlarContext, Task(Of T)), CancellationToken)
   fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Of T, TState)(Kevlar.Shield, TState, System.Action(Of TState, Kevlar.KevlarProperties), System.Func(Of TState, Kevlar.KevlarContext, System.Threading.Tasks.Task(Of T)), System.Threading.CancellationToken)
   name.vb: ExecuteWithContextAsync(Of T, TState)(Shield, TState, Action(Of TState, KevlarProperties), Func(Of TState, KevlarContext, Task(Of T)), CancellationToken)
+- uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.Shield,``1,System.Action{``1,Kevlar.KevlarProperties},System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},System.Action{``1,Kevlar.KevlarProperties},System.Threading.CancellationToken)
+  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.Shield,``1,System.Action{``1,Kevlar.KevlarProperties},System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{`0}},System.Action{``1,Kevlar.KevlarProperties},System.Threading.CancellationToken)
+  id: ExecuteWithContextAsync``2(Kevlar.Shield,``1,System.Action{``1,Kevlar.KevlarProperties},System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},System.Action{``1,Kevlar.KevlarProperties},System.Threading.CancellationToken)
+  isExtensionMethod: true
+  parent: Kevlar.ShieldTaskExtensions
+  langs:
+  - csharp
+  - vb
+  name: ExecuteWithContextAsync<T, TState>(Shield, TState, Action<TState, KevlarProperties>, Func<TState, KevlarContext, Task<T>>, Action<TState, KevlarProperties>, CancellationToken)
+  nameWithType: ShieldTaskExtensions.ExecuteWithContextAsync<T, TState>(Shield, TState, Action<TState, KevlarProperties>, Func<TState, KevlarContext, Task<T>>, Action<TState, KevlarProperties>, CancellationToken)
+  fullName: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync<T, TState>(Kevlar.Shield, TState, System.Action<TState, Kevlar.KevlarProperties>, System.Func<TState, Kevlar.KevlarContext, System.Threading.Tasks.Task<T>>, System.Action<TState, Kevlar.KevlarProperties>, System.Threading.CancellationToken)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Initializes execution properties, executes a context-aware <xref href="System.Threading.Tasks.Task%601" data-throw-if-not-resolved="false"></xref> delegate,
+
+    then exposes final properties before the pooled context is returned.
+  example: []
+  syntax:
+    content: public static ValueTask<T> ExecuteWithContextAsync<T, TState>(this Shield shield, TState state, Action<TState, KevlarProperties> initializeProperties, Func<TState, KevlarContext, Task<T>> action, Action<TState, KevlarProperties> onCompleted, CancellationToken cancellationToken = default)
+    parameters:
+    - id: shield
+      type: Kevlar.Shield
+    - id: state
+      type: '{TState}'
+    - id: initializeProperties
+      type: System.Action{{TState},Kevlar.KevlarProperties}
+    - id: action
+      type: System.Func{{TState},Kevlar.KevlarContext,System.Threading.Tasks.Task{{T}}}
+    - id: onCompleted
+      type: System.Action{{TState},Kevlar.KevlarProperties}
+    - id: cancellationToken
+      type: System.Threading.CancellationToken
+    typeParameters:
+    - id: T
+    - id: TState
+    return:
+      type: System.Threading.Tasks.ValueTask{{T}}
+    content.vb: Public Shared Function ExecuteWithContextAsync(Of T, TState)(shield As Shield, state As TState, initializeProperties As Action(Of TState, KevlarProperties), action As Func(Of TState, KevlarContext, Task(Of T)), onCompleted As Action(Of TState, KevlarProperties), cancellationToken As CancellationToken = Nothing) As ValueTask(Of T)
+  overload: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync*
+  nameWithType.vb: ShieldTaskExtensions.ExecuteWithContextAsync(Of T, TState)(Shield, TState, Action(Of TState, KevlarProperties), Func(Of TState, KevlarContext, Task(Of T)), Action(Of TState, KevlarProperties), CancellationToken)
+  fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Of T, TState)(Kevlar.Shield, TState, System.Action(Of TState, Kevlar.KevlarProperties), System.Func(Of TState, Kevlar.KevlarContext, System.Threading.Tasks.Task(Of T)), System.Action(Of TState, Kevlar.KevlarProperties), System.Threading.CancellationToken)
+  name.vb: ExecuteWithContextAsync(Of T, TState)(Shield, TState, Action(Of TState, KevlarProperties), Func(Of TState, KevlarContext, Task(Of T)), Action(Of TState, KevlarProperties), CancellationToken)
 - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
   commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{`0}},System.Threading.CancellationToken)
   id: ExecuteWithContextAsync``1(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
@@ -317,6 +367,50 @@ items:
   nameWithType.vb: ShieldTaskExtensions.ExecuteWithContextAsync(Of TState)(Shield, TState, Action(Of TState, KevlarProperties), Func(Of TState, KevlarContext, Task), CancellationToken)
   fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Of TState)(Kevlar.Shield, TState, System.Action(Of TState, Kevlar.KevlarProperties), System.Func(Of TState, Kevlar.KevlarContext, System.Threading.Tasks.Task), System.Threading.CancellationToken)
   name.vb: ExecuteWithContextAsync(Of TState)(Shield, TState, Action(Of TState, KevlarProperties), Func(Of TState, KevlarContext, Task), CancellationToken)
+- uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,``0,System.Action{``0,Kevlar.KevlarProperties},System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.Task},System.Action{``0,Kevlar.KevlarProperties},System.Threading.CancellationToken)
+  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,``0,System.Action{``0,Kevlar.KevlarProperties},System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.Task},System.Action{``0,Kevlar.KevlarProperties},System.Threading.CancellationToken)
+  id: ExecuteWithContextAsync``1(Kevlar.Shield,``0,System.Action{``0,Kevlar.KevlarProperties},System.Func{``0,Kevlar.KevlarContext,System.Threading.Tasks.Task},System.Action{``0,Kevlar.KevlarProperties},System.Threading.CancellationToken)
+  isExtensionMethod: true
+  parent: Kevlar.ShieldTaskExtensions
+  langs:
+  - csharp
+  - vb
+  name: ExecuteWithContextAsync<TState>(Shield, TState, Action<TState, KevlarProperties>, Func<TState, KevlarContext, Task>, Action<TState, KevlarProperties>, CancellationToken)
+  nameWithType: ShieldTaskExtensions.ExecuteWithContextAsync<TState>(Shield, TState, Action<TState, KevlarProperties>, Func<TState, KevlarContext, Task>, Action<TState, KevlarProperties>, CancellationToken)
+  fullName: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync<TState>(Kevlar.Shield, TState, System.Action<TState, Kevlar.KevlarProperties>, System.Func<TState, Kevlar.KevlarContext, System.Threading.Tasks.Task>, System.Action<TState, Kevlar.KevlarProperties>, System.Threading.CancellationToken)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Initializes execution properties, executes a context-aware <xref href="System.Threading.Tasks.Task" data-throw-if-not-resolved="false"></xref> delegate,
+
+    then exposes final properties before the pooled context is returned.
+  example: []
+  syntax:
+    content: public static ValueTask ExecuteWithContextAsync<TState>(this Shield shield, TState state, Action<TState, KevlarProperties> initializeProperties, Func<TState, KevlarContext, Task> action, Action<TState, KevlarProperties> onCompleted, CancellationToken cancellationToken = default)
+    parameters:
+    - id: shield
+      type: Kevlar.Shield
+    - id: state
+      type: '{TState}'
+    - id: initializeProperties
+      type: System.Action{{TState},Kevlar.KevlarProperties}
+    - id: action
+      type: System.Func{{TState},Kevlar.KevlarContext,System.Threading.Tasks.Task}
+    - id: onCompleted
+      type: System.Action{{TState},Kevlar.KevlarProperties}
+    - id: cancellationToken
+      type: System.Threading.CancellationToken
+    typeParameters:
+    - id: TState
+    return:
+      type: System.Threading.Tasks.ValueTask
+    content.vb: Public Shared Function ExecuteWithContextAsync(Of TState)(shield As Shield, state As TState, initializeProperties As Action(Of TState, KevlarProperties), action As Func(Of TState, KevlarContext, Task), onCompleted As Action(Of TState, KevlarProperties), cancellationToken As CancellationToken = Nothing) As ValueTask
+  overload: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync*
+  nameWithType.vb: ShieldTaskExtensions.ExecuteWithContextAsync(Of TState)(Shield, TState, Action(Of TState, KevlarProperties), Func(Of TState, KevlarContext, Task), Action(Of TState, KevlarProperties), CancellationToken)
+  fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Of TState)(Kevlar.Shield, TState, System.Action(Of TState, Kevlar.KevlarProperties), System.Func(Of TState, Kevlar.KevlarContext, System.Threading.Tasks.Task), System.Action(Of TState, Kevlar.KevlarProperties), System.Threading.CancellationToken)
+  name.vb: ExecuteWithContextAsync(Of TState)(Shield, TState, Action(Of TState, KevlarProperties), Func(Of TState, KevlarContext, Task), Action(Of TState, KevlarProperties), CancellationToken)
 - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task},System.Threading.CancellationToken)
   commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task},System.Threading.CancellationToken)
   id: ExecuteWithContextAsync(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task},System.Threading.CancellationToken)
@@ -426,6 +520,79 @@ items:
   nameWithType.vb: ShieldTaskExtensions.ExecuteOutcomeAsync(Of T, TState)(Shield, TState, Func(Of TState, CancellationToken, Task(Of T)), CancellationToken)
   fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync(Of T, TState)(Kevlar.Shield, TState, System.Func(Of TState, System.Threading.CancellationToken, System.Threading.Tasks.Task(Of T)), System.Threading.CancellationToken)
   name.vb: ExecuteOutcomeAsync(Of T, TState)(Shield, TState, Func(Of TState, CancellationToken, Task(Of T)), CancellationToken)
+- uid: Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync(Kevlar.Shield,System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task},System.Threading.CancellationToken)
+  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync(Kevlar.Shield,System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task},System.Threading.CancellationToken)
+  id: ExecuteOutcomeAsync(Kevlar.Shield,System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task},System.Threading.CancellationToken)
+  isExtensionMethod: true
+  parent: Kevlar.ShieldTaskExtensions
+  langs:
+  - csharp
+  - vb
+  name: ExecuteOutcomeAsync(Shield, Func<CancellationToken, Task>, CancellationToken)
+  nameWithType: ShieldTaskExtensions.ExecuteOutcomeAsync(Shield, Func<CancellationToken, Task>, CancellationToken)
+  fullName: Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync(Kevlar.Shield, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.Task>, System.Threading.CancellationToken)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Executes a <xref href="System.Threading.Tasks.Task" data-throw-if-not-resolved="false"></xref>-returning void delegate and returns its outcome.
+  example: []
+  syntax:
+    content: public static ValueTask<Outcome> ExecuteOutcomeAsync(this Shield shield, Func<CancellationToken, Task> action, CancellationToken cancellationToken = default)
+    parameters:
+    - id: shield
+      type: Kevlar.Shield
+    - id: action
+      type: System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task}
+    - id: cancellationToken
+      type: System.Threading.CancellationToken
+    return:
+      type: System.Threading.Tasks.ValueTask{Kevlar.Outcome}
+    content.vb: Public Shared Function ExecuteOutcomeAsync(shield As Shield, action As Func(Of CancellationToken, Task), cancellationToken As CancellationToken = Nothing) As ValueTask(Of Outcome)
+  overload: Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync*
+  nameWithType.vb: ShieldTaskExtensions.ExecuteOutcomeAsync(Shield, Func(Of CancellationToken, Task), CancellationToken)
+  fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync(Kevlar.Shield, System.Func(Of System.Threading.CancellationToken, System.Threading.Tasks.Task), System.Threading.CancellationToken)
+  name.vb: ExecuteOutcomeAsync(Shield, Func(Of CancellationToken, Task), CancellationToken)
+- uid: Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync``1(Kevlar.Shield,``0,System.Func{``0,System.Threading.CancellationToken,System.Threading.Tasks.Task},System.Threading.CancellationToken)
+  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync``1(Kevlar.Shield,``0,System.Func{``0,System.Threading.CancellationToken,System.Threading.Tasks.Task},System.Threading.CancellationToken)
+  id: ExecuteOutcomeAsync``1(Kevlar.Shield,``0,System.Func{``0,System.Threading.CancellationToken,System.Threading.Tasks.Task},System.Threading.CancellationToken)
+  isExtensionMethod: true
+  parent: Kevlar.ShieldTaskExtensions
+  langs:
+  - csharp
+  - vb
+  name: ExecuteOutcomeAsync<TState>(Shield, TState, Func<TState, CancellationToken, Task>, CancellationToken)
+  nameWithType: ShieldTaskExtensions.ExecuteOutcomeAsync<TState>(Shield, TState, Func<TState, CancellationToken, Task>, CancellationToken)
+  fullName: Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync<TState>(Kevlar.Shield, TState, System.Func<TState, System.Threading.CancellationToken, System.Threading.Tasks.Task>, System.Threading.CancellationToken)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Executes a <xref href="System.Threading.Tasks.Task" data-throw-if-not-resolved="false"></xref>-returning void delegate, threading <code class="paramref">state</code> to
+
+    avoid closure allocations, and returns its outcome.
+  example: []
+  syntax:
+    content: public static ValueTask<Outcome> ExecuteOutcomeAsync<TState>(this Shield shield, TState state, Func<TState, CancellationToken, Task> action, CancellationToken cancellationToken = default)
+    parameters:
+    - id: shield
+      type: Kevlar.Shield
+    - id: state
+      type: '{TState}'
+    - id: action
+      type: System.Func{{TState},System.Threading.CancellationToken,System.Threading.Tasks.Task}
+    - id: cancellationToken
+      type: System.Threading.CancellationToken
+    typeParameters:
+    - id: TState
+    return:
+      type: System.Threading.Tasks.ValueTask{Kevlar.Outcome}
+    content.vb: Public Shared Function ExecuteOutcomeAsync(Of TState)(shield As Shield, state As TState, action As Func(Of TState, CancellationToken, Task), cancellationToken As CancellationToken = Nothing) As ValueTask(Of Outcome)
+  overload: Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync*
+  nameWithType.vb: ShieldTaskExtensions.ExecuteOutcomeAsync(Of TState)(Shield, TState, Func(Of TState, CancellationToken, Task), CancellationToken)
+  fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync(Of TState)(Kevlar.Shield, TState, System.Func(Of TState, System.Threading.CancellationToken, System.Threading.Tasks.Task), System.Threading.CancellationToken)
+  name.vb: ExecuteOutcomeAsync(Of TState)(Shield, TState, Func(Of TState, CancellationToken, Task), CancellationToken)
 - uid: Kevlar.ShieldTaskExtensions.ExecuteAsync``1(Kevlar.Shield{``0},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
   commentId: M:Kevlar.ShieldTaskExtensions.ExecuteAsync``1(Kevlar.Shield{`0},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task{`0}},System.Threading.CancellationToken)
   id: ExecuteAsync``1(Kevlar.Shield{``0},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
@@ -539,6 +706,51 @@ items:
   nameWithType.vb: ShieldTaskExtensions.ExecuteWithContextAsync(Of TResult, TState)(Shield(Of TResult), TState, Action(Of TState, KevlarProperties), Func(Of TState, KevlarContext, Task(Of TResult)), CancellationToken)
   fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Of TResult, TState)(Kevlar.Shield(Of TResult), TState, System.Action(Of TState, Kevlar.KevlarProperties), System.Func(Of TState, Kevlar.KevlarContext, System.Threading.Tasks.Task(Of TResult)), System.Threading.CancellationToken)
   name.vb: ExecuteWithContextAsync(Of TResult, TState)(Shield(Of TResult), TState, Action(Of TState, KevlarProperties), Func(Of TState, KevlarContext, Task(Of TResult)), CancellationToken)
+- uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.Shield{``0},``1,System.Action{``1,Kevlar.KevlarProperties},System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},System.Action{``1,Kevlar.KevlarProperties},System.Threading.CancellationToken)
+  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.Shield{`0},``1,System.Action{``1,Kevlar.KevlarProperties},System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{`0}},System.Action{``1,Kevlar.KevlarProperties},System.Threading.CancellationToken)
+  id: ExecuteWithContextAsync``2(Kevlar.Shield{``0},``1,System.Action{``1,Kevlar.KevlarProperties},System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},System.Action{``1,Kevlar.KevlarProperties},System.Threading.CancellationToken)
+  isExtensionMethod: true
+  parent: Kevlar.ShieldTaskExtensions
+  langs:
+  - csharp
+  - vb
+  name: ExecuteWithContextAsync<TResult, TState>(Shield<TResult>, TState, Action<TState, KevlarProperties>, Func<TState, KevlarContext, Task<TResult>>, Action<TState, KevlarProperties>, CancellationToken)
+  nameWithType: ShieldTaskExtensions.ExecuteWithContextAsync<TResult, TState>(Shield<TResult>, TState, Action<TState, KevlarProperties>, Func<TState, KevlarContext, Task<TResult>>, Action<TState, KevlarProperties>, CancellationToken)
+  fullName: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync<TResult, TState>(Kevlar.Shield<TResult>, TState, System.Action<TState, Kevlar.KevlarProperties>, System.Func<TState, Kevlar.KevlarContext, System.Threading.Tasks.Task<TResult>>, System.Action<TState, Kevlar.KevlarProperties>, System.Threading.CancellationToken)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Initializes execution properties, executes a context-aware <xref href="System.Threading.Tasks.Task%601" data-throw-if-not-resolved="false"></xref> delegate,
+
+    then exposes final properties before the pooled context is returned.
+  example: []
+  syntax:
+    content: public static ValueTask<TResult> ExecuteWithContextAsync<TResult, TState>(this Shield<TResult> shield, TState state, Action<TState, KevlarProperties> initializeProperties, Func<TState, KevlarContext, Task<TResult>> action, Action<TState, KevlarProperties> onCompleted, CancellationToken cancellationToken = default)
+    parameters:
+    - id: shield
+      type: Kevlar.Shield{{TResult}}
+    - id: state
+      type: '{TState}'
+    - id: initializeProperties
+      type: System.Action{{TState},Kevlar.KevlarProperties}
+    - id: action
+      type: System.Func{{TState},Kevlar.KevlarContext,System.Threading.Tasks.Task{{TResult}}}
+    - id: onCompleted
+      type: System.Action{{TState},Kevlar.KevlarProperties}
+    - id: cancellationToken
+      type: System.Threading.CancellationToken
+    typeParameters:
+    - id: TResult
+    - id: TState
+    return:
+      type: System.Threading.Tasks.ValueTask{{TResult}}
+    content.vb: Public Shared Function ExecuteWithContextAsync(Of TResult, TState)(shield As Shield(Of TResult), state As TState, initializeProperties As Action(Of TState, KevlarProperties), action As Func(Of TState, KevlarContext, Task(Of TResult)), onCompleted As Action(Of TState, KevlarProperties), cancellationToken As CancellationToken = Nothing) As ValueTask(Of TResult)
+  overload: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync*
+  nameWithType.vb: ShieldTaskExtensions.ExecuteWithContextAsync(Of TResult, TState)(Shield(Of TResult), TState, Action(Of TState, KevlarProperties), Func(Of TState, KevlarContext, Task(Of TResult)), Action(Of TState, KevlarProperties), CancellationToken)
+  fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Of TResult, TState)(Kevlar.Shield(Of TResult), TState, System.Action(Of TState, Kevlar.KevlarProperties), System.Func(Of TState, Kevlar.KevlarContext, System.Threading.Tasks.Task(Of TResult)), System.Action(Of TState, Kevlar.KevlarProperties), System.Threading.CancellationToken)
+  name.vb: ExecuteWithContextAsync(Of TResult, TState)(Shield(Of TResult), TState, Action(Of TState, KevlarProperties), Func(Of TState, KevlarContext, Task(Of TResult)), Action(Of TState, KevlarProperties), CancellationToken)
 - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield{``0},System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
   commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield{`0},System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{`0}},System.Threading.CancellationToken)
   id: ExecuteWithContextAsync``1(Kevlar.Shield{``0},System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
@@ -1730,6 +1942,41 @@ references:
   - name: " "
   - name: T
   - name: )
+  - name: )
+- uid: System.Threading.Tasks.ValueTask{Kevlar.Outcome}
+  commentId: T:System.Threading.Tasks.ValueTask{Kevlar.Outcome}
+  parent: System.Threading.Tasks
+  definition: System.Threading.Tasks.ValueTask`1
+  href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  name: ValueTask<Outcome>
+  nameWithType: ValueTask<Outcome>
+  fullName: System.Threading.Tasks.ValueTask<Kevlar.Outcome>
+  nameWithType.vb: ValueTask(Of Outcome)
+  fullName.vb: System.Threading.Tasks.ValueTask(Of Kevlar.Outcome)
+  name.vb: ValueTask(Of Outcome)
+  spec.csharp:
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
+  - uid: Kevlar.Outcome
+    name: Outcome
+    isExternal: true
+    href: Kevlar.Outcome.html
+  - name: '>'
+  spec.vb:
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.Outcome
+    name: Outcome
+    isExternal: true
+    href: Kevlar.Outcome.html
   - name: )
 - uid: Kevlar.Shield{{TResult}}
   commentId: T:Kevlar.Shield{`1}
