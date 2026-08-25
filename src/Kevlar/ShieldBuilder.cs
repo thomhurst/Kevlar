@@ -268,16 +268,28 @@ public sealed class ShieldBuilder
         }
 
         return handling =>
+            EvaluateContextPredicates(predicates, handling);
+    }
+
+    internal static bool EvaluateContextPredicates<TEvent>(
+        Func<TEvent, bool>[] predicates,
+        TEvent handling)
+    {
+        foreach (var predicate in predicates)
         {
-            foreach (var predicate in predicates)
+            try
             {
                 if (predicate(handling))
                 {
                     return true;
                 }
             }
+            catch (Exception exception)
+            {
+                OutcomeJudge.ReportPredicateFailure(exception);
+            }
+        }
 
-            return false;
-        };
+        return false;
     }
 }

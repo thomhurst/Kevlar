@@ -369,8 +369,9 @@ internal sealed class HedgingStrategy : Strategy
             Func<CancellationToken, ValueTask<T>>? generatedAction = null;
             if (_actionGenerator is not null)
             {
+                var contextCapture = new OriginalActionContextCapture(fork);
                 Func<CancellationToken, ValueTask<T>> originalAction =
-                    token => InvokeOriginalAction(next, fork, token);
+                    token => InvokeOriginalAction(next, contextCapture, token);
                 try
                 {
                     generatedAction = _actionGenerator.Generate(attemptNumber, fork, originalAction, outcome);
@@ -415,10 +416,10 @@ internal sealed class HedgingStrategy : Strategy
 
     private static ValueTask<T> InvokeOriginalAction<T, TState>(
         Continuation<T, TState> next,
-        KevlarContext attemptContext,
+        OriginalActionContextCapture contextCapture,
         CancellationToken cancellationToken)
     {
-        var invocationContext = attemptContext.Fork(cancellationToken);
+        var invocationContext = contextCapture.Fork(cancellationToken);
         ValueTask<Outcome<T>> execution;
         try
         {
@@ -426,13 +427,13 @@ internal sealed class HedgingStrategy : Strategy
         }
         catch
         {
-            KevlarContext.Return(invocationContext);
+            CaptureAndReturn(contextCapture, invocationContext);
             throw;
         }
 
         if (!execution.IsCompletedSuccessfully)
         {
-            return AwaitOriginalResultAsync(execution, invocationContext);
+            return AwaitOriginalResultAsync(execution, invocationContext, contextCapture);
         }
 
         try
@@ -441,7 +442,7 @@ internal sealed class HedgingStrategy : Strategy
         }
         finally
         {
-            KevlarContext.Return(invocationContext);
+            CaptureAndReturn(contextCapture, invocationContext);
         }
     }
 
@@ -453,7 +454,8 @@ internal sealed class HedgingStrategy : Strategy
 
     private static async ValueTask<T> AwaitOriginalResultAsync<T>(
         ValueTask<Outcome<T>> execution,
-        KevlarContext invocationContext)
+        KevlarContext invocationContext,
+        OriginalActionContextCapture contextCapture)
     {
         try
         {
@@ -462,7 +464,44 @@ internal sealed class HedgingStrategy : Strategy
         }
         finally
         {
+            CaptureAndReturn(contextCapture, invocationContext);
+        }
+    }
+
+    private static void CaptureAndReturn(
+        OriginalActionContextCapture contextCapture,
+        KevlarContext invocationContext)
+    {
+        try
+        {
+            contextCapture.Capture(invocationContext);
+        }
+        finally
+        {
             KevlarContext.Return(invocationContext);
+        }
+    }
+
+    private readonly struct OriginalActionContextCapture(KevlarContext context)
+    {
+        private readonly KevlarContext _context = context;
+
+        public KevlarContext Fork(CancellationToken cancellationToken)
+        {
+            lock (_context.Properties)
+            {
+                return _context.Fork(cancellationToken);
+            }
+        }
+
+        public void Capture(KevlarContext source)
+        {
+            lock (_context.Properties)
+            {
+                _context.CancellationToken = source.CancellationToken;
+                _context.Properties.Clear();
+                source.Properties.CopyTo(_context.Properties);
+            }
         }
     }
 

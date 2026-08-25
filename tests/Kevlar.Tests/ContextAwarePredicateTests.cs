@@ -156,6 +156,44 @@ public class ContextAwarePredicateTests
     }
 
     [Test]
+    public async Task Hedge_Predicate_Receives_Generated_Original_Action_Context()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var executions = 0;
+        var observedValue = -1;
+        var observedToken = default(CancellationToken);
+        var shield = Shield.For<int>()
+            .WhenResult(handling =>
+            {
+                if (handling.Attempt == 1)
+                {
+                    observedValue = handling.Context.Properties.GetOrDefault(HedgeAttempt, -1);
+                    observedToken = handling.Context.CancellationToken;
+                }
+
+                return handling.Outcome.TryGetResult(out var result) && result < 0;
+            })
+            .Hedge(options =>
+            {
+                options.MaxAttempts = 2;
+                options.Delay = Timeout.InfiniteTimeSpan;
+                options.ActionGenerator = hedge => _ => hedge.OriginalAction(cancellation.Token);
+            });
+
+        var result = await shield.ExecuteWithContextAsync(async context =>
+        {
+            await Task.Yield();
+            var execution = Interlocked.Increment(ref executions);
+            context.Properties.Set(HedgeAttempt, execution);
+            return execution == 1 ? -1 : 42;
+        });
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(observedValue).IsEqualTo(2);
+        await Assert.That(observedToken).IsEqualTo(cancellation.Token);
+    }
+
+    [Test]
     public async Task HandlesException_Context_Override_Replaces_Ambient_Clause()
     {
         var attempts = 0;
@@ -199,6 +237,51 @@ public class ContextAwarePredicateTests
 
         await Assert.That(executionFailure).IsNotSameReferenceAs(predicateFailure);
         await Assert.That(attempts).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Predicate_Exception_Does_Not_Skip_Later_Context_Alternative()
+    {
+        var alternatives = 0;
+        var shield = Shield
+            .When((HandlingEvent _) => throw new DivideByZeroException("first"))
+            .Or((HandlingEvent _) =>
+            {
+                alternatives++;
+                return true;
+            })
+            .Retry(1, Backoff.None);
+        var attempts = 0;
+
+        await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
+        {
+            attempts++;
+            throw new InvalidOperationException("execution");
+        })).Throws<InvalidOperationException>();
+
+        await Assert.That(attempts).IsEqualTo(2);
+        await Assert.That(alternatives).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Typed_Predicate_Exception_Does_Not_Skip_Later_Context_Alternative()
+    {
+        var alternatives = 0;
+        var shield = Shield.For<int>()
+            .WhenResult((HandlingEvent<int> _) => throw new DivideByZeroException("first"))
+            .Or((HandlingEvent<int> _) =>
+            {
+                alternatives++;
+                return true;
+            })
+            .Retry(1, Backoff.None);
+        var attempts = 0;
+
+        var result = await shield.ExecuteAsync(_ => new ValueTask<int>(++attempts));
+
+        await Assert.That(result).IsEqualTo(2);
+        await Assert.That(attempts).IsEqualTo(2);
+        await Assert.That(alternatives).IsEqualTo(1);
     }
 
     [Test]

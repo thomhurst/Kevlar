@@ -309,17 +309,6 @@ public sealed class ShieldBuilder<TResult>
             return predicates[0];
         }
 
-        return handling =>
-        {
-            foreach (var predicate in predicates)
-            {
-                if (predicate(handling))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        };
+        return handling => ShieldBuilder.EvaluateContextPredicates(predicates, handling);
     }
 }
