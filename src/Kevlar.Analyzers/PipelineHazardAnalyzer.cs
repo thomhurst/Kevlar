@@ -2090,6 +2090,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         return TryFindAsyncConfiguration(
             anonymousFunction.Body,
+            anonymousFunction.Body,
             anonymousFunction.Symbol.Parameters[0],
             context,
             knownTypes,
@@ -2321,6 +2322,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
     private static bool TryFindAsyncConfiguration(
         IOperation operation,
+        IOperation configurationBody,
         IParameterSymbol configuratorParameter,
         OperationAnalysisContext context,
         KnownTypes knownTypes,
@@ -2341,7 +2343,13 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             && propertyReference.Instance is { } instance
             && ReferencesConfiguratorParameter(instance, configuratorParameter, context)
             && knownTypes.IsAsyncConfigurationProperty(propertyReference.Property)
-            && value.ConstantValue is not { HasValue: true, Value: null })
+            && value.ConstantValue is not { HasValue: true, Value: null }
+            && !IsGuaranteedClearedAfter(
+                configurationBody,
+                operation,
+                propertyReference.Property,
+                configuratorParameter,
+                context))
         {
             memberName = $"{propertyReference.Property.ContainingType.Name}.{propertyReference.Property.Name}";
             return true;
@@ -2351,6 +2359,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         {
             if (TryFindAsyncConfiguration(
                 child,
+                configurationBody,
                 configuratorParameter,
                 context,
                 knownTypes,
@@ -2361,6 +2370,87 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         }
 
         memberName = null;
+        return false;
+    }
+
+    private static bool IsGuaranteedClearedAfter(
+        IOperation configurationBody,
+        IOperation configuredAssignment,
+        IPropertySymbol property,
+        IParameterSymbol configuratorParameter,
+        OperationAnalysisContext context)
+    {
+        if (configurationBody is not IBlockOperation block)
+        {
+            return false;
+        }
+
+        IOperation? finalValue = null;
+        var finalAssignmentStart = -1;
+        foreach (var statement in block.Operations)
+        {
+            var operation = statement is IExpressionStatementOperation expressionStatement
+                ? expressionStatement.Operation
+                : statement;
+            operation = Unwrap(operation)!;
+            if (operation.Syntax.SpanStart > configuredAssignment.Syntax.SpanStart
+                && operation is IAssignmentOperation
+                {
+                    Target: IPropertyReferenceOperation propertyReference,
+                    Value: { } value,
+                }
+                && SymbolEqualityComparer.Default.Equals(propertyReference.Property, property)
+                && propertyReference.Instance is { } instance
+                && ReferencesConfiguratorParameter(instance, configuratorParameter, context))
+            {
+                finalValue = value;
+                finalAssignmentStart = operation.Syntax.SpanStart;
+            }
+        }
+
+        return finalValue?.ConstantValue is { HasValue: true, Value: null }
+            && !HasBypassingControlFlowBefore(block, finalAssignmentStart)
+            && !HasPropertyAssignmentAfter(
+                block,
+                property,
+                configuratorParameter,
+                finalAssignmentStart,
+                context);
+    }
+
+    private static bool HasPropertyAssignmentAfter(
+        IOperation operation,
+        IPropertySymbol property,
+        IParameterSymbol configuratorParameter,
+        int position,
+        OperationAnalysisContext context)
+    {
+        if (operation.Syntax.SpanStart > position
+            && operation is IAssignmentOperation
+            {
+                Target: IPropertyReferenceOperation propertyReference,
+            }
+            && SymbolEqualityComparer.Default.Equals(propertyReference.Property, property)
+            && propertyReference.Instance is { } instance
+            && ReferencesConfiguratorParameter(instance, configuratorParameter, context))
+        {
+            return true;
+        }
+
+        foreach (var child in operation.ChildOperations)
+        {
+            if (child is not IAnonymousFunctionOperation
+                && HasPropertyAssignmentAfter(
+                    child,
+                    property,
+                    configuratorParameter,
+                    position,
+                    context))
+            {
+                return true;
+            }
+        }
+
         return false;
     }
 
