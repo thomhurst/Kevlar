@@ -32,7 +32,7 @@ public class RateLimiterAdapterTests
             }))
             .Throws<NotSupportedException>();
 
-        await Assert.That(exception!.Message).Contains("RateLimiterAdapterOptions.OnRejectedAsync");
+        await Assert.That(exception!.Message).Contains("RateLimiter.AcquireAsync");
         await Assert.That(actionInvoked).IsFalse();
     }
 
@@ -57,6 +57,34 @@ public class RateLimiterAdapterTests
         await Assert.That(exception!.Message).Contains(nameof(RateLimitLeaseAcquirer));
         await Assert.That(acquisitionInvoked).IsFalse();
         await Assert.That(actionInvoked).IsFalse();
+    }
+
+    [Test]
+    public async Task Synchronous_Execution_Rejects_Abstract_Limiter_Acquisition()
+    {
+        var acquisitionInvoked = false;
+        using var limiter = new StubLimiter(_ =>
+        {
+            acquisitionInvoked = true;
+            throw new InvalidOperationException("acquisition must not run");
+        });
+        using var partitioned = new StubPartitionedLimiter((_, _) =>
+        {
+            acquisitionInvoked = true;
+            throw new InvalidOperationException("acquisition must not run");
+        });
+        var direct = Shield.Empty.UseRateLimiter(limiter);
+        var byPartition = Shield.Empty.UseRateLimiter(partitioned);
+
+        var directException = await Assert.That(() => direct.Execute(_ => 1))
+            .Throws<NotSupportedException>();
+        var partitionException = await Assert.That(() => byPartition.Execute(_ => 1))
+            .Throws<NotSupportedException>();
+
+        await Assert.That(directException!.Message).Contains("RateLimiter.AcquireAsync");
+        await Assert.That(partitionException!.Message)
+            .Contains("PartitionedRateLimiter<KevlarContext>.AcquireAsync");
+        await Assert.That(acquisitionInvoked).IsFalse();
     }
 
     private static readonly KevlarKey<string> TenantKey = new("tenant");

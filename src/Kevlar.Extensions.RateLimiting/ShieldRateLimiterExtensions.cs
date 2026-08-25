@@ -114,7 +114,7 @@ public static class ShieldRateLimiterExtensions
             (permitCount, context) => limiter.AcquireAsync(permitCount, context.CancellationToken),
             options,
             $"RateLimiter({GetLimiterName(limiter.GetType())})",
-            supportsSynchronousExecution: true,
+            acquisitionUnsupportedReason: "RateLimiter.AcquireAsync",
             ownedLimiter: ownsLimiter ? limiter : null);
     }
 
@@ -136,7 +136,7 @@ public static class ShieldRateLimiterExtensions
                 context.CancellationToken),
             options,
             "RateLimiter(Partitioned)",
-            supportsSynchronousExecution: true,
+            acquisitionUnsupportedReason: "PartitionedRateLimiter<KevlarContext>.AcquireAsync",
             ownedLimiter: ownsLimiter ? limiter : null);
     }
 
@@ -153,7 +153,7 @@ public static class ShieldRateLimiterExtensions
             acquireLease,
             CreateOptions(configure),
             "RateLimiter(Delegate)",
-            supportsSynchronousExecution: false);
+            acquisitionUnsupportedReason: nameof(RateLimitLeaseAcquirer));
     }
 
     private static RateLimiterAdapterOptions CreateOptions(

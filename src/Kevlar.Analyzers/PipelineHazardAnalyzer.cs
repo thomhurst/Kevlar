@@ -2084,75 +2084,110 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        var canEnable = false;
-        var hasInjectionRateAssignment = false;
-        var injectionRateAlwaysZero = true;
-        var canGenerateInjectionRate = false;
-        AnalyzeChaosAssignments(
-            anonymousFunction.Body,
-            configuratorParameter,
-            context,
-            ref canEnable,
-            ref hasInjectionRateAssignment,
-            ref injectionRateAlwaysZero,
-            ref canGenerateInjectionRate);
-
-        return !canEnable
-            || hasInjectionRateAssignment
-                && injectionRateAlwaysZero
-                && !canGenerateInjectionRate;
-    }
-
-    private static void AnalyzeChaosAssignments(
-        IOperation operation,
-        IParameterSymbol configuratorParameter,
-        OperationAnalysisContext context,
-        ref bool canEnable,
-        ref bool hasInjectionRateAssignment,
-        ref bool injectionRateAlwaysZero,
-        ref bool canGenerateInjectionRate)
-    {
-        operation = Unwrap(operation)!;
-        if (operation is IAnonymousFunctionOperation)
+        if (TryGetFinalChaosPropertyValue(
+                anonymousFunction,
+                configuratorParameter,
+                "Enabled",
+                context,
+                out var enabled)
+            && (enabled is null
+                || enabled.ConstantValue is { HasValue: true, Value: false }))
         {
-            return;
+            return true;
         }
 
-        if (operation is IAssignmentOperation
+        return TryGetFinalChaosPropertyValue(
+                anonymousFunction,
+                configuratorParameter,
+                "InjectionRate",
+                context,
+                out var injectionRate)
+            && injectionRate?.ConstantValue is { HasValue: true, Value: double rate }
+            && rate <= 0
+            && TryGetFinalChaosPropertyValue(
+                anonymousFunction,
+                configuratorParameter,
+                "InjectionRateGenerator",
+                context,
+                out var injectionRateGenerator)
+            && (injectionRateGenerator is null
+                || injectionRateGenerator.ConstantValue is { HasValue: true, Value: null });
+    }
+
+    private static bool TryGetFinalChaosPropertyValue(
+        IAnonymousFunctionOperation anonymousFunction,
+        IParameterSymbol configuratorParameter,
+        string propertyName,
+        OperationAnalysisContext context,
+        out IOperation? configuredValue)
+    {
+        configuredValue = null;
+        var lastDirectAssignmentStart = -1;
+        if (anonymousFunction.Body is IBlockOperation block)
+        {
+            foreach (var statement in block.Operations)
+            {
+                var operation = statement is IExpressionStatementOperation expressionStatement
+                    ? expressionStatement.Operation
+                    : statement;
+                operation = Unwrap(operation)!;
+                if (operation is IAssignmentOperation
+                    {
+                        Target: IPropertyReferenceOperation property,
+                        Value: { } value,
+                    }
+                    && property.Property.Name == propertyName
+                    && property.Instance is { } instance
+                    && ReferencesConfiguratorParameter(instance, configuratorParameter, context))
+                {
+                    configuredValue = value;
+                    lastDirectAssignmentStart = operation.Syntax.SpanStart;
+                }
+            }
+        }
+
+        return !HasChaosPropertyAssignmentAfter(
+            anonymousFunction.Body,
+            configuratorParameter,
+            propertyName,
+            lastDirectAssignmentStart,
+            context);
+    }
+
+    private static bool HasChaosPropertyAssignmentAfter(
+        IOperation operation,
+        IParameterSymbol configuratorParameter,
+        string propertyName,
+        int position,
+        OperationAnalysisContext context)
+    {
+        if (operation.Syntax.SpanStart > position
+            && operation is IAssignmentOperation
             {
                 Target: IPropertyReferenceOperation property,
-                Value: { } value,
             }
+            && property.Property.Name == propertyName
             && property.Instance is { } instance
             && ReferencesConfiguratorParameter(instance, configuratorParameter, context))
         {
-            switch (property.Property.Name)
-            {
-                case "Enabled":
-                    canEnable |= value.ConstantValue is not { HasValue: true, Value: false };
-                    break;
-                case "InjectionRate":
-                    hasInjectionRateAssignment = true;
-                    injectionRateAlwaysZero &= value.ConstantValue is { HasValue: true, Value: double rate }
-                        && rate <= 0;
-                    break;
-                case "InjectionRateGenerator":
-                    canGenerateInjectionRate |= value.ConstantValue is not { HasValue: true, Value: null };
-                    break;
-            }
+            return true;
         }
 
         foreach (var child in operation.ChildOperations)
         {
-            AnalyzeChaosAssignments(
+            if (child is not IAnonymousFunctionOperation
+                && HasChaosPropertyAssignmentAfter(
                 child,
                 configuratorParameter,
-                context,
-                ref canEnable,
-                ref hasInjectionRateAssignment,
-                ref injectionRateAlwaysZero,
-                ref canGenerateInjectionRate);
+                propertyName,
+                position,
+                context))
+            {
+                return true;
+            }
         }
+
+        return false;
     }
 
     private static bool HasStaticallyDisabledRetries(

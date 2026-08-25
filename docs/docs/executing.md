@@ -63,7 +63,7 @@ the calling thread until they complete, so prefer `ExecuteAsync` for delayed or 
 | `TimeoutGeneratorSync` or `BreakDurationGeneratorSync` | Invokes the generator synchronously; no async transition is introduced |
 | `CircuitBreakerMonitor.Isolate()` / `Reset()` with `OnStateChangedAsync` | Blocks until the observer completes; the observer runs on the thread pool |
 | Multi-attempt hedging | Throws `NotSupportedException` before the action runs |
-| A `ValueTask`-returning fallback recovery delegate, `OnRetryAsync`, `DelayGeneratorAsync`, `OnTimeoutAsync`, `OnFallbackAsync`, `OnStateChangedAsync`, any `OnRejectedAsync`, `TimeoutGenerator`, `BreakDurationGenerator`, or an injectable `ChaosBehaviorOptions.Behavior` | Throws `NotSupportedException` before the action runs; use `ExecuteAsync` or the synchronous counterpart |
+| A `ValueTask`-returning fallback recovery delegate, any `UseRateLimiter` adapter, `OnRetryAsync`, `DelayGeneratorAsync`, `OnTimeoutAsync`, `OnFallbackAsync`, `OnStateChangedAsync`, any `OnRejectedAsync`, `TimeoutGenerator`, `BreakDurationGenerator`, or an injectable `ChaosBehaviorOptions.Behavior` | Throws `NotSupportedException` before the action runs; use `ExecuteAsync` or the synchronous counterpart |
 | Custom strategy returning an incomplete `ValueTask` | Blocks at the execution boundary; custom code must avoid capturing a single-threaded `SynchronizationContext` |
 
 [`KEV012`](analyzers.md#kev012-async-configuration-with-synchronous-execute) catches inline async
