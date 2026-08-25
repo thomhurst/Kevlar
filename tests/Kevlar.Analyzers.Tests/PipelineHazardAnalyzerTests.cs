@@ -369,6 +369,36 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Uses_Declaration_Tree_Control_Flow_For_Method_Groups()
+    {
+        var diagnostics = await AnalyzeSourcesAsync(
+            """
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = CallbackHost.OnRetry);
+            }
+            """,
+            """
+            public static class CallbackHost
+            {
+                public static async void OnRetry(RetryEvent item)
+                {
+                    if (Environment.TickCount == 0)
+                    {
+                        await Task.Yield();
+                        return;
+                    }
+
+                    _ = item.Context.ShieldName;
+                }
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV013");
+    }
+
+    [Test]
     public async Task KEV014_Inspects_Constructed_Async_Void_Method_Groups()
     {
         var diagnostics = await AnalyzeSourceAsync("""
@@ -1230,6 +1260,25 @@ public class PipelineHazardAnalyzerTests
         var diagnostics = await AnalyzeBodyAsync("""
             _ = Shield.Retry(options => options.OnRetryAsync = async item =>
                 await Task.Run(() => Consume(item.Context)));
+
+            static void Consume(KevlarContext context) =>
+                Console.WriteLine(context.ShieldName);
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Task_Locals_Joined_After_Constant_Declarations()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetryAsync = async item =>
+            {
+                var pending = Task.Run(() => Consume(item.Context));
+                var marker = 0;
+                await pending;
+                _ = marker;
+            });
 
             static void Consume(KevlarContext context) =>
                 Console.WriteLine(context.ShieldName);
@@ -3662,6 +3711,28 @@ public class PipelineHazardAnalyzerTests
         if (!allowCompilationErrors && errors.Length > 0)
         {
             throw new InvalidOperationException("Test source does not compile: " + string.Join("; ", errors.Select(static error => error.ToString())));
+        }
+
+        return await GetAnalyzerDiagnosticsAsync(compilation);
+    }
+
+    private static async Task<ImmutableArray<Diagnostic>> AnalyzeSourcesAsync(
+        params string[] declarations)
+    {
+        var compilation = CSharpCompilation.Create(
+            "PipelineHazardAnalyzerTestSubject",
+            declarations.Select(declaration =>
+                CSharpSyntaxTree.ParseText(CreateSource(declaration))),
+            GetMetadataReferences(),
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+        var errors = compilation.GetDiagnostics()
+            .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+            .ToArray();
+        if (errors.Length > 0)
+        {
+            throw new InvalidOperationException(
+                "Test source does not compile: "
+                + string.Join("; ", errors.Select(static error => error.ToString())));
         }
 
         return await GetAnalyzerDiagnosticsAsync(compilation);

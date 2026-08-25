@@ -499,13 +499,16 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             {
                 var declaration = syntaxReference.GetSyntax(context.CancellationToken);
                 var body = GetFunctionBody(declaration);
+#pragma warning disable RS1030 // Cross-tree method-group CFGs require that tree's semantic model.
+                var semanticModel = declaration.SyntaxTree == context.SemanticModel.SyntaxTree
+                    ? context.SemanticModel
+                    : context.SemanticModel.Compilation.GetSemanticModel(declaration.SyntaxTree);
+#pragma warning restore RS1030
                 if (body is not null
                     && TryFindPostAwaitEventContext(
                         body,
                         eventParameterNames,
-                        declaration.SyntaxTree == context.SemanticModel.SyntaxTree
-                            ? context.SemanticModel
-                            : null,
+                        semanticModel,
                         context.CancellationToken,
                         out capturedContext))
                 {
@@ -1592,7 +1595,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 || observationBlock != block
                 || block.Statements.Any(statement =>
                     statement.SpanStart > declarationStatement.SpanStart
-                        && statement.SpanStart < observationStatement.SpanStart)
+                        && statement.SpanStart < observationStatement.SpanStart
+                        && IsPotentiallyThrowingOrBranchingStatement(
+                            statement,
+                            semanticModel,
+                            cancellationToken))
                 || !SymbolEqualityComparer.Default.Equals(
                     semanticModel.GetSymbolInfo(reference, cancellationToken).Symbol,
                     local)
@@ -1621,6 +1628,23 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         return false;
     }
+
+    private static bool IsPotentiallyThrowingOrBranchingStatement(
+        StatementSyntax statement,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken) =>
+        statement switch
+        {
+            EmptyStatementSyntax => false,
+            LocalDeclarationStatementSyntax declaration => declaration.Declaration.Variables
+                .Any(variable => variable.Initializer is { Value: { } value }
+                    && !semanticModel.GetConstantValue(value, cancellationToken).HasValue
+                    && value is not (DefaultExpressionSyntax or LiteralExpressionSyntax
+                    {
+                        RawKind: (int)SyntaxKind.DefaultLiteralExpression,
+                    })),
+            _ => true,
+        };
 
     private static bool IsGuaranteedBeforeFunctionExit(
         SyntaxNode start,
