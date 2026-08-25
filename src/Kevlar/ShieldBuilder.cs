@@ -126,6 +126,25 @@ public sealed class ShieldBuilder
     public Shield Use(Func<HandlingClause, Strategy> factory) => Seal().Use(factory);
 
     /// <summary>
+    /// Appends a custom strategy. The accumulated handling clause remains ambient for later strategies.
+    /// </summary>
+    public Shield Use(Strategy strategy) => Seal().Use(strategy);
+
+    /// <summary>
+    /// Runs <paramref name="fallback"/> in place of handled failures. Applies to void executions
+    /// only; result-producing recovery needs a typed shield.
+    /// </summary>
+    public Shield Fallback(Func<CancellationToken, ValueTask> fallback) => Seal().Fallback(fallback);
+
+    /// <summary>
+    /// Runs <paramref name="fallback"/> in place of handled failures and configures notifications.
+    /// Applies to void executions only.
+    /// </summary>
+    public Shield Fallback(
+        Func<CancellationToken, ValueTask> fallback,
+        Action<FallbackOptions> configure) => Seal().Fallback(fallback, configure);
+
+    /// <summary>
     /// Runs <paramref name="fallback"/> in place of handled failures. Applies to void executions
     /// only; result-producing recovery needs <c>Shield.For&lt;T&gt;().FallbackTo(…)</c> for a constant
     /// value or a typed <c>Fallback(…)</c> factory.
@@ -142,6 +161,11 @@ public sealed class ShieldBuilder
 
     /// <summary>Cancels executions that exceed <paramref name="timeout"/>. The handling clauses remain ambient for later strategies.</summary>
     public Shield Timeout(TimeSpan timeout) => Seal().Timeout(timeout);
+
+    /// <summary>
+    /// Adds a configured timeout. The handling clause remains ambient for later strategies.
+    /// </summary>
+    public Shield Timeout(Action<TimeoutOptions> configure) => Seal().Timeout(configure);
 
     /// <summary>Limits throughput. The handling clauses remain ambient for later strategies.</summary>
     public Shield RateLimit(int permits, TimeSpan perWindow) => Seal().RateLimit(permits, perWindow);
