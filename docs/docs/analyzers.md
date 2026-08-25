@@ -118,9 +118,9 @@ Test methods marked with standard TUnit, xUnit, NUnit, or MSTest attributes are 
 
 ## KEV005: void fallback with a result
 
-A fallback on non-generic `Shield` can recover void executions only. If that shield executes a
-result-returning delegate, the fallback cannot produce the required value and fails at runtime when
-it handles an outcome:
+A fallback on non-generic `Shield` can recover void executions only. A shield containing one rejects
+every result-returning execution at the execution boundary, before the delegate or any strategy
+runs—even when the delegate would have succeeded:
 
 ```csharp
 var shield = Shield.Fallback(static _ => ValueTask.CompletedTask);

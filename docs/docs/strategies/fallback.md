@@ -36,9 +36,9 @@ var shield = Shield
 ```
 
 A void fallback keeps the chain's type as `Shield`, so it can be stored, passed, and composed like
-any other untyped shield. It can recover void executions only. If a result-returning execution
-reaches the fallback, Kevlar throws an `InvalidOperationException` because the fallback cannot
-produce the required value. The [KEV005 analyzer](../analyzers.md#kev005-void-fallback-with-a-result)
+any other untyped shield. It can recover void executions only. A result-returning execution is
+rejected with `InvalidOperationException` before its delegate or any strategy runs, even when the
+delegate would have succeeded. The [KEV005 analyzer](../analyzers.md#kev005-void-fallback-with-a-result)
 catches statically visible cases.
 
 ```csharp

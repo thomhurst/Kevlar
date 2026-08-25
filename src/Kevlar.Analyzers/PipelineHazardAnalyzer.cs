@@ -58,7 +58,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         category: "Configuration",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        description: "A void fallback cannot produce a value for a result-returning execution and fails at runtime when it handles an outcome.");
+        description: "A shield containing a void fallback rejects every result-returning execution at the execution boundary, before the delegate or any strategy runs.");
 
     /// <summary>The KEV006 rule.</summary>
     public static readonly DiagnosticDescriptor UntypedHedgeRule = new(
