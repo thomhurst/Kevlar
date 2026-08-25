@@ -427,7 +427,7 @@ public class PipelineHazardAnalyzerTests
     {
         var diagnostics = await AnalyzeBodyAsync(
             "_ = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask)" +
-            ".RateLimit((System.Threading.RateLimiting.RateLimiter)null!).Execute(static _ => 1);");
+            ".UseRateLimiter((System.Threading.RateLimiting.RateLimiter)null!).Execute(static _ => 1);");
 
         await AssertRuleAsync(Without(diagnostics, "KEV004"), "KEV005");
     }

@@ -2,24 +2,29 @@
 Kevlar.Extensions.RateLimiting.RateLimitLeaseAcquirer
 virtual Kevlar.Extensions.RateLimiting.RateLimitLeaseAcquirer.Invoke(int permitCount, Kevlar.KevlarContext! context) -> System.Threading.Tasks.ValueTask<System.Threading.RateLimiting.RateLimitLease!>
 Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions
-Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejected.get -> System.Action<Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent>?
+Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejected.get -> System.Action<Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent>?
 Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejected.set -> void
-Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejectedAsync.get -> System.Func<Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent, System.Threading.Tasks.ValueTask>?
+Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejectedAsync.get -> System.Func<Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent, System.Threading.Tasks.ValueTask>?
 Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejectedAsync.set -> void
 Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.PermitCount.get -> int
 Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.PermitCount.set -> void
 Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.RateLimiterAdapterOptions() -> void
-Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent
-Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.RateLimiterRejectedEvent() -> void
-Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.Context.get -> Kevlar.KevlarContext!
-Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.Metadata.get -> System.Collections.Generic.IReadOnlyDictionary<string!, object?>!
-Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.PermitCount.get -> int
-Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.RetryAfter.get -> System.TimeSpan?
-Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.StrategyIndex.get -> int
+Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException
+Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.RateLimiterAdapterRejectedException() -> void
+Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.RateLimiterAdapterRejectedException(string! message) -> void
+Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.RateLimiterAdapterRejectedException(string! message, System.Exception! innerException) -> void
+Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.RateLimiterAdapterRejectedException(System.TimeSpan? retryAfter) -> void
+Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent
+Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.RateLimiterAdapterRejectedEvent() -> void
+Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.Context.get -> Kevlar.KevlarContext!
+Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.Metadata.get -> System.Collections.Generic.IReadOnlyDictionary<string!, object?>!
+Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.PermitCount.get -> int
+Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.RetryAfter.get -> System.TimeSpan?
+Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.StrategyIndex.get -> int
 Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions
-static Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.RateLimit(this Kevlar.Shield! shield, Kevlar.Extensions.RateLimiting.RateLimitLeaseAcquirer! acquireLease, System.Action<Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions!>? configure = null) -> Kevlar.Shield!
-static Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.RateLimit(this Kevlar.Shield! shield, System.Threading.RateLimiting.RateLimiter! limiter, System.Action<Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions!>? configure = null) -> Kevlar.Shield!
-static Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.RateLimit(this Kevlar.Shield! shield, System.Threading.RateLimiting.PartitionedRateLimiter<Kevlar.KevlarContext!>! limiter, System.Action<Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions!>? configure = null) -> Kevlar.Shield!
-static Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.RateLimit<TResult>(this Kevlar.Shield<TResult>! shield, Kevlar.Extensions.RateLimiting.RateLimitLeaseAcquirer! acquireLease, System.Action<Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions!>? configure = null) -> Kevlar.Shield<TResult>!
-static Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.RateLimit<TResult>(this Kevlar.Shield<TResult>! shield, System.Threading.RateLimiting.RateLimiter! limiter, System.Action<Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions!>? configure = null) -> Kevlar.Shield<TResult>!
-static Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.RateLimit<TResult>(this Kevlar.Shield<TResult>! shield, System.Threading.RateLimiting.PartitionedRateLimiter<Kevlar.KevlarContext!>! limiter, System.Action<Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions!>? configure = null) -> Kevlar.Shield<TResult>!
+static Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter(this Kevlar.Shield! shield, Kevlar.Extensions.RateLimiting.RateLimitLeaseAcquirer! acquireLease, System.Action<Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions!>? configure = null) -> Kevlar.Shield!
+static Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter(this Kevlar.Shield! shield, System.Threading.RateLimiting.RateLimiter! limiter, System.Action<Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions!>? configure = null) -> Kevlar.Shield!
+static Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter(this Kevlar.Shield! shield, System.Threading.RateLimiting.PartitionedRateLimiter<Kevlar.KevlarContext!>! limiter, System.Action<Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions!>? configure = null) -> Kevlar.Shield!
+static Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter<TResult>(this Kevlar.Shield<TResult>! shield, Kevlar.Extensions.RateLimiting.RateLimitLeaseAcquirer! acquireLease, System.Action<Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions!>? configure = null) -> Kevlar.Shield<TResult>!
+static Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter<TResult>(this Kevlar.Shield<TResult>! shield, System.Threading.RateLimiting.RateLimiter! limiter, System.Action<Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions!>? configure = null) -> Kevlar.Shield<TResult>!
+static Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter<TResult>(this Kevlar.Shield<TResult>! shield, System.Threading.RateLimiting.PartitionedRateLimiter<Kevlar.KevlarContext!>! limiter, System.Action<Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions!>? configure = null) -> Kevlar.Shield<TResult>!

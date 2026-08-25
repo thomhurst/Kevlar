@@ -5,6 +5,9 @@ namespace Kevlar.Testing;
 /// <summary>Creates structured, read-only descriptors for shields.</summary>
 public static class ShieldDescriptorExtensions
 {
+    private const string RateLimiterAdapterStrategyTypeName =
+        "Kevlar.Extensions.RateLimiting.RateLimiterStrategy";
+
     /// <summary>Describes an untyped shield without executing it.</summary>
     public static ShieldDescriptor GetDescriptor(this Shield shield)
     {
@@ -89,6 +92,12 @@ public static class ShieldDescriptorExtensions
                 fallback.ResultType,
                 fallback.HasNotification,
                 strategy.HasHandlingOverride),
+            _ when strategy.GetType().FullName == RateLimiterAdapterStrategyTypeName =>
+                new CustomStrategyDescriptor(
+                    StrategyKind.RateLimiterAdapter,
+                    description,
+                    strategy.GetType(),
+                    handling: null),
             _ => new CustomStrategyDescriptor(
                 description,
                 strategy.GetType(),

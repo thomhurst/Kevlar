@@ -30,7 +30,7 @@ public class RateLimitBenchmarks
         Window = TimeSpan.FromSeconds(1),
         QueueLimit = 0,
     });
-    private static readonly Shield KevlarFrameworkRateLimit = Shield.Empty.RateLimit(FrameworkLimiter);
+    private static readonly Shield KevlarFrameworkRateLimit = Shield.Empty.UseRateLimiter(FrameworkLimiter);
     private static readonly PartitionedRateLimiter<KevlarContext> FrameworkPartitionedLimiter =
         PartitionedRateLimiter.Create<KevlarContext, int>(context =>
             RateLimitPartition.Get(
@@ -42,7 +42,7 @@ public class RateLimitBenchmarks
                     QueueLimit = 0,
                 })));
     private static readonly Shield KevlarPartitionedFrameworkRateLimit =
-        Shield.Empty.RateLimit(FrameworkPartitionedLimiter);
+        Shield.Empty.UseRateLimiter(FrameworkPartitionedLimiter);
 
     private static readonly ResiliencePipeline PollyRateLimit = new ResiliencePipelineBuilder()
         .AddRateLimiter(new TokenBucketRateLimiter(new TokenBucketRateLimiterOptions
