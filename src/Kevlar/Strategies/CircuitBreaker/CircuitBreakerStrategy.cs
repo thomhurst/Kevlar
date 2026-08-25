@@ -30,16 +30,17 @@ internal sealed class CircuitBreakerStrategy : Strategy
         CircuitBreakerBreakDurationGenerator? breakDurationGenerator,
         Type optionsType)
     {
+#if NET9_0_OR_GREATER
+        _metricsRegistration = KevlarMetrics.RegisterCircuitStateSource(this);
+#endif
         _core = new CircuitBreakerCore(
             options,
             breakDurationGenerator,
             RecordTransitionState,
             optionsType);
-#if NET9_0_OR_GREATER
-        _metricsRegistration = KevlarMetrics.RegisterCircuitStateSource(this);
-#endif
         _judge = judge;
         HasHandlingOverride = hasHandlingOverride;
+        _core.BindMonitor();
     }
 
     internal static CircuitBreakerStrategy Create<TResult>(

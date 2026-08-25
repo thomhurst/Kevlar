@@ -1773,6 +1773,22 @@ public class MetricsTests
         await Assert.That(strategy.IsAlive).IsFalse();
     }
 
+    [Test]
+    public async Task State_Gauges_Do_Not_Retain_Time_Providers_Without_Collection()
+    {
+        using var listener = new KevlarMeterListener();
+        var timeProvider = CreateCollectibleStateTimeProvider();
+
+        for (var attempt = 0; timeProvider.IsAlive && attempt < 10; attempt++)
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+        }
+
+        await Assert.That(timeProvider.IsAlive).IsFalse();
+    }
+
     [System.Runtime.CompilerServices.MethodImpl(
         System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
     private static WeakReference CreateCollectibleStateStrategy()
@@ -1780,6 +1796,18 @@ public class MetricsTests
         var shield = Shield.ConcurrencyLimit(1).WithName("metrics-collectible-strategy");
         shield.Execute(static _ => { });
         return new WeakReference(shield.Strategies[0]);
+    }
+
+    [System.Runtime.CompilerServices.MethodImpl(
+        System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    private static WeakReference CreateCollectibleStateTimeProvider()
+    {
+        var timeProvider = new FakeTimeProvider();
+        var shield = Shield.RateLimit(1, TimeSpan.FromMinutes(1))
+            .WithName("metrics-collectible-time-provider")
+            .WithTimeProvider(timeProvider);
+        shield.Execute(static _ => { });
+        return new WeakReference(timeProvider);
     }
 
 #endif

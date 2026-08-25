@@ -15,6 +15,7 @@ public class DocsConsistencyTests
         using var observer = new InstrumentObserver();
 
         await ExerciseEveryInstrumentAsync();
+        observer.RecordObservableInstruments();
 
         var documented = ParseInstrumentTable();
         var available = documented
@@ -241,6 +242,7 @@ public class DocsConsistencyTests
     {
         Counter<long> => "Counter",
         Histogram<double> => "Histogram",
+        ObservableGauge<long> => "ObservableGauge",
 #if NET9_0_OR_GREATER
         Gauge<long> => "Gauge",
 #endif
@@ -306,6 +308,8 @@ public class DocsConsistencyTests
 
         public ConcurrentDictionary<string, ConcurrentDictionary<string, byte>> Tags { get; } =
             new(StringComparer.Ordinal);
+
+        public void RecordObservableInstruments() => _listener.RecordObservableInstruments();
 
         public void Dispose() => _listener.Dispose();
 

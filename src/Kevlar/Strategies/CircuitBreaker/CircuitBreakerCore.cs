@@ -115,8 +115,9 @@ internal sealed class CircuitBreakerCore
             ? null
             : new AsyncLocal<TransitionPublication?>();
         _monitor = options.Monitor;
-        _monitor?.Bind(this);
     }
+
+    internal void BindMonitor() => _monitor?.Bind(this);
 
     public string Describe() =>
         _consecutiveFailureLimit is { } limit

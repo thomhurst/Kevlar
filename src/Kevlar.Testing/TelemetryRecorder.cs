@@ -178,13 +178,24 @@ public sealed class TelemetryRecorder : IDisposable, IKevlarTelemetryListener
             item.ConsecutiveFailures,
             breakDuration);
 
-    /// <summary>Waits until at least <paramref name="count"/> metrics have been captured.</summary>
+    /// <summary>
+    /// Waits until at least <paramref name="count"/> metrics have been captured, collecting
+    /// observable instruments while waiting.
+    /// </summary>
     public Task WaitForMetricCountAsync(int count, CancellationToken cancellationToken = default) =>
-        WaitForCountAsync(static recorder => recorder._metrics.Count, count, cancellationToken);
+        WaitForCountAsync(
+            static recorder => recorder._metrics.Count,
+            count,
+            collectObservableMetrics: true,
+            cancellationToken);
 
     /// <summary>Waits until at least <paramref name="count"/> callbacks have been captured.</summary>
     public Task WaitForCallbackCountAsync(int count, CancellationToken cancellationToken = default) =>
-        WaitForCountAsync(static recorder => recorder._callbacks.Count, count, cancellationToken);
+        WaitForCountAsync(
+            static recorder => recorder._callbacks.Count,
+            count,
+            collectObservableMetrics: false,
+            cancellationToken);
 
     /// <summary>Waits until at least <paramref name="count"/> telemetry events have been captured.</summary>
     public Task WaitForEventCountAsync(int count, CancellationToken cancellationToken = default) =>
@@ -315,6 +326,7 @@ public sealed class TelemetryRecorder : IDisposable, IKevlarTelemetryListener
     private async Task WaitForCountAsync(
         Func<TelemetryRecorder, int> getCount,
         int count,
+        bool collectObservableMetrics,
         CancellationToken cancellationToken)
     {
         if (count < 0)
@@ -324,6 +336,13 @@ public sealed class TelemetryRecorder : IDisposable, IKevlarTelemetryListener
 
         while (true)
         {
+            if (collectObservableMetrics)
+            {
+#if NET8_0_OR_GREATER
+                _listener?.RecordObservableInstruments();
+#endif
+            }
+
             Task signal;
             lock (_gate)
             {
@@ -340,7 +359,16 @@ public sealed class TelemetryRecorder : IDisposable, IKevlarTelemetryListener
                 signal = _changed.Task;
             }
 
-            await WaitWithCancellationAsync(signal, cancellationToken).ConfigureAwait(false);
+            if (collectObservableMetrics)
+            {
+                var pollingDelay = Task.Delay(TimeSpan.FromMilliseconds(10), cancellationToken);
+                var completed = await Task.WhenAny(signal, pollingDelay).ConfigureAwait(false);
+                await completed.ConfigureAwait(false);
+            }
+            else
+            {
+                await WaitWithCancellationAsync(signal, cancellationToken).ConfigureAwait(false);
+            }
         }
     }
 
