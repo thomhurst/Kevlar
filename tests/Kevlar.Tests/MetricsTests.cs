@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.Metrics;
 using Kevlar.Internal;
+using Kevlar.Strategies;
 using Microsoft.Extensions.Time.Testing;
 
 namespace Kevlar.Tests;
@@ -1644,6 +1645,22 @@ public class MetricsTests
     }
 
     [Test]
+    public async Task Concurrency_Reservation_Is_Not_Reported_As_Queued()
+    {
+        var strategy = new ConcurrencyLimitStrategy(new ConcurrencyLimitOptions
+        {
+            MaxConcurrency = 1,
+            QueueLimit = 0,
+        });
+        var reserve = typeof(ConcurrencyLimitStrategy).GetMethod(
+            "TryReserveCapacity",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+
+        await Assert.That((bool)reserve.Invoke(strategy, null)!).IsTrue();
+        await Assert.That(strategy.CaptureState().Queued).IsEqualTo(0);
+    }
+
+    [Test]
     public async Task State_Registry_Compaction_Tolerates_Collected_Entries()
     {
         var registry = new KevlarMetrics.StateMetricRegistry<object>();
@@ -1667,6 +1684,32 @@ public class MetricsTests
         _ = registry.Observe(static (_, _) => 0).ToArray();
 
         await Assert.That(((Array)registrations.GetValue(registry)!).Length).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task State_Registration_Is_Published_Only_Once()
+    {
+        var registry = new KevlarMetrics.StateMetricRegistry<object>();
+        var strategy = new object();
+        var registration = registry.Register(strategy);
+        var firstProvider = AddCollectibleStateObservation(registration);
+
+        for (var attempt = 0; firstProvider.IsAlive && attempt < 10; attempt++)
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+        }
+
+        _ = registry.Observe(static (_, _) => 0).ToArray();
+        var secondProvider = new FakeTimeProvider();
+        registration.Add(new StrategyMetricAlias("metrics-republished-state", 0), secondProvider);
+        var observations = registry.Observe(static (_, _) => 0).ToArray();
+
+        await Assert.That(firstProvider.IsAlive).IsFalse();
+        await Assert.That(observations.Length).IsEqualTo(1);
+        GC.KeepAlive(strategy);
+        GC.KeepAlive(secondProvider);
     }
 
     [Test]
@@ -1911,6 +1954,16 @@ public class MetricsTests
             .WithName("metrics-collectible-provider-alias")
             .WithTimeProvider(timeProvider)
             .Execute(static _ => { });
+        return new WeakReference(timeProvider);
+    }
+
+    [System.Runtime.CompilerServices.MethodImpl(
+        System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    private static WeakReference AddCollectibleStateObservation(
+        KevlarMetrics.StateMetricRegistration<object> registration)
+    {
+        var timeProvider = new FakeTimeProvider();
+        registration.Add(new StrategyMetricAlias("metrics-republished-state", 0), timeProvider);
         return new WeakReference(timeProvider);
     }
 

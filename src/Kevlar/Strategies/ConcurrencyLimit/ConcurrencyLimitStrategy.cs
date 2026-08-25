@@ -13,6 +13,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
     private readonly Func<ConcurrencyLimitRejectedEvent, ValueTask>? _onRejectedAsync;
     private readonly string _telemetryName;
     private int _available;
+    private int _queued;
     private int _waiters;
     private long _pending;
     private readonly KevlarMetrics.StateMetricRegistration<ConcurrencyLimitStrategy> _metricsRegistration;
@@ -29,11 +30,9 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
 
     internal (int Available, int Running, int Queued) CaptureState()
     {
-        var pending = Math.Max(0, Volatile.Read(ref _pending));
-        var available = Volatile.Read(ref _available);
-        var running = (int)Math.Min(pending, _maxConcurrency - available);
-        var queued = (int)Math.Min(int.MaxValue, pending - running);
-        return (_maxConcurrency - running, running, queued);
+        var available = Math.Min(_maxConcurrency, Math.Max(0, Volatile.Read(ref _available)));
+        var queued = Math.Min(_queueLimit, Math.Max(0, Volatile.Read(ref _queued)));
+        return (available, _maxConcurrency - available, queued);
     }
 
     public ConcurrencyLimitStrategy(ConcurrencyLimitOptions options)
@@ -134,6 +133,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
         Continuation<T, TState> next,
         KevlarContext context)
     {
+        Interlocked.Increment(ref _queued);
         Interlocked.Increment(ref _waiters);
         try
         {
@@ -157,6 +157,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
         finally
         {
             Interlocked.Decrement(ref _waiters);
+            Interlocked.Decrement(ref _queued);
         }
 
         return await ExecuteAcquired(next, context).ConfigureAwait(false);
