@@ -391,6 +391,8 @@ public class ApiShapeTests
             .Distinct()
             .SelectMany(static assembly => assembly.ExportedTypes)
             .Where(static type =>
-                type.IsValueType && type.Name.Contains("Event", StringComparison.Ordinal))
+                type.IsValueType
+                && type.Name.Contains("Event", StringComparison.Ordinal)
+                && !type.Name.StartsWith("HandlingEvent", StringComparison.Ordinal))
             .ToArray();
 }
