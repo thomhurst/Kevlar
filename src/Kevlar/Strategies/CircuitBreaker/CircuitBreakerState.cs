@@ -47,4 +47,10 @@ public readonly struct CircuitBreakerStateChangedEvent
     /// with <see cref="KevlarContext.StrategyIndex"/> equal to <c>-1</c>.
     /// </summary>
     public KevlarContext Context => Internal.EventContext.Required(_context);
+
+    internal CircuitBreakerStateChangedEvent WithDetachedContext() => new(
+        From,
+        To,
+        LastException,
+        Context.CreateDetachedSnapshot());
 }

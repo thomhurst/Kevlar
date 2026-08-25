@@ -7,6 +7,100 @@ namespace Kevlar.Tests;
 public class CircuitBreakerTransitionOrderingTests
 {
     [Test]
+    public async Task Reentrant_Execution_Transition_Preserves_Triggering_Context()
+    {
+        var key = new KevlarKey<string>("reentrant-transition");
+        var monitor = new CircuitBreakerMonitor();
+        var opened = 0;
+        string? observed = null;
+        Shield shield = null!;
+        shield = Shield.CircuitBreaker(options =>
+        {
+            options.ConsecutiveFailures = 1;
+            options.BreakDuration = TimeSpan.FromMinutes(1);
+            options.Monitor = monitor;
+            options.OnStateChanged = change =>
+            {
+                if (change.To != CircuitState.Open)
+                {
+                    return;
+                }
+
+                if (Interlocked.Increment(ref opened) == 1)
+                {
+                    monitor.Reset();
+                    try
+                    {
+                        shield.ExecuteWithContext<int>(context =>
+                        {
+                            context.Properties.Set(key, "nested");
+                            throw new InvalidOperationException("nested");
+                        });
+                    }
+                    catch (InvalidOperationException)
+                    {
+                    }
+
+                    return;
+                }
+
+                observed = change.Context.Properties.GetOrDefault<string>(key);
+            };
+        });
+
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException("outer"));
+
+        await Assert.That(observed).IsEqualTo("nested");
+    }
+
+    [Test]
+    public async Task Async_Reentrant_Execution_Transition_Preserves_Triggering_Context()
+    {
+        var key = new KevlarKey<string>("async-reentrant-transition");
+        var monitor = new CircuitBreakerMonitor();
+        var opened = 0;
+        string? observed = null;
+        Shield shield = null!;
+        shield = Shield.CircuitBreaker(options =>
+        {
+            options.ConsecutiveFailures = 1;
+            options.BreakDuration = TimeSpan.FromMinutes(1);
+            options.Monitor = monitor;
+            options.OnStateChangedAsync = async change =>
+            {
+                if (change.To != CircuitState.Open)
+                {
+                    return;
+                }
+
+                if (Interlocked.Increment(ref opened) == 1)
+                {
+                    await monitor.ResetAsync();
+                    try
+                    {
+                        await shield.ExecuteWithContextAsync<int>(context =>
+                        {
+                            context.Properties.Set(key, "nested");
+                            return ValueTask.FromException<int>(new InvalidOperationException("nested"));
+                        });
+                    }
+                    catch (InvalidOperationException)
+                    {
+                    }
+
+                    return;
+                }
+
+                observed = change.Context.Properties.GetOrDefault<string>(key);
+            };
+        });
+
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException("outer"));
+
+        await Assert.That(observed).IsEqualTo("nested");
+    }
+
+    [Test]
     public async Task Concurrent_Control_Publishes_One_Ordered_NonConcurrent_Stream()
     {
         var monitor = new CircuitBreakerMonitor();

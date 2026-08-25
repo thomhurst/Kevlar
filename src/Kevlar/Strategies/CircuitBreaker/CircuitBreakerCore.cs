@@ -782,6 +782,7 @@ internal sealed class CircuitBreakerCore
             {
                 if (!parent.ObserversCompleted)
                 {
+                    publication.DetachContext();
                     publication.Parent = parent;
                     parent.PendingChildren++;
                     return default;
@@ -806,6 +807,7 @@ internal sealed class CircuitBreakerCore
         }
         else if (Volatile.Read(ref _publishingThreadId) == Environment.CurrentManagedThreadId)
         {
+            publication.DetachContext();
             publication.Parent = _activePublication;
             _activePublication!.PendingChildren++;
         }
@@ -1103,7 +1105,7 @@ internal sealed class CircuitBreakerCore
 
     private sealed class TransitionPublication(CircuitBreakerStateChangedEvent stateChange)
     {
-        public CircuitBreakerStateChangedEvent StateChange { get; } = stateChange;
+        public CircuitBreakerStateChangedEvent StateChange { get; private set; } = stateChange;
 
         public TaskCompletionSource<bool> Completion { get; } =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -1117,6 +1119,8 @@ internal sealed class CircuitBreakerCore
         public bool ObserversCompleted { get; set; }
 
         public Exception? Failure { get; set; }
+
+        public void DetachContext() => StateChange = StateChange.WithDetachedContext();
 
         public void ThrowIfFailed()
         {

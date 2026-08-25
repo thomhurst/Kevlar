@@ -140,6 +140,21 @@ public sealed class KevlarContext
     /// <summary>Creates the detached context used by manual circuit-breaker transitions.</summary>
     internal static KevlarContext CreateManual() => new();
 
+    /// <summary>Creates a detached snapshot for an event that may outlive this pooled context.</summary>
+    internal KevlarContext CreateDetachedSnapshot()
+    {
+        var snapshot = new KevlarContext
+        {
+            CancellationToken = CancellationToken,
+            IsSynchronous = IsSynchronous,
+            TimeProvider = TimeProvider,
+            ShieldName = ShieldName,
+            StrategyIndex = StrategyIndex,
+        };
+        Properties.CopyTo(snapshot.Properties);
+        return snapshot;
+    }
+
     /// <summary>
     /// Creates a detached copy of this context for a concurrent attempt (used by hedging).
     /// The copy shares no mutable state with the original.
