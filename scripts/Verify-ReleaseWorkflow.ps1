@@ -125,7 +125,7 @@ try
         [Text.UTF8Encoding]::new($false))
 
     & (Join-Path $PSScriptRoot 'Get-ReleaseNotes.ps1') `
-        -Version '1.2.3' `
+        -Version '1.2.3-pr.274.75' `
         -ChangelogPath $fixturePath `
         -OutputPath $outputPath
 
@@ -142,7 +142,7 @@ try
         [Text.UTF8Encoding]::new($false))
 
     & (Join-Path $PSScriptRoot 'Get-ReleaseNotes.ps1') `
-        -Version '2.0.0' `
+        -Version '2.0.0-alpha.1+build.42' `
         -ChangelogPath $fixturePath `
         -OutputPath $outputPath
 
