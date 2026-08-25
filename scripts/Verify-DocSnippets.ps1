@@ -34,6 +34,9 @@ $requiredPackages = @(
     'Kevlar.Extensions.RateLimiting'
     'Kevlar.Testing'
 )
+$allowedExternalPackages = @(
+    'Microsoft.Extensions.TimeProvider.Testing'
+)
 
 foreach ($packageId in $requiredPackages)
 {
@@ -173,7 +176,7 @@ foreach ($documentPath in $documentPaths)
 
 foreach ($packageId in $installPackageIds)
 {
-    if ($packageId -notin $requiredPackages)
+    if ($packageId -notin $requiredPackages -and $packageId -notin $allowedExternalPackages)
     {
         throw "Shell sample references unexpected package ID '$packageId'."
     }
