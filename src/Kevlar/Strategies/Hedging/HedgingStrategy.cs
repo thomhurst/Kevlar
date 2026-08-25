@@ -419,7 +419,7 @@ internal sealed class HedgingStrategy : Strategy
                 }
                 catch (Exception exception)
                 {
-                    KevlarMetrics.Hedge(context, _telemetryName, attemptNumber - 1);
+                    KevlarMetrics.Hedge(context, _telemetryName, attemptNumber - 1, exception);
                     return new StartedAttempt<T>(
                         new ValueTask<Outcome<T>>(Outcome<T>.FromException(exception)),
                         cancellation,

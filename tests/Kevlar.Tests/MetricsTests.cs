@@ -811,6 +811,36 @@ public class MetricsTests
     }
 
     [Test]
+    public async Task Failed_Hedge_Generation_Records_The_Exception()
+    {
+        using var meterListener = new KevlarMeterListener();
+        var generatorFailure = new InvalidOperationException("generator failure");
+        KevlarTelemetryEvent observed = default;
+        using var subscription = KevlarDiagnostics.Listen(new CallbackTelemetryListener(telemetryEvent =>
+        {
+            if (telemetryEvent.EventName == "hedge")
+            {
+                observed = telemetryEvent;
+            }
+        }));
+        var shield = Shield.For<int>().Hedge(options =>
+        {
+            options.MaxAttempts = 2;
+            options.Delay = Timeout.InfiniteTimeSpan;
+            options.ActionGenerator = _ => throw generatorFailure;
+        }).WithName("metrics-failed-hedge");
+
+        var outcome = await shield.ExecuteOutcomeAsync(_ => throw new InvalidOperationException("primary failure"));
+
+        await Assert.That(ReferenceEquals(outcome.Exception, generatorFailure)).IsTrue();
+        await Assert.That(observed.EventName).IsEqualTo("hedge");
+        await Assert.That(observed.IsSuccess).IsFalse();
+        await Assert.That(ReferenceEquals(observed.Exception, generatorFailure)).IsTrue();
+        var tags = meterListener.Measurements("kevlar.strategy.events", "metrics-failed-hedge").Single();
+        await Assert.That(tags["exception.type"]).IsEqualTo(typeof(InvalidOperationException).FullName);
+    }
+
+    [Test]
     public async Task Suppressed_Hedged_Attempts_Are_Not_Counted()
     {
         using var listener = new KevlarMeterListener();

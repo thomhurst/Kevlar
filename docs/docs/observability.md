@@ -111,6 +111,7 @@ backend. The callback receives a `KevlarTelemetryEvent` containing the active co
 metadata, duration, and exception. The context and its properties are valid only during the callback.
 Listener exceptions are ignored and cannot replace the execution outcome.
 
+<!-- doc-test-declaration: split-before=using var subscription -->
 ```csharp
 sealed class Listener : IKevlarTelemetryListener
 {

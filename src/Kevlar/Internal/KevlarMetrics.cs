@@ -162,6 +162,11 @@ internal static class KevlarMetrics
             Timeouts.Add(1, NameTags(context.ShieldName));
         }
 #endif
+        if (!KevlarTelemetry.EventEnabled)
+        {
+            return;
+        }
+
         KevlarTelemetry.Record(
             context,
             strategyName,
@@ -173,7 +178,11 @@ internal static class KevlarMetrics
             exception);
     }
 
-    public static void Hedge(KevlarContext context, string strategyName, int attemptNumber)
+    public static void Hedge(
+        KevlarContext context,
+        string strategyName,
+        int attemptNumber,
+        Exception? exception = null)
     {
 #if NET8_0_OR_GREATER
         if (Hedges.Enabled)
@@ -181,14 +190,22 @@ internal static class KevlarMetrics
             Hedges.Add(1, NameTags(context.ShieldName));
         }
 #endif
+        if (!KevlarTelemetry.EventEnabled)
+        {
+            return;
+        }
+
         KevlarTelemetry.Record(
             context,
             strategyName,
             eventName: "hedge",
-            KevlarTelemetrySeverity.Information,
+            exception is null
+                ? KevlarTelemetrySeverity.Information
+                : KevlarTelemetrySeverity.Warning,
             context.StrategyIndex,
             attemptNumber,
-            isSuccess: true);
+            isSuccess: exception is null,
+            exception);
     }
 
     public static void Fallback(
@@ -203,6 +220,11 @@ internal static class KevlarMetrics
             Fallbacks.Add(1, NameTags(context.ShieldName));
         }
 #endif
+        if (!KevlarTelemetry.EventEnabled)
+        {
+            return;
+        }
+
         KevlarTelemetry.Record(
             context,
             strategyName,
@@ -224,6 +246,11 @@ internal static class KevlarMetrics
             Rejections.Add(1, tags);
         }
 #endif
+        if (!KevlarTelemetry.EventEnabled)
+        {
+            return;
+        }
+
         KevlarTelemetry.Record(
             context,
             strategyName ?? StrategyNameFromRejection(kind),

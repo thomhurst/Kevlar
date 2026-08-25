@@ -5,10 +5,11 @@ internal static class KevlarTelemetry
     private static readonly object Sync = new();
     private static IKevlarTelemetryListener[] _listeners = [];
 
-    public static bool AttemptEnabled =>
+    public static bool EventEnabled =>
         Volatile.Read(ref _listeners).Length != 0
-        || KevlarMetrics.StrategyEventsEnabled
-        || KevlarMetrics.AttemptDurationEnabled;
+        || KevlarMetrics.StrategyEventsEnabled;
+
+    public static bool AttemptEnabled => EventEnabled || KevlarMetrics.AttemptDurationEnabled;
 
     public static IDisposable Subscribe(IKevlarTelemetryListener listener)
     {
