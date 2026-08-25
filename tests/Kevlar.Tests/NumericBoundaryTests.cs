@@ -79,20 +79,20 @@ public class NumericBoundaryTests
     [Test]
     public async Task Strategies_Reject_Unsupported_Delay_And_Capacity_Values_Early()
     {
-        await AssertOutOfRangeAsync(
+        await AssertConfigurationErrorAsync(
             () => Shield.Retry(options => options.MaxDelay = TimeSpan.FromTicks(-1)),
-            "MaxDelay",
-            "MaxDelay must not be negative.");
-        await AssertOutOfRangeAsync(
+            "RetryOptions.MaxDelay",
+            "must not be negative");
+        await AssertConfigurationErrorAsync(
             () => Shield.Retry(options => options.MaxDelay = TimeSpan.MaxValue),
-            "MaxDelay",
-            "MaxDelay exceeds the runtime timer limit.");
+            "RetryOptions.MaxDelay",
+            "must not exceed the runtime timer limit");
         await AssertOutOfRangeAsync(
             () => Shield.Timeout(TimeSpan.MaxValue),
-            "Timeout");
+            "timeout");
         await AssertOutOfRangeAsync(
             () => Shield.Hedge(2, TimeSpan.MaxValue),
-            "Delay");
+            "delay");
     }
 
     [Test]
@@ -124,9 +124,9 @@ public class NumericBoundaryTests
     [Test]
     public async Task Circuit_Breaker_Rejects_NaN_Ratio()
     {
-        await AssertOutOfRangeAsync(
+        await AssertConfigurationErrorAsync(
             () => Shield.CircuitBreaker(options => options.FailureRatio = double.NaN),
-            "FailureRatio");
+            "CircuitBreakerOptions.FailureRatio");
     }
 
     [Test]
@@ -253,6 +253,19 @@ public class NumericBoundaryTests
     {
         var exception = await Assert.That(action).Throws<ArgumentOutOfRangeException>();
         await Assert.That(exception!.ParamName).IsEqualTo(paramName);
+        if (expectedMessage is not null)
+        {
+            await Assert.That(exception.Message).Contains(expectedMessage);
+        }
+    }
+
+    private static async Task AssertConfigurationErrorAsync(
+        Action action,
+        string expectedProperty,
+        string? expectedMessage = null)
+    {
+        var exception = await Assert.That(action).Throws<KevlarConfigurationException>();
+        await Assert.That(exception!.Message).Contains(expectedProperty);
         if (expectedMessage is not null)
         {
             await Assert.That(exception.Message).Contains(expectedMessage);

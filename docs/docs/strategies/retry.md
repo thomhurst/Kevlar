@@ -73,6 +73,9 @@ Shield.Retry(o =>
 | `HandlesException` | — | Local exception predicate; replaces the ambient clause for this retry |
 | `HandlesResult` (`RetryOptions<T>`) | — | Local result predicate; replaces the ambient clause together with `HandlesException` |
 
+Invalid option values throw [`KevlarConfigurationException`](../exceptions.md#configuration-failures)
+and identify the options type, property, and offending value.
+
 Order per retry: retry metrics are recorded → backoff computes the delay → `MaxDelay` clamps it → `DelayGenerator` may override it → the awaited `DelayGeneratorAsync` may override that result → `OnRetry`/`OnRetryAsync` see the final delay → sleep. Both generators ignore `null` and negative results, and `MaxDelay` clamps each override.
 
 `RetryOptions` and `RetryOptions<T>` are standalone sibling types. Both expose the same

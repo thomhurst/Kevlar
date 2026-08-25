@@ -383,6 +383,30 @@ public class DependencyInjectionContractTests
         await Assert.That(second.ToString()).IsEqualTo("dynamic: Retry(4, no delay)");
     }
 
+    [Test]
+    public async Task Invalid_Configuration_Reports_Section_And_Property()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Resilience:Retry:MaxRetries"] = "-1",
+            })
+            .Build()
+            .GetSection("Resilience");
+        var services = new ServiceCollection();
+        services.AddShield("invalid", configuration);
+        using var provider = services.BuildServiceProvider();
+        var registry = provider.GetRequiredService<IKevlarRegistry>();
+
+        var exception = await Assert.That(() => registry.GetShield("invalid"))
+            .Throws<KevlarConfigurationException>();
+
+        await Assert.That(exception!.Message).Contains("Resilience");
+        await Assert.That(exception.Message).Contains("RetryOptions.MaxRetries");
+        await Assert.That(exception.Message).Contains("-1");
+        await Assert.That(exception.InnerException).IsTypeOf<KevlarConfigurationException>();
+    }
+
     private static async Task AssertNullNameAsync(Action action)
     {
         await AssertNullParameterAsync(action, "name");

@@ -117,6 +117,9 @@ queued is cancellation, not rejection, so hooks do not run.
 | `OnRejected` | — | Synchronous notification for an actual rejection |
 | `OnRejectedAsync` | — | Awaited notification after `OnRejected` |
 
+Invalid option values throw [`KevlarConfigurationException`](../exceptions.md#configuration-failures)
+and identify the options type, property, and offending value.
+
 ## Rejection vs queueing
 
 With `QueueLimit = 0`, an execution that finds the bucket empty fails immediately with `RateLimitExceededException`. The exception carries `RetryAfter` — an estimate of when a permit will next be available — which pairs naturally with an outer retry's `DelayGenerator`.

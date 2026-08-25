@@ -52,10 +52,7 @@ public static class KevlarServiceCollectionExtensions
         if (configuration is null) { throw new ArgumentNullException(nameof(configuration)); }
 
         return services.AddShield(name, _ =>
-        {
-            var definition = BindDefinition(configuration);
-            return definition.Build().WithName(name);
-        });
+            BuildConfiguredShield(configuration).WithName(name));
     }
 
     /// <summary>
@@ -86,7 +83,7 @@ public static class KevlarServiceCollectionExtensions
         services.AddKeyedSingleton<IShieldProvider>(
             name,
             (_, _) => new ReloadingShieldProvider(
-                () => BindDefinition(configuration).Build().WithName(name),
+                () => BuildConfiguredShield(configuration).WithName(name),
                 configuration.GetReloadToken,
                 onReloadFailure));
         services.AddSingleton(new ShieldRegistration(
@@ -133,7 +130,7 @@ public static class KevlarServiceCollectionExtensions
         if (configuration is null) { throw new ArgumentNullException(nameof(configuration)); }
 
         return services.AddShield<TResult>(name, _ =>
-            BindDefinition(configuration).Build<TResult>().WithName(name));
+            BuildConfiguredShield<TResult>(configuration).WithName(name));
     }
 
     /// <summary>
@@ -162,7 +159,7 @@ public static class KevlarServiceCollectionExtensions
         services.AddKeyedSingleton<IShieldProvider<TResult>>(
             name,
             (_, _) => new ReloadingShieldProvider<TResult>(
-                () => BindDefinition(configuration).Build<TResult>().WithName(name),
+                () => BuildConfiguredShield<TResult>(configuration).WithName(name),
                 configuration.GetReloadToken,
                 onReloadFailure));
         services.AddSingleton(new ShieldRegistration(
@@ -326,6 +323,42 @@ public static class KevlarServiceCollectionExtensions
         }
 
         return definition;
+    }
+
+    private static Shield BuildConfiguredShield(IConfiguration configuration)
+    {
+        try
+        {
+            return BindDefinition(configuration).Build();
+        }
+        catch (KevlarConfigurationException exception)
+        {
+            throw AddConfigurationPath(configuration, exception);
+        }
+    }
+
+    private static Shield<TResult> BuildConfiguredShield<TResult>(IConfiguration configuration)
+    {
+        try
+        {
+            return BindDefinition(configuration).Build<TResult>();
+        }
+        catch (KevlarConfigurationException exception)
+        {
+            throw AddConfigurationPath(configuration, exception);
+        }
+    }
+
+    private static KevlarConfigurationException AddConfigurationPath(
+        IConfiguration configuration,
+        KevlarConfigurationException exception)
+    {
+        var path = configuration is IConfigurationSection section && !string.IsNullOrEmpty(section.Path)
+            ? section.Path
+            : "<root>";
+        return new KevlarConfigurationException(
+            $"Configuration section '{path}' is invalid: {exception.Message}",
+            exception);
     }
 
     private static bool HasChildren(IConfigurationSection section) => section.GetChildren().Any();

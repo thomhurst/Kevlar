@@ -291,8 +291,8 @@ public class CircuitBreakerDynamicOptionsTests
         });
 
         await Assert.That(async () =>
-                await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
-            .Throws<ArgumentOutOfRangeException>();
+            await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
+            .Throws<KevlarConfigurationException>();
     }
 
     [Test]
@@ -311,8 +311,8 @@ public class CircuitBreakerDynamicOptionsTests
         });
 
         _ = await Assert.That(async () =>
-                await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
-            .Throws<ArgumentOutOfRangeException>();
+            await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
+            .Throws<KevlarConfigurationException>();
         await Assert.That(monitor.State).IsEqualTo(CircuitState.Closed);
     }
 

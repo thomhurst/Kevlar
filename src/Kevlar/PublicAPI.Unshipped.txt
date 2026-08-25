@@ -382,6 +382,10 @@ Kevlar.HedgeOptions.DelayGeneratorAsync.set -> void
 Kevlar.KevlarProxyException
 Kevlar.KevlarProxyException.KevlarProxyException(System.Exception! originalException) -> void
 Kevlar.KevlarProxyException.OriginalException.get -> System.Exception!
+Kevlar.KevlarConfigurationException
+Kevlar.KevlarConfigurationException.KevlarConfigurationException() -> void
+Kevlar.KevlarConfigurationException.KevlarConfigurationException(string! message) -> void
+Kevlar.KevlarConfigurationException.KevlarConfigurationException(string! message, System.Exception? innerException) -> void
 *REMOVED*Kevlar.ConcurrencyLimitOptions.MaxQueue.get -> int
 *REMOVED*Kevlar.ConcurrencyLimitOptions.MaxQueue.set -> void
 *REMOVED*Kevlar.Shield<TResult>.ConcurrencyLimit(int maxConcurrency, int maxQueue = 0) -> Kevlar.Shield<TResult>!

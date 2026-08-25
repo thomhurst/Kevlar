@@ -25,7 +25,8 @@ internal sealed class RetryStrategy : Strategy
             options.DelayGenerator,
             options.DelayGeneratorAsync,
             options.HasHandlingOverride,
-            callbackResultType: null)
+            callbackResultType: null,
+            optionsType: options.GetType())
     {
     }
 
@@ -39,16 +40,37 @@ internal sealed class RetryStrategy : Strategy
         Delegate? delayGenerator,
         Delegate? delayGeneratorAsync,
         bool hasHandlingOverride,
-        Type? callbackResultType)
+        Type? callbackResultType,
+        Type optionsType)
     {
-        Throw.IfOutOfRange(maxRetries < 0, "options", "MaxRetries must not be negative.");
-        Throw.IfNull(backoff, "options");
-        Throw.IfOutOfRange(maxDelay.HasValue && maxDelay.Value < TimeSpan.Zero, "MaxDelay", "MaxDelay must not be negative.");
-        Throw.IfOutOfRange(maxDelay > DelayHelper.MaximumDelay, "MaxDelay", "MaxDelay exceeds the runtime timer limit.");
+        ConfigurationValidation.ThrowIf(
+            maxRetries < 0,
+            optionsType,
+            nameof(RetryOptions.MaxRetries),
+            maxRetries,
+            "must not be negative");
+        ConfigurationValidation.ThrowIf(
+            backoff is null,
+            optionsType,
+            nameof(RetryOptions.Backoff),
+            backoff,
+            "must not be null");
+        ConfigurationValidation.ThrowIf(
+            maxDelay.HasValue && maxDelay.Value < TimeSpan.Zero,
+            optionsType,
+            nameof(RetryOptions.MaxDelay),
+            maxDelay,
+            "must not be negative");
+        ConfigurationValidation.ThrowIf(
+            maxDelay > DelayHelper.MaximumDelay,
+            optionsType,
+            nameof(RetryOptions.MaxDelay),
+            maxDelay,
+            "must not exceed the runtime timer limit");
 
         _judge = judge;
         _maxRetries = maxRetries;
-        _backoff = backoff;
+        _backoff = backoff!;
         _maxDelay = maxDelay;
         _onRetry = onRetry;
         _onRetryAsync = onRetryAsync;
@@ -70,7 +92,8 @@ internal sealed class RetryStrategy : Strategy
             options.DelayGenerator,
             options.DelayGeneratorAsync,
             options.HasHandlingOverride,
-            typeof(TResult));
+            typeof(TResult),
+            options.GetType());
     }
 
     internal override OutcomeJudge? ReactiveJudge => _judge;
