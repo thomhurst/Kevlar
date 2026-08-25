@@ -75,7 +75,7 @@ public class CircuitBreakerTransitionOrderingTests
     {
         var monitor = new CircuitBreakerMonitor();
         var callbackFailure = new InvalidOperationException("option callback");
-        CircuitStateChangedEvent? observed = null;
+        CircuitBreakerStateChangedEvent? observed = null;
         var shield = Shield.CircuitBreaker(options =>
         {
             options.ConsecutiveFailures = 1;

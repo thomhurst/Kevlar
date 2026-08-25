@@ -139,6 +139,32 @@ public class TelemetryRecorderTests
     }
 
     [Test]
+    public async Task Records_Circuit_Break_Duration_Statistics_And_Strategy_Index()
+    {
+        using var recorder = new TelemetryRecorder(captureMetrics: false);
+        var shield = Shield.For<int>()
+            .WhenResult(static result => result < 0)
+            .CircuitBreaker(options =>
+            {
+                options.ConsecutiveFailures = 1;
+                options.BreakDurationGenerator = item =>
+                    recorder.Record(item, TimeSpan.FromMinutes(1));
+            })
+            .WithName("typed-breaker");
+
+        _ = await shield.ExecuteAsync(static _ => new ValueTask<int>(-1));
+
+        var record = recorder.Callbacks.Single();
+        await Assert.That(record.Kind).IsEqualTo(CallbackKind.CircuitBreakDuration);
+        await Assert.That(record.ShieldName).IsEqualTo("typed-breaker");
+        await Assert.That(record.StrategyIndex).IsEqualTo(0);
+        await Assert.That(record.Result).IsEqualTo(-1);
+        await Assert.That(record.FailureRate).IsEqualTo(1);
+        await Assert.That(record.FailureCount).IsEqualTo(1);
+        await Assert.That(record.ConsecutiveFailures).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Waiters_Honor_Cancellation()
     {
         using var recorder = new TelemetryRecorder(captureMetrics: false);

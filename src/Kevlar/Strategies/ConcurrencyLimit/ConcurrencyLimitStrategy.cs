@@ -94,7 +94,6 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
         var rejectedEvent = new ConcurrencyLimitRejectedEvent(
             _maxConcurrency,
             _queueLimit,
-            context.StrategyIndex,
             context);
         try
         {

@@ -20,7 +20,7 @@ Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.Context.get -> Ke
 Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.Metadata.get -> System.Collections.Generic.IReadOnlyDictionary<string!, object?>!
 Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.PermitCount.get -> int
 Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.RetryAfter.get -> System.TimeSpan?
-Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.StrategyIndex.get -> int
+*REMOVED*Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.StrategyIndex.get -> int
 Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions
 static Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter(this Kevlar.Shield! shield, Kevlar.Extensions.RateLimiting.RateLimitLeaseAcquirer! acquireLease, System.Action<Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions!>? configure = null) -> Kevlar.Shield!
 static Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter(this Kevlar.Shield! shield, System.Threading.RateLimiting.RateLimiter! limiter, System.Action<Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions!>? configure = null) -> Kevlar.Shield!

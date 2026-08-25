@@ -103,7 +103,6 @@ internal sealed class RateLimitStrategy : Strategy
             _window,
             _burst,
             _queueLimit,
-            context.StrategyIndex,
             context);
 
         try

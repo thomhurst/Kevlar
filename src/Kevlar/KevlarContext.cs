@@ -27,6 +27,7 @@ public sealed class KevlarContext
     private CancellationToken _cancellationToken;
     private bool _isSynchronous;
     private string? _shieldName;
+    private int _strategyIndex = -1;
     private TimeProvider _timeProvider = TimeProvider.System;
 
 #if DEBUG
@@ -77,7 +78,20 @@ public sealed class KevlarContext
         internal set => _shieldName = value;
     }
 
-    internal int StrategyIndex { get; set; }
+    /// <summary>
+    /// The zero-based position of the strategy currently executing, or <c>-1</c> outside a
+    /// strategy. Nested strategies temporarily replace this value and restore it on return.
+    /// </summary>
+    public int StrategyIndex
+    {
+        get
+        {
+            ThrowIfReturnedToPool();
+            return _strategyIndex;
+        }
+
+        internal set => _strategyIndex = value;
+    }
 
     /// <summary>The time provider used for delays, timeouts and time-window calculations.</summary>
     public TimeProvider TimeProvider
@@ -122,6 +136,9 @@ public sealed class KevlarContext
         MarkReturned(context);
         Pool.Return(context);
     }
+
+    /// <summary>Creates the detached context used by manual circuit-breaker transitions.</summary>
+    internal static KevlarContext CreateManual() => new();
 
     /// <summary>
     /// Creates a detached copy of this context for a concurrent attempt (used by hedging).

@@ -77,6 +77,20 @@ public class AllocationBudgetTests
     private readonly Shield<int> _typedJudge = Shield.For<int>()
         .WhenResult(-1)
         .Retry(3, Backoff.None);
+    private readonly Shield<int> _typedRetryNotification = Shield.For<int>()
+        .WhenResult(-1)
+        .Retry(static options =>
+        {
+            options.MaxRetries = 1;
+            options.Backoff = Backoff.None;
+            options.OnRetry = static item =>
+            {
+                if (item.Outcome.Result == int.MinValue)
+                {
+                    throw new InvalidOperationException();
+                }
+            };
+        });
     private readonly Shield _composed = Shield
         .RateLimit(1_000_000_000, TimeSpan.FromSeconds(1))
         .Timeout(TimeSpan.FromMinutes(1))
@@ -241,6 +255,13 @@ public class AllocationBudgetTests
         AssertZero("concurrency state metrics", this, static test =>
             test._concurrencyLimit.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
     }
+
+    [Test]
+    public void RetryEvent_Typed_Outcome_Round_Trips_Without_Boxing() =>
+        AssertZero("typed retry notification", this, static test =>
+            test._typedRetryNotification.ExecuteAsync(static _ => new ValueTask<int>(-1))
+                .GetAwaiter()
+                .GetResult());
 
     /// <summary>Verifies bounded allocations for failure and parallel execution paths.</summary>
     [Test]

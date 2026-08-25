@@ -118,6 +118,7 @@ public readonly struct Continuation<T, TState>
     private ValueTask<Outcome<T>> InvokeStrategyAsync(StrategyNode node, KevlarContext context)
     {
         ValueTask<Outcome<T>> execution;
+        var previousStrategyIndex = context.StrategyIndex;
 
         try
         {
@@ -128,15 +129,23 @@ public readonly struct Continuation<T, TState>
         }
         catch (Exception exception)
         {
+            context.StrategyIndex = previousStrategyIndex;
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(exception));
         }
 
-        return execution.IsCompletedSuccessfully
-            ? execution
-            : AwaitStrategyAsync(execution);
+        if (execution.IsCompletedSuccessfully)
+        {
+            context.StrategyIndex = previousStrategyIndex;
+            return execution;
+        }
+
+        return AwaitStrategyAsync(execution, context, previousStrategyIndex);
     }
 
-    private static async ValueTask<Outcome<T>> AwaitStrategyAsync(ValueTask<Outcome<T>> execution)
+    private static async ValueTask<Outcome<T>> AwaitStrategyAsync(
+        ValueTask<Outcome<T>> execution,
+        KevlarContext context,
+        int previousStrategyIndex)
     {
         try
         {
@@ -145,6 +154,10 @@ public readonly struct Continuation<T, TState>
         catch (Exception exception)
         {
             return Outcome<T>.FromException(exception);
+        }
+        finally
+        {
+            context.StrategyIndex = previousStrategyIndex;
         }
     }
 }

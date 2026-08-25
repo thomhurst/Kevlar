@@ -7,6 +7,8 @@ namespace Kevlar.Chaos;
 /// </remarks>
 public readonly struct ChaosEvent
 {
+    private readonly KevlarContext? _context;
+
     internal ChaosEvent(
         ChaosInjectionKind kind,
         KevlarContext context,
@@ -16,7 +18,7 @@ public readonly struct ChaosEvent
         double sample)
     {
         Kind = kind;
-        Context = context;
+        _context = context;
         Operation = operation;
         Environment = environment;
         InjectionRate = injectionRate;
@@ -27,7 +29,9 @@ public readonly struct ChaosEvent
     public ChaosInjectionKind Kind { get; }
 
     /// <summary>Gets the current Kevlar execution context.</summary>
-    public KevlarContext Context { get; }
+    public KevlarContext Context => _context
+        ?? throw new InvalidOperationException(
+            "A default strategy event has no execution context.");
 
     /// <summary>Gets the operation from the active <see cref="ChaosScope"/>, if any.</summary>
     public string? Operation { get; }
