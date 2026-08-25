@@ -291,7 +291,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     || GetCallbackInvocations(
                             body,
                             context.SemanticModel,
-                            context.CancellationToken)
+                            context.CancellationToken,
+                            followTaskReturningLocalFunctions: false)
                         .Any(invocation => IsUnobservedAsyncInvocation(invocation, context));
             }
 
@@ -299,7 +300,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 && GetCallbackInvocations(
                         block,
                         context.SemanticModel,
-                        context.CancellationToken)
+                        context.CancellationToken,
+                        followTaskReturningLocalFunctions: false)
                     .Any(invocation => IsUnobservedAsyncInvocation(invocation, context));
         }
 
@@ -366,7 +368,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             foreach (var invocation in GetCallbackInvocations(
                          anonymous.Body,
                          context.SemanticModel,
-                         context.CancellationToken))
+                         context.CancellationToken,
+                         followTaskReturningLocalFunctions: true))
             {
                 if (!IsUnobservedAsyncInvocation(invocation, context))
                 {
@@ -449,10 +452,22 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     .Select(static awaitExpression => awaitExpression.SpanStart)
                     .DefaultIfEmpty(int.MaxValue)
                     .Min();
+                var retainedNames = new HashSet<string>(eventParameterNames, StringComparer.Ordinal);
+                foreach (var declarator in nodes.OfType<VariableDeclaratorSyntax>()
+                             .Where(declarator => declarator.SpanStart < firstAwait)
+                             .OrderBy(static declarator => declarator.SpanStart))
+                {
+                    if (declarator.Initializer?.Value is { } initializer
+                        && IsRetainedAliasExpression(initializer, retainedNames))
+                    {
+                        retainedNames.Add(declarator.Identifier.ValueText);
+                    }
+                }
+
                 foreach (var identifier in nodes
                              .OfType<IdentifierNameSyntax>()
                              .Where(identifier => identifier.SpanStart > firstAwait
-                                 && eventParameterNames.Contains(identifier.Identifier.ValueText)))
+                                 && retainedNames.Contains(identifier.Identifier.ValueText)))
                 {
                     capturedContext = identifier;
                     return true;
@@ -463,6 +478,20 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         capturedContext = null!;
         return false;
     }
+
+    private static bool IsRetainedAliasExpression(
+        ExpressionSyntax expression,
+        HashSet<string> retainedNames) => expression switch
+    {
+        IdentifierNameSyntax identifier => retainedNames.Contains(identifier.Identifier.ValueText),
+        ParenthesizedExpressionSyntax parenthesized =>
+            IsRetainedAliasExpression(parenthesized.Expression, retainedNames),
+        CastExpressionSyntax cast => IsRetainedAliasExpression(cast.Expression, retainedNames),
+        PostfixUnaryExpressionSyntax postfix
+            when postfix.IsKind(SyntaxKind.SuppressNullableWarningExpression) =>
+            IsRetainedAliasExpression(postfix.Operand, retainedNames),
+        _ => false,
+    };
 
     private static SyntaxNode? GetFunctionBody(SyntaxNode declaration) => declaration switch
     {
@@ -650,7 +679,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     private static IEnumerable<InvocationExpressionSyntax> GetCallbackInvocations(
         SyntaxNode body,
         SemanticModel semanticModel,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        bool followTaskReturningLocalFunctions)
     {
         var pendingBodies = new Stack<SyntaxNode>();
         var visitedLocalFunctions = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
@@ -669,8 +699,10 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                         cancellationToken).Symbol is not IMethodSymbol
                     {
                         MethodKind: MethodKind.LocalFunction,
-                        ReturnsVoid: true,
                     } localFunction
+                    || !localFunction.ReturnsVoid
+                        && (!followTaskReturningLocalFunctions
+                            || !StartsAsynchronousWork(localFunction))
                     || !visitedLocalFunctions.Add(localFunction))
                 {
                     continue;
@@ -750,6 +782,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     and not StatementSyntax)
                 .OfType<ArgumentSyntax>()
                 .FirstOrDefault() is not { } argument
+            || !IsObservationPreservingArgumentPath(current, argument)
             || argument.Parent?.Parent is not InvocationExpressionSyntax consumerInvocation
             || semanticModel.GetSymbolInfo(
                 consumerInvocation,
@@ -775,6 +808,28 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 consumerInvocation,
                 semanticModel,
                 cancellationToken);
+    }
+
+    private static bool IsObservationPreservingArgumentPath(
+        SyntaxNode value,
+        ArgumentSyntax argument)
+    {
+        for (var current = value.Parent; current != argument; current = current?.Parent)
+        {
+            if (current is null
+                || current is not (InitializerExpressionSyntax
+                    or ArrayCreationExpressionSyntax
+                    or ImplicitArrayCreationExpressionSyntax
+                    or CollectionExpressionSyntax
+                    or ParenthesizedExpressionSyntax
+                    or CastExpressionSyntax
+                    or PostfixUnaryExpressionSyntax))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static bool IsFrameworkAwaiterGetResult(IMethodSymbol method)

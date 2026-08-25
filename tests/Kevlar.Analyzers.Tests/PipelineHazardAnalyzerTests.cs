@@ -150,6 +150,31 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Follows_Async_Void_Event_Aliases_After_Await()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = RetryAsyncVoid);
+
+                private static async void RetryAsyncVoid(RetryEvent item)
+                {
+                    var retained = item;
+                    await Task.Yield();
+                    _ = retained.Context.ShieldName;
+                }
+            }
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
     public async Task KEV013_Follows_Stable_Callback_Local_Initializers()
     {
         var trailingStatements = new[] { "", "callback = _ => { };" };
@@ -347,6 +372,26 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Follows_Task_Returning_Local_Functions()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                Task Start() => AuditAsync(item);
+                _ = Start();
+            });
+
+            static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
     public async Task KEV013_Ignores_Synchronously_Observed_Task_Calls()
     {
         var statements = new[]
@@ -394,6 +439,31 @@ public class PipelineHazardAnalyzerTests
                 public void Configure() =>
                     _ = Shield.Retry(options => options.OnRetry = item =>
                         AuditAsync(item).GetResult());
+
+                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            }
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV013_Rejects_Filtered_WhenAll_Collections()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            using System.Linq;
+
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                        Task.WhenAll(new[] { AuditAsync(item) }.Where(_ => false))
+                            .GetAwaiter()
+                            .GetResult());
 
                 private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
             }
