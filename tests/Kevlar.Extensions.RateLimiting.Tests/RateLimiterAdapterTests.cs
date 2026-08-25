@@ -1,4 +1,5 @@
 using System.Diagnostics.Metrics;
+using System.Runtime.CompilerServices;
 using System.Threading.RateLimiting;
 using Kevlar.Extensions.RateLimiting;
 using Kevlar.Extensions.DependencyInjection;
@@ -152,6 +153,38 @@ public class RateLimiterAdapterTests
         await Assert.That(() => owned.AttemptAcquire()).Throws<ObjectDisposedException>();
         using var lease = userOwned.AttemptAcquire();
         await Assert.That(lease.IsAcquired).IsTrue();
+    }
+
+    [Test]
+    public async Task Shared_Owned_Limiter_Is_Disposed_After_Last_Adapter_Retires()
+    {
+        var limiter = new TrackingLimiter();
+        using var services = new ServiceCollection().AddKevlar().BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        _ = registry.GetOrAdd(
+            "first-owner",
+            _ => Shield.Empty.UseRateLimiter(limiter, ownsLimiter: true));
+        _ = registry.GetOrAdd(
+            "second-owner",
+            _ => Shield.Empty.UseRateLimiter(limiter, ownsLimiter: true));
+
+        var first = ResolveAndRemove(registry, "first-owner");
+        Collect(first);
+        _ = registry.GetOrAdd("first-scavenge", _ => Shield.Empty);
+
+        await Assert.That(first.IsAlive).IsFalse();
+        await Assert.That(limiter.DisposeCount).IsEqualTo(0);
+        using (var lease = limiter.AttemptAcquire())
+        {
+            await Assert.That(lease.IsAcquired).IsTrue();
+        }
+
+        var second = ResolveAndRemove(registry, "second-owner");
+        Collect(second);
+        _ = registry.GetOrAdd("second-scavenge", _ => Shield.Empty);
+
+        await Assert.That(second.IsAlive).IsFalse();
+        await Assert.That(limiter.DisposeCount).IsEqualTo(1);
     }
 
     [Test]
@@ -827,6 +860,25 @@ public class RateLimiterAdapterTests
             .Throws<RateLimiterAdapterRejectedException>();
     }
 
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static WeakReference ResolveAndRemove(IKevlarRegistry registry, string name)
+    {
+        var shield = registry.GetShield(name);
+        var reference = new WeakReference(shield);
+        registry.Remove(name);
+        return reference;
+    }
+
+    private static void Collect(WeakReference reference)
+    {
+        for (var attempt = 0; attempt < 5 && reference.IsAlive; attempt++)
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+        }
+    }
+
     private sealed class StubLimiter(
         Func<CancellationToken, ValueTask<RateLimitLease>> acquire) : RateLimiter
     {
@@ -840,6 +892,31 @@ public class RateLimiterAdapterTests
             CancellationToken cancellationToken) => acquire(cancellationToken);
 
         public override RateLimiterStatistics? GetStatistics() => null;
+    }
+
+    private sealed class TrackingLimiter : RateLimiter
+    {
+        private int _disposeCount;
+
+        public override TimeSpan? IdleDuration => null;
+
+        public int DisposeCount => Volatile.Read(ref _disposeCount);
+
+        protected override RateLimitLease AttemptAcquireCore(int permitCount) =>
+            new TrackingLease(isAcquired: true);
+
+        protected override ValueTask<RateLimitLease> AcquireAsyncCore(
+            int permitCount,
+            CancellationToken cancellationToken) =>
+            new(new TrackingLease(isAcquired: true));
+
+        public override RateLimiterStatistics? GetStatistics() => null;
+
+        protected override void Dispose(bool disposing)
+        {
+            Interlocked.Increment(ref _disposeCount);
+            base.Dispose(disposing);
+        }
     }
 
     private sealed class StubPartitionedLimiter(

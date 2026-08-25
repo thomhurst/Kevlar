@@ -23,6 +23,7 @@ public sealed class Shield : IShieldLifecycle
     internal readonly OutcomeJudge? Ambient;
     internal readonly TimeProvider? Time;
     private readonly bool _hasVoidFallback;
+    private readonly object[] _strategyOwners;
 
     Strategy[] IShieldLifecycle.Strategies => Strategies;
 
@@ -34,6 +35,7 @@ public sealed class Shield : IShieldLifecycle
         Ambient = ambient;
         Name = name;
         Time = timeProvider;
+        _strategyOwners = GetStrategyOwners(strategies);
 
         foreach (var strategy in strategies)
         {
@@ -801,6 +803,22 @@ public sealed class Shield : IShieldLifecycle
         }
 
         return next;
+    }
+
+    internal static object[] GetStrategyOwners(Strategy[] strategies)
+    {
+        if (strategies.Length == 0)
+        {
+            return [];
+        }
+
+        var owners = new object[strategies.Length];
+        for (var index = 0; index < strategies.Length; index++)
+        {
+            owners[index] = strategies[index].GetShieldOwner();
+        }
+
+        return owners;
     }
 
     internal static Strategy[] Concat(Strategy[] first, Strategy[] second)

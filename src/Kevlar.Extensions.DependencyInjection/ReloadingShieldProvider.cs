@@ -104,6 +104,8 @@ internal abstract class ReloadingProvider<TShield> : IReloadingProvider
     private Action<IReadOnlyList<ShieldRetirement>>? _retirementHandler;
     private Action<Action>? _publicationGuard;
     private TShield _current = null!;
+    private bool _initialized;
+    private bool _reloadPending;
     private bool _disposed;
 
     protected ReloadingProvider(
@@ -147,10 +149,19 @@ internal abstract class ReloadingProvider<TShield> : IReloadingProvider
         try
         {
             _subscription = subscribe(ScheduleReload) ?? NullDisposable.Instance;
+            var reloadPending = false;
             lock (_reloadLock)
             {
                 _current = factory();
                 ShieldRetirement.Track(_current);
+                _initialized = true;
+                reloadPending = _reloadPending;
+                _reloadPending = false;
+            }
+
+            if (reloadPending)
+            {
+                Reload();
             }
         }
         catch
@@ -244,6 +255,12 @@ internal abstract class ReloadingProvider<TShield> : IReloadingProvider
         {
             if (_disposed)
             {
+                return;
+            }
+
+            if (!_initialized)
+            {
+                _reloadPending = true;
                 return;
             }
 

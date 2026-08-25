@@ -275,6 +275,24 @@ public class DynamicRegistryTests
     }
 
     [Test]
+    public async Task Immediate_Change_Callback_Waits_For_Initial_Snapshot()
+    {
+        Exception? reported = null;
+        using var services = new ServiceCollection()
+            .AddSingleton<IOptionsMonitor<ReloadOptions>>(new ImmediateCallbackOptionsMonitor())
+            .AddReloadingShield<ReloadOptions>(
+                "immediate",
+                static (_, _) => Shield.Retry(1, Backoff.None),
+                exception => reported = exception)
+            .BuildServiceProvider();
+
+        var provider = services.GetRequiredKeyedService<IShieldProvider>("immediate");
+
+        await Assert.That(provider.Current).IsNotNull();
+        await Assert.That(reported).IsNull();
+    }
+
+    [Test]
     public async Task Superseded_Reload_Snapshot_Is_Reclaimed_After_Holders_Release_It()
     {
         var monitor = new MutableOptionsMonitor<ReloadOptions>();
@@ -487,6 +505,35 @@ public class DynamicRegistryTests
 
         await Assert.That(retired.IsAlive).IsFalse();
         await Assert.That(strategy.DisposeCount).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Derived_Shields_Keep_Retired_Strategies_Alive()
+    {
+        Func<Shield, Shield>[] derivations =
+        [
+            static shield => shield.WithName("derived"),
+            static shield => shield.Wrap(Shield.Empty),
+            static shield => Shield.Compose(shield, Shield.Empty),
+        ];
+
+        for (var index = 0; index < derivations.Length; index++)
+        {
+            using var services = new ServiceCollection().AddKevlar().BuildServiceProvider();
+            var registry = services.GetRequiredService<IKevlarRegistry>();
+            var strategy = new DisposableStrategy();
+            var (retired, released) = ExerciseDerivedShield(
+                registry,
+                strategy,
+                derivations[index],
+                index);
+            Collect(released);
+            _ = registry.GetOrAdd($"released-scavenge-{index}", _ => Shield.Empty);
+
+            await Assert.That(retired.IsAlive).IsFalse();
+            await Assert.That(released.IsAlive).IsFalse();
+            await Assert.That(strategy.DisposeCount).IsEqualTo(1);
+        }
     }
 
     [Test]
@@ -703,6 +750,34 @@ public class DynamicRegistryTests
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
+    private static (WeakReference Retired, WeakReference Released) ExerciseDerivedShield(
+        IKevlarRegistry registry,
+        DisposableStrategy strategy,
+        Func<Shield, Shield> derive,
+        int index)
+    {
+        var shield = registry.GetOrAdd("derived", _ => Shield.Use(strategy));
+        var retired = new WeakReference(shield);
+        var derived = derive(shield);
+        registry.Remove("derived");
+
+        shield = null!;
+        Collect(retired);
+        _ = registry.GetOrAdd($"derived-scavenge-{index}", _ => Shield.Empty);
+        if (retired.IsAlive || strategy.DisposeCount != 0)
+        {
+            throw new InvalidOperationException("The derived shield did not preserve the retired strategy lifetime.");
+        }
+
+        if (derived.Execute(static _ => 42) != 42)
+        {
+            throw new InvalidOperationException("The derived shield returned an unexpected result.");
+        }
+
+        return (retired, new WeakReference(derived));
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
     private static WeakReference ClaimDisposableStrategy(StrategyDisposalTracker disposalTracker)
     {
         var strategy = new DisposableStrategy();
@@ -832,6 +907,19 @@ public class DynamicRegistryTests
         private sealed class ThrowingDisposable : IDisposable
         {
             public void Dispose() => throw new InvalidOperationException("subscription cleanup failed");
+        }
+    }
+
+    private sealed class ImmediateCallbackOptionsMonitor : IOptionsMonitor<ReloadOptions>
+    {
+        public ReloadOptions CurrentValue { get; } = new();
+
+        public ReloadOptions Get(string? name) => CurrentValue;
+
+        public IDisposable OnChange(Action<ReloadOptions, string?> listener)
+        {
+            listener(CurrentValue, "immediate");
+            return NullDisposable.Instance;
         }
     }
 }

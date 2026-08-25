@@ -23,7 +23,8 @@ internal sealed class ShieldRetirement
 
         foreach (var strategy in Strategies)
         {
-            if (strategy.ExecutionTracker!.ActiveExecutions != 0)
+            if (strategy.HasShieldOwner()
+                || strategy.ExecutionTracker!.ActiveExecutions != 0)
             {
                 return false;
             }

@@ -22,6 +22,7 @@ namespace Kevlar;
 public abstract class Strategy
 {
     private StrategyExecutionTracker? _executionTracker;
+    private WeakReference<object>? _shieldOwner;
 
     /// <summary>
     /// Gets whether this strategy guarantees invoking its continuation at most once per execution.
@@ -86,6 +87,30 @@ public abstract class Strategy
     }
 
     internal StrategyExecutionTracker? ExecutionTracker => Volatile.Read(ref _executionTracker);
+
+    internal object GetShieldOwner()
+    {
+        while (true)
+        {
+            var reference = Volatile.Read(ref _shieldOwner);
+            if (reference is not null && reference.TryGetTarget(out var owner))
+            {
+                return owner;
+            }
+
+            owner = new object();
+            var replacement = new WeakReference<object>(owner);
+            if (ReferenceEquals(
+                    Interlocked.CompareExchange(ref _shieldOwner, replacement, reference),
+                    reference))
+            {
+                return owner;
+            }
+        }
+    }
+
+    internal bool HasShieldOwner() =>
+        Volatile.Read(ref _shieldOwner)?.TryGetTarget(out _) == true;
 }
 
 internal sealed class StrategyExecutionTracker
