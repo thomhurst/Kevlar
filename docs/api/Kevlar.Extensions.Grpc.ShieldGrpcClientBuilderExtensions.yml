@@ -590,7 +590,7 @@ references:
   - uid: Kevlar.Shield
     name: Shield
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/Shield.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Shield.cs
   - name: '>'
   spec.vb:
   - uid: System.Func`2
@@ -609,7 +609,7 @@ references:
   - uid: Kevlar.Shield
     name: Shield
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/Shield.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Shield.cs
   - name: )
 - uid: System.Func`2
   commentId: T:System.Func`2
@@ -648,7 +648,7 @@ references:
 - uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Kevlar.Shield)
   commentId: M:Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Kevlar.Shield)
   isExternal: true
-  href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar.Extensions.DependencyInjection/KevlarServiceCollectionExtensions.cs
+  href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar.Extensions.DependencyInjection/KevlarServiceCollectionExtensions.cs
   name: AddShield(IServiceCollection, string, Shield)
   nameWithType: KevlarServiceCollectionExtensions.AddShield(IServiceCollection, string, Shield)
   fullName: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IServiceCollection, string, Kevlar.Shield)
@@ -659,7 +659,7 @@ references:
   - uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Kevlar.Shield)
     name: AddShield
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar.Extensions.DependencyInjection/KevlarServiceCollectionExtensions.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar.Extensions.DependencyInjection/KevlarServiceCollectionExtensions.cs
   - name: (
   - uid: Microsoft.Extensions.DependencyInjection.IServiceCollection
     name: IServiceCollection
@@ -676,13 +676,13 @@ references:
   - uid: Kevlar.Shield
     name: Shield
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/Shield.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Shield.cs
   - name: )
   spec.vb:
   - uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Kevlar.Shield)
     name: AddShield
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar.Extensions.DependencyInjection/KevlarServiceCollectionExtensions.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar.Extensions.DependencyInjection/KevlarServiceCollectionExtensions.cs
   - name: (
   - uid: Microsoft.Extensions.DependencyInjection.IServiceCollection
     name: IServiceCollection
@@ -699,7 +699,7 @@ references:
   - uid: Kevlar.Shield
     name: Shield
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/Shield.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Shield.cs
   - name: )
 - uid: System.String
   commentId: T:System.String

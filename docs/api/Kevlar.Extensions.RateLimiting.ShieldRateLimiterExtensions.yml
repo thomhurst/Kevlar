@@ -767,7 +767,7 @@ references:
   - uid: Kevlar.KevlarContext
     name: KevlarContext
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/KevlarContext.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/KevlarContext.cs
   - name: '>'
   spec.vb:
   - uid: System.Threading.RateLimiting.PartitionedRateLimiter`1
@@ -780,7 +780,7 @@ references:
   - uid: Kevlar.KevlarContext
     name: KevlarContext
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/KevlarContext.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/KevlarContext.cs
   - name: )
 - uid: System.Threading.RateLimiting.PartitionedRateLimiter`1
   commentId: T:System.Threading.RateLimiting.PartitionedRateLimiter`1

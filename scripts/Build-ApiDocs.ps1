@@ -36,6 +36,20 @@ if (-not $SkipMetadata)
     {
         throw 'DocFX metadata generation failed.'
     }
+
+    $sourceLinkPattern = '(https://github\.com/thomhurst/Kevlar/blob/)[0-9a-f]{40}/'
+    foreach ($metadataFile in Get-ChildItem -LiteralPath $metadataPath -Filter '*.yml' -File)
+    {
+        $content = [IO.File]::ReadAllText($metadataFile.FullName)
+        $normalized = [regex]::Replace($content, $sourceLinkPattern, '$1main/')
+        if ($normalized -ne $content)
+        {
+            [IO.File]::WriteAllText(
+                $metadataFile.FullName,
+                $normalized,
+                [Text.UTF8Encoding]::new($false))
+        }
+    }
 }
 
 Remove-Item -LiteralPath $outputPath -Recurse -Force -ErrorAction SilentlyContinue

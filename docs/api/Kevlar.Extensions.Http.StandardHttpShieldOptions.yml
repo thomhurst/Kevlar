@@ -498,7 +498,7 @@ references:
   commentId: T:Kevlar.RetryOptions{System.Net.Http.HttpResponseMessage}
   parent: Kevlar
   definition: Kevlar.RetryOptions`1
-  href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/Strategies/Retry/RetryOptions.cs
+  href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Strategies/Retry/RetryOptions.cs
   name: RetryOptions<HttpResponseMessage>
   nameWithType: RetryOptions<HttpResponseMessage>
   fullName: Kevlar.RetryOptions<System.Net.Http.HttpResponseMessage>
@@ -509,7 +509,7 @@ references:
   - uid: Kevlar.RetryOptions`1
     name: RetryOptions
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/Strategies/Retry/RetryOptions.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Strategies/Retry/RetryOptions.cs
   - name: <
   - uid: System.Net.Http.HttpResponseMessage
     name: HttpResponseMessage
@@ -520,7 +520,7 @@ references:
   - uid: Kevlar.RetryOptions`1
     name: RetryOptions
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/Strategies/Retry/RetryOptions.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Strategies/Retry/RetryOptions.cs
   - name: (
   - name: Of
   - name: " "

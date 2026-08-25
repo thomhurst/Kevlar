@@ -5,12 +5,13 @@ items:
   id: CallbackRecord
   parent: Kevlar.Testing
   children:
-  - Kevlar.Testing.CallbackRecord.Attempt
+  - Kevlar.Testing.CallbackRecord.AttemptNumber
   - Kevlar.Testing.CallbackRecord.Delay
   - Kevlar.Testing.CallbackRecord.Exception
   - Kevlar.Testing.CallbackRecord.From
   - Kevlar.Testing.CallbackRecord.Kind
   - Kevlar.Testing.CallbackRecord.Result
+  - Kevlar.Testing.CallbackRecord.RetryNumber
   - Kevlar.Testing.CallbackRecord.Sequence
   - Kevlar.Testing.CallbackRecord.ShieldName
   - Kevlar.Testing.CallbackRecord.Timeout
@@ -108,29 +109,52 @@ items:
       type: System.String
     content.vb: Public ReadOnly Property ShieldName As String
   overload: Kevlar.Testing.CallbackRecord.ShieldName*
-- uid: Kevlar.Testing.CallbackRecord.Attempt
-  commentId: P:Kevlar.Testing.CallbackRecord.Attempt
-  id: Attempt
+- uid: Kevlar.Testing.CallbackRecord.RetryNumber
+  commentId: P:Kevlar.Testing.CallbackRecord.RetryNumber
+  id: RetryNumber
   parent: Kevlar.Testing.CallbackRecord
   langs:
   - csharp
   - vb
-  name: Attempt
-  nameWithType: CallbackRecord.Attempt
-  fullName: Kevlar.Testing.CallbackRecord.Attempt
+  name: RetryNumber
+  nameWithType: CallbackRecord.RetryNumber
+  fullName: Kevlar.Testing.CallbackRecord.RetryNumber
   type: Property
   assemblies:
   - Kevlar.Testing
   namespace: Kevlar.Testing
-  summary: The retry or hedge attempt number, when applicable.
+  summary: The 1-based retry number, when this is a retry callback.
   example: []
   syntax:
-    content: public int? Attempt { get; }
+    content: public int? RetryNumber { get; }
     parameters: []
     return:
       type: System.Nullable{System.Int32}
-    content.vb: Public ReadOnly Property Attempt As Integer?
-  overload: Kevlar.Testing.CallbackRecord.Attempt*
+    content.vb: Public ReadOnly Property RetryNumber As Integer?
+  overload: Kevlar.Testing.CallbackRecord.RetryNumber*
+- uid: Kevlar.Testing.CallbackRecord.AttemptNumber
+  commentId: P:Kevlar.Testing.CallbackRecord.AttemptNumber
+  id: AttemptNumber
+  parent: Kevlar.Testing.CallbackRecord
+  langs:
+  - csharp
+  - vb
+  name: AttemptNumber
+  nameWithType: CallbackRecord.AttemptNumber
+  fullName: Kevlar.Testing.CallbackRecord.AttemptNumber
+  type: Property
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: The 1-based execution number, when this is a hedge callback.
+  example: []
+  syntax:
+    content: public int? AttemptNumber { get; }
+    parameters: []
+    return:
+      type: System.Nullable{System.Int32}
+    content.vb: Public ReadOnly Property AttemptNumber As Integer?
+  overload: Kevlar.Testing.CallbackRecord.AttemptNumber*
 - uid: Kevlar.Testing.CallbackRecord.Delay
   commentId: P:Kevlar.Testing.CallbackRecord.Delay
   id: Delay
@@ -561,13 +585,13 @@ references:
   nameWithType.vb: String
   fullName.vb: String
   name.vb: String
-- uid: Kevlar.Testing.CallbackRecord.Attempt*
-  commentId: Overload:Kevlar.Testing.CallbackRecord.Attempt
+- uid: Kevlar.Testing.CallbackRecord.RetryNumber*
+  commentId: Overload:Kevlar.Testing.CallbackRecord.RetryNumber
   isExternal: true
-  href: Kevlar.Testing.CallbackRecord.html#Kevlar_Testing_CallbackRecord_Attempt
-  name: Attempt
-  nameWithType: CallbackRecord.Attempt
-  fullName: Kevlar.Testing.CallbackRecord.Attempt
+  href: Kevlar.Testing.CallbackRecord.html#Kevlar_Testing_CallbackRecord_RetryNumber
+  name: RetryNumber
+  nameWithType: CallbackRecord.RetryNumber
+  fullName: Kevlar.Testing.CallbackRecord.RetryNumber
 - uid: System.Nullable{System.Int32}
   commentId: T:System.Nullable{System.Int32}
   parent: System
@@ -619,6 +643,13 @@ references:
   - name: " "
   - name: T
   - name: )
+- uid: Kevlar.Testing.CallbackRecord.AttemptNumber*
+  commentId: Overload:Kevlar.Testing.CallbackRecord.AttemptNumber
+  isExternal: true
+  href: Kevlar.Testing.CallbackRecord.html#Kevlar_Testing_CallbackRecord_AttemptNumber
+  name: AttemptNumber
+  nameWithType: CallbackRecord.AttemptNumber
+  fullName: Kevlar.Testing.CallbackRecord.AttemptNumber
 - uid: Kevlar.Testing.CallbackRecord.Delay*
   commentId: Overload:Kevlar.Testing.CallbackRecord.Delay
   isExternal: true
@@ -686,7 +717,7 @@ references:
   commentId: T:System.Nullable{Kevlar.CircuitState}
   parent: System
   definition: System.Nullable`1
-  href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/Strategies/CircuitBreaker/CircuitState.cs
+  href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Strategies/CircuitBreaker/CircuitState.cs
   name: CircuitState?
   nameWithType: CircuitState?
   fullName: Kevlar.CircuitState?
@@ -694,13 +725,13 @@ references:
   - uid: Kevlar.CircuitState
     name: CircuitState
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/Strategies/CircuitBreaker/CircuitState.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Strategies/CircuitBreaker/CircuitState.cs
   - name: '?'
   spec.vb:
   - uid: Kevlar.CircuitState
     name: CircuitState
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/Strategies/CircuitBreaker/CircuitState.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Strategies/CircuitBreaker/CircuitState.cs
   - name: '?'
 - uid: Kevlar.Testing.CallbackRecord.To*
   commentId: Overload:Kevlar.Testing.CallbackRecord.To

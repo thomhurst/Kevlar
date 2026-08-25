@@ -6,6 +6,7 @@ items:
   parent: Kevlar.Extensions.Http
   children:
   - Kevlar.Extensions.Http.HttpShield.IsTransient(System.Net.Http.HttpResponseMessage)
+  - Kevlar.Extensions.Http.HttpShield.IsTransientException(System.Exception,System.Threading.CancellationToken)
   - Kevlar.Extensions.Http.HttpShield.RetryAfter(Kevlar.RetryEvent{System.Net.Http.HttpResponseMessage})
   - Kevlar.Extensions.Http.HttpShield.RetryAfter(System.TimeSpan)
   - Kevlar.Extensions.Http.HttpShield.Standard
@@ -64,6 +65,41 @@ items:
       type: System.Boolean
     content.vb: Public Shared Function IsTransient(response As HttpResponseMessage) As Boolean
   overload: Kevlar.Extensions.Http.HttpShield.IsTransient*
+- uid: Kevlar.Extensions.Http.HttpShield.IsTransientException(System.Exception,System.Threading.CancellationToken)
+  commentId: M:Kevlar.Extensions.Http.HttpShield.IsTransientException(System.Exception,System.Threading.CancellationToken)
+  id: IsTransientException(System.Exception,System.Threading.CancellationToken)
+  parent: Kevlar.Extensions.Http.HttpShield
+  langs:
+  - csharp
+  - vb
+  name: IsTransientException(Exception?, CancellationToken)
+  nameWithType: HttpShield.IsTransientException(Exception?, CancellationToken)
+  fullName: Kevlar.Extensions.Http.HttpShield.IsTransientException(System.Exception?, System.Threading.CancellationToken)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: >-
+    Returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> for transient HTTP exceptions, including an
+
+    <xref href="System.Net.Http.HttpClient.Timeout" data-throw-if-not-resolved="false"></xref> cancellation when <code class="paramref">callerCancellationToken</code>
+
+    was not cancelled.
+  example: []
+  syntax:
+    content: public static bool IsTransientException(Exception? exception, CancellationToken callerCancellationToken)
+    parameters:
+    - id: exception
+      type: System.Exception
+    - id: callerCancellationToken
+      type: System.Threading.CancellationToken
+    return:
+      type: System.Boolean
+    content.vb: Public Shared Function IsTransientException(exception As Exception, callerCancellationToken As CancellationToken) As Boolean
+  overload: Kevlar.Extensions.Http.HttpShield.IsTransientException*
+  nameWithType.vb: HttpShield.IsTransientException(Exception, CancellationToken)
+  fullName.vb: Kevlar.Extensions.Http.HttpShield.IsTransientException(System.Exception, System.Threading.CancellationToken)
+  name.vb: IsTransientException(Exception, CancellationToken)
 - uid: Kevlar.Extensions.Http.HttpShield.WhenTransient
   commentId: M:Kevlar.Extensions.Http.HttpShield.WhenTransient
   id: WhenTransient
@@ -81,7 +117,9 @@ items:
   summary: >-
     Starts a shield that handles the usual transient HTTP failures:
 
-    <xref href="System.Net.Http.HttpRequestException" data-throw-if-not-resolved="false"></xref>, Kevlar attempt timeouts, 5xx, 408 and 429.
+    <xref href="System.Net.Http.HttpRequestException" data-throw-if-not-resolved="false"></xref>, <xref href="System.Net.Http.HttpClient.Timeout" data-throw-if-not-resolved="false"></xref> cancellations,
+
+    Kevlar attempt timeouts, 5xx, 408 and 429.
 
     Chain your strategies onto the returned builder.
   example: []
@@ -548,6 +586,63 @@ references:
     name: Http
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.net.http
+- uid: System.Net.Http.HttpClient.Timeout
+  commentId: P:System.Net.Http.HttpClient.Timeout
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.net.http.httpclient.timeout
+  name: Timeout
+  nameWithType: HttpClient.Timeout
+  fullName: System.Net.Http.HttpClient.Timeout
+- uid: Kevlar.Extensions.Http.HttpShield.IsTransientException*
+  commentId: Overload:Kevlar.Extensions.Http.HttpShield.IsTransientException
+  isExternal: true
+  href: Kevlar.Extensions.Http.HttpShield.html#Kevlar_Extensions_Http_HttpShield_IsTransientException_System_Exception_System_Threading_CancellationToken_
+  name: IsTransientException
+  nameWithType: HttpShield.IsTransientException
+  fullName: Kevlar.Extensions.Http.HttpShield.IsTransientException
+- uid: System.Exception
+  commentId: T:System.Exception
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.exception
+  name: Exception
+  nameWithType: Exception
+  fullName: System.Exception
+- uid: System.Threading.CancellationToken
+  commentId: T:System.Threading.CancellationToken
+  parent: System.Threading
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
+  name: CancellationToken
+  nameWithType: CancellationToken
+  fullName: System.Threading.CancellationToken
+- uid: System.Threading
+  commentId: N:System.Threading
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System.Threading
+  nameWithType: System.Threading
+  fullName: System.Threading
+  spec.csharp:
+  - uid: System
+    name: System
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system
+  - name: .
+  - uid: System.Threading
+    name: Threading
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading
+  spec.vb:
+  - uid: System
+    name: System
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system
+  - name: .
+  - uid: System.Threading
+    name: Threading
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading
 - uid: System.Net.Http.HttpRequestException
   commentId: T:System.Net.Http.HttpRequestException
   isExternal: true
@@ -566,7 +661,7 @@ references:
   commentId: T:Kevlar.ShieldBuilder{System.Net.Http.HttpResponseMessage}
   parent: Kevlar
   definition: Kevlar.ShieldBuilder`1
-  href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/ShieldBuilderOfT.cs
+  href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/ShieldBuilderOfT.cs
   name: ShieldBuilder<HttpResponseMessage>
   nameWithType: ShieldBuilder<HttpResponseMessage>
   fullName: Kevlar.ShieldBuilder<System.Net.Http.HttpResponseMessage>
@@ -577,7 +672,7 @@ references:
   - uid: Kevlar.ShieldBuilder`1
     name: ShieldBuilder
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/ShieldBuilderOfT.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/ShieldBuilderOfT.cs
   - name: <
   - uid: System.Net.Http.HttpResponseMessage
     name: HttpResponseMessage
@@ -588,7 +683,7 @@ references:
   - uid: Kevlar.ShieldBuilder`1
     name: ShieldBuilder
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/ShieldBuilderOfT.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/ShieldBuilderOfT.cs
   - name: (
   - name: Of
   - name: " "
@@ -644,7 +739,7 @@ references:
   commentId: T:Kevlar.Shield{System.Net.Http.HttpResponseMessage}
   parent: Kevlar
   definition: Kevlar.Shield`1
-  href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/ShieldOfT.cs
+  href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/ShieldOfT.cs
   name: Shield<HttpResponseMessage>
   nameWithType: Shield<HttpResponseMessage>
   fullName: Kevlar.Shield<System.Net.Http.HttpResponseMessage>
@@ -655,7 +750,7 @@ references:
   - uid: Kevlar.Shield`1
     name: Shield
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/ShieldOfT.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/ShieldOfT.cs
   - name: <
   - uid: System.Net.Http.HttpResponseMessage
     name: HttpResponseMessage
@@ -666,7 +761,7 @@ references:
   - uid: Kevlar.Shield`1
     name: Shield
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/ShieldOfT.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/ShieldOfT.cs
   - name: (
   - name: Of
   - name: " "
@@ -732,7 +827,7 @@ references:
   commentId: T:Kevlar.RetryEvent{System.Net.Http.HttpResponseMessage}
   parent: Kevlar
   definition: Kevlar.RetryEvent`1
-  href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/Strategies/Retry/RetryOptions.cs
+  href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Strategies/Retry/RetryOptions.cs
   name: RetryEvent<HttpResponseMessage>
   nameWithType: RetryEvent<HttpResponseMessage>
   fullName: Kevlar.RetryEvent<System.Net.Http.HttpResponseMessage>
@@ -743,7 +838,7 @@ references:
   - uid: Kevlar.RetryEvent`1
     name: RetryEvent
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/Strategies/Retry/RetryOptions.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Strategies/Retry/RetryOptions.cs
   - name: <
   - uid: System.Net.Http.HttpResponseMessage
     name: HttpResponseMessage
@@ -754,7 +849,7 @@ references:
   - uid: Kevlar.RetryEvent`1
     name: RetryEvent
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/Strategies/Retry/RetryOptions.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Strategies/Retry/RetryOptions.cs
   - name: (
   - name: Of
   - name: " "
@@ -874,7 +969,7 @@ references:
   - uid: Kevlar.RetryEvent`1
     name: RetryEvent
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/Strategies/Retry/RetryOptions.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Strategies/Retry/RetryOptions.cs
   - name: <
   - uid: System.Net.Http.HttpResponseMessage
     name: HttpResponseMessage
@@ -900,7 +995,7 @@ references:
   - uid: Kevlar.RetryEvent`1
     name: RetryEvent
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/Strategies/Retry/RetryOptions.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Strategies/Retry/RetryOptions.cs
   - name: (
   - name: Of
   - name: " "

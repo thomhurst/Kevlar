@@ -9,9 +9,9 @@ items:
   - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield{System.Net.Http.HttpResponseMessage},Kevlar.Extensions.Http.ShieldHttpHandlerOptions)
   - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}})
   - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}},System.Func{System.IServiceProvider,Kevlar.Extensions.Http.ShieldHttpHandlerOptions})
-  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgingShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
-  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgingShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHedgingShieldOptions},System.Action{System.Exception})
-  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgingShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHedgingShieldOptions})
+  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
+  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHedgeShieldOptions},System.Action{System.Exception})
+  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHedgeShieldOptions})
   - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
   - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
   - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHttpShieldOptions},System.Action{System.Exception})
@@ -185,7 +185,10 @@ items:
   assemblies:
   - Kevlar.Extensions.Http
   namespace: Kevlar.Extensions.Http
-  summary: Sends this client's requests through <xref href="Kevlar.Extensions.Http.HttpShield.Standard" data-throw-if-not-resolved="false"></xref>.
+  summary: >-
+    Sends this client's requests through <xref href="Kevlar.Extensions.Http.HttpShield.Standard" data-throw-if-not-resolved="false"></xref> and uses its
+
+    attempt timeout instead of <xref href="System.Net.Http.HttpClient.Timeout" data-throw-if-not-resolved="false"></xref>.
   example: []
   syntax:
     content: public static IHttpClientBuilder AddStandardShield(this IHttpClientBuilder builder)
@@ -211,7 +214,10 @@ items:
   assemblies:
   - Kevlar.Extensions.Http
   namespace: Kevlar.Extensions.Http
-  summary: Configures and adds one shared standard shield for this client registration.
+  summary: >-
+    Configures and adds one shared standard shield for this client registration. The standard
+
+    attempt timeout replaces <xref href="System.Net.Http.HttpClient.Timeout" data-throw-if-not-resolved="false"></xref>.
   example: []
   syntax:
     content: public static IHttpClientBuilder AddStandardShield(this IHttpClientBuilder builder, Action<StandardHttpShieldOptions> configure)
@@ -337,17 +343,17 @@ items:
   nameWithType.vb: ShieldHttpClientBuilderExtensions.AddStandardShield(IHttpClientBuilder, IConfiguration, Action(Of IServiceProvider, StandardHttpShieldOptions), Action(Of Exception))
   fullName.vb: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action(Of System.IServiceProvider, Kevlar.Extensions.Http.StandardHttpShieldOptions), System.Action(Of System.Exception))
   name.vb: AddStandardShield(IHttpClientBuilder, IConfiguration, Action(Of IServiceProvider, StandardHttpShieldOptions), Action(Of Exception))
-- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgingShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHedgingShieldOptions})
-  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgingShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHedgingShieldOptions})
-  id: AddStandardHedgingShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHedgingShieldOptions})
+- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHedgeShieldOptions})
+  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHedgeShieldOptions})
+  id: AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHedgeShieldOptions})
   isExtensionMethod: true
   parent: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
   langs:
   - csharp
   - vb
-  name: AddStandardHedgingShield(IHttpClientBuilder, Action<StandardHedgingShieldOptions>)
-  nameWithType: ShieldHttpClientBuilderExtensions.AddStandardHedgingShield(IHttpClientBuilder, Action<StandardHedgingShieldOptions>)
-  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgingShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Action<Kevlar.Extensions.Http.StandardHedgingShieldOptions>)
+  name: AddStandardHedgeShield(IHttpClientBuilder, Action<StandardHedgeShieldOptions>)
+  nameWithType: ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(IHttpClientBuilder, Action<StandardHedgeShieldOptions>)
+  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Action<Kevlar.Extensions.Http.StandardHedgeShieldOptions>)
   type: Method
   assemblies:
   - Kevlar.Extensions.Http
@@ -358,30 +364,30 @@ items:
     limit and circuit breaker, then per-attempt timeout.
   example: []
   syntax:
-    content: public static IHttpClientBuilder AddStandardHedgingShield(this IHttpClientBuilder builder, Action<StandardHedgingShieldOptions> configure)
+    content: public static IHttpClientBuilder AddStandardHedgeShield(this IHttpClientBuilder builder, Action<StandardHedgeShieldOptions> configure)
     parameters:
     - id: builder
       type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
     - id: configure
-      type: System.Action{Kevlar.Extensions.Http.StandardHedgingShieldOptions}
+      type: System.Action{Kevlar.Extensions.Http.StandardHedgeShieldOptions}
     return:
       type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
-    content.vb: Public Shared Function AddStandardHedgingShield(builder As IHttpClientBuilder, configure As Action(Of StandardHedgingShieldOptions)) As IHttpClientBuilder
-  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgingShield*
-  nameWithType.vb: ShieldHttpClientBuilderExtensions.AddStandardHedgingShield(IHttpClientBuilder, Action(Of StandardHedgingShieldOptions))
-  fullName.vb: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgingShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Action(Of Kevlar.Extensions.Http.StandardHedgingShieldOptions))
-  name.vb: AddStandardHedgingShield(IHttpClientBuilder, Action(Of StandardHedgingShieldOptions))
-- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgingShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
-  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgingShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
-  id: AddStandardHedgingShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
+    content.vb: Public Shared Function AddStandardHedgeShield(builder As IHttpClientBuilder, configure As Action(Of StandardHedgeShieldOptions)) As IHttpClientBuilder
+  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield*
+  nameWithType.vb: ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(IHttpClientBuilder, Action(Of StandardHedgeShieldOptions))
+  fullName.vb: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Action(Of Kevlar.Extensions.Http.StandardHedgeShieldOptions))
+  name.vb: AddStandardHedgeShield(IHttpClientBuilder, Action(Of StandardHedgeShieldOptions))
+- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
+  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
+  id: AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
   isExtensionMethod: true
   parent: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
   langs:
   - csharp
   - vb
-  name: AddStandardHedgingShield(IHttpClientBuilder, IConfiguration, Action<Exception>?)
-  nameWithType: ShieldHttpClientBuilderExtensions.AddStandardHedgingShield(IHttpClientBuilder, IConfiguration, Action<Exception>?)
-  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgingShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action<System.Exception>?)
+  name: AddStandardHedgeShield(IHttpClientBuilder, IConfiguration, Action<Exception>?)
+  nameWithType: ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(IHttpClientBuilder, IConfiguration, Action<Exception>?)
+  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action<System.Exception>?)
   type: Method
   assemblies:
   - Kevlar.Extensions.Http
@@ -392,7 +398,7 @@ items:
     A valid change replaces the complete pipeline and all endpoint-local state.
   example: []
   syntax:
-    content: public static IHttpClientBuilder AddStandardHedgingShield(this IHttpClientBuilder builder, IConfiguration configuration, Action<Exception>? onReloadFailure = null)
+    content: public static IHttpClientBuilder AddStandardHedgeShield(this IHttpClientBuilder builder, IConfiguration configuration, Action<Exception>? onReloadFailure = null)
     parameters:
     - id: builder
       type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
@@ -402,22 +408,22 @@ items:
       type: System.Action{System.Exception}
     return:
       type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
-    content.vb: Public Shared Function AddStandardHedgingShield(builder As IHttpClientBuilder, configuration As IConfiguration, onReloadFailure As Action(Of Exception) = Nothing) As IHttpClientBuilder
-  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgingShield*
-  nameWithType.vb: ShieldHttpClientBuilderExtensions.AddStandardHedgingShield(IHttpClientBuilder, IConfiguration, Action(Of Exception))
-  fullName.vb: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgingShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action(Of System.Exception))
-  name.vb: AddStandardHedgingShield(IHttpClientBuilder, IConfiguration, Action(Of Exception))
-- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgingShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHedgingShieldOptions},System.Action{System.Exception})
-  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgingShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHedgingShieldOptions},System.Action{System.Exception})
-  id: AddStandardHedgingShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHedgingShieldOptions},System.Action{System.Exception})
+    content.vb: Public Shared Function AddStandardHedgeShield(builder As IHttpClientBuilder, configuration As IConfiguration, onReloadFailure As Action(Of Exception) = Nothing) As IHttpClientBuilder
+  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield*
+  nameWithType.vb: ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(IHttpClientBuilder, IConfiguration, Action(Of Exception))
+  fullName.vb: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action(Of System.Exception))
+  name.vb: AddStandardHedgeShield(IHttpClientBuilder, IConfiguration, Action(Of Exception))
+- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHedgeShieldOptions},System.Action{System.Exception})
+  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHedgeShieldOptions},System.Action{System.Exception})
+  id: AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHedgeShieldOptions},System.Action{System.Exception})
   isExtensionMethod: true
   parent: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
   langs:
   - csharp
   - vb
-  name: AddStandardHedgingShield(IHttpClientBuilder, IConfiguration, Action<IServiceProvider, StandardHedgingShieldOptions>, Action<Exception>?)
-  nameWithType: ShieldHttpClientBuilderExtensions.AddStandardHedgingShield(IHttpClientBuilder, IConfiguration, Action<IServiceProvider, StandardHedgingShieldOptions>, Action<Exception>?)
-  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgingShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action<System.IServiceProvider, Kevlar.Extensions.Http.StandardHedgingShieldOptions>, System.Action<System.Exception>?)
+  name: AddStandardHedgeShield(IHttpClientBuilder, IConfiguration, Action<IServiceProvider, StandardHedgeShieldOptions>, Action<Exception>?)
+  nameWithType: ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(IHttpClientBuilder, IConfiguration, Action<IServiceProvider, StandardHedgeShieldOptions>, Action<Exception>?)
+  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action<System.IServiceProvider, Kevlar.Extensions.Http.StandardHedgeShieldOptions>, System.Action<System.Exception>?)
   type: Method
   assemblies:
   - Kevlar.Extensions.Http
@@ -430,23 +436,23 @@ items:
     configuration values have been applied.
   example: []
   syntax:
-    content: public static IHttpClientBuilder AddStandardHedgingShield(this IHttpClientBuilder builder, IConfiguration configuration, Action<IServiceProvider, StandardHedgingShieldOptions> configure, Action<Exception>? onReloadFailure = null)
+    content: public static IHttpClientBuilder AddStandardHedgeShield(this IHttpClientBuilder builder, IConfiguration configuration, Action<IServiceProvider, StandardHedgeShieldOptions> configure, Action<Exception>? onReloadFailure = null)
     parameters:
     - id: builder
       type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
     - id: configuration
       type: Microsoft.Extensions.Configuration.IConfiguration
     - id: configure
-      type: System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHedgingShieldOptions}
+      type: System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHedgeShieldOptions}
     - id: onReloadFailure
       type: System.Action{System.Exception}
     return:
       type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
-    content.vb: Public Shared Function AddStandardHedgingShield(builder As IHttpClientBuilder, configuration As IConfiguration, configure As Action(Of IServiceProvider, StandardHedgingShieldOptions), onReloadFailure As Action(Of Exception) = Nothing) As IHttpClientBuilder
-  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgingShield*
-  nameWithType.vb: ShieldHttpClientBuilderExtensions.AddStandardHedgingShield(IHttpClientBuilder, IConfiguration, Action(Of IServiceProvider, StandardHedgingShieldOptions), Action(Of Exception))
-  fullName.vb: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgingShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action(Of System.IServiceProvider, Kevlar.Extensions.Http.StandardHedgingShieldOptions), System.Action(Of System.Exception))
-  name.vb: AddStandardHedgingShield(IHttpClientBuilder, IConfiguration, Action(Of IServiceProvider, StandardHedgingShieldOptions), Action(Of Exception))
+    content.vb: Public Shared Function AddStandardHedgeShield(builder As IHttpClientBuilder, configuration As IConfiguration, configure As Action(Of IServiceProvider, StandardHedgeShieldOptions), onReloadFailure As Action(Of Exception) = Nothing) As IHttpClientBuilder
+  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield*
+  nameWithType.vb: ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(IHttpClientBuilder, IConfiguration, Action(Of IServiceProvider, StandardHedgeShieldOptions), Action(Of Exception))
+  fullName.vb: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action(Of System.IServiceProvider, Kevlar.Extensions.Http.StandardHedgeShieldOptions), System.Action(Of System.Exception))
+  name.vb: AddStandardHedgeShield(IHttpClientBuilder, IConfiguration, Action(Of IServiceProvider, StandardHedgeShieldOptions), Action(Of Exception))
 references:
 - uid: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
   commentId: T:Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
@@ -778,7 +784,7 @@ references:
   commentId: T:Kevlar.Shield{System.Net.Http.HttpResponseMessage}
   parent: Kevlar
   definition: Kevlar.Shield`1
-  href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/ShieldOfT.cs
+  href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/ShieldOfT.cs
   name: Shield<HttpResponseMessage>
   nameWithType: Shield<HttpResponseMessage>
   fullName: Kevlar.Shield<System.Net.Http.HttpResponseMessage>
@@ -789,7 +795,7 @@ references:
   - uid: Kevlar.Shield`1
     name: Shield
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/ShieldOfT.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/ShieldOfT.cs
   - name: <
   - uid: System.Net.Http.HttpResponseMessage
     name: HttpResponseMessage
@@ -800,7 +806,7 @@ references:
   - uid: Kevlar.Shield`1
     name: Shield
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/ShieldOfT.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/ShieldOfT.cs
   - name: (
   - name: Of
   - name: " "
@@ -879,7 +885,7 @@ references:
   - uid: Kevlar.Shield`1
     name: Shield
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/ShieldOfT.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/ShieldOfT.cs
   - name: <
   - uid: System.Net.Http.HttpResponseMessage
     name: HttpResponseMessage
@@ -904,7 +910,7 @@ references:
   - uid: Kevlar.Shield`1
     name: Shield
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/ShieldOfT.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/ShieldOfT.cs
   - name: (
   - name: Of
   - name: " "
@@ -1016,6 +1022,13 @@ references:
     href: Kevlar.Extensions.Http.HttpShield.html#Kevlar_Extensions_Http_HttpShield_Standard
   - name: (
   - name: )
+- uid: System.Net.Http.HttpClient.Timeout
+  commentId: P:System.Net.Http.HttpClient.Timeout
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.net.http.httpclient.timeout
+  name: Timeout
+  nameWithType: HttpClient.Timeout
+  fullName: System.Net.Http.HttpClient.Timeout
 - uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield*
   commentId: Overload:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield
   isExternal: true
@@ -1247,34 +1260,34 @@ references:
     name: Configuration
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/microsoft.extensions.configuration
-- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgingShield*
-  commentId: Overload:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgingShield
+- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield*
+  commentId: Overload:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield
   isExternal: true
-  href: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.html#Kevlar_Extensions_Http_ShieldHttpClientBuilderExtensions_AddStandardHedgingShield_Microsoft_Extensions_DependencyInjection_IHttpClientBuilder_System_Action_Kevlar_Extensions_Http_StandardHedgingShieldOptions__
-  name: AddStandardHedgingShield
-  nameWithType: ShieldHttpClientBuilderExtensions.AddStandardHedgingShield
-  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgingShield
-- uid: System.Action{Kevlar.Extensions.Http.StandardHedgingShieldOptions}
-  commentId: T:System.Action{Kevlar.Extensions.Http.StandardHedgingShieldOptions}
+  href: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.html#Kevlar_Extensions_Http_ShieldHttpClientBuilderExtensions_AddStandardHedgeShield_Microsoft_Extensions_DependencyInjection_IHttpClientBuilder_System_Action_Kevlar_Extensions_Http_StandardHedgeShieldOptions__
+  name: AddStandardHedgeShield
+  nameWithType: ShieldHttpClientBuilderExtensions.AddStandardHedgeShield
+  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield
+- uid: System.Action{Kevlar.Extensions.Http.StandardHedgeShieldOptions}
+  commentId: T:System.Action{Kevlar.Extensions.Http.StandardHedgeShieldOptions}
   parent: System
   definition: System.Action`1
   href: https://learn.microsoft.com/dotnet/api/system.action-1
-  name: Action<StandardHedgingShieldOptions>
-  nameWithType: Action<StandardHedgingShieldOptions>
-  fullName: System.Action<Kevlar.Extensions.Http.StandardHedgingShieldOptions>
-  nameWithType.vb: Action(Of StandardHedgingShieldOptions)
-  fullName.vb: System.Action(Of Kevlar.Extensions.Http.StandardHedgingShieldOptions)
-  name.vb: Action(Of StandardHedgingShieldOptions)
+  name: Action<StandardHedgeShieldOptions>
+  nameWithType: Action<StandardHedgeShieldOptions>
+  fullName: System.Action<Kevlar.Extensions.Http.StandardHedgeShieldOptions>
+  nameWithType.vb: Action(Of StandardHedgeShieldOptions)
+  fullName.vb: System.Action(Of Kevlar.Extensions.Http.StandardHedgeShieldOptions)
+  name.vb: Action(Of StandardHedgeShieldOptions)
   spec.csharp:
   - uid: System.Action`1
     name: Action
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.action-1
   - name: <
-  - uid: Kevlar.Extensions.Http.StandardHedgingShieldOptions
-    name: StandardHedgingShieldOptions
+  - uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+    name: StandardHedgeShieldOptions
     isExternal: true
-    href: Kevlar.Extensions.Http.StandardHedgingShieldOptions.html
+    href: Kevlar.Extensions.Http.StandardHedgeShieldOptions.html
   - name: '>'
   spec.vb:
   - uid: System.Action`1
@@ -1284,22 +1297,22 @@ references:
   - name: (
   - name: Of
   - name: " "
-  - uid: Kevlar.Extensions.Http.StandardHedgingShieldOptions
-    name: StandardHedgingShieldOptions
+  - uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+    name: StandardHedgeShieldOptions
     isExternal: true
-    href: Kevlar.Extensions.Http.StandardHedgingShieldOptions.html
+    href: Kevlar.Extensions.Http.StandardHedgeShieldOptions.html
   - name: )
-- uid: System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHedgingShieldOptions}
-  commentId: T:System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHedgingShieldOptions}
+- uid: System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHedgeShieldOptions}
+  commentId: T:System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHedgeShieldOptions}
   parent: System
   definition: System.Action`2
   href: https://learn.microsoft.com/dotnet/api/system.action-2
-  name: Action<IServiceProvider, StandardHedgingShieldOptions>
-  nameWithType: Action<IServiceProvider, StandardHedgingShieldOptions>
-  fullName: System.Action<System.IServiceProvider, Kevlar.Extensions.Http.StandardHedgingShieldOptions>
-  nameWithType.vb: Action(Of IServiceProvider, StandardHedgingShieldOptions)
-  fullName.vb: System.Action(Of System.IServiceProvider, Kevlar.Extensions.Http.StandardHedgingShieldOptions)
-  name.vb: Action(Of IServiceProvider, StandardHedgingShieldOptions)
+  name: Action<IServiceProvider, StandardHedgeShieldOptions>
+  nameWithType: Action<IServiceProvider, StandardHedgeShieldOptions>
+  fullName: System.Action<System.IServiceProvider, Kevlar.Extensions.Http.StandardHedgeShieldOptions>
+  nameWithType.vb: Action(Of IServiceProvider, StandardHedgeShieldOptions)
+  fullName.vb: System.Action(Of System.IServiceProvider, Kevlar.Extensions.Http.StandardHedgeShieldOptions)
+  name.vb: Action(Of IServiceProvider, StandardHedgeShieldOptions)
   spec.csharp:
   - uid: System.Action`2
     name: Action
@@ -1312,10 +1325,10 @@ references:
     href: https://learn.microsoft.com/dotnet/api/system.iserviceprovider
   - name: ','
   - name: " "
-  - uid: Kevlar.Extensions.Http.StandardHedgingShieldOptions
-    name: StandardHedgingShieldOptions
+  - uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+    name: StandardHedgeShieldOptions
     isExternal: true
-    href: Kevlar.Extensions.Http.StandardHedgingShieldOptions.html
+    href: Kevlar.Extensions.Http.StandardHedgeShieldOptions.html
   - name: '>'
   spec.vb:
   - uid: System.Action`2
@@ -1331,8 +1344,8 @@ references:
     href: https://learn.microsoft.com/dotnet/api/system.iserviceprovider
   - name: ','
   - name: " "
-  - uid: Kevlar.Extensions.Http.StandardHedgingShieldOptions
-    name: StandardHedgingShieldOptions
+  - uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+    name: StandardHedgeShieldOptions
     isExternal: true
-    href: Kevlar.Extensions.Http.StandardHedgingShieldOptions.html
+    href: Kevlar.Extensions.Http.StandardHedgeShieldOptions.html
   - name: )

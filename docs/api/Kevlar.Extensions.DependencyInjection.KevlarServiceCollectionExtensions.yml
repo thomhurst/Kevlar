@@ -907,7 +907,7 @@ references:
   - uid: Kevlar.Shield
     name: Shield
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/Shield.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Shield.cs
   - name: '>'
   spec.vb:
   - uid: System.Func`2
@@ -926,7 +926,7 @@ references:
   - uid: Kevlar.Shield
     name: Shield
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/Shield.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Shield.cs
   - name: )
 - uid: System.Func`2
   commentId: T:System.Func`2
@@ -1003,7 +1003,7 @@ references:
   - uid: Kevlar.VoidShield
     name: VoidShield
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/VoidShield.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/VoidShield.cs
   - name: '>'
   spec.vb:
   - uid: System.Func`2
@@ -1022,7 +1022,7 @@ references:
   - uid: Kevlar.VoidShield
     name: VoidShield
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/VoidShield.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/VoidShield.cs
   - name: )
 - uid: Kevlar.Extensions.DependencyInjection.ShieldDefinition
   commentId: T:Kevlar.Extensions.DependencyInjection.ShieldDefinition
@@ -1284,7 +1284,7 @@ references:
   - uid: Kevlar.Shield`1
     name: Shield
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/ShieldOfT.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/ShieldOfT.cs
   - name: <
   - name: TResult
   - name: '>'
@@ -1306,7 +1306,7 @@ references:
   - uid: Kevlar.Shield`1
     name: Shield
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/ShieldOfT.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/ShieldOfT.cs
   - name: (
   - name: Of
   - name: " "
@@ -1349,7 +1349,7 @@ references:
   - uid: Kevlar.Shield
     name: Shield
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/Shield.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Shield.cs
   - name: '>'
   spec.vb:
   - uid: System.Func`3
@@ -1371,7 +1371,7 @@ references:
   - uid: Kevlar.Shield
     name: Shield
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/Shield.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Shield.cs
   - name: )
 - uid: System.Action{Kevlar.PartitionedShieldOptions}
   commentId: T:System.Action{Kevlar.PartitionedShieldOptions}
@@ -1393,7 +1393,7 @@ references:
   - uid: Kevlar.PartitionedShieldOptions
     name: PartitionedShieldOptions
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/PartitionedShieldOptions.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/PartitionedShieldOptions.cs
   - name: '>'
   spec.vb:
   - uid: System.Action`1
@@ -1406,7 +1406,7 @@ references:
   - uid: Kevlar.PartitionedShieldOptions
     name: PartitionedShieldOptions
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/PartitionedShieldOptions.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/PartitionedShieldOptions.cs
   - name: )
 - uid: System.Collections.Generic.IEqualityComparer{{TKey}}
   commentId: T:System.Collections.Generic.IEqualityComparer{`0}
@@ -1578,7 +1578,7 @@ references:
   - uid: Kevlar.VoidShield
     name: VoidShield
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/VoidShield.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/VoidShield.cs
   - name: '>'
   spec.vb:
   - uid: System.Func`3
@@ -1600,7 +1600,7 @@ references:
   - uid: Kevlar.VoidShield
     name: VoidShield
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/VoidShield.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/VoidShield.cs
   - name: )
 - uid: System.Func{System.IServiceProvider,{TKey},Kevlar.Shield{{TResult}}}
   commentId: T:System.Func{System.IServiceProvider,``0,Kevlar.Shield{``1}}
@@ -1631,7 +1631,7 @@ references:
   - uid: Kevlar.Shield`1
     name: Shield
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/ShieldOfT.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/ShieldOfT.cs
   - name: <
   - name: TResult
   - name: '>'
@@ -1656,7 +1656,7 @@ references:
   - uid: Kevlar.Shield`1
     name: Shield
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/66e6d1496fac3818b262fa3c1758c869525e32b8/src/Kevlar/ShieldOfT.cs
+    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/ShieldOfT.cs
   - name: (
   - name: Of
   - name: " "
