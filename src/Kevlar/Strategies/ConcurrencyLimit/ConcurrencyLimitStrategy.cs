@@ -14,6 +14,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
     private readonly string _telemetryName;
     private int _available;
     private int _queued;
+    private int _running;
     private int _waiters;
     private long _pending;
     private readonly KevlarMetrics.StateMetricRegistration<ConcurrencyLimitStrategy> _metricsRegistration;
@@ -30,11 +31,9 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
 
     internal (int Available, int Running, int Queued) CaptureState()
     {
-        var available = Math.Min(
-            _maxConcurrency,
-            Math.Max(0, Volatile.Read(ref _available) + _semaphore.CurrentCount));
+        var running = Math.Min(_maxConcurrency, Math.Max(0, Volatile.Read(ref _running)));
         var queued = Math.Min(_queueLimit, Math.Max(0, Volatile.Read(ref _queued)));
-        return (available, _maxConcurrency - available, queued);
+        return (_maxConcurrency - running, running, queued);
     }
 
     public ConcurrencyLimitStrategy(ConcurrencyLimitOptions options)
@@ -80,6 +79,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
             context.CancellationToken.ThrowIfCancellationRequested();
             if (TryAcquirePermit())
             {
+                Interlocked.Increment(ref _running);
                 return ExecuteAcquired(next, context);
             }
         }
@@ -150,6 +150,8 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
                     await _semaphore.WaitAsync(context.CancellationToken).ConfigureAwait(false);
                 }
             }
+
+            Interlocked.Increment(ref _running);
         }
         catch (OperationCanceledException cancelled)
         {
@@ -194,6 +196,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
 
     private void CompleteExecution()
     {
+        Interlocked.Decrement(ref _running);
         Interlocked.Decrement(ref _pending);
         ReleasePermit();
     }

@@ -1689,6 +1689,33 @@ public class MetricsTests
     }
 
     [Test]
+    public async Task Concurrency_State_Uses_Atomic_Running_Count_During_Permit_Transfer()
+    {
+        var strategy = new ConcurrencyLimitStrategy(new ConcurrencyLimitOptions
+        {
+            MaxConcurrency = 2,
+            QueueLimit = 1,
+        });
+        var available = typeof(ConcurrencyLimitStrategy).GetField(
+            "_available",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        var running = typeof(ConcurrencyLimitStrategy).GetField(
+            "_running",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        var semaphore = typeof(ConcurrencyLimitStrategy).GetField(
+            "_semaphore",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+
+        available.SetValue(strategy, 1);
+        running.SetValue(strategy, 1);
+        ((SemaphoreSlim)semaphore.GetValue(strategy)!).Release();
+
+        var state = strategy.CaptureState();
+        await Assert.That(state.Available).IsEqualTo(1);
+        await Assert.That(state.Running).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task State_Registry_Compaction_Tolerates_Collected_Entries()
     {
         var registry = new KevlarMetrics.StateMetricRegistry<object>();
@@ -1766,6 +1793,57 @@ public class MetricsTests
         await Assert.That(providers.All(static provider => !provider.IsAlive)).IsTrue();
         await Assert.That(registration.Observations.Select(static observation => observation.Alias))
             .IsEquivalentTo([liveAlias]);
+        GC.KeepAlive(strategy);
+        GC.KeepAlive(liveProvider);
+    }
+
+    [Test]
+    public async Task State_Registration_Serializes_Provider_Revival_With_Compaction()
+    {
+        var registry = new KevlarMetrics.StateMetricRegistry<object>();
+        var strategy = new object();
+        var registration = registry.Register(strategy);
+        var alias = new StrategyMetricAlias("metrics-provider-revival", 0);
+        var oldProvider = AddCollectibleStateObservation(registration, alias.ShieldName!);
+
+        for (var attempt = 0; oldProvider.IsAlive && attempt < 10; attempt++)
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+        }
+
+        var gateField = typeof(KevlarMetrics.StateMetricRegistration<object>).GetField(
+            "_gate",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        var gate = (Lock)gateField.GetValue(registration)!;
+        var liveProvider = new FakeTimeProvider();
+        using var started = new ManualResetEventSlim();
+        Task revival;
+        bool startedWhileCompactionHeld;
+        bool completedWhileCompactionHeld;
+        using (gate.EnterScope())
+        {
+            revival = Task.Run(() =>
+            {
+                started.Set();
+                registration.Add(alias, liveProvider);
+            });
+            startedWhileCompactionHeld = started.Wait(TimeSpan.FromSeconds(5));
+            completedWhileCompactionHeld = startedWhileCompactionHeld
+                && revival.Wait(TimeSpan.FromMilliseconds(200));
+        }
+
+        await revival.WaitAsync(TimeSpan.FromSeconds(5));
+        registration.RemoveCollectedObservations();
+
+        await Assert.That(oldProvider.IsAlive).IsFalse();
+        await Assert.That(startedWhileCompactionHeld).IsTrue();
+        await Assert.That(completedWhileCompactionHeld).IsFalse();
+        await Assert.That(registration.Observations).Count().IsEqualTo(1);
+        await Assert.That(registration.Observations[0].TryGetTimeProvider(out var retainedProvider))
+            .IsTrue();
+        await Assert.That(ReferenceEquals(retainedProvider, liveProvider)).IsTrue();
         GC.KeepAlive(strategy);
         GC.KeepAlive(liveProvider);
     }
