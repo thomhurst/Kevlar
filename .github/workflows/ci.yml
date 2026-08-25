@@ -370,12 +370,13 @@ jobs:
 
       - name: Push to NuGet
         if: inputs.release_dry_run != true
+        shell: pwsh
         run: |
-          dotnet nuget push packages/*.nupkg --no-symbols --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
-          dotnet nuget push packages/*.snupkg --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
+          ./scripts/Push-NuGetRelease.ps1 -PackagesPath packages -ApiKey '${{ steps.login.outputs.NUGET_API_KEY }}'
 
       - name: Create GitHub release
         if: inputs.release_dry_run != true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release create "v${{ steps.gitversion.outputs.semVer }}" --verify-tag --notes-file "$RELEASE_NOTES_PATH" packages/*.nupkg packages/*.snupkg
+        shell: pwsh
+        run: ./scripts/Publish-GitHubRelease.ps1 -Tag "v${{ steps.gitversion.outputs.semVer }}" -NotesPath $env:RELEASE_NOTES_PATH -AssetsPath packages

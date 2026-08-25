@@ -36,11 +36,8 @@ Assert-Contains 'Publish branch guard' "github.ref == 'refs/heads/main'"
 Assert-Contains 'Publish approval environment' 'environment: nuget'
 Assert-Contains 'Changelog release notes' './scripts/Get-ReleaseNotes.ps1'
 Assert-Contains 'Retry-safe release tag' './scripts/Push-ReleaseTag.ps1'
-Assert-Contains 'GitHub release notes file' '--notes-file "$RELEASE_NOTES_PATH"'
-Assert-Contains 'Release tag verification' '--verify-tag'
-Assert-Contains 'NuGet package push' 'dotnet nuget push packages/*.nupkg'
-Assert-Contains 'Separate symbol publishing' '--no-symbols'
-Assert-Contains 'NuGet symbol package push' 'dotnet nuget push packages/*.snupkg'
+Assert-Contains 'Retry-safe NuGet publication' './scripts/Push-NuGetRelease.ps1'
+Assert-Contains 'Retry-safe GitHub release' './scripts/Publish-GitHubRelease.ps1'
 
 Assert-StepGuarded 'Create and push release tag'
 Assert-StepGuarded 'NuGet login'
@@ -49,12 +46,26 @@ Assert-StepGuarded 'Create GitHub release'
 
 if ($publish.Contains('--skip-duplicate', [StringComparison]::Ordinal))
 {
-    throw 'Publish must not mask duplicate-package failures with --skip-duplicate.'
+    throw 'Publish must verify an existing package payload instead of masking duplicates.'
 }
 
 if ($publish.Contains('--generate-notes', [StringComparison]::Ordinal))
 {
     throw 'Publish must use CHANGELOG.md notes instead of generated notes.'
+}
+
+$nugetPublishScript = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'Push-NuGetRelease.ps1') -Raw
+foreach ($requiredText in @('Compare-NuGetPackagePayload.ps1', '--no-symbols', "-Filter '*.snupkg'"))
+{
+    if (-not $nugetPublishScript.Contains($requiredText, [StringComparison]::Ordinal))
+    {
+        throw "NuGet publication is missing '$requiredText'."
+    }
+}
+
+if ($nugetPublishScript.Contains('--skip-duplicate', [StringComparison]::Ordinal))
+{
+    throw 'NuGet publication must reject conflicting duplicates after comparing payloads.'
 }
 
 $tagIndex = $publish.IndexOf('- name: Create and push release tag', [StringComparison]::Ordinal)
@@ -64,6 +75,15 @@ if ($tagIndex -lt 0 -or $packageIndex -lt 0 -or $releaseIndex -lt 0 -or
     $tagIndex -ge $packageIndex -or $packageIndex -ge $releaseIndex)
 {
     throw 'Release ordering must be tag, NuGet push, then GitHub release.'
+}
+
+$githubReleaseScript = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'Publish-GitHubRelease.ps1') -Raw
+foreach ($requiredText in @('gh release create', '--verify-tag', '--notes-file', 'gh release upload', '--clobber'))
+{
+    if (-not $githubReleaseScript.Contains($requiredText, [StringComparison]::Ordinal))
+    {
+        throw "GitHub release publication is missing '$requiredText'."
+    }
 }
 
 $temporaryRoot = Join-Path ([IO.Path]::GetTempPath()) "kevlar-release-notes-$([Guid]::NewGuid().ToString('N'))"
@@ -106,6 +126,67 @@ try
     if ($actualNotes -ne $expectedNotes)
     {
         throw "Unreleased-note extraction mismatch: '$actualNotes'."
+    }
+
+    function New-PackageFixture([string]$path, [string]$payload, [bool]$includeSignature)
+    {
+        $archive = [IO.Compression.ZipFile]::Open($path, [IO.Compression.ZipArchiveMode]::Create)
+        try
+        {
+            $payloadEntry = $archive.CreateEntry('lib/net8.0/example.dll')
+            $writer = [IO.StreamWriter]::new($payloadEntry.Open())
+            try
+            {
+                $writer.Write($payload)
+            }
+            finally
+            {
+                $writer.Dispose()
+            }
+
+            if ($includeSignature)
+            {
+                $signatureEntry = $archive.CreateEntry('.signature.p7s')
+                $writer = [IO.StreamWriter]::new($signatureEntry.Open())
+                try
+                {
+                    $writer.Write('repository signature')
+                }
+                finally
+                {
+                    $writer.Dispose()
+                }
+            }
+        }
+        finally
+        {
+            $archive.Dispose()
+        }
+    }
+
+    $expectedPackage = Join-Path $resolvedTemporaryRoot 'expected.nupkg'
+    $matchingPackage = Join-Path $resolvedTemporaryRoot 'matching.nupkg'
+    $conflictingPackage = Join-Path $resolvedTemporaryRoot 'conflicting.nupkg'
+    New-PackageFixture $expectedPackage 'same payload' $false
+    New-PackageFixture $matchingPackage 'same payload' $true
+    New-PackageFixture $conflictingPackage 'different payload' $true
+
+    $comparePackageScript = Join-Path $PSScriptRoot 'Compare-NuGetPackagePayload.ps1'
+    & $comparePackageScript -ExpectedPath $expectedPackage -ActualPath $matchingPackage
+
+    $conflictRejected = $false
+    try
+    {
+        & $comparePackageScript -ExpectedPath $expectedPackage -ActualPath $conflictingPackage
+    }
+    catch
+    {
+        $conflictRejected = $true
+    }
+
+    if (-not $conflictRejected)
+    {
+        throw 'NuGet payload verification accepted conflicting package contents.'
     }
 
     $remotePath = Join-Path $resolvedTemporaryRoot 'remote.git'
