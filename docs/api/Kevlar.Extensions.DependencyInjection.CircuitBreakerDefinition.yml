@@ -195,7 +195,6 @@ references:
   - uid: Kevlar.Extensions
     name: Extensions
     isExternal: true
-    href: Kevlar.Extensions.html
   - name: .
   - uid: Kevlar.Extensions.DependencyInjection
     name: DependencyInjection
@@ -210,7 +209,6 @@ references:
   - uid: Kevlar.Extensions
     name: Extensions
     isExternal: true
-    href: Kevlar.Extensions.html
   - name: .
   - uid: Kevlar.Extensions.DependencyInjection
     name: DependencyInjection

@@ -29,6 +29,17 @@ foreach ($metadataFile in Get-ChildItem -LiteralPath $resolvedMetadataPath -Filt
         {
             [void]$uids.Add($Matches.uid)
         }
+
+        if ($line -match '^\s*href:\s+(?<href>\S+)\s*$')
+        {
+            $relativeTarget = $Matches.href.Split('#')[0]
+            if ($relativeTarget.EndsWith('.html', [StringComparison]::OrdinalIgnoreCase) -and
+                -not [Uri]::IsWellFormedUriString($relativeTarget, [UriKind]::Absolute) -and
+                -not (Test-Path -LiteralPath (Join-Path $resolvedOutputPath $relativeTarget) -PathType Leaf))
+            {
+                $errors.Add("API metadata '$($metadataFile.Name)' links to missing page '$relativeTarget'.")
+            }
+        }
     }
 }
 

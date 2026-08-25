@@ -6,8 +6,9 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $resolvedMetadataPath = (Resolve-Path -LiteralPath $MetadataPath).Path
+$metadataFiles = @(Get-ChildItem -LiteralPath $resolvedMetadataPath -Filter '*.yml' -File)
 
-foreach ($metadataFile in Get-ChildItem -LiteralPath $resolvedMetadataPath -Filter '*.yml' -File)
+foreach ($metadataFile in $metadataFiles)
 {
     $content = [IO.File]::ReadAllText($metadataFile.FullName)
     $lines = $content -split '\r?\n'
@@ -35,8 +36,15 @@ foreach ($metadataFile in Get-ChildItem -LiteralPath $resolvedMetadataPath -Filt
             $isExternalLocalReference = $inReferences -and
                 $isLocalReference -and
                 $line.StartsWith('  href: https://learn.microsoft.com/', [StringComparison]::OrdinalIgnoreCase)
+            $relativeTarget = $Matches.href.Split('#')[0]
+            $isUnresolvedLocalReference = $inReferences -and
+                $isLocalReference -and
+                $relativeTarget.EndsWith('.html', [StringComparison]::OrdinalIgnoreCase) -and
+                -not [Uri]::IsWellFormedUriString($relativeTarget, [UriKind]::Absolute) -and
+                -not (Test-Path -LiteralPath (Join-Path $resolvedMetadataPath (
+                    [IO.Path]::ChangeExtension($relativeTarget, '.yml'))))
 
-            if ($isExternalLocalReference -or $isGitHubSourceLink)
+            if ($isExternalLocalReference -or $isGitHubSourceLink -or $isUnresolvedLocalReference)
             {
                 continue
             }

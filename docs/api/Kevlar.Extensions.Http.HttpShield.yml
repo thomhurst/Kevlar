@@ -265,7 +265,6 @@ references:
   - uid: Kevlar.Extensions
     name: Extensions
     isExternal: true
-    href: Kevlar.Extensions.html
   - name: .
   - uid: Kevlar.Extensions.Http
     name: Http
@@ -280,7 +279,6 @@ references:
   - uid: Kevlar.Extensions
     name: Extensions
     isExternal: true
-    href: Kevlar.Extensions.html
   - name: .
   - uid: Kevlar.Extensions.Http
     name: Http
