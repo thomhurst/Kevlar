@@ -98,6 +98,33 @@ public class HttpPropertiesReplayTests
         await Assert.That(observed.All(value => ReferenceEquals(value, marker))).IsTrue();
     }
 
+    [Test]
+    public async Task Kevlar_Request_Options_Use_Properties_And_Flow_To_Replay()
+    {
+        var observed = new List<KevlarRequestOptions?>();
+        using var invoker = new HttpMessageInvoker(new ShieldDelegatingHandler(
+            HttpShield.WhenTransient().Retry(1, Backoff.None))
+        {
+            InnerHandler = new DelegateHandler((request, _) =>
+            {
+                observed.Add(KevlarHttp.GetRequestOptions(request));
+                return Task.FromResult(new HttpResponseMessage(
+                    observed.Count == 1 ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.OK));
+            }),
+        });
+        using var request = new HttpRequestMessage(HttpMethod.Get, "https://example.test/replay")
+            .WithShieldName("netstandard");
+
+        using var response = await invoker.SendAsync(request, CancellationToken.None);
+
+#pragma warning disable CS0618 // netstandard2.0 compatibility contract uses HttpRequestMessage.Properties.
+        await Assert.That(request.Properties.ContainsKey("Kevlar.RequestOptions")).IsTrue();
+#pragma warning restore CS0618
+        await Assert.That(observed.Count).IsEqualTo(2);
+        await Assert.That(ReferenceEquals(observed[0], observed[1])).IsTrue();
+        await Assert.That(observed[1]!.ShieldName).IsEqualTo("netstandard");
+    }
+
     private sealed class PropertyRecordingHandler(List<object?> observed) : HttpMessageHandler
     {
         private int _attempt;

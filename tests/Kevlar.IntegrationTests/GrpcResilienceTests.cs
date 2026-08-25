@@ -1028,11 +1028,12 @@ public class GrpcResilienceTests
     {
         await using var server = await GrpcTestServer.StartAsync();
         using var call = server.StreamingClient(
-                Shield.Timeout(TimeSpan.FromMilliseconds(100)))
+                Shield.Timeout(TimeSpan.FromSeconds(1)))
             .ServerStream(new TestRequest { Scenario = "stream-wait" });
+        var move = call.ResponseStream.MoveNext(CancellationToken.None);
+        await server.State.WaitForEntryAsync().WaitAsync(TimeSpan.FromSeconds(5));
 
-        _ = await Assert.That(async () =>
-                await call.ResponseStream.MoveNext(CancellationToken.None))
+        _ = await Assert.That(async () => await move)
             .Throws<TimeoutExceededException>();
 
         await server.State.WaitForCancellationAsync().WaitAsync(TimeSpan.FromSeconds(5));

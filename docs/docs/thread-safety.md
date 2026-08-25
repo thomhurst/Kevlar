@@ -36,12 +36,15 @@ The following public mutable types follow that rule:
 | Core | `CircuitBreakerOptions`, `CircuitBreakerOptions<TResult>`, `ConcurrencyLimitOptions`, `FallbackOptions`, `FallbackOptions<TResult>`, `HedgeOptions`, `HedgeOptions<TResult>`, `PartitionedShieldOptions`, `RateLimitOptions`, `RetryOptions`, `RetryOptions<TResult>`, `TimeoutOptions` |
 | Chaos | `ChaosBehaviorOptions`, `ChaosFaultOptions`, `ChaosLatencyOptions`, `ChaosOutcomeOptions<TResult>` |
 | Dependency injection | `CircuitBreakerDefinition`, `ConcurrencyLimitDefinition`, `RateLimitDefinition`, `ReloadingShieldOptions`, `RetryDefinition`, `ShieldDefinition` |
-| HTTP | `HttpEndpointRoutingOptions`, `ShieldHttpHandlerOptions`, `StandardHedgeShieldOptions`, `StandardHttpShieldOptions` |
+| HTTP | `HttpEndpointRoutingOptions`, `KevlarRequestOptions`, `ShieldHttpHandlerOptions`, `StandardHedgeShieldOptions`, `StandardHttpShieldOptions` |
 | Rate-limiter adapter | `RateLimiterAdapterOptions` |
 
 `CircuitBreakerMonitor`, `KevlarContext`, `KevlarProperties`, `ExecutionProbe`, and
 `TelemetryRecorder` also contain mutable state, but their ownership rules are described separately
 above because they are live controls or observations rather than setup objects.
+
+`KevlarRequestOptions` is request-scoped. Configure it before calling `SendAsync`, then do not
+mutate it while that request is executing; built-in replay clones share the same options instance.
 
 ## User delegates and values
 

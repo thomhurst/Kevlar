@@ -253,6 +253,71 @@ services.AddHttpClient("api")
 
 `AddShield` accepts a shield instance or an `IServiceProvider` factory.
 
+## Per-request options
+
+Attach execution properties, select a shield, suppress replay, or link another cancellation token
+without changing the named client's defaults:
+
+```csharp
+using Kevlar.Extensions.Http;
+
+var tenantKey = new KevlarKey<string>("tenant");
+using var request = new HttpRequestMessage(HttpMethod.Post, "orders")
+    .WithKevlarProperties(properties => properties.Set(tenantKey, "north"))
+    .WithShieldName("orders-write")
+    .DisableReplay()
+    .WithKevlarCancellationToken(cancellationToken);
+
+using var response = await httpClient.SendAsync(request, cancellationToken);
+```
+
+The property initializer runs once for the outer request execution and once for each separately
+executed endpoint-local shield. Retries reuse their context, while hedges copy the initialized
+properties into forked contexts instead of rerunning the initializer. Pooled properties are cleared
+after execution, so values do not leak to later requests. `DisableReplay` affects only this request.
+To allow an unsafe method for one known-idempotent request, set
+`KevlarHttp.GetRequestOptions(request).AllowReplay = true`; content must still satisfy the normal
+replay-safety rules.
+
+Choose one shield per request with the selector overload. Selection happens once, before the
+shield executes. A direct `.WithShield(shield)` request override takes precedence over the
+selector; `ShieldName` is metadata for selectors and has no global lookup behavior:
+
+```csharp
+using Kevlar.Extensions.Http;
+
+var readShield = HttpShield.WhenTransient().Retry(3);
+var writeShield = HttpShield.WhenTransient().Retry(0);
+
+services.AddHttpClient("api")
+    .AddShield((request, serviceProvider) =>
+        KevlarHttp.GetRequestOptions(request).ShieldName == "orders-write"
+            ? writeShield
+            : readShield);
+```
+
+For isolated, bounded state per request key, connect a [`PartitionedShield`](partitioning.md)
+directly:
+
+```csharp
+using Kevlar.Extensions.Http;
+
+var tenantShields = new PartitionedShield<string, HttpResponseMessage>(
+    _ => HttpShield.WhenTransient()
+        .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30)));
+
+services.AddHttpClient("tenant-api")
+    .AddShield(
+        tenantShields,
+        request => request.Headers.GetValues("X-Tenant").Single());
+```
+
+On .NET 8 and later, `KevlarHttp.RequestOptions` is the public typed
+`HttpRequestOptionsKey<KevlarRequestOptions>` for direct `HttpRequestMessage.Options` access.
+`GetRequestOptions` and the request extensions also work through `HttpRequestMessage.Properties`
+when consuming the `netstandard2.0` asset. Built-in replay clones carry the same request-options
+object. A custom `RequestFactory` creates the complete request and must copy any desired options.
+
 ## Safe request replay
 
 The first no-routing attempt sends the caller's original request directly. Additional attempts use

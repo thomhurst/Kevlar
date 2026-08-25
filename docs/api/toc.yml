@@ -320,6 +320,15 @@ items:
   - uid: Kevlar.Extensions.Http.HttpShield
     name: HttpShield
     type: Class
+  - uid: Kevlar.Extensions.Http.KevlarHttp
+    name: KevlarHttp
+    type: Class
+  - uid: Kevlar.Extensions.Http.KevlarHttpRequestExtensions
+    name: KevlarHttpRequestExtensions
+    type: Class
+  - uid: Kevlar.Extensions.Http.KevlarRequestOptions
+    name: KevlarRequestOptions
+    type: Class
   - uid: Kevlar.Extensions.Http.ShieldDelegatingHandler
     name: ShieldDelegatingHandler
     type: Class

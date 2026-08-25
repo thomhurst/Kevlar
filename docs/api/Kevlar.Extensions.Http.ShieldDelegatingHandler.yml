@@ -7,6 +7,8 @@ items:
   children:
   - Kevlar.Extensions.Http.ShieldDelegatingHandler.#ctor(Kevlar.Shield{System.Net.Http.HttpResponseMessage})
   - Kevlar.Extensions.Http.ShieldDelegatingHandler.#ctor(Kevlar.Shield{System.Net.Http.HttpResponseMessage},Kevlar.Extensions.Http.ShieldHttpHandlerOptions)
+  - Kevlar.Extensions.Http.ShieldDelegatingHandler.#ctor(System.Func{System.Net.Http.HttpRequestMessage,Kevlar.Shield{System.Net.Http.HttpResponseMessage}})
+  - Kevlar.Extensions.Http.ShieldDelegatingHandler.#ctor(System.Func{System.Net.Http.HttpRequestMessage,Kevlar.Shield{System.Net.Http.HttpResponseMessage}},Kevlar.Extensions.Http.ShieldHttpHandlerOptions)
   - Kevlar.Extensions.Http.ShieldDelegatingHandler.Dispose(System.Boolean)
   - Kevlar.Extensions.Http.ShieldDelegatingHandler.SendAsync(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)
   langs:
@@ -97,6 +99,60 @@ items:
   nameWithType.vb: ShieldDelegatingHandler.New(Shield(Of HttpResponseMessage), ShieldHttpHandlerOptions)
   fullName.vb: Kevlar.Extensions.Http.ShieldDelegatingHandler.New(Kevlar.Shield(Of System.Net.Http.HttpResponseMessage), Kevlar.Extensions.Http.ShieldHttpHandlerOptions)
   name.vb: New(Shield(Of HttpResponseMessage), ShieldHttpHandlerOptions)
+- uid: Kevlar.Extensions.Http.ShieldDelegatingHandler.#ctor(System.Func{System.Net.Http.HttpRequestMessage,Kevlar.Shield{System.Net.Http.HttpResponseMessage}})
+  commentId: M:Kevlar.Extensions.Http.ShieldDelegatingHandler.#ctor(System.Func{System.Net.Http.HttpRequestMessage,Kevlar.Shield{System.Net.Http.HttpResponseMessage}})
+  id: '#ctor(System.Func{System.Net.Http.HttpRequestMessage,Kevlar.Shield{System.Net.Http.HttpResponseMessage}})'
+  parent: Kevlar.Extensions.Http.ShieldDelegatingHandler
+  langs:
+  - csharp
+  - vb
+  name: ShieldDelegatingHandler(Func<HttpRequestMessage, Shield<HttpResponseMessage>>)
+  nameWithType: ShieldDelegatingHandler.ShieldDelegatingHandler(Func<HttpRequestMessage, Shield<HttpResponseMessage>>)
+  fullName: Kevlar.Extensions.Http.ShieldDelegatingHandler.ShieldDelegatingHandler(System.Func<System.Net.Http.HttpRequestMessage, Kevlar.Shield<System.Net.Http.HttpResponseMessage>>)
+  type: Constructor
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: Creates the handler with a shield selected once for each request.
+  example: []
+  syntax:
+    content: public ShieldDelegatingHandler(Func<HttpRequestMessage, Shield<HttpResponseMessage>> shieldSelector)
+    parameters:
+    - id: shieldSelector
+      type: System.Func{System.Net.Http.HttpRequestMessage,Kevlar.Shield{System.Net.Http.HttpResponseMessage}}
+    content.vb: Public Sub New(shieldSelector As Func(Of HttpRequestMessage, Shield(Of HttpResponseMessage)))
+  overload: Kevlar.Extensions.Http.ShieldDelegatingHandler.#ctor*
+  nameWithType.vb: ShieldDelegatingHandler.New(Func(Of HttpRequestMessage, Shield(Of HttpResponseMessage)))
+  fullName.vb: Kevlar.Extensions.Http.ShieldDelegatingHandler.New(System.Func(Of System.Net.Http.HttpRequestMessage, Kevlar.Shield(Of System.Net.Http.HttpResponseMessage)))
+  name.vb: New(Func(Of HttpRequestMessage, Shield(Of HttpResponseMessage)))
+- uid: Kevlar.Extensions.Http.ShieldDelegatingHandler.#ctor(System.Func{System.Net.Http.HttpRequestMessage,Kevlar.Shield{System.Net.Http.HttpResponseMessage}},Kevlar.Extensions.Http.ShieldHttpHandlerOptions)
+  commentId: M:Kevlar.Extensions.Http.ShieldDelegatingHandler.#ctor(System.Func{System.Net.Http.HttpRequestMessage,Kevlar.Shield{System.Net.Http.HttpResponseMessage}},Kevlar.Extensions.Http.ShieldHttpHandlerOptions)
+  id: '#ctor(System.Func{System.Net.Http.HttpRequestMessage,Kevlar.Shield{System.Net.Http.HttpResponseMessage}},Kevlar.Extensions.Http.ShieldHttpHandlerOptions)'
+  parent: Kevlar.Extensions.Http.ShieldDelegatingHandler
+  langs:
+  - csharp
+  - vb
+  name: ShieldDelegatingHandler(Func<HttpRequestMessage, Shield<HttpResponseMessage>>, ShieldHttpHandlerOptions)
+  nameWithType: ShieldDelegatingHandler.ShieldDelegatingHandler(Func<HttpRequestMessage, Shield<HttpResponseMessage>>, ShieldHttpHandlerOptions)
+  fullName: Kevlar.Extensions.Http.ShieldDelegatingHandler.ShieldDelegatingHandler(System.Func<System.Net.Http.HttpRequestMessage, Kevlar.Shield<System.Net.Http.HttpResponseMessage>>, Kevlar.Extensions.Http.ShieldHttpHandlerOptions)
+  type: Constructor
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: Creates the handler with per-request shield selection and explicit replay options.
+  example: []
+  syntax:
+    content: public ShieldDelegatingHandler(Func<HttpRequestMessage, Shield<HttpResponseMessage>> shieldSelector, ShieldHttpHandlerOptions options)
+    parameters:
+    - id: shieldSelector
+      type: System.Func{System.Net.Http.HttpRequestMessage,Kevlar.Shield{System.Net.Http.HttpResponseMessage}}
+    - id: options
+      type: Kevlar.Extensions.Http.ShieldHttpHandlerOptions
+    content.vb: Public Sub New(shieldSelector As Func(Of HttpRequestMessage, Shield(Of HttpResponseMessage)), options As ShieldHttpHandlerOptions)
+  overload: Kevlar.Extensions.Http.ShieldDelegatingHandler.#ctor*
+  nameWithType.vb: ShieldDelegatingHandler.New(Func(Of HttpRequestMessage, Shield(Of HttpResponseMessage)), ShieldHttpHandlerOptions)
+  fullName.vb: Kevlar.Extensions.Http.ShieldDelegatingHandler.New(System.Func(Of System.Net.Http.HttpRequestMessage, Kevlar.Shield(Of System.Net.Http.HttpResponseMessage)), Kevlar.Extensions.Http.ShieldHttpHandlerOptions)
+  name.vb: New(Func(Of HttpRequestMessage, Shield(Of HttpResponseMessage)), ShieldHttpHandlerOptions)
 - uid: Kevlar.Extensions.Http.ShieldDelegatingHandler.SendAsync(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)
   commentId: M:Kevlar.Extensions.Http.ShieldDelegatingHandler.SendAsync(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)
   id: SendAsync(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)
@@ -579,6 +635,101 @@ references:
   name: ShieldHttpHandlerOptions
   nameWithType: ShieldHttpHandlerOptions
   fullName: Kevlar.Extensions.Http.ShieldHttpHandlerOptions
+- uid: System.Func{System.Net.Http.HttpRequestMessage,Kevlar.Shield{System.Net.Http.HttpResponseMessage}}
+  commentId: T:System.Func{System.Net.Http.HttpRequestMessage,Kevlar.Shield{System.Net.Http.HttpResponseMessage}}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<HttpRequestMessage, Shield<HttpResponseMessage>>
+  nameWithType: Func<HttpRequestMessage, Shield<HttpResponseMessage>>
+  fullName: System.Func<System.Net.Http.HttpRequestMessage, Kevlar.Shield<System.Net.Http.HttpResponseMessage>>
+  nameWithType.vb: Func(Of HttpRequestMessage, Shield(Of HttpResponseMessage))
+  fullName.vb: System.Func(Of System.Net.Http.HttpRequestMessage, Kevlar.Shield(Of System.Net.Http.HttpResponseMessage))
+  name.vb: Func(Of HttpRequestMessage, Shield(Of HttpResponseMessage))
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: System.Net.Http.HttpRequestMessage
+    name: HttpRequestMessage
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.net.http.httprequestmessage
+  - name: ','
+  - name: " "
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: <
+  - uid: System.Net.Http.HttpResponseMessage
+    name: HttpResponseMessage
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.net.http.httpresponsemessage
+  - name: '>'
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.Net.Http.HttpRequestMessage
+    name: HttpRequestMessage
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.net.http.httprequestmessage
+  - name: ','
+  - name: " "
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.Net.Http.HttpResponseMessage
+    name: HttpResponseMessage
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.net.http.httpresponsemessage
+  - name: )
+  - name: )
+- uid: System.Func`2
+  commentId: T:System.Func`2
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<T, TResult>
+  nameWithType: Func<T, TResult>
+  fullName: System.Func<T, TResult>
+  nameWithType.vb: Func(Of T, TResult)
+  fullName.vb: System.Func(Of T, TResult)
+  name.vb: Func(Of T, TResult)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )
 - uid: System.Net.Http.DelegatingHandler.SendAsync(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)
   commentId: M:System.Net.Http.DelegatingHandler.SendAsync(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)
   parent: System.Net.Http.DelegatingHandler

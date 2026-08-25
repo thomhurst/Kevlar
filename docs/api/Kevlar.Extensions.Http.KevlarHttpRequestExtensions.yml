@@ -1,0 +1,717 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Extensions.Http.KevlarHttpRequestExtensions
+  commentId: T:Kevlar.Extensions.Http.KevlarHttpRequestExtensions
+  id: KevlarHttpRequestExtensions
+  parent: Kevlar.Extensions.Http
+  children:
+  - Kevlar.Extensions.Http.KevlarHttpRequestExtensions.DisableReplay(System.Net.Http.HttpRequestMessage)
+  - Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithKevlarCancellationToken(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)
+  - Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithKevlarProperties(System.Net.Http.HttpRequestMessage,System.Action{Kevlar.KevlarProperties})
+  - Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithShield(System.Net.Http.HttpRequestMessage,Kevlar.Shield{System.Net.Http.HttpResponseMessage})
+  - Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithShieldName(System.Net.Http.HttpRequestMessage,System.String)
+  langs:
+  - csharp
+  - vb
+  name: KevlarHttpRequestExtensions
+  nameWithType: KevlarHttpRequestExtensions
+  fullName: Kevlar.Extensions.Http.KevlarHttpRequestExtensions
+  type: Class
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: Configures Kevlar behavior on individual HTTP requests.
+  example: []
+  syntax:
+    content: public static class KevlarHttpRequestExtensions
+    content.vb: Public Module KevlarHttpRequestExtensions
+  inheritance:
+  - System.Object
+  inheritedMembers:
+  - System.Object.GetType
+  - System.Object.MemberwiseClone
+  - System.Object.ToString
+  - System.Object.Equals(System.Object)
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  - System.Object.GetHashCode
+- uid: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithKevlarProperties(System.Net.Http.HttpRequestMessage,System.Action{Kevlar.KevlarProperties})
+  commentId: M:Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithKevlarProperties(System.Net.Http.HttpRequestMessage,System.Action{Kevlar.KevlarProperties})
+  id: WithKevlarProperties(System.Net.Http.HttpRequestMessage,System.Action{Kevlar.KevlarProperties})
+  isExtensionMethod: true
+  parent: Kevlar.Extensions.Http.KevlarHttpRequestExtensions
+  langs:
+  - csharp
+  - vb
+  name: WithKevlarProperties(HttpRequestMessage, Action<KevlarProperties>)
+  nameWithType: KevlarHttpRequestExtensions.WithKevlarProperties(HttpRequestMessage, Action<KevlarProperties>)
+  fullName: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithKevlarProperties(System.Net.Http.HttpRequestMessage, System.Action<Kevlar.KevlarProperties>)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: Adds an initializer for properties visible to strategies and callbacks.
+  example: []
+  syntax:
+    content: public static HttpRequestMessage WithKevlarProperties(this HttpRequestMessage request, Action<KevlarProperties> configure)
+    parameters:
+    - id: request
+      type: System.Net.Http.HttpRequestMessage
+    - id: configure
+      type: System.Action{Kevlar.KevlarProperties}
+    return:
+      type: System.Net.Http.HttpRequestMessage
+    content.vb: Public Shared Function WithKevlarProperties(request As HttpRequestMessage, configure As Action(Of KevlarProperties)) As HttpRequestMessage
+  overload: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithKevlarProperties*
+  nameWithType.vb: KevlarHttpRequestExtensions.WithKevlarProperties(HttpRequestMessage, Action(Of KevlarProperties))
+  fullName.vb: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithKevlarProperties(System.Net.Http.HttpRequestMessage, System.Action(Of Kevlar.KevlarProperties))
+  name.vb: WithKevlarProperties(HttpRequestMessage, Action(Of KevlarProperties))
+- uid: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithShield(System.Net.Http.HttpRequestMessage,Kevlar.Shield{System.Net.Http.HttpResponseMessage})
+  commentId: M:Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithShield(System.Net.Http.HttpRequestMessage,Kevlar.Shield{System.Net.Http.HttpResponseMessage})
+  id: WithShield(System.Net.Http.HttpRequestMessage,Kevlar.Shield{System.Net.Http.HttpResponseMessage})
+  isExtensionMethod: true
+  parent: Kevlar.Extensions.Http.KevlarHttpRequestExtensions
+  langs:
+  - csharp
+  - vb
+  name: WithShield(HttpRequestMessage, Shield<HttpResponseMessage>)
+  nameWithType: KevlarHttpRequestExtensions.WithShield(HttpRequestMessage, Shield<HttpResponseMessage>)
+  fullName: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithShield(System.Net.Http.HttpRequestMessage, Kevlar.Shield<System.Net.Http.HttpResponseMessage>)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: Uses <code class="paramref">shield</code> instead of the client's default for this request.
+  example: []
+  syntax:
+    content: public static HttpRequestMessage WithShield(this HttpRequestMessage request, Shield<HttpResponseMessage> shield)
+    parameters:
+    - id: request
+      type: System.Net.Http.HttpRequestMessage
+    - id: shield
+      type: Kevlar.Shield{System.Net.Http.HttpResponseMessage}
+    return:
+      type: System.Net.Http.HttpRequestMessage
+    content.vb: Public Shared Function WithShield(request As HttpRequestMessage, shield As Shield(Of HttpResponseMessage)) As HttpRequestMessage
+  overload: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithShield*
+  nameWithType.vb: KevlarHttpRequestExtensions.WithShield(HttpRequestMessage, Shield(Of HttpResponseMessage))
+  fullName.vb: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithShield(System.Net.Http.HttpRequestMessage, Kevlar.Shield(Of System.Net.Http.HttpResponseMessage))
+  name.vb: WithShield(HttpRequestMessage, Shield(Of HttpResponseMessage))
+- uid: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithShieldName(System.Net.Http.HttpRequestMessage,System.String)
+  commentId: M:Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithShieldName(System.Net.Http.HttpRequestMessage,System.String)
+  id: WithShieldName(System.Net.Http.HttpRequestMessage,System.String)
+  isExtensionMethod: true
+  parent: Kevlar.Extensions.Http.KevlarHttpRequestExtensions
+  langs:
+  - csharp
+  - vb
+  name: WithShieldName(HttpRequestMessage, string)
+  nameWithType: KevlarHttpRequestExtensions.WithShieldName(HttpRequestMessage, string)
+  fullName: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithShieldName(System.Net.Http.HttpRequestMessage, string)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: Sets the logical name consumed by a per-request shield selector.
+  example: []
+  syntax:
+    content: public static HttpRequestMessage WithShieldName(this HttpRequestMessage request, string shieldName)
+    parameters:
+    - id: request
+      type: System.Net.Http.HttpRequestMessage
+    - id: shieldName
+      type: System.String
+    return:
+      type: System.Net.Http.HttpRequestMessage
+    content.vb: Public Shared Function WithShieldName(request As HttpRequestMessage, shieldName As String) As HttpRequestMessage
+  overload: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithShieldName*
+  nameWithType.vb: KevlarHttpRequestExtensions.WithShieldName(HttpRequestMessage, String)
+  fullName.vb: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithShieldName(System.Net.Http.HttpRequestMessage, String)
+  name.vb: WithShieldName(HttpRequestMessage, String)
+- uid: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.DisableReplay(System.Net.Http.HttpRequestMessage)
+  commentId: M:Kevlar.Extensions.Http.KevlarHttpRequestExtensions.DisableReplay(System.Net.Http.HttpRequestMessage)
+  id: DisableReplay(System.Net.Http.HttpRequestMessage)
+  isExtensionMethod: true
+  parent: Kevlar.Extensions.Http.KevlarHttpRequestExtensions
+  langs:
+  - csharp
+  - vb
+  name: DisableReplay(HttpRequestMessage)
+  nameWithType: KevlarHttpRequestExtensions.DisableReplay(HttpRequestMessage)
+  fullName: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.DisableReplay(System.Net.Http.HttpRequestMessage)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: Suppresses retries, hedges, and other additional attempts for this request.
+  example: []
+  syntax:
+    content: public static HttpRequestMessage DisableReplay(this HttpRequestMessage request)
+    parameters:
+    - id: request
+      type: System.Net.Http.HttpRequestMessage
+    return:
+      type: System.Net.Http.HttpRequestMessage
+    content.vb: Public Shared Function DisableReplay(request As HttpRequestMessage) As HttpRequestMessage
+  overload: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.DisableReplay*
+- uid: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithKevlarCancellationToken(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)
+  commentId: M:Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithKevlarCancellationToken(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)
+  id: WithKevlarCancellationToken(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)
+  isExtensionMethod: true
+  parent: Kevlar.Extensions.Http.KevlarHttpRequestExtensions
+  langs:
+  - csharp
+  - vb
+  name: WithKevlarCancellationToken(HttpRequestMessage, CancellationToken)
+  nameWithType: KevlarHttpRequestExtensions.WithKevlarCancellationToken(HttpRequestMessage, CancellationToken)
+  fullName: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithKevlarCancellationToken(System.Net.Http.HttpRequestMessage, System.Threading.CancellationToken)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: Links an additional cancellation token to this request's handler execution.
+  example: []
+  syntax:
+    content: public static HttpRequestMessage WithKevlarCancellationToken(this HttpRequestMessage request, CancellationToken cancellationToken)
+    parameters:
+    - id: request
+      type: System.Net.Http.HttpRequestMessage
+    - id: cancellationToken
+      type: System.Threading.CancellationToken
+    return:
+      type: System.Net.Http.HttpRequestMessage
+    content.vb: Public Shared Function WithKevlarCancellationToken(request As HttpRequestMessage, cancellationToken As CancellationToken) As HttpRequestMessage
+  overload: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithKevlarCancellationToken*
+references:
+- uid: Kevlar.Extensions.Http
+  commentId: N:Kevlar.Extensions.Http
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar.Extensions.Http
+  nameWithType: Kevlar.Extensions.Http
+  fullName: Kevlar.Extensions.Http
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+  - name: .
+  - uid: Kevlar.Extensions.Http
+    name: Http
+    isExternal: true
+    href: Kevlar.Extensions.Http.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+  - name: .
+  - uid: Kevlar.Extensions.Http
+    name: Http
+    isExternal: true
+    href: Kevlar.Extensions.Http.html
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.MemberwiseClone
+  commentId: M:System.Object.MemberwiseClone
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  name: MemberwiseClone()
+  nameWithType: object.MemberwiseClone()
+  fullName: object.MemberwiseClone()
+  nameWithType.vb: Object.MemberwiseClone()
+  fullName.vb: Object.MemberwiseClone()
+  spec.csharp:
+  - uid: System.Object.MemberwiseClone
+    name: MemberwiseClone
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.MemberwiseClone
+    name: MemberwiseClone
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  - name: (
+  - name: )
+- uid: System.Object.ToString
+  commentId: M:System.Object.ToString
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  name: ToString()
+  nameWithType: object.ToString()
+  fullName: object.ToString()
+  nameWithType.vb: Object.ToString()
+  fullName.vb: Object.ToString()
+  spec.csharp:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object)
+  commentId: M:System.Object.Equals(System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  name: Equals(object)
+  nameWithType: object.Equals(object)
+  fullName: object.Equals(object)
+  nameWithType.vb: Object.Equals(Object)
+  fullName.vb: Object.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetHashCode
+  commentId: M:System.Object.GetHashCode
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  name: GetHashCode()
+  nameWithType: object.GetHashCode()
+  fullName: object.GetHashCode()
+  nameWithType.vb: Object.GetHashCode()
+  fullName.vb: Object.GetHashCode()
+  spec.csharp:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithKevlarProperties*
+  commentId: Overload:Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithKevlarProperties
+  isExternal: true
+  href: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.html#Kevlar_Extensions_Http_KevlarHttpRequestExtensions_WithKevlarProperties_System_Net_Http_HttpRequestMessage_System_Action_Kevlar_KevlarProperties__
+  name: WithKevlarProperties
+  nameWithType: KevlarHttpRequestExtensions.WithKevlarProperties
+  fullName: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithKevlarProperties
+- uid: System.Net.Http.HttpRequestMessage
+  commentId: T:System.Net.Http.HttpRequestMessage
+  parent: System.Net.Http
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.net.http.httprequestmessage
+  name: HttpRequestMessage
+  nameWithType: HttpRequestMessage
+  fullName: System.Net.Http.HttpRequestMessage
+- uid: System.Action{Kevlar.KevlarProperties}
+  commentId: T:System.Action{Kevlar.KevlarProperties}
+  parent: System
+  definition: System.Action`1
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<KevlarProperties>
+  nameWithType: Action<KevlarProperties>
+  fullName: System.Action<Kevlar.KevlarProperties>
+  nameWithType.vb: Action(Of KevlarProperties)
+  fullName.vb: System.Action(Of Kevlar.KevlarProperties)
+  name.vb: Action(Of KevlarProperties)
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - uid: Kevlar.KevlarProperties
+    name: KevlarProperties
+    isExternal: true
+    href: Kevlar.KevlarProperties.html
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.KevlarProperties
+    name: KevlarProperties
+    isExternal: true
+    href: Kevlar.KevlarProperties.html
+  - name: )
+- uid: System.Net.Http
+  commentId: N:System.Net.Http
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System.Net.Http
+  nameWithType: System.Net.Http
+  fullName: System.Net.Http
+  spec.csharp:
+  - uid: System
+    name: System
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system
+  - name: .
+  - uid: System.Net
+    name: Net
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.net
+  - name: .
+  - uid: System.Net.Http
+    name: Http
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.net.http
+  spec.vb:
+  - uid: System
+    name: System
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system
+  - name: .
+  - uid: System.Net
+    name: Net
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.net
+  - name: .
+  - uid: System.Net.Http
+    name: Http
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.net.http
+- uid: System.Action`1
+  commentId: T:System.Action`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<T>
+  nameWithType: Action<T>
+  fullName: System.Action<T>
+  nameWithType.vb: Action(Of T)
+  fullName.vb: System.Action(Of T)
+  name.vb: Action(Of T)
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithShield*
+  commentId: Overload:Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithShield
+  isExternal: true
+  href: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.html#Kevlar_Extensions_Http_KevlarHttpRequestExtensions_WithShield_System_Net_Http_HttpRequestMessage_Kevlar_Shield_System_Net_Http_HttpResponseMessage__
+  name: WithShield
+  nameWithType: KevlarHttpRequestExtensions.WithShield
+  fullName: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithShield
+- uid: Kevlar.Shield{System.Net.Http.HttpResponseMessage}
+  commentId: T:Kevlar.Shield{System.Net.Http.HttpResponseMessage}
+  parent: Kevlar
+  definition: Kevlar.Shield`1
+  href: Kevlar.Shield-1.html
+  name: Shield<HttpResponseMessage>
+  nameWithType: Shield<HttpResponseMessage>
+  fullName: Kevlar.Shield<System.Net.Http.HttpResponseMessage>
+  nameWithType.vb: Shield(Of HttpResponseMessage)
+  fullName.vb: Kevlar.Shield(Of System.Net.Http.HttpResponseMessage)
+  name.vb: Shield(Of HttpResponseMessage)
+  spec.csharp:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: <
+  - uid: System.Net.Http.HttpResponseMessage
+    name: HttpResponseMessage
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.net.http.httpresponsemessage
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.Net.Http.HttpResponseMessage
+    name: HttpResponseMessage
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.net.http.httpresponsemessage
+  - name: )
+- uid: Kevlar.Shield`1
+  commentId: T:Kevlar.Shield`1
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Shield-1.html
+  name: Shield<TResult>
+  nameWithType: Shield<TResult>
+  fullName: Kevlar.Shield<TResult>
+  nameWithType.vb: Shield(Of TResult)
+  fullName.vb: Kevlar.Shield(Of TResult)
+  name.vb: Shield(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithShieldName*
+  commentId: Overload:Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithShieldName
+  isExternal: true
+  href: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.html#Kevlar_Extensions_Http_KevlarHttpRequestExtensions_WithShieldName_System_Net_Http_HttpRequestMessage_System_String_
+  name: WithShieldName
+  nameWithType: KevlarHttpRequestExtensions.WithShieldName
+  fullName: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithShieldName
+- uid: System.String
+  commentId: T:System.String
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.string
+  name: string
+  nameWithType: string
+  fullName: string
+  nameWithType.vb: String
+  fullName.vb: String
+  name.vb: String
+- uid: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.DisableReplay*
+  commentId: Overload:Kevlar.Extensions.Http.KevlarHttpRequestExtensions.DisableReplay
+  isExternal: true
+  href: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.html#Kevlar_Extensions_Http_KevlarHttpRequestExtensions_DisableReplay_System_Net_Http_HttpRequestMessage_
+  name: DisableReplay
+  nameWithType: KevlarHttpRequestExtensions.DisableReplay
+  fullName: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.DisableReplay
+- uid: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithKevlarCancellationToken*
+  commentId: Overload:Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithKevlarCancellationToken
+  isExternal: true
+  href: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.html#Kevlar_Extensions_Http_KevlarHttpRequestExtensions_WithKevlarCancellationToken_System_Net_Http_HttpRequestMessage_System_Threading_CancellationToken_
+  name: WithKevlarCancellationToken
+  nameWithType: KevlarHttpRequestExtensions.WithKevlarCancellationToken
+  fullName: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithKevlarCancellationToken
+- uid: System.Threading.CancellationToken
+  commentId: T:System.Threading.CancellationToken
+  parent: System.Threading
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
+  name: CancellationToken
+  nameWithType: CancellationToken
+  fullName: System.Threading.CancellationToken
+- uid: System.Threading
+  commentId: N:System.Threading
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System.Threading
+  nameWithType: System.Threading
+  fullName: System.Threading
+  spec.csharp:
+  - uid: System
+    name: System
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system
+  - name: .
+  - uid: System.Threading
+    name: Threading
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading
+  spec.vb:
+  - uid: System
+    name: System
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system
+  - name: .
+  - uid: System.Threading
+    name: Threading
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading

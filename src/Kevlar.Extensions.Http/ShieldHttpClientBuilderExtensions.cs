@@ -64,6 +64,53 @@ public static class ShieldHttpClientBuilderExtensions
         return builder.AddHttpMessageHandler(services => new ShieldDelegatingHandler(shieldFactory(services)));
     }
 
+    /// <summary>Selects one shield for each request using the request and service provider.</summary>
+    public static IHttpClientBuilder AddShield(
+        this IHttpClientBuilder builder,
+        Func<HttpRequestMessage, IServiceProvider, Shield<HttpResponseMessage>> shieldSelector)
+    {
+        if (builder is null)
+        {
+            throw new ArgumentNullException(nameof(builder));
+        }
+
+        if (shieldSelector is null)
+        {
+            throw new ArgumentNullException(nameof(shieldSelector));
+        }
+
+        return builder.AddHttpMessageHandler(services =>
+            new ShieldDelegatingHandler(request => shieldSelector(request, services)));
+    }
+
+    /// <summary>Selects a bounded partition shield from each request.</summary>
+    public static IHttpClientBuilder AddShield<TKey>(
+        this IHttpClientBuilder builder,
+        PartitionedShield<TKey, HttpResponseMessage> partitions,
+        Func<HttpRequestMessage, TKey> keySelector)
+        where TKey : notnull
+    {
+        if (builder is null)
+        {
+            throw new ArgumentNullException(nameof(builder));
+        }
+
+        if (partitions is null)
+        {
+            throw new ArgumentNullException(nameof(partitions));
+        }
+
+        if (keySelector is null)
+        {
+            throw new ArgumentNullException(nameof(keySelector));
+        }
+
+        return builder.AddHttpMessageHandler(() =>
+            new ShieldDelegatingHandler(
+                request => partitions.GetShieldAsync(keySelector(request)),
+                new ShieldHttpHandlerOptions()));
+    }
+
     /// <summary>Sends this client's requests through service-provider-created shield and handler options.</summary>
     public static IHttpClientBuilder AddShield(
         this IHttpClientBuilder builder,
