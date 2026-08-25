@@ -352,9 +352,11 @@ public class DynamicRegistryTests
 
         release.SetResult();
         await execution;
+        execution = null!;
         Collect(retired);
         monitor.Set("active", new ReloadOptions());
 
+        await Assert.That(retired.IsAlive).IsFalse();
         await Assert.That(first.DisposeCount).IsEqualTo(1);
     }
 
