@@ -160,7 +160,9 @@ public static class HttpShield
         if (!IsDisabled(options.TotalTimeout)
             && !IsDisabled(options.AttemptTimeout)
             && options.TotalTimeout.TimeoutGenerator is null
+            && options.TotalTimeout.TimeoutGeneratorSync is null
             && options.AttemptTimeout.TimeoutGenerator is null
+            && options.AttemptTimeout.TimeoutGeneratorSync is null
             && options.AttemptTimeout.Timeout > options.TotalTimeout.Timeout)
         {
             throw new KevlarConfigurationException(
@@ -207,6 +209,7 @@ public static class HttpShield
     {
         target.Timeout = source.Timeout;
         target.TimeoutGenerator = source.TimeoutGenerator;
+        target.TimeoutGeneratorSync = source.TimeoutGeneratorSync;
         target.OnTimeout = source.OnTimeout;
         target.OnTimeoutAsync = source.OnTimeoutAsync;
     }
@@ -271,6 +274,7 @@ public static class HttpShield
         target.SamplingWindow = source.SamplingWindow;
         target.BreakDuration = source.BreakDuration;
         target.BreakDurationGenerator = source.BreakDurationGenerator;
+        target.BreakDurationGeneratorSync = source.BreakDurationGeneratorSync;
         target.HandlesException = source.HandlesException;
         target.HandlesResult = source.HandlesResult;
         target.Monitor = source.Monitor;

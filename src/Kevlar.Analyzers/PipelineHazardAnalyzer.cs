@@ -2048,11 +2048,57 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
+        if (HasStaticallyDisabledRetries(
+                anonymousFunction,
+                anonymousFunction.Symbol.Parameters[0],
+                context))
+        {
+            memberName = null;
+            return false;
+        }
+
         return TryFindAsyncConfiguration(
             anonymousFunction.Body,
             anonymousFunction.Symbol.Parameters[0],
             context,
             out memberName);
+    }
+
+    private static bool HasStaticallyDisabledRetries(
+        IAnonymousFunctionOperation anonymousFunction,
+        IParameterSymbol configuratorParameter,
+        OperationAnalysisContext context)
+    {
+        if (configuratorParameter.Type is not INamedTypeSymbol retryOptions
+            || retryOptions.Name != "RetryOptions"
+            || retryOptions.ContainingNamespace.ToDisplayString() != "Kevlar"
+            || anonymousFunction.Body is not IBlockOperation block)
+        {
+            return false;
+        }
+
+        int? maxRetries = null;
+        foreach (var statement in block.Operations)
+        {
+            var operation = statement is IExpressionStatementOperation expressionStatement
+                ? expressionStatement.Operation
+                : statement;
+            operation = Unwrap(operation)!;
+            if (operation is IAssignmentOperation
+                {
+                    Target: IPropertyReferenceOperation { Property.Name: "MaxRetries" } property,
+                    Value: { } value,
+                }
+                && property.Instance is { } instance
+                && ReferencesConfiguratorParameter(instance, configuratorParameter, context))
+            {
+                maxRetries = value.ConstantValue is { HasValue: true, Value: int configured }
+                    ? configured
+                    : null;
+            }
+        }
+
+        return maxRetries == 0;
     }
 
     private static bool TryFindAsyncConfiguration(
