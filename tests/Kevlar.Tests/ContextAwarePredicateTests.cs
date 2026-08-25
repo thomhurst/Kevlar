@@ -196,6 +196,56 @@ public class ContextAwarePredicateTests
     }
 
     [Test]
+    public async Task Hedge_Predicate_Context_Is_Frozen_Before_Classification()
+    {
+        var releaseSlowOriginal = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        Task<int>? slowOriginal = null;
+        var executions = 0;
+        var observedValue = -1;
+        var shield = Shield.For<int>()
+            .WhenResultContext(handling =>
+            {
+                if (handling.Attempt == 1)
+                {
+                    releaseSlowOriginal.SetResult();
+                    slowOriginal!.GetAwaiter().GetResult();
+                    observedValue = handling.Context.Properties.GetOrDefault(HedgeAttempt, -1);
+                }
+
+                return handling.Outcome.TryGetResult(out var result) && result < 0;
+            })
+            .Hedge(options =>
+            {
+                options.MaxAttempts = 2;
+                options.Delay = Timeout.InfiniteTimeSpan;
+                options.ActionGenerator = hedge => async token =>
+                {
+                    var selectedOriginal = hedge.OriginalAction(token);
+                    slowOriginal = hedge.OriginalAction(token).AsTask();
+                    return await selectedOriginal;
+                };
+            });
+
+        var result = await shield.ExecuteWithContextAsync(async context =>
+        {
+            await Task.Yield();
+            var execution = Interlocked.Increment(ref executions);
+            context.Properties.Set(HedgeAttempt, execution);
+            if (execution == 3)
+            {
+                await releaseSlowOriginal.Task;
+            }
+
+            return execution == 1 ? -1 : execution;
+        });
+
+        await Assert.That(result).IsEqualTo(2);
+        await Assert.That(observedValue).IsEqualTo(2);
+        await Assert.That(await slowOriginal!).IsEqualTo(3);
+    }
+
+    [Test]
     public async Task HandlesException_Context_Override_Replaces_Ambient_Clause()
     {
         var attempts = 0;

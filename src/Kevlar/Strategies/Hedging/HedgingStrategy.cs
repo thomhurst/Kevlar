@@ -203,6 +203,7 @@ internal sealed class HedgingStrategy : Strategy
                 bool shouldHandle;
                 try
                 {
+                    completedAttempt.FreezeContext();
                     shouldHandle = _judge.ShouldHandle(
                         in outcome,
                         completedAttempt.Context,
@@ -526,6 +527,7 @@ internal sealed class HedgingStrategy : Strategy
         private KevlarContext? _context;
         private CancellationTokenSource? _cancellation;
         private bool _acceptingInvocations;
+        private bool _frozen;
         private int _references;
         private int _version;
 
@@ -544,6 +546,7 @@ internal sealed class HedgingStrategy : Strategy
                 capture._context = context;
                 capture._cancellation = cancellation;
                 capture._acceptingInvocations = true;
+                capture._frozen = false;
                 capture._references = 1;
                 capture._version++;
                 version = capture._version;
@@ -578,6 +581,11 @@ internal sealed class HedgingStrategy : Strategy
         {
             lock (_sync)
             {
+                if (_frozen)
+                {
+                    return;
+                }
+
                 _context!.CancellationToken = source.CancellationToken;
                 _context.Properties.Clear();
                 source.Properties.CopyTo(_context.Properties);
@@ -585,6 +593,14 @@ internal sealed class HedgingStrategy : Strategy
         }
 
         public void ReleaseInvocation() => ReleaseReference(stopAcceptingInvocations: false);
+
+        public void Freeze()
+        {
+            lock (_sync)
+            {
+                _frozen = true;
+            }
+        }
 
         public void ReleaseAttempt() => ReleaseReference(stopAcceptingInvocations: true);
 
@@ -597,6 +613,7 @@ internal sealed class HedgingStrategy : Strategy
                 if (stopAcceptingInvocations)
                 {
                     _acceptingInvocations = false;
+                    _frozen = true;
                 }
 
                 _references--;
@@ -783,6 +800,8 @@ internal sealed class HedgingStrategy : Strategy
         public int Attempt { get; }
 
         private OriginalActionContextCapture? ContextCapture { get; }
+
+        public void FreezeContext() => ContextCapture?.Freeze();
 
         public void Dispose() => ReleaseAttemptResources(Context, Cancellation, ContextCapture);
     }
