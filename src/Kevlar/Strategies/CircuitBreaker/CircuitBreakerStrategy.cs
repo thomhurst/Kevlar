@@ -12,16 +12,26 @@ internal sealed class CircuitBreakerStrategy : Strategy
     private readonly OutcomeJudge _judge;
 
     public CircuitBreakerStrategy(CircuitBreakerOptions options, OutcomeJudge judge)
-        : this(options, judge, options.HasHandlingOverride)
+        : this(
+            options,
+            judge,
+            options.HasHandlingOverride,
+            options.BreakDurationGenerator is null
+                ? null
+                : CircuitBreakerBreakDurationGenerator.Create(options.BreakDurationGenerator))
     {
     }
 
     private CircuitBreakerStrategy(
         CircuitBreakerOptions options,
         OutcomeJudge judge,
-        bool hasHandlingOverride)
+        bool hasHandlingOverride,
+        CircuitBreakerBreakDurationGenerator? breakDurationGenerator)
     {
-        _core = new CircuitBreakerCore(options, RecordTransitionState);
+        _core = new CircuitBreakerCore(
+            options,
+            breakDurationGenerator,
+            RecordTransitionState);
         _judge = judge;
         HasHandlingOverride = hasHandlingOverride;
     }
@@ -29,7 +39,13 @@ internal sealed class CircuitBreakerStrategy : Strategy
     internal static CircuitBreakerStrategy Create<TResult>(
         CircuitBreakerOptions<TResult> options,
         OutcomeJudge judge) =>
-        new(options.ToUntyped(), judge, options.HasHandlingOverride);
+        new(
+            options.ToUntyped(),
+            judge,
+            options.HasHandlingOverride,
+            options.BreakDurationGenerator is null
+                ? null
+                : CircuitBreakerBreakDurationGenerator.Create(options.BreakDurationGenerator));
 
     internal override OutcomeJudge? ReactiveJudge => _judge;
 
@@ -51,7 +67,11 @@ internal sealed class CircuitBreakerStrategy : Strategy
             return ExecuteConfiguredAsync(next, context, alias, recordState);
         }
 
-        if (!_core.TryEnter(context.TimeProvider, out var rejection, out var admittedProbeGeneration))
+        if (!_core.TryEnter(
+                context.TimeProvider,
+                context,
+                out var rejection,
+                out var admittedProbeGeneration))
         {
             if (recordState)
             {
@@ -103,11 +123,11 @@ internal sealed class CircuitBreakerStrategy : Strategy
     {
         if (_judge.ShouldHandle(in outcome, context, attempt: 0, alias.StrategyIndex))
         {
-            _core.RecordFailure(context.TimeProvider, outcome.Exception);
+            _core.RecordFailure(context.TimeProvider, outcome.Exception, context);
         }
         else if (outcome.Exception is null)
         {
-            _core.RecordSuccess(context.TimeProvider);
+            _core.RecordSuccess(context.TimeProvider, context);
         }
         else
         {
@@ -211,7 +231,7 @@ internal sealed class CircuitBreakerStrategy : Strategy
         StrategyMetricAlias alias,
         bool recordState)
     {
-        var entry = _core.TryEnterAsync(context.TimeProvider);
+        var entry = _core.TryEnterAsync(context.TimeProvider, context);
         if (!entry.IsCompletedSuccessfully)
         {
             return AwaitConfiguredEntryAsync(entry, next, context, alias, recordState);
@@ -310,7 +330,7 @@ internal sealed class CircuitBreakerStrategy : Strategy
         }
         else if (outcome.Exception is null)
         {
-            recording = _core.RecordSuccessAsync(context.TimeProvider);
+            recording = _core.RecordSuccessAsync(context.TimeProvider, context);
         }
         else
         {

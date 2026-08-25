@@ -17,4 +17,7 @@ public enum CallbackKind
 
     /// <summary>A circuit-breaker transition callback.</summary>
     CircuitTransition,
+
+    /// <summary>A circuit-breaker break-duration callback.</summary>
+    CircuitBreakDuration,
 }

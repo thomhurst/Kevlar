@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import yaml from 'js-yaml';
+import { load } from 'js-yaml';
 
 const docsRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const repositoryRoot = path.dirname(docsRoot);
@@ -13,7 +13,7 @@ const allowedTypes = new Set(['checkboxes', 'dropdown', 'input', 'markdown', 'te
 function readYaml(fileName) {
   const filePath = path.join(templatesRoot, fileName);
   try {
-    return yaml.load(fs.readFileSync(filePath, 'utf8'));
+    return load(fs.readFileSync(filePath, 'utf8'));
   } catch (error) {
     throw new Error(`${fileName}: invalid YAML: ${error.message}`);
   }

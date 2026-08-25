@@ -634,7 +634,11 @@ public sealed class Shield
         StrategyNode? next = null;
         for (var i = strategies.Length - 1; i >= 0; i--)
         {
-            next = new StrategyNode(strategies[i], next, i);
+            next = new StrategyNode(
+                strategies[i],
+                next,
+                i,
+                i > 0 && strategies[i - 1].RequiresContinuationOverlapIsolation);
         }
 
         return next;

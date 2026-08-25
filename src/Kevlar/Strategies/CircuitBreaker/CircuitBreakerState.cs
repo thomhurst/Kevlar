@@ -17,13 +17,20 @@ public enum CircuitState
 }
 
 /// <summary>Describes a circuit breaker state transition.</summary>
-public readonly struct CircuitStateChangedEvent
+public readonly struct CircuitBreakerStateChangedEvent
 {
-    internal CircuitStateChangedEvent(CircuitState from, CircuitState to, Exception? lastException)
+    private readonly KevlarContext? _context;
+
+    internal CircuitBreakerStateChangedEvent(
+        CircuitState from,
+        CircuitState to,
+        Exception? lastException,
+        KevlarContext context)
     {
         From = from;
         To = to;
         LastException = lastException;
+        _context = context;
     }
 
     /// <summary>The state the circuit left.</summary>
@@ -34,4 +41,16 @@ public readonly struct CircuitStateChangedEvent
 
     /// <summary>The exception from the failure that caused the transition, when applicable.</summary>
     public Exception? LastException { get; }
+
+    /// <summary>
+    /// The triggering execution context. Manual monitor transitions receive a detached context
+    /// with <see cref="KevlarContext.StrategyIndex"/> equal to <c>-1</c>.
+    /// </summary>
+    public KevlarContext Context => Internal.EventContext.Required(_context);
+
+    internal CircuitBreakerStateChangedEvent WithDetachedContext() => new(
+        From,
+        To,
+        LastException,
+        Context.CreateDetachedSnapshot());
 }

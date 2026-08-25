@@ -35,9 +35,9 @@ Configure either `ConsecutiveFailures` *or* `FailureRatio` — not both. When ne
 | `MinimumThroughput` | `10` | Sampling mode: don't judge until at least this many calls landed in the window |
 | `SamplingWindow` | `30s` | Rolling window over which the ratio is measured (tracked in 10 buckets) |
 | `BreakDuration` | `15s` | How long the circuit stays open before allowing a probe |
-| `BreakDurationGenerator` | — | Awaited outcome/context-aware duration; overrides `BreakDuration` for each trip |
+| `BreakDurationGenerator` | — | Awaited outcome, failure-statistics, and context-aware duration; overrides `BreakDuration` for each trip |
 | `Monitor` | — | A `CircuitBreakerMonitor` for observing + manual control |
-| `OnStateChanged` | — | Callback on every transition: `e.From`, `e.To`, `e.LastException` |
+| `OnStateChanged` | — | Callback on every transition: `e.From`, `e.To`, `e.LastException`, `e.Context` |
 | `OnStateChangedAsync` | — | Awaited callback on every transition, after `OnStateChanged` |
 | `HandlesException` | — | Local exception predicate; replaces the ambient clause for this breaker |
 | `HandlesResult` (`CircuitBreakerOptions<T>`) | — | Local result predicate on `Shield<T>`; replaces the ambient clause together with `HandlesException` |
@@ -54,6 +54,7 @@ var breaker = Shield.CircuitBreaker(o =>
     {
         await Task.Yield(); // for example, fetch a dependency recovery hint
         trip.Context.CancellationToken.ThrowIfCancellationRequested();
+        Console.WriteLine($"Opening at {trip.FailureRate:P0} failures");
         return trip.Exception is TimeoutExceededException
             ? TimeSpan.FromMinutes(1)
             : TimeSpan.FromSeconds(30);
@@ -61,7 +62,14 @@ var breaker = Shield.CircuitBreaker(o =>
 });
 ```
 
-The generator runs after the handled outcome crosses the threshold and before the circuit changes to `Open`. It is awaited outside the circuit lock. Its duration must be positive; its exception or cancellation propagates unchanged and leaves the circuit available for a later trip. `Result` carries a boxed handled result when a typed shield trips without an exception. `Context` is pooled and must not be retained after the callback completes. A dynamic breaker describes itself as `break dynamic` without running the generator.
+The generator runs after the handled outcome crosses the threshold and before the circuit changes
+to `Open`. It receives `FailureRate`, `FailureCount`, and `ConsecutiveFailures` at that moment and
+is awaited outside the circuit lock. Its duration must be positive; its exception or cancellation
+propagates unchanged and leaves the circuit available for a later trip. Untyped shields expose
+`Exception` and boxed `Result`; `CircuitBreakerOptions<T>` instead receives
+`CircuitBreakerBreakDurationEvent<T>` with a directly stored `Outcome<T>`. `Context` is pooled and
+must not be retained after the callback completes. A dynamic breaker describes itself as
+`break dynamic` without running the generator.
 
 ## The state machine
 
@@ -109,7 +117,17 @@ await monitor.ResetAsync();
 
 A monitor binds to exactly **one** breaker: assign it to `CircuitBreakerOptions.Monitor` when building the shield, and keep your reference. Binding it twice throws, as does using it before binding.
 
-Transitions are delivered serially in state-change order: `OnStateChanged`, awaited `OnStateChangedAsync`, then `monitor.StateChanged`. Callbacks run outside the circuit lock, so they can read `State` or call the synchronous or asynchronous monitor controls; a reentrant transition is queued behind the transition currently being delivered. Use `ResetAsync()` and `IsolateAsync()` when asynchronous transition callbacks are configured so the calling thread is not blocked. If an observer throws, later observers still run and the circuit keeps its new, usable state. One callback failure is rethrown unchanged after delivery; multiple failures are combined in an `AggregateException`.
+Transitions are delivered serially in state-change order: `OnStateChanged`, awaited
+`OnStateChangedAsync`, then `monitor.StateChanged`. The monitor intentionally retains an
+`Action<CircuitBreakerStateChangedEvent>` event so the three observers share one event shape and
+delivery model. Execution-driven transitions carry the triggering pooled context. Manual
+`Isolate`/`Reset` transitions carry a detached context with `StrategyIndex == -1`, no shield name,
+and an empty property bag. Callbacks run outside the circuit lock, so they can read `State` or call
+the synchronous or asynchronous monitor controls; a reentrant transition is queued behind the
+transition currently being delivered. Use `ResetAsync()` and `IsolateAsync()` when asynchronous
+transition callbacks are configured so the calling thread is not blocked. If an observer throws,
+later observers still run and the circuit keeps its new, usable state. One callback failure is
+rethrown unchanged after delivery; multiple failures are combined in an `AggregateException`.
 
 ## Share the circuit deliberately
 

@@ -129,12 +129,14 @@ public class RateLimiterAdapterTests
         using var listener = new RejectionListener("fixed-window");
         var order = new List<string>();
         RateLimiterAdapterRejectedEvent observed = default;
+        var observedStrategyIndex = -1;
         var shield = Shield.Empty
             .UseRateLimiter(limiter, options =>
             {
                 options.OnRejected = rejection =>
                 {
                     observed = rejection;
+                    observedStrategyIndex = rejection.Context.StrategyIndex;
                     order.Add(listener.Count == 1 ? "metric-sync" : "sync-before-metric");
                 };
                 options.OnRejectedAsync = async rejection =>
@@ -156,7 +158,7 @@ public class RateLimiterAdapterTests
         await Assert.That(observed.RetryAfter).IsEqualTo(exception.RetryAfter);
         await Assert.That(observed.Metadata.ContainsKey(MetadataName.RetryAfter.Name)).IsTrue();
         await Assert.That(observed.PermitCount).IsEqualTo(1);
-        await Assert.That(observed.StrategyIndex).IsEqualTo(0);
+        await Assert.That(observedStrategyIndex).IsEqualTo(0);
         await Assert.That(order.SequenceEqual(["metric-sync", "async"])).IsTrue();
     }
 

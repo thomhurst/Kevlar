@@ -22,7 +22,7 @@ public sealed class CircuitBreakerMonitor
     /// transition publishers, so they should not perform I/O, wait on external work, or otherwise
     /// run for a long time.
     /// </summary>
-    public event Action<CircuitStateChangedEvent>? StateChanged;
+    public event Action<CircuitBreakerStateChangedEvent>? StateChanged;
 
     /// <summary>Forces the circuit open. Executions are rejected until <see cref="Reset"/> is called.</summary>
     public void Isolate() => BoundCore().Isolate();
@@ -55,7 +55,7 @@ public sealed class CircuitBreakerMonitor
         }
     }
 
-    internal void Raise(in CircuitStateChangedEvent stateChangedEvent) => StateChanged?.Invoke(stateChangedEvent);
+    internal void Raise(in CircuitBreakerStateChangedEvent stateChangedEvent) => StateChanged?.Invoke(stateChangedEvent);
 
     private CircuitBreakerCore BoundCore() =>
         _core ?? throw new InvalidOperationException(

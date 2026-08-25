@@ -54,16 +54,16 @@ public sealed class CircuitBreakerOptions<TResult>
     public TimeSpan BreakDuration { get; set; } = TimeSpan.FromSeconds(15);
 
     /// <inheritdoc cref="CircuitBreakerOptions.BreakDurationGenerator"/>
-    public Func<CircuitBreakerBreakDurationEvent, ValueTask<TimeSpan>>? BreakDurationGenerator { get; set; }
+    public Func<CircuitBreakerBreakDurationEvent<TResult>, ValueTask<TimeSpan>>? BreakDurationGenerator { get; set; }
 
     /// <inheritdoc cref="CircuitBreakerOptions.Monitor"/>
     public CircuitBreakerMonitor? Monitor { get; set; }
 
     /// <inheritdoc cref="CircuitBreakerOptions.OnStateChanged"/>
-    public Action<CircuitStateChangedEvent>? OnStateChanged { get; set; }
+    public Action<CircuitBreakerStateChangedEvent>? OnStateChanged { get; set; }
 
     /// <inheritdoc cref="CircuitBreakerOptions.OnStateChangedAsync"/>
-    public Func<CircuitStateChangedEvent, ValueTask>? OnStateChangedAsync { get; set; }
+    public Func<CircuitBreakerStateChangedEvent, ValueTask>? OnStateChangedAsync { get; set; }
 
     internal CircuitBreakerOptions ToUntyped() => new()
     {
@@ -73,7 +73,6 @@ public sealed class CircuitBreakerOptions<TResult>
         MinimumThroughput = MinimumThroughput,
         SamplingWindow = SamplingWindow,
         BreakDuration = BreakDuration,
-        BreakDurationGenerator = BreakDurationGenerator,
         Monitor = Monitor,
         OnStateChanged = OnStateChanged,
         OnStateChangedAsync = OnStateChangedAsync,

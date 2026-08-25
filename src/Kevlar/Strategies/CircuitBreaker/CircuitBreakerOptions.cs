@@ -66,12 +66,12 @@ public sealed class CircuitBreakerOptions
     /// are aggregated. The handler runs synchronously and blocks later transition publishers, so
     /// it should not perform I/O, wait on external work, or otherwise run for a long time.
     /// </summary>
-    public Action<CircuitStateChangedEvent>? OnStateChanged { get; set; }
+    public Action<CircuitBreakerStateChangedEvent>? OnStateChanged { get; set; }
 
     /// <summary>
     /// Invoked and awaited on every state transition, after <see cref="OnStateChanged"/> and
     /// before <see cref="CircuitBreakerMonitor.StateChanged"/>. Transitions are delivered
     /// serially outside the circuit lock.
     /// </summary>
-    public Func<CircuitStateChangedEvent, ValueTask>? OnStateChangedAsync { get; set; }
+    public Func<CircuitBreakerStateChangedEvent, ValueTask>? OnStateChangedAsync { get; set; }
 }

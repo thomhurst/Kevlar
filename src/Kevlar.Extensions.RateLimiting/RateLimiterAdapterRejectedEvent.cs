@@ -3,18 +3,18 @@ namespace Kevlar.Extensions.RateLimiting;
 /// <summary>Describes an execution rejected by an adapted rate limiter.</summary>
 public readonly struct RateLimiterAdapterRejectedEvent
 {
+    private readonly KevlarContext? _context;
+
     internal RateLimiterAdapterRejectedEvent(
         TimeSpan? retryAfter,
         IReadOnlyDictionary<string, object?> metadata,
         int permitCount,
-        int strategyIndex,
         KevlarContext context)
     {
         RetryAfter = retryAfter;
         Metadata = metadata;
         PermitCount = permitCount;
-        StrategyIndex = strategyIndex;
-        Context = context;
+        _context = context;
     }
 
     /// <summary>The lease-provided delay before another acquisition should be attempted.</summary>
@@ -26,12 +26,11 @@ public readonly struct RateLimiterAdapterRejectedEvent
     /// <summary>The number of permits requested for the execution.</summary>
     public int PermitCount { get; }
 
-    /// <summary>The zero-based position of this strategy in the executing shield.</summary>
-    public int StrategyIndex { get; }
-
     /// <summary>
     /// The ambient execution context. It is pooled; do not retain it after synchronous and
     /// asynchronous rejection callbacks complete.
     /// </summary>
-    public KevlarContext Context { get; }
+    public KevlarContext Context => _context
+        ?? throw new InvalidOperationException(
+            "A default strategy event has no execution context.");
 }
