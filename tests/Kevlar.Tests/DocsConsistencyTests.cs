@@ -103,13 +103,10 @@ public class DocsConsistencyTests
             {
                 typeof(Shield),
                 typeof(Shield<>),
-                typeof(VoidShield),
                 typeof(ShieldBuilder),
                 typeof(ShieldBuilder<>),
-                typeof(VoidShieldBuilder),
                 typeof(PartitionedShield<>),
                 typeof(PartitionedShield<,>),
-                typeof(PartitionedVoidShield<>),
                 typeof(Strategy),
                 typeof(IKevlarRegistry),
                 typeof(IShieldProvider),
