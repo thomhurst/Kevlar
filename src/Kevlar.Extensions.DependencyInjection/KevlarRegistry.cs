@@ -23,9 +23,13 @@ internal sealed class ShieldRegistration
 
 internal sealed class RegistryEntry
 {
+    private readonly object _retirementLock = new();
     private readonly IServiceProvider _serviceProvider;
     private readonly ShieldRegistration _registration;
     private Lazy<object> _value;
+    private object? _resolved;
+    private Action<object>? _retirementHandler;
+    private bool _retirementPublished;
 
     public RegistryEntry(IServiceProvider serviceProvider, ShieldRegistration registration)
     {
@@ -50,15 +54,27 @@ internal sealed class RegistryEntry
 
     public bool TryGetResolved([NotNullWhen(true)] out object? resolved)
     {
-        var value = Volatile.Read(ref _value);
-        if (!value.IsValueCreated)
+        resolved = Volatile.Read(ref _resolved);
+        return resolved is not null;
+    }
+
+    public void MarkRemoved(Action<object> retirementHandler)
+    {
+        object? resolved = null;
+        lock (_retirementLock)
         {
-            resolved = null;
-            return false;
+            _retirementHandler = retirementHandler;
+            if (_resolved is not null && !_retirementPublished)
+            {
+                _retirementPublished = true;
+                resolved = _resolved;
+            }
         }
 
-        resolved = value.Value;
-        return true;
+        if (resolved is not null)
+        {
+            retirementHandler(resolved);
+        }
     }
 
     private Lazy<object> CreateValue() => new(
@@ -71,6 +87,19 @@ internal sealed class RegistryEntry
             {
                 ShieldRetirement.Track(shield);
             }
+
+            Action<object>? retirementHandler = null;
+            lock (_retirementLock)
+            {
+                Volatile.Write(ref _resolved, value);
+                if (_retirementHandler is not null && !_retirementPublished)
+                {
+                    _retirementPublished = true;
+                    retirementHandler = _retirementHandler;
+                }
+            }
+
+            retirementHandler?.Invoke(value);
 
             return value;
         },
@@ -88,6 +117,8 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         new(ReferenceComparer<IReloadingProvider>.Instance);
     private readonly object _lifecycleLock = new();
     private int _activeOperations;
+    private int _reclamationThreadId;
+    private bool _reclaiming;
     private bool _disposed;
 
     public KevlarRegistry(IServiceProvider serviceProvider, IEnumerable<ShieldRegistration> registrations)
@@ -193,7 +224,7 @@ internal sealed class KevlarRegistry : IKevlarRegistry
     {
         var provider = factory();
         _reloadingProviders.TryAdd(provider, 0);
-        provider.SetRetirementHandler(ReclaimRetirements);
+        provider.SetLifecycleHandlers(ReclaimRetirements, ProtectPublication);
         return provider;
     });
 
@@ -266,10 +297,7 @@ internal sealed class KevlarRegistry : IKevlarRegistry
             return false;
         }
 
-        if (entry.TryGetResolved(out var value))
-        {
-            Retire(value);
-        }
+        entry.MarkRemoved(Retire);
 
         return true;
     });
@@ -345,14 +373,9 @@ internal sealed class KevlarRegistry : IKevlarRegistry
 
     private TResult Read<TResult>(Func<TResult> action)
     {
-        lock (_lifecycleLock)
+        if (!TryBeginOperation())
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(IKevlarRegistry));
-            }
-
-            _activeOperations++;
+            throw new ObjectDisposedException(nameof(IKevlarRegistry));
         }
 
         try
@@ -361,15 +384,7 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         }
         finally
         {
-            ScavengeRetirements();
-            lock (_lifecycleLock)
-            {
-                _activeOperations--;
-                if (_activeOperations == 0)
-                {
-                    Monitor.PulseAll(_lifecycleLock);
-                }
-            }
+            EndOperation();
         }
     }
 
@@ -383,7 +398,7 @@ internal sealed class KevlarRegistry : IKevlarRegistry
             }
 
             _disposed = true;
-            while (_activeOperations > 0)
+            while (_activeOperations > 0 || _reclaiming)
             {
                 Monitor.Wait(_lifecycleLock);
             }
@@ -507,39 +522,54 @@ internal sealed class KevlarRegistry : IKevlarRegistry
 
     private void ScavengeRetirements()
     {
-        List<ShieldRetirement>? reclaimable = null;
-        foreach (var retirement in _retirements.Keys)
-        {
-            if (retirement.CanReclaim() && _retirements.TryRemove(retirement, out _))
-            {
-                reclaimable ??= [];
-                reclaimable.Add(retirement);
-            }
-        }
-
-        if (reclaimable is null)
+        if (!TryBeginReclamation())
         {
             return;
         }
 
-        ReclaimRetirements(reclaimable);
+        try
+        {
+            List<ShieldRetirement>? reclaimable = null;
+            foreach (var retirement in _retirements.Keys)
+            {
+                if (retirement.CanReclaim() && _retirements.TryRemove(retirement, out _))
+                {
+                    reclaimable ??= [];
+                    reclaimable.Add(retirement);
+                }
+            }
+
+            if (reclaimable is null)
+            {
+                return;
+            }
+
+            ReclaimRetirementsCore(reclaimable);
+        }
+        finally
+        {
+            EndReclamation();
+        }
     }
 
     private void ReclaimRetirements(IReadOnlyList<ShieldRetirement> reclaimable)
     {
+        foreach (var retirement in reclaimable)
+        {
+            _retirements.TryAdd(retirement, 0);
+        }
+
+        ScavengeRetirements();
+    }
+
+    private void ReclaimRetirementsCore(IReadOnlyList<ShieldRetirement> reclaimable)
+    {
         var retainedOrClaimed = ShieldRetirement.CreateStrategySet();
         foreach (var entry in _entries.Values)
         {
-            try
+            if (entry.TryGetResolved(out var resolved))
             {
-                if (entry.TryGetResolved(out var resolved))
-                {
-                    AddStrategies(resolved, retainedOrClaimed);
-                }
-            }
-            catch
-            {
-                // Failed lazy factories are retried and do not own a usable shield snapshot.
+                AddStrategies(resolved, retainedOrClaimed);
             }
         }
 
@@ -559,6 +589,87 @@ internal sealed class KevlarRegistry : IKevlarRegistry
                 _retirementFailures.Enqueue,
                 retainedOrClaimed,
                 _strategyDisposals);
+        }
+    }
+
+    private void ProtectPublication(Action publish)
+    {
+        if (!TryBeginOperation())
+        {
+            return;
+        }
+
+        try
+        {
+            publish();
+        }
+        finally
+        {
+            EndOperation();
+        }
+    }
+
+    private bool TryBeginOperation()
+    {
+        lock (_lifecycleLock)
+        {
+            var currentThreadId = Environment.CurrentManagedThreadId;
+            while (_reclaiming && _reclamationThreadId != currentThreadId)
+            {
+                Monitor.Wait(_lifecycleLock);
+            }
+
+            if (_disposed)
+            {
+                return false;
+            }
+
+            _activeOperations++;
+            return true;
+        }
+    }
+
+    private void EndOperation()
+    {
+        var scavenge = false;
+        lock (_lifecycleLock)
+        {
+            _activeOperations--;
+            if (_activeOperations == 0)
+            {
+                scavenge = !_disposed;
+                Monitor.PulseAll(_lifecycleLock);
+            }
+        }
+
+        if (scavenge)
+        {
+            ScavengeRetirements();
+        }
+    }
+
+    private bool TryBeginReclamation()
+    {
+        lock (_lifecycleLock)
+        {
+            if (_disposed || _reclaiming || _activeOperations != 0)
+            {
+                return false;
+            }
+
+            _reclaiming = true;
+            _reclamationThreadId = Environment.CurrentManagedThreadId;
+            return true;
+        }
+    }
+
+    private void EndReclamation()
+    {
+        lock (_lifecycleLock)
+        {
+            _reclamationThreadId = 0;
+            _reclaiming = false;
+            Monitor.PulseAll(_lifecycleLock);
         }
     }
 

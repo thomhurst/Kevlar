@@ -407,6 +407,125 @@ public class DynamicRegistryTests
     }
 
     [Test]
+    public async Task Remove_While_Factory_Runs_Retires_The_Result()
+    {
+        using var factoryStarted = new ManualResetEventSlim();
+        using var releaseFactory = new ManualResetEventSlim();
+        using var services = new ServiceCollection().AddKevlar().BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        var strategy = new DisposableStrategy();
+        var resolving = Task.Factory.StartNew(
+            () => registry.GetOrAdd("overlap", _ =>
+            {
+                factoryStarted.Set();
+                if (!releaseFactory.Wait(TimeSpan.FromSeconds(5)))
+                {
+                    throw new TimeoutException("The removal did not release the shield factory.");
+                }
+
+                return Shield.Use(strategy);
+            }),
+            CancellationToken.None,
+            TaskCreationOptions.LongRunning,
+            TaskScheduler.Default);
+
+        await Assert.That(factoryStarted.Wait(TimeSpan.FromSeconds(5))).IsTrue();
+        await Assert.That(registry.Remove("overlap")).IsTrue();
+        releaseFactory.Set();
+        _ = await resolving;
+
+        registry.Dispose();
+
+        await Assert.That(strategy.DisposeCount).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Reclamation_Waits_For_Concurrent_Strategy_Publication()
+    {
+        using var factoryStarted = new ManualResetEventSlim();
+        using var triggerFactoryStarted = new ManualResetEventSlim();
+        using var releaseFactory = new ManualResetEventSlim();
+        using var services = new ServiceCollection().AddKevlar().BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        var strategy = new DisposableStrategy();
+        var retired = ResolveAndRemove(registry, strategy);
+        Collect(retired);
+        var replacement = Task.Factory.StartNew(
+            () => registry.GetOrAdd("replacement", _ =>
+            {
+                factoryStarted.Set();
+                if (!releaseFactory.Wait(TimeSpan.FromSeconds(5)))
+                {
+                    throw new TimeoutException("The reclamation test did not release the shield factory.");
+                }
+
+                return Shield.Use(strategy);
+            }),
+            CancellationToken.None,
+            TaskCreationOptions.LongRunning,
+            TaskScheduler.Default);
+        await Assert.That(factoryStarted.Wait(TimeSpan.FromSeconds(5))).IsTrue();
+        var scavenging = Task.Run(() => registry.GetOrAdd("scavenge", _ =>
+        {
+            triggerFactoryStarted.Set();
+            return Shield.Empty;
+        }));
+        await Assert.That(triggerFactoryStarted.Wait(TimeSpan.FromSeconds(5))).IsTrue();
+
+        _ = await scavenging;
+        await Assert.That(strategy.DisposeCount).IsEqualTo(0);
+        releaseFactory.Set();
+        _ = await replacement;
+
+        await Assert.That(strategy.DisposeCount).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Reclamation_Waits_For_Reload_Publication()
+    {
+        using var factoryStarted = new ManualResetEventSlim();
+        using var releaseFactory = new ManualResetEventSlim();
+        var monitor = new MutableOptionsMonitor<ReloadOptions>();
+        monitor.Set("reload-race", new ReloadOptions(), notify: false);
+        var strategy = new DisposableStrategy();
+        using var services = new ServiceCollection()
+            .AddSingleton<IOptionsMonitor<ReloadOptions>>(monitor)
+            .AddReloadingShield<ReloadOptions>("reload-race", (options, _) =>
+            {
+                if (options.Retries == 0)
+                {
+                    return Shield.Empty;
+                }
+
+                factoryStarted.Set();
+                if (!releaseFactory.Wait(TimeSpan.FromSeconds(5)))
+                {
+                    throw new TimeoutException("The reclamation test did not release the reload factory.");
+                }
+
+                return Shield.Use(strategy);
+            })
+            .BuildServiceProvider();
+        _ = services.GetRequiredKeyedService<IShieldProvider>("reload-race");
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        var retired = ResolveAndRemove(registry, strategy);
+        Collect(retired);
+        var reload = Task.Factory.StartNew(
+            () => monitor.Set("reload-race", new ReloadOptions { Retries = 1 }),
+            CancellationToken.None,
+            TaskCreationOptions.LongRunning,
+            TaskScheduler.Default);
+        await Assert.That(factoryStarted.Wait(TimeSpan.FromSeconds(5))).IsTrue();
+
+        _ = registry.GetOrAdd("reload-scavenge", _ => Shield.Empty);
+        await Assert.That(strategy.DisposeCount).IsEqualTo(0);
+        releaseFactory.Set();
+        await reload;
+
+        await Assert.That(strategy.DisposeCount).IsEqualTo(0);
+    }
+
+    [Test]
     public async Task Shared_Strategy_Is_Disposed_Once_Across_Retirement_Batches()
     {
         var strategy = new DisposableStrategy();

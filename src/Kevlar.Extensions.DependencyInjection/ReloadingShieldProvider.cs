@@ -10,7 +10,9 @@ internal interface IReloadingProvider : IDisposable
 
     IReadOnlyList<ShieldRetirement> Retire();
 
-    void SetRetirementHandler(Action<IReadOnlyList<ShieldRetirement>> handler);
+    void SetLifecycleHandlers(
+        Action<IReadOnlyList<ShieldRetirement>> retirementHandler,
+        Action<Action> publicationGuard);
 }
 
 internal sealed class ReloadingShieldProvider(
@@ -100,6 +102,7 @@ internal abstract class ReloadingProvider<TShield> : IReloadingProvider
     private readonly List<ShieldRetirement> _retiredSnapshots = [];
     private readonly StrategyDisposalTracker _strategyDisposals = new();
     private Action<IReadOnlyList<ShieldRetirement>>? _retirementHandler;
+    private Action<Action>? _publicationGuard;
     private TShield _current = null!;
     private bool _disposed;
 
@@ -192,11 +195,14 @@ internal abstract class ReloadingProvider<TShield> : IReloadingProvider
         }
     }
 
-    void IReloadingProvider.SetRetirementHandler(Action<IReadOnlyList<ShieldRetirement>> handler)
+    void IReloadingProvider.SetLifecycleHandlers(
+        Action<IReadOnlyList<ShieldRetirement>> retirementHandler,
+        Action<Action> publicationGuard)
     {
         lock (_reloadLock)
         {
-            _retirementHandler = handler;
+            _retirementHandler = retirementHandler;
+            _publicationGuard = publicationGuard;
         }
     }
 
@@ -253,25 +259,43 @@ internal abstract class ReloadingProvider<TShield> : IReloadingProvider
         Exception? failure = null;
         List<ShieldRetirement>? reclaimable = null;
 
+        void Publish()
+        {
+            lock (_reloadLock)
+            {
+                if (_disposed)
+                {
+                    return;
+                }
+
+                try
+                {
+                    var replacement = _factory();
+                    ShieldRetirement.Track(replacement);
+                    _retiredSnapshots.Add(new ShieldRetirement(_current, _current));
+                    Volatile.Write(ref _current, replacement);
+                    reclaimable = CollectReclaimableSnapshots();
+                }
+                catch (Exception exception)
+                {
+                    failure = exception;
+                }
+            }
+        }
+
+        Action<Action>? publicationGuard;
         lock (_reloadLock)
         {
-            if (_disposed)
-            {
-                return;
-            }
+            publicationGuard = _publicationGuard;
+        }
 
-            try
-            {
-                var replacement = _factory();
-                ShieldRetirement.Track(replacement);
-                _retiredSnapshots.Add(new ShieldRetirement(_current, _current));
-                Volatile.Write(ref _current, replacement);
-                reclaimable = CollectReclaimableSnapshots();
-            }
-            catch (Exception exception)
-            {
-                failure = exception;
-            }
+        if (publicationGuard is null)
+        {
+            Publish();
+        }
+        else
+        {
+            publicationGuard(Publish);
         }
 
         Reclaim(reclaimable);
