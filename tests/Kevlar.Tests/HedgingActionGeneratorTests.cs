@@ -8,6 +8,7 @@ public class HedgingActionGeneratorTests
     private static readonly KevlarKey<int> GeneratedContextRemoval = new("generated-context-removal");
     private static readonly KevlarKey<int> GeneratedContextWrite = new("generated-context-write");
     private static readonly KevlarKey<int> OriginalContextWrite = new("original-context-write");
+    private static readonly KevlarKey<ThrowingEquality> ThrowingEqualityKey = new("throwing-equality");
 
     [Test]
     public async Task Typed_Generator_Selects_A_Distinct_Action()
@@ -900,6 +901,69 @@ public class HedgingActionGeneratorTests
     }
 
     [Test]
+    [NotInParallel]
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task Original_Action_Releases_Contexts_When_Property_Merge_Throws(
+        bool completesAsynchronously)
+    {
+        var heldContexts = RentContexts(KevlarContext.PoolCapacity);
+        KevlarContext[]? recycledContexts = null;
+
+        try
+        {
+            KevlarContext? attemptContext = null;
+            var attempts = 0;
+            var shield = Shield.For<int>().Hedge(options =>
+            {
+                options.MaxAttempts = 2;
+                options.Delay = Timeout.InfiniteTimeSpan;
+                options.ActionGenerator = hedge =>
+                {
+                    attemptContext = hedge.Context;
+                    return hedge.OriginalAction;
+                };
+            });
+
+            var exception = await Assert.That(async () => await shield.ExecuteWithContextAsync(
+                    0,
+                    static (_, properties) =>
+                        properties.Set(ThrowingEqualityKey, new ThrowingEquality()),
+                    async (_, _) =>
+                    {
+                        if (Interlocked.Increment(ref attempts) == 1)
+                        {
+                            throw new InvalidOperationException("primary");
+                        }
+
+                        if (completesAsynchronously)
+                        {
+                            await Task.Yield();
+                        }
+
+                        return 42;
+                    },
+                    static (_, _) => { }))
+                .Throws<InvalidOperationException>();
+            await Assert.That(exception!.Message).IsEqualTo("Property equality failed.");
+
+            recycledContexts = RentContexts(KevlarContext.PoolCapacity);
+
+            await Assert.That(recycledContexts.Any(context =>
+                ReferenceEquals(context, attemptContext))).IsTrue();
+        }
+        finally
+        {
+            if (recycledContexts is not null)
+            {
+                ReturnContexts(recycledContexts);
+            }
+
+            ReturnContexts(heldContexts);
+        }
+    }
+
+    [Test]
     public async Task Void_Generated_Action_Is_Awaited_To_Completion()
     {
         var actionCompleted = false;
@@ -977,6 +1041,34 @@ public class HedgingActionGeneratorTests
             }
 
             return await next.InvokeAsync(context);
+        }
+    }
+
+    private sealed class ThrowingEquality : IEquatable<ThrowingEquality>
+    {
+        public bool Equals(ThrowingEquality? other) =>
+            throw new InvalidOperationException("Property equality failed.");
+
+        public override bool Equals(object? obj) =>
+            obj is ThrowingEquality other && Equals(other);
+
+        public override int GetHashCode() => 0;
+    }
+
+    private static KevlarContext[] RentContexts(int count) =>
+        Enumerable.Range(0, count)
+            .Select(_ => KevlarContext.Rent(
+                default,
+                isSynchronous: false,
+                TimeProvider.System,
+                shieldName: null))
+            .ToArray();
+
+    private static void ReturnContexts(IEnumerable<KevlarContext> contexts)
+    {
+        foreach (var context in contexts)
+        {
+            KevlarContext.Return(context);
         }
     }
 

@@ -470,9 +470,7 @@ internal sealed class HedgingStrategy : Strategy
         }
         finally
         {
-            lifetime.CaptureCompletionProperties(invocationContext);
-            KevlarContext.Return(invocationContext);
-            lifetime.Release();
+            ReleaseOriginalAction(invocationContext, lifetime);
         }
     }
 
@@ -494,9 +492,28 @@ internal sealed class HedgingStrategy : Strategy
         }
         finally
         {
+            ReleaseOriginalAction(invocationContext, lifetime);
+        }
+    }
+
+    private static void ReleaseOriginalAction(
+        KevlarContext invocationContext,
+        HedgeAttemptLifetime lifetime)
+    {
+        try
+        {
             lifetime.CaptureCompletionProperties(invocationContext);
-            KevlarContext.Return(invocationContext);
-            lifetime.Release();
+        }
+        finally
+        {
+            try
+            {
+                KevlarContext.Return(invocationContext);
+            }
+            finally
+            {
+                lifetime.Release();
+            }
         }
     }
 

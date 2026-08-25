@@ -182,9 +182,9 @@ internal static class ShieldEngine
         if (pipeline.IsCompletedSuccessfully)
         {
             var outcome = pipeline.Result;
+            RecordExecution(startedAt, shieldName, outcome.IsSuccess);
             NotifyCompleted(onCompleted, state, context.PropertiesForCompletion);
             KevlarContext.Return(context);
-            RecordExecution(startedAt, shieldName, outcome.IsSuccess);
             return outcome.IsSuccess ? new ValueTask<T>(outcome.Result!) : Rethrow(outcome);
         }
 

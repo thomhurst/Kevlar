@@ -619,6 +619,39 @@ public class MetricsTests
     }
 
     [Test]
+    public async Task Execution_Duration_Is_Recorded_Before_Completion_Observers()
+    {
+        using var listener = new KevlarMeterListener();
+        const string shieldName = "metrics-completion-order";
+        var observedCounts = new List<int>();
+        var shield = Shield.Empty.WithName(shieldName);
+
+        await shield.ExecuteWithContextAsync(
+            0,
+            static (_, _) => { },
+            static (_, _) => new ValueTask<int>(42),
+            (_, _) => observedCounts.Add(listener.DoubleValues(
+                "kevlar.execution.duration",
+                shieldName).Count));
+
+        await shield.ExecuteWithContextAsync(
+            0,
+            static (_, _) => { },
+            static async (_, _) =>
+            {
+                await Task.Yield();
+                return 42;
+            },
+            (_, _) => observedCounts.Add(listener.DoubleValues(
+                "kevlar.execution.duration",
+                shieldName).Count));
+
+        await Assert.That(observedCounts.Count).IsEqualTo(2);
+        await Assert.That(observedCounts[0]).IsEqualTo(1);
+        await Assert.That(observedCounts[1]).IsEqualTo(2);
+    }
+
+    [Test]
     public async Task Execution_Duration_Excludes_Execution_Counter_Listener_Time()
     {
         using var listener = new KevlarMeterListener((instrument, _) =>
