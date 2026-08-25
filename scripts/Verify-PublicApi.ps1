@@ -28,14 +28,16 @@ try
         {
             foreach ($entry in $archive.Entries)
             {
+                $assemblyId = $null
                 $targetFramework = $null
                 if ($entry.FullName -match '^lib/([^/]+)/([^/]+)\.dll$' -and $Matches[2] -eq $packageId)
                 {
+                    $assemblyId = $packageId
                     $targetFramework = $Matches[1].ToLowerInvariant()
                 }
-                elseif ($packageId -eq 'Kevlar.Analyzers' -and
-                    $entry.FullName -eq 'analyzers/dotnet/cs/Kevlar.Analyzers.dll')
+                elseif ($entry.FullName -match '^analyzers/dotnet/cs/(Kevlar\.Analyzers(?:\.CodeFixes)?)\.dll$')
                 {
+                    $assemblyId = $Matches[1]
                     $targetFramework = 'netstandard2.0'
                 }
                 else
@@ -45,10 +47,10 @@ try
 
                 $outputDirectory = Join-Path $resolvedTemporaryRoot $targetFramework
                 [IO.Directory]::CreateDirectory($outputDirectory) | Out-Null
-                $assemblyPath = Join-Path $outputDirectory "$packageId.dll"
+                $assemblyPath = Join-Path $outputDirectory "$assemblyId.dll"
                 [IO.Compression.ZipFileExtensions]::ExtractToFile($entry, $assemblyPath, $true)
                 $assemblies.Add([pscustomobject]@{
-                    PackageId = $packageId
+                    AssemblyId = $assemblyId
                     TargetFramework = $targetFramework
                     AssemblyPath = $assemblyPath
                 })
@@ -77,7 +79,7 @@ try
         (Join-Path $RepositoryRoot 'artifacts/bin'))
     foreach ($assembly in $assemblies)
     {
-        $baselineDirectory = Join-Path $BaselineRoot $assembly.PackageId
+        $baselineDirectory = Join-Path $BaselineRoot $assembly.AssemblyId
         $baselines = [Collections.Generic.List[string]]::new()
         $commonBaseline = Join-Path $baselineDirectory 'PublicAPI.Shipped.txt'
         if (-not (Test-Path -LiteralPath $commonBaseline -PathType Leaf))
@@ -119,7 +121,7 @@ try
         & dotnet @arguments
         if ($LASTEXITCODE -ne 0)
         {
-            throw "$($assembly.PackageId) $($assembly.TargetFramework) public API verification failed."
+            throw "$($assembly.AssemblyId) $($assembly.TargetFramework) public API verification failed."
         }
     }
 
