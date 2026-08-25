@@ -199,7 +199,8 @@ internal static class KevlarMetrics
         KevlarContext context,
         string strategyName,
         int attemptNumber,
-        Exception? exception = null)
+        Exception? exception = null,
+        TimeSpan delay = default)
     {
 #if NET8_0_OR_GREATER
         if (Hedges.Enabled)
@@ -222,7 +223,8 @@ internal static class KevlarMetrics
             context.StrategyIndex,
             attemptNumber,
             isSuccess: exception is null,
-            exception);
+            exception,
+            delay: delay);
     }
 
     public static void Fallback<T>(

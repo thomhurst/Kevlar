@@ -64,7 +64,7 @@ internal sealed class CircuitBreakerCore
         {
             var registrations = _telemetryRegistrations;
             var updated = new List<CircuitTelemetryRegistration>(registrations.Length + 1);
-            var replaced = false;
+            var registeredForShield = false;
             foreach (var registration in registrations)
             {
                 if (!registration.Listener.TryGetTarget(out var registered))
@@ -72,39 +72,17 @@ internal sealed class CircuitBreakerCore
                     continue;
                 }
 
-                if (previous is not null && ReferenceEquals(registered, previous))
+                if (ReferenceEquals(registered, listener)
+                    && registration.ShieldName == shieldName
+                    && registration.StrategyIndex == strategyIndex)
                 {
-                    if (!replaced)
-                    {
-                        updated.Add(new CircuitTelemetryRegistration(
-                            listener,
-                            shieldName,
-                            strategyIndex));
-                        replaced = true;
-                    }
-
-                    continue;
-                }
-
-                if (previous is null
-                    && ReferenceEquals(registered, listener))
-                {
-                    if (!replaced)
-                    {
-                        updated.Add(new CircuitTelemetryRegistration(
-                            listener,
-                            shieldName,
-                            strategyIndex));
-                    }
-
-                    replaced = true;
-                    continue;
+                    registeredForShield = true;
                 }
 
                 updated.Add(registration);
             }
 
-            if (!replaced)
+            if (!registeredForShield)
             {
                 updated.Add(new CircuitTelemetryRegistration(listener, shieldName, strategyIndex));
             }

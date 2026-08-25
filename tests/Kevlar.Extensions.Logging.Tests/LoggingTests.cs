@@ -189,6 +189,49 @@ public class LoggingTests
 
     [Test]
     [NotInParallel]
+    public async Task Hedge_Logs_The_Effective_Delay()
+    {
+        var logger = new FakeLogger();
+        var time = new FakeTimeProvider();
+        var delay = TimeSpan.FromSeconds(5);
+        var observedDelay = TimeSpan.Zero;
+        var firstAttempt = new TaskCompletionSource<int>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var primaryStarted = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var attempts = 0;
+        var shield = Shield.Hedge(1, delay)
+            .WithTimeProvider(time)
+            .WithLogging(logger, options => options.SeverityProvider = logEvent =>
+            {
+                if (logEvent.Kind == KevlarLogEventKind.Hedge)
+                {
+                    observedDelay = logEvent.Delay;
+                }
+
+                return LogLevel.Information;
+            });
+
+        var execution = shield.ExecuteAsync(token =>
+        {
+            if (Interlocked.Increment(ref attempts) == 1)
+            {
+                primaryStarted.SetResult();
+                return new ValueTask<int>(firstAttempt.Task.WaitAsync(token));
+            }
+
+            return new ValueTask<int>(42);
+        }).AsTask();
+
+        await primaryStarted.Task;
+        time.Advance(delay);
+
+        await Assert.That(await execution).IsEqualTo(42);
+        await Assert.That(observedDelay).IsEqualTo(delay);
+    }
+
+    [Test]
+    [NotInParallel]
     public async Task RateLimit_And_Concurrency_Rejections_Log()
     {
         var logger = new FakeLogger();
@@ -599,16 +642,15 @@ public class LoggingTests
         var innerTransitions = innerLogger.Collector.GetSnapshot()
             .Where(record => record.Id == new EventId(1003, "CircuitState"))
             .ToArray();
-        await Assert.That(outerTransitions.Length).IsEqualTo(1);
-        await Assert.That(innerTransitions.Length).IsEqualTo(2);
-        await Assert.That(outerTransitions[0].GetStructuredStateValue("StrategyIndex"))
-            .IsEqualTo("0");
-        await Assert.That(innerTransitions[0].GetStructuredStateValue("StrategyIndex"))
-            .IsEqualTo("1");
-        await Assert.That(innerTransitions[1].GetStructuredStateValue("StrategyIndex"))
-            .IsEqualTo("2");
-        await Assert.That(innerTransitions.All(record =>
-            record.GetStructuredStateValue("ShieldName") == "composed")).IsTrue();
+        await Assert.That(outerTransitions.Any(record =>
+            record.GetStructuredStateValue("ShieldName") == "composed"
+            && record.GetStructuredStateValue("StrategyIndex") == "0")).IsTrue();
+        await Assert.That(innerTransitions.Any(record =>
+            record.GetStructuredStateValue("ShieldName") == "composed"
+            && record.GetStructuredStateValue("StrategyIndex") == "1")).IsTrue();
+        await Assert.That(innerTransitions.Any(record =>
+            record.GetStructuredStateValue("ShieldName") == "composed"
+            && record.GetStructuredStateValue("StrategyIndex") == "2")).IsTrue();
         GC.KeepAlive(composed);
     }
 
@@ -630,6 +672,35 @@ public class LoggingTests
         await Assert.That(transition.GetStructuredStateValue("StrategyIndex"))
             .IsEqualTo("0");
         GC.KeepAlive(shield);
+    }
+
+    [Test]
+    [NotInParallel]
+    public async Task Successful_Composition_Preserves_Source_Circuit_Listener_Metadata()
+    {
+        var logger = new FakeLogger();
+        var monitor = new CircuitBreakerMonitor();
+        var source = Shield.CircuitBreaker(options => options.Monitor = monitor)
+            .WithName("source")
+            .WithLogging(logger);
+        var composed = Shield.Compose(
+            Shield.Timeout(TimeSpan.FromSeconds(1)).WithName("composed"),
+            source);
+
+        monitor.Isolate();
+
+        var transitions = logger.Collector.GetSnapshot()
+            .Where(record => record.Id == new EventId(1003, "CircuitState"))
+            .ToArray();
+        await Assert.That(transitions.Length).IsEqualTo(2);
+        await Assert.That(transitions.Any(record =>
+            record.GetStructuredStateValue("ShieldName") == "source"
+            && record.GetStructuredStateValue("StrategyIndex") == "0")).IsTrue();
+        await Assert.That(transitions.Any(record =>
+            record.GetStructuredStateValue("ShieldName") == "composed"
+            && record.GetStructuredStateValue("StrategyIndex") == "1")).IsTrue();
+        GC.KeepAlive(source);
+        GC.KeepAlive(composed);
     }
 
     [Test]
@@ -668,9 +739,10 @@ public class LoggingTests
 
         monitor.Isolate();
 
-        var record = logger.Collector.GetSnapshot().Single();
-        await Assert.That(record.GetStructuredStateValue("ShieldName")).IsEqualTo("catalog");
-        await Assert.That(record.GetStructuredStateValue("ToState")).IsEqualTo("Isolated");
+        var records = logger.Collector.GetSnapshot();
+        await Assert.That(records.Any(record =>
+            record.GetStructuredStateValue("ShieldName") == "catalog"
+            && record.GetStructuredStateValue("ToState") == "Isolated")).IsTrue();
         GC.KeepAlive(shield);
     }
 

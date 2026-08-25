@@ -174,7 +174,12 @@ internal sealed class HedgingStrategy : Strategy
             }
             else
             {
-                pending.Add(await StartHedgeAttemptAsync(next, context, 2, lastOutcome).ConfigureAwait(false));
+                pending.Add(await StartHedgeAttemptAsync(
+                    next,
+                    context,
+                    2,
+                    lastOutcome,
+                    TimeSpan.Zero).ConfigureAwait(false));
                 hedgesLaunched++;
             }
 
@@ -193,7 +198,12 @@ internal sealed class HedgingStrategy : Strategy
                     delay = await GetDelayAsync(hedgesLaunched + 2, context, startedAt).ConfigureAwait(false);
                     if (delay == TimeSpan.Zero)
                     {
-                        pending.Add(await StartHedgeAttemptAsync(next, context, hedgesLaunched + 2, lastOutcome).ConfigureAwait(false));
+                        pending.Add(await StartHedgeAttemptAsync(
+                            next,
+                            context,
+                            hedgesLaunched + 2,
+                            lastOutcome,
+                            TimeSpan.Zero).ConfigureAwait(false));
                         hedgesLaunched++;
                         continue;
                     }
@@ -209,7 +219,12 @@ internal sealed class HedgingStrategy : Strategy
 
                     if (winner == delayTask)
                     {
-                        pending.Add(await StartHedgeAttemptAsync(next, context, hedgesLaunched + 2, lastOutcome).ConfigureAwait(false));
+                        pending.Add(await StartHedgeAttemptAsync(
+                            next,
+                            context,
+                            hedgesLaunched + 2,
+                            lastOutcome,
+                            delay).ConfigureAwait(false));
                         hedgesLaunched++;
                         continue;
                     }
@@ -262,7 +277,12 @@ internal sealed class HedgingStrategy : Strategy
 
                 if (hedgesLaunched < _maxHedgedAttempts)
                 {
-                    pending.Add(await StartHedgeAttemptAsync(next, context, hedgesLaunched + 2, lastOutcome).ConfigureAwait(false));
+                    pending.Add(await StartHedgeAttemptAsync(
+                        next,
+                        context,
+                        hedgesLaunched + 2,
+                        lastOutcome,
+                        TimeSpan.Zero).ConfigureAwait(false));
                     hedgesLaunched++;
                 }
                 else if (pending.Count == 0)
@@ -342,7 +362,8 @@ internal sealed class HedgingStrategy : Strategy
         Continuation<T, TState> next,
         KevlarContext context,
         int attemptNumber,
-        Outcome<T>? outcome)
+        Outcome<T>? outcome,
+        TimeSpan delay)
     {
         context.CancellationToken.ThrowIfCancellationRequested();
         var hedgeEvent = new HedgeEvent(attemptNumber, context);
@@ -356,12 +377,18 @@ internal sealed class HedgingStrategy : Strategy
             context);
         if (!notification.IsCompletedSuccessfully)
         {
-            return AwaitHedgeNotificationAsync(notification, next, context, attemptNumber, outcome);
+            return AwaitHedgeNotificationAsync(
+                notification,
+                next,
+                context,
+                attemptNumber,
+                outcome,
+                delay);
         }
 
         context.CancellationToken.ThrowIfCancellationRequested();
         return new ValueTask<HedgeAttempt<T>>(
-            StartHedgeAttempt(next, context, attemptNumber, outcome).AsPending());
+            StartHedgeAttempt(next, context, attemptNumber, outcome, delay).AsPending());
     }
 
     private async ValueTask<HedgeAttempt<T>> AwaitHedgeNotificationAsync<T, TState>(
@@ -369,12 +396,13 @@ internal sealed class HedgingStrategy : Strategy
         Continuation<T, TState> next,
         KevlarContext context,
         int attemptNumber,
-        Outcome<T>? outcome)
+        Outcome<T>? outcome,
+        TimeSpan delay)
     {
         // Stryker disable once all: ConfigureAwait is execution-context policy, not outcome behavior.
         await notification.ConfigureAwait(false);
         context.CancellationToken.ThrowIfCancellationRequested();
-        return StartHedgeAttempt(next, context, attemptNumber, outcome).AsPending();
+        return StartHedgeAttempt(next, context, attemptNumber, outcome, delay).AsPending();
     }
 
     private StartedAttempt<T> StartPrimaryAttempt<T, TState>(
@@ -400,7 +428,8 @@ internal sealed class HedgingStrategy : Strategy
         Continuation<T, TState> next,
         KevlarContext context,
         int attemptNumber,
-        Outcome<T>? outcome)
+        Outcome<T>? outcome,
+        TimeSpan delay)
     {
         var cancellation = CancellationTokenSourcePool.Shared.RentLinked(context.CancellationToken);
         var fork = context.Fork(cancellation.Token);
@@ -423,7 +452,12 @@ internal sealed class HedgingStrategy : Strategy
                 }
                 catch (Exception exception)
                 {
-                    KevlarMetrics.Hedge(context, _telemetryName, attemptNumber - 1, exception);
+                    KevlarMetrics.Hedge(
+                        context,
+                        _telemetryName,
+                        attemptNumber - 1,
+                        exception,
+                        delay);
                     return new StartedAttempt<T>(
                         new ValueTask<Outcome<T>>(Outcome<T>.FromException(exception)),
                         cancellation,
@@ -435,7 +469,11 @@ internal sealed class HedgingStrategy : Strategy
                 context.CancellationToken.ThrowIfCancellationRequested();
             }
 
-            KevlarMetrics.Hedge(context, _telemetryName, attemptNumber - 1);
+            KevlarMetrics.Hedge(
+                context,
+                _telemetryName,
+                attemptNumber - 1,
+                delay: delay);
             var execution = generatedAction is null
                 ? next.InvokeAsync(fork)
                 : InvokeGeneratedAction(generatedAction, fork.CancellationToken);
