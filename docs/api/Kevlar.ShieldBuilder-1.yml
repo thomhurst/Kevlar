@@ -30,7 +30,9 @@ items:
   - Kevlar.ShieldBuilder`1.Retry(System.Int32,Kevlar.Backoff)
   - Kevlar.ShieldBuilder`1.RetryForever
   - Kevlar.ShieldBuilder`1.RetryForever(Kevlar.Backoff)
+  - Kevlar.ShieldBuilder`1.Timeout(System.Action{Kevlar.TimeoutOptions})
   - Kevlar.ShieldBuilder`1.Timeout(System.TimeSpan)
+  - Kevlar.ShieldBuilder`1.Use(Kevlar.Strategy)
   - Kevlar.ShieldBuilder`1.Use(System.Func{Kevlar.HandlingClause,Kevlar.Strategy})
   langs:
   - csharp
@@ -573,6 +575,33 @@ items:
   nameWithType.vb: ShieldBuilder(Of TResult).Use(Func(Of HandlingClause, Strategy))
   fullName.vb: Kevlar.ShieldBuilder(Of TResult).Use(System.Func(Of Kevlar.HandlingClause, Kevlar.Strategy))
   name.vb: Use(Func(Of HandlingClause, Strategy))
+- uid: Kevlar.ShieldBuilder`1.Use(Kevlar.Strategy)
+  commentId: M:Kevlar.ShieldBuilder`1.Use(Kevlar.Strategy)
+  id: Use(Kevlar.Strategy)
+  parent: Kevlar.ShieldBuilder`1
+  langs:
+  - csharp
+  - vb
+  name: Use(Strategy)
+  nameWithType: ShieldBuilder<TResult>.Use(Strategy)
+  fullName: Kevlar.ShieldBuilder<TResult>.Use(Kevlar.Strategy)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Appends a custom strategy. The accumulated handling clause remains ambient for later strategies.
+  example: []
+  syntax:
+    content: public Shield<TResult> Use(Strategy strategy)
+    parameters:
+    - id: strategy
+      type: Kevlar.Strategy
+    return:
+      type: Kevlar.Shield{{TResult}}
+    content.vb: Public Function Use(strategy As Strategy) As Shield(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.Use*
+  nameWithType.vb: ShieldBuilder(Of TResult).Use(Strategy)
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).Use(Kevlar.Strategy)
 - uid: Kevlar.ShieldBuilder`1.FallbackTo(`0)
   commentId: M:Kevlar.ShieldBuilder`1.FallbackTo(`0)
   id: FallbackTo(`0)
@@ -776,6 +805,34 @@ items:
   overload: Kevlar.ShieldBuilder`1.Timeout*
   nameWithType.vb: ShieldBuilder(Of TResult).Timeout(TimeSpan)
   fullName.vb: Kevlar.ShieldBuilder(Of TResult).Timeout(System.TimeSpan)
+- uid: Kevlar.ShieldBuilder`1.Timeout(System.Action{Kevlar.TimeoutOptions})
+  commentId: M:Kevlar.ShieldBuilder`1.Timeout(System.Action{Kevlar.TimeoutOptions})
+  id: Timeout(System.Action{Kevlar.TimeoutOptions})
+  parent: Kevlar.ShieldBuilder`1
+  langs:
+  - csharp
+  - vb
+  name: Timeout(Action<TimeoutOptions>)
+  nameWithType: ShieldBuilder<TResult>.Timeout(Action<TimeoutOptions>)
+  fullName: Kevlar.ShieldBuilder<TResult>.Timeout(System.Action<Kevlar.TimeoutOptions>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Adds a configured timeout. The handling clause remains ambient for later strategies.
+  example: []
+  syntax:
+    content: public Shield<TResult> Timeout(Action<TimeoutOptions> configure)
+    parameters:
+    - id: configure
+      type: System.Action{Kevlar.TimeoutOptions}
+    return:
+      type: Kevlar.Shield{{TResult}}
+    content.vb: Public Function Timeout(configure As Action(Of TimeoutOptions)) As Shield(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.Timeout*
+  nameWithType.vb: ShieldBuilder(Of TResult).Timeout(Action(Of TimeoutOptions))
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).Timeout(System.Action(Of Kevlar.TimeoutOptions))
+  name.vb: Timeout(Action(Of TimeoutOptions))
 - uid: Kevlar.ShieldBuilder`1.RateLimit(System.Int32,System.TimeSpan)
   commentId: M:Kevlar.ShieldBuilder`1.RateLimit(System.Int32,System.TimeSpan)
   id: RateLimit(System.Int32,System.TimeSpan)
@@ -1845,6 +1902,14 @@ references:
     isExternal: true
     href: Kevlar.Strategy.html
   - name: )
+- uid: Kevlar.Strategy
+  commentId: T:Kevlar.Strategy
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Strategy.html
+  name: Strategy
+  nameWithType: Strategy
+  fullName: Kevlar.Strategy
 - uid: Kevlar.ShieldBuilder`1.FallbackTo*
   commentId: Overload:Kevlar.ShieldBuilder`1.FallbackTo
   isExternal: true
@@ -2085,6 +2150,41 @@ references:
   fullName: Kevlar.ShieldBuilder<TResult>.Timeout
   nameWithType.vb: ShieldBuilder(Of TResult).Timeout
   fullName.vb: Kevlar.ShieldBuilder(Of TResult).Timeout
+- uid: System.Action{Kevlar.TimeoutOptions}
+  commentId: T:System.Action{Kevlar.TimeoutOptions}
+  parent: System
+  definition: System.Action`1
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<TimeoutOptions>
+  nameWithType: Action<TimeoutOptions>
+  fullName: System.Action<Kevlar.TimeoutOptions>
+  nameWithType.vb: Action(Of TimeoutOptions)
+  fullName.vb: System.Action(Of Kevlar.TimeoutOptions)
+  name.vb: Action(Of TimeoutOptions)
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - uid: Kevlar.TimeoutOptions
+    name: TimeoutOptions
+    isExternal: true
+    href: Kevlar.TimeoutOptions.html
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.TimeoutOptions
+    name: TimeoutOptions
+    isExternal: true
+    href: Kevlar.TimeoutOptions.html
+  - name: )
 - uid: Kevlar.ShieldBuilder`1.RateLimit*
   commentId: Overload:Kevlar.ShieldBuilder`1.RateLimit
   isExternal: true

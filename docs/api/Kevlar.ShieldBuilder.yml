@@ -11,6 +11,8 @@ items:
   - Kevlar.ShieldBuilder.ConcurrencyLimit(System.Int32,System.Int32)
   - Kevlar.ShieldBuilder.Fallback(System.Func{System.Exception,System.Threading.CancellationToken,System.Threading.Tasks.ValueTask})
   - Kevlar.ShieldBuilder.Fallback(System.Func{System.Exception,System.Threading.CancellationToken,System.Threading.Tasks.ValueTask},System.Action{Kevlar.FallbackOptions})
+  - Kevlar.ShieldBuilder.Fallback(System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask})
+  - Kevlar.ShieldBuilder.Fallback(System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask},System.Action{Kevlar.FallbackOptions})
   - Kevlar.ShieldBuilder.Hedge(System.Action{Kevlar.HedgeOptions})
   - Kevlar.ShieldBuilder.Hedge(System.Int32,System.TimeSpan)
   - Kevlar.ShieldBuilder.Or(System.Func{System.Exception,System.Boolean})
@@ -23,7 +25,9 @@ items:
   - Kevlar.ShieldBuilder.Retry(System.Int32,Kevlar.Backoff)
   - Kevlar.ShieldBuilder.RetryForever
   - Kevlar.ShieldBuilder.RetryForever(Kevlar.Backoff)
+  - Kevlar.ShieldBuilder.Timeout(System.Action{Kevlar.TimeoutOptions})
   - Kevlar.ShieldBuilder.Timeout(System.TimeSpan)
+  - Kevlar.ShieldBuilder.Use(Kevlar.Strategy)
   - Kevlar.ShieldBuilder.Use(System.Func{Kevlar.HandlingClause,Kevlar.Strategy})
   langs:
   - csharp
@@ -486,6 +490,95 @@ items:
   nameWithType.vb: ShieldBuilder.Use(Func(Of HandlingClause, Strategy))
   fullName.vb: Kevlar.ShieldBuilder.Use(System.Func(Of Kevlar.HandlingClause, Kevlar.Strategy))
   name.vb: Use(Func(Of HandlingClause, Strategy))
+- uid: Kevlar.ShieldBuilder.Use(Kevlar.Strategy)
+  commentId: M:Kevlar.ShieldBuilder.Use(Kevlar.Strategy)
+  id: Use(Kevlar.Strategy)
+  parent: Kevlar.ShieldBuilder
+  langs:
+  - csharp
+  - vb
+  name: Use(Strategy)
+  nameWithType: ShieldBuilder.Use(Strategy)
+  fullName: Kevlar.ShieldBuilder.Use(Kevlar.Strategy)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Appends a custom strategy. The accumulated handling clause remains ambient for later strategies.
+  example: []
+  syntax:
+    content: public Shield Use(Strategy strategy)
+    parameters:
+    - id: strategy
+      type: Kevlar.Strategy
+    return:
+      type: Kevlar.Shield
+    content.vb: Public Function Use(strategy As Strategy) As Shield
+  overload: Kevlar.ShieldBuilder.Use*
+- uid: Kevlar.ShieldBuilder.Fallback(System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask})
+  commentId: M:Kevlar.ShieldBuilder.Fallback(System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask})
+  id: Fallback(System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask})
+  parent: Kevlar.ShieldBuilder
+  langs:
+  - csharp
+  - vb
+  name: Fallback(Func<CancellationToken, ValueTask>)
+  nameWithType: ShieldBuilder.Fallback(Func<CancellationToken, ValueTask>)
+  fullName: Kevlar.ShieldBuilder.Fallback(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Runs <code class="paramref">fallback</code> in place of handled failures. Applies to void executions
+
+    only; result-producing recovery needs a typed shield.
+  example: []
+  syntax:
+    content: public Shield Fallback(Func<CancellationToken, ValueTask> fallback)
+    parameters:
+    - id: fallback
+      type: System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask}
+    return:
+      type: Kevlar.Shield
+    content.vb: Public Function Fallback(fallback As Func(Of CancellationToken, ValueTask)) As Shield
+  overload: Kevlar.ShieldBuilder.Fallback*
+  nameWithType.vb: ShieldBuilder.Fallback(Func(Of CancellationToken, ValueTask))
+  fullName.vb: Kevlar.ShieldBuilder.Fallback(System.Func(Of System.Threading.CancellationToken, System.Threading.Tasks.ValueTask))
+  name.vb: Fallback(Func(Of CancellationToken, ValueTask))
+- uid: Kevlar.ShieldBuilder.Fallback(System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask},System.Action{Kevlar.FallbackOptions})
+  commentId: M:Kevlar.ShieldBuilder.Fallback(System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask},System.Action{Kevlar.FallbackOptions})
+  id: Fallback(System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask},System.Action{Kevlar.FallbackOptions})
+  parent: Kevlar.ShieldBuilder
+  langs:
+  - csharp
+  - vb
+  name: Fallback(Func<CancellationToken, ValueTask>, Action<FallbackOptions>)
+  nameWithType: ShieldBuilder.Fallback(Func<CancellationToken, ValueTask>, Action<FallbackOptions>)
+  fullName: Kevlar.ShieldBuilder.Fallback(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>, System.Action<Kevlar.FallbackOptions>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Runs <code class="paramref">fallback</code> in place of handled failures and configures notifications.
+
+    Applies to void executions only.
+  example: []
+  syntax:
+    content: public Shield Fallback(Func<CancellationToken, ValueTask> fallback, Action<FallbackOptions> configure)
+    parameters:
+    - id: fallback
+      type: System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask}
+    - id: configure
+      type: System.Action{Kevlar.FallbackOptions}
+    return:
+      type: Kevlar.Shield
+    content.vb: Public Function Fallback(fallback As Func(Of CancellationToken, ValueTask), configure As Action(Of FallbackOptions)) As Shield
+  overload: Kevlar.ShieldBuilder.Fallback*
+  nameWithType.vb: ShieldBuilder.Fallback(Func(Of CancellationToken, ValueTask), Action(Of FallbackOptions))
+  fullName.vb: Kevlar.ShieldBuilder.Fallback(System.Func(Of System.Threading.CancellationToken, System.Threading.Tasks.ValueTask), System.Action(Of Kevlar.FallbackOptions))
+  name.vb: Fallback(Func(Of CancellationToken, ValueTask), Action(Of FallbackOptions))
 - uid: Kevlar.ShieldBuilder.Fallback(System.Func{System.Exception,System.Threading.CancellationToken,System.Threading.Tasks.ValueTask})
   commentId: M:Kevlar.ShieldBuilder.Fallback(System.Func{System.Exception,System.Threading.CancellationToken,System.Threading.Tasks.ValueTask})
   id: Fallback(System.Func{System.Exception,System.Threading.CancellationToken,System.Threading.Tasks.ValueTask})
@@ -577,6 +670,34 @@ items:
       type: Kevlar.Shield
     content.vb: Public Function Timeout(timeout As TimeSpan) As Shield
   overload: Kevlar.ShieldBuilder.Timeout*
+- uid: Kevlar.ShieldBuilder.Timeout(System.Action{Kevlar.TimeoutOptions})
+  commentId: M:Kevlar.ShieldBuilder.Timeout(System.Action{Kevlar.TimeoutOptions})
+  id: Timeout(System.Action{Kevlar.TimeoutOptions})
+  parent: Kevlar.ShieldBuilder
+  langs:
+  - csharp
+  - vb
+  name: Timeout(Action<TimeoutOptions>)
+  nameWithType: ShieldBuilder.Timeout(Action<TimeoutOptions>)
+  fullName: Kevlar.ShieldBuilder.Timeout(System.Action<Kevlar.TimeoutOptions>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Adds a configured timeout. The handling clause remains ambient for later strategies.
+  example: []
+  syntax:
+    content: public Shield Timeout(Action<TimeoutOptions> configure)
+    parameters:
+    - id: configure
+      type: System.Action{Kevlar.TimeoutOptions}
+    return:
+      type: Kevlar.Shield
+    content.vb: Public Function Timeout(configure As Action(Of TimeoutOptions)) As Shield
+  overload: Kevlar.ShieldBuilder.Timeout*
+  nameWithType.vb: ShieldBuilder.Timeout(Action(Of TimeoutOptions))
+  fullName.vb: Kevlar.ShieldBuilder.Timeout(System.Action(Of Kevlar.TimeoutOptions))
+  name.vb: Timeout(Action(Of TimeoutOptions))
 - uid: Kevlar.ShieldBuilder.RateLimit(System.Int32,System.TimeSpan)
   commentId: M:Kevlar.ShieldBuilder.RateLimit(System.Int32,System.TimeSpan)
   id: RateLimit(System.Int32,System.TimeSpan)
@@ -1337,13 +1458,103 @@ references:
     isExternal: true
     href: Kevlar.Strategy.html
   - name: )
+- uid: Kevlar.Strategy
+  commentId: T:Kevlar.Strategy
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Strategy.html
+  name: Strategy
+  nameWithType: Strategy
+  fullName: Kevlar.Strategy
 - uid: Kevlar.ShieldBuilder.Fallback*
   commentId: Overload:Kevlar.ShieldBuilder.Fallback
   isExternal: true
-  href: Kevlar.ShieldBuilder.html#Kevlar_ShieldBuilder_Fallback_System_Func_System_Exception_System_Threading_CancellationToken_System_Threading_Tasks_ValueTask__
+  href: Kevlar.ShieldBuilder.html#Kevlar_ShieldBuilder_Fallback_System_Func_System_Threading_CancellationToken_System_Threading_Tasks_ValueTask__
   name: Fallback
   nameWithType: ShieldBuilder.Fallback
   fullName: Kevlar.ShieldBuilder.Fallback
+- uid: System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask}
+  commentId: T:System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<CancellationToken, ValueTask>
+  nameWithType: Func<CancellationToken, ValueTask>
+  fullName: System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>
+  nameWithType.vb: Func(Of CancellationToken, ValueTask)
+  fullName.vb: System.Func(Of System.Threading.CancellationToken, System.Threading.Tasks.ValueTask)
+  name.vb: Func(Of CancellationToken, ValueTask)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: System.Threading.CancellationToken
+    name: CancellationToken
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.Threading.CancellationToken
+    name: CancellationToken
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
+  - name: )
+- uid: System.Action{Kevlar.FallbackOptions}
+  commentId: T:System.Action{Kevlar.FallbackOptions}
+  parent: System
+  definition: System.Action`1
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<FallbackOptions>
+  nameWithType: Action<FallbackOptions>
+  fullName: System.Action<Kevlar.FallbackOptions>
+  nameWithType.vb: Action(Of FallbackOptions)
+  fullName.vb: System.Action(Of Kevlar.FallbackOptions)
+  name.vb: Action(Of FallbackOptions)
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - uid: Kevlar.FallbackOptions
+    name: FallbackOptions
+    isExternal: true
+    href: Kevlar.FallbackOptions.html
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.FallbackOptions
+    name: FallbackOptions
+    isExternal: true
+    href: Kevlar.FallbackOptions.html
+  - name: )
 - uid: System.Func{System.Exception,System.Threading.CancellationToken,System.Threading.Tasks.ValueTask}
   commentId: T:System.Func{System.Exception,System.Threading.CancellationToken,System.Threading.Tasks.ValueTask}
   parent: System
@@ -1443,27 +1654,34 @@ references:
   - name: " "
   - name: TResult
   - name: )
-- uid: System.Action{Kevlar.FallbackOptions}
-  commentId: T:System.Action{Kevlar.FallbackOptions}
+- uid: Kevlar.ShieldBuilder.Timeout*
+  commentId: Overload:Kevlar.ShieldBuilder.Timeout
+  isExternal: true
+  href: Kevlar.ShieldBuilder.html#Kevlar_ShieldBuilder_Timeout_System_TimeSpan_
+  name: Timeout
+  nameWithType: ShieldBuilder.Timeout
+  fullName: Kevlar.ShieldBuilder.Timeout
+- uid: System.Action{Kevlar.TimeoutOptions}
+  commentId: T:System.Action{Kevlar.TimeoutOptions}
   parent: System
   definition: System.Action`1
   href: https://learn.microsoft.com/dotnet/api/system.action-1
-  name: Action<FallbackOptions>
-  nameWithType: Action<FallbackOptions>
-  fullName: System.Action<Kevlar.FallbackOptions>
-  nameWithType.vb: Action(Of FallbackOptions)
-  fullName.vb: System.Action(Of Kevlar.FallbackOptions)
-  name.vb: Action(Of FallbackOptions)
+  name: Action<TimeoutOptions>
+  nameWithType: Action<TimeoutOptions>
+  fullName: System.Action<Kevlar.TimeoutOptions>
+  nameWithType.vb: Action(Of TimeoutOptions)
+  fullName.vb: System.Action(Of Kevlar.TimeoutOptions)
+  name.vb: Action(Of TimeoutOptions)
   spec.csharp:
   - uid: System.Action`1
     name: Action
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.action-1
   - name: <
-  - uid: Kevlar.FallbackOptions
-    name: FallbackOptions
+  - uid: Kevlar.TimeoutOptions
+    name: TimeoutOptions
     isExternal: true
-    href: Kevlar.FallbackOptions.html
+    href: Kevlar.TimeoutOptions.html
   - name: '>'
   spec.vb:
   - uid: System.Action`1
@@ -1473,18 +1691,11 @@ references:
   - name: (
   - name: Of
   - name: " "
-  - uid: Kevlar.FallbackOptions
-    name: FallbackOptions
+  - uid: Kevlar.TimeoutOptions
+    name: TimeoutOptions
     isExternal: true
-    href: Kevlar.FallbackOptions.html
+    href: Kevlar.TimeoutOptions.html
   - name: )
-- uid: Kevlar.ShieldBuilder.Timeout*
-  commentId: Overload:Kevlar.ShieldBuilder.Timeout
-  isExternal: true
-  href: Kevlar.ShieldBuilder.html#Kevlar_ShieldBuilder_Timeout_System_TimeSpan_
-  name: Timeout
-  nameWithType: ShieldBuilder.Timeout
-  fullName: Kevlar.ShieldBuilder.Timeout
 - uid: Kevlar.ShieldBuilder.RateLimit*
   commentId: Overload:Kevlar.ShieldBuilder.RateLimit
   isExternal: true
