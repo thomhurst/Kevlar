@@ -654,6 +654,7 @@ public class PipelineHazardAnalyzerTests
         var cases = new[]
         {
             "_ = Shield.When<InvalidOperationException>().Timeout(TimeSpan.FromSeconds(1)).WhenAnyError().Retry(1);",
+            "_ = Shield.When<InvalidOperationException>().Timeout(static options => options.Timeout = TimeSpan.FromSeconds(1)).WhenAnyError().Retry(1);",
             "_ = Shield.When<InvalidOperationException>().Timeout(TimeSpan.FromSeconds(1)).When<TimeoutException>().Retry(1);",
             "_ = Shield.When<InvalidOperationException>().Or<TimeoutException>().RateLimit(1, TimeSpan.FromSeconds(1)).When<TimeoutException>().Retry(1);",
             "_ = Shield.For<int>().When<InvalidOperationException>().Timeout(TimeSpan.FromSeconds(1)).WhenResult(static value => value < 0).Retry(1);",
@@ -671,6 +672,7 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.When<InvalidOperationException>().Or<TimeoutException>().CircuitBreaker(2, TimeSpan.FromSeconds(1));",
             "_ = Shield.When<InvalidOperationException>().Timeout(TimeSpan.FromSeconds(1)).Retry(1);",
             "_ = Shield.When<InvalidOperationException>().Fallback(static (_, _) => default);",
+            "_ = Shield.When<InvalidOperationException>().Fallback(static _ => default);",
             "_ = Shield.For<int>().WhenResult(static value => value < 0).FallbackTo(0);",
             "_ = Shield.For<int>().When<InvalidOperationException>().Timeout(TimeSpan.FromSeconds(1)).Retry(1);",
             "var clause = Shield.When<InvalidOperationException>(); _ = clause.Retry(1);",
@@ -733,6 +735,7 @@ public class PipelineHazardAnalyzerTests
             "Shield.For<int>().Retry(3);",
             "Shield.When<InvalidOperationException>().Retry(3);",
             "Shield.For<int>().WhenResult(static value => value < 0).FallbackTo(0);",
+            "Shield.When<InvalidOperationException>().Fallback(static _ => default);",
             "Shield.Compose(Shield.Empty, Shield.Empty);",
             "var shield = Shield.Empty; shield.Timeout(TimeSpan.FromSeconds(1));",
         };
