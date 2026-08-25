@@ -29,10 +29,19 @@ internal abstract class OutcomeJudge
 
     public virtual bool IsContextAware => false;
 
-    protected internal static void ReportPredicateFailure(Exception exception) =>
-        System.Diagnostics.Trace.TraceError(
-            "Kevlar handling predicate failed and was treated as not handled: {0}",
-            exception);
+    protected internal static void ReportPredicateFailure(Exception exception)
+    {
+        try
+        {
+            System.Diagnostics.Trace.TraceError(
+                "Kevlar handling predicate failed and was treated as not handled: {0}",
+                exception);
+        }
+        catch
+        {
+            // Diagnostics must not change the protected execution's outcome.
+        }
+    }
 
     private sealed class DefaultJudge : OutcomeJudge
     {

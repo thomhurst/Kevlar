@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace Kevlar.Tests;
 
 public class ContextAwarePredicateTests
@@ -240,6 +242,30 @@ public class ContextAwarePredicateTests
     }
 
     [Test]
+    [NotInParallel]
+    public async Task Trace_Listener_Exception_Does_Not_Replace_Execution_Failure()
+    {
+        var listener = new ThrowingTraceListener();
+        Trace.Listeners.Add(listener);
+
+        try
+        {
+            var shield = Shield.When((HandlingEvent _) => throw new DivideByZeroException("predicate"))
+                .Retry(1, Backoff.None);
+            var executionFailure = new InvalidOperationException("execution");
+
+            var thrown = await Assert.That(async () => await shield.ExecuteAsync<int>(
+                _ => throw executionFailure)).Throws<InvalidOperationException>();
+
+            await Assert.That(thrown).IsSameReferenceAs(executionFailure);
+        }
+        finally
+        {
+            Trace.Listeners.Remove(listener);
+        }
+    }
+
+    [Test]
     public async Task Predicate_Exception_Does_Not_Skip_Later_Context_Alternative()
     {
         var alternatives = 0;
@@ -261,6 +287,13 @@ public class ContextAwarePredicateTests
 
         await Assert.That(attempts).IsEqualTo(2);
         await Assert.That(alternatives).IsEqualTo(1);
+    }
+
+    private sealed class ThrowingTraceListener : TraceListener
+    {
+        public override void Write(string? message) => throw new InvalidOperationException("listener");
+
+        public override void WriteLine(string? message) => throw new InvalidOperationException("listener");
     }
 
     [Test]
