@@ -1386,6 +1386,28 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             return true;
         }
 
+        var expression = invocation.Expression;
+        while (true)
+        {
+            if (expression is AnonymousFunctionExpressionSyntax anonymous)
+            {
+                initializer = anonymous;
+                return true;
+            }
+
+            var parts = GetCallbackExpressionParts(
+                    expression,
+                    semanticModel,
+                    cancellationToken)
+                .ToArray();
+            if (parts.Length != 1)
+            {
+                break;
+            }
+
+            expression = parts[0];
+        }
+
         initializer = null!;
         return false;
     }
@@ -1503,6 +1525,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             if (reference.FirstAncestorOrSelf<StatementSyntax>()
                     is not { Parent: BlockSyntax observationBlock } observationStatement
                 || observationBlock != block
+                || block.Statements.Any(statement =>
+                    statement.SpanStart > declarationStatement.SpanStart
+                        && statement.SpanStart < observationStatement.SpanStart)
                 || !SymbolEqualityComparer.Default.Equals(
                     semanticModel.GetSymbolInfo(reference, cancellationToken).Symbol,
                     local)

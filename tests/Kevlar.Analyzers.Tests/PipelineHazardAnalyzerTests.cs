@@ -161,6 +161,27 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Inspects_Immediately_Invoked_Async_Delegates()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                ((Action)(async () =>
+                {
+                    await Task.Yield();
+                    _ = item.Context.ShieldName;
+                }))();
+            });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
     public async Task KEV014_Inspects_Invoked_Delegates_After_Await()
     {
         var diagnostics = await AnalyzeBodyAsync("""
@@ -846,6 +867,28 @@ public class PipelineHazardAnalyzerTests
             });
 
             static Task<int> AuditAsync(RetryEvent item) => Task.FromResult(0);
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV013_Rejects_Task_Local_Joins_After_Throwing_Work()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var pending = AuditAsync(item);
+                MightThrow();
+                pending.GetAwaiter().GetResult();
+            });
+
+            static void MightThrow() => throw new InvalidOperationException();
+            static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
             """);
 
         await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
