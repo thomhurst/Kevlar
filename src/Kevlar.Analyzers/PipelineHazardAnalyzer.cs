@@ -1465,7 +1465,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             current = consumer;
         }
 
-        if (current.Parent is AwaitExpressionSyntax)
+        if (current.Parent is AwaitExpressionSyntax
+            && IsTaskReturningFunction(current, semanticModel, cancellationToken))
         {
             return true;
         }
@@ -1502,6 +1503,27 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 semanticModel,
                 cancellationToken);
     }
+
+    private static bool IsTaskReturningFunction(
+        SyntaxNode node,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken) =>
+        GetContainingFunction(node) switch
+        {
+            AnonymousFunctionExpressionSyntax anonymous =>
+                semanticModel.GetTypeInfo(anonymous, cancellationToken).ConvertedType
+                    is INamedTypeSymbol { DelegateInvokeMethod.ReturnType: { } returnType }
+                && IsTaskLike(returnType),
+            LocalFunctionStatementSyntax localFunction =>
+                semanticModel.GetDeclaredSymbol(localFunction, cancellationToken)
+                    is IMethodSymbol { ReturnType: { } returnType }
+                && IsTaskLike(returnType),
+            BaseMethodDeclarationSyntax method =>
+                semanticModel.GetDeclaredSymbol(method, cancellationToken)
+                    is IMethodSymbol { ReturnType: { } returnType }
+                && IsTaskLike(returnType),
+            _ => false,
+        };
 
     private static bool IsSynchronouslyObservedThroughLocal(
         InvocationExpressionSyntax invocation,
