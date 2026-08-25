@@ -39,11 +39,19 @@ if ($badgeCount -lt 5)
     $errors.Add("README.md must contain at least five linked badges; found $badgeCount.")
 }
 
-foreach ($requiredLink in @('CONTRIBUTING.md', 'SECURITY.md', 'CODE_OF_CONDUCT.md', 'CHANGELOG.md'))
+$requiredReadmeLinks = @(
+    'CONTRIBUTING.md'
+    'SECURITY.md'
+    'CODE_OF_CONDUCT.md'
+    'CHANGELOG.md'
+)
+
+foreach ($requiredLink in $requiredReadmeLinks)
 {
-    if ($readme -notmatch [regex]::Escape("]($requiredLink)"))
+    $url = "https://github.com/thomhurst/Kevlar/blob/main/$requiredLink"
+    if ($readme -notmatch [regex]::Escape("]($url)"))
     {
-        $errors.Add("README.md does not link to '$requiredLink'.")
+        $errors.Add("README.md does not link to canonical '$url'.")
     }
 }
 
