@@ -1737,6 +1737,28 @@ public class MetricsTests
     }
 
     [Test]
+    public async Task Concurrency_New_Arrival_Cannot_Bypass_Queued_Caller()
+    {
+        var strategy = new ConcurrencyLimitStrategy(new ConcurrencyLimitOptions
+        {
+            MaxConcurrency = 1,
+            QueueLimit = 2,
+        });
+        var state = typeof(ConcurrencyLimitStrategy).GetField(
+            "_state",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        var acquire = typeof(ConcurrencyLimitStrategy).GetMethod(
+            "TryAcquirePermit",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+
+        state.SetValue(strategy, 1L);
+
+        await Assert.That((bool)acquire.Invoke(strategy, null)!).IsFalse();
+        await Assert.That(strategy.CaptureState())
+            .IsEqualTo((Available: 1, Running: 0, Queued: 1));
+    }
+
+    [Test]
     public async Task Concurrency_Redundant_Wake_Signal_Does_Not_Fail_Completion()
     {
         var strategy = new ConcurrencyLimitStrategy(new ConcurrencyLimitOptions

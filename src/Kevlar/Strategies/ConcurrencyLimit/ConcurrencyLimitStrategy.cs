@@ -138,11 +138,12 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
         Continuation<T, TState> next,
         KevlarContext context)
     {
-        Interlocked.Add(ref _state, QueuedIncrement);
+        var queuedState = Interlocked.Add(ref _state, QueuedIncrement);
+        var hasPrecedingWaiter = (uint)queuedState > 1;
         Interlocked.Increment(ref _waiters);
         try
         {
-            if (!TryAcquireQueuedPermit(drainSignal: true))
+            if (hasPrecedingWaiter || !TryAcquireQueuedPermit(drainSignal: true))
             {
                 do
                 {
@@ -229,7 +230,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
         {
             var state = Volatile.Read(ref _state);
             var running = (int)(state >> 32);
-            if (running >= _maxConcurrency)
+            if (running >= _maxConcurrency || (!isQueued && (uint)state > 0))
             {
                 return false;
             }
