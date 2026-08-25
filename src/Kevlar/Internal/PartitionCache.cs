@@ -16,6 +16,7 @@ internal sealed class PartitionCache<TKey, TShield>
     private readonly Func<PartitionCreatedNotification, ValueTask>? _onCreatedAsync;
     private readonly Action<PartitionEvictionNotification>? _onEvicted;
     private readonly Func<PartitionEvictionNotification, ValueTask>? _onEvictedAsync;
+    private readonly AsyncLocal<EvictionCallbackScope?> _evictionCallback = new();
 
     private Entry? _leastRecentlyUsed;
     private Entry? _mostRecentlyUsed;
@@ -247,6 +248,7 @@ internal sealed class PartitionCache<TKey, TShield>
                 Entry? capacityEviction = null;
                 Task? waitForCapacity = null;
                 var published = false;
+                var completedUnretained = false;
 
                 await _mutationGate.WaitAsync().ConfigureAwait(false);
                 try
@@ -263,28 +265,40 @@ internal sealed class PartitionCache<TKey, TShield>
                         }
                         else
                         {
-                            expired = PruneExpiredUnderLock();
-                            if (expired is not null)
+                            if (_evictionCallback.Value?.Active == true
+                                && _entries.Count + _reservedSlots >= _maximumPartitions)
                             {
-                                ownedReservations = expired.Count;
-                                _reservedSlots += ownedReservations;
-                            }
-                            else if (_entries.Count + _reservedSlots < _maximumPartitions)
-                            {
-                                Publish(key, shield, creation);
-                                published = true;
-                            }
-                            else if (_leastRecentlyUsed is { } eviction)
-                            {
-                                capacityEviction = eviction;
-                                RemoveEntry(capacityEviction);
-                                _capacityEvictionCount++;
-                                _reservedSlots++;
-                                ownedReservations = 1;
+                                // This callback owns capacity that cannot be reused before it
+                                // returns. Complete its nested lookup without retaining it so the
+                                // outer publisher keeps the reservation and capacity invariant.
+                                _creations.Remove(key);
+                                completedUnretained = true;
                             }
                             else
                             {
-                                waitForCapacity = _capacityChanged.Task;
+                                expired = PruneExpiredUnderLock();
+                                if (expired is not null)
+                                {
+                                    ownedReservations = expired.Count;
+                                    _reservedSlots += ownedReservations;
+                                }
+                                else if (_entries.Count + _reservedSlots < _maximumPartitions)
+                                {
+                                    Publish(key, shield, creation);
+                                    published = true;
+                                }
+                                else if (_leastRecentlyUsed is { } eviction)
+                                {
+                                    capacityEviction = eviction;
+                                    RemoveEntry(capacityEviction);
+                                    _capacityEvictionCount++;
+                                    _reservedSlots++;
+                                    ownedReservations = 1;
+                                }
+                                else
+                                {
+                                    waitForCapacity = _capacityChanged.Task;
+                                }
                             }
                         }
                     }
@@ -292,6 +306,12 @@ internal sealed class PartitionCache<TKey, TShield>
                 finally
                 {
                     _mutationGate.Release();
+                }
+
+                if (completedUnretained)
+                {
+                    creation.Succeed(shield);
+                    return;
                 }
 
                 if (waitForCapacity is not null)
@@ -512,26 +532,36 @@ internal sealed class PartitionCache<TKey, TShield>
         }
 
         var notification = new PartitionEvictionNotification(entry.Key, entry.Shield, reason);
-
+        var previousScope = _evictionCallback.Value;
+        var scope = new EvictionCallbackScope();
+        _evictionCallback.Value = scope;
         try
-        {
-            _onEvicted?.Invoke(notification);
-        }
-        catch
-        {
-            // Lifecycle observers must not change partition behavior.
-        }
-
-        if (_onEvictedAsync is not null)
         {
             try
             {
-                await _onEvictedAsync(notification).ConfigureAwait(false);
+                _onEvicted?.Invoke(notification);
             }
             catch
             {
                 // Lifecycle observers must not change partition behavior.
             }
+
+            if (_onEvictedAsync is not null)
+            {
+                try
+                {
+                    await _onEvictedAsync(notification).ConfigureAwait(false);
+                }
+                catch
+                {
+                    // Lifecycle observers must not change partition behavior.
+                }
+            }
+        }
+        finally
+        {
+            scope.Deactivate();
+            _evictionCallback.Value = previousScope;
         }
     }
 
@@ -722,6 +752,15 @@ internal sealed class PartitionCache<TKey, TShield>
         public void Succeed(TShield shield) => _completion.TrySetResult(shield);
 
         public void Fail(Exception exception) => _completion.TrySetException(exception);
+    }
+
+    private sealed class EvictionCallbackScope
+    {
+        private int _active = 1;
+
+        public bool Active => Volatile.Read(ref _active) != 0;
+
+        public void Deactivate() => Volatile.Write(ref _active, 0);
     }
 
 }

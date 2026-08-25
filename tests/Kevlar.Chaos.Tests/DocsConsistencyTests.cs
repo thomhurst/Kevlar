@@ -91,6 +91,12 @@ public class DocsConsistencyTests
         await rateLimit.ExecuteAsync(_ => ValueTask.CompletedTask);
         _ = await rateLimit.ExecuteOutcomeAsync(_ => new ValueTask<int>(1));
 
+        var partitions = new PartitionedShield<string>(
+            static _ => Shield.Empty,
+            new PartitionedShieldOptions { MaximumPartitions = 1 });
+        _ = partitions.GetShield("docs-first");
+        _ = partitions.GetShield("docs-second");
+
         using (ChaosScope.Begin("docs-operation", "docs-environment"))
         {
             _ = await ChaosShield.Fault(static options => options.Enabled = true)

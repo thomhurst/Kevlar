@@ -54,7 +54,10 @@ coupling cache lifetime to execution lifetime.
 
 Lifecycle callbacks report both the key and shield. Callback failures are swallowed so telemetry
 or cleanup cannot fail a lookup. The async eviction callback is awaited before a capacity slot is
-reused. Explicit `TryRemove` and `Clear` removals use the `Cleared` reason.
+reused. If that callback performs a cold lookup while its caller owns all available capacity, the
+nested lookup receives an unretained shield instead of waiting on its own reservation; a later
+lookup creates and retains the partition normally. Explicit `TryRemove` and `Clear` removals use the
+`Cleared` reason.
 
 ```csharp
 var observed = new PartitionedShield<string>(

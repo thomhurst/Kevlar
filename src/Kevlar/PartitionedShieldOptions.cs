@@ -29,7 +29,8 @@ public sealed class PartitionedShieldOptions
 
     /// <summary>
     /// Invoked and awaited after <see cref="OnEvicted"/> and before an automatically evicted
-    /// partition's slot is reused.
+    /// partition's slot is reused. A cold lookup reentered from this callback may return an
+    /// unretained shield when the invoking eviction owns all available capacity.
     /// </summary>
     public Func<PartitionEvictionNotification, ValueTask>? OnEvictedAsync { get; set; }
 }

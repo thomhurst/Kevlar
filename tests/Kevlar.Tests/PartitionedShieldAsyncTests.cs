@@ -236,6 +236,39 @@ public class PartitionedShieldAsyncTests
     }
 
     [Test]
+    public async Task Eviction_Callback_Cold_Lookup_Does_Not_Wait_On_Its_Own_Reservation()
+    {
+        PartitionedShield<string>? provider = null;
+        Shield? nested = null;
+        provider = new PartitionedShield<string>(
+            static _ => Shield.Empty,
+            new PartitionedShieldOptions
+            {
+                MaximumPartitions = 1,
+                OnEvictedAsync = async item =>
+                {
+                    if ((string)item.Key == "first")
+                    {
+                        nested = await provider!.GetShieldAsync("nested");
+                    }
+                },
+            });
+        _ = provider.GetShield("first");
+
+        var second = await provider.GetShieldAsync("second")
+            .AsTask()
+            .WaitAsync(TimeSpan.FromSeconds(5));
+
+        await Assert.That(second).IsSameReferenceAs(Shield.Empty);
+        await Assert.That(nested).IsSameReferenceAs(Shield.Empty);
+        await Assert.That(provider.Count).IsEqualTo(1);
+        await Assert.That(provider.TryGetShield("second", out _)).IsTrue();
+        await Assert.That(provider.TryGetShield("nested", out _)).IsFalse();
+        await Assert.That(provider.CreatedCount).IsEqualTo(2);
+        await Assert.That(provider.CapacityEvictionCount).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Evicted_Resources_Can_Be_Disposed_By_Key()
     {
         var resources = new ConcurrentDictionary<string, DisposableResource>();
