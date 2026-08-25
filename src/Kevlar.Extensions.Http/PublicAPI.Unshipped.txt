@@ -92,6 +92,8 @@ Kevlar.Extensions.Http.StandardHttpShieldOptions.Retry.set -> void
 Kevlar.Extensions.Http.StandardHttpShieldOptions.StandardHttpShieldOptions() -> void
 Kevlar.Extensions.Http.StandardHttpShieldOptions.TotalTimeout.get -> Kevlar.TimeoutOptions!
 Kevlar.Extensions.Http.StandardHttpShieldOptions.TotalTimeout.set -> void
+Kevlar.Extensions.Http.StandardHttpShieldOptions.UseRetryAfterHeader.get -> bool
+Kevlar.Extensions.Http.StandardHttpShieldOptions.UseRetryAfterHeader.set -> void
 static Kevlar.Extensions.Http.HttpShield.IsTransientException(System.Exception? exception, System.Threading.CancellationToken callerCancellationToken) -> bool
 static Kevlar.Extensions.Http.HttpShield.Standard(Kevlar.Extensions.Http.StandardHttpShieldOptions! options) -> Kevlar.Shield<System.Net.Http.HttpResponseMessage!>!
 static Kevlar.Extensions.Http.HttpShield.RetryAfter(System.TimeSpan maxDelay) -> System.Func<Kevlar.RetryEvent<System.Net.Http.HttpResponseMessage!>, System.TimeSpan?>!
