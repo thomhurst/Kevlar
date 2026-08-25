@@ -14,6 +14,9 @@ All notable changes to this project are documented here. The format follows
   manual monitor transitions carry a detached context at index `-1`. Typed circuit-breaker
   duration generators receive `CircuitBreakerBreakDurationEvent<TResult>` with a directly stored
   outcome and failure statistics. Typed retry events likewise store their outcome without boxing.
+- Hedging supports synchronous and asynchronous per-attempt delay generators with access to the
+  attempt number, execution context, and elapsed time. Standard endpoint-aware HTTP hedging
+  exposes the same adaptive delay hooks, and `Kevlar.Testing` reports whether one is configured.
 - `HedgeOptions<TResult>.ActionGenerator` is now a strongly typed delegate. Assign the generator
   directly instead of wrapping it with `HedgeActionGenerator.Create<TResult>(...)`; the erased
   wrapper remains available on untyped `HedgeOptions`. Typed generator events now expose the latest
@@ -30,6 +33,14 @@ All notable changes to this project are documented here. The format follows
 - Typed constant-value `Fallback(value)` is now `FallbackTo(value)` on `Shield<TResult>` and
   `ShieldBuilder<TResult>`. Delegate factories remain `Fallback(...)`. This makes null fallback
   values explicit and avoids ambiguity between value and delegate overloads.
+- Named DI registrations now expose symmetric configuration overloads, typed
+  `IShieldProvider<TResult>` snapshots, and `AddReloadingShield<TResult>`.
+- The System.Threading.RateLimiting adapter now uses `UseRateLimiter(...)`,
+  `RateLimiterAdapterRejectedEvent`, and `RateLimiterAdapterRejectedException`. The distinct names
+  separate adapter-backed strategies from Kevlar's built-in `RateLimit(...)` strategy.
+- `StandardHttpShieldOptions.CircuitBreaker` now uses
+  `CircuitBreakerOptions<HttpResponseMessage>`, exposing typed result predicates for the standard
+  HTTP breaker.
 
 ## [1.0.0] - 2026-08-24
 
@@ -98,6 +109,10 @@ All notable changes to this project are documented here. The format follows
 | `WhenDefault()` | `WhenResultIsDefault()` |
 | `OrDefault()` | `OrResultIsDefault()` |
 | `OrWhen(predicate)` | `Or(predicate)` |
+| `builder.When<TException>()` / `builder.When<TException>(predicate)` | `builder.Or<TException>()` / `builder.Or<TException>(predicate)` |
+| `builder.When(predicate)` | `builder.Or(predicate)` |
+| `builder.WhenResult(predicate)` / `builder.WhenResult(value)` | `builder.OrResult(predicate)` / `builder.OrResult(value)` |
+| `builder.WhenDefault()` | `builder.OrResultIsDefault()` |
 | `HedgingOptions` | `HedgeOptions` |
 | `HedgingStrategyDescriptor` | `HedgeStrategyDescriptor` |
 | `StrategyKind.Hedging` | `StrategyKind.Hedge` |
