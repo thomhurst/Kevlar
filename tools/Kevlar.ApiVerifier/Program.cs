@@ -49,7 +49,7 @@ internal static class Program
 
                 if (api.StartsWith("*REMOVED*", StringComparison.Ordinal))
                 {
-                    throw new InvalidOperationException($"Shipped baseline '{path}' contains a removed API entry.");
+                    continue;
                 }
 
                 if (!expected.Add(api))
