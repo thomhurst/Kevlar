@@ -43,6 +43,9 @@ items:
   - uid: Kevlar.Continuation`2
     name: Continuation<T, TState>
     type: Struct
+  - uid: Kevlar.ExecutionRejectedException
+    name: ExecutionRejectedException
+    type: Class
   - uid: Kevlar.FallbackEvent
     name: FallbackEvent
     type: Struct

@@ -5,6 +5,7 @@ items:
   id: HttpRequestReplayException
   parent: Kevlar.Extensions.Http
   children:
+  - Kevlar.Extensions.Http.HttpRequestReplayException.#ctor
   - Kevlar.Extensions.Http.HttpRequestReplayException.#ctor(System.String)
   - Kevlar.Extensions.Http.HttpRequestReplayException.#ctor(System.String,System.Exception)
   langs:
@@ -45,6 +46,29 @@ items:
   - System.Object.Equals(System.Object,System.Object)
   - System.Object.ReferenceEquals(System.Object,System.Object)
   - System.Object.GetHashCode
+- uid: Kevlar.Extensions.Http.HttpRequestReplayException.#ctor
+  commentId: M:Kevlar.Extensions.Http.HttpRequestReplayException.#ctor
+  id: '#ctor'
+  parent: Kevlar.Extensions.Http.HttpRequestReplayException
+  langs:
+  - csharp
+  - vb
+  name: HttpRequestReplayException()
+  nameWithType: HttpRequestReplayException.HttpRequestReplayException()
+  fullName: Kevlar.Extensions.Http.HttpRequestReplayException.HttpRequestReplayException()
+  type: Constructor
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: Creates a replay error with a default message.
+  example: []
+  syntax:
+    content: public HttpRequestReplayException()
+    content.vb: Public Sub New()
+  overload: Kevlar.Extensions.Http.HttpRequestReplayException.#ctor*
+  nameWithType.vb: HttpRequestReplayException.New()
+  fullName.vb: Kevlar.Extensions.Http.HttpRequestReplayException.New()
+  name.vb: New()
 - uid: Kevlar.Extensions.Http.HttpRequestReplayException.#ctor(System.String)
   commentId: M:Kevlar.Extensions.Http.HttpRequestReplayException.#ctor(System.String)
   id: '#ctor(System.String)'
@@ -504,7 +528,7 @@ references:
 - uid: Kevlar.Extensions.Http.HttpRequestReplayException.#ctor*
   commentId: Overload:Kevlar.Extensions.Http.HttpRequestReplayException.#ctor
   isExternal: true
-  href: Kevlar.Extensions.Http.HttpRequestReplayException.html#Kevlar_Extensions_Http_HttpRequestReplayException__ctor_System_String_
+  href: Kevlar.Extensions.Http.HttpRequestReplayException.html#Kevlar_Extensions_Http_HttpRequestReplayException__ctor
   name: HttpRequestReplayException
   nameWithType: HttpRequestReplayException.HttpRequestReplayException
   fullName: Kevlar.Extensions.Http.HttpRequestReplayException.HttpRequestReplayException

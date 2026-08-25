@@ -5,6 +5,7 @@ items:
   id: KevlarException
   parent: Kevlar
   children:
+  - Kevlar.KevlarException.#ctor
   - Kevlar.KevlarException.#ctor(System.String)
   - Kevlar.KevlarException.#ctor(System.String,System.Exception)
   langs:
@@ -26,10 +27,7 @@ items:
   - System.Object
   - System.Exception
   derivedClasses:
-  - Kevlar.CircuitOpenException
-  - Kevlar.ConcurrencyLimitExceededException
-  - Kevlar.RateLimitExceededException
-  - Kevlar.TimeoutExceededException
+  - Kevlar.ExecutionRejectedException
   implements:
   - System.Runtime.Serialization.ISerializable
   inheritedMembers:
@@ -50,6 +48,29 @@ items:
   - System.Object.Equals(System.Object,System.Object)
   - System.Object.ReferenceEquals(System.Object,System.Object)
   - System.Object.GetHashCode
+- uid: Kevlar.KevlarException.#ctor
+  commentId: M:Kevlar.KevlarException.#ctor
+  id: '#ctor'
+  parent: Kevlar.KevlarException
+  langs:
+  - csharp
+  - vb
+  name: KevlarException()
+  nameWithType: KevlarException.KevlarException()
+  fullName: Kevlar.KevlarException.KevlarException()
+  type: Constructor
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Initializes the exception.
+  example: []
+  syntax:
+    content: protected KevlarException()
+    content.vb: Protected Sub New()
+  overload: Kevlar.KevlarException.#ctor*
+  nameWithType.vb: KevlarException.New()
+  fullName.vb: Kevlar.KevlarException.New()
+  name.vb: New()
 - uid: Kevlar.KevlarException.#ctor(System.String)
   commentId: M:Kevlar.KevlarException.#ctor(System.String)
   id: '#ctor(System.String)'
@@ -83,9 +104,9 @@ items:
   langs:
   - csharp
   - vb
-  name: KevlarException(string, Exception)
-  nameWithType: KevlarException.KevlarException(string, Exception)
-  fullName: Kevlar.KevlarException.KevlarException(string, System.Exception)
+  name: KevlarException(string, Exception?)
+  nameWithType: KevlarException.KevlarException(string, Exception?)
+  fullName: Kevlar.KevlarException.KevlarException(string, System.Exception?)
   type: Constructor
   assemblies:
   - Kevlar
@@ -93,7 +114,7 @@ items:
   summary: Initializes the exception with a message and inner exception.
   example: []
   syntax:
-    content: protected KevlarException(string message, Exception innerException)
+    content: protected KevlarException(string message, Exception? innerException)
     parameters:
     - id: message
       type: System.String
@@ -495,7 +516,7 @@ references:
 - uid: Kevlar.KevlarException.#ctor*
   commentId: Overload:Kevlar.KevlarException.#ctor
   isExternal: true
-  href: Kevlar.KevlarException.html#Kevlar_KevlarException__ctor_System_String_
+  href: Kevlar.KevlarException.html#Kevlar_KevlarException__ctor
   name: KevlarException
   nameWithType: KevlarException.KevlarException
   fullName: Kevlar.KevlarException.KevlarException

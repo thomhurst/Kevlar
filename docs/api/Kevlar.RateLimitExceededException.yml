@@ -5,8 +5,10 @@ items:
   id: RateLimitExceededException
   parent: Kevlar
   children:
+  - Kevlar.RateLimitExceededException.#ctor
   - Kevlar.RateLimitExceededException.#ctor(System.Nullable{System.TimeSpan})
-  - Kevlar.RateLimitExceededException.RetryAfter
+  - Kevlar.RateLimitExceededException.#ctor(System.String)
+  - Kevlar.RateLimitExceededException.#ctor(System.String,System.Exception)
   langs:
   - csharp
   - vb
@@ -20,15 +22,17 @@ items:
   summary: Thrown when a rate limit strategy rejects an execution.
   example: []
   syntax:
-    content: 'public sealed class RateLimitExceededException : KevlarException, ISerializable'
-    content.vb: Public NotInheritable Class RateLimitExceededException Inherits KevlarException Implements ISerializable
+    content: 'public sealed class RateLimitExceededException : ExecutionRejectedException, ISerializable'
+    content.vb: Public NotInheritable Class RateLimitExceededException Inherits ExecutionRejectedException Implements ISerializable
   inheritance:
   - System.Object
   - System.Exception
   - Kevlar.KevlarException
+  - Kevlar.ExecutionRejectedException
   implements:
   - System.Runtime.Serialization.ISerializable
   inheritedMembers:
+  - Kevlar.ExecutionRejectedException.RetryAfter
   - System.Exception.GetBaseException
   - System.Exception.ToString
   - System.Exception.GetType
@@ -44,6 +48,83 @@ items:
   - System.Object.Equals(System.Object,System.Object)
   - System.Object.ReferenceEquals(System.Object,System.Object)
   - System.Object.GetHashCode
+- uid: Kevlar.RateLimitExceededException.#ctor
+  commentId: M:Kevlar.RateLimitExceededException.#ctor
+  id: '#ctor'
+  parent: Kevlar.RateLimitExceededException
+  langs:
+  - csharp
+  - vb
+  name: RateLimitExceededException()
+  nameWithType: RateLimitExceededException.RateLimitExceededException()
+  fullName: Kevlar.RateLimitExceededException.RateLimitExceededException()
+  type: Constructor
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Initializes a rate-limit rejection without a retry estimate.
+  example: []
+  syntax:
+    content: public RateLimitExceededException()
+    content.vb: Public Sub New()
+  overload: Kevlar.RateLimitExceededException.#ctor*
+  nameWithType.vb: RateLimitExceededException.New()
+  fullName.vb: Kevlar.RateLimitExceededException.New()
+  name.vb: New()
+- uid: Kevlar.RateLimitExceededException.#ctor(System.String)
+  commentId: M:Kevlar.RateLimitExceededException.#ctor(System.String)
+  id: '#ctor(System.String)'
+  parent: Kevlar.RateLimitExceededException
+  langs:
+  - csharp
+  - vb
+  name: RateLimitExceededException(string)
+  nameWithType: RateLimitExceededException.RateLimitExceededException(string)
+  fullName: Kevlar.RateLimitExceededException.RateLimitExceededException(string)
+  type: Constructor
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Initializes a rate-limit rejection with a custom message.
+  example: []
+  syntax:
+    content: public RateLimitExceededException(string message)
+    parameters:
+    - id: message
+      type: System.String
+    content.vb: Public Sub New(message As String)
+  overload: Kevlar.RateLimitExceededException.#ctor*
+  nameWithType.vb: RateLimitExceededException.New(String)
+  fullName.vb: Kevlar.RateLimitExceededException.New(String)
+  name.vb: New(String)
+- uid: Kevlar.RateLimitExceededException.#ctor(System.String,System.Exception)
+  commentId: M:Kevlar.RateLimitExceededException.#ctor(System.String,System.Exception)
+  id: '#ctor(System.String,System.Exception)'
+  parent: Kevlar.RateLimitExceededException
+  langs:
+  - csharp
+  - vb
+  name: RateLimitExceededException(string, Exception)
+  nameWithType: RateLimitExceededException.RateLimitExceededException(string, Exception)
+  fullName: Kevlar.RateLimitExceededException.RateLimitExceededException(string, System.Exception)
+  type: Constructor
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Initializes a rate-limit rejection with a custom message and cause.
+  example: []
+  syntax:
+    content: public RateLimitExceededException(string message, Exception innerException)
+    parameters:
+    - id: message
+      type: System.String
+    - id: innerException
+      type: System.Exception
+    content.vb: Public Sub New(message As String, innerException As Exception)
+  overload: Kevlar.RateLimitExceededException.#ctor*
+  nameWithType.vb: RateLimitExceededException.New(String, Exception)
+  fullName.vb: Kevlar.RateLimitExceededException.New(String, System.Exception)
+  name.vb: New(String, Exception)
 - uid: Kevlar.RateLimitExceededException.#ctor(System.Nullable{System.TimeSpan})
   commentId: M:Kevlar.RateLimitExceededException.#ctor(System.Nullable{System.TimeSpan})
   id: '#ctor(System.Nullable{System.TimeSpan})'
@@ -70,29 +151,6 @@ items:
   nameWithType.vb: RateLimitExceededException.New(TimeSpan?)
   fullName.vb: Kevlar.RateLimitExceededException.New(System.TimeSpan?)
   name.vb: New(TimeSpan?)
-- uid: Kevlar.RateLimitExceededException.RetryAfter
-  commentId: P:Kevlar.RateLimitExceededException.RetryAfter
-  id: RetryAfter
-  parent: Kevlar.RateLimitExceededException
-  langs:
-  - csharp
-  - vb
-  name: RetryAfter
-  nameWithType: RateLimitExceededException.RetryAfter
-  fullName: Kevlar.RateLimitExceededException.RetryAfter
-  type: Property
-  assemblies:
-  - Kevlar
-  namespace: Kevlar
-  summary: Estimated time until a permit becomes available, when known.
-  example: []
-  syntax:
-    content: public TimeSpan? RetryAfter { get; }
-    parameters: []
-    return:
-      type: System.Nullable{System.TimeSpan}
-    content.vb: Public ReadOnly Property RetryAfter As TimeSpan?
-  overload: Kevlar.RateLimitExceededException.RetryAfter*
 references:
 - uid: Kevlar
   commentId: N:Kevlar
@@ -128,6 +186,14 @@ references:
   name: KevlarException
   nameWithType: KevlarException
   fullName: Kevlar.KevlarException
+- uid: Kevlar.ExecutionRejectedException
+  commentId: T:Kevlar.ExecutionRejectedException
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.ExecutionRejectedException.html
+  name: ExecutionRejectedException
+  nameWithType: ExecutionRejectedException
+  fullName: Kevlar.ExecutionRejectedException
 - uid: System.Runtime.Serialization.ISerializable
   commentId: T:System.Runtime.Serialization.ISerializable
   parent: System.Runtime.Serialization
@@ -136,6 +202,14 @@ references:
   name: ISerializable
   nameWithType: ISerializable
   fullName: System.Runtime.Serialization.ISerializable
+- uid: Kevlar.ExecutionRejectedException.RetryAfter
+  commentId: P:Kevlar.ExecutionRejectedException.RetryAfter
+  parent: Kevlar.ExecutionRejectedException
+  isExternal: true
+  href: Kevlar.ExecutionRejectedException.html#Kevlar_ExecutionRejectedException_RetryAfter
+  name: RetryAfter
+  nameWithType: ExecutionRejectedException.RetryAfter
+  fullName: Kevlar.ExecutionRejectedException.RetryAfter
 - uid: System.Exception.GetBaseException
   commentId: M:System.Exception.GetBaseException
   parent: System.Exception
@@ -460,13 +534,24 @@ references:
 - uid: Kevlar.RateLimitExceededException.#ctor*
   commentId: Overload:Kevlar.RateLimitExceededException.#ctor
   isExternal: true
-  href: Kevlar.RateLimitExceededException.html#Kevlar_RateLimitExceededException__ctor_System_Nullable_System_TimeSpan__
+  href: Kevlar.RateLimitExceededException.html#Kevlar_RateLimitExceededException__ctor
   name: RateLimitExceededException
   nameWithType: RateLimitExceededException.RateLimitExceededException
   fullName: Kevlar.RateLimitExceededException.RateLimitExceededException
   nameWithType.vb: RateLimitExceededException.New
   fullName.vb: Kevlar.RateLimitExceededException.New
   name.vb: New
+- uid: System.String
+  commentId: T:System.String
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.string
+  name: string
+  nameWithType: string
+  fullName: string
+  nameWithType.vb: String
+  fullName.vb: String
+  name.vb: String
 - uid: System.Nullable{System.TimeSpan}
   commentId: T:System.Nullable{System.TimeSpan}
   parent: System
@@ -515,10 +600,3 @@ references:
   - name: " "
   - name: T
   - name: )
-- uid: Kevlar.RateLimitExceededException.RetryAfter*
-  commentId: Overload:Kevlar.RateLimitExceededException.RetryAfter
-  isExternal: true
-  href: Kevlar.RateLimitExceededException.html#Kevlar_RateLimitExceededException_RetryAfter
-  name: RetryAfter
-  nameWithType: RateLimitExceededException.RetryAfter
-  fullName: Kevlar.RateLimitExceededException.RetryAfter

@@ -5,7 +5,9 @@ items:
   id: ShieldAssertionException
   parent: Kevlar.Testing
   children:
+  - Kevlar.Testing.ShieldAssertionException.#ctor
   - Kevlar.Testing.ShieldAssertionException.#ctor(System.String)
+  - Kevlar.Testing.ShieldAssertionException.#ctor(System.String,System.Exception)
   langs:
   - csharp
   - vb
@@ -42,6 +44,29 @@ items:
   - System.Object.Equals(System.Object,System.Object)
   - System.Object.ReferenceEquals(System.Object,System.Object)
   - System.Object.GetHashCode
+- uid: Kevlar.Testing.ShieldAssertionException.#ctor
+  commentId: M:Kevlar.Testing.ShieldAssertionException.#ctor
+  id: '#ctor'
+  parent: Kevlar.Testing.ShieldAssertionException
+  langs:
+  - csharp
+  - vb
+  name: ShieldAssertionException()
+  nameWithType: ShieldAssertionException.ShieldAssertionException()
+  fullName: Kevlar.Testing.ShieldAssertionException.ShieldAssertionException()
+  type: Constructor
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Creates an assertion failure with a default message.
+  example: []
+  syntax:
+    content: public ShieldAssertionException()
+    content.vb: Public Sub New()
+  overload: Kevlar.Testing.ShieldAssertionException.#ctor*
+  nameWithType.vb: ShieldAssertionException.New()
+  fullName.vb: Kevlar.Testing.ShieldAssertionException.New()
+  name.vb: New()
 - uid: Kevlar.Testing.ShieldAssertionException.#ctor(System.String)
   commentId: M:Kevlar.Testing.ShieldAssertionException.#ctor(System.String)
   id: '#ctor(System.String)'
@@ -68,6 +93,34 @@ items:
   nameWithType.vb: ShieldAssertionException.New(String)
   fullName.vb: Kevlar.Testing.ShieldAssertionException.New(String)
   name.vb: New(String)
+- uid: Kevlar.Testing.ShieldAssertionException.#ctor(System.String,System.Exception)
+  commentId: M:Kevlar.Testing.ShieldAssertionException.#ctor(System.String,System.Exception)
+  id: '#ctor(System.String,System.Exception)'
+  parent: Kevlar.Testing.ShieldAssertionException
+  langs:
+  - csharp
+  - vb
+  name: ShieldAssertionException(string, Exception)
+  nameWithType: ShieldAssertionException.ShieldAssertionException(string, Exception)
+  fullName: Kevlar.Testing.ShieldAssertionException.ShieldAssertionException(string, System.Exception)
+  type: Constructor
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Creates an assertion failure with an actionable message and cause.
+  example: []
+  syntax:
+    content: public ShieldAssertionException(string message, Exception innerException)
+    parameters:
+    - id: message
+      type: System.String
+    - id: innerException
+      type: System.Exception
+    content.vb: Public Sub New(message As String, innerException As Exception)
+  overload: Kevlar.Testing.ShieldAssertionException.#ctor*
+  nameWithType.vb: ShieldAssertionException.New(String, Exception)
+  fullName.vb: Kevlar.Testing.ShieldAssertionException.New(String, System.Exception)
+  name.vb: New(String, Exception)
 references:
 - uid: Kevlar.Testing
   commentId: N:Kevlar.Testing
@@ -447,7 +500,7 @@ references:
 - uid: Kevlar.Testing.ShieldAssertionException.#ctor*
   commentId: Overload:Kevlar.Testing.ShieldAssertionException.#ctor
   isExternal: true
-  href: Kevlar.Testing.ShieldAssertionException.html#Kevlar_Testing_ShieldAssertionException__ctor_System_String_
+  href: Kevlar.Testing.ShieldAssertionException.html#Kevlar_Testing_ShieldAssertionException__ctor
   name: ShieldAssertionException
   nameWithType: ShieldAssertionException.ShieldAssertionException
   fullName: Kevlar.Testing.ShieldAssertionException.ShieldAssertionException

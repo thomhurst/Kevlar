@@ -5,9 +5,11 @@ items:
   id: CircuitOpenException
   parent: Kevlar
   children:
+  - Kevlar.CircuitOpenException.#ctor
   - Kevlar.CircuitOpenException.#ctor(System.Nullable{System.TimeSpan},System.Boolean,System.Exception)
+  - Kevlar.CircuitOpenException.#ctor(System.String)
+  - Kevlar.CircuitOpenException.#ctor(System.String,System.Exception)
   - Kevlar.CircuitOpenException.IsIsolated
-  - Kevlar.CircuitOpenException.RetryAfter
   langs:
   - csharp
   - vb
@@ -21,15 +23,17 @@ items:
   summary: Thrown when a circuit breaker rejects an execution because the circuit is open.
   example: []
   syntax:
-    content: 'public sealed class CircuitOpenException : KevlarException, ISerializable'
-    content.vb: Public NotInheritable Class CircuitOpenException Inherits KevlarException Implements ISerializable
+    content: 'public sealed class CircuitOpenException : ExecutionRejectedException, ISerializable'
+    content.vb: Public NotInheritable Class CircuitOpenException Inherits ExecutionRejectedException Implements ISerializable
   inheritance:
   - System.Object
   - System.Exception
   - Kevlar.KevlarException
+  - Kevlar.ExecutionRejectedException
   implements:
   - System.Runtime.Serialization.ISerializable
   inheritedMembers:
+  - Kevlar.ExecutionRejectedException.RetryAfter
   - System.Exception.GetBaseException
   - System.Exception.ToString
   - System.Exception.GetType
@@ -45,6 +49,83 @@ items:
   - System.Object.Equals(System.Object,System.Object)
   - System.Object.ReferenceEquals(System.Object,System.Object)
   - System.Object.GetHashCode
+- uid: Kevlar.CircuitOpenException.#ctor
+  commentId: M:Kevlar.CircuitOpenException.#ctor
+  id: '#ctor'
+  parent: Kevlar.CircuitOpenException
+  langs:
+  - csharp
+  - vb
+  name: CircuitOpenException()
+  nameWithType: CircuitOpenException.CircuitOpenException()
+  fullName: Kevlar.CircuitOpenException.CircuitOpenException()
+  type: Constructor
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Initializes an open-circuit rejection.
+  example: []
+  syntax:
+    content: public CircuitOpenException()
+    content.vb: Public Sub New()
+  overload: Kevlar.CircuitOpenException.#ctor*
+  nameWithType.vb: CircuitOpenException.New()
+  fullName.vb: Kevlar.CircuitOpenException.New()
+  name.vb: New()
+- uid: Kevlar.CircuitOpenException.#ctor(System.String)
+  commentId: M:Kevlar.CircuitOpenException.#ctor(System.String)
+  id: '#ctor(System.String)'
+  parent: Kevlar.CircuitOpenException
+  langs:
+  - csharp
+  - vb
+  name: CircuitOpenException(string)
+  nameWithType: CircuitOpenException.CircuitOpenException(string)
+  fullName: Kevlar.CircuitOpenException.CircuitOpenException(string)
+  type: Constructor
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Initializes an open-circuit rejection with a custom message.
+  example: []
+  syntax:
+    content: public CircuitOpenException(string message)
+    parameters:
+    - id: message
+      type: System.String
+    content.vb: Public Sub New(message As String)
+  overload: Kevlar.CircuitOpenException.#ctor*
+  nameWithType.vb: CircuitOpenException.New(String)
+  fullName.vb: Kevlar.CircuitOpenException.New(String)
+  name.vb: New(String)
+- uid: Kevlar.CircuitOpenException.#ctor(System.String,System.Exception)
+  commentId: M:Kevlar.CircuitOpenException.#ctor(System.String,System.Exception)
+  id: '#ctor(System.String,System.Exception)'
+  parent: Kevlar.CircuitOpenException
+  langs:
+  - csharp
+  - vb
+  name: CircuitOpenException(string, Exception)
+  nameWithType: CircuitOpenException.CircuitOpenException(string, Exception)
+  fullName: Kevlar.CircuitOpenException.CircuitOpenException(string, System.Exception)
+  type: Constructor
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Initializes an open-circuit rejection with a custom message and last failure.
+  example: []
+  syntax:
+    content: public CircuitOpenException(string message, Exception innerException)
+    parameters:
+    - id: message
+      type: System.String
+    - id: innerException
+      type: System.Exception
+    content.vb: Public Sub New(message As String, innerException As Exception)
+  overload: Kevlar.CircuitOpenException.#ctor*
+  nameWithType.vb: CircuitOpenException.New(String, Exception)
+  fullName.vb: Kevlar.CircuitOpenException.New(String, System.Exception)
+  name.vb: New(String, Exception)
 - uid: Kevlar.CircuitOpenException.#ctor(System.Nullable{System.TimeSpan},System.Boolean,System.Exception)
   commentId: M:Kevlar.CircuitOpenException.#ctor(System.Nullable{System.TimeSpan},System.Boolean,System.Exception)
   id: '#ctor(System.Nullable{System.TimeSpan},System.Boolean,System.Exception)'
@@ -75,29 +156,6 @@ items:
   nameWithType.vb: CircuitOpenException.New(TimeSpan?, Boolean, Exception)
   fullName.vb: Kevlar.CircuitOpenException.New(System.TimeSpan?, Boolean, System.Exception)
   name.vb: New(TimeSpan?, Boolean, Exception)
-- uid: Kevlar.CircuitOpenException.RetryAfter
-  commentId: P:Kevlar.CircuitOpenException.RetryAfter
-  id: RetryAfter
-  parent: Kevlar.CircuitOpenException
-  langs:
-  - csharp
-  - vb
-  name: RetryAfter
-  nameWithType: CircuitOpenException.RetryAfter
-  fullName: Kevlar.CircuitOpenException.RetryAfter
-  type: Property
-  assemblies:
-  - Kevlar
-  namespace: Kevlar
-  summary: Time remaining until the circuit will allow a probe execution, when known.
-  example: []
-  syntax:
-    content: public TimeSpan? RetryAfter { get; }
-    parameters: []
-    return:
-      type: System.Nullable{System.TimeSpan}
-    content.vb: Public ReadOnly Property RetryAfter As TimeSpan?
-  overload: Kevlar.CircuitOpenException.RetryAfter*
 - uid: Kevlar.CircuitOpenException.IsIsolated
   commentId: P:Kevlar.CircuitOpenException.IsIsolated
   id: IsIsolated
@@ -156,6 +214,14 @@ references:
   name: KevlarException
   nameWithType: KevlarException
   fullName: Kevlar.KevlarException
+- uid: Kevlar.ExecutionRejectedException
+  commentId: T:Kevlar.ExecutionRejectedException
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.ExecutionRejectedException.html
+  name: ExecutionRejectedException
+  nameWithType: ExecutionRejectedException
+  fullName: Kevlar.ExecutionRejectedException
 - uid: System.Runtime.Serialization.ISerializable
   commentId: T:System.Runtime.Serialization.ISerializable
   parent: System.Runtime.Serialization
@@ -164,6 +230,14 @@ references:
   name: ISerializable
   nameWithType: ISerializable
   fullName: System.Runtime.Serialization.ISerializable
+- uid: Kevlar.ExecutionRejectedException.RetryAfter
+  commentId: P:Kevlar.ExecutionRejectedException.RetryAfter
+  parent: Kevlar.ExecutionRejectedException
+  isExternal: true
+  href: Kevlar.ExecutionRejectedException.html#Kevlar_ExecutionRejectedException_RetryAfter
+  name: RetryAfter
+  nameWithType: ExecutionRejectedException.RetryAfter
+  fullName: Kevlar.ExecutionRejectedException.RetryAfter
 - uid: System.Exception.GetBaseException
   commentId: M:System.Exception.GetBaseException
   parent: System.Exception
@@ -488,13 +562,24 @@ references:
 - uid: Kevlar.CircuitOpenException.#ctor*
   commentId: Overload:Kevlar.CircuitOpenException.#ctor
   isExternal: true
-  href: Kevlar.CircuitOpenException.html#Kevlar_CircuitOpenException__ctor_System_Nullable_System_TimeSpan__System_Boolean_System_Exception_
+  href: Kevlar.CircuitOpenException.html#Kevlar_CircuitOpenException__ctor
   name: CircuitOpenException
   nameWithType: CircuitOpenException.CircuitOpenException
   fullName: Kevlar.CircuitOpenException.CircuitOpenException
   nameWithType.vb: CircuitOpenException.New
   fullName.vb: Kevlar.CircuitOpenException.New
   name.vb: New
+- uid: System.String
+  commentId: T:System.String
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.string
+  name: string
+  nameWithType: string
+  fullName: string
+  nameWithType.vb: String
+  fullName.vb: String
+  name.vb: String
 - uid: System.Nullable{System.TimeSpan}
   commentId: T:System.Nullable{System.TimeSpan}
   parent: System
@@ -554,13 +639,6 @@ references:
   - name: " "
   - name: T
   - name: )
-- uid: Kevlar.CircuitOpenException.RetryAfter*
-  commentId: Overload:Kevlar.CircuitOpenException.RetryAfter
-  isExternal: true
-  href: Kevlar.CircuitOpenException.html#Kevlar_CircuitOpenException_RetryAfter
-  name: RetryAfter
-  nameWithType: CircuitOpenException.RetryAfter
-  fullName: Kevlar.CircuitOpenException.RetryAfter
 - uid: Kevlar.CircuitOpenException.IsIsolated*
   commentId: Overload:Kevlar.CircuitOpenException.IsIsolated
   isExternal: true

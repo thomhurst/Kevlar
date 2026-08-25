@@ -17,6 +17,7 @@ items:
   - Kevlar.ConcurrencyLimitOptions
   - Kevlar.ConcurrencyLimitRejectedEvent
   - Kevlar.Continuation`2
+  - Kevlar.ExecutionRejectedException
   - Kevlar.FallbackEvent
   - Kevlar.FallbackEvent`1
   - Kevlar.FallbackOptions
@@ -98,6 +99,14 @@ references:
   name: ConcurrencyLimitExceededException
   nameWithType: ConcurrencyLimitExceededException
   fullName: Kevlar.ConcurrencyLimitExceededException
+- uid: Kevlar.ExecutionRejectedException
+  commentId: T:Kevlar.ExecutionRejectedException
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.ExecutionRejectedException.html
+  name: ExecutionRejectedException
+  nameWithType: ExecutionRejectedException
+  fullName: Kevlar.ExecutionRejectedException
 - uid: Kevlar.KevlarException
   commentId: T:Kevlar.KevlarException
   parent: Kevlar

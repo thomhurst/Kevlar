@@ -1,40 +1,42 @@
 ### YamlMime:ManagedReference
 items:
-- uid: Kevlar.TimeoutExceededException
-  commentId: T:Kevlar.TimeoutExceededException
-  id: TimeoutExceededException
+- uid: Kevlar.ExecutionRejectedException
+  commentId: T:Kevlar.ExecutionRejectedException
+  id: ExecutionRejectedException
   parent: Kevlar
   children:
-  - Kevlar.TimeoutExceededException.#ctor
-  - Kevlar.TimeoutExceededException.#ctor(System.String)
-  - Kevlar.TimeoutExceededException.#ctor(System.String,System.Exception)
-  - Kevlar.TimeoutExceededException.#ctor(System.TimeSpan)
-  - Kevlar.TimeoutExceededException.#ctor(System.TimeSpan,System.OperationCanceledException)
-  - Kevlar.TimeoutExceededException.Timeout
+  - Kevlar.ExecutionRejectedException.#ctor
+  - Kevlar.ExecutionRejectedException.#ctor(System.String)
+  - Kevlar.ExecutionRejectedException.#ctor(System.String,System.Exception)
+  - Kevlar.ExecutionRejectedException.#ctor(System.String,System.Nullable{System.TimeSpan},System.Exception)
+  - Kevlar.ExecutionRejectedException.RetryAfter
   langs:
   - csharp
   - vb
-  name: TimeoutExceededException
-  nameWithType: TimeoutExceededException
-  fullName: Kevlar.TimeoutExceededException
+  name: ExecutionRejectedException
+  nameWithType: ExecutionRejectedException
+  fullName: Kevlar.ExecutionRejectedException
   type: Class
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Thrown when a timeout strategy cancels an execution that exceeded its allotted time.
+  summary: Base class for executions rejected by a Kevlar strategy.
   example: []
   syntax:
-    content: 'public sealed class TimeoutExceededException : ExecutionRejectedException, ISerializable'
-    content.vb: Public NotInheritable Class TimeoutExceededException Inherits ExecutionRejectedException Implements ISerializable
+    content: 'public abstract class ExecutionRejectedException : KevlarException, ISerializable'
+    content.vb: Public MustInherit Class ExecutionRejectedException Inherits KevlarException Implements ISerializable
   inheritance:
   - System.Object
   - System.Exception
   - Kevlar.KevlarException
-  - Kevlar.ExecutionRejectedException
+  derivedClasses:
+  - Kevlar.CircuitOpenException
+  - Kevlar.ConcurrencyLimitExceededException
+  - Kevlar.RateLimitExceededException
+  - Kevlar.TimeoutExceededException
   implements:
   - System.Runtime.Serialization.ISerializable
   inheritedMembers:
-  - Kevlar.ExecutionRejectedException.RetryAfter
   - System.Exception.GetBaseException
   - System.Exception.ToString
   - System.Exception.GetType
@@ -46,164 +48,142 @@ items:
   - System.Exception.Source
   - System.Exception.HResult
   - System.Exception.StackTrace
+  - System.Exception.SerializeObjectState
+  - System.Object.MemberwiseClone
   - System.Object.Equals(System.Object)
   - System.Object.Equals(System.Object,System.Object)
   - System.Object.ReferenceEquals(System.Object,System.Object)
   - System.Object.GetHashCode
-- uid: Kevlar.TimeoutExceededException.#ctor
-  commentId: M:Kevlar.TimeoutExceededException.#ctor
+- uid: Kevlar.ExecutionRejectedException.#ctor
+  commentId: M:Kevlar.ExecutionRejectedException.#ctor
   id: '#ctor'
-  parent: Kevlar.TimeoutExceededException
+  parent: Kevlar.ExecutionRejectedException
   langs:
   - csharp
   - vb
-  name: TimeoutExceededException()
-  nameWithType: TimeoutExceededException.TimeoutExceededException()
-  fullName: Kevlar.TimeoutExceededException.TimeoutExceededException()
+  name: ExecutionRejectedException()
+  nameWithType: ExecutionRejectedException.ExecutionRejectedException()
+  fullName: Kevlar.ExecutionRejectedException.ExecutionRejectedException()
   type: Constructor
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Initializes a timeout rejection without a recorded timeout.
+  summary: Initializes a rejection with no retry estimate.
   example: []
   syntax:
-    content: public TimeoutExceededException()
-    content.vb: Public Sub New()
-  overload: Kevlar.TimeoutExceededException.#ctor*
-  nameWithType.vb: TimeoutExceededException.New()
-  fullName.vb: Kevlar.TimeoutExceededException.New()
+    content: protected ExecutionRejectedException()
+    content.vb: Protected Sub New()
+  overload: Kevlar.ExecutionRejectedException.#ctor*
+  nameWithType.vb: ExecutionRejectedException.New()
+  fullName.vb: Kevlar.ExecutionRejectedException.New()
   name.vb: New()
-- uid: Kevlar.TimeoutExceededException.#ctor(System.String)
-  commentId: M:Kevlar.TimeoutExceededException.#ctor(System.String)
+- uid: Kevlar.ExecutionRejectedException.#ctor(System.String)
+  commentId: M:Kevlar.ExecutionRejectedException.#ctor(System.String)
   id: '#ctor(System.String)'
-  parent: Kevlar.TimeoutExceededException
+  parent: Kevlar.ExecutionRejectedException
   langs:
   - csharp
   - vb
-  name: TimeoutExceededException(string)
-  nameWithType: TimeoutExceededException.TimeoutExceededException(string)
-  fullName: Kevlar.TimeoutExceededException.TimeoutExceededException(string)
+  name: ExecutionRejectedException(string)
+  nameWithType: ExecutionRejectedException.ExecutionRejectedException(string)
+  fullName: Kevlar.ExecutionRejectedException.ExecutionRejectedException(string)
   type: Constructor
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Initializes a timeout rejection with a custom message.
+  summary: Initializes a rejection with no retry estimate.
   example: []
   syntax:
-    content: public TimeoutExceededException(string message)
+    content: protected ExecutionRejectedException(string message)
     parameters:
     - id: message
       type: System.String
-    content.vb: Public Sub New(message As String)
-  overload: Kevlar.TimeoutExceededException.#ctor*
-  nameWithType.vb: TimeoutExceededException.New(String)
-  fullName.vb: Kevlar.TimeoutExceededException.New(String)
+    content.vb: Protected Sub New(message As String)
+  overload: Kevlar.ExecutionRejectedException.#ctor*
+  nameWithType.vb: ExecutionRejectedException.New(String)
+  fullName.vb: Kevlar.ExecutionRejectedException.New(String)
   name.vb: New(String)
-- uid: Kevlar.TimeoutExceededException.#ctor(System.String,System.Exception)
-  commentId: M:Kevlar.TimeoutExceededException.#ctor(System.String,System.Exception)
+- uid: Kevlar.ExecutionRejectedException.#ctor(System.String,System.Exception)
+  commentId: M:Kevlar.ExecutionRejectedException.#ctor(System.String,System.Exception)
   id: '#ctor(System.String,System.Exception)'
-  parent: Kevlar.TimeoutExceededException
+  parent: Kevlar.ExecutionRejectedException
   langs:
   - csharp
   - vb
-  name: TimeoutExceededException(string, Exception)
-  nameWithType: TimeoutExceededException.TimeoutExceededException(string, Exception)
-  fullName: Kevlar.TimeoutExceededException.TimeoutExceededException(string, System.Exception)
+  name: ExecutionRejectedException(string, Exception?)
+  nameWithType: ExecutionRejectedException.ExecutionRejectedException(string, Exception?)
+  fullName: Kevlar.ExecutionRejectedException.ExecutionRejectedException(string, System.Exception?)
   type: Constructor
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Initializes a timeout rejection with a custom message and cause.
+  summary: Initializes a rejection with no retry estimate and a cause.
   example: []
   syntax:
-    content: public TimeoutExceededException(string message, Exception innerException)
+    content: protected ExecutionRejectedException(string message, Exception? innerException)
     parameters:
     - id: message
       type: System.String
     - id: innerException
       type: System.Exception
-    content.vb: Public Sub New(message As String, innerException As Exception)
-  overload: Kevlar.TimeoutExceededException.#ctor*
-  nameWithType.vb: TimeoutExceededException.New(String, Exception)
-  fullName.vb: Kevlar.TimeoutExceededException.New(String, System.Exception)
+    content.vb: Protected Sub New(message As String, innerException As Exception)
+  overload: Kevlar.ExecutionRejectedException.#ctor*
+  nameWithType.vb: ExecutionRejectedException.New(String, Exception)
+  fullName.vb: Kevlar.ExecutionRejectedException.New(String, System.Exception)
   name.vb: New(String, Exception)
-- uid: Kevlar.TimeoutExceededException.#ctor(System.TimeSpan)
-  commentId: M:Kevlar.TimeoutExceededException.#ctor(System.TimeSpan)
-  id: '#ctor(System.TimeSpan)'
-  parent: Kevlar.TimeoutExceededException
+- uid: Kevlar.ExecutionRejectedException.#ctor(System.String,System.Nullable{System.TimeSpan},System.Exception)
+  commentId: M:Kevlar.ExecutionRejectedException.#ctor(System.String,System.Nullable{System.TimeSpan},System.Exception)
+  id: '#ctor(System.String,System.Nullable{System.TimeSpan},System.Exception)'
+  parent: Kevlar.ExecutionRejectedException
   langs:
   - csharp
   - vb
-  name: TimeoutExceededException(TimeSpan)
-  nameWithType: TimeoutExceededException.TimeoutExceededException(TimeSpan)
-  fullName: Kevlar.TimeoutExceededException.TimeoutExceededException(System.TimeSpan)
+  name: ExecutionRejectedException(string, TimeSpan?, Exception?)
+  nameWithType: ExecutionRejectedException.ExecutionRejectedException(string, TimeSpan?, Exception?)
+  fullName: Kevlar.ExecutionRejectedException.ExecutionRejectedException(string, System.TimeSpan?, System.Exception?)
   type: Constructor
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Initializes the exception for the given timeout.
+  summary: Initializes a rejection with an optional retry estimate and cause.
   example: []
   syntax:
-    content: public TimeoutExceededException(TimeSpan timeout)
+    content: protected ExecutionRejectedException(string message, TimeSpan? retryAfter, Exception? innerException = null)
     parameters:
-    - id: timeout
-      type: System.TimeSpan
-    content.vb: Public Sub New(timeout As TimeSpan)
-  overload: Kevlar.TimeoutExceededException.#ctor*
-  nameWithType.vb: TimeoutExceededException.New(TimeSpan)
-  fullName.vb: Kevlar.TimeoutExceededException.New(System.TimeSpan)
-  name.vb: New(TimeSpan)
-- uid: Kevlar.TimeoutExceededException.#ctor(System.TimeSpan,System.OperationCanceledException)
-  commentId: M:Kevlar.TimeoutExceededException.#ctor(System.TimeSpan,System.OperationCanceledException)
-  id: '#ctor(System.TimeSpan,System.OperationCanceledException)'
-  parent: Kevlar.TimeoutExceededException
-  langs:
-  - csharp
-  - vb
-  name: TimeoutExceededException(TimeSpan, OperationCanceledException)
-  nameWithType: TimeoutExceededException.TimeoutExceededException(TimeSpan, OperationCanceledException)
-  fullName: Kevlar.TimeoutExceededException.TimeoutExceededException(System.TimeSpan, System.OperationCanceledException)
-  type: Constructor
-  assemblies:
-  - Kevlar
-  namespace: Kevlar
-  summary: Initializes the exception for the given timeout and triggering cancellation.
-  example: []
-  syntax:
-    content: public TimeoutExceededException(TimeSpan timeout, OperationCanceledException innerException)
-    parameters:
-    - id: timeout
-      type: System.TimeSpan
+    - id: message
+      type: System.String
+    - id: retryAfter
+      type: System.Nullable{System.TimeSpan}
     - id: innerException
-      type: System.OperationCanceledException
-    content.vb: Public Sub New(timeout As TimeSpan, innerException As OperationCanceledException)
-  overload: Kevlar.TimeoutExceededException.#ctor*
-  nameWithType.vb: TimeoutExceededException.New(TimeSpan, OperationCanceledException)
-  fullName.vb: Kevlar.TimeoutExceededException.New(System.TimeSpan, System.OperationCanceledException)
-  name.vb: New(TimeSpan, OperationCanceledException)
-- uid: Kevlar.TimeoutExceededException.Timeout
-  commentId: P:Kevlar.TimeoutExceededException.Timeout
-  id: Timeout
-  parent: Kevlar.TimeoutExceededException
+      type: System.Exception
+    content.vb: Protected Sub New(message As String, retryAfter As TimeSpan?, innerException As Exception = Nothing)
+  overload: Kevlar.ExecutionRejectedException.#ctor*
+  nameWithType.vb: ExecutionRejectedException.New(String, TimeSpan?, Exception)
+  fullName.vb: Kevlar.ExecutionRejectedException.New(String, System.TimeSpan?, System.Exception)
+  name.vb: New(String, TimeSpan?, Exception)
+- uid: Kevlar.ExecutionRejectedException.RetryAfter
+  commentId: P:Kevlar.ExecutionRejectedException.RetryAfter
+  id: RetryAfter
+  parent: Kevlar.ExecutionRejectedException
   langs:
   - csharp
   - vb
-  name: Timeout
-  nameWithType: TimeoutExceededException.Timeout
-  fullName: Kevlar.TimeoutExceededException.Timeout
+  name: RetryAfter
+  nameWithType: ExecutionRejectedException.RetryAfter
+  fullName: Kevlar.ExecutionRejectedException.RetryAfter
   type: Property
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: The timeout that was exceeded.
+  summary: Estimated time until execution may be attempted again, when known.
   example: []
   syntax:
-    content: public TimeSpan Timeout { get; }
+    content: public TimeSpan? RetryAfter { get; }
     parameters: []
     return:
-      type: System.TimeSpan
-    content.vb: Public ReadOnly Property Timeout As TimeSpan
-  overload: Kevlar.TimeoutExceededException.Timeout*
+      type: System.Nullable{System.TimeSpan}
+    content.vb: Public ReadOnly Property RetryAfter As TimeSpan?
+  overload: Kevlar.ExecutionRejectedException.RetryAfter*
 references:
 - uid: Kevlar
   commentId: N:Kevlar
@@ -239,14 +219,6 @@ references:
   name: KevlarException
   nameWithType: KevlarException
   fullName: Kevlar.KevlarException
-- uid: Kevlar.ExecutionRejectedException
-  commentId: T:Kevlar.ExecutionRejectedException
-  parent: Kevlar
-  isExternal: true
-  href: Kevlar.ExecutionRejectedException.html
-  name: ExecutionRejectedException
-  nameWithType: ExecutionRejectedException
-  fullName: Kevlar.ExecutionRejectedException
 - uid: System.Runtime.Serialization.ISerializable
   commentId: T:System.Runtime.Serialization.ISerializable
   parent: System.Runtime.Serialization
@@ -255,14 +227,6 @@ references:
   name: ISerializable
   nameWithType: ISerializable
   fullName: System.Runtime.Serialization.ISerializable
-- uid: Kevlar.ExecutionRejectedException.RetryAfter
-  commentId: P:Kevlar.ExecutionRejectedException.RetryAfter
-  parent: Kevlar.ExecutionRejectedException
-  isExternal: true
-  href: Kevlar.ExecutionRejectedException.html#Kevlar_ExecutionRejectedException_RetryAfter
-  name: RetryAfter
-  nameWithType: ExecutionRejectedException.RetryAfter
-  fullName: Kevlar.ExecutionRejectedException.RetryAfter
 - uid: System.Exception.GetBaseException
   commentId: M:System.Exception.GetBaseException
   parent: System.Exception
@@ -393,6 +357,38 @@ references:
   name: StackTrace
   nameWithType: Exception.StackTrace
   fullName: System.Exception.StackTrace
+- uid: System.Exception.SerializeObjectState
+  commentId: E:System.Exception.SerializeObjectState
+  parent: System.Exception
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.exception.serializeobjectstate
+  name: SerializeObjectState
+  nameWithType: Exception.SerializeObjectState
+  fullName: System.Exception.SerializeObjectState
+- uid: System.Object.MemberwiseClone
+  commentId: M:System.Object.MemberwiseClone
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  name: MemberwiseClone()
+  nameWithType: object.MemberwiseClone()
+  fullName: object.MemberwiseClone()
+  nameWithType.vb: Object.MemberwiseClone()
+  fullName.vb: Object.MemberwiseClone()
+  spec.csharp:
+  - uid: System.Object.MemberwiseClone
+    name: MemberwiseClone
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.MemberwiseClone
+    name: MemberwiseClone
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  - name: (
+  - name: )
 - uid: System.Object.Equals(System.Object)
   commentId: M:System.Object.Equals(System.Object)
   parent: System.Object
@@ -584,15 +580,15 @@ references:
     name: Serialization
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.runtime.serialization
-- uid: Kevlar.TimeoutExceededException.#ctor*
-  commentId: Overload:Kevlar.TimeoutExceededException.#ctor
+- uid: Kevlar.ExecutionRejectedException.#ctor*
+  commentId: Overload:Kevlar.ExecutionRejectedException.#ctor
   isExternal: true
-  href: Kevlar.TimeoutExceededException.html#Kevlar_TimeoutExceededException__ctor
-  name: TimeoutExceededException
-  nameWithType: TimeoutExceededException.TimeoutExceededException
-  fullName: Kevlar.TimeoutExceededException.TimeoutExceededException
-  nameWithType.vb: TimeoutExceededException.New
-  fullName.vb: Kevlar.TimeoutExceededException.New
+  href: Kevlar.ExecutionRejectedException.html#Kevlar_ExecutionRejectedException__ctor
+  name: ExecutionRejectedException
+  nameWithType: ExecutionRejectedException.ExecutionRejectedException
+  fullName: Kevlar.ExecutionRejectedException.ExecutionRejectedException
+  nameWithType.vb: ExecutionRejectedException.New
+  fullName.vb: Kevlar.ExecutionRejectedException.New
   name.vb: New
 - uid: System.String
   commentId: T:System.String
@@ -605,26 +601,58 @@ references:
   nameWithType.vb: String
   fullName.vb: String
   name.vb: String
-- uid: System.TimeSpan
-  commentId: T:System.TimeSpan
+- uid: System.Nullable{System.TimeSpan}
+  commentId: T:System.Nullable{System.TimeSpan}
   parent: System
-  isExternal: true
+  definition: System.Nullable`1
   href: https://learn.microsoft.com/dotnet/api/system.timespan
-  name: TimeSpan
-  nameWithType: TimeSpan
-  fullName: System.TimeSpan
-- uid: System.OperationCanceledException
-  commentId: T:System.OperationCanceledException
-  parent: System
+  name: TimeSpan?
+  nameWithType: TimeSpan?
+  fullName: System.TimeSpan?
+  spec.csharp:
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '?'
+  spec.vb:
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '?'
+- uid: System.Nullable`1
+  commentId: T:System.Nullable`1
   isExternal: true
-  href: https://learn.microsoft.com/dotnet/api/system.operationcanceledexception
-  name: OperationCanceledException
-  nameWithType: OperationCanceledException
-  fullName: System.OperationCanceledException
-- uid: Kevlar.TimeoutExceededException.Timeout*
-  commentId: Overload:Kevlar.TimeoutExceededException.Timeout
+  href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  name: Nullable<T>
+  nameWithType: Nullable<T>
+  fullName: System.Nullable<T>
+  nameWithType.vb: Nullable(Of T)
+  fullName.vb: System.Nullable(Of T)
+  name.vb: Nullable(Of T)
+  spec.csharp:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Kevlar.ExecutionRejectedException.RetryAfter*
+  commentId: Overload:Kevlar.ExecutionRejectedException.RetryAfter
   isExternal: true
-  href: Kevlar.TimeoutExceededException.html#Kevlar_TimeoutExceededException_Timeout
-  name: Timeout
-  nameWithType: TimeoutExceededException.Timeout
-  fullName: Kevlar.TimeoutExceededException.Timeout
+  href: Kevlar.ExecutionRejectedException.html#Kevlar_ExecutionRejectedException_RetryAfter
+  name: RetryAfter
+  nameWithType: ExecutionRejectedException.RetryAfter
+  fullName: Kevlar.ExecutionRejectedException.RetryAfter
