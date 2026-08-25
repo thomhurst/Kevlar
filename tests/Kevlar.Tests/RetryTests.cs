@@ -5,6 +5,50 @@ namespace Kevlar.Tests;
 public class RetryTests
 {
     [Test]
+    public async Task SuppressAdditionalAttempts_Skips_Retry_And_Notification()
+    {
+        var attempts = 0;
+        var notifications = 0;
+        var shield = Shield.Retry(options =>
+        {
+            options.MaxRetries = 3;
+            options.Backoff = Backoff.None;
+            options.OnRetry = _ => notifications++;
+        });
+
+        var exception = await Assert.That(async () => await shield.ExecuteWithContextAsync<int, int>(
+                0,
+                static (_, properties) =>
+                    properties.SuppressAdditionalAttempts = true,
+                (_, _) =>
+                {
+                    attempts++;
+                    throw new InvalidOperationException("original");
+                }))
+            .Throws<InvalidOperationException>();
+
+        await Assert.That(exception!.Message).IsEqualTo("original");
+        await Assert.That(attempts).IsEqualTo(1);
+        await Assert.That(notifications).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Public_Named_Property_Cannot_Suppress_Retry()
+    {
+        var attempts = 0;
+        var result = await Shield.Retry(1, Backoff.None).ExecuteWithContextAsync<int, int>(
+            0,
+            static (_, properties) =>
+                properties.Set(new KevlarKey<bool>("Kevlar.SuppressAdditionalAttempts"), true),
+            (_, _) => new ValueTask<int>(++attempts == 1
+                ? throw new InvalidOperationException("retry")
+                : 42));
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(attempts).IsEqualTo(2);
+    }
+
+    [Test]
     public async Task Retries_Until_Success()
     {
         var attempts = 0;

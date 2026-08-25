@@ -24,6 +24,8 @@ public sealed class KevlarProperties
     {
     }
 
+    internal bool SuppressAdditionalAttempts { get; set; }
+
     /// <summary>Gets the number of values currently stored in the bag.</summary>
     public int Count
     {
@@ -98,6 +100,7 @@ public sealed class KevlarProperties
 
     internal void Clear()
     {
+        SuppressAdditionalAttempts = false;
         if (_firstItem is null)
         {
             return;
@@ -125,6 +128,7 @@ public sealed class KevlarProperties
 
     internal void CopyTo(KevlarProperties target)
     {
+        target.SuppressAdditionalAttempts = SuppressAdditionalAttempts;
         if (_firstItem is null)
         {
             return;

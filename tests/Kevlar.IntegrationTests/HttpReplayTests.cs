@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using Kevlar.Extensions.Http;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -116,12 +117,18 @@ public class HttpReplayTests
     }
 
     [Test]
-    public async Task NoBuffer_Rejects_A_OneShot_Content_Second_Send()
+    public async Task Put_With_StreamContent_NoBuffer_Returns_Original_Response()
     {
+        var bodies = new List<byte[]>();
+        var responseContent = new TrackingContent("original");
+        var originalResponse = new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)
+        {
+            Content = responseContent,
+        };
         var transport = new RecordingHandler(async (_, request, _) =>
         {
-            _ = await request.Content!.ReadAsByteArrayAsync();
-            return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+            bodies.Add(await request.Content!.ReadAsByteArrayAsync());
+            return originalResponse;
         });
         using var invoker = CreateInvoker(
             HttpShield.WhenTransient().Retry(1, Backoff.None),
@@ -129,15 +136,356 @@ public class HttpReplayTests
             transport);
         using var request = new HttpRequestMessage(HttpMethod.Put, "https://origin.example/upload")
         {
-            Content = new StreamContent(new MemoryStream([1, 2, 3])),
+            Content = new StreamContent(new NonSeekableStream([1, 2, 3])),
+        };
+        request.Content.Headers.ContentLength = 3;
+
+        using var response = await invoker.SendAsync(request, CancellationToken.None);
+
+        await Assert.That(ReferenceEquals(response, originalResponse)).IsTrue();
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.ServiceUnavailable);
+        await Assert.That(await response.Content.ReadAsStringAsync()).IsEqualTo("original");
+        await Assert.That(transport.Attempts).IsEqualTo(1);
+        await Assert.That(bodies.Single().SequenceEqual(new byte[] { 1, 2, 3 })).IsTrue();
+        await Assert.That(responseContent.DisposeCount).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task False_Zero_ContentLength_Does_Not_Make_Content_Replayable()
+    {
+        var bodies = new List<byte[]>();
+        var originalResponse = new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+        var transport = new RecordingHandler(async (_, request, _) =>
+        {
+            bodies.Add(await request.Content!.ReadAsByteArrayAsync());
+            return originalResponse;
+        });
+        using var invoker = CreateInvoker(
+            HttpShield.WhenTransient().Retry(1, Backoff.None),
+            new ShieldHttpHandlerOptions(),
+            transport);
+        using var request = new HttpRequestMessage(HttpMethod.Put, "https://origin.example/upload")
+        {
+            Content = new StreamContent(new NonSeekableStream([1, 2, 3])),
+        };
+        request.Content.Headers.ContentLength = 0;
+
+        using var response = await invoker.SendAsync(request, CancellationToken.None);
+
+        await Assert.That(ReferenceEquals(response, originalResponse)).IsTrue();
+        await Assert.That(transport.Attempts).IsEqualTo(1);
+        await Assert.That(bodies.Single().SequenceEqual(new byte[] { 1, 2, 3 })).IsTrue();
+    }
+
+    [Test]
+    public async Task Throwing_ContentLength_Probe_Allows_One_Shielded_Attempt()
+    {
+        var fallback = new HttpResponseMessage(HttpStatusCode.OK);
+        var transport = new RecordingHandler((_, attemptRequest, _) =>
+        {
+            _ = attemptRequest.Content!.Headers.ContentLength;
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+        });
+        using var invoker = CreateInvoker(
+            Shield.For<HttpResponseMessage>().When<InvalidOperationException>().Fallback(
+                (_, _) => new ValueTask<HttpResponseMessage>(fallback)),
+            new ShieldHttpHandlerOptions
+            {
+                AllowUnsafeMethodReplay = true,
+            },
+            transport);
+        using var request = new HttpRequestMessage(HttpMethod.Put, "https://origin.example/upload")
+        {
+            Content = new ThrowingLengthContent(),
         };
 
-        var exception = await Assert.That(async () =>
-                await invoker.SendAsync(request, CancellationToken.None))
-            .Throws<HttpRequestReplayException>();
+        using var response = await invoker.SendAsync(request, CancellationToken.None);
 
-        await Assert.That(exception!.Message).Contains("RequestFactory");
+        await Assert.That(ReferenceEquals(response, fallback)).IsTrue();
         await Assert.That(transport.Attempts).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Custom_MultiInvocation_Strategy_Cannot_Replay_Unsafe_Method()
+    {
+        var originalResponse = new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+        var transport = new RecordingHandler((attempt, _, _) => Task.FromResult(
+            attempt == 1 ? originalResponse : new HttpResponseMessage(HttpStatusCode.OK)));
+        using var invoker = CreateInvoker(
+            Shield.For<HttpResponseMessage>().Use(new ReturnSecondStrategy()),
+            new ShieldHttpHandlerOptions(),
+            transport);
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://origin.example/api");
+
+        using var response = await invoker.SendAsync(request, CancellationToken.None);
+
+        await Assert.That(ReferenceEquals(response, originalResponse)).IsTrue();
+        await Assert.That(transport.Attempts).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Endpoint_Custom_Strategy_Cannot_Replay_Unsafe_Method()
+    {
+        var originalResponse = new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+        var transport = new RecordingHandler((attempt, _, _) => Task.FromResult(
+            attempt == 1 ? originalResponse : new HttpResponseMessage(HttpStatusCode.OK)));
+        var options = RoutingOptions(
+            HttpEndpointSelectionMode.Ordered,
+            new HttpEndpoint(new Uri("https://endpoint.example")));
+        options.Routing!.ShieldFactory = _ =>
+            Shield.For<HttpResponseMessage>().Use(new ReturnSecondStrategy());
+        using var invoker = CreateInvoker(Shield<HttpResponseMessage>.Empty, options, transport);
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://origin.example/api");
+
+        using var response = await invoker.SendAsync(request, CancellationToken.None);
+
+        await Assert.That(ReferenceEquals(response, originalResponse)).IsTrue();
+        await Assert.That(transport.Attempts).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Put_With_ByteArrayContent_NoBuffer_Is_Retried()
+    {
+        var bodies = new List<byte[]>();
+        var transport = new RecordingHandler(async (attempt, request, _) =>
+        {
+            bodies.Add(await request.Content!.ReadAsByteArrayAsync());
+            return new HttpResponseMessage(
+                attempt == 1 ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.OK);
+        });
+        using var invoker = CreateInvoker(
+            HttpShield.WhenTransient().Retry(1, Backoff.None),
+            new ShieldHttpHandlerOptions(),
+            transport);
+        using var request = new HttpRequestMessage(HttpMethod.Put, "https://origin.example/upload")
+        {
+            Content = new ByteArrayContent([1, 2, 3]),
+        };
+
+        using var response = await invoker.SendAsync(request, CancellationToken.None);
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(transport.Attempts).IsEqualTo(2);
+        await Assert.That(bodies.All(static body => body.SequenceEqual(new byte[] { 1, 2, 3 }))).IsTrue();
+    }
+
+    [Test]
+    public async Task Derived_ByteArrayContent_NoBuffer_Returns_Original_Response()
+    {
+        var originalResponse = new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+        var transport = new RecordingHandler(async (_, request, _) =>
+        {
+            _ = await request.Content!.ReadAsByteArrayAsync();
+            return originalResponse;
+        });
+        using var invoker = CreateInvoker(
+            HttpShield.WhenTransient().Retry(1, Backoff.None),
+            new ShieldHttpHandlerOptions(),
+            transport);
+        using var request = new HttpRequestMessage(HttpMethod.Put, "https://origin.example/upload")
+        {
+            Content = new DerivedByteArrayContent([1, 2, 3]),
+        };
+
+        using var response = await invoker.SendAsync(request, CancellationToken.None);
+
+        await Assert.That(ReferenceEquals(response, originalResponse)).IsTrue();
+        await Assert.That(transport.Attempts).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Content_Attached_By_Inner_Handler_Is_Recreated_For_Retry()
+    {
+        var bodies = new List<byte[]>();
+        var transport = new RecordingHandler(async (attempt, request, _) =>
+        {
+            bodies.Add(await request.Content!.ReadAsByteArrayAsync());
+            return new HttpResponseMessage(
+                attempt == 1 ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.OK);
+        });
+        var contentAttacher = new ContentAttachingHandler([1, 2, 3])
+        {
+            InnerHandler = transport,
+        };
+        using var invoker = CreateInvoker(
+            HttpShield.WhenTransient().Retry(1, Backoff.None),
+            new ShieldHttpHandlerOptions(),
+            contentAttacher);
+        using var request = new HttpRequestMessage(HttpMethod.Get, "https://origin.example/api");
+
+        using var response = await invoker.SendAsync(request, CancellationToken.None);
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(contentAttacher.Attachments).IsEqualTo(2);
+        await Assert.That(bodies.Count).IsEqualTo(2);
+        await Assert.That(bodies.All(static body => body.SequenceEqual(new byte[] { 1, 2, 3 }))).IsTrue();
+    }
+
+    [Test]
+    public async Task NoBuffer_Content_Headers_Are_Isolated_Per_Attempt()
+    {
+        var observedHeaders = new List<string>();
+        var transport = new RecordingHandler((attempt, request, _) =>
+        {
+            observedHeaders.Add(string.Join(",", request.Content!.Headers.GetValues("X-Attempt")));
+            return Task.FromResult(new HttpResponseMessage(
+                attempt == 1 ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.OK));
+        });
+        var headerAppender = new AttemptHeaderHandler
+        {
+            InnerHandler = transport,
+        };
+        using var invoker = CreateInvoker(
+            HttpShield.WhenTransient().Retry(1, Backoff.None),
+            new ShieldHttpHandlerOptions(),
+            headerAppender);
+        using var request = new HttpRequestMessage(HttpMethod.Put, "https://origin.example/upload")
+        {
+            Content = new ByteArrayContent([1, 2, 3]),
+        };
+
+        using var response = await invoker.SendAsync(request, CancellationToken.None);
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(observedHeaders).IsEquivalentTo(["1", "2"]);
+    }
+
+    [Test]
+    public async Task ReReadable_NoBuffer_Content_Is_Retried()
+    {
+        Func<HttpContent>[] factories =
+        [
+            static () => new StringContent("payload"),
+            static () => new FormUrlEncodedContent([new("name", "value")]),
+        ];
+
+        foreach (var factory in factories)
+        {
+            var bodies = new List<string>();
+            var transport = new RecordingHandler(async (attempt, request, _) =>
+            {
+                bodies.Add(await request.Content!.ReadAsStringAsync());
+                return new HttpResponseMessage(
+                    attempt == 1 ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.OK);
+            });
+            using var invoker = CreateInvoker(
+                HttpShield.WhenTransient().Retry(1, Backoff.None),
+                new ShieldHttpHandlerOptions(),
+                transport);
+            using var request = new HttpRequestMessage(HttpMethod.Put, "https://origin.example/upload")
+            {
+                Content = factory(),
+            };
+
+            using var response = await invoker.SendAsync(request, CancellationToken.None);
+
+            await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+            await Assert.That(transport.Attempts).IsEqualTo(2);
+            await Assert.That(bodies[1]).IsEqualTo(bodies[0]);
+        }
+    }
+
+    [Test]
+    public async Task JsonContent_With_Consumable_Value_NoBuffer_Returns_Original_Response()
+    {
+        var values = new SingleUseAsyncEnumerable();
+        var originalResponse = new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+        var transport = new RecordingHandler(async (_, request, _) =>
+        {
+            await request.Content!.CopyToAsync(Stream.Null);
+            return originalResponse;
+        });
+        using var invoker = CreateInvoker(
+            HttpShield.WhenTransient().Retry(1, Backoff.None),
+            new ShieldHttpHandlerOptions(),
+            transport);
+        using var request = new HttpRequestMessage(HttpMethod.Put, "https://origin.example/upload")
+        {
+            Content = JsonContent.Create<IAsyncEnumerable<int>>(values),
+        };
+
+        using var response = await invoker.SendAsync(request, CancellationToken.None);
+
+        await Assert.That(ReferenceEquals(response, originalResponse)).IsTrue();
+        await Assert.That(transport.Attempts).IsEqualTo(1);
+        await Assert.That(values.Enumerations).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Buffered_JsonContent_NoBuffer_Is_Retried()
+    {
+        var bodies = new List<string>();
+        var transport = new RecordingHandler(async (attempt, request, _) =>
+        {
+            bodies.Add(await request.Content!.ReadAsStringAsync());
+            return new HttpResponseMessage(
+                attempt == 1 ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.OK);
+        });
+        using var invoker = CreateInvoker(
+            HttpShield.WhenTransient().Retry(1, Backoff.None),
+            new ShieldHttpHandlerOptions(),
+            transport);
+        using var content = JsonContent.Create(new { Name = "value" });
+        await content.LoadIntoBufferAsync();
+        using var request = new HttpRequestMessage(HttpMethod.Put, "https://origin.example/upload")
+        {
+            Content = content,
+        };
+
+        using var response = await invoker.SendAsync(request, CancellationToken.None);
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(transport.Attempts).IsEqualTo(2);
+        await Assert.That(bodies[1]).IsEqualTo(bodies[0]);
+    }
+
+    [Test]
+    public async Task Post_With_AllowUnsafeMethodReplay_Is_Retried()
+    {
+        var transport = new RecordingHandler((attempt, _, _) => Task.FromResult(
+            new HttpResponseMessage(
+                attempt == 1 ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.OK)));
+        using var invoker = CreateInvoker(
+            HttpShield.WhenTransient().Retry(1, Backoff.None),
+            new ShieldHttpHandlerOptions { AllowUnsafeMethodReplay = true },
+            transport);
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://origin.example/upload")
+        {
+            Content = new StringContent("payload"),
+        };
+
+        using var response = await invoker.SendAsync(request, CancellationToken.None);
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(transport.Attempts).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task Already_Buffered_StreamContent_NoBuffer_Is_Retried()
+    {
+        var bodies = new List<byte[]>();
+        var transport = new RecordingHandler(async (attempt, request, _) =>
+        {
+            bodies.Add(await request.Content!.ReadAsByteArrayAsync());
+            return new HttpResponseMessage(
+                attempt == 1 ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.OK);
+        });
+        using var invoker = CreateInvoker(
+            HttpShield.WhenTransient().Retry(1, Backoff.None),
+            new ShieldHttpHandlerOptions(),
+            transport);
+        using var content = new StreamContent(new MemoryStream([1, 2, 3]));
+        await content.LoadIntoBufferAsync();
+        using var request = new HttpRequestMessage(HttpMethod.Put, "https://origin.example/upload")
+        {
+            Content = content,
+        };
+
+        using var response = await invoker.SendAsync(request, CancellationToken.None);
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(transport.Attempts).IsEqualTo(2);
+        await Assert.That(bodies.All(static body => body.SequenceEqual(new byte[] { 1, 2, 3 }))).IsTrue();
     }
 
     [Test]
@@ -595,7 +943,7 @@ public class HttpReplayTests
     }
 
     [Test]
-    public async Task Standard_Hedge_Rejects_Unsafe_Replay_Without_Explicit_Opt_In()
+    public async Task Standard_Hedge_Preserves_Non_Replayable_Response_Without_Retry()
     {
         var failedContent = new TrackingContent("failed");
         var transport = new RecordingHandler((_, _, _) => Task.FromResult(
@@ -612,11 +960,11 @@ public class HttpReplayTests
             Content = new StringContent("payload"),
         };
 
-        _ = await Assert.That(async () => await client.SendAsync(request))
-            .Throws<HttpRequestReplayException>();
+        using var response = await client.SendAsync(request);
 
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.ServiceUnavailable);
         await Assert.That(transport.Attempts).IsEqualTo(1);
-        await Assert.That(failedContent.DisposeCount).IsEqualTo(1);
+        await Assert.That(failedContent.DisposeCount).IsEqualTo(0);
     }
 
     [Test]
@@ -767,14 +1115,16 @@ public class HttpReplayTests
     }
 
     [Test]
-    public async Task Routed_NoBuffer_Content_Is_Sent_Once_Before_Replay_Is_Rejected()
+    public async Task Routed_NonReplayable_Content_Uses_Only_First_Endpoint()
     {
         var bodies = new List<string>();
+        var hosts = new List<string>();
         var contentHeaderCounts = new List<int>();
         var content = new TrackingContent("payload");
         var transport = new RecordingHandler(async (_, request, _) =>
         {
             bodies.Add(await request.Content!.ReadAsStringAsync());
+            hosts.Add(request.RequestUri!.Host);
             contentHeaderCounts.Add(request.Content.Headers.GetValues("x-content").Count());
             return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
         });
@@ -792,14 +1142,66 @@ public class HttpReplayTests
         };
         request.Content.Headers.TryAddWithoutValidation("x-content", new[] { "one", "two" });
 
-        _ = await Assert.That(async () =>
-                await invoker.SendAsync(request, CancellationToken.None))
-            .Throws<HttpRequestReplayException>();
+        using var response = await invoker.SendAsync(request, CancellationToken.None);
 
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.ServiceUnavailable);
         await Assert.That(bodies).IsEquivalentTo(["payload"]);
+        await Assert.That(hosts).IsEquivalentTo(["first.example"]);
         await Assert.That(contentHeaderCounts).IsEquivalentTo([2]);
         await Assert.That(transport.Attempts).IsEqualTo(1);
         await Assert.That(content.DisposeCount).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task HttpRequestException_On_NonReplayable_Request_Is_Rethrown_Unchanged()
+    {
+        var expected = new HttpRequestException("original");
+        var transport = new RecordingHandler((_, _, _) => throw expected);
+        using var invoker = CreateInvoker(
+            HttpShield.WhenTransient().Retry(3, Backoff.Constant(TimeSpan.FromSeconds(1))),
+            new ShieldHttpHandlerOptions(),
+            transport);
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://origin.example/upload")
+        {
+            Content = new StringContent("payload"),
+        };
+
+        var actual = await Assert.That(async () =>
+                await invoker.SendAsync(request, CancellationToken.None))
+            .Throws<HttpRequestException>();
+
+        await Assert.That(ReferenceEquals(actual, expected)).IsTrue();
+        await Assert.That(transport.Attempts).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task NonReplayable_Request_Counts_As_CircuitBreaker_Failure()
+    {
+        var transport = new RecordingHandler((_, _, _) => Task.FromResult(
+            new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)));
+        var shield = HttpShield.WhenTransient()
+            .Retry(3, Backoff.None)
+            .CircuitBreaker(consecutiveFailures: 2, breakDuration: TimeSpan.FromHours(1));
+        using var invoker = CreateInvoker(shield, new ShieldHttpHandlerOptions(), transport);
+
+        for (var requestIndex = 0; requestIndex < 2; requestIndex++)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Post, "https://origin.example/upload")
+            {
+                Content = new StringContent("payload"),
+            };
+            using var response = await invoker.SendAsync(request, CancellationToken.None);
+            await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.ServiceUnavailable);
+        }
+
+        using var blockedRequest = new HttpRequestMessage(HttpMethod.Post, "https://origin.example/upload")
+        {
+            Content = new StringContent("payload"),
+        };
+        _ = await Assert.That(async () =>
+                await invoker.SendAsync(blockedRequest, CancellationToken.None))
+            .Throws<CircuitOpenException>();
+        await Assert.That(transport.Attempts).IsEqualTo(2);
     }
 
     [Test]
@@ -926,6 +1328,80 @@ public class HttpReplayTests
             send(Interlocked.Increment(ref _attempts), request, cancellationToken);
     }
 
+    private sealed class ContentAttachingHandler(byte[] content) : DelegatingHandler
+    {
+        private int _attachments;
+
+        public int Attachments => Volatile.Read(ref _attachments);
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            if (request.Content is null)
+            {
+                Interlocked.Increment(ref _attachments);
+                request.Content = new StreamContent(new NonSeekableStream(content));
+            }
+
+            return base.SendAsync(request, cancellationToken);
+        }
+    }
+
+    private sealed class AttemptHeaderHandler : DelegatingHandler
+    {
+        private int _attempt;
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            _ = request.Content!.Headers.TryAddWithoutValidation(
+                "X-Attempt",
+                Interlocked.Increment(ref _attempt).ToString(System.Globalization.CultureInfo.InvariantCulture));
+            return base.SendAsync(request, cancellationToken);
+        }
+    }
+
+    private sealed class DerivedByteArrayContent(byte[] content) : ByteArrayContent(content);
+
+    private sealed class SingleUseAsyncEnumerable : IAsyncEnumerable<int>
+    {
+        private int _enumerations;
+
+        public int Enumerations => Volatile.Read(ref _enumerations);
+
+        public async IAsyncEnumerator<int> GetAsyncEnumerator(
+            CancellationToken cancellationToken = default)
+        {
+            if (Interlocked.Increment(ref _enumerations) != 1)
+            {
+                throw new InvalidOperationException("The sequence can only be consumed once.");
+            }
+
+            yield return 1;
+            await Task.Yield();
+            cancellationToken.ThrowIfCancellationRequested();
+            yield return 2;
+        }
+    }
+
+    private sealed class ReturnSecondStrategy : Strategy
+    {
+        public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+            Continuation<T, TState> next,
+            KevlarContext context)
+        {
+            _ = await next.InvokeAsync(context).ConfigureAwait(false);
+            return await next.InvokeAsync(context).ConfigureAwait(false);
+        }
+    }
+
+    private sealed class NonSeekableStream(byte[] bytes) : MemoryStream(bytes)
+    {
+        public override bool CanSeek => false;
+    }
+
     private sealed class TrackingContent(string value) : HttpContent
     {
         private readonly byte[] _bytes = System.Text.Encoding.UTF8.GetBytes(value);
@@ -988,6 +1464,17 @@ public class HttpReplayTests
         {
             length = 0;
             return false;
+        }
+    }
+
+    private sealed class ThrowingLengthContent : HttpContent
+    {
+        protected override Task SerializeToStreamAsync(Stream stream, TransportContext? context) =>
+            Task.CompletedTask;
+
+        protected override bool TryComputeLength(out long length)
+        {
+            throw new InvalidOperationException("Length is unavailable.");
         }
     }
 
