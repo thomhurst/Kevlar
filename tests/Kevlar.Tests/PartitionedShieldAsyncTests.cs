@@ -203,6 +203,39 @@ public class PartitionedShieldAsyncTests
     }
 
     [Test]
+    public async Task Concurrent_Publishers_Wait_For_Reserved_Eviction_Slots()
+    {
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var provider = new PartitionedShield<string>(
+            static _ => Shield.Empty,
+            new PartitionedShieldOptions
+            {
+                MaximumPartitions = 1,
+                OnEvictedAsync = async _ =>
+                {
+                    entered.TrySetResult();
+                    await release.Task;
+                },
+            });
+        _ = provider.GetShield("first");
+
+        var second = provider.GetShieldAsync("second").AsTask();
+        await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        var third = provider.GetShieldAsync("third").AsTask();
+        await Task.Yield();
+
+        await Assert.That(second.IsCompleted).IsFalse();
+        await Assert.That(third.IsCompleted).IsFalse();
+        await Assert.That(provider.Count).IsEqualTo(0);
+
+        release.TrySetResult();
+        _ = await Task.WhenAll(second, third).WaitAsync(TimeSpan.FromSeconds(5));
+        await Assert.That(provider.Count).IsEqualTo(1);
+        await Assert.That(provider.CapacityEvictionCount).IsEqualTo(2);
+    }
+
+    [Test]
     public async Task Evicted_Resources_Can_Be_Disposed_By_Key()
     {
         var resources = new ConcurrentDictionary<string, DisposableResource>();

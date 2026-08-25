@@ -19,6 +19,8 @@ internal sealed class PartitionCache<TKey, TShield>
 
     private Entry? _leastRecentlyUsed;
     private Entry? _mostRecentlyUsed;
+    private TaskCompletionSource<bool> _capacityChanged = CreateCapacitySignal();
+    private int _reservedSlots;
     private long _createdCount;
     private long _capacityEvictionCount;
     private long _expirationEvictionCount;
@@ -176,6 +178,7 @@ internal sealed class PartitionCache<TKey, TShield>
             lock (_gate)
             {
                 expired = PruneExpiredUnderLock();
+                ReserveSlots(expired);
                 if (_entries.TryGetValue(key, out var existing))
                 {
                     Touch(existing, Timestamp());
@@ -196,7 +199,8 @@ internal sealed class PartitionCache<TKey, TShield>
             _mutationGate.Release();
         }
 
-        await NotifyEvictedAsync(expired, PartitionEvictionReason.Idle).ConfigureAwait(false);
+        await NotifyAutomaticEvictionsAsync(expired, PartitionEvictionReason.Idle)
+            .ConfigureAwait(false);
 
         if (retained is not null)
         {
@@ -234,56 +238,86 @@ internal sealed class PartitionCache<TKey, TShield>
 
     private async ValueTask PublishAsync(TKey key, TShield shield, Creation creation)
     {
-        while (true)
+        var ownedReservations = 0;
+        try
         {
-            List<Entry>? expired;
-            Entry? capacityEviction = null;
-            var published = false;
-
-            await _mutationGate.WaitAsync().ConfigureAwait(false);
-            try
+            while (true)
             {
-                lock (_gate)
+                List<Entry>? expired = null;
+                Entry? capacityEviction = null;
+                Task? waitForCapacity = null;
+                var published = false;
+
+                await _mutationGate.WaitAsync().ConfigureAwait(false);
+                try
                 {
-                    expired = PruneExpiredUnderLock();
-                    if (expired is null)
+                    lock (_gate)
                     {
-                        if (_entries.Count == _maximumPartitions)
+                        if (ownedReservations > 0)
                         {
-                            capacityEviction = _leastRecentlyUsed!;
-                            RemoveEntry(capacityEviction);
-                            _capacityEvictionCount++;
+                            Publish(key, shield, creation);
+                            _reservedSlots -= ownedReservations;
+                            ownedReservations = 0;
+                            PulseCapacityChanged();
+                            published = true;
                         }
                         else
                         {
-                            var entry = new Entry(key, shield, Timestamp());
-                            _entries.Add(key, entry);
-                            AddMostRecentlyUsed(entry);
-                            _createdCount++;
-                            _creations.Remove(key);
-                            published = true;
+                            expired = PruneExpiredUnderLock();
+                            if (expired is not null)
+                            {
+                                ownedReservations = expired.Count;
+                                _reservedSlots += ownedReservations;
+                            }
+                            else if (_entries.Count + _reservedSlots < _maximumPartitions)
+                            {
+                                Publish(key, shield, creation);
+                                published = true;
+                            }
+                            else if (_leastRecentlyUsed is { } eviction)
+                            {
+                                capacityEviction = eviction;
+                                RemoveEntry(capacityEviction);
+                                _capacityEvictionCount++;
+                                _reservedSlots++;
+                                ownedReservations = 1;
+                            }
+                            else
+                            {
+                                waitForCapacity = _capacityChanged.Task;
+                            }
                         }
                     }
                 }
-            }
-            finally
-            {
-                _mutationGate.Release();
-            }
+                finally
+                {
+                    _mutationGate.Release();
+                }
 
-            await NotifyEvictedAsync(expired, PartitionEvictionReason.Idle).ConfigureAwait(false);
-            if (capacityEviction is not null)
-            {
-                await NotifyEvictedAsync(capacityEviction, PartitionEvictionReason.Capacity)
-                    .ConfigureAwait(false);
-            }
+                if (waitForCapacity is not null)
+                {
+                    await waitForCapacity.ConfigureAwait(false);
+                    continue;
+                }
 
-            if (published)
-            {
-                await NotifyCreatedAsync(key, shield).ConfigureAwait(false);
-                creation.Succeed(shield);
-                return;
+                await NotifyEvictedAsync(expired, PartitionEvictionReason.Idle).ConfigureAwait(false);
+                if (capacityEviction is not null)
+                {
+                    await NotifyEvictedAsync(capacityEviction, PartitionEvictionReason.Capacity)
+                        .ConfigureAwait(false);
+                }
+
+                if (published)
+                {
+                    await NotifyCreatedAsync(key, shield).ConfigureAwait(false);
+                    creation.Succeed(shield);
+                    return;
+                }
             }
+        }
+        finally
+        {
+            ReleaseReservations(ownedReservations);
         }
     }
 
@@ -297,6 +331,7 @@ internal sealed class PartitionCache<TKey, TShield>
             lock (_gate)
             {
                 expired = PruneExpiredUnderLock();
+                ReserveSlots(expired);
                 if (_entries.TryGetValue(key, out var entry))
                 {
                     Touch(entry, Timestamp());
@@ -309,7 +344,8 @@ internal sealed class PartitionCache<TKey, TShield>
             _mutationGate.Release();
         }
 
-        await NotifyEvictedAsync(expired, PartitionEvictionReason.Idle).ConfigureAwait(false);
+        await NotifyAutomaticEvictionsAsync(expired, PartitionEvictionReason.Idle)
+            .ConfigureAwait(false);
         return shield;
     }
 
@@ -323,6 +359,7 @@ internal sealed class PartitionCache<TKey, TShield>
             lock (_gate)
             {
                 expired = PruneExpiredUnderLock();
+                ReserveSlots(expired);
                 if (_entries.TryGetValue(key, out removed))
                 {
                     RemoveEntry(removed);
@@ -335,7 +372,8 @@ internal sealed class PartitionCache<TKey, TShield>
             _mutationGate.Release();
         }
 
-        await NotifyEvictedAsync(expired, PartitionEvictionReason.Idle).ConfigureAwait(false);
+        await NotifyAutomaticEvictionsAsync(expired, PartitionEvictionReason.Idle)
+            .ConfigureAwait(false);
         if (removed is not null)
         {
             await NotifyEvictedAsync(removed, PartitionEvictionReason.Cleared).ConfigureAwait(false);
@@ -379,6 +417,7 @@ internal sealed class PartitionCache<TKey, TShield>
             lock (_gate)
             {
                 expired = PruneExpiredUnderLock();
+                ReserveSlots(expired);
             }
         }
         finally
@@ -386,7 +425,8 @@ internal sealed class PartitionCache<TKey, TShield>
             _mutationGate.Release();
         }
 
-        await NotifyEvictedAsync(expired, PartitionEvictionReason.Idle).ConfigureAwait(false);
+        await NotifyAutomaticEvictionsAsync(expired, PartitionEvictionReason.Idle)
+            .ConfigureAwait(false);
         return expired?.Count ?? 0;
     }
 
@@ -412,6 +452,11 @@ internal sealed class PartitionCache<TKey, TShield>
 
     private async ValueTask NotifyCreatedAsync(TKey key, TShield shield)
     {
+        if (_onCreated is null && _onCreatedAsync is null)
+        {
+            return;
+        }
+
         var notification = new PartitionCreatedNotification(key, shield);
         try
         {
@@ -452,7 +497,6 @@ internal sealed class PartitionCache<TKey, TShield>
 
     private async ValueTask NotifyEvictedAsync(Entry entry, PartitionEvictionReason reason)
     {
-        var notification = new PartitionEvictionNotification(entry.Key, entry.Shield, reason);
         try
         {
             KevlarMetrics.PartitionEviction(reason);
@@ -461,6 +505,13 @@ internal sealed class PartitionCache<TKey, TShield>
         {
             // Metric listeners must not change partition behavior.
         }
+
+        if (_onEvicted is null && _onEvictedAsync is null)
+        {
+            return;
+        }
+
+        var notification = new PartitionEvictionNotification(entry.Key, entry.Shield, reason);
 
         try
         {
@@ -483,6 +534,61 @@ internal sealed class PartitionCache<TKey, TShield>
             }
         }
     }
+
+    private async ValueTask NotifyAutomaticEvictionsAsync(
+        List<Entry>? entries,
+        PartitionEvictionReason reason)
+    {
+        try
+        {
+            await NotifyEvictedAsync(entries, reason).ConfigureAwait(false);
+        }
+        finally
+        {
+            ReleaseReservations(entries?.Count ?? 0);
+        }
+    }
+
+    private void Publish(TKey key, TShield shield, Creation creation)
+    {
+        var entry = new Entry(key, shield, Timestamp());
+        _entries.Add(key, entry);
+        AddMostRecentlyUsed(entry);
+        _createdCount++;
+        _creations.Remove(key);
+    }
+
+    private void ReserveSlots(List<Entry>? entries)
+    {
+        if (entries is not null)
+        {
+            _reservedSlots += entries.Count;
+        }
+    }
+
+    private void ReleaseReservations(int count)
+    {
+        if (count == 0)
+        {
+            return;
+        }
+
+        lock (_gate)
+        {
+            _reservedSlots -= count;
+            PulseCapacityChanged();
+        }
+    }
+
+    private void PulseCapacityChanged()
+    {
+        var previous = _capacityChanged;
+        _capacityChanged = CreateCapacitySignal();
+        previous.TrySetResult(true);
+    }
+
+    private static TaskCompletionSource<bool> CreateCapacitySignal() =>
+        new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     private void FailCreation(TKey key, Creation creation, Exception exception)
     {

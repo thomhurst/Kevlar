@@ -826,7 +826,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             return true;
         }
 
-        if (method.Name == "GetShield" && knownTypes.IsPartitionedShield(method.ContainingType))
+        if (method.Name is "GetShield" or "GetShieldAsync"
+            && knownTypes.IsPartitionedShield(method.ContainingType))
         {
             return TryFindEphemeralPartitionProvider(
                 GetReceiver(invocation),
@@ -907,6 +908,15 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         {
             statefulComponent = "PartitionedShield";
             location = creation.Syntax.GetLocation();
+            return true;
+        }
+
+        if (operation is IInvocationOperation invocation
+            && Normalize(invocation.TargetMethod) is { Name: "CreateAsync" } factory
+            && knownTypes.IsPartitionedShield(factory.ContainingType))
+        {
+            statefulComponent = "PartitionedShield";
+            location = invocation.Syntax.GetLocation();
             return true;
         }
 
@@ -1867,6 +1877,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     continue;
                 case IParenthesizedOperation parenthesized:
                     operation = parenthesized.Operand;
+                    continue;
+                case IAwaitOperation awaitOperation:
+                    operation = awaitOperation.Operation;
                     continue;
                 default:
                     return operation;

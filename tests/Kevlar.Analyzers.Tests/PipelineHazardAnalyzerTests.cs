@@ -166,6 +166,8 @@ public class PipelineHazardAnalyzerTests
             "await new PartitionedShield<string, int>(_ => Shield<int>.Empty).GetShield(\"tenant\").ExecuteAsync(_ => new ValueTask<int>(1));",
             "var partitions = new PartitionedShield<string>(_ => Shield.Empty); await partitions.GetShield(\"tenant\").ExecuteOutcomeAsync(_ => new ValueTask<int>(1));",
             "var partitions = new PartitionedShield<string>(_ => Shield.Empty); var shield = partitions.GetShield(\"tenant\"); _ = shield.Execute(_ => 1);",
+            "await (await PartitionedShield<string>.CreateAsync(_ => new ValueTask<Shield>(Shield.Empty)).GetShieldAsync(\"tenant\")).ExecuteAsync(_ => new ValueTask<int>(1));",
+            "var partitions = PartitionedShield<string, int>.CreateAsync(_ => new ValueTask<Shield<int>>(Shield<int>.Empty)); await (await partitions.GetShieldAsync(\"tenant\")).ExecuteAsync(_ => new ValueTask<int>(1));",
         };
 
         await AssertEachAsync(cases, "KEV004");
