@@ -14,6 +14,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
     private readonly long _capacity;
     private readonly Action<ConcurrencyLimitRejectedEvent>? _onRejected;
     private readonly Func<ConcurrencyLimitRejectedEvent, ValueTask>? _onRejectedAsync;
+    private readonly string _telemetryName;
     private int _available;
     private int _waiters;
     private StrategyMetricAlias[] _metricsAliasSnapshot = [];
@@ -59,6 +60,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
         _available = options.MaxConcurrency;
         _onRejected = options.OnRejected;
         _onRejectedAsync = options.OnRejectedAsync;
+        _telemetryName = options.Name ?? "ConcurrencyLimit";
     }
 
     public override string Describe() =>
@@ -71,7 +73,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
         {
             Interlocked.Decrement(ref _pending);
             RecordState(alias);
-            KevlarMetrics.Rejection(context.ShieldName, "concurrency_limit");
+            KevlarMetrics.Rejection(context, "concurrency_limit", _telemetryName);
             return RejectAsync<T>(context);
         }
 

@@ -3,6 +3,9 @@ namespace Kevlar.Chaos;
 /// <summary>Common controls for explicitly enabling and bounding chaos injection.</summary>
 public abstract class ChaosOptions
 {
+    /// <summary>An optional low-cardinality name used by strategy telemetry.</summary>
+    public string? Name { get; set; }
+
     /// <summary>
     /// Gets or sets whether injection is permitted. The default is <see langword="false"/>.
     /// </summary>

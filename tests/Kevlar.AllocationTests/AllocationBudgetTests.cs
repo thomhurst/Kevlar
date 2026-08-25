@@ -276,6 +276,8 @@ public class AllocationBudgetTests
             test._rateLimit.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("concurrency state metrics", this, static test =>
             test._concurrencyLimit.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
+        AssertZero("retry attempt metrics", this, static test =>
+            test._retry.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
     }
 
     [Test]

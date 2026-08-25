@@ -22,6 +22,10 @@ namespace Kevlar;
 /// <item><c>kevlar.circuit_breaker.transitions</c> — circuit state changes; attributes <c>kevlar.circuit_breaker.state.from</c>, <c>kevlar.circuit_breaker.state.to</c></item>
 /// <item><c>kevlar.callback_errors</c> — exceptions thrown by notifications or observers; attributes <c>kevlar.shield.name</c>, <c>kevlar.callback.kind</c></item>
 /// <item><c>kevlar.execution.duration</c> — execution duration histogram in seconds; attributes <c>kevlar.shield.name</c>, <c>kevlar.execution.outcome</c></item>
+/// <item><c>kevlar.strategy.events</c> — strategy and custom events; attributes include shield,
+/// strategy, event, severity, attempt, exception type, and an optional bounded operation key</item>
+/// <item><c>kevlar.attempt.duration</c> — retry-attempt duration histogram in milliseconds with
+/// the strategy-event attributes</item>
 /// <item><c>kevlar.circuit_breaker.state</c> — current state gauge (<c>closed=0</c>, <c>open=1</c>, <c>half_open=2</c>, <c>isolated=3</c>)</item>
 /// <item><c>kevlar.concurrency_limit.inflight</c>, <c>kevlar.concurrency_limit.queued</c>, and <c>kevlar.concurrency_limit.capacity</c> — concurrency-limit state gauges</item>
 /// <item><c>kevlar.rate_limit.available</c> and <c>kevlar.rate_limit.queued</c> — rate-limit state gauges</item>
@@ -91,5 +95,13 @@ public static class KevlarDiagnostics
                 // Diagnostic handlers cannot recursively become callback errors.
             }
         }
+    }
+
+    /// <summary>Subscribes a listener to synchronous strategy telemetry.</summary>
+    /// <returns>A subscription that removes the listener when disposed.</returns>
+    public static IDisposable Listen(IKevlarTelemetryListener listener)
+    {
+        Internal.Throw.IfNull(listener, nameof(listener));
+        return Internal.KevlarTelemetry.Subscribe(listener);
     }
 }

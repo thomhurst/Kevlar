@@ -152,6 +152,7 @@ Kevlar.Testing.MetricRecord.Tags.get -> System.Collections.Generic.IReadOnlyDict
 Kevlar.Testing.MetricRecord.Value.get -> double
 Kevlar.Testing.TelemetryRecorder
 Kevlar.Testing.TelemetryRecorder.Callbacks.get -> System.Collections.Generic.IReadOnlyList<Kevlar.Testing.CallbackRecord!>!
+Kevlar.Testing.TelemetryRecorder.Events.get -> System.Collections.Generic.IReadOnlyList<Kevlar.Testing.TelemetryEventRecord!>!
 Kevlar.Testing.TelemetryRecorder.Dispose() -> void
 Kevlar.Testing.TelemetryRecorder.Metrics.get -> System.Collections.Generic.IReadOnlyList<Kevlar.Testing.MetricRecord!>!
 Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CircuitBreakerStateChangedEvent item) -> void
@@ -165,7 +166,20 @@ Kevlar.Testing.TelemetryRecorder.Record<TResult>(Kevlar.CircuitBreakerBreakDurat
 Kevlar.Testing.TelemetryRecorder.Record<TResult>(Kevlar.RetryEvent<TResult> item) -> void
 Kevlar.Testing.TelemetryRecorder.TelemetryRecorder(bool captureMetrics = true, bool captureCallbackErrors = false) -> void
 Kevlar.Testing.TelemetryRecorder.WaitForCallbackCountAsync(int count, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kevlar.Testing.TelemetryRecorder.WaitForEventCountAsync(int count, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Kevlar.Testing.TelemetryRecorder.WaitForMetricCountAsync(int count, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kevlar.Testing.TelemetryEventRecord
+Kevlar.Testing.TelemetryEventRecord.AttemptNumber.get -> int
+Kevlar.Testing.TelemetryEventRecord.Duration.get -> System.TimeSpan
+Kevlar.Testing.TelemetryEventRecord.EventName.get -> string!
+Kevlar.Testing.TelemetryEventRecord.Exception.get -> System.Exception?
+Kevlar.Testing.TelemetryEventRecord.IsSuccess.get -> bool
+Kevlar.Testing.TelemetryEventRecord.OperationKey.get -> string?
+Kevlar.Testing.TelemetryEventRecord.Sequence.get -> long
+Kevlar.Testing.TelemetryEventRecord.Severity.get -> Kevlar.KevlarTelemetrySeverity
+Kevlar.Testing.TelemetryEventRecord.ShieldName.get -> string?
+Kevlar.Testing.TelemetryEventRecord.StrategyIndex.get -> int
+Kevlar.Testing.TelemetryEventRecord.StrategyName.get -> string!
 static Kevlar.Testing.ShieldExecutionExtensions.WaitForPendingAsync(this System.Threading.Tasks.Task! execution, System.Func<bool>! workStarted, string! workDescription, int maxYields = 100, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
 Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.HasNotification.get -> bool
 Kevlar.Testing.RateLimitStrategyDescriptor.HasNotification.get -> bool

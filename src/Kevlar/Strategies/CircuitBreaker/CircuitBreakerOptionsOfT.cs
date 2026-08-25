@@ -10,6 +10,9 @@ namespace Kevlar;
 /// </remarks>
 public sealed class CircuitBreakerOptions<TResult>
 {
+    /// <summary>An optional low-cardinality name used by strategy telemetry.</summary>
+    public string? Name { get; set; }
+
     /// <inheritdoc cref="CircuitBreakerOptions.HandlesException"/>
     public Func<Exception, bool>? HandlesException { get; set; }
 
@@ -67,6 +70,7 @@ public sealed class CircuitBreakerOptions<TResult>
 
     internal CircuitBreakerOptions ToUntyped() => new()
     {
+        Name = Name,
         HandlesException = HandlesException,
         ConsecutiveFailures = ConsecutiveFailures,
         FailureRatio = FailureRatio,

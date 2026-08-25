@@ -16,6 +16,7 @@ internal sealed class TimeoutStrategy : Strategy
     private readonly Func<KevlarContext, ValueTask<TimeSpan>>? _timeoutGenerator;
     private readonly Action<TimeoutEvent>? _onTimeout;
     private readonly Func<TimeoutEvent, ValueTask>? _onTimeoutAsync;
+    private readonly string _telemetryName;
 
     public TimeoutStrategy(TimeoutOptions options)
     {
@@ -35,6 +36,7 @@ internal sealed class TimeoutStrategy : Strategy
         _timeoutGenerator = options.TimeoutGenerator;
         _onTimeout = options.OnTimeout;
         _onTimeoutAsync = options.OnTimeoutAsync;
+        _telemetryName = options.Name ?? "Timeout";
     }
 
     public override string Describe() => _timeoutGenerator is null
@@ -234,7 +236,7 @@ internal sealed class TimeoutStrategy : Strategy
 
         if (timedOut)
         {
-            KevlarMetrics.Timeout(context.ShieldName);
+            KevlarMetrics.Timeout(context, _telemetryName, cancellationException);
             var timeoutEvent = new TimeoutEvent(timeout, context);
             CallbackInvoker.Invoke(_onTimeout, timeoutEvent, CallbackErrorKind.Timeout, context);
             var notification = CallbackInvoker.InvokeAsync(

@@ -13,6 +13,7 @@ internal sealed class RetryStrategy : Strategy
     private readonly Delegate? _delayGenerator;
     private readonly Delegate? _delayGeneratorAsync;
     private readonly Type? _callbackResultType;
+    private readonly string _telemetryName;
 
     public RetryStrategy(RetryOptions options, OutcomeJudge judge)
         : this(
@@ -24,6 +25,7 @@ internal sealed class RetryStrategy : Strategy
             options.OnRetryAsync,
             options.DelayGenerator,
             options.DelayGeneratorAsync,
+            options.Name,
             options.HasHandlingOverride,
             callbackResultType: null,
             optionsType: options.GetType())
@@ -39,6 +41,7 @@ internal sealed class RetryStrategy : Strategy
         Delegate? onRetryAsync,
         Delegate? delayGenerator,
         Delegate? delayGeneratorAsync,
+        string? telemetryName,
         bool hasHandlingOverride,
         Type? callbackResultType,
         Type optionsType)
@@ -77,6 +80,7 @@ internal sealed class RetryStrategy : Strategy
         _delayGenerator = delayGenerator;
         _delayGeneratorAsync = delayGeneratorAsync;
         _callbackResultType = callbackResultType;
+        _telemetryName = telemetryName ?? "Retry";
         HasHandlingOverride = hasHandlingOverride;
     }
 
@@ -91,6 +95,7 @@ internal sealed class RetryStrategy : Strategy
             options.OnRetryAsync,
             options.DelayGenerator,
             options.DelayGeneratorAsync,
+            options.Name,
             options.HasHandlingOverride,
             typeof(TResult),
             options.GetType());
@@ -125,11 +130,14 @@ internal sealed class RetryStrategy : Strategy
     public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
         var strategyIndex = context.StrategyIndex;
+        var recordAttempts = KevlarTelemetry.AttemptEnabled;
+        var attemptStartedAt = recordAttempts ? context.TimeProvider.GetTimestamp() : 0;
         var execution = next.InvokeAsync(context);
         var firstOutcomeShouldRetry = false;
         if (execution.IsCompletedSuccessfully)
         {
             var outcome = execution.Result;
+            RecordAttempt(context, strategyIndex, attempt: 0, attemptStartedAt, recordAttempts, in outcome);
             if (!ShouldRetry(in outcome, retriesUsed: 0, context, strategyIndex))
             {
                 return new ValueTask<Outcome<T>>(outcome);
@@ -139,7 +147,14 @@ internal sealed class RetryStrategy : Strategy
             firstOutcomeShouldRetry = true;
         }
 
-        return ExecuteCoreAsync(next, context, execution, firstOutcomeShouldRetry, strategyIndex);
+        return ExecuteCoreAsync(
+            next,
+            context,
+            execution,
+            firstOutcomeShouldRetry,
+            strategyIndex,
+            attemptStartedAt,
+            recordAttempts);
     }
 
     private async ValueTask<Outcome<T>> ExecuteCoreAsync<T, TState>(
@@ -147,12 +162,24 @@ internal sealed class RetryStrategy : Strategy
         KevlarContext context,
         ValueTask<Outcome<T>> execution,
         bool firstOutcomeShouldRetry,
-        int strategyIndex)
+        int strategyIndex,
+        long attemptStartedAt,
+        bool recordAttempts)
     {
         var previousBackoffDelay = TimeSpan.Zero;
         for (var retriesUsed = 0; ; retriesUsed++)
         {
             var outcome = await execution.ConfigureAwait(false);
+            if (!firstOutcomeShouldRetry)
+            {
+                RecordAttempt(
+                    context,
+                    strategyIndex,
+                    retriesUsed,
+                    attemptStartedAt,
+                    recordAttempts,
+                    in outcome);
+            }
 
             if (!firstOutcomeShouldRetry && !ShouldRetry(in outcome, retriesUsed, context, strategyIndex))
             {
@@ -163,6 +190,15 @@ internal sealed class RetryStrategy : Strategy
 
             var attempt = retriesUsed + 1;
             KevlarMetrics.Retry(context.ShieldName);
+            KevlarTelemetry.Record(
+                context,
+                strategyName: _telemetryName,
+                eventName: "retry",
+                KevlarTelemetrySeverity.Warning,
+                strategyIndex,
+                attempt,
+                isSuccess: outcome.IsSuccess,
+                outcome.Exception);
             var delay = _backoff.GetDelay(attempt, previousBackoffDelay);
 
             if (_maxDelay is { } cap && delay > cap)
@@ -245,8 +281,37 @@ internal sealed class RetryStrategy : Strategy
                 }
             }
 
+            attemptStartedAt = recordAttempts ? context.TimeProvider.GetTimestamp() : 0;
             execution = next.InvokeAsync(context);
         }
+    }
+
+    private void RecordAttempt<T>(
+        KevlarContext context,
+        int strategyIndex,
+        int attempt,
+        long startedAt,
+        bool enabled,
+        in Outcome<T> outcome)
+    {
+        if (!enabled)
+        {
+            return;
+        }
+
+        KevlarTelemetry.Record(
+            context,
+            strategyName: _telemetryName,
+            eventName: "execution_attempt",
+            outcome.IsSuccess
+                ? KevlarTelemetrySeverity.Information
+                : KevlarTelemetrySeverity.Warning,
+            strategyIndex,
+            attempt,
+            outcome.IsSuccess,
+            outcome.Exception,
+            context.TimeProvider.GetElapsedTime(startedAt),
+            recordAttemptDuration: true);
     }
 
     private bool ShouldRetry<T>(

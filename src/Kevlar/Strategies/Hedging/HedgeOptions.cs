@@ -14,6 +14,9 @@ namespace Kevlar;
 /// </remarks>
 public sealed class HedgeOptions
 {
+    /// <summary>An optional low-cardinality name used by strategy telemetry.</summary>
+    public string? Name { get; set; }
+
     /// <summary>
     /// Setting this — or, on <see cref="HedgeOptions{TResult}"/>, its <c>HandlesResult</c> — makes
     /// this hedging strategy ignore the ambient <c>When…</c> handling clause; this predicate then

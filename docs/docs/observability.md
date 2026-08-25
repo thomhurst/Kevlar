@@ -76,6 +76,8 @@ services.AddOpenTelemetry().WithMetrics(metrics => metrics
 | `kevlar.partitions.evictions` | Counter | `{partition}` | `net8.0` | partitions removed from bounded providers | `kevlar.partition.reason` (`capacity`/`idle`/`cleared`) |
 | `kevlar.callback_errors` | Counter | `{error}` | `net8.0` | exceptions thrown by strategy notifications or observers | `kevlar.shield.name`, `kevlar.callback.kind` |
 | `kevlar.execution.duration` | Histogram | `s` | `net8.0` | completed public execution duration | `kevlar.shield.name`, `kevlar.execution.outcome` (`success`/`failure`) |
+| `kevlar.strategy.events` | Counter | `{event}` | `net8.0` | built-in strategy and caller-recorded events | `kevlar.shield.name`, `kevlar.strategy.index`, `kevlar.strategy.name`, `kevlar.event.name`, `kevlar.event.severity`, `kevlar.attempt.number`, optional `exception.type`, optional `kevlar.operation.key` |
+| `kevlar.attempt.duration` | Histogram | `ms` | `net8.0` | retry attempt duration, including the initial attempt | `kevlar.shield.name`, `kevlar.strategy.index`, `kevlar.strategy.name`, `kevlar.event.name`, `kevlar.event.severity`, `kevlar.attempt.number`, optional `exception.type`, optional `kevlar.operation.key` |
 | `kevlar.circuit_breaker.state` | Gauge | `{state}` | `net10.0` | last observed circuit state: closed `0`, open `1`, half-open `2`, isolated `3` | `kevlar.shield.name`, `kevlar.strategy.index` |
 | `kevlar.concurrency_limit.inflight` | Gauge | `{execution}` | `net10.0` | executions holding a permit | `kevlar.shield.name`, `kevlar.strategy.index` |
 | `kevlar.concurrency_limit.queued` | Gauge | `{execution}` | `net10.0` | executions waiting for a permit | `kevlar.shield.name`, `kevlar.strategy.index` |
@@ -87,6 +89,46 @@ services.AddOpenTelemetry().WithMetrics(metrics => metrics
 Each public execution call records exactly one `kevlar.executions` measurement after its final outcome: recovery through fallback is `success`; exceptions, caller cancellation, timeout, and strategy rejection are `failure`. Retry and hedge attempts do not add execution measurements of their own.
 
 The `kevlar.shield.name` attribute appears only for shields named via `WithName` — name the shields you plan to chart. `WithName("")` emits the attribute with an empty value; an unnamed shield omits it. Optional chaos scope attributes are also omitted when unset. Instrument and attribute names use the product-specific `kevlar` namespace; count units use singular UCUM annotations. Counters and the duration histogram are active in the native `net8.0` and `net10.0` assets; the shipped state gauges require `net10.0`. On `netstandard2.0` targets the instruments are inert because the metrics API is not available in-box.
+
+Strategy event names and strategy names are stable bounded values. Exception telemetry uses only the
+full exception type name; messages are never tags. To correlate a small fixed set of logical
+operations, set `KevlarKeys.OperationKey` while initializing execution properties. Never put request
+IDs, URLs, partition keys, tenant IDs, or other unbounded values in that key.
+
+Every strategy options type has an optional `Name`. When unset, telemetry uses the built-in strategy
+name such as `Retry`; when set, the configured value becomes `kevlar.strategy.name`. Keep strategy
+names bounded just like shield names.
+
+Built-in `kevlar.event.name` values are `execution_attempt`, `retry`, `timeout`, `hedge`,
+`fallback`, `rejection`, `circuit_opened`, `circuit_half_opened`, `circuit_closed`, and
+`circuit_isolated`. `Kevlar.Chaos` additionally emits `chaos_latency`, `chaos_fault`,
+`chaos_outcome`, and `chaos_behavior`.
+
+### Telemetry listener and custom events
+
+`KevlarDiagnostics.Listen` provides the same events synchronously without requiring a metrics
+backend. The callback receives a `KevlarTelemetryEvent` containing the active context, attempt
+metadata, duration, and exception. The context and its properties are valid only during the callback.
+Listener exceptions are ignored and cannot replace the execution outcome.
+
+```csharp
+sealed class Listener : IKevlarTelemetryListener
+{
+    public void OnEvent(in KevlarTelemetryEvent item) =>
+        Console.WriteLine($"{item.StrategyName}: {item.EventName}");
+}
+
+using var subscription = KevlarDiagnostics.Listen(new Listener());
+```
+
+Custom strategies can publish through the same listener and meter using
+`context.RecordEvent("cache_refresh", strategyName: "CacheRefresh")`. Event names and strategy names must come from a bounded vocabulary; exception
+messages and operation-specific data belong in logs, not metric dimensions.
+
+`Kevlar.Testing.TelemetryRecorder` subscribes to this stream and exposes immutable snapshots through
+its `Events` property and `WaitForEventCountAsync`. Kevlar intentionally does not create
+`ActivitySource` spans: use the metrics and listener hook to enrich the tracing system already owned
+by the application or transport.
 
 The gauges are synchronous last-value measurements emitted when strategy state changes. They aggregate by shield name and carry a bounded `kevlar.strategy.index` attribute (the strategy's zero-based pipeline position), so independent stateful strategies in one named pipeline remain distinct. Shared strategies update up to 64 observed name/index aliases; additional aliases omit state-gauge measurements to bound memory, transition work, and series growth. The gauges do not use observable callbacks or global strategy registries, so telemetry never keeps an abandoned shield alive.
 

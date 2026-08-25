@@ -4,6 +4,34 @@ namespace Kevlar.Testing.Tests;
 public class TelemetryRecorderTests
 {
     [Test]
+    public async Task Records_Typed_Telemetry_Events_Without_Retaining_Context()
+    {
+        using var recorder = new TelemetryRecorder(captureMetrics: false);
+        var attempts = 0;
+        var shield = Shield.Retry(options =>
+        {
+            options.Name = "testing-retry";
+            options.MaxRetries = 1;
+            options.Backoff = Backoff.None;
+        }).WithName("testing-events");
+
+        _ = await shield.ExecuteWithContextAsync(
+            "checkout",
+            static (operation, properties) => properties.Set(KevlarKeys.OperationKey, operation),
+            (_, _) => ++attempts == 1
+                ? ValueTask.FromException<int>(new InvalidOperationException())
+                : new ValueTask<int>(42));
+
+        await recorder.WaitForEventCountAsync(3).WaitAsync(TimeSpan.FromSeconds(5));
+        await Assert.That(recorder.Events.Select(item => item.EventName).SequenceEqual(
+            ["execution_attempt", "retry", "execution_attempt"])).IsTrue();
+        await Assert.That(recorder.Events.All(item =>
+            item.StrategyName == "testing-retry"
+            && item.ShieldName == "testing-events"
+            && item.OperationKey == "checkout")).IsTrue();
+    }
+
+    [Test]
     public async Task Records_Metrics_With_Documented_Attributes()
     {
         using var recorder = new TelemetryRecorder();
@@ -326,6 +354,8 @@ public class TelemetryRecorderTests
             "kevlar.fallbacks",
             "kevlar.rejections",
             "kevlar.callback_errors",
+            "kevlar.strategy.events",
+            "kevlar.attempt.duration",
 #if NET9_0_OR_GREATER
             "kevlar.circuit_breaker.state",
             "kevlar.concurrency_limit.inflight",

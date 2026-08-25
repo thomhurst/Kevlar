@@ -11,18 +11,21 @@ internal sealed class FallbackStrategy<TResult> : Strategy, IFallbackStrategyIns
     private readonly OutcomeJudge _judge;
     private readonly Action<FallbackEvent<TResult>>? _onFallback;
     private readonly Func<FallbackEvent<TResult>, ValueTask>? _onFallbackAsync;
+    private readonly string _telemetryName;
 
     public FallbackStrategy(
         Func<Outcome<TResult>, KevlarContext, ValueTask<TResult>> fallback,
         OutcomeJudge judge,
         Action<FallbackEvent<TResult>>? onFallback,
         Func<FallbackEvent<TResult>, ValueTask>? onFallbackAsync,
-        bool hasHandlingOverride = false)
+        bool hasHandlingOverride = false,
+        string? telemetryName = null)
     {
         _fallback = fallback;
         _judge = judge;
         _onFallback = onFallback;
         _onFallbackAsync = onFallbackAsync;
+        _telemetryName = telemetryName ?? "Fallback";
         HasHandlingOverride = hasHandlingOverride;
     }
 
@@ -74,7 +77,7 @@ internal sealed class FallbackStrategy<TResult> : Strategy, IFallbackStrategyIns
         Debug.Assert(typeof(T) == typeof(TResult), "Fallback strategies only execute inside a matching Shield<TResult>.");
         var typedOutcome = (Outcome<TResult>)(object)outcome;
 
-        KevlarMetrics.Fallback(context.ShieldName);
+        KevlarMetrics.Fallback(context, _telemetryName, outcome.IsSuccess, outcome.Exception);
         if (_onFallback is not null || _onFallbackAsync is not null)
         {
             var fallbackEvent = new FallbackEvent<TResult>(typedOutcome, context);
@@ -145,18 +148,21 @@ internal sealed class VoidFallbackStrategy : Strategy, IFallbackStrategyInspecti
     private readonly OutcomeJudge _judge;
     private readonly Action<FallbackEvent>? _onFallback;
     private readonly Func<FallbackEvent, ValueTask>? _onFallbackAsync;
+    private readonly string _telemetryName;
 
     public VoidFallbackStrategy(
         Func<Exception, CancellationToken, ValueTask> fallback,
         OutcomeJudge judge,
         Action<FallbackEvent>? onFallback,
         Func<FallbackEvent, ValueTask>? onFallbackAsync,
-        bool hasHandlingOverride = false)
+        bool hasHandlingOverride = false,
+        string? telemetryName = null)
     {
         _fallback = fallback;
         _judge = judge;
         _onFallback = onFallback;
         _onFallbackAsync = onFallbackAsync;
+        _telemetryName = telemetryName ?? "Fallback";
         HasHandlingOverride = hasHandlingOverride;
     }
 
@@ -192,7 +198,7 @@ internal sealed class VoidFallbackStrategy : Strategy, IFallbackStrategyInspecti
                 "Shield.For<T>() and use its Fallback overloads."));
         }
 
-        KevlarMetrics.Fallback(context.ShieldName);
+        KevlarMetrics.Fallback(context, _telemetryName, isSuccess: false, exception);
 
         if (_onFallback is not null || _onFallbackAsync is not null)
         {

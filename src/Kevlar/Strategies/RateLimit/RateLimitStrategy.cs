@@ -27,6 +27,7 @@ internal sealed class RateLimitStrategy : Strategy
     private readonly double _burstTolerance;
     private readonly Action<RateLimitRejectedEvent>? _onRejected;
     private readonly Func<RateLimitRejectedEvent, ValueTask>? _onRejectedAsync;
+    private readonly string _telemetryName;
     private readonly Lock _metricsPublicationGate = new();
     private readonly HashSet<StrategyMetricAlias> _metricsAliases = [];
     private readonly object _queueGate = new();
@@ -87,6 +88,7 @@ internal sealed class RateLimitStrategy : Strategy
         _burstTolerance = (_burst - 1) * _timestampUnitsPerPermit;
         _onRejected = options.OnRejected;
         _onRejectedAsync = options.OnRejectedAsync;
+        _telemetryName = options.Name ?? "RateLimit";
     }
 
     public override string Describe()
@@ -100,7 +102,7 @@ internal sealed class RateLimitStrategy : Strategy
     {
         if (!TryAcquireAndRecord(context, out var reservation, out var retryAfter))
         {
-            KevlarMetrics.Rejection(context.ShieldName, "rate_limit");
+            KevlarMetrics.Rejection(context, "rate_limit", _telemetryName);
             return RejectAsync<T>(context, retryAfter);
         }
 

@@ -16,7 +16,7 @@ internal static class KevlarMetrics
 {
     public const int MaxTrackedStrategyAliases = 64;
 
-#if NET9_0_OR_GREATER
+#if NET8_0_OR_GREATER
     private const int _minimumCachedStrategyIndex = -1;
     private const int _maximumCachedStrategyIndex = 63;
     private static readonly object[] _boxedStrategyIndexes = CreateBoxedStrategyIndexes();
@@ -64,6 +64,14 @@ internal static class KevlarMetrics
         "kevlar.execution.duration",
         "s",
         "Duration of completed public shield executions.");
+    private static readonly Counter<long> StrategyEvents = Meter.CreateCounter<long>(
+        "kevlar.strategy.events",
+        "{event}",
+        "Strategy and custom telemetry events.");
+    private static readonly Histogram<double> AttemptDuration = Meter.CreateHistogram<double>(
+        "kevlar.attempt.duration",
+        "ms",
+        "Duration of resilience execution attempts.");
 #endif
 
 #if NET9_0_OR_GREATER
@@ -105,6 +113,14 @@ internal static class KevlarMetrics
     public static bool DurationEnabled => false;
 #endif
 
+#if NET8_0_OR_GREATER
+    public static bool StrategyEventsEnabled => StrategyEvents.Enabled;
+    public static bool AttemptDurationEnabled => AttemptDuration.Enabled;
+#else
+    public static bool StrategyEventsEnabled => false;
+    public static bool AttemptDurationEnabled => false;
+#endif
+
 #if NET9_0_OR_GREATER
     public static bool CircuitStateEnabled => CircuitStateGauge.Enabled;
     public static bool ConcurrencyStateEnabled =>
@@ -138,46 +154,84 @@ internal static class KevlarMetrics
 #endif
     }
 
-    public static void Timeout(string? shieldName)
+    public static void Timeout(KevlarContext context, string strategyName, Exception? exception)
     {
 #if NET8_0_OR_GREATER
         if (Timeouts.Enabled)
         {
-            Timeouts.Add(1, NameTags(shieldName));
+            Timeouts.Add(1, NameTags(context.ShieldName));
         }
 #endif
+        KevlarTelemetry.Record(
+            context,
+            strategyName,
+            eventName: "timeout",
+            KevlarTelemetrySeverity.Warning,
+            context.StrategyIndex,
+            attemptNumber: 0,
+            isSuccess: false,
+            exception);
     }
 
-    public static void Hedge(string? shieldName)
+    public static void Hedge(KevlarContext context, string strategyName, int attemptNumber)
     {
 #if NET8_0_OR_GREATER
         if (Hedges.Enabled)
         {
-            Hedges.Add(1, NameTags(shieldName));
+            Hedges.Add(1, NameTags(context.ShieldName));
         }
 #endif
+        KevlarTelemetry.Record(
+            context,
+            strategyName,
+            eventName: "hedge",
+            KevlarTelemetrySeverity.Information,
+            context.StrategyIndex,
+            attemptNumber,
+            isSuccess: true);
     }
 
-    public static void Fallback(string? shieldName)
+    public static void Fallback(
+        KevlarContext context,
+        string strategyName,
+        bool isSuccess,
+        Exception? exception)
     {
 #if NET8_0_OR_GREATER
         if (Fallbacks.Enabled)
         {
-            Fallbacks.Add(1, NameTags(shieldName));
+            Fallbacks.Add(1, NameTags(context.ShieldName));
         }
 #endif
+        KevlarTelemetry.Record(
+            context,
+            strategyName,
+            eventName: "fallback",
+            KevlarTelemetrySeverity.Warning,
+            context.StrategyIndex,
+            attemptNumber: 0,
+            isSuccess,
+            exception);
     }
 
-    public static void Rejection(string? shieldName, string kind)
+    public static void Rejection(KevlarContext context, string kind, string? strategyName = null)
     {
 #if NET8_0_OR_GREATER
         if (Rejections.Enabled)
         {
-            var tags = NameTags(shieldName);
+            var tags = NameTags(context.ShieldName);
             tags.Add("kevlar.rejection.type", kind);
             Rejections.Add(1, tags);
         }
 #endif
+        KevlarTelemetry.Record(
+            context,
+            strategyName ?? StrategyNameFromRejection(kind),
+            eventName: "rejection",
+            KevlarTelemetrySeverity.Warning,
+            context.StrategyIndex,
+            attemptNumber: 0,
+            isSuccess: false);
     }
 
     public static void CircuitTransition(CircuitState from, CircuitState to)
@@ -233,6 +287,44 @@ internal static class KevlarMetrics
             var tags = NameTags(shieldName);
             tags.Add("kevlar.execution.outcome", success ? "success" : "failure");
             ExecutionDuration.Record(Stopwatch.GetElapsedTime(startedAt).TotalSeconds, tags);
+        }
+#endif
+    }
+
+    public static void StrategyEvent(
+        in KevlarTelemetryEvent telemetryEvent,
+        bool recordAttemptDuration)
+    {
+#if NET8_0_OR_GREATER
+        if (!StrategyEvents.Enabled && (!recordAttemptDuration || !AttemptDuration.Enabled))
+        {
+            return;
+        }
+
+        var tags = NameTags(telemetryEvent.ShieldName);
+        tags.Add("kevlar.strategy.index", BoxStrategyIndex(telemetryEvent.StrategyIndex));
+        tags.Add("kevlar.strategy.name", telemetryEvent.StrategyName);
+        tags.Add("kevlar.event.name", telemetryEvent.EventName);
+        tags.Add("kevlar.event.severity", SeverityName(telemetryEvent.Severity));
+        tags.Add("kevlar.attempt.number", BoxStrategyIndex(telemetryEvent.AttemptNumber));
+        if (telemetryEvent.Exception is not null)
+        {
+            tags.Add("exception.type", telemetryEvent.Exception.GetType().FullName);
+        }
+
+        if (telemetryEvent.OperationKey is not null)
+        {
+            tags.Add("kevlar.operation.key", telemetryEvent.OperationKey);
+        }
+
+        if (StrategyEvents.Enabled)
+        {
+            StrategyEvents.Add(1, tags);
+        }
+
+        if (recordAttemptDuration && AttemptDuration.Enabled)
+        {
+            AttemptDuration.Record(telemetryEvent.Duration.TotalMilliseconds, tags);
         }
 #endif
     }
@@ -310,7 +402,6 @@ internal static class KevlarMetrics
         return tags;
     }
 
-#if NET9_0_OR_GREATER
     private static TagList StateTags(string? shieldName, int strategyIndex)
     {
         var tags = NameTags(shieldName);
@@ -333,6 +424,14 @@ internal static class KevlarMetrics
 
         return indexes;
     }
+
+    private static string SeverityName(KevlarTelemetrySeverity severity) => severity switch
+    {
+        KevlarTelemetrySeverity.Information => "information",
+        KevlarTelemetrySeverity.Warning => "warning",
+        KevlarTelemetrySeverity.Error => "error",
+        _ => "information",
+    };
 #endif
 
     private static string StateName(CircuitState state) => state switch
@@ -375,7 +474,15 @@ internal static class KevlarMetrics
         CircuitState.Isolated => 3,
         _ => throw new ArgumentOutOfRangeException(nameof(state)),
     };
-#endif
+
+    private static string StrategyNameFromRejection(string kind) => kind switch
+    {
+        "circuit_open" => "CircuitBreaker",
+        "rate_limit" => "RateLimit",
+        "rate_limiter_adapter" => "RateLimiterAdapter",
+        "concurrency_limit" => "ConcurrencyLimit",
+        _ => "Rejection",
+    };
 }
 
 internal readonly record struct StrategyMetricAlias(string? ShieldName, int StrategyIndex);

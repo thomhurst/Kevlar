@@ -14,6 +14,7 @@ internal sealed class RateLimiterStrategy : Strategy
     private readonly Action<RateLimiterAdapterRejectedEvent>? _onRejected;
     private readonly Func<RateLimiterAdapterRejectedEvent, ValueTask>? _onRejectedAsync;
     private readonly string _description;
+    private readonly string _telemetryName;
 
     protected internal override bool InvokesContinuationAtMostOnce => true;
 
@@ -34,6 +35,7 @@ internal sealed class RateLimiterStrategy : Strategy
         _onRejected = options.OnRejected;
         _onRejectedAsync = options.OnRejectedAsync;
         _description = description;
+        _telemetryName = options.Name ?? "RateLimiterAdapter";
     }
 
     public override string Describe() => _description;
@@ -158,7 +160,7 @@ internal sealed class RateLimiterStrategy : Strategy
             return Failure<T>(exception);
         }
 
-        KevlarMetrics.Rejection(context.ShieldName, "rate_limiter_adapter");
+        KevlarMetrics.Rejection(context, "rate_limiter_adapter", _telemetryName);
         var rejection = new RateLimiterAdapterRejectedException(retryAfter);
         if (_onRejected is null && _onRejectedAsync is null)
         {

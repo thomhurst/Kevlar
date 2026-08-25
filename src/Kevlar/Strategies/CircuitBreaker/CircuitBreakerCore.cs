@@ -29,6 +29,7 @@ internal sealed class CircuitBreakerCore
     private readonly Func<CircuitBreakerStateChangedEvent, ValueTask>? _onStateChangedAsync;
     private readonly CircuitBreakerMonitor? _monitor;
     private readonly Type _optionsType;
+    private readonly string _telemetryName;
     private readonly Queue<TransitionPublication> _pendingTransitions = new();
     private readonly AsyncLocal<TransitionPublication?>? _ambientPublication;
 
@@ -109,6 +110,7 @@ internal sealed class CircuitBreakerCore
         _onStateChanged = options.OnStateChanged;
         _onStateChangedAsync = options.OnStateChangedAsync;
         _optionsType = optionsType;
+        _telemetryName = options.Name ?? "CircuitBreaker";
         _ambientPublication = options.OnStateChangedAsync is null
             ? null
             : new AsyncLocal<TransitionPublication?>();
@@ -123,6 +125,8 @@ internal sealed class CircuitBreakerCore
                 $"CircuitBreaker({_failureRatio!.Value * 100:0.#}% over {DescribeHelper.Time(_samplingWindow)}, min {_minimumThroughput}, break {DescribeBreakDuration()})");
 
     public bool RequiresAsyncExecution => _breakDurationGenerator is not null || _onStateChangedAsync is not null;
+
+    internal string TelemetryName => _telemetryName;
 
     private string DescribeBreakDuration() => _breakDurationGenerator is null
         ? DescribeHelper.Time(_breakDuration)
@@ -1090,6 +1094,7 @@ internal sealed class CircuitBreakerCore
         try
         {
             KevlarMetrics.CircuitTransition(stateChange.From, stateChange.To);
+            RecordTelemetry(stateChange);
         }
         catch (Exception exception)
         {
@@ -1122,6 +1127,7 @@ internal sealed class CircuitBreakerCore
         try
         {
             KevlarMetrics.CircuitTransition(stateChange.From, stateChange.To);
+            RecordTelemetry(stateChange);
         }
         catch (Exception exception)
         {
@@ -1150,6 +1156,29 @@ internal sealed class CircuitBreakerCore
         _monitor?.Raise(in stateChange);
 
         return failure;
+    }
+
+    private void RecordTelemetry(CircuitBreakerStateChangedEvent stateChange)
+    {
+        var context = stateChange.Context;
+        KevlarTelemetry.Record(
+            context,
+            _telemetryName,
+            stateChange.To switch
+            {
+                CircuitState.Open => "circuit_opened",
+                CircuitState.HalfOpen => "circuit_half_opened",
+                CircuitState.Closed => "circuit_closed",
+                CircuitState.Isolated => "circuit_isolated",
+                _ => "circuit_changed",
+            },
+            stateChange.To is CircuitState.Open or CircuitState.Isolated
+                ? KevlarTelemetrySeverity.Warning
+                : KevlarTelemetrySeverity.Information,
+            context.StrategyIndex,
+            attemptNumber: 0,
+            isSuccess: stateChange.To == CircuitState.Closed,
+            stateChange.LastException);
     }
 
     private static void AddFailure(ref Exception? failure, Exception next)

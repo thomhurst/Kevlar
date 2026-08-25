@@ -251,6 +251,8 @@ public class MetricsTests
             ["kevlar.partitions.evictions"] = "{partition}",
             ["kevlar.callback_errors"] = "{error}",
             ["kevlar.execution.duration"] = "s",
+            ["kevlar.strategy.events"] = "{event}",
+            ["kevlar.attempt.duration"] = "ms",
 #if NET9_0_OR_GREATER
             ["kevlar.circuit_breaker.state"] = "{state}",
             ["kevlar.concurrency_limit.inflight"] = "{execution}",
@@ -263,10 +265,11 @@ public class MetricsTests
 
         await Assert.That(listener.Instruments.Select(instrument => instrument.Name))
             .IsEquivalentTo(expectedInstruments.Keys);
-        await Assert.That(listener.Instruments.Single(instrument => instrument.Name == "kevlar.execution.duration"))
-            .IsTypeOf<Histogram<double>>();
         await Assert.That(listener.Instruments
-            .Where(instrument => instrument.Name is not "kevlar.execution.duration")
+            .Where(instrument => instrument.Name is "kevlar.execution.duration" or "kevlar.attempt.duration")
+            .All(instrument => instrument is Histogram<double>)).IsTrue();
+        await Assert.That(listener.Instruments
+            .Where(instrument => instrument.Name is not ("kevlar.execution.duration" or "kevlar.attempt.duration"))
             .All(instrument => instrument is Counter<long> or Gauge<long>)).IsTrue();
         await Assert.That(listener.Instruments.All(instrument => instrument.Meter.Name == "Kevlar")).IsTrue();
         await Assert.That(listener.Instruments.All(instrument => instrument.Meter.Version == "1.0")).IsTrue();
@@ -371,6 +374,171 @@ public class MetricsTests
         });
 
         await Assert.That(listener.Total("kevlar.retries", "metrics-retries")).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task Retry_Attempts_Record_Duration_And_Documented_Tags()
+    {
+        using var listener = new KevlarMeterListener();
+        var timeProvider = new FakeTimeProvider();
+        var attempts = 0;
+        var shield = Shield.Retry(2, Backoff.None)
+            .WithTimeProvider(timeProvider)
+            .WithName("metrics-attempts");
+
+        var result = await shield.ExecuteWithContextAsync(
+            "checkout",
+            static (operation, properties) => properties.Set(KevlarKeys.OperationKey, operation),
+            (_, _) =>
+            {
+                timeProvider.Advance(TimeSpan.FromMilliseconds(10));
+                return ++attempts < 3
+                    ? ValueTask.FromException<int>(new InvalidOperationException("unique-message"))
+                    : new ValueTask<int>(42);
+            });
+
+        var durations = listener.DoubleValues("kevlar.attempt.duration", "metrics-attempts");
+        var attemptTags = listener.DoubleMeasurements("kevlar.attempt.duration", "metrics-attempts");
+        var retryTags = listener.Measurements("kevlar.strategy.events", "metrics-attempts")
+            .Where(tags => Equals(tags["kevlar.event.name"], "retry"))
+            .ToArray();
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(durations).IsEquivalentTo([10d, 10d, 10d]);
+        await Assert.That(attemptTags.Select(tags => (int)tags["kevlar.attempt.number"]!))
+            .IsEquivalentTo([0, 1, 2]);
+        await Assert.That(attemptTags.All(tags =>
+            Equals(tags["kevlar.strategy.name"], "Retry")
+            && Equals(tags["kevlar.operation.key"], "checkout")
+            && !tags.Values.Contains("unique-message"))).IsTrue();
+        await Assert.That(retryTags.Length).IsEqualTo(2);
+        await Assert.That(retryTags.All(tags =>
+            Equals(tags["exception.type"], typeof(InvalidOperationException).FullName))).IsTrue();
+    }
+
+    [Test]
+    public async Task Missing_Optional_Values_Produce_The_Exact_Bounded_Tag_Set()
+    {
+        using var listener = new KevlarMeterListener();
+
+        _ = await Shield.Retry(0, Backoff.None)
+            .WithName("metrics-bounded-tags")
+            .ExecuteAsync(_ => new ValueTask<int>(42));
+
+        var tags = listener.DoubleMeasurements("kevlar.attempt.duration", "metrics-bounded-tags").Single();
+        await Assert.That(tags.Keys).IsEquivalentTo([
+            "kevlar.shield.name",
+            "kevlar.strategy.index",
+            "kevlar.strategy.name",
+            "kevlar.event.name",
+            "kevlar.event.severity",
+            "kevlar.attempt.number",
+        ]);
+        await Assert.That(tags["kevlar.event.severity"]).IsEqualTo("information");
+    }
+
+    [Test]
+    public async Task Listener_Receives_Ordered_Events_And_Cannot_Change_Outcome()
+    {
+        var observed = new List<TelemetrySnapshot>();
+        using var subscription = KevlarDiagnostics.Listen(new CallbackTelemetryListener(telemetryEvent =>
+        {
+            observed.Add(new TelemetrySnapshot(
+                telemetryEvent.EventName,
+                telemetryEvent.AttemptNumber,
+                telemetryEvent.OperationKey,
+                telemetryEvent.Context.Properties.GetOrDefault(KevlarKeys.OperationKey, string.Empty)));
+            if (telemetryEvent.EventName == "retry")
+            {
+                throw new InvalidOperationException("listener");
+            }
+        }));
+        var attempts = 0;
+
+        var result = await Shield.Retry(1, Backoff.None).ExecuteWithContextAsync(
+            "listener-operation",
+            static (operation, properties) => properties.Set(KevlarKeys.OperationKey, operation),
+            (_, _) => ++attempts == 1
+                ? ValueTask.FromException<int>(new InvalidOperationException("action"))
+                : new ValueTask<int>(42));
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(observed.Select(item => item.EventName).SequenceEqual(
+            ["execution_attempt", "retry", "execution_attempt"])).IsTrue();
+        await Assert.That(observed.Select(item => item.AttemptNumber).SequenceEqual([0, 1, 1])).IsTrue();
+        await Assert.That(observed.All(item =>
+            item.OperationKey == "listener-operation"
+            && item.ContextOperationKey == "listener-operation")).IsTrue();
+    }
+
+    [Test]
+    public async Task Custom_Strategy_Can_Record_Into_Listener_And_Meter()
+    {
+        using var listener = new KevlarMeterListener();
+        TelemetrySnapshot observed = default;
+        using var subscription = KevlarDiagnostics.Listen(new CallbackTelemetryListener(telemetryEvent =>
+            observed = new TelemetrySnapshot(
+                telemetryEvent.EventName,
+                telemetryEvent.AttemptNumber,
+                telemetryEvent.OperationKey,
+                telemetryEvent.Context.Properties.GetOrDefault(KevlarKeys.OperationKey, string.Empty))));
+        var shield = Shield.Use(new TelemetryStrategy()).WithName("metrics-custom-event");
+
+        _ = await shield.ExecuteAsync(_ => new ValueTask<int>(42));
+
+        var tags = listener.Measurements("kevlar.strategy.events", "metrics-custom-event").Single();
+        await Assert.That(observed.EventName).IsEqualTo("custom_strategy_event");
+        await Assert.That(tags["kevlar.event.name"]).IsEqualTo("custom_strategy_event");
+        await Assert.That(tags["kevlar.strategy.name"]).IsEqualTo("Custom");
+    }
+
+    [Test]
+    public async Task Strategy_Name_Tag_Uses_Options_Name_Or_Built_In_Default()
+    {
+        using var listener = new KevlarMeterListener();
+        var namedAttempts = 0;
+        var named = Shield.Retry(options =>
+        {
+            options.Name = "catalog-retry";
+            options.MaxRetries = 1;
+            options.Backoff = Backoff.None;
+        }).WithName("metrics-named-strategy");
+
+        _ = await named.ExecuteAsync(_ => ++namedAttempts == 1
+            ? ValueTask.FromException<int>(new InvalidOperationException())
+            : new ValueTask<int>(42));
+        _ = await Shield.Retry(0, Backoff.None)
+            .WithName("metrics-default-strategy")
+            .ExecuteAsync(_ => new ValueTask<int>(42));
+
+        await Assert.That(listener.Measurements("kevlar.strategy.events", "metrics-named-strategy")
+            .All(tags => Equals(tags["kevlar.strategy.name"], "catalog-retry"))).IsTrue();
+        await Assert.That(listener.Measurements("kevlar.strategy.events", "metrics-default-strategy")
+            .All(tags => Equals(tags["kevlar.strategy.name"], "Retry"))).IsTrue();
+    }
+
+    [Test]
+    public async Task Circuit_State_Changes_Emit_Ordered_Strategy_Events()
+    {
+        using var listener = new KevlarMeterListener();
+        var timeProvider = new FakeTimeProvider();
+        var circuit = Shield.CircuitBreaker(options =>
+        {
+            options.Name = "inventory-circuit";
+            options.ConsecutiveFailures = 1;
+            options.BreakDuration = TimeSpan.FromSeconds(1);
+        }).WithName("metrics-circuit-events").WithTimeProvider(timeProvider);
+
+        _ = await circuit.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+        timeProvider.Advance(TimeSpan.FromSeconds(2));
+        _ = await circuit.ExecuteAsync(_ => new ValueTask<int>(42));
+
+        var events = listener.Measurements("kevlar.strategy.events", "metrics-circuit-events")
+            .Where(tags => Equals(tags["kevlar.strategy.name"], "inventory-circuit"))
+            .Select(tags => (string)tags["kevlar.event.name"]!)
+            .ToArray();
+        await Assert.That(events.SequenceEqual(
+            ["circuit_opened", "circuit_half_opened", "circuit_closed"])).IsTrue();
     }
 
     [Test]
@@ -1671,6 +1839,29 @@ public class MetricsTests
 
         _ = await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
         monitor.Reset();
+    }
+
+    private readonly record struct TelemetrySnapshot(
+        string? EventName,
+        int AttemptNumber,
+        string? OperationKey,
+        string? ContextOperationKey);
+
+    private sealed class CallbackTelemetryListener(Action<KevlarTelemetryEvent> callback)
+        : IKevlarTelemetryListener
+    {
+        public void OnEvent(in KevlarTelemetryEvent telemetryEvent) => callback(telemetryEvent);
+    }
+
+    private sealed class TelemetryStrategy : Strategy
+    {
+        public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+            Continuation<T, TState> next,
+            KevlarContext context)
+        {
+            context.RecordEvent("custom_strategy_event");
+            return next.InvokeAsync(context);
+        }
     }
 
     private sealed class BlockingFirstTimestampTimeProvider : TimeProvider, IDisposable

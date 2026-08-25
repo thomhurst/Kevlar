@@ -11,6 +11,9 @@ namespace Kevlar;
 /// </remarks>
 public sealed class RateLimitOptions
 {
+    /// <summary>An optional low-cardinality name used by strategy telemetry.</summary>
+    public string? Name { get; set; }
+
     /// <summary>Sustained number of executions allowed per <see cref="Window"/>. Default 100.</summary>
     public int Permits { get; set; } = 100;
 

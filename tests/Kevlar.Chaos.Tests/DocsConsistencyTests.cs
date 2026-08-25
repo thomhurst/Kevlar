@@ -55,15 +55,18 @@ public class DocsConsistencyTests
                 options.OnRetry = _ => throw new IOException("docs callback");
             })
             .WithName("docs-retry")
-            .ExecuteAsync<int>(_ =>
-            {
-                if (Interlocked.Increment(ref retryAttempts) == 1)
+            .ExecuteWithContextAsync(
+                "docs-operation",
+                static (operation, properties) => properties.Set(KevlarKeys.OperationKey, operation),
+                (_, _) =>
                 {
-                    throw new InvalidOperationException();
-                }
+                    if (Interlocked.Increment(ref retryAttempts) == 1)
+                    {
+                        throw new InvalidOperationException();
+                    }
 
-                return new ValueTask<int>(1);
-            });
+                    return new ValueTask<int>(1);
+                });
 
         _ = await Shield.Timeout(TimeSpan.FromMilliseconds(10))
             .WithName("docs-timeout")
@@ -128,7 +131,7 @@ public class DocsConsistencyTests
             }
 
             var name = cells[1].Trim('`');
-            var tags = Regex.Matches(cells[6], "`(kevlar\\.[^`]+)`")
+            var tags = Regex.Matches(cells[6], "`((?:kevlar|exception)\\.[^`]+)`")
                 .Select(static match => match.Groups[1].Value)
                 .ToHashSet(StringComparer.Ordinal);
             rows.Add(name, new InstrumentRow(

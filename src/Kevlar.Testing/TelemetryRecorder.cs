@@ -9,12 +9,14 @@ namespace Kevlar.Testing;
 /// Records Kevlar metrics and strategy callbacks for deterministic tests. Assign the
 /// <see cref="Record(RetryEvent)"/> overloads directly to strategy notification options.
 /// </summary>
-public sealed class TelemetryRecorder : IDisposable
+public sealed class TelemetryRecorder : IDisposable, IKevlarTelemetryListener
 {
     private readonly object _gate = new();
     private readonly List<MetricRecord> _metrics = [];
     private readonly List<CallbackRecord> _callbacks = [];
     private readonly bool _captureCallbackErrors;
+    private readonly List<TelemetryEventRecord> _events = [];
+    private readonly IDisposable _telemetrySubscription;
     private TaskCompletionSource<bool> _changed = CreateSignal();
 #if NET8_0_OR_GREATER
     private readonly MeterListener? _listener;
@@ -33,6 +35,7 @@ public sealed class TelemetryRecorder : IDisposable
         bool captureCallbackErrors = false)
     {
         _captureCallbackErrors = captureCallbackErrors;
+        _telemetrySubscription = KevlarDiagnostics.Listen(this);
 #if NET8_0_OR_GREATER
         if (captureMetrics)
         {
@@ -58,6 +61,18 @@ public sealed class TelemetryRecorder : IDisposable
         if (captureCallbackErrors)
         {
             KevlarDiagnostics.OnCallbackError += Record;
+        }
+    }
+
+    /// <summary>Gets a stable snapshot of captured strategy telemetry events.</summary>
+    public IReadOnlyList<TelemetryEventRecord> Events
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _events.ToArray();
+            }
         }
     }
 
@@ -168,6 +183,29 @@ public sealed class TelemetryRecorder : IDisposable
     public Task WaitForCallbackCountAsync(int count, CancellationToken cancellationToken = default) =>
         WaitForCountAsync(static recorder => recorder._callbacks.Count, count, cancellationToken);
 
+    /// <summary>Waits until at least <paramref name="count"/> telemetry events have been captured.</summary>
+    public Task WaitForEventCountAsync(int count, CancellationToken cancellationToken = default) =>
+        WaitForCountAsync(static recorder => recorder._events.Count, count, cancellationToken);
+
+    /// <inheritdoc />
+    void IKevlarTelemetryListener.OnEvent(in KevlarTelemetryEvent telemetryEvent)
+    {
+        TaskCompletionSource<bool> signal;
+        lock (_gate)
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            _events.Add(new TelemetryEventRecord(++_sequence, in telemetryEvent));
+            signal = _changed;
+            _changed = CreateSignal();
+        }
+
+        signal.TrySetResult(true);
+    }
+
     /// <inheritdoc />
     public void Dispose()
     {
@@ -191,6 +229,7 @@ public sealed class TelemetryRecorder : IDisposable
 #if NET8_0_OR_GREATER
         _listener?.Dispose();
 #endif
+        _telemetrySubscription.Dispose();
         signal.TrySetResult(true);
     }
 

@@ -9,6 +9,9 @@ namespace Kevlar;
 /// </remarks>
 public sealed class HedgeOptions<TResult>
 {
+    /// <summary>An optional low-cardinality name used by strategy telemetry.</summary>
+    public string? Name { get; set; }
+
     /// <inheritdoc cref="HedgeOptions.HandlesException"/>
     public Func<Exception, bool>? HandlesException { get; set; }
 
@@ -64,6 +67,7 @@ public sealed class HedgeOptions<TResult>
 
     internal HedgeOptions ToUntyped(HedgeActionGenerator? actionGenerator = null) => new()
     {
+        Name = Name,
         HandlesException = HandlesException,
         MaxHedgedAttempts = MaxHedgedAttempts,
         Delay = Delay,
