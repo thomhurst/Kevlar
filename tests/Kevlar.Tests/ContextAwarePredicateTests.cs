@@ -246,6 +246,59 @@ public class ContextAwarePredicateTests
     }
 
     [Test]
+    public async Task Hedge_Predicate_Context_Matches_Returned_Original_Result()
+    {
+        var releaseSelected = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseLater = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var executions = 0;
+        var observedValue = -1;
+        var shield = Shield.For<int>()
+            .WhenResultContext(handling =>
+            {
+                if (handling.Attempt == 1)
+                {
+                    observedValue = handling.Context.Properties.GetOrDefault(HedgeAttempt, -1);
+                }
+
+                return handling.Outcome.TryGetResult(out var result) && result < 0;
+            })
+            .Hedge(options =>
+            {
+                options.MaxAttempts = 2;
+                options.Delay = Timeout.InfiniteTimeSpan;
+                options.ActionGenerator = hedge => async token =>
+                {
+                    var selectedOriginal = hedge.OriginalAction(token).AsTask();
+                    var laterOriginal = hedge.OriginalAction(token).AsTask();
+                    releaseSelected.SetResult();
+                    var selected = await selectedOriginal;
+                    releaseLater.SetResult();
+                    _ = await laterOriginal;
+                    return selected;
+                };
+            });
+
+        var result = await shield.ExecuteWithContextAsync(async context =>
+        {
+            var execution = Interlocked.Increment(ref executions);
+            context.Properties.Set(HedgeAttempt, execution);
+            if (execution == 2)
+            {
+                await releaseSelected.Task;
+            }
+            else if (execution == 3)
+            {
+                await releaseLater.Task;
+            }
+
+            return execution == 1 ? -1 : execution;
+        });
+
+        await Assert.That(result).IsEqualTo(2);
+        await Assert.That(observedValue).IsEqualTo(2);
+    }
+
+    [Test]
     public async Task HandlesException_Context_Override_Replaces_Ambient_Clause()
     {
         var attempts = 0;
