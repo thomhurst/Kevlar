@@ -132,6 +132,8 @@ public class ConfigurationBindingTests
     [Arguments("equal", "exponential 1s ×2, equal jitter, cap 30s")]
     [Arguments("FULL", "exponential 1s ×2, full jitter, cap 30s")]
     [Arguments("Decorrelated", "exponential 1s ×2, decorrelated jitter, cap 30s")]
+    [Arguments("false", "exponential 1s ×2, cap 30s")]
+    [Arguments("true", "exponential 1s ×2, equal jitter, cap 30s")]
     public async Task RetryDefinition_Binds_Jitter_From_Configuration(string value, string expected)
     {
         var configuration = BuildConfiguration(

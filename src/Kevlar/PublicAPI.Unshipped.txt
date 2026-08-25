@@ -6,6 +6,7 @@ Kevlar.BackoffKind.Linear = 2 -> Kevlar.BackoffKind
 Kevlar.BackoffKind.None = 0 -> Kevlar.BackoffKind
 abstract Kevlar.Backoff.Kind.get -> Kevlar.BackoffKind
 virtual Kevlar.Backoff.Factor.get -> double?
+virtual Kevlar.Backoff.GetDelay(int attempt, System.TimeSpan previousDelay) -> System.TimeSpan
 virtual Kevlar.Backoff.InitialDelay.get -> System.TimeSpan?
 virtual Kevlar.Backoff.Jitter.get -> Kevlar.Jitter?
 virtual Kevlar.Backoff.MaxDelay.get -> System.TimeSpan?

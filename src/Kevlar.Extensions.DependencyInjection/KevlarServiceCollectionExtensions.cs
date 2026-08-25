@@ -241,7 +241,7 @@ public static class KevlarServiceCollectionExtensions
             {
                 retryDefinition.Factor = factor;
             }
-            if (ReadEnum<Jitter>(retry, nameof(RetryDefinition.Jitter)) is { } jitter)
+            if (ReadJitter(retry, nameof(RetryDefinition.Jitter)) is { } jitter)
             {
                 retryDefinition.Jitter = jitter;
             }
@@ -367,6 +367,11 @@ public static class KevlarServiceCollectionExtensions
             ? ParseEnum<TEnum>(configuration, key, value)
             : null;
 
+    private static Jitter? ReadJitter(IConfiguration configuration, string key) =>
+        Read(configuration, key) is { } value
+            ? ParseJitter(configuration, key, value)
+            : null;
+
     private static BackoffKind? ReadBackoffKind(IConfiguration configuration, string key)
     {
         if (Read(configuration, key) is not { } value)
@@ -411,6 +416,11 @@ public static class KevlarServiceCollectionExtensions
         && Enum.IsDefined(typeof(TEnum), parsed)
             ? parsed
             : throw InvalidValue(configuration, key, value, $"a {typeof(TEnum).Name}");
+
+    private static Jitter ParseJitter(IConfiguration configuration, string key, string value) =>
+        bool.TryParse(value, out var enabled)
+            ? enabled ? Jitter.Equal : Jitter.None
+            : ParseEnum<Jitter>(configuration, key, value);
 
     private static InvalidOperationException InvalidValue(
         IConfiguration configuration,

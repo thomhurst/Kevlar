@@ -95,7 +95,11 @@ public abstract class Backoff
     /// <summary>The jitter mode for built-in backoffs, when applicable.</summary>
     public virtual Jitter? Jitter => null;
 
-    internal virtual TimeSpan GetDelay(int attempt, TimeSpan previousDelay) => GetDelay(attempt);
+    /// <summary>
+    /// Returns the delay before the given retry attempt, using the preceding effective delay for
+    /// stateful jitter modes. Pass <see cref="TimeSpan.Zero"/> for the first decorrelated draw.
+    /// </summary>
+    public virtual TimeSpan GetDelay(int attempt, TimeSpan previousDelay) => GetDelay(attempt);
 
     private protected static void ValidateAttempt(int attempt) =>
         Throw.IfOutOfRange(attempt < 1, nameof(attempt), "Attempt must be at least 1.");
@@ -195,7 +199,7 @@ public abstract class Backoff
                 : FromTicksClamped(ApplyJitter(_delay.Ticks, _jitter), maxDelay: null);
         }
 
-        internal override TimeSpan GetDelay(int attempt, TimeSpan previousDelay)
+        public override TimeSpan GetDelay(int attempt, TimeSpan previousDelay)
         {
             ValidateAttempt(attempt);
             return _jitter == global::Kevlar.Jitter.Decorrelated
@@ -237,7 +241,7 @@ public abstract class Backoff
                 : FromTicksClamped(ApplyJitter((double)_step.Ticks * attempt, _jitter), _maxDelay);
         }
 
-        internal override TimeSpan GetDelay(int attempt, TimeSpan previousDelay)
+        public override TimeSpan GetDelay(int attempt, TimeSpan previousDelay)
         {
             ValidateAttempt(attempt);
             return _jitter == global::Kevlar.Jitter.Decorrelated
@@ -284,7 +288,7 @@ public abstract class Backoff
             return FromTicksClamped(ApplyJitter(ticks, _jitter), _maxDelay);
         }
 
-        internal override TimeSpan GetDelay(int attempt, TimeSpan previousDelay)
+        public override TimeSpan GetDelay(int attempt, TimeSpan previousDelay)
         {
             ValidateAttempt(attempt);
             return _jitter == global::Kevlar.Jitter.Decorrelated

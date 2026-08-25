@@ -40,9 +40,10 @@ _ = Backoff.None;                                // no delay between attempts
 _ = Backoff.Default;                             // what bare Retry(n) uses
 ```
 
-- `Jitter.None` uses the exact curve; `Equal` scales it by [0.5, 1.5); `Full` selects [0, curve); `Decorrelated` selects [initial delay, previous delay × 3]. Decorrelated state is isolated per execution.
+- `Jitter.None` uses the exact curve; `Equal` scales it by [0.5, 1.5); `Full` selects [0, curve); `Decorrelated` selects [initial delay, previous delay × 3]. Decorrelated state is isolated per retry execution. Direct backoff consumers can carry the effective preceding delay through `GetDelay(attempt, previousDelay)`; pass zero for the first draw.
 - `Exponential(initialDelay, factor = 2.0, maxDelay = null, jitter = Jitter.Equal)` is the default curve. `Backoff.Default` = `Exponential(250ms, maxDelay: 30s)`.
 - `Constant(delay, jitter = Jitter.None)` and `Linear(step, maxDelay = null, jitter = Jitter.None)` also accept jitter explicitly.
+- Configuration accepts the enum names; legacy Boolean jitter values remain aliases for `Equal` and `None`.
 - Without `maxDelay`, built-in and custom backoffs clamp only at the runtime timer limit (`uint.MaxValue - 1` milliseconds, roughly 49.7 days). Use `maxDelay` for an application-specific cap.
 
 ## Full options

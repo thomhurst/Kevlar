@@ -100,7 +100,7 @@ internal static class StandardHttpConfigurationBinder
             : ParseDouble(section.GetSection("Factor"), factorValue);
         var jitter = jitterValue is null
             ? Jitter.Equal
-            : ParseEnum<Jitter>(section, "Jitter", jitterValue);
+            : ParseJitter(section, "Jitter", jitterValue);
         var backoffMaxDelay = backoffMaxDelayValue is null
             ? TimeSpan.FromSeconds(30)
             : ParseNullableTimeSpan(section.GetSection("BackoffMaxDelay"), backoffMaxDelayValue);
@@ -430,6 +430,11 @@ internal static class StandardHttpConfigurationBinder
 
         throw InvalidValue(section.GetSection(key), value, $"a {typeof(TEnum).Name}");
     }
+
+    private static Jitter ParseJitter(IConfiguration section, string key, string value) =>
+        bool.TryParse(value, out var enabled)
+            ? enabled ? Jitter.Equal : Jitter.None
+            : ParseEnum<Jitter>(section, key, value);
 
     private static InvalidOperationException InvalidValue(
         IConfigurationSection section,

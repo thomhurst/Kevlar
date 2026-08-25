@@ -147,6 +147,27 @@ public class HttpConfigurationReloadTests
     }
 
     [Test]
+    [Arguments("false", "exponential 100ms ×2, cap 30s")]
+    [Arguments("true", "exponential 100ms ×2, equal jitter, cap 30s")]
+    public async Task Standard_Section_Accepts_Legacy_Boolean_Jitter(
+        string value,
+        string expected)
+    {
+        var configuration = BuildConfiguration(
+            ("Retry:BaseDelay", "00:00:00.100"),
+            ("Retry:Jitter", value));
+        StandardHttpShieldOptions? bound = null;
+        var services = new ServiceCollection();
+        services.AddHttpClient("client")
+            .AddStandardShield(configuration, (_, options) => bound = options);
+        using var provider = services.BuildServiceProvider();
+
+        _ = provider.GetRequiredService<IHttpClientFactory>().CreateClient("client");
+
+        await Assert.That(bound!.Retry.Backoff.ToString()).IsEqualTo(expected);
+    }
+
+    [Test]
     public async Task Hedge_Section_Binds_All_Supported_Values()
     {
         var configuration = BuildConfiguration(
