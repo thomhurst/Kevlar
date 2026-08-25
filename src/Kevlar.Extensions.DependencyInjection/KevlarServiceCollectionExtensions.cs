@@ -144,8 +144,8 @@ public static class KevlarServiceCollectionExtensions
     public static IServiceCollection AddReloadingShield(
         this IServiceCollection services,
         string name,
-        IConfiguration configuration,
         ReloadingShieldOptions options,
+        IConfiguration configuration,
         Action<Exception>? onReloadFailure = null,
         bool replace = false) =>
         AddReloadingShieldCore(services, name, configuration, options, onReloadFailure, replace);
@@ -305,8 +305,8 @@ public static class KevlarServiceCollectionExtensions
     public static IServiceCollection AddReloadingShield<TResult>(
         this IServiceCollection services,
         string name,
-        IConfiguration configuration,
         ReloadingShieldOptions options,
+        IConfiguration configuration,
         Action<Exception>? onReloadFailure = null,
         bool replace = false) =>
         AddReloadingShieldCore<TResult>(services, name, configuration, options, onReloadFailure, replace);
