@@ -293,6 +293,8 @@ public class PipelineHazardAnalyzerTests
             "Task.WaitAll(AuditAsync(item));",
             "Task.WhenAll(AuditAsync(item), FlushAsync()).GetAwaiter().GetResult();",
             "Task.WhenAll(new[] { AuditAsync(item), FlushAsync() }).GetAwaiter().GetResult();",
+            "AuditValueAsync(item).AsTask().GetAwaiter().GetResult();",
+            "AuditValueAsync(item).AsTask().Wait();",
         };
         foreach (var statement in statements)
         {
@@ -303,6 +305,8 @@ public class PipelineHazardAnalyzerTests
                 });
 
                 static Task<RetryEvent> AuditAsync(RetryEvent item) => Task.FromResult(item);
+                static ValueTask<RetryEvent> AuditValueAsync(RetryEvent item) =>
+                    ValueTask.FromResult(item);
                 static Task FlushAsync() => Task.CompletedTask;
                 """);
 

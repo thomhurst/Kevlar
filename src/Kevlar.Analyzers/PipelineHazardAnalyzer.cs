@@ -617,7 +617,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 return true;
             }
 
-            if (method.Name is not ("ConfigureAwait" or "GetAwaiter"))
+            if (method.Name is not ("ConfigureAwait" or "GetAwaiter")
+                && (method.Name != "AsTask" || !IsTaskLike(method.ContainingType)))
             {
                 break;
             }
