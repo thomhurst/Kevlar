@@ -1217,6 +1217,7 @@ references:
   - name: )
 - uid: Kevlar.PartitionedShield`2
   commentId: T:Kevlar.PartitionedShield`2
+  parent: Kevlar
   isExternal: true
   href: Kevlar.PartitionedShield-2.html
   name: PartitionedShield<TKey, TResult>
