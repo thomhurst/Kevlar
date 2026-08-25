@@ -1,0 +1,248 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.CallbackErrorKind
+  commentId: T:Kevlar.CallbackErrorKind
+  id: CallbackErrorKind
+  parent: Kevlar
+  children:
+  - Kevlar.CallbackErrorKind.ChaosInjected
+  - Kevlar.CallbackErrorKind.CircuitMonitor
+  - Kevlar.CallbackErrorKind.CircuitStateChanged
+  - Kevlar.CallbackErrorKind.ConcurrencyLimitRejected
+  - Kevlar.CallbackErrorKind.Fallback
+  - Kevlar.CallbackErrorKind.Hedge
+  - Kevlar.CallbackErrorKind.RateLimitRejected
+  - Kevlar.CallbackErrorKind.RateLimiterAdapterRejected
+  - Kevlar.CallbackErrorKind.Retry
+  - Kevlar.CallbackErrorKind.Timeout
+  langs:
+  - csharp
+  - vb
+  name: CallbackErrorKind
+  nameWithType: CallbackErrorKind
+  fullName: Kevlar.CallbackErrorKind
+  type: Enum
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Identifies a strategy notification whose failure was reported by Kevlar.
+  example: []
+  syntax:
+    content: public enum CallbackErrorKind
+    content.vb: Public Enum CallbackErrorKind
+- uid: Kevlar.CallbackErrorKind.Retry
+  commentId: F:Kevlar.CallbackErrorKind.Retry
+  id: Retry
+  parent: Kevlar.CallbackErrorKind
+  langs:
+  - csharp
+  - vb
+  name: Retry
+  nameWithType: CallbackErrorKind.Retry
+  fullName: Kevlar.CallbackErrorKind.Retry
+  type: Field
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: A retry notification.
+  example: []
+  syntax:
+    content: Retry = 0
+    return:
+      type: Kevlar.CallbackErrorKind
+- uid: Kevlar.CallbackErrorKind.Timeout
+  commentId: F:Kevlar.CallbackErrorKind.Timeout
+  id: Timeout
+  parent: Kevlar.CallbackErrorKind
+  langs:
+  - csharp
+  - vb
+  name: Timeout
+  nameWithType: CallbackErrorKind.Timeout
+  fullName: Kevlar.CallbackErrorKind.Timeout
+  type: Field
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: A timeout notification.
+  example: []
+  syntax:
+    content: Timeout = 1
+    return:
+      type: Kevlar.CallbackErrorKind
+- uid: Kevlar.CallbackErrorKind.CircuitStateChanged
+  commentId: F:Kevlar.CallbackErrorKind.CircuitStateChanged
+  id: CircuitStateChanged
+  parent: Kevlar.CallbackErrorKind
+  langs:
+  - csharp
+  - vb
+  name: CircuitStateChanged
+  nameWithType: CallbackErrorKind.CircuitStateChanged
+  fullName: Kevlar.CallbackErrorKind.CircuitStateChanged
+  type: Field
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: A circuit-breaker state-change notification.
+  example: []
+  syntax:
+    content: CircuitStateChanged = 2
+    return:
+      type: Kevlar.CallbackErrorKind
+- uid: Kevlar.CallbackErrorKind.CircuitMonitor
+  commentId: F:Kevlar.CallbackErrorKind.CircuitMonitor
+  id: CircuitMonitor
+  parent: Kevlar.CallbackErrorKind
+  langs:
+  - csharp
+  - vb
+  name: CircuitMonitor
+  nameWithType: CallbackErrorKind.CircuitMonitor
+  fullName: Kevlar.CallbackErrorKind.CircuitMonitor
+  type: Field
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: A circuit-breaker monitor subscriber.
+  example: []
+  syntax:
+    content: CircuitMonitor = 3
+    return:
+      type: Kevlar.CallbackErrorKind
+- uid: Kevlar.CallbackErrorKind.Hedge
+  commentId: F:Kevlar.CallbackErrorKind.Hedge
+  id: Hedge
+  parent: Kevlar.CallbackErrorKind
+  langs:
+  - csharp
+  - vb
+  name: Hedge
+  nameWithType: CallbackErrorKind.Hedge
+  fullName: Kevlar.CallbackErrorKind.Hedge
+  type: Field
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: A hedge notification.
+  example: []
+  syntax:
+    content: Hedge = 4
+    return:
+      type: Kevlar.CallbackErrorKind
+- uid: Kevlar.CallbackErrorKind.Fallback
+  commentId: F:Kevlar.CallbackErrorKind.Fallback
+  id: Fallback
+  parent: Kevlar.CallbackErrorKind
+  langs:
+  - csharp
+  - vb
+  name: Fallback
+  nameWithType: CallbackErrorKind.Fallback
+  fullName: Kevlar.CallbackErrorKind.Fallback
+  type: Field
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: A fallback notification.
+  example: []
+  syntax:
+    content: Fallback = 5
+    return:
+      type: Kevlar.CallbackErrorKind
+- uid: Kevlar.CallbackErrorKind.ConcurrencyLimitRejected
+  commentId: F:Kevlar.CallbackErrorKind.ConcurrencyLimitRejected
+  id: ConcurrencyLimitRejected
+  parent: Kevlar.CallbackErrorKind
+  langs:
+  - csharp
+  - vb
+  name: ConcurrencyLimitRejected
+  nameWithType: CallbackErrorKind.ConcurrencyLimitRejected
+  fullName: Kevlar.CallbackErrorKind.ConcurrencyLimitRejected
+  type: Field
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: A concurrency-limit rejection notification.
+  example: []
+  syntax:
+    content: ConcurrencyLimitRejected = 6
+    return:
+      type: Kevlar.CallbackErrorKind
+- uid: Kevlar.CallbackErrorKind.RateLimitRejected
+  commentId: F:Kevlar.CallbackErrorKind.RateLimitRejected
+  id: RateLimitRejected
+  parent: Kevlar.CallbackErrorKind
+  langs:
+  - csharp
+  - vb
+  name: RateLimitRejected
+  nameWithType: CallbackErrorKind.RateLimitRejected
+  fullName: Kevlar.CallbackErrorKind.RateLimitRejected
+  type: Field
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: A built-in rate-limit rejection notification.
+  example: []
+  syntax:
+    content: RateLimitRejected = 7
+    return:
+      type: Kevlar.CallbackErrorKind
+- uid: Kevlar.CallbackErrorKind.RateLimiterAdapterRejected
+  commentId: F:Kevlar.CallbackErrorKind.RateLimiterAdapterRejected
+  id: RateLimiterAdapterRejected
+  parent: Kevlar.CallbackErrorKind
+  langs:
+  - csharp
+  - vb
+  name: RateLimiterAdapterRejected
+  nameWithType: CallbackErrorKind.RateLimiterAdapterRejected
+  fullName: Kevlar.CallbackErrorKind.RateLimiterAdapterRejected
+  type: Field
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: A System.Threading.RateLimiting adapter rejection notification.
+  example: []
+  syntax:
+    content: RateLimiterAdapterRejected = 8
+    return:
+      type: Kevlar.CallbackErrorKind
+- uid: Kevlar.CallbackErrorKind.ChaosInjected
+  commentId: F:Kevlar.CallbackErrorKind.ChaosInjected
+  id: ChaosInjected
+  parent: Kevlar.CallbackErrorKind
+  langs:
+  - csharp
+  - vb
+  name: ChaosInjected
+  nameWithType: CallbackErrorKind.ChaosInjected
+  fullName: Kevlar.CallbackErrorKind.ChaosInjected
+  type: Field
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: A chaos-injection notification.
+  example: []
+  syntax:
+    content: ChaosInjected = 9
+    return:
+      type: Kevlar.CallbackErrorKind
+references:
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: Kevlar.CallbackErrorKind
+  commentId: T:Kevlar.CallbackErrorKind
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.CallbackErrorKind.html
+  name: CallbackErrorKind
+  nameWithType: CallbackErrorKind
+  fullName: Kevlar.CallbackErrorKind

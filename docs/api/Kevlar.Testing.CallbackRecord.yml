@@ -8,6 +8,7 @@ items:
   - Kevlar.Testing.CallbackRecord.AttemptNumber
   - Kevlar.Testing.CallbackRecord.ConsecutiveFailures
   - Kevlar.Testing.CallbackRecord.Delay
+  - Kevlar.Testing.CallbackRecord.ErrorKind
   - Kevlar.Testing.CallbackRecord.Exception
   - Kevlar.Testing.CallbackRecord.FailureCount
   - Kevlar.Testing.CallbackRecord.FailureRate
@@ -389,6 +390,29 @@ items:
       type: System.Nullable{System.Int32}
     content.vb: Public ReadOnly Property ConsecutiveFailures As Integer?
   overload: Kevlar.Testing.CallbackRecord.ConsecutiveFailures*
+- uid: Kevlar.Testing.CallbackRecord.ErrorKind
+  commentId: P:Kevlar.Testing.CallbackRecord.ErrorKind
+  id: ErrorKind
+  parent: Kevlar.Testing.CallbackRecord
+  langs:
+  - csharp
+  - vb
+  name: ErrorKind
+  nameWithType: CallbackRecord.ErrorKind
+  fullName: Kevlar.Testing.CallbackRecord.ErrorKind
+  type: Property
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: The failed callback family, when this is a callback-error record.
+  example: []
+  syntax:
+    content: public CallbackErrorKind? ErrorKind { get; }
+    parameters: []
+    return:
+      type: System.Nullable{Kevlar.CallbackErrorKind}
+    content.vb: Public ReadOnly Property ErrorKind As CallbackErrorKind?
+  overload: Kevlar.Testing.CallbackRecord.ErrorKind*
 references:
 - uid: Kevlar.Testing
   commentId: N:Kevlar.Testing
@@ -909,3 +933,29 @@ references:
   name: ConsecutiveFailures
   nameWithType: CallbackRecord.ConsecutiveFailures
   fullName: Kevlar.Testing.CallbackRecord.ConsecutiveFailures
+- uid: Kevlar.Testing.CallbackRecord.ErrorKind*
+  commentId: Overload:Kevlar.Testing.CallbackRecord.ErrorKind
+  isExternal: true
+  href: Kevlar.Testing.CallbackRecord.html#Kevlar_Testing_CallbackRecord_ErrorKind
+  name: ErrorKind
+  nameWithType: CallbackRecord.ErrorKind
+  fullName: Kevlar.Testing.CallbackRecord.ErrorKind
+- uid: System.Nullable{Kevlar.CallbackErrorKind}
+  commentId: T:System.Nullable{Kevlar.CallbackErrorKind}
+  parent: System
+  definition: System.Nullable`1
+  name: CallbackErrorKind?
+  nameWithType: CallbackErrorKind?
+  fullName: Kevlar.CallbackErrorKind?
+  spec.csharp:
+  - uid: Kevlar.CallbackErrorKind
+    name: CallbackErrorKind
+    isExternal: true
+    href: Kevlar.CallbackErrorKind.html
+  - name: '?'
+  spec.vb:
+  - uid: Kevlar.CallbackErrorKind
+    name: CallbackErrorKind
+    isExternal: true
+    href: Kevlar.CallbackErrorKind.html
+  - name: '?'

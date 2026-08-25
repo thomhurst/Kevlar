@@ -103,8 +103,9 @@ only each returned lease.
 
 The delegate must return a fresh acquired or rejected lease for each call. Rejection metrics and
 hooks follow the built-in contract: metric first, then `OnRejected`, then awaited
-`OnRejectedAsync`; a hook failure replaces `RateLimiterAdapterRejectedException`. Cancellation while
-queued is cancellation, not rejection, so hooks do not run.
+`OnRejectedAsync`. Hook failures are reported through `KevlarDiagnostics.OnCallbackError`, and
+`RateLimiterAdapterRejectedException` remains the outcome. Cancellation while queued is cancellation,
+not rejection, so hooks do not run.
 
 ## Options
 
@@ -131,9 +132,9 @@ With `QueueLimit > 0`, up to that many executions reserve a future permit and **
 For an actual rejection, Kevlar records rejection metrics, invokes `OnRejected`, awaits
 `OnRejectedAsync`, then surfaces `RateLimitExceededException`. The event includes `RetryAfter`,
 the configured permit/window/burst/queue values, the strategy index, and `KevlarContext`.
-A synchronous callback failure skips the asynchronous callback; either callback's failure replaces
-the limiter exception and preserves its exception instance. Queued cancellation is cancellation,
-not rejection, so it invokes neither hook.
+Callback failures are reported through `KevlarDiagnostics.OnCallbackError`; both callbacks still
+run and `RateLimitExceededException` remains the rejection outcome. Queued cancellation is
+cancellation, not rejection, so it invokes neither hook.
 
 Callback contexts are pooled. Do not retain `RateLimitRejectedEvent.Context` after the synchronous
 callback or returned `ValueTask` completes. Hooks run outside limiter locks and may run concurrently

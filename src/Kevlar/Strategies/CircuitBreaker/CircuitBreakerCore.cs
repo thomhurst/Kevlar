@@ -1105,23 +1105,12 @@ internal sealed class CircuitBreakerCore
             AddFailure(ref failure, exception);
         }
 
-        try
-        {
-            _onStateChanged?.Invoke(stateChange);
-        }
-        catch (Exception exception)
-        {
-            AddFailure(ref failure, exception);
-        }
-
-        try
-        {
-            _monitor?.Raise(in stateChange);
-        }
-        catch (Exception monitorFailure)
-        {
-            AddFailure(ref failure, monitorFailure);
-        }
+        CallbackInvoker.Invoke(
+            _onStateChanged,
+            stateChange,
+            CallbackErrorKind.CircuitStateChanged,
+            stateChange.Context);
+        _monitor?.Raise(in stateChange);
 
         return failure;
     }
@@ -1148,40 +1137,17 @@ internal sealed class CircuitBreakerCore
             AddFailure(ref failure, exception);
         }
 
-        try
-        {
-            _onStateChanged?.Invoke(stateChange);
-        }
-        catch (Exception exception)
-        {
-            AddFailure(ref failure, exception);
-        }
-
-        try
-        {
-            var notification = _onStateChangedAsync!(stateChange);
-            if (!notification.IsCompletedSuccessfully)
-            {
-                await notification.ConfigureAwait(false);
-            }
-            else
-            {
-                notification.GetAwaiter().GetResult();
-            }
-        }
-        catch (Exception exception)
-        {
-            AddFailure(ref failure, exception);
-        }
-
-        try
-        {
-            _monitor?.Raise(in stateChange);
-        }
-        catch (Exception monitorFailure)
-        {
-            AddFailure(ref failure, monitorFailure);
-        }
+        CallbackInvoker.Invoke(
+            _onStateChanged,
+            stateChange,
+            CallbackErrorKind.CircuitStateChanged,
+            stateChange.Context);
+        await CallbackInvoker.InvokeAsync(
+            _onStateChangedAsync,
+            stateChange,
+            CallbackErrorKind.CircuitStateChanged,
+            stateChange.Context).ConfigureAwait(false);
+        _monitor?.Raise(in stateChange);
 
         return failure;
     }

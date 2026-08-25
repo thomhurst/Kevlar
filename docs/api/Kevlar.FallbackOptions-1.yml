@@ -31,7 +31,9 @@ items:
 
     <xref href="Kevlar.FallbackOptions%601.OnFallback" data-throw-if-not-resolved="false"></xref>, awaits <xref href="Kevlar.FallbackOptions%601.OnFallbackAsync" data-throw-if-not-resolved="false"></xref>, and then runs the recovery
 
-    factory. A notification failure skips recovery and becomes the execution outcome.
+    factory. Notification failures are reported through <xref href="Kevlar.KevlarDiagnostics.OnCallbackError" data-throw-if-not-resolved="false"></xref>
+
+    and do not skip recovery.
   example: []
   syntax:
     content: public sealed class FallbackOptions<TResult>
@@ -296,6 +298,13 @@ references:
   fullName: Kevlar.FallbackOptions<TResult>.OnFallbackAsync
   nameWithType.vb: FallbackOptions(Of TResult).OnFallbackAsync
   fullName.vb: Kevlar.FallbackOptions(Of TResult).OnFallbackAsync
+- uid: Kevlar.KevlarDiagnostics.OnCallbackError
+  commentId: E:Kevlar.KevlarDiagnostics.OnCallbackError
+  isExternal: true
+  href: Kevlar.KevlarDiagnostics.html#Kevlar_KevlarDiagnostics_OnCallbackError
+  name: OnCallbackError
+  nameWithType: KevlarDiagnostics.OnCallbackError
+  fullName: Kevlar.KevlarDiagnostics.OnCallbackError
 - uid: Kevlar
   commentId: N:Kevlar
   isExternal: true

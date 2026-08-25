@@ -481,7 +481,7 @@ public class RateLimiterAdapterTests
     }
 
     [Test]
-    public async Task Callback_Failure_Replaces_Rejection_And_Skips_Later_Hook()
+    public async Task Callback_Failure_Preserves_Rejection_And_Runs_Later_Hook()
     {
         var callbackFailure = new InvalidOperationException("callback failed");
         var asyncCalls = 0;
@@ -499,12 +499,12 @@ public class RateLimiterAdapterTests
 
         var outcome = await shield.ExecuteOutcomeAsync(static _ => new ValueTask<int>(42));
 
-        await Assert.That(ReferenceEquals(outcome.Exception, callbackFailure)).IsTrue();
-        await Assert.That(asyncCalls).IsEqualTo(0);
+        await Assert.That(outcome.Exception).IsTypeOf<RateLimiterAdapterRejectedException>();
+        await Assert.That(asyncCalls).IsEqualTo(1);
     }
 
     [Test]
-    public async Task Asynchronous_Callback_Failure_Replaces_Rejection()
+    public async Task Asynchronous_Callback_Failure_Preserves_Rejection()
     {
         var callbackFailure = new InvalidOperationException("async callback failed");
         var shield = Shield.Empty.UseRateLimiter(
@@ -517,7 +517,7 @@ public class RateLimiterAdapterTests
 
         var outcome = await shield.ExecuteOutcomeAsync(static _ => new ValueTask<int>(42));
 
-        await Assert.That(ReferenceEquals(outcome.Exception, callbackFailure)).IsTrue();
+        await Assert.That(outcome.Exception).IsTypeOf<RateLimiterAdapterRejectedException>();
     }
 
     [Test]

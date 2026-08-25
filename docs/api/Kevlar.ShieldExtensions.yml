@@ -945,7 +945,7 @@ items:
     Runs <code class="paramref">fallback</code> in place of handled failures and configures notifications.
 
     Applies to void executions only.
-  remarks: Runs <xref href="Kevlar.FallbackOptions.OnFallback" data-throw-if-not-resolved="false"></xref>, then <xref href="Kevlar.FallbackOptions.OnFallbackAsync" data-throw-if-not-resolved="false"></xref>, before recovery. A notification failure skips recovery.
+  remarks: Runs <xref href="Kevlar.FallbackOptions.OnFallback" data-throw-if-not-resolved="false"></xref>, then <xref href="Kevlar.FallbackOptions.OnFallbackAsync" data-throw-if-not-resolved="false"></xref>, before recovery. Notification failures are reported and recovery continues.
   example: []
   syntax:
     content: public static Shield Fallback(this Shield shield, Func<Exception, CancellationToken, ValueTask> fallback, Action<FallbackOptions> configure)
@@ -1020,7 +1020,7 @@ items:
     Runs <code class="paramref">fallback</code> in place of handled failures and configures notifications.
 
     Applies to void executions only.
-  remarks: Runs <xref href="Kevlar.FallbackOptions.OnFallback" data-throw-if-not-resolved="false"></xref>, then <xref href="Kevlar.FallbackOptions.OnFallbackAsync" data-throw-if-not-resolved="false"></xref>, before recovery. A notification failure skips recovery.
+  remarks: Runs <xref href="Kevlar.FallbackOptions.OnFallback" data-throw-if-not-resolved="false"></xref>, then <xref href="Kevlar.FallbackOptions.OnFallbackAsync" data-throw-if-not-resolved="false"></xref>, before recovery. Notification failures are reported and recovery continues.
   example: []
   syntax:
     content: public static Shield Fallback(this Shield shield, Func<CancellationToken, ValueTask> fallback, Action<FallbackOptions> configure)

@@ -5,7 +5,7 @@ namespace Kevlar.Tests;
 public class FallbackContractTests
 {
     [Test]
-    public async Task OnFallback_Failure_Skips_Factory_And_Later_Execution_Recovers()
+    public async Task OnFallback_Failure_Does_Not_Skip_Recovery()
     {
         var callbackFailure = new ApplicationException("callback failed");
         var callbackCalls = 0;
@@ -30,10 +30,10 @@ public class FallbackContractTests
         var recovered = await shield.ExecuteAsync<int>(_ =>
             throw new InvalidOperationException("original"));
 
-        await Assert.That(ReferenceEquals(failed.Exception, callbackFailure)).IsTrue();
+        await Assert.That(failed.Result).IsEqualTo(42);
         await Assert.That(recovered).IsEqualTo(42);
         await Assert.That(callbackCalls).IsEqualTo(2);
-        await Assert.That(factoryCalls).IsEqualTo(1);
+        await Assert.That(factoryCalls).IsEqualTo(2);
     }
 
     [Test]

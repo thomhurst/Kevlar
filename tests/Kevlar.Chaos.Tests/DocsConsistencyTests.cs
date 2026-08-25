@@ -48,7 +48,12 @@ public class DocsConsistencyTests
     private static async Task ExerciseEveryInstrumentAsync()
     {
         var retryAttempts = 0;
-        await Shield.Retry(1, Backoff.None)
+        await Shield.Retry(options =>
+            {
+                options.MaxRetries = 1;
+                options.Backoff = Backoff.None;
+                options.OnRetry = _ => throw new IOException("docs callback");
+            })
             .WithName("docs-retry")
             .ExecuteAsync<int>(_ =>
             {

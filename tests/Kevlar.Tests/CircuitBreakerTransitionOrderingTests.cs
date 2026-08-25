@@ -179,11 +179,12 @@ public class CircuitBreakerTransitionOrderingTests
         });
         monitor.StateChanged += change => observed = change;
 
+        var operationFailure = new InvalidOperationException("operation");
         var thrown = await Assert.That(async () =>
-                await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException("operation")))
+                await shield.ExecuteAsync<int>(_ => throw operationFailure))
             .Throws<InvalidOperationException>();
 
-        await Assert.That(ReferenceEquals(thrown, callbackFailure)).IsTrue();
+        await Assert.That(ReferenceEquals(thrown, operationFailure)).IsTrue();
         await Assert.That(observed?.To).IsEqualTo(CircuitState.Open);
         await Assert.That(monitor.State).IsEqualTo(CircuitState.Open);
     }
@@ -209,11 +210,12 @@ public class CircuitBreakerTransitionOrderingTests
             }
         };
 
+        var operationFailure = new InvalidOperationException("operation");
         var thrown = await Assert.That(async () =>
-                await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException("operation")))
+                await shield.ExecuteAsync<int>(_ => throw operationFailure))
             .Throws<InvalidOperationException>();
 
-        await Assert.That(ReferenceEquals(thrown, monitorFailure)).IsTrue();
+        await Assert.That(ReferenceEquals(thrown, operationFailure)).IsTrue();
         await Assert.That(optionObserved).IsTrue();
         await Assert.That(monitor.State).IsEqualTo(CircuitState.Open);
 
@@ -222,7 +224,7 @@ public class CircuitBreakerTransitionOrderingTests
     }
 
     [Test]
-    public async Task Failures_From_Both_Observers_Are_Aggregated()
+    public async Task Failures_From_Both_Observers_Do_Not_Replace_The_Operation()
     {
         var monitor = new CircuitBreakerMonitor();
         var optionFailure = new InvalidOperationException("option callback");
@@ -236,13 +238,12 @@ public class CircuitBreakerTransitionOrderingTests
         });
         monitor.StateChanged += _ => throw monitorFailure;
 
+        var operationFailure = new InvalidOperationException("operation");
         var thrown = await Assert.That(async () =>
-                await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException("operation")))
-            .Throws<AggregateException>();
+                await shield.ExecuteAsync<int>(_ => throw operationFailure))
+            .Throws<InvalidOperationException>();
 
-        await Assert.That(thrown!.InnerExceptions.Count).IsEqualTo(2);
-        await Assert.That(ReferenceEquals(thrown.InnerExceptions[0], optionFailure)).IsTrue();
-        await Assert.That(ReferenceEquals(thrown.InnerExceptions[1], monitorFailure)).IsTrue();
+        await Assert.That(ReferenceEquals(thrown, operationFailure)).IsTrue();
         await Assert.That(monitor.State).IsEqualTo(CircuitState.Open);
     }
 
@@ -291,7 +292,7 @@ public class CircuitBreakerTransitionOrderingTests
     }
 
     [Test]
-    public async Task HalfOpen_Observer_Failure_Releases_The_Probe_Slot()
+    public async Task HalfOpen_Observer_Failure_Does_Not_Abandon_The_Probe()
     {
         var timeProvider = new FakeTimeProvider();
         var monitor = new CircuitBreakerMonitor();
@@ -315,11 +316,9 @@ public class CircuitBreakerTransitionOrderingTests
         await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException("operation"));
         timeProvider.Advance(TimeSpan.FromSeconds(1));
 
-        var thrown = await Assert.That(async () =>
-                await shield.ExecuteAsync(_ => new ValueTask<int>(1)))
-            .Throws<InvalidOperationException>();
-        await Assert.That(ReferenceEquals(thrown, callbackFailure)).IsTrue();
-        await Assert.That(monitor.State).IsEqualTo(CircuitState.HalfOpen);
+        var probe = await shield.ExecuteAsync(_ => new ValueTask<int>(1));
+        await Assert.That(probe).IsEqualTo(1);
+        await Assert.That(monitor.State).IsEqualTo(CircuitState.Closed);
 
         var result = await shield.ExecuteAsync(_ => new ValueTask<int>(42));
         await Assert.That(result).IsEqualTo(42);
@@ -365,10 +364,8 @@ public class CircuitBreakerTransitionOrderingTests
         await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException("open"));
         timeProvider.Advance(TimeSpan.FromSeconds(1));
 
-        var thrown = await Assert.That(async () =>
-                await shield.ExecuteAsync(_ => new ValueTask<int>(1)))
-            .Throws<InvalidOperationException>();
-        await Assert.That(ReferenceEquals(thrown, callbackFailure)).IsTrue();
+        var staleProbe = await shield.ExecuteAsync(_ => new ValueTask<int>(1));
+        await Assert.That(staleProbe).IsEqualTo(1);
         await Assert.That(monitor.State).IsEqualTo(CircuitState.HalfOpen);
 
         var rejected = await shield.ExecuteOutcomeAsync(_ => new ValueTask<int>(2));
@@ -457,10 +454,7 @@ public class CircuitBreakerTransitionOrderingTests
 
         releaseFirstObserver.TrySetResult();
         await first.WaitAsync(TimeSpan.FromSeconds(5));
-        var thrown = await Assert.That(async () => await second.WaitAsync(TimeSpan.FromSeconds(5)))
-            .Throws<InvalidOperationException>();
-
-        await Assert.That(ReferenceEquals(thrown, nestedFailure)).IsTrue();
+        await second.WaitAsync(TimeSpan.FromSeconds(5));
         await Assert.That(monitor.State).IsEqualTo(CircuitState.Isolated);
     }
 

@@ -55,7 +55,29 @@ public sealed class CircuitBreakerMonitor
         }
     }
 
-    internal void Raise(in CircuitBreakerStateChangedEvent stateChangedEvent) => StateChanged?.Invoke(stateChangedEvent);
+    internal void Raise(in CircuitBreakerStateChangedEvent stateChangedEvent)
+    {
+        var handlers = StateChanged;
+        if (handlers is null)
+        {
+            return;
+        }
+
+        foreach (Action<CircuitBreakerStateChangedEvent> handler in handlers.GetInvocationList())
+        {
+            try
+            {
+                handler(stateChangedEvent);
+            }
+            catch (Exception exception)
+            {
+                KevlarDiagnostics.ReportCallbackError(
+                    CallbackErrorKind.CircuitMonitor,
+                    stateChangedEvent.Context,
+                    exception);
+            }
+        }
+    }
 
     private CircuitBreakerCore BoundCore() =>
         _core ?? throw new InvalidOperationException(

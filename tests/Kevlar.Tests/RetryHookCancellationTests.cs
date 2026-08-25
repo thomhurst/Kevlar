@@ -165,7 +165,7 @@ public class RetryHookCancellationTests
     }
 
     [Test]
-    public async Task OnRetry_Failure_Skips_Async_Hook_And_Attempts()
+    public async Task OnRetry_Failure_Does_Not_Skip_Async_Hook_Or_Attempts()
     {
         var callbackFailure = new FormatException("sync hook failed");
         var attempts = 0;
@@ -188,13 +188,13 @@ public class RetryHookCancellationTests
             throw new InvalidOperationException();
         });
 
-        await Assert.That(ReferenceEquals(outcome.Exception, callbackFailure)).IsTrue();
-        await Assert.That(attempts).IsEqualTo(1);
-        await Assert.That(asynchronousHooks).IsEqualTo(0);
+        await Assert.That(outcome.Exception).IsTypeOf<InvalidOperationException>();
+        await Assert.That(attempts).IsEqualTo(4);
+        await Assert.That(asynchronousHooks).IsEqualTo(3);
     }
 
     [Test]
-    public async Task OnRetryAsync_Failure_Surfaces_The_Exact_Exception()
+    public async Task OnRetryAsync_Failure_Does_Not_Replace_The_Action_Failure()
     {
         var callbackFailure = new FormatException("async hook failed");
         var attempts = 0;
@@ -211,12 +211,12 @@ public class RetryHookCancellationTests
             throw new InvalidOperationException();
         });
 
-        await Assert.That(ReferenceEquals(outcome.Exception, callbackFailure)).IsTrue();
-        await Assert.That(attempts).IsEqualTo(1);
+        await Assert.That(outcome.Exception).IsTypeOf<InvalidOperationException>();
+        await Assert.That(attempts).IsEqualTo(4);
     }
 
     [Test]
-    public async Task OnRetryAsync_Cancellation_Surfaces_The_Exact_Exception()
+    public async Task OnRetryAsync_Cancellation_Does_Not_Replace_The_Action_Failure()
     {
         using var callbackCancellation = new CancellationTokenSource();
         callbackCancellation.Cancel();
@@ -235,8 +235,8 @@ public class RetryHookCancellationTests
             throw new InvalidOperationException();
         });
 
-        await Assert.That(ReferenceEquals(outcome.Exception, cancellationFailure)).IsTrue();
-        await Assert.That(attempts).IsEqualTo(1);
+        await Assert.That(outcome.Exception).IsTypeOf<InvalidOperationException>();
+        await Assert.That(attempts).IsEqualTo(4);
     }
 
     [Test]

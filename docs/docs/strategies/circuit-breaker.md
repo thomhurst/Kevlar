@@ -139,8 +139,9 @@ and an empty property bag. Callbacks run outside the circuit lock, so they can r
 the synchronous or asynchronous monitor controls; a reentrant transition is queued behind the
 transition currently being delivered. Use `ResetAsync()` and `IsolateAsync()` when asynchronous
 transition callbacks are configured so the calling thread is not blocked. If an observer throws,
-later observers still run and the circuit keeps its new, usable state. One callback failure is
-rethrown unchanged after delivery; multiple failures are combined in an `AggregateException`.
+later observers still run and the circuit keeps its new, usable state. Observer failures are
+reported through `KevlarDiagnostics.OnCallbackError` and never replace an execution outcome or
+block a transition.
 
 ## Share the circuit deliberately
 

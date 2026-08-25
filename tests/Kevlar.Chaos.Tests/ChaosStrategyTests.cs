@@ -561,7 +561,7 @@ public class ChaosStrategyTests
 
     [Test]
     [NotInParallel]
-    public async Task Injection_Callback_Failure_Is_Preserved()
+    public async Task Injection_Callback_Failure_Does_Not_Replace_The_Outcome()
     {
         var injected = new TestException("callback");
         var shieldName = $"callback-failure-{Guid.NewGuid():N}";
@@ -596,8 +596,8 @@ public class ChaosStrategyTests
 
         var outcome = await shield.ExecuteOutcomeAsync(static _ => new ValueTask<int>(1));
 
-        await Assert.That(ReferenceEquals(outcome.Exception, injected)).IsTrue();
-        await Assert.That(measurements).IsEqualTo(0);
+        await Assert.That(outcome.Result).IsEqualTo(1);
+        await Assert.That(measurements).IsEqualTo(1);
     }
 
     [Test]

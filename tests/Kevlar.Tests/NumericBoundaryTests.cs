@@ -172,7 +172,7 @@ public class NumericBoundaryTests
     [Test]
     public async Task Retry_Generator_Delay_Is_Clamped_Before_Callbacks()
     {
-        var callbackFailure = new InvalidOperationException("stop before waiting");
+        using var cancellation = new CancellationTokenSource();
         TimeSpan? observedDelay = null;
         var shield = Shield.Retry(options =>
         {
@@ -182,14 +182,15 @@ public class NumericBoundaryTests
             options.OnRetry = retry =>
             {
                 observedDelay = retry.Delay;
-                throw callbackFailure;
+                cancellation.Cancel();
             };
         });
 
-        var caught = await Assert.That(async () => await shield.ExecuteAsync<int>(_ => throw new ArgumentException()))
-            .Throws<InvalidOperationException>();
+        await Assert.That(async () => await shield.ExecuteAsync<int>(
+                _ => throw new ArgumentException(),
+                cancellation.Token))
+            .Throws<OperationCanceledException>();
 
-        await Assert.That(ReferenceEquals(caught, callbackFailure)).IsTrue();
         await Assert.That(observedDelay).IsEqualTo(MaximumRuntimeDelay);
     }
 

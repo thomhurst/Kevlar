@@ -336,7 +336,7 @@ public static class ShieldExtensions
     /// Runs <paramref name="fallback"/> in place of handled failures and configures notifications.
     /// Applies to void executions only.
     /// </summary>
-    /// <remarks>Runs <see cref="FallbackOptions.OnFallback"/>, then <see cref="FallbackOptions.OnFallbackAsync"/>, before recovery. A notification failure skips recovery.</remarks>
+    /// <remarks>Runs <see cref="FallbackOptions.OnFallback"/>, then <see cref="FallbackOptions.OnFallbackAsync"/>, before recovery. Notification failures are reported and recovery continues.</remarks>
     public static Shield Fallback(
         this Shield shield,
         Func<Exception, CancellationToken, ValueTask> fallback,
@@ -375,7 +375,7 @@ public static class ShieldExtensions
     /// Runs <paramref name="fallback"/> in place of handled failures and configures notifications.
     /// Applies to void executions only.
     /// </summary>
-    /// <remarks>Runs <see cref="FallbackOptions.OnFallback"/>, then <see cref="FallbackOptions.OnFallbackAsync"/>, before recovery. A notification failure skips recovery.</remarks>
+    /// <remarks>Runs <see cref="FallbackOptions.OnFallback"/>, then <see cref="FallbackOptions.OnFallbackAsync"/>, before recovery. Notification failures are reported and recovery continues.</remarks>
     public static Shield Fallback(
         this Shield shield,
         Func<CancellationToken, ValueTask> fallback,

@@ -29,9 +29,9 @@ items:
   remarks: >-
     When an execution is rejected, rejection metrics are recorded, <xref href="Kevlar.ConcurrencyLimitOptions.OnRejected" data-throw-if-not-resolved="false"></xref> runs,
 
-    and then <xref href="Kevlar.ConcurrencyLimitOptions.OnRejectedAsync" data-throw-if-not-resolved="false"></xref> runs and is awaited. A callback failure replaces the
+    and then <xref href="Kevlar.ConcurrencyLimitOptions.OnRejectedAsync" data-throw-if-not-resolved="false"></xref> runs and is awaited. Callback failures are reported
 
-    <xref href="Kevlar.ConcurrencyLimitExceededException" data-throw-if-not-resolved="false"></xref> that would otherwise be returned.
+    through <xref href="Kevlar.KevlarDiagnostics.OnCallbackError" data-throw-if-not-resolved="false"></xref> and do not replace the rejection.
   example: []
   syntax:
     content: public sealed class ConcurrencyLimitOptions
@@ -187,13 +187,13 @@ references:
   name: OnRejectedAsync
   nameWithType: ConcurrencyLimitOptions.OnRejectedAsync
   fullName: Kevlar.ConcurrencyLimitOptions.OnRejectedAsync
-- uid: Kevlar.ConcurrencyLimitExceededException
-  commentId: T:Kevlar.ConcurrencyLimitExceededException
+- uid: Kevlar.KevlarDiagnostics.OnCallbackError
+  commentId: E:Kevlar.KevlarDiagnostics.OnCallbackError
   isExternal: true
-  href: Kevlar.ConcurrencyLimitExceededException.html
-  name: ConcurrencyLimitExceededException
-  nameWithType: ConcurrencyLimitExceededException
-  fullName: Kevlar.ConcurrencyLimitExceededException
+  href: Kevlar.KevlarDiagnostics.html#Kevlar_KevlarDiagnostics_OnCallbackError
+  name: OnCallbackError
+  nameWithType: KevlarDiagnostics.OnCallbackError
+  fullName: Kevlar.KevlarDiagnostics.OnCallbackError
 - uid: Kevlar
   commentId: N:Kevlar
   isExternal: true

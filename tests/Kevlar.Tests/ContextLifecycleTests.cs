@@ -199,7 +199,7 @@ public class ContextLifecycleTests
             case ExitPath.CallbackFailure:
                 await Assert.That(async () => await shield.ExecuteAsync<int>(
                     _ => throw new InvalidOperationException("handled"),
-                    cancellation.Token)).Throws<ApplicationException>();
+                    cancellation.Token)).Throws<InvalidOperationException>();
                 break;
             case ExitPath.OutcomeFailure:
                 var outcome = await shield.ExecuteOutcomeAsync<int>(

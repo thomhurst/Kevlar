@@ -522,11 +522,12 @@ public class CircuitBreakerDynamicOptionsTests
         });
         monitor.StateChanged += change => observed = change.To;
 
+        var operationFailure = new ApplicationException("operation");
         var thrown = await Assert.That(async () =>
-                await shield.ExecuteAsync<int>(_ => throw new ApplicationException("operation")))
-            .Throws<InvalidOperationException>();
+                await shield.ExecuteAsync<int>(_ => throw operationFailure))
+            .Throws<ApplicationException>();
 
-        await Assert.That(ReferenceEquals(thrown, callbackFailure)).IsTrue();
+        await Assert.That(ReferenceEquals(thrown, operationFailure)).IsTrue();
         await Assert.That(observed).IsEqualTo(CircuitState.Open);
         await Assert.That(monitor.State).IsEqualTo(CircuitState.Open);
     }
@@ -564,7 +565,7 @@ public class CircuitBreakerDynamicOptionsTests
     }
 
     [Test]
-    public async Task Dynamic_Breaker_Releases_Probe_When_Synchronous_HalfOpen_Callback_Fails()
+    public async Task Dynamic_Breaker_Records_Probe_When_Synchronous_HalfOpen_Callback_Fails()
     {
         var timeProvider = new FakeTimeProvider();
         var callbackFailure = new InvalidOperationException("half-open callback");
@@ -587,16 +588,13 @@ public class CircuitBreakerDynamicOptionsTests
         await shield.ExecuteOutcomeAsync<int>(_ => throw new ApplicationException("open"));
         timeProvider.Advance(TimeSpan.FromSeconds(1));
 
-        var thrown = await Assert.That(async () =>
-                await shield.ExecuteAsync(_ => new ValueTask<int>(1)))
-            .Throws<InvalidOperationException>();
-        await Assert.That(ReferenceEquals(thrown, callbackFailure)).IsTrue();
+        await Assert.That(await shield.ExecuteAsync(_ => new ValueTask<int>(1))).IsEqualTo(1);
 
         await Assert.That(await shield.ExecuteAsync(_ => new ValueTask<int>(42))).IsEqualTo(42);
     }
 
     [Test]
-    public async Task Dynamic_Breaker_Releases_Probe_When_Async_HalfOpen_Callback_Fails()
+    public async Task Dynamic_Breaker_Records_Probe_When_Async_HalfOpen_Callback_Fails()
     {
         var timeProvider = new FakeTimeProvider();
         var expected = new InvalidOperationException("async half-open callback");
@@ -621,10 +619,7 @@ public class CircuitBreakerDynamicOptionsTests
         await shield.ExecuteOutcomeAsync<int>(_ => throw new ApplicationException("open"));
         timeProvider.Advance(TimeSpan.FromSeconds(1));
 
-        var thrown = await Assert.That(async () =>
-                await shield.ExecuteAsync(_ => new ValueTask<int>(1)))
-            .Throws<InvalidOperationException>();
-        await Assert.That(ReferenceEquals(thrown, expected)).IsTrue();
+        await Assert.That(await shield.ExecuteAsync(_ => new ValueTask<int>(1))).IsEqualTo(1);
         await Assert.That(await shield.ExecuteAsync(_ => new ValueTask<int>(42))).IsEqualTo(42);
     }
 

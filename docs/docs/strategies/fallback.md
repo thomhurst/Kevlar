@@ -87,9 +87,9 @@ callback to `options.OnFallback` as shown above.
 
 The `FallbackEvent<T>` carries the failure that triggered it as a typed `Outcome<T>` — `Outcome.Exception` when an exception was handled, `Outcome.Result` when a result value was. No casting, no boxing.
 
-`OnFallback` runs before the fallback value or factory. If the callback throws, its exact
-exception becomes the pipeline outcome and the factory is not called. A later execution is
-unaffected. Async factory failures are likewise preserved as the pipeline outcome.
+`OnFallback` runs before the fallback value or factory. Callback failures are reported through
+`KevlarDiagnostics.OnCallbackError`; they do not replace the protected outcome or skip recovery.
+Fallback factory failures are preserved as the pipeline outcome.
 
 ## Notifications
 
@@ -110,8 +110,8 @@ var shield = Shield.For<Config>()
 ```
 
 Kevlar records its fallback metric, invokes `OnFallback`, awaits `OnFallbackAsync`, then runs
-the fallback value or factory. A notification exception or cancellation is preserved as the exact
-pipeline outcome and skips recovery. Caller cancellation is exposed through `e.Context` and the
+the fallback value or factory. Notification failures are reported through
+`KevlarDiagnostics.OnCallbackError` and do not skip recovery. Caller cancellation is exposed through `e.Context` and the
 token passed to the recovery factory; Kevlar does not forcibly stop either callback when user code
 chooses not to observe that token.
 

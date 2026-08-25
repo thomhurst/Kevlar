@@ -1,3 +1,22 @@
+Kevlar.CallbackErrorEvent
+Kevlar.CallbackErrorEvent.CallbackErrorEvent() -> void
+Kevlar.CallbackErrorEvent.Exception.get -> System.Exception!
+Kevlar.CallbackErrorEvent.Kind.get -> Kevlar.CallbackErrorKind
+Kevlar.CallbackErrorEvent.ShieldName.get -> string?
+Kevlar.CallbackErrorEvent.StrategyIndex.get -> int
+Kevlar.CallbackErrorKind
+Kevlar.CallbackErrorKind.ChaosInjected = 9 -> Kevlar.CallbackErrorKind
+Kevlar.CallbackErrorKind.CircuitMonitor = 3 -> Kevlar.CallbackErrorKind
+Kevlar.CallbackErrorKind.CircuitStateChanged = 2 -> Kevlar.CallbackErrorKind
+Kevlar.CallbackErrorKind.ConcurrencyLimitRejected = 6 -> Kevlar.CallbackErrorKind
+Kevlar.CallbackErrorKind.Fallback = 5 -> Kevlar.CallbackErrorKind
+Kevlar.CallbackErrorKind.Hedge = 4 -> Kevlar.CallbackErrorKind
+Kevlar.CallbackErrorKind.RateLimitRejected = 7 -> Kevlar.CallbackErrorKind
+Kevlar.CallbackErrorKind.RateLimiterAdapterRejected = 8 -> Kevlar.CallbackErrorKind
+Kevlar.CallbackErrorKind.Retry = 0 -> Kevlar.CallbackErrorKind
+Kevlar.CallbackErrorKind.Timeout = 1 -> Kevlar.CallbackErrorKind
+static Kevlar.KevlarDiagnostics.OnCallbackError -> System.Action<Kevlar.CallbackErrorEvent>?
+static Kevlar.KevlarDiagnostics.ReportCallbackError(Kevlar.CallbackErrorKind kind, Kevlar.KevlarContext! context, System.Exception! exception) -> void
 Kevlar.BackoffKind
 Kevlar.BackoffKind.Constant = 1 -> Kevlar.BackoffKind
 Kevlar.BackoffKind.Custom = 4 -> Kevlar.BackoffKind

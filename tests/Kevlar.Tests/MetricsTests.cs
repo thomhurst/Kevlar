@@ -249,6 +249,7 @@ public class MetricsTests
             ["kevlar.rejections"] = "{rejection}",
             ["kevlar.circuit_breaker.transitions"] = "{transition}",
             ["kevlar.partitions.evictions"] = "{partition}",
+            ["kevlar.callback_errors"] = "{error}",
             ["kevlar.execution.duration"] = "s",
 #if NET9_0_OR_GREATER
             ["kevlar.circuit_breaker.state"] = "{state}",

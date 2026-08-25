@@ -14,6 +14,7 @@ public sealed class TelemetryRecorder : IDisposable
     private readonly object _gate = new();
     private readonly List<MetricRecord> _metrics = [];
     private readonly List<CallbackRecord> _callbacks = [];
+    private readonly bool _captureCallbackErrors;
     private TaskCompletionSource<bool> _changed = CreateSignal();
 #if NET8_0_OR_GREATER
     private readonly MeterListener? _listener;
@@ -21,9 +22,17 @@ public sealed class TelemetryRecorder : IDisposable
     private long _sequence;
     private bool _disposed;
 
-    /// <summary>Creates a recorder, optionally subscribing to Kevlar metrics.</summary>
-    public TelemetryRecorder(bool captureMetrics = true)
+    /// <summary>Creates a recorder with optional process-wide metric and callback-error capture.</summary>
+    /// <param name="captureMetrics">Whether to subscribe to Kevlar metrics.</param>
+    /// <param name="captureCallbackErrors">
+    /// Whether to subscribe to process-wide callback-error diagnostics. Leave disabled when recording
+    /// callbacks assigned directly to a shield to preserve per-pipeline isolation.
+    /// </param>
+    public TelemetryRecorder(
+        bool captureMetrics = true,
+        bool captureCallbackErrors = false)
     {
+        _captureCallbackErrors = captureCallbackErrors;
 #if NET8_0_OR_GREATER
         if (captureMetrics)
         {
@@ -46,6 +55,10 @@ public sealed class TelemetryRecorder : IDisposable
 #else
         _ = captureMetrics;
 #endif
+        if (captureCallbackErrors)
+        {
+            KevlarDiagnostics.OnCallbackError += Record;
+        }
     }
 
     /// <summary>Gets a stable snapshot of captured metric measurements.</summary>
@@ -112,6 +125,15 @@ public sealed class TelemetryRecorder : IDisposable
         exception: item.LastException,
         from: item.From, to: item.To));
 
+    /// <summary>Records a callback failure reported by Kevlar diagnostics.</summary>
+    public void Record(CallbackErrorEvent item) => AddCallback(new CallbackRecord(
+        0,
+        CallbackKind.CallbackError,
+        item.ShieldName,
+        strategyIndex: item.StrategyIndex,
+        exception: item.Exception,
+        errorKind: item.Kind));
+
     /// <summary>Records an untyped circuit-breaker break-duration callback.</summary>
     public ValueTask<TimeSpan> Record(
         CircuitBreakerBreakDurationEvent item,
@@ -159,6 +181,11 @@ public sealed class TelemetryRecorder : IDisposable
 
             _disposed = true;
             signal = _changed;
+        }
+
+        if (_captureCallbackErrors)
+        {
+            KevlarDiagnostics.OnCallbackError -= Record;
         }
 
 #if NET8_0_OR_GREATER
