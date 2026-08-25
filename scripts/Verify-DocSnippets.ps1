@@ -211,11 +211,15 @@ $usingStatements = @(
     'using Microsoft.Extensions.Configuration;'
     'using Microsoft.Extensions.Time.Testing;'
     'using Microsoft.Extensions.Logging;'
+    'using Microsoft.Extensions.Http.Resilience;'
     'using System.Threading.RateLimiting;'
     'using OpenTelemetry.Metrics;'
     'using Polly;'
     'using Polly.CircuitBreaker;'
+    'using Polly.Hedging;'
     'using Polly.Retry;'
+    'using Polly.Simmy;'
+    'using Polly.Testing;'
     'using Polly.Timeout;'
 )
 

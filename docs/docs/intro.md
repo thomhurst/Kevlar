@@ -42,4 +42,4 @@ including optional gRPC, testing, analyzer, and integration packages.
 
 - [Getting Started](getting-started.md) — install and build your first shield in five minutes.
 - [Strategies](/docs/category/strategies) — every resilience behaviour in detail.
-- [Coming from Polly?](polly-migration.md) — a 1:1 translation table.
+- [Coming from Polly?](polly-migration.md) — a practical migration guide.

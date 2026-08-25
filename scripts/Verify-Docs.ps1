@@ -33,6 +33,11 @@ $documents = Get-ChildItem -LiteralPath $resolvedDocsPath -Recurse -File |
     Sort-Object FullName
 $visibleDocuments = [System.Collections.Generic.List[object]]::new()
 $errors = [System.Collections.Generic.List[string]]::new()
+
+if ($sidebarSource -notmatch "'getting-started',\s*'polly-migration',\s*'handling-failures'")
+{
+    $errors.Add("Documentation sidebar must place 'polly-migration' immediately after 'getting-started'.")
+}
 $timeoutExceptionPattern = [regex]'(?:(?:When|Or)(?:<|&lt;)(?:(?:global::)?System\.)?TimeoutException(?:>|&gt;)|\bis\s+(?:(?:global::)?System\.)?TimeoutException\b|\bcatch\s*\(\s*(?:(?:global::)?System\.)?TimeoutException\b)'
 $timeoutExceptionAllowMarker = '<!-- doc-lint: allow-TimeoutException -->'
 

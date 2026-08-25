@@ -4,6 +4,7 @@ const sidebars: SidebarsConfig = {
   docsSidebar: [
     'intro',
     'getting-started',
+    'polly-migration',
     'handling-failures',
     'exceptions',
     {
@@ -41,7 +42,6 @@ const sidebars: SidebarsConfig = {
     'performance',
     'benchmarks',
     'stress-tests',
-    'polly-migration',
   ],
 };
 
