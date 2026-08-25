@@ -397,21 +397,18 @@ references:
 - uid: Grpc.Core.StatusCode.Unavailable
   commentId: F:Grpc.Core.StatusCode.Unavailable
   isExternal: true
-  href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/StatusCode.cs
   name: Unavailable
   nameWithType: StatusCode.Unavailable
   fullName: Grpc.Core.StatusCode.Unavailable
 - uid: Grpc.Core.StatusCode.DeadlineExceeded
   commentId: F:Grpc.Core.StatusCode.DeadlineExceeded
   isExternal: true
-  href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/StatusCode.cs
   name: DeadlineExceeded
   nameWithType: StatusCode.DeadlineExceeded
   fullName: Grpc.Core.StatusCode.DeadlineExceeded
 - uid: Grpc.Core.StatusCode.ResourceExhausted
   commentId: F:Grpc.Core.StatusCode.ResourceExhausted
   isExternal: true
-  href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/StatusCode.cs
   name: ResourceExhausted
   nameWithType: StatusCode.ResourceExhausted
   fullName: Grpc.Core.StatusCode.ResourceExhausted
@@ -426,7 +423,6 @@ references:
   commentId: T:Grpc.Core.StatusCode
   parent: Grpc.Core
   isExternal: true
-  href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/StatusCode.cs
   name: StatusCode
   nameWithType: StatusCode
   fullName: Grpc.Core.StatusCode
@@ -467,7 +463,6 @@ references:
   commentId: T:Grpc.Core.RpcException
   parent: Grpc.Core
   isExternal: true
-  href: https://github.com/grpc/grpc-dotnet/blob/4301104498e53898a452e8fb2fea6c0b1492b755/src/Grpc.Core.Api/RpcException.cs
   name: RpcException
   nameWithType: RpcException
   fullName: Grpc.Core.RpcException

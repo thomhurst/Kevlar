@@ -29,14 +29,14 @@ foreach ($metadataFile in Get-ChildItem -LiteralPath $resolvedMetadataPath -Filt
 
         if ($line -match '^[ \t]*href:\s+(?<href>\S+)')
         {
-            $isRepositorySourceLink = $Matches.href.StartsWith(
-                'https://github.com/thomhurst/Kevlar/blob/',
+            $isGitHubSourceLink = $Matches.href.StartsWith(
+                'https://github.com/',
                 [StringComparison]::OrdinalIgnoreCase)
             $isExternalLocalReference = $inReferences -and
                 $isLocalReference -and
                 $line.StartsWith('  href: https://learn.microsoft.com/', [StringComparison]::OrdinalIgnoreCase)
 
-            if ($isExternalLocalReference -or $isRepositorySourceLink)
+            if ($isExternalLocalReference -or $isGitHubSourceLink)
             {
                 continue
             }
