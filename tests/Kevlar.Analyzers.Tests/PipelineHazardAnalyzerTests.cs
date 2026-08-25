@@ -427,6 +427,26 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Distinguishes_Member_And_Parameter_Names()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            var holder = (item: default(RetryEvent), other: 0);
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                holder.item = default;
+                await Task.Yield();
+                _ = item.Context.ShieldName;
+            });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
     public async Task KEV014_Follows_Assigned_Event_Fields_After_Await()
     {
         var diagnostics = await AnalyzeSourceAsync("""
@@ -783,6 +803,27 @@ public class PipelineHazardAnalyzerTests
             });
 
             static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV013_Rejects_Conditional_Task_Local_Joins()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            var skip = Environment.TickCount == 0;
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var pending = AuditAsync(item);
+                _ = skip ? 0 : pending.GetAwaiter().GetResult();
+            });
+
+            static Task<int> AuditAsync(RetryEvent item) => Task.FromResult(0);
             """);
 
         await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");

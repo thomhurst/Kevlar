@@ -563,37 +563,78 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             semanticModel,
             cancellationToken);
         var retainedNames = new HashSet<string>(eventParameterNames, StringComparer.Ordinal);
+        var retainedSymbols = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+        if (semanticModel is not null)
+        {
+            foreach (var identifier in nodes.OfType<IdentifierNameSyntax>()
+                         .Where(identifier => eventParameterNames.Contains(
+                             identifier.Identifier.ValueText)))
+            {
+                if (semanticModel.GetSymbolInfo(identifier, cancellationToken).Symbol
+                    is IParameterSymbol parameter)
+                {
+                    retainedSymbols.Add(parameter);
+                }
+            }
+        }
+
         foreach (var alias in nodes
                      .Where(node => node.SpanStart < firstAwait
                          && node is VariableDeclaratorSyntax or AssignmentExpressionSyntax)
                      .OrderBy(static node => node.SpanStart))
         {
-            var (name, value) = alias switch
+            var (target, name, value) = alias switch
             {
                 VariableDeclaratorSyntax declarator =>
-                    (declarator.Identifier.ValueText, declarator.Initializer?.Value),
+                    (semanticModel?.GetDeclaredSymbol(declarator, cancellationToken),
+                        declarator.Identifier.ValueText,
+                        declarator.Initializer?.Value),
                 AssignmentExpressionSyntax assignment
                     when assignment.IsKind(SyntaxKind.SimpleAssignmentExpression) =>
-                    (GetAssignedName(assignment.Left), assignment.Right),
-                _ => (null, null),
+                    (semanticModel?.GetSymbolInfo(assignment.Left, cancellationToken).Symbol,
+                        GetAssignedName(assignment.Left),
+                        assignment.Right),
+                _ => (null, null, null),
             };
             if (name is null)
             {
                 continue;
             }
 
-            if (value is not null && IsRetainedAliasExpression(value, retainedNames))
+            if (value is not null
+                && IsRetainedAliasExpression(
+                    value,
+                    retainedNames,
+                    retainedSymbols,
+                    semanticModel,
+                    cancellationToken))
             {
                 retainedNames.Add(name);
+                if (target is not null)
+                {
+                    retainedSymbols.Add(target);
+                }
             }
             else if (IsUnconditionalAliasWrite(alias, body))
             {
-                retainedNames.Remove(name);
+                if (target is not null)
+                {
+                    retainedSymbols.Remove(target);
+                }
+                else
+                {
+                    retainedNames.Remove(name);
+                }
             }
         }
 
         foreach (var identifier in nodes.OfType<IdentifierNameSyntax>()
-                     .Where(identifier => retainedNames.Contains(identifier.Identifier.ValueText)
+                     .Where(identifier => IsRetainedReference(
+                             identifier,
+                             retainedNames,
+                             retainedSymbols,
+                             semanticModel,
+                             cancellationToken)
                          && IsRuntimeValueReference(identifier)
                          && awaits.Any(awaitExpression => CanReachAfterSuspension(
                              awaitExpression,
@@ -983,20 +1024,58 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
     private static bool IsRetainedAliasExpression(
         ExpressionSyntax expression,
-        HashSet<string> retainedNames) => expression switch
+        HashSet<string> retainedNames,
+        HashSet<ISymbol> retainedSymbols,
+        SemanticModel? semanticModel,
+        CancellationToken cancellationToken) => expression switch
     {
-        IdentifierNameSyntax identifier => retainedNames.Contains(identifier.Identifier.ValueText),
+        IdentifierNameSyntax identifier => IsRetainedReference(
+            identifier,
+            retainedNames,
+            retainedSymbols,
+            semanticModel,
+            cancellationToken),
         MemberAccessExpressionSyntax memberAccess
             when memberAccess.Name.Identifier.ValueText is "Context" or "Properties" =>
-            IsRetainedAliasExpression(memberAccess.Expression, retainedNames),
+            IsRetainedAliasExpression(
+                memberAccess.Expression,
+                retainedNames,
+                retainedSymbols,
+                semanticModel,
+                cancellationToken),
         ParenthesizedExpressionSyntax parenthesized =>
-            IsRetainedAliasExpression(parenthesized.Expression, retainedNames),
-        CastExpressionSyntax cast => IsRetainedAliasExpression(cast.Expression, retainedNames),
+            IsRetainedAliasExpression(
+                parenthesized.Expression,
+                retainedNames,
+                retainedSymbols,
+                semanticModel,
+                cancellationToken),
+        CastExpressionSyntax cast => IsRetainedAliasExpression(
+            cast.Expression,
+            retainedNames,
+            retainedSymbols,
+            semanticModel,
+            cancellationToken),
         PostfixUnaryExpressionSyntax postfix
             when postfix.IsKind(SyntaxKind.SuppressNullableWarningExpression) =>
-            IsRetainedAliasExpression(postfix.Operand, retainedNames),
+            IsRetainedAliasExpression(
+                postfix.Operand,
+                retainedNames,
+                retainedSymbols,
+                semanticModel,
+                cancellationToken),
         _ => false,
     };
+
+    private static bool IsRetainedReference(
+        IdentifierNameSyntax identifier,
+        HashSet<string> retainedNames,
+        HashSet<ISymbol> retainedSymbols,
+        SemanticModel? semanticModel,
+        CancellationToken cancellationToken) =>
+        semanticModel?.GetSymbolInfo(identifier, cancellationToken).Symbol is { } symbol
+            ? retainedSymbols.Contains(symbol)
+            : retainedNames.Contains(identifier.Identifier.ValueText);
 
     private static SyntaxNode? GetFunctionBody(SyntaxNode declaration) => declaration switch
     {
@@ -1389,10 +1468,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     reference,
                     semanticModel,
                     cancellationToken)
-                || semanticModel.AnalyzeControlFlow(
-                        declarationStatement,
-                        observationStatement)
-                    ?.ExitPoints.Any() != false)
+                || !IsGuaranteedBeforeFunctionExit(
+                    invocation,
+                    reference,
+                    semanticModel,
+                    cancellationToken))
             {
                 continue;
             }
@@ -1401,6 +1481,68 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         }
 
         return false;
+    }
+
+    private static bool IsGuaranteedBeforeFunctionExit(
+        SyntaxNode start,
+        SyntaxNode observation,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        var controlFlowGraph = TryCreateControlFlowGraph(
+            start,
+            semanticModel,
+            cancellationToken);
+        if (controlFlowGraph is null)
+        {
+            return false;
+        }
+
+        var observationBlocks = new HashSet<BasicBlock>(controlFlowGraph.Blocks
+            .Where(block => block.IsReachable && ContainsOperationSyntax(block, observation)));
+        if (observationBlocks.Count == 0)
+        {
+            return false;
+        }
+
+        var startBlocks = controlFlowGraph.Blocks
+            .Where(block => block.IsReachable && ContainsOperationSyntax(block, start))
+            .ToArray();
+        if (startBlocks.Length == 0)
+        {
+            return false;
+        }
+
+        foreach (var startBlock in startBlocks)
+        {
+            if (observationBlocks.Contains(startBlock))
+            {
+                continue;
+            }
+
+            var pending = new Queue<BasicBlock>();
+            var visited = new HashSet<BasicBlock>();
+            EnqueueSuccessor(startBlock.FallThroughSuccessor, pending);
+            EnqueueSuccessor(startBlock.ConditionalSuccessor, pending);
+            while (pending.Count > 0)
+            {
+                var block = pending.Dequeue();
+                if (!visited.Add(block) || observationBlocks.Contains(block))
+                {
+                    continue;
+                }
+
+                if (block.Kind == BasicBlockKind.Exit)
+                {
+                    return false;
+                }
+
+                EnqueueSuccessor(block.FallThroughSuccessor, pending);
+                EnqueueSuccessor(block.ConditionalSuccessor, pending);
+            }
+        }
+
+        return true;
     }
 
     private static bool IsObservationPreservingArgumentPath(
