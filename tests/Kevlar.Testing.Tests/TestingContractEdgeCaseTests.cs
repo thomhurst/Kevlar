@@ -6,15 +6,12 @@ namespace Kevlar.Testing.Tests;
 public class TestingContractEdgeCaseTests
 {
     [Test]
-    public async Task Descriptor_Extensions_Reject_Null_For_Every_Shield_Family()
+    public async Task Descriptor_Extensions_Reject_Null_For_Untyped_And_Typed_Shields()
     {
         Shield? untyped = null;
-        VoidShield? voidShield = null;
         Shield<int>? typed = null;
 
         await Assert.That(() => untyped!.GetDescriptor())
-            .Throws<ArgumentNullException>();
-        await Assert.That(() => voidShield!.GetDescriptor())
             .Throws<ArgumentNullException>();
         await Assert.That(() => typed!.GetDescriptor())
             .Throws<ArgumentNullException>();

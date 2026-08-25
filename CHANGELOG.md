@@ -8,12 +8,10 @@
   directly instead of wrapping it with `HedgeActionGenerator.Create<TResult>(...)`; the erased
   wrapper remains available on untyped `HedgeOptions`. Typed generator events now expose the latest
   available `Outcome<TResult>`.
-- Untyped `Fallback(...)` now changes the fluent chain's static type from `Shield` to `VoidShield`.
-  `VoidShield` exposes only void execution overloads, and every later fluent method preserves that
-  type. Result-returning execution, `For<TResult>()`, typed wrapping, and mixed static composition
-  therefore fail at compile time instead of reaching a void fallback that cannot produce a value.
-  `ShieldBuilder.Fallback(...)` similarly returns `VoidShield`; its later `When...` clauses use
-  `VoidShieldBuilder`. Use `Shield.For<TResult>().Fallback(...)` for result-producing recovery.
+- Untyped `Fallback(...)` continues to return `Shield`. The pre-release `VoidShield`,
+  `VoidShieldBuilder`, and `PartitionedVoidShield<TKey>` types and their satellite overloads were
+  removed. Result-returning execution through a void fallback is guarded by the restored `KEV005`
+  analyzer; use `Shield.For<TResult>().Fallback(...)` for result-producing recovery.
 - Configure fallback notifications through `Fallback(..., configure)`. The pre-release `FallbackWithNotifications` methods and typed `onFallback` parameters were removed, including the migration-only error overloads that briefly replaced them. Every fallback shape now has exactly two overloads — bare and `Action<FallbackOptions>`/`Action<FallbackOptions<TResult>>` — on `Shield`, `Shield<TResult>`, `ShieldBuilder` and `ShieldBuilder<TResult>`.
 - Typed constant-value `Fallback(value)` is now `FallbackTo(value)` on `Shield<TResult>` and
   `ShieldBuilder<TResult>`. Delegate factories remain `Fallback(...)`. This makes null fallback
@@ -73,7 +71,7 @@ build spelled these `WhenResultDefault`/`OrResultDefault`; the `Is` makes the re
   callback, while timeout, circuit-breaker, and concurrency stages still observe the attempt.
   `NoBuffer` can replay inherently re-readable and already-buffered content.
 - Custom strategies can override `Strategy.InvokesContinuationAtMostOnce`; the same aggregate
-  value is now exposed on `Shield<TResult>` as well as `Shield` and `VoidShield`.
+  value is now exposed on `Shield<TResult>` as well as `Shield`.
 - **Breaking:** `Shield.Wrap(...)` and `Shield.Compose(...)` now seal ambient handling clauses. Reactive strategies appended after composition use default handling unless a new clause is declared. Existing strategies inside composed shields keep their original handling.
 - `Backoff.Custom` documents the clamping the retry path already applied to its delegate's result: a
   negative delay becomes zero, a delay above the runtime timer limit becomes that limit, and the
@@ -101,10 +99,6 @@ build spelled these `WhenResultDefault`/`OrResultDefault`; the `Is` makes the re
 
 ### Added
 
-- `VoidShield` and `PartitionedVoidShield<TKey>`, plus void-aware dependency-injection registry,
-  rate-limiter adapter, inspection, and state-snapshot overloads. `outer.Wrap(voidShield)` and
-  `voidShield.Wrap(inner)` preserve the void-only type. The former `KEV005` analyzer is removed
-  because invalid result execution is now rejected by the C# compiler.
 - `WhenResultIsNull()` / `OrResultIsNull()` on `ShieldResultExtensions`: the null-result clause
   `WhenResultIsDefault`/`OrResultIsDefault` was really written for, constrained to reference types
   (`where TResult : class?`) so it cannot be written where `default` is an ordinary value. They

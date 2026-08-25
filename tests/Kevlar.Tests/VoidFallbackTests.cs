@@ -2,8 +2,8 @@ namespace Kevlar.Tests;
 
 /// <summary>
 /// Guards the non-generic void fallback: it recovers void executions, receives the handled
-/// exception, and respects handling clauses. Compile-time API tests separately verify that the
-/// resulting <see cref="VoidShield"/> cannot execute result-returning delegates.
+/// exception, respects handling clauses, and refuses handled result-returning executions with a
+/// descriptive error instead of inventing a default value.
 /// </summary>
 public class VoidFallbackTests
 {
@@ -66,6 +66,104 @@ public class VoidFallbackTests
         await Assert.That(async () => await shield.ExecuteAsync(_ => throw new InvalidOperationException()))
             .Throws<InvalidOperationException>();
         await Assert.That(fallbackRan).IsFalse();
+    }
+
+    [Test]
+    public async Task Fallback_Preserves_The_Shield_Static_Type()
+    {
+        Shield shield = Shield.Fallback(static _ => ValueTask.CompletedTask).Retry(0);
+
+        await Assert.That(shield).IsNotNull();
+    }
+
+    [Test]
+    public async Task A_Result_Returning_Execution_Is_Refused_With_Guidance()
+    {
+        var shield = Shield.When<InvalidOperationException>().Fallback(static (_, _) => default);
+
+        InvalidOperationException? error = null;
+        try
+        {
+            _ = await shield.ExecuteAsync<int>(static _ => throw new InvalidOperationException());
+        }
+        catch (InvalidOperationException caught)
+        {
+            error = caught;
+        }
+
+        await Assert.That(error).IsNotNull();
+        await Assert.That(error!.Message).Contains("Shield.For<T>()");
+    }
+
+    [Test]
+    public async Task Successful_Result_Execution_Is_Refused_Without_Invoking_The_Action()
+    {
+        var actionRan = false;
+        var fallbackRan = false;
+        var shield = Shield.When<InvalidOperationException>().Fallback((_, _) =>
+        {
+            fallbackRan = true;
+            return default;
+        });
+
+        await Assert.That(async () => await shield.ExecuteAsync(_ =>
+            {
+                actionRan = true;
+                return new ValueTask<int>(42);
+            }))
+            .Throws<InvalidOperationException>();
+
+        await Assert.That(actionRan).IsFalse();
+        await Assert.That(fallbackRan).IsFalse();
+    }
+
+    [Test]
+    public async Task Result_Execution_Is_Refused_Before_Outer_Retry_With_A_Different_Clause()
+    {
+        var attempts = 0;
+        var fallbackRuns = 0;
+        var shield = Shield
+            .Retry(1, Backoff.None)
+            .When<IOException>()
+            .Fallback((_, _) =>
+            {
+                fallbackRuns++;
+                return default;
+            });
+
+        await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
+            {
+                attempts++;
+                throw new IOException();
+            }))
+            .Throws<InvalidOperationException>();
+
+        await Assert.That(attempts).IsEqualTo(0);
+        await Assert.That(fallbackRuns).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task A_Void_Fallback_Cannot_Be_Lifted_Into_A_Typed_Shield()
+    {
+        var shield = Shield.Fallback(static _ => default);
+
+        await Assert.That(() => shield.For<int>())
+            .Throws<InvalidOperationException>()
+            .WithMessageContaining("Shield.For<T>()");
+    }
+
+    [Test]
+    public async Task A_Void_Fallback_Cannot_Be_Wrapped_Into_A_Typed_Shield()
+    {
+        var voidFallback = Shield.Fallback(static _ => default);
+        var typed = Shield.For<int>();
+
+        await Assert.That(() => typed.Wrap(voidFallback))
+            .Throws<InvalidOperationException>()
+            .WithMessageContaining("Shield.For<T>()");
+        await Assert.That(() => voidFallback.Wrap(typed))
+            .Throws<InvalidOperationException>()
+            .WithMessageContaining("Shield.For<T>()");
     }
 
     [Test]

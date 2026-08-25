@@ -138,63 +138,6 @@ public static class ShieldTaskExtensions
         return shield.ExecuteOutcomeAsync((state, action), static (s, token) => new ValueTask<T>(s.action(s.state, token)), cancellationToken);
     }
 
-    // ── VoidShield ─────────────────────────────────────────────────────────────────────
-
-    /// <summary>Executes a <see cref="Task"/>-returning void delegate through the pipeline.</summary>
-    public static ValueTask ExecuteAsync(
-        this VoidShield shield,
-        Func<CancellationToken, Task> action,
-        CancellationToken cancellationToken = default)
-    {
-        Throw.IfNull(shield, nameof(shield));
-        Throw.IfNull(action, nameof(action));
-        return shield.ExecuteAsync(token => new ValueTask(action(token)), cancellationToken);
-    }
-
-    /// <summary>Executes a stateful <see cref="Task"/>-returning void delegate through the pipeline.</summary>
-    public static ValueTask ExecuteAsync<TState>(
-        this VoidShield shield,
-        TState state,
-        Func<TState, CancellationToken, Task> action,
-        CancellationToken cancellationToken = default)
-    {
-        Throw.IfNull(shield, nameof(shield));
-        Throw.IfNull(action, nameof(action));
-        return shield.ExecuteAsync(
-            (state, action),
-            static (s, token) => new ValueTask(s.action(s.state, token)),
-            cancellationToken);
-    }
-
-    /// <summary>Initializes properties, then executes a context-aware <see cref="Task"/>-returning void delegate.</summary>
-    public static ValueTask ExecuteWithContextAsync<TState>(
-        this VoidShield shield,
-        TState state,
-        Action<TState, KevlarProperties> initializeProperties,
-        Func<TState, KevlarContext, Task> action,
-        CancellationToken cancellationToken = default)
-    {
-        Throw.IfNull(shield, nameof(shield));
-        Throw.IfNull(initializeProperties, nameof(initializeProperties));
-        Throw.IfNull(action, nameof(action));
-        return shield.ExecuteWithContextAsync(
-            (state, initializeProperties, action),
-            static (s, properties) => s.initializeProperties(s.state, properties),
-            static (s, context) => new ValueTask(s.action(s.state, context)),
-            cancellationToken);
-    }
-
-    /// <summary>Executes a context-aware <see cref="Task"/>-returning void delegate.</summary>
-    public static ValueTask ExecuteWithContextAsync(
-        this VoidShield shield,
-        Func<KevlarContext, Task> action,
-        CancellationToken cancellationToken = default)
-    {
-        Throw.IfNull(shield, nameof(shield));
-        Throw.IfNull(action, nameof(action));
-        return shield.ExecuteWithContextAsync(context => new ValueTask(action(context)), cancellationToken);
-    }
-
     // ── Shield<TResult> ─────────────────────────────────────────────────────────────────
 
     /// <summary>Executes the <see cref="Task{TResult}"/>-returning delegate through the pipeline.</summary>

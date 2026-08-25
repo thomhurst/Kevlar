@@ -156,7 +156,6 @@ public class ExecutionContextPlumbingTests
     private static IEnumerable<MethodInfo> GetContextInitializerMethods() =>
         typeof(Shield).GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
             .Concat(typeof(Shield<int>).GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
-            .Concat(typeof(VoidShield).GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
             .Concat(typeof(ShieldTaskExtensions).GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly))
             .Where(static method => method.Name is "ExecuteWithContext" or "ExecuteWithContextAsync")
             .Where(static method => method.GetParameters()
@@ -167,11 +166,9 @@ public class ExecutionContextPlumbingTests
             ? method.MakeGenericMethod(Enumerable.Repeat(typeof(int), method.GetGenericArguments().Length).ToArray())
             : method;
 
-    private static object CreateShield(Type type) => type == typeof(Shield)
-        ? Shield.Empty
-        : type == typeof(Shield<int>)
-            ? Shield<int>.Empty
-            : CreateVoidShield();
+    private static object CreateShield(Type type) => type == typeof(Shield<int>)
+        ? Shield<int>.Empty
+        : Shield.Empty;
 
     private static object? CreateArgument(ParameterInfo parameter, bool nullInitializer)
     {
@@ -194,9 +191,6 @@ public class ExecutionContextPlumbingTests
             ? Activator.CreateInstance(parameter.ParameterType)
             : null;
     }
-
-    private static VoidShield CreateVoidShield() =>
-        Shield.Fallback(static _ => ValueTask.CompletedTask);
 
     private static Exception CaptureReflectionFailure(Action action)
     {

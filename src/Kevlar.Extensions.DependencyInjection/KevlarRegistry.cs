@@ -14,10 +14,7 @@ internal sealed class ShieldRegistration
 
     public string Name { get; }
 
-    /// <summary>
-    /// <see langword="null"/> for result-polymorphic shields, <see cref="VoidShield"/> for
-    /// void-only shields, or the result type for <see cref="Shield{TResult}"/>.
-    /// </summary>
+    /// <summary><see langword="null"/> for non-generic shields; the result type for <see cref="Shield{TResult}"/>.</summary>
     public Type? ResultType { get; }
 
     public Func<IServiceProvider, object> Factory { get; }
@@ -51,11 +48,6 @@ internal sealed class KevlarRegistry : IKevlarRegistry
             ? shield
             : throw new KeyNotFoundException($"No Kevlar shield named '{name}' for result type {typeof(TResult).Name} has been registered. Register one with AddShield<{typeof(TResult).Name}>(\"{name}\", ...).");
 
-    public VoidShield GetVoidShield(string name) =>
-        TryGetVoidShield(name, out var shield)
-            ? shield
-            : throw new KeyNotFoundException($"No void-only Kevlar shield named '{name}' has been registered. Register one with AddShield(\"{name}\", ...).");
-
     public bool TryGetShield(string name, [NotNullWhen(true)] out Shield? shield)
     {
         var value = Resolve(name, null);
@@ -78,18 +70,6 @@ internal sealed class KevlarRegistry : IKevlarRegistry
     public bool TryGetShield<TResult>(string name, [NotNullWhen(true)] out Shield<TResult>? shield)
     {
         if (Resolve(name, typeof(TResult)) is Shield<TResult> resolved)
-        {
-            shield = resolved;
-            return true;
-        }
-
-        shield = null;
-        return false;
-    }
-
-    public bool TryGetVoidShield(string name, [NotNullWhen(true)] out VoidShield? shield)
-    {
-        if (Resolve(name, typeof(VoidShield)) is VoidShield resolved)
         {
             shield = resolved;
             return true;

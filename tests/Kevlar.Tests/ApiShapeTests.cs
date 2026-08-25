@@ -153,6 +153,41 @@ public class ApiShapeTests
     }
 
     [Test]
+    public async Task Void_Fallback_Preserves_The_Shield_Static_Type()
+    {
+        var compilation = CreateCompilation(
+            """
+            using Kevlar;
+            using System.Threading.Tasks;
+
+            public static class Consumer
+            {
+                public static void Build()
+                {
+                    Shield shield = Shield.Retry(3)
+                        .Fallback(static _ => ValueTask.CompletedTask);
+                }
+            }
+            """);
+
+        var errors = compilation.GetDiagnostics()
+            .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+            .ToArray();
+
+        await Assert.That(errors).IsEmpty();
+    }
+
+    [Test]
+    public async Task VoidShield_Type_Family_Is_Not_Publicly_Exposed()
+    {
+        var assembly = typeof(Shield).Assembly;
+
+        await Assert.That(assembly.GetType("Kevlar.VoidShield")).IsNull();
+        await Assert.That(assembly.GetType("Kevlar.VoidShieldBuilder")).IsNull();
+        await Assert.That(assembly.GetType("Kevlar.PartitionedVoidShield`1")).IsNull();
+    }
+
+    [Test]
     public async Task FallbackTo_Accepts_Null_Without_Overload_Ambiguity()
     {
         var compilation = CreateCompilation(

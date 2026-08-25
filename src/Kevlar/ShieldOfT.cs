@@ -27,6 +27,11 @@ public sealed class Shield<TResult>
             {
                 hedging.ValidateResultType(typeof(TResult));
             }
+
+            if (strategy is VoidFallbackStrategy)
+            {
+                throw Shield.CreateVoidFallbackResultException();
+            }
         }
 
         Strategies = strategies;

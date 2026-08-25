@@ -106,7 +106,7 @@ public class AllocationBudgetTests
         .FallbackTo(
             7,
             static options => options.OnFallbackAsync = static _ => ValueTask.CompletedTask);
-    private readonly VoidShield _voidFallback = Shield
+    private readonly Shield _voidExecutionFallback = Shield
         .When<InvalidOperationException>()
         .Fallback(static (_, _) => ValueTask.CompletedTask);
     private readonly Shield _parallelHedge = Shield.Hedge(2, TimeSpan.Zero);
@@ -183,7 +183,7 @@ public class AllocationBudgetTests
         AssertZero("fallback async notification pass-through", this, static test =>
             test._fallbackWithAsyncNotification.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("void fallback pass-through", this, static test =>
-            test._voidFallback.ExecuteAsync(static _ => ValueTask.CompletedTask).GetAwaiter().GetResult());
+            test._voidExecutionFallback.ExecuteAsync(static _ => ValueTask.CompletedTask).GetAwaiter().GetResult());
         AssertZero("rate limit uncontended", this, static test =>
             test._rateLimit.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("rate limit with rejection hooks uncontended", this, static test =>
@@ -264,7 +264,7 @@ public class AllocationBudgetTests
         AssertBudget("fallback completed async notification", 512, this, static test =>
             test._fallbackWithAsyncNotification.ExecuteAsync(static _ => throw RecoverableFailure).GetAwaiter().GetResult());
         AssertBudget("void fallback triggered", 1_536, this, static test =>
-            test._voidFallback.ExecuteAsync(static _ => throw RecoverableFailure).GetAwaiter().GetResult());
+            test._voidExecutionFallback.ExecuteAsync(static _ => throw RecoverableFailure).GetAwaiter().GetResult());
         AssertBudget("open circuit rejection", 2_048, this, static test =>
         {
             try

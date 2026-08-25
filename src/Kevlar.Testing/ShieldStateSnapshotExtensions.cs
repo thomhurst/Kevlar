@@ -16,17 +16,6 @@ public static class ShieldStateSnapshotExtensions
         return Capture(shield.Strategies, shield.TimeOrSystem);
     }
 
-    /// <summary>Captures the current state of a void-only shield's stateful strategies.</summary>
-    public static ShieldStateSnapshot GetStateSnapshot(this VoidShield shield)
-    {
-        if (shield is null)
-        {
-            throw new ArgumentNullException(nameof(shield));
-        }
-
-        return Capture(shield.Strategies, shield.TimeOrSystem);
-    }
-
     /// <summary>Captures the current state of a typed shield's stateful strategies.</summary>
     public static ShieldStateSnapshot GetStateSnapshot<TResult>(this Shield<TResult> shield)
     {

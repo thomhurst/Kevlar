@@ -59,18 +59,6 @@ public class IgnoredCancellationTokenTests
         ("await Shield.Empty.ExecuteWithContextAsync(context => Task.FromResult(1));", "Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield,System.Func<Kevlar.KevlarContext,System.Threading.Tasks.Task<M0>>,System.Threading.CancellationToken)"),
         ("await Shield.Empty.ExecuteWithContextAsync(context => Task.CompletedTask);", "Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield,System.Func<Kevlar.KevlarContext,System.Threading.Tasks.Task>,System.Threading.CancellationToken)"),
         ("await Shield<int>.Empty.ExecuteWithContextAsync(context => Task.FromResult(1));", "Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield<M0>,System.Func<Kevlar.KevlarContext,System.Threading.Tasks.Task<M0>>,System.Threading.CancellationToken)"),
-        ("Shield.Fallback(static _ => ValueTask.CompletedTask).Execute(ct => { });", "Kevlar.VoidShield.Execute(System.Action<System.Threading.CancellationToken>,System.Threading.CancellationToken)"),
-        ("Shield.Fallback(static _ => ValueTask.CompletedTask).Execute(1, (state, ct) => { _ = state; });", "Kevlar.VoidShield.Execute(M0,System.Action<M0,System.Threading.CancellationToken>,System.Threading.CancellationToken)"),
-        ("Shield.Fallback(static _ => ValueTask.CompletedTask).ExecuteWithContext(context => { });", "Kevlar.VoidShield.ExecuteWithContext(System.Action<Kevlar.KevlarContext>,System.Threading.CancellationToken)"),
-        ("Shield.Fallback(static _ => ValueTask.CompletedTask).ExecuteWithContext(1, (_, _) => { }, (state, context) => { _ = state; });", "Kevlar.VoidShield.ExecuteWithContext(M0,System.Action<M0,Kevlar.KevlarProperties>,System.Action<M0,Kevlar.KevlarContext>,System.Threading.CancellationToken)"),
-        ("await Shield.Fallback(static _ => ValueTask.CompletedTask).ExecuteAsync(ct => ValueTask.CompletedTask);", "Kevlar.VoidShield.ExecuteAsync(System.Func<System.Threading.CancellationToken,System.Threading.Tasks.ValueTask>,System.Threading.CancellationToken)"),
-        ("await Shield.Fallback(static _ => ValueTask.CompletedTask).ExecuteAsync(1, (state, ct) => { _ = state; return ValueTask.CompletedTask; });", "Kevlar.VoidShield.ExecuteAsync(M0,System.Func<M0,System.Threading.CancellationToken,System.Threading.Tasks.ValueTask>,System.Threading.CancellationToken)"),
-        ("await Shield.Fallback(static _ => ValueTask.CompletedTask).ExecuteWithContextAsync(context => ValueTask.CompletedTask);", "Kevlar.VoidShield.ExecuteWithContextAsync(System.Func<Kevlar.KevlarContext,System.Threading.Tasks.ValueTask>,System.Threading.CancellationToken)"),
-        ("await Shield.Fallback(static _ => ValueTask.CompletedTask).ExecuteWithContextAsync(1, (_, _) => { }, (state, context) => { _ = state; return ValueTask.CompletedTask; });", "Kevlar.VoidShield.ExecuteWithContextAsync(M0,System.Action<M0,Kevlar.KevlarProperties>,System.Func<M0,Kevlar.KevlarContext,System.Threading.Tasks.ValueTask>,System.Threading.CancellationToken)"),
-        ("await Shield.Fallback(static _ => ValueTask.CompletedTask).ExecuteAsync(ct => Task.CompletedTask);", "Kevlar.ShieldTaskExtensions.ExecuteAsync(Kevlar.VoidShield,System.Func<System.Threading.CancellationToken,System.Threading.Tasks.Task>,System.Threading.CancellationToken)"),
-        ("await Shield.Fallback(static _ => ValueTask.CompletedTask).ExecuteAsync(1, (state, ct) => { _ = state; return Task.CompletedTask; });", "Kevlar.ShieldTaskExtensions.ExecuteAsync(Kevlar.VoidShield,M0,System.Func<M0,System.Threading.CancellationToken,System.Threading.Tasks.Task>,System.Threading.CancellationToken)"),
-        ("await Shield.Fallback(static _ => ValueTask.CompletedTask).ExecuteWithContextAsync(context => Task.CompletedTask);", "Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.VoidShield,System.Func<Kevlar.KevlarContext,System.Threading.Tasks.Task>,System.Threading.CancellationToken)"),
-        ("await Shield.Fallback(static _ => ValueTask.CompletedTask).ExecuteWithContextAsync(1, (_, _) => { }, (state, context) => { _ = state; return Task.CompletedTask; });", "Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.VoidShield,M0,System.Action<M0,Kevlar.KevlarProperties>,System.Func<M0,Kevlar.KevlarContext,System.Threading.Tasks.Task>,System.Threading.CancellationToken)"),
     ];
 
     private static readonly string[] CleanContextExecutionCases =
@@ -179,7 +167,7 @@ public class IgnoredCancellationTokenTests
     private static HashSet<string> GetPublicExecutionOverloadSignatures()
     {
         var compilation = CreateCompilation(CreateSource("public class TestSubject { }"));
-        return new[] { "Kevlar.Shield", "Kevlar.Shield`1", "Kevlar.VoidShield", "Kevlar.ShieldTaskExtensions" }
+        return new[] { "Kevlar.Shield", "Kevlar.Shield`1", "Kevlar.Shield", "Kevlar.ShieldTaskExtensions" }
             .Select(compilation.GetTypeByMetadataName)
             .OfType<INamedTypeSymbol>()
             .SelectMany(type => type.GetMembers().OfType<IMethodSymbol>())
