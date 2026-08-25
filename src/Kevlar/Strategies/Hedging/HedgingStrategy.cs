@@ -470,7 +470,7 @@ internal sealed class HedgingStrategy : Strategy
         }
         finally
         {
-            lifetime.CaptureCompletionProperties(invocationContext.PropertiesForCompletion);
+            lifetime.CaptureCompletionProperties(invocationContext);
             KevlarContext.Return(invocationContext);
             lifetime.Release();
         }
@@ -494,7 +494,7 @@ internal sealed class HedgingStrategy : Strategy
         }
         finally
         {
-            lifetime.CaptureCompletionProperties(invocationContext.PropertiesForCompletion);
+            lifetime.CaptureCompletionProperties(invocationContext);
             KevlarContext.Return(invocationContext);
             lifetime.Release();
         }
@@ -596,7 +596,7 @@ internal sealed class HedgingStrategy : Strategy
 
     private static void CopyAttemptProperties(KevlarContext source, KevlarContext target)
     {
-        target.CaptureCompletionProperties(source.PropertiesForCompletion);
+        source.CopyCompletionPropertiesTo(target);
     }
 
     private static void Cleanup<T>(HedgeAttempt<T> attempt)
@@ -717,8 +717,8 @@ internal sealed class HedgingStrategy : Strategy
             Volatile.Write(ref _lease, lease);
         }
 
-        public void CaptureCompletionProperties(KevlarProperties properties) =>
-            Context.CaptureCompletionProperties(properties, _initialProperties);
+        public void CaptureCompletionProperties(KevlarContext source) =>
+            source.CopyCompletionPropertiesTo(Context, _initialProperties);
 
         public bool TryRetain(object lease)
         {

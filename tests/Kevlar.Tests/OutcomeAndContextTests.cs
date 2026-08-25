@@ -345,6 +345,52 @@ public class OutcomeAndContextTests
     }
 
     [Test]
+    public async Task Completion_Property_Copy_Waits_For_Source_Capture()
+    {
+        using var blocker = new BlockingEquality();
+        var key = new KevlarKey<BlockingEquality>("completion-copy-lock");
+        var baseline = new KevlarProperties();
+        var completed = new KevlarProperties();
+        baseline.Set(key, blocker);
+        completed.Set(key, blocker);
+        var source = KevlarContext.Rent(
+            CancellationToken.None,
+            isSynchronous: false,
+            TimeProvider.System,
+            shieldName: null);
+        var target = KevlarContext.Rent(
+            CancellationToken.None,
+            isSynchronous: false,
+            TimeProvider.System,
+            shieldName: null);
+        source.Properties.Set(key, blocker);
+        var capture = Task.CompletedTask;
+        var copy = Task.CompletedTask;
+
+        try
+        {
+            capture = Task.Run(() => source.CaptureCompletionProperties(completed, baseline));
+            blocker.WaitUntilEntered();
+            copy = Task.Run(() => source.CopyCompletionPropertiesTo(target));
+
+            await Assert.That(SpinWait.SpinUntil(() => copy.IsCompleted, TimeSpan.FromMilliseconds(250)))
+                .IsFalse();
+
+            blocker.Release();
+            await Task.WhenAll(capture, copy);
+            _ = target.PropertiesForCompletion.TryGet(key, out var copied);
+            await Assert.That(copied).IsSameReferenceAs(blocker);
+        }
+        finally
+        {
+            blocker.Release();
+            await Task.WhenAll(capture, copy);
+            KevlarContext.Return(source);
+            KevlarContext.Return(target);
+        }
+    }
+
+    [Test]
     public async Task Context_Reports_Synchronous_And_Asynchronous_Executions()
     {
         bool? sawSynchronous = null;
@@ -389,6 +435,39 @@ public class OutcomeAndContextTests
     private sealed class CustomValue
     {
         public override string ToString() => "custom-value";
+    }
+
+    private sealed class BlockingEquality : IEquatable<BlockingEquality>, IDisposable
+    {
+        private readonly ManualResetEventSlim _entered = new();
+        private readonly ManualResetEventSlim _release = new();
+
+        public bool Equals(BlockingEquality? other)
+        {
+            _entered.Set();
+            _release.Wait();
+            return ReferenceEquals(this, other);
+        }
+
+        public override bool Equals(object? obj) => Equals(obj as BlockingEquality);
+
+        public override int GetHashCode() => 0;
+
+        public void WaitUntilEntered()
+        {
+            if (!_entered.Wait(TimeSpan.FromSeconds(5)))
+            {
+                throw new TimeoutException("Completion-property capture did not reach equality comparison.");
+            }
+        }
+
+        public void Release() => _release.Set();
+
+        public void Dispose()
+        {
+            _entered.Dispose();
+            _release.Dispose();
+        }
     }
 
     private sealed class AttemptFailureException : Exception

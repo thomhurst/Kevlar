@@ -129,6 +129,16 @@ public sealed class KevlarContext
         }
     }
 
+    internal void CopyCompletionPropertiesTo(
+        KevlarContext target,
+        KevlarProperties? baseline = null)
+    {
+        lock (_completionPropertiesLock)
+        {
+            target.CaptureCompletionProperties(PropertiesForCompletion, baseline);
+        }
+    }
+
     internal static KevlarContext Rent(CancellationToken cancellationToken, bool isSynchronous, TimeProvider timeProvider, string? shieldName)
     {
         var context = Pool.Rent();
