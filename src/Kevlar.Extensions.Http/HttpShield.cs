@@ -216,21 +216,12 @@ public static class HttpShield
         CircuitBreakerOptions<HttpResponseMessage> source,
         CircuitBreakerOptions<HttpResponseMessage> target)
     {
-        var breakDurationGenerator = source.BreakDurationGenerator;
         target.ConsecutiveFailures = source.ConsecutiveFailures;
         target.FailureRatio = source.FailureRatio;
         target.MinimumThroughput = source.MinimumThroughput;
         target.SamplingWindow = source.SamplingWindow;
         target.BreakDuration = source.BreakDuration;
-        target.BreakDurationGenerator = breakDurationGenerator is null
-            ? null
-            : item => breakDurationGenerator(new CircuitBreakerBreakDurationEvent(
-                item.Outcome.Exception,
-                item.Outcome.Exception is null ? item.Outcome.Result : null,
-                item.FailureRate,
-                item.FailureCount,
-                item.ConsecutiveFailures,
-                item.Context));
+        target.BreakDurationGenerator = source.BreakDurationGenerator;
         target.HandlesException = source.HandlesException;
         target.HandlesResult = source.HandlesResult;
         target.Monitor = source.Monitor;

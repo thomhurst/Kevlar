@@ -351,7 +351,7 @@ public class ApiShapeTests
         {
             typeof(Shield).Assembly,
             typeof(ChaosEvent).Assembly,
-            typeof(RateLimiterRejectedEvent).Assembly,
+            typeof(RateLimiterAdapterRejectedEvent).Assembly,
         }
             .Distinct()
             .SelectMany(static assembly => assembly.ExportedTypes)
