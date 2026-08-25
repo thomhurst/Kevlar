@@ -29,6 +29,7 @@ items:
   - Kevlar.HedgeEvent
   - Kevlar.HedgeOptions
   - Kevlar.HedgeOptions`1
+  - Kevlar.Jitter
   - Kevlar.KevlarContext
   - Kevlar.KevlarDiagnostics
   - Kevlar.KevlarException
@@ -38,7 +39,6 @@ items:
   - Kevlar.PartitionedShieldOptions
   - Kevlar.PartitionedShield`1
   - Kevlar.PartitionedShield`2
-  - Kevlar.PartitionedVoidShield`1
   - Kevlar.RateLimitExceededException
   - Kevlar.RateLimitOptions
   - Kevlar.RateLimitRejectedEvent
@@ -57,8 +57,6 @@ items:
   - Kevlar.TimeoutEvent
   - Kevlar.TimeoutExceededException
   - Kevlar.TimeoutOptions
-  - Kevlar.VoidShield
-  - Kevlar.VoidShieldBuilder
   langs:
   - csharp
   - vb
@@ -137,6 +135,14 @@ references:
   name: HandlingClause
   nameWithType: HandlingClause
   fullName: Kevlar.HandlingClause
+- uid: Kevlar.Jitter
+  commentId: T:Kevlar.Jitter
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Jitter.html
+  name: Jitter
+  nameWithType: Jitter
+  fullName: Kevlar.Jitter
 - uid: Kevlar.KevlarContext
   commentId: T:Kevlar.KevlarContext
   parent: Kevlar
@@ -288,34 +294,6 @@ references:
   name: PartitionedShieldOptions
   nameWithType: PartitionedShieldOptions
   fullName: Kevlar.PartitionedShieldOptions
-- uid: Kevlar.PartitionedVoidShield`1
-  commentId: T:Kevlar.PartitionedVoidShield`1
-  isExternal: true
-  href: Kevlar.PartitionedVoidShield-1.html
-  name: PartitionedVoidShield<TKey>
-  nameWithType: PartitionedVoidShield<TKey>
-  fullName: Kevlar.PartitionedVoidShield<TKey>
-  nameWithType.vb: PartitionedVoidShield(Of TKey)
-  fullName.vb: Kevlar.PartitionedVoidShield(Of TKey)
-  name.vb: PartitionedVoidShield(Of TKey)
-  spec.csharp:
-  - uid: Kevlar.PartitionedVoidShield`1
-    name: PartitionedVoidShield
-    isExternal: true
-    href: Kevlar.PartitionedVoidShield-1.html
-  - name: <
-  - name: TKey
-  - name: '>'
-  spec.vb:
-  - uid: Kevlar.PartitionedVoidShield`1
-    name: PartitionedVoidShield
-    isExternal: true
-    href: Kevlar.PartitionedVoidShield-1.html
-  - name: (
-  - name: Of
-  - name: " "
-  - name: TKey
-  - name: )
 - uid: Kevlar.Shield
   commentId: T:Kevlar.Shield
   parent: Kevlar
@@ -795,22 +773,6 @@ references:
   - name: " "
   - name: TState
   - name: )
-- uid: Kevlar.VoidShield
-  commentId: T:Kevlar.VoidShield
-  parent: Kevlar
-  isExternal: true
-  href: Kevlar.VoidShield.html
-  name: VoidShield
-  nameWithType: VoidShield
-  fullName: Kevlar.VoidShield
-- uid: Kevlar.VoidShieldBuilder
-  commentId: T:Kevlar.VoidShieldBuilder
-  parent: Kevlar
-  isExternal: true
-  href: Kevlar.VoidShieldBuilder.html
-  name: VoidShieldBuilder
-  nameWithType: VoidShieldBuilder
-  fullName: Kevlar.VoidShieldBuilder
 - uid: Kevlar
   commentId: N:Kevlar
   isExternal: true

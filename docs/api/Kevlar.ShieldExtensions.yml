@@ -34,7 +34,6 @@ items:
   - Kevlar.ShieldExtensions.WithName(Kevlar.Shield,System.String)
   - Kevlar.ShieldExtensions.WithTimeProvider(Kevlar.Shield,System.TimeProvider)
   - Kevlar.ShieldExtensions.Wrap(Kevlar.Shield,Kevlar.Shield)
-  - Kevlar.ShieldExtensions.Wrap(Kevlar.Shield,Kevlar.VoidShield)
   - Kevlar.ShieldExtensions.Wrap``1(Kevlar.Shield,Kevlar.Shield{``0})
   langs:
   - csharp
@@ -781,37 +780,6 @@ items:
       type: Kevlar.Shield
     content.vb: Public Shared Function Wrap(outer As Shield, inner As Shield) As Shield
   overload: Kevlar.ShieldExtensions.Wrap*
-- uid: Kevlar.ShieldExtensions.Wrap(Kevlar.Shield,Kevlar.VoidShield)
-  commentId: M:Kevlar.ShieldExtensions.Wrap(Kevlar.Shield,Kevlar.VoidShield)
-  id: Wrap(Kevlar.Shield,Kevlar.VoidShield)
-  isExtensionMethod: true
-  parent: Kevlar.ShieldExtensions
-  langs:
-  - csharp
-  - vb
-  name: Wrap(Shield, VoidShield)
-  nameWithType: ShieldExtensions.Wrap(Shield, VoidShield)
-  fullName: Kevlar.ShieldExtensions.Wrap(Kevlar.Shield, Kevlar.VoidShield)
-  type: Method
-  assemblies:
-  - Kevlar
-  namespace: Kevlar
-  summary: >-
-    Wraps a void-only <code class="paramref">inner</code> shield inside <code class="paramref">outer</code>. Because
-
-    the resulting pipeline contains a void fallback, it remains restricted to void executions.
-  example: []
-  syntax:
-    content: public static VoidShield Wrap(this Shield outer, VoidShield inner)
-    parameters:
-    - id: outer
-      type: Kevlar.Shield
-    - id: inner
-      type: Kevlar.VoidShield
-    return:
-      type: Kevlar.VoidShield
-    content.vb: Public Shared Function Wrap(outer As Shield, inner As VoidShield) As VoidShield
-  overload: Kevlar.ShieldExtensions.Wrap*
 - uid: Kevlar.ShieldExtensions.Wrap``1(Kevlar.Shield,Kevlar.Shield{``0})
   commentId: M:Kevlar.ShieldExtensions.Wrap``1(Kevlar.Shield,Kevlar.Shield{``0})
   id: Wrap``1(Kevlar.Shield,Kevlar.Shield{``0})
@@ -904,20 +872,24 @@ items:
   summary: >-
     Runs <code class="paramref">fallback</code> in place of handled failures, receiving the handled
 
-    exception. Returns a <xref href="Kevlar.VoidShield" data-throw-if-not-resolved="false"></xref>, which exposes only void execution overloads.
+    exception. Applies to void executions only; result-returning executions fail with a
 
-    Use <code>Shield.For&lt;T&gt;().FallbackTo(…)</code> for constant values or its typed <code>Fallback(…)</code> overloads for factories.
+    descriptive <xref href="System.InvalidOperationException" data-throw-if-not-resolved="false"></xref>. Use
+
+    <code>Shield.For&lt;T&gt;().FallbackTo(…)</code> for constant values or its typed <code>Fallback(…)</code>
+
+    overloads for factories.
   example: []
   syntax:
-    content: public static VoidShield Fallback(this Shield shield, Func<Exception, CancellationToken, ValueTask> fallback)
+    content: public static Shield Fallback(this Shield shield, Func<Exception, CancellationToken, ValueTask> fallback)
     parameters:
     - id: shield
       type: Kevlar.Shield
     - id: fallback
       type: System.Func{System.Exception,System.Threading.CancellationToken,System.Threading.Tasks.ValueTask}
     return:
-      type: Kevlar.VoidShield
-    content.vb: Public Shared Function Fallback(shield As Shield, fallback As Func(Of Exception, CancellationToken, ValueTask)) As VoidShield
+      type: Kevlar.Shield
+    content.vb: Public Shared Function Fallback(shield As Shield, fallback As Func(Of Exception, CancellationToken, ValueTask)) As Shield
   overload: Kevlar.ShieldExtensions.Fallback*
   nameWithType.vb: ShieldExtensions.Fallback(Shield, Func(Of Exception, CancellationToken, ValueTask))
   fullName.vb: Kevlar.ShieldExtensions.Fallback(Kevlar.Shield, System.Func(Of System.Exception, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask))
@@ -944,7 +916,7 @@ items:
   remarks: Runs <xref href="Kevlar.FallbackOptions.OnFallback" data-throw-if-not-resolved="false"></xref>, then <xref href="Kevlar.FallbackOptions.OnFallbackAsync" data-throw-if-not-resolved="false"></xref>, before recovery. A notification failure skips recovery.
   example: []
   syntax:
-    content: public static VoidShield Fallback(this Shield shield, Func<Exception, CancellationToken, ValueTask> fallback, Action<FallbackOptions> configure)
+    content: public static Shield Fallback(this Shield shield, Func<Exception, CancellationToken, ValueTask> fallback, Action<FallbackOptions> configure)
     parameters:
     - id: shield
       type: Kevlar.Shield
@@ -953,8 +925,8 @@ items:
     - id: configure
       type: System.Action{Kevlar.FallbackOptions}
     return:
-      type: Kevlar.VoidShield
-    content.vb: Public Shared Function Fallback(shield As Shield, fallback As Func(Of Exception, CancellationToken, ValueTask), configure As Action(Of FallbackOptions)) As VoidShield
+      type: Kevlar.Shield
+    content.vb: Public Shared Function Fallback(shield As Shield, fallback As Func(Of Exception, CancellationToken, ValueTask), configure As Action(Of FallbackOptions)) As Shield
   overload: Kevlar.ShieldExtensions.Fallback*
   nameWithType.vb: ShieldExtensions.Fallback(Shield, Func(Of Exception, CancellationToken, ValueTask), Action(Of FallbackOptions))
   fullName.vb: Kevlar.ShieldExtensions.Fallback(Kevlar.Shield, System.Func(Of System.Exception, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask), System.Action(Of Kevlar.FallbackOptions))
@@ -975,22 +947,24 @@ items:
   - Kevlar
   namespace: Kevlar
   summary: >-
-    Runs <code class="paramref">fallback</code> in place of handled failures. Returns a
+    Runs <code class="paramref">fallback</code> in place of handled failures. Applies to void executions
 
-    <xref href="Kevlar.VoidShield" data-throw-if-not-resolved="false"></xref>, which exposes only void execution overloads. Use
+    only; result-returning executions fail with a descriptive
 
-    <code>Shield.For&lt;T&gt;().FallbackTo(…)</code> for constant values or its typed <code>Fallback(…)</code> overloads for factories.
+    <xref href="System.InvalidOperationException" data-throw-if-not-resolved="false"></xref>. Use <code>Shield.For&lt;T&gt;().FallbackTo(…)</code> for
+
+    constant values or its typed <code>Fallback(…)</code> overloads for factories.
   example: []
   syntax:
-    content: public static VoidShield Fallback(this Shield shield, Func<CancellationToken, ValueTask> fallback)
+    content: public static Shield Fallback(this Shield shield, Func<CancellationToken, ValueTask> fallback)
     parameters:
     - id: shield
       type: Kevlar.Shield
     - id: fallback
       type: System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask}
     return:
-      type: Kevlar.VoidShield
-    content.vb: Public Shared Function Fallback(shield As Shield, fallback As Func(Of CancellationToken, ValueTask)) As VoidShield
+      type: Kevlar.Shield
+    content.vb: Public Shared Function Fallback(shield As Shield, fallback As Func(Of CancellationToken, ValueTask)) As Shield
   overload: Kevlar.ShieldExtensions.Fallback*
   nameWithType.vb: ShieldExtensions.Fallback(Shield, Func(Of CancellationToken, ValueTask))
   fullName.vb: Kevlar.ShieldExtensions.Fallback(Kevlar.Shield, System.Func(Of System.Threading.CancellationToken, System.Threading.Tasks.ValueTask))
@@ -1017,7 +991,7 @@ items:
   remarks: Runs <xref href="Kevlar.FallbackOptions.OnFallback" data-throw-if-not-resolved="false"></xref>, then <xref href="Kevlar.FallbackOptions.OnFallbackAsync" data-throw-if-not-resolved="false"></xref>, before recovery. A notification failure skips recovery.
   example: []
   syntax:
-    content: public static VoidShield Fallback(this Shield shield, Func<CancellationToken, ValueTask> fallback, Action<FallbackOptions> configure)
+    content: public static Shield Fallback(this Shield shield, Func<CancellationToken, ValueTask> fallback, Action<FallbackOptions> configure)
     parameters:
     - id: shield
       type: Kevlar.Shield
@@ -1026,8 +1000,8 @@ items:
     - id: configure
       type: System.Action{Kevlar.FallbackOptions}
     return:
-      type: Kevlar.VoidShield
-    content.vb: Public Shared Function Fallback(shield As Shield, fallback As Func(Of CancellationToken, ValueTask), configure As Action(Of FallbackOptions)) As VoidShield
+      type: Kevlar.Shield
+    content.vb: Public Shared Function Fallback(shield As Shield, fallback As Func(Of CancellationToken, ValueTask), configure As Action(Of FallbackOptions)) As Shield
   overload: Kevlar.ShieldExtensions.Fallback*
   nameWithType.vb: ShieldExtensions.Fallback(Shield, Func(Of CancellationToken, ValueTask), Action(Of FallbackOptions))
   fullName.vb: Kevlar.ShieldExtensions.Fallback(Kevlar.Shield, System.Func(Of System.Threading.CancellationToken, System.Threading.Tasks.ValueTask), System.Action(Of Kevlar.FallbackOptions))
@@ -1921,14 +1895,6 @@ references:
   name: Wrap
   nameWithType: ShieldExtensions.Wrap
   fullName: Kevlar.ShieldExtensions.Wrap
-- uid: Kevlar.VoidShield
-  commentId: T:Kevlar.VoidShield
-  parent: Kevlar
-  isExternal: true
-  href: Kevlar.VoidShield.html
-  name: VoidShield
-  nameWithType: VoidShield
-  fullName: Kevlar.VoidShield
 - uid: Kevlar.Shield{{TResult}}
   commentId: T:Kevlar.Shield{`1}
   parent: Kevlar
@@ -1994,6 +1960,14 @@ references:
   name: For
   nameWithType: ShieldExtensions.For
   fullName: Kevlar.ShieldExtensions.For
+- uid: System.InvalidOperationException
+  commentId: T:System.InvalidOperationException
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.invalidoperationexception
+  name: InvalidOperationException
+  nameWithType: InvalidOperationException
+  fullName: System.InvalidOperationException
 - uid: Kevlar.ShieldExtensions.Fallback*
   commentId: Overload:Kevlar.ShieldExtensions.Fallback
   isExternal: true

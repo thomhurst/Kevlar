@@ -140,14 +140,14 @@ items:
   assemblies:
   - Kevlar.Testing
   namespace: Kevlar.Testing
-  summary: Whether exponential jitter is enabled, when applicable.
+  summary: The jitter mode for built-in backoffs, when applicable.
   example: []
   syntax:
-    content: public bool? Jitter { get; }
+    content: public Jitter? Jitter { get; }
     parameters: []
     return:
-      type: System.Nullable{System.Boolean}
-    content.vb: Public ReadOnly Property Jitter As Boolean?
+      type: System.Nullable{Kevlar.Jitter}
+    content.vb: Public ReadOnly Property Jitter As Jitter?
   overload: Kevlar.Testing.BackoffDescriptor.Jitter*
 references:
 - uid: Kevlar.Testing
@@ -511,26 +511,23 @@ references:
   name: Jitter
   nameWithType: BackoffDescriptor.Jitter
   fullName: Kevlar.Testing.BackoffDescriptor.Jitter
-- uid: System.Nullable{System.Boolean}
-  commentId: T:System.Nullable{System.Boolean}
+- uid: System.Nullable{Kevlar.Jitter}
+  commentId: T:System.Nullable{Kevlar.Jitter}
   parent: System
   definition: System.Nullable`1
-  href: https://learn.microsoft.com/dotnet/api/system.boolean
-  name: bool?
-  nameWithType: bool?
-  fullName: bool?
-  nameWithType.vb: Boolean?
-  fullName.vb: Boolean?
-  name.vb: Boolean?
+  href: Kevlar.Jitter.html
+  name: Jitter?
+  nameWithType: Jitter?
+  fullName: Kevlar.Jitter?
   spec.csharp:
-  - uid: System.Boolean
-    name: bool
+  - uid: Kevlar.Jitter
+    name: Jitter
     isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.boolean
+    href: Kevlar.Jitter.html
   - name: '?'
   spec.vb:
-  - uid: System.Boolean
-    name: Boolean
+  - uid: Kevlar.Jitter
+    name: Jitter
     isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.boolean
+    href: Kevlar.Jitter.html
   - name: '?'

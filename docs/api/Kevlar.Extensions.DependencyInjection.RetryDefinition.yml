@@ -169,14 +169,14 @@ items:
   assemblies:
   - Kevlar.Extensions.DependencyInjection
   namespace: Kevlar.Extensions.DependencyInjection
-  summary: Whether exponential delays are jittered. Default true.
+  summary: The jitter mode applied to built-in backoff delays. Default equal jitter.
   example: []
   syntax:
-    content: public bool Jitter { get; set; }
+    content: public Jitter Jitter { get; set; }
     parameters: []
     return:
-      type: System.Boolean
-    content.vb: Public Property Jitter As Boolean
+      type: Kevlar.Jitter
+    content.vb: Public Property Jitter As Jitter
   overload: Kevlar.Extensions.DependencyInjection.RetryDefinition.Jitter*
 - uid: Kevlar.Extensions.DependencyInjection.RetryDefinition.MaxDelay
   commentId: P:Kevlar.Extensions.DependencyInjection.RetryDefinition.MaxDelay
@@ -595,17 +595,14 @@ references:
   name: Jitter
   nameWithType: RetryDefinition.Jitter
   fullName: Kevlar.Extensions.DependencyInjection.RetryDefinition.Jitter
-- uid: System.Boolean
-  commentId: T:System.Boolean
-  parent: System
+- uid: Kevlar.Jitter
+  commentId: T:Kevlar.Jitter
+  parent: Kevlar
   isExternal: true
-  href: https://learn.microsoft.com/dotnet/api/system.boolean
-  name: bool
-  nameWithType: bool
-  fullName: bool
-  nameWithType.vb: Boolean
-  fullName.vb: Boolean
-  name.vb: Boolean
+  href: Kevlar.Jitter.html
+  name: Jitter
+  nameWithType: Jitter
+  fullName: Kevlar.Jitter
 - uid: Kevlar.Extensions.DependencyInjection.RetryDefinition.MaxDelay*
   commentId: Overload:Kevlar.Extensions.DependencyInjection.RetryDefinition.MaxDelay
   isExternal: true

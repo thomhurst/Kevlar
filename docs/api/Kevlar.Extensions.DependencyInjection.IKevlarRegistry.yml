@@ -7,10 +7,8 @@ items:
   children:
   - Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetShield(System.String)
   - Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetShield``1(System.String)
-  - Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetVoidShield(System.String)
   - Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryGetShield(System.String,Kevlar.Shield@)
   - Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryGetShield``1(System.String,Kevlar.Shield{``0}@)
-  - Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryGetVoidShield(System.String,Kevlar.VoidShield@)
   langs:
   - csharp
   - vb
@@ -60,34 +58,6 @@ items:
   nameWithType.vb: IKevlarRegistry.GetShield(String)
   fullName.vb: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetShield(String)
   name.vb: GetShield(String)
-- uid: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetVoidShield(System.String)
-  commentId: M:Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetVoidShield(System.String)
-  id: GetVoidShield(System.String)
-  parent: Kevlar.Extensions.DependencyInjection.IKevlarRegistry
-  langs:
-  - csharp
-  - vb
-  name: GetVoidShield(string)
-  nameWithType: IKevlarRegistry.GetVoidShield(string)
-  fullName: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetVoidShield(string)
-  type: Method
-  assemblies:
-  - Kevlar.Extensions.DependencyInjection
-  namespace: Kevlar.Extensions.DependencyInjection
-  summary: Returns the named void-only shield, or throws <xref href="System.Collections.Generic.KeyNotFoundException" data-throw-if-not-resolved="false"></xref>.
-  example: []
-  syntax:
-    content: VoidShield GetVoidShield(string name)
-    parameters:
-    - id: name
-      type: System.String
-    return:
-      type: Kevlar.VoidShield
-    content.vb: Function GetVoidShield(name As String) As VoidShield
-  overload: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetVoidShield*
-  nameWithType.vb: IKevlarRegistry.GetVoidShield(String)
-  fullName.vb: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetVoidShield(String)
-  name.vb: GetVoidShield(String)
 - uid: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetShield``1(System.String)
   commentId: M:Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetShield``1(System.String)
   id: GetShield``1(System.String)
@@ -154,42 +124,6 @@ items:
   nameWithType.vb: IKevlarRegistry.TryGetShield(String, Shield)
   fullName.vb: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryGetShield(String, Kevlar.Shield)
   name.vb: TryGetShield(String, Shield)
-- uid: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryGetVoidShield(System.String,Kevlar.VoidShield@)
-  commentId: M:Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryGetVoidShield(System.String,Kevlar.VoidShield@)
-  id: TryGetVoidShield(System.String,Kevlar.VoidShield@)
-  parent: Kevlar.Extensions.DependencyInjection.IKevlarRegistry
-  langs:
-  - csharp
-  - vb
-  name: TryGetVoidShield(string, out VoidShield?)
-  nameWithType: IKevlarRegistry.TryGetVoidShield(string, out VoidShield?)
-  fullName: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryGetVoidShield(string, out Kevlar.VoidShield?)
-  type: Method
-  assemblies:
-  - Kevlar.Extensions.DependencyInjection
-  namespace: Kevlar.Extensions.DependencyInjection
-  summary: Attempts to resolve the named void-only shield.
-  example: []
-  syntax:
-    content: bool TryGetVoidShield(string name, out VoidShield? shield)
-    parameters:
-    - id: name
-      type: System.String
-    - id: shield
-      type: Kevlar.VoidShield
-      attributes:
-      - type: System.Diagnostics.CodeAnalysis.NotNullWhenAttribute
-        ctor: System.Diagnostics.CodeAnalysis.NotNullWhenAttribute.#ctor(System.Boolean)
-        arguments:
-        - type: System.Boolean
-          value: true
-    return:
-      type: System.Boolean
-    content.vb: Function TryGetVoidShield(name As String, shield As VoidShield) As Boolean
-  overload: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryGetVoidShield*
-  nameWithType.vb: IKevlarRegistry.TryGetVoidShield(String, VoidShield)
-  fullName.vb: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryGetVoidShield(String, Kevlar.VoidShield)
-  name.vb: TryGetVoidShield(String, VoidShield)
 - uid: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryGetShield``1(System.String,Kevlar.Shield{``0}@)
   commentId: M:Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryGetShield``1(System.String,Kevlar.Shield{``0}@)
   id: TryGetShield``1(System.String,Kevlar.Shield{``0}@)
@@ -345,21 +279,6 @@ references:
   name: Kevlar
   nameWithType: Kevlar
   fullName: Kevlar
-- uid: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetVoidShield*
-  commentId: Overload:Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetVoidShield
-  isExternal: true
-  href: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.html#Kevlar_Extensions_DependencyInjection_IKevlarRegistry_GetVoidShield_System_String_
-  name: GetVoidShield
-  nameWithType: IKevlarRegistry.GetVoidShield
-  fullName: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetVoidShield
-- uid: Kevlar.VoidShield
-  commentId: T:Kevlar.VoidShield
-  parent: Kevlar
-  isExternal: true
-  href: Kevlar.VoidShield.html
-  name: VoidShield
-  nameWithType: VoidShield
-  fullName: Kevlar.VoidShield
 - uid: Kevlar.Shield{{TResult}}
   commentId: T:Kevlar.Shield{`1}
   parent: Kevlar
@@ -436,10 +355,3 @@ references:
   nameWithType.vb: Boolean
   fullName.vb: Boolean
   name.vb: Boolean
-- uid: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryGetVoidShield*
-  commentId: Overload:Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryGetVoidShield
-  isExternal: true
-  href: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.html#Kevlar_Extensions_DependencyInjection_IKevlarRegistry_TryGetVoidShield_System_String_Kevlar_VoidShield__
-  name: TryGetVoidShield
-  nameWithType: IKevlarRegistry.TryGetVoidShield
-  fullName: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryGetVoidShield

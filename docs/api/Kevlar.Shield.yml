@@ -119,7 +119,6 @@ items:
   - Kevlar.Shield.Kevlar.ShieldExtensions.WithName(System.String)
   - Kevlar.Shield.Kevlar.ShieldExtensions.WithTimeProvider(System.TimeProvider)
   - Kevlar.Shield.Kevlar.ShieldExtensions.Wrap(Kevlar.Shield)
-  - Kevlar.Shield.Kevlar.ShieldExtensions.Wrap(Kevlar.VoidShield)
   - Kevlar.Shield.Kevlar.ShieldExtensions.Wrap``1(Kevlar.Shield{{TResult}})
   - Kevlar.Shield.Kevlar.ShieldTaskExtensions.ExecuteAsync(System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task},System.Threading.CancellationToken)
   - Kevlar.Shield.Kevlar.ShieldTaskExtensions.ExecuteAsync``1(System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task{{T}}},System.Threading.CancellationToken)
@@ -607,13 +606,13 @@ items:
     inside it could not.
   example: []
   syntax:
-    content: public static VoidShield Fallback(Func<Exception, CancellationToken, ValueTask> fallback)
+    content: public static Shield Fallback(Func<Exception, CancellationToken, ValueTask> fallback)
     parameters:
     - id: fallback
       type: System.Func{System.Exception,System.Threading.CancellationToken,System.Threading.Tasks.ValueTask}
     return:
-      type: Kevlar.VoidShield
-    content.vb: Public Shared Function Fallback(fallback As Func(Of Exception, CancellationToken, ValueTask)) As VoidShield
+      type: Kevlar.Shield
+    content.vb: Public Shared Function Fallback(fallback As Func(Of Exception, CancellationToken, ValueTask)) As Shield
   overload: Kevlar.Shield.Fallback*
   nameWithType.vb: Shield.Fallback(Func(Of Exception, CancellationToken, ValueTask))
   fullName.vb: Kevlar.Shield.Fallback(System.Func(Of System.Exception, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask))
@@ -639,15 +638,15 @@ items:
   remarks: Runs <xref href="Kevlar.FallbackOptions.OnFallback" data-throw-if-not-resolved="false"></xref>, then <xref href="Kevlar.FallbackOptions.OnFallbackAsync" data-throw-if-not-resolved="false"></xref>, before recovery. A notification failure skips recovery.
   example: []
   syntax:
-    content: public static VoidShield Fallback(Func<Exception, CancellationToken, ValueTask> fallback, Action<FallbackOptions> configure)
+    content: public static Shield Fallback(Func<Exception, CancellationToken, ValueTask> fallback, Action<FallbackOptions> configure)
     parameters:
     - id: fallback
       type: System.Func{System.Exception,System.Threading.CancellationToken,System.Threading.Tasks.ValueTask}
     - id: configure
       type: System.Action{Kevlar.FallbackOptions}
     return:
-      type: Kevlar.VoidShield
-    content.vb: Public Shared Function Fallback(fallback As Func(Of Exception, CancellationToken, ValueTask), configure As Action(Of FallbackOptions)) As VoidShield
+      type: Kevlar.Shield
+    content.vb: Public Shared Function Fallback(fallback As Func(Of Exception, CancellationToken, ValueTask), configure As Action(Of FallbackOptions)) As Shield
   overload: Kevlar.Shield.Fallback*
   nameWithType.vb: Shield.Fallback(Func(Of Exception, CancellationToken, ValueTask), Action(Of FallbackOptions))
   fullName.vb: Kevlar.Shield.Fallback(System.Func(Of System.Exception, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask), System.Action(Of Kevlar.FallbackOptions))
@@ -669,18 +668,22 @@ items:
   summary: >-
     Starts a pipeline with a fallback that runs <code class="paramref">fallback</code> in place of handled
 
-    failures. Returns a <xref href="Kevlar.VoidShield" data-throw-if-not-resolved="false"></xref>, which exposes only void execution overloads.
+    failures. Applies to void executions only; result-returning executions fail with a
 
-    Use <code>Shield.For&lt;T&gt;().FallbackTo(…)</code> for constant values or its typed <code>Fallback(…)</code> overloads for factories.
+    descriptive <xref href="System.InvalidOperationException" data-throw-if-not-resolved="false"></xref>. Use
+
+    <code>Shield.For&lt;T&gt;().FallbackTo(…)</code> for constant values or its typed <code>Fallback(…)</code>
+
+    overloads for factories.
   example: []
   syntax:
-    content: public static VoidShield Fallback(Func<CancellationToken, ValueTask> fallback)
+    content: public static Shield Fallback(Func<CancellationToken, ValueTask> fallback)
     parameters:
     - id: fallback
       type: System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask}
     return:
-      type: Kevlar.VoidShield
-    content.vb: Public Shared Function Fallback(fallback As Func(Of CancellationToken, ValueTask)) As VoidShield
+      type: Kevlar.Shield
+    content.vb: Public Shared Function Fallback(fallback As Func(Of CancellationToken, ValueTask)) As Shield
   overload: Kevlar.Shield.Fallback*
   nameWithType.vb: Shield.Fallback(Func(Of CancellationToken, ValueTask))
   fullName.vb: Kevlar.Shield.Fallback(System.Func(Of System.Threading.CancellationToken, System.Threading.Tasks.ValueTask))
@@ -706,15 +709,15 @@ items:
   remarks: Runs <xref href="Kevlar.FallbackOptions.OnFallback" data-throw-if-not-resolved="false"></xref>, then <xref href="Kevlar.FallbackOptions.OnFallbackAsync" data-throw-if-not-resolved="false"></xref>, before recovery. A notification failure skips recovery.
   example: []
   syntax:
-    content: public static VoidShield Fallback(Func<CancellationToken, ValueTask> fallback, Action<FallbackOptions> configure)
+    content: public static Shield Fallback(Func<CancellationToken, ValueTask> fallback, Action<FallbackOptions> configure)
     parameters:
     - id: fallback
       type: System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask}
     - id: configure
       type: System.Action{Kevlar.FallbackOptions}
     return:
-      type: Kevlar.VoidShield
-    content.vb: Public Shared Function Fallback(fallback As Func(Of CancellationToken, ValueTask), configure As Action(Of FallbackOptions)) As VoidShield
+      type: Kevlar.Shield
+    content.vb: Public Shared Function Fallback(fallback As Func(Of CancellationToken, ValueTask), configure As Action(Of FallbackOptions)) As Shield
   overload: Kevlar.Shield.Fallback*
   nameWithType.vb: Shield.Fallback(Func(Of CancellationToken, ValueTask), Action(Of FallbackOptions))
   fullName.vb: Kevlar.Shield.Fallback(System.Func(Of System.Threading.CancellationToken, System.Threading.Tasks.ValueTask), System.Action(Of Kevlar.FallbackOptions))
@@ -1566,7 +1569,7 @@ items:
   summary: >-
     Describes the pipeline, outermost strategy first, e.g.
 
-    <code>Timeout(30s) → Retry(3, exponential 250ms ×2 +jitter ≤30s) → CircuitBreaker(5 consecutive, break 30s)</code>.
+    <code>Timeout(30s) → Retry(3, exponential 250ms ×2, equal jitter, cap 30s) → CircuitBreaker(5 consecutive, break 30s)</code>.
   example: []
   syntax:
     content: public override string ToString()
@@ -3492,48 +3495,6 @@ references:
     name: Shield
     isExternal: true
     href: Kevlar.Shield.html
-  - name: )
-- uid: Kevlar.Shield.Kevlar.ShieldExtensions.Wrap(Kevlar.VoidShield)
-  commentId: M:Kevlar.ShieldExtensions.Wrap(Kevlar.Shield,Kevlar.VoidShield)
-  parent: Kevlar.ShieldExtensions
-  definition: Kevlar.ShieldExtensions.Wrap(Kevlar.Shield,Kevlar.VoidShield)
-  href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_Wrap_Kevlar_Shield_Kevlar_VoidShield_
-  name: Wrap(Shield, VoidShield)
-  nameWithType: ShieldExtensions.Wrap(Shield, VoidShield)
-  fullName: Kevlar.ShieldExtensions.Wrap(Kevlar.Shield, Kevlar.VoidShield)
-  spec.csharp:
-  - uid: Kevlar.ShieldExtensions.Wrap(Kevlar.Shield,Kevlar.VoidShield)
-    name: Wrap
-    isExternal: true
-    href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_Wrap_Kevlar_Shield_Kevlar_VoidShield_
-  - name: (
-  - uid: Kevlar.Shield
-    name: Shield
-    isExternal: true
-    href: Kevlar.Shield.html
-  - name: ','
-  - name: " "
-  - uid: Kevlar.VoidShield
-    name: VoidShield
-    isExternal: true
-    href: Kevlar.VoidShield.html
-  - name: )
-  spec.vb:
-  - uid: Kevlar.ShieldExtensions.Wrap(Kevlar.Shield,Kevlar.VoidShield)
-    name: Wrap
-    isExternal: true
-    href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_Wrap_Kevlar_Shield_Kevlar_VoidShield_
-  - name: (
-  - uid: Kevlar.Shield
-    name: Shield
-    isExternal: true
-    href: Kevlar.Shield.html
-  - name: ','
-  - name: " "
-  - uid: Kevlar.VoidShield
-    name: VoidShield
-    isExternal: true
-    href: Kevlar.VoidShield.html
   - name: )
 - uid: Kevlar.Shield.Kevlar.ShieldExtensions.Wrap``1(Kevlar.Shield{{TResult}})
   commentId: M:Kevlar.ShieldExtensions.Wrap``1(Kevlar.Shield,Kevlar.Shield{``0})
@@ -6322,47 +6283,6 @@ references:
     isExternal: true
     href: Kevlar.Shield.html
   - name: )
-- uid: Kevlar.ShieldExtensions.Wrap(Kevlar.Shield,Kevlar.VoidShield)
-  commentId: M:Kevlar.ShieldExtensions.Wrap(Kevlar.Shield,Kevlar.VoidShield)
-  isExternal: true
-  href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_Wrap_Kevlar_Shield_Kevlar_VoidShield_
-  name: Wrap(Shield, VoidShield)
-  nameWithType: ShieldExtensions.Wrap(Shield, VoidShield)
-  fullName: Kevlar.ShieldExtensions.Wrap(Kevlar.Shield, Kevlar.VoidShield)
-  spec.csharp:
-  - uid: Kevlar.ShieldExtensions.Wrap(Kevlar.Shield,Kevlar.VoidShield)
-    name: Wrap
-    isExternal: true
-    href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_Wrap_Kevlar_Shield_Kevlar_VoidShield_
-  - name: (
-  - uid: Kevlar.Shield
-    name: Shield
-    isExternal: true
-    href: Kevlar.Shield.html
-  - name: ','
-  - name: " "
-  - uid: Kevlar.VoidShield
-    name: VoidShield
-    isExternal: true
-    href: Kevlar.VoidShield.html
-  - name: )
-  spec.vb:
-  - uid: Kevlar.ShieldExtensions.Wrap(Kevlar.Shield,Kevlar.VoidShield)
-    name: Wrap
-    isExternal: true
-    href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_Wrap_Kevlar_Shield_Kevlar_VoidShield_
-  - name: (
-  - uid: Kevlar.Shield
-    name: Shield
-    isExternal: true
-    href: Kevlar.Shield.html
-  - name: ','
-  - name: " "
-  - uid: Kevlar.VoidShield
-    name: VoidShield
-    isExternal: true
-    href: Kevlar.VoidShield.html
-  - name: )
 - uid: Kevlar.ShieldExtensions.Wrap``1(Kevlar.Shield,Kevlar.Shield{``0})
   commentId: M:Kevlar.ShieldExtensions.Wrap``1(Kevlar.Shield,Kevlar.Shield{``0})
   isExternal: true
@@ -7947,14 +7867,6 @@ references:
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
   - name: )
-- uid: Kevlar.VoidShield
-  commentId: T:Kevlar.VoidShield
-  parent: Kevlar
-  isExternal: true
-  href: Kevlar.VoidShield.html
-  name: VoidShield
-  nameWithType: VoidShield
-  fullName: Kevlar.VoidShield
 - uid: System.Func`3
   commentId: T:System.Func`3
   isExternal: true

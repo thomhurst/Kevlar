@@ -6,7 +6,6 @@ items:
   parent: Kevlar.Testing
   children:
   - Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor(Kevlar.Shield)
-  - Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor(Kevlar.VoidShield)
   - Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor``1(Kevlar.Shield{``0})
   langs:
   - csharp
@@ -58,32 +57,6 @@ items:
     return:
       type: Kevlar.Testing.ShieldDescriptor
     content.vb: Public Shared Function GetDescriptor(shield As Shield) As ShieldDescriptor
-  overload: Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor*
-- uid: Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor(Kevlar.VoidShield)
-  commentId: M:Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor(Kevlar.VoidShield)
-  id: GetDescriptor(Kevlar.VoidShield)
-  isExtensionMethod: true
-  parent: Kevlar.Testing.ShieldDescriptorExtensions
-  langs:
-  - csharp
-  - vb
-  name: GetDescriptor(VoidShield)
-  nameWithType: ShieldDescriptorExtensions.GetDescriptor(VoidShield)
-  fullName: Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor(Kevlar.VoidShield)
-  type: Method
-  assemblies:
-  - Kevlar.Testing
-  namespace: Kevlar.Testing
-  summary: Describes a void-only shield without executing it.
-  example: []
-  syntax:
-    content: public static ShieldDescriptor GetDescriptor(this VoidShield shield)
-    parameters:
-    - id: shield
-      type: Kevlar.VoidShield
-    return:
-      type: Kevlar.Testing.ShieldDescriptor
-    content.vb: Public Shared Function GetDescriptor(shield As VoidShield) As ShieldDescriptor
   overload: Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor*
 - uid: Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor``1(Kevlar.Shield{``0})
   commentId: M:Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor``1(Kevlar.Shield{``0})
@@ -411,14 +384,6 @@ references:
   name: Kevlar
   nameWithType: Kevlar
   fullName: Kevlar
-- uid: Kevlar.VoidShield
-  commentId: T:Kevlar.VoidShield
-  parent: Kevlar
-  isExternal: true
-  href: Kevlar.VoidShield.html
-  name: VoidShield
-  nameWithType: VoidShield
-  fullName: Kevlar.VoidShield
 - uid: Kevlar.Shield{{TResult}}
   commentId: T:Kevlar.Shield{`1}
   parent: Kevlar

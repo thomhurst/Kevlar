@@ -79,6 +79,9 @@ items:
   - uid: Kevlar.HedgeOptions`1
     name: HedgeOptions<TResult>
     type: Class
+  - uid: Kevlar.Jitter
+    name: Jitter
+    type: Enum
   - uid: Kevlar.KevlarContext
     name: KevlarContext
     type: Class
@@ -105,9 +108,6 @@ items:
     type: Class
   - uid: Kevlar.PartitionedShield`2
     name: PartitionedShield<TKey, TResult>
-    type: Class
-  - uid: Kevlar.PartitionedVoidShield`1
-    name: PartitionedVoidShield<TKey>
     type: Class
   - uid: Kevlar.RateLimitExceededException
     name: RateLimitExceededException
@@ -162,12 +162,6 @@ items:
     type: Class
   - uid: Kevlar.TimeoutOptions
     name: TimeoutOptions
-    type: Class
-  - uid: Kevlar.VoidShield
-    name: VoidShield
-    type: Class
-  - uid: Kevlar.VoidShieldBuilder
-    name: VoidShieldBuilder
     type: Class
 - uid: Kevlar.Chaos
   name: Kevlar.Chaos

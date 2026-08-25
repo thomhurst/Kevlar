@@ -6,7 +6,6 @@ items:
   parent: Kevlar.Testing
   children:
   - Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot(Kevlar.Shield)
-  - Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot(Kevlar.VoidShield)
   - Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot``1(Kevlar.Shield{``0})
   langs:
   - csharp
@@ -58,32 +57,6 @@ items:
     return:
       type: Kevlar.Testing.ShieldStateSnapshot
     content.vb: Public Shared Function GetStateSnapshot(shield As Shield) As ShieldStateSnapshot
-  overload: Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot*
-- uid: Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot(Kevlar.VoidShield)
-  commentId: M:Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot(Kevlar.VoidShield)
-  id: GetStateSnapshot(Kevlar.VoidShield)
-  isExtensionMethod: true
-  parent: Kevlar.Testing.ShieldStateSnapshotExtensions
-  langs:
-  - csharp
-  - vb
-  name: GetStateSnapshot(VoidShield)
-  nameWithType: ShieldStateSnapshotExtensions.GetStateSnapshot(VoidShield)
-  fullName: Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot(Kevlar.VoidShield)
-  type: Method
-  assemblies:
-  - Kevlar.Testing
-  namespace: Kevlar.Testing
-  summary: Captures the current state of a void-only shield's stateful strategies.
-  example: []
-  syntax:
-    content: public static ShieldStateSnapshot GetStateSnapshot(this VoidShield shield)
-    parameters:
-    - id: shield
-      type: Kevlar.VoidShield
-    return:
-      type: Kevlar.Testing.ShieldStateSnapshot
-    content.vb: Public Shared Function GetStateSnapshot(shield As VoidShield) As ShieldStateSnapshot
   overload: Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot*
 - uid: Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot``1(Kevlar.Shield{``0})
   commentId: M:Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot``1(Kevlar.Shield{``0})
@@ -411,14 +384,6 @@ references:
   name: Kevlar
   nameWithType: Kevlar
   fullName: Kevlar
-- uid: Kevlar.VoidShield
-  commentId: T:Kevlar.VoidShield
-  parent: Kevlar
-  isExternal: true
-  href: Kevlar.VoidShield.html
-  name: VoidShield
-  nameWithType: VoidShield
-  fullName: Kevlar.VoidShield
 - uid: Kevlar.Shield{{TResult}}
   commentId: T:Kevlar.Shield{`1}
   parent: Kevlar
