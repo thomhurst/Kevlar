@@ -10,7 +10,7 @@ internal static class ShieldDecoration
     {
         if (!firstHasStrategies)
         {
-            return secondHasStrategies ? second : [];
+            return Union(first, second);
         }
 
         if (!secondHasStrategies)
@@ -41,6 +41,42 @@ internal static class ShieldDecoration
 
         Array.Resize(ref intersection, count);
         return intersection;
+    }
+
+    public static bool HasResilienceStrategies(Strategy[] strategies) =>
+        strategies.Any(static strategy => strategy is not ITransparentStrategy);
+
+    private static IShieldDecorator[] Union(
+        IShieldDecorator[] first,
+        IShieldDecorator[] second)
+    {
+        if (first.Length == 0)
+        {
+            return second;
+        }
+
+        if (second.Length == 0)
+        {
+            return first;
+        }
+
+        var union = new IShieldDecorator[first.Length + second.Length];
+        Array.Copy(first, union, first.Length);
+        var count = first.Length;
+        foreach (var decorator in second)
+        {
+            if (!IsApplied(union, count, decorator))
+            {
+                union[count++] = decorator;
+            }
+        }
+
+        if (count != union.Length)
+        {
+            Array.Resize(ref union, count);
+        }
+
+        return union;
     }
 
     public static Shield Apply(

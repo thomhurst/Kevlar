@@ -250,7 +250,7 @@ internal static class KevlarMetrics
             context.AttemptNumber,
             outcome.IsSuccess,
             outcome.Exception,
-            result: KevlarTelemetry.IsListenerEnabled(context) && outcome.IsSuccess
+            result: KevlarTelemetry.ShouldCaptureResult(context) && outcome.IsSuccess
                 ? outcome.Result
                 : null);
     }

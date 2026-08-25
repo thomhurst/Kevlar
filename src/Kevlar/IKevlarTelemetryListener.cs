@@ -7,3 +7,8 @@ public interface IKevlarTelemetryListener
     /// <remarks>Exceptions thrown by a listener are ignored by Kevlar.</remarks>
     void OnEvent(in KevlarTelemetryEvent telemetryEvent);
 }
+
+internal interface IKevlarResultTelemetryListener
+{
+    bool ShouldCaptureResult { get; }
+}

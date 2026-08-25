@@ -257,7 +257,7 @@ internal sealed class RetryStrategy : Strategy
                         attempt,
                         isSuccess: outcome.IsSuccess,
                         outcome.Exception,
-                        result: KevlarTelemetry.IsListenerEnabled(context) && outcome.IsSuccess
+                        result: KevlarTelemetry.ShouldCaptureResult(context) && outcome.IsSuccess
                             ? outcome.Result
                             : null,
                         delay: delay);

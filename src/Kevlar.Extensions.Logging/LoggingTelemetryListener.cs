@@ -3,8 +3,34 @@ using Microsoft.Extensions.Logging;
 namespace Kevlar.Extensions.Logging;
 
 internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
-    : IKevlarTelemetryListener
+    : IKevlarTelemetryListener, IKevlarResultTelemetryListener
 {
+    bool IKevlarResultTelemetryListener.ShouldCaptureResult
+    {
+        get
+        {
+            for (var current = registration; current is not null; current = current.Next)
+            {
+                try
+                {
+                    for (var level = LogLevel.Trace; level < LogLevel.None; level++)
+                    {
+                        if (current.Logger.IsEnabled(level))
+                        {
+                            return true;
+                        }
+                    }
+                }
+                catch
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    }
+
     public void OnEvent(in KevlarTelemetryEvent telemetryEvent)
     {
         if (!TryMap(in telemetryEvent, out var kind, out var eventId, out var defaultLevel))
@@ -80,6 +106,11 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
         KevlarLogEventKind kind,
         in KevlarTelemetryEvent telemetryEvent)
     {
+        if (kind == KevlarLogEventKind.CircuitState && telemetryEvent.IsSuccess)
+        {
+            return "success";
+        }
+
         if (telemetryEvent.Exception is { } exception)
         {
             return exception.GetType().FullName ?? exception.GetType().Name;

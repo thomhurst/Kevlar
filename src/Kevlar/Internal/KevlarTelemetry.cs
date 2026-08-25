@@ -14,8 +14,21 @@ internal static class KevlarTelemetry
     public static bool IsEventEnabled(KevlarContext context) =>
         EventEnabled || context.TelemetryListener is not null;
 
-    public static bool IsListenerEnabled(KevlarContext context) =>
-        Volatile.Read(ref _listeners).Length != 0 || context.TelemetryListener is not null;
+    public static bool ShouldCaptureResult(KevlarContext context)
+    {
+        foreach (var listener in Volatile.Read(ref _listeners))
+        {
+            if (listener is not IKevlarResultTelemetryListener resultListener
+                || resultListener.ShouldCaptureResult)
+            {
+                return true;
+            }
+        }
+
+        return context.TelemetryListener is { } contextListener
+            && (contextListener is not IKevlarResultTelemetryListener contextResultListener
+                || contextResultListener.ShouldCaptureResult);
+    }
 
     public static IDisposable Subscribe(IKevlarTelemetryListener listener)
     {

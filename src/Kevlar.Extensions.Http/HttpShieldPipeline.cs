@@ -19,7 +19,9 @@ internal sealed class HttpShieldPipeline
 
     public ShieldHttpHandlerOptions Options { get; }
 
-    public Shield<HttpResponseMessage>? GetEndpointShield(Uri endpoint)
+    public Shield<HttpResponseMessage>? GetEndpointShield(
+        Uri endpoint,
+        Func<Shield<HttpResponseMessage>, Shield<HttpResponseMessage>>? decorator = null)
     {
         var factory = Options.Routing?.ShieldFactory;
         if (factory is null)
@@ -34,8 +36,12 @@ internal sealed class HttpShieldPipeline
             if (!_endpointShields.TryGetValue(authority, out creation!))
             {
                 creation = new Lazy<Shield<HttpResponseMessage>>(
-                    () => factory(endpoint)
-                        ?? throw new InvalidOperationException("The endpoint shield factory returned null."),
+                    () =>
+                    {
+                        var shield = factory(endpoint)
+                            ?? throw new InvalidOperationException("The endpoint shield factory returned null.");
+                        return decorator is null ? shield : decorator(shield);
+                    },
                     LazyThreadSafetyMode.ExecutionAndPublication);
                 _endpointShields.Add(authority, creation);
             }

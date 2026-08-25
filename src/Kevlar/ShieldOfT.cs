@@ -452,9 +452,9 @@ public sealed class Shield<TResult> : IShieldLifecycle
             Time ?? inner.Time,
             ShieldDecoration.IntersectForComposition(
                 AppliedDecorators,
-                Strategies.Length > 0,
+                ShieldDecoration.HasResilienceStrategies(Strategies),
                 inner.AppliedDecorators,
-                inner.Strategies.Length > 0));
+                ShieldDecoration.HasResilienceStrategies(inner.Strategies)));
     }
 
     /// <summary>
@@ -472,9 +472,9 @@ public sealed class Shield<TResult> : IShieldLifecycle
             Time ?? inner.Time,
             ShieldDecoration.IntersectForComposition(
                 AppliedDecorators,
-                Strategies.Length > 0,
+                ShieldDecoration.HasResilienceStrategies(Strategies),
                 inner.AppliedDecorators,
-                inner.Strategies.Length > 0));
+                ShieldDecoration.HasResilienceStrategies(inner.Strategies)));
     }
 
     /// <summary>
@@ -501,12 +501,13 @@ public sealed class Shield<TResult> : IShieldLifecycle
             parts[i] = shield.Strategies;
             name ??= shield.Name;
             time ??= shield.Time;
+            var shieldHasStrategies = ShieldDecoration.HasResilienceStrategies(shield.Strategies);
             appliedDecorators = ShieldDecoration.IntersectForComposition(
                 appliedDecorators,
                 hasStrategies,
                 shield.AppliedDecorators,
-                shield.Strategies.Length > 0);
-            hasStrategies |= shield.Strategies.Length > 0;
+                shieldHasStrategies);
+            hasStrategies |= shieldHasStrategies;
         }
 
         return new Shield<TResult>(Shield.Concat(parts), null, name, time, appliedDecorators);

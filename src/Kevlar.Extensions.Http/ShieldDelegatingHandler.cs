@@ -405,7 +405,9 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
                     RouteToAuthority(request, endpoint);
                 }
 
-                var endpointShield = endpoint is null ? null : _pipeline.GetEndpointShield(endpoint);
+                var endpointShield = endpoint is null
+                    ? null
+                    : _pipeline.GetEndpointShield(endpoint, _handler._requestShieldDecorator);
                 var response = endpointShield is null
                     ? await SendTransportAsync(request, cancellationToken).ConfigureAwait(false)
                     : await endpointShield.ExecuteWithContextAsync(

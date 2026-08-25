@@ -500,6 +500,7 @@ public class LoggingTests
         await Assert.That(transitions[1].Level).IsEqualTo(LogLevel.Information);
         await Assert.That(transitions[2].GetStructuredStateValue("ToState")).IsEqualTo("Closed");
         await Assert.That(transitions[2].Level).IsEqualTo(LogLevel.Information);
+        await Assert.That(transitions[2].GetStructuredStateValue("Outcome")).IsEqualTo("success");
     }
 
     [Test]

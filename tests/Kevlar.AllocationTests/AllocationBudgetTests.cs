@@ -159,8 +159,8 @@ public class AllocationBudgetTests
                 ? static _ => new ValueTask<int>(42)
                 : throw new InvalidOperationException("Expected the primary outcome.");
     });
-    private readonly Shield<string> _disabledLogging = Shield.For<string>()
-        .WhenResult("retry")
+    private readonly Shield<int> _disabledLogging = Shield.For<int>()
+        .WhenResult(-1)
         .Retry(1, Backoff.None)
         .WithLogging(NullLogger.Instance, static options =>
         {
@@ -292,7 +292,7 @@ public class AllocationBudgetTests
         AssertZero("outcome exception access", FailureOutcome, static outcome =>
             GC.KeepAlive(outcome.Exception));
         AssertZero("disabled structured logging", this, static test =>
-            _ = test._disabledLogging.ExecuteOutcome(static _ => "retry"));
+            _ = test._disabledLogging.ExecuteOutcome(static _ => -1));
     }
 
     [Test]

@@ -241,12 +241,13 @@ public sealed class Shield : IShieldLifecycle
             parts[i] = shield.Strategies;
             name ??= shield.Name;
             time ??= shield.Time;
+            var shieldHasStrategies = ShieldDecoration.HasResilienceStrategies(shield.Strategies);
             appliedDecorators = ShieldDecoration.IntersectForComposition(
                 appliedDecorators,
                 hasStrategies,
                 shield.AppliedDecorators,
-                shield.Strategies.Length > 0);
-            hasStrategies |= shield.Strategies.Length > 0;
+                shieldHasStrategies);
+            hasStrategies |= shieldHasStrategies;
         }
 
         return new Shield(Concat(parts), null, name, time, appliedDecorators);

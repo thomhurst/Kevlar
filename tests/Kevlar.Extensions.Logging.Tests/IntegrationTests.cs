@@ -225,6 +225,67 @@ public class IntegrationTests
 
     [Test]
     [NotInParallel]
+    public async Task AddKevlarLogging_Decorates_Standard_Hedge_Endpoint_Shields()
+    {
+        var logs = new FakeLoggerProvider();
+        var services = new ServiceCollection();
+        services.AddLogging(builder => builder.AddProvider(logs));
+        services.AddKevlarLogging();
+        services.AddHttpClient("hedged")
+            .ConfigurePrimaryHttpMessageHandler(() => new SequenceHandler(
+                HttpStatusCode.InternalServerError))
+            .AddStandardHedgeShield(options =>
+            {
+                options.TotalTimeout = TimeSpan.FromMinutes(1);
+                options.MaxHedgedAttempts = 0;
+                options.AttemptTimeout = TimeSpan.FromMinutes(1);
+                options.ConsecutiveFailures = 1;
+                options.FailureRatio = null;
+                options.Endpoints.Add(new HttpEndpoint(new Uri("https://endpoint.test")));
+            });
+        using var provider = services.BuildServiceProvider();
+        var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("hedged");
+
+        using var response = await client.GetAsync("https://origin.test/resource");
+
+        var transition = logs.Collector.GetSnapshot()
+            .Single(record => record.Id == new EventId(1003, "CircuitState"));
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.InternalServerError);
+        await Assert.That(transition.GetStructuredStateValue("ShieldName")).IsEqualTo("hedged");
+        await Assert.That(transition.GetStructuredStateValue("ToState")).IsEqualTo("Open");
+    }
+
+    [Test]
+    [NotInParallel]
+    public async Task AddKevlarLogging_Does_Not_Redecorate_Outer_Transparent_Shields()
+    {
+        var logs = new FakeLoggerProvider();
+        var services = new ServiceCollection();
+        services.AddLogging(builder => builder.AddProvider(logs));
+        services.AddKevlarLogging();
+        services.AddShield<HttpResponseMessage>("empty", Shield<HttpResponseMessage>.Empty);
+        services.AddHttpClient("composed")
+            .ConfigurePrimaryHttpMessageHandler(() => new SequenceHandler(
+                HttpStatusCode.InternalServerError,
+                HttpStatusCode.OK))
+            .AddShield(static (_, serviceProvider) => serviceProvider
+                .GetRequiredService<IKevlarRegistry>()
+                .GetShield<HttpResponseMessage>("empty")
+                .Wrap(HttpShield.WhenTransient().Retry(1, Backoff.None)));
+        using var provider = services.BuildServiceProvider();
+        var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("composed");
+
+        using var response = await client.GetAsync("https://example.test/composed");
+
+        var retries = logs.Collector.GetSnapshot()
+            .Where(record => record.Id == new EventId(1001, "Retry"))
+            .ToArray();
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(retries.Length).IsEqualTo(1);
+    }
+
+    [Test]
+    [NotInParallel]
     public async Task AddKevlarLogging_Shares_Rate_Limit_Across_Decorated_Shields()
     {
         var logs = new FakeLoggerProvider();
