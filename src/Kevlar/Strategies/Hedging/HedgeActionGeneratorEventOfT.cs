@@ -6,11 +6,13 @@ public readonly struct HedgeActionGeneratorEvent<TResult>
     internal HedgeActionGeneratorEvent(
         int attemptNumber,
         KevlarContext context,
-        Func<CancellationToken, ValueTask<TResult>> originalAction)
+        Func<CancellationToken, ValueTask<TResult>> originalAction,
+        Outcome<TResult>? outcome)
     {
         AttemptNumber = attemptNumber;
         Context = context;
         OriginalAction = originalAction;
+        Outcome = outcome;
     }
 
     /// <summary>The 1-based execution number (2 = first hedge).</summary>
@@ -24,4 +26,10 @@ public readonly struct HedgeActionGeneratorEvent<TResult>
     /// becomes the cancellation token for that nested execution.
     /// </summary>
     public Func<CancellationToken, ValueTask<TResult>> OriginalAction { get; }
+
+    /// <summary>
+    /// The latest handled outcome available before this attempt was launched, or
+    /// <see langword="null"/> when pending attempts have not produced an outcome yet.
+    /// </summary>
+    public Outcome<TResult>? Outcome { get; }
 }

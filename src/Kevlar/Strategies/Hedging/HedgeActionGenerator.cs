@@ -45,7 +45,8 @@ public sealed class HedgeActionGenerator
     internal Func<CancellationToken, ValueTask<TResult>>? Generate<TResult>(
         int attempt,
         KevlarContext context,
-        Func<CancellationToken, ValueTask<TResult>> originalAction)
+        Func<CancellationToken, ValueTask<TResult>> originalAction,
+        Outcome<TResult>? outcome)
     {
         if (_resultType != typeof(TResult))
         {
@@ -55,7 +56,17 @@ public sealed class HedgeActionGenerator
         }
 
         var generator = (Func<HedgeActionGeneratorEvent<TResult>, Func<CancellationToken, ValueTask<TResult>>?>)_generator;
-        return generator(new HedgeActionGeneratorEvent<TResult>(attempt, context, originalAction));
+        return generator(new HedgeActionGeneratorEvent<TResult>(attempt, context, originalAction, outcome));
+    }
+
+    internal void ValidateResultType(Type resultType)
+    {
+        if (_resultType != resultType)
+        {
+            throw new InvalidOperationException(
+                $"The hedge action generator was created for '{_resultType}', but this shield returns '{resultType}'. " +
+                "Create the generator with the shield's result type.");
+        }
     }
 
     private sealed class VoidGeneratorAdapter(
