@@ -690,7 +690,9 @@ public sealed class Shield<TResult> : IShieldLifecycle
         var strategies = new Strategy[Strategies.Length + 1];
         Array.Copy(Strategies, strategies, Strategies.Length);
         strategies[Strategies.Length] = strategy;
-        return new Shield<TResult>(strategies, ambient ?? Ambient, Name, Time);
+        var shield = new Shield<TResult>(strategies, ambient ?? Ambient, Name, Time);
+        StrategyAppendObserver.Notify(Strategies, strategy, Name);
+        return shield;
     }
 }
 

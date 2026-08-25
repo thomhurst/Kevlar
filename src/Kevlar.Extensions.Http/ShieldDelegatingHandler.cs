@@ -10,6 +10,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
     private readonly HttpShieldPipeline _pipeline;
     private readonly ReloadingHttpShieldPipeline? _reloadingPipeline;
     private readonly Func<HttpRequestMessage, ValueTask<Shield<HttpResponseMessage>>>? _shieldSelector;
+    private readonly Func<Shield<HttpResponseMessage>, Shield<HttpResponseMessage>>? _requestShieldDecorator;
 
     /// <summary>Creates the handler with safe no-buffer replay defaults.</summary>
     public ShieldDelegatingHandler(Shield<HttpResponseMessage> shield)
@@ -23,6 +24,16 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         ShieldHttpHandlerOptions options)
     {
         _pipeline = new HttpShieldPipeline(shield, options);
+    }
+
+    internal ShieldDelegatingHandler(
+        Shield<HttpResponseMessage> shield,
+        ShieldHttpHandlerOptions options,
+        Func<Shield<HttpResponseMessage>, Shield<HttpResponseMessage>> requestShieldDecorator)
+        : this(shield, options)
+    {
+        _requestShieldDecorator = requestShieldDecorator
+            ?? throw new ArgumentNullException(nameof(requestShieldDecorator));
     }
 
     /// <summary>Creates the handler with a shield selected once for each request.</summary>
@@ -41,26 +52,39 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
     }
 
     internal ShieldDelegatingHandler(
+        Func<HttpRequestMessage, Shield<HttpResponseMessage>> shieldSelector,
+        ShieldHttpHandlerOptions options,
+        Func<Shield<HttpResponseMessage>, Shield<HttpResponseMessage>> requestShieldDecorator)
+        : this(WrapSelector(shieldSelector), options, requestShieldDecorator)
+    {
+    }
+
+    internal ShieldDelegatingHandler(
         Func<HttpRequestMessage, ValueTask<Shield<HttpResponseMessage>>> shieldSelector,
-        ShieldHttpHandlerOptions options)
+        ShieldHttpHandlerOptions options,
+        Func<Shield<HttpResponseMessage>, Shield<HttpResponseMessage>>? requestShieldDecorator = null)
     {
         _shieldSelector = shieldSelector
             ?? throw new ArgumentNullException(nameof(shieldSelector));
+        _requestShieldDecorator = requestShieldDecorator;
         _pipeline = new HttpShieldPipeline(Shield<HttpResponseMessage>.Empty, options);
     }
 
     private ShieldDelegatingHandler(
         ReloadingHttpShieldPipeline reloadingPipeline,
-        bool _)
+        Func<Shield<HttpResponseMessage>, Shield<HttpResponseMessage>> requestShieldDecorator)
     {
         _reloadingPipeline = reloadingPipeline
             ?? throw new ArgumentNullException(nameof(reloadingPipeline));
+        _requestShieldDecorator = requestShieldDecorator
+            ?? throw new ArgumentNullException(nameof(requestShieldDecorator));
         _pipeline = null!;
     }
 
     internal static ShieldDelegatingHandler CreateReloading(
-        ReloadingHttpShieldPipeline reloadingPipeline) =>
-        new(reloadingPipeline, true);
+        ReloadingHttpShieldPipeline reloadingPipeline,
+        Func<Shield<HttpResponseMessage>, Shield<HttpResponseMessage>> requestShieldDecorator) =>
+        new(reloadingPipeline, requestShieldDecorator);
 
     /// <inheritdoc />
     protected override async Task<HttpResponseMessage> SendAsync(
@@ -74,6 +98,11 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         requestOptions?.CancellationToken.ThrowIfCancellationRequested();
         var pipeline = _reloadingPipeline?.Current ?? _pipeline;
         var selectedShield = requestOptions?.Shield;
+        if (selectedShield is not null && _requestShieldDecorator is not null)
+        {
+            selectedShield = _requestShieldDecorator(selectedShield);
+        }
+
         if (selectedShield is null && _shieldSelector is not null)
         {
             using (var selectionCancellation = CreateLinkedCancellation(

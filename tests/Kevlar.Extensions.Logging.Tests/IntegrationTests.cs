@@ -162,6 +162,53 @@ public class IntegrationTests
         await Assert.That(retry.GetStructuredStateValue("ShieldName")).IsEqualTo("partitioned");
     }
 
+    [Test]
+    [NotInParallel]
+    public async Task AddKevlarLogging_Decorates_Direct_Request_Shield()
+    {
+        var logs = new FakeLoggerProvider();
+        var services = new ServiceCollection();
+        services.AddLogging(builder => builder.AddProvider(logs));
+        services.AddKevlarLogging();
+        services.AddHttpClient("direct")
+            .ConfigurePrimaryHttpMessageHandler(() => new SequenceHandler(
+                HttpStatusCode.InternalServerError,
+                HttpStatusCode.OK))
+            .AddShield(Shield<HttpResponseMessage>.Empty);
+        using var provider = services.BuildServiceProvider();
+        var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("direct");
+        using var request = new HttpRequestMessage(HttpMethod.Get, "https://example.test/direct")
+            .WithShield(HttpShield.WhenTransient().Retry(1, Backoff.None));
+
+        using var response = await client.SendAsync(request);
+
+        var retry = logs.Collector.GetSnapshot()
+            .Single(record => record.Id == new EventId(1001, "Retry"));
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(retry.GetStructuredStateValue("ShieldName")).IsEqualTo("direct");
+    }
+
+    [Test]
+    [NotInParallel]
+    public async Task AddKevlarLogging_Shares_Rate_Limit_Across_Decorated_Shields()
+    {
+        var logs = new FakeLoggerProvider();
+        var services = new ServiceCollection();
+        services.AddLogging(builder => builder.AddProvider(logs));
+        services.AddKevlarLogging(options => options.MaxLogsPerSecond = 1);
+        services.AddShield("first", Shield.Retry(1, Backoff.None));
+        services.AddShield("second", Shield.Retry(1, Backoff.None));
+        using var provider = services.BuildServiceProvider();
+        var registry = provider.GetRequiredService<IKevlarRegistry>();
+
+        _ = await registry.GetShield("first").ExecuteOutcomeAsync<int>(Fail);
+        _ = await registry.GetShield("second").ExecuteOutcomeAsync<int>(Fail);
+
+        var retryLogs = logs.Collector.GetSnapshot()
+            .Count(record => record.Id == new EventId(1001, "Retry"));
+        await Assert.That(retryLogs).IsEqualTo(1);
+    }
+
     private static ValueTask<int> Fail(CancellationToken _) =>
         new(Task.FromException<int>(new TestException("failure")));
 

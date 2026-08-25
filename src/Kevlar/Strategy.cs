@@ -146,6 +146,29 @@ internal interface ITransparentStrategy
 {
 }
 
+internal interface IStrategyAppendObserver
+{
+    void OnStrategyAppended(Strategy strategy, string? shieldName, int strategyIndex);
+}
+
+internal static class StrategyAppendObserver
+{
+    public static void Notify(
+        Strategy[] strategies,
+        Strategy appended,
+        string? shieldName)
+    {
+        var strategyIndex = strategies.Count(static strategy => strategy is not ITransparentStrategy);
+        foreach (var strategy in strategies)
+        {
+            if (strategy is IStrategyAppendObserver observer)
+            {
+                observer.OnStrategyAppended(appended, shieldName, strategyIndex);
+            }
+        }
+    }
+}
+
 /// <summary>
 /// The rest of a shield pipeline, from a strategy's point of view. Invoking it runs every
 /// remaining strategy and finally the user's delegate. It may be invoked multiple times

@@ -523,6 +523,24 @@ public class LoggingTests
         GC.KeepAlive(shield);
     }
 
+    [Test]
+    [NotInParallel]
+    public async Task Breaker_Appended_After_Logging_Logs_Manual_Isolation()
+    {
+        var logger = new FakeLogger();
+        var monitor = new CircuitBreakerMonitor();
+        var shield = Shield.Empty
+            .WithLogging(logger)
+            .CircuitBreaker(options => options.Monitor = monitor);
+
+        monitor.Isolate();
+
+        var record = logger.Collector.GetSnapshot().Single();
+        await Assert.That(record.Id).IsEqualTo(new EventId(1003, "CircuitState"));
+        await Assert.That(record.GetStructuredStateValue("ToState")).IsEqualTo("Isolated");
+        GC.KeepAlive(shield);
+    }
+
     private static MeterListener CreateCallbackErrorListener(
         string shieldName,
         List<string> measurements)

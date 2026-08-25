@@ -29,22 +29,14 @@ internal sealed class LoggingShieldDecorator(
     LoggingOptionsSnapshot options) : IShieldDecorator
 {
     public Shield Decorate(Shield shield, string? name) =>
-        EnsureName(shield, name).WithLogging(logger, target => Copy(options, target));
+        EnsureName(shield, name).WithLogging(logger, options);
 
     public Shield<TResult> Decorate<TResult>(Shield<TResult> shield, string? name) =>
-        EnsureName(shield, name).WithLogging(logger, target => Copy(options, target));
+        EnsureName(shield, name).WithLogging(logger, options);
 
     private static Shield EnsureName(Shield shield, string? name) =>
         shield.Name is null && name is not null ? shield.WithName(name) : shield;
 
     private static Shield<TResult> EnsureName<TResult>(Shield<TResult> shield, string? name) =>
         shield.Name is null && name is not null ? shield.WithName(name) : shield;
-
-    private static void Copy(LoggingOptionsSnapshot source, KevlarLoggingOptions target)
-    {
-        target.SeverityProvider = source.SeverityProvider;
-        target.ResultFormatter = source.ResultFormatter;
-        target.IncludeScopes = source.IncludeScopes;
-        target.MaxLogsPerSecond = source.MaxLogsPerSecond;
-    }
 }

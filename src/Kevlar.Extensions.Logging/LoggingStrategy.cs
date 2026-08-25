@@ -1,10 +1,11 @@
 using System.Runtime.ExceptionServices;
+using Kevlar.Strategies;
 using Microsoft.Extensions.Logging;
 
 namespace Kevlar.Extensions.Logging;
 
 internal sealed class LoggingStrategy(LoggingRegistration registration)
-    : Strategy, ITransparentStrategy
+    : Strategy, ITransparentStrategy, IStrategyAppendObserver
 {
     private readonly LoggingTelemetryListener _listener = new(registration);
 
@@ -13,6 +14,21 @@ internal sealed class LoggingStrategy(LoggingRegistration registration)
     internal LoggingRegistration Registration { get; } = registration;
 
     internal IKevlarTelemetryListener Listener => _listener;
+
+    void IStrategyAppendObserver.OnStrategyAppended(
+        Strategy strategy,
+        string? shieldName,
+        int strategyIndex)
+    {
+        if (strategy is CircuitBreakerStrategy circuitBreaker)
+        {
+            circuitBreaker.Core.AttachTelemetryListener(
+                previous: null,
+                _listener,
+                shieldName,
+                strategyIndex);
+        }
+    }
 
     public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
         Continuation<T, TState> next,

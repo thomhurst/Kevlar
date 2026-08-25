@@ -17,8 +17,20 @@ public static class ShieldLoggingExtensions
         if (shield is null) { throw new ArgumentNullException(nameof(shield)); }
         if (logger is null) { throw new ArgumentNullException(nameof(logger)); }
 
+        return WithLogging(shield, logger, CreateOptions(configure));
+    }
+
+    internal static Shield WithLogging(
+        this Shield shield,
+        ILogger logger,
+        LoggingOptionsSnapshot options)
+    {
+        if (shield is null) { throw new ArgumentNullException(nameof(shield)); }
+        if (logger is null) { throw new ArgumentNullException(nameof(logger)); }
+        if (options is null) { throw new ArgumentNullException(nameof(options)); }
+
         return new Shield(
-            Prepend(shield.Strategies, CreateRegistration(logger, configure), shield.Name),
+            Prepend(shield.Strategies, new LoggingRegistration(logger, options), shield.Name),
             shield.Ambient,
             shield.Name,
             shield.Time);
@@ -33,20 +45,31 @@ public static class ShieldLoggingExtensions
         if (shield is null) { throw new ArgumentNullException(nameof(shield)); }
         if (logger is null) { throw new ArgumentNullException(nameof(logger)); }
 
+        return WithLogging(shield, logger, CreateOptions(configure));
+    }
+
+    internal static Shield<TResult> WithLogging<TResult>(
+        this Shield<TResult> shield,
+        ILogger logger,
+        LoggingOptionsSnapshot options)
+    {
+        if (shield is null) { throw new ArgumentNullException(nameof(shield)); }
+        if (logger is null) { throw new ArgumentNullException(nameof(logger)); }
+        if (options is null) { throw new ArgumentNullException(nameof(options)); }
+
         return new Shield<TResult>(
-            Prepend(shield.Strategies, CreateRegistration(logger, configure), shield.Name),
+            Prepend(shield.Strategies, new LoggingRegistration(logger, options), shield.Name),
             shield.Ambient,
             shield.Name,
             shield.Time);
     }
 
-    private static LoggingRegistration CreateRegistration(
-        ILogger logger,
+    private static LoggingOptionsSnapshot CreateOptions(
         Action<KevlarLoggingOptions>? configure)
     {
         var options = new KevlarLoggingOptions();
         configure?.Invoke(options);
-        return new LoggingRegistration(logger, options.Snapshot());
+        return options.Snapshot();
     }
 
     private static Strategy[] Prepend(

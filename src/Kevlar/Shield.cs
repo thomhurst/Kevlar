@@ -794,7 +794,9 @@ public sealed class Shield : IShieldLifecycle
         var strategies = new Strategy[Strategies.Length + 1];
         Array.Copy(Strategies, strategies, Strategies.Length);
         strategies[Strategies.Length] = strategy;
-        return new Shield(strategies, ambient ?? Ambient, Name, Time);
+        var shield = new Shield(strategies, ambient ?? Ambient, Name, Time);
+        StrategyAppendObserver.Notify(Strategies, strategy, Name);
+        return shield;
     }
 
     internal static StrategyNode? BuildChain(Strategy[] strategies, StrategyOwnerSet shieldOwners)

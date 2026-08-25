@@ -22,7 +22,10 @@ public static class ShieldHttpClientBuilderExtensions
         }
 
         return builder.AddHttpMessageHandler(services =>
-            new ShieldDelegatingHandler(Decorate(services, shield, builder.Name)));
+            new ShieldDelegatingHandler(
+                Decorate(services, shield, builder.Name),
+                new ShieldHttpHandlerOptions(),
+                CreateDecorator(services, builder.Name)));
     }
 
     /// <summary>Sends this client's requests through the given shield with replay and routing options.</summary>
@@ -47,7 +50,10 @@ public static class ShieldHttpClientBuilderExtensions
         }
 
         return builder.AddHttpMessageHandler(services =>
-            new ShieldDelegatingHandler(Decorate(services, shield, builder.Name), options));
+            new ShieldDelegatingHandler(
+                Decorate(services, shield, builder.Name),
+                options,
+                CreateDecorator(services, builder.Name)));
     }
 
     /// <summary>Sends this client's requests through a shield built from the service provider.</summary>
@@ -64,7 +70,9 @@ public static class ShieldHttpClientBuilderExtensions
         }
 
         return builder.AddHttpMessageHandler(services => new ShieldDelegatingHandler(
-            Decorate(services, shieldFactory(services), builder.Name)));
+            Decorate(services, shieldFactory(services), builder.Name),
+            new ShieldHttpHandlerOptions(),
+            CreateDecorator(services, builder.Name)));
     }
 
     /// <summary>Selects one shield for each request using the request and service provider.</summary>
@@ -84,7 +92,9 @@ public static class ShieldHttpClientBuilderExtensions
 
         return builder.AddHttpMessageHandler(services =>
             new ShieldDelegatingHandler(request =>
-                Decorate(services, shieldSelector(request, services), builder.Name)));
+                Decorate(services, shieldSelector(request, services), builder.Name),
+                new ShieldHttpHandlerOptions(),
+                CreateDecorator(services, builder.Name)));
     }
 
     /// <summary>Selects a bounded partition shield from each request.</summary>
@@ -116,7 +126,8 @@ public static class ShieldHttpClientBuilderExtensions
                     partitions,
                     keySelector(request),
                     builder.Name),
-                new ShieldHttpHandlerOptions()));
+                new ShieldHttpHandlerOptions(),
+                CreateDecorator(services, builder.Name)));
     }
 
     /// <summary>Sends this client's requests through service-provider-created shield and handler options.</summary>
@@ -143,7 +154,8 @@ public static class ShieldHttpClientBuilderExtensions
         return builder.AddHttpMessageHandler(services =>
             new ShieldDelegatingHandler(
                 Decorate(services, shieldFactory(services), builder.Name),
-                optionsFactory(services)));
+                optionsFactory(services),
+                CreateDecorator(services, builder.Name)));
     }
 
     /// <summary>
@@ -178,7 +190,8 @@ public static class ShieldHttpClientBuilderExtensions
         return UseStandardTimeout(builder)
             .AddHttpMessageHandler(services => new ShieldDelegatingHandler(
                 Decorate(services, shield, builder.Name),
-                handlerOptions));
+                handlerOptions,
+                CreateDecorator(services, builder.Name)));
     }
 
     /// <summary>
@@ -205,7 +218,8 @@ public static class ShieldHttpClientBuilderExtensions
             configure(services, options);
             return new ShieldDelegatingHandler(
                 Decorate(services, HttpShield.Standard(options), builder.Name),
-                Snapshot(options.Handler));
+                Snapshot(options.Handler),
+                CreateDecorator(services, builder.Name));
         });
     }
 
@@ -264,7 +278,8 @@ public static class ShieldHttpClientBuilderExtensions
             return ShieldDelegatingHandler.CreateReloading(new ReloadingHttpShieldPipeline(
                 CreatePipeline,
                 configuration.GetReloadToken,
-                onReloadFailure));
+                onReloadFailure),
+                CreateDecorator(services, builder.Name));
         });
     }
 
@@ -331,7 +346,8 @@ public static class ShieldHttpClientBuilderExtensions
         return UseStandardTimeout(builder).AddHttpMessageHandler(services =>
             new ShieldDelegatingHandler(
                 Decorate(services, shield, builder.Name),
-                handlerOptions));
+                handlerOptions,
+                CreateDecorator(services, builder.Name)));
     }
 
     /// <summary>
@@ -389,7 +405,8 @@ public static class ShieldHttpClientBuilderExtensions
             return ShieldDelegatingHandler.CreateReloading(new ReloadingHttpShieldPipeline(
                 CreatePipeline,
                 configuration.GetReloadToken,
-                onReloadFailure));
+                onReloadFailure),
+                CreateDecorator(services, builder.Name));
         });
     }
 
@@ -411,6 +428,11 @@ public static class ShieldHttpClientBuilderExtensions
 
         return shield;
     }
+
+    private static Func<Shield<HttpResponseMessage>, Shield<HttpResponseMessage>> CreateDecorator(
+        IServiceProvider serviceProvider,
+        string? name) =>
+        shield => Decorate(serviceProvider, shield, name);
 
     private static async ValueTask<Shield<TResult>> GetDecoratedPartitionAsync<TKey, TResult>(
         IServiceProvider serviceProvider,
