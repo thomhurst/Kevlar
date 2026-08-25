@@ -1478,6 +1478,30 @@ public class MetricsTests
     }
 
     [Test]
+    public async Task Full_Live_Alias_Registration_Does_Not_Allocate_For_Overflow()
+    {
+        var registry = new KevlarMetrics.StateMetricRegistry<object>();
+        var strategy = new object();
+        var registration = registry.Register(strategy);
+        for (var index = 0; index < KevlarMetrics.MaxTrackedStrategyAliases; index++)
+        {
+            registration.Add(new StrategyMetricAlias($"metrics-full-alias-{index}", 0));
+        }
+
+        var overflow = new StrategyMetricAlias("metrics-overflow-alias", 0);
+        registration.Add(overflow);
+        var before = GC.GetAllocatedBytesForCurrentThread();
+        for (var iteration = 0; iteration < 100; iteration++)
+        {
+            registration.Add(overflow);
+        }
+
+        var allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+        await Assert.That(allocated).IsEqualTo(0);
+        GC.KeepAlive(strategy);
+    }
+
+    [Test]
     public async Task Immediately_Admitted_Execution_Is_Not_Reported_As_Queued()
     {
         using var listener = new KevlarMeterListener();
