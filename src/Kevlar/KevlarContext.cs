@@ -24,8 +24,10 @@ public sealed class KevlarContext
 
     private readonly KevlarProperties _properties = new();
     private KevlarProperties? _completionProperties;
+    private KevlarProperties? _forkBaseline;
     private readonly object _completionPropertiesLock = new();
     private bool _hasCompletionProperties;
+    private bool _hasForkBaseline;
 
     private CancellationToken _cancellationToken;
     private long _activeStrategyMask;
@@ -154,6 +156,16 @@ public sealed class KevlarContext
         }
     }
 
+    internal void CopyCompletionPropertiesToParent(KevlarContext target)
+    {
+        lock (_completionPropertiesLock)
+        {
+            target.CaptureCompletionProperties(
+                PropertiesForCompletion,
+                _hasForkBaseline ? _forkBaseline : null);
+        }
+    }
+
     internal static KevlarContext Rent(CancellationToken cancellationToken, bool isSynchronous, TimeProvider timeProvider, string? shieldName)
     {
         var context = Pool.Rent();
@@ -201,6 +213,9 @@ public sealed class KevlarContext
         fork.StrategyIndex = StrategyIndex;
 
         Properties.CopyTo(fork.Properties);
+        fork._forkBaseline ??= new KevlarProperties();
+        Properties.CopyTo(fork._forkBaseline);
+        fork._hasForkBaseline = true;
         return fork;
     }
 
@@ -290,7 +305,9 @@ public sealed class KevlarContext
             context._properties.MirrorMutationsTo(null);
             context._properties.Clear();
             context._completionProperties?.Clear();
+            context._forkBaseline?.Clear();
             context._hasCompletionProperties = false;
+            context._hasForkBaseline = false;
             return true;
         }
     }

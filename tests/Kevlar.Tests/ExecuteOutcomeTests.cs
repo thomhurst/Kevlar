@@ -6,6 +6,8 @@ public class ExecuteOutcomeTests
     private static readonly KevlarKey<int> WinningAttempt = new("winning-attempt");
     private static readonly KevlarKey<int> OuterStrategyWrite = new("outer-strategy-write");
     private static readonly KevlarKey<int> RemovedByOuterStrategy = new("removed-by-outer-strategy");
+    private static readonly KevlarKey<int> HedgeCallbackWrite = new("hedge-callback-write");
+    private static readonly KevlarKey<int> PredicateWrite = new("predicate-write");
 
     [Test]
     public async Task Void_ExecuteOutcomeAsync_Returns_Success()
@@ -297,6 +299,44 @@ public class ExecuteOutcomeTests
     }
 
     [Test]
+    public async Task OnCompleted_Preserves_Parent_Writes_After_Winning_Attempt_Forked()
+    {
+        var releasePrimary = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var attempts = 0;
+        var observed = -1;
+        var shield = Shield.Hedge(options =>
+        {
+            options.MaxAttempts = 2;
+            options.Delay = TimeSpan.Zero;
+            options.OnHedge = hedge =>
+            {
+                hedge.Context.Properties.Set(HedgeCallbackWrite, 42);
+                releasePrimary.TrySetResult();
+            };
+        });
+
+        _ = await shield.ExecuteWithContextAsync(
+            0,
+            static (_, _) => { },
+            async (_, context) =>
+            {
+                if (Interlocked.Increment(ref attempts) == 1)
+                {
+                    await releasePrimary.Task;
+                    return 42;
+                }
+
+                await Task.Delay(Timeout.InfiniteTimeSpan, context.CancellationToken);
+                return 0;
+            },
+            (_, properties) =>
+                observed = properties.GetOrDefault(HedgeCallbackWrite, -1));
+
+        await Assert.That(observed).IsEqualTo(42);
+    }
+
+    [Test]
     public async Task OnCompleted_Sees_Properties_Removed_By_Winning_Hedge()
     {
         var key = new KevlarKey<int>("removed-by-winner");
@@ -417,6 +457,36 @@ public class ExecuteOutcomeTests
                 observedWinner = properties.GetOrDefault(WinningAttempt, -1));
 
         await Assert.That(observedWinner).IsEqualTo(3);
+    }
+
+    [Test]
+    public async Task OnCompleted_Preserves_Generated_Winner_Predicate_Writes()
+    {
+        var attempts = 0;
+        var observed = -1;
+        var shield = Shield.For<int>().Hedge(options =>
+        {
+            options.MaxAttempts = 2;
+            options.Delay = Timeout.InfiniteTimeSpan;
+            options.HandlesException = static _ => true;
+            options.HandlesResultWithContext = handling =>
+            {
+                handling.Context.Properties.Set(PredicateWrite, 42);
+                return false;
+            };
+            options.ActionGenerator = hedge => token => hedge.OriginalAction(token);
+        });
+
+        _ = await shield.ExecuteWithContextAsync(
+            0,
+            static (_, _) => { },
+            (_, _) => Interlocked.Increment(ref attempts) == 1
+                ? ValueTask.FromException<int>(new InvalidOperationException())
+                : new ValueTask<int>(42),
+            (_, properties) =>
+                observed = properties.GetOrDefault(PredicateWrite, -1));
+
+        await Assert.That(observed).IsEqualTo(42);
     }
 
     [Test]

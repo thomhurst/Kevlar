@@ -235,6 +235,11 @@ internal sealed class HedgingStrategy : Strategy
                         strategyIndex);
                     if (!shouldHandle || launched == _maxAttempts && pending.Count == 0)
                     {
+                        if (!ReferenceEquals(judgingContext, completedAttempt.Context))
+                        {
+                            CopyAttemptProperties(judgingContext, completedAttempt.Context);
+                        }
+
                         CopyAttemptProperties(completedAttempt.Context, context);
                     }
                 }
@@ -977,7 +982,7 @@ internal sealed class HedgingStrategy : Strategy
     }
 
     private static void CopyAttemptProperties(KevlarContext source, KevlarContext target) =>
-        source.CopyCompletionPropertiesTo(target);
+        source.CopyCompletionPropertiesToParent(target);
 
     private readonly struct StartedAttempt<T>
     {
