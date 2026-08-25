@@ -490,7 +490,6 @@ references:
   - uid: Kevlar.KevlarContext
     name: KevlarContext
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/KevlarContext.cs
   - name: ','
   - name: " "
   - uid: System.Exception
@@ -509,7 +508,6 @@ references:
   - uid: Kevlar.KevlarContext
     name: KevlarContext
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/KevlarContext.cs
   - name: ','
   - name: " "
   - uid: System.Exception

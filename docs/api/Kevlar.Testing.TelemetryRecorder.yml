@@ -388,7 +388,6 @@ references:
   - uid: Kevlar.RetryEvent
     name: RetryEvent
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Strategies/Retry/RetryOptions.cs
   - name: )
   spec.vb:
   - uid: Kevlar.Testing.TelemetryRecorder.Record(Kevlar.RetryEvent)
@@ -399,7 +398,6 @@ references:
   - uid: Kevlar.RetryEvent
     name: RetryEvent
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Strategies/Retry/RetryOptions.cs
   - name: )
 - uid: Kevlar.Testing
   commentId: N:Kevlar.Testing
@@ -696,7 +694,6 @@ references:
   commentId: T:Kevlar.RetryEvent{``0}
   parent: Kevlar
   definition: Kevlar.RetryEvent`1
-  href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Strategies/Retry/RetryOptions.cs
   name: RetryEvent<TResult>
   nameWithType: RetryEvent<TResult>
   fullName: Kevlar.RetryEvent<TResult>
@@ -707,7 +704,6 @@ references:
   - uid: Kevlar.RetryEvent`1
     name: RetryEvent
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Strategies/Retry/RetryOptions.cs
   - name: <
   - name: TResult
   - name: '>'
@@ -715,7 +711,6 @@ references:
   - uid: Kevlar.RetryEvent`1
     name: RetryEvent
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Strategies/Retry/RetryOptions.cs
   - name: (
   - name: Of
   - name: " "
@@ -777,7 +772,6 @@ references:
   commentId: T:Kevlar.FallbackEvent{``0}
   parent: Kevlar
   definition: Kevlar.FallbackEvent`1
-  href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Strategies/Fallback/FallbackEventOfT.cs
   name: FallbackEvent<TResult>
   nameWithType: FallbackEvent<TResult>
   fullName: Kevlar.FallbackEvent<TResult>
@@ -788,7 +782,6 @@ references:
   - uid: Kevlar.FallbackEvent`1
     name: FallbackEvent
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Strategies/Fallback/FallbackEventOfT.cs
   - name: <
   - name: TResult
   - name: '>'
@@ -796,7 +789,6 @@ references:
   - uid: Kevlar.FallbackEvent`1
     name: FallbackEvent
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Strategies/Fallback/FallbackEventOfT.cs
   - name: (
   - name: Of
   - name: " "

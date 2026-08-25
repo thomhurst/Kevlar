@@ -661,7 +661,6 @@ references:
   commentId: T:Kevlar.ShieldBuilder{System.Net.Http.HttpResponseMessage}
   parent: Kevlar
   definition: Kevlar.ShieldBuilder`1
-  href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/ShieldBuilderOfT.cs
   name: ShieldBuilder<HttpResponseMessage>
   nameWithType: ShieldBuilder<HttpResponseMessage>
   fullName: Kevlar.ShieldBuilder<System.Net.Http.HttpResponseMessage>
@@ -672,7 +671,6 @@ references:
   - uid: Kevlar.ShieldBuilder`1
     name: ShieldBuilder
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/ShieldBuilderOfT.cs
   - name: <
   - uid: System.Net.Http.HttpResponseMessage
     name: HttpResponseMessage
@@ -683,7 +681,6 @@ references:
   - uid: Kevlar.ShieldBuilder`1
     name: ShieldBuilder
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/ShieldBuilderOfT.cs
   - name: (
   - name: Of
   - name: " "
@@ -739,7 +736,6 @@ references:
   commentId: T:Kevlar.Shield{System.Net.Http.HttpResponseMessage}
   parent: Kevlar
   definition: Kevlar.Shield`1
-  href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/ShieldOfT.cs
   name: Shield<HttpResponseMessage>
   nameWithType: Shield<HttpResponseMessage>
   fullName: Kevlar.Shield<System.Net.Http.HttpResponseMessage>
@@ -750,7 +746,6 @@ references:
   - uid: Kevlar.Shield`1
     name: Shield
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/ShieldOfT.cs
   - name: <
   - uid: System.Net.Http.HttpResponseMessage
     name: HttpResponseMessage
@@ -761,7 +756,6 @@ references:
   - uid: Kevlar.Shield`1
     name: Shield
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/ShieldOfT.cs
   - name: (
   - name: Of
   - name: " "
@@ -827,7 +821,6 @@ references:
   commentId: T:Kevlar.RetryEvent{System.Net.Http.HttpResponseMessage}
   parent: Kevlar
   definition: Kevlar.RetryEvent`1
-  href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Strategies/Retry/RetryOptions.cs
   name: RetryEvent<HttpResponseMessage>
   nameWithType: RetryEvent<HttpResponseMessage>
   fullName: Kevlar.RetryEvent<System.Net.Http.HttpResponseMessage>
@@ -838,7 +831,6 @@ references:
   - uid: Kevlar.RetryEvent`1
     name: RetryEvent
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Strategies/Retry/RetryOptions.cs
   - name: <
   - uid: System.Net.Http.HttpResponseMessage
     name: HttpResponseMessage
@@ -849,7 +841,6 @@ references:
   - uid: Kevlar.RetryEvent`1
     name: RetryEvent
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Strategies/Retry/RetryOptions.cs
   - name: (
   - name: Of
   - name: " "
@@ -969,7 +960,6 @@ references:
   - uid: Kevlar.RetryEvent`1
     name: RetryEvent
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Strategies/Retry/RetryOptions.cs
   - name: <
   - uid: System.Net.Http.HttpResponseMessage
     name: HttpResponseMessage
@@ -995,7 +985,6 @@ references:
   - uid: Kevlar.RetryEvent`1
     name: RetryEvent
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Strategies/Retry/RetryOptions.cs
   - name: (
   - name: Of
   - name: " "

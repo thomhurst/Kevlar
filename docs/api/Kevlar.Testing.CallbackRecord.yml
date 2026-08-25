@@ -717,7 +717,6 @@ references:
   commentId: T:System.Nullable{Kevlar.CircuitState}
   parent: System
   definition: System.Nullable`1
-  href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Strategies/CircuitBreaker/CircuitState.cs
   name: CircuitState?
   nameWithType: CircuitState?
   fullName: Kevlar.CircuitState?
@@ -725,13 +724,11 @@ references:
   - uid: Kevlar.CircuitState
     name: CircuitState
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Strategies/CircuitBreaker/CircuitState.cs
   - name: '?'
   spec.vb:
   - uid: Kevlar.CircuitState
     name: CircuitState
     isExternal: true
-    href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/Strategies/CircuitBreaker/CircuitState.cs
   - name: '?'
 - uid: Kevlar.Testing.CallbackRecord.To*
   commentId: Overload:Kevlar.Testing.CallbackRecord.To

@@ -37,11 +37,11 @@ if (-not $SkipMetadata)
         throw 'DocFX metadata generation failed.'
     }
 
-    $sourceLinkPattern = '(https://github\.com/thomhurst/Kevlar/blob/)[0-9a-f]{40}/'
+    $sourceLinkPattern = '(?m)^[ \t]*href: https://github\.com/thomhurst/Kevlar/blob/[^\r\n]*(?:\r?\n|$)'
     foreach ($metadataFile in Get-ChildItem -LiteralPath $metadataPath -Filter '*.yml' -File)
     {
         $content = [IO.File]::ReadAllText($metadataFile.FullName)
-        $normalized = [regex]::Replace($content, $sourceLinkPattern, '$1main/')
+        $normalized = [regex]::Replace($content, $sourceLinkPattern, '')
         if ($normalized -ne $content)
         {
             [IO.File]::WriteAllText(

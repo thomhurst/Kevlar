@@ -490,7 +490,6 @@ references:
 - uid: Kevlar.BackoffKind.Exponential
   commentId: F:Kevlar.BackoffKind.Exponential
   isExternal: true
-  href: https://github.com/thomhurst/Kevlar/blob/main/src/Kevlar/BackoffKind.cs
   name: Exponential
   nameWithType: BackoffKind.Exponential
   fullName: Kevlar.BackoffKind.Exponential
