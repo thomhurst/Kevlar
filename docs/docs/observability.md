@@ -94,6 +94,8 @@ Strategy event names and strategy names are stable bounded values. Exception tel
 full exception type name; messages are never tags. To correlate a small fixed set of logical
 operations, set `KevlarKeys.OperationKey` while initializing execution properties. Never put request
 IDs, URLs, partition keys, tenant IDs, or other unbounded values in that key.
+The `kevlar.attempt.number` metric attribute is capped at `63` to bound series cardinality; telemetry
+listener events retain the exact attempt number.
 
 Every strategy options type has an optional `Name`. When unset, telemetry uses the built-in strategy
 name such as `Retry`; when set, the configured value becomes `kevlar.strategy.name`. Keep strategy

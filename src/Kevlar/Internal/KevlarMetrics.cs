@@ -338,7 +338,12 @@ internal static class KevlarMetrics
         tags.Add("kevlar.strategy.name", telemetryEvent.StrategyName);
         tags.Add("kevlar.event.name", telemetryEvent.EventName);
         tags.Add("kevlar.event.severity", SeverityName(telemetryEvent.Severity));
-        tags.Add("kevlar.attempt.number", BoxStrategyIndex(telemetryEvent.AttemptNumber));
+        tags.Add(
+            "kevlar.attempt.number",
+            BoxStrategyIndex(Math.Clamp(
+                telemetryEvent.AttemptNumber,
+                0,
+                _maximumCachedStrategyIndex)));
         if (telemetryEvent.Exception is not null)
         {
             tags.Add("exception.type", telemetryEvent.Exception.GetType().FullName);

@@ -417,6 +417,33 @@ public class MetricsTests
     }
 
     [Test]
+    public async Task Attempt_Number_Metric_Tag_Is_Capped_But_Listener_Value_Is_Exact()
+    {
+        using var meterListener = new KevlarMeterListener();
+        var listenerAttempts = new List<int>();
+        using var subscription = KevlarDiagnostics.Listen(new CallbackTelemetryListener(telemetryEvent =>
+        {
+            if (telemetryEvent.EventName == "execution_attempt")
+            {
+                listenerAttempts.Add(telemetryEvent.AttemptNumber);
+            }
+        }));
+        var shield = Shield.Retry(65, Backoff.None)
+            .WithName("metrics-bounded-attempt-number");
+
+        _ = await shield.ExecuteOutcomeAsync<int>(_ =>
+            ValueTask.FromException<int>(new InvalidOperationException("retry")));
+
+        var metricAttempts = meterListener
+            .DoubleMeasurements("kevlar.attempt.duration", "metrics-bounded-attempt-number")
+            .Select(tags => (int)tags["kevlar.attempt.number"]!)
+            .ToArray();
+        await Assert.That(listenerAttempts).IsEquivalentTo(Enumerable.Range(0, 66));
+        await Assert.That(metricAttempts.Max()).IsEqualTo(63);
+        await Assert.That(metricAttempts.Distinct().Count()).IsEqualTo(64);
+    }
+
+    [Test]
     public async Task Missing_Optional_Values_Produce_The_Exact_Bounded_Tag_Set()
     {
         using var listener = new KevlarMeterListener();
@@ -750,6 +777,31 @@ public class MetricsTests
 
         await Assert.That(result).IsEqualTo(42);
         await Assert.That(attempts).IsEquivalentTo([0, 1]);
+    }
+
+    [Test]
+    public async Task Primary_Hedge_Attempt_Resets_The_Outer_Retry_Attempt()
+    {
+        var attempts = new List<int>();
+        using var subscription = KevlarDiagnostics.Listen(new CallbackTelemetryListener(telemetryEvent =>
+        {
+            if (telemetryEvent.EventName == "custom_strategy_event")
+            {
+                attempts.Add(telemetryEvent.AttemptNumber);
+            }
+        }));
+        var calls = 0;
+        var shield = Shield.Retry(1, Backoff.None)
+            .Hedge(1, Timeout.InfiniteTimeSpan)
+            .Use(new TelemetryStrategy());
+
+        var result = await shield.ExecuteAsync(_ => ++calls <= 2
+            ? ValueTask.FromException<int>(new InvalidOperationException("retry"))
+            : new ValueTask<int>(42));
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(calls).IsEqualTo(3);
+        await Assert.That(attempts).IsEquivalentTo([0, 1, 0]);
     }
 
     [Test]
