@@ -56,6 +56,8 @@ build spelled these `WhenResultDefault`/`OrResultDefault`; the `Is` makes the re
 
 ### Changed
 
+- Handling-clause builders now match their shield counterparts for configured timeouts, direct
+  custom strategies, and void fallbacks that do not need the handled exception.
 - Every NuGet package now embeds the canonical Kevlar icon, links release notes, and carries a
   NuGet-safe README with status badges. `Kevlar.Analyzers` is marked as a development dependency
   so it does not flow from a packed consumer library.
