@@ -126,6 +126,10 @@ internal sealed class HedgingStrategy : Strategy
                 primary.Context,
                 attempt: 0,
                 strategyIndex);
+            if (!shouldHandle)
+            {
+                CopyAttemptProperties(primary.Context, context);
+            }
         }
         finally
         {
@@ -223,12 +227,21 @@ internal sealed class HedgingStrategy : Strategy
                 bool shouldHandle;
                 try
                 {
-                    completedAttempt.FreezeContext(in outcome);
+                    var judgingContext = completedAttempt.FreezeContext(in outcome);
                     shouldHandle = _judge.ShouldHandle(
                         in outcome,
-                        completedAttempt.Context,
+                        judgingContext,
                         completedAttempt.Attempt,
                         strategyIndex);
+                    if (!shouldHandle || launched == _maxAttempts && pending.Count == 0)
+                    {
+                        if (!ReferenceEquals(judgingContext, completedAttempt.Context))
+                        {
+                            CopyAttemptProperties(judgingContext, completedAttempt.Context);
+                        }
+
+                        CopyAttemptProperties(completedAttempt.Context, context);
+                    }
                 }
                 finally
                 {
@@ -563,12 +576,13 @@ internal sealed class HedgingStrategy : Strategy
             maxCapacity: KevlarContext.PoolCapacity);
 
         private readonly object _sync = new();
+        private readonly KevlarProperties _initialProperties = new();
+        private readonly KevlarProperties _mergedProperties = new();
         private KevlarContext? _context;
         private CancellationTokenSource? _cancellation;
-        private List<CapturedOriginalAction>? _additionalCompletions;
-        private Outcome<T> _firstOutcome;
+        private List<CapturedOriginalAction>? _completions;
+        private KevlarContext? _selectedContext;
         private bool _acceptingInvocations;
-        private bool _hasFirstOutcome;
         private bool _frozen;
         private int _references;
         private int _version;
@@ -587,10 +601,11 @@ internal sealed class HedgingStrategy : Strategy
             {
                 capture._context = context;
                 capture._cancellation = cancellation;
-                capture._additionalCompletions = null;
-                capture._firstOutcome = default;
+                capture._completions = null;
+                capture._selectedContext = null;
+                capture._initialProperties.Clear();
+                context.Properties.CopyTo(capture._initialProperties);
                 capture._acceptingInvocations = true;
-                capture._hasFirstOutcome = false;
                 capture._frozen = false;
                 capture._references = 1;
                 capture._version++;
@@ -631,50 +646,70 @@ internal sealed class HedgingStrategy : Strategy
                     return false;
                 }
 
-                if (!_hasFirstOutcome)
-                {
-                    CopyContext(source, _context!);
-                    _firstOutcome = outcome;
-                    _hasFirstOutcome = true;
-                    return false;
-                }
-
-                _additionalCompletions ??= [];
-                _additionalCompletions.Add(new CapturedOriginalAction(source, outcome));
+                _completions ??= [];
+                _completions.Add(new CapturedOriginalAction(source, outcome));
                 return true;
             }
         }
 
         public void ReleaseInvocation() => ReleaseReference(stopAcceptingInvocations: false);
 
-        public void Freeze(in Outcome<T> selectedOutcome)
+        public KevlarContext Freeze(in Outcome<T> selectedOutcome)
         {
-            List<CapturedOriginalAction>? additionalCompletions;
-            lock (_sync)
+            List<CapturedOriginalAction>? completions = null;
+            try
             {
-                _frozen = true;
-                additionalCompletions = _additionalCompletions;
-                _additionalCompletions = null;
-                if (additionalCompletions is not null)
+                lock (_sync)
                 {
-                    var selected = additionalCompletions[^1];
-                    if (!_hasFirstOutcome || !Matches(_firstOutcome, selectedOutcome))
+                    _frozen = true;
+                    completions = _completions;
+                    _completions = null;
+                    if (completions is null)
                     {
-                        foreach (var completion in additionalCompletions)
-                        {
-                            if (Matches(completion.Outcome, selectedOutcome))
-                            {
-                                selected = completion;
-                                break;
-                            }
-                        }
+                        return _context!;
+                    }
 
-                        CopyContext(selected.Context, _context!);
+                    var selectedIndex = FindSelectedIndex(completions, in selectedOutcome);
+
+                    var selected = completions[selectedIndex];
+                    completions.RemoveAt(selectedIndex);
+                    _selectedContext = selected.Context;
+                    MergeContext(selected.Context, _context!);
+                    return selected.Context;
+                }
+            }
+            finally
+            {
+                ReturnContexts(completions);
+            }
+        }
+
+        private static int FindSelectedIndex(
+            List<CapturedOriginalAction> completions,
+            in Outcome<T> selectedOutcome)
+        {
+            if (selectedOutcome.IsSuccess && !typeof(T).IsValueType)
+            {
+                for (var i = completions.Count - 1; i >= 0; i--)
+                {
+                    var candidate = completions[i].Outcome;
+                    if (candidate.IsSuccess
+                        && ReferenceEquals(candidate.Result, selectedOutcome.Result))
+                    {
+                        return i;
                     }
                 }
             }
 
-            ReturnContexts(additionalCompletions);
+            for (var i = completions.Count - 1; i >= 0; i--)
+            {
+                if (Matches(completions[i].Outcome, selectedOutcome))
+                {
+                    return i;
+                }
+            }
+
+            return completions.Count - 1;
         }
 
         public void ReleaseAttempt() => ReleaseReference(stopAcceptingInvocations: true);
@@ -682,16 +717,19 @@ internal sealed class HedgingStrategy : Strategy
         private void ReleaseReference(bool stopAcceptingInvocations)
         {
             KevlarContext? context = null;
+            KevlarContext? selectedContext = null;
             CancellationTokenSource? cancellation = null;
-            List<CapturedOriginalAction>? additionalCompletions = null;
+            List<CapturedOriginalAction>? completions = null;
             lock (_sync)
             {
                 if (stopAcceptingInvocations)
                 {
                     _acceptingInvocations = false;
                     _frozen = true;
-                    additionalCompletions = _additionalCompletions;
-                    _additionalCompletions = null;
+                    completions = _completions;
+                    _completions = null;
+                    selectedContext = _selectedContext;
+                    _selectedContext = null;
                 }
 
                 _references--;
@@ -701,12 +739,15 @@ internal sealed class HedgingStrategy : Strategy
                     cancellation = _cancellation;
                     _context = null;
                     _cancellation = null;
-                    _firstOutcome = default;
-                    _hasFirstOutcome = false;
                 }
             }
 
-            ReturnContexts(additionalCompletions);
+            ReturnContexts(completions);
+            if (selectedContext is not null)
+            {
+                KevlarContext.Return(selectedContext);
+            }
+
             if (context is null)
             {
                 return;
@@ -745,11 +786,17 @@ internal sealed class HedgingStrategy : Strategy
             }
         }
 
-        private static void CopyContext(KevlarContext source, KevlarContext target)
+        private void MergeContext(KevlarContext source, KevlarContext target)
         {
-            target.CancellationToken = source.CancellationToken;
-            target.Properties.Clear();
-            source.Properties.CopyTo(target.Properties);
+            _mergedProperties.Clear();
+            source.PropertiesForCompletion.CopyTo(_mergedProperties);
+            target.Properties.ApplyChangesSince(_initialProperties, _mergedProperties);
+
+            source.Properties.MirrorMutationsTo(null);
+            source.Properties.Clear();
+            _mergedProperties.CopyTo(source.Properties);
+            source.CaptureCompletionProperties(source.Properties);
+            source.CopyCompletionPropertiesTo(target);
         }
 
         private static void ReturnContexts(List<CapturedOriginalAction>? completions)
@@ -928,10 +975,14 @@ internal sealed class HedgingStrategy : Strategy
 
         private OriginalActionContextCapture<T>? ContextCapture { get; }
 
-        public void FreezeContext(in Outcome<T> outcome) => ContextCapture?.Freeze(in outcome);
+        public KevlarContext FreezeContext(in Outcome<T> outcome) =>
+            ContextCapture?.Freeze(in outcome) ?? Context;
 
         public void Dispose() => ReleaseAttemptResources(Context, Cancellation, ContextCapture);
     }
+
+    private static void CopyAttemptProperties(KevlarContext source, KevlarContext target) =>
+        source.CopyCompletionPropertiesToParent(target);
 
     private readonly struct StartedAttempt<T>
     {

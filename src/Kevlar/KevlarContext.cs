@@ -23,6 +23,11 @@ public sealed class KevlarContext
     private static readonly ObjectPool<KevlarContext, PoolPolicy> Pool = new(maxCapacity: PoolCapacity);
 
     private readonly KevlarProperties _properties = new();
+    private KevlarProperties? _completionProperties;
+    private KevlarProperties? _forkBaseline;
+    private readonly object _completionPropertiesLock = new();
+    private bool _hasCompletionProperties;
+    private bool _hasForkBaseline;
 
     private CancellationToken _cancellationToken;
     private long _activeStrategyMask;
@@ -119,6 +124,48 @@ public sealed class KevlarContext
         }
     }
 
+    internal KevlarProperties PropertiesForCompletion =>
+        _hasCompletionProperties ? _completionProperties! : _properties;
+
+    internal void CaptureCompletionProperties(
+        KevlarProperties properties,
+        KevlarProperties? baseline = null)
+    {
+        lock (_completionPropertiesLock)
+        {
+            _completionProperties ??= new KevlarProperties();
+            _completionProperties.Clear();
+            properties.CopyTo(_completionProperties);
+            if (baseline is not null)
+            {
+                _properties.ApplyChangesSince(baseline, _completionProperties);
+            }
+
+            _properties.MirrorMutationsTo(_completionProperties);
+            _hasCompletionProperties = true;
+        }
+    }
+
+    internal void CopyCompletionPropertiesTo(
+        KevlarContext target,
+        KevlarProperties? baseline = null)
+    {
+        lock (_completionPropertiesLock)
+        {
+            target.CaptureCompletionProperties(PropertiesForCompletion, baseline);
+        }
+    }
+
+    internal void CopyCompletionPropertiesToParent(KevlarContext target)
+    {
+        lock (_completionPropertiesLock)
+        {
+            target.CaptureCompletionProperties(
+                PropertiesForCompletion,
+                _hasForkBaseline ? _forkBaseline : null);
+        }
+    }
+
     internal static KevlarContext Rent(CancellationToken cancellationToken, bool isSynchronous, TimeProvider timeProvider, string? shieldName)
     {
         var context = Pool.Rent();
@@ -166,6 +213,9 @@ public sealed class KevlarContext
         fork.StrategyIndex = StrategyIndex;
 
         Properties.CopyTo(fork.Properties);
+        fork._forkBaseline ??= new KevlarProperties();
+        Properties.CopyTo(fork._forkBaseline);
+        fork._hasForkBaseline = true;
         return fork;
     }
 
@@ -212,6 +262,7 @@ public sealed class KevlarContext
 #if DEBUG
         context._returnedToPool = false;
         context._properties.MarkRented();
+        context._completionProperties?.MarkRented();
 #endif
     }
 
@@ -221,6 +272,7 @@ public sealed class KevlarContext
 #if DEBUG
         context._returnedToPool = true;
         context._properties.MarkReturned();
+        context._completionProperties?.MarkReturned();
 #endif
     }
 
@@ -250,7 +302,12 @@ public sealed class KevlarContext
             context.StrategyIndex = -1;
             context._activeStrategyMask = 0;
             context.TimeProvider = TimeProvider.System;
+            context._properties.MirrorMutationsTo(null);
             context._properties.Clear();
+            context._completionProperties?.Clear();
+            context._forkBaseline?.Clear();
+            context._hasCompletionProperties = false;
+            context._hasForkBaseline = false;
             return true;
         }
     }

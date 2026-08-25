@@ -15,6 +15,7 @@ public sealed class KevlarProperties
     private PropertySlot? _firstItem;
     private Dictionary<PropertyIdentity, PropertySlot>? _items;
     private int _count;
+    private KevlarProperties? _mutationTarget;
 
 #if DEBUG
     private bool _returnedToPool;
@@ -42,6 +43,7 @@ public sealed class KevlarProperties
         ThrowIfReturnedToPool();
         var identity = GetIdentity(key);
         Set(identity, value);
+        _mutationTarget?.Set(identity, value);
     }
 
     /// <summary>Attempts to read the value stored under the given key.</summary>
@@ -87,6 +89,13 @@ public sealed class KevlarProperties
     {
         ThrowIfReturnedToPool();
         var identity = GetIdentity(key);
+        var removed = Remove(identity);
+        _mutationTarget?.Remove(identity);
+        return removed;
+    }
+
+    private bool Remove(PropertyIdentity identity)
+    {
         var slot = Find(identity);
         if (slot is not { HasValue: true })
         {
@@ -97,6 +106,8 @@ public sealed class KevlarProperties
         _count--;
         return true;
     }
+
+    internal void MirrorMutationsTo(KevlarProperties? target) => _mutationTarget = target;
 
     internal void Clear()
     {
@@ -143,6 +154,80 @@ public sealed class KevlarProperties
             }
         }
     }
+
+    internal void ApplyChangesSince(KevlarProperties baseline, KevlarProperties target)
+    {
+        if (SuppressAdditionalAttempts != baseline.SuppressAdditionalAttempts
+            && target.SuppressAdditionalAttempts == baseline.SuppressAdditionalAttempts)
+        {
+            target.SuppressAdditionalAttempts = SuppressAdditionalAttempts;
+        }
+
+        baseline.RemoveMissingValuesFrom(this, target);
+        CopyChangedValuesTo(baseline, target);
+    }
+
+    private void RemoveMissingValuesFrom(KevlarProperties current, KevlarProperties target)
+    {
+        RemoveMissingValue(_firstItem, _firstIdentity, current, target);
+        if (_items is null)
+        {
+            return;
+        }
+
+        foreach (var pair in _items)
+        {
+            RemoveMissingValue(pair.Value, pair.Key, current, target);
+        }
+    }
+
+    private static void RemoveMissingValue(
+        PropertySlot? baselineSlot,
+        PropertyIdentity identity,
+        KevlarProperties current,
+        KevlarProperties target)
+    {
+        if (baselineSlot is { HasValue: true }
+            && current.Find(identity) is not { HasValue: true }
+            && HasSameValue(target.Find(identity), baselineSlot))
+        {
+            target.Remove(identity);
+        }
+    }
+
+    private void CopyChangedValuesTo(KevlarProperties baseline, KevlarProperties target)
+    {
+        CopyChangedValue(_firstItem, _firstIdentity, baseline, target);
+        if (_items is null)
+        {
+            return;
+        }
+
+        foreach (var pair in _items)
+        {
+            CopyChangedValue(pair.Value, pair.Key, baseline, target);
+        }
+    }
+
+    private static void CopyChangedValue(
+        PropertySlot? currentSlot,
+        PropertyIdentity identity,
+        KevlarProperties baseline,
+        KevlarProperties target)
+    {
+        var baselineSlot = baseline.Find(identity);
+        if (currentSlot is { HasValue: true }
+            && !HasSameValue(currentSlot, baselineSlot)
+            && HasSameValue(target.Find(identity), baselineSlot))
+        {
+            currentSlot.CopyTo(target, identity);
+        }
+    }
+
+    private static bool HasSameValue(PropertySlot? left, PropertySlot? right) =>
+        left is not { HasValue: true }
+            ? right is not { HasValue: true }
+            : left.ValueEquals(right);
 
     private void Set<T>(PropertyIdentity identity, T value)
     {
@@ -237,6 +322,8 @@ public sealed class KevlarProperties
         public abstract void Clear();
 
         public abstract void CopyTo(KevlarProperties target, PropertyIdentity identity);
+
+        public abstract bool ValueEquals(PropertySlot? other);
     }
 
     private sealed class PropertySlot<T>(T value) : PropertySlot
@@ -273,5 +360,10 @@ public sealed class KevlarProperties
                 target.Set(identity, _value);
             }
         }
+
+        public override bool ValueEquals(PropertySlot? other) =>
+            other is PropertySlot<T> slot
+            && _hasValue == slot._hasValue
+            && (!_hasValue || EqualityComparer<T>.Default.Equals(_value, slot._value));
     }
 }

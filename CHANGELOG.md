@@ -55,6 +55,12 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- Non-generic `Outcome` and void `ExecuteOutcomeAsync` overloads make no-throw execution available
+  to operations without a result. Synchronous `ExecuteOutcome` overloads cover void and typed work
+  on `Shield` and `Shield<TResult>`; `Task`, `ValueTask`, and state-passing forms stay aligned.
+- `ExecuteWithContextAsync` can invoke an `onCompleted` callback with final `KevlarProperties`
+  before its pooled context is returned. The callback runs on success and failure without masking
+  the execution outcome, and hedged executions expose the winning attempt's isolated properties.
 - Result clauses include `WhenResultIsNull`, `OrResultIsNull`, `WhenResultIsDefault`, and
   `OrResultIsDefault` for nullable, value-type, and generic results.
 - Reactive strategy options can replace ambient handling with `HandlesException` and typed

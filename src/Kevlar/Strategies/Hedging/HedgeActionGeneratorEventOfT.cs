@@ -25,7 +25,9 @@ public readonly struct HedgeActionGeneratorEvent<TResult>
 
     /// <summary>
     /// The original operation, including strategies nested inside the hedge. The supplied token
-    /// becomes the cancellation token for that nested execution.
+    /// becomes the cancellation token for that nested execution. Invoke it before the generated
+    /// action completes; invoking a retained delegate afterward throws
+    /// <see cref="InvalidOperationException"/>.
     /// </summary>
     public Func<CancellationToken, ValueTask<TResult>> OriginalAction { get; }
 

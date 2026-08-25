@@ -511,6 +511,31 @@ public sealed class Shield<TResult>
     }
 
     /// <summary>
+    /// Initializes execution properties, executes a context-aware delegate, then exposes the final
+    /// properties to <paramref name="onCompleted"/> before the pooled context is returned.
+    /// </summary>
+    public ValueTask<TResult> ExecuteWithContextAsync<TState>(
+        TState state,
+        Action<TState, KevlarProperties> initializeProperties,
+        Func<TState, KevlarContext, ValueTask<TResult>> action,
+        Action<TState, KevlarProperties> onCompleted,
+        CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(initializeProperties, nameof(initializeProperties));
+        Throw.IfNull(action, nameof(action));
+        Throw.IfNull(onCompleted, nameof(onCompleted));
+        return ShieldEngine.ExecuteWithContextAsync(
+            Head,
+            TimeOrSystem,
+            Name,
+            state,
+            initializeProperties,
+            action,
+            onCompleted,
+            cancellationToken);
+    }
+
+    /// <summary>
     /// Executes a context-aware delegate through the pipeline without seeding execution properties.
     /// The context is pooled and is valid only for the duration of the delegate invocation; never retain it.
     /// </summary>
@@ -541,6 +566,34 @@ public sealed class Shield<TResult>
     {
         Throw.IfNull(action, nameof(action));
         return ShieldEngine.ExecuteOutcomeAsync(Head, TimeOrSystem, Name, state, action, cancellationToken);
+    }
+
+    /// <summary>Executes the delegate synchronously and returns its outcome instead of throwing.</summary>
+    public Outcome<TResult> ExecuteOutcome(
+        Func<CancellationToken, TResult> action,
+        CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(action, nameof(action));
+        return ShieldEngine.ExecuteOutcomeSync(
+            Head,
+            TimeOrSystem,
+            Name,
+            action,
+            static (a, token) => a(token),
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Executes the delegate synchronously, threading <paramref name="state"/> to avoid closure
+    /// allocations, and returns its outcome instead of throwing.
+    /// </summary>
+    public Outcome<TResult> ExecuteOutcome<TState>(
+        TState state,
+        Func<TState, CancellationToken, TResult> action,
+        CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(action, nameof(action));
+        return ShieldEngine.ExecuteOutcomeSync(Head, TimeOrSystem, Name, state, action, cancellationToken);
     }
 
     /// <summary>

@@ -275,6 +275,32 @@ public sealed class Shield
     }
 
     /// <summary>
+    /// Initializes execution properties, executes a context-aware delegate, then exposes the final
+    /// properties to <paramref name="onCompleted"/> before the pooled context is returned.
+    /// </summary>
+    public ValueTask<T> ExecuteWithContextAsync<T, TState>(
+        TState state,
+        Action<TState, KevlarProperties> initializeProperties,
+        Func<TState, KevlarContext, ValueTask<T>> action,
+        Action<TState, KevlarProperties> onCompleted,
+        CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(initializeProperties, nameof(initializeProperties));
+        Throw.IfNull(action, nameof(action));
+        Throw.IfNull(onCompleted, nameof(onCompleted));
+        ThrowIfVoidFallbackResultExecution();
+        return ShieldEngine.ExecuteWithContextAsync(
+            Head,
+            TimeOrSystem,
+            Name,
+            state,
+            initializeProperties,
+            action,
+            onCompleted,
+            cancellationToken);
+    }
+
+    /// <summary>
     /// Executes a context-aware delegate through the pipeline without seeding execution properties.
     /// The context is pooled and is valid only for the duration of the delegate invocation; never retain it.
     /// </summary>
@@ -351,6 +377,35 @@ public sealed class Shield
     }
 
     /// <summary>
+    /// Initializes execution properties, executes a context-aware void delegate, then exposes the
+    /// final properties to <paramref name="onCompleted"/> before the pooled context is returned.
+    /// </summary>
+    public ValueTask ExecuteWithContextAsync<TState>(
+        TState state,
+        Action<TState, KevlarProperties> initializeProperties,
+        Func<TState, KevlarContext, ValueTask> action,
+        Action<TState, KevlarProperties> onCompleted,
+        CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(initializeProperties, nameof(initializeProperties));
+        Throw.IfNull(action, nameof(action));
+        Throw.IfNull(onCompleted, nameof(onCompleted));
+        return StripResult(ShieldEngine.ExecuteWithContextAsync(
+            Head,
+            TimeOrSystem,
+            Name,
+            (state, initializeProperties, action, onCompleted),
+            static (s, properties) => s.initializeProperties(s.state, properties),
+            static async (s, context) =>
+            {
+                await s.action(s.state, context).ConfigureAwait(false);
+                return Nothing.Value;
+            },
+            static (s, properties) => s.onCompleted(s.state, properties),
+            cancellationToken));
+    }
+
+    /// <summary>
     /// Executes a context-aware void delegate through the pipeline without seeding execution properties.
     /// The context is pooled and is valid only for the duration of the delegate invocation; never retain it.
     /// </summary>
@@ -385,6 +440,108 @@ public sealed class Shield
         Throw.IfNull(action, nameof(action));
         ThrowIfVoidFallbackResultExecution();
         return ShieldEngine.ExecuteOutcomeAsync(Head, TimeOrSystem, Name, state, action, cancellationToken);
+    }
+
+    /// <summary>Executes a void delegate and returns success or the captured exception.</summary>
+    public ValueTask<Outcome> ExecuteOutcomeAsync(
+        Func<CancellationToken, ValueTask> action,
+        CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(action, nameof(action));
+        return StripOutcome(ShieldEngine.ExecuteOutcomeAsync(
+            Head,
+            TimeOrSystem,
+            Name,
+            action,
+            static async (a, token) =>
+            {
+                await a(token).ConfigureAwait(false);
+                return Nothing.Value;
+            },
+            cancellationToken));
+    }
+
+    /// <summary>
+    /// Executes a void delegate, threading <paramref name="state"/> to avoid closure allocations,
+    /// and returns success or the captured exception.
+    /// </summary>
+    public ValueTask<Outcome> ExecuteOutcomeAsync<TState>(
+        TState state,
+        Func<TState, CancellationToken, ValueTask> action,
+        CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(action, nameof(action));
+        return StripOutcome(ShieldEngine.ExecuteOutcomeAsync(
+            Head,
+            TimeOrSystem,
+            Name,
+            (state, action),
+            static async (s, token) =>
+            {
+                await s.action(s.state, token).ConfigureAwait(false);
+                return Nothing.Value;
+            },
+            cancellationToken));
+    }
+
+    /// <summary>Executes a result-returning delegate synchronously and returns its outcome.</summary>
+    public Outcome<T> ExecuteOutcome<T>(
+        Func<CancellationToken, T> action,
+        CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(action, nameof(action));
+        ThrowIfVoidFallbackResultExecution();
+        return ShieldEngine.ExecuteOutcomeSync(
+            Head,
+            TimeOrSystem,
+            Name,
+            action,
+            static (a, token) => a(token),
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Executes a result-returning delegate synchronously, threading <paramref name="state"/> to
+    /// avoid closure allocations, and returns its outcome.
+    /// </summary>
+    public Outcome<T> ExecuteOutcome<T, TState>(
+        TState state,
+        Func<TState, CancellationToken, T> action,
+        CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(action, nameof(action));
+        ThrowIfVoidFallbackResultExecution();
+        return ShieldEngine.ExecuteOutcomeSync(Head, TimeOrSystem, Name, state, action, cancellationToken);
+    }
+
+    /// <summary>Executes a void delegate synchronously and returns success or the captured exception.</summary>
+    public Outcome ExecuteOutcome(
+        Action<CancellationToken> action,
+        CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(action, nameof(action));
+        return ShieldEngine.ExecuteOutcomeSync(Head, TimeOrSystem, Name, action, static (a, token) =>
+        {
+            a(token);
+            return Nothing.Value;
+        }, cancellationToken);
+    }
+
+    /// <summary>
+    /// Executes a void delegate synchronously, threading <paramref name="state"/> to avoid closure
+    /// allocations, and returns success or the captured exception.
+    /// </summary>
+    public Outcome ExecuteOutcome<TState>(
+        TState state,
+        Action<TState, CancellationToken> action,
+        CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(action, nameof(action));
+        return ShieldEngine.ExecuteOutcomeSync(Head, TimeOrSystem, Name, (state, action), static (s, token) =>
+        {
+            s.action(s.state, token);
+            return Nothing.Value;
+        }, cancellationToken);
     }
 
     /// <summary>
@@ -692,6 +849,19 @@ public sealed class Shield
 
         return new ValueTask(pipeline.AsTask());
     }
+
+    private static ValueTask<Outcome> StripOutcome(ValueTask<Outcome<Nothing>> pipeline)
+    {
+        if (pipeline.IsCompletedSuccessfully)
+        {
+            return new ValueTask<Outcome>(pipeline.Result);
+        }
+
+        return AwaitOutcome(pipeline);
+    }
+
+    private static async ValueTask<Outcome> AwaitOutcome(ValueTask<Outcome<Nothing>> pipeline) =>
+        await pipeline.ConfigureAwait(false);
 }
 
 #pragma warning restore RS0026

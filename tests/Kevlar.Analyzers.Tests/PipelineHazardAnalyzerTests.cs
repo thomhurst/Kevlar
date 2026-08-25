@@ -441,6 +441,12 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.For<int>().FallbackTo(0).Execute(static _ => 1);",
             "Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).Execute(static _ => { });",
             "await Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteAsync(static _ => ValueTask.CompletedTask);",
+            "_ = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteOutcome(static _ => { });",
+            "_ = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteOutcome(0, static (_, _) => { });",
+            "_ = await Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteOutcomeAsync(static _ => ValueTask.CompletedTask);",
+            "_ = await Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteOutcomeAsync(0, static (_, _) => ValueTask.CompletedTask);",
+            "_ = await Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteOutcomeAsync(static _ => Task.CompletedTask);",
+            "_ = await Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteOutcomeAsync(0, static (_, _) => Task.CompletedTask);",
             "Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteWithContext(0, static (_, _) => { }, static (_, _) => { });",
             "await Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteWithContextAsync(0, static (_, _) => { }, static (_, _) => ValueTask.CompletedTask);",
         };
@@ -491,6 +497,8 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.Compose([.. new[] { Shield.Hedge(2, TimeSpan.Zero) }]).Execute(_ => 1);",
             "var parts = new[] { Shield.Hedge(2, TimeSpan.Zero) }; _ = Shield.Compose(parts).Execute(_ => 1);",
             "_ = Shield<int>.Empty.Wrap(Shield.Hedge(2, TimeSpan.Zero)).Execute(_ => 1);",
+            "_ = Shield.Hedge(2, TimeSpan.Zero).ExecuteOutcome(_ => 1);",
+            "_ = Shield.For<int>().Hedge(2, TimeSpan.Zero).ExecuteOutcome(_ => 1);",
         };
 
         await AssertEachAsync(cases, "KEV002", "KEV006");

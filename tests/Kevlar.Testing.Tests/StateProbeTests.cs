@@ -161,6 +161,23 @@ public class StateProbeTests
     }
 
     [Test]
+    public async Task ExecutionProbe_Supports_Outcome_Executions()
+    {
+        var untypedProbe = new ExecutionProbe();
+        var untyped = await Shield.Empty.ExecuteOutcomeAsync(untypedProbe.Wrap(
+            static _ => throw new InvalidOperationException("untyped")));
+
+        var typedProbe = new ExecutionProbe();
+        var typed = await Shield<int>.Empty.ExecuteOutcomeAsync(typedProbe.Wrap<int>(
+            static _ => throw new InvalidOperationException("typed")));
+
+        await Assert.That(untyped.Exception).IsTypeOf<InvalidOperationException>();
+        await Assert.That(typed.Exception).IsTypeOf<InvalidOperationException>();
+        await Assert.That(untypedProbe.AttemptCount).IsEqualTo(1);
+        await Assert.That(typedProbe.AttemptCount).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task ExecutionProbe_Observes_Active_Attempt_Cancellation()
     {
         var probe = new ExecutionProbe();

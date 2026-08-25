@@ -213,6 +213,26 @@ public class MetricsTests
     }
 
     [Test]
+    public async Task Initialization_Failure_Is_Recorded_Before_OnCompleted()
+    {
+        using var listener = new KevlarMeterListener();
+        const string name = "metrics-initialization-failure";
+        var failuresObserved = 0L;
+
+        await Assert.That(async () => await Shield.Empty.WithName(name).ExecuteWithContextAsync(
+                0,
+                static (_, _) => throw new InvalidOperationException("initialize"),
+                static (_, _) => new ValueTask<int>(42),
+                (_, _) => failuresObserved = listener.Total(
+                    "kevlar.executions",
+                    name,
+                    ("kevlar.execution.outcome", "failure"))))
+            .Throws<InvalidOperationException>();
+
+        await Assert.That(failuresObserved).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Meter_And_Instrument_Schema_Is_Stable()
     {
         using var listener = new KevlarMeterListener();
@@ -616,6 +636,39 @@ public class MetricsTests
             .IsEquivalentTo(["success", "failure", "failure"]);
         await Assert.That(listener.DoubleValues("kevlar.execution.duration", null, requireName: false).Count >= 1)
             .IsTrue();
+    }
+
+    [Test]
+    public async Task Execution_Duration_Is_Recorded_Before_Completion_Observers()
+    {
+        using var listener = new KevlarMeterListener();
+        const string shieldName = "metrics-completion-order";
+        var observedCounts = new List<int>();
+        var shield = Shield.Empty.WithName(shieldName);
+
+        await shield.ExecuteWithContextAsync(
+            0,
+            static (_, _) => { },
+            static (_, _) => new ValueTask<int>(42),
+            (_, _) => observedCounts.Add(listener.DoubleValues(
+                "kevlar.execution.duration",
+                shieldName).Count));
+
+        await shield.ExecuteWithContextAsync(
+            0,
+            static (_, _) => { },
+            static async (_, _) =>
+            {
+                await Task.Yield();
+                return 42;
+            },
+            (_, _) => observedCounts.Add(listener.DoubleValues(
+                "kevlar.execution.duration",
+                shieldName).Count));
+
+        await Assert.That(observedCounts.Count).IsEqualTo(2);
+        await Assert.That(observedCounts[0]).IsEqualTo(1);
+        await Assert.That(observedCounts[1]).IsEqualTo(2);
     }
 
     [Test]

@@ -129,7 +129,31 @@ Keep these three kinds of state distinct:
 action or strategy callback. Never retain either object, return it to the caller, or use it after
 the callback finishes. Kevlar clears properties before a pooled context serves another execution.
 
-## No-throw execution
+### Reading properties after execution
+
+Add an `onCompleted` callback when the caller needs metadata that the action or a strategy wrote.
+Kevlar invokes it after the final pipeline outcome, on success or failure, and before returning the
+context to the pool:
+
+```csharp
+var attemptsKey = new KevlarKey<int>("attempts");
+var attempts = 0;
+
+await shield.ExecuteWithContextAsync(
+    (attemptsKey, onAttempts: (Action<int>)(value => attempts = value)),
+    static (_, _) => { },
+    static (state, context) => FetchAsync(context.CancellationToken),
+    static (state, properties) =>
+        state.onAttempts(properties.GetOrDefault(state.attemptsKey)),
+    cancellationToken);
+```
+
+The callback receives `KevlarProperties`, not the pooled `KevlarContext`, so it cannot keep the
+execution alive accidentally. Copy any values you need into caller-owned state during the callback.
+Exceptions thrown by `onCompleted` are ignored and never replace the execution result or exception.
+For hedging, the callback sees properties from the winning attempt.
+
+## Outcomes without exceptions
 
 When a failure is an expected outcome rather than an exceptional one, skip the throw/catch entirely and inspect the outcome:
 
@@ -148,6 +172,21 @@ return cached;
 `TryGetResult` returns `true` exactly when the outcome succeeded. Its nullability annotation
 also tells flow analysis that a non-nullable result is available inside the success branch.
 Use `GetResultOrRethrow()` when you want the throwing path instead.
+
+Void and synchronous work use the same pattern through non-generic `Outcome` and
+`ExecuteOutcome`:
+
+```csharp
+Outcome saved = await shield.ExecuteOutcomeAsync(ct => SaveAsync(ct), cancellationToken);
+Outcome<int> computed = shield.ExecuteOutcome(ct => ComputeSync(ct), cancellationToken);
+
+if (!saved.IsSuccess)
+{
+    saved.Rethrow();
+}
+```
+
+`Outcome<T>` converts implicitly to `Outcome`, preserving success or the captured exception.
 
 No-throw execution also supports state-passing `ValueTask` and `Task` delegates. Use a static
 delegate to keep caller data out of a closure:

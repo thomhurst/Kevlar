@@ -4,6 +4,12 @@ namespace Kevlar.Tests;
 
 public class HedgingActionGeneratorTests
 {
+    private static readonly KevlarKey<int> ConcurrentOriginalAction = new("concurrent-original-action");
+    private static readonly KevlarKey<int> GeneratedContextRemoval = new("generated-context-removal");
+    private static readonly KevlarKey<int> GeneratedContextWrite = new("generated-context-write");
+    private static readonly KevlarKey<int> OriginalContextWrite = new("original-context-write");
+    private static readonly KevlarKey<ThrowingEquality> ThrowingEqualityKey = new("throwing-equality");
+
     [Test]
     public async Task Typed_Generator_Selects_A_Distinct_Action()
     {
@@ -695,33 +701,266 @@ public class HedgingActionGeneratorTests
     }
 
     [Test]
+    public async Task Original_Action_Preserves_Later_Generator_Context_Writes()
+    {
+        var releaseOriginal = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var observedGeneratedProperty = 0;
+        var observedOriginalProperty = 0;
+        var retainedRemovedProperty = false;
+        var attempts = 0;
+        var shield = Shield.For<int>().Hedge(options =>
+        {
+            options.MaxAttempts = 2;
+            options.Delay = Timeout.InfiniteTimeSpan;
+            options.ActionGenerator = hedge =>
+            {
+                var original = hedge.OriginalAction(hedge.Context.CancellationToken).AsTask();
+                hedge.Context.Properties.Set(GeneratedContextWrite, 42);
+                hedge.Context.Properties.Remove(GeneratedContextRemoval);
+                return async _ =>
+                {
+                    releaseOriginal.SetResult();
+                    return await original;
+                };
+            };
+        });
+
+        var result = await shield.ExecuteWithContextAsync(
+            0,
+            static (_, properties) => properties.Set(GeneratedContextRemoval, 99),
+            async (_, context) =>
+            {
+                if (Interlocked.Increment(ref attempts) == 1)
+                {
+                    throw new InvalidOperationException("primary");
+                }
+
+                await releaseOriginal.Task;
+                context.Properties.Set(OriginalContextWrite, 43);
+                return 42;
+            },
+            (_, properties) =>
+            {
+                observedGeneratedProperty = properties.GetOrDefault(GeneratedContextWrite);
+                observedOriginalProperty = properties.GetOrDefault(OriginalContextWrite);
+                retainedRemovedProperty = properties.Contains(GeneratedContextRemoval);
+            });
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(observedGeneratedProperty).IsEqualTo(42);
+        await Assert.That(observedOriginalProperty).IsEqualTo(43);
+        await Assert.That(retainedRemovedProperty).IsFalse();
+    }
+
+    [Test]
     public async Task Concurrent_Original_Actions_With_The_Same_Token_Use_Distinct_Contexts()
     {
         var observer = new ContextIdentityObserver();
         var attempts = 0;
+        var observedProperty = 0;
         var shield = Shield.For<int>().Hedge(options =>
             {
                 options.MaxAttempts = 2;
                 options.Delay = Timeout.InfiniteTimeSpan;
                 options.ActionGenerator = hedge => async token =>
                 {
-                    var first = hedge.OriginalAction(token).AsTask();
-                    var second = hedge.OriginalAction(token).AsTask();
-                    var results = await Task.WhenAll(first, second);
+                    var executions = Enumerable.Range(0, 8)
+                        .Select(_ => hedge.OriginalAction(token).AsTask());
+                    var results = await Task.WhenAll(executions);
                     return results.Sum();
                 };
             })
             .Use(observer);
 
-        var result = await shield.ExecuteAsync(_ =>
-            Interlocked.Increment(ref attempts) == 1
-                ? ValueTask.FromException<int>(new InvalidOperationException("primary"))
-                : new ValueTask<int>(21));
+        var result = await shield.ExecuteWithContextAsync(
+            0,
+            static (_, _) => { },
+            (_, context) =>
+            {
+                var attempt = Interlocked.Increment(ref attempts);
+                context.Properties.Set(ConcurrentOriginalAction, attempt);
+                return attempt == 1
+                    ? ValueTask.FromException<int>(new InvalidOperationException("primary"))
+                    : new ValueTask<int>(21);
+            },
+            (_, properties) => observedProperty =
+                properties.GetOrDefault(ConcurrentOriginalAction));
 
         var contexts = observer.Contexts.ToArray();
-        await Assert.That(result).IsEqualTo(42);
-        await Assert.That(contexts.Length).IsEqualTo(3);
+        await Assert.That(result).IsEqualTo(168);
+        await Assert.That(contexts.Length).IsEqualTo(9);
         await Assert.That(ReferenceEquals(contexts[1], contexts[2])).IsFalse();
+        await Assert.That(observedProperty).IsBetween(2, 9);
+    }
+
+    [Test]
+    [NotInParallel]
+    public async Task Detached_Original_Action_Keeps_Attempt_Context_Leased()
+    {
+        var originalStarted = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseOriginal = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        Func<CancellationToken, ValueTask<int>>? invokeOriginal = null;
+        Task<int>? originalAction = null;
+        KevlarContext? attemptContext = null;
+        var attempts = 0;
+        var shield = Shield.For<int>().Hedge(options =>
+        {
+            options.MaxAttempts = 2;
+            options.Delay = Timeout.InfiniteTimeSpan;
+            options.ActionGenerator = hedge =>
+            {
+                attemptContext = hedge.Context;
+                invokeOriginal = hedge.OriginalAction;
+                return async token =>
+                {
+                    originalAction = invokeOriginal!(token).AsTask();
+                    await originalStarted.Task;
+                    return 42;
+                };
+            };
+        });
+
+        var result = await shield.ExecuteAsync(async _ =>
+        {
+            if (Interlocked.Increment(ref attempts) == 1)
+            {
+                throw new InvalidOperationException("primary");
+            }
+
+            originalStarted.SetResult();
+            await releaseOriginal.Task;
+            return 43;
+        });
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(async () => await invokeOriginal!(CancellationToken.None))
+            .Throws<InvalidOperationException>();
+
+        var rentedContexts = new ConcurrentBag<KevlarContext>();
+        var allRented = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseRentals = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var rentalCount = KevlarContext.PoolCapacity + 2;
+        var rentalsStarted = 0;
+        var rentals = Enumerable.Range(0, rentalCount)
+            .Select(_ => Shield.Empty.ExecuteWithContextAsync(async context =>
+            {
+                rentedContexts.Add(context);
+                if (Interlocked.Increment(ref rentalsStarted) == rentalCount)
+                {
+                    allRented.SetResult();
+                }
+
+                await releaseRentals.Task;
+                return 0;
+            }).AsTask())
+            .ToArray();
+
+        try
+        {
+            await allRented.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await Assert.That(rentedContexts.Any(context =>
+                ReferenceEquals(context, attemptContext))).IsFalse();
+        }
+        finally
+        {
+            releaseRentals.TrySetResult();
+        }
+
+        await Task.WhenAll(rentals);
+
+        releaseOriginal.SetResult();
+        await Assert.That(await originalAction!).IsEqualTo(43);
+    }
+
+    [Test]
+    public async Task Retained_Original_Action_Cannot_Run_After_Generated_Action_Completes()
+    {
+        Func<CancellationToken, ValueTask<int>>? originalAction = null;
+        var shield = Shield.For<int>().Hedge(options =>
+        {
+            options.MaxAttempts = 2;
+            options.Delay = Timeout.InfiniteTimeSpan;
+            options.ActionGenerator = hedge =>
+            {
+                originalAction = hedge.OriginalAction;
+                return static _ => new ValueTask<int>(42);
+            };
+        });
+
+        var result = await shield.ExecuteAsync(static _ =>
+            ValueTask.FromException<int>(new InvalidOperationException("primary")));
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(async () => await originalAction!(CancellationToken.None))
+            .Throws<InvalidOperationException>();
+    }
+
+    [Test]
+    [NotInParallel]
+    [Arguments(false)]
+    [Arguments(true)]
+    public async Task Original_Action_Releases_Contexts_When_Property_Merge_Throws(
+        bool completesAsynchronously)
+    {
+        var heldContexts = RentContexts(KevlarContext.PoolCapacity);
+        KevlarContext[]? recycledContexts = null;
+
+        try
+        {
+            KevlarContext? attemptContext = null;
+            var attempts = 0;
+            var shield = Shield.For<int>().Hedge(options =>
+            {
+                options.MaxAttempts = 2;
+                options.Delay = Timeout.InfiniteTimeSpan;
+                options.ActionGenerator = hedge =>
+                {
+                    attemptContext = hedge.Context;
+                    return hedge.OriginalAction;
+                };
+            });
+
+            var exception = await Assert.That(async () => await shield.ExecuteWithContextAsync(
+                    0,
+                    static (_, properties) =>
+                        properties.Set(ThrowingEqualityKey, new ThrowingEquality()),
+                    async (_, _) =>
+                    {
+                        if (Interlocked.Increment(ref attempts) == 1)
+                        {
+                            throw new InvalidOperationException("primary");
+                        }
+
+                        if (completesAsynchronously)
+                        {
+                            await Task.Yield();
+                        }
+
+                        return 42;
+                    },
+                    static (_, _) => { }))
+                .Throws<InvalidOperationException>();
+            await Assert.That(exception!.Message).IsEqualTo("Property equality failed.");
+
+            recycledContexts = RentContexts(KevlarContext.PoolCapacity);
+
+            await Assert.That(recycledContexts.Any(context =>
+                ReferenceEquals(context, attemptContext))).IsTrue();
+        }
+        finally
+        {
+            if (recycledContexts is not null)
+            {
+                ReturnContexts(recycledContexts);
+            }
+
+            ReturnContexts(heldContexts);
+        }
     }
 
     [Test]
@@ -890,6 +1129,34 @@ public class HedgingActionGeneratorTests
             }
 
             return await next.InvokeAsync(context);
+        }
+    }
+
+    private sealed class ThrowingEquality : IEquatable<ThrowingEquality>
+    {
+        public bool Equals(ThrowingEquality? other) =>
+            throw new InvalidOperationException("Property equality failed.");
+
+        public override bool Equals(object? obj) =>
+            obj is ThrowingEquality other && Equals(other);
+
+        public override int GetHashCode() => 0;
+    }
+
+    private static KevlarContext[] RentContexts(int count) =>
+        Enumerable.Range(0, count)
+            .Select(_ => KevlarContext.Rent(
+                default,
+                isSynchronous: false,
+                TimeProvider.System,
+                shieldName: null))
+            .ToArray();
+
+    private static void ReturnContexts(IEnumerable<KevlarContext> contexts)
+    {
+        foreach (var context in contexts)
+        {
+            KevlarContext.Return(context);
         }
     }
 

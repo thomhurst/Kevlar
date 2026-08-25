@@ -53,6 +53,30 @@ public static class ShieldTaskExtensions
     }
 
     /// <summary>
+    /// Initializes execution properties, executes a context-aware <see cref="Task{TResult}"/> delegate,
+    /// then exposes final properties before the pooled context is returned.
+    /// </summary>
+    public static ValueTask<T> ExecuteWithContextAsync<T, TState>(
+        this Shield shield,
+        TState state,
+        Action<TState, KevlarProperties> initializeProperties,
+        Func<TState, KevlarContext, Task<T>> action,
+        Action<TState, KevlarProperties> onCompleted,
+        CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(shield, nameof(shield));
+        Throw.IfNull(initializeProperties, nameof(initializeProperties));
+        Throw.IfNull(action, nameof(action));
+        Throw.IfNull(onCompleted, nameof(onCompleted));
+        return shield.ExecuteWithContextAsync(
+            (state, initializeProperties, action, onCompleted),
+            static (s, properties) => s.initializeProperties(s.state, properties),
+            static (s, context) => new ValueTask<T>(s.action(s.state, context)),
+            static (s, properties) => s.onCompleted(s.state, properties),
+            cancellationToken);
+    }
+
+    /// <summary>
     /// Executes a context-aware <see cref="Task{TResult}"/>-returning delegate without seeding
     /// execution properties. The context is pooled; never retain it beyond the delegate.
     /// </summary>
@@ -105,6 +129,30 @@ public static class ShieldTaskExtensions
     }
 
     /// <summary>
+    /// Initializes execution properties, executes a context-aware <see cref="Task"/> delegate,
+    /// then exposes final properties before the pooled context is returned.
+    /// </summary>
+    public static ValueTask ExecuteWithContextAsync<TState>(
+        this Shield shield,
+        TState state,
+        Action<TState, KevlarProperties> initializeProperties,
+        Func<TState, KevlarContext, Task> action,
+        Action<TState, KevlarProperties> onCompleted,
+        CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(shield, nameof(shield));
+        Throw.IfNull(initializeProperties, nameof(initializeProperties));
+        Throw.IfNull(action, nameof(action));
+        Throw.IfNull(onCompleted, nameof(onCompleted));
+        return shield.ExecuteWithContextAsync(
+            (state, initializeProperties, action, onCompleted),
+            static (s, properties) => s.initializeProperties(s.state, properties),
+            static (s, context) => new ValueTask(s.action(s.state, context)),
+            static (s, properties) => s.onCompleted(s.state, properties),
+            cancellationToken);
+    }
+
+    /// <summary>
     /// Executes a context-aware <see cref="Task"/>-returning void delegate without seeding execution
     /// properties. The context is pooled; never retain it beyond the delegate.
     /// </summary>
@@ -136,6 +184,35 @@ public static class ShieldTaskExtensions
         Throw.IfNull(shield, nameof(shield));
         Throw.IfNull(action, nameof(action));
         return shield.ExecuteOutcomeAsync((state, action), static (s, token) => new ValueTask<T>(s.action(s.state, token)), cancellationToken);
+    }
+
+    /// <summary>Executes a <see cref="Task"/>-returning void delegate and returns its outcome.</summary>
+    public static ValueTask<Outcome> ExecuteOutcomeAsync(
+        this Shield shield,
+        Func<CancellationToken, Task> action,
+        CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(shield, nameof(shield));
+        Throw.IfNull(action, nameof(action));
+        return shield.ExecuteOutcomeAsync(token => new ValueTask(action(token)), cancellationToken);
+    }
+
+    /// <summary>
+    /// Executes a <see cref="Task"/>-returning void delegate, threading <paramref name="state"/> to
+    /// avoid closure allocations, and returns its outcome.
+    /// </summary>
+    public static ValueTask<Outcome> ExecuteOutcomeAsync<TState>(
+        this Shield shield,
+        TState state,
+        Func<TState, CancellationToken, Task> action,
+        CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(shield, nameof(shield));
+        Throw.IfNull(action, nameof(action));
+        return shield.ExecuteOutcomeAsync(
+            (state, action),
+            static (s, token) => new ValueTask(s.action(s.state, token)),
+            cancellationToken);
     }
 
     // ── Shield<TResult> ─────────────────────────────────────────────────────────────────
@@ -171,6 +248,30 @@ public static class ShieldTaskExtensions
             (state, initializeProperties, action),
             static (s, properties) => s.initializeProperties(s.state, properties),
             static (s, context) => new ValueTask<TResult>(s.action(s.state, context)),
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Initializes execution properties, executes a context-aware <see cref="Task{TResult}"/> delegate,
+    /// then exposes final properties before the pooled context is returned.
+    /// </summary>
+    public static ValueTask<TResult> ExecuteWithContextAsync<TResult, TState>(
+        this Shield<TResult> shield,
+        TState state,
+        Action<TState, KevlarProperties> initializeProperties,
+        Func<TState, KevlarContext, Task<TResult>> action,
+        Action<TState, KevlarProperties> onCompleted,
+        CancellationToken cancellationToken = default)
+    {
+        Throw.IfNull(shield, nameof(shield));
+        Throw.IfNull(initializeProperties, nameof(initializeProperties));
+        Throw.IfNull(action, nameof(action));
+        Throw.IfNull(onCompleted, nameof(onCompleted));
+        return shield.ExecuteWithContextAsync(
+            (state, initializeProperties, action, onCompleted),
+            static (s, properties) => s.initializeProperties(s.state, properties),
+            static (s, context) => new ValueTask<TResult>(s.action(s.state, context)),
+            static (s, properties) => s.onCompleted(s.state, properties),
             cancellationToken);
     }
 
