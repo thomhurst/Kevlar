@@ -53,6 +53,26 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Follows_PostAwait_Local_Function_Calls()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                await Task.Yield();
+                ReadContext();
+
+                void ReadContext() => Console.WriteLine(item.Context.ShieldName);
+            });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
     public async Task KEV014_Inspects_Combined_Async_Delegates()
     {
         var diagnostics = await AnalyzeBodyAsync("""
@@ -494,6 +514,9 @@ public class PipelineHazardAnalyzerTests
             "AuditValueAsync(item).AsTask().GetAwaiter().GetResult();",
             "AuditValueAsync(item).ConfigureAwait(false).GetAwaiter().GetResult();",
             "AuditValueAsync(item).AsTask().Wait();",
+            "var pending = AuditAsync(item); pending.GetAwaiter().GetResult();",
+            "var pending = AuditAsync(item); pending.Wait();",
+            "var pending = AuditAsync(item); _ = pending.Result;",
         };
         foreach (var statement in statements)
         {
@@ -848,6 +871,26 @@ public class PipelineHazardAnalyzerTests
                     {
                         _event = item;
                         _ = Task.Run(() => Console.WriteLine(_event.Context.ShieldName));
+                    });
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Flags_Pooled_Event_Property_In_Deferred_Work()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent StoredEvent { get; set; }
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        StoredEvent = item;
+                        _ = Task.Run(() => Console.WriteLine(StoredEvent.Context.ShieldName));
                     });
             }
             """);

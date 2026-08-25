@@ -586,6 +586,90 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             return true;
         }
 
+        var localFunctions = body.DescendantNodesAndSelf(descendIntoChildren: static node =>
+                node is not AnonymousFunctionExpressionSyntax)
+            .OfType<LocalFunctionStatementSyntax>()
+            .ToLookup(
+                static function => function.Identifier.ValueText,
+                StringComparer.Ordinal);
+        foreach (var invocation in nodes.OfType<InvocationExpressionSyntax>()
+                     .Where(invocation => invocation.SpanStart > firstAwait))
+        {
+            if (TryFindRetainedContextInLocalFunction(
+                invocation,
+                localFunctions,
+                retainedNames,
+                [],
+                out capturedContext))
+            {
+                return true;
+            }
+        }
+
+        capturedContext = null!;
+        return false;
+    }
+
+    private static bool TryFindRetainedContextInLocalFunction(
+        InvocationExpressionSyntax invocation,
+        ILookup<string, LocalFunctionStatementSyntax> localFunctions,
+        HashSet<string> retainedNames,
+        HashSet<LocalFunctionStatementSyntax> callPath,
+        out SyntaxNode capturedContext)
+    {
+        if (invocation.Expression is not IdentifierNameSyntax identifier)
+        {
+            capturedContext = null!;
+            return false;
+        }
+
+        foreach (var function in localFunctions[identifier.Identifier.ValueText])
+        {
+            if (function.Parent is not BlockSyntax declaringBlock
+                || !invocation.Ancestors().Contains(declaringBlock)
+                || callPath.Contains(function)
+                || GetFunctionBody(function) is not { } functionBody)
+            {
+                continue;
+            }
+
+            var nestedCallPath = new HashSet<LocalFunctionStatementSyntax>(callPath)
+            {
+                function,
+            };
+            var functionRetainedNames = new HashSet<string>(retainedNames, StringComparer.Ordinal);
+            foreach (var parameter in function.ParameterList.Parameters)
+            {
+                functionRetainedNames.Remove(parameter.Identifier.ValueText);
+            }
+
+            var functionNodes = functionBody.DescendantNodesAndSelf(
+                    descendIntoChildren: static node =>
+                        node is not AnonymousFunctionExpressionSyntax
+                            and not LocalFunctionStatementSyntax)
+                .ToArray();
+            foreach (var retainedIdentifier in functionNodes.OfType<IdentifierNameSyntax>()
+                         .Where(candidate => functionRetainedNames.Contains(
+                             candidate.Identifier.ValueText)))
+            {
+                capturedContext = retainedIdentifier;
+                return true;
+            }
+
+            foreach (var nestedInvocation in functionNodes.OfType<InvocationExpressionSyntax>())
+            {
+                if (TryFindRetainedContextInLocalFunction(
+                    nestedInvocation,
+                    localFunctions,
+                    functionRetainedNames,
+                    nestedCallPath,
+                    out capturedContext))
+                {
+                    return true;
+                }
+            }
+        }
+
         capturedContext = null!;
         return false;
     }
@@ -855,9 +939,19 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     private static bool IsSynchronouslyObserved(
         InvocationExpressionSyntax invocation,
         SemanticModel semanticModel,
+        CancellationToken cancellationToken) =>
+        IsSynchronouslyObservedCore(invocation, semanticModel, cancellationToken)
+        || IsSynchronouslyObservedThroughLocal(
+            invocation,
+            semanticModel,
+            cancellationToken);
+
+    private static bool IsSynchronouslyObservedCore(
+        SyntaxNode value,
+        SemanticModel semanticModel,
         CancellationToken cancellationToken)
     {
-        SyntaxNode current = invocation;
+        var current = value;
         while (current.Parent is MemberAccessExpressionSyntax memberAccess
                && memberAccess.Expression == current)
         {
@@ -926,6 +1020,55 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 consumerInvocation,
                 semanticModel,
                 cancellationToken);
+    }
+
+    private static bool IsSynchronouslyObservedThroughLocal(
+        InvocationExpressionSyntax invocation,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        if (invocation.Parent is not EqualsValueClauseSyntax
+            {
+                Parent: VariableDeclaratorSyntax declarator,
+            }
+            || semanticModel.GetDeclaredSymbol(
+                declarator,
+                cancellationToken) is not ILocalSymbol local
+            || declarator.FirstAncestorOrSelf<LocalDeclarationStatementSyntax>()?.Parent
+                is not BlockSyntax block)
+        {
+            return false;
+        }
+
+        foreach (var reference in block.DescendantNodes(descendIntoChildren: static node =>
+                     node is not AnonymousFunctionExpressionSyntax
+                         and not LocalFunctionStatementSyntax)
+                 .OfType<IdentifierNameSyntax>()
+                 .Where(reference => reference.SpanStart > declarator.SpanStart
+                     && reference.FirstAncestorOrSelf<StatementSyntax>()?.Parent == block))
+        {
+            if (!SymbolEqualityComparer.Default.Equals(
+                    semanticModel.GetSymbolInfo(reference, cancellationToken).Symbol,
+                    local)
+                || !TryGetStableLocalInitializer(
+                    local,
+                    semanticModel,
+                    cancellationToken,
+                    reference,
+                    out var initializer)
+                || !initializer.Span.Contains(invocation.Span)
+                || !IsSynchronouslyObservedCore(
+                    reference,
+                    semanticModel,
+                    cancellationToken))
+            {
+                continue;
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     private static bool IsObservationPreservingArgumentPath(
@@ -1608,8 +1751,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         foreach (var operation in DescendantOperations(root))
         {
             if (operation is IPropertyReferenceOperation property
-                && property.Property.Name == "Context"
-                && knownTypes.IsEventContextReference(property.Property.Type))
+                && ContainsEventContextReference(property.Property.Type, knownTypes))
             {
                 capturedContext = property.Syntax;
                 return true;
