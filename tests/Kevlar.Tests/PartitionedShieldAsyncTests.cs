@@ -357,6 +357,54 @@ public class PartitionedShieldAsyncTests
     }
 
     [Test]
+    public async Task Explicit_Removal_Callback_Joins_An_Unrelated_Creation()
+    {
+        var pendingFactoryEntered = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var releasePendingFactory = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        PartitionedShield<string>? provider = null;
+        Shield? callbackShield = null;
+        var pendingFactoryCalls = 0;
+        provider = PartitionedShield<string>.CreateAsync(
+            async key =>
+            {
+                if (key == "pending")
+                {
+                    Interlocked.Increment(ref pendingFactoryCalls);
+                    pendingFactoryEntered.TrySetResult();
+                    await releasePendingFactory.Task;
+                }
+
+                return Shield.Empty.WithName(key);
+            },
+            new PartitionedShieldOptions
+            {
+                MaximumPartitions = 2,
+                OnEvictedAsync = async item =>
+                {
+                    if ((string)item.Key == "removed")
+                    {
+                        callbackShield = await provider!.GetShieldAsync("pending");
+                    }
+                },
+            });
+        _ = provider.GetShield("removed");
+        var pending = provider.GetShieldAsync("pending").AsTask();
+        await pendingFactoryEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
+
+        var removal = provider.TryRemoveAsync("removed").AsTask();
+        await Task.Yield();
+        releasePendingFactory.TrySetResult();
+        var retained = await pending.WaitAsync(TimeSpan.FromSeconds(5));
+        await removal.WaitAsync(TimeSpan.FromSeconds(5));
+
+        await Assert.That(callbackShield).IsSameReferenceAs(retained);
+        await Assert.That(pendingFactoryCalls).IsEqualTo(1);
+        await Assert.That(provider.CreatedCount).IsEqualTo(2);
+    }
+
+    [Test]
     public async Task Evicted_Resources_Can_Be_Disposed_By_Key()
     {
         var resources = new ConcurrentDictionary<string, DisposableResource>();
