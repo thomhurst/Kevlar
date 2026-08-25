@@ -94,6 +94,7 @@ public static class ShieldDescriptorExtensions
                 hedging.MaxAttempts,
                 hedging.Delay,
                 hedging.HasNotification,
+                hedging.HasActionGenerator,
                 hedging.HasHandlingOverride),
             IFallbackStrategyInspection fallback => new FallbackStrategyDescriptor(
                 description,

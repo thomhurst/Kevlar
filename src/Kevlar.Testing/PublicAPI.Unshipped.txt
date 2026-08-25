@@ -24,6 +24,7 @@ Kevlar.Testing.FallbackStrategyDescriptor.IsVoid.get -> bool
 Kevlar.Testing.FallbackStrategyDescriptor.ResultType.get -> System.Type?
 Kevlar.Testing.HedgeStrategyDescriptor
 Kevlar.Testing.HedgeStrategyDescriptor.Delay.get -> System.TimeSpan
+Kevlar.Testing.HedgeStrategyDescriptor.HasActionGenerator.get -> bool
 Kevlar.Testing.HedgeStrategyDescriptor.HasNotification.get -> bool
 Kevlar.Testing.HedgeStrategyDescriptor.MaxAttempts.get -> int
 Kevlar.Testing.RateLimitStrategyDescriptor

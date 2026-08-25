@@ -146,6 +146,7 @@ Kevlar.HedgeActionGeneratorEvent<TResult>.HedgeActionGeneratorEvent() -> void
 Kevlar.HedgeActionGeneratorEvent<TResult>.AttemptNumber.get -> int
 Kevlar.HedgeActionGeneratorEvent<TResult>.Context.get -> Kevlar.KevlarContext!
 Kevlar.HedgeActionGeneratorEvent<TResult>.OriginalAction.get -> System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>!
+Kevlar.HedgeActionGeneratorEvent<TResult>.Outcome.get -> Kevlar.Outcome<TResult>?
 Kevlar.HedgeOptions.ActionGenerator.get -> Kevlar.HedgeActionGenerator?
 Kevlar.HedgeOptions.ActionGenerator.set -> void
 Kevlar.HedgeOptions.OnHedgeAsync.get -> System.Func<Kevlar.HedgeEvent, System.Threading.Tasks.ValueTask>?
@@ -398,7 +399,7 @@ Kevlar.CircuitBreakerOptions<TResult>.OnStateChangedAsync.get -> System.Func<Kev
 Kevlar.CircuitBreakerOptions<TResult>.OnStateChangedAsync.set -> void
 Kevlar.CircuitBreakerOptions<TResult>.SamplingWindow.get -> System.TimeSpan
 Kevlar.CircuitBreakerOptions<TResult>.SamplingWindow.set -> void
-Kevlar.HedgeOptions<TResult>.ActionGenerator.get -> Kevlar.HedgeActionGenerator?
+Kevlar.HedgeOptions<TResult>.ActionGenerator.get -> System.Func<Kevlar.HedgeActionGeneratorEvent<TResult>, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>?>?
 Kevlar.HedgeOptions<TResult>.ActionGenerator.set -> void
 Kevlar.HedgeOptions<TResult>.Delay.get -> System.TimeSpan
 Kevlar.HedgeOptions<TResult>.Delay.set -> void

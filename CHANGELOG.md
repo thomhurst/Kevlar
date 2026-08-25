@@ -4,6 +4,10 @@
 
 ### Breaking changes
 
+- `HedgeOptions<TResult>.ActionGenerator` is now a strongly typed delegate. Assign the generator
+  directly instead of wrapping it with `HedgeActionGenerator.Create<TResult>(...)`; the erased
+  wrapper remains available on untyped `HedgeOptions`. Typed generator events now expose the latest
+  available `Outcome<TResult>`.
 - Untyped `Fallback(...)` now changes the fluent chain's static type from `Shield` to `VoidShield`.
   `VoidShield` exposes only void execution overloads, and every later fluent method preserves that
   type. Result-returning execution, `For<TResult>()`, typed wrapping, and mixed static composition

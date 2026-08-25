@@ -121,6 +121,38 @@ public class ApiShapeTests
     }
 
     [Test]
+    public async Task Typed_Hedge_ActionGenerator_Requires_The_Matching_Result_Type()
+    {
+        var compilation = CreateCompilation(
+            """
+            using Kevlar;
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+
+            public static class Consumer
+            {
+                public static void Build()
+                {
+                    Func<HedgeActionGeneratorEvent<string>, Func<CancellationToken, ValueTask<string>>?> correct =
+                        static _ => null;
+                    Func<HedgeActionGeneratorEvent<string>, Func<CancellationToken, ValueTask<int>>?> wrong =
+                        static _ => null;
+                    var options = new HedgeOptions<string> { ActionGenerator = correct };
+                    options.ActionGenerator = wrong;
+                }
+            }
+            """);
+
+        var errors = compilation.GetDiagnostics()
+            .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+            .ToArray();
+
+        await Assert.That(errors).HasSingleItem();
+        await Assert.That(errors[0].Id).IsEqualTo("CS0029");
+    }
+
+    [Test]
     public async Task FallbackTo_Accepts_Null_Without_Overload_Ambiguity()
     {
         var compilation = CreateCompilation(

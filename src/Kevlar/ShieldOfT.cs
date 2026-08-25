@@ -21,6 +21,14 @@ public sealed class Shield<TResult>
     internal Shield(Strategy[] strategies, OutcomeJudge? ambient, string? name, TimeProvider? timeProvider)
     {
         Shield.ValidateChain(strategies);
+        foreach (var strategy in strategies)
+        {
+            if (strategy is HedgingStrategy hedging)
+            {
+                hedging.ValidateResultType(typeof(TResult));
+            }
+        }
+
         Strategies = strategies;
         Head = Shield.BuildChain(strategies);
         Ambient = ambient;

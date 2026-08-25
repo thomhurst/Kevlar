@@ -50,6 +50,7 @@ public class PipelineDescriptorTests
                 options.MaxAttempts = 3;
                 options.Delay = TimeSpan.FromMilliseconds(25);
                 options.OnHedge = _ => { };
+                options.ActionGenerator = HedgeActionGenerator.Create(static _ => null);
             })
             .WithName("orders")
             .WithTimeProvider(timeProvider);
@@ -104,6 +105,18 @@ public class PipelineDescriptorTests
         await Assert.That(hedge.MaxAttempts).IsEqualTo(3);
         await Assert.That(hedge.Delay).IsEqualTo(TimeSpan.FromMilliseconds(25));
         await Assert.That(hedge.HasNotification).IsTrue();
+        await Assert.That(hedge.HasActionGenerator).IsTrue();
+    }
+
+    [Test]
+    public async Task Typed_Action_Generator_Is_Visible_In_The_Descriptor()
+    {
+        var descriptor = Shield.For<int>()
+            .Hedge(options => options.ActionGenerator = static _ => null)
+            .GetDescriptor();
+
+        await Assert.That(descriptor.AssertContainsSingle<HedgeStrategyDescriptor>().HasActionGenerator)
+            .IsTrue();
     }
 
     [Test]

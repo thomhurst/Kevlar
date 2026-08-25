@@ -110,6 +110,15 @@ public class AllocationBudgetTests
         .When<InvalidOperationException>()
         .Fallback(static (_, _) => ValueTask.CompletedTask);
     private readonly Shield _parallelHedge = Shield.Hedge(2, TimeSpan.Zero);
+    private readonly Shield<int> _typedGeneratedHedge = Shield.For<int>().Hedge(options =>
+    {
+        options.MaxAttempts = 2;
+        options.Delay = Timeout.InfiniteTimeSpan;
+        options.ActionGenerator = static hedge =>
+            hedge.Outcome is { Exception: InvalidOperationException }
+                ? static _ => new ValueTask<int>(42)
+                : throw new InvalidOperationException("Expected the primary outcome.");
+    });
     private readonly Counter _retryCounter = new();
     private readonly Counter _asyncDelayRetryCounter = new();
     private readonly ParallelHedgeState _parallelHedgeState = new();
@@ -274,6 +283,12 @@ public class AllocationBudgetTests
                 .GetAwaiter().GetResult();
             test._parallelHedgeState.WaitForLoserCompletion();
         }, AllocationScope.AllThreads);
+        // The eight-byte margin catches boxing the typed Outcome<int> while allowing
+        // the existing generator-path allocations.
+        AssertBudget("typed hedge generator", 576, this, static test =>
+            test._typedGeneratedHedge.ExecuteAsync(static _ => throw RecoverableFailure)
+                .GetAwaiter()
+                .GetResult());
     }
 
     private static void AssertZero<TState>(string scenario, TState state, Action<TState> operation) =>
