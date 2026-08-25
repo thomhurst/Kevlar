@@ -88,6 +88,23 @@ public class DocsConsistencyTests
     }
 
     [Test]
+    public async Task Support_Policy_Packability_Defaults_To_True()
+    {
+        var defaultProject = XDocument.Parse("<Project Sdk=\"Microsoft.NET.Sdk\" />");
+        var disabledProject = XDocument.Parse(
+            """
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup>
+                <IsPackable>false</IsPackable>
+              </PropertyGroup>
+            </Project>
+            """);
+
+        await Assert.That(IsPackableProject(defaultProject)).IsTrue();
+        await Assert.That(IsPackableProject(disabledProject)).IsFalse();
+    }
+
+    [Test]
     public async Task Thread_Safety_Page_Mentions_Every_Public_Stateful_Contract()
     {
         var repositoryRoot = FindRepositoryRoot();
@@ -173,10 +190,7 @@ public class DocsConsistencyTests
         Directory
             .EnumerateFiles(Path.Combine(repositoryRoot, "src"), "*.csproj", SearchOption.AllDirectories)
             .Select(static path => (Path: path, Project: XDocument.Load(path)))
-            .Where(static item => string.Equals(
-                item.Project.Descendants("IsPackable").FirstOrDefault()?.Value,
-                "true",
-                StringComparison.OrdinalIgnoreCase))
+            .Where(static item => IsPackableProject(item.Project))
             .ToDictionary(
                 static item => Path.GetFileNameWithoutExtension(item.Path),
                 static item => item.Project
@@ -185,6 +199,12 @@ public class DocsConsistencyTests
                     .SelectMany(static element => element.Value.Split(';', StringSplitOptions.RemoveEmptyEntries))
                     .ToHashSet(StringComparer.Ordinal),
                 StringComparer.Ordinal);
+
+    private static bool IsPackableProject(XDocument project) =>
+        !string.Equals(
+            project.Descendants("IsPackable").FirstOrDefault()?.Value,
+            "false",
+            StringComparison.OrdinalIgnoreCase);
 
     private static string DocumentationTypeName(Type type)
     {
