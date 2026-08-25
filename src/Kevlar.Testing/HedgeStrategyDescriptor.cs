@@ -8,12 +8,14 @@ public sealed class HedgeStrategyDescriptor : StrategyDescriptor
         int maxAttempts,
         TimeSpan delay,
         bool hasNotification,
+        bool hasActionGenerator,
         bool hasHandlingOverride)
         : base(StrategyKind.Hedge, description)
     {
         MaxAttempts = maxAttempts;
         Delay = delay;
         HasNotification = hasNotification;
+        HasActionGenerator = hasActionGenerator;
         HasHandlingOverride = hasHandlingOverride;
     }
 
@@ -25,6 +27,9 @@ public sealed class HedgeStrategyDescriptor : StrategyDescriptor
 
     /// <summary>Whether a hedge notification is configured.</summary>
     public bool HasNotification { get; }
+
+    /// <summary>Whether an action generator is configured.</summary>
+    public bool HasActionGenerator { get; }
 
     /// <summary>Whether local predicates replace the ambient handling clause.</summary>
     public bool HasHandlingOverride { get; }

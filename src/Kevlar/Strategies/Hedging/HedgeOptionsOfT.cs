@@ -40,16 +40,20 @@ public sealed class HedgeOptions<TResult>
     /// <inheritdoc cref="HedgeOptions.OnHedgeAsync"/>
     public Func<HedgeEvent, ValueTask>? OnHedgeAsync { get; set; }
 
-    /// <inheritdoc cref="HedgeOptions.ActionGenerator"/>
-    public HedgeActionGenerator? ActionGenerator { get; set; }
+    /// <summary>
+    /// Selects a replacement operation for each additional attempt. A <see langword="null"/>
+    /// result runs the original operation.
+    /// </summary>
+    public Func<HedgeActionGeneratorEvent<TResult>, Func<CancellationToken, ValueTask<TResult>>?>?
+        ActionGenerator { get; set; }
 
-    internal HedgeOptions ToUntyped() => new()
+    internal HedgeOptions ToUntyped(HedgeActionGenerator? actionGenerator = null) => new()
     {
         HandlesException = HandlesException,
         MaxAttempts = MaxAttempts,
         Delay = Delay,
         OnHedge = OnHedge,
         OnHedgeAsync = OnHedgeAsync,
-        ActionGenerator = ActionGenerator,
+        ActionGenerator = actionGenerator,
     };
 }

@@ -23,6 +23,11 @@ public sealed class Shield<TResult>
         Shield.ValidateChain(strategies);
         foreach (var strategy in strategies)
         {
+            if (strategy is HedgingStrategy hedging)
+            {
+                hedging.ValidateResultType(typeof(TResult));
+            }
+
             if (strategy is VoidFallbackStrategy)
             {
                 throw Shield.CreateVoidFallbackResultException();

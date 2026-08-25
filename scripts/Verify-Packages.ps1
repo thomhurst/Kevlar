@@ -10,6 +10,28 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
+$isCiBuild = $env:CI -eq 'true'
+$ciPropertyValue = $isCiBuild.ToString().ToLowerInvariant()
+$expectedVersion = if ($isCiBuild)
+{
+    if ([string]::IsNullOrWhiteSpace($env:PACKAGE_VERSION))
+    {
+        throw 'PACKAGE_VERSION must contain the GitVersion SemVer when CI=true.'
+    }
+
+    $env:PACKAGE_VERSION
+}
+else
+{
+    '0.0.0-local'
+}
+
+if ($Version -ne $expectedVersion)
+{
+    $context = if ($isCiBuild) { 'CI' } else { 'local' }
+    throw "Package version for a $context build must be '$expectedVersion', got '$Version'."
+}
+
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
 function Assert-Equal([string]$Name, [AllowNull()]$Actual, [AllowNull()]$Expected)
@@ -210,7 +232,7 @@ $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $buildPropertiesJson = & dotnet msbuild `
     (Join-Path $repositoryRoot 'src/Kevlar/Kevlar.csproj') `
     -nologo `
-    -p:CI=true `
+    "-p:CI=$ciPropertyValue" `
     "-p:Version=$Version" `
     -getProperty:Deterministic,ContinuousIntegrationBuild,DeterministicSourcePaths,PublishRepositoryUrl,EmbedUntrackedSources,IncludeSymbols,SymbolPackageFormat,SignAssembly,AssemblyVersion,FileVersion,InformationalVersion
 if ($LASTEXITCODE -ne 0)
@@ -220,8 +242,15 @@ if ($LASTEXITCODE -ne 0)
 
 $buildProperties = ($buildPropertiesJson | Out-String | ConvertFrom-Json).Properties
 Assert-Equal 'Deterministic' $buildProperties.Deterministic 'true'
-Assert-Equal 'ContinuousIntegrationBuild' $buildProperties.ContinuousIntegrationBuild 'true'
-Assert-Equal 'DeterministicSourcePaths' $buildProperties.DeterministicSourcePaths 'true'
+if ($isCiBuild)
+{
+    Assert-Equal 'ContinuousIntegrationBuild' $buildProperties.ContinuousIntegrationBuild 'true'
+    Assert-Equal 'DeterministicSourcePaths' $buildProperties.DeterministicSourcePaths 'true'
+}
+elseif ($buildProperties.ContinuousIntegrationBuild -eq 'true' -or $buildProperties.DeterministicSourcePaths -eq 'true')
+{
+    throw 'Local package verification unexpectedly enabled continuous-integration path normalization.'
+}
 Assert-Equal 'PublishRepositoryUrl' $buildProperties.PublishRepositoryUrl 'true'
 Assert-Equal 'EmbedUntrackedSources' $buildProperties.EmbedUntrackedSources 'true'
 Assert-Equal 'IncludeSymbols' $buildProperties.IncludeSymbols 'true'
@@ -581,13 +610,13 @@ try
         '--no-restore',
         '-t:Rebuild',
         "-p:Version=$Version",
-        '-p:CI=true')
+        "-p:CI=$ciPropertyValue")
     Invoke-DotNet @(
         'pack', (Join-Path $repositoryRoot 'Kevlar.slnx'),
         '-c', 'Release',
         '--no-build',
         "-p:Version=$Version",
-        '-p:CI=true',
+        "-p:CI=$ciPropertyValue",
         "-p:PackageOutputPath=$repeatPackages")
 
     foreach ($packageId in $expectedDependencies.Keys)
@@ -636,7 +665,7 @@ try
         '-c', 'Release',
         '--no-build',
         "-p:Version=$skewVersion",
-        '-p:CI=true',
+        "-p:CI=$ciPropertyValue",
         "-p:PackageOutputPath=$skewFeed")
 
     $escapedSkewFeed = [System.Security.SecurityElement]::Escape($skewFeed)
@@ -705,7 +734,8 @@ try
 }
 catch (ExpectedConsumerException exception)
 {
-    if (exception.StackTrace is null || !exception.StackTrace.Contains("Kevlar/Internal/ShieldEngine.cs:line ", StringComparison.Ordinal))
+    var normalizedStackTrace = exception.StackTrace?.Replace('\\', '/');
+    if (normalizedStackTrace is null || !normalizedStackTrace.Contains("Kevlar/Internal/ShieldEngine.cs:line ", StringComparison.Ordinal))
     {
         throw new InvalidOperationException($"Packaged symbols did not produce Kevlar source line information:{Environment.NewLine}{exception.StackTrace}");
     }
