@@ -1737,6 +1737,42 @@ public class MetricsTests
     }
 
     [Test]
+    public async Task Concurrency_Redundant_Wake_Signal_Does_Not_Fail_Completion()
+    {
+        var strategy = new ConcurrencyLimitStrategy(new ConcurrencyLimitOptions
+        {
+            MaxConcurrency = 1,
+            QueueLimit = 2,
+        });
+        var state = typeof(ConcurrencyLimitStrategy).GetField(
+            "_state",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        var waiters = typeof(ConcurrencyLimitStrategy).GetField(
+            "_waiters",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        var semaphore = (SemaphoreSlim)typeof(ConcurrencyLimitStrategy).GetField(
+            "_semaphore",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+            .GetValue(strategy)!;
+        var acquire = typeof(ConcurrencyLimitStrategy).GetMethod(
+            "TryAcquirePermit",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        var release = typeof(ConcurrencyLimitStrategy).GetMethod(
+            "ReleasePermit",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+
+        state.SetValue(strategy, 0L);
+        await Assert.That((bool)acquire.Invoke(strategy, null)!).IsTrue();
+        semaphore.Release();
+        waiters.SetValue(strategy, 1);
+
+        release.Invoke(strategy, null);
+
+        await Assert.That(semaphore.CurrentCount).IsEqualTo(2);
+        await Assert.That(strategy.CaptureState().Running).IsEqualTo(0);
+    }
+
+    [Test]
     public async Task State_Registry_Compaction_Tolerates_Collected_Entries()
     {
         var registry = new KevlarMetrics.StateMetricRegistry<object>();

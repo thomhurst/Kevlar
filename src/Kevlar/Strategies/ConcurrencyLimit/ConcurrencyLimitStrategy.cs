@@ -53,7 +53,10 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
             nameof(options.QueueLimit),
             options.QueueLimit,
             "must not be negative");
-        _semaphore = new SemaphoreSlim(0, options.MaxConcurrency);
+        // Wake-ups can become redundant when a caller acquires directly before a releasing
+        // execution publishes its signal. Permit ownership is validated through _state, so
+        // accepting the extra signal prevents a completion from throwing SemaphoreFullException.
+        _semaphore = new SemaphoreSlim(0);
         _maxConcurrency = options.MaxConcurrency;
         _queueLimit = options.QueueLimit;
         _capacity = options.MaxConcurrency + (long)options.QueueLimit;
