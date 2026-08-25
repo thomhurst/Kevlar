@@ -146,6 +146,8 @@ rejections.
 
 <!-- doc-test-run: catch-http-replay -->
 ```csharp
+using Kevlar.Extensions.Http;
+
 var caughtReplay = false;
 try
 {
@@ -165,6 +167,8 @@ if (!caughtReplay)
 
 <!-- doc-test-run: catch-chaos-injected -->
 ```csharp
+using Kevlar.Chaos;
+
 var caughtChaos = false;
 try
 {
@@ -183,6 +187,8 @@ if (!caughtChaos)
 
 <!-- doc-test-run: catch-shield-assertion -->
 ```csharp
+using Kevlar.Testing;
+
 var caughtAssertion = false;
 try
 {

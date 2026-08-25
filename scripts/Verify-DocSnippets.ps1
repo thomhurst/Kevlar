@@ -47,7 +47,6 @@ foreach ($packageId in $requiredPackages)
 $snippets = [System.Collections.Generic.List[object]]::new()
 $installPackageIds = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
 $projectCommands = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
-$documentedUsings = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
 
 foreach ($documentPath in $documentPaths)
 {
@@ -117,22 +116,20 @@ foreach ($documentPath in $documentPaths)
             }
 
             $source = $body -join "`n"
-            foreach ($usingMatch in [regex]::Matches(
-                         $source,
-                         '(?m)^using\s+(?<namespace>[A-Za-z0-9_.]+);\s*(?://.*)?$'))
-            {
-                $namespace = $usingMatch.Groups['namespace'].Value
-                if (-not $namespace.StartsWith('TUnit.', [StringComparison]::Ordinal))
-                {
-                    [void]$documentedUsings.Add("using $namespace;")
-                }
-            }
-
             if ($ignored)
             {
                 Write-Host "EXCLUDED $relativePath#$csharpOrdinal ($ignoreReason)"
                 continue
             }
+
+            $snippetUsings = @(
+                [regex]::Matches(
+                    $source,
+                    '(?m)^using\s+(?<namespace>[A-Za-z0-9_.]+);\s*(?://.*)?$') |
+                    ForEach-Object { "using $($_.Groups['namespace'].Value);" } |
+                    Where-Object { -not $_.StartsWith('using TUnit.', [StringComparison]::Ordinal) } |
+                    Select-Object -Unique
+            )
 
             $sourceWithoutLineComments = [regex]::Replace($source, '(?s)/\*.*?\*/', '') -replace '(?m)//.*$', ''
             if ($sourceWithoutLineComments -match '\.\.\.')
@@ -149,6 +146,7 @@ foreach ($documentPath in $documentPaths)
                 Mode = $mode
                 SplitBefore = $splitBefore
                 RunName = $runName
+                Usings = $snippetUsings
             })
 
             continue
@@ -196,8 +194,15 @@ $builder = [Text.StringBuilder]::new()
 [void]$builder.AppendLine('#nullable enable')
 [void]$builder.AppendLine('#pragma warning disable CS0162 // Harness appends a fallback return after documentation control flow.')
 $usingStatements = @(
+    'using System;'
+    'using System.Collections.Generic;'
     'using System.Diagnostics.Metrics;'
+    'using System.IO;'
+    'using System.Linq;'
     'using System.Net;'
+    'using System.Net.Http;'
+    'using System.Threading;'
+    'using System.Threading.Tasks;'
     'using Kevlar;'
     'using Microsoft.Extensions.DependencyInjection;'
     'using Microsoft.Extensions.Configuration;'
@@ -211,11 +216,7 @@ $usingStatements = @(
     'using Polly.Timeout;'
 )
 
-if ($NoImplicitUsings)
-{
-    $usingStatements += @($documentedUsings | Sort-Object)
-}
-else
+if (-not $NoImplicitUsings)
 {
     $usingStatements += @(
         'using Kevlar.Chaos;'
@@ -231,12 +232,17 @@ foreach ($usingStatement in $usingStatements | Select-Object -Unique)
 {
     [void]$builder.AppendLine($usingStatement)
 }
-[void]$builder.AppendLine('namespace Kevlar.DocTests;')
 
 for ($snippetIndex = 0; $snippetIndex -lt $snippets.Count; $snippetIndex++)
 {
     $snippet = $snippets[$snippetIndex]
     $source = $snippet.Source -replace '(?m)^using\s+[A-Za-z0-9_.]+;\s*(?://.*)?$', ''
+    [void]$builder.AppendLine('namespace Kevlar.DocTests')
+    [void]$builder.AppendLine('{')
+    foreach ($usingStatement in $snippet.Usings)
+    {
+        [void]$builder.AppendLine("    $usingStatement")
+    }
     [void]$builder.AppendLine("internal sealed class Snippet$snippetIndex : SnippetContext")
     [void]$builder.AppendLine('{')
 
@@ -316,8 +322,11 @@ for ($snippetIndex = 0; $snippetIndex -lt $snippets.Count; $snippetIndex++)
     [void]$builder.AppendLine('        return null;')
     [void]$builder.AppendLine('    }')
     [void]$builder.AppendLine('}')
+    [void]$builder.AppendLine('}')
 }
 
+[void]$builder.AppendLine('namespace Kevlar.DocTests')
+[void]$builder.AppendLine('{')
 [void]$builder.AppendLine('internal static class SnippetCatalog')
 [void]$builder.AppendLine('{')
 [void]$builder.AppendLine('    public static async Task RunAsync()')
@@ -433,6 +442,7 @@ for ($snippetIndex = 0; $snippetIndex -lt $snippets.Count; $snippetIndex++)
 [void]$builder.AppendLine('        Console.WriteLine("Executed documented pipeline behavior successfully.");')
 [void]$builder.AppendLine('    }')
 [void]$builder.AppendLine('}')
+[void]$builder.AppendLine('}')
 
 [IO.File]::WriteAllText($generatedPath, $builder.ToString())
 
@@ -449,9 +459,12 @@ for ($snippetIndex = 0; $snippetIndex -lt $snippets.Count; $snippetIndex++)
 </configuration>
 "@)
 
+$implicitUsings = if ($NoImplicitUsings) { 'disable' } else { 'enable' }
+
 & dotnet restore $projectPath --configfile $nugetConfigPath `
     "-p:KevlarPackageVersion=$Version" `
-    "-p:GeneratedSnippetsPath=$generatedPath"
+    "-p:GeneratedSnippetsPath=$generatedPath" `
+    "-p:ImplicitUsings=$implicitUsings"
 
 if ($LASTEXITCODE -ne 0)
 {
@@ -462,7 +475,8 @@ foreach ($framework in @('net8.0', 'net10.0'))
 {
     & dotnet run --project $projectPath -c Release --framework $framework --no-restore `
         "-p:KevlarPackageVersion=$Version" `
-        "-p:GeneratedSnippetsPath=$generatedPath"
+        "-p:GeneratedSnippetsPath=$generatedPath" `
+        "-p:ImplicitUsings=$implicitUsings"
 
     if ($LASTEXITCODE -ne 0)
     {

@@ -35,6 +35,8 @@ that configuration.
 Customize those stages without rebuilding the pipeline:
 
 ```csharp
+using Kevlar.Extensions.Http;
+
 services.AddHttpClient("api")
     .AddStandardShield(options =>
     {
@@ -60,6 +62,8 @@ values fail while the registration is built; handler replay/routing values fail 
 For dependency-aware setup, use the service-provider overload:
 
 ```csharp
+using Kevlar.Extensions.Http;
+
 services.AddSingleton(new ConcurrencyLimitOptions
 {
     MaxConcurrency = 100,
@@ -83,6 +87,8 @@ Pass an `IConfiguration` section to bind the standard pipeline and reload it whe
 change token fires:
 
 ```csharp
+using Kevlar.Extensions.Http;
+
 var configuration = new ConfigurationBuilder()
     .AddInMemoryCollection(new Dictionary<string, string?>
     {
@@ -114,6 +120,8 @@ Configuration is applied first. The service-provider callback overload runs afte
 and delegates can deliberately override bound values:
 
 ```csharp
+using Kevlar.Extensions.Http;
+
 var configuration = new ConfigurationBuilder()
     .AddInMemoryCollection(new Dictionary<string, string?>
     {
@@ -144,6 +152,8 @@ Hedging uses the same reload contract. Its scalar keys match `StandardHedgeShiel
 `Endpoints` is required:
 
 ```csharp
+using Kevlar.Extensions.Http;
+
 var configuration = new ConfigurationBuilder()
     .AddInMemoryCollection(new Dictionary<string, string?>
     {
@@ -163,6 +173,8 @@ services.AddHttpClient("routed")
 ## Bring your own pipeline
 
 ```csharp
+using Kevlar.Extensions.Http;
+
 services.AddHttpClient("api")
     .AddShield(
         HttpShield.WhenTransient()
@@ -206,6 +218,8 @@ The standard shield caps every retry delay at 10 seconds, so one excessive serve
 impose an unbounded wait. Custom shields can cap server-suggested delays directly:
 
 ```csharp
+using Kevlar.Extensions.Http;
+
 var shield = HttpShield.WhenTransient()
     .Retry(options =>
     {
@@ -216,6 +230,9 @@ var shield = HttpShield.WhenTransient()
 ### Registering a shield built elsewhere
 
 ```csharp
+using Kevlar.Extensions.DependencyInjection;
+using Kevlar.Extensions.Http;
+
 services.AddHttpClient("api")
     .AddShield(sp => sp.GetRequiredService<IKevlarRegistry>()
         .GetShield<HttpResponseMessage>("downstream"));
@@ -257,6 +274,8 @@ Route attempt 1, attempt 2, and so on across alternate authorities while preserv
 path and query:
 
 ```csharp
+using Kevlar.Extensions.Http;
+
 services.AddHttpClient("routed")
     .AddStandardHedgeShield(options =>
     {
@@ -282,6 +301,8 @@ make an unsafe operation safe to repeat.
 For a fully custom endpoint-aware pipeline, compose the outer and endpoint shields directly:
 
 ```csharp
+using Kevlar.Extensions.Http;
+
 var routing = new HttpEndpointRoutingOptions
 {
     SelectionMode = HttpEndpointSelectionMode.Ordered,

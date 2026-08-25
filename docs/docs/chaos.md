@@ -57,6 +57,8 @@ Typed outcome injection is useful for failures represented as values, such as HT
 sentinels. It returns a `Shield<TResult>`, so normal typed handling and composition remain available:
 
 ```csharp
+using Kevlar.Chaos;
+
 var unavailable = ChaosShield.Outcome<int>(options =>
 {
     options.Enabled = true;
@@ -79,6 +81,8 @@ var value = await shield.ExecuteAsync(static _ => new ValueTask<int>(42));
 is copied when the shield is built, while generators are evaluated on every execution.
 
 ```csharp
+using Kevlar.Chaos;
+
 var chaosEnabled = true;
 var deterministic = ChaosShield.Fault(options =>
 {
@@ -102,6 +106,8 @@ that are not just a delay or result, and any exception it throws is preserved as
 failure.
 
 ```csharp
+using Kevlar.Chaos;
+
 var behavior = ChaosShield.Behavior(options =>
 {
     options.Enabled = true;

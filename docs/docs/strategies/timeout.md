@@ -95,6 +95,8 @@ The inner timeout's `TimeoutExceededException` is a handleable failure, so the r
 
 <!-- doc-test-run: timeout-exceeded-clause -->
 ```csharp
+using Kevlar.Testing;
+
 var time = new FakeTimeProvider();
 var attempts = 0;
 var execution = Shield
@@ -140,6 +142,8 @@ The similar-looking `System.TimeoutException` clause does not handle Kevlar's ti
 
 <!-- doc-test-run: system-timeout-clause-trap -->
 ```csharp
+using Kevlar.Testing;
+
 var time = new FakeTimeProvider();
 var attempts = 0;
 var shield = Shield

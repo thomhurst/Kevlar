@@ -58,6 +58,8 @@ services.AddOpenTelemetry().WithMetrics(metrics => metrics
 Applications that reference the optional `Kevlar.Chaos` package can register its meter separately:
 
 ```csharp
+using Kevlar.Chaos;
+
 services.AddOpenTelemetry().WithMetrics(metrics => metrics
     .AddMeter(ChaosDiagnostics.MeterName));
 ```

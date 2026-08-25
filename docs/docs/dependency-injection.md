@@ -80,6 +80,8 @@ independent shield state per tenant, endpoint, or other key while remaining boun
 ```
 
 ```csharp
+using Kevlar.Extensions.DependencyInjection;
+
 var configuration = new ConfigurationBuilder().Build();
 services.AddShield("github", configuration.GetSection("Resilience:GitHub"));
 ```
@@ -100,6 +102,8 @@ Configuration cannot reorder that chain — the order is what makes a definition
 `AddReloadingShield` when future configuration reloads must affect new operations:
 
 ```csharp
+using Kevlar.Extensions.DependencyInjection;
+
 var configuration = new ConfigurationBuilder().Build();
 services.AddReloadingShield(
     "github",
