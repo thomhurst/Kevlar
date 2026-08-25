@@ -862,10 +862,18 @@ internal sealed class CircuitBreakerCore
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private void PublishOnThreadPool(TransitionPublication? publication) =>
-        Task.Run(() => PublishAsync(publication).AsTask()).GetAwaiter().GetResult();
+    private void PublishOnThreadPool(TransitionPublication? publication)
+    {
+        var parent = _ambientPublication!.Value;
+        Task.Run(() => PublishAsync(publication, parent).AsTask()).GetAwaiter().GetResult();
+    }
 
     private ValueTask PublishAsync(TransitionPublication? publication)
+        => PublishAsync(publication, _ambientPublication?.Value);
+
+    private ValueTask PublishAsync(
+        TransitionPublication? publication,
+        TransitionPublication? parent)
     {
         if (publication is null)
         {
@@ -883,7 +891,6 @@ internal sealed class CircuitBreakerCore
             return DrainPublicationsAsync(publication);
         }
 
-        var parent = _ambientPublication!.Value;
         if (parent is not null)
         {
             lock (_gate)

@@ -101,6 +101,43 @@ public class CircuitBreakerTransitionOrderingTests
     }
 
     [Test]
+    public async Task Suppressed_Context_Flow_Preserves_Reentrant_Publication_Parent()
+    {
+        var monitor = new CircuitBreakerMonitor();
+        var transitions = new List<(CircuitState From, CircuitState To)>();
+        var shield = Shield.CircuitBreaker(options =>
+        {
+            options.ConsecutiveFailures = 1;
+            options.BreakDuration = TimeSpan.FromMinutes(1);
+            options.Monitor = monitor;
+            options.OnStateChangedAsync = change =>
+            {
+                transitions.Add((change.From, change.To));
+                if (change.To == CircuitState.Open)
+                {
+                    using (ExecutionContext.SuppressFlow())
+                    {
+                        monitor.Reset();
+                    }
+                }
+
+                return default;
+            };
+        });
+
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException())
+            .AsTask()
+            .WaitAsync(TimeSpan.FromSeconds(5));
+
+        await Assert.That(transitions.SequenceEqual(
+        [
+            (CircuitState.Closed, CircuitState.Open),
+            (CircuitState.Open, CircuitState.Closed),
+        ])).IsTrue();
+        await Assert.That(monitor.State).IsEqualTo(CircuitState.Closed);
+    }
+
+    [Test]
     public async Task Concurrent_Control_Publishes_One_Ordered_NonConcurrent_Stream()
     {
         var monitor = new CircuitBreakerMonitor();
