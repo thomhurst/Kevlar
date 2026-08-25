@@ -470,4 +470,3 @@ Kevlar.ShieldBuilder<TResult>.OrResultContext(System.Func<Kevlar.HandlingEvent<T
 static Kevlar.Shield.WhenContext(System.Func<Kevlar.HandlingEvent, bool>! predicate) -> Kevlar.ShieldBuilder!
 static Kevlar.ShieldExtensions.WhenContext(this Kevlar.Shield! shield, System.Func<Kevlar.HandlingEvent, bool>! predicate) -> Kevlar.ShieldBuilder!
 Kevlar.HandlingClause.ShouldHandle<T>(in Kevlar.Outcome<T> outcome, Kevlar.KevlarContext! context, int attempt = 0, int strategyIndex = -1) -> bool
-Kevlar.KevlarContext.StrategyIndex.get -> int
