@@ -2,45 +2,12 @@ namespace Kevlar.Internal;
 
 internal static class ShieldDecoration
 {
-    public static IShieldDecorator[] IntersectForComposition(
+    public static IShieldDecorator[] MergeForComposition(
         IShieldDecorator[] first,
         bool firstHasStrategies,
-        IShieldDecorator[] second,
-        bool secondHasStrategies)
+        IShieldDecorator[] second)
     {
-        if (!firstHasStrategies)
-        {
-            return Union(first, second);
-        }
-
-        if (!secondHasStrategies)
-        {
-            return first;
-        }
-
-        if (first.Length == 0 || second.Length == 0)
-        {
-            return [];
-        }
-
-        var intersection = new IShieldDecorator[Math.Min(first.Length, second.Length)];
-        var count = 0;
-
-        foreach (var decorator in first)
-        {
-            if (IsApplied(second, decorator))
-            {
-                intersection[count++] = decorator;
-            }
-        }
-
-        if (count == first.Length)
-        {
-            return first;
-        }
-
-        Array.Resize(ref intersection, count);
-        return intersection;
+        return firstHasStrategies ? first : Union(first, second);
     }
 
     public static bool HasResilienceStrategies(Strategy[] strategies) =>

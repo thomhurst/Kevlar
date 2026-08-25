@@ -242,11 +242,10 @@ public sealed class Shield : IShieldLifecycle
             name ??= shield.Name;
             time ??= shield.Time;
             var shieldHasStrategies = ShieldDecoration.HasResilienceStrategies(shield.Strategies);
-            appliedDecorators = ShieldDecoration.IntersectForComposition(
+            appliedDecorators = ShieldDecoration.MergeForComposition(
                 appliedDecorators,
                 hasStrategies,
-                shield.AppliedDecorators,
-                shieldHasStrategies);
+                shield.AppliedDecorators);
             hasStrategies |= shieldHasStrategies;
         }
 

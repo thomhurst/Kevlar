@@ -317,6 +317,29 @@ public class IntegrationTests
 
     [Test]
     [NotInParallel]
+    public async Task AddKevlarLogging_Does_Not_Redecorate_Repeated_Composition()
+    {
+        var logs = new FakeLoggerProvider();
+        var services = new ServiceCollection();
+        services.AddLogging(builder => builder.AddProvider(logs));
+        services.AddKevlarLogging();
+        services.AddShield("leading", Shield.Empty);
+        using var provider = services.BuildServiceProvider();
+        var registry = provider.GetRequiredService<IKevlarRegistry>();
+        var repeated = registry.GetShield("leading")
+            .Wrap(Shield.Retry(1, Backoff.None))
+            .Wrap(Shield.Timeout(TimeSpan.FromSeconds(1)));
+        var dynamicShield = registry.GetOrAdd("repeated", _ => repeated);
+
+        _ = await dynamicShield.ExecuteOutcomeAsync<int>(Fail);
+
+        var retries = logs.Collector.GetSnapshot()
+            .Count(record => record.Id == new EventId(1001, "Retry"));
+        await Assert.That(retries).IsEqualTo(1);
+    }
+
+    [Test]
+    [NotInParallel]
     public async Task AddKevlarLogging_Shares_Rate_Limit_Across_Decorated_Shields()
     {
         var logs = new FakeLoggerProvider();

@@ -296,11 +296,10 @@ public static class ShieldExtensions
             null,
             outer.Name ?? inner.Name,
             outer.Time ?? inner.Time,
-            ShieldDecoration.IntersectForComposition(
+            ShieldDecoration.MergeForComposition(
                 outer.AppliedDecorators,
                 ShieldDecoration.HasResilienceStrategies(outer.Strategies),
-                inner.AppliedDecorators,
-                ShieldDecoration.HasResilienceStrategies(inner.Strategies)));
+                inner.AppliedDecorators));
     }
 
     /// <summary>
@@ -319,11 +318,10 @@ public static class ShieldExtensions
             null,
             outer.Name ?? inner.Name,
             outer.Time ?? inner.Time,
-            ShieldDecoration.IntersectForComposition(
+            ShieldDecoration.MergeForComposition(
                 outer.AppliedDecorators,
                 ShieldDecoration.HasResilienceStrategies(outer.Strategies),
-                inner.AppliedDecorators,
-                ShieldDecoration.HasResilienceStrategies(inner.Strategies)));
+                inner.AppliedDecorators));
     }
 
     /// <summary>

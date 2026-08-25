@@ -452,11 +452,10 @@ public sealed class Shield<TResult> : IShieldLifecycle
             null,
             Name ?? inner.Name,
             Time ?? inner.Time,
-            ShieldDecoration.IntersectForComposition(
+            ShieldDecoration.MergeForComposition(
                 AppliedDecorators,
                 ShieldDecoration.HasResilienceStrategies(Strategies),
-                inner.AppliedDecorators,
-                ShieldDecoration.HasResilienceStrategies(inner.Strategies)));
+                inner.AppliedDecorators));
     }
 
     /// <summary>
@@ -474,11 +473,10 @@ public sealed class Shield<TResult> : IShieldLifecycle
             null,
             Name ?? inner.Name,
             Time ?? inner.Time,
-            ShieldDecoration.IntersectForComposition(
+            ShieldDecoration.MergeForComposition(
                 AppliedDecorators,
                 ShieldDecoration.HasResilienceStrategies(Strategies),
-                inner.AppliedDecorators,
-                ShieldDecoration.HasResilienceStrategies(inner.Strategies)));
+                inner.AppliedDecorators));
     }
 
     /// <summary>
@@ -506,11 +504,10 @@ public sealed class Shield<TResult> : IShieldLifecycle
             name ??= shield.Name;
             time ??= shield.Time;
             var shieldHasStrategies = ShieldDecoration.HasResilienceStrategies(shield.Strategies);
-            appliedDecorators = ShieldDecoration.IntersectForComposition(
+            appliedDecorators = ShieldDecoration.MergeForComposition(
                 appliedDecorators,
                 hasStrategies,
-                shield.AppliedDecorators,
-                shieldHasStrategies);
+                shield.AppliedDecorators);
             hasStrategies |= shieldHasStrategies;
         }
 

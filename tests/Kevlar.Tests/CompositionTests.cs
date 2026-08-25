@@ -129,6 +129,25 @@ public class CompositionTests
     }
 
     [Test]
+    public async Task Repeated_Composition_Preserves_Outer_Applied_Decorators()
+    {
+        var decorator = new CountingDecorator();
+        var decorated = ShieldDecoration.Apply(Shield.Empty, null, [decorator]);
+        var wrapped = decorated
+            .Wrap(Shield.Retry(1, Backoff.None))
+            .Wrap(Shield.CircuitBreaker(1, TimeSpan.FromSeconds(1)));
+        var composed = Shield.Compose(
+            decorated,
+            Shield.Retry(1, Backoff.None),
+            Shield.CircuitBreaker(1, TimeSpan.FromSeconds(1)));
+
+        ShieldDecoration.Apply(wrapped, null, [decorator]);
+        ShieldDecoration.Apply(composed, null, [decorator]);
+
+        await Assert.That(decorator.Count).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Typed_Compose_Keeps_The_First_Non_Null_Metadata_And_Seals_Clauses()
     {
         var time = new Microsoft.Extensions.Time.Testing.FakeTimeProvider();
