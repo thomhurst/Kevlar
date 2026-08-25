@@ -91,6 +91,7 @@ dotnet add package Microsoft.Extensions.Configuration.Json
 using Kevlar.Extensions.DependencyInjection;
 
 var configuration = new ConfigurationBuilder()
+    .SetBasePath(Directory.GetCurrentDirectory())
     .AddJsonFile("appsettings.json")
     .Build();
 services.AddShield("github", configuration.GetSection("Resilience:GitHub"));
@@ -115,6 +116,7 @@ Configuration cannot reorder that chain — the order is what makes a definition
 using Kevlar.Extensions.DependencyInjection;
 
 var configuration = new ConfigurationBuilder()
+    .SetBasePath(Directory.GetCurrentDirectory())
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
     .Build();
 services.AddReloadingShield(
