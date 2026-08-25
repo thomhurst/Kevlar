@@ -205,6 +205,18 @@ public class HttpRequestOptionsTests
     }
 
     [Test]
+    public async Task Handler_Cancellation_Stops_Waiting_For_Asynchronous_Partition()
+    {
+        await AssertPartitionSelectionCancellation(requestScoped: false);
+    }
+
+    [Test]
+    public async Task Request_Cancellation_Stops_Waiting_For_Asynchronous_Partition()
+    {
+        await AssertPartitionSelectionCancellation(requestScoped: true);
+    }
+
+    [Test]
     public async Task Request_Cancellation_Option_Links_With_Handler_Token()
     {
         using var cancellation = new CancellationTokenSource();
@@ -312,6 +324,52 @@ public class HttpRequestOptionsTests
             InnerHandler = new StubHandler(send),
         };
         return new HttpClient(handler);
+    }
+
+    private static async Task AssertPartitionSelectionCancellation(bool requestScoped)
+    {
+        var factoryCalls = 0;
+        var factoryStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseFactory = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var partitions = PartitionedShield<string, HttpResponseMessage>.CreateAsync(async _ =>
+        {
+            Interlocked.Increment(ref factoryCalls);
+            factoryStarted.SetResult();
+            await releaseFactory.Task;
+            return Shield<HttpResponseMessage>.Empty;
+        });
+        using var services = new ServiceCollection()
+            .AddHttpClient("cancel-partitioned")
+            .AddShield(partitions, static _ => "tenant")
+            .ConfigurePrimaryHttpMessageHandler(() => new StubHandler((_, _) =>
+                Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK))))
+            .Services
+            .BuildServiceProvider();
+        using var client = services.GetRequiredService<IHttpClientFactory>()
+            .CreateClient("cancel-partitioned");
+        using var cancellation = new CancellationTokenSource();
+        using var request = new HttpRequestMessage(HttpMethod.Get, "https://example.test/");
+        if (requestScoped)
+        {
+            request.WithKevlarCancellationToken(cancellation.Token);
+        }
+
+        var send = client.SendAsync(
+            request,
+            requestScoped ? CancellationToken.None : cancellation.Token);
+        await factoryStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        cancellation.Cancel();
+
+        _ = await Assert.That(async () => await send.WaitAsync(TimeSpan.FromSeconds(5)))
+            .Throws<OperationCanceledException>();
+        await Assert.That(releaseFactory.Task.IsCompleted).IsFalse();
+
+        releaseFactory.SetResult();
+        using var response = await client.GetAsync("https://example.test/")
+            .WaitAsync(TimeSpan.FromSeconds(5));
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(factoryCalls).IsEqualTo(1);
     }
 
     private sealed class PropertyObserverStrategy(

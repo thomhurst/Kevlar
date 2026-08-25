@@ -76,8 +76,17 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         var selectedShield = requestOptions?.Shield;
         if (selectedShield is null && _shieldSelector is not null)
         {
-            selectedShield = await _shieldSelector(request).ConfigureAwait(false)
-                ?? throw new InvalidOperationException("The HTTP shield selector returned null.");
+            using (var selectionCancellation = CreateLinkedCancellation(
+                cancellationToken,
+                requestOptions?.CancellationToken ?? default))
+            {
+                var selectionCancellationToken = selectionCancellation?.Token ?? cancellationToken;
+                selectedShield = await AwaitWithCancellationAsync(
+                    _shieldSelector(request),
+                    selectionCancellationToken).ConfigureAwait(false)
+                    ?? throw new InvalidOperationException("The HTTP shield selector returned null.");
+            }
+
             if (requestOptions is null)
             {
                 _ = KevlarHttp.TryGetRequestOptions(request, out requestOptions);
@@ -160,6 +169,34 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         }
 
         return CancellationTokenSource.CreateLinkedTokenSource(handlerToken, requestToken);
+    }
+
+    private static async ValueTask<T> AwaitWithCancellationAsync<T>(
+        ValueTask<T> operation,
+        CancellationToken cancellationToken)
+    {
+        if (operation.IsCompleted || !cancellationToken.CanBeCanceled)
+        {
+            return await operation.ConfigureAwait(false);
+        }
+
+        var task = operation.AsTask();
+        var cancellation = new TaskCompletionSource<bool>(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        using var registration = cancellationToken.Register(
+            static state => ((TaskCompletionSource<bool>)state!).TrySetResult(true),
+            cancellation);
+        if (await Task.WhenAny(task, cancellation.Task).ConfigureAwait(false) != task)
+        {
+            _ = task.ContinueWith(
+                static completed => _ = completed.Exception,
+                CancellationToken.None,
+                TaskContinuationOptions.ExecuteSynchronously | TaskContinuationOptions.OnlyOnFaulted,
+                TaskScheduler.Default);
+            cancellationToken.ThrowIfCancellationRequested();
+        }
+
+        return await task.ConfigureAwait(false);
     }
 
     private static Func<HttpRequestMessage, ValueTask<Shield<HttpResponseMessage>>> WrapSelector(
