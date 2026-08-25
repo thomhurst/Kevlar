@@ -22,12 +22,18 @@ public sealed class Shield : IShieldLifecycle
     internal readonly StrategyNode? Head;
     internal readonly OutcomeJudge? Ambient;
     internal readonly TimeProvider? Time;
+    internal readonly IShieldDecorator[] AppliedDecorators;
     private readonly bool _hasVoidFallback;
     private readonly StrategyOwnerSet _strategyOwners;
 
     Strategy[] IShieldLifecycle.Strategies => Strategies;
 
-    internal Shield(Strategy[] strategies, OutcomeJudge? ambient, string? name, TimeProvider? timeProvider)
+    internal Shield(
+        Strategy[] strategies,
+        OutcomeJudge? ambient,
+        string? name,
+        TimeProvider? timeProvider,
+        IShieldDecorator[]? appliedDecorators = null)
     {
         ValidateChain(strategies);
         Strategies = strategies;
@@ -36,6 +42,7 @@ public sealed class Shield : IShieldLifecycle
         Ambient = ambient;
         Name = name;
         Time = timeProvider;
+        AppliedDecorators = appliedDecorators ?? [];
 
         foreach (var strategy in strategies)
         {
@@ -794,9 +801,19 @@ public sealed class Shield : IShieldLifecycle
         var strategies = new Strategy[Strategies.Length + 1];
         Array.Copy(Strategies, strategies, Strategies.Length);
         strategies[Strategies.Length] = strategy;
-        var shield = new Shield(strategies, ambient ?? Ambient, Name, Time);
+        var shield = new Shield(strategies, ambient ?? Ambient, Name, Time, AppliedDecorators);
         StrategyAppendObserver.Notify(Strategies, strategy, Name);
         return shield;
+    }
+
+    internal Shield MarkDecoratorApplied(
+        IShieldDecorator[] appliedDecorators,
+        IShieldDecorator decorator)
+    {
+        var decorators = new IShieldDecorator[appliedDecorators.Length + 1];
+        Array.Copy(appliedDecorators, decorators, appliedDecorators.Length);
+        decorators[^1] = decorator;
+        return new Shield(Strategies, Ambient, Name, Time, decorators);
     }
 
     internal static StrategyNode? BuildChain(Strategy[] strategies, StrategyOwnerSet shieldOwners)

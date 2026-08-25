@@ -33,7 +33,8 @@ public static class ShieldLoggingExtensions
             Prepend(shield.Strategies, new LoggingRegistration(logger, options), shield.Name),
             shield.Ambient,
             shield.Name,
-            shield.Time);
+            shield.Time,
+            shield.AppliedDecorators);
     }
 
     /// <summary>Logs strategy events without replacing strategy callbacks.</summary>
@@ -61,7 +62,8 @@ public static class ShieldLoggingExtensions
             Prepend(shield.Strategies, new LoggingRegistration(logger, options), shield.Name),
             shield.Ambient,
             shield.Name,
-            shield.Time);
+            shield.Time,
+            shield.AppliedDecorators);
     }
 
     private static LoggingOptionsSnapshot CreateOptions(
@@ -99,7 +101,7 @@ public static class ShieldLoggingExtensions
         return result;
     }
 
-    private static void AttachCircuitListeners(
+    internal static void AttachCircuitListeners(
         Strategy[] strategies,
         IKevlarTelemetryListener? previous,
         IKevlarTelemetryListener listener,

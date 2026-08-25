@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 namespace Kevlar.Extensions.Logging;
 
 internal sealed class LoggingStrategy(LoggingRegistration registration)
-    : Strategy, ITransparentStrategy, IStrategyAppendObserver
+    : Strategy, ITransparentStrategy, IStrategyAppendObserver, IShieldNameObserver
 {
     private readonly LoggingTelemetryListener _listener = new(registration);
 
@@ -29,6 +29,13 @@ internal sealed class LoggingStrategy(LoggingRegistration registration)
                 strategyIndex);
         }
     }
+
+    void IShieldNameObserver.OnShieldNamed(Strategy[] strategies, string shieldName) =>
+        ShieldLoggingExtensions.AttachCircuitListeners(
+            strategies,
+            _listener,
+            _listener,
+            shieldName);
 
     public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
         Continuation<T, TState> next,

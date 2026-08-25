@@ -1,4 +1,5 @@
 using System.Globalization;
+using Kevlar.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -645,28 +646,20 @@ public static class KevlarServiceCollectionExtensions
     private static Shield Decorate(
         IServiceProvider serviceProvider,
         Shield shield,
-        string? name)
-    {
-        foreach (var decorator in serviceProvider.GetServices<IShieldDecorator>())
-        {
-            shield = decorator.Decorate(shield, name);
-        }
-
-        return shield;
-    }
+        string? name) =>
+        ShieldDecoration.Apply(
+            shield,
+            name,
+            serviceProvider.GetServices<IShieldDecorator>());
 
     private static Shield<TResult> Decorate<TResult>(
         IServiceProvider serviceProvider,
         Shield<TResult> shield,
-        string? name)
-    {
-        foreach (var decorator in serviceProvider.GetServices<IShieldDecorator>())
-        {
-            shield = decorator.Decorate(shield, name);
-        }
-
-        return shield;
-    }
+        string? name) =>
+        ShieldDecoration.Apply(
+            shield,
+            name,
+            serviceProvider.GetServices<IShieldDecorator>());
 
     private static Shield BuildConfiguredShield(IConfiguration configuration)
     {

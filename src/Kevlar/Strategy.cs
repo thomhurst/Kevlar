@@ -151,6 +151,11 @@ internal interface IStrategyAppendObserver
     void OnStrategyAppended(Strategy strategy, string? shieldName, int strategyIndex);
 }
 
+internal interface IShieldNameObserver
+{
+    void OnShieldNamed(Strategy[] strategies, string shieldName);
+}
+
 internal static class StrategyAppendObserver
 {
     public static void Notify(
@@ -164,6 +169,20 @@ internal static class StrategyAppendObserver
             if (strategy is IStrategyAppendObserver observer)
             {
                 observer.OnStrategyAppended(appended, shieldName, strategyIndex);
+            }
+        }
+    }
+}
+
+internal static class ShieldNameObserver
+{
+    public static void Notify(Strategy[] strategies, string shieldName)
+    {
+        foreach (var strategy in strategies)
+        {
+            if (strategy is IShieldNameObserver observer)
+            {
+                observer.OnShieldNamed(strategies, shieldName);
             }
         }
     }

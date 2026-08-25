@@ -227,7 +227,12 @@ public sealed class ShieldBuilder<TResult>
             resultPredicate,
             DescribeHelper.Clause(_clauseTerms),
             CombineContexts(_contextPredicates));
-        return new Shield<TResult>(_parent.Strategies, judge, _parent.Name, _parent.Time);
+        return new Shield<TResult>(
+            _parent.Strategies,
+            judge,
+            _parent.Name,
+            _parent.Time,
+            _parent.AppliedDecorators);
     }
 
     /// <summary>

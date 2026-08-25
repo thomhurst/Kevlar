@@ -520,6 +520,27 @@ public class LoggingTests
         await Assert.That(record.GetStructuredStateValue("ShieldName")).IsEqualTo("payments");
         await Assert.That(record.GetStructuredStateValue("FromState")).IsEqualTo("Closed");
         await Assert.That(record.GetStructuredStateValue("ToState")).IsEqualTo("Isolated");
+        await Assert.That(record.StructuredState?.Any(pair => pair.Key == "BreakDuration") ?? false)
+            .IsFalse();
+        await Assert.That(record.Message).DoesNotContain(" for ");
+        GC.KeepAlive(shield);
+    }
+
+    [Test]
+    [NotInParallel]
+    public async Task Naming_A_Logged_Shield_Refreshes_Manual_Circuit_Metadata()
+    {
+        var logger = new FakeLogger();
+        var monitor = new CircuitBreakerMonitor();
+        var shield = Shield.CircuitBreaker(options => options.Monitor = monitor)
+            .WithLogging(logger)
+            .WithName("catalog");
+
+        monitor.Isolate();
+
+        var record = logger.Collector.GetSnapshot().Single();
+        await Assert.That(record.GetStructuredStateValue("ShieldName")).IsEqualTo("catalog");
+        await Assert.That(record.GetStructuredStateValue("ToState")).IsEqualTo("Isolated");
         GC.KeepAlive(shield);
     }
 

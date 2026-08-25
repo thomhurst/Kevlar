@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Kevlar.Internal;
 
 namespace Kevlar.Extensions.Http;
 
@@ -419,15 +420,11 @@ public static class ShieldHttpClientBuilderExtensions
     private static Shield<TResult> Decorate<TResult>(
         IServiceProvider serviceProvider,
         Shield<TResult> shield,
-        string? name)
-    {
-        foreach (var decorator in serviceProvider.GetServices<IShieldDecorator>())
-        {
-            shield = decorator.Decorate(shield, name);
-        }
-
-        return shield;
-    }
+        string? name) =>
+        ShieldDecoration.Apply(
+            shield,
+            name,
+            serviceProvider.GetServices<IShieldDecorator>());
 
     private static Func<Shield<HttpResponseMessage>, Shield<HttpResponseMessage>> CreateDecorator(
         IServiceProvider serviceProvider,

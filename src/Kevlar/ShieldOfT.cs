@@ -17,11 +17,17 @@ public sealed class Shield<TResult> : IShieldLifecycle
     internal readonly StrategyNode? Head;
     internal readonly OutcomeJudge? Ambient;
     internal readonly TimeProvider? Time;
+    internal readonly IShieldDecorator[] AppliedDecorators;
     private readonly StrategyOwnerSet _strategyOwners;
 
     Strategy[] IShieldLifecycle.Strategies => Strategies;
 
-    internal Shield(Strategy[] strategies, OutcomeJudge? ambient, string? name, TimeProvider? timeProvider)
+    internal Shield(
+        Strategy[] strategies,
+        OutcomeJudge? ambient,
+        string? name,
+        TimeProvider? timeProvider,
+        IShieldDecorator[]? appliedDecorators = null)
     {
         Shield.ValidateChain(strategies);
         foreach (var strategy in strategies)
@@ -43,6 +49,7 @@ public sealed class Shield<TResult> : IShieldLifecycle
         Ambient = ambient;
         Name = name;
         Time = timeProvider;
+        AppliedDecorators = appliedDecorators ?? [];
     }
 
     /// <summary>The shield's diagnostic name, if assigned via <see cref="WithName"/>.</summary>
@@ -106,7 +113,8 @@ public sealed class Shield<TResult> : IShieldLifecycle
     /// Resets the ambient handling clause. Subsequent reactive strategies use the default
     /// handling defined by <see cref="HandlingClause.Default"/>.
     /// </summary>
-    public Shield<TResult> WhenAnyError() => new(Strategies, OutcomeJudge.Default, Name, Time);
+    public Shield<TResult> WhenAnyError() =>
+        new(Strategies, OutcomeJudge.Default, Name, Time, AppliedDecorators);
 
     // ── Strategy chaining ───────────────────────────────────────────────────────────────
 
@@ -490,14 +498,15 @@ public sealed class Shield<TResult> : IShieldLifecycle
     public Shield<TResult> WithName(string name)
     {
         Throw.IfNull(name, nameof(name));
-        return new Shield<TResult>(Strategies, Ambient, name, Time);
+        ShieldNameObserver.Notify(Strategies, name);
+        return new Shield<TResult>(Strategies, Ambient, name, Time, AppliedDecorators);
     }
 
     /// <summary>Returns a copy of this shield using the given <see cref="TimeProvider"/> for delays, timeouts and time windows.</summary>
     public Shield<TResult> WithTimeProvider(TimeProvider timeProvider)
     {
         Throw.IfNull(timeProvider, nameof(timeProvider));
-        return new Shield<TResult>(Strategies, Ambient, Name, timeProvider);
+        return new Shield<TResult>(Strategies, Ambient, Name, timeProvider, AppliedDecorators);
     }
 
     // ── Execution ───────────────────────────────────────────────────────────────────────
@@ -690,9 +699,19 @@ public sealed class Shield<TResult> : IShieldLifecycle
         var strategies = new Strategy[Strategies.Length + 1];
         Array.Copy(Strategies, strategies, Strategies.Length);
         strategies[Strategies.Length] = strategy;
-        var shield = new Shield<TResult>(strategies, ambient ?? Ambient, Name, Time);
+        var shield = new Shield<TResult>(strategies, ambient ?? Ambient, Name, Time, AppliedDecorators);
         StrategyAppendObserver.Notify(Strategies, strategy, Name);
         return shield;
+    }
+
+    internal Shield<TResult> MarkDecoratorApplied(
+        IShieldDecorator[] appliedDecorators,
+        IShieldDecorator decorator)
+    {
+        var decorators = new IShieldDecorator[appliedDecorators.Length + 1];
+        Array.Copy(appliedDecorators, decorators, appliedDecorators.Length);
+        decorators[^1] = decorator;
+        return new Shield<TResult>(Strategies, Ambient, Name, Time, decorators);
     }
 }
 

@@ -133,17 +133,23 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
                     telemetryEvent.Duration, outcome, telemetryEvent.Exception);
                 break;
             case KevlarLogEventKind.CircuitState:
-                if (telemetryEvent.ToState is CircuitState.HalfOpen or CircuitState.Closed)
-                {
-                    InformationLoggerMessages.CircuitState(logger, telemetryEvent.ShieldName,
-                        telemetryEvent.StrategyIndex, telemetryEvent.FromState, telemetryEvent.ToState,
-                        telemetryEvent.Delay, outcome, telemetryEvent.Exception);
-                }
-                else
+                if (telemetryEvent.ToState == CircuitState.Open)
                 {
                     LoggerMessages.CircuitState(logger, telemetryEvent.ShieldName,
                         telemetryEvent.StrategyIndex, telemetryEvent.FromState, telemetryEvent.ToState,
                         telemetryEvent.Delay, outcome, telemetryEvent.Exception);
+                }
+                else if (telemetryEvent.ToState is CircuitState.HalfOpen or CircuitState.Closed)
+                {
+                    InformationLoggerMessages.CircuitStateUntimed(logger, telemetryEvent.ShieldName,
+                        telemetryEvent.StrategyIndex, telemetryEvent.FromState, telemetryEvent.ToState,
+                        outcome, telemetryEvent.Exception);
+                }
+                else
+                {
+                    UntimedLoggerMessages.CircuitState(logger, telemetryEvent.ShieldName,
+                        telemetryEvent.StrategyIndex, telemetryEvent.FromState, telemetryEvent.ToState,
+                        outcome, telemetryEvent.Exception);
                 }
                 break;
             case KevlarLogEventKind.CircuitRejected:
@@ -210,10 +216,20 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
                     telemetryEvent.Duration, outcome);
                 break;
             case KevlarLogEventKind.CircuitState:
-                logger.Log(level, eventId, telemetryEvent.Exception,
-                    "Shield {ShieldName} strategy {StrategyIndex} circuit changed from {FromState} to {ToState} for {BreakDuration}; outcome {Outcome}",
-                    telemetryEvent.ShieldName, telemetryEvent.StrategyIndex,
-                    telemetryEvent.FromState, telemetryEvent.ToState, telemetryEvent.Delay, outcome);
+                if (telemetryEvent.ToState == CircuitState.Open)
+                {
+                    logger.Log(level, eventId, telemetryEvent.Exception,
+                        "Shield {ShieldName} strategy {StrategyIndex} circuit changed from {FromState} to {ToState} for {BreakDuration}; outcome {Outcome}",
+                        telemetryEvent.ShieldName, telemetryEvent.StrategyIndex,
+                        telemetryEvent.FromState, telemetryEvent.ToState, telemetryEvent.Delay, outcome);
+                }
+                else
+                {
+                    logger.Log(level, eventId, telemetryEvent.Exception,
+                        "Shield {ShieldName} strategy {StrategyIndex} circuit changed from {FromState} to {ToState}; outcome {Outcome}",
+                        telemetryEvent.ShieldName, telemetryEvent.StrategyIndex,
+                        telemetryEvent.FromState, telemetryEvent.ToState, outcome);
+                }
                 break;
             case KevlarLogEventKind.CircuitRejected:
                 logger.Log(level, eventId, telemetryEvent.Exception,

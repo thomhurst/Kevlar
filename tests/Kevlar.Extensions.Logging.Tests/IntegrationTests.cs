@@ -164,6 +164,41 @@ public class IntegrationTests
 
     [Test]
     [NotInParallel]
+    public async Task AddKevlarLogging_Does_Not_Decorate_Di_Shields_Twice()
+    {
+        var logs = new FakeLoggerProvider();
+        var decorator = new CountingDecorator();
+        var services = new ServiceCollection();
+        services.AddLogging(builder => builder.AddProvider(logs));
+        services.AddSingleton<IShieldDecorator>(decorator);
+        services.AddKevlarLogging();
+        services.AddShield<HttpResponseMessage>(
+            "downstream",
+            HttpShield.WhenTransient().Retry(1, Backoff.None));
+        services.AddHttpClient("factory")
+            .ConfigurePrimaryHttpMessageHandler(() => new SequenceHandler(
+                HttpStatusCode.InternalServerError,
+                HttpStatusCode.OK))
+            .AddShield(static serviceProvider => serviceProvider
+                .GetRequiredService<IKevlarRegistry>()
+                .GetShield<HttpResponseMessage>("downstream"));
+        using var provider = services.BuildServiceProvider();
+        var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("factory");
+
+        using var response = await client.GetAsync("https://example.test/factory");
+
+        var retries = logs.Collector.GetSnapshot()
+            .Where(record => record.Id == new EventId(1001, "Retry"))
+            .ToArray();
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(retries.Length).IsEqualTo(1);
+        await Assert.That(retries[0].GetStructuredStateValue("ShieldName"))
+            .IsEqualTo("downstream");
+        await Assert.That(decorator.Count).IsEqualTo(1);
+    }
+
+    [Test]
+    [NotInParallel]
     public async Task AddKevlarLogging_Decorates_Direct_Request_Shield()
     {
         var logs = new FakeLoggerProvider();
@@ -226,6 +261,23 @@ public class IntegrationTests
     }
 
     private sealed class TestException(string message) : Exception(message);
+
+    private sealed class CountingDecorator : IShieldDecorator
+    {
+        public int Count { get; private set; }
+
+        public Shield Decorate(Shield shield, string? name)
+        {
+            Count++;
+            return shield;
+        }
+
+        public Shield<TResult> Decorate<TResult>(Shield<TResult> shield, string? name)
+        {
+            Count++;
+            return shield;
+        }
+    }
 
     private sealed class ReloadOptions
     {
