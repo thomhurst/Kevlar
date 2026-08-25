@@ -69,7 +69,9 @@ builder held in a variable can be branched into independent chains:
 ```csharp
 var transient = Shield.When<HttpRequestException>();
 
-var reads = transient.Or<TimeoutExceededException>().Retry(3);
+var reads = transient.Or<TimeoutExceededException>()
+    .Timeout(options => options.Timeout = TimeSpan.FromSeconds(10))
+    .Retry(3);
 var writes = transient.Or<IOException>().Retry(1);   // no TimeoutExceededException here
 ```
 
