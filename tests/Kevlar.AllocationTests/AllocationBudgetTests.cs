@@ -77,6 +77,24 @@ public class AllocationBudgetTests
     private readonly Shield<int> _typedJudge = Shield.For<int>()
         .WhenResult(-1)
         .Retry(3, Backoff.None);
+    private readonly Shield<int> _contextTypedJudge = Shield.For<int>()
+        .WhenResultContext(static handling =>
+            handling.Outcome.TryGetResult(out var result) && result < 0)
+        .Retry(3, Backoff.None);
+    private readonly Shield<int> _typedRetryNotification = Shield.For<int>()
+        .WhenResult(-1)
+        .Retry(static options =>
+        {
+            options.MaxRetries = 1;
+            options.Backoff = Backoff.None;
+            options.OnRetry = static item =>
+            {
+                if (item.Outcome.Result == int.MinValue)
+                {
+                    throw new InvalidOperationException();
+                }
+            };
+        });
     private readonly Shield _composed = Shield
         .RateLimit(1_000_000_000, TimeSpan.FromSeconds(1))
         .Timeout(TimeSpan.FromMinutes(1))
@@ -221,6 +239,8 @@ public class AllocationBudgetTests
             test._concurrencyLimitWithRejectionHooks.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("typed result judging", this, static test =>
             test._typedJudge.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
+        AssertZero("context-aware typed result judging", this, static test =>
+            test._contextTypedJudge.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("composed pipeline", this, static test =>
             test._composed.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("hedge primary wins", this, static test =>
@@ -257,6 +277,13 @@ public class AllocationBudgetTests
         AssertZero("concurrency state metrics", this, static test =>
             test._concurrencyLimit.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
     }
+
+    [Test]
+    public void RetryEvent_Typed_Outcome_Round_Trips_Without_Boxing() =>
+        AssertZero("typed retry notification", this, static test =>
+            test._typedRetryNotification.ExecuteAsync(static _ => new ValueTask<int>(-1))
+                .GetAwaiter()
+                .GetResult());
 
     /// <summary>Verifies bounded allocations for failure and parallel execution paths.</summary>
     [Test]
@@ -319,8 +346,8 @@ public class AllocationBudgetTests
             test._syncDelayGeneratedHedgeState.WaitForLoserCompletion();
         }, AllocationScope.AllThreads);
         // The eight-byte margin catches boxing the typed Outcome<int> while allowing
-        // the existing generator-path allocations.
-        AssertBudget("typed hedge generator", 576, this, static test =>
+        // the generator delegate's pooled-context version token.
+        AssertBudget("typed hedge generator", 584, this, static test =>
             test._typedGeneratedHedge.ExecuteAsync(static _ => throw RecoverableFailure)
                 .GetAwaiter()
                 .GetResult());

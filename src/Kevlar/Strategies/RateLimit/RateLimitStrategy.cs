@@ -54,10 +54,30 @@ internal sealed class RateLimitStrategy : Strategy
 
     public RateLimitStrategy(RateLimitOptions options)
     {
-        Throw.IfOutOfRange(options.Permits <= 0, nameof(options), "Permits must be positive.");
-        Throw.IfOutOfRange(options.Window <= TimeSpan.Zero, nameof(options), "Window must be positive.");
-        Throw.IfOutOfRange(options.Burst is <= 0, nameof(options), "Burst must be positive.");
-        Throw.IfOutOfRange(options.QueueLimit < 0, nameof(options), "QueueLimit must not be negative.");
+        ConfigurationValidation.ThrowIf(
+            options.Permits <= 0,
+            typeof(RateLimitOptions),
+            nameof(options.Permits),
+            options.Permits,
+            "must be positive");
+        ConfigurationValidation.ThrowIf(
+            options.Window <= TimeSpan.Zero,
+            typeof(RateLimitOptions),
+            nameof(options.Window),
+            options.Window,
+            "must be positive");
+        ConfigurationValidation.ThrowIf(
+            options.Burst is <= 0,
+            typeof(RateLimitOptions),
+            nameof(options.Burst),
+            options.Burst,
+            "must be positive when set");
+        ConfigurationValidation.ThrowIf(
+            options.QueueLimit < 0,
+            typeof(RateLimitOptions),
+            nameof(options.QueueLimit),
+            options.QueueLimit,
+            "must not be negative");
 
         _permits = options.Permits;
         _window = options.Window;
@@ -103,7 +123,6 @@ internal sealed class RateLimitStrategy : Strategy
             _window,
             _burst,
             _queueLimit,
-            context.StrategyIndex,
             context);
 
         try

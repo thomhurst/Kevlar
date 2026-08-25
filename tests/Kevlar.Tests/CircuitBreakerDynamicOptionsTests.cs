@@ -16,6 +16,145 @@ public class CircuitBreakerDynamicOptionsTests
     }
 
     [Test]
+    public async Task BreakDurationGenerator_Receives_Typed_Outcome_And_Failure_Stats()
+    {
+        CircuitBreakerBreakDurationEvent<int> ratioEvent = default;
+        var ratioBreaker = Shield.For<int>()
+            .WhenResult(static result => result < 0)
+            .CircuitBreaker(options =>
+            {
+                options.FailureRatio = 0.5;
+                options.MinimumThroughput = 4;
+                options.BreakDurationGenerator = item =>
+                {
+                    ratioEvent = item;
+                    return new ValueTask<TimeSpan>(TimeSpan.FromMinutes(1));
+                };
+            });
+
+        foreach (var result in new[] { 1, -1, 2, -2 })
+        {
+            _ = await ratioBreaker.ExecuteAsync(_ => new ValueTask<int>(result));
+        }
+
+        await Assert.That(ratioEvent.Outcome.Result).IsEqualTo(-2);
+        await Assert.That(ratioEvent.FailureRate).IsEqualTo(0.5);
+        await Assert.That(ratioEvent.FailureCount).IsEqualTo(2);
+        await Assert.That(ratioEvent.ConsecutiveFailures).IsEqualTo(1);
+
+        CircuitBreakerBreakDurationEvent<int> consecutiveEvent = default;
+        var consecutiveBreaker = Shield.For<int>()
+            .WhenResult(static result => result < 0)
+            .CircuitBreaker(options =>
+            {
+                options.ConsecutiveFailures = 3;
+                options.BreakDurationGenerator = item =>
+                {
+                    consecutiveEvent = item;
+                    return new ValueTask<TimeSpan>(TimeSpan.FromMinutes(1));
+                };
+            });
+
+        foreach (var result in new[] { -1, -2, -3 })
+        {
+            _ = await consecutiveBreaker.ExecuteAsync(_ => new ValueTask<int>(result));
+        }
+
+        await Assert.That(consecutiveEvent.Outcome.Result).IsEqualTo(-3);
+        await Assert.That(consecutiveEvent.FailureRate).IsEqualTo(1);
+        await Assert.That(consecutiveEvent.FailureCount).IsEqualTo(3);
+        await Assert.That(consecutiveEvent.ConsecutiveFailures).IsEqualTo(3);
+    }
+
+    [Test]
+    public async Task BreakDurationGenerator_Typed_Result_Not_Boxed()
+    {
+        var context = KevlarContext.Rent(
+            CancellationToken.None,
+            isSynchronous: false,
+            TimeProvider.System,
+            shieldName: null);
+        var generator = CircuitBreakerBreakDurationGenerator.Create<int>(static item =>
+        {
+            if (item.Outcome.Result != 42)
+            {
+                throw new InvalidOperationException();
+            }
+
+            return new ValueTask<TimeSpan>(TimeSpan.FromSeconds(1));
+        });
+        var outcome = Outcome<int>.FromResult(42);
+        var statistics = new CircuitBreakerFailureStatistics(1, 1, 1);
+
+        try
+        {
+            for (var index = 0; index < 1_000; index++)
+            {
+                _ = generator.Invoke(in outcome, in statistics, context).Result;
+            }
+
+            var before = GC.GetAllocatedBytesForCurrentThread();
+            for (var index = 0; index < 10_000; index++)
+            {
+                _ = generator.Invoke(in outcome, in statistics, context).Result;
+            }
+
+            // TUnit may materialize one assertion object on this thread; a boxed int would add
+            // roughly 24 bytes for every invocation instead of this fixed allowance.
+            await Assert.That(GC.GetAllocatedBytesForCurrentThread() - before)
+                .IsLessThanOrEqualTo(64);
+        }
+        finally
+        {
+            KevlarContext.Return(context);
+        }
+    }
+
+    [Test]
+    public async Task StateChanged_Event_Carries_Triggering_And_Manual_Context()
+    {
+        var key = new KevlarKey<string>("breaker-state");
+        (string? Name, string? Value, int StrategyIndex) execution = default;
+        (string? Name, int PropertyCount, int StrategyIndex) manual = default;
+        var monitor = new CircuitBreakerMonitor();
+        var shield = Shield.CircuitBreaker(options =>
+            {
+                options.ConsecutiveFailures = 1;
+                options.Monitor = monitor;
+                options.OnStateChanged = item =>
+                {
+                    if (item.To == CircuitState.Open)
+                    {
+                        execution = (
+                            item.Context.ShieldName,
+                            item.Context.Properties.GetOrDefault<string>(key),
+                            item.Context.StrategyIndex);
+                    }
+                    else if (item.To == CircuitState.Isolated)
+                    {
+                        manual = (
+                            item.Context.ShieldName,
+                            item.Context.Properties.Count,
+                            item.Context.StrategyIndex);
+                    }
+                };
+            })
+            .WithName("orders");
+
+        _ = await Assert.That(async () => await shield.ExecuteWithContextAsync<int, int>(
+                42,
+                (_, properties) => properties.Set(key, "visible"),
+                static (_, _) => ValueTask.FromException<int>(new InvalidOperationException())))
+            .Throws<InvalidOperationException>();
+
+        await Assert.That(execution).IsEqualTo(("orders", "visible", 0));
+
+        monitor.Isolate();
+
+        await Assert.That(manual).IsEqualTo((null, 0, -1));
+    }
+
+    [Test]
     public async Task BreakDurationGenerator_Receives_Handled_Outcome_And_Context()
     {
         var timeProvider = new FakeTimeProvider();
@@ -28,7 +167,10 @@ public class CircuitBreakerDynamicOptionsTests
                 options.ConsecutiveFailures = 1;
                 options.BreakDurationGenerator = item =>
                 {
-                    observed.Add((item.Result, item.Exception, item.Context.ShieldName));
+                    observed.Add((
+                        item.Outcome.Result,
+                        item.Outcome.Exception,
+                        item.Context.ShieldName));
                     return new ValueTask<TimeSpan>(durations.Dequeue());
                 };
             })
@@ -149,8 +291,8 @@ public class CircuitBreakerDynamicOptionsTests
         });
 
         await Assert.That(async () =>
-                await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
-            .Throws<ArgumentOutOfRangeException>();
+            await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
+            .Throws<KevlarConfigurationException>();
     }
 
     [Test]
@@ -169,8 +311,8 @@ public class CircuitBreakerDynamicOptionsTests
         });
 
         _ = await Assert.That(async () =>
-                await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
-            .Throws<ArgumentOutOfRangeException>();
+            await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
+            .Throws<KevlarConfigurationException>();
         await Assert.That(monitor.State).IsEqualTo(CircuitState.Closed);
     }
 

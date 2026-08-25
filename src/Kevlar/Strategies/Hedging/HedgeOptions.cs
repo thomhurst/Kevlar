@@ -27,7 +27,11 @@ public sealed class HedgeOptions
     /// <seealso cref="HandlingClause"/>
     public Func<Exception, bool>? HandlesException { get; set; }
 
-    internal bool HasHandlingOverride => HandlesException is not null;
+    /// <summary>Locally handles exceptions using execution context and attempt metadata.</summary>
+    public Func<HandlingEvent, bool>? HandlesExceptionWithContext { get; set; }
+
+    internal bool HasHandlingOverride =>
+        HandlesException is not null || HandlesExceptionWithContext is not null;
 
     /// <summary>Total attempts including the original. Default 2.</summary>
     public int MaxAttempts { get; set; } = 2;
@@ -71,10 +75,12 @@ public sealed class HedgeOptions
 /// <summary>Describes a hedged attempt being launched.</summary>
 public readonly struct HedgeEvent
 {
+    private readonly KevlarContext? _context;
+
     internal HedgeEvent(int attemptNumber, KevlarContext context)
     {
         AttemptNumber = attemptNumber;
-        Context = context;
+        _context = context;
     }
 
     /// <summary>The 1-based number of the attempt being launched (2 = first hedge).</summary>
@@ -84,5 +90,5 @@ public readonly struct HedgeEvent
     /// The ambient execution context. It is pooled; do not retain it after synchronous and
     /// asynchronous hedge callbacks complete.
     /// </summary>
-    public KevlarContext Context { get; }
+    public KevlarContext Context => Internal.EventContext.Required(_context);
 }

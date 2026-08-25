@@ -2,6 +2,8 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Kevlar.Extensions.DependencyInjection;
 using Kevlar.Extensions.Http;
+using Kevlar.Extensions.RateLimiting;
+using Kevlar.Chaos;
 using Kevlar.Testing;
 using System.Reflection;
 
@@ -42,6 +44,63 @@ public class ApiShapeTests
 
         await Assert.That(typedReloadShapes).IsEquivalentTo(untypedReloadShapes);
         await Assert.That(methods.Where(static method => method.Name == "AddVoidShield")).IsEmpty();
+    }
+
+    [Test]
+    public async Task Strategy_Event_Structs_Have_One_Context_Contract()
+    {
+        var eventTypes = GetStrategyEventTypes();
+
+        await Assert.That(eventTypes.Length).IsGreaterThan(0);
+        foreach (var eventType in eventTypes)
+        {
+            await Assert.That(eventType.IsDefined(
+                typeof(System.Runtime.CompilerServices.IsReadOnlyAttribute),
+                inherit: false)).IsTrue();
+            await Assert.That(eventType.GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic)
+                .Any(static constructor => constructor.IsAssembly)).IsTrue();
+
+            var contextProperty = eventType.GetProperty(
+                "Context",
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly);
+            await Assert.That(contextProperty).IsNotNull();
+            await Assert.That(contextProperty!.PropertyType).IsEqualTo(typeof(KevlarContext));
+
+            var concreteType = eventType.IsGenericTypeDefinition
+                ? eventType.MakeGenericType(
+                    Enumerable.Repeat(typeof(int), eventType.GetGenericArguments().Length).ToArray())
+                : eventType;
+            var defaultEvent = Activator.CreateInstance(concreteType);
+            var concreteContextProperty = concreteType.GetProperty(
+                "Context",
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)!;
+            var failure = await Assert.That(() => concreteContextProperty.GetValue(defaultEvent))
+                .Throws<TargetInvocationException>();
+            await Assert.That(failure!.InnerException).IsTypeOf<InvalidOperationException>();
+        }
+    }
+
+    [Test]
+    public async Task Event_Type_Names_Share_Strategy_Prefix()
+    {
+        var prefixes = new[]
+        {
+            "CircuitBreaker",
+            "Chaos",
+            "ConcurrencyLimit",
+            "Fallback",
+            "Hedge",
+            "RateLimit",
+            "RateLimiter",
+            "Retry",
+            "Timeout",
+        };
+        var eventTypes = GetStrategyEventTypes();
+
+        await Assert.That(eventTypes.All(type => prefixes.Any(prefix =>
+            type.Name.StartsWith(prefix, StringComparison.Ordinal)))).IsTrue();
+        await Assert.That(eventTypes.Any(static type =>
+            type.Name.StartsWith("CircuitState", StringComparison.Ordinal))).IsFalse();
     }
 
     [Test]
@@ -271,7 +330,42 @@ public class ApiShapeTests
         await Assert.That(errors[0].Id).IsEqualTo("CS0121");
     }
 
-    private static CSharpCompilation CreateCompilation(string source)
+    [Test]
+    public async Task Handling_Predicates_Remain_Unambiguous_For_CSharp_12_Consumers()
+    {
+        var compilation = CreateCompilation(
+            """
+            using Kevlar;
+
+            public static class Consumer
+            {
+                public static void Build()
+                {
+                    _ = Shield.When(_ => true);
+                    _ = Shield.Empty.When(_ => true);
+                    _ = Shield.For<int>().When(_ => true);
+                    _ = Shield.For<int>().WhenResult(_ => true);
+                    _ = Shield.When<System.Exception>().Or(_ => true);
+                    _ = Shield.For<int>().When<System.Exception>().Or(_ => true).OrResult(_ => true);
+
+                    _ = Shield.WhenContext(handling => handling.Attempt == 0);
+                    _ = Shield.For<int>().WhenResultContext(handling => handling.Attempt == 0);
+                }
+            }
+            """,
+            LanguageVersion.CSharp12);
+
+        var errors = compilation.GetDiagnostics()
+            .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+            .Select(static diagnostic => $"{diagnostic.Id}: {diagnostic.GetMessage()}")
+            .ToArray();
+
+        await Assert.That(errors).IsEmpty();
+    }
+
+    private static CSharpCompilation CreateCompilation(
+        string source,
+        LanguageVersion languageVersion = LanguageVersion.Preview)
     {
         var references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)
             .Split(Path.PathSeparator)
@@ -282,8 +376,23 @@ public class ApiShapeTests
 
         return CSharpCompilation.Create(
             "FallbackApiShape",
-            [CSharpSyntaxTree.ParseText(source)],
+            [CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(languageVersion))],
             references,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
     }
+
+    private static Type[] GetStrategyEventTypes() =>
+        new[]
+        {
+            typeof(Shield).Assembly,
+            typeof(ChaosEvent).Assembly,
+            typeof(RateLimiterAdapterRejectedEvent).Assembly,
+        }
+            .Distinct()
+            .SelectMany(static assembly => assembly.ExportedTypes)
+            .Where(static type =>
+                type.IsValueType
+                && type.Name.Contains("Event", StringComparison.Ordinal)
+                && !type.Name.StartsWith("HandlingEvent", StringComparison.Ordinal))
+            .ToArray();
 }

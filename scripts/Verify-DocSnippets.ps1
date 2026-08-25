@@ -17,8 +17,10 @@ $generatedDirectory = Join-Path $repositoryRoot 'artifacts/doc-tests/generated'
 $generatedPath = Join-Path $generatedDirectory 'GeneratedSnippets.g.cs'
 $nugetConfigPath = Join-Path $generatedDirectory 'NuGet.config'
 $projectPath = Join-Path $repositoryRoot 'tests/Kevlar.DocTests/Kevlar.DocTests.csproj'
+$changelogPath = Join-Path $repositoryRoot 'CHANGELOG.md'
 $documentPaths = @(
     (Join-Path $repositoryRoot 'README.md')
+    $changelogPath
     Get-ChildItem (Join-Path $repositoryRoot 'docs/docs') -Recurse -File -Include '*.md', '*.mdx' |
         Sort-Object FullName |
         ForEach-Object FullName
@@ -56,6 +58,51 @@ foreach ($documentPath in $documentPaths)
 {
     $relativePath = [IO.Path]::GetRelativePath($repositoryRoot, $documentPath).Replace('\', '/')
     $lines = Get-Content -LiteralPath $documentPath
+    $lineOffset = 0
+    if ($documentPath -eq $changelogPath)
+    {
+        if ($Version -notmatch '^(?<version>[0-9]+\.[0-9]+\.[0-9]+)(?:[-+].+)?$')
+        {
+            throw "Package version '$Version' is not a semantic version."
+        }
+
+        $releaseVersion = $Matches['version']
+        $releaseHeadings = @($lines |
+            Select-String -Pattern "^## \[$([regex]::Escape($releaseVersion))\] - [0-9]{4}-[0-9]{2}-[0-9]{2}$")
+        if ($releaseHeadings.Count -gt 1)
+        {
+            throw "Multiple $releaseVersion release headings found in CHANGELOG.md."
+        }
+
+        $selectedHeading = if ($releaseHeadings.Count -eq 1)
+        {
+            $releaseHeadings[0]
+        }
+        else
+        {
+            $unreleasedHeadings = @($lines | Select-String -SimpleMatch '## [Unreleased]')
+            if ($unreleasedHeadings.Count -ne 1)
+            {
+                throw 'CHANGELOG.md must contain exactly one ## [Unreleased] heading.'
+            }
+
+            $unreleasedHeadings[0]
+        }
+
+        $lineOffset = $selectedHeading.LineNumber - 1
+        $end = $lines.Count
+        for ($index = $lineOffset + 1; $index -lt $lines.Count; $index++)
+        {
+            if ($lines[$index] -match '^## ')
+            {
+                $end = $index
+                break
+            }
+        }
+
+        $lines = $lines[$lineOffset..($end - 1)]
+    }
+
     $csharpOrdinal = 0
 
     for ($lineIndex = 0; $lineIndex -lt $lines.Count; $lineIndex++)
@@ -63,7 +110,8 @@ foreach ($documentPath in $documentPaths)
         if ($lines[$lineIndex] -match '^```csharp\s*$')
         {
             $csharpOrdinal++
-            $startLine = $lineIndex + 2
+            $startLine = $lineOffset + $lineIndex + 2
+            $directive = if ($lineIndex -gt 0) { $lines[$lineIndex - 1].Trim() } else { '' }
             $body = [System.Collections.Generic.List[string]]::new()
             for ($lineIndex++; $lineIndex -lt $lines.Count -and $lines[$lineIndex] -notmatch '^```\s*$'; $lineIndex++)
             {
@@ -75,7 +123,6 @@ foreach ($documentPath in $documentPaths)
                 throw "Unclosed C# fence at ${relativePath}:$startLine."
             }
 
-            $directive = if ($startLine -ge 3) { $lines[$startLine - 3].Trim() } else { '' }
             $ignoreReason = $null
             if ($directive -match '^<!--\s*doc-test-ignore:\s*(.+?)\s*-->$')
             {

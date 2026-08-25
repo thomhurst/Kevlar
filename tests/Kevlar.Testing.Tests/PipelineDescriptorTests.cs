@@ -182,6 +182,25 @@ public class PipelineDescriptorTests
     }
 
     [Test]
+    public async Task Handling_Descriptor_Reports_Context_Aware_Clauses()
+    {
+        var contextAware = Shield
+            .WhenContext(handling => handling.Attempt == 0)
+            .Retry(1, Backoff.None)
+            .GetDescriptor()
+            .AssertContainsSingle<RetryStrategyDescriptor>();
+        var simple = Shield.When<InvalidOperationException>()
+            .Retry(1, Backoff.None)
+            .GetDescriptor()
+            .AssertContainsSingle<RetryStrategyDescriptor>();
+
+        await Assert.That(contextAware.HandlingClause).IsNotNull();
+        await Assert.That(contextAware.HandlingClause!.IsContextAware).IsTrue();
+        await Assert.That(contextAware.HandlingClause.Description).IsEqualTo("custom");
+        await Assert.That(simple.HandlingClause!.IsContextAware).IsFalse();
+    }
+
+    [Test]
     public async Task Custom_Strategy_Uses_A_Diagnostic_Descriptor()
     {
         var shield = Shield.Empty.Use(new PassThroughStrategy());

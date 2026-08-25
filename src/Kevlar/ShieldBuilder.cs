@@ -33,17 +33,23 @@ public sealed class ShieldBuilder
 {
     private readonly Shield _parent;
     private readonly Func<Exception, bool>[] _predicates;
+    private readonly Func<HandlingEvent, bool>[] _contextPredicates;
     private readonly string[] _clauseTerms;
 
     internal ShieldBuilder(Shield parent)
-        : this(parent, [], [])
+        : this(parent, [], [], [])
     {
     }
 
-    private ShieldBuilder(Shield parent, Func<Exception, bool>[] predicates, string[] clauseTerms)
+    private ShieldBuilder(
+        Shield parent,
+        Func<Exception, bool>[] predicates,
+        Func<HandlingEvent, bool>[] contextPredicates,
+        string[] clauseTerms)
     {
         _parent = parent;
         _predicates = predicates;
+        _contextPredicates = contextPredicates;
         _clauseTerms = clauseTerms;
     }
 
@@ -67,6 +73,13 @@ public sealed class ShieldBuilder
     {
         Throw.IfNull(predicate, nameof(predicate));
         return With(predicate, "exception predicate");
+    }
+
+    /// <summary>Returns a new builder that also handles exceptions selected using execution context.</summary>
+    public ShieldBuilder OrContext(Func<HandlingEvent, bool> predicate)
+    {
+        Throw.IfNull(predicate, nameof(predicate));
+        return WithContext(predicate, "custom");
     }
 
     /// <summary>Retries handled exceptions up to <paramref name="maxRetries"/> times with the default exponential jittered backoff.</summary>
@@ -184,16 +197,32 @@ public sealed class ShieldBuilder
     /// never mutated, and the description is rendered here, so no later chaining — on this builder
     /// or on any builder derived from it — can change the handling of a shield already built.
     /// </summary>
-    private Shield Seal() =>
-        new(
-            _parent.Strategies,
-            new ExceptionJudge(Combine(_predicates), DescribeHelper.Clause(_clauseTerms)),
-            _parent.Name,
-            _parent.Time);
+    private Shield Seal()
+    {
+        var description = DescribeHelper.Clause(_clauseTerms);
+        OutcomeJudge judge = _contextPredicates.Length == 0
+            ? new ExceptionJudge(Combine(_predicates), description)
+            : new ContextExceptionJudge(
+                _predicates.Length == 0 ? null : Combine(_predicates),
+                CombineContexts(_contextPredicates),
+                description);
+        return new Shield(_parent.Strategies, judge, _parent.Name, _parent.Time);
+    }
 
     /// <summary>Builds the successor holding this builder's terms plus one more.</summary>
     private ShieldBuilder With(Func<Exception, bool> predicate, string clauseTerm) =>
-        new(_parent, Append(_predicates, predicate), Append(_clauseTerms, clauseTerm));
+        new(
+            _parent,
+            Append(_predicates, predicate),
+            _contextPredicates,
+            Append(_clauseTerms, clauseTerm));
+
+    private ShieldBuilder WithContext(Func<HandlingEvent, bool> predicate, string clauseTerm) =>
+        new(
+            _parent,
+            _predicates,
+            Append(_contextPredicates, predicate),
+            Append(_clauseTerms, clauseTerm));
 
     /// <summary>Copies <paramref name="source"/> with <paramref name="item"/> appended.</summary>
     internal static T[] Append<T>(T[] source, T item)
@@ -228,5 +257,38 @@ public sealed class ShieldBuilder
 
             return false;
         };
+    }
+
+    private static Func<HandlingEvent, bool> CombineContexts(Func<HandlingEvent, bool>[] predicates)
+    {
+        if (predicates.Length == 1)
+        {
+            return predicates[0];
+        }
+
+        return handling =>
+            EvaluateContextPredicates(predicates, handling);
+    }
+
+    internal static bool EvaluateContextPredicates<TEvent>(
+        Func<TEvent, bool>[] predicates,
+        TEvent handling)
+    {
+        foreach (var predicate in predicates)
+        {
+            try
+            {
+                if (predicate(handling))
+                {
+                    return true;
+                }
+            }
+            catch (Exception exception)
+            {
+                OutcomeJudge.ReportPredicateFailure(exception);
+            }
+        }
+
+        return false;
     }
 }

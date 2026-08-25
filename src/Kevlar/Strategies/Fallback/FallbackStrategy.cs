@@ -48,21 +48,25 @@ internal sealed class FallbackStrategy<TResult> : Strategy, IFallbackStrategyIns
 
     public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
+        var strategyIndex = context.StrategyIndex;
         var execution = next.InvokeAsync(context);
         return execution.IsCompletedSuccessfully
-            ? HandleOutcome(execution.Result, context)
-            : AwaitOutcomeAsync(execution, context);
+            ? HandleOutcome(execution.Result, context, strategyIndex)
+            : AwaitOutcomeAsync(execution, context, strategyIndex);
     }
 
-    private async ValueTask<Outcome<T>> AwaitOutcomeAsync<T>(ValueTask<Outcome<T>> execution, KevlarContext context)
+    private async ValueTask<Outcome<T>> AwaitOutcomeAsync<T>(
+        ValueTask<Outcome<T>> execution,
+        KevlarContext context,
+        int strategyIndex)
     {
         var outcome = await execution.ConfigureAwait(false);
-        return await HandleOutcome(outcome, context).ConfigureAwait(false);
+        return await HandleOutcome(outcome, context, strategyIndex).ConfigureAwait(false);
     }
 
-    private ValueTask<Outcome<T>> HandleOutcome<T>(Outcome<T> outcome, KevlarContext context)
+    private ValueTask<Outcome<T>> HandleOutcome<T>(Outcome<T> outcome, KevlarContext context, int strategyIndex)
     {
-        if (!_judge.ShouldHandle(in outcome))
+        if (!_judge.ShouldHandle(in outcome, context, attempt: 0, strategyIndex))
         {
             return new ValueTask<Outcome<T>>(outcome);
         }
@@ -173,9 +177,11 @@ internal sealed class VoidFallbackStrategy : Strategy, IFallbackStrategyInspecti
 
     public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
+        var strategyIndex = context.StrategyIndex;
         var outcome = await next.InvokeAsync(context).ConfigureAwait(false);
 
-        if (outcome.Exception is not { } exception || !_judge.ShouldHandle(in outcome))
+        if (outcome.Exception is not { } exception
+            || !_judge.ShouldHandle(in outcome, context, attempt: 0, strategyIndex))
         {
             return outcome;
         }

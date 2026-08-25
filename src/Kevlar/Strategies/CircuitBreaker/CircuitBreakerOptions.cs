@@ -20,7 +20,11 @@ public sealed class CircuitBreakerOptions
     /// <seealso cref="HandlingClause"/>
     public Func<Exception, bool>? HandlesException { get; set; }
 
-    internal bool HasHandlingOverride => HandlesException is not null;
+    /// <summary>Locally handles exceptions using execution context and strategy metadata.</summary>
+    public Func<HandlingEvent, bool>? HandlesExceptionWithContext { get; set; }
+
+    internal bool HasHandlingOverride =>
+        HandlesException is not null || HandlesExceptionWithContext is not null;
 
     /// <summary>Trips the circuit after this many consecutive handled failures.</summary>
     public int? ConsecutiveFailures { get; set; }
@@ -62,12 +66,12 @@ public sealed class CircuitBreakerOptions
     /// are aggregated. The handler runs synchronously and blocks later transition publishers, so
     /// it should not perform I/O, wait on external work, or otherwise run for a long time.
     /// </summary>
-    public Action<CircuitStateChangedEvent>? OnStateChanged { get; set; }
+    public Action<CircuitBreakerStateChangedEvent>? OnStateChanged { get; set; }
 
     /// <summary>
     /// Invoked and awaited on every state transition, after <see cref="OnStateChanged"/> and
     /// before <see cref="CircuitBreakerMonitor.StateChanged"/>. Transitions are delivered
     /// serially outside the circuit lock.
     /// </summary>
-    public Func<CircuitStateChangedEvent, ValueTask>? OnStateChangedAsync { get; set; }
+    public Func<CircuitBreakerStateChangedEvent, ValueTask>? OnStateChangedAsync { get; set; }
 }

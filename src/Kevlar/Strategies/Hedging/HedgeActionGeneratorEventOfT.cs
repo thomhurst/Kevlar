@@ -3,6 +3,8 @@ namespace Kevlar;
 /// <summary>Arguments used to select a result-returning operation for a hedged attempt.</summary>
 public readonly struct HedgeActionGeneratorEvent<TResult>
 {
+    private readonly KevlarContext? _context;
+
     internal HedgeActionGeneratorEvent(
         int attemptNumber,
         KevlarContext context,
@@ -10,7 +12,7 @@ public readonly struct HedgeActionGeneratorEvent<TResult>
         Outcome<TResult>? outcome)
     {
         AttemptNumber = attemptNumber;
-        Context = context;
+        _context = context;
         OriginalAction = originalAction;
         Outcome = outcome;
     }
@@ -19,7 +21,7 @@ public readonly struct HedgeActionGeneratorEvent<TResult>
     public int AttemptNumber { get; }
 
     /// <summary>The isolated context that belongs to this attempt.</summary>
-    public KevlarContext Context { get; }
+    public KevlarContext Context => Internal.EventContext.Required(_context);
 
     /// <summary>
     /// The original operation, including strategies nested inside the hedge. The supplied token

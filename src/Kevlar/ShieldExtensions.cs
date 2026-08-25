@@ -15,7 +15,12 @@ public static class ShieldExtensions
     /// The number of <em>retries</em>, not the number of attempts: <c>Retry(3)</c> makes up to 4
     /// total attempts — the initial call plus 3 retries.
     /// </param>
-    public static Shield Retry(this Shield shield, int maxRetries = 3) => shield.Retry(options => options.MaxRetries = maxRetries);
+    public static Shield Retry(this Shield shield, int maxRetries = 3)
+    {
+        Throw.IfNull(shield, nameof(shield));
+        Throw.IfOutOfRange(maxRetries < 0, nameof(maxRetries), "Max retries must not be negative.");
+        return shield.Retry(options => options.MaxRetries = maxRetries);
+    }
 
     /// <summary>Appends a retry of handled exceptions, up to <paramref name="maxRetries"/> times, with the given backoff.</summary>
     /// <param name="shield">The shield to append the retry to.</param>
@@ -24,11 +29,17 @@ public static class ShieldExtensions
     /// total attempts — the initial call plus 3 retries.
     /// </param>
     /// <param name="backoff">The delay computation applied between attempts.</param>
-    public static Shield Retry(this Shield shield, int maxRetries, Backoff backoff) => shield.Retry(options =>
+    public static Shield Retry(this Shield shield, int maxRetries, Backoff backoff)
     {
-        options.MaxRetries = maxRetries;
-        options.Backoff = backoff;
-    });
+        Throw.IfNull(shield, nameof(shield));
+        Throw.IfOutOfRange(maxRetries < 0, nameof(maxRetries), "Max retries must not be negative.");
+        Throw.IfNull(backoff, nameof(backoff));
+        return shield.Retry(options =>
+        {
+            options.MaxRetries = maxRetries;
+            options.Backoff = backoff;
+        });
+    }
 
     /// <summary>Appends a retry strategy configured via <paramref name="configure"/>.</summary>
     /// <remarks>
@@ -41,7 +52,10 @@ public static class ShieldExtensions
         Throw.IfNull(configure, nameof(configure));
         var options = new RetryOptions();
         configure(options);
-        var judge = HandlingOverride.Resolve(options.HandlesException, shield.JudgeOrDefault);
+        var judge = HandlingOverride.Resolve(
+            options.HandlesException,
+            options.HandlesExceptionWithContext,
+            shield.JudgeOrDefault);
         return shield.Append(new RetryStrategy(options, judge));
     }
 
@@ -63,7 +77,13 @@ public static class ShieldExtensions
     }
 
     /// <summary>Appends a timeout, surfacing <see cref="TimeoutExceededException"/> when exceeded.</summary>
-    public static Shield Timeout(this Shield shield, TimeSpan timeout) => shield.Timeout(options => options.Timeout = timeout);
+    public static Shield Timeout(this Shield shield, TimeSpan timeout)
+    {
+        Throw.IfNull(shield, nameof(shield));
+        Throw.IfOutOfRange(timeout <= TimeSpan.Zero, nameof(timeout), "Timeout must be positive.");
+        Throw.IfOutOfRange(timeout > DelayHelper.MaximumDelay, nameof(timeout), "Timeout exceeds the runtime timer limit.");
+        return shield.Timeout(options => options.Timeout = timeout);
+    }
 
     /// <summary>Appends a timeout strategy configured via <paramref name="configure"/>.</summary>
     public static Shield Timeout(this Shield shield, Action<TimeoutOptions> configure)
@@ -76,11 +96,17 @@ public static class ShieldExtensions
     }
 
     /// <summary>Appends a circuit breaker that opens for <paramref name="breakDuration"/> after <paramref name="consecutiveFailures"/> consecutive handled exceptions.</summary>
-    public static Shield CircuitBreaker(this Shield shield, int consecutiveFailures, TimeSpan breakDuration) => shield.CircuitBreaker(options =>
+    public static Shield CircuitBreaker(this Shield shield, int consecutiveFailures, TimeSpan breakDuration)
     {
-        options.ConsecutiveFailures = consecutiveFailures;
-        options.BreakDuration = breakDuration;
-    });
+        Throw.IfNull(shield, nameof(shield));
+        Throw.IfOutOfRange(consecutiveFailures <= 0, nameof(consecutiveFailures), "Consecutive failures must be positive.");
+        Throw.IfOutOfRange(breakDuration <= TimeSpan.Zero, nameof(breakDuration), "Break duration must be positive.");
+        return shield.CircuitBreaker(options =>
+        {
+            options.ConsecutiveFailures = consecutiveFailures;
+            options.BreakDuration = breakDuration;
+        });
+    }
 
     /// <summary>Appends a circuit breaker strategy configured via <paramref name="configure"/>.</summary>
     public static Shield CircuitBreaker(this Shield shield, Action<CircuitBreakerOptions> configure)
@@ -89,16 +115,25 @@ public static class ShieldExtensions
         Throw.IfNull(configure, nameof(configure));
         var options = new CircuitBreakerOptions();
         configure(options);
-        var judge = HandlingOverride.Resolve(options.HandlesException, shield.JudgeOrDefault);
+        var judge = HandlingOverride.Resolve(
+            options.HandlesException,
+            options.HandlesExceptionWithContext,
+            shield.JudgeOrDefault);
         return shield.Append(new CircuitBreakerStrategy(options, judge));
     }
 
     /// <summary>Appends a token-bucket rate limit of <paramref name="permits"/> executions per <paramref name="perWindow"/>.</summary>
-    public static Shield RateLimit(this Shield shield, int permits, TimeSpan perWindow) => shield.RateLimit(options =>
+    public static Shield RateLimit(this Shield shield, int permits, TimeSpan perWindow)
     {
-        options.Permits = permits;
-        options.Window = perWindow;
-    });
+        Throw.IfNull(shield, nameof(shield));
+        Throw.IfOutOfRange(permits <= 0, nameof(permits), "Permits must be positive.");
+        Throw.IfOutOfRange(perWindow <= TimeSpan.Zero, nameof(perWindow), "Window must be positive.");
+        return shield.RateLimit(options =>
+        {
+            options.Permits = permits;
+            options.Window = perWindow;
+        });
+    }
 
     /// <summary>Appends a rate limit strategy configured via <paramref name="configure"/>.</summary>
     public static Shield RateLimit(this Shield shield, Action<RateLimitOptions> configure)
@@ -111,11 +146,17 @@ public static class ShieldExtensions
     }
 
     /// <summary>Appends a concurrency limit capping concurrency at <paramref name="maxConcurrency"/> with an optional wait queue.</summary>
-    public static Shield ConcurrencyLimit(this Shield shield, int maxConcurrency, int queueLimit = 0) => shield.ConcurrencyLimit(options =>
+    public static Shield ConcurrencyLimit(this Shield shield, int maxConcurrency, int queueLimit = 0)
     {
-        options.MaxConcurrency = maxConcurrency;
-        options.QueueLimit = queueLimit;
-    });
+        Throw.IfNull(shield, nameof(shield));
+        Throw.IfOutOfRange(maxConcurrency <= 0, nameof(maxConcurrency), "MaxConcurrency must be positive.");
+        Throw.IfOutOfRange(queueLimit < 0, nameof(queueLimit), "QueueLimit must not be negative.");
+        return shield.ConcurrencyLimit(options =>
+        {
+            options.MaxConcurrency = maxConcurrency;
+            options.QueueLimit = queueLimit;
+        });
+    }
 
     /// <summary>Appends a concurrency limit strategy configured via <paramref name="configure"/>.</summary>
     public static Shield ConcurrencyLimit(this Shield shield, Action<ConcurrencyLimitOptions> configure)
@@ -135,11 +176,21 @@ public static class ShieldExtensions
     /// hedge that later loses. Prefer <c>Shield.For&lt;T&gt;()</c>, where result clauses decide which
     /// attempt is acceptable, or confirm the action is safe to repeat.
     /// </remarks>
-    public static Shield Hedge(this Shield shield, int maxAttempts, TimeSpan delay) => shield.Hedge(options =>
+    public static Shield Hedge(this Shield shield, int maxAttempts, TimeSpan delay)
     {
-        options.MaxAttempts = maxAttempts;
-        options.Delay = delay;
-    });
+        Throw.IfNull(shield, nameof(shield));
+        Throw.IfOutOfRange(maxAttempts < 1, nameof(maxAttempts), "Maximum attempts must be at least 1.");
+        Throw.IfOutOfRange(
+            delay < TimeSpan.Zero && delay != System.Threading.Timeout.InfiniteTimeSpan,
+            nameof(delay),
+            "Delay must be non-negative or Timeout.InfiniteTimeSpan.");
+        Throw.IfOutOfRange(delay > DelayHelper.MaximumDelay, nameof(delay), "Delay exceeds the runtime timer limit.");
+        return shield.Hedge(options =>
+        {
+            options.MaxAttempts = maxAttempts;
+            options.Delay = delay;
+        });
+    }
 
     /// <summary>Appends a hedging strategy configured via <paramref name="configure"/>.</summary>
     /// <remarks>
@@ -153,7 +204,10 @@ public static class ShieldExtensions
         Throw.IfNull(configure, nameof(configure));
         var options = new HedgeOptions();
         configure(options);
-        var judge = HandlingOverride.Resolve(options.HandlesException, shield.JudgeOrDefault);
+        var judge = HandlingOverride.Resolve(
+            options.HandlesException,
+            options.HandlesExceptionWithContext,
+            shield.JudgeOrDefault);
         return shield.Append(new HedgingStrategy(options, judge));
     }
 
@@ -178,6 +232,13 @@ public static class ShieldExtensions
     {
         Throw.IfNull(shield, nameof(shield));
         return new ShieldBuilder(shield).Or(predicate);
+    }
+
+    /// <summary>Starts a handling clause using the active execution and strategy context.</summary>
+    public static ShieldBuilder WhenContext(this Shield shield, Func<HandlingEvent, bool> predicate)
+    {
+        Throw.IfNull(shield, nameof(shield));
+        return new ShieldBuilder(shield).OrContext(predicate);
     }
 
     /// <summary>
@@ -283,13 +344,16 @@ public static class ShieldExtensions
         Throw.IfNull(configure, nameof(configure));
         var options = new FallbackOptions();
         configure(options);
-        var judge = HandlingOverride.Resolve(options.HandlesException, shield.JudgeOrDefault);
+        var judge = HandlingOverride.Resolve(
+            options.HandlesException,
+            options.HandlesExceptionWithContext,
+            shield.JudgeOrDefault);
         return shield.Append(new VoidFallbackStrategy(
             fallback,
             judge,
             options.OnFallback,
             options.OnFallbackAsync,
-            options.HandlesException is not null));
+            options.HasHandlingOverride));
     }
 
     /// <summary>

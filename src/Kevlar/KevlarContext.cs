@@ -28,8 +28,10 @@ public sealed class KevlarContext
     private bool _hasCompletionProperties;
 
     private CancellationToken _cancellationToken;
+    private long _activeStrategyMask;
     private bool _isSynchronous;
     private string? _shieldName;
+    private int _strategyIndex = -1;
     private TimeProvider _timeProvider = TimeProvider.System;
 
 #if DEBUG
@@ -80,7 +82,20 @@ public sealed class KevlarContext
         internal set => _shieldName = value;
     }
 
-    internal int StrategyIndex { get; set; }
+    /// <summary>
+    /// The zero-based position of the strategy currently executing, or <c>-1</c> outside a
+    /// strategy. Nested strategies temporarily replace this value and restore it on return.
+    /// </summary>
+    public int StrategyIndex
+    {
+        get
+        {
+            ThrowIfReturnedToPool();
+            return _strategyIndex;
+        }
+
+        internal set => _strategyIndex = value;
+    }
 
     /// <summary>The time provider used for delays, timeouts and time-window calculations.</summary>
     public TimeProvider TimeProvider
@@ -158,6 +173,24 @@ public sealed class KevlarContext
         Pool.Return(context);
     }
 
+    /// <summary>Creates the detached context used by manual circuit-breaker transitions.</summary>
+    internal static KevlarContext CreateManual() => new();
+
+    /// <summary>Creates a detached snapshot for an event that may outlive this pooled context.</summary>
+    internal KevlarContext CreateDetachedSnapshot()
+    {
+        var snapshot = new KevlarContext
+        {
+            CancellationToken = CancellationToken,
+            IsSynchronous = IsSynchronous,
+            TimeProvider = TimeProvider,
+            ShieldName = ShieldName,
+            StrategyIndex = StrategyIndex,
+        };
+        Properties.CopyTo(snapshot.Properties);
+        return snapshot;
+    }
+
     /// <summary>
     /// Creates a detached copy of this context for a concurrent attempt (used by hedging).
     /// The copy shares no mutable state with the original.
@@ -169,6 +202,37 @@ public sealed class KevlarContext
 
         Properties.CopyTo(fork.Properties);
         return fork;
+    }
+
+    internal bool TryEnterStrategy(int strategyIndex)
+    {
+        var bit = 1L << (strategyIndex & 63);
+        while (true)
+        {
+            var current = Volatile.Read(ref _activeStrategyMask);
+            if ((current & bit) != 0)
+            {
+                return false;
+            }
+
+            if (Interlocked.CompareExchange(ref _activeStrategyMask, current | bit, current) == current)
+            {
+                return true;
+            }
+        }
+    }
+
+    internal void ExitStrategy(int strategyIndex)
+    {
+        var bit = ~(1L << (strategyIndex & 63));
+        while (true)
+        {
+            var current = Volatile.Read(ref _activeStrategyMask);
+            if (Interlocked.CompareExchange(ref _activeStrategyMask, current & bit, current) == current)
+            {
+                return;
+            }
+        }
     }
 
     /// <summary>
@@ -221,6 +285,7 @@ public sealed class KevlarContext
             context.IsSynchronous = false;
             context.ShieldName = null;
             context.StrategyIndex = -1;
+            context._activeStrategyMask = 0;
             context.TimeProvider = TimeProvider.System;
             context._properties.MirrorMutationsTo(null);
             context._properties.Clear();

@@ -24,10 +24,11 @@ internal sealed class CircuitBreakerCore
     private readonly TimeSpan _breakDuration;
     private readonly double _breakDurationTimestampUnits;
     private readonly Action<CircuitState> _recordState;
-    private readonly Func<CircuitBreakerBreakDurationEvent, ValueTask<TimeSpan>>? _breakDurationGenerator;
-    private readonly Action<CircuitStateChangedEvent>? _onStateChanged;
-    private readonly Func<CircuitStateChangedEvent, ValueTask>? _onStateChangedAsync;
+    private readonly CircuitBreakerBreakDurationGenerator? _breakDurationGenerator;
+    private readonly Action<CircuitBreakerStateChangedEvent>? _onStateChanged;
+    private readonly Func<CircuitBreakerStateChangedEvent, ValueTask>? _onStateChangedAsync;
     private readonly CircuitBreakerMonitor? _monitor;
+    private readonly Type _optionsType;
     private readonly Queue<TransitionPublication> _pendingTransitions = new();
     private readonly AsyncLocal<TransitionPublication?>? _ambientPublication;
 
@@ -50,23 +51,51 @@ internal sealed class CircuitBreakerCore
     private int _publishingThreadId;
     private TransitionPublication? _activePublication;
 
-    public CircuitBreakerCore(CircuitBreakerOptions options, Action<CircuitState> recordState)
+    public CircuitBreakerCore(
+        CircuitBreakerOptions options,
+        CircuitBreakerBreakDurationGenerator? breakDurationGenerator,
+        Action<CircuitState> recordState,
+        Type optionsType)
     {
-        Throw.IfOutOfRange(options.ConsecutiveFailures is <= 0, nameof(options.ConsecutiveFailures), "ConsecutiveFailures must be positive.");
-        Throw.IfOutOfRange(
+        ConfigurationValidation.ThrowIf(
+            options.ConsecutiveFailures is <= 0,
+            optionsType,
+            nameof(options.ConsecutiveFailures),
+            options.ConsecutiveFailures,
+            "must be positive when set");
+        ConfigurationValidation.ThrowIf(
             options.FailureRatio is { } ratio && (double.IsNaN(ratio) || ratio <= 0 || ratio > 1),
+            optionsType,
             nameof(options.FailureRatio),
-            "FailureRatio must be between 0 (exclusive) and 1 (inclusive).");
-        Throw.IfOutOfRange(
+            options.FailureRatio,
+            "must be between 0 (exclusive) and 1 (inclusive)");
+        ConfigurationValidation.ThrowIf(
             options.ConsecutiveFailures is not null && options.FailureRatio is not null,
-            nameof(options),
-            "ConsecutiveFailures and FailureRatio select different trip modes and cannot both be set. " +
-            "Clear ConsecutiveFailures to trip on the failure ratio within SamplingWindow, clear " +
+            optionsType,
+            $"{nameof(options.ConsecutiveFailures)} and {nameof(options.FailureRatio)}",
+            $"{options.ConsecutiveFailures} and {options.FailureRatio}",
+            "select different trip modes and cannot both be set; " +
+            "Clear ConsecutiveFailures to trip on the failure ratio within SamplingWindow or clear " +
             "FailureRatio to trip on consecutive failures, or leave both unset to trip after 5 " +
-            "consecutive failures.");
-        Throw.IfOutOfRange(options.MinimumThroughput < 1, nameof(options), "MinimumThroughput must be at least 1.");
-        Throw.IfOutOfRange(options.SamplingWindow <= TimeSpan.Zero, nameof(options), "SamplingWindow must be positive.");
-        Throw.IfOutOfRange(options.BreakDuration <= TimeSpan.Zero, nameof(options), "BreakDuration must be positive.");
+            "consecutive failures");
+        ConfigurationValidation.ThrowIf(
+            options.MinimumThroughput < 1,
+            optionsType,
+            nameof(options.MinimumThroughput),
+            options.MinimumThroughput,
+            "must be at least 1");
+        ConfigurationValidation.ThrowIf(
+            options.SamplingWindow <= TimeSpan.Zero,
+            optionsType,
+            nameof(options.SamplingWindow),
+            options.SamplingWindow,
+            "must be positive");
+        ConfigurationValidation.ThrowIf(
+            options.BreakDuration <= TimeSpan.Zero,
+            optionsType,
+            nameof(options.BreakDuration),
+            options.BreakDuration,
+            "must be positive");
 
         _failureRatio = options.FailureRatio;
         _consecutiveFailureLimit = options.FailureRatio is null ? options.ConsecutiveFailures ?? 5 : null;
@@ -76,9 +105,10 @@ internal sealed class CircuitBreakerCore
         _breakDuration = options.BreakDuration;
         _breakDurationTimestampUnits = options.BreakDuration.TotalSeconds * Stopwatch.Frequency;
         _recordState = recordState;
-        _breakDurationGenerator = options.BreakDurationGenerator;
+        _breakDurationGenerator = breakDurationGenerator;
         _onStateChanged = options.OnStateChanged;
         _onStateChangedAsync = options.OnStateChangedAsync;
+        _optionsType = optionsType;
         _ambientPublication = options.OnStateChangedAsync is null
             ? null
             : new AsyncLocal<TransitionPublication?>();
@@ -130,10 +160,16 @@ internal sealed class CircuitBreakerCore
     /// </summary>
     public bool TryEnter(
         TimeProvider timeProvider,
+        KevlarContext context,
         out CircuitOpenException? rejection,
         out long admittedProbeGeneration)
     {
-        var allowed = TryEnterCore(timeProvider, out rejection, out var transition, out admittedProbeGeneration);
+        var allowed = TryEnterCore(
+            timeProvider,
+            context,
+            out rejection,
+            out var transition,
+            out admittedProbeGeneration);
 
         try
         {
@@ -152,10 +188,11 @@ internal sealed class CircuitBreakerCore
         return allowed;
     }
 
-    public ValueTask<EntryResult> TryEnterAsync(TimeProvider timeProvider)
+    public ValueTask<EntryResult> TryEnterAsync(TimeProvider timeProvider, KevlarContext context)
     {
         var allowed = TryEnterCore(
             timeProvider,
+            context,
             out var rejection,
             out var transition,
             out var admittedProbeGeneration);
@@ -190,6 +227,7 @@ internal sealed class CircuitBreakerCore
 
     private bool TryEnterCore(
         TimeProvider timeProvider,
+        KevlarContext context,
         out CircuitOpenException? rejection,
         out TransitionPublication? transition,
         out long admittedProbeGeneration)
@@ -220,7 +258,7 @@ internal sealed class CircuitBreakerCore
                         return false;
                     }
 
-                    transition = ChangeState(CircuitState.HalfOpen);
+                    transition = ChangeState(CircuitState.HalfOpen, context);
                     _probeInFlight = true;
                     admittedProbeGeneration = _activeProbeGeneration = ++_probeGeneration;
                     return true;
@@ -267,15 +305,17 @@ internal sealed class CircuitBreakerCore
         CircuitOpenException? Rejection,
         long AdmittedProbeGeneration);
 
-    public void RecordSuccess(TimeProvider timeProvider)
+    public void RecordSuccess(TimeProvider timeProvider, KevlarContext context)
     {
-        Publish(RecordSuccessCore(timeProvider));
+        Publish(RecordSuccessCore(timeProvider, context));
     }
 
-    public ValueTask RecordSuccessAsync(TimeProvider timeProvider) =>
-        PublishAsync(RecordSuccessCore(timeProvider));
+    public ValueTask RecordSuccessAsync(TimeProvider timeProvider, KevlarContext context) =>
+        PublishAsync(RecordSuccessCore(timeProvider, context));
 
-    private TransitionPublication? RecordSuccessCore(TimeProvider timeProvider)
+    private TransitionPublication? RecordSuccessCore(
+        TimeProvider timeProvider,
+        KevlarContext context)
     {
         lock (_gate)
         {
@@ -284,7 +324,7 @@ internal sealed class CircuitBreakerCore
                 _probeInFlight = false;
                 CancelPendingOpening();
                 ResetMetrics();
-                return ChangeState(CircuitState.Closed);
+                return ChangeState(CircuitState.Closed, context);
             }
 
             if (_state == CircuitState.Closed)
@@ -300,9 +340,12 @@ internal sealed class CircuitBreakerCore
         }
     }
 
-    public void RecordFailure(TimeProvider timeProvider, Exception? exception)
+    public void RecordFailure(
+        TimeProvider timeProvider,
+        Exception? exception,
+        KevlarContext context)
     {
-        Publish(RecordFailureCore(timeProvider, exception));
+        Publish(RecordFailureCore(timeProvider, exception, context));
     }
 
     public ValueTask RecordFailureAsync<T>(
@@ -312,10 +355,14 @@ internal sealed class CircuitBreakerCore
     {
         if (_breakDurationGenerator is null)
         {
-            return PublishAsync(RecordFailureCore(timeProvider, outcome.Exception));
+            return PublishAsync(RecordFailureCore(timeProvider, outcome.Exception, context));
         }
 
-        if (!TryReserveDynamicOpening(timeProvider, outcome.Exception, out var reservation))
+        if (!TryReserveDynamicOpening(
+                timeProvider,
+                outcome.Exception,
+                context,
+                out var reservation))
         {
             return default;
         }
@@ -323,11 +370,11 @@ internal sealed class CircuitBreakerCore
         ValueTask<TimeSpan> generation;
         try
         {
-            var item = new CircuitBreakerBreakDurationEvent(
-                outcome.Exception,
-                outcome.Exception is null ? outcome.Result : null,
+            var statistics = reservation.Statistics;
+            generation = _breakDurationGenerator.Invoke(
+                in outcome,
+                in statistics,
                 context);
-            generation = _breakDurationGenerator(item);
         }
         catch
         {
@@ -355,7 +402,10 @@ internal sealed class CircuitBreakerCore
         return PublishAsync(CommitDynamicOpening(reservation, timeProvider, duration));
     }
 
-    private TransitionPublication? RecordFailureCore(TimeProvider timeProvider, Exception? exception)
+    private TransitionPublication? RecordFailureCore(
+        TimeProvider timeProvider,
+        Exception? exception,
+        KevlarContext context)
     {
         lock (_gate)
         {
@@ -365,7 +415,7 @@ internal sealed class CircuitBreakerCore
             {
                 _probeInFlight = false;
                 _openUntilTimestamp = GetCurrentTimestamp(timeProvider) + _breakDurationTimestampUnits;
-                return ChangeState(CircuitState.Open);
+                return ChangeState(CircuitState.Open, context);
             }
 
             if (_state == CircuitState.Closed)
@@ -374,7 +424,7 @@ internal sealed class CircuitBreakerCore
                     ? 0
                     : GetCurrentTimestamp(timeProvider);
 
-                if (IsTripped(timestamp))
+                if (RecordFailureAndCheckThreshold(timestamp, out _))
                 {
                     if (_failureRatio is null)
                     {
@@ -382,7 +432,7 @@ internal sealed class CircuitBreakerCore
                     }
 
                     _openUntilTimestamp = timestamp + _breakDurationTimestampUnits;
-                    return ChangeState(CircuitState.Open);
+                    return ChangeState(CircuitState.Open, context);
                 }
             }
 
@@ -393,6 +443,7 @@ internal sealed class CircuitBreakerCore
     private bool TryReserveDynamicOpening(
         TimeProvider timeProvider,
         Exception? exception,
+        KevlarContext context,
         out OpeningReservation reservation)
     {
         lock (_gate)
@@ -403,26 +454,48 @@ internal sealed class CircuitBreakerCore
             {
                 if (_state == CircuitState.Closed)
                 {
-                    _ = IsTripped(_failureRatio is null ? 0 : GetCurrentTimestamp(timeProvider));
+                    _ = RecordFailureAndCheckThreshold(
+                        _failureRatio is null ? 0 : GetCurrentTimestamp(timeProvider),
+                        out _);
                 }
 
                 return false;
             }
 
-            var shouldOpen = _state switch
+            CircuitBreakerFailureStatistics statistics;
+            bool shouldOpen;
+            if (_state == CircuitState.HalfOpen)
             {
-                CircuitState.HalfOpen => true,
-                CircuitState.Closed => IsTripped(
-                    _failureRatio is null ? 0 : GetCurrentTimestamp(timeProvider)),
-                _ => false,
-            };
+                statistics = new CircuitBreakerFailureStatistics(
+                    FailureRate: 1,
+                    FailureCount: 1,
+                    ConsecutiveFailures: 1);
+                shouldOpen = true;
+            }
+            else if (_state == CircuitState.Closed)
+            {
+                shouldOpen = RecordFailureAndCheckThreshold(
+                    _failureRatio is null ? 0 : GetCurrentTimestamp(timeProvider),
+                    out statistics);
+            }
+            else
+            {
+                statistics = default;
+                shouldOpen = false;
+            }
+
             if (!shouldOpen)
             {
                 return false;
             }
 
             _openingPending = true;
-            reservation = new OpeningReservation(++_openingGeneration, _state, exception);
+            reservation = new OpeningReservation(
+                ++_openingGeneration,
+                _state,
+                exception,
+                context,
+                statistics);
             return true;
         }
     }
@@ -466,7 +539,7 @@ internal sealed class CircuitBreakerCore
             _lastException = reservation.Exception;
             _openUntilTimestamp = GetCurrentTimestamp(timeProvider)
                 + (duration.TotalSeconds * Stopwatch.Frequency);
-            return ChangeState(CircuitState.Open);
+            return ChangeState(CircuitState.Open, reservation.Context);
         }
     }
 
@@ -491,16 +564,20 @@ internal sealed class CircuitBreakerCore
         _openingGeneration++;
     }
 
-    private static void ValidateGeneratedBreakDuration(TimeSpan duration) =>
-        Throw.IfOutOfRange(
+    private void ValidateGeneratedBreakDuration(TimeSpan duration) =>
+        ConfigurationValidation.ThrowIf(
             duration <= TimeSpan.Zero,
-            nameof(duration),
-            "Generated break duration must be positive.");
+            _optionsType,
+            nameof(CircuitBreakerOptions.BreakDurationGenerator),
+            duration,
+            "must return a positive duration");
 
     private readonly record struct OpeningReservation(
         long Generation,
         CircuitState ExpectedState,
-        Exception? Exception);
+        Exception? Exception,
+        KevlarContext Context,
+        CircuitBreakerFailureStatistics Statistics);
 
     /// <summary>Releases a half-open probe slot without recording an outcome (e.g. the probe was cancelled).</summary>
     public void AbandonProbe(long probeGeneration)
@@ -529,7 +606,7 @@ internal sealed class CircuitBreakerCore
             _probeInFlight = false;
             return _state == CircuitState.Isolated
                 ? null
-                : ChangeState(CircuitState.Isolated);
+                : ChangeState(CircuitState.Isolated, KevlarContext.CreateManual());
         }
     }
 
@@ -549,15 +626,22 @@ internal sealed class CircuitBreakerCore
             _probeInFlight = false;
             return _state == CircuitState.Closed
                 ? null
-                : ChangeState(CircuitState.Closed);
+                : ChangeState(CircuitState.Closed, KevlarContext.CreateManual());
         }
     }
 
-    private bool IsTripped(double timestamp)
+    private bool RecordFailureAndCheckThreshold(
+        double timestamp,
+        out CircuitBreakerFailureStatistics statistics)
     {
+        _consecutiveFailures++;
         if (_consecutiveFailureLimit is { } limit)
         {
-            return ++_consecutiveFailures >= limit;
+            statistics = new CircuitBreakerFailureStatistics(
+                FailureRate: 1,
+                FailureCount: _consecutiveFailures,
+                ConsecutiveFailures: _consecutiveFailures);
+            return _consecutiveFailures >= limit;
         }
 
         var bucket = AdvanceBucket(timestamp);
@@ -570,7 +654,12 @@ internal sealed class CircuitBreakerCore
             total += _bucketFailures[i] + _bucketSuccesses[i];
         }
 
-        return total >= _minimumThroughput && (double)failures / total >= _failureRatio!.Value;
+        var failureRate = (double)failures / total;
+        statistics = new CircuitBreakerFailureStatistics(
+            failureRate,
+            failures,
+            _consecutiveFailures);
+        return total >= _minimumThroughput && failureRate >= _failureRatio!.Value;
     }
 
     private int AdvanceBucket(TimeProvider timeProvider) => AdvanceBucket(GetCurrentTimestamp(timeProvider));
@@ -667,9 +756,13 @@ internal sealed class CircuitBreakerCore
         public double TimestampScale { get; }
     }
 
-    private TransitionPublication ChangeState(CircuitState next)
+    private TransitionPublication ChangeState(CircuitState next, KevlarContext context)
     {
-        var transition = new CircuitStateChangedEvent(_state, next, _lastException);
+        var transition = new CircuitBreakerStateChangedEvent(
+            _state,
+            next,
+            _lastException,
+            context);
         _state = next;
         var publication = new TransitionPublication(transition);
         _pendingTransitions.Enqueue(publication);
@@ -718,6 +811,7 @@ internal sealed class CircuitBreakerCore
             {
                 if (!parent.ObserversCompleted)
                 {
+                    publication.DetachContext();
                     publication.Parent = parent;
                     parent.PendingChildren++;
                     return default;
@@ -742,6 +836,7 @@ internal sealed class CircuitBreakerCore
         }
         else if (Volatile.Read(ref _publishingThreadId) == Environment.CurrentManagedThreadId)
         {
+            publication.DetachContext();
             publication.Parent = _activePublication;
             _activePublication!.PendingChildren++;
         }
@@ -925,7 +1020,7 @@ internal sealed class CircuitBreakerCore
         CompletePublication(publication);
     }
 
-    private Exception? PublishObservers(CircuitStateChangedEvent stateChange)
+    private Exception? PublishObservers(CircuitBreakerStateChangedEvent stateChange)
     {
         Exception? failure = null;
         try
@@ -967,7 +1062,8 @@ internal sealed class CircuitBreakerCore
         return failure;
     }
 
-    private async ValueTask<Exception?> PublishObserversAsync(CircuitStateChangedEvent stateChange)
+    private async ValueTask<Exception?> PublishObserversAsync(
+        CircuitBreakerStateChangedEvent stateChange)
     {
         Exception? failure = null;
         try
@@ -1036,9 +1132,9 @@ internal sealed class CircuitBreakerCore
         };
     }
 
-    private sealed class TransitionPublication(CircuitStateChangedEvent stateChange)
+    private sealed class TransitionPublication(CircuitBreakerStateChangedEvent stateChange)
     {
-        public CircuitStateChangedEvent StateChange { get; } = stateChange;
+        public CircuitBreakerStateChangedEvent StateChange { get; private set; } = stateChange;
 
         public TaskCompletionSource<bool> Completion { get; } =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -1052,6 +1148,8 @@ internal sealed class CircuitBreakerCore
         public bool ObserversCompleted { get; set; }
 
         public Exception? Failure { get; set; }
+
+        public void DetachContext() => StateChange = StateChange.WithDetachedContext();
 
         public void ThrowIfFailed()
         {

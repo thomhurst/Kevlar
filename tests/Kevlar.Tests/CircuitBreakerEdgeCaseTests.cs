@@ -446,7 +446,7 @@ public class CircuitBreakerEdgeCaseTests
     public async Task Transition_Events_Carry_The_Causing_Exception()
     {
         var cause = new InvalidOperationException("cause");
-        CircuitStateChangedEvent? opened = null;
+        CircuitBreakerStateChangedEvent? opened = null;
         var shield = Shield.CircuitBreaker(options =>
         {
             options.ConsecutiveFailures = 1;

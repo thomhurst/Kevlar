@@ -52,6 +52,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          fetch-depth: 0  # Required for changelog compare-link validation
           persist-credentials: false
 
       - name: Setup Node.js
@@ -218,6 +219,16 @@ jobs:
       - name: Validate Renovate configuration
         if: matrix.os == 'ubuntu-latest'
         run: npx --yes --package renovate -- renovate-config-validator renovate.json
+
+      - name: Verify changelog and release notes
+        if: matrix.os == 'ubuntu-latest'
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ steps.gitversion.outputs.semVer }}
+        run: |
+          ./scripts/Verify-Changelog.ps1
+          $notes = ./scripts/Get-ReleaseNotes.ps1 -Version $env:RELEASE_VERSION
+          if ([string]::IsNullOrWhiteSpace(($notes | Out-String))) { throw "$env:RELEASE_VERSION release notes are empty." }
 
       - name: Compile and execute documentation snippets
         if: matrix.os == 'ubuntu-latest'

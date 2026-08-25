@@ -21,7 +21,11 @@ public sealed class RetryOptions
     /// <seealso cref="HandlingClause"/>
     public Func<Exception, bool>? HandlesException { get; set; }
 
-    internal bool HasHandlingOverride => HandlesException is not null;
+    /// <summary>Locally handles exceptions using execution context and attempt metadata.</summary>
+    public Func<HandlingEvent, bool>? HandlesExceptionWithContext { get; set; }
+
+    internal bool HasHandlingOverride =>
+        HandlesException is not null || HandlesExceptionWithContext is not null;
 
     /// <summary>
     /// The number of <em>retries</em> made after the initial attempt — not the number of attempts.
@@ -105,6 +109,9 @@ public sealed class RetryOptions<TResult>
     /// <seealso cref="HandlingClause"/>
     public Func<Exception, bool>? HandlesException { get; set; }
 
+    /// <summary>Locally handles exceptions using the typed outcome and execution context.</summary>
+    public Func<HandlingEvent<TResult>, bool>? HandlesExceptionWithContext { get; set; }
+
     /// <summary>
     /// Setting this — or <see cref="HandlesException"/> — makes this retry ignore the ambient
     /// <c>When…</c> handling clause; this predicate then selects the results it handles.
@@ -117,8 +124,14 @@ public sealed class RetryOptions<TResult>
     /// <seealso cref="HandlingClause"/>
     public Func<TResult, bool>? HandlesResult { get; set; }
 
+    /// <summary>Locally handles results using the typed outcome and execution context.</summary>
+    public Func<HandlingEvent<TResult>, bool>? HandlesResultWithContext { get; set; }
+
     internal bool HasHandlingOverride =>
-        HandlesException is not null || HandlesResult is not null;
+        HandlesException is not null
+        || HandlesResult is not null
+        || HandlesExceptionWithContext is not null
+        || HandlesResultWithContext is not null;
 
     /// <summary>Invoked synchronously before each retry sleeps, with the typed handled outcome.</summary>
     public Action<RetryEvent<TResult>>? OnRetry { get; set; }
@@ -144,13 +157,15 @@ public sealed class RetryOptions<TResult>
 /// <summary>Describes a retry that is about to happen.</summary>
 public readonly struct RetryEvent
 {
+    private readonly KevlarContext? _context;
+
     internal RetryEvent(int retryNumber, TimeSpan delay, Exception? exception, object? result, KevlarContext context)
     {
         RetryNumber = retryNumber;
         Delay = delay;
         Exception = exception;
         Result = result;
-        Context = context;
+        _context = context;
     }
 
     /// <summary>The 1-based number of the retry about to be made (1 = first retry, i.e. second execution).</summary>
@@ -180,31 +195,38 @@ public readonly struct RetryEvent
     /// The ambient execution context. It is pooled; do not retain it or its property bag after
     /// the callback (including an asynchronous callback) completes.
     /// </summary>
-    public KevlarContext Context { get; }
+    public KevlarContext Context => Internal.EventContext.Required(_context);
 }
 
 /// <summary>Describes a retry that is about to happen, with the handled outcome typed as <typeparamref name="TResult"/>.</summary>
 public readonly struct RetryEvent<TResult>
 {
-    private readonly RetryEvent _inner;
+    private readonly KevlarContext? _context;
 
-    internal RetryEvent(RetryEvent inner) => _inner = inner;
+    internal RetryEvent(
+        int retryNumber,
+        TimeSpan delay,
+        Outcome<TResult> outcome,
+        KevlarContext context)
+    {
+        RetryNumber = retryNumber;
+        Delay = delay;
+        Outcome = outcome;
+        _context = context;
+    }
 
     /// <summary>The 1-based number of the retry about to be made (1 = first retry, i.e. second execution).</summary>
-    public int RetryNumber => _inner.RetryNumber;
+    public int RetryNumber { get; }
 
     /// <summary>The delay that will be waited before the retry.</summary>
-    public TimeSpan Delay => _inner.Delay;
+    public TimeSpan Delay { get; }
 
     /// <summary>The handled outcome — the exception or result value that triggered this retry.</summary>
-    public Outcome<TResult> Outcome =>
-        _inner.Exception is { } exception
-            ? Outcome<TResult>.FromException(exception)
-            : Outcome<TResult>.FromResult((TResult)_inner.Result!);
+    public Outcome<TResult> Outcome { get; }
 
     /// <summary>
     /// The ambient execution context. It is pooled; do not retain it or its property bag after
     /// the callback (including an asynchronous callback) completes.
     /// </summary>
-    public KevlarContext Context => _inner.Context;
+    public KevlarContext Context => Internal.EventContext.Required(_context);
 }

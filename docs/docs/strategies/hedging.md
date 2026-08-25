@@ -37,6 +37,9 @@ Shield.Hedge(o =>
 | `HandlesException` | — | Local exception predicate; replaces the ambient clause for this hedge |
 | `HandlesResult` (`HedgeOptions<T>`) | — | Local result predicate on `Shield<T>`; replaces the ambient clause together with `HandlesException` |
 
+Invalid option values throw [`KevlarConfigurationException`](../exceptions.md#configuration-failures)
+and identify the options type, property, and offending value.
+
 ### Selecting another target
 
 Set the typed `ActionGenerator` to send a hedge to a different replica without boxing the result.

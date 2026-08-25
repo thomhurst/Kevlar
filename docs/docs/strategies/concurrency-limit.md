@@ -30,6 +30,9 @@ Shield.ConcurrencyLimit(o =>
 | `OnRejected` | — | Synchronous notification for an actual rejection |
 | `OnRejectedAsync` | — | Awaited notification after `OnRejected` |
 
+Invalid option values throw [`KevlarConfigurationException`](../exceptions.md#configuration-failures)
+and identify the options type, property, and offending value.
+
 Total capacity is `MaxConcurrency + QueueLimit`. Anything beyond that fails **immediately** with `ConcurrencyLimitExceededException` — the overflow check happens before any waiting, so rejection is instant and allocation-light.
 
 For an actual rejection, Kevlar publishes current limiter state and rejection metrics, invokes
