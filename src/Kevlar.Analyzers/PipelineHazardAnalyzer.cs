@@ -169,7 +169,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             if (FindInPipeline(
                     GetReceiver(invocation),
                     context,
-                    candidate => TryFindAsyncConfiguration(candidate, context, out asyncMember),
+                    candidate => TryFindAsyncConfiguration(candidate, context, knownTypes, out asyncMember),
                     knownTypes,
                     stopAtHandlingClause: false,
                     stopAtCompositionBoundary: false,
@@ -2015,12 +2015,13 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     private static bool TryFindAsyncConfiguration(
         IInvocationOperation invocation,
         OperationAnalysisContext context,
+        KnownTypes knownTypes,
         out string? memberName)
     {
         foreach (var argument in invocation.Arguments)
         {
             if (argument.Parameter?.Name == "configure"
-                && TryFindAsyncConfiguration(argument.Value, context, out memberName))
+                && TryFindAsyncConfiguration(argument.Value, context, knownTypes, out memberName))
             {
                 return true;
             }
@@ -2033,6 +2034,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     private static bool TryFindAsyncConfiguration(
         IOperation operation,
         OperationAnalysisContext context,
+        KnownTypes knownTypes,
         out string? memberName)
     {
         operation = Unwrap(operation)!;
@@ -2067,6 +2069,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             anonymousFunction.Body,
             anonymousFunction.Symbol.Parameters[0],
             context,
+            knownTypes,
             out memberName);
     }
 
@@ -2146,7 +2149,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        return !HasChaosPropertyAssignmentAfter(
+        return !HasBypassingControlFlowBefore(anonymousFunction.Body, lastDirectAssignmentStart)
+            && !HasChaosPropertyAssignmentAfter(
             anonymousFunction.Body,
             configuratorParameter,
             propertyName,
@@ -2182,6 +2186,30 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 propertyName,
                 position,
                 context))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool HasBypassingControlFlowBefore(IOperation operation, int position)
+    {
+        if (operation.Syntax.SpanStart >= position)
+        {
+            return false;
+        }
+
+        if (!operation.IsImplicit && operation is IReturnOperation or IBranchOperation)
+        {
+            return true;
+        }
+
+        foreach (var child in operation.ChildOperations)
+        {
+            if (child is not IAnonymousFunctionOperation
+                && HasBypassingControlFlowBefore(child, position))
             {
                 return true;
             }
@@ -2227,6 +2255,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         }
 
         return maxRetries == 0
+            && !HasBypassingControlFlowBefore(block, lastDirectAssignmentStart)
             && !HasMaxRetriesAssignmentAfter(
                 block,
                 configuratorParameter,
@@ -2271,6 +2300,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         IOperation operation,
         IParameterSymbol configuratorParameter,
         OperationAnalysisContext context,
+        KnownTypes knownTypes,
         out string? memberName)
     {
         operation = Unwrap(operation)!;
@@ -2287,7 +2317,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             }
             && propertyReference.Instance is { } instance
             && ReferencesConfiguratorParameter(instance, configuratorParameter, context)
-            && IsAsyncConfigurationProperty(propertyReference.Property)
+            && knownTypes.IsAsyncConfigurationProperty(propertyReference.Property)
             && value.ConstantValue is not { HasValue: true, Value: null })
         {
             memberName = $"{propertyReference.Property.ContainingType.Name}.{propertyReference.Property.Name}";
@@ -2300,6 +2330,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 child,
                 configuratorParameter,
                 context,
+                knownTypes,
                 out memberName))
             {
                 return true;
@@ -2375,30 +2406,6 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             visitedLocals);
         visitedLocals.Remove(localReference.Local);
         return referencesParameter;
-    }
-
-    private static bool IsAsyncConfigurationProperty(IPropertySymbol property)
-    {
-        var containingType = property.ContainingType.Name;
-        var containingNamespace = property.ContainingNamespace.ToDisplayString();
-        return containingNamespace switch
-        {
-            "Kevlar" => containingType switch
-            {
-                "RetryOptions" => property.Name is "OnRetryAsync" or "DelayGeneratorAsync",
-                "HedgeOptions" => property.Name == "DelayGeneratorAsync",
-                "TimeoutOptions" => property.Name is "OnTimeoutAsync" or "TimeoutGenerator",
-                "FallbackOptions" => property.Name == "OnFallbackAsync",
-                "CircuitBreakerOptions" => property.Name is "OnStateChangedAsync" or "BreakDurationGenerator",
-                "RateLimitOptions" or "ConcurrencyLimitOptions" => property.Name == "OnRejectedAsync",
-                _ => false,
-            },
-            "Kevlar.Chaos" =>
-                containingType == "ChaosBehaviorOptions" && property.Name == "Behavior",
-            "Kevlar.Extensions.RateLimiting" =>
-                containingType == "RateLimiterAdapterOptions" && property.Name == "OnRejectedAsync",
-            _ => false,
-        };
     }
 
     private static bool IsReactiveStrategy(IMethodSymbol method, KnownTypes knownTypes) =>
@@ -2886,6 +2893,19 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         private readonly INamedTypeSymbol? _taskOfT;
         private readonly INamedTypeSymbol? _valueTask;
         private readonly INamedTypeSymbol? _valueTaskOfT;
+        private readonly INamedTypeSymbol? _retryOptions;
+        private readonly INamedTypeSymbol? _retryOptionsOfT;
+        private readonly INamedTypeSymbol? _hedgeOptions;
+        private readonly INamedTypeSymbol? _hedgeOptionsOfT;
+        private readonly INamedTypeSymbol? _timeoutOptions;
+        private readonly INamedTypeSymbol? _fallbackOptions;
+        private readonly INamedTypeSymbol? _fallbackOptionsOfT;
+        private readonly INamedTypeSymbol? _circuitBreakerOptions;
+        private readonly INamedTypeSymbol? _circuitBreakerOptionsOfT;
+        private readonly INamedTypeSymbol? _rateLimitOptions;
+        private readonly INamedTypeSymbol? _concurrencyLimitOptions;
+        private readonly INamedTypeSymbol? _chaosBehaviorOptions;
+        private readonly INamedTypeSymbol? _rateLimiterAdapterOptions;
 
         internal KnownTypes(Compilation compilation)
         {
@@ -2905,6 +2925,23 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             _taskOfT = compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1");
             _valueTask = compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask");
             _valueTaskOfT = compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
+            var kevlarAssembly = _shield?.ContainingAssembly;
+            _retryOptions = kevlarAssembly?.GetTypeByMetadataName("Kevlar.RetryOptions");
+            _retryOptionsOfT = kevlarAssembly?.GetTypeByMetadataName("Kevlar.RetryOptions`1");
+            _hedgeOptions = kevlarAssembly?.GetTypeByMetadataName("Kevlar.HedgeOptions");
+            _hedgeOptionsOfT = kevlarAssembly?.GetTypeByMetadataName("Kevlar.HedgeOptions`1");
+            _timeoutOptions = kevlarAssembly?.GetTypeByMetadataName("Kevlar.TimeoutOptions");
+            _fallbackOptions = kevlarAssembly?.GetTypeByMetadataName("Kevlar.FallbackOptions");
+            _fallbackOptionsOfT = kevlarAssembly?.GetTypeByMetadataName("Kevlar.FallbackOptions`1");
+            _circuitBreakerOptions = kevlarAssembly?.GetTypeByMetadataName("Kevlar.CircuitBreakerOptions");
+            _circuitBreakerOptionsOfT = kevlarAssembly?.GetTypeByMetadataName("Kevlar.CircuitBreakerOptions`1");
+            _rateLimitOptions = kevlarAssembly?.GetTypeByMetadataName("Kevlar.RateLimitOptions");
+            _concurrencyLimitOptions = kevlarAssembly?.GetTypeByMetadataName("Kevlar.ConcurrencyLimitOptions");
+            var chaosShield = compilation.GetTypeByMetadataName("Kevlar.Chaos.ChaosShield");
+            _chaosBehaviorOptions = chaosShield?.ContainingAssembly.GetTypeByMetadataName(
+                "Kevlar.Chaos.ChaosBehaviorOptions");
+            _rateLimiterAdapterOptions = _shieldRateLimiterExtensions?.ContainingAssembly.GetTypeByMetadataName(
+                "Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions");
             var assemblyName = compilation.AssemblyName;
             IsTestAssembly = assemblyName is not null
                 && (assemblyName.EndsWith(".Test", StringComparison.OrdinalIgnoreCase)
@@ -2931,6 +2968,30 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         internal bool IsPartitionedShield(INamedTypeSymbol type) =>
             Is(type, _partitionedShield) || Is(type, _partitionedShieldOfT);
+
+        internal bool IsAsyncConfigurationProperty(IPropertySymbol property)
+        {
+            var type = property.ContainingType;
+            return property.Name switch
+            {
+                "OnRetryAsync" => Is(type, _retryOptions) || Is(type, _retryOptionsOfT),
+                "DelayGeneratorAsync" =>
+                    Is(type, _retryOptions)
+                    || Is(type, _retryOptionsOfT)
+                    || Is(type, _hedgeOptions)
+                    || Is(type, _hedgeOptionsOfT),
+                "OnTimeoutAsync" or "TimeoutGenerator" => Is(type, _timeoutOptions),
+                "OnFallbackAsync" => Is(type, _fallbackOptions) || Is(type, _fallbackOptionsOfT),
+                "OnStateChangedAsync" or "BreakDurationGenerator" =>
+                    Is(type, _circuitBreakerOptions) || Is(type, _circuitBreakerOptionsOfT),
+                "OnRejectedAsync" =>
+                    Is(type, _rateLimitOptions)
+                    || Is(type, _concurrencyLimitOptions)
+                    || Is(type, _rateLimiterAdapterOptions),
+                "Behavior" => Is(type, _chaosBehaviorOptions),
+                _ => false,
+            };
+        }
 
         internal bool IsNonGenericExecutionResult(ITypeSymbol type) =>
             type is INamedTypeSymbol namedType

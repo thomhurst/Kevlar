@@ -375,9 +375,14 @@ public class AllocationBudgetTests
                 .GetAwaiter().GetResult();
             test._syncDelayGeneratedHedgeState.WaitForLoserCompletion();
         }, AllocationScope.AllThreads);
+#if NET8_0
         // The eight-byte margin above the .NET 8 Linux pool-miss path still catches
         // the additional 24 bytes caused by boxing the typed Outcome<int>.
-        AssertBudget("typed hedge generator", 624, this, static test =>
+        const long typedHedgeGeneratorBudget = 624;
+#else
+        const long typedHedgeGeneratorBudget = 584;
+#endif
+        AssertBudget("typed hedge generator", typedHedgeGeneratorBudget, this, static test =>
             test._typedGeneratedHedge.ExecuteAsync(static _ => throw RecoverableFailure)
                 .GetAwaiter()
                 .GetResult());

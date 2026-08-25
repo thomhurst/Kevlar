@@ -409,7 +409,8 @@ public static class ShieldExtensions
             options.OnFallback,
             options.OnFallbackAsync,
             fallbackIsAsync: true,
-            hasHandlingOverride: options.HasHandlingOverride));
+            hasHandlingOverride: options.HasHandlingOverride,
+            telemetryName: options.Name));
     }
 
     /// <summary>Returns a copy of this shield with a diagnostic name (surfaced as <see cref="KevlarContext.ShieldName"/>).</summary>

@@ -1328,6 +1328,8 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.Retry(options => { var alias = options; alias.OnRetryAsync = static _ => ValueTask.CompletedTask; }).Execute(_ => 1);",
             "_ = Shield.Retry(options => { options.MaxRetries = 0; options.OnRetryAsync = static _ => ValueTask.CompletedTask; options.MaxRetries = 1; }).Execute(_ => 1);",
             "_ = Shield.Retry(options => { options.MaxRetries = 0; if (DateTime.UtcNow.Ticks > 0) { options.MaxRetries = 1; } options.OnRetryAsync = static _ => ValueTask.CompletedTask; }).Execute(_ => 1);",
+            "_ = Shield.Retry(options => { options.MaxRetries = 1; options.OnRetryAsync = static _ => ValueTask.CompletedTask; if (DateTime.UtcNow.Ticks > 0) return; options.MaxRetries = 0; }).Execute(_ => 1);",
+            "_ = ChaosShield.Behavior(options => { options.Enabled = true; options.Behavior = static _ => ValueTask.CompletedTask; if (DateTime.UtcNow.Ticks > 0) return; options.Enabled = false; }).Execute(_ => 1);",
         };
 
         await AssertEachAsync(cases, "KEV012", "KEV004", "KEV011");
@@ -1433,6 +1435,38 @@ public class PipelineHazardAnalyzerTests
                     public static Shield Custom(this Shield shield, Action<CustomOptions> configure)
                     {
                         configure(new CustomOptions());
+                        return shield;
+                    }
+                }
+
+                public sealed class TestSubject
+                {
+                    public int Run() => Shield.Empty
+                        .Custom(options => options.OnRetryAsync = static _ => ValueTask.CompletedTask)
+                        .Execute(_ => 1);
+                }
+            }
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV012_Ignores_Lookalike_Options_In_The_Kevlar_Namespace()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            namespace Kevlar
+            {
+                public sealed class RetryOptions
+                {
+                    public Func<int, ValueTask>? OnRetryAsync { get; set; }
+                }
+
+                public static class LookalikeShieldExtensions
+                {
+                    public static Shield Custom(this Shield shield, Action<RetryOptions> configure)
+                    {
+                        configure(new RetryOptions());
                         return shield;
                     }
                 }
