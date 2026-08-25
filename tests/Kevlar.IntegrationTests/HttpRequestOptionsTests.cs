@@ -175,6 +175,36 @@ public class HttpRequestOptionsTests
     }
 
     [Test]
+    public async Task Partition_Selector_Awaits_Asynchronous_Factory()
+    {
+        var factoryStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseFactory = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var partitions = PartitionedShield<string, HttpResponseMessage>.CreateAsync(async _ =>
+        {
+            factoryStarted.SetResult();
+            await releaseFactory.Task;
+            return Shield<HttpResponseMessage>.Empty;
+        });
+        using var services = new ServiceCollection()
+            .AddHttpClient("async-partitioned")
+            .AddShield(partitions, static _ => "tenant")
+            .ConfigurePrimaryHttpMessageHandler(() => new StubHandler((_, _) =>
+                Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK))))
+            .Services
+            .BuildServiceProvider();
+        using var client = services.GetRequiredService<IHttpClientFactory>()
+            .CreateClient("async-partitioned");
+
+        var send = client.GetAsync("https://example.test/");
+        await factoryStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        await Assert.That(send.IsCompleted).IsFalse();
+        releaseFactory.SetResult();
+        using var response = await send.WaitAsync(TimeSpan.FromSeconds(5));
+
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+    }
+
+    [Test]
     public async Task Request_Cancellation_Option_Links_With_Handler_Token()
     {
         using var cancellation = new CancellationTokenSource();

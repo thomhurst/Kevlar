@@ -9,7 +9,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
 {
     private readonly HttpShieldPipeline _pipeline;
     private readonly ReloadingHttpShieldPipeline? _reloadingPipeline;
-    private readonly Func<HttpRequestMessage, Shield<HttpResponseMessage>>? _shieldSelector;
+    private readonly Func<HttpRequestMessage, ValueTask<Shield<HttpResponseMessage>>>? _shieldSelector;
 
     /// <summary>Creates the handler with safe no-buffer replay defaults.</summary>
     public ShieldDelegatingHandler(Shield<HttpResponseMessage> shield)
@@ -35,6 +35,13 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
     /// <summary>Creates the handler with per-request shield selection and explicit replay options.</summary>
     public ShieldDelegatingHandler(
         Func<HttpRequestMessage, Shield<HttpResponseMessage>> shieldSelector,
+        ShieldHttpHandlerOptions options)
+        : this(WrapSelector(shieldSelector), options)
+    {
+    }
+
+    internal ShieldDelegatingHandler(
+        Func<HttpRequestMessage, ValueTask<Shield<HttpResponseMessage>>> shieldSelector,
         ShieldHttpHandlerOptions options)
     {
         _shieldSelector = shieldSelector
@@ -69,7 +76,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         var selectedShield = requestOptions?.Shield;
         if (selectedShield is null && _shieldSelector is not null)
         {
-            selectedShield = _shieldSelector(request)
+            selectedShield = await _shieldSelector(request).ConfigureAwait(false)
                 ?? throw new InvalidOperationException("The HTTP shield selector returned null.");
             if (requestOptions is null)
             {
@@ -153,6 +160,17 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         }
 
         return CancellationTokenSource.CreateLinkedTokenSource(handlerToken, requestToken);
+    }
+
+    private static Func<HttpRequestMessage, ValueTask<Shield<HttpResponseMessage>>> WrapSelector(
+        Func<HttpRequestMessage, Shield<HttpResponseMessage>> shieldSelector)
+    {
+        if (shieldSelector is null)
+        {
+            throw new ArgumentNullException(nameof(shieldSelector));
+        }
+
+        return request => new ValueTask<Shield<HttpResponseMessage>>(shieldSelector(request));
     }
 
     private Task<HttpResponseMessage> BaseSendAsync(

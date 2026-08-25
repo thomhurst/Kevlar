@@ -106,7 +106,9 @@ public static class ShieldHttpClientBuilderExtensions
         }
 
         return builder.AddHttpMessageHandler(() =>
-            new ShieldDelegatingHandler(request => partitions.GetShield(keySelector(request))));
+            new ShieldDelegatingHandler(
+                request => partitions.GetShieldAsync(keySelector(request)),
+                new ShieldHttpHandlerOptions()));
     }
 
     /// <summary>Sends this client's requests through service-provider-created shield and handler options.</summary>
