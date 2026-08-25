@@ -6,7 +6,9 @@ items:
   parent: Kevlar.Testing
   children:
   - Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot(Kevlar.Shield)
+  - Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot``1(Kevlar.PartitionedShield{``0})
   - Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot``1(Kevlar.Shield{``0})
+  - Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot``2(Kevlar.PartitionedShield{``0,``1})
   langs:
   - csharp
   - vb
@@ -89,6 +91,69 @@ items:
   nameWithType.vb: ShieldStateSnapshotExtensions.GetStateSnapshot(Of TResult)(Shield(Of TResult))
   fullName.vb: Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot(Of TResult)(Kevlar.Shield(Of TResult))
   name.vb: GetStateSnapshot(Of TResult)(Shield(Of TResult))
+- uid: Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot``1(Kevlar.PartitionedShield{``0})
+  commentId: M:Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot``1(Kevlar.PartitionedShield{`0})
+  id: GetStateSnapshot``1(Kevlar.PartitionedShield{``0})
+  isExtensionMethod: true
+  parent: Kevlar.Testing.ShieldStateSnapshotExtensions
+  langs:
+  - csharp
+  - vb
+  name: GetStateSnapshot<TKey>(PartitionedShield<TKey>)
+  nameWithType: ShieldStateSnapshotExtensions.GetStateSnapshot<TKey>(PartitionedShield<TKey>)
+  fullName: Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot<TKey>(Kevlar.PartitionedShield<TKey>)
+  type: Method
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Captures the current retention and eviction state of a partitioned provider.
+  example: []
+  syntax:
+    content: 'public static PartitionedShieldStateSnapshot GetStateSnapshot<TKey>(this PartitionedShield<TKey> shield) where TKey : notnull'
+    parameters:
+    - id: shield
+      type: Kevlar.PartitionedShield{{TKey}}
+    typeParameters:
+    - id: TKey
+    return:
+      type: Kevlar.Testing.PartitionedShieldStateSnapshot
+    content.vb: Public Shared Function GetStateSnapshot(Of TKey)(shield As PartitionedShield(Of TKey)) As PartitionedShieldStateSnapshot
+  overload: Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot*
+  nameWithType.vb: ShieldStateSnapshotExtensions.GetStateSnapshot(Of TKey)(PartitionedShield(Of TKey))
+  fullName.vb: Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot(Of TKey)(Kevlar.PartitionedShield(Of TKey))
+  name.vb: GetStateSnapshot(Of TKey)(PartitionedShield(Of TKey))
+- uid: Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot``2(Kevlar.PartitionedShield{``0,``1})
+  commentId: M:Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot``2(Kevlar.PartitionedShield{``0,``1})
+  id: GetStateSnapshot``2(Kevlar.PartitionedShield{``0,``1})
+  isExtensionMethod: true
+  parent: Kevlar.Testing.ShieldStateSnapshotExtensions
+  langs:
+  - csharp
+  - vb
+  name: GetStateSnapshot<TKey, TResult>(PartitionedShield<TKey, TResult>)
+  nameWithType: ShieldStateSnapshotExtensions.GetStateSnapshot<TKey, TResult>(PartitionedShield<TKey, TResult>)
+  fullName: Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot<TKey, TResult>(Kevlar.PartitionedShield<TKey, TResult>)
+  type: Method
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Captures the current retention and eviction state of a typed partitioned provider.
+  example: []
+  syntax:
+    content: 'public static PartitionedShieldStateSnapshot GetStateSnapshot<TKey, TResult>(this PartitionedShield<TKey, TResult> shield) where TKey : notnull'
+    parameters:
+    - id: shield
+      type: Kevlar.PartitionedShield{{TKey},{TResult}}
+    typeParameters:
+    - id: TKey
+    - id: TResult
+    return:
+      type: Kevlar.Testing.PartitionedShieldStateSnapshot
+    content.vb: Public Shared Function GetStateSnapshot(Of TKey, TResult)(shield As PartitionedShield(Of TKey, TResult)) As PartitionedShieldStateSnapshot
+  overload: Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot*
+  nameWithType.vb: ShieldStateSnapshotExtensions.GetStateSnapshot(Of TKey, TResult)(PartitionedShield(Of TKey, TResult))
+  fullName.vb: Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot(Of TKey, TResult)(Kevlar.PartitionedShield(Of TKey, TResult))
+  name.vb: GetStateSnapshot(Of TKey, TResult)(PartitionedShield(Of TKey, TResult))
 references:
 - uid: Kevlar.Testing
   commentId: N:Kevlar.Testing
@@ -439,6 +504,142 @@ references:
     href: Kevlar.Shield-1.html
   - name: (
   - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.PartitionedShield{{TKey}}
+  commentId: T:Kevlar.PartitionedShield{`0}
+  parent: Kevlar
+  definition: Kevlar.PartitionedShield`1
+  href: Kevlar.PartitionedShield-1.html
+  name: PartitionedShield<TKey>
+  nameWithType: PartitionedShield<TKey>
+  fullName: Kevlar.PartitionedShield<TKey>
+  nameWithType.vb: PartitionedShield(Of TKey)
+  fullName.vb: Kevlar.PartitionedShield(Of TKey)
+  name.vb: PartitionedShield(Of TKey)
+  spec.csharp:
+  - uid: Kevlar.PartitionedShield`1
+    name: PartitionedShield
+    isExternal: true
+    href: Kevlar.PartitionedShield-1.html
+  - name: <
+  - name: TKey
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.PartitionedShield`1
+    name: PartitionedShield
+    isExternal: true
+    href: Kevlar.PartitionedShield-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TKey
+  - name: )
+- uid: Kevlar.Testing.PartitionedShieldStateSnapshot
+  commentId: T:Kevlar.Testing.PartitionedShieldStateSnapshot
+  parent: Kevlar.Testing
+  isExternal: true
+  href: Kevlar.Testing.PartitionedShieldStateSnapshot.html
+  name: PartitionedShieldStateSnapshot
+  nameWithType: PartitionedShieldStateSnapshot
+  fullName: Kevlar.Testing.PartitionedShieldStateSnapshot
+- uid: Kevlar.PartitionedShield`1
+  commentId: T:Kevlar.PartitionedShield`1
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.PartitionedShield-1.html
+  name: PartitionedShield<TKey>
+  nameWithType: PartitionedShield<TKey>
+  fullName: Kevlar.PartitionedShield<TKey>
+  nameWithType.vb: PartitionedShield(Of TKey)
+  fullName.vb: Kevlar.PartitionedShield(Of TKey)
+  name.vb: PartitionedShield(Of TKey)
+  spec.csharp:
+  - uid: Kevlar.PartitionedShield`1
+    name: PartitionedShield
+    isExternal: true
+    href: Kevlar.PartitionedShield-1.html
+  - name: <
+  - name: TKey
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.PartitionedShield`1
+    name: PartitionedShield
+    isExternal: true
+    href: Kevlar.PartitionedShield-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TKey
+  - name: )
+- uid: Kevlar.PartitionedShield{{TKey},{TResult}}
+  commentId: T:Kevlar.PartitionedShield{``0,``1}
+  parent: Kevlar
+  definition: Kevlar.PartitionedShield`2
+  href: Kevlar.PartitionedShield-2.html
+  name: PartitionedShield<TKey, TResult>
+  nameWithType: PartitionedShield<TKey, TResult>
+  fullName: Kevlar.PartitionedShield<TKey, TResult>
+  nameWithType.vb: PartitionedShield(Of TKey, TResult)
+  fullName.vb: Kevlar.PartitionedShield(Of TKey, TResult)
+  name.vb: PartitionedShield(Of TKey, TResult)
+  spec.csharp:
+  - uid: Kevlar.PartitionedShield`2
+    name: PartitionedShield
+    isExternal: true
+    href: Kevlar.PartitionedShield-2.html
+  - name: <
+  - name: TKey
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.PartitionedShield`2
+    name: PartitionedShield
+    isExternal: true
+    href: Kevlar.PartitionedShield-2.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TKey
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.PartitionedShield`2
+  commentId: T:Kevlar.PartitionedShield`2
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.PartitionedShield-2.html
+  name: PartitionedShield<TKey, TResult>
+  nameWithType: PartitionedShield<TKey, TResult>
+  fullName: Kevlar.PartitionedShield<TKey, TResult>
+  nameWithType.vb: PartitionedShield(Of TKey, TResult)
+  fullName.vb: Kevlar.PartitionedShield(Of TKey, TResult)
+  name.vb: PartitionedShield(Of TKey, TResult)
+  spec.csharp:
+  - uid: Kevlar.PartitionedShield`2
+    name: PartitionedShield
+    isExternal: true
+    href: Kevlar.PartitionedShield-2.html
+  - name: <
+  - name: TKey
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.PartitionedShield`2
+    name: PartitionedShield
+    isExternal: true
+    href: Kevlar.PartitionedShield-2.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TKey
+  - name: ','
   - name: " "
   - name: TResult
   - name: )

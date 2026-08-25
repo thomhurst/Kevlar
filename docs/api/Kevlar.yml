@@ -43,6 +43,9 @@ items:
   - Kevlar.KevlarProxyException
   - Kevlar.Outcome
   - Kevlar.Outcome`1
+  - Kevlar.PartitionCreatedNotification
+  - Kevlar.PartitionEvictionNotification
+  - Kevlar.PartitionEvictionReason
   - Kevlar.PartitionedShieldOptions
   - Kevlar.PartitionedShield`1
   - Kevlar.PartitionedShield`2
@@ -288,8 +291,16 @@ references:
   - name: " "
   - name: T
   - name: )
+- uid: Kevlar.PartitionCreatedNotification
+  commentId: T:Kevlar.PartitionCreatedNotification
+  isExternal: true
+  href: Kevlar.PartitionCreatedNotification.html
+  name: PartitionCreatedNotification
+  nameWithType: PartitionCreatedNotification
+  fullName: Kevlar.PartitionCreatedNotification
 - uid: Kevlar.PartitionedShield`1
   commentId: T:Kevlar.PartitionedShield`1
+  parent: Kevlar
   isExternal: true
   href: Kevlar.PartitionedShield-1.html
   name: PartitionedShield<TKey>
@@ -318,6 +329,7 @@ references:
   - name: )
 - uid: Kevlar.PartitionedShield`2
   commentId: T:Kevlar.PartitionedShield`2
+  parent: Kevlar
   isExternal: true
   href: Kevlar.PartitionedShield-2.html
   name: PartitionedShield<TKey, TResult>
@@ -358,6 +370,21 @@ references:
   name: PartitionedShieldOptions
   nameWithType: PartitionedShieldOptions
   fullName: Kevlar.PartitionedShieldOptions
+- uid: Kevlar.PartitionEvictionNotification
+  commentId: T:Kevlar.PartitionEvictionNotification
+  isExternal: true
+  href: Kevlar.PartitionEvictionNotification.html
+  name: PartitionEvictionNotification
+  nameWithType: PartitionEvictionNotification
+  fullName: Kevlar.PartitionEvictionNotification
+- uid: Kevlar.PartitionEvictionReason
+  commentId: T:Kevlar.PartitionEvictionReason
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.PartitionEvictionReason.html
+  name: PartitionEvictionReason
+  nameWithType: PartitionEvictionReason
+  fullName: Kevlar.PartitionEvictionReason
 - uid: Kevlar.Shield
   commentId: T:Kevlar.Shield
   parent: Kevlar

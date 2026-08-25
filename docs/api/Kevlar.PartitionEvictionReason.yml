@@ -1,0 +1,101 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.PartitionEvictionReason
+  commentId: T:Kevlar.PartitionEvictionReason
+  id: PartitionEvictionReason
+  parent: Kevlar
+  children:
+  - Kevlar.PartitionEvictionReason.Capacity
+  - Kevlar.PartitionEvictionReason.Cleared
+  - Kevlar.PartitionEvictionReason.Idle
+  langs:
+  - csharp
+  - vb
+  name: PartitionEvictionReason
+  nameWithType: PartitionEvictionReason
+  fullName: Kevlar.PartitionEvictionReason
+  type: Enum
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Identifies why a partition was removed from a provider.
+  example: []
+  syntax:
+    content: public enum PartitionEvictionReason
+    content.vb: Public Enum PartitionEvictionReason
+- uid: Kevlar.PartitionEvictionReason.Capacity
+  commentId: F:Kevlar.PartitionEvictionReason.Capacity
+  id: Capacity
+  parent: Kevlar.PartitionEvictionReason
+  langs:
+  - csharp
+  - vb
+  name: Capacity
+  nameWithType: PartitionEvictionReason.Capacity
+  fullName: Kevlar.PartitionEvictionReason.Capacity
+  type: Field
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The least-recently-used partition was removed to enforce the capacity bound.
+  example: []
+  syntax:
+    content: Capacity = 0
+    return:
+      type: Kevlar.PartitionEvictionReason
+- uid: Kevlar.PartitionEvictionReason.Idle
+  commentId: F:Kevlar.PartitionEvictionReason.Idle
+  id: Idle
+  parent: Kevlar.PartitionEvictionReason
+  langs:
+  - csharp
+  - vb
+  name: Idle
+  nameWithType: PartitionEvictionReason.Idle
+  fullName: Kevlar.PartitionEvictionReason.Idle
+  type: Field
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The partition exceeded its configured idle duration.
+  example: []
+  syntax:
+    content: Idle = 1
+    return:
+      type: Kevlar.PartitionEvictionReason
+- uid: Kevlar.PartitionEvictionReason.Cleared
+  commentId: F:Kevlar.PartitionEvictionReason.Cleared
+  id: Cleared
+  parent: Kevlar.PartitionEvictionReason
+  langs:
+  - csharp
+  - vb
+  name: Cleared
+  nameWithType: PartitionEvictionReason.Cleared
+  fullName: Kevlar.PartitionEvictionReason.Cleared
+  type: Field
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The partition was explicitly removed or cleared.
+  example: []
+  syntax:
+    content: Cleared = 2
+    return:
+      type: Kevlar.PartitionEvictionReason
+references:
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: Kevlar.PartitionEvictionReason
+  commentId: T:Kevlar.PartitionEvictionReason
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.PartitionEvictionReason.html
+  name: PartitionEvictionReason
+  nameWithType: PartitionEvictionReason
+  fullName: Kevlar.PartitionEvictionReason

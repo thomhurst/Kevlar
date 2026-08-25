@@ -1,0 +1,363 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.PartitionEvictionNotification
+  commentId: T:Kevlar.PartitionEvictionNotification
+  id: PartitionEvictionNotification
+  parent: Kevlar
+  children:
+  - Kevlar.PartitionEvictionNotification.Key
+  - Kevlar.PartitionEvictionNotification.Reason
+  - Kevlar.PartitionEvictionNotification.Shield
+  langs:
+  - csharp
+  - vb
+  name: PartitionEvictionNotification
+  nameWithType: PartitionEvictionNotification
+  fullName: Kevlar.PartitionEvictionNotification
+  type: Struct
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Describes a partition removed from a provider.
+  example: []
+  syntax:
+    content: public readonly struct PartitionEvictionNotification
+    content.vb: Public Structure PartitionEvictionNotification
+  inheritedMembers:
+  - System.ValueType.Equals(System.Object)
+  - System.ValueType.GetHashCode
+  - System.ValueType.ToString
+  - System.Object.GetType
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+- uid: Kevlar.PartitionEvictionNotification.Key
+  commentId: P:Kevlar.PartitionEvictionNotification.Key
+  id: Key
+  parent: Kevlar.PartitionEvictionNotification
+  langs:
+  - csharp
+  - vb
+  name: Key
+  nameWithType: PartitionEvictionNotification.Key
+  fullName: Kevlar.PartitionEvictionNotification.Key
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Gets the partition key.
+  example: []
+  syntax:
+    content: public object Key { get; }
+    parameters: []
+    return:
+      type: System.Object
+    content.vb: Public ReadOnly Property Key As Object
+  overload: Kevlar.PartitionEvictionNotification.Key*
+- uid: Kevlar.PartitionEvictionNotification.Shield
+  commentId: P:Kevlar.PartitionEvictionNotification.Shield
+  id: Shield
+  parent: Kevlar.PartitionEvictionNotification
+  langs:
+  - csharp
+  - vb
+  name: Shield
+  nameWithType: PartitionEvictionNotification.Shield
+  fullName: Kevlar.PartitionEvictionNotification.Shield
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Gets the removed <xref href="Kevlar.Shield" data-throw-if-not-resolved="false"></xref> or result-aware shield.
+  example: []
+  syntax:
+    content: public object Shield { get; }
+    parameters: []
+    return:
+      type: System.Object
+    content.vb: Public ReadOnly Property Shield As Object
+  overload: Kevlar.PartitionEvictionNotification.Shield*
+- uid: Kevlar.PartitionEvictionNotification.Reason
+  commentId: P:Kevlar.PartitionEvictionNotification.Reason
+  id: Reason
+  parent: Kevlar.PartitionEvictionNotification
+  langs:
+  - csharp
+  - vb
+  name: Reason
+  nameWithType: PartitionEvictionNotification.Reason
+  fullName: Kevlar.PartitionEvictionNotification.Reason
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Gets why the partition was removed.
+  example: []
+  syntax:
+    content: public PartitionEvictionReason Reason { get; }
+    parameters: []
+    return:
+      type: Kevlar.PartitionEvictionReason
+    content.vb: Public ReadOnly Property Reason As PartitionEvictionReason
+  overload: Kevlar.PartitionEvictionNotification.Reason*
+references:
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: System.ValueType.Equals(System.Object)
+  commentId: M:System.ValueType.Equals(System.Object)
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  name: Equals(object)
+  nameWithType: ValueType.Equals(object)
+  fullName: System.ValueType.Equals(object)
+  nameWithType.vb: ValueType.Equals(Object)
+  fullName.vb: System.ValueType.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.ValueType.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.ValueType.GetHashCode
+  commentId: M:System.ValueType.GetHashCode
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  name: GetHashCode()
+  nameWithType: ValueType.GetHashCode()
+  fullName: System.ValueType.GetHashCode()
+  spec.csharp:
+  - uid: System.ValueType.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  - name: (
+  - name: )
+- uid: System.ValueType.ToString
+  commentId: M:System.ValueType.ToString
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  name: ToString()
+  nameWithType: ValueType.ToString()
+  fullName: System.ValueType.ToString()
+  spec.csharp:
+  - uid: System.ValueType.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  - name: (
+  - name: )
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.ValueType
+  commentId: T:System.ValueType
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype
+  name: ValueType
+  nameWithType: ValueType
+  fullName: System.ValueType
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.PartitionEvictionNotification.Key*
+  commentId: Overload:Kevlar.PartitionEvictionNotification.Key
+  isExternal: true
+  href: Kevlar.PartitionEvictionNotification.html#Kevlar_PartitionEvictionNotification_Key
+  name: Key
+  nameWithType: PartitionEvictionNotification.Key
+  fullName: Kevlar.PartitionEvictionNotification.Key
+- uid: Kevlar.Shield
+  commentId: T:Kevlar.Shield
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Shield.html
+  name: Shield
+  nameWithType: Shield
+  fullName: Kevlar.Shield
+- uid: Kevlar.PartitionEvictionNotification.Shield*
+  commentId: Overload:Kevlar.PartitionEvictionNotification.Shield
+  isExternal: true
+  href: Kevlar.PartitionEvictionNotification.html#Kevlar_PartitionEvictionNotification_Shield
+  name: Shield
+  nameWithType: PartitionEvictionNotification.Shield
+  fullName: Kevlar.PartitionEvictionNotification.Shield
+- uid: Kevlar.PartitionEvictionNotification.Reason*
+  commentId: Overload:Kevlar.PartitionEvictionNotification.Reason
+  isExternal: true
+  href: Kevlar.PartitionEvictionNotification.html#Kevlar_PartitionEvictionNotification_Reason
+  name: Reason
+  nameWithType: PartitionEvictionNotification.Reason
+  fullName: Kevlar.PartitionEvictionNotification.Reason
+- uid: Kevlar.PartitionEvictionReason
+  commentId: T:Kevlar.PartitionEvictionReason
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.PartitionEvictionReason.html
+  name: PartitionEvictionReason
+  nameWithType: PartitionEvictionReason
+  fullName: Kevlar.PartitionEvictionReason

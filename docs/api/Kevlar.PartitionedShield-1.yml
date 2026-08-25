@@ -8,13 +8,21 @@ items:
   - Kevlar.PartitionedShield`1.#ctor(System.Func{`0,Kevlar.Shield},Kevlar.PartitionedShieldOptions,System.Collections.Generic.IEqualityComparer{`0})
   - Kevlar.PartitionedShield`1.CapacityEvictionCount
   - Kevlar.PartitionedShield`1.Clear
+  - Kevlar.PartitionedShield`1.ClearAsync
+  - Kevlar.PartitionedShield`1.ClearedEvictionCount
   - Kevlar.PartitionedShield`1.Count
+  - Kevlar.PartitionedShield`1.CreateAsync(System.Func{`0,System.Threading.Tasks.ValueTask{Kevlar.Shield}},Kevlar.PartitionedShieldOptions,System.Collections.Generic.IEqualityComparer{`0})
   - Kevlar.PartitionedShield`1.CreatedCount
+  - Kevlar.PartitionedShield`1.EvictionCount
   - Kevlar.PartitionedShield`1.ExpirationEvictionCount
   - Kevlar.PartitionedShield`1.GetShield(`0)
+  - Kevlar.PartitionedShield`1.GetShieldAsync(`0)
   - Kevlar.PartitionedShield`1.PruneExpired
+  - Kevlar.PartitionedShield`1.PruneExpiredAsync
   - Kevlar.PartitionedShield`1.Remove(`0)
   - Kevlar.PartitionedShield`1.TryGetShield(`0,Kevlar.Shield@)
+  - Kevlar.PartitionedShield`1.TryRemove(`0)
+  - Kevlar.PartitionedShield`1.TryRemoveAsync(`0)
   langs:
   - csharp
   - vb
@@ -82,6 +90,38 @@ items:
   nameWithType.vb: PartitionedShield(Of TKey).New(Func(Of TKey, Shield), PartitionedShieldOptions, IEqualityComparer(Of TKey))
   fullName.vb: Kevlar.PartitionedShield(Of TKey).New(System.Func(Of TKey, Kevlar.Shield), Kevlar.PartitionedShieldOptions, System.Collections.Generic.IEqualityComparer(Of TKey))
   name.vb: New(Func(Of TKey, Shield), PartitionedShieldOptions, IEqualityComparer(Of TKey))
+- uid: Kevlar.PartitionedShield`1.CreateAsync(System.Func{`0,System.Threading.Tasks.ValueTask{Kevlar.Shield}},Kevlar.PartitionedShieldOptions,System.Collections.Generic.IEqualityComparer{`0})
+  commentId: M:Kevlar.PartitionedShield`1.CreateAsync(System.Func{`0,System.Threading.Tasks.ValueTask{Kevlar.Shield}},Kevlar.PartitionedShieldOptions,System.Collections.Generic.IEqualityComparer{`0})
+  id: CreateAsync(System.Func{`0,System.Threading.Tasks.ValueTask{Kevlar.Shield}},Kevlar.PartitionedShieldOptions,System.Collections.Generic.IEqualityComparer{`0})
+  parent: Kevlar.PartitionedShield`1
+  langs:
+  - csharp
+  - vb
+  name: CreateAsync(Func<TKey, ValueTask<Shield>>, PartitionedShieldOptions?, IEqualityComparer<TKey>?)
+  nameWithType: PartitionedShield<TKey>.CreateAsync(Func<TKey, ValueTask<Shield>>, PartitionedShieldOptions?, IEqualityComparer<TKey>?)
+  fullName: Kevlar.PartitionedShield<TKey>.CreateAsync(System.Func<TKey, System.Threading.Tasks.ValueTask<Kevlar.Shield>>, Kevlar.PartitionedShieldOptions?, System.Collections.Generic.IEqualityComparer<TKey>?)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Creates a bounded partition provider with an asynchronous factory.
+  example: []
+  syntax:
+    content: public static PartitionedShield<TKey> CreateAsync(Func<TKey, ValueTask<Shield>> factory, PartitionedShieldOptions? options = null, IEqualityComparer<TKey>? comparer = null)
+    parameters:
+    - id: factory
+      type: System.Func{{TKey},System.Threading.Tasks.ValueTask{Kevlar.Shield}}
+    - id: options
+      type: Kevlar.PartitionedShieldOptions
+    - id: comparer
+      type: System.Collections.Generic.IEqualityComparer{{TKey}}
+    return:
+      type: Kevlar.PartitionedShield`1
+    content.vb: Public Shared Function CreateAsync(factory As Func(Of TKey, ValueTask(Of Shield)), options As PartitionedShieldOptions = Nothing, comparer As IEqualityComparer(Of TKey) = Nothing) As PartitionedShield(Of TKey)
+  overload: Kevlar.PartitionedShield`1.CreateAsync*
+  nameWithType.vb: PartitionedShield(Of TKey).CreateAsync(Func(Of TKey, ValueTask(Of Shield)), PartitionedShieldOptions, IEqualityComparer(Of TKey))
+  fullName.vb: Kevlar.PartitionedShield(Of TKey).CreateAsync(System.Func(Of TKey, System.Threading.Tasks.ValueTask(Of Kevlar.Shield)), Kevlar.PartitionedShieldOptions, System.Collections.Generic.IEqualityComparer(Of TKey))
+  name.vb: CreateAsync(Func(Of TKey, ValueTask(Of Shield)), PartitionedShieldOptions, IEqualityComparer(Of TKey))
 - uid: Kevlar.PartitionedShield`1.GetShield(`0)
   commentId: M:Kevlar.PartitionedShield`1.GetShield(`0)
   id: GetShield(`0)
@@ -109,6 +149,33 @@ items:
   overload: Kevlar.PartitionedShield`1.GetShield*
   nameWithType.vb: PartitionedShield(Of TKey).GetShield(TKey)
   fullName.vb: Kevlar.PartitionedShield(Of TKey).GetShield(TKey)
+- uid: Kevlar.PartitionedShield`1.GetShieldAsync(`0)
+  commentId: M:Kevlar.PartitionedShield`1.GetShieldAsync(`0)
+  id: GetShieldAsync(`0)
+  parent: Kevlar.PartitionedShield`1
+  langs:
+  - csharp
+  - vb
+  name: GetShieldAsync(TKey)
+  nameWithType: PartitionedShield<TKey>.GetShieldAsync(TKey)
+  fullName: Kevlar.PartitionedShield<TKey>.GetShieldAsync(TKey)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Asynchronously gets or creates the shield for <code class="paramref">key</code>.
+  example: []
+  syntax:
+    content: public ValueTask<Shield> GetShieldAsync(TKey key)
+    parameters:
+    - id: key
+      type: '{TKey}'
+    return:
+      type: System.Threading.Tasks.ValueTask{Kevlar.Shield}
+    content.vb: Public Function GetShieldAsync(key As TKey) As ValueTask(Of Shield)
+  overload: Kevlar.PartitionedShield`1.GetShieldAsync*
+  nameWithType.vb: PartitionedShield(Of TKey).GetShieldAsync(TKey)
+  fullName.vb: Kevlar.PartitionedShield(Of TKey).GetShieldAsync(TKey)
 - uid: Kevlar.PartitionedShield`1.TryGetShield(`0,Kevlar.Shield@)
   commentId: M:Kevlar.PartitionedShield`1.TryGetShield(`0,Kevlar.Shield@)
   id: TryGetShield(`0,Kevlar.Shield@)
@@ -172,6 +239,60 @@ items:
   overload: Kevlar.PartitionedShield`1.Remove*
   nameWithType.vb: PartitionedShield(Of TKey).Remove(TKey)
   fullName.vb: Kevlar.PartitionedShield(Of TKey).Remove(TKey)
+- uid: Kevlar.PartitionedShield`1.TryRemove(`0)
+  commentId: M:Kevlar.PartitionedShield`1.TryRemove(`0)
+  id: TryRemove(`0)
+  parent: Kevlar.PartitionedShield`1
+  langs:
+  - csharp
+  - vb
+  name: TryRemove(TKey)
+  nameWithType: PartitionedShield<TKey>.TryRemove(TKey)
+  fullName: Kevlar.PartitionedShield<TKey>.TryRemove(TKey)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Removes a retained partition. Existing users of its shield are unaffected.
+  example: []
+  syntax:
+    content: public bool TryRemove(TKey key)
+    parameters:
+    - id: key
+      type: '{TKey}'
+    return:
+      type: System.Boolean
+    content.vb: Public Function TryRemove(key As TKey) As Boolean
+  overload: Kevlar.PartitionedShield`1.TryRemove*
+  nameWithType.vb: PartitionedShield(Of TKey).TryRemove(TKey)
+  fullName.vb: Kevlar.PartitionedShield(Of TKey).TryRemove(TKey)
+- uid: Kevlar.PartitionedShield`1.TryRemoveAsync(`0)
+  commentId: M:Kevlar.PartitionedShield`1.TryRemoveAsync(`0)
+  id: TryRemoveAsync(`0)
+  parent: Kevlar.PartitionedShield`1
+  langs:
+  - csharp
+  - vb
+  name: TryRemoveAsync(TKey)
+  nameWithType: PartitionedShield<TKey>.TryRemoveAsync(TKey)
+  fullName: Kevlar.PartitionedShield<TKey>.TryRemoveAsync(TKey)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Asynchronously removes a retained partition.
+  example: []
+  syntax:
+    content: public ValueTask<bool> TryRemoveAsync(TKey key)
+    parameters:
+    - id: key
+      type: '{TKey}'
+    return:
+      type: System.Threading.Tasks.ValueTask{System.Boolean}
+    content.vb: Public Function TryRemoveAsync(key As TKey) As ValueTask(Of Boolean)
+  overload: Kevlar.PartitionedShield`1.TryRemoveAsync*
+  nameWithType.vb: PartitionedShield(Of TKey).TryRemoveAsync(TKey)
+  fullName.vb: Kevlar.PartitionedShield(Of TKey).TryRemoveAsync(TKey)
 - uid: Kevlar.PartitionedShield`1.Clear
   commentId: M:Kevlar.PartitionedShield`1.Clear
   id: Clear
@@ -194,6 +315,30 @@ items:
   overload: Kevlar.PartitionedShield`1.Clear*
   nameWithType.vb: PartitionedShield(Of TKey).Clear()
   fullName.vb: Kevlar.PartitionedShield(Of TKey).Clear()
+- uid: Kevlar.PartitionedShield`1.ClearAsync
+  commentId: M:Kevlar.PartitionedShield`1.ClearAsync
+  id: ClearAsync
+  parent: Kevlar.PartitionedShield`1
+  langs:
+  - csharp
+  - vb
+  name: ClearAsync()
+  nameWithType: PartitionedShield<TKey>.ClearAsync()
+  fullName: Kevlar.PartitionedShield<TKey>.ClearAsync()
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Asynchronously removes every retained partition.
+  example: []
+  syntax:
+    content: public ValueTask ClearAsync()
+    return:
+      type: System.Threading.Tasks.ValueTask
+    content.vb: Public Function ClearAsync() As ValueTask
+  overload: Kevlar.PartitionedShield`1.ClearAsync*
+  nameWithType.vb: PartitionedShield(Of TKey).ClearAsync()
+  fullName.vb: Kevlar.PartitionedShield(Of TKey).ClearAsync()
 - uid: Kevlar.PartitionedShield`1.PruneExpired
   commentId: M:Kevlar.PartitionedShield`1.PruneExpired
   id: PruneExpired
@@ -219,6 +364,30 @@ items:
   overload: Kevlar.PartitionedShield`1.PruneExpired*
   nameWithType.vb: PartitionedShield(Of TKey).PruneExpired()
   fullName.vb: Kevlar.PartitionedShield(Of TKey).PruneExpired()
+- uid: Kevlar.PartitionedShield`1.PruneExpiredAsync
+  commentId: M:Kevlar.PartitionedShield`1.PruneExpiredAsync
+  id: PruneExpiredAsync
+  parent: Kevlar.PartitionedShield`1
+  langs:
+  - csharp
+  - vb
+  name: PruneExpiredAsync()
+  nameWithType: PartitionedShield<TKey>.PruneExpiredAsync()
+  fullName: Kevlar.PartitionedShield<TKey>.PruneExpiredAsync()
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Asynchronously removes partitions whose idle expiration has elapsed.
+  example: []
+  syntax:
+    content: public ValueTask<int> PruneExpiredAsync()
+    return:
+      type: System.Threading.Tasks.ValueTask{System.Int32}
+    content.vb: Public Function PruneExpiredAsync() As ValueTask(Of Integer)
+  overload: Kevlar.PartitionedShield`1.PruneExpiredAsync*
+  nameWithType.vb: PartitionedShield(Of TKey).PruneExpiredAsync()
+  fullName.vb: Kevlar.PartitionedShield(Of TKey).PruneExpiredAsync()
 - uid: Kevlar.PartitionedShield`1.Count
   commentId: P:Kevlar.PartitionedShield`1.Count
   id: Count
@@ -319,6 +488,56 @@ items:
   overload: Kevlar.PartitionedShield`1.ExpirationEvictionCount*
   nameWithType.vb: PartitionedShield(Of TKey).ExpirationEvictionCount
   fullName.vb: Kevlar.PartitionedShield(Of TKey).ExpirationEvictionCount
+- uid: Kevlar.PartitionedShield`1.ClearedEvictionCount
+  commentId: P:Kevlar.PartitionedShield`1.ClearedEvictionCount
+  id: ClearedEvictionCount
+  parent: Kevlar.PartitionedShield`1
+  langs:
+  - csharp
+  - vb
+  name: ClearedEvictionCount
+  nameWithType: PartitionedShield<TKey>.ClearedEvictionCount
+  fullName: Kevlar.PartitionedShield<TKey>.ClearedEvictionCount
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Gets the total number removed explicitly through remove or clear operations.
+  example: []
+  syntax:
+    content: public long ClearedEvictionCount { get; }
+    parameters: []
+    return:
+      type: System.Int64
+    content.vb: Public ReadOnly Property ClearedEvictionCount As Long
+  overload: Kevlar.PartitionedShield`1.ClearedEvictionCount*
+  nameWithType.vb: PartitionedShield(Of TKey).ClearedEvictionCount
+  fullName.vb: Kevlar.PartitionedShield(Of TKey).ClearedEvictionCount
+- uid: Kevlar.PartitionedShield`1.EvictionCount
+  commentId: P:Kevlar.PartitionedShield`1.EvictionCount
+  id: EvictionCount
+  parent: Kevlar.PartitionedShield`1
+  langs:
+  - csharp
+  - vb
+  name: EvictionCount
+  nameWithType: PartitionedShield<TKey>.EvictionCount
+  fullName: Kevlar.PartitionedShield<TKey>.EvictionCount
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Gets the total number of partitions removed for any reason.
+  example: []
+  syntax:
+    content: public long EvictionCount { get; }
+    parameters: []
+    return:
+      type: System.Int64
+    content.vb: Public ReadOnly Property EvictionCount As Long
+  overload: Kevlar.PartitionedShield`1.EvictionCount*
+  nameWithType.vb: PartitionedShield(Of TKey).EvictionCount
+  fullName.vb: Kevlar.PartitionedShield(Of TKey).EvictionCount
 references:
 - uid: Kevlar.Shield
   commentId: T:Kevlar.Shield
@@ -742,6 +961,99 @@ references:
     name: Generic
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.collections.generic
+- uid: Kevlar.PartitionedShield`1.CreateAsync*
+  commentId: Overload:Kevlar.PartitionedShield`1.CreateAsync
+  isExternal: true
+  href: Kevlar.PartitionedShield-1.html#Kevlar_PartitionedShield_1_CreateAsync_System_Func__0_System_Threading_Tasks_ValueTask_Kevlar_Shield___Kevlar_PartitionedShieldOptions_System_Collections_Generic_IEqualityComparer__0__
+  name: CreateAsync
+  nameWithType: PartitionedShield<TKey>.CreateAsync
+  fullName: Kevlar.PartitionedShield<TKey>.CreateAsync
+  nameWithType.vb: PartitionedShield(Of TKey).CreateAsync
+  fullName.vb: Kevlar.PartitionedShield(Of TKey).CreateAsync
+- uid: System.Func{{TKey},System.Threading.Tasks.ValueTask{Kevlar.Shield}}
+  commentId: T:System.Func{`0,System.Threading.Tasks.ValueTask{Kevlar.Shield}}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<TKey, ValueTask<Shield>>
+  nameWithType: Func<TKey, ValueTask<Shield>>
+  fullName: System.Func<TKey, System.Threading.Tasks.ValueTask<Kevlar.Shield>>
+  nameWithType.vb: Func(Of TKey, ValueTask(Of Shield))
+  fullName.vb: System.Func(Of TKey, System.Threading.Tasks.ValueTask(Of Kevlar.Shield))
+  name.vb: Func(Of TKey, ValueTask(Of Shield))
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - name: TKey
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
+  - name: '>'
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TKey
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
+  - name: )
+  - name: )
+- uid: Kevlar.PartitionedShield`1
+  commentId: T:Kevlar.PartitionedShield`1
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.PartitionedShield-1.html
+  name: PartitionedShield<TKey>
+  nameWithType: PartitionedShield<TKey>
+  fullName: Kevlar.PartitionedShield<TKey>
+  nameWithType.vb: PartitionedShield(Of TKey)
+  fullName.vb: Kevlar.PartitionedShield(Of TKey)
+  name.vb: PartitionedShield(Of TKey)
+  spec.csharp:
+  - uid: Kevlar.PartitionedShield`1
+    name: PartitionedShield
+    isExternal: true
+    href: Kevlar.PartitionedShield-1.html
+  - name: <
+  - name: TKey
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.PartitionedShield`1
+    name: PartitionedShield
+    isExternal: true
+    href: Kevlar.PartitionedShield-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TKey
+  - name: )
 - uid: Kevlar.PartitionedShield`1.GetShield*
   commentId: Overload:Kevlar.PartitionedShield`1.GetShield
   isExternal: true
@@ -761,6 +1073,115 @@ references:
   name: TKey
   nameWithType: TKey
   fullName: TKey
+- uid: Kevlar.PartitionedShield`1.GetShieldAsync*
+  commentId: Overload:Kevlar.PartitionedShield`1.GetShieldAsync
+  isExternal: true
+  href: Kevlar.PartitionedShield-1.html#Kevlar_PartitionedShield_1_GetShieldAsync__0_
+  name: GetShieldAsync
+  nameWithType: PartitionedShield<TKey>.GetShieldAsync
+  fullName: Kevlar.PartitionedShield<TKey>.GetShieldAsync
+  nameWithType.vb: PartitionedShield(Of TKey).GetShieldAsync
+  fullName.vb: Kevlar.PartitionedShield(Of TKey).GetShieldAsync
+- uid: System.Threading.Tasks.ValueTask{Kevlar.Shield}
+  commentId: T:System.Threading.Tasks.ValueTask{Kevlar.Shield}
+  parent: System.Threading.Tasks
+  definition: System.Threading.Tasks.ValueTask`1
+  href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  name: ValueTask<Shield>
+  nameWithType: ValueTask<Shield>
+  fullName: System.Threading.Tasks.ValueTask<Kevlar.Shield>
+  nameWithType.vb: ValueTask(Of Shield)
+  fullName.vb: System.Threading.Tasks.ValueTask(Of Kevlar.Shield)
+  name.vb: ValueTask(Of Shield)
+  spec.csharp:
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
+  - name: '>'
+  spec.vb:
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
+  - name: )
+- uid: System.Threading.Tasks.ValueTask`1
+  commentId: T:System.Threading.Tasks.ValueTask`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  name: ValueTask<TResult>
+  nameWithType: ValueTask<TResult>
+  fullName: System.Threading.Tasks.ValueTask<TResult>
+  nameWithType.vb: ValueTask(Of TResult)
+  fullName.vb: System.Threading.Tasks.ValueTask(Of TResult)
+  name.vb: ValueTask(Of TResult)
+  spec.csharp:
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: System.Threading.Tasks
+  commentId: N:System.Threading.Tasks
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System.Threading.Tasks
+  nameWithType: System.Threading.Tasks
+  fullName: System.Threading.Tasks
+  spec.csharp:
+  - uid: System
+    name: System
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system
+  - name: .
+  - uid: System.Threading
+    name: Threading
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading
+  - name: .
+  - uid: System.Threading.Tasks
+    name: Tasks
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks
+  spec.vb:
+  - uid: System
+    name: System
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system
+  - name: .
+  - uid: System.Threading
+    name: Threading
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading
+  - name: .
+  - uid: System.Threading.Tasks
+    name: Tasks
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks
 - uid: Kevlar.PartitionedShield`1.TryGetShield*
   commentId: Overload:Kevlar.PartitionedShield`1.TryGetShield
   isExternal: true
@@ -790,6 +1211,59 @@ references:
   fullName: Kevlar.PartitionedShield<TKey>.Remove
   nameWithType.vb: PartitionedShield(Of TKey).Remove
   fullName.vb: Kevlar.PartitionedShield(Of TKey).Remove
+- uid: Kevlar.PartitionedShield`1.TryRemove*
+  commentId: Overload:Kevlar.PartitionedShield`1.TryRemove
+  isExternal: true
+  href: Kevlar.PartitionedShield-1.html#Kevlar_PartitionedShield_1_TryRemove__0_
+  name: TryRemove
+  nameWithType: PartitionedShield<TKey>.TryRemove
+  fullName: Kevlar.PartitionedShield<TKey>.TryRemove
+  nameWithType.vb: PartitionedShield(Of TKey).TryRemove
+  fullName.vb: Kevlar.PartitionedShield(Of TKey).TryRemove
+- uid: Kevlar.PartitionedShield`1.TryRemoveAsync*
+  commentId: Overload:Kevlar.PartitionedShield`1.TryRemoveAsync
+  isExternal: true
+  href: Kevlar.PartitionedShield-1.html#Kevlar_PartitionedShield_1_TryRemoveAsync__0_
+  name: TryRemoveAsync
+  nameWithType: PartitionedShield<TKey>.TryRemoveAsync
+  fullName: Kevlar.PartitionedShield<TKey>.TryRemoveAsync
+  nameWithType.vb: PartitionedShield(Of TKey).TryRemoveAsync
+  fullName.vb: Kevlar.PartitionedShield(Of TKey).TryRemoveAsync
+- uid: System.Threading.Tasks.ValueTask{System.Boolean}
+  commentId: T:System.Threading.Tasks.ValueTask{System.Boolean}
+  parent: System.Threading.Tasks
+  definition: System.Threading.Tasks.ValueTask`1
+  href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  name: ValueTask<bool>
+  nameWithType: ValueTask<bool>
+  fullName: System.Threading.Tasks.ValueTask<bool>
+  nameWithType.vb: ValueTask(Of Boolean)
+  fullName.vb: System.Threading.Tasks.ValueTask(Of Boolean)
+  name.vb: ValueTask(Of Boolean)
+  spec.csharp:
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
+  - uid: System.Boolean
+    name: bool
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: '>'
+  spec.vb:
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.Boolean
+    name: Boolean
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: )
 - uid: Kevlar.PartitionedShield`1.Clear*
   commentId: Overload:Kevlar.PartitionedShield`1.Clear
   isExternal: true
@@ -799,6 +1273,23 @@ references:
   fullName: Kevlar.PartitionedShield<TKey>.Clear
   nameWithType.vb: PartitionedShield(Of TKey).Clear
   fullName.vb: Kevlar.PartitionedShield(Of TKey).Clear
+- uid: Kevlar.PartitionedShield`1.ClearAsync*
+  commentId: Overload:Kevlar.PartitionedShield`1.ClearAsync
+  isExternal: true
+  href: Kevlar.PartitionedShield-1.html#Kevlar_PartitionedShield_1_ClearAsync
+  name: ClearAsync
+  nameWithType: PartitionedShield<TKey>.ClearAsync
+  fullName: Kevlar.PartitionedShield<TKey>.ClearAsync
+  nameWithType.vb: PartitionedShield(Of TKey).ClearAsync
+  fullName.vb: Kevlar.PartitionedShield(Of TKey).ClearAsync
+- uid: System.Threading.Tasks.ValueTask
+  commentId: T:System.Threading.Tasks.ValueTask
+  parent: System.Threading.Tasks
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
+  name: ValueTask
+  nameWithType: ValueTask
+  fullName: System.Threading.Tasks.ValueTask
 - uid: Kevlar.PartitionedShield`1.PruneExpired*
   commentId: Overload:Kevlar.PartitionedShield`1.PruneExpired
   isExternal: true
@@ -819,6 +1310,50 @@ references:
   nameWithType.vb: Integer
   fullName.vb: Integer
   name.vb: Integer
+- uid: Kevlar.PartitionedShield`1.PruneExpiredAsync*
+  commentId: Overload:Kevlar.PartitionedShield`1.PruneExpiredAsync
+  isExternal: true
+  href: Kevlar.PartitionedShield-1.html#Kevlar_PartitionedShield_1_PruneExpiredAsync
+  name: PruneExpiredAsync
+  nameWithType: PartitionedShield<TKey>.PruneExpiredAsync
+  fullName: Kevlar.PartitionedShield<TKey>.PruneExpiredAsync
+  nameWithType.vb: PartitionedShield(Of TKey).PruneExpiredAsync
+  fullName.vb: Kevlar.PartitionedShield(Of TKey).PruneExpiredAsync
+- uid: System.Threading.Tasks.ValueTask{System.Int32}
+  commentId: T:System.Threading.Tasks.ValueTask{System.Int32}
+  parent: System.Threading.Tasks
+  definition: System.Threading.Tasks.ValueTask`1
+  href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  name: ValueTask<int>
+  nameWithType: ValueTask<int>
+  fullName: System.Threading.Tasks.ValueTask<int>
+  nameWithType.vb: ValueTask(Of Integer)
+  fullName.vb: System.Threading.Tasks.ValueTask(Of Integer)
+  name.vb: ValueTask(Of Integer)
+  spec.csharp:
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
+  - uid: System.Int32
+    name: int
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: '>'
+  spec.vb:
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.Int32
+    name: Integer
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: )
 - uid: Kevlar.PartitionedShield`1.Count*
   commentId: Overload:Kevlar.PartitionedShield`1.Count
   isExternal: true
@@ -866,3 +1401,21 @@ references:
   fullName: Kevlar.PartitionedShield<TKey>.ExpirationEvictionCount
   nameWithType.vb: PartitionedShield(Of TKey).ExpirationEvictionCount
   fullName.vb: Kevlar.PartitionedShield(Of TKey).ExpirationEvictionCount
+- uid: Kevlar.PartitionedShield`1.ClearedEvictionCount*
+  commentId: Overload:Kevlar.PartitionedShield`1.ClearedEvictionCount
+  isExternal: true
+  href: Kevlar.PartitionedShield-1.html#Kevlar_PartitionedShield_1_ClearedEvictionCount
+  name: ClearedEvictionCount
+  nameWithType: PartitionedShield<TKey>.ClearedEvictionCount
+  fullName: Kevlar.PartitionedShield<TKey>.ClearedEvictionCount
+  nameWithType.vb: PartitionedShield(Of TKey).ClearedEvictionCount
+  fullName.vb: Kevlar.PartitionedShield(Of TKey).ClearedEvictionCount
+- uid: Kevlar.PartitionedShield`1.EvictionCount*
+  commentId: Overload:Kevlar.PartitionedShield`1.EvictionCount
+  isExternal: true
+  href: Kevlar.PartitionedShield-1.html#Kevlar_PartitionedShield_1_EvictionCount
+  name: EvictionCount
+  nameWithType: PartitionedShield<TKey>.EvictionCount
+  fullName: Kevlar.PartitionedShield<TKey>.EvictionCount
+  nameWithType.vb: PartitionedShield(Of TKey).EvictionCount
+  fullName.vb: Kevlar.PartitionedShield(Of TKey).EvictionCount

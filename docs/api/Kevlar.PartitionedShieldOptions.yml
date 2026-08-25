@@ -8,6 +8,10 @@ items:
   - Kevlar.PartitionedShieldOptions.#ctor
   - Kevlar.PartitionedShieldOptions.IdleExpiration
   - Kevlar.PartitionedShieldOptions.MaximumPartitions
+  - Kevlar.PartitionedShieldOptions.OnCreated
+  - Kevlar.PartitionedShieldOptions.OnCreatedAsync
+  - Kevlar.PartitionedShieldOptions.OnEvicted
+  - Kevlar.PartitionedShieldOptions.OnEvictedAsync
   - Kevlar.PartitionedShieldOptions.TimeProvider
   langs:
   - csharp
@@ -129,6 +133,103 @@ items:
       type: System.TimeProvider
     content.vb: Public Property TimeProvider As TimeProvider
   overload: Kevlar.PartitionedShieldOptions.TimeProvider*
+- uid: Kevlar.PartitionedShieldOptions.OnCreated
+  commentId: P:Kevlar.PartitionedShieldOptions.OnCreated
+  id: OnCreated
+  parent: Kevlar.PartitionedShieldOptions
+  langs:
+  - csharp
+  - vb
+  name: OnCreated
+  nameWithType: PartitionedShieldOptions.OnCreated
+  fullName: Kevlar.PartitionedShieldOptions.OnCreated
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Invoked after a partition is created and retained.
+  example: []
+  syntax:
+    content: public Action<PartitionCreatedNotification>? OnCreated { get; set; }
+    parameters: []
+    return:
+      type: System.Action{Kevlar.PartitionCreatedNotification}
+    content.vb: Public Property OnCreated As Action(Of PartitionCreatedNotification)
+  overload: Kevlar.PartitionedShieldOptions.OnCreated*
+- uid: Kevlar.PartitionedShieldOptions.OnCreatedAsync
+  commentId: P:Kevlar.PartitionedShieldOptions.OnCreatedAsync
+  id: OnCreatedAsync
+  parent: Kevlar.PartitionedShieldOptions
+  langs:
+  - csharp
+  - vb
+  name: OnCreatedAsync
+  nameWithType: PartitionedShieldOptions.OnCreatedAsync
+  fullName: Kevlar.PartitionedShieldOptions.OnCreatedAsync
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Invoked and awaited after <xref href="Kevlar.PartitionedShieldOptions.OnCreated" data-throw-if-not-resolved="false"></xref>.
+  example: []
+  syntax:
+    content: public Func<PartitionCreatedNotification, ValueTask>? OnCreatedAsync { get; set; }
+    parameters: []
+    return:
+      type: System.Func{Kevlar.PartitionCreatedNotification,System.Threading.Tasks.ValueTask}
+    content.vb: Public Property OnCreatedAsync As Func(Of PartitionCreatedNotification, ValueTask)
+  overload: Kevlar.PartitionedShieldOptions.OnCreatedAsync*
+- uid: Kevlar.PartitionedShieldOptions.OnEvicted
+  commentId: P:Kevlar.PartitionedShieldOptions.OnEvicted
+  id: OnEvicted
+  parent: Kevlar.PartitionedShieldOptions
+  langs:
+  - csharp
+  - vb
+  name: OnEvicted
+  nameWithType: PartitionedShieldOptions.OnEvicted
+  fullName: Kevlar.PartitionedShieldOptions.OnEvicted
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Invoked after a partition is removed from the provider.
+  example: []
+  syntax:
+    content: public Action<PartitionEvictionNotification>? OnEvicted { get; set; }
+    parameters: []
+    return:
+      type: System.Action{Kevlar.PartitionEvictionNotification}
+    content.vb: Public Property OnEvicted As Action(Of PartitionEvictionNotification)
+  overload: Kevlar.PartitionedShieldOptions.OnEvicted*
+- uid: Kevlar.PartitionedShieldOptions.OnEvictedAsync
+  commentId: P:Kevlar.PartitionedShieldOptions.OnEvictedAsync
+  id: OnEvictedAsync
+  parent: Kevlar.PartitionedShieldOptions
+  langs:
+  - csharp
+  - vb
+  name: OnEvictedAsync
+  nameWithType: PartitionedShieldOptions.OnEvictedAsync
+  fullName: Kevlar.PartitionedShieldOptions.OnEvictedAsync
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Invoked and awaited after <xref href="Kevlar.PartitionedShieldOptions.OnEvicted" data-throw-if-not-resolved="false"></xref> and before an automatically evicted
+
+    partition's slot is reused. A cold lookup reentered from this callback may return an
+
+    unretained shield when the invoking eviction owns all available capacity.
+  example: []
+  syntax:
+    content: public Func<PartitionEvictionNotification, ValueTask>? OnEvictedAsync { get; set; }
+    parameters: []
+    return:
+      type: System.Func{Kevlar.PartitionEvictionNotification,System.Threading.Tasks.ValueTask}
+    content.vb: Public Property OnEvictedAsync As Func(Of PartitionEvictionNotification, ValueTask)
+  overload: Kevlar.PartitionedShieldOptions.OnEvictedAsync*
 references:
 - uid: Kevlar
   commentId: N:Kevlar
@@ -448,3 +549,271 @@ references:
   name: TimeProvider
   nameWithType: TimeProvider
   fullName: System.TimeProvider
+- uid: Kevlar.PartitionedShieldOptions.OnCreated*
+  commentId: Overload:Kevlar.PartitionedShieldOptions.OnCreated
+  isExternal: true
+  href: Kevlar.PartitionedShieldOptions.html#Kevlar_PartitionedShieldOptions_OnCreated
+  name: OnCreated
+  nameWithType: PartitionedShieldOptions.OnCreated
+  fullName: Kevlar.PartitionedShieldOptions.OnCreated
+- uid: System.Action{Kevlar.PartitionCreatedNotification}
+  commentId: T:System.Action{Kevlar.PartitionCreatedNotification}
+  parent: System
+  definition: System.Action`1
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<PartitionCreatedNotification>
+  nameWithType: Action<PartitionCreatedNotification>
+  fullName: System.Action<Kevlar.PartitionCreatedNotification>
+  nameWithType.vb: Action(Of PartitionCreatedNotification)
+  fullName.vb: System.Action(Of Kevlar.PartitionCreatedNotification)
+  name.vb: Action(Of PartitionCreatedNotification)
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - uid: Kevlar.PartitionCreatedNotification
+    name: PartitionCreatedNotification
+    isExternal: true
+    href: Kevlar.PartitionCreatedNotification.html
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.PartitionCreatedNotification
+    name: PartitionCreatedNotification
+    isExternal: true
+    href: Kevlar.PartitionCreatedNotification.html
+  - name: )
+- uid: System.Action`1
+  commentId: T:System.Action`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<T>
+  nameWithType: Action<T>
+  fullName: System.Action<T>
+  nameWithType.vb: Action(Of T)
+  fullName.vb: System.Action(Of T)
+  name.vb: Action(Of T)
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Kevlar.PartitionedShieldOptions.OnCreated
+  commentId: P:Kevlar.PartitionedShieldOptions.OnCreated
+  isExternal: true
+  href: Kevlar.PartitionedShieldOptions.html#Kevlar_PartitionedShieldOptions_OnCreated
+  name: OnCreated
+  nameWithType: PartitionedShieldOptions.OnCreated
+  fullName: Kevlar.PartitionedShieldOptions.OnCreated
+- uid: Kevlar.PartitionedShieldOptions.OnCreatedAsync*
+  commentId: Overload:Kevlar.PartitionedShieldOptions.OnCreatedAsync
+  isExternal: true
+  href: Kevlar.PartitionedShieldOptions.html#Kevlar_PartitionedShieldOptions_OnCreatedAsync
+  name: OnCreatedAsync
+  nameWithType: PartitionedShieldOptions.OnCreatedAsync
+  fullName: Kevlar.PartitionedShieldOptions.OnCreatedAsync
+- uid: System.Func{Kevlar.PartitionCreatedNotification,System.Threading.Tasks.ValueTask}
+  commentId: T:System.Func{Kevlar.PartitionCreatedNotification,System.Threading.Tasks.ValueTask}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<PartitionCreatedNotification, ValueTask>
+  nameWithType: Func<PartitionCreatedNotification, ValueTask>
+  fullName: System.Func<Kevlar.PartitionCreatedNotification, System.Threading.Tasks.ValueTask>
+  nameWithType.vb: Func(Of PartitionCreatedNotification, ValueTask)
+  fullName.vb: System.Func(Of Kevlar.PartitionCreatedNotification, System.Threading.Tasks.ValueTask)
+  name.vb: Func(Of PartitionCreatedNotification, ValueTask)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.PartitionCreatedNotification
+    name: PartitionCreatedNotification
+    isExternal: true
+    href: Kevlar.PartitionCreatedNotification.html
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.PartitionCreatedNotification
+    name: PartitionCreatedNotification
+    isExternal: true
+    href: Kevlar.PartitionCreatedNotification.html
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
+  - name: )
+- uid: System.Func`2
+  commentId: T:System.Func`2
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<T, TResult>
+  nameWithType: Func<T, TResult>
+  fullName: System.Func<T, TResult>
+  nameWithType.vb: Func(Of T, TResult)
+  fullName.vb: System.Func(Of T, TResult)
+  name.vb: Func(Of T, TResult)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.PartitionedShieldOptions.OnEvicted*
+  commentId: Overload:Kevlar.PartitionedShieldOptions.OnEvicted
+  isExternal: true
+  href: Kevlar.PartitionedShieldOptions.html#Kevlar_PartitionedShieldOptions_OnEvicted
+  name: OnEvicted
+  nameWithType: PartitionedShieldOptions.OnEvicted
+  fullName: Kevlar.PartitionedShieldOptions.OnEvicted
+- uid: System.Action{Kevlar.PartitionEvictionNotification}
+  commentId: T:System.Action{Kevlar.PartitionEvictionNotification}
+  parent: System
+  definition: System.Action`1
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<PartitionEvictionNotification>
+  nameWithType: Action<PartitionEvictionNotification>
+  fullName: System.Action<Kevlar.PartitionEvictionNotification>
+  nameWithType.vb: Action(Of PartitionEvictionNotification)
+  fullName.vb: System.Action(Of Kevlar.PartitionEvictionNotification)
+  name.vb: Action(Of PartitionEvictionNotification)
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - uid: Kevlar.PartitionEvictionNotification
+    name: PartitionEvictionNotification
+    isExternal: true
+    href: Kevlar.PartitionEvictionNotification.html
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.PartitionEvictionNotification
+    name: PartitionEvictionNotification
+    isExternal: true
+    href: Kevlar.PartitionEvictionNotification.html
+  - name: )
+- uid: Kevlar.PartitionedShieldOptions.OnEvicted
+  commentId: P:Kevlar.PartitionedShieldOptions.OnEvicted
+  isExternal: true
+  href: Kevlar.PartitionedShieldOptions.html#Kevlar_PartitionedShieldOptions_OnEvicted
+  name: OnEvicted
+  nameWithType: PartitionedShieldOptions.OnEvicted
+  fullName: Kevlar.PartitionedShieldOptions.OnEvicted
+- uid: Kevlar.PartitionedShieldOptions.OnEvictedAsync*
+  commentId: Overload:Kevlar.PartitionedShieldOptions.OnEvictedAsync
+  isExternal: true
+  href: Kevlar.PartitionedShieldOptions.html#Kevlar_PartitionedShieldOptions_OnEvictedAsync
+  name: OnEvictedAsync
+  nameWithType: PartitionedShieldOptions.OnEvictedAsync
+  fullName: Kevlar.PartitionedShieldOptions.OnEvictedAsync
+- uid: System.Func{Kevlar.PartitionEvictionNotification,System.Threading.Tasks.ValueTask}
+  commentId: T:System.Func{Kevlar.PartitionEvictionNotification,System.Threading.Tasks.ValueTask}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<PartitionEvictionNotification, ValueTask>
+  nameWithType: Func<PartitionEvictionNotification, ValueTask>
+  fullName: System.Func<Kevlar.PartitionEvictionNotification, System.Threading.Tasks.ValueTask>
+  nameWithType.vb: Func(Of PartitionEvictionNotification, ValueTask)
+  fullName.vb: System.Func(Of Kevlar.PartitionEvictionNotification, System.Threading.Tasks.ValueTask)
+  name.vb: Func(Of PartitionEvictionNotification, ValueTask)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.PartitionEvictionNotification
+    name: PartitionEvictionNotification
+    isExternal: true
+    href: Kevlar.PartitionEvictionNotification.html
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.PartitionEvictionNotification
+    name: PartitionEvictionNotification
+    isExternal: true
+    href: Kevlar.PartitionEvictionNotification.html
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
+  - name: )
