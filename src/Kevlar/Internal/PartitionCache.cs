@@ -554,26 +554,29 @@ internal sealed class PartitionCache<TKey, TShield>
         bool ownsReservation = false,
         Creation? blockedCreation = null)
     {
-        try
-        {
-            KevlarMetrics.PartitionEviction(reason);
-        }
-        catch
-        {
-            // Metric listeners must not change partition behavior.
-        }
-
-        if (_onEvicted is null && _onEvictedAsync is null)
-        {
-            return;
-        }
-
-        var notification = new PartitionEvictionNotification(entry.Key, entry.Shield, reason);
         var previousScope = _evictionCallback.Value;
-        var scope = new EvictionCallbackScope(ownsReservation, blockedCreation);
+        var scope = new EvictionCallbackScope(
+            ownsReservation,
+            blockedCreation,
+            previousScope);
         _evictionCallback.Value = scope;
         try
         {
+            try
+            {
+                KevlarMetrics.PartitionEviction(reason);
+            }
+            catch
+            {
+                // Metric listeners must not change partition behavior.
+            }
+
+            if (_onEvicted is null && _onEvictedAsync is null)
+            {
+                return;
+            }
+
+            var notification = new PartitionEvictionNotification(entry.Key, entry.Shield, reason);
             try
             {
                 _onEvicted?.Invoke(notification);
@@ -803,15 +806,19 @@ internal sealed class PartitionCache<TKey, TShield>
 
     private sealed class EvictionCallbackScope(
         bool ownsReservation,
-        Creation? blockedCreation)
+        Creation? blockedCreation,
+        EvictionCallbackScope? parent)
     {
         private int _active = 1;
 
         public bool Active => Volatile.Read(ref _active) != 0;
 
-        public bool OwnsReservation { get; } = ownsReservation;
+        public bool OwnsReservation => ownsReservation
+            || parent is { Active: true, OwnsReservation: true };
 
-        public bool Blocks(Creation creation) => ReferenceEquals(blockedCreation, creation);
+        public bool Blocks(Creation creation) =>
+            ReferenceEquals(blockedCreation, creation)
+            || parent is { Active: true } && parent.Blocks(creation);
 
         public void Deactivate() => Volatile.Write(ref _active, 0);
     }

@@ -297,6 +297,39 @@ public class MetricsTests
     }
 
     [Test]
+    public async Task Partition_Eviction_Metric_Reentrancy_Uses_The_Active_Reservation()
+    {
+        PartitionedShield<string>? provider = null;
+        Shield? nested = null;
+        var handled = false;
+        var factoryCalls = 0;
+        using var listener = new KevlarMeterListener((instrument, _) =>
+        {
+            if (handled || instrument != "kevlar.partitions.evictions")
+            {
+                return;
+            }
+
+            handled = true;
+            nested = provider!.GetShield("nested");
+        });
+        provider = new PartitionedShield<string>(
+            key => Shield.Empty.WithName($"{key}-{Interlocked.Increment(ref factoryCalls)}"),
+            new PartitionedShieldOptions { MaximumPartitions = 1 });
+        _ = provider.GetShield("first");
+
+        var replacement = await Task.Run(() => provider.GetShield("replacement"))
+            .WaitAsync(TimeSpan.FromSeconds(5));
+
+        await Assert.That(nested).IsNotNull();
+        await Assert.That(provider.TryGetShield("nested", out _)).IsFalse();
+        await Assert.That(provider.TryGetShield("replacement", out var retained)).IsTrue();
+        await Assert.That(retained).IsSameReferenceAs(replacement);
+        await Assert.That(factoryCalls).IsEqualTo(3);
+        await Assert.That(provider.Count).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Name_And_Outcome_Tag_Schema_Is_Stable()
     {
         using var listener = new KevlarMeterListener();
