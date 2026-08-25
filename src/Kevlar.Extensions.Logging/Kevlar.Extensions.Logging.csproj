@@ -10,7 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Kevlar\Kevlar.csproj" />
+    <ProjectReference Include="..\Kevlar\Kevlar.csproj" PrivateAssets="Build" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
   </ItemGroup>

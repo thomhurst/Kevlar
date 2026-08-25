@@ -11,7 +11,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Kevlar.Tests" />
-    <ProjectReference Include="..\Kevlar\Kevlar.csproj" />
+    <ProjectReference Include="..\Kevlar\Kevlar.csproj" PrivateAssets="Build" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Primitives" />

@@ -433,8 +433,23 @@ foreach ($packageId in $expectedDependencies.Keys)
 
             foreach ($dependency in $dependencies)
             {
-                Assert-Set "$packageId $framework $($dependency.GetAttribute('id')) excluded assets" ($dependency.GetAttribute('exclude') -split ',') @('Build', 'Analyzers')
                 $dependencyId = $dependency.GetAttribute('id')
+                $expectedExcludedAssets = if ($dependencyId -eq 'Kevlar' -and $packageId -ne 'Kevlar')
+                {
+                    @()
+                }
+                else
+                {
+                    @('Build', 'Analyzers')
+                }
+                Assert-Set "$packageId $framework $dependencyId excluded assets" ($dependency.GetAttribute('exclude') -split ',') $expectedExcludedAssets
+                if ($dependencyId -eq 'Kevlar' -and $packageId -ne 'Kevlar')
+                {
+                    Assert-Set `
+                        "$packageId $framework Kevlar included assets" `
+                        ($dependency.GetAttribute('include') -split ',') `
+                        @('Runtime', 'Compile', 'Native', 'ContentFiles', 'Analyzers', 'BuildTransitive')
+                }
                 if ($dependencyId -eq 'Kevlar' -and
                     $packageId -in @('Kevlar.Testing', 'Kevlar.Extensions.RateLimiting'))
                 {
@@ -918,7 +933,7 @@ sealed class ExpectedConsumerException : Exception;
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Kevlar" Version="$Version" />
+    <PackageReference Include="Kevlar.Extensions.Http" Version="$Version" />
   </ItemGroup>
 </Project>
 "@
@@ -942,7 +957,7 @@ await Shield.Empty.ExecuteAsync(cancellationToken => ValueTask.CompletedTask);
     )
     if ($analyzerExitCode -eq 0)
     {
-        throw "Kevlar package did not fail the consumer build with KEV001.`n$analyzerOutput"
+        throw "Kevlar.Extensions.Http did not transitively run KEV001.`n$analyzerOutput"
     }
 
     Assert-Set 'analyzer consumer error codes' $analyzerErrorCodes @('KEV001')
