@@ -1855,6 +1855,32 @@ public class MetricsTests
         await Assert.That(timeProvider.IsAlive).IsFalse();
     }
 
+    [Test]
+    public async Task State_Gauges_Do_Not_Retain_Providers_For_Abandoned_Shield_Aliases()
+    {
+        using var listener = new KevlarMeterListener();
+        var shared = Shield.RateLimit(1, TimeSpan.FromMinutes(1));
+        var timeProvider = CreateCollectibleStateTimeProviderAlias(shared);
+
+        for (var attempt = 0; timeProvider.IsAlive && attempt < 10; attempt++)
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+        }
+
+        listener.RecordObservableInstruments();
+
+        await Assert.That(timeProvider.IsAlive).IsFalse();
+        await Assert.That(listener.AllLongMeasurements("kevlar.rate_limit.available")
+                .Any(measurement => measurement.Tags.TryGetValue(
+                    "kevlar.shield.name",
+                    out var name)
+                    && Equals(name, "metrics-collectible-provider-alias")))
+            .IsFalse();
+        GC.KeepAlive(shared);
+    }
+
     [System.Runtime.CompilerServices.MethodImpl(
         System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
     private static WeakReference CreateCollectibleStateStrategy()
@@ -1873,6 +1899,18 @@ public class MetricsTests
             .WithName("metrics-collectible-time-provider")
             .WithTimeProvider(timeProvider);
         shield.Execute(static _ => { });
+        return new WeakReference(timeProvider);
+    }
+
+    [System.Runtime.CompilerServices.MethodImpl(
+        System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    private static WeakReference CreateCollectibleStateTimeProviderAlias(Shield shared)
+    {
+        var timeProvider = new FakeTimeProvider();
+        shared
+            .WithName("metrics-collectible-provider-alias")
+            .WithTimeProvider(timeProvider)
+            .Execute(static _ => { });
         return new WeakReference(timeProvider);
     }
 

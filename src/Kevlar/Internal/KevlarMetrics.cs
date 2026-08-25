@@ -525,19 +525,31 @@ internal readonly record struct StrategyMetricAlias(string? ShieldName, int Stra
 #if NET9_0_OR_GREATER
 internal sealed class StateMetricObservation
 {
-    private TimeProvider? _timeProvider;
+    private WeakReference<TimeProvider>? _timeProvider;
 
     public StateMetricObservation(StrategyMetricAlias alias, TimeProvider? timeProvider)
     {
         Alias = alias;
-        _timeProvider = timeProvider;
+        SetTimeProvider(timeProvider);
     }
 
     public StrategyMetricAlias Alias { get; }
 
-    public TimeProvider? TimeProvider => Volatile.Read(ref _timeProvider);
+    public bool TryGetTimeProvider(out TimeProvider? timeProvider)
+    {
+        var reference = Volatile.Read(ref _timeProvider);
+        if (reference is null)
+        {
+            timeProvider = null;
+            return true;
+        }
+
+        return reference.TryGetTarget(out timeProvider);
+    }
 
     public void SetTimeProvider(TimeProvider? timeProvider) =>
-        Volatile.Write(ref _timeProvider, timeProvider);
+        Volatile.Write(
+            ref _timeProvider,
+            timeProvider is null ? null : new WeakReference<TimeProvider>(timeProvider));
 }
 #endif
