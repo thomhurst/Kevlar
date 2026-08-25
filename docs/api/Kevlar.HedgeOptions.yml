@@ -13,6 +13,7 @@ items:
   - Kevlar.HedgeOptions.HandlesException
   - Kevlar.HedgeOptions.HandlesExceptionWithContext
   - Kevlar.HedgeOptions.MaxHedgedAttempts
+  - Kevlar.HedgeOptions.Name
   - Kevlar.HedgeOptions.OnHedge
   - Kevlar.HedgeOptions.OnHedgeAsync
   langs:
@@ -75,6 +76,29 @@ items:
   nameWithType.vb: HedgeOptions.New()
   fullName.vb: Kevlar.HedgeOptions.New()
   name.vb: New()
+- uid: Kevlar.HedgeOptions.Name
+  commentId: P:Kevlar.HedgeOptions.Name
+  id: Name
+  parent: Kevlar.HedgeOptions
+  langs:
+  - csharp
+  - vb
+  name: Name
+  nameWithType: HedgeOptions.Name
+  fullName: Kevlar.HedgeOptions.Name
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: An optional low-cardinality name used by strategy telemetry.
+  example: []
+  syntax:
+    content: public string? Name { get; set; }
+    parameters: []
+    return:
+      type: System.String
+    content.vb: Public Property Name As String
+  overload: Kevlar.HedgeOptions.Name*
 - uid: Kevlar.HedgeOptions.HandlesException
   commentId: P:Kevlar.HedgeOptions.HandlesException
   id: HandlesException
@@ -584,6 +608,24 @@ references:
   nameWithType.vb: HedgeOptions.New
   fullName.vb: Kevlar.HedgeOptions.New
   name.vb: New
+- uid: Kevlar.HedgeOptions.Name*
+  commentId: Overload:Kevlar.HedgeOptions.Name
+  isExternal: true
+  href: Kevlar.HedgeOptions.html#Kevlar_HedgeOptions_Name
+  name: Name
+  nameWithType: HedgeOptions.Name
+  fullName: Kevlar.HedgeOptions.Name
+- uid: System.String
+  commentId: T:System.String
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.string
+  name: string
+  nameWithType: string
+  fullName: string
+  nameWithType.vb: String
+  fullName.vb: String
+  name.vb: String
 - uid: Kevlar.HandlingClause
   commentId: T:Kevlar.HandlingClause
   parent: Kevlar

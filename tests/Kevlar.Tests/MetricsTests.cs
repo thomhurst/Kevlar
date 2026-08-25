@@ -850,7 +850,7 @@ public class MetricsTests
         }));
         var shield = Shield.For<int>().Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = Timeout.InfiniteTimeSpan;
             options.ActionGenerator = _ => throw generatorFailure;
         }).WithName("metrics-failed-hedge");
