@@ -79,6 +79,8 @@ All notable changes to this project are documented here. The format follows
 - `Backoff.Constant` and explicit `maxDelay` values validate timer limits. Linear and exponential
   base delays are accepted beyond that limit, then computed delays clamp to their configured cap or
   the default one-day cap; custom delays clamp to the runtime timer limit.
+- Retry jitter configuration uses the `Jitter` enum. The former Boolean `false` maps to
+  `Jitter.None`; `true` maps to `Jitter.Equal`.
 - Custom strategies can declare `InvokesContinuationAtMostOnce`; the aggregate is exposed on
   `Shield` and `Shield<TResult>`.
 - Every NuGet package embeds the canonical icon, links release notes, and carries a package README
@@ -108,6 +110,9 @@ All notable changes to this project are documented here. The format follows
 | `RetryForever(backoff: null)` | `RetryForever()` |
 | ambient handling flowed past `Wrap`/`Compose` | `Wrap`/`Compose` seals the clause |
 | `maxQueue` / `MaxQueue` | `queueLimit` / `QueueLimit` |
+| `jitter: false` / `RetryDefinition.Jitter = false` | `jitter: Jitter.None` / `RetryDefinition.Jitter = Jitter.None` |
+| `jitter: true` / `RetryDefinition.Jitter = true` | `jitter: Jitter.Equal` / `RetryDefinition.Jitter = Jitter.Equal` |
+| `RetryEvent.Attempt` / `RetryEvent<TResult>.Attempt` / `HedgeEvent.Attempt` | `AttemptNumber` |
 <!-- upgrade-from-0.x:end -->
 
 The replacement forms compile together:
