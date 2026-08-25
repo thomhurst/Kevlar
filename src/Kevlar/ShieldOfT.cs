@@ -532,7 +532,9 @@ public sealed class Shield<TResult> : IShieldLifecycle
     public Shield<TResult> WithTimeProvider(TimeProvider timeProvider)
     {
         Throw.IfNull(timeProvider, nameof(timeProvider));
-        return new Shield<TResult>(Strategies, Ambient, Name, timeProvider, AppliedDecorators);
+        var timed = new Shield<TResult>(Strategies, Ambient, Name, timeProvider, AppliedDecorators);
+        StrategyAppendObserver.NotifyComposition(Strategies, Name, timed);
+        return timed;
     }
 
     // ── Execution ───────────────────────────────────────────────────────────────────────
@@ -737,7 +739,9 @@ public sealed class Shield<TResult> : IShieldLifecycle
         var decorators = new IShieldDecorator[appliedDecorators.Length + 1];
         Array.Copy(appliedDecorators, decorators, appliedDecorators.Length);
         decorators[^1] = decorator;
-        return new Shield<TResult>(Strategies, Ambient, Name, Time, decorators);
+        var decorated = new Shield<TResult>(Strategies, Ambient, Name, Time, decorators);
+        StrategyAppendObserver.NotifyComposition(Strategies, Name, decorated);
+        return decorated;
     }
 }
 

@@ -824,7 +824,9 @@ public sealed class Shield : IShieldLifecycle
         var decorators = new IShieldDecorator[appliedDecorators.Length + 1];
         Array.Copy(appliedDecorators, decorators, appliedDecorators.Length);
         decorators[^1] = decorator;
-        return new Shield(Strategies, Ambient, Name, Time, decorators);
+        var decorated = new Shield(Strategies, Ambient, Name, Time, decorators);
+        StrategyAppendObserver.NotifyComposition(Strategies, Name, decorated);
+        return decorated;
     }
 
     internal static StrategyNode? BuildChain(Strategy[] strategies, StrategyOwnerSet shieldOwners)

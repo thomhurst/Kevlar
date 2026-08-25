@@ -463,11 +463,13 @@ public static class ShieldExtensions
     {
         Throw.IfNull(shield, nameof(shield));
         Throw.IfNull(timeProvider, nameof(timeProvider));
-        return new Shield(
+        var timed = new Shield(
             shield.Strategies,
             shield.Ambient,
             shield.Name,
             timeProvider,
             shield.AppliedDecorators);
+        StrategyAppendObserver.NotifyComposition(shield.Strategies, shield.Name, timed);
+        return timed;
     }
 }

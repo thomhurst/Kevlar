@@ -775,6 +775,31 @@ public class LoggingTests
 
     [Test]
     [NotInParallel]
+    public async Task TimeProvider_Copy_Retains_Derived_Circuit_Listener_Metadata()
+    {
+        var logger = new FakeLogger();
+        var monitor = new CircuitBreakerMonitor();
+        var source = Shield.CircuitBreaker(options => options.Monitor = monitor)
+            .WithName("source")
+            .WithLogging(logger);
+        var timed = CreateTimedComposition(source);
+
+        CollectGarbage();
+        monitor.Isolate();
+
+        var transitions = logger.Collector.GetSnapshot()
+            .Where(record => record.Id == new EventId(1003, "CircuitState"))
+            .ToArray();
+        await Assert.That(transitions.Length).IsEqualTo(2);
+        await Assert.That(transitions.Any(record =>
+            record.GetStructuredStateValue("ShieldName") == "catalog"
+            && record.GetStructuredStateValue("StrategyIndex") == "1")).IsTrue();
+        GC.KeepAlive(source);
+        GC.KeepAlive(timed);
+    }
+
+    [Test]
+    [NotInParallel]
     public async Task Isolated_Logs_Error()
     {
         var logger = new FakeLogger();
@@ -885,6 +910,14 @@ public class LoggingTests
         return new WeakReference(derived);
     }
 
+    [System.Runtime.CompilerServices.MethodImpl(
+        System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    private static Shield CreateTimedComposition(Shield source) =>
+        Shield.Timeout(TimeSpan.FromSeconds(1))
+            .Wrap(source)
+            .WithName("catalog")
+            .WithTimeProvider(TimeProvider.System);
+
     private static void Collect(WeakReference reference)
     {
         for (var attempt = 0; reference.IsAlive && attempt < 10; attempt++)
@@ -893,6 +926,13 @@ public class LoggingTests
             GC.WaitForPendingFinalizers();
             GC.Collect();
         }
+    }
+
+    private static void CollectGarbage()
+    {
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
     }
 
     private sealed class TestException(string message) : Exception(message);
