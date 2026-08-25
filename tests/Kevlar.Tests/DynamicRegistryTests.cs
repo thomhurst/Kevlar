@@ -235,6 +235,52 @@ public class DynamicRegistryTests
     }
 
     [Test]
+    public async Task Options_Monitor_Registrations_Reject_Duplicate_Names()
+    {
+        var monitor = new MutableOptionsMonitor<ReloadOptions>();
+        var services = new ServiceCollection()
+            .AddSingleton<IOptionsMonitor<ReloadOptions>>(monitor)
+            .AddShield("duplicate", Shield.Empty)
+            .AddShield("typed-duplicate", Shield.For<int>().FallbackTo(42));
+
+        var untyped = await Assert.That(() => services.AddReloadingShield<ReloadOptions>(
+                "duplicate",
+                static (_, _) => Shield.Empty))
+            .Throws<InvalidOperationException>();
+        var typed = await Assert.That(() => services.AddReloadingShield<ReloadOptions, int>(
+                "typed-duplicate",
+                static (_, _) => Shield.For<int>().FallbackTo(42)))
+            .Throws<InvalidOperationException>();
+
+        await Assert.That(untyped!.Message)
+            .IsEqualTo("A shield named 'duplicate' is already registered.");
+        await Assert.That(typed!.Message)
+            .IsEqualTo("A shield named 'typed-duplicate' is already registered.");
+    }
+
+    [Test]
+    public async Task Options_Monitor_Registrations_Expose_Providers_Not_Stale_Keyed_Snapshots()
+    {
+        var monitor = new MutableOptionsMonitor<ReloadOptions>();
+        monitor.Set("untyped", new ReloadOptions(), notify: false);
+        monitor.Set("typed", new ReloadOptions(), notify: false);
+        using var services = new ServiceCollection()
+            .AddSingleton<IOptionsMonitor<ReloadOptions>>(monitor)
+            .AddReloadingShield<ReloadOptions>("untyped", static (_, _) => Shield.Empty)
+            .AddReloadingShield<ReloadOptions, int>(
+                "typed",
+                static (_, _) => Shield.For<int>().FallbackTo(42))
+            .BuildServiceProvider();
+
+        await Assert.That(services.GetRequiredKeyedService<IShieldProvider>("untyped").Current)
+            .IsNotNull();
+        await Assert.That(services.GetRequiredKeyedService<IShieldProvider<int>>("typed").Current)
+            .IsNotNull();
+        await Assert.That(services.GetKeyedService<Shield>("untyped")).IsNull();
+        await Assert.That(services.GetKeyedService<Shield<int>>("typed")).IsNull();
+    }
+
+    [Test]
     public async Task Invalid_Options_Keep_Last_Known_Good_And_Report_Failure()
     {
         var monitor = new MutableOptionsMonitor<ReloadOptions>();

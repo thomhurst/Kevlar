@@ -339,6 +339,7 @@ public static class KevlarServiceCollectionExtensions
         if (name is null) { throw new ArgumentNullException(nameof(name)); }
         if (build is null) { throw new ArgumentNullException(nameof(build)); }
 
+        PrepareRegistration(services, name, replace: false);
         services.AddKevlar();
         services.AddKeyedSingleton<IShieldProvider>(name, (serviceProvider, _) => serviceProvider
             .GetRequiredService<KevlarRegistry>()
@@ -351,9 +352,6 @@ public static class KevlarServiceCollectionExtensions
             name,
             null,
             serviceProvider => serviceProvider.GetRequiredKeyedService<IShieldProvider>(name)));
-        services.AddKeyedSingleton(
-            name,
-            (serviceProvider, _) => serviceProvider.GetRequiredService<IKevlarRegistry>().GetShield(name));
         return services;
     }
 
@@ -374,6 +372,7 @@ public static class KevlarServiceCollectionExtensions
         if (name is null) { throw new ArgumentNullException(nameof(name)); }
         if (build is null) { throw new ArgumentNullException(nameof(build)); }
 
+        PrepareRegistration(services, name, replace: false);
         services.AddKevlar();
         services.AddKeyedSingleton<IShieldProvider<TResult>>(name, (serviceProvider, _) => serviceProvider
             .GetRequiredService<KevlarRegistry>()
@@ -386,9 +385,6 @@ public static class KevlarServiceCollectionExtensions
             name,
             typeof(TResult),
             serviceProvider => serviceProvider.GetRequiredKeyedService<IShieldProvider<TResult>>(name)));
-        services.AddKeyedSingleton(
-            name,
-            (serviceProvider, _) => serviceProvider.GetRequiredService<IKevlarRegistry>().GetShield<TResult>(name));
         return services;
     }
 
