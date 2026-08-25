@@ -366,12 +366,13 @@ internal sealed class HedgingStrategy : Strategy
     {
         var cancellation = CancellationTokenSourcePool.Shared.RentLinked(context.CancellationToken);
         var fork = context.Fork(cancellation.Token);
+        OriginalActionContextCapture? contextCapture = null;
         try
         {
             Func<CancellationToken, ValueTask<T>>? generatedAction = null;
             if (_actionGenerator is not null)
             {
-                var contextCapture = new OriginalActionContextCapture(fork);
+                contextCapture = new OriginalActionContextCapture(fork, cancellation);
                 Func<CancellationToken, ValueTask<T>> originalAction =
                     token => InvokeOriginalAction(next, contextCapture, token);
                 try
@@ -385,7 +386,8 @@ internal sealed class HedgingStrategy : Strategy
                         new ValueTask<Outcome<T>>(Outcome<T>.FromException(exception)),
                         cancellation,
                         fork,
-                        attemptNumber - 1);
+                        attemptNumber - 1,
+                        contextCapture);
                 }
 
                 context.CancellationToken.ThrowIfCancellationRequested();
@@ -395,12 +397,11 @@ internal sealed class HedgingStrategy : Strategy
             var execution = generatedAction is null
                 ? next.InvokeAsync(fork)
                 : InvokeGeneratedAction(generatedAction, fork.CancellationToken);
-            return new StartedAttempt<T>(execution, cancellation, fork, attemptNumber - 1);
+            return new StartedAttempt<T>(execution, cancellation, fork, attemptNumber - 1, contextCapture);
         }
         catch
         {
-            KevlarContext.Return(fork);
-            cancellation.Dispose();
+            ReleaseAttemptResources(fork, cancellation, contextCapture);
             throw;
         }
     }
@@ -480,29 +481,110 @@ internal sealed class HedgingStrategy : Strategy
         }
         finally
         {
-            KevlarContext.Return(invocationContext);
+            try
+            {
+                KevlarContext.Return(invocationContext);
+            }
+            finally
+            {
+                contextCapture.ReleaseInvocation();
+            }
         }
     }
 
-    private readonly struct OriginalActionContextCapture(KevlarContext context)
+    private static void ReleaseAttemptResources(
+        KevlarContext context,
+        CancellationTokenSource cancellation,
+        OriginalActionContextCapture? contextCapture)
     {
+        if (contextCapture is not null)
+        {
+            contextCapture.ReleaseAttempt();
+            return;
+        }
+
+        try
+        {
+            KevlarContext.Return(context);
+        }
+        finally
+        {
+            cancellation.Dispose();
+        }
+    }
+
+    private sealed class OriginalActionContextCapture(
+        KevlarContext context,
+        CancellationTokenSource cancellation)
+    {
+        private readonly object _sync = new();
         private readonly KevlarContext _context = context;
+        private readonly CancellationTokenSource _cancellation = cancellation;
+        private bool _acceptingInvocations = true;
+        private int _references = 1;
 
         public KevlarContext Fork(CancellationToken cancellationToken)
         {
-            lock (_context.Properties)
+            lock (_sync)
             {
-                return _context.Fork(cancellationToken);
+                if (!_acceptingInvocations)
+                {
+                    throw new ObjectDisposedException(nameof(OriginalActionContextCapture));
+                }
+
+                _references++;
+                try
+                {
+                    return _context.Fork(cancellationToken);
+                }
+                catch
+                {
+                    _references--;
+                    throw;
+                }
             }
         }
 
         public void Capture(KevlarContext source)
         {
-            lock (_context.Properties)
+            lock (_sync)
             {
                 _context.CancellationToken = source.CancellationToken;
                 _context.Properties.Clear();
                 source.Properties.CopyTo(_context.Properties);
+            }
+        }
+
+        public void ReleaseInvocation() => ReleaseReference(stopAcceptingInvocations: false);
+
+        public void ReleaseAttempt() => ReleaseReference(stopAcceptingInvocations: true);
+
+        private void ReleaseReference(bool stopAcceptingInvocations)
+        {
+            bool releaseResources;
+            lock (_sync)
+            {
+                if (stopAcceptingInvocations)
+                {
+                    _acceptingInvocations = false;
+                }
+
+                _references--;
+                releaseResources = _references == 0;
+            }
+
+            if (!releaseResources)
+            {
+                return;
+            }
+
+            try
+            {
+                KevlarContext.Return(_context);
+            }
+            finally
+            {
+                _cancellation.Dispose();
             }
         }
     }
@@ -638,12 +720,14 @@ internal sealed class HedgingStrategy : Strategy
             Task<Outcome<T>> task,
             CancellationTokenSource cancellation,
             KevlarContext context,
-            int attempt)
+            int attempt,
+            OriginalActionContextCapture? contextCapture)
         {
             Task = task;
             Cancellation = cancellation;
             Context = context;
             Attempt = attempt;
+            ContextCapture = contextCapture;
         }
 
         public Task<Outcome<T>> Task { get; }
@@ -654,11 +738,9 @@ internal sealed class HedgingStrategy : Strategy
 
         public int Attempt { get; }
 
-        public void Dispose()
-        {
-            KevlarContext.Return(Context);
-            Cancellation.Dispose();
-        }
+        private OriginalActionContextCapture? ContextCapture { get; }
+
+        public void Dispose() => ReleaseAttemptResources(Context, Cancellation, ContextCapture);
     }
 
     private readonly struct StartedAttempt<T>
@@ -667,12 +749,14 @@ internal sealed class HedgingStrategy : Strategy
             ValueTask<Outcome<T>> execution,
             CancellationTokenSource cancellation,
             KevlarContext context,
-            int attempt)
+            int attempt,
+            OriginalActionContextCapture? contextCapture = null)
         {
             Execution = execution;
             Cancellation = cancellation;
             Context = context;
             Attempt = attempt;
+            ContextCapture = contextCapture;
         }
 
         public ValueTask<Outcome<T>> Execution { get; }
@@ -683,12 +767,10 @@ internal sealed class HedgingStrategy : Strategy
 
         private int Attempt { get; }
 
-        public HedgeAttempt<T> AsPending() => new(Execution.AsTask(), Cancellation, Context, Attempt);
+        private OriginalActionContextCapture? ContextCapture { get; }
 
-        public void Dispose()
-        {
-            KevlarContext.Return(Context);
-            Cancellation.Dispose();
-        }
+        public HedgeAttempt<T> AsPending() => new(Execution.AsTask(), Cancellation, Context, Attempt, ContextCapture);
+
+        public void Dispose() => ReleaseAttemptResources(Context, Cancellation, ContextCapture);
     }
 }
