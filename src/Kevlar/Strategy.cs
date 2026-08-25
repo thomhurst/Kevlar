@@ -118,7 +118,7 @@ public readonly struct Continuation<T, TState>
     private ValueTask<Outcome<T>> InvokeStrategyAsync(StrategyNode node, KevlarContext context)
     {
         ValueTask<Outcome<T>> execution;
-        var previousStrategyIndex = context.StrategyIndex;
+        var previousStrategyIndex = node.Index - 1;
 
         try
         {

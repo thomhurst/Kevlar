@@ -112,6 +112,19 @@ public class EventStrategyIndexTests
         await Assert.That(observed.Values.All(static index => index == 1)).IsTrue();
     }
 
+    [Test]
+    public async Task Parallel_Continuations_Restore_Owning_Strategy_Index()
+    {
+        var inner = new OutOfOrderCompletionStrategy();
+        var outer = new ParallelContinuationStrategy(inner);
+        var shield = Shield.Use(outer).Use(inner);
+
+        var outcome = await shield.ExecuteOutcomeAsync<int>(static _ => new ValueTask<int>(42));
+
+        await Assert.That(outcome.Exception).IsNull();
+        await Assert.That(outer.StrategyIndexAfterContinuations).IsEqualTo(0);
+    }
+
     private static Shield Prefix() => Shield.Use(new PassThroughStrategy());
 
     private static Shield<int> TypedPrefix() =>
@@ -122,5 +135,55 @@ public class EventStrategyIndexTests
         public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
             Continuation<T, TState> next,
             KevlarContext context) => next.InvokeAsync(context);
+    }
+
+    private sealed class ParallelContinuationStrategy(OutOfOrderCompletionStrategy inner) : Strategy
+    {
+        public int StrategyIndexAfterContinuations { get; private set; } = -1;
+
+        public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+            Continuation<T, TState> next,
+            KevlarContext context)
+        {
+            var first = next.InvokeAsync(context).AsTask();
+            var second = next.InvokeAsync(context).AsTask();
+
+            await inner.BothEntered.Task;
+            inner.ReleaseFirst.SetResult();
+            _ = await first;
+            inner.ReleaseSecond.SetResult();
+            var outcome = await second;
+
+            StrategyIndexAfterContinuations = context.StrategyIndex;
+            return outcome;
+        }
+    }
+
+    private sealed class OutOfOrderCompletionStrategy : Strategy
+    {
+        private int _invocations;
+
+        public TaskCompletionSource BothEntered { get; } = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public TaskCompletionSource ReleaseFirst { get; } = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public TaskCompletionSource ReleaseSecond { get; } = new(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+            Continuation<T, TState> next,
+            KevlarContext context)
+        {
+            var invocation = Interlocked.Increment(ref _invocations);
+            if (invocation == 2)
+            {
+                BothEntered.SetResult();
+            }
+
+            await (invocation == 1 ? ReleaseFirst.Task : ReleaseSecond.Task);
+            return await next.InvokeAsync(context);
+        }
     }
 }
