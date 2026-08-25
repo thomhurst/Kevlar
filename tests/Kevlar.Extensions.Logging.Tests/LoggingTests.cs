@@ -461,6 +461,31 @@ public class LoggingTests
 
     [Test]
     [NotInParallel]
+    public async Task Zero_Log_Volume_Skips_First_Result_Capture()
+    {
+        var logger = new FakeLogger();
+        var formatterCalls = 0;
+        var shield = Shield.For<int>()
+            .WhenResult(-1)
+            .Retry(1, Backoff.None)
+            .WithLogging(logger, options =>
+            {
+                options.MaxLogsPerSecond = 0;
+                options.ResultFormatter = _ =>
+                {
+                    formatterCalls++;
+                    return "unexpected";
+                };
+            });
+
+        _ = await shield.ExecuteOutcomeAsync(static _ => new ValueTask<int>(-1));
+
+        await Assert.That(logger.Collector.Count).IsEqualTo(0);
+        await Assert.That(formatterCalls).IsEqualTo(0);
+    }
+
+    [Test]
+    [NotInParallel]
     public async Task Concurrent_Executions_Log_Every_Retry()
     {
         var logger = new FakeLogger();
@@ -501,6 +526,31 @@ public class LoggingTests
         await Assert.That(transitions[2].GetStructuredStateValue("ToState")).IsEqualTo("Closed");
         await Assert.That(transitions[2].Level).IsEqualTo(LogLevel.Information);
         await Assert.That(transitions[2].GetStructuredStateValue("Outcome")).IsEqualTo("success");
+    }
+
+    [Test]
+    [NotInParallel]
+    public async Task Composition_Attaches_Manual_Circuit_Listeners()
+    {
+        var logger = new FakeLogger();
+        var wrappedMonitor = new CircuitBreakerMonitor();
+        var composedMonitor = new CircuitBreakerMonitor();
+        var loggedEmpty = Shield.Empty.WithLogging(logger);
+        var wrapped = loggedEmpty.Wrap(
+            Shield.CircuitBreaker(options => options.Monitor = wrappedMonitor));
+        var composed = Shield.Compose(
+            loggedEmpty,
+            Shield.CircuitBreaker(options => options.Monitor = composedMonitor));
+
+        wrappedMonitor.Isolate();
+        composedMonitor.Isolate();
+
+        var transitions = logger.Collector.GetSnapshot()
+            .Where(record => record.Id == new EventId(1003, "CircuitState"))
+            .ToArray();
+        await Assert.That(transitions.Length).IsEqualTo(2);
+        GC.KeepAlive(wrapped);
+        GC.KeepAlive(composed);
     }
 
     [Test]

@@ -168,6 +168,15 @@ public class AllocationBudgetTests
             options.ResultFormatter = static _ => throw new InvalidOperationException(
                 "Disabled logging must not format results.");
         });
+    private readonly Shield<int> _quotaDisabledLogging = Shield.For<int>()
+        .WhenResult(-1)
+        .Retry(1, Backoff.None)
+        .WithLogging(EnabledNoopLogger.Instance, static options =>
+        {
+            options.MaxLogsPerSecond = 0;
+            options.ResultFormatter = static _ => throw new InvalidOperationException(
+                "Quota-disabled logging must not format results.");
+        });
     private readonly Counter _retryCounter = new();
     private readonly Counter _asyncDelayRetryCounter = new();
     private readonly ParallelHedgeState _parallelHedgeState = new();
@@ -293,6 +302,8 @@ public class AllocationBudgetTests
             GC.KeepAlive(outcome.Exception));
         AssertZero("disabled structured logging", this, static test =>
             _ = test._disabledLogging.ExecuteOutcome(static _ => -1));
+        AssertZero("quota-disabled structured logging", this, static test =>
+            _ = test._quotaDisabledLogging.ExecuteOutcome(static _ => -1));
     }
 
     [Test]
@@ -489,5 +500,23 @@ public class AllocationBudgetTests
     {
         CurrentThread,
         AllThreads,
+    }
+
+    private sealed class EnabledNoopLogger : ILogger
+    {
+        public static EnabledNoopLogger Instance { get; } = new();
+
+        public IDisposable? BeginScope<TState>(TState state)
+            where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter) =>
+            throw new InvalidOperationException("Quota-disabled logger must not receive events.");
     }
 }

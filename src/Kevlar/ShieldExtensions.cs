@@ -289,8 +289,10 @@ public static class ShieldExtensions
     {
         Throw.IfNull(outer, nameof(outer));
         Throw.IfNull(inner, nameof(inner));
+        var strategies = Shield.Concat(outer.Strategies, inner.Strategies);
+        StrategyAppendObserver.NotifyComposition(strategies, outer.Name ?? inner.Name);
         return new Shield(
-            Shield.Concat(outer.Strategies, inner.Strategies),
+            strategies,
             null,
             outer.Name ?? inner.Name,
             outer.Time ?? inner.Time,
@@ -310,8 +312,10 @@ public static class ShieldExtensions
     {
         Throw.IfNull(outer, nameof(outer));
         Throw.IfNull(inner, nameof(inner));
+        var strategies = Shield.Concat(outer.Strategies, inner.Strategies);
+        StrategyAppendObserver.NotifyComposition(strategies, outer.Name ?? inner.Name);
         return new Shield<TResult>(
-            Shield.Concat(outer.Strategies, inner.Strategies),
+            strategies,
             null,
             outer.Name ?? inner.Name,
             outer.Time ?? inner.Time,

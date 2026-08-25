@@ -86,6 +86,16 @@ internal sealed class CircuitBreakerCore
                     continue;
                 }
 
+                if (previous is null
+                    && ReferenceEquals(registered, listener)
+                    && registration.ShieldName == shieldName
+                    && registration.StrategyIndex == strategyIndex)
+                {
+                    updated.Add(registration);
+                    replaced = true;
+                    continue;
+                }
+
                 updated.Add(registration);
             }
 

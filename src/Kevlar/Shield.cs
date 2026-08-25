@@ -250,7 +250,9 @@ public sealed class Shield : IShieldLifecycle
             hasStrategies |= shieldHasStrategies;
         }
 
-        return new Shield(Concat(parts), null, name, time, appliedDecorators);
+        var strategies = Concat(parts);
+        StrategyAppendObserver.NotifyComposition(strategies, name);
+        return new Shield(strategies, null, name, time, appliedDecorators);
     }
 
     // ── Execution ───────────────────────────────────────────────────────────────────────

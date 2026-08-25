@@ -11,6 +11,11 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
         {
             for (var current = registration; current is not null; current = current.Next)
             {
+                if (!current.Options.CanAcquire())
+                {
+                    continue;
+                }
+
                 try
                 {
                     for (var level = LogLevel.Trace; level < LogLevel.None; level++)

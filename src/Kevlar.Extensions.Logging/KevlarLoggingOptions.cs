@@ -54,6 +54,23 @@ internal sealed class LoggingOptionsSnapshot(
 
     public int? MaxLogsPerSecond { get; } = maxLogsPerSecond;
 
+    public bool CanAcquire()
+    {
+        if (MaxLogsPerSecond is not { } limit)
+        {
+            return true;
+        }
+
+        var now = Stopwatch.GetTimestamp();
+        lock (_rateLock)
+        {
+            return limit > 0
+                && (_windowStarted == 0
+                    || now - _windowStarted >= Stopwatch.Frequency
+                    || _windowCount < limit);
+        }
+    }
+
     public bool TryAcquire()
     {
         if (MaxLogsPerSecond is not { } limit)

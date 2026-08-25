@@ -286,6 +286,37 @@ public class IntegrationTests
 
     [Test]
     [NotInParallel]
+    public async Task AddKevlarLogging_Decorates_Runtime_Registry_Shields()
+    {
+        var logs = new FakeLoggerProvider();
+        var services = new ServiceCollection();
+        services.AddLogging(builder => builder.AddProvider(logs));
+        services.AddKevlarLogging();
+        services.AddKevlar();
+        using var provider = services.BuildServiceProvider();
+        var registry = provider.GetRequiredService<IKevlarRegistry>();
+
+        var untyped = registry.GetOrAdd(
+            "dynamic-untyped",
+            static _ => Shield.Retry(1, Backoff.None));
+        var added = registry.TryAdd<int>(
+            "dynamic-typed",
+            static _ => Shield.For<int>().Retry(1, Backoff.None));
+        var typed = registry.GetShield<int>("dynamic-typed");
+
+        _ = await untyped.ExecuteOutcomeAsync<int>(Fail);
+        _ = await typed.ExecuteOutcomeAsync(Fail);
+
+        var shieldNames = logs.Collector.GetSnapshot()
+            .Where(record => record.Id == new EventId(1001, "Retry"))
+            .Select(record => record.GetStructuredStateValue("ShieldName")!)
+            .ToArray();
+        await Assert.That(added).IsTrue();
+        await Assert.That(shieldNames).IsEquivalentTo(["dynamic-untyped", "dynamic-typed"]);
+    }
+
+    [Test]
+    [NotInParallel]
     public async Task AddKevlarLogging_Shares_Rate_Limit_Across_Decorated_Shields()
     {
         var logs = new FakeLoggerProvider();

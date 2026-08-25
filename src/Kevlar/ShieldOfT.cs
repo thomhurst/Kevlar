@@ -445,8 +445,10 @@ public sealed class Shield<TResult> : IShieldLifecycle
     public Shield<TResult> Wrap(Shield inner)
     {
         Throw.IfNull(inner, nameof(inner));
+        var strategies = Shield.Concat(Strategies, inner.Strategies);
+        StrategyAppendObserver.NotifyComposition(strategies, Name ?? inner.Name);
         return new Shield<TResult>(
-            Shield.Concat(Strategies, inner.Strategies),
+            strategies,
             null,
             Name ?? inner.Name,
             Time ?? inner.Time,
@@ -465,8 +467,10 @@ public sealed class Shield<TResult> : IShieldLifecycle
     public Shield<TResult> Wrap(Shield<TResult> inner)
     {
         Throw.IfNull(inner, nameof(inner));
+        var strategies = Shield.Concat(Strategies, inner.Strategies);
+        StrategyAppendObserver.NotifyComposition(strategies, Name ?? inner.Name);
         return new Shield<TResult>(
-            Shield.Concat(Strategies, inner.Strategies),
+            strategies,
             null,
             Name ?? inner.Name,
             Time ?? inner.Time,
@@ -510,7 +514,9 @@ public sealed class Shield<TResult> : IShieldLifecycle
             hasStrategies |= shieldHasStrategies;
         }
 
-        return new Shield<TResult>(Shield.Concat(parts), null, name, time, appliedDecorators);
+        var strategies = Shield.Concat(parts);
+        StrategyAppendObserver.NotifyComposition(strategies, name);
+        return new Shield<TResult>(strategies, null, name, time, appliedDecorators);
     }
 
     /// <summary>Returns a copy of this shield with a diagnostic name (surfaced as <see cref="KevlarContext.ShieldName"/>).</summary>

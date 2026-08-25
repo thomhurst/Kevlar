@@ -172,6 +172,27 @@ internal static class StrategyAppendObserver
             }
         }
     }
+
+    public static void NotifyComposition(Strategy[] strategies, string? shieldName)
+    {
+        var strategyIndex = 0;
+        for (var appendedIndex = 0; appendedIndex < strategies.Length; appendedIndex++)
+        {
+            var appended = strategies[appendedIndex];
+            for (var observerIndex = 0; observerIndex < appendedIndex; observerIndex++)
+            {
+                if (strategies[observerIndex] is IStrategyAppendObserver observer)
+                {
+                    observer.OnStrategyAppended(appended, shieldName, strategyIndex);
+                }
+            }
+
+            if (appended is not ITransparentStrategy)
+            {
+                strategyIndex++;
+            }
+        }
+    }
 }
 
 internal static class ShieldNameObserver
