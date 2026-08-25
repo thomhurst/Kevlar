@@ -65,6 +65,12 @@ independent shield state per tenant, endpoint, or other key while remaining boun
 
 `AddShield(name, IConfiguration)` builds a shield from a configuration section, so retry counts, timeouts and breaker thresholds are tunable per environment without a redeploy:
 
+The Generic Host already loads `appsettings.json`. A standalone application can add the same JSON provider explicitly:
+
+```bash
+dotnet add package Microsoft.Extensions.Configuration.Json
+```
+
 ```json
 // appsettings.json
 {
@@ -82,7 +88,9 @@ independent shield state per tenant, endpoint, or other key while remaining boun
 ```csharp
 using Kevlar.Extensions.DependencyInjection;
 
-var configuration = new ConfigurationBuilder().Build();
+var configuration = new ConfigurationBuilder()
+    .AddJsonFile("appsettings.json")
+    .Build();
 services.AddShield("github", configuration.GetSection("Resilience:GitHub"));
 ```
 
@@ -104,7 +112,9 @@ Configuration cannot reorder that chain — the order is what makes a definition
 ```csharp
 using Kevlar.Extensions.DependencyInjection;
 
-var configuration = new ConfigurationBuilder().Build();
+var configuration = new ConfigurationBuilder()
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .Build();
 services.AddReloadingShield(
     "github",
     configuration.GetSection("Resilience:GitHub"),

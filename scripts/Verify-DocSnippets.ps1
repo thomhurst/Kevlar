@@ -35,6 +35,7 @@ $requiredPackages = @(
     'Kevlar.Testing'
 )
 $allowedExternalPackages = @(
+    'Microsoft.Extensions.Configuration.Json'
     'Microsoft.Extensions.TimeProvider.Testing'
 )
 
