@@ -231,6 +231,8 @@ public sealed class Shield : IShieldLifecycle
         var parts = new Strategy[shields.Length][];
         string? name = null;
         TimeProvider? time = null;
+        IShieldDecorator[] appliedDecorators = [];
+        var hasStrategies = false;
 
         for (var i = 0; i < shields.Length; i++)
         {
@@ -239,9 +241,15 @@ public sealed class Shield : IShieldLifecycle
             parts[i] = shield.Strategies;
             name ??= shield.Name;
             time ??= shield.Time;
+            appliedDecorators = ShieldDecoration.IntersectForComposition(
+                appliedDecorators,
+                hasStrategies,
+                shield.AppliedDecorators,
+                shield.Strategies.Length > 0);
+            hasStrategies |= shield.Strategies.Length > 0;
         }
 
-        return new Shield(Concat(parts), null, name, time);
+        return new Shield(Concat(parts), null, name, time, appliedDecorators);
     }
 
     // ── Execution ───────────────────────────────────────────────────────────────────────

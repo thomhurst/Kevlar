@@ -2,6 +2,47 @@ namespace Kevlar.Internal;
 
 internal static class ShieldDecoration
 {
+    public static IShieldDecorator[] IntersectForComposition(
+        IShieldDecorator[] first,
+        bool firstHasStrategies,
+        IShieldDecorator[] second,
+        bool secondHasStrategies)
+    {
+        if (!firstHasStrategies)
+        {
+            return secondHasStrategies ? second : [];
+        }
+
+        if (!secondHasStrategies)
+        {
+            return first;
+        }
+
+        if (first.Length == 0 || second.Length == 0)
+        {
+            return [];
+        }
+
+        var intersection = new IShieldDecorator[Math.Min(first.Length, second.Length)];
+        var count = 0;
+
+        foreach (var decorator in first)
+        {
+            if (IsApplied(second, decorator))
+            {
+                intersection[count++] = decorator;
+            }
+        }
+
+        if (count == first.Length)
+        {
+            return first;
+        }
+
+        Array.Resize(ref intersection, count);
+        return intersection;
+    }
+
     public static Shield Apply(
         Shield shield,
         string? name,
@@ -47,10 +88,16 @@ internal static class ShieldDecoration
     private static bool IsApplied(
         IShieldDecorator[] appliedDecorators,
         IShieldDecorator decorator)
+        => IsApplied(appliedDecorators, appliedDecorators.Length, decorator);
+
+    private static bool IsApplied(
+        IShieldDecorator[] appliedDecorators,
+        int count,
+        IShieldDecorator decorator)
     {
-        foreach (var applied in appliedDecorators)
+        for (var i = 0; i < count; i++)
         {
-            if (ReferenceEquals(applied, decorator))
+            if (ReferenceEquals(appliedDecorators[i], decorator))
             {
                 return true;
             }

@@ -449,7 +449,12 @@ public sealed class Shield<TResult> : IShieldLifecycle
             Shield.Concat(Strategies, inner.Strategies),
             null,
             Name ?? inner.Name,
-            Time ?? inner.Time);
+            Time ?? inner.Time,
+            ShieldDecoration.IntersectForComposition(
+                AppliedDecorators,
+                Strategies.Length > 0,
+                inner.AppliedDecorators,
+                inner.Strategies.Length > 0));
     }
 
     /// <summary>
@@ -464,7 +469,12 @@ public sealed class Shield<TResult> : IShieldLifecycle
             Shield.Concat(Strategies, inner.Strategies),
             null,
             Name ?? inner.Name,
-            Time ?? inner.Time);
+            Time ?? inner.Time,
+            ShieldDecoration.IntersectForComposition(
+                AppliedDecorators,
+                Strategies.Length > 0,
+                inner.AppliedDecorators,
+                inner.Strategies.Length > 0));
     }
 
     /// <summary>
@@ -481,6 +491,8 @@ public sealed class Shield<TResult> : IShieldLifecycle
         var parts = new Strategy[shields.Length][];
         string? name = null;
         TimeProvider? time = null;
+        IShieldDecorator[] appliedDecorators = [];
+        var hasStrategies = false;
 
         for (var i = 0; i < shields.Length; i++)
         {
@@ -489,9 +501,15 @@ public sealed class Shield<TResult> : IShieldLifecycle
             parts[i] = shield.Strategies;
             name ??= shield.Name;
             time ??= shield.Time;
+            appliedDecorators = ShieldDecoration.IntersectForComposition(
+                appliedDecorators,
+                hasStrategies,
+                shield.AppliedDecorators,
+                shield.Strategies.Length > 0);
+            hasStrategies |= shield.Strategies.Length > 0;
         }
 
-        return new Shield<TResult>(Shield.Concat(parts), null, name, time);
+        return new Shield<TResult>(Shield.Concat(parts), null, name, time, appliedDecorators);
     }
 
     /// <summary>Returns a copy of this shield with a diagnostic name (surfaced as <see cref="KevlarContext.ShieldName"/>).</summary>

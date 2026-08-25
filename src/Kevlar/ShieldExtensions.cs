@@ -293,7 +293,12 @@ public static class ShieldExtensions
             Shield.Concat(outer.Strategies, inner.Strategies),
             null,
             outer.Name ?? inner.Name,
-            outer.Time ?? inner.Time);
+            outer.Time ?? inner.Time,
+            ShieldDecoration.IntersectForComposition(
+                outer.AppliedDecorators,
+                outer.Strategies.Length > 0,
+                inner.AppliedDecorators,
+                inner.Strategies.Length > 0));
     }
 
     /// <summary>
@@ -309,7 +314,12 @@ public static class ShieldExtensions
             Shield.Concat(outer.Strategies, inner.Strategies),
             null,
             outer.Name ?? inner.Name,
-            outer.Time ?? inner.Time);
+            outer.Time ?? inner.Time,
+            ShieldDecoration.IntersectForComposition(
+                outer.AppliedDecorators,
+                outer.Strategies.Length > 0,
+                inner.AppliedDecorators,
+                inner.Strategies.Length > 0));
     }
 
     /// <summary>
