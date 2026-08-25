@@ -18,6 +18,7 @@ Kevlar.Extensions.Http.HttpEndpointSelectionMode
 Kevlar.Extensions.Http.HttpEndpointSelectionMode.Ordered = 0 -> Kevlar.Extensions.Http.HttpEndpointSelectionMode
 Kevlar.Extensions.Http.HttpEndpointSelectionMode.Weighted = 1 -> Kevlar.Extensions.Http.HttpEndpointSelectionMode
 Kevlar.Extensions.Http.HttpRequestReplayException
+Kevlar.Extensions.Http.HttpRequestReplayException.HttpRequestReplayException() -> void
 Kevlar.Extensions.Http.HttpRequestReplayException.HttpRequestReplayException(string! message) -> void
 Kevlar.Extensions.Http.HttpRequestReplayException.HttpRequestReplayException(string! message, System.Exception! innerException) -> void
 Kevlar.Extensions.Http.ShieldDelegatingHandler.ShieldDelegatingHandler(Kevlar.Shield<System.Net.Http.HttpResponseMessage!>! shield, Kevlar.Extensions.Http.ShieldHttpHandlerOptions! options) -> void

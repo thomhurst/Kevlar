@@ -24,13 +24,15 @@ Kevlar's pipeline model translates 1:1 from Polly v8 — the "first strategy add
 
 :::warning `TimeoutExceededException` is **not** a `System.TimeoutException`
 
-`Kevlar.TimeoutExceededException` derives from `KevlarException`, not from `System.TimeoutException`.
-Polly set the same trap — `TimeoutRejectedException` derived from `ExecutionRejectedException`, never
+`Kevlar.TimeoutExceededException` derives from `ExecutionRejectedException`, not from
+`System.TimeoutException`. Polly set the same trap — `TimeoutRejectedException` derived from its own
+`ExecutionRejectedException`, never
 from `System.TimeoutException` — and the reflex is the same in both libraries: a `catch (TimeoutException)` <!-- doc-lint: allow-TimeoutException -->
 carried over from application code still compiles, never matches, and lets the timeout escape as an
 unhandled exception.
 
-Catch the exception the strategy actually throws, or `KevlarException` for any Kevlar rejection:
+Catch the exception the strategy actually throws, or `ExecutionRejectedException` for any Kevlar
+execution rejection:
 
 ```csharp
 var saveShield = Shield.Timeout(TimeSpan.FromSeconds(30));
@@ -43,14 +45,15 @@ catch (TimeoutExceededException exception)      // not System.TimeoutException
 {
     logger.LogWarning("Timed out after {Timeout}", exception.Timeout);
 }
-catch (KevlarException exception)               // CircuitOpenException, RateLimitExceededException, …
+catch (ExecutionRejectedException exception)    // CircuitOpenException, RateLimitExceededException, …
 {
     logger.LogWarning(exception, "Shielded call was rejected");
 }
 ```
 
 The same applies to `CircuitOpenException`, `RateLimitExceededException` and
-`ConcurrencyLimitExceededException`: every rejection Kevlar raises derives from `KevlarException`.
+`ConcurrencyLimitExceededException`: every execution rejection Kevlar raises derives from
+`ExecutionRejectedException`, which itself derives from `KevlarException`.
 The [exceptions reference](exceptions.md) covers every core and satellite exception in one place.
 
 :::
