@@ -6,7 +6,11 @@ namespace Kevlar.Extensions.DependencyInjection;
 
 internal interface IReloadingProvider : IDisposable
 {
-    IReadOnlyList<IShieldLifecycle> Snapshots { get; }
+    IReadOnlyList<Strategy> Strategies { get; }
+
+    IReadOnlyList<ShieldRetirement> Retire();
+
+    void SetRetirementHandler(Action<IReadOnlyList<ShieldRetirement>> handler);
 }
 
 internal sealed class ReloadingShieldProvider(
@@ -55,7 +59,7 @@ internal sealed class OptionsReloadingShieldProvider<
             {
                 reload();
             }
-        })!,
+        }) ?? NullDisposable.Instance,
         onReloadFailure)
     , IShieldProvider
     where TOptions : class
@@ -77,7 +81,7 @@ internal sealed class OptionsReloadingShieldProvider<
             {
                 reload();
             }
-        })!,
+        }) ?? NullDisposable.Instance,
         onReloadFailure)
     , IShieldProvider<TResult>
     where TOptions : class
@@ -93,7 +97,8 @@ internal abstract class ReloadingProvider<TShield> : IReloadingProvider
     private readonly TimeSpan _debounceDelay;
     private readonly ITimer _reloadTimer;
     private readonly IDisposable? _subscription;
-    private readonly List<TShield> _snapshots = [];
+    private readonly List<ShieldRetirement> _retiredSnapshots = [];
+    private Action<IReadOnlyList<ShieldRetirement>>? _retirementHandler;
     private TShield _current = null!;
     private bool _disposed;
 
@@ -137,11 +142,11 @@ internal abstract class ReloadingProvider<TShield> : IReloadingProvider
             Timeout.InfiniteTimeSpan);
         try
         {
-            _subscription = subscribe(ScheduleReload);
+            _subscription = subscribe(ScheduleReload) ?? NullDisposable.Instance;
             lock (_reloadLock)
             {
                 _current = factory();
-                _snapshots.Add(_current);
+                ShieldRetirement.Track(_current);
             }
         }
         catch
@@ -154,14 +159,43 @@ internal abstract class ReloadingProvider<TShield> : IReloadingProvider
 
     public TShield Current => Volatile.Read(ref _current);
 
-    IReadOnlyList<IShieldLifecycle> IReloadingProvider.Snapshots
+    IReadOnlyList<Strategy> IReloadingProvider.Strategies
     {
         get
         {
             lock (_reloadLock)
             {
-                return _snapshots.Cast<IShieldLifecycle>().ToArray();
+                var seen = ShieldRetirement.CreateStrategySet();
+                var strategies = new List<Strategy>();
+                AddStrategiesForDisposal(((IShieldLifecycle)_current).Strategies, seen, strategies);
+                foreach (var snapshot in _retiredSnapshots)
+                {
+                    AddStrategiesForDisposal(snapshot.Strategies, seen, strategies);
+                }
+
+                return strategies;
             }
+        }
+    }
+
+    IReadOnlyList<ShieldRetirement> IReloadingProvider.Retire()
+    {
+        Dispose();
+        lock (_reloadLock)
+        {
+            var retirements = new List<ShieldRetirement>(_retiredSnapshots.Count + 1);
+            retirements.AddRange(_retiredSnapshots);
+            retirements.Add(new ShieldRetirement(_current, _current));
+            _retiredSnapshots.Clear();
+            return retirements;
+        }
+    }
+
+    void IReloadingProvider.SetRetirementHandler(Action<IReadOnlyList<ShieldRetirement>> handler)
+    {
+        lock (_reloadLock)
+        {
+            _retirementHandler = handler;
         }
     }
 
@@ -216,6 +250,7 @@ internal abstract class ReloadingProvider<TShield> : IReloadingProvider
     private void Reload()
     {
         Exception? failure = null;
+        List<ShieldRetirement>? reclaimable = null;
 
         lock (_reloadLock)
         {
@@ -227,8 +262,10 @@ internal abstract class ReloadingProvider<TShield> : IReloadingProvider
             try
             {
                 var replacement = _factory();
-                _snapshots.Add(replacement);
+                ShieldRetirement.Track(replacement);
+                _retiredSnapshots.Add(new ShieldRetirement(_current, _current));
                 Volatile.Write(ref _current, replacement);
+                reclaimable = CollectReclaimableSnapshots();
             }
             catch (Exception exception)
             {
@@ -236,6 +273,59 @@ internal abstract class ReloadingProvider<TShield> : IReloadingProvider
             }
         }
 
+        Reclaim(reclaimable);
+
+        ReportFailure(failure);
+    }
+
+    private List<ShieldRetirement>? CollectReclaimableSnapshots()
+    {
+        List<ShieldRetirement>? reclaimable = null;
+        for (var index = _retiredSnapshots.Count - 1; index >= 0; index--)
+        {
+            var snapshot = _retiredSnapshots[index];
+            if (!snapshot.CanReclaim())
+            {
+                continue;
+            }
+
+            reclaimable ??= [];
+            reclaimable.Add(snapshot);
+            _retiredSnapshots.RemoveAt(index);
+        }
+
+        return reclaimable;
+    }
+
+    private void Reclaim(List<ShieldRetirement>? reclaimable)
+    {
+        if (reclaimable is null)
+        {
+            return;
+        }
+
+        Action<IReadOnlyList<ShieldRetirement>>? retirementHandler;
+        lock (_reloadLock)
+        {
+            retirementHandler = _retirementHandler;
+        }
+
+        if (retirementHandler is not null)
+        {
+            retirementHandler(reclaimable);
+            return;
+        }
+
+        var retainedOrDisposed = ShieldRetirement.CreateStrategySet();
+        retainedOrDisposed.UnionWith(((IShieldLifecycle)_current).Strategies);
+        foreach (var snapshot in reclaimable)
+        {
+            snapshot.Reclaim(ReportFailure, retainedOrDisposed);
+        }
+    }
+
+    private void ReportFailure(Exception? failure)
+    {
         if (failure is not null && _onReloadFailure is not null)
         {
             try
@@ -247,5 +337,28 @@ internal abstract class ReloadingProvider<TShield> : IReloadingProvider
                 // A reporting failure must not disable future configuration reloads.
             }
         }
+    }
+
+    private static void AddStrategiesForDisposal(
+        IReadOnlyList<Strategy> source,
+        HashSet<Strategy> seen,
+        List<Strategy> destination)
+    {
+        for (var index = source.Count - 1; index >= 0; index--)
+        {
+            if (seen.Add(source[index]))
+            {
+                destination.Add(source[index]);
+            }
+        }
+    }
+}
+
+internal sealed class NullDisposable : IDisposable
+{
+    public static NullDisposable Instance { get; } = new();
+
+    public void Dispose()
+    {
     }
 }

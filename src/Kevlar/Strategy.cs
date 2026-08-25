@@ -21,6 +21,8 @@ namespace Kevlar;
 /// </remarks>
 public abstract class Strategy
 {
+    private StrategyExecutionTracker? _executionTracker;
+
     /// <summary>
     /// Gets whether this strategy guarantees invoking its continuation at most once per execution.
     /// </summary>
@@ -70,6 +72,31 @@ public abstract class Strategy
     /// when duplicate use could deadlock or corrupt their accounting.
     /// </summary>
     protected internal virtual bool IsDuplicateReferenceUnsafe => false;
+
+    internal StrategyExecutionTracker EnableExecutionTracking()
+    {
+        var tracker = Volatile.Read(ref _executionTracker);
+        if (tracker is not null)
+        {
+            return tracker;
+        }
+
+        var created = new StrategyExecutionTracker();
+        return Interlocked.CompareExchange(ref _executionTracker, created, null) ?? created;
+    }
+
+    internal StrategyExecutionTracker? ExecutionTracker => Volatile.Read(ref _executionTracker);
+}
+
+internal sealed class StrategyExecutionTracker
+{
+    private int _activeExecutions;
+
+    public int ActiveExecutions => Volatile.Read(ref _activeExecutions);
+
+    public void Enter() => Interlocked.Increment(ref _activeExecutions);
+
+    public void Exit() => Interlocked.Decrement(ref _activeExecutions);
 }
 
 internal interface IFallbackStrategyInspection
@@ -131,6 +158,8 @@ public readonly struct Continuation<T, TState>
 
         ValueTask<Outcome<T>> execution;
         var previousStrategyIndex = node.Index - 1;
+        var executionTracker = node.Strategy.ExecutionTracker;
+        executionTracker?.Enter();
 
         try
         {
@@ -143,6 +172,7 @@ public readonly struct Continuation<T, TState>
         {
             context.StrategyIndex = previousStrategyIndex;
             ExitStrategyIfRequired(node, context);
+            executionTracker?.Exit();
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(exception));
         }
 
@@ -150,10 +180,11 @@ public readonly struct Continuation<T, TState>
         {
             context.StrategyIndex = previousStrategyIndex;
             ExitStrategyIfRequired(node, context);
+            executionTracker?.Exit();
             return execution;
         }
 
-        return AwaitStrategyAsync(execution, context, previousStrategyIndex, node);
+        return AwaitStrategyAsync(execution, context, previousStrategyIndex, node, executionTracker);
     }
 
     private async ValueTask<Outcome<T>> InvokeStrategyWithForkAsync(
@@ -175,7 +206,8 @@ public readonly struct Continuation<T, TState>
         ValueTask<Outcome<T>> execution,
         KevlarContext context,
         int previousStrategyIndex,
-        StrategyNode node)
+        StrategyNode node,
+        StrategyExecutionTracker? executionTracker)
     {
         try
         {
@@ -189,6 +221,7 @@ public readonly struct Continuation<T, TState>
         {
             context.StrategyIndex = previousStrategyIndex;
             ExitStrategyIfRequired(node, context);
+            executionTracker?.Exit();
         }
     }
 

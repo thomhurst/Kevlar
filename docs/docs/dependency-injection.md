@@ -71,6 +71,10 @@ later call can recover. `TryAdd` installs a lazy factory only when the name is f
 forgets the registration without disposing a shield already held by a caller.
 
 ```csharp
+using Kevlar;
+using Kevlar.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
+
 using var dynamicServices = new ServiceCollection().AddKevlar().BuildServiceProvider();
 var dynamicRegistry = dynamicServices.GetRequiredService<IKevlarRegistry>();
 var tenantShield = dynamicRegistry.GetOrAdd(
@@ -192,15 +196,16 @@ the service provider removes the change-token subscription.
 Named options can drive the same atomic replacement model without the fixed `ShieldDefinition`
 schema. The options name and shield name are the same; a change for another name is ignored.
 
-<!-- doc-test-declaration -->
+<!-- doc-test-declaration: split-before=services.AddReloadingShield -->
 ```csharp
+using Kevlar;
+using Kevlar.Extensions.DependencyInjection;
+
 public sealed class CatalogResilienceOptions
 {
     public int MaxRetries { get; set; } = 3;
 }
-```
 
-```csharp
 services.AddReloadingShield<CatalogResilienceOptions>(
     "catalog",
     static (options, _) => Shield.Retry(options.MaxRetries),

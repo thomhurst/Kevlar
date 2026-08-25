@@ -62,9 +62,18 @@ internal sealed class RegistryEntry
     }
 
     private Lazy<object> CreateValue() => new(
-        () => _registration.Factory(_serviceProvider)
-            ?? throw new InvalidOperationException(
-                $"The factory for shield '{_registration.Name}' returned null."),
+        () =>
+        {
+            var value = _registration.Factory(_serviceProvider)
+                ?? throw new InvalidOperationException(
+                    $"The factory for shield '{_registration.Name}' returned null.");
+            if (value is IShieldLifecycle shield)
+            {
+                ShieldRetirement.Track(shield);
+            }
+
+            return value;
+        },
         LazyThreadSafetyMode.ExecutionAndPublication);
 }
 
@@ -72,7 +81,8 @@ internal sealed class KevlarRegistry : IKevlarRegistry
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ConcurrentDictionary<(string Name, Type? ResultType), RegistryEntry> _entries = new();
-    private readonly ConcurrentQueue<RegistryEntry> _retiredEntries = new();
+    private readonly ConcurrentDictionary<ShieldRetirement, byte> _retirements = new();
+    private readonly ConcurrentQueue<Exception> _retirementFailures = new();
     private readonly ConcurrentDictionary<IReloadingProvider, byte> _reloadingProviders =
         new(ReferenceComparer<IReloadingProvider>.Instance);
     private readonly object _lifecycleLock = new();
@@ -182,6 +192,7 @@ internal sealed class KevlarRegistry : IKevlarRegistry
     {
         var provider = factory();
         _reloadingProviders.TryAdd(provider, 0);
+        provider.SetRetirementHandler(ReclaimRetirements);
         return provider;
     });
 
@@ -194,6 +205,7 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         }
 
         var failures = new List<Exception>();
+        DrainRetirementFailures(failures);
         foreach (var provider in GetReloadingProviders(values))
         {
             TryDispose(provider, failures);
@@ -216,6 +228,7 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         }
 
         var failures = new List<Exception>();
+        DrainRetirementFailures(failures);
         foreach (var provider in GetReloadingProviders(values))
         {
             TryDispose(provider, failures);
@@ -252,7 +265,11 @@ internal sealed class KevlarRegistry : IKevlarRegistry
             return false;
         }
 
-        _retiredEntries.Enqueue(entry);
+        if (entry.TryGetResolved(out var value))
+        {
+            Retire(value);
+        }
+
         return true;
     });
 
@@ -343,6 +360,7 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         }
         finally
         {
+            ScavengeRetirements();
             lock (_lifecycleLock)
             {
                 _activeOperations--;
@@ -378,12 +396,9 @@ internal sealed class KevlarRegistry : IKevlarRegistry
                 }
             }
 
-            foreach (var entry in _retiredEntries)
+            foreach (var retirement in _retirements.Keys)
             {
-                if (entry.TryGetResolved(out var value))
-                {
-                    values.Add(value);
-                }
+                values.Add(retirement.Strategies);
             }
 
             return values;
@@ -409,11 +424,21 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         {
             if (value is IReloadingProvider provider)
             {
-                foreach (var snapshot in provider.Snapshots)
+                foreach (var strategy in provider.Strategies)
                 {
-                    foreach (var strategy in GetStrategies(snapshot, seen))
+                    if (seen.Add(strategy))
                     {
                         yield return strategy;
+                    }
+                }
+            }
+            else if (value is Strategy[] strategies)
+            {
+                for (var index = strategies.Length - 1; index >= 0; index--)
+                {
+                    if (seen.Add(strategies[index]))
+                    {
+                        yield return strategies[index];
                     }
                 }
             }
@@ -460,6 +485,91 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         }
     }
 
+    private void Retire(object value)
+    {
+        if (value is IReloadingProvider provider)
+        {
+            _reloadingProviders.TryRemove(provider, out _);
+            foreach (var retirement in provider.Retire())
+            {
+                _retirements.TryAdd(retirement, 0);
+            }
+
+            return;
+        }
+
+        if (value is IShieldLifecycle shield)
+        {
+            _retirements.TryAdd(new ShieldRetirement(value, shield), 0);
+        }
+    }
+
+    private void ScavengeRetirements()
+    {
+        List<ShieldRetirement>? reclaimable = null;
+        foreach (var retirement in _retirements.Keys)
+        {
+            if (retirement.CanReclaim() && _retirements.TryRemove(retirement, out _))
+            {
+                reclaimable ??= [];
+                reclaimable.Add(retirement);
+            }
+        }
+
+        if (reclaimable is null)
+        {
+            return;
+        }
+
+        ReclaimRetirements(reclaimable);
+    }
+
+    private void ReclaimRetirements(IReadOnlyList<ShieldRetirement> reclaimable)
+    {
+        var retainedOrDisposed = ShieldRetirement.CreateStrategySet();
+        foreach (var entry in _entries.Values)
+        {
+            try
+            {
+                if (entry.TryGetResolved(out var resolved))
+                {
+                    AddStrategies(resolved, retainedOrDisposed);
+                }
+            }
+            catch
+            {
+                // Failed lazy factories are retried and do not own a usable shield snapshot.
+            }
+        }
+
+        foreach (var provider in _reloadingProviders.Keys)
+        {
+            retainedOrDisposed.UnionWith(provider.Strategies);
+        }
+
+        foreach (var retirement in _retirements.Keys)
+        {
+            retainedOrDisposed.UnionWith(retirement.Strategies);
+        }
+
+        foreach (var retirement in reclaimable)
+        {
+            retirement.Reclaim(_retirementFailures.Enqueue, retainedOrDisposed);
+        }
+    }
+
+    private static void AddStrategies(object value, HashSet<Strategy> strategies)
+    {
+        if (value is IReloadingProvider provider)
+        {
+            strategies.UnionWith(provider.Strategies);
+        }
+        else if (value is IShieldLifecycle shield)
+        {
+            strategies.UnionWith(shield.Strategies);
+        }
+    }
+
     private static void ThrowDisposalFailures(List<Exception> failures)
     {
         if (failures.Count == 1)
@@ -470,6 +580,14 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         if (failures.Count > 1)
         {
             throw new AggregateException(failures);
+        }
+    }
+
+    private void DrainRetirementFailures(List<Exception> failures)
+    {
+        while (_retirementFailures.TryDequeue(out var failure))
+        {
+            failures.Add(failure);
         }
     }
 

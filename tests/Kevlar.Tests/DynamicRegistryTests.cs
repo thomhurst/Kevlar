@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using Kevlar.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -258,6 +259,88 @@ public class DynamicRegistryTests
     }
 
     [Test]
+    public async Task Options_Monitor_With_No_Change_Subscription_Remains_Usable_And_Disposable()
+    {
+        using var services = new ServiceCollection()
+            .AddSingleton<IOptionsMonitor<ReloadOptions>>(new NullSubscriptionOptionsMonitor())
+            .AddReloadingShield<ReloadOptions>(
+                "nullable-subscription",
+                static (_, _) => Shield.Empty)
+            .BuildServiceProvider();
+
+        var provider = services.GetRequiredKeyedService<IShieldProvider>("nullable-subscription");
+
+        await Assert.That(provider.Current).IsNotNull();
+        services.Dispose();
+    }
+
+    [Test]
+    public async Task Superseded_Reload_Snapshot_Is_Reclaimed_After_Holders_Release_It()
+    {
+        var monitor = new MutableOptionsMonitor<ReloadOptions>();
+        monitor.Set("reclaim", new ReloadOptions(), notify: false);
+        var first = new DisposableStrategy();
+        var second = new DisposableStrategy();
+        var factoryCalls = 0;
+        using var services = new ServiceCollection()
+            .AddSingleton<IOptionsMonitor<ReloadOptions>>(monitor)
+            .AddReloadingShield<ReloadOptions>(
+                "reclaim",
+                (_, _) => Shield.Use(Interlocked.Increment(ref factoryCalls) == 1 ? first : second))
+            .BuildServiceProvider();
+        var provider = services.GetRequiredKeyedService<IShieldProvider>("reclaim");
+
+        var retired = ReplaceCurrentSnapshot(provider, monitor, "reclaim");
+        Collect(retired);
+        monitor.Set("reclaim", new ReloadOptions());
+
+        await Assert.That(retired.IsAlive).IsFalse();
+        await Assert.That(first.DisposeCount).IsEqualTo(1);
+        await Assert.That(second.DisposeCount).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Superseded_Reload_Snapshot_Is_Not_Disposed_During_Execution()
+    {
+        var monitor = new MutableOptionsMonitor<ReloadOptions>();
+        monitor.Set("active", new ReloadOptions(), notify: false);
+        var first = new DisposableStrategy();
+        var second = new DisposableStrategy();
+        var factoryCalls = 0;
+        using var services = new ServiceCollection()
+            .AddSingleton<IOptionsMonitor<ReloadOptions>>(monitor)
+            .AddReloadingShield<ReloadOptions>(
+                "active",
+                (_, _) => Shield.Use(Interlocked.Increment(ref factoryCalls) == 1 ? first : second))
+            .BuildServiceProvider();
+        var provider = services.GetRequiredKeyedService<IShieldProvider>("active");
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var current = provider.Current;
+        var execution = current.ExecuteAsync(async _ =>
+        {
+            started.SetResult();
+            await release.Task;
+        }).AsTask();
+        await started.Task;
+
+        monitor.Set("active", new ReloadOptions());
+        var retired = new WeakReference(current);
+        current = null!;
+        Collect(retired);
+        monitor.Set("active", new ReloadOptions());
+
+        await Assert.That(first.DisposeCount).IsEqualTo(0);
+
+        release.SetResult();
+        await execution;
+        Collect(retired);
+        monitor.Set("active", new ReloadOptions());
+
+        await Assert.That(first.DisposeCount).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Typed_Options_Monitor_Reload_Publishes_Typed_Shield()
     {
         var monitor = new MutableOptionsMonitor<ReloadOptions>();
@@ -309,6 +392,21 @@ public class DynamicRegistryTests
     }
 
     [Test]
+    public async Task Removed_Resolved_Shield_Is_Reclaimed_After_Holders_Release_It()
+    {
+        using var services = new ServiceCollection().AddKevlar().BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        var strategy = new DisposableStrategy();
+        var retired = ResolveAndRemove(registry, strategy);
+
+        Collect(retired);
+        _ = registry.GetOrAdd("scavenge", _ => Shield.Empty);
+
+        await Assert.That(retired.IsAlive).IsFalse();
+        await Assert.That(strategy.DisposeCount).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Direct_Reloading_Provider_Resolution_Registers_Snapshots_For_Disposal()
     {
         var monitor = new MutableOptionsMonitor<ReloadOptions>();
@@ -345,6 +443,37 @@ public class DynamicRegistryTests
         public int Retries { get; init; }
 
         public int Fallback { get; init; }
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static WeakReference ReplaceCurrentSnapshot(
+        IShieldProvider provider,
+        MutableOptionsMonitor<ReloadOptions> monitor,
+        string name)
+    {
+        var current = provider.Current;
+        var reference = new WeakReference(current);
+        monitor.Set(name, new ReloadOptions());
+        return reference;
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static WeakReference ResolveAndRemove(IKevlarRegistry registry, DisposableStrategy strategy)
+    {
+        var shield = registry.GetOrAdd("retired", _ => Shield.Use(strategy));
+        var reference = new WeakReference(shield);
+        registry.Remove("retired");
+        return reference;
+    }
+
+    private static void Collect(WeakReference reference)
+    {
+        for (var attempt = 0; attempt < 5 && reference.IsAlive; attempt++)
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+        }
     }
 
     private sealed class DisposableStrategy : Strategy, IDisposable
@@ -437,5 +566,14 @@ public class DynamicRegistryTests
                 }
             }
         }
+    }
+
+    private sealed class NullSubscriptionOptionsMonitor : IOptionsMonitor<ReloadOptions>
+    {
+        public ReloadOptions CurrentValue { get; } = new();
+
+        public ReloadOptions Get(string? name) => CurrentValue;
+
+        public IDisposable OnChange(Action<ReloadOptions, string?> listener) => null!;
     }
 }
