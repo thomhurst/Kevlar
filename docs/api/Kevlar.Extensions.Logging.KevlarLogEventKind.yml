@@ -1,0 +1,255 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Extensions.Logging.KevlarLogEventKind
+  commentId: T:Kevlar.Extensions.Logging.KevlarLogEventKind
+  id: KevlarLogEventKind
+  parent: Kevlar.Extensions.Logging
+  children:
+  - Kevlar.Extensions.Logging.KevlarLogEventKind.CallbackError
+  - Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitRejected
+  - Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitState
+  - Kevlar.Extensions.Logging.KevlarLogEventKind.ConcurrencyLimitRejected
+  - Kevlar.Extensions.Logging.KevlarLogEventKind.Fallback
+  - Kevlar.Extensions.Logging.KevlarLogEventKind.Hedge
+  - Kevlar.Extensions.Logging.KevlarLogEventKind.RateLimitRejected
+  - Kevlar.Extensions.Logging.KevlarLogEventKind.Retry
+  - Kevlar.Extensions.Logging.KevlarLogEventKind.Timeout
+  langs:
+  - csharp
+  - vb
+  name: KevlarLogEventKind
+  nameWithType: KevlarLogEventKind
+  fullName: Kevlar.Extensions.Logging.KevlarLogEventKind
+  type: Enum
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: Identifies the stable logging event emitted for a Kevlar strategy event.
+  example: []
+  syntax:
+    content: public enum KevlarLogEventKind
+    content.vb: Public Enum KevlarLogEventKind
+- uid: Kevlar.Extensions.Logging.KevlarLogEventKind.Retry
+  commentId: F:Kevlar.Extensions.Logging.KevlarLogEventKind.Retry
+  id: Retry
+  parent: Kevlar.Extensions.Logging.KevlarLogEventKind
+  langs:
+  - csharp
+  - vb
+  name: Retry
+  nameWithType: KevlarLogEventKind.Retry
+  fullName: Kevlar.Extensions.Logging.KevlarLogEventKind.Retry
+  type: Field
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: A retry is about to run.
+  example: []
+  syntax:
+    content: Retry = 0
+    return:
+      type: Kevlar.Extensions.Logging.KevlarLogEventKind
+- uid: Kevlar.Extensions.Logging.KevlarLogEventKind.Timeout
+  commentId: F:Kevlar.Extensions.Logging.KevlarLogEventKind.Timeout
+  id: Timeout
+  parent: Kevlar.Extensions.Logging.KevlarLogEventKind
+  langs:
+  - csharp
+  - vb
+  name: Timeout
+  nameWithType: KevlarLogEventKind.Timeout
+  fullName: Kevlar.Extensions.Logging.KevlarLogEventKind.Timeout
+  type: Field
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: An execution exceeded a timeout.
+  example: []
+  syntax:
+    content: Timeout = 1
+    return:
+      type: Kevlar.Extensions.Logging.KevlarLogEventKind
+- uid: Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitState
+  commentId: F:Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitState
+  id: CircuitState
+  parent: Kevlar.Extensions.Logging.KevlarLogEventKind
+  langs:
+  - csharp
+  - vb
+  name: CircuitState
+  nameWithType: KevlarLogEventKind.CircuitState
+  fullName: Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitState
+  type: Field
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: A circuit breaker changed state or rejected an execution.
+  example: []
+  syntax:
+    content: CircuitState = 2
+    return:
+      type: Kevlar.Extensions.Logging.KevlarLogEventKind
+- uid: Kevlar.Extensions.Logging.KevlarLogEventKind.Hedge
+  commentId: F:Kevlar.Extensions.Logging.KevlarLogEventKind.Hedge
+  id: Hedge
+  parent: Kevlar.Extensions.Logging.KevlarLogEventKind
+  langs:
+  - csharp
+  - vb
+  name: Hedge
+  nameWithType: KevlarLogEventKind.Hedge
+  fullName: Kevlar.Extensions.Logging.KevlarLogEventKind.Hedge
+  type: Field
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: A hedged attempt started.
+  example: []
+  syntax:
+    content: Hedge = 3
+    return:
+      type: Kevlar.Extensions.Logging.KevlarLogEventKind
+- uid: Kevlar.Extensions.Logging.KevlarLogEventKind.Fallback
+  commentId: F:Kevlar.Extensions.Logging.KevlarLogEventKind.Fallback
+  id: Fallback
+  parent: Kevlar.Extensions.Logging.KevlarLogEventKind
+  langs:
+  - csharp
+  - vb
+  name: Fallback
+  nameWithType: KevlarLogEventKind.Fallback
+  fullName: Kevlar.Extensions.Logging.KevlarLogEventKind.Fallback
+  type: Field
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: A fallback replaced an outcome.
+  example: []
+  syntax:
+    content: Fallback = 4
+    return:
+      type: Kevlar.Extensions.Logging.KevlarLogEventKind
+- uid: Kevlar.Extensions.Logging.KevlarLogEventKind.RateLimitRejected
+  commentId: F:Kevlar.Extensions.Logging.KevlarLogEventKind.RateLimitRejected
+  id: RateLimitRejected
+  parent: Kevlar.Extensions.Logging.KevlarLogEventKind
+  langs:
+  - csharp
+  - vb
+  name: RateLimitRejected
+  nameWithType: KevlarLogEventKind.RateLimitRejected
+  fullName: Kevlar.Extensions.Logging.KevlarLogEventKind.RateLimitRejected
+  type: Field
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: A rate limiter rejected an execution.
+  example: []
+  syntax:
+    content: RateLimitRejected = 5
+    return:
+      type: Kevlar.Extensions.Logging.KevlarLogEventKind
+- uid: Kevlar.Extensions.Logging.KevlarLogEventKind.ConcurrencyLimitRejected
+  commentId: F:Kevlar.Extensions.Logging.KevlarLogEventKind.ConcurrencyLimitRejected
+  id: ConcurrencyLimitRejected
+  parent: Kevlar.Extensions.Logging.KevlarLogEventKind
+  langs:
+  - csharp
+  - vb
+  name: ConcurrencyLimitRejected
+  nameWithType: KevlarLogEventKind.ConcurrencyLimitRejected
+  fullName: Kevlar.Extensions.Logging.KevlarLogEventKind.ConcurrencyLimitRejected
+  type: Field
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: A concurrency limiter rejected an execution.
+  example: []
+  syntax:
+    content: ConcurrencyLimitRejected = 6
+    return:
+      type: Kevlar.Extensions.Logging.KevlarLogEventKind
+- uid: Kevlar.Extensions.Logging.KevlarLogEventKind.CallbackError
+  commentId: F:Kevlar.Extensions.Logging.KevlarLogEventKind.CallbackError
+  id: CallbackError
+  parent: Kevlar.Extensions.Logging.KevlarLogEventKind
+  langs:
+  - csharp
+  - vb
+  name: CallbackError
+  nameWithType: KevlarLogEventKind.CallbackError
+  fullName: Kevlar.Extensions.Logging.KevlarLogEventKind.CallbackError
+  type: Field
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: A user callback threw.
+  example: []
+  syntax:
+    content: CallbackError = 7
+    return:
+      type: Kevlar.Extensions.Logging.KevlarLogEventKind
+- uid: Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitRejected
+  commentId: F:Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitRejected
+  id: CircuitRejected
+  parent: Kevlar.Extensions.Logging.KevlarLogEventKind
+  langs:
+  - csharp
+  - vb
+  name: CircuitRejected
+  nameWithType: KevlarLogEventKind.CircuitRejected
+  fullName: Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitRejected
+  type: Field
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: An open or isolated circuit rejected an execution.
+  example: []
+  syntax:
+    content: CircuitRejected = 8
+    return:
+      type: Kevlar.Extensions.Logging.KevlarLogEventKind
+references:
+- uid: Kevlar.Extensions.Logging
+  commentId: N:Kevlar.Extensions.Logging
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar.Extensions.Logging
+  nameWithType: Kevlar.Extensions.Logging
+  fullName: Kevlar.Extensions.Logging
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+  - name: .
+  - uid: Kevlar.Extensions.Logging
+    name: Logging
+    isExternal: true
+    href: Kevlar.Extensions.Logging.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+  - name: .
+  - uid: Kevlar.Extensions.Logging
+    name: Logging
+    isExternal: true
+    href: Kevlar.Extensions.Logging.html
+- uid: Kevlar.Extensions.Logging.KevlarLogEventKind
+  commentId: T:Kevlar.Extensions.Logging.KevlarLogEventKind
+  parent: Kevlar.Extensions.Logging
+  isExternal: true
+  href: Kevlar.Extensions.Logging.KevlarLogEventKind.html
+  name: KevlarLogEventKind
+  nameWithType: KevlarLogEventKind
+  fullName: Kevlar.Extensions.Logging.KevlarLogEventKind

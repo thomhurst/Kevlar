@@ -1,10 +1,13 @@
 ---
-sidebar_position: 14
+sidebar_position: 15
 ---
 
 # Observability
 
-Shields describe their configured pipeline, publish metrics through built-in `Meter` instances, and expose strategy callbacks for request-level telemetry. The optional analyzer package catches resilience mistakes at compile time.
+Shields describe their configured pipeline, publish metrics through built-in `Meter` instances,
+and expose strategy events for request-level telemetry. Use
+[`Kevlar.Extensions.Logging`](logging.md) for structured `ILogger` events. The optional analyzer
+package catches resilience mistakes at compile time.
 
 ## Pipeline descriptions
 
@@ -253,4 +256,9 @@ finally
 
 ## Logging and tracing
 
-Kevlar does not create `ILogger` messages or `Activity` spans automatically. This avoids duplicate telemetry and keeps the core package independent of a logging provider or tracing SDK. Log callback event payloads with your application's `ILogger`, and create custom `Activity` events or spans in callbacks when strategy-level tracing is useful. The delegate executed by a shield runs in the caller's ambient `Activity`, so normal trace-context propagation continues through the protected operation.
+The core package does not create `ILogger` messages or `Activity` spans automatically. This avoids
+duplicate telemetry and keeps it independent of a logging provider or tracing SDK. Add
+`Kevlar.Extensions.Logging` when structured strategy logs are useful. Create custom `Activity`
+events or spans in callbacks when strategy-level tracing is useful. The delegate executed by a
+shield runs in the caller's ambient `Activity`, so normal trace-context propagation continues
+through the protected operation.

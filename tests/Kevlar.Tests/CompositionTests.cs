@@ -1,3 +1,5 @@
+using Kevlar.Internal;
+
 namespace Kevlar.Tests;
 
 public class CompositionTests
@@ -20,6 +22,31 @@ public class CompositionTests
             _log.Add($"{_name}:exit");
             return outcome;
         }
+    }
+
+    private sealed class CountingDecorator : IShieldDecorator
+    {
+        public int Count { get; private set; }
+
+        public Shield Decorate(Shield shield, string? name)
+        {
+            Count++;
+            return shield.Use(new PassthroughStrategy());
+        }
+
+        public Shield<TResult> Decorate<TResult>(Shield<TResult> shield, string? name)
+        {
+            Count++;
+            return shield.Use(new PassthroughStrategy());
+        }
+    }
+
+    private sealed class PassthroughStrategy : Strategy
+    {
+        public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+            Continuation<T, TState> next,
+            KevlarContext context)
+            => next.InvokeAsync(context);
     }
 
     [Test]
@@ -65,6 +92,59 @@ public class CompositionTests
         await composed.ExecuteAsync(_ => new ValueTask<int>(1));
 
         await Assert.That(log).IsEquivalentTo(["first:enter", "second:enter", "second:exit", "first:exit"]);
+    }
+
+    [Test]
+    public async Task Composition_Preserves_Applied_Decorators()
+    {
+        var decorator = new CountingDecorator();
+        var untyped = ShieldDecoration.Apply(Shield.Empty, null, [decorator]);
+        var typed = ShieldDecoration.Apply(Shield<int>.Empty, null, [decorator]);
+
+        var composed = Shield.Compose(untyped, Shield.Empty);
+        var wrapped = untyped.Wrap(Shield.Empty);
+        var typedComposed = Shield<int>.Compose(typed, Shield<int>.Empty);
+        var typedWrapped = typed.Wrap(Shield<int>.Empty);
+        var mixedWrapped = untyped.Wrap(Shield<int>.Empty);
+        var partiallyDecoratedWrap = Shield.Retry(1, Backoff.None).Wrap(untyped);
+        var partiallyDecoratedCompose = Shield<int>.Compose(
+            Shield.For<int>().Retry(1, Backoff.None),
+            typed);
+
+        ShieldDecoration.Apply(composed, null, [decorator]);
+        await Assert.That(decorator.Count).IsEqualTo(2);
+        ShieldDecoration.Apply(wrapped, null, [decorator]);
+        await Assert.That(decorator.Count).IsEqualTo(2);
+        ShieldDecoration.Apply(typedComposed, null, [decorator]);
+        await Assert.That(decorator.Count).IsEqualTo(2);
+        ShieldDecoration.Apply(typedWrapped, null, [decorator]);
+        await Assert.That(decorator.Count).IsEqualTo(2);
+        ShieldDecoration.Apply(mixedWrapped, null, [decorator]);
+        await Assert.That(decorator.Count).IsEqualTo(2);
+
+        ShieldDecoration.Apply(partiallyDecoratedWrap, null, [decorator]);
+        await Assert.That(decorator.Count).IsEqualTo(3);
+        ShieldDecoration.Apply(partiallyDecoratedCompose, null, [decorator]);
+        await Assert.That(decorator.Count).IsEqualTo(4);
+    }
+
+    [Test]
+    public async Task Repeated_Composition_Preserves_Outer_Applied_Decorators()
+    {
+        var decorator = new CountingDecorator();
+        var decorated = ShieldDecoration.Apply(Shield.Empty, null, [decorator]);
+        var wrapped = decorated
+            .Wrap(Shield.Retry(1, Backoff.None))
+            .Wrap(Shield.CircuitBreaker(1, TimeSpan.FromSeconds(1)));
+        var composed = Shield.Compose(
+            decorated,
+            Shield.Retry(1, Backoff.None),
+            Shield.CircuitBreaker(1, TimeSpan.FromSeconds(1)));
+
+        ShieldDecoration.Apply(wrapped, null, [decorator]);
+        ShieldDecoration.Apply(composed, null, [decorator]);
+
+        await Assert.That(decorator.Count).IsEqualTo(1);
     }
 
     [Test]

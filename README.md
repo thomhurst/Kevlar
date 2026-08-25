@@ -67,8 +67,9 @@ stateful strategies: calls made through the same shield share its circuit breake
   [benchmark suite](https://github.com/thomhurst/Kevlar/tree/main/benchmarks/Kevlar.Benchmarks) or the published comparative
   [BenchmarkDotNet results](https://thomhurst.github.io/Kevlar/docs/benchmarks).
 - **Production concerns are built in.** Shields support `TimeProvider`, describe their own pipeline,
-  and publish metrics through the `Kevlar` meter on .NET 8 and later. An optional analyzer catches
-  cancellation and pipeline mistakes at compile time.
+  publish metrics through the `Kevlar` meter, and can emit structured `ILogger` events through
+  `Kevlar.Extensions.Logging`. An optional analyzer catches cancellation and pipeline mistakes at
+  compile time.
 
 The core package targets `netstandard2.0`, `net8.0`, and `net10.0`.
 
@@ -157,6 +158,7 @@ configuration-bound shields and `IKevlarRegistry`.
 | [`Kevlar.Chaos`](https://www.nuget.org/packages/Kevlar.Chaos) | Controlled latency, faults, outcomes and custom behaviour |
 | [`Kevlar.Extensions.DependencyInjection`](https://www.nuget.org/packages/Kevlar.Extensions.DependencyInjection) | Named and configuration-bound shields for Microsoft DI |
 | [`Kevlar.Extensions.Http`](https://www.nuget.org/packages/Kevlar.Extensions.Http) | `HttpClientFactory` integration, request replay and transient-fault handling |
+| [`Kevlar.Extensions.Logging`](https://www.nuget.org/packages/Kevlar.Extensions.Logging) | Structured `ILogger` events for every built-in strategy |
 | [`Kevlar.Extensions.Grpc`](https://www.nuget.org/packages/Kevlar.Extensions.Grpc) | gRPC client resilience for unary and streaming calls |
 | [`Kevlar.Extensions.RateLimiting`](https://www.nuget.org/packages/Kevlar.Extensions.RateLimiting) | Adapters for `System.Threading.RateLimiting` and custom leases |
 | [`Kevlar.Analyzers`](https://www.nuget.org/packages/Kevlar.Analyzers) | Compile-time checks for common resilience mistakes |

@@ -6,6 +6,7 @@ Kevlar.CallbackErrorEvent.ShieldName.get -> string?
 Kevlar.CallbackErrorEvent.StrategyIndex.get -> int
 Kevlar.CallbackErrorKind
 Kevlar.CallbackErrorKind.ChaosInjected = 9 -> Kevlar.CallbackErrorKind
+Kevlar.CallbackErrorKind.Logging = 10 -> Kevlar.CallbackErrorKind
 Kevlar.CallbackErrorKind.CircuitMonitor = 3 -> Kevlar.CallbackErrorKind
 Kevlar.CallbackErrorKind.CircuitStateChanged = 2 -> Kevlar.CallbackErrorKind
 Kevlar.CallbackErrorKind.ConcurrencyLimitRejected = 6 -> Kevlar.CallbackErrorKind
@@ -595,25 +596,36 @@ static Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync<T, TState>(this Kevla
 static Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync<TResult, TState>(this Kevlar.Shield<TResult>! shield, TState state, System.Action<TState, Kevlar.KevlarProperties!>! initializeProperties, System.Func<TState, Kevlar.KevlarContext!, System.Threading.Tasks.Task<TResult>!>! action, System.Action<TState, Kevlar.KevlarProperties!>! onCompleted, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<TResult>
 static Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync<TState>(this Kevlar.Shield! shield, TState state, System.Action<TState, Kevlar.KevlarProperties!>! initializeProperties, System.Func<TState, Kevlar.KevlarContext!, System.Threading.Tasks.Task!>! action, System.Action<TState, Kevlar.KevlarProperties!>! onCompleted, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
 Kevlar.IKevlarTelemetryListener
+Kevlar.IShieldDecorator
+Kevlar.IShieldDecorator.Decorate(Kevlar.Shield! shield, string? name) -> Kevlar.Shield!
+Kevlar.IShieldDecorator.Decorate<TResult>(Kevlar.Shield<TResult>! shield, string? name) -> Kevlar.Shield<TResult>!
 Kevlar.IKevlarTelemetryListener.OnEvent(in Kevlar.KevlarTelemetryEvent telemetryEvent) -> void
 Kevlar.KevlarKeys
 Kevlar.KevlarTelemetryEvent
 Kevlar.KevlarTelemetryEvent.AttemptNumber.get -> int
+Kevlar.KevlarTelemetryEvent.CallbackKind.get -> Kevlar.CallbackErrorKind?
 Kevlar.KevlarTelemetryEvent.Context.get -> Kevlar.KevlarContext!
+Kevlar.KevlarTelemetryEvent.Delay.get -> System.TimeSpan
 Kevlar.KevlarTelemetryEvent.Duration.get -> System.TimeSpan
 Kevlar.KevlarTelemetryEvent.EventName.get -> string!
 Kevlar.KevlarTelemetryEvent.Exception.get -> System.Exception?
 Kevlar.KevlarTelemetryEvent.IsSuccess.get -> bool
 Kevlar.KevlarTelemetryEvent.KevlarTelemetryEvent() -> void
 Kevlar.KevlarTelemetryEvent.OperationKey.get -> string?
+Kevlar.KevlarTelemetryEvent.FromState.get -> Kevlar.CircuitState?
+Kevlar.KevlarTelemetryEvent.Result.get -> object?
+Kevlar.KevlarTelemetryEvent.RetryAfter.get -> System.TimeSpan?
 Kevlar.KevlarTelemetryEvent.Severity.get -> Kevlar.KevlarTelemetrySeverity
 Kevlar.KevlarTelemetryEvent.ShieldName.get -> string?
 Kevlar.KevlarTelemetryEvent.StrategyIndex.get -> int
 Kevlar.KevlarTelemetryEvent.StrategyName.get -> string!
+Kevlar.KevlarTelemetryEvent.ToState.get -> Kevlar.CircuitState?
 Kevlar.KevlarTelemetrySeverity
 Kevlar.KevlarTelemetrySeverity.Error = 2 -> Kevlar.KevlarTelemetrySeverity
 Kevlar.KevlarTelemetrySeverity.Information = 0 -> Kevlar.KevlarTelemetrySeverity
 Kevlar.KevlarTelemetrySeverity.Warning = 1 -> Kevlar.KevlarTelemetrySeverity
 static Kevlar.KevlarDiagnostics.Listen(Kevlar.IKevlarTelemetryListener! listener) -> System.IDisposable!
 static Kevlar.KevlarKeys.OperationKey.get -> Kevlar.KevlarKey<string!>
+static Kevlar.KevlarKeys.HttpRequestMethod.get -> Kevlar.KevlarKey<string!>
+static Kevlar.KevlarKeys.HttpRequestUri.get -> Kevlar.KevlarKey<string!>
 Kevlar.KevlarContext.RecordEvent(string! eventName, Kevlar.KevlarTelemetrySeverity severity = Kevlar.KevlarTelemetrySeverity.Information, System.Exception? exception = null, int? attemptNumber = null, string? strategyName = null) -> void

@@ -206,7 +206,12 @@ public sealed class ShieldBuilder
                 _predicates.Length == 0 ? null : Combine(_predicates),
                 CombineContexts(_contextPredicates),
                 description);
-        return new Shield(_parent.Strategies, judge, _parent.Name, _parent.Time);
+        return new Shield(
+            _parent.Strategies,
+            judge,
+            _parent.Name,
+            _parent.Time,
+            _parent.AppliedDecorators);
     }
 
     /// <summary>Builds the successor holding this builder's terms plus one more.</summary>

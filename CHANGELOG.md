@@ -6,6 +6,13 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `Kevlar.Extensions.Logging` emits stable, structured `ILogger` events for retry, timeout,
+  circuit-state, hedge, fallback, rejection, and callback-error activity. `WithLogging` decorates
+  individual shields, while `AddKevlarLogging` applies to named, reloading, partitioned, and HTTP
+  shields created through dependency injection.
+
 ### Fixed
 
 - Circuit-breaker monitors and testing snapshots now report `HalfOpen` as soon as the break

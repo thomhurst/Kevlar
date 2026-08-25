@@ -25,11 +25,13 @@ public readonly struct CircuitBreakerStateChangedEvent
         CircuitState from,
         CircuitState to,
         Exception? lastException,
-        KevlarContext context)
+        KevlarContext context,
+        TimeSpan breakDuration = default)
     {
         From = from;
         To = to;
         LastException = lastException;
+        BreakDuration = breakDuration;
         _context = context;
     }
 
@@ -42,6 +44,8 @@ public readonly struct CircuitBreakerStateChangedEvent
     /// <summary>The exception from the failure that caused the transition, when applicable.</summary>
     public Exception? LastException { get; }
 
+    internal TimeSpan BreakDuration { get; }
+
     /// <summary>
     /// The triggering execution context. Manual monitor transitions receive a detached context
     /// with <see cref="KevlarContext.StrategyIndex"/> equal to <c>-1</c>.
@@ -52,5 +56,6 @@ public readonly struct CircuitBreakerStateChangedEvent
         From,
         To,
         LastException,
-        Context.CreateDetachedSnapshot());
+        Context.CreateDetachedSnapshot(),
+        BreakDuration);
 }

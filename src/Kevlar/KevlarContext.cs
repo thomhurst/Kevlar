@@ -134,6 +134,8 @@ public sealed class KevlarContext
         set => _attemptNumber = value;
     }
 
+    internal IKevlarTelemetryListener? TelemetryListener { get; set; }
+
     internal void CaptureCompletionProperties(
         KevlarProperties properties,
         KevlarProperties? baseline = null)
@@ -212,6 +214,7 @@ public sealed class KevlarContext
         context.ShieldName = shieldName;
         context.StrategyIndex = -1;
         context.AttemptNumber = 0;
+        context.TelemetryListener = null;
         return context;
     }
 
@@ -249,6 +252,7 @@ public sealed class KevlarContext
         var fork = Rent(cancellationToken, IsSynchronous, TimeProvider, ShieldName);
         fork.StrategyIndex = StrategyIndex;
         fork.AttemptNumber = AttemptNumber;
+        fork.TelemetryListener = TelemetryListener;
 
         Properties.CopyTo(fork.Properties);
         fork._forkBaseline ??= new KevlarProperties();
@@ -339,6 +343,7 @@ public sealed class KevlarContext
             context.ShieldName = null;
             context.StrategyIndex = -1;
             context.AttemptNumber = 0;
+            context.TelemetryListener = null;
             context._activeStrategyMask = 0;
             context.TimeProvider = TimeProvider.System;
             context._properties.MirrorMutationsTo(null);

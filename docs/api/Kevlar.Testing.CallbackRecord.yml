@@ -844,6 +844,7 @@ references:
   commentId: T:System.Nullable{Kevlar.CircuitState}
   parent: System
   definition: System.Nullable`1
+  href: Kevlar.CircuitState.html
   name: CircuitState?
   nameWithType: CircuitState?
   fullName: Kevlar.CircuitState?
@@ -944,6 +945,7 @@ references:
   commentId: T:System.Nullable{Kevlar.CallbackErrorKind}
   parent: System
   definition: System.Nullable`1
+  href: Kevlar.CallbackErrorKind.html
   name: CallbackErrorKind?
   nameWithType: CallbackErrorKind?
   fullName: Kevlar.CallbackErrorKind?

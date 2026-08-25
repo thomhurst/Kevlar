@@ -87,7 +87,7 @@ internal sealed class FallbackStrategy<TResult> : Strategy, IFallbackStrategyIns
         Debug.Assert(typeof(T) == typeof(TResult), "Fallback strategies only execute inside a matching Shield<TResult>.");
         var typedOutcome = (Outcome<TResult>)(object)outcome;
 
-        KevlarMetrics.Fallback(context, _telemetryName, outcome.IsSuccess, outcome.Exception);
+        KevlarMetrics.Fallback(context, _telemetryName, in outcome);
         if (_onFallback is not null || _onFallbackAsync is not null)
         {
             var fallbackEvent = new FallbackEvent<TResult>(typedOutcome, context);
@@ -218,7 +218,7 @@ internal sealed class VoidFallbackStrategy : Strategy, IFallbackStrategyInspecti
                 "Shield.For<T>() and use its Fallback overloads."));
         }
 
-        KevlarMetrics.Fallback(context, _telemetryName, isSuccess: false, exception);
+        KevlarMetrics.Fallback(context, _telemetryName, in outcome);
 
         if (_onFallback is not null || _onFallbackAsync is not null)
         {

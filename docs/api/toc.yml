@@ -100,6 +100,9 @@ items:
   - uid: Kevlar.IKevlarTelemetryListener
     name: IKevlarTelemetryListener
     type: Interface
+  - uid: Kevlar.IShieldDecorator
+    name: IShieldDecorator
+    type: Interface
   - uid: Kevlar.Jitter
     name: Jitter
     type: Enum
@@ -343,6 +346,25 @@ items:
     type: Class
   - uid: Kevlar.Extensions.Http.StandardHttpShieldOptions
     name: StandardHttpShieldOptions
+    type: Class
+- uid: Kevlar.Extensions.Logging
+  name: Kevlar.Extensions.Logging
+  type: Namespace
+  items:
+  - uid: Kevlar.Extensions.Logging.KevlarLogEvent
+    name: KevlarLogEvent
+    type: Struct
+  - uid: Kevlar.Extensions.Logging.KevlarLogEventKind
+    name: KevlarLogEventKind
+    type: Enum
+  - uid: Kevlar.Extensions.Logging.KevlarLoggingOptions
+    name: KevlarLoggingOptions
+    type: Class
+  - uid: Kevlar.Extensions.Logging.KevlarLoggingServiceCollectionExtensions
+    name: KevlarLoggingServiceCollectionExtensions
+    type: Class
+  - uid: Kevlar.Extensions.Logging.ShieldLoggingExtensions
+    name: ShieldLoggingExtensions
     type: Class
 - uid: Kevlar.Extensions.RateLimiting
   name: Kevlar.Extensions.RateLimiting

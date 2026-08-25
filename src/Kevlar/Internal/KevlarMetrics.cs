@@ -166,7 +166,11 @@ internal static class KevlarMetrics
 #endif
     }
 
-    public static void Timeout(KevlarContext context, string strategyName, Exception? exception)
+    public static void Timeout(
+        KevlarContext context,
+        string strategyName,
+        TimeSpan timeout,
+        Exception? exception)
     {
 #if NET8_0_OR_GREATER
         if (Timeouts.Enabled)
@@ -174,7 +178,7 @@ internal static class KevlarMetrics
             Timeouts.Add(1, NameTags(context.ShieldName));
         }
 #endif
-        if (!KevlarTelemetry.EventEnabled)
+        if (!KevlarTelemetry.IsEventEnabled(context))
         {
             return;
         }
@@ -187,14 +191,16 @@ internal static class KevlarMetrics
             context.StrategyIndex,
             context.AttemptNumber,
             isSuccess: false,
-            exception);
+            exception,
+            duration: timeout);
     }
 
     public static void Hedge(
         KevlarContext context,
         string strategyName,
         int attemptNumber,
-        Exception? exception = null)
+        Exception? exception = null,
+        TimeSpan delay = default)
     {
 #if NET8_0_OR_GREATER
         if (Hedges.Enabled)
@@ -202,7 +208,7 @@ internal static class KevlarMetrics
             Hedges.Add(1, NameTags(context.ShieldName));
         }
 #endif
-        if (!KevlarTelemetry.EventEnabled)
+        if (!KevlarTelemetry.IsEventEnabled(context))
         {
             return;
         }
@@ -217,14 +223,14 @@ internal static class KevlarMetrics
             context.StrategyIndex,
             attemptNumber,
             isSuccess: exception is null,
-            exception);
+            exception,
+            delay: delay);
     }
 
-    public static void Fallback(
+    public static void Fallback<T>(
         KevlarContext context,
         string strategyName,
-        bool isSuccess,
-        Exception? exception)
+        in Outcome<T> outcome)
     {
 #if NET8_0_OR_GREATER
         if (Fallbacks.Enabled)
@@ -232,20 +238,19 @@ internal static class KevlarMetrics
             Fallbacks.Add(1, NameTags(context.ShieldName));
         }
 #endif
-        if (!KevlarTelemetry.EventEnabled)
+        if (!KevlarTelemetry.IsEventEnabled(context))
         {
             return;
         }
 
-        KevlarTelemetry.Record(
+        KevlarTelemetry.RecordResult(
             context,
             strategyName,
             eventName: "fallback",
             KevlarTelemetrySeverity.Warning,
             context.StrategyIndex,
             context.AttemptNumber,
-            isSuccess,
-            exception);
+            in outcome);
     }
 
     public static void Rejection(
@@ -262,7 +267,7 @@ internal static class KevlarMetrics
             Rejections.Add(1, tags);
         }
 #endif
-        if (!KevlarTelemetry.EventEnabled)
+        if (!KevlarTelemetry.IsEventEnabled(context))
         {
             return;
         }
@@ -275,7 +280,9 @@ internal static class KevlarMetrics
             context.StrategyIndex,
             context.AttemptNumber,
             isSuccess: false,
-            exception);
+            exception,
+            retryAfter: (exception as ExecutionRejectedException)?.RetryAfter,
+            rejectionKind: kind);
     }
 
     public static void CircuitTransition(CircuitState from, CircuitState to)
@@ -752,6 +759,7 @@ internal static class KevlarMetrics
         CallbackErrorKind.RateLimitRejected => "rate_limit_rejected",
         CallbackErrorKind.RateLimiterAdapterRejected => "rate_limiter_adapter_rejected",
         CallbackErrorKind.ChaosInjected => "chaos_injected",
+        CallbackErrorKind.Logging => "logging",
         _ => throw new ArgumentOutOfRangeException(nameof(kind)),
     };
 

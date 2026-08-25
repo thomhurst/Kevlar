@@ -113,6 +113,7 @@ try
     <PackageReference Include="Kevlar.Extensions.DependencyInjection" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.Grpc" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.Http" Version="$Version" />
+    <PackageReference Include="Kevlar.Extensions.Logging" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.RateLimiting" Version="$Version" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="$ConfigurationVersion" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="$DependencyInjectionVersion" />
@@ -128,12 +129,15 @@ using Kevlar.Chaos;
 using Kevlar.Extensions.DependencyInjection;
 using Kevlar.Extensions.Grpc;
 using Kevlar.Extensions.Http;
+using Kevlar.Extensions.Logging;
 using Kevlar.Extensions.RateLimiting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using System.Threading.RateLimiting;
 
 var untyped = Shield.Empty;
+_ = untyped.WithLogging(NullLogger.Instance);
 if (untyped.Execute(static _ => 42) != 42
     || await untyped.ExecuteAsync(static _ => new ValueTask<int>(42)) != 42
     || !(await untyped.ExecuteOutcomeAsync(static _ => new ValueTask<int>(42))).IsSuccess)

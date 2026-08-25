@@ -1,5 +1,8 @@
 using System.Diagnostics.Metrics;
 using Kevlar.Chaos;
+using Kevlar.Extensions.Logging;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Kevlar.AllocationTests;
 
@@ -156,6 +159,24 @@ public class AllocationBudgetTests
                 ? static _ => new ValueTask<int>(42)
                 : throw new InvalidOperationException("Expected the primary outcome.");
     });
+    private readonly Shield<int> _disabledLogging = Shield.For<int>()
+        .WhenResult(-1)
+        .Retry(1, Backoff.None)
+        .WithLogging(EnabledNoopLogger.Instance, static options =>
+        {
+            options.SeverityProvider = static _ => LogLevel.None;
+            options.ResultFormatter = static _ => throw new InvalidOperationException(
+                "Disabled logging must not format results.");
+        });
+    private readonly Shield<int> _quotaDisabledLogging = Shield.For<int>()
+        .WhenResult(-1)
+        .Retry(1, Backoff.None)
+        .WithLogging(EnabledNoopLogger.Instance, static options =>
+        {
+            options.MaxLogsPerSecond = 0;
+            options.ResultFormatter = static _ => throw new InvalidOperationException(
+                "Quota-disabled logging must not format results.");
+        });
     private readonly Counter _retryCounter = new();
     private readonly Counter _asyncDelayRetryCounter = new();
     private readonly ParallelHedgeState _parallelHedgeState = new();
@@ -279,6 +300,10 @@ public class AllocationBudgetTests
             _ = test._keyDictionary[MetadataValue]);
         AssertZero("outcome exception access", FailureOutcome, static outcome =>
             GC.KeepAlive(outcome.Exception));
+        AssertZero("disabled structured logging", this, static test =>
+            _ = test._disabledLogging.ExecuteOutcome(static _ => -1));
+        AssertZero("quota-disabled structured logging", this, static test =>
+            _ = test._quotaDisabledLogging.ExecuteOutcome(static _ => -1));
     }
 
     [Test]
@@ -475,5 +500,23 @@ public class AllocationBudgetTests
     {
         CurrentThread,
         AllThreads,
+    }
+
+    private sealed class EnabledNoopLogger : ILogger
+    {
+        public static EnabledNoopLogger Instance { get; } = new();
+
+        public IDisposable? BeginScope<TState>(TState state)
+            where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter) =>
+            throw new InvalidOperationException("Quota-disabled logger must not receive events.");
     }
 }

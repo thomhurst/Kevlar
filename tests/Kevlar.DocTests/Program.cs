@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Kevlar;
 using Kevlar.Extensions.DependencyInjection;
 using Kevlar.Extensions.Http;
+using Kevlar.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;

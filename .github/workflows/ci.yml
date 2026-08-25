@@ -86,6 +86,7 @@ jobs:
             --max-retries 3 --retry-wait-time 2
             --exclude 'https://github\.com/thomhurst/Kevlar/blob/main/(CONTRIBUTING|SECURITY|CODE_OF_CONDUCT)\.md'
             --exclude '^https://github\.com/thomhurst/Kevlar/tree/main/samples/'
+            --exclude '^https://www\.nuget\.org/packages/Kevlar\.Extensions\.Logging/?$'
             README.md CONTRIBUTING.md SECURITY.md CODE_OF_CONDUCT.md "docs/docs/**/*.md"
           fail: true
           failIfEmpty: true
@@ -201,6 +202,13 @@ jobs:
           dotnet run --project tests/Kevlar.Extensions.RateLimiting.Tests -c Release -f net8.0 --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --report-trx --report-trx-filename rate-limiting-net8.trx --results-directory artifacts/test-results/rate-limiting
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           dotnet run --project tests/Kevlar.Extensions.RateLimiting.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --report-trx --report-trx-filename rate-limiting-net10.trx --results-directory artifacts/test-results/rate-limiting
+
+      - name: Logging integration tests
+        shell: pwsh
+        run: |
+          dotnet run --project tests/Kevlar.Extensions.Logging.Tests -c Release -f net8.0 --no-build -- --timeout 5m --minimum-expected-tests 19 --zero-tests-policy strict --report-trx --report-trx-filename logging-net8.trx --results-directory artifacts/test-results/logging
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          dotnet run --project tests/Kevlar.Extensions.Logging.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 19 --zero-tests-policy strict --report-trx --report-trx-filename logging-net10.trx --results-directory artifacts/test-results/logging
 
       - name: Upload test reports
         if: always()
@@ -342,6 +350,9 @@ jobs:
 
       - name: Collect rate limiting adapter coverage
         run: dotnet run --project tests/Kevlar.Extensions.RateLimiting.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/rate-limiting.cobertura.xml --coverage-output-format cobertura
+
+      - name: Collect logging integration coverage
+        run: dotnet run --project tests/Kevlar.Extensions.Logging.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 19 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/logging.cobertura.xml --coverage-output-format cobertura
 
       - name: Merge coverage reports
         run: dotnet reportgenerator '-reports:artifacts/coverage/raw/*.cobertura.xml' '-targetdir:artifacts/coverage/report' '-reporttypes:Cobertura;Html'

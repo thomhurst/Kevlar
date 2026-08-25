@@ -251,7 +251,12 @@ public static class ShieldExtensions
     public static Shield WhenAnyError(this Shield shield)
     {
         Throw.IfNull(shield, nameof(shield));
-        return new Shield(shield.Strategies, OutcomeJudge.Default, shield.Name, shield.Time);
+        return new Shield(
+            shield.Strategies,
+            OutcomeJudge.Default,
+            shield.Name,
+            shield.Time,
+            shield.AppliedDecorators);
     }
 
     /// <summary>Appends a custom <see cref="Strategy"/> implementation to the pipeline.</summary>
@@ -284,11 +289,21 @@ public static class ShieldExtensions
     {
         Throw.IfNull(outer, nameof(outer));
         Throw.IfNull(inner, nameof(inner));
-        return new Shield(
-            Shield.Concat(outer.Strategies, inner.Strategies),
+        var strategies = Shield.Concat(outer.Strategies, inner.Strategies);
+        var wrapped = new Shield(
+            strategies,
             null,
             outer.Name ?? inner.Name,
-            outer.Time ?? inner.Time);
+            outer.Time ?? inner.Time,
+            ShieldDecoration.MergeForComposition(
+                outer.AppliedDecorators,
+                ShieldDecoration.HasResilienceStrategies(outer.Strategies),
+                inner.AppliedDecorators));
+        StrategyAppendObserver.NotifyComposition(
+            strategies,
+            outer.Name ?? inner.Name,
+            wrapped);
+        return wrapped;
     }
 
     /// <summary>
@@ -300,11 +315,21 @@ public static class ShieldExtensions
     {
         Throw.IfNull(outer, nameof(outer));
         Throw.IfNull(inner, nameof(inner));
-        return new Shield<TResult>(
-            Shield.Concat(outer.Strategies, inner.Strategies),
+        var strategies = Shield.Concat(outer.Strategies, inner.Strategies);
+        var wrapped = new Shield<TResult>(
+            strategies,
             null,
             outer.Name ?? inner.Name,
-            outer.Time ?? inner.Time);
+            outer.Time ?? inner.Time,
+            ShieldDecoration.MergeForComposition(
+                outer.AppliedDecorators,
+                ShieldDecoration.HasResilienceStrategies(outer.Strategies),
+                inner.AppliedDecorators));
+        StrategyAppendObserver.NotifyComposition(
+            strategies,
+            outer.Name ?? inner.Name,
+            wrapped);
+        return wrapped;
     }
 
     /// <summary>
@@ -315,7 +340,12 @@ public static class ShieldExtensions
     public static Shield<TResult> For<TResult>(this Shield shield)
     {
         Throw.IfNull(shield, nameof(shield));
-        return new Shield<TResult>(shield.Strategies, shield.Ambient, shield.Name, shield.Time);
+        return new Shield<TResult>(
+            shield.Strategies,
+            shield.Ambient,
+            shield.Name,
+            shield.Time,
+            shield.AppliedDecorators);
     }
 
     /// <summary>
@@ -418,7 +448,14 @@ public static class ShieldExtensions
     {
         Throw.IfNull(shield, nameof(shield));
         Throw.IfNull(name, nameof(name));
-        return new Shield(shield.Strategies, shield.Ambient, name, shield.Time);
+        var named = new Shield(
+            shield.Strategies,
+            shield.Ambient,
+            name,
+            shield.Time,
+            shield.AppliedDecorators);
+        ShieldNameObserver.Notify(shield.Strategies, name, named);
+        return named;
     }
 
     /// <summary>Returns a copy of this shield using the given <see cref="TimeProvider"/> for delays, timeouts and time windows.</summary>
@@ -426,6 +463,13 @@ public static class ShieldExtensions
     {
         Throw.IfNull(shield, nameof(shield));
         Throw.IfNull(timeProvider, nameof(timeProvider));
-        return new Shield(shield.Strategies, shield.Ambient, shield.Name, timeProvider);
+        var timed = new Shield(
+            shield.Strategies,
+            shield.Ambient,
+            shield.Name,
+            timeProvider,
+            shield.AppliedDecorators);
+        StrategyAppendObserver.NotifyComposition(shield.Strategies, shield.Name, timed);
+        return timed;
     }
 }

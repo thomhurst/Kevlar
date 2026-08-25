@@ -22,12 +22,18 @@ public sealed class Shield : IShieldLifecycle
     internal readonly StrategyNode? Head;
     internal readonly OutcomeJudge? Ambient;
     internal readonly TimeProvider? Time;
+    internal readonly IShieldDecorator[] AppliedDecorators;
     private readonly bool _hasVoidFallback;
     private readonly StrategyOwnerSet _strategyOwners;
 
     Strategy[] IShieldLifecycle.Strategies => Strategies;
 
-    internal Shield(Strategy[] strategies, OutcomeJudge? ambient, string? name, TimeProvider? timeProvider)
+    internal Shield(
+        Strategy[] strategies,
+        OutcomeJudge? ambient,
+        string? name,
+        TimeProvider? timeProvider,
+        IShieldDecorator[]? appliedDecorators = null)
     {
         ValidateChain(strategies);
         Strategies = strategies;
@@ -36,6 +42,7 @@ public sealed class Shield : IShieldLifecycle
         Ambient = ambient;
         Name = name;
         Time = timeProvider;
+        AppliedDecorators = appliedDecorators ?? [];
 
         foreach (var strategy in strategies)
         {
@@ -224,6 +231,8 @@ public sealed class Shield : IShieldLifecycle
         var parts = new Strategy[shields.Length][];
         string? name = null;
         TimeProvider? time = null;
+        IShieldDecorator[] appliedDecorators = [];
+        var hasStrategies = false;
 
         for (var i = 0; i < shields.Length; i++)
         {
@@ -232,9 +241,18 @@ public sealed class Shield : IShieldLifecycle
             parts[i] = shield.Strategies;
             name ??= shield.Name;
             time ??= shield.Time;
+            var shieldHasStrategies = ShieldDecoration.HasResilienceStrategies(shield.Strategies);
+            appliedDecorators = ShieldDecoration.MergeForComposition(
+                appliedDecorators,
+                hasStrategies,
+                shield.AppliedDecorators);
+            hasStrategies |= shieldHasStrategies;
         }
 
-        return new Shield(Concat(parts), null, name, time);
+        var strategies = Concat(parts);
+        var composed = new Shield(strategies, null, name, time, appliedDecorators);
+        StrategyAppendObserver.NotifyComposition(strategies, name, composed);
+        return composed;
     }
 
     // ── Execution ───────────────────────────────────────────────────────────────────────
@@ -692,7 +710,8 @@ public sealed class Shield : IShieldLifecycle
 
     internal static string Describe(string? name, Strategy[] strategies)
     {
-        var pipeline = strategies.Length == 0 ? "(empty)" : DescribeStrategies(strategies);
+        var visibleCount = strategies.Count(static strategy => strategy is not ITransparentStrategy);
+        var pipeline = visibleCount == 0 ? "(empty)" : DescribeStrategies(strategies, visibleCount);
 
         return name is null ? pipeline : $"{name}: {pipeline}";
     }
@@ -702,25 +721,31 @@ public sealed class Shield : IShieldLifecycle
     /// clause with <c>[when …]</c> and marking strategies whose options replaced that clause
     /// locally. Proactive strategies carry no clause and never open or close a run.
     /// </summary>
-    private static string DescribeStrategies(Strategy[] strategies)
+    private static string DescribeStrategies(Strategy[] strategies, int visibleCount)
     {
-        var parts = new string[strategies.Length];
+        var parts = new string[visibleCount];
         string? activeClause = null;
+        var partIndex = 0;
 
         for (var i = 0; i < strategies.Length; i++)
         {
             var strategy = strategies[i];
+            if (strategy is ITransparentStrategy)
+            {
+                continue;
+            }
+
             var description = strategy.Describe();
 
             if (strategy.HasHandlingOverride)
             {
-                parts[i] = description + " (local handling)";
+                parts[partIndex++] = description + " (local handling)";
                 continue;
             }
 
             if (strategy.ReactiveJudge is not { } judge)
             {
-                parts[i] = description;
+                parts[partIndex++] = description;
                 continue;
             }
 
@@ -728,11 +753,11 @@ public sealed class Shield : IShieldLifecycle
             if (clause is null)
             {
                 activeClause = null;
-                parts[i] = description;
+                parts[partIndex++] = description;
                 continue;
             }
 
-            parts[i] = string.Equals(clause, activeClause, StringComparison.Ordinal)
+            parts[partIndex++] = string.Equals(clause, activeClause, StringComparison.Ordinal)
                 ? description
                 : $"[when {clause}] {description}";
             activeClause = clause;
@@ -787,11 +812,39 @@ public sealed class Shield : IShieldLifecycle
         var strategies = new Strategy[Strategies.Length + 1];
         Array.Copy(Strategies, strategies, Strategies.Length);
         strategies[Strategies.Length] = strategy;
-        return new Shield(strategies, ambient ?? Ambient, Name, Time);
+        var shield = new Shield(strategies, ambient ?? Ambient, Name, Time, AppliedDecorators);
+        StrategyAppendObserver.Notify(Strategies, strategy, Name, shield);
+        return shield;
+    }
+
+    internal Shield MarkDecoratorApplied(
+        IShieldDecorator[] appliedDecorators,
+        IShieldDecorator decorator)
+    {
+        var decorators = new IShieldDecorator[appliedDecorators.Length + 1];
+        Array.Copy(appliedDecorators, decorators, appliedDecorators.Length);
+        decorators[^1] = decorator;
+        var decorated = new Shield(Strategies, Ambient, Name, Time, decorators);
+        StrategyAppendObserver.NotifyComposition(Strategies, Name, decorated);
+        return decorated;
     }
 
     internal static StrategyNode? BuildChain(Strategy[] strategies, StrategyOwnerSet shieldOwners)
     {
+        var indexes = new int[strategies.Length];
+        var previousIndexes = new int[strategies.Length];
+        var visibleIndex = -1;
+        for (var i = 0; i < strategies.Length; i++)
+        {
+            previousIndexes[i] = visibleIndex;
+            if (strategies[i] is not ITransparentStrategy)
+            {
+                visibleIndex++;
+            }
+
+            indexes[i] = visibleIndex;
+        }
+
         StrategyNode? next = null;
         var shieldOwnerReference = new WeakReference<StrategyOwnerSet>(shieldOwners);
         for (var i = strategies.Length - 1; i >= 0; i--)
@@ -799,7 +852,8 @@ public sealed class Shield : IShieldLifecycle
             next = new StrategyNode(
                 strategies[i],
                 next,
-                i,
+                indexes[i],
+                previousIndexes[i],
                 i > 0 && strategies[i - 1].RequiresContinuationOverlapIsolation,
                 shieldOwnerReference);
         }

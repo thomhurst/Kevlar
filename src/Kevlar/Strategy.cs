@@ -142,6 +142,103 @@ internal interface IShieldLifecycle
     Strategy[] Strategies { get; }
 }
 
+internal interface ITransparentStrategy
+{
+}
+
+internal interface IStrategyAppendObserver
+{
+    void OnStrategyAppended(
+        Strategy strategy,
+        string? shieldName,
+        int strategyIndex,
+        object scopeOwner);
+}
+
+internal interface IShieldNameObserver
+{
+    void OnStrategyNamed(
+        Strategy strategy,
+        string shieldName,
+        int strategyIndex,
+        object scopeOwner);
+}
+
+internal static class StrategyAppendObserver
+{
+    public static void Notify(
+        Strategy[] strategies,
+        Strategy appended,
+        string? shieldName,
+        object scopeOwner)
+    {
+        var strategyIndex = strategies.Count(static strategy => strategy is not ITransparentStrategy);
+        for (var index = strategies.Length - 1; index >= 0; index--)
+        {
+            if (strategies[index] is IStrategyAppendObserver observer)
+            {
+                observer.OnStrategyAppended(appended, shieldName, strategyIndex, scopeOwner);
+                break;
+            }
+        }
+    }
+
+    public static void NotifyComposition(
+        Strategy[] strategies,
+        string? shieldName,
+        object scopeOwner)
+    {
+        var strategyIndex = 0;
+        for (var appendedIndex = 0; appendedIndex < strategies.Length; appendedIndex++)
+        {
+            var appended = strategies[appendedIndex];
+            for (var observerIndex = appendedIndex - 1; observerIndex >= 0; observerIndex--)
+            {
+                if (strategies[observerIndex] is IStrategyAppendObserver observer)
+                {
+                    observer.OnStrategyAppended(
+                        appended,
+                        shieldName,
+                        strategyIndex,
+                        scopeOwner);
+                    break;
+                }
+            }
+
+            if (appended is not ITransparentStrategy)
+            {
+                strategyIndex++;
+            }
+        }
+    }
+}
+
+internal static class ShieldNameObserver
+{
+    public static void Notify(
+        Strategy[] strategies,
+        string shieldName,
+        object scopeOwner)
+    {
+        IShieldNameObserver? observer = null;
+        var strategyIndex = 0;
+        foreach (var strategy in strategies)
+        {
+            if (strategy is IShieldNameObserver nameObserver)
+            {
+                observer = nameObserver;
+                continue;
+            }
+
+            if (strategy is not ITransparentStrategy)
+            {
+                observer?.OnStrategyNamed(strategy, shieldName, strategyIndex, scopeOwner);
+                strategyIndex++;
+            }
+        }
+    }
+}
+
 /// <summary>
 /// The rest of a shield pipeline, from a strategy's point of view. Invoking it runs every
 /// remaining strategy and finally the user's delegate. It may be invoked multiple times
@@ -188,7 +285,7 @@ public readonly struct Continuation<T, TState>
         }
 
         ValueTask<Outcome<T>> execution;
-        var previousStrategyIndex = node.Index - 1;
+        var previousStrategyIndex = node.PreviousIndex;
         var shieldOwner = node.GetShieldOwner();
         var executionTracker = node.Strategy.ExecutionTracker;
         executionTracker?.Enter();
@@ -289,12 +386,14 @@ internal sealed class StrategyNode
         Strategy strategy,
         StrategyNode? next,
         int index,
+        int previousIndex,
         bool requiresOverlapIsolation,
         WeakReference<StrategyOwnerSet> shieldOwners)
     {
         Strategy = strategy;
         Next = next;
         Index = index;
+        PreviousIndex = previousIndex;
         RequiresOverlapIsolation = requiresOverlapIsolation;
         _shieldOwners = shieldOwners;
         SynchronousExecutionUnsupportedReason =
@@ -307,6 +406,8 @@ internal sealed class StrategyNode
     internal StrategyNode? Next { get; }
 
     internal int Index { get; }
+
+    internal int PreviousIndex { get; }
 
     internal bool RequiresOverlapIsolation { get; }
 

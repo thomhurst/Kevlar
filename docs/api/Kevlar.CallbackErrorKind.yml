@@ -11,6 +11,7 @@ items:
   - Kevlar.CallbackErrorKind.ConcurrencyLimitRejected
   - Kevlar.CallbackErrorKind.Fallback
   - Kevlar.CallbackErrorKind.Hedge
+  - Kevlar.CallbackErrorKind.Logging
   - Kevlar.CallbackErrorKind.RateLimitRejected
   - Kevlar.CallbackErrorKind.RateLimiterAdapterRejected
   - Kevlar.CallbackErrorKind.Retry
@@ -228,6 +229,26 @@ items:
   example: []
   syntax:
     content: ChaosInjected = 9
+    return:
+      type: Kevlar.CallbackErrorKind
+- uid: Kevlar.CallbackErrorKind.Logging
+  commentId: F:Kevlar.CallbackErrorKind.Logging
+  id: Logging
+  parent: Kevlar.CallbackErrorKind
+  langs:
+  - csharp
+  - vb
+  name: Logging
+  nameWithType: CallbackErrorKind.Logging
+  fullName: Kevlar.CallbackErrorKind.Logging
+  type: Field
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: A logging formatter or severity callback.
+  example: []
+  syntax:
+    content: Logging = 10
     return:
       type: Kevlar.CallbackErrorKind
 references:

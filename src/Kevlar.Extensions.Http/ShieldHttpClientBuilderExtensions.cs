@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Kevlar.Internal;
 
 namespace Kevlar.Extensions.Http;
 
@@ -21,7 +22,11 @@ public static class ShieldHttpClientBuilderExtensions
             throw new ArgumentNullException(nameof(shield));
         }
 
-        return builder.AddHttpMessageHandler(() => new ShieldDelegatingHandler(shield));
+        return builder.AddHttpMessageHandler(services =>
+            new ShieldDelegatingHandler(
+                Decorate(services, shield, builder.Name),
+                new ShieldHttpHandlerOptions(),
+                CreateDecorator(services, builder.Name)));
     }
 
     /// <summary>Sends this client's requests through the given shield with replay and routing options.</summary>
@@ -45,7 +50,11 @@ public static class ShieldHttpClientBuilderExtensions
             throw new ArgumentNullException(nameof(options));
         }
 
-        return builder.AddHttpMessageHandler(() => new ShieldDelegatingHandler(shield, options));
+        return builder.AddHttpMessageHandler(services =>
+            new ShieldDelegatingHandler(
+                Decorate(services, shield, builder.Name),
+                options,
+                CreateDecorator(services, builder.Name)));
     }
 
     /// <summary>Sends this client's requests through a shield built from the service provider.</summary>
@@ -61,7 +70,10 @@ public static class ShieldHttpClientBuilderExtensions
             throw new ArgumentNullException(nameof(shieldFactory));
         }
 
-        return builder.AddHttpMessageHandler(services => new ShieldDelegatingHandler(shieldFactory(services)));
+        return builder.AddHttpMessageHandler(services => new ShieldDelegatingHandler(
+            Decorate(services, shieldFactory(services), builder.Name),
+            new ShieldHttpHandlerOptions(),
+            CreateDecorator(services, builder.Name)));
     }
 
     /// <summary>Selects one shield for each request using the request and service provider.</summary>
@@ -80,7 +92,10 @@ public static class ShieldHttpClientBuilderExtensions
         }
 
         return builder.AddHttpMessageHandler(services =>
-            new ShieldDelegatingHandler(request => shieldSelector(request, services)));
+            new ShieldDelegatingHandler(request =>
+                Decorate(services, shieldSelector(request, services), builder.Name),
+                new ShieldHttpHandlerOptions(),
+                CreateDecorator(services, builder.Name)));
     }
 
     /// <summary>Selects a bounded partition shield from each request.</summary>
@@ -105,10 +120,15 @@ public static class ShieldHttpClientBuilderExtensions
             throw new ArgumentNullException(nameof(keySelector));
         }
 
-        return builder.AddHttpMessageHandler(() =>
+        return builder.AddHttpMessageHandler(services =>
             new ShieldDelegatingHandler(
-                request => partitions.GetShieldAsync(keySelector(request)),
-                new ShieldHttpHandlerOptions()));
+                request => GetDecoratedPartitionAsync(
+                    services,
+                    partitions,
+                    keySelector(request),
+                    builder.Name),
+                new ShieldHttpHandlerOptions(),
+                CreateDecorator(services, builder.Name)));
     }
 
     /// <summary>Sends this client's requests through service-provider-created shield and handler options.</summary>
@@ -133,7 +153,10 @@ public static class ShieldHttpClientBuilderExtensions
         }
 
         return builder.AddHttpMessageHandler(services =>
-            new ShieldDelegatingHandler(shieldFactory(services), optionsFactory(services)));
+            new ShieldDelegatingHandler(
+                Decorate(services, shieldFactory(services), builder.Name),
+                optionsFactory(services),
+                CreateDecorator(services, builder.Name)));
     }
 
     /// <summary>
@@ -166,7 +189,10 @@ public static class ShieldHttpClientBuilderExtensions
         var shield = HttpShield.Standard(options);
         var handlerOptions = Snapshot(options.Handler);
         return UseStandardTimeout(builder)
-            .AddHttpMessageHandler(() => new ShieldDelegatingHandler(shield, handlerOptions));
+            .AddHttpMessageHandler(services => new ShieldDelegatingHandler(
+                Decorate(services, shield, builder.Name),
+                handlerOptions,
+                CreateDecorator(services, builder.Name)));
     }
 
     /// <summary>
@@ -191,7 +217,10 @@ public static class ShieldHttpClientBuilderExtensions
         {
             var options = new StandardHttpShieldOptions();
             configure(services, options);
-            return new ShieldDelegatingHandler(HttpShield.Standard(options), Snapshot(options.Handler));
+            return new ShieldDelegatingHandler(
+                Decorate(services, HttpShield.Standard(options), builder.Name),
+                Snapshot(options.Handler),
+                CreateDecorator(services, builder.Name));
         });
     }
 
@@ -243,14 +272,15 @@ public static class ShieldHttpClientBuilderExtensions
                 var options = StandardHttpConfigurationBinder.BindStandard(configuration);
                 configure(services, options);
                 return new HttpShieldPipeline(
-                    HttpShield.Standard(options),
+                    Decorate(services, HttpShield.Standard(options), builder.Name),
                     Snapshot(options.Handler));
             }
 
             return ShieldDelegatingHandler.CreateReloading(new ReloadingHttpShieldPipeline(
                 CreatePipeline,
                 configuration.GetReloadToken,
-                onReloadFailure));
+                onReloadFailure),
+                CreateDecorator(services, builder.Name));
         });
     }
 
@@ -314,8 +344,11 @@ public static class ShieldHttpClientBuilderExtensions
         var shield = CreateHedgeShield(options);
         var handlerOptions = CreateHandlerOptions(options);
 
-        return UseStandardTimeout(builder).AddHttpMessageHandler(() =>
-            new ShieldDelegatingHandler(shield, handlerOptions));
+        return UseStandardTimeout(builder).AddHttpMessageHandler(services =>
+            new ShieldDelegatingHandler(
+                Decorate(services, shield, builder.Name),
+                handlerOptions,
+                CreateDecorator(services, builder.Name)));
     }
 
     /// <summary>
@@ -366,14 +399,15 @@ public static class ShieldHttpClientBuilderExtensions
                 var options = StandardHttpConfigurationBinder.BindHedge(configuration);
                 configure(services, options);
                 return new HttpShieldPipeline(
-                    CreateHedgeShield(options),
+                    Decorate(services, CreateHedgeShield(options), builder.Name),
                     CreateHandlerOptions(options));
             }
 
             return ShieldDelegatingHandler.CreateReloading(new ReloadingHttpShieldPipeline(
                 CreatePipeline,
                 configuration.GetReloadToken,
-                onReloadFailure));
+                onReloadFailure),
+                CreateDecorator(services, builder.Name));
         });
     }
 
@@ -382,6 +416,31 @@ public static class ShieldHttpClientBuilderExtensions
         var options = StandardHttpConfigurationBinder.BindStandard(configuration);
         _ = new HttpShieldPipeline(HttpShield.Standard(options), Snapshot(options.Handler));
     }
+
+    private static Shield<TResult> Decorate<TResult>(
+        IServiceProvider serviceProvider,
+        Shield<TResult> shield,
+        string? name) =>
+        ShieldDecoration.Apply(
+            shield,
+            name,
+            serviceProvider.GetServices<IShieldDecorator>());
+
+    private static Func<Shield<HttpResponseMessage>, Shield<HttpResponseMessage>> CreateDecorator(
+        IServiceProvider serviceProvider,
+        string? name) =>
+        shield => Decorate(serviceProvider, shield, name);
+
+    private static async ValueTask<Shield<TResult>> GetDecoratedPartitionAsync<TKey, TResult>(
+        IServiceProvider serviceProvider,
+        PartitionedShield<TKey, TResult> partitions,
+        TKey key,
+        string? name)
+        where TKey : notnull =>
+        Decorate(
+            serviceProvider,
+            await partitions.GetShieldAsync(key).ConfigureAwait(false),
+            name);
 
     private static void ValidateHedgeConfiguration(IConfiguration configuration)
     {

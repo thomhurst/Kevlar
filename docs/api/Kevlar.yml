@@ -36,6 +36,7 @@ items:
   - Kevlar.HedgeOptions
   - Kevlar.HedgeOptions`1
   - Kevlar.IKevlarTelemetryListener
+  - Kevlar.IShieldDecorator
   - Kevlar.Jitter
   - Kevlar.KevlarConfigurationException
   - Kevlar.KevlarContext
@@ -224,6 +225,13 @@ references:
   name: IKevlarTelemetryListener
   nameWithType: IKevlarTelemetryListener
   fullName: Kevlar.IKevlarTelemetryListener
+- uid: Kevlar.IShieldDecorator
+  commentId: T:Kevlar.IShieldDecorator
+  isExternal: true
+  href: Kevlar.IShieldDecorator.html
+  name: IShieldDecorator
+  nameWithType: IShieldDecorator
+  fullName: Kevlar.IShieldDecorator
 - uid: Kevlar.Jitter
   commentId: T:Kevlar.Jitter
   parent: Kevlar

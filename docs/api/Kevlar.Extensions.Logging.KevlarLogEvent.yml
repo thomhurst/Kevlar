@@ -1,0 +1,850 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent
+  commentId: T:Kevlar.Extensions.Logging.KevlarLogEvent
+  id: KevlarLogEvent
+  parent: Kevlar.Extensions.Logging
+  children:
+  - Kevlar.Extensions.Logging.KevlarLogEvent.Attempt
+  - Kevlar.Extensions.Logging.KevlarLogEvent.CallbackKind
+  - Kevlar.Extensions.Logging.KevlarLogEvent.Delay
+  - Kevlar.Extensions.Logging.KevlarLogEvent.Duration
+  - Kevlar.Extensions.Logging.KevlarLogEvent.EventName
+  - Kevlar.Extensions.Logging.KevlarLogEvent.Exception
+  - Kevlar.Extensions.Logging.KevlarLogEvent.FromState
+  - Kevlar.Extensions.Logging.KevlarLogEvent.Kind
+  - Kevlar.Extensions.Logging.KevlarLogEvent.Result
+  - Kevlar.Extensions.Logging.KevlarLogEvent.RetryAfter
+  - Kevlar.Extensions.Logging.KevlarLogEvent.ShieldName
+  - Kevlar.Extensions.Logging.KevlarLogEvent.StrategyIndex
+  - Kevlar.Extensions.Logging.KevlarLogEvent.StrategyName
+  - Kevlar.Extensions.Logging.KevlarLogEvent.ToState
+  langs:
+  - csharp
+  - vb
+  name: KevlarLogEvent
+  nameWithType: KevlarLogEvent
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent
+  type: Struct
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: Describes one strategy event before its log level is selected.
+  example: []
+  syntax:
+    content: public readonly struct KevlarLogEvent
+    content.vb: Public Structure KevlarLogEvent
+  inheritedMembers:
+  - System.ValueType.Equals(System.Object)
+  - System.ValueType.GetHashCode
+  - System.ValueType.ToString
+  - System.Object.GetType
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.Kind
+  commentId: P:Kevlar.Extensions.Logging.KevlarLogEvent.Kind
+  id: Kind
+  parent: Kevlar.Extensions.Logging.KevlarLogEvent
+  langs:
+  - csharp
+  - vb
+  name: Kind
+  nameWithType: KevlarLogEvent.Kind
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.Kind
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: The mapped logging event kind.
+  example: []
+  syntax:
+    content: public KevlarLogEventKind Kind { get; }
+    parameters: []
+    return:
+      type: Kevlar.Extensions.Logging.KevlarLogEventKind
+    content.vb: Public ReadOnly Property Kind As KevlarLogEventKind
+  overload: Kevlar.Extensions.Logging.KevlarLogEvent.Kind*
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.EventName
+  commentId: P:Kevlar.Extensions.Logging.KevlarLogEvent.EventName
+  id: EventName
+  parent: Kevlar.Extensions.Logging.KevlarLogEvent
+  langs:
+  - csharp
+  - vb
+  name: EventName
+  nameWithType: KevlarLogEvent.EventName
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.EventName
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: The stable telemetry event name.
+  example: []
+  syntax:
+    content: public string EventName { get; }
+    parameters: []
+    return:
+      type: System.String
+    content.vb: Public ReadOnly Property EventName As String
+  overload: Kevlar.Extensions.Logging.KevlarLogEvent.EventName*
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.ShieldName
+  commentId: P:Kevlar.Extensions.Logging.KevlarLogEvent.ShieldName
+  id: ShieldName
+  parent: Kevlar.Extensions.Logging.KevlarLogEvent
+  langs:
+  - csharp
+  - vb
+  name: ShieldName
+  nameWithType: KevlarLogEvent.ShieldName
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.ShieldName
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: The shield name, when configured.
+  example: []
+  syntax:
+    content: public string? ShieldName { get; }
+    parameters: []
+    return:
+      type: System.String
+    content.vb: Public ReadOnly Property ShieldName As String
+  overload: Kevlar.Extensions.Logging.KevlarLogEvent.ShieldName*
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.StrategyName
+  commentId: P:Kevlar.Extensions.Logging.KevlarLogEvent.StrategyName
+  id: StrategyName
+  parent: Kevlar.Extensions.Logging.KevlarLogEvent
+  langs:
+  - csharp
+  - vb
+  name: StrategyName
+  nameWithType: KevlarLogEvent.StrategyName
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.StrategyName
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: The strategy name.
+  example: []
+  syntax:
+    content: public string StrategyName { get; }
+    parameters: []
+    return:
+      type: System.String
+    content.vb: Public ReadOnly Property StrategyName As String
+  overload: Kevlar.Extensions.Logging.KevlarLogEvent.StrategyName*
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.StrategyIndex
+  commentId: P:Kevlar.Extensions.Logging.KevlarLogEvent.StrategyIndex
+  id: StrategyIndex
+  parent: Kevlar.Extensions.Logging.KevlarLogEvent
+  langs:
+  - csharp
+  - vb
+  name: StrategyIndex
+  nameWithType: KevlarLogEvent.StrategyIndex
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.StrategyIndex
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: The zero-based strategy position.
+  example: []
+  syntax:
+    content: public int StrategyIndex { get; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public ReadOnly Property StrategyIndex As Integer
+  overload: Kevlar.Extensions.Logging.KevlarLogEvent.StrategyIndex*
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.Attempt
+  commentId: P:Kevlar.Extensions.Logging.KevlarLogEvent.Attempt
+  id: Attempt
+  parent: Kevlar.Extensions.Logging.KevlarLogEvent
+  langs:
+  - csharp
+  - vb
+  name: Attempt
+  nameWithType: KevlarLogEvent.Attempt
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.Attempt
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: The zero-based attempt number.
+  example: []
+  syntax:
+    content: public int Attempt { get; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public ReadOnly Property Attempt As Integer
+  overload: Kevlar.Extensions.Logging.KevlarLogEvent.Attempt*
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.Exception
+  commentId: P:Kevlar.Extensions.Logging.KevlarLogEvent.Exception
+  id: Exception
+  parent: Kevlar.Extensions.Logging.KevlarLogEvent
+  langs:
+  - csharp
+  - vb
+  name: Exception
+  nameWithType: KevlarLogEvent.Exception
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.Exception
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: The associated exception, when present.
+  example: []
+  syntax:
+    content: public Exception? Exception { get; }
+    parameters: []
+    return:
+      type: System.Exception
+    content.vb: Public ReadOnly Property Exception As Exception
+  overload: Kevlar.Extensions.Logging.KevlarLogEvent.Exception*
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.Result
+  commentId: P:Kevlar.Extensions.Logging.KevlarLogEvent.Result
+  id: Result
+  parent: Kevlar.Extensions.Logging.KevlarLogEvent
+  langs:
+  - csharp
+  - vb
+  name: Result
+  nameWithType: KevlarLogEvent.Result
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.Result
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: The handled result, when available.
+  example: []
+  syntax:
+    content: public object? Result { get; }
+    parameters: []
+    return:
+      type: System.Object
+    content.vb: Public ReadOnly Property Result As Object
+  overload: Kevlar.Extensions.Logging.KevlarLogEvent.Result*
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.Delay
+  commentId: P:Kevlar.Extensions.Logging.KevlarLogEvent.Delay
+  id: Delay
+  parent: Kevlar.Extensions.Logging.KevlarLogEvent
+  langs:
+  - csharp
+  - vb
+  name: Delay
+  nameWithType: KevlarLogEvent.Delay
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.Delay
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: The computed retry, hedge, or break delay.
+  example: []
+  syntax:
+    content: public TimeSpan Delay { get; }
+    parameters: []
+    return:
+      type: System.TimeSpan
+    content.vb: Public ReadOnly Property Delay As TimeSpan
+  overload: Kevlar.Extensions.Logging.KevlarLogEvent.Delay*
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.Duration
+  commentId: P:Kevlar.Extensions.Logging.KevlarLogEvent.Duration
+  id: Duration
+  parent: Kevlar.Extensions.Logging.KevlarLogEvent
+  langs:
+  - csharp
+  - vb
+  name: Duration
+  nameWithType: KevlarLogEvent.Duration
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.Duration
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: The measured duration.
+  example: []
+  syntax:
+    content: public TimeSpan Duration { get; }
+    parameters: []
+    return:
+      type: System.TimeSpan
+    content.vb: Public ReadOnly Property Duration As TimeSpan
+  overload: Kevlar.Extensions.Logging.KevlarLogEvent.Duration*
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.FromState
+  commentId: P:Kevlar.Extensions.Logging.KevlarLogEvent.FromState
+  id: FromState
+  parent: Kevlar.Extensions.Logging.KevlarLogEvent
+  langs:
+  - csharp
+  - vb
+  name: FromState
+  nameWithType: KevlarLogEvent.FromState
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.FromState
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: The circuit state left by a transition.
+  example: []
+  syntax:
+    content: public CircuitState? FromState { get; }
+    parameters: []
+    return:
+      type: System.Nullable{Kevlar.CircuitState}
+    content.vb: Public ReadOnly Property FromState As CircuitState?
+  overload: Kevlar.Extensions.Logging.KevlarLogEvent.FromState*
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.ToState
+  commentId: P:Kevlar.Extensions.Logging.KevlarLogEvent.ToState
+  id: ToState
+  parent: Kevlar.Extensions.Logging.KevlarLogEvent
+  langs:
+  - csharp
+  - vb
+  name: ToState
+  nameWithType: KevlarLogEvent.ToState
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.ToState
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: The circuit state entered by a transition.
+  example: []
+  syntax:
+    content: public CircuitState? ToState { get; }
+    parameters: []
+    return:
+      type: System.Nullable{Kevlar.CircuitState}
+    content.vb: Public ReadOnly Property ToState As CircuitState?
+  overload: Kevlar.Extensions.Logging.KevlarLogEvent.ToState*
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.RetryAfter
+  commentId: P:Kevlar.Extensions.Logging.KevlarLogEvent.RetryAfter
+  id: RetryAfter
+  parent: Kevlar.Extensions.Logging.KevlarLogEvent
+  langs:
+  - csharp
+  - vb
+  name: RetryAfter
+  nameWithType: KevlarLogEvent.RetryAfter
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.RetryAfter
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: The estimated retry delay for a rejection.
+  example: []
+  syntax:
+    content: public TimeSpan? RetryAfter { get; }
+    parameters: []
+    return:
+      type: System.Nullable{System.TimeSpan}
+    content.vb: Public ReadOnly Property RetryAfter As TimeSpan?
+  overload: Kevlar.Extensions.Logging.KevlarLogEvent.RetryAfter*
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.CallbackKind
+  commentId: P:Kevlar.Extensions.Logging.KevlarLogEvent.CallbackKind
+  id: CallbackKind
+  parent: Kevlar.Extensions.Logging.KevlarLogEvent
+  langs:
+  - csharp
+  - vb
+  name: CallbackKind
+  nameWithType: KevlarLogEvent.CallbackKind
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.CallbackKind
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: The callback family that failed.
+  example: []
+  syntax:
+    content: public CallbackErrorKind? CallbackKind { get; }
+    parameters: []
+    return:
+      type: System.Nullable{Kevlar.CallbackErrorKind}
+    content.vb: Public ReadOnly Property CallbackKind As CallbackErrorKind?
+  overload: Kevlar.Extensions.Logging.KevlarLogEvent.CallbackKind*
+references:
+- uid: Kevlar.Extensions.Logging
+  commentId: N:Kevlar.Extensions.Logging
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar.Extensions.Logging
+  nameWithType: Kevlar.Extensions.Logging
+  fullName: Kevlar.Extensions.Logging
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+  - name: .
+  - uid: Kevlar.Extensions.Logging
+    name: Logging
+    isExternal: true
+    href: Kevlar.Extensions.Logging.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+  - name: .
+  - uid: Kevlar.Extensions.Logging
+    name: Logging
+    isExternal: true
+    href: Kevlar.Extensions.Logging.html
+- uid: System.ValueType.Equals(System.Object)
+  commentId: M:System.ValueType.Equals(System.Object)
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  name: Equals(object)
+  nameWithType: ValueType.Equals(object)
+  fullName: System.ValueType.Equals(object)
+  nameWithType.vb: ValueType.Equals(Object)
+  fullName.vb: System.ValueType.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.ValueType.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.ValueType.GetHashCode
+  commentId: M:System.ValueType.GetHashCode
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  name: GetHashCode()
+  nameWithType: ValueType.GetHashCode()
+  fullName: System.ValueType.GetHashCode()
+  spec.csharp:
+  - uid: System.ValueType.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  - name: (
+  - name: )
+- uid: System.ValueType.ToString
+  commentId: M:System.ValueType.ToString
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  name: ToString()
+  nameWithType: ValueType.ToString()
+  fullName: System.ValueType.ToString()
+  spec.csharp:
+  - uid: System.ValueType.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  - name: (
+  - name: )
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.ValueType
+  commentId: T:System.ValueType
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype
+  name: ValueType
+  nameWithType: ValueType
+  fullName: System.ValueType
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.Kind*
+  commentId: Overload:Kevlar.Extensions.Logging.KevlarLogEvent.Kind
+  isExternal: true
+  href: Kevlar.Extensions.Logging.KevlarLogEvent.html#Kevlar_Extensions_Logging_KevlarLogEvent_Kind
+  name: Kind
+  nameWithType: KevlarLogEvent.Kind
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.Kind
+- uid: Kevlar.Extensions.Logging.KevlarLogEventKind
+  commentId: T:Kevlar.Extensions.Logging.KevlarLogEventKind
+  parent: Kevlar.Extensions.Logging
+  isExternal: true
+  href: Kevlar.Extensions.Logging.KevlarLogEventKind.html
+  name: KevlarLogEventKind
+  nameWithType: KevlarLogEventKind
+  fullName: Kevlar.Extensions.Logging.KevlarLogEventKind
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.EventName*
+  commentId: Overload:Kevlar.Extensions.Logging.KevlarLogEvent.EventName
+  isExternal: true
+  href: Kevlar.Extensions.Logging.KevlarLogEvent.html#Kevlar_Extensions_Logging_KevlarLogEvent_EventName
+  name: EventName
+  nameWithType: KevlarLogEvent.EventName
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.EventName
+- uid: System.String
+  commentId: T:System.String
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.string
+  name: string
+  nameWithType: string
+  fullName: string
+  nameWithType.vb: String
+  fullName.vb: String
+  name.vb: String
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.ShieldName*
+  commentId: Overload:Kevlar.Extensions.Logging.KevlarLogEvent.ShieldName
+  isExternal: true
+  href: Kevlar.Extensions.Logging.KevlarLogEvent.html#Kevlar_Extensions_Logging_KevlarLogEvent_ShieldName
+  name: ShieldName
+  nameWithType: KevlarLogEvent.ShieldName
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.ShieldName
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.StrategyName*
+  commentId: Overload:Kevlar.Extensions.Logging.KevlarLogEvent.StrategyName
+  isExternal: true
+  href: Kevlar.Extensions.Logging.KevlarLogEvent.html#Kevlar_Extensions_Logging_KevlarLogEvent_StrategyName
+  name: StrategyName
+  nameWithType: KevlarLogEvent.StrategyName
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.StrategyName
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.StrategyIndex*
+  commentId: Overload:Kevlar.Extensions.Logging.KevlarLogEvent.StrategyIndex
+  isExternal: true
+  href: Kevlar.Extensions.Logging.KevlarLogEvent.html#Kevlar_Extensions_Logging_KevlarLogEvent_StrategyIndex
+  name: StrategyIndex
+  nameWithType: KevlarLogEvent.StrategyIndex
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.StrategyIndex
+- uid: System.Int32
+  commentId: T:System.Int32
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.int32
+  name: int
+  nameWithType: int
+  fullName: int
+  nameWithType.vb: Integer
+  fullName.vb: Integer
+  name.vb: Integer
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.Attempt*
+  commentId: Overload:Kevlar.Extensions.Logging.KevlarLogEvent.Attempt
+  isExternal: true
+  href: Kevlar.Extensions.Logging.KevlarLogEvent.html#Kevlar_Extensions_Logging_KevlarLogEvent_Attempt
+  name: Attempt
+  nameWithType: KevlarLogEvent.Attempt
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.Attempt
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.Exception*
+  commentId: Overload:Kevlar.Extensions.Logging.KevlarLogEvent.Exception
+  isExternal: true
+  href: Kevlar.Extensions.Logging.KevlarLogEvent.html#Kevlar_Extensions_Logging_KevlarLogEvent_Exception
+  name: Exception
+  nameWithType: KevlarLogEvent.Exception
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.Exception
+- uid: System.Exception
+  commentId: T:System.Exception
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.exception
+  name: Exception
+  nameWithType: Exception
+  fullName: System.Exception
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.Result*
+  commentId: Overload:Kevlar.Extensions.Logging.KevlarLogEvent.Result
+  isExternal: true
+  href: Kevlar.Extensions.Logging.KevlarLogEvent.html#Kevlar_Extensions_Logging_KevlarLogEvent_Result
+  name: Result
+  nameWithType: KevlarLogEvent.Result
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.Result
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.Delay*
+  commentId: Overload:Kevlar.Extensions.Logging.KevlarLogEvent.Delay
+  isExternal: true
+  href: Kevlar.Extensions.Logging.KevlarLogEvent.html#Kevlar_Extensions_Logging_KevlarLogEvent_Delay
+  name: Delay
+  nameWithType: KevlarLogEvent.Delay
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.Delay
+- uid: System.TimeSpan
+  commentId: T:System.TimeSpan
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.timespan
+  name: TimeSpan
+  nameWithType: TimeSpan
+  fullName: System.TimeSpan
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.Duration*
+  commentId: Overload:Kevlar.Extensions.Logging.KevlarLogEvent.Duration
+  isExternal: true
+  href: Kevlar.Extensions.Logging.KevlarLogEvent.html#Kevlar_Extensions_Logging_KevlarLogEvent_Duration
+  name: Duration
+  nameWithType: KevlarLogEvent.Duration
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.Duration
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.FromState*
+  commentId: Overload:Kevlar.Extensions.Logging.KevlarLogEvent.FromState
+  isExternal: true
+  href: Kevlar.Extensions.Logging.KevlarLogEvent.html#Kevlar_Extensions_Logging_KevlarLogEvent_FromState
+  name: FromState
+  nameWithType: KevlarLogEvent.FromState
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.FromState
+- uid: System.Nullable{Kevlar.CircuitState}
+  commentId: T:System.Nullable{Kevlar.CircuitState}
+  parent: System
+  definition: System.Nullable`1
+  href: Kevlar.CircuitState.html
+  name: CircuitState?
+  nameWithType: CircuitState?
+  fullName: Kevlar.CircuitState?
+  spec.csharp:
+  - uid: Kevlar.CircuitState
+    name: CircuitState
+    isExternal: true
+    href: Kevlar.CircuitState.html
+  - name: '?'
+  spec.vb:
+  - uid: Kevlar.CircuitState
+    name: CircuitState
+    isExternal: true
+    href: Kevlar.CircuitState.html
+  - name: '?'
+- uid: System.Nullable`1
+  commentId: T:System.Nullable`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  name: Nullable<T>
+  nameWithType: Nullable<T>
+  fullName: System.Nullable<T>
+  nameWithType.vb: Nullable(Of T)
+  fullName.vb: System.Nullable(Of T)
+  name.vb: Nullable(Of T)
+  spec.csharp:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.ToState*
+  commentId: Overload:Kevlar.Extensions.Logging.KevlarLogEvent.ToState
+  isExternal: true
+  href: Kevlar.Extensions.Logging.KevlarLogEvent.html#Kevlar_Extensions_Logging_KevlarLogEvent_ToState
+  name: ToState
+  nameWithType: KevlarLogEvent.ToState
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.ToState
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.RetryAfter*
+  commentId: Overload:Kevlar.Extensions.Logging.KevlarLogEvent.RetryAfter
+  isExternal: true
+  href: Kevlar.Extensions.Logging.KevlarLogEvent.html#Kevlar_Extensions_Logging_KevlarLogEvent_RetryAfter
+  name: RetryAfter
+  nameWithType: KevlarLogEvent.RetryAfter
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.RetryAfter
+- uid: System.Nullable{System.TimeSpan}
+  commentId: T:System.Nullable{System.TimeSpan}
+  parent: System
+  definition: System.Nullable`1
+  href: https://learn.microsoft.com/dotnet/api/system.timespan
+  name: TimeSpan?
+  nameWithType: TimeSpan?
+  fullName: System.TimeSpan?
+  spec.csharp:
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '?'
+  spec.vb:
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '?'
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.CallbackKind*
+  commentId: Overload:Kevlar.Extensions.Logging.KevlarLogEvent.CallbackKind
+  isExternal: true
+  href: Kevlar.Extensions.Logging.KevlarLogEvent.html#Kevlar_Extensions_Logging_KevlarLogEvent_CallbackKind
+  name: CallbackKind
+  nameWithType: KevlarLogEvent.CallbackKind
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.CallbackKind
+- uid: System.Nullable{Kevlar.CallbackErrorKind}
+  commentId: T:System.Nullable{Kevlar.CallbackErrorKind}
+  parent: System
+  definition: System.Nullable`1
+  href: Kevlar.CallbackErrorKind.html
+  name: CallbackErrorKind?
+  nameWithType: CallbackErrorKind?
+  fullName: Kevlar.CallbackErrorKind?
+  spec.csharp:
+  - uid: Kevlar.CallbackErrorKind
+    name: CallbackErrorKind
+    isExternal: true
+    href: Kevlar.CallbackErrorKind.html
+  - name: '?'
+  spec.vb:
+  - uid: Kevlar.CallbackErrorKind
+    name: CallbackErrorKind
+    isExternal: true
+    href: Kevlar.CallbackErrorKind.html
+  - name: '?'

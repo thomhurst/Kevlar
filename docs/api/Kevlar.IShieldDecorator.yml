@@ -1,0 +1,185 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.IShieldDecorator
+  commentId: T:Kevlar.IShieldDecorator
+  id: IShieldDecorator
+  parent: Kevlar
+  children:
+  - Kevlar.IShieldDecorator.Decorate(Kevlar.Shield,System.String)
+  - Kevlar.IShieldDecorator.Decorate``1(Kevlar.Shield{``0},System.String)
+  langs:
+  - csharp
+  - vb
+  name: IShieldDecorator
+  nameWithType: IShieldDecorator
+  fullName: Kevlar.IShieldDecorator
+  type: Interface
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Decorates shields created by dependency-injection and HTTP integrations.
+  example: []
+  syntax:
+    content: public interface IShieldDecorator
+    content.vb: Public Interface IShieldDecorator
+- uid: Kevlar.IShieldDecorator.Decorate(Kevlar.Shield,System.String)
+  commentId: M:Kevlar.IShieldDecorator.Decorate(Kevlar.Shield,System.String)
+  id: Decorate(Kevlar.Shield,System.String)
+  parent: Kevlar.IShieldDecorator
+  langs:
+  - csharp
+  - vb
+  name: Decorate(Shield, string?)
+  nameWithType: IShieldDecorator.Decorate(Shield, string?)
+  fullName: Kevlar.IShieldDecorator.Decorate(Kevlar.Shield, string?)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Decorates an untyped shield.
+  example: []
+  syntax:
+    content: Shield Decorate(Shield shield, string? name)
+    parameters:
+    - id: shield
+      type: Kevlar.Shield
+    - id: name
+      type: System.String
+    return:
+      type: Kevlar.Shield
+    content.vb: Function Decorate(shield As Shield, name As String) As Shield
+  overload: Kevlar.IShieldDecorator.Decorate*
+  nameWithType.vb: IShieldDecorator.Decorate(Shield, String)
+  fullName.vb: Kevlar.IShieldDecorator.Decorate(Kevlar.Shield, String)
+  name.vb: Decorate(Shield, String)
+- uid: Kevlar.IShieldDecorator.Decorate``1(Kevlar.Shield{``0},System.String)
+  commentId: M:Kevlar.IShieldDecorator.Decorate``1(Kevlar.Shield{`0},System.String)
+  id: Decorate``1(Kevlar.Shield{``0},System.String)
+  parent: Kevlar.IShieldDecorator
+  langs:
+  - csharp
+  - vb
+  name: Decorate<TResult>(Shield<TResult>, string?)
+  nameWithType: IShieldDecorator.Decorate<TResult>(Shield<TResult>, string?)
+  fullName: Kevlar.IShieldDecorator.Decorate<TResult>(Kevlar.Shield<TResult>, string?)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Decorates a result-aware shield.
+  example: []
+  syntax:
+    content: Shield<TResult> Decorate<TResult>(Shield<TResult> shield, string? name)
+    parameters:
+    - id: shield
+      type: Kevlar.Shield{{TResult}}
+    - id: name
+      type: System.String
+    typeParameters:
+    - id: TResult
+    return:
+      type: Kevlar.Shield{{TResult}}
+    content.vb: Function Decorate(Of TResult)(shield As Shield(Of TResult), name As String) As Shield(Of TResult)
+  overload: Kevlar.IShieldDecorator.Decorate*
+  nameWithType.vb: IShieldDecorator.Decorate(Of TResult)(Shield(Of TResult), String)
+  fullName.vb: Kevlar.IShieldDecorator.Decorate(Of TResult)(Kevlar.Shield(Of TResult), String)
+  name.vb: Decorate(Of TResult)(Shield(Of TResult), String)
+references:
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: Kevlar.IShieldDecorator.Decorate*
+  commentId: Overload:Kevlar.IShieldDecorator.Decorate
+  isExternal: true
+  href: Kevlar.IShieldDecorator.html#Kevlar_IShieldDecorator_Decorate_Kevlar_Shield_System_String_
+  name: Decorate
+  nameWithType: IShieldDecorator.Decorate
+  fullName: Kevlar.IShieldDecorator.Decorate
+- uid: Kevlar.Shield
+  commentId: T:Kevlar.Shield
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Shield.html
+  name: Shield
+  nameWithType: Shield
+  fullName: Kevlar.Shield
+- uid: System.String
+  commentId: T:System.String
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.string
+  name: string
+  nameWithType: string
+  fullName: string
+  nameWithType.vb: String
+  fullName.vb: String
+  name.vb: String
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.Shield{{TResult}}
+  commentId: T:Kevlar.Shield{`1}
+  parent: Kevlar
+  definition: Kevlar.Shield`1
+  href: Kevlar.Shield-1.html
+  name: Shield<TResult>
+  nameWithType: Shield<TResult>
+  fullName: Kevlar.Shield<TResult>
+  nameWithType.vb: Shield(Of TResult)
+  fullName.vb: Kevlar.Shield(Of TResult)
+  name.vb: Shield(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.Shield`1
+  commentId: T:Kevlar.Shield`1
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Shield-1.html
+  name: Shield<TResult>
+  nameWithType: Shield<TResult>
+  fullName: Kevlar.Shield<TResult>
+  nameWithType.vb: Shield(Of TResult)
+  fullName.vb: Kevlar.Shield(Of TResult)
+  name.vb: Shield(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )

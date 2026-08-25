@@ -1,4 +1,5 @@
 using System.Globalization;
+using Kevlar.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -57,7 +58,10 @@ public static class KevlarServiceCollectionExtensions
 
         PrepareRegistration(services, name, replace);
         services.AddKevlar();
-        services.AddSingleton(new ShieldRegistration(name, null, factory));
+        services.AddSingleton(new ShieldRegistration(
+            name,
+            null,
+            serviceProvider => Decorate(serviceProvider, factory(serviceProvider), name)));
         services.AddKeyedSingleton(name, (sp, _) => sp.GetRequiredService<IKevlarRegistry>().GetShield(name));
         services.AddKeyedSingleton<IShieldProvider>(
             name,
@@ -162,7 +166,10 @@ public static class KevlarServiceCollectionExtensions
             (serviceProvider, _) => serviceProvider
                 .GetRequiredService<KevlarRegistry>()
                 .CreateReloadingProvider(() => new ReloadingShieldProvider(
-                    () => BuildConfiguredShield(configuration).WithName(name),
+                    () => Decorate(
+                        serviceProvider,
+                        BuildConfiguredShield(configuration).WithName(name),
+                        name),
                     configuration.GetReloadToken,
                     onReloadFailure,
                     debounceDelay,
@@ -206,7 +213,10 @@ public static class KevlarServiceCollectionExtensions
 
         PrepareRegistration(services, name, replace);
         services.AddKevlar();
-        services.AddSingleton(new ShieldRegistration(name, typeof(TResult), factory));
+        services.AddSingleton(new ShieldRegistration(
+            name,
+            typeof(TResult),
+            serviceProvider => Decorate(serviceProvider, factory(serviceProvider), name)));
         services.AddKeyedSingleton(name, (sp, _) => sp.GetRequiredService<IKevlarRegistry>().GetShield<TResult>(name));
         services.AddKeyedSingleton<IShieldProvider<TResult>>(
             name,
@@ -311,7 +321,10 @@ public static class KevlarServiceCollectionExtensions
             (serviceProvider, _) => serviceProvider
                 .GetRequiredService<KevlarRegistry>()
                 .CreateReloadingProvider(() => new ReloadingShieldProvider<TResult>(
-                    () => BuildConfiguredShield<TResult>(configuration).WithName(name),
+                    () => Decorate(
+                        serviceProvider,
+                        BuildConfiguredShield<TResult>(configuration).WithName(name),
+                        name),
                     configuration.GetReloadToken,
                     onReloadFailure,
                     debounceDelay,
@@ -346,7 +359,10 @@ public static class KevlarServiceCollectionExtensions
             .CreateReloadingProvider(() => new OptionsReloadingShieldProvider<TOptions>(
                 serviceProvider.GetRequiredService<IOptionsMonitor<TOptions>>(),
                 name,
-                options => build(options, serviceProvider).WithName(name),
+                options => Decorate(
+                    serviceProvider,
+                    build(options, serviceProvider).WithName(name),
+                    name),
                 onReloadFailure)));
         services.AddSingleton(new ShieldRegistration(
             name,
@@ -379,7 +395,10 @@ public static class KevlarServiceCollectionExtensions
             .CreateReloadingProvider(() => new OptionsReloadingShieldProvider<TOptions, TResult>(
                 serviceProvider.GetRequiredService<IOptionsMonitor<TOptions>>(),
                 name,
-                options => build(options, serviceProvider).WithName(name),
+                options => Decorate(
+                    serviceProvider,
+                    build(options, serviceProvider).WithName(name),
+                    name),
                 onReloadFailure)));
         services.AddSingleton(new ShieldRegistration(
             name,
@@ -407,7 +426,7 @@ public static class KevlarServiceCollectionExtensions
         configure?.Invoke(options);
         services.AddKeyedSingleton<PartitionedShield<TKey>>(name, (serviceProvider, _) =>
             new PartitionedShield<TKey>(
-                key => factory(serviceProvider, key),
+                key => Decorate(serviceProvider, factory(serviceProvider, key), name),
                 options,
                 comparer));
         return services;
@@ -432,7 +451,7 @@ public static class KevlarServiceCollectionExtensions
         configure?.Invoke(options);
         services.AddKeyedSingleton<PartitionedShield<TKey, TResult>>(name, (serviceProvider, _) =>
             new PartitionedShield<TKey, TResult>(
-                key => factory(serviceProvider, key),
+                key => Decorate(serviceProvider, factory(serviceProvider, key), name),
                 options,
                 comparer));
         return services;
@@ -623,6 +642,24 @@ public static class KevlarServiceCollectionExtensions
 
         return definition;
     }
+
+    private static Shield Decorate(
+        IServiceProvider serviceProvider,
+        Shield shield,
+        string? name) =>
+        ShieldDecoration.Apply(
+            shield,
+            name,
+            serviceProvider.GetServices<IShieldDecorator>());
+
+    private static Shield<TResult> Decorate<TResult>(
+        IServiceProvider serviceProvider,
+        Shield<TResult> shield,
+        string? name) =>
+        ShieldDecoration.Apply(
+            shield,
+            name,
+            serviceProvider.GetServices<IShieldDecorator>());
 
     private static Shield BuildConfiguredShield(IConfiguration configuration)
     {

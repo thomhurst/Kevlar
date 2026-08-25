@@ -103,6 +103,37 @@ public class CallbackFailureTests
 
     [Test]
     [NotInParallel]
+    public async Task Throwing_Strategy_Event_Metrics_Do_Not_Escape_Callback_Error_Reporting()
+    {
+        using var listener = new MeterListener
+        {
+            InstrumentPublished = static (instrument, activeListener) =>
+            {
+                if (instrument.Meter.Name == KevlarDiagnostics.MeterName
+                    && instrument.Name == "kevlar.strategy.events")
+                {
+                    activeListener.EnableMeasurementEvents(instrument);
+                }
+            },
+        };
+        listener.SetMeasurementEventCallback<long>(static (_, _, _, _) =>
+            throw new InvalidOperationException("metrics"));
+        listener.Start();
+
+        var result = Shield.Empty.ExecuteWithContext(context =>
+        {
+            KevlarDiagnostics.ReportCallbackError(
+                CallbackErrorKind.Retry,
+                context,
+                new IOException("callback"));
+            return 42;
+        });
+
+        await Assert.That(result).IsEqualTo(42);
+    }
+
+    [Test]
+    [NotInParallel]
     public async Task Throwing_Monitor_Subscriber_Does_Not_Block_Other_Subscribers_Or_Controls()
     {
         var monitor = new CircuitBreakerMonitor();

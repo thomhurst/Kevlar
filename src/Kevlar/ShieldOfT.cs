@@ -17,11 +17,17 @@ public sealed class Shield<TResult> : IShieldLifecycle
     internal readonly StrategyNode? Head;
     internal readonly OutcomeJudge? Ambient;
     internal readonly TimeProvider? Time;
+    internal readonly IShieldDecorator[] AppliedDecorators;
     private readonly StrategyOwnerSet _strategyOwners;
 
     Strategy[] IShieldLifecycle.Strategies => Strategies;
 
-    internal Shield(Strategy[] strategies, OutcomeJudge? ambient, string? name, TimeProvider? timeProvider)
+    internal Shield(
+        Strategy[] strategies,
+        OutcomeJudge? ambient,
+        string? name,
+        TimeProvider? timeProvider,
+        IShieldDecorator[]? appliedDecorators = null)
     {
         Shield.ValidateChain(strategies);
         foreach (var strategy in strategies)
@@ -43,6 +49,7 @@ public sealed class Shield<TResult> : IShieldLifecycle
         Ambient = ambient;
         Name = name;
         Time = timeProvider;
+        AppliedDecorators = appliedDecorators ?? [];
     }
 
     /// <summary>The shield's diagnostic name, if assigned via <see cref="WithName"/>.</summary>
@@ -106,7 +113,8 @@ public sealed class Shield<TResult> : IShieldLifecycle
     /// Resets the ambient handling clause. Subsequent reactive strategies use the default
     /// handling defined by <see cref="HandlingClause.Default"/>.
     /// </summary>
-    public Shield<TResult> WhenAnyError() => new(Strategies, OutcomeJudge.Default, Name, Time);
+    public Shield<TResult> WhenAnyError() =>
+        new(Strategies, OutcomeJudge.Default, Name, Time, AppliedDecorators);
 
     // ── Strategy chaining ───────────────────────────────────────────────────────────────
 
@@ -437,11 +445,18 @@ public sealed class Shield<TResult> : IShieldLifecycle
     public Shield<TResult> Wrap(Shield inner)
     {
         Throw.IfNull(inner, nameof(inner));
-        return new Shield<TResult>(
-            Shield.Concat(Strategies, inner.Strategies),
+        var strategies = Shield.Concat(Strategies, inner.Strategies);
+        var wrapped = new Shield<TResult>(
+            strategies,
             null,
             Name ?? inner.Name,
-            Time ?? inner.Time);
+            Time ?? inner.Time,
+            ShieldDecoration.MergeForComposition(
+                AppliedDecorators,
+                ShieldDecoration.HasResilienceStrategies(Strategies),
+                inner.AppliedDecorators));
+        StrategyAppendObserver.NotifyComposition(strategies, Name ?? inner.Name, wrapped);
+        return wrapped;
     }
 
     /// <summary>
@@ -452,11 +467,18 @@ public sealed class Shield<TResult> : IShieldLifecycle
     public Shield<TResult> Wrap(Shield<TResult> inner)
     {
         Throw.IfNull(inner, nameof(inner));
-        return new Shield<TResult>(
-            Shield.Concat(Strategies, inner.Strategies),
+        var strategies = Shield.Concat(Strategies, inner.Strategies);
+        var wrapped = new Shield<TResult>(
+            strategies,
             null,
             Name ?? inner.Name,
-            Time ?? inner.Time);
+            Time ?? inner.Time,
+            ShieldDecoration.MergeForComposition(
+                AppliedDecorators,
+                ShieldDecoration.HasResilienceStrategies(Strategies),
+                inner.AppliedDecorators));
+        StrategyAppendObserver.NotifyComposition(strategies, Name ?? inner.Name, wrapped);
+        return wrapped;
     }
 
     /// <summary>
@@ -473,6 +495,8 @@ public sealed class Shield<TResult> : IShieldLifecycle
         var parts = new Strategy[shields.Length][];
         string? name = null;
         TimeProvider? time = null;
+        IShieldDecorator[] appliedDecorators = [];
+        var hasStrategies = false;
 
         for (var i = 0; i < shields.Length; i++)
         {
@@ -481,23 +505,36 @@ public sealed class Shield<TResult> : IShieldLifecycle
             parts[i] = shield.Strategies;
             name ??= shield.Name;
             time ??= shield.Time;
+            var shieldHasStrategies = ShieldDecoration.HasResilienceStrategies(shield.Strategies);
+            appliedDecorators = ShieldDecoration.MergeForComposition(
+                appliedDecorators,
+                hasStrategies,
+                shield.AppliedDecorators);
+            hasStrategies |= shieldHasStrategies;
         }
 
-        return new Shield<TResult>(Shield.Concat(parts), null, name, time);
+        var strategies = Shield.Concat(parts);
+        var composed = new Shield<TResult>(strategies, null, name, time, appliedDecorators);
+        StrategyAppendObserver.NotifyComposition(strategies, name, composed);
+        return composed;
     }
 
     /// <summary>Returns a copy of this shield with a diagnostic name (surfaced as <see cref="KevlarContext.ShieldName"/>).</summary>
     public Shield<TResult> WithName(string name)
     {
         Throw.IfNull(name, nameof(name));
-        return new Shield<TResult>(Strategies, Ambient, name, Time);
+        var named = new Shield<TResult>(Strategies, Ambient, name, Time, AppliedDecorators);
+        ShieldNameObserver.Notify(Strategies, name, named);
+        return named;
     }
 
     /// <summary>Returns a copy of this shield using the given <see cref="TimeProvider"/> for delays, timeouts and time windows.</summary>
     public Shield<TResult> WithTimeProvider(TimeProvider timeProvider)
     {
         Throw.IfNull(timeProvider, nameof(timeProvider));
-        return new Shield<TResult>(Strategies, Ambient, Name, timeProvider);
+        var timed = new Shield<TResult>(Strategies, Ambient, Name, timeProvider, AppliedDecorators);
+        StrategyAppendObserver.NotifyComposition(Strategies, Name, timed);
+        return timed;
     }
 
     // ── Execution ───────────────────────────────────────────────────────────────────────
@@ -690,7 +727,21 @@ public sealed class Shield<TResult> : IShieldLifecycle
         var strategies = new Strategy[Strategies.Length + 1];
         Array.Copy(Strategies, strategies, Strategies.Length);
         strategies[Strategies.Length] = strategy;
-        return new Shield<TResult>(strategies, ambient ?? Ambient, Name, Time);
+        var shield = new Shield<TResult>(strategies, ambient ?? Ambient, Name, Time, AppliedDecorators);
+        StrategyAppendObserver.Notify(Strategies, strategy, Name, shield);
+        return shield;
+    }
+
+    internal Shield<TResult> MarkDecoratorApplied(
+        IShieldDecorator[] appliedDecorators,
+        IShieldDecorator decorator)
+    {
+        var decorators = new IShieldDecorator[appliedDecorators.Length + 1];
+        Array.Copy(appliedDecorators, decorators, appliedDecorators.Length);
+        decorators[^1] = decorator;
+        var decorated = new Shield<TResult>(Strategies, Ambient, Name, Time, decorators);
+        StrategyAppendObserver.NotifyComposition(Strategies, Name, decorated);
+        return decorated;
     }
 }
 

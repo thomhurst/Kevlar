@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using Kevlar.Internal;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Kevlar.Extensions.DependencyInjection;
 
@@ -195,7 +197,10 @@ internal sealed class KevlarRegistry : IKevlarRegistry
             key,
             _ => new RegistryEntry(
                 _serviceProvider,
-                new ShieldRegistration(name, null, services => factory(services)),
+                new ShieldRegistration(
+                    name,
+                    null,
+                    services => Decorate(services, factory(services), name)),
                 ValidatePublication,
                 Retire));
         return TryResolve(entry, out Shield? shield)
@@ -215,7 +220,10 @@ internal sealed class KevlarRegistry : IKevlarRegistry
             key,
             _ => new RegistryEntry(
                 _serviceProvider,
-                new ShieldRegistration(name, resultType, services => factory(services)),
+                new ShieldRegistration(
+                    name,
+                    resultType,
+                    services => Decorate(services, factory(services), name)),
                 ValidatePublication,
                 Retire));
         return TryResolve(entry, out Shield<TResult>? shield)
@@ -232,7 +240,10 @@ internal sealed class KevlarRegistry : IKevlarRegistry
             (name, null),
             new RegistryEntry(
                 _serviceProvider,
-                new ShieldRegistration(name, null, services => factory(services)),
+                new ShieldRegistration(
+                    name,
+                    null,
+                    services => Decorate(services, factory(services), name)),
                 ValidatePublication,
                 Retire));
     });
@@ -246,10 +257,31 @@ internal sealed class KevlarRegistry : IKevlarRegistry
             (name, resultType),
             new RegistryEntry(
                 _serviceProvider,
-                new ShieldRegistration(name, resultType, services => factory(services)),
+                new ShieldRegistration(
+                    name,
+                    resultType,
+                    services => Decorate(services, factory(services), name)),
                 ValidatePublication,
                 Retire));
     });
+
+    private static Shield Decorate(
+        IServiceProvider serviceProvider,
+        Shield shield,
+        string name) =>
+        ShieldDecoration.Apply(
+            shield,
+            name,
+            serviceProvider.GetServices<IShieldDecorator>());
+
+    private static Shield<TResult> Decorate<TResult>(
+        IServiceProvider serviceProvider,
+        Shield<TResult> shield,
+        string name) =>
+        ShieldDecoration.Apply(
+            shield,
+            name,
+            serviceProvider.GetServices<IShieldDecorator>());
 
     public bool Remove(string name) => Remove(name, resultType: null);
 

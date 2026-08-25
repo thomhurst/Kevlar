@@ -256,7 +256,7 @@ internal sealed class TimeoutStrategy : Strategy
         if (timedOut)
         {
             var timeoutException = new TimeoutExceededException(timeout, cancellationException);
-            KevlarMetrics.Timeout(context, _telemetryName, timeoutException);
+            KevlarMetrics.Timeout(context, _telemetryName, timeout, timeoutException);
             var timeoutEvent = new TimeoutEvent(timeout, context);
             CallbackInvoker.Invoke(_onTimeout, timeoutEvent, CallbackErrorKind.Timeout, context);
             var notification = CallbackInvoker.InvokeAsync(

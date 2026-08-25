@@ -293,6 +293,11 @@ $expectedDependencies = @{
         'net8.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.Http', 'Microsoft.Extensions.Primitives')
         '.NETStandard2.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.Http', 'Microsoft.Extensions.Primitives')
     }
+    'Kevlar.Extensions.Logging' = @{
+        'net10.0' = @('Kevlar', 'Microsoft.Extensions.Logging', 'Microsoft.Extensions.Logging.Abstractions')
+        'net8.0' = @('Kevlar', 'Microsoft.Extensions.Logging', 'Microsoft.Extensions.Logging.Abstractions')
+        '.NETStandard2.0' = @('Kevlar', 'Microsoft.Extensions.Logging', 'Microsoft.Extensions.Logging.Abstractions')
+    }
     'Kevlar.Extensions.RateLimiting' = @{
         'net10.0' = @('Kevlar', 'System.Threading.RateLimiting')
         'net8.0' = @('Kevlar', 'System.Threading.RateLimiting')
@@ -329,6 +334,8 @@ foreach ($dependencyId in @(
     'Microsoft.Extensions.Configuration.Abstractions',
     'Microsoft.Extensions.DependencyInjection.Abstractions',
     'Microsoft.Extensions.Http',
+    'Microsoft.Extensions.Logging',
+    'Microsoft.Extensions.Logging.Abstractions',
     'Microsoft.Extensions.Options',
     'Microsoft.Extensions.Primitives',
     'Microsoft.Extensions.TimeProvider.Testing',
@@ -710,15 +717,22 @@ using Kevlar.Chaos;
 using Kevlar.Extensions.DependencyInjection;
 using Kevlar.Extensions.Grpc;
 using Kevlar.Extensions.Http;
+using Kevlar.Extensions.Logging;
 using Kevlar.Extensions.RateLimiting;
 using Kevlar.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using System.Diagnostics.Metrics;
 using System.Runtime.CompilerServices;
 using System.Threading.RateLimiting;
 
 var shield = Shield.Empty;
+var loggedShield = Shield.Retry(0, Backoff.None).WithLogging(NullLogger.Instance);
+if (loggedShield.Execute(static _ => 42) != 42)
+{
+    throw new InvalidOperationException("Logging package execution failed.");
+}
 var descriptor = shield.GetDescriptor();
 descriptor.AssertStrategyCount(0);
 var value = await shield.ExecuteAsync(static cancellationToken =>
@@ -861,6 +875,7 @@ sealed class ExpectedConsumerException : Exception;
     <PackageReference Include="Kevlar.Chaos" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.DependencyInjection" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.Http" Version="$Version" />
+    <PackageReference Include="Kevlar.Extensions.Logging" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.RateLimiting" Version="$Version" />
     <PackageReference Include="Kevlar.Testing" Version="$Version" />
     <PackageReference Include="Kevlar.Extensions.Grpc" Version="$Version" />
