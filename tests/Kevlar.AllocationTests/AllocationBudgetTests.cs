@@ -330,8 +330,8 @@ public class AllocationBudgetTests
             test._syncDelayGeneratedHedgeState.WaitForLoserCompletion();
         }, AllocationScope.AllThreads);
         // The eight-byte margin catches boxing the typed Outcome<int> while allowing
-        // the existing generator-path allocations.
-        AssertBudget("typed hedge generator", 576, this, static test =>
+        // the generator delegate's pooled-context version token.
+        AssertBudget("typed hedge generator", 584, this, static test =>
             test._typedGeneratedHedge.ExecuteAsync(static _ => throw RecoverableFailure)
                 .GetAwaiter()
                 .GetResult());
