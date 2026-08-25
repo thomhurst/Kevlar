@@ -8,9 +8,9 @@ sidebar_position: 23
 
 `Retry` reacts only to handled outcomes. The default handling clause includes ordinary exceptions,
 but excludes caller cancellation, Kevlar fail-fast rejections, and fatal runtime failures. Result
-values are successful unless a typed `OrResult` clause handles them. Check the
-[handling guide](handling-failures.md) and put the clause before the reactive strategies it should
-control.
+values are successful unless a typed clause handles them. Use `WhenResult` to start one from
+`Shield.For<TResult>()`, or `OrResult` to extend an existing typed clause. Check the [handling
+guide](handling-failures.md) and put the clause before the reactive strategies it should control.
 
 This executable example makes only one attempt because cancellation is not a transient failure:
 
