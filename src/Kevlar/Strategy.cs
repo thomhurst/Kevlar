@@ -179,11 +179,12 @@ internal static class StrategyAppendObserver
         for (var appendedIndex = 0; appendedIndex < strategies.Length; appendedIndex++)
         {
             var appended = strategies[appendedIndex];
-            for (var observerIndex = 0; observerIndex < appendedIndex; observerIndex++)
+            for (var observerIndex = appendedIndex - 1; observerIndex >= 0; observerIndex--)
             {
                 if (strategies[observerIndex] is IStrategyAppendObserver observer)
                 {
                     observer.OnStrategyAppended(appended, shieldName, strategyIndex);
+                    break;
                 }
             }
 

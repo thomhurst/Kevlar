@@ -87,11 +87,16 @@ internal sealed class CircuitBreakerCore
                 }
 
                 if (previous is null
-                    && ReferenceEquals(registered, listener)
-                    && registration.ShieldName == shieldName
-                    && registration.StrategyIndex == strategyIndex)
+                    && ReferenceEquals(registered, listener))
                 {
-                    updated.Add(registration);
+                    if (!replaced)
+                    {
+                        updated.Add(new CircuitTelemetryRegistration(
+                            listener,
+                            shieldName,
+                            strategyIndex));
+                    }
+
                     replaced = true;
                     continue;
                 }

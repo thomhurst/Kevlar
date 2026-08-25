@@ -555,6 +555,38 @@ public class LoggingTests
 
     [Test]
     [NotInParallel]
+    public async Task Composition_Uses_The_Nearest_Circuit_Logging_Observer()
+    {
+        var outerLogger = new FakeLogger();
+        var innerLogger = new FakeLogger();
+        var outerMonitor = new CircuitBreakerMonitor();
+        var innerMonitor = new CircuitBreakerMonitor();
+        var outer = Shield.CircuitBreaker(options => options.Monitor = outerMonitor)
+            .WithLogging(outerLogger);
+        var inner = Shield.CircuitBreaker(options => options.Monitor = innerMonitor)
+            .WithLogging(innerLogger);
+        var composed = outer.Wrap(inner);
+
+        outerMonitor.Isolate();
+        innerMonitor.Isolate();
+
+        var outerTransitions = outerLogger.Collector.GetSnapshot()
+            .Where(record => record.Id == new EventId(1003, "CircuitState"))
+            .ToArray();
+        var innerTransitions = innerLogger.Collector.GetSnapshot()
+            .Where(record => record.Id == new EventId(1003, "CircuitState"))
+            .ToArray();
+        await Assert.That(outerTransitions.Length).IsEqualTo(1);
+        await Assert.That(innerTransitions.Length).IsEqualTo(1);
+        await Assert.That(outerTransitions[0].GetStructuredStateValue("StrategyIndex"))
+            .IsEqualTo("0");
+        await Assert.That(innerTransitions[0].GetStructuredStateValue("StrategyIndex"))
+            .IsEqualTo("1");
+        GC.KeepAlive(composed);
+    }
+
+    [Test]
+    [NotInParallel]
     public async Task Isolated_Logs_Error()
     {
         var logger = new FakeLogger();
