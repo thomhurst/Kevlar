@@ -121,12 +121,13 @@ Class-level declarations use `doc-test-declaration`; mixed blocks can split decl
 After packing with a chosen version, run the same package-consumer check locally:
 
 ```powershell
-./scripts/Verify-DocSnippets.ps1 -PackagesPath artifacts/package/release -Version $packageVersion
+./scripts/Verify-DocSnippets.ps1 -PackagesPath artifacts/package/release -Version $packageVersion -NoImplicitUsings
 ```
 
 Every delay, timeout and time window in Kevlar runs on a `TimeProvider`. Swap in a fake and your tests never actually wait:
 
 ```csharp
+using Kevlar.Testing;
 using Microsoft.Extensions.Time.Testing;   // Microsoft.Extensions.TimeProvider.Testing package
 
 var time = new FakeTimeProvider();

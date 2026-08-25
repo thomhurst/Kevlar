@@ -7,6 +7,9 @@ slug: /intro
 
 **Kevlar is fast, allocation-conscious resilience for .NET.** Retries, circuit breakers, timeouts, rate limiting, concurrency limits, hedging and fallbacks — composed through one fluent shield API.
 
+Strategies execute in reading order: the first strategy is the outermost. A `When...` handling
+clause is ambient across later reactive strategies until another clause replaces or resets it.
+
 ```csharp
 using Kevlar;
 
@@ -32,14 +35,8 @@ Build a shield once, reuse it everywhere. Shields are **immutable and thread-saf
 
 ## Packages
 
-| Package | Purpose |
-|---|---|
-| `Kevlar` | The core: all strategies |
-| `Kevlar.Chaos` | Opt-in latency, fault, typed outcome and custom behavior injection |
-| `Kevlar.Extensions.DependencyInjection` | Named shields + `IKevlarRegistry` for Microsoft DI |
-| `Kevlar.Extensions.Http` | `HttpClientFactory` integration, transient-fault handling, `Retry-After` support |
-| `Kevlar.Extensions.RateLimiting` | `System.Threading.RateLimiting` and custom lease-acquisition adapters |
-| `Kevlar.Analyzers` | Roslyn analyzers that catch resilience mistakes at compile time |
+The README maintains the canonical [package table](https://github.com/thomhurst/Kevlar#packages),
+including optional gRPC, testing, analyzer, and integration packages.
 
 ## Where to next?
 

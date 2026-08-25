@@ -11,9 +11,9 @@ internal sealed class RateLimiterStrategy : Strategy
 
     private readonly RateLimitLeaseAcquirer _acquireLease;
     private readonly int _permitCount;
-    private readonly Action<RateLimiterRejectedEvent>? _onRejected;
-    private readonly Func<RateLimiterRejectedEvent, ValueTask>? _onRejectedAsync;
-    private readonly string _kind;
+    private readonly Action<RateLimiterAdapterRejectedEvent>? _onRejected;
+    private readonly Func<RateLimiterAdapterRejectedEvent, ValueTask>? _onRejectedAsync;
+    private readonly string _description;
 
     protected internal override bool InvokesContinuationAtMostOnce => true;
 
@@ -22,7 +22,7 @@ internal sealed class RateLimiterStrategy : Strategy
     internal RateLimiterStrategy(
         RateLimitLeaseAcquirer acquireLease,
         RateLimiterAdapterOptions options,
-        string kind)
+        string description)
     {
         if (options.PermitCount <= 0)
         {
@@ -33,10 +33,10 @@ internal sealed class RateLimiterStrategy : Strategy
         _permitCount = options.PermitCount;
         _onRejected = options.OnRejected;
         _onRejectedAsync = options.OnRejectedAsync;
-        _kind = kind;
+        _description = description;
     }
 
-    public override string Describe() => $"RateLimitAdapter({_kind}, permits {_permitCount})";
+    public override string Describe() => _description;
 
     public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
         Continuation<T, TState> next,
@@ -158,14 +158,14 @@ internal sealed class RateLimiterStrategy : Strategy
             return Failure<T>(exception);
         }
 
-        KevlarMetrics.Rejection(context.ShieldName, "rate_limit");
-        var rejection = new RateLimitExceededException(retryAfter);
+        KevlarMetrics.Rejection(context.ShieldName, "rate_limiter_adapter");
+        var rejection = new RateLimiterAdapterRejectedException(retryAfter);
         if (_onRejected is null && _onRejectedAsync is null)
         {
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(rejection));
         }
 
-        var rejectedEvent = new RateLimiterRejectedEvent(
+        var rejectedEvent = new RateLimiterAdapterRejectedEvent(
             retryAfter,
             metadata,
             _permitCount,
@@ -223,7 +223,7 @@ internal sealed class RateLimiterStrategy : Strategy
 
     private static async ValueTask<Outcome<T>> AwaitRejectionAsync<T>(
         ValueTask notification,
-        RateLimitExceededException rejection)
+        RateLimiterAdapterRejectedException rejection)
     {
         try
         {

@@ -16,6 +16,9 @@
 - Typed constant-value `Fallback(value)` is now `FallbackTo(value)` on `Shield<TResult>` and
   `ShieldBuilder<TResult>`. Delegate factories remain `Fallback(...)`. This makes null fallback
   values explicit and avoids ambiguity between value and delegate overloads.
+- The System.Threading.RateLimiting adapter now uses `UseRateLimiter(...)`,
+  `RateLimiterAdapterRejectedEvent`, and `RateLimiterAdapterRejectedException`. The distinct names
+  separate adapter-backed strategies from Kevlar's built-in `RateLimit(...)` strategy.
 - `StandardHttpShieldOptions.CircuitBreaker` now uses
   `CircuitBreakerOptions<HttpResponseMessage>`, exposing typed result predicates for the standard
   HTTP breaker.
@@ -39,6 +42,9 @@ Handling clauses now use one spelling per position. `When…` starts a clause on
 | `StrategyKind.Hedging` | `StrategyKind.Hedge` |
 | `StandardHedgingShieldOptions` | `StandardHedgeShieldOptions` |
 | `AddStandardHedgingShield(...)` | `AddStandardHedgeShield(...)` |
+| adapter `.RateLimit(limiter)` | `.UseRateLimiter(limiter)` |
+| `RateLimiterRejectedEvent` | `RateLimiterAdapterRejectedEvent` |
+| adapter `RateLimitExceededException` | `RateLimiterAdapterRejectedException` |
 | `StandardHttpShieldOptions.CircuitBreaker` as `CircuitBreakerOptions` | `CircuitBreakerOptions<HttpResponseMessage>` |
 
 `OrWhen` is gone: `Or(Func<Exception, bool>)` now mirrors `When(Func<Exception, bool>)`, so the

@@ -4,7 +4,16 @@ namespace Kevlar.Testing;
 public sealed class CustomStrategyDescriptor : StrategyDescriptor
 {
     internal CustomStrategyDescriptor(string description, Type strategyType, HandlingClause? handling)
-        : base(StrategyKind.Custom, description)
+        : this(StrategyKind.Custom, description, strategyType, handling)
+    {
+    }
+
+    internal CustomStrategyDescriptor(
+        StrategyKind kind,
+        string description,
+        Type strategyType,
+        HandlingClause? handling)
+        : base(kind, description)
     {
         StrategyType = strategyType;
         Handling = handling;

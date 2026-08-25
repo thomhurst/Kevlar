@@ -58,6 +58,7 @@ Kevlar.Testing.StrategyKind.CircuitBreaker = 3 -> Kevlar.Testing.StrategyKind
 Kevlar.Testing.StrategyKind.ConcurrencyLimit = 5 -> Kevlar.Testing.StrategyKind
 Kevlar.Testing.StrategyKind.Custom = 0 -> Kevlar.Testing.StrategyKind
 Kevlar.Testing.StrategyKind.Fallback = 7 -> Kevlar.Testing.StrategyKind
+Kevlar.Testing.StrategyKind.RateLimiterAdapter = 8 -> Kevlar.Testing.StrategyKind
 Kevlar.Testing.StrategyKind.Hedge = 6 -> Kevlar.Testing.StrategyKind
 Kevlar.Testing.StrategyKind.RateLimit = 4 -> Kevlar.Testing.StrategyKind
 Kevlar.Testing.StrategyKind.Retry = 1 -> Kevlar.Testing.StrategyKind

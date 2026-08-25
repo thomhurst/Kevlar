@@ -107,6 +107,8 @@ Caller cancellation and cancellation created by Kevlar strategies are passed to 
 A gRPC deadline is an absolute timestamp and is preserved unchanged across retries and hedges. A Kevlar timeout is relative to its position in the shield:
 
 ```csharp
+using Kevlar.Extensions.Grpc;
+
 var shield = Shield.Timeout(TimeSpan.FromSeconds(10)) // total Kevlar budget
     .When<Grpc.Core.RpcException>(GrpcShield.IsTransient)
     .Retry(2)

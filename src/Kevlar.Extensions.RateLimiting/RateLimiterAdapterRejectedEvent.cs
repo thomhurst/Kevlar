@@ -1,9 +1,9 @@
 namespace Kevlar.Extensions.RateLimiting;
 
 /// <summary>Describes an execution rejected by an adapted rate limiter.</summary>
-public readonly struct RateLimiterRejectedEvent
+public readonly struct RateLimiterAdapterRejectedEvent
 {
-    internal RateLimiterRejectedEvent(
+    internal RateLimiterAdapterRejectedEvent(
         TimeSpan? retryAfter,
         IReadOnlyDictionary<string, object?> metadata,
         int permitCount,

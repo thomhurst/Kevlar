@@ -24,6 +24,7 @@ errors handled by a retry, breaker, hedge, or fallback.
 | `TimeoutExceededException` | Timeout | `Timeout` is the winning budget; a strategy-produced timeout carries the delegate's cancellation exception in inherited `InnerException`. `RetryAfter` is `null`. | `ExecutionRejectedException` | `catch (TimeoutExceededException e) when (e.Timeout == budget)` | Yes |
 | `CircuitOpenException` | Circuit breaker | Inherited `RetryAfter` is the remaining break duration; `IsIsolated` distinguishes manual isolation; inherited `InnerException` is the last failure when known. | `ExecutionRejectedException` | `catch (CircuitOpenException e) when (e.RetryAfter is { } delay)` | No |
 | `RateLimitExceededException` | Rate limit | Inherited `RetryAfter` estimates when a permit may become available. | `ExecutionRejectedException` | `catch (RateLimitExceededException e) when (e.RetryAfter is { } delay)` | No |
+| `RateLimiterAdapterRejectedException` | System.Threading.RateLimiting adapter | Inherited `RetryAfter` is copied from rejected lease metadata when supplied. | `ExecutionRejectedException` | `catch (RateLimiterAdapterRejectedException e) when (e.RetryAfter is { } delay)` | No |
 | `ConcurrencyLimitExceededException` | Concurrency limit | Inherited `RetryAfter` and `InnerException` are `null`; the rejection means both execution and queue capacity are full. | `ExecutionRejectedException` | `catch (ConcurrencyLimitExceededException)` | No |
 | `HttpRequestReplayException` | HTTP request replay and endpoint routing | Inherited `InnerException` is the content failure when serialization or buffering caused the replay failure. | `InvalidOperationException` | `catch (HttpRequestReplayException e)` | Yes |
 | `ChaosInjectedException` | Chaos fault injection | Inherited `InnerException` is populated only when the configured injected fault wraps a cause. | `Exception` | `catch (ChaosInjectedException e)` | Yes |
@@ -146,6 +147,8 @@ rejections.
 
 <!-- doc-test-run: catch-http-replay -->
 ```csharp
+using Kevlar.Extensions.Http;
+
 var caughtReplay = false;
 try
 {
@@ -165,6 +168,8 @@ if (!caughtReplay)
 
 <!-- doc-test-run: catch-chaos-injected -->
 ```csharp
+using Kevlar.Chaos;
+
 var caughtChaos = false;
 try
 {
@@ -183,6 +188,8 @@ if (!caughtChaos)
 
 <!-- doc-test-run: catch-shield-assertion -->
 ```csharp
+using Kevlar.Testing;
+
 var caughtAssertion = false;
 try
 {
