@@ -109,6 +109,56 @@ foreach ($document in $documents)
     }
 }
 
+$contributorOnlyPatterns = [ordered]@{
+    'Stryker' = [regex]'(?i)\bStryker\b'
+    'mutation score' = [regex]'(?i)\bmutation score\b'
+    'coverage.runsettings' = [regex]'(?i)\bcoverage\.runsettings\b'
+    'Verify-PublishCompatibility' = [regex]'(?i)\bVerify-PublishCompatibility\b'
+}
+
+foreach ($document in $documents)
+{
+    $relativePath = [IO.Path]::GetRelativePath($resolvedDocsPath, $document.FullName).Replace('\', '/')
+    $lines = @(Get-Content -LiteralPath $document.FullName)
+    for ($lineIndex = 0; $lineIndex -lt $lines.Count; $lineIndex++)
+    {
+        foreach ($entry in $contributorOnlyPatterns.GetEnumerator())
+        {
+            if ($entry.Value.IsMatch($lines[$lineIndex]))
+            {
+                $errors.Add(
+                    "Contributor-only term '$($entry.Key)' at ${relativePath}:$($lineIndex + 1). " +
+                    'Move repository maintenance guidance to CONTRIBUTING.md.')
+            }
+        }
+    }
+}
+
+$testingDocument = $visibleDocuments | Where-Object Path -eq 'testing.md' | Select-Object -First 1
+$requiredTestingHeadings = @(
+    '## Deterministic time with TimeProvider'
+    '## Asserting pipeline shape'
+    '## Recording telemetry'
+    '## Testing HTTP shields'
+    '## Testing partitioned shields'
+    '## Chaos in tests'
+)
+
+if ($null -eq $testingDocument)
+{
+    $errors.Add("Documentation page 'testing.md' is missing.")
+}
+else
+{
+    foreach ($heading in $requiredTestingHeadings)
+    {
+        if ($heading -notin $testingDocument.Lines)
+        {
+            $errors.Add("Documentation page 'testing.md' must contain heading '$heading'.")
+        }
+    }
+}
+
 $positionedDocuments = $visibleDocuments | Where-Object { $null -ne $_.SidebarPosition }
 $duplicatePositions = $positionedDocuments |
     Group-Object Directory, SidebarPosition |
