@@ -28,6 +28,7 @@ sleeping.
 <!-- doc-test-run: testing-fake-time-retry -->
 ```csharp
 using Kevlar.Testing;
+using Microsoft.Extensions.Time.Testing;
 
 var timeProvider = new FakeTimeProvider();
 var startedAt = timeProvider.GetUtcNow();
@@ -72,6 +73,7 @@ so the executable documentation check cannot leak work.
 ```csharp
 #pragma warning disable CA2007 // Negative example deliberately uses Task.WhenAny as a test timeout.
 using Kevlar.Testing;
+using Microsoft.Extensions.Time.Testing;
 
 var timeProvider = new FakeTimeProvider();
 var attempts = 0;
@@ -201,8 +203,10 @@ asserts that the server's three-second delay is observed, then succeeds.
 
 <!-- doc-test-run: testing-http-retry-after -->
 ```csharp
+using System.Net;
 using Kevlar.Extensions.Http;
 using Kevlar.Testing;
+using Microsoft.Extensions.Time.Testing;
 
 var timeProvider = new FakeTimeProvider();
 var startedAt = timeProvider.GetUtcNow();
