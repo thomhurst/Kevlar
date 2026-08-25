@@ -103,7 +103,11 @@ public sealed class RetryOnceStrategy(HandlingClause handling) : Strategy
     {
         var strategyIndex = context.StrategyIndex;
         var outcome = await next.InvokeAsync(context);
-        return handling.ShouldHandle(in outcome, context, attempt: 0, strategyIndex)
+        return handling.ShouldHandle(
+            in outcome,
+            context,
+            attempt: 0,
+            strategyIndex: strategyIndex)
             ? await next.InvokeAsync(context)
             : outcome;
     }

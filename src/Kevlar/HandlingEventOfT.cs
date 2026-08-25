@@ -1,18 +1,19 @@
 namespace Kevlar;
 
-/// <summary>Context supplied to an exception handling predicate.</summary>
-public readonly struct HandlingEvent
+/// <summary>Context supplied to a result-aware handling predicate.</summary>
+/// <typeparam name="TResult">The execution result type.</typeparam>
+public readonly struct HandlingEvent<TResult>
 {
-    internal HandlingEvent(Exception exception, KevlarContext context, int attempt, int strategyIndex)
+    internal HandlingEvent(Outcome<TResult> outcome, KevlarContext context, int attempt, int strategyIndex)
     {
-        Exception = exception;
+        Outcome = outcome;
         Context = context;
         Attempt = attempt;
         StrategyIndex = strategyIndex;
     }
 
-    /// <summary>The exception being classified.</summary>
-    public Exception Exception { get; }
+    /// <summary>The exception or result being classified.</summary>
+    public Outcome<TResult> Outcome { get; }
 
     /// <summary>The active execution context. Do not retain this pooled object.</summary>
     public KevlarContext Context { get; }
