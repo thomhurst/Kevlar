@@ -33,8 +33,7 @@ internal sealed class KevlarRegistry : IKevlarRegistry
 
         foreach (var registration in registrations)
         {
-            // Last registration for a given name wins, matching standard DI override behaviour.
-            _registrations[(registration.Name, registration.ResultType)] = registration;
+            _registrations.Add((registration.Name, registration.ResultType), registration);
         }
     }
 
@@ -102,11 +101,21 @@ internal sealed class KevlarRegistry : IKevlarRegistry
             return null;
         }
 
-        return _resolved.GetOrAdd(
+        var lazy = _resolved.GetOrAdd(
             key,
             _ => new Lazy<object>(
                 () => registration.Factory(_serviceProvider),
-                LazyThreadSafetyMode.ExecutionAndPublication)).Value;
+                LazyThreadSafetyMode.ExecutionAndPublication));
+        try
+        {
+            return lazy.Value;
+        }
+        catch
+        {
+            _ = ((ICollection<KeyValuePair<(string Name, Type? ResultType), Lazy<object>>>)_resolved)
+                .Remove(new(key, lazy));
+            throw;
+        }
     }
 
 }

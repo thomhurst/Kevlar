@@ -261,6 +261,9 @@ items:
   - uid: Kevlar.Extensions.DependencyInjection.RateLimitDefinition
     name: RateLimitDefinition
     type: Class
+  - uid: Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions
+    name: ReloadingShieldOptions
+    type: Class
   - uid: Kevlar.Extensions.DependencyInjection.RetryDefinition
     name: RetryDefinition
     type: Class

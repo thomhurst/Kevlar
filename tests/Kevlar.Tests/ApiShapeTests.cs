@@ -313,6 +313,39 @@ public class ApiShapeTests
     }
 
     [Test]
+    public async Task Reloading_Shield_Legacy_Callback_Literals_Remain_Unambiguous()
+    {
+        var compilation = CreateCompilation(
+            """
+            using Kevlar.Extensions.DependencyInjection;
+            using Microsoft.Extensions.Configuration;
+            using Microsoft.Extensions.DependencyInjection;
+
+            public static class Consumer
+            {
+                public static void Build(IServiceCollection services, IConfiguration configuration)
+                {
+                    services.AddReloadingShield("untyped", configuration, null);
+                    services.AddReloadingShield<int>("typed", configuration, null);
+                    services.AddReloadingShield("untyped-default", configuration, default);
+                    services.AddReloadingShield<int>("typed-default", configuration, default);
+
+                    var options = new ReloadingShieldOptions();
+                    services.AddReloadingShield("untyped-options", options, configuration);
+                    services.AddReloadingShield<int>("typed-options", options, configuration);
+                }
+            }
+            """);
+
+        var errors = compilation.GetDiagnostics()
+            .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+            .Select(static diagnostic => $"{diagnostic.Id}: {diagnostic.GetMessage()}")
+            .ToArray();
+
+        await Assert.That(errors).IsEmpty();
+    }
+
+    [Test]
     public async Task Legacy_Fallback_Null_Remains_Ambiguous_Between_Delegate_Overloads()
     {
         var compilation = CreateCompilation(
@@ -375,7 +408,11 @@ public class ApiShapeTests
             .Select(static path => (MetadataReference)MetadataReference.CreateFromFile(path))
             .Append(MetadataReference.CreateFromFile(typeof(Shield).Assembly.Location))
             .Append(MetadataReference.CreateFromFile(typeof(ShieldDefinition).Assembly.Location))
-            .Append(MetadataReference.CreateFromFile(typeof(ShieldDescriptor).Assembly.Location));
+            .Append(MetadataReference.CreateFromFile(typeof(ShieldDescriptor).Assembly.Location))
+            .Append(MetadataReference.CreateFromFile(
+                typeof(Microsoft.Extensions.Configuration.IConfiguration).Assembly.Location))
+            .Append(MetadataReference.CreateFromFile(
+                typeof(Microsoft.Extensions.DependencyInjection.IServiceCollection).Assembly.Location));
 
         return CSharpCompilation.Create(
             "FallbackApiShape",

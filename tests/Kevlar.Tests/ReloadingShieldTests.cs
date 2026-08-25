@@ -1,11 +1,17 @@
 using Kevlar.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Time.Testing;
 
 namespace Kevlar.Tests;
 
 public class ReloadingShieldTests
 {
+    private static ReloadingShieldOptions ImmediateReload => new()
+    {
+        DebounceDelay = TimeSpan.Zero,
+    };
+
     [Test]
     public async Task Registration_Null_Guards_Report_Exact_Parameters()
     {
@@ -27,6 +33,12 @@ public class ReloadingShieldTests
         var typedConfigurationError = await Assert.That(
                 () => new ServiceCollection().AddReloadingShield<int>("dynamic", null!))
             .Throws<ArgumentNullException>();
+        var optionsError = await Assert.That(
+                () => new ServiceCollection().AddReloadingShield(
+                    "dynamic",
+                    (ReloadingShieldOptions)null!,
+                    configuration))
+            .Throws<ArgumentNullException>();
 
         await Assert.That(servicesError!.ParamName).IsEqualTo("services");
         await Assert.That(nameError!.ParamName).IsEqualTo("name");
@@ -34,6 +46,36 @@ public class ReloadingShieldTests
         await Assert.That(typedServicesError!.ParamName).IsEqualTo("services");
         await Assert.That(typedNameError!.ParamName).IsEqualTo("name");
         await Assert.That(typedConfigurationError!.ParamName).IsEqualTo("configuration");
+        await Assert.That(optionsError!.ParamName).IsEqualTo("options");
+    }
+
+    [Test]
+    public async Task Reload_Options_Reject_Invalid_Values()
+    {
+        var configuration = BuildConfiguration();
+        var negativeDelay = new ReloadingShieldOptions { DebounceDelay = TimeSpan.FromTicks(-1) };
+        var excessiveDelay = new ReloadingShieldOptions { DebounceDelay = TimeSpan.FromDays(50) };
+        var missingClock = new ReloadingShieldOptions { TimeProvider = null! };
+
+        var delayError = await Assert.That(() => new ServiceCollection().AddReloadingShield(
+                "dynamic",
+                negativeDelay,
+                configuration))
+            .Throws<ArgumentOutOfRangeException>();
+        var clockError = await Assert.That(() => new ServiceCollection().AddReloadingShield(
+                "dynamic",
+                missingClock,
+                configuration))
+            .Throws<ArgumentException>();
+        var excessiveDelayError = await Assert.That(() => new ServiceCollection().AddReloadingShield(
+                "dynamic",
+                excessiveDelay,
+                configuration))
+            .Throws<ArgumentOutOfRangeException>();
+
+        await Assert.That(delayError!.ParamName).IsEqualTo("options");
+        await Assert.That(excessiveDelayError!.ParamName).IsEqualTo("options");
+        await Assert.That(clockError!.ParamName).IsEqualTo("options");
     }
 
     [Test]
@@ -41,7 +83,7 @@ public class ReloadingShieldTests
     {
         var configuration = BuildConfiguration(("Retry:MaxRetries", "1"), ("Retry:Backoff", "None"));
         using var services = new ServiceCollection()
-            .AddReloadingShield("dynamic", configuration)
+            .AddReloadingShield("dynamic", ImmediateReload, configuration)
             .BuildServiceProvider();
         var registry = services.GetRequiredService<IKevlarRegistry>();
         var shieldProvider = services.GetRequiredKeyedService<IShieldProvider>("dynamic");
@@ -58,6 +100,40 @@ public class ReloadingShieldTests
     }
 
     [Test]
+    public async Task Reloads_Are_Debounced_And_Later_Windows_Rebuild_Again()
+    {
+        var timeProvider = new FakeTimeProvider();
+        var options = new ReloadingShieldOptions
+        {
+            DebounceDelay = TimeSpan.FromMilliseconds(250),
+            TimeProvider = timeProvider,
+        };
+        var configuration = BuildConfiguration(("Retry:MaxRetries", "0"), ("Retry:Backoff", "None"));
+        using var services = new ServiceCollection()
+            .AddReloadingShield("dynamic", options, configuration)
+            .BuildServiceProvider();
+        var provider = services.GetRequiredKeyedService<IShieldProvider>("dynamic");
+        var initial = provider.Current;
+
+        configuration["Retry:MaxRetries"] = "1";
+        configuration.Reload();
+        configuration["Retry:MaxRetries"] = "2";
+        configuration.Reload();
+
+        await Assert.That(provider.Current).IsSameReferenceAs(initial);
+        timeProvider.Advance(TimeSpan.FromMilliseconds(250));
+        var firstReload = provider.Current;
+        await Assert.That(firstReload.ToString()).IsEqualTo("dynamic: Retry(2, no delay)");
+
+        configuration["Retry:MaxRetries"] = "3";
+        configuration.Reload();
+        timeProvider.Advance(TimeSpan.FromMilliseconds(250));
+
+        await Assert.That(provider.Current).IsNotSameReferenceAs(firstReload);
+        await Assert.That(provider.Current.ToString()).IsEqualTo("dynamic: Retry(3, no delay)");
+    }
+
+    [Test]
     public async Task Typed_Reload_Rebuilds_And_Resets_Strategy_State()
     {
         var configuration = BuildConfiguration(
@@ -67,12 +143,10 @@ public class ReloadingShieldTests
             ("CircuitBreaker:FailureRatio", ""),
             ("CircuitBreaker:BreakDuration", "01:00:00"));
         using var services = new ServiceCollection()
-            .AddReloadingShield<HttpResponseMessage>("dynamic", configuration)
-            .AddTransient<TypedShieldConsumer>()
+            .AddReloadingShield<HttpResponseMessage>("dynamic", ImmediateReload, configuration)
             .BuildServiceProvider();
         var registry = services.GetRequiredService<IKevlarRegistry>();
         var live = services.GetRequiredKeyedService<IShieldProvider<HttpResponseMessage>>("dynamic");
-        var injected = services.GetRequiredService<TypedShieldConsumer>().Shield;
         var first = live.Current;
         var attempts = 0;
 
@@ -98,7 +172,6 @@ public class ReloadingShieldTests
         });
 
         await Assert.That(ReferenceEquals(first, second)).IsFalse();
-        await Assert.That(ReferenceEquals(injected, first)).IsTrue();
         await Assert.That(ReferenceEquals(registry.GetShield<HttpResponseMessage>("dynamic"), second))
             .IsTrue();
         await Assert.That(first.ToString()).Contains("Retry(0, no delay)");
@@ -112,7 +185,11 @@ public class ReloadingShieldTests
         var configuration = BuildConfiguration(("Retry:MaxRetries", "1"));
         Exception? reported = null;
         using var services = new ServiceCollection()
-            .AddReloadingShield<int>("dynamic", configuration, error => reported = error)
+            .AddReloadingShield<int>(
+                "dynamic",
+                ImmediateReload,
+                configuration,
+                error => reported = error)
             .BuildServiceProvider();
         var live = services.GetRequiredKeyedService<IShieldProvider<int>>("dynamic");
         var lastGood = live.Current;
@@ -127,20 +204,20 @@ public class ReloadingShieldTests
     }
 
     [Test]
-    public async Task Keyed_Provider_Is_Live_But_Injected_Shield_Remains_Its_Resolved_Snapshot()
+    public async Task Reloading_Name_Registers_Only_The_Live_Keyed_Provider()
     {
         var configuration = BuildConfiguration(("Retry:MaxRetries", "1"), ("Retry:Backoff", "None"));
         using var services = new ServiceCollection()
-            .AddReloadingShield("dynamic", configuration)
+            .AddReloadingShield("dynamic", ImmediateReload, configuration)
             .BuildServiceProvider();
         var live = services.GetRequiredKeyedService<IShieldProvider>("dynamic");
-        var injectedSnapshot = services.GetRequiredKeyedService<Shield>("dynamic");
+        var keyedShield = services.GetKeyedService<Shield>("dynamic");
 
         configuration["Retry:MaxRetries"] = "2";
         configuration.Reload();
 
         await Assert.That(live.Current.ToString()).IsEqualTo("dynamic: Retry(2, no delay)");
-        await Assert.That(injectedSnapshot.ToString()).IsEqualTo("dynamic: Retry(1, no delay)");
+        await Assert.That(keyedShield).IsNull();
     }
 
     [Test]
@@ -149,12 +226,16 @@ public class ReloadingShieldTests
         var configuration = BuildConfiguration(("Retry:MaxRetries", "1"), ("Retry:Backoff", "None"));
         var fixedShield = Shield.Timeout(TimeSpan.FromSeconds(1));
         using var fixedLast = new ServiceCollection()
-            .AddReloadingShield("dynamic", configuration)
-            .AddShield("dynamic", fixedShield)
+            .AddReloadingShield("dynamic", ImmediateReload, configuration)
+            .AddShield("dynamic", fixedShield, replace: true)
             .BuildServiceProvider();
         using var reloadingLast = new ServiceCollection()
             .AddShield("dynamic", fixedShield)
-            .AddReloadingShield("dynamic", configuration)
+            .AddReloadingShield(
+                "dynamic",
+                ImmediateReload,
+                configuration,
+                replace: true)
             .BuildServiceProvider();
 
         var fixedRegistry = fixedLast.GetRequiredService<IKevlarRegistry>();
@@ -176,7 +257,11 @@ public class ReloadingShieldTests
         var configuration = BuildConfiguration(("Retry:MaxRetries", "1"), ("Retry:Backoff", "None"));
         Exception? reported = null;
         using var services = new ServiceCollection()
-            .AddReloadingShield("dynamic", configuration, error => reported = error)
+            .AddReloadingShield(
+                "dynamic",
+                ImmediateReload,
+                configuration,
+                error => reported = error)
             .BuildServiceProvider();
         var shieldProvider = services.GetRequiredKeyedService<IShieldProvider>("dynamic");
         var lastGood = shieldProvider.Current;
@@ -195,7 +280,11 @@ public class ReloadingShieldTests
     {
         var configuration = BuildConfiguration(("Retry:MaxRetries", "1"), ("Retry:Backoff", "None"));
         using var services = new ServiceCollection()
-            .AddReloadingShield("dynamic", configuration, _ => throw new InvalidOperationException("callback"))
+            .AddReloadingShield(
+                "dynamic",
+                ImmediateReload,
+                configuration,
+                _ => throw new InvalidOperationException("callback"))
             .BuildServiceProvider();
         var shieldProvider = services.GetRequiredKeyedService<IShieldProvider>("dynamic");
         _ = shieldProvider.Current;
@@ -213,7 +302,7 @@ public class ReloadingShieldTests
     {
         var configuration = BuildConfiguration(("Retry:MaxRetries", "0"), ("Retry:Backoff", "None"));
         using var services = new ServiceCollection()
-            .AddReloadingShield("dynamic", configuration)
+            .AddReloadingShield("dynamic", ImmediateReload, configuration)
             .BuildServiceProvider();
         var shieldProvider = services.GetRequiredKeyedService<IShieldProvider>("dynamic");
         var unexpected = new List<string>();
@@ -256,7 +345,7 @@ public class ReloadingShieldTests
         {
             var configuration = BuildConfiguration(("Retry:MaxRetries", "0"), ("Retry:Backoff", "None"));
             using var services = new ServiceCollection()
-                .AddReloadingShield("dynamic", configuration)
+                .AddReloadingShield("dynamic", ImmediateReload, configuration)
                 .BuildServiceProvider();
             var resolve = Task.Run(() => services.GetRequiredKeyedService<IShieldProvider>("dynamic"));
 
@@ -274,7 +363,7 @@ public class ReloadingShieldTests
     {
         var configuration = BuildConfiguration(("Retry:MaxRetries", "1"), ("Retry:Backoff", "None"));
         using var services = new ServiceCollection()
-            .AddReloadingShield("dynamic", configuration)
+            .AddReloadingShield("dynamic", ImmediateReload, configuration)
             .BuildServiceProvider();
         var shieldProvider = services.GetRequiredKeyedService<IShieldProvider>("dynamic");
         var oldSnapshot = shieldProvider.Current;
@@ -309,7 +398,7 @@ public class ReloadingShieldTests
             ("CircuitBreaker:ConsecutiveFailures", "1"),
             ("CircuitBreaker:BreakDuration", "01:00:00"));
         using var services = new ServiceCollection()
-            .AddReloadingShield("dynamic", configuration)
+            .AddReloadingShield("dynamic", ImmediateReload, configuration)
             .BuildServiceProvider();
         var shieldProvider = services.GetRequiredKeyedService<IShieldProvider>("dynamic");
         var attempts = 0;
@@ -339,14 +428,27 @@ public class ReloadingShieldTests
     public async Task Disposal_Unsubscribes_From_Configuration_Changes()
     {
         var configuration = BuildConfiguration(("Retry:MaxRetries", "1"), ("Retry:Backoff", "None"));
+        var timeProvider = new FakeTimeProvider();
+        var options = new ReloadingShieldOptions
+        {
+            DebounceDelay = TimeSpan.FromMilliseconds(250),
+            TimeProvider = timeProvider,
+        };
         var failures = 0;
         var services = new ServiceCollection()
-            .AddReloadingShield("dynamic", configuration, _ => Interlocked.Increment(ref failures))
+            .AddReloadingShield(
+                "dynamic",
+                options,
+                configuration,
+                _ => Interlocked.Increment(ref failures))
             .BuildServiceProvider();
         var shieldProvider = services.GetRequiredKeyedService<IShieldProvider>("dynamic");
         var snapshot = shieldProvider.Current;
 
+        configuration["Retry:MaxRetries"] = "2";
+        configuration.Reload();
         services.Dispose();
+        timeProvider.Advance(TimeSpan.FromMilliseconds(250));
         configuration["Retry:MaxRetries"] = "invalid";
         configuration.Reload();
 
@@ -359,7 +461,7 @@ public class ReloadingShieldTests
     {
         var configuration = BuildConfiguration(("Retry:MaxRetries", "1"), ("Retry:Backoff", "None"));
         using var services = new ServiceCollection()
-            .AddReloadingShield("dynamic", configuration)
+            .AddReloadingShield("dynamic", ImmediateReload, configuration)
             .BuildServiceProvider();
         var shieldProvider = services.GetRequiredKeyedService<IShieldProvider>("dynamic");
         const int Iterations = 10_000;
@@ -383,9 +485,4 @@ public class ReloadingShieldTests
             .AddInMemoryCollection(values.Select(pair => new KeyValuePair<string, string?>(pair.Key, pair.Value)))
             .Build();
 
-    private sealed class TypedShieldConsumer(
-        [FromKeyedServices("dynamic")] Shield<HttpResponseMessage> shield)
-    {
-        public Shield<HttpResponseMessage> Shield { get; } = shield;
-    }
 }

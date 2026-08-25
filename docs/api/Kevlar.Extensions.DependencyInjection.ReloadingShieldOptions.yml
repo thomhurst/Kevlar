@@ -1,0 +1,394 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions
+  commentId: T:Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions
+  id: ReloadingShieldOptions
+  parent: Kevlar.Extensions.DependencyInjection
+  children:
+  - Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions.#ctor
+  - Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions.DebounceDelay
+  - Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions.TimeProvider
+  langs:
+  - csharp
+  - vb
+  name: ReloadingShieldOptions
+  nameWithType: ReloadingShieldOptions
+  fullName: Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions
+  type: Class
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: Controls configuration-change handling for a reloading shield.
+  example: []
+  syntax:
+    content: public sealed class ReloadingShieldOptions
+    content.vb: Public NotInheritable Class ReloadingShieldOptions
+  inheritance:
+  - System.Object
+  inheritedMembers:
+  - System.Object.GetType
+  - System.Object.ToString
+  - System.Object.Equals(System.Object)
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  - System.Object.GetHashCode
+- uid: Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions.#ctor
+  commentId: M:Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions.#ctor
+  id: '#ctor'
+  parent: Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions
+  langs:
+  - csharp
+  - vb
+  name: ReloadingShieldOptions()
+  nameWithType: ReloadingShieldOptions.ReloadingShieldOptions()
+  fullName: Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions.ReloadingShieldOptions()
+  type: Constructor
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  syntax:
+    content: public ReloadingShieldOptions()
+    content.vb: Public Sub New()
+  overload: Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions.#ctor*
+  nameWithType.vb: ReloadingShieldOptions.New()
+  fullName.vb: Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions.New()
+  name.vb: New()
+- uid: Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions.DebounceDelay
+  commentId: P:Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions.DebounceDelay
+  id: DebounceDelay
+  parent: Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions
+  langs:
+  - csharp
+  - vb
+  name: DebounceDelay
+  nameWithType: ReloadingShieldOptions.DebounceDelay
+  fullName: Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions.DebounceDelay
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: Gets or sets how long configuration changes are coalesced before rebuilding the shield.
+  remarks: >-
+    The delay must be nonnegative and no greater than <code>uint.MaxValue - 1</code> milliseconds,
+
+    the runtime timer limit.
+  example: []
+  syntax:
+    content: public TimeSpan DebounceDelay { get; set; }
+    parameters: []
+    return:
+      type: System.TimeSpan
+    content.vb: Public Property DebounceDelay As TimeSpan
+  overload: Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions.DebounceDelay*
+- uid: Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions.TimeProvider
+  commentId: P:Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions.TimeProvider
+  id: TimeProvider
+  parent: Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions
+  langs:
+  - csharp
+  - vb
+  name: TimeProvider
+  nameWithType: ReloadingShieldOptions.TimeProvider
+  fullName: Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions.TimeProvider
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: Gets or sets the clock used to schedule reloads.
+  example: []
+  syntax:
+    content: public TimeProvider TimeProvider { get; set; }
+    parameters: []
+    return:
+      type: System.TimeProvider
+    content.vb: Public Property TimeProvider As TimeProvider
+  overload: Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions.TimeProvider*
+references:
+- uid: Kevlar.Extensions.DependencyInjection
+  commentId: N:Kevlar.Extensions.DependencyInjection
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar.Extensions.DependencyInjection
+  nameWithType: Kevlar.Extensions.DependencyInjection
+  fullName: Kevlar.Extensions.DependencyInjection
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+  - name: .
+  - uid: Kevlar.Extensions.DependencyInjection
+    name: DependencyInjection
+    isExternal: true
+    href: Kevlar.Extensions.DependencyInjection.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+  - name: .
+  - uid: Kevlar.Extensions.DependencyInjection
+    name: DependencyInjection
+    isExternal: true
+    href: Kevlar.Extensions.DependencyInjection.html
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.ToString
+  commentId: M:System.Object.ToString
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  name: ToString()
+  nameWithType: object.ToString()
+  fullName: object.ToString()
+  nameWithType.vb: Object.ToString()
+  fullName.vb: Object.ToString()
+  spec.csharp:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object)
+  commentId: M:System.Object.Equals(System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  name: Equals(object)
+  nameWithType: object.Equals(object)
+  fullName: object.Equals(object)
+  nameWithType.vb: Object.Equals(Object)
+  fullName.vb: Object.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetHashCode
+  commentId: M:System.Object.GetHashCode
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  name: GetHashCode()
+  nameWithType: object.GetHashCode()
+  fullName: object.GetHashCode()
+  nameWithType.vb: Object.GetHashCode()
+  fullName.vb: Object.GetHashCode()
+  spec.csharp:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions.#ctor*
+  commentId: Overload:Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions.#ctor
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions.html#Kevlar_Extensions_DependencyInjection_ReloadingShieldOptions__ctor
+  name: ReloadingShieldOptions
+  nameWithType: ReloadingShieldOptions.ReloadingShieldOptions
+  fullName: Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions.ReloadingShieldOptions
+  nameWithType.vb: ReloadingShieldOptions.New
+  fullName.vb: Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions.New
+  name.vb: New
+- uid: Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions.DebounceDelay*
+  commentId: Overload:Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions.DebounceDelay
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions.html#Kevlar_Extensions_DependencyInjection_ReloadingShieldOptions_DebounceDelay
+  name: DebounceDelay
+  nameWithType: ReloadingShieldOptions.DebounceDelay
+  fullName: Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions.DebounceDelay
+- uid: System.TimeSpan
+  commentId: T:System.TimeSpan
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.timespan
+  name: TimeSpan
+  nameWithType: TimeSpan
+  fullName: System.TimeSpan
+- uid: Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions.TimeProvider*
+  commentId: Overload:Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions.TimeProvider
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions.html#Kevlar_Extensions_DependencyInjection_ReloadingShieldOptions_TimeProvider
+  name: TimeProvider
+  nameWithType: ReloadingShieldOptions.TimeProvider
+  fullName: Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions.TimeProvider
+- uid: System.TimeProvider
+  commentId: T:System.TimeProvider
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.timeprovider
+  name: TimeProvider
+  nameWithType: TimeProvider
+  fullName: System.TimeProvider
