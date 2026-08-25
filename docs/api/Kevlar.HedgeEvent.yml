@@ -5,7 +5,7 @@ items:
   id: HedgeEvent
   parent: Kevlar
   children:
-  - Kevlar.HedgeEvent.Attempt
+  - Kevlar.HedgeEvent.AttemptNumber
   - Kevlar.HedgeEvent.Context
   langs:
   - csharp
@@ -29,16 +29,16 @@ items:
   - System.Object.GetType
   - System.Object.Equals(System.Object,System.Object)
   - System.Object.ReferenceEquals(System.Object,System.Object)
-- uid: Kevlar.HedgeEvent.Attempt
-  commentId: P:Kevlar.HedgeEvent.Attempt
-  id: Attempt
+- uid: Kevlar.HedgeEvent.AttemptNumber
+  commentId: P:Kevlar.HedgeEvent.AttemptNumber
+  id: AttemptNumber
   parent: Kevlar.HedgeEvent
   langs:
   - csharp
   - vb
-  name: Attempt
-  nameWithType: HedgeEvent.Attempt
-  fullName: Kevlar.HedgeEvent.Attempt
+  name: AttemptNumber
+  nameWithType: HedgeEvent.AttemptNumber
+  fullName: Kevlar.HedgeEvent.AttemptNumber
   type: Property
   assemblies:
   - Kevlar
@@ -46,12 +46,12 @@ items:
   summary: The 1-based number of the attempt being launched (2 = first hedge).
   example: []
   syntax:
-    content: public int Attempt { get; }
+    content: public int AttemptNumber { get; }
     parameters: []
     return:
       type: System.Int32
-    content.vb: Public ReadOnly Property Attempt As Integer
-  overload: Kevlar.HedgeEvent.Attempt*
+    content.vb: Public ReadOnly Property AttemptNumber As Integer
+  overload: Kevlar.HedgeEvent.AttemptNumber*
 - uid: Kevlar.HedgeEvent.Context
   commentId: P:Kevlar.HedgeEvent.Context
   id: Context
@@ -303,13 +303,13 @@ references:
   name: System
   nameWithType: System
   fullName: System
-- uid: Kevlar.HedgeEvent.Attempt*
-  commentId: Overload:Kevlar.HedgeEvent.Attempt
+- uid: Kevlar.HedgeEvent.AttemptNumber*
+  commentId: Overload:Kevlar.HedgeEvent.AttemptNumber
   isExternal: true
-  href: Kevlar.HedgeEvent.html#Kevlar_HedgeEvent_Attempt
-  name: Attempt
-  nameWithType: HedgeEvent.Attempt
-  fullName: Kevlar.HedgeEvent.Attempt
+  href: Kevlar.HedgeEvent.html#Kevlar_HedgeEvent_AttemptNumber
+  name: AttemptNumber
+  nameWithType: HedgeEvent.AttemptNumber
+  fullName: Kevlar.HedgeEvent.AttemptNumber
 - uid: System.Int32
   commentId: T:System.Int32
   parent: System

@@ -7,7 +7,7 @@ items:
   children:
   - Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.HasNotification
   - Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.MaxConcurrency
-  - Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.MaxQueue
+  - Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.QueueLimit
   langs:
   - csharp
   - vb
@@ -58,16 +58,16 @@ items:
       type: System.Int32
     content.vb: Public ReadOnly Property MaxConcurrency As Integer
   overload: Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.MaxConcurrency*
-- uid: Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.MaxQueue
-  commentId: P:Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.MaxQueue
-  id: MaxQueue
+- uid: Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.QueueLimit
+  commentId: P:Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.QueueLimit
+  id: QueueLimit
   parent: Kevlar.Testing.ConcurrencyLimitStrategyDescriptor
   langs:
   - csharp
   - vb
-  name: MaxQueue
-  nameWithType: ConcurrencyLimitStrategyDescriptor.MaxQueue
-  fullName: Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.MaxQueue
+  name: QueueLimit
+  nameWithType: ConcurrencyLimitStrategyDescriptor.QueueLimit
+  fullName: Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.QueueLimit
   type: Property
   assemblies:
   - Kevlar.Testing
@@ -75,12 +75,12 @@ items:
   summary: The maximum wait queue size.
   example: []
   syntax:
-    content: public int MaxQueue { get; }
+    content: public int QueueLimit { get; }
     parameters: []
     return:
       type: System.Int32
-    content.vb: Public ReadOnly Property MaxQueue As Integer
-  overload: Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.MaxQueue*
+    content.vb: Public ReadOnly Property QueueLimit As Integer
+  overload: Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.QueueLimit*
 - uid: Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.HasNotification
   commentId: P:Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.HasNotification
   id: HasNotification
@@ -387,13 +387,13 @@ references:
   nameWithType.vb: Integer
   fullName.vb: Integer
   name.vb: Integer
-- uid: Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.MaxQueue*
-  commentId: Overload:Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.MaxQueue
+- uid: Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.QueueLimit*
+  commentId: Overload:Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.QueueLimit
   isExternal: true
-  href: Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.html#Kevlar_Testing_ConcurrencyLimitStrategyDescriptor_MaxQueue
-  name: MaxQueue
-  nameWithType: ConcurrencyLimitStrategyDescriptor.MaxQueue
-  fullName: Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.MaxQueue
+  href: Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.html#Kevlar_Testing_ConcurrencyLimitStrategyDescriptor_QueueLimit
+  name: QueueLimit
+  nameWithType: ConcurrencyLimitStrategyDescriptor.QueueLimit
+  fullName: Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.QueueLimit
 - uid: Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.HasNotification*
   commentId: Overload:Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.HasNotification
   isExternal: true

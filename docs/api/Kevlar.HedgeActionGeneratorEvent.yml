@@ -5,7 +5,7 @@ items:
   id: HedgeActionGeneratorEvent
   parent: Kevlar
   children:
-  - Kevlar.HedgeActionGeneratorEvent.Attempt
+  - Kevlar.HedgeActionGeneratorEvent.AttemptNumber
   - Kevlar.HedgeActionGeneratorEvent.Context
   - Kevlar.HedgeActionGeneratorEvent.OriginalAction
   langs:
@@ -30,29 +30,29 @@ items:
   - System.Object.GetType
   - System.Object.Equals(System.Object,System.Object)
   - System.Object.ReferenceEquals(System.Object,System.Object)
-- uid: Kevlar.HedgeActionGeneratorEvent.Attempt
-  commentId: P:Kevlar.HedgeActionGeneratorEvent.Attempt
-  id: Attempt
+- uid: Kevlar.HedgeActionGeneratorEvent.AttemptNumber
+  commentId: P:Kevlar.HedgeActionGeneratorEvent.AttemptNumber
+  id: AttemptNumber
   parent: Kevlar.HedgeActionGeneratorEvent
   langs:
   - csharp
   - vb
-  name: Attempt
-  nameWithType: HedgeActionGeneratorEvent.Attempt
-  fullName: Kevlar.HedgeActionGeneratorEvent.Attempt
+  name: AttemptNumber
+  nameWithType: HedgeActionGeneratorEvent.AttemptNumber
+  fullName: Kevlar.HedgeActionGeneratorEvent.AttemptNumber
   type: Property
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: The 1-based attempt number (2 = first hedge).
+  summary: The 1-based execution number (2 = first hedge).
   example: []
   syntax:
-    content: public int Attempt { get; }
+    content: public int AttemptNumber { get; }
     parameters: []
     return:
       type: System.Int32
-    content.vb: Public ReadOnly Property Attempt As Integer
-  overload: Kevlar.HedgeActionGeneratorEvent.Attempt*
+    content.vb: Public ReadOnly Property AttemptNumber As Integer
+  overload: Kevlar.HedgeActionGeneratorEvent.AttemptNumber*
 - uid: Kevlar.HedgeActionGeneratorEvent.Context
   commentId: P:Kevlar.HedgeActionGeneratorEvent.Context
   id: Context
@@ -327,13 +327,13 @@ references:
   name: System
   nameWithType: System
   fullName: System
-- uid: Kevlar.HedgeActionGeneratorEvent.Attempt*
-  commentId: Overload:Kevlar.HedgeActionGeneratorEvent.Attempt
+- uid: Kevlar.HedgeActionGeneratorEvent.AttemptNumber*
+  commentId: Overload:Kevlar.HedgeActionGeneratorEvent.AttemptNumber
   isExternal: true
-  href: Kevlar.HedgeActionGeneratorEvent.html#Kevlar_HedgeActionGeneratorEvent_Attempt
-  name: Attempt
-  nameWithType: HedgeActionGeneratorEvent.Attempt
-  fullName: Kevlar.HedgeActionGeneratorEvent.Attempt
+  href: Kevlar.HedgeActionGeneratorEvent.html#Kevlar_HedgeActionGeneratorEvent_AttemptNumber
+  name: AttemptNumber
+  nameWithType: HedgeActionGeneratorEvent.AttemptNumber
+  fullName: Kevlar.HedgeActionGeneratorEvent.AttemptNumber
 - uid: System.Int32
   commentId: T:System.Int32
   parent: System

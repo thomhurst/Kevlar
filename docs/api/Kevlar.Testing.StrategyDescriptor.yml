@@ -29,7 +29,7 @@ items:
   - Kevlar.Testing.ConcurrencyLimitStrategyDescriptor
   - Kevlar.Testing.CustomStrategyDescriptor
   - Kevlar.Testing.FallbackStrategyDescriptor
-  - Kevlar.Testing.HedgingStrategyDescriptor
+  - Kevlar.Testing.HedgeStrategyDescriptor
   - Kevlar.Testing.RateLimitStrategyDescriptor
   - Kevlar.Testing.RetryStrategyDescriptor
   - Kevlar.Testing.TimeoutStrategyDescriptor

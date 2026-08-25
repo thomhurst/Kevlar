@@ -1,20 +1,21 @@
 ### YamlMime:ManagedReference
 items:
-- uid: Kevlar.Testing.HedgingStrategyDescriptor
-  commentId: T:Kevlar.Testing.HedgingStrategyDescriptor
-  id: HedgingStrategyDescriptor
+- uid: Kevlar.Testing.HedgeStrategyDescriptor
+  commentId: T:Kevlar.Testing.HedgeStrategyDescriptor
+  id: HedgeStrategyDescriptor
   parent: Kevlar.Testing
   children:
-  - Kevlar.Testing.HedgingStrategyDescriptor.Delay
-  - Kevlar.Testing.HedgingStrategyDescriptor.HasHandlingOverride
-  - Kevlar.Testing.HedgingStrategyDescriptor.HasNotification
-  - Kevlar.Testing.HedgingStrategyDescriptor.MaxAttempts
+  - Kevlar.Testing.HedgeStrategyDescriptor.Delay
+  - Kevlar.Testing.HedgeStrategyDescriptor.HasActionGenerator
+  - Kevlar.Testing.HedgeStrategyDescriptor.HasHandlingOverride
+  - Kevlar.Testing.HedgeStrategyDescriptor.HasNotification
+  - Kevlar.Testing.HedgeStrategyDescriptor.MaxAttempts
   langs:
   - csharp
   - vb
-  name: HedgingStrategyDescriptor
-  nameWithType: HedgingStrategyDescriptor
-  fullName: Kevlar.Testing.HedgingStrategyDescriptor
+  name: HedgeStrategyDescriptor
+  nameWithType: HedgeStrategyDescriptor
+  fullName: Kevlar.Testing.HedgeStrategyDescriptor
   type: Class
   assemblies:
   - Kevlar.Testing
@@ -22,8 +23,8 @@ items:
   summary: Read-only hedging configuration.
   example: []
   syntax:
-    content: 'public sealed class HedgingStrategyDescriptor : StrategyDescriptor'
-    content.vb: Public NotInheritable Class HedgingStrategyDescriptor Inherits StrategyDescriptor
+    content: 'public sealed class HedgeStrategyDescriptor : StrategyDescriptor'
+    content.vb: Public NotInheritable Class HedgeStrategyDescriptor Inherits StrategyDescriptor
   inheritance:
   - System.Object
   - Kevlar.Testing.StrategyDescriptor
@@ -36,16 +37,16 @@ items:
   - System.Object.Equals(System.Object,System.Object)
   - System.Object.ReferenceEquals(System.Object,System.Object)
   - System.Object.GetHashCode
-- uid: Kevlar.Testing.HedgingStrategyDescriptor.MaxAttempts
-  commentId: P:Kevlar.Testing.HedgingStrategyDescriptor.MaxAttempts
+- uid: Kevlar.Testing.HedgeStrategyDescriptor.MaxAttempts
+  commentId: P:Kevlar.Testing.HedgeStrategyDescriptor.MaxAttempts
   id: MaxAttempts
-  parent: Kevlar.Testing.HedgingStrategyDescriptor
+  parent: Kevlar.Testing.HedgeStrategyDescriptor
   langs:
   - csharp
   - vb
   name: MaxAttempts
-  nameWithType: HedgingStrategyDescriptor.MaxAttempts
-  fullName: Kevlar.Testing.HedgingStrategyDescriptor.MaxAttempts
+  nameWithType: HedgeStrategyDescriptor.MaxAttempts
+  fullName: Kevlar.Testing.HedgeStrategyDescriptor.MaxAttempts
   type: Property
   assemblies:
   - Kevlar.Testing
@@ -58,17 +59,17 @@ items:
     return:
       type: System.Int32
     content.vb: Public ReadOnly Property MaxAttempts As Integer
-  overload: Kevlar.Testing.HedgingStrategyDescriptor.MaxAttempts*
-- uid: Kevlar.Testing.HedgingStrategyDescriptor.Delay
-  commentId: P:Kevlar.Testing.HedgingStrategyDescriptor.Delay
+  overload: Kevlar.Testing.HedgeStrategyDescriptor.MaxAttempts*
+- uid: Kevlar.Testing.HedgeStrategyDescriptor.Delay
+  commentId: P:Kevlar.Testing.HedgeStrategyDescriptor.Delay
   id: Delay
-  parent: Kevlar.Testing.HedgingStrategyDescriptor
+  parent: Kevlar.Testing.HedgeStrategyDescriptor
   langs:
   - csharp
   - vb
   name: Delay
-  nameWithType: HedgingStrategyDescriptor.Delay
-  fullName: Kevlar.Testing.HedgingStrategyDescriptor.Delay
+  nameWithType: HedgeStrategyDescriptor.Delay
+  fullName: Kevlar.Testing.HedgeStrategyDescriptor.Delay
   type: Property
   assemblies:
   - Kevlar.Testing
@@ -81,17 +82,17 @@ items:
     return:
       type: System.TimeSpan
     content.vb: Public ReadOnly Property Delay As TimeSpan
-  overload: Kevlar.Testing.HedgingStrategyDescriptor.Delay*
-- uid: Kevlar.Testing.HedgingStrategyDescriptor.HasNotification
-  commentId: P:Kevlar.Testing.HedgingStrategyDescriptor.HasNotification
+  overload: Kevlar.Testing.HedgeStrategyDescriptor.Delay*
+- uid: Kevlar.Testing.HedgeStrategyDescriptor.HasNotification
+  commentId: P:Kevlar.Testing.HedgeStrategyDescriptor.HasNotification
   id: HasNotification
-  parent: Kevlar.Testing.HedgingStrategyDescriptor
+  parent: Kevlar.Testing.HedgeStrategyDescriptor
   langs:
   - csharp
   - vb
   name: HasNotification
-  nameWithType: HedgingStrategyDescriptor.HasNotification
-  fullName: Kevlar.Testing.HedgingStrategyDescriptor.HasNotification
+  nameWithType: HedgeStrategyDescriptor.HasNotification
+  fullName: Kevlar.Testing.HedgeStrategyDescriptor.HasNotification
   type: Property
   assemblies:
   - Kevlar.Testing
@@ -104,17 +105,40 @@ items:
     return:
       type: System.Boolean
     content.vb: Public ReadOnly Property HasNotification As Boolean
-  overload: Kevlar.Testing.HedgingStrategyDescriptor.HasNotification*
-- uid: Kevlar.Testing.HedgingStrategyDescriptor.HasHandlingOverride
-  commentId: P:Kevlar.Testing.HedgingStrategyDescriptor.HasHandlingOverride
+  overload: Kevlar.Testing.HedgeStrategyDescriptor.HasNotification*
+- uid: Kevlar.Testing.HedgeStrategyDescriptor.HasActionGenerator
+  commentId: P:Kevlar.Testing.HedgeStrategyDescriptor.HasActionGenerator
+  id: HasActionGenerator
+  parent: Kevlar.Testing.HedgeStrategyDescriptor
+  langs:
+  - csharp
+  - vb
+  name: HasActionGenerator
+  nameWithType: HedgeStrategyDescriptor.HasActionGenerator
+  fullName: Kevlar.Testing.HedgeStrategyDescriptor.HasActionGenerator
+  type: Property
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Whether an action generator is configured.
+  example: []
+  syntax:
+    content: public bool HasActionGenerator { get; }
+    parameters: []
+    return:
+      type: System.Boolean
+    content.vb: Public ReadOnly Property HasActionGenerator As Boolean
+  overload: Kevlar.Testing.HedgeStrategyDescriptor.HasActionGenerator*
+- uid: Kevlar.Testing.HedgeStrategyDescriptor.HasHandlingOverride
+  commentId: P:Kevlar.Testing.HedgeStrategyDescriptor.HasHandlingOverride
   id: HasHandlingOverride
-  parent: Kevlar.Testing.HedgingStrategyDescriptor
+  parent: Kevlar.Testing.HedgeStrategyDescriptor
   langs:
   - csharp
   - vb
   name: HasHandlingOverride
-  nameWithType: HedgingStrategyDescriptor.HasHandlingOverride
-  fullName: Kevlar.Testing.HedgingStrategyDescriptor.HasHandlingOverride
+  nameWithType: HedgeStrategyDescriptor.HasHandlingOverride
+  fullName: Kevlar.Testing.HedgeStrategyDescriptor.HasHandlingOverride
   type: Property
   assemblies:
   - Kevlar.Testing
@@ -127,7 +151,7 @@ items:
     return:
       type: System.Boolean
     content.vb: Public ReadOnly Property HasHandlingOverride As Boolean
-  overload: Kevlar.Testing.HedgingStrategyDescriptor.HasHandlingOverride*
+  overload: Kevlar.Testing.HedgeStrategyDescriptor.HasHandlingOverride*
 references:
 - uid: Kevlar.Testing
   commentId: N:Kevlar.Testing
@@ -393,13 +417,13 @@ references:
   name: System
   nameWithType: System
   fullName: System
-- uid: Kevlar.Testing.HedgingStrategyDescriptor.MaxAttempts*
-  commentId: Overload:Kevlar.Testing.HedgingStrategyDescriptor.MaxAttempts
+- uid: Kevlar.Testing.HedgeStrategyDescriptor.MaxAttempts*
+  commentId: Overload:Kevlar.Testing.HedgeStrategyDescriptor.MaxAttempts
   isExternal: true
-  href: Kevlar.Testing.HedgingStrategyDescriptor.html#Kevlar_Testing_HedgingStrategyDescriptor_MaxAttempts
+  href: Kevlar.Testing.HedgeStrategyDescriptor.html#Kevlar_Testing_HedgeStrategyDescriptor_MaxAttempts
   name: MaxAttempts
-  nameWithType: HedgingStrategyDescriptor.MaxAttempts
-  fullName: Kevlar.Testing.HedgingStrategyDescriptor.MaxAttempts
+  nameWithType: HedgeStrategyDescriptor.MaxAttempts
+  fullName: Kevlar.Testing.HedgeStrategyDescriptor.MaxAttempts
 - uid: System.Int32
   commentId: T:System.Int32
   parent: System
@@ -411,13 +435,13 @@ references:
   nameWithType.vb: Integer
   fullName.vb: Integer
   name.vb: Integer
-- uid: Kevlar.Testing.HedgingStrategyDescriptor.Delay*
-  commentId: Overload:Kevlar.Testing.HedgingStrategyDescriptor.Delay
+- uid: Kevlar.Testing.HedgeStrategyDescriptor.Delay*
+  commentId: Overload:Kevlar.Testing.HedgeStrategyDescriptor.Delay
   isExternal: true
-  href: Kevlar.Testing.HedgingStrategyDescriptor.html#Kevlar_Testing_HedgingStrategyDescriptor_Delay
+  href: Kevlar.Testing.HedgeStrategyDescriptor.html#Kevlar_Testing_HedgeStrategyDescriptor_Delay
   name: Delay
-  nameWithType: HedgingStrategyDescriptor.Delay
-  fullName: Kevlar.Testing.HedgingStrategyDescriptor.Delay
+  nameWithType: HedgeStrategyDescriptor.Delay
+  fullName: Kevlar.Testing.HedgeStrategyDescriptor.Delay
 - uid: System.TimeSpan
   commentId: T:System.TimeSpan
   parent: System
@@ -426,13 +450,13 @@ references:
   name: TimeSpan
   nameWithType: TimeSpan
   fullName: System.TimeSpan
-- uid: Kevlar.Testing.HedgingStrategyDescriptor.HasNotification*
-  commentId: Overload:Kevlar.Testing.HedgingStrategyDescriptor.HasNotification
+- uid: Kevlar.Testing.HedgeStrategyDescriptor.HasNotification*
+  commentId: Overload:Kevlar.Testing.HedgeStrategyDescriptor.HasNotification
   isExternal: true
-  href: Kevlar.Testing.HedgingStrategyDescriptor.html#Kevlar_Testing_HedgingStrategyDescriptor_HasNotification
+  href: Kevlar.Testing.HedgeStrategyDescriptor.html#Kevlar_Testing_HedgeStrategyDescriptor_HasNotification
   name: HasNotification
-  nameWithType: HedgingStrategyDescriptor.HasNotification
-  fullName: Kevlar.Testing.HedgingStrategyDescriptor.HasNotification
+  nameWithType: HedgeStrategyDescriptor.HasNotification
+  fullName: Kevlar.Testing.HedgeStrategyDescriptor.HasNotification
 - uid: System.Boolean
   commentId: T:System.Boolean
   parent: System
@@ -444,10 +468,17 @@ references:
   nameWithType.vb: Boolean
   fullName.vb: Boolean
   name.vb: Boolean
-- uid: Kevlar.Testing.HedgingStrategyDescriptor.HasHandlingOverride*
-  commentId: Overload:Kevlar.Testing.HedgingStrategyDescriptor.HasHandlingOverride
+- uid: Kevlar.Testing.HedgeStrategyDescriptor.HasActionGenerator*
+  commentId: Overload:Kevlar.Testing.HedgeStrategyDescriptor.HasActionGenerator
   isExternal: true
-  href: Kevlar.Testing.HedgingStrategyDescriptor.html#Kevlar_Testing_HedgingStrategyDescriptor_HasHandlingOverride
+  href: Kevlar.Testing.HedgeStrategyDescriptor.html#Kevlar_Testing_HedgeStrategyDescriptor_HasActionGenerator
+  name: HasActionGenerator
+  nameWithType: HedgeStrategyDescriptor.HasActionGenerator
+  fullName: Kevlar.Testing.HedgeStrategyDescriptor.HasActionGenerator
+- uid: Kevlar.Testing.HedgeStrategyDescriptor.HasHandlingOverride*
+  commentId: Overload:Kevlar.Testing.HedgeStrategyDescriptor.HasHandlingOverride
+  isExternal: true
+  href: Kevlar.Testing.HedgeStrategyDescriptor.html#Kevlar_Testing_HedgeStrategyDescriptor_HasHandlingOverride
   name: HasHandlingOverride
-  nameWithType: HedgingStrategyDescriptor.HasHandlingOverride
-  fullName: Kevlar.Testing.HedgingStrategyDescriptor.HasHandlingOverride
+  nameWithType: HedgeStrategyDescriptor.HasHandlingOverride
+  fullName: Kevlar.Testing.HedgeStrategyDescriptor.HasHandlingOverride

@@ -16,7 +16,7 @@ items:
   - Kevlar.Testing.ExecutionProbeSnapshot
   - Kevlar.Testing.FakeTimeProviderExtensions
   - Kevlar.Testing.FallbackStrategyDescriptor
-  - Kevlar.Testing.HedgingStrategyDescriptor
+  - Kevlar.Testing.HedgeStrategyDescriptor
   - Kevlar.Testing.MetricRecord
   - Kevlar.Testing.RateLimitStateSnapshot
   - Kevlar.Testing.RateLimitStrategyDescriptor
@@ -130,13 +130,13 @@ references:
   name: FallbackStrategyDescriptor
   nameWithType: FallbackStrategyDescriptor
   fullName: Kevlar.Testing.FallbackStrategyDescriptor
-- uid: Kevlar.Testing.HedgingStrategyDescriptor
-  commentId: T:Kevlar.Testing.HedgingStrategyDescriptor
+- uid: Kevlar.Testing.HedgeStrategyDescriptor
+  commentId: T:Kevlar.Testing.HedgeStrategyDescriptor
   isExternal: true
-  href: Kevlar.Testing.HedgingStrategyDescriptor.html
-  name: HedgingStrategyDescriptor
-  nameWithType: HedgingStrategyDescriptor
-  fullName: Kevlar.Testing.HedgingStrategyDescriptor
+  href: Kevlar.Testing.HedgeStrategyDescriptor.html
+  name: HedgeStrategyDescriptor
+  nameWithType: HedgeStrategyDescriptor
+  fullName: Kevlar.Testing.HedgeStrategyDescriptor
 - uid: Kevlar.Testing.MetricRecord
   commentId: T:Kevlar.Testing.MetricRecord
   isExternal: true

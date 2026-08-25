@@ -7,7 +7,7 @@ items:
   children:
   - Kevlar.ConcurrencyLimitRejectedEvent.Context
   - Kevlar.ConcurrencyLimitRejectedEvent.MaxConcurrency
-  - Kevlar.ConcurrencyLimitRejectedEvent.MaxQueue
+  - Kevlar.ConcurrencyLimitRejectedEvent.QueueLimit
   - Kevlar.ConcurrencyLimitRejectedEvent.StrategyIndex
   langs:
   - csharp
@@ -54,16 +54,16 @@ items:
       type: System.Int32
     content.vb: Public ReadOnly Property MaxConcurrency As Integer
   overload: Kevlar.ConcurrencyLimitRejectedEvent.MaxConcurrency*
-- uid: Kevlar.ConcurrencyLimitRejectedEvent.MaxQueue
-  commentId: P:Kevlar.ConcurrencyLimitRejectedEvent.MaxQueue
-  id: MaxQueue
+- uid: Kevlar.ConcurrencyLimitRejectedEvent.QueueLimit
+  commentId: P:Kevlar.ConcurrencyLimitRejectedEvent.QueueLimit
+  id: QueueLimit
   parent: Kevlar.ConcurrencyLimitRejectedEvent
   langs:
   - csharp
   - vb
-  name: MaxQueue
-  nameWithType: ConcurrencyLimitRejectedEvent.MaxQueue
-  fullName: Kevlar.ConcurrencyLimitRejectedEvent.MaxQueue
+  name: QueueLimit
+  nameWithType: ConcurrencyLimitRejectedEvent.QueueLimit
+  fullName: Kevlar.ConcurrencyLimitRejectedEvent.QueueLimit
   type: Property
   assemblies:
   - Kevlar
@@ -71,12 +71,12 @@ items:
   summary: The configured maximum wait queue size.
   example: []
   syntax:
-    content: public int MaxQueue { get; }
+    content: public int QueueLimit { get; }
     parameters: []
     return:
       type: System.Int32
-    content.vb: Public ReadOnly Property MaxQueue As Integer
-  overload: Kevlar.ConcurrencyLimitRejectedEvent.MaxQueue*
+    content.vb: Public ReadOnly Property QueueLimit As Integer
+  overload: Kevlar.ConcurrencyLimitRejectedEvent.QueueLimit*
 - uid: Kevlar.ConcurrencyLimitRejectedEvent.StrategyIndex
   commentId: P:Kevlar.ConcurrencyLimitRejectedEvent.StrategyIndex
   id: StrategyIndex
@@ -369,13 +369,13 @@ references:
   nameWithType.vb: Integer
   fullName.vb: Integer
   name.vb: Integer
-- uid: Kevlar.ConcurrencyLimitRejectedEvent.MaxQueue*
-  commentId: Overload:Kevlar.ConcurrencyLimitRejectedEvent.MaxQueue
+- uid: Kevlar.ConcurrencyLimitRejectedEvent.QueueLimit*
+  commentId: Overload:Kevlar.ConcurrencyLimitRejectedEvent.QueueLimit
   isExternal: true
-  href: Kevlar.ConcurrencyLimitRejectedEvent.html#Kevlar_ConcurrencyLimitRejectedEvent_MaxQueue
-  name: MaxQueue
-  nameWithType: ConcurrencyLimitRejectedEvent.MaxQueue
-  fullName: Kevlar.ConcurrencyLimitRejectedEvent.MaxQueue
+  href: Kevlar.ConcurrencyLimitRejectedEvent.html#Kevlar_ConcurrencyLimitRejectedEvent_QueueLimit
+  name: QueueLimit
+  nameWithType: ConcurrencyLimitRejectedEvent.QueueLimit
+  fullName: Kevlar.ConcurrencyLimitRejectedEvent.QueueLimit
 - uid: Kevlar.ConcurrencyLimitRejectedEvent.StrategyIndex*
   commentId: Overload:Kevlar.ConcurrencyLimitRejectedEvent.StrategyIndex
   isExternal: true

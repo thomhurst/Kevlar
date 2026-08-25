@@ -7,7 +7,7 @@ items:
   children:
   - Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.#ctor
   - Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxConcurrency
-  - Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxQueue
+  - Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.QueueLimit
   langs:
   - csharp
   - vb
@@ -76,16 +76,16 @@ items:
       type: System.Int32
     content.vb: Public Property MaxConcurrency As Integer
   overload: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxConcurrency*
-- uid: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxQueue
-  commentId: P:Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxQueue
-  id: MaxQueue
+- uid: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.QueueLimit
+  commentId: P:Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.QueueLimit
+  id: QueueLimit
   parent: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition
   langs:
   - csharp
   - vb
-  name: MaxQueue
-  nameWithType: ConcurrencyLimitDefinition.MaxQueue
-  fullName: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxQueue
+  name: QueueLimit
+  nameWithType: ConcurrencyLimitDefinition.QueueLimit
+  fullName: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.QueueLimit
   type: Property
   assemblies:
   - Kevlar.Extensions.DependencyInjection
@@ -93,12 +93,12 @@ items:
   summary: Executions allowed to wait for a slot. Default 0.
   example: []
   syntax:
-    content: public int MaxQueue { get; set; }
+    content: public int QueueLimit { get; set; }
     parameters: []
     return:
       type: System.Int32
-    content.vb: Public Property MaxQueue As Integer
-  overload: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxQueue*
+    content.vb: Public Property QueueLimit As Integer
+  overload: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.QueueLimit*
 references:
 - uid: Kevlar.Extensions.DependencyInjection.ShieldDefinition
   commentId: T:Kevlar.Extensions.DependencyInjection.ShieldDefinition
@@ -385,10 +385,10 @@ references:
   nameWithType.vb: Integer
   fullName.vb: Integer
   name.vb: Integer
-- uid: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxQueue*
-  commentId: Overload:Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxQueue
+- uid: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.QueueLimit*
+  commentId: Overload:Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.QueueLimit
   isExternal: true
-  href: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.html#Kevlar_Extensions_DependencyInjection_ConcurrencyLimitDefinition_MaxQueue
-  name: MaxQueue
-  nameWithType: ConcurrencyLimitDefinition.MaxQueue
-  fullName: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxQueue
+  href: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.html#Kevlar_Extensions_DependencyInjection_ConcurrencyLimitDefinition_QueueLimit
+  name: QueueLimit
+  nameWithType: ConcurrencyLimitDefinition.QueueLimit
+  fullName: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.QueueLimit

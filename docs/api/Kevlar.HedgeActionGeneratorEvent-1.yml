@@ -5,9 +5,10 @@ items:
   id: HedgeActionGeneratorEvent`1
   parent: Kevlar
   children:
-  - Kevlar.HedgeActionGeneratorEvent`1.Attempt
+  - Kevlar.HedgeActionGeneratorEvent`1.AttemptNumber
   - Kevlar.HedgeActionGeneratorEvent`1.Context
   - Kevlar.HedgeActionGeneratorEvent`1.OriginalAction
+  - Kevlar.HedgeActionGeneratorEvent`1.Outcome
   langs:
   - csharp
   - vb
@@ -35,31 +36,31 @@ items:
   nameWithType.vb: HedgeActionGeneratorEvent(Of TResult)
   fullName.vb: Kevlar.HedgeActionGeneratorEvent(Of TResult)
   name.vb: HedgeActionGeneratorEvent(Of TResult)
-- uid: Kevlar.HedgeActionGeneratorEvent`1.Attempt
-  commentId: P:Kevlar.HedgeActionGeneratorEvent`1.Attempt
-  id: Attempt
+- uid: Kevlar.HedgeActionGeneratorEvent`1.AttemptNumber
+  commentId: P:Kevlar.HedgeActionGeneratorEvent`1.AttemptNumber
+  id: AttemptNumber
   parent: Kevlar.HedgeActionGeneratorEvent`1
   langs:
   - csharp
   - vb
-  name: Attempt
-  nameWithType: HedgeActionGeneratorEvent<TResult>.Attempt
-  fullName: Kevlar.HedgeActionGeneratorEvent<TResult>.Attempt
+  name: AttemptNumber
+  nameWithType: HedgeActionGeneratorEvent<TResult>.AttemptNumber
+  fullName: Kevlar.HedgeActionGeneratorEvent<TResult>.AttemptNumber
   type: Property
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: The 1-based attempt number (2 = first hedge).
+  summary: The 1-based execution number (2 = first hedge).
   example: []
   syntax:
-    content: public int Attempt { get; }
+    content: public int AttemptNumber { get; }
     parameters: []
     return:
       type: System.Int32
-    content.vb: Public ReadOnly Property Attempt As Integer
-  overload: Kevlar.HedgeActionGeneratorEvent`1.Attempt*
-  nameWithType.vb: HedgeActionGeneratorEvent(Of TResult).Attempt
-  fullName.vb: Kevlar.HedgeActionGeneratorEvent(Of TResult).Attempt
+    content.vb: Public ReadOnly Property AttemptNumber As Integer
+  overload: Kevlar.HedgeActionGeneratorEvent`1.AttemptNumber*
+  nameWithType.vb: HedgeActionGeneratorEvent(Of TResult).AttemptNumber
+  fullName.vb: Kevlar.HedgeActionGeneratorEvent(Of TResult).AttemptNumber
 - uid: Kevlar.HedgeActionGeneratorEvent`1.Context
   commentId: P:Kevlar.HedgeActionGeneratorEvent`1.Context
   id: Context
@@ -113,6 +114,34 @@ items:
   overload: Kevlar.HedgeActionGeneratorEvent`1.OriginalAction*
   nameWithType.vb: HedgeActionGeneratorEvent(Of TResult).OriginalAction
   fullName.vb: Kevlar.HedgeActionGeneratorEvent(Of TResult).OriginalAction
+- uid: Kevlar.HedgeActionGeneratorEvent`1.Outcome
+  commentId: P:Kevlar.HedgeActionGeneratorEvent`1.Outcome
+  id: Outcome
+  parent: Kevlar.HedgeActionGeneratorEvent`1
+  langs:
+  - csharp
+  - vb
+  name: Outcome
+  nameWithType: HedgeActionGeneratorEvent<TResult>.Outcome
+  fullName: Kevlar.HedgeActionGeneratorEvent<TResult>.Outcome
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    The latest handled outcome available before this attempt was launched, or
+
+    <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> when pending attempts have not produced an outcome yet.
+  example: []
+  syntax:
+    content: public Outcome<TResult>? Outcome { get; }
+    parameters: []
+    return:
+      type: System.Nullable{Kevlar.Outcome{{TResult}}}
+    content.vb: Public ReadOnly Property Outcome As Outcome(Of TResult)?
+  overload: Kevlar.HedgeActionGeneratorEvent`1.Outcome*
+  nameWithType.vb: HedgeActionGeneratorEvent(Of TResult).Outcome
+  fullName.vb: Kevlar.HedgeActionGeneratorEvent(Of TResult).Outcome
 references:
 - uid: Kevlar
   commentId: N:Kevlar
@@ -338,15 +367,15 @@ references:
   name: System
   nameWithType: System
   fullName: System
-- uid: Kevlar.HedgeActionGeneratorEvent`1.Attempt*
-  commentId: Overload:Kevlar.HedgeActionGeneratorEvent`1.Attempt
+- uid: Kevlar.HedgeActionGeneratorEvent`1.AttemptNumber*
+  commentId: Overload:Kevlar.HedgeActionGeneratorEvent`1.AttemptNumber
   isExternal: true
-  href: Kevlar.HedgeActionGeneratorEvent-1.html#Kevlar_HedgeActionGeneratorEvent_1_Attempt
-  name: Attempt
-  nameWithType: HedgeActionGeneratorEvent<TResult>.Attempt
-  fullName: Kevlar.HedgeActionGeneratorEvent<TResult>.Attempt
-  nameWithType.vb: HedgeActionGeneratorEvent(Of TResult).Attempt
-  fullName.vb: Kevlar.HedgeActionGeneratorEvent(Of TResult).Attempt
+  href: Kevlar.HedgeActionGeneratorEvent-1.html#Kevlar_HedgeActionGeneratorEvent_1_AttemptNumber
+  name: AttemptNumber
+  nameWithType: HedgeActionGeneratorEvent<TResult>.AttemptNumber
+  fullName: Kevlar.HedgeActionGeneratorEvent<TResult>.AttemptNumber
+  nameWithType.vb: HedgeActionGeneratorEvent(Of TResult).AttemptNumber
+  fullName.vb: Kevlar.HedgeActionGeneratorEvent(Of TResult).AttemptNumber
 - uid: System.Int32
   commentId: T:System.Int32
   parent: System
@@ -472,4 +501,72 @@ references:
   - name: ','
   - name: " "
   - name: TResult
+  - name: )
+- uid: Kevlar.HedgeActionGeneratorEvent`1.Outcome*
+  commentId: Overload:Kevlar.HedgeActionGeneratorEvent`1.Outcome
+  isExternal: true
+  href: Kevlar.HedgeActionGeneratorEvent-1.html#Kevlar_HedgeActionGeneratorEvent_1_Outcome
+  name: Outcome
+  nameWithType: HedgeActionGeneratorEvent<TResult>.Outcome
+  fullName: Kevlar.HedgeActionGeneratorEvent<TResult>.Outcome
+  nameWithType.vb: HedgeActionGeneratorEvent(Of TResult).Outcome
+  fullName.vb: Kevlar.HedgeActionGeneratorEvent(Of TResult).Outcome
+- uid: System.Nullable{Kevlar.Outcome{{TResult}}}
+  commentId: T:System.Nullable{Kevlar.Outcome{`0}}
+  parent: System
+  definition: System.Nullable`1
+  href: Kevlar.Outcome-1.html
+  name: Outcome<TResult>?
+  nameWithType: Outcome<TResult>?
+  fullName: Kevlar.Outcome<TResult>?
+  nameWithType.vb: Outcome(Of TResult)?
+  fullName.vb: Kevlar.Outcome(Of TResult)?
+  name.vb: Outcome(Of TResult)?
+  spec.csharp:
+  - uid: Kevlar.Outcome`1
+    name: Outcome
+    isExternal: true
+    href: Kevlar.Outcome-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  - name: '?'
+  spec.vb:
+  - uid: Kevlar.Outcome`1
+    name: Outcome
+    isExternal: true
+    href: Kevlar.Outcome-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+  - name: '?'
+- uid: System.Nullable`1
+  commentId: T:System.Nullable`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  name: Nullable<T>
+  nameWithType: Nullable<T>
+  fullName: System.Nullable<T>
+  nameWithType.vb: Nullable(Of T)
+  fullName.vb: System.Nullable(Of T)
+  name.vb: Nullable(Of T)
+  spec.csharp:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
   - name: )

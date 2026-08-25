@@ -5,10 +5,10 @@ items:
   id: RetryEvent`1
   parent: Kevlar
   children:
-  - Kevlar.RetryEvent`1.Attempt
   - Kevlar.RetryEvent`1.Context
   - Kevlar.RetryEvent`1.Delay
   - Kevlar.RetryEvent`1.Outcome
+  - Kevlar.RetryEvent`1.RetryNumber
   langs:
   - csharp
   - vb
@@ -36,16 +36,16 @@ items:
   nameWithType.vb: RetryEvent(Of TResult)
   fullName.vb: Kevlar.RetryEvent(Of TResult)
   name.vb: RetryEvent(Of TResult)
-- uid: Kevlar.RetryEvent`1.Attempt
-  commentId: P:Kevlar.RetryEvent`1.Attempt
-  id: Attempt
+- uid: Kevlar.RetryEvent`1.RetryNumber
+  commentId: P:Kevlar.RetryEvent`1.RetryNumber
+  id: RetryNumber
   parent: Kevlar.RetryEvent`1
   langs:
   - csharp
   - vb
-  name: Attempt
-  nameWithType: RetryEvent<TResult>.Attempt
-  fullName: Kevlar.RetryEvent<TResult>.Attempt
+  name: RetryNumber
+  nameWithType: RetryEvent<TResult>.RetryNumber
+  fullName: Kevlar.RetryEvent<TResult>.RetryNumber
   type: Property
   assemblies:
   - Kevlar
@@ -53,14 +53,14 @@ items:
   summary: The 1-based number of the retry about to be made (1 = first retry, i.e. second execution).
   example: []
   syntax:
-    content: public int Attempt { get; }
+    content: public int RetryNumber { get; }
     parameters: []
     return:
       type: System.Int32
-    content.vb: Public ReadOnly Property Attempt As Integer
-  overload: Kevlar.RetryEvent`1.Attempt*
-  nameWithType.vb: RetryEvent(Of TResult).Attempt
-  fullName.vb: Kevlar.RetryEvent(Of TResult).Attempt
+    content.vb: Public ReadOnly Property RetryNumber As Integer
+  overload: Kevlar.RetryEvent`1.RetryNumber*
+  nameWithType.vb: RetryEvent(Of TResult).RetryNumber
+  fullName.vb: Kevlar.RetryEvent(Of TResult).RetryNumber
 - uid: Kevlar.RetryEvent`1.Delay
   commentId: P:Kevlar.RetryEvent`1.Delay
   id: Delay
@@ -364,15 +364,15 @@ references:
   name: System
   nameWithType: System
   fullName: System
-- uid: Kevlar.RetryEvent`1.Attempt*
-  commentId: Overload:Kevlar.RetryEvent`1.Attempt
+- uid: Kevlar.RetryEvent`1.RetryNumber*
+  commentId: Overload:Kevlar.RetryEvent`1.RetryNumber
   isExternal: true
-  href: Kevlar.RetryEvent-1.html#Kevlar_RetryEvent_1_Attempt
-  name: Attempt
-  nameWithType: RetryEvent<TResult>.Attempt
-  fullName: Kevlar.RetryEvent<TResult>.Attempt
-  nameWithType.vb: RetryEvent(Of TResult).Attempt
-  fullName.vb: Kevlar.RetryEvent(Of TResult).Attempt
+  href: Kevlar.RetryEvent-1.html#Kevlar_RetryEvent_1_RetryNumber
+  name: RetryNumber
+  nameWithType: RetryEvent<TResult>.RetryNumber
+  fullName: Kevlar.RetryEvent<TResult>.RetryNumber
+  nameWithType.vb: RetryEvent(Of TResult).RetryNumber
+  fullName.vb: Kevlar.RetryEvent(Of TResult).RetryNumber
 - uid: System.Int32
   commentId: T:System.Int32
   parent: System

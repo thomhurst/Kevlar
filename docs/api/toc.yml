@@ -97,6 +97,9 @@ items:
   - uid: Kevlar.KevlarProperties
     name: KevlarProperties
     type: Class
+  - uid: Kevlar.KevlarProxyException
+    name: KevlarProxyException
+    type: Class
   - uid: Kevlar.Outcome`1
     name: Outcome<T>
     type: Struct
@@ -275,8 +278,8 @@ items:
   - uid: Kevlar.Extensions.Http.ShieldHttpHandlerOptions
     name: ShieldHttpHandlerOptions
     type: Class
-  - uid: Kevlar.Extensions.Http.StandardHedgingShieldOptions
-    name: StandardHedgingShieldOptions
+  - uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+    name: StandardHedgeShieldOptions
     type: Class
   - uid: Kevlar.Extensions.Http.StandardHttpShieldOptions
     name: StandardHttpShieldOptions
@@ -337,8 +340,8 @@ items:
   - uid: Kevlar.Testing.FallbackStrategyDescriptor
     name: FallbackStrategyDescriptor
     type: Class
-  - uid: Kevlar.Testing.HedgingStrategyDescriptor
-    name: HedgingStrategyDescriptor
+  - uid: Kevlar.Testing.HedgeStrategyDescriptor
+    name: HedgeStrategyDescriptor
     type: Class
   - uid: Kevlar.Testing.MetricRecord
     name: MetricRecord

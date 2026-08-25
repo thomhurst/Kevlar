@@ -13,7 +13,7 @@ items:
   - Kevlar.Extensions.Http.ShieldDelegatingHandler
   - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
   - Kevlar.Extensions.Http.ShieldHttpHandlerOptions
-  - Kevlar.Extensions.Http.StandardHedgingShieldOptions
+  - Kevlar.Extensions.Http.StandardHedgeShieldOptions
   - Kevlar.Extensions.Http.StandardHttpShieldOptions
   langs:
   - csharp
@@ -92,13 +92,13 @@ references:
   name: ShieldHttpHandlerOptions
   nameWithType: ShieldHttpHandlerOptions
   fullName: Kevlar.Extensions.Http.ShieldHttpHandlerOptions
-- uid: Kevlar.Extensions.Http.StandardHedgingShieldOptions
-  commentId: T:Kevlar.Extensions.Http.StandardHedgingShieldOptions
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+  commentId: T:Kevlar.Extensions.Http.StandardHedgeShieldOptions
   isExternal: true
-  href: Kevlar.Extensions.Http.StandardHedgingShieldOptions.html
-  name: StandardHedgingShieldOptions
-  nameWithType: StandardHedgingShieldOptions
-  fullName: Kevlar.Extensions.Http.StandardHedgingShieldOptions
+  href: Kevlar.Extensions.Http.StandardHedgeShieldOptions.html
+  name: StandardHedgeShieldOptions
+  nameWithType: StandardHedgeShieldOptions
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions
 - uid: Kevlar.Extensions.Http.StandardHttpShieldOptions
   commentId: T:Kevlar.Extensions.Http.StandardHttpShieldOptions
   parent: Kevlar.Extensions.Http

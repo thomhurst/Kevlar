@@ -7,9 +7,9 @@ items:
   children:
   - Kevlar.ConcurrencyLimitOptions.#ctor
   - Kevlar.ConcurrencyLimitOptions.MaxConcurrency
-  - Kevlar.ConcurrencyLimitOptions.MaxQueue
   - Kevlar.ConcurrencyLimitOptions.OnRejected
   - Kevlar.ConcurrencyLimitOptions.OnRejectedAsync
+  - Kevlar.ConcurrencyLimitOptions.QueueLimit
   langs:
   - csharp
   - vb
@@ -23,7 +23,7 @@ items:
   summary: >-
     Configuration for a concurrency limit (concurrency limiter) strategy: at most
 
-    <xref href="Kevlar.ConcurrencyLimitOptions.MaxConcurrency" data-throw-if-not-resolved="false"></xref> executions run at once, with up to <xref href="Kevlar.ConcurrencyLimitOptions.MaxQueue" data-throw-if-not-resolved="false"></xref>
+    <xref href="Kevlar.ConcurrencyLimitOptions.MaxConcurrency" data-throw-if-not-resolved="false"></xref> executions run at once, with up to <xref href="Kevlar.ConcurrencyLimitOptions.QueueLimit" data-throw-if-not-resolved="false"></xref>
 
     more waiting; anything beyond that is rejected immediately.
   remarks: >-
@@ -89,16 +89,16 @@ items:
       type: System.Int32
     content.vb: Public Property MaxConcurrency As Integer
   overload: Kevlar.ConcurrencyLimitOptions.MaxConcurrency*
-- uid: Kevlar.ConcurrencyLimitOptions.MaxQueue
-  commentId: P:Kevlar.ConcurrencyLimitOptions.MaxQueue
-  id: MaxQueue
+- uid: Kevlar.ConcurrencyLimitOptions.QueueLimit
+  commentId: P:Kevlar.ConcurrencyLimitOptions.QueueLimit
+  id: QueueLimit
   parent: Kevlar.ConcurrencyLimitOptions
   langs:
   - csharp
   - vb
-  name: MaxQueue
-  nameWithType: ConcurrencyLimitOptions.MaxQueue
-  fullName: Kevlar.ConcurrencyLimitOptions.MaxQueue
+  name: QueueLimit
+  nameWithType: ConcurrencyLimitOptions.QueueLimit
+  fullName: Kevlar.ConcurrencyLimitOptions.QueueLimit
   type: Property
   assemblies:
   - Kevlar
@@ -106,12 +106,12 @@ items:
   summary: Maximum executions allowed to wait for a slot. Default 0 (reject immediately when full).
   example: []
   syntax:
-    content: public int MaxQueue { get; set; }
+    content: public int QueueLimit { get; set; }
     parameters: []
     return:
       type: System.Int32
-    content.vb: Public Property MaxQueue As Integer
-  overload: Kevlar.ConcurrencyLimitOptions.MaxQueue*
+    content.vb: Public Property QueueLimit As Integer
+  overload: Kevlar.ConcurrencyLimitOptions.QueueLimit*
 - uid: Kevlar.ConcurrencyLimitOptions.OnRejected
   commentId: P:Kevlar.ConcurrencyLimitOptions.OnRejected
   id: OnRejected
@@ -166,13 +166,13 @@ references:
   name: MaxConcurrency
   nameWithType: ConcurrencyLimitOptions.MaxConcurrency
   fullName: Kevlar.ConcurrencyLimitOptions.MaxConcurrency
-- uid: Kevlar.ConcurrencyLimitOptions.MaxQueue
-  commentId: P:Kevlar.ConcurrencyLimitOptions.MaxQueue
+- uid: Kevlar.ConcurrencyLimitOptions.QueueLimit
+  commentId: P:Kevlar.ConcurrencyLimitOptions.QueueLimit
   isExternal: true
-  href: Kevlar.ConcurrencyLimitOptions.html#Kevlar_ConcurrencyLimitOptions_MaxQueue
-  name: MaxQueue
-  nameWithType: ConcurrencyLimitOptions.MaxQueue
-  fullName: Kevlar.ConcurrencyLimitOptions.MaxQueue
+  href: Kevlar.ConcurrencyLimitOptions.html#Kevlar_ConcurrencyLimitOptions_QueueLimit
+  name: QueueLimit
+  nameWithType: ConcurrencyLimitOptions.QueueLimit
+  fullName: Kevlar.ConcurrencyLimitOptions.QueueLimit
 - uid: Kevlar.ConcurrencyLimitOptions.OnRejected
   commentId: P:Kevlar.ConcurrencyLimitOptions.OnRejected
   isExternal: true
@@ -442,13 +442,13 @@ references:
   nameWithType.vb: Integer
   fullName.vb: Integer
   name.vb: Integer
-- uid: Kevlar.ConcurrencyLimitOptions.MaxQueue*
-  commentId: Overload:Kevlar.ConcurrencyLimitOptions.MaxQueue
+- uid: Kevlar.ConcurrencyLimitOptions.QueueLimit*
+  commentId: Overload:Kevlar.ConcurrencyLimitOptions.QueueLimit
   isExternal: true
-  href: Kevlar.ConcurrencyLimitOptions.html#Kevlar_ConcurrencyLimitOptions_MaxQueue
-  name: MaxQueue
-  nameWithType: ConcurrencyLimitOptions.MaxQueue
-  fullName: Kevlar.ConcurrencyLimitOptions.MaxQueue
+  href: Kevlar.ConcurrencyLimitOptions.html#Kevlar_ConcurrencyLimitOptions_QueueLimit
+  name: QueueLimit
+  nameWithType: ConcurrencyLimitOptions.QueueLimit
+  fullName: Kevlar.ConcurrencyLimitOptions.QueueLimit
 - uid: Kevlar.ConcurrencyLimitOptions.OnRejected*
   commentId: Overload:Kevlar.ConcurrencyLimitOptions.OnRejected
   isExternal: true

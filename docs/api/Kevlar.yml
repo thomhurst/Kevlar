@@ -35,6 +35,7 @@ items:
   - Kevlar.KevlarException
   - Kevlar.KevlarKey`1
   - Kevlar.KevlarProperties
+  - Kevlar.KevlarProxyException
   - Kevlar.Outcome`1
   - Kevlar.PartitionedShieldOptions
   - Kevlar.PartitionedShield`1
@@ -113,6 +114,13 @@ references:
   name: KevlarException
   nameWithType: KevlarException
   fullName: Kevlar.KevlarException
+- uid: Kevlar.KevlarProxyException
+  commentId: T:Kevlar.KevlarProxyException
+  isExternal: true
+  href: Kevlar.KevlarProxyException.html
+  name: KevlarProxyException
+  nameWithType: KevlarProxyException
+  fullName: Kevlar.KevlarProxyException
 - uid: Kevlar.RateLimitExceededException
   commentId: T:Kevlar.RateLimitExceededException
   isExternal: true

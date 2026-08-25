@@ -9,7 +9,7 @@ items:
   - Kevlar.Testing.StrategyKind.ConcurrencyLimit
   - Kevlar.Testing.StrategyKind.Custom
   - Kevlar.Testing.StrategyKind.Fallback
-  - Kevlar.Testing.StrategyKind.Hedging
+  - Kevlar.Testing.StrategyKind.Hedge
   - Kevlar.Testing.StrategyKind.RateLimit
   - Kevlar.Testing.StrategyKind.Retry
   - Kevlar.Testing.StrategyKind.Timeout
@@ -148,16 +148,16 @@ items:
     content: ConcurrencyLimit = 5
     return:
       type: Kevlar.Testing.StrategyKind
-- uid: Kevlar.Testing.StrategyKind.Hedging
-  commentId: F:Kevlar.Testing.StrategyKind.Hedging
-  id: Hedging
+- uid: Kevlar.Testing.StrategyKind.Hedge
+  commentId: F:Kevlar.Testing.StrategyKind.Hedge
+  id: Hedge
   parent: Kevlar.Testing.StrategyKind
   langs:
   - csharp
   - vb
-  name: Hedging
-  nameWithType: StrategyKind.Hedging
-  fullName: Kevlar.Testing.StrategyKind.Hedging
+  name: Hedge
+  nameWithType: StrategyKind.Hedge
+  fullName: Kevlar.Testing.StrategyKind.Hedge
   type: Field
   assemblies:
   - Kevlar.Testing
@@ -165,7 +165,7 @@ items:
   summary: A hedging strategy.
   example: []
   syntax:
-    content: Hedging = 6
+    content: Hedge = 6
     return:
       type: Kevlar.Testing.StrategyKind
 - uid: Kevlar.Testing.StrategyKind.Fallback

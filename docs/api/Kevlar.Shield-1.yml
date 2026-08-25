@@ -642,15 +642,15 @@ items:
   summary: Caps concurrent executions at <code class="paramref">maxConcurrency</code> with an optional wait queue.
   example: []
   syntax:
-    content: public Shield<TResult> ConcurrencyLimit(int maxConcurrency, int maxQueue = 0)
+    content: public Shield<TResult> ConcurrencyLimit(int maxConcurrency, int queueLimit = 0)
     parameters:
     - id: maxConcurrency
       type: System.Int32
-    - id: maxQueue
+    - id: queueLimit
       type: System.Int32
     return:
       type: Kevlar.Shield`1
-    content.vb: Public Function ConcurrencyLimit(maxConcurrency As Integer, maxQueue As Integer = 0) As Shield(Of TResult)
+    content.vb: Public Function ConcurrencyLimit(maxConcurrency As Integer, queueLimit As Integer = 0) As Shield(Of TResult)
   overload: Kevlar.Shield`1.ConcurrencyLimit*
   nameWithType.vb: Shield(Of TResult).ConcurrencyLimit(Integer, Integer)
   fullName.vb: Kevlar.Shield(Of TResult).ConcurrencyLimit(Integer, Integer)

@@ -435,17 +435,17 @@ items:
   summary: Appends a concurrency limit capping concurrency at <code class="paramref">maxConcurrency</code> with an optional wait queue.
   example: []
   syntax:
-    content: public static Shield ConcurrencyLimit(this Shield shield, int maxConcurrency, int maxQueue = 0)
+    content: public static Shield ConcurrencyLimit(this Shield shield, int maxConcurrency, int queueLimit = 0)
     parameters:
     - id: shield
       type: Kevlar.Shield
     - id: maxConcurrency
       type: System.Int32
-    - id: maxQueue
+    - id: queueLimit
       type: System.Int32
     return:
       type: Kevlar.Shield
-    content.vb: Public Shared Function ConcurrencyLimit(shield As Shield, maxConcurrency As Integer, maxQueue As Integer = 0) As Shield
+    content.vb: Public Shared Function ConcurrencyLimit(shield As Shield, maxConcurrency As Integer, queueLimit As Integer = 0) As Shield
   overload: Kevlar.ShieldExtensions.ConcurrencyLimit*
   nameWithType.vb: ShieldExtensions.ConcurrencyLimit(Shield, Integer, Integer)
   fullName.vb: Kevlar.ShieldExtensions.ConcurrencyLimit(Kevlar.Shield, Integer, Integer)

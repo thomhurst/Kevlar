@@ -851,15 +851,15 @@ items:
   summary: Caps concurrency. The handling clauses remain ambient for later strategies.
   example: []
   syntax:
-    content: public Shield<TResult> ConcurrencyLimit(int maxConcurrency, int maxQueue = 0)
+    content: public Shield<TResult> ConcurrencyLimit(int maxConcurrency, int queueLimit = 0)
     parameters:
     - id: maxConcurrency
       type: System.Int32
-    - id: maxQueue
+    - id: queueLimit
       type: System.Int32
     return:
       type: Kevlar.Shield{{TResult}}
-    content.vb: Public Function ConcurrencyLimit(maxConcurrency As Integer, maxQueue As Integer = 0) As Shield(Of TResult)
+    content.vb: Public Function ConcurrencyLimit(maxConcurrency As Integer, queueLimit As Integer = 0) As Shield(Of TResult)
   overload: Kevlar.ShieldBuilder`1.ConcurrencyLimit*
   nameWithType.vb: ShieldBuilder(Of TResult).ConcurrencyLimit(Integer, Integer)
   fullName.vb: Kevlar.ShieldBuilder(Of TResult).ConcurrencyLimit(Integer, Integer)
