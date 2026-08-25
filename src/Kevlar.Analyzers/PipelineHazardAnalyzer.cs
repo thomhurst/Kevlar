@@ -436,6 +436,15 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     return true;
                 }
 
+                if (TryFindPostAwaitMemberContext(
+                    invocation,
+                    context,
+                    knownTypes,
+                    out capturedContext))
+                {
+                    return true;
+                }
+
                 if (invocation.Expression is MemberAccessExpressionSyntax memberAccess
                     && context.SemanticModel.GetSymbolInfo(
                         invocation,
@@ -460,6 +469,75 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                         knownTypes,
                         out capturedContext))
                     {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        capturedContext = null!;
+        return false;
+    }
+
+    private static bool TryFindPostAwaitMemberContext(
+        InvocationExpressionSyntax invocation,
+        SyntaxNodeAnalysisContext context,
+        KnownTypes knownTypes,
+        out SyntaxNode capturedContext)
+    {
+        var symbolInfo = context.SemanticModel.GetSymbolInfo(
+            invocation,
+            context.CancellationToken);
+        var methods = symbolInfo.Symbol is IMethodSymbol method
+            ? [method]
+            : symbolInfo.CandidateSymbols.OfType<IMethodSymbol>();
+        foreach (var candidate in methods.Where(static method =>
+                     method.DeclaringSyntaxReferences.Length > 0))
+        {
+            foreach (var syntaxReference in candidate.DeclaringSyntaxReferences)
+            {
+                var declaration = syntaxReference.GetSyntax(context.CancellationToken);
+                if (GetFunctionBody(declaration) is not { } body)
+                {
+                    continue;
+                }
+
+#pragma warning disable RS1030 // Source-backed async calls may be declared in another tree.
+                var semanticModel = declaration.SyntaxTree == context.SemanticModel.SyntaxTree
+                    ? context.SemanticModel
+                    : context.SemanticModel.Compilation.GetSemanticModel(declaration.SyntaxTree);
+#pragma warning restore RS1030
+                var nodes = body.DescendantNodesAndSelf(descendIntoChildren: static node =>
+                        node is not AnonymousFunctionExpressionSyntax
+                            and not LocalFunctionStatementSyntax)
+                    .ToArray();
+                var awaits = nodes.OfType<AwaitExpressionSyntax>().ToArray();
+                if (awaits.Length == 0)
+                {
+                    continue;
+                }
+
+                var controlFlowGraph = TryCreateControlFlowGraph(
+                    body,
+                    semanticModel,
+                    context.CancellationToken);
+                foreach (var identifier in nodes.OfType<IdentifierNameSyntax>()
+                             .Where(identifier => IsRuntimeValueReference(identifier)))
+                {
+                    var type = semanticModel.GetSymbolInfo(identifier, context.CancellationToken).Symbol
+                        switch
+                        {
+                            IFieldSymbol field => field.Type,
+                            IPropertySymbol property => property.Type,
+                            _ => null,
+                        };
+                    if (ContainsEventContextReference(type, knownTypes)
+                        && awaits.Any(awaitExpression => CanReachAfterSuspension(
+                            awaitExpression,
+                            identifier,
+                            controlFlowGraph)))
+                    {
+                        capturedContext = identifier;
                         return true;
                     }
                 }

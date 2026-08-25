@@ -1138,6 +1138,19 @@ public class PipelineHazardAnalyzerTests
                 private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
             }
             """);
+        var incompatibleAsyncDiscardingBlock = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        _ = AuditAsync(item);
+                        await Task.Yield();
+                    });
+
+                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            }
+            """);
         var incompatibleTimedWait = await GetCodeFixAsync("""
             public class TestSubject
             {
@@ -1217,6 +1230,8 @@ public class PipelineHazardAnalyzerTests
         await Assert.That(incompatibleCoalescingAssignment.ChangedText).IsNull();
         await Assert.That(incompatibleDiscardingBlock.ActionCount).IsEqualTo(0);
         await Assert.That(incompatibleDiscardingBlock.ChangedText).IsNull();
+        await Assert.That(incompatibleAsyncDiscardingBlock.ActionCount).IsEqualTo(0);
+        await Assert.That(incompatibleAsyncDiscardingBlock.ChangedText).IsNull();
         await Assert.That(incompatibleTimedWait.ActionCount).IsEqualTo(0);
         await Assert.That(incompatibleTimedWait.ChangedText).IsNull();
         await Assert.That(incompatibleCollectionAdd.ActionCount).IsEqualTo(0);
@@ -1394,6 +1409,36 @@ public class PipelineHazardAnalyzerTests
             """);
 
         await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Unobserved_Async_Instance_Method_Bodies()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = item;
+                        _ = AuditStoredAsync();
+                    });
+
+                private async Task AuditStoredAsync()
+                {
+                    await Task.Yield();
+                    Console.WriteLine(_event.Context.ShieldName);
+                }
+            }
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
     }
 
     [Test]

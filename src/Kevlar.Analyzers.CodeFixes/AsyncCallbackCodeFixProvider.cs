@@ -54,6 +54,12 @@ internal sealed class AsyncCallbackCodeFixProvider : CodeFixProvider
             return;
         }
 
+        if (callback.Body is BlockSyntax block
+            && ContainsUnawaitedTaskInvocation(block, semanticModel!, context.CancellationToken))
+        {
+            return;
+        }
+
         if (callback is LambdaExpressionSyntax
             {
                 AsyncKeyword.RawKind: 0,
@@ -86,6 +92,28 @@ internal sealed class AsyncCallbackCodeFixProvider : CodeFixProvider
                 Title),
             context.Diagnostics);
     }
+
+    private static bool ContainsUnawaitedTaskInvocation(
+        BlockSyntax block,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken) =>
+        block.DescendantNodes(descendIntoChildren: static node =>
+                node is not AnonymousFunctionExpressionSyntax
+                    and not LocalFunctionStatementSyntax)
+            .OfType<InvocationExpressionSyntax>()
+            .Any(invocation => IsTaskLike(
+                    semanticModel.GetTypeInfo(invocation, cancellationToken).Type)
+                && !invocation.Ancestors()
+                    .TakeWhile(static ancestor => ancestor is not StatementSyntax)
+                    .Any(static ancestor => ancestor is AwaitExpressionSyntax));
+
+    private static bool IsTaskLike(ITypeSymbol? type) =>
+        type is INamedTypeSymbol named
+        && named.OriginalDefinition.ToDisplayString() is
+            "System.Threading.Tasks.Task"
+                or "System.Threading.Tasks.Task<TResult>"
+                or "System.Threading.Tasks.ValueTask"
+                or "System.Threading.Tasks.ValueTask<TResult>";
 
     private static bool IsAlreadyAssigned(
         AssignmentExpressionSyntax assignment,
