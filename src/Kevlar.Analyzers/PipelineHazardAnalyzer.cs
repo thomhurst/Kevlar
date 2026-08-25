@@ -2018,6 +2018,25 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         KnownTypes knownTypes,
         out string? memberName)
     {
+        var method = Normalize(invocation.TargetMethod);
+        if (!IsKnownAsyncStrategyFactory(method, knownTypes))
+        {
+            memberName = null;
+            return false;
+        }
+
+        if (method.Name == "Fallback")
+        {
+            memberName = "Fallback recovery delegate";
+            return true;
+        }
+
+        if (method.Name == "UseRateLimiter")
+        {
+            memberName = "UseRateLimiter acquisition";
+            return true;
+        }
+
         foreach (var argument in invocation.Arguments)
         {
             if (argument.Parameter?.Name == "configure"
@@ -2030,6 +2049,10 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         memberName = null;
         return false;
     }
+
+    private static bool IsKnownAsyncStrategyFactory(IMethodSymbol method, KnownTypes knownTypes) =>
+        IsKevlarFluentMethod(method, knownTypes)
+        || (method.Name == "Behavior" && knownTypes.IsChaosShield(method.ContainingType));
 
     private static bool TryFindAsyncConfiguration(
         IOperation operation,
@@ -2904,6 +2927,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         private readonly INamedTypeSymbol? _circuitBreakerOptionsOfT;
         private readonly INamedTypeSymbol? _rateLimitOptions;
         private readonly INamedTypeSymbol? _concurrencyLimitOptions;
+        private readonly INamedTypeSymbol? _chaosShield;
         private readonly INamedTypeSymbol? _chaosBehaviorOptions;
         private readonly INamedTypeSymbol? _rateLimiterAdapterOptions;
 
@@ -2937,8 +2961,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             _circuitBreakerOptionsOfT = kevlarAssembly?.GetTypeByMetadataName("Kevlar.CircuitBreakerOptions`1");
             _rateLimitOptions = kevlarAssembly?.GetTypeByMetadataName("Kevlar.RateLimitOptions");
             _concurrencyLimitOptions = kevlarAssembly?.GetTypeByMetadataName("Kevlar.ConcurrencyLimitOptions");
-            var chaosShield = compilation.GetTypeByMetadataName("Kevlar.Chaos.ChaosShield");
-            _chaosBehaviorOptions = chaosShield?.ContainingAssembly.GetTypeByMetadataName(
+            _chaosShield = compilation.GetTypeByMetadataName("Kevlar.Chaos.ChaosShield");
+            _chaosBehaviorOptions = _chaosShield?.ContainingAssembly.GetTypeByMetadataName(
                 "Kevlar.Chaos.ChaosBehaviorOptions");
             _rateLimiterAdapterOptions = _shieldRateLimiterExtensions?.ContainingAssembly.GetTypeByMetadataName(
                 "Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions");
@@ -2965,6 +2989,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         internal bool IsShieldRateLimiterExtensions(INamedTypeSymbol type) =>
             Is(type, _shieldRateLimiterExtensions);
+
+        internal bool IsChaosShield(INamedTypeSymbol type) => Is(type, _chaosShield);
 
         internal bool IsPartitionedShield(INamedTypeSymbol type) =>
             Is(type, _partitionedShield) || Is(type, _partitionedShieldOfT);

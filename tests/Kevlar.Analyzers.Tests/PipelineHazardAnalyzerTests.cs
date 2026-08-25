@@ -115,7 +115,7 @@ public class PipelineHazardAnalyzerTests
             "await Shield.For<int>().ConcurrencyLimit(2).ExecuteOutcomeAsync(1, (state, _) => new ValueTask<int>(state));",
         };
 
-        await AssertEachAsync(cases, "KEV004");
+        await AssertEachAsync(cases, "KEV004", "KEV012");
     }
 
     [Test]
@@ -407,7 +407,7 @@ public class PipelineHazardAnalyzerTests
             "_ = await Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteOutcomeAsync(static _ => Task.FromResult(1));",
         };
 
-        await AssertEachAsync(cases, "KEV005");
+        await AssertEachAsync(cases, "KEV005", "KEV012");
     }
 
     [Test]
@@ -423,7 +423,7 @@ public class PipelineHazardAnalyzerTests
             "var fallback = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask); _ = Shield.Compose(Shield.Empty, fallback).Execute(static _ => 1);",
         };
 
-        await AssertEachAsync(cases, "KEV005");
+        await AssertEachAsync(cases, "KEV005", "KEV012");
     }
 
     [Test]
@@ -433,7 +433,7 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask)" +
             ".UseRateLimiter((System.Threading.RateLimiting.RateLimiter)null!).Execute(static _ => 1);");
 
-        await AssertRuleAsync(Without(diagnostics, "KEV004"), "KEV005");
+        await AssertRuleAsync(Without(diagnostics, "KEV004", "KEV012"), "KEV005");
     }
 
     [Test]
@@ -457,7 +457,7 @@ public class PipelineHazardAnalyzerTests
         foreach (var body in cases)
         {
             var diagnostics = await AnalyzeBodyAsync(body);
-            await Assert.That(diagnostics).IsEmpty();
+            await Assert.That(Without(diagnostics, "KEV012")).IsEmpty();
         }
     }
 
@@ -472,15 +472,16 @@ public class PipelineHazardAnalyzerTests
             #pragma warning restore KEV005
             """);
 
-        await Assert.That(diagnostics.Length).IsEqualTo(1);
-        var diagnostic = diagnostics[0];
+        var kev005Diagnostics = diagnostics.Where(static diagnostic => diagnostic.Id == "KEV005").ToArray();
+        await Assert.That(kev005Diagnostics.Length).IsEqualTo(1);
+        var diagnostic = kev005Diagnostics[0];
         await Assert.That(diagnostic.Id).IsEqualTo("KEV005");
         await Assert.That(diagnostic.Severity).IsEqualTo(DiagnosticSeverity.Warning);
         await Assert.That(diagnostic.GetMessage()).IsEqualTo(
             "Fallback on a non-generic Shield applies only to void executions. " +
             "For executions that return a value, build a result-aware shield with " +
             "Shield.For<T>() and use its Fallback overloads.");
-        await Assert.That(suppressed).IsEmpty();
+        await Assert.That(Without(suppressed, "KEV012")).IsEmpty();
     }
 
     [Test]
@@ -1323,6 +1324,8 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.Retry(options => options.OnRetryAsync = static _ => ValueTask.CompletedTask).ExecuteWithContext(static _ => 1);",
             "_ = Shield.Retry(options => options.OnRetryAsync = static _ => ValueTask.CompletedTask).ExecuteOutcome(static _ => 1);",
             "_ = Shield.Empty.UseRateLimiter((System.Threading.RateLimiting.RateLimiter)null!, options => options.OnRejectedAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
+            "_ = Shield.For<int>().Fallback(static _ => ValueTask.FromResult(0)).Execute(_ => 1);",
+            "_ = Shield.Empty.UseRateLimiter((System.Threading.RateLimiting.RateLimiter)null!).Execute(_ => 1);",
             "_ = ChaosShield.Behavior(options => { options.Enabled = true; options.Behavior = static _ => ValueTask.CompletedTask; }).Execute(_ => 1);",
             "_ = ChaosShield.Behavior(options => { options.Enabled = false; if (DateTime.UtcNow.Ticks > 0) { options.Enabled = true; } options.Behavior = static _ => ValueTask.CompletedTask; }).Execute(_ => 1);",
             "_ = Shield.Retry(options => { var alias = options; alias.OnRetryAsync = static _ => ValueTask.CompletedTask; }).Execute(_ => 1);",
@@ -1477,6 +1480,32 @@ public class PipelineHazardAnalyzerTests
                         .Custom(options => options.OnRetryAsync = static _ => ValueTask.CompletedTask)
                         .Execute(_ => 1);
                 }
+            }
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV012_Ignores_Known_Options_On_Custom_Fluent_Extensions()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            namespace Custom;
+
+            public static class InspectionExtensions
+            {
+                public static Shield Inspect(this Shield shield, Action<Kevlar.RetryOptions> configure)
+                {
+                    configure(new Kevlar.RetryOptions());
+                    return shield;
+                }
+            }
+
+            public sealed class TestSubject
+            {
+                public int Run() => Shield.Empty
+                    .Inspect(options => options.OnRetryAsync = static _ => ValueTask.CompletedTask)
+                    .Execute(_ => 1);
             }
             """);
 

@@ -371,9 +371,13 @@ var value = shield.Execute(static _ => 42);
 ```
 
 The rule recognizes async property assignments in a configuration lambda on the same fluent chain.
-It does not guess through fields, parameters, local delegates, or opaque factories; the runtime check
-still protects those cases. `ExecuteAsync` and configurations containing only synchronous callbacks
-remain clean.
+It also recognizes `Fallback` recovery delegates and `UseRateLimiter` adapters, whose runtime
+contracts are async-only. Configuration lambdas are inspected only on known Kevlar strategy
+factories, so a custom extension that merely inspects genuine Kevlar options remains clean.
+
+The analyzer does not guess through fields, parameters, local delegates, or opaque factories; the
+runtime check still protects those cases. `ExecuteAsync` and configurations containing only
+synchronous callbacks remain clean.
 
 ## Suppression
 
