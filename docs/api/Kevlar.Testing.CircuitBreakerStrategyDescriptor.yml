@@ -34,6 +34,7 @@ items:
   inheritedMembers:
   - Kevlar.Testing.StrategyDescriptor.Kind
   - Kevlar.Testing.StrategyDescriptor.Description
+  - Kevlar.Testing.StrategyDescriptor.HandlingClause
   - System.Object.GetType
   - System.Object.ToString
   - System.Object.Equals(System.Object)
@@ -287,6 +288,14 @@ references:
   name: Description
   nameWithType: StrategyDescriptor.Description
   fullName: Kevlar.Testing.StrategyDescriptor.Description
+- uid: Kevlar.Testing.StrategyDescriptor.HandlingClause
+  commentId: P:Kevlar.Testing.StrategyDescriptor.HandlingClause
+  parent: Kevlar.Testing.StrategyDescriptor
+  isExternal: true
+  href: Kevlar.Testing.StrategyDescriptor.html#Kevlar_Testing_StrategyDescriptor_HandlingClause
+  name: HandlingClause
+  nameWithType: StrategyDescriptor.HandlingClause
+  fullName: Kevlar.Testing.StrategyDescriptor.HandlingClause
 - uid: System.Object.GetType
   commentId: M:System.Object.GetType
   parent: System.Object

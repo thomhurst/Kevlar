@@ -16,6 +16,7 @@ items:
   - Kevlar.Testing.ExecutionProbeSnapshot
   - Kevlar.Testing.FakeTimeProviderExtensions
   - Kevlar.Testing.FallbackStrategyDescriptor
+  - Kevlar.Testing.HandlingClauseDescriptor
   - Kevlar.Testing.HedgeStrategyDescriptor
   - Kevlar.Testing.MetricRecord
   - Kevlar.Testing.RateLimitStateSnapshot
@@ -130,6 +131,14 @@ references:
   name: FallbackStrategyDescriptor
   nameWithType: FallbackStrategyDescriptor
   fullName: Kevlar.Testing.FallbackStrategyDescriptor
+- uid: Kevlar.Testing.HandlingClauseDescriptor
+  commentId: T:Kevlar.Testing.HandlingClauseDescriptor
+  parent: Kevlar.Testing
+  isExternal: true
+  href: Kevlar.Testing.HandlingClauseDescriptor.html
+  name: HandlingClauseDescriptor
+  nameWithType: HandlingClauseDescriptor
+  fullName: Kevlar.Testing.HandlingClauseDescriptor
 - uid: Kevlar.Testing.HedgeStrategyDescriptor
   commentId: T:Kevlar.Testing.HedgeStrategyDescriptor
   isExternal: true

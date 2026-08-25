@@ -45,8 +45,10 @@ items:
   - Kevlar.Shield`1.Use(System.Func{Kevlar.HandlingClause,Kevlar.Strategy})
   - Kevlar.Shield`1.When(System.Func{System.Exception,System.Boolean})
   - Kevlar.Shield`1.WhenAnyError
+  - Kevlar.Shield`1.WhenContext(System.Func{Kevlar.HandlingEvent{`0},System.Boolean})
   - Kevlar.Shield`1.WhenResult(System.Func{`0,System.Boolean})
   - Kevlar.Shield`1.WhenResult(`0)
+  - Kevlar.Shield`1.WhenResultContext(System.Func{Kevlar.HandlingEvent{`0},System.Boolean})
   - Kevlar.Shield`1.WhenResultIsDefault
   - Kevlar.Shield`1.When``1
   - Kevlar.Shield`1.When``1(System.Func{``0,System.Boolean})
@@ -181,6 +183,34 @@ items:
   nameWithType.vb: Shield(Of TResult).When(Func(Of Exception, Boolean))
   fullName.vb: Kevlar.Shield(Of TResult).When(System.Func(Of System.Exception, Boolean))
   name.vb: When(Func(Of Exception, Boolean))
+- uid: Kevlar.Shield`1.WhenContext(System.Func{Kevlar.HandlingEvent{`0},System.Boolean})
+  commentId: M:Kevlar.Shield`1.WhenContext(System.Func{Kevlar.HandlingEvent{`0},System.Boolean})
+  id: WhenContext(System.Func{Kevlar.HandlingEvent{`0},System.Boolean})
+  parent: Kevlar.Shield`1
+  langs:
+  - csharp
+  - vb
+  name: WhenContext(Func<HandlingEvent<TResult>, bool>)
+  nameWithType: Shield<TResult>.WhenContext(Func<HandlingEvent<TResult>, bool>)
+  fullName: Kevlar.Shield<TResult>.WhenContext(System.Func<Kevlar.HandlingEvent<TResult>, bool>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Starts a handling clause using the typed outcome and active execution context.
+  example: []
+  syntax:
+    content: public ShieldBuilder<TResult> WhenContext(Func<HandlingEvent<TResult>, bool> predicate)
+    parameters:
+    - id: predicate
+      type: System.Func{Kevlar.HandlingEvent{{TResult}},System.Boolean}
+    return:
+      type: Kevlar.ShieldBuilder{{TResult}}
+    content.vb: Public Function WhenContext(predicate As Func(Of HandlingEvent(Of TResult), Boolean)) As ShieldBuilder(Of TResult)
+  overload: Kevlar.Shield`1.WhenContext*
+  nameWithType.vb: Shield(Of TResult).WhenContext(Func(Of HandlingEvent(Of TResult), Boolean))
+  fullName.vb: Kevlar.Shield(Of TResult).WhenContext(System.Func(Of Kevlar.HandlingEvent(Of TResult), Boolean))
+  name.vb: WhenContext(Func(Of HandlingEvent(Of TResult), Boolean))
 - uid: Kevlar.Shield`1.WhenResult(System.Func{`0,System.Boolean})
   commentId: M:Kevlar.Shield`1.WhenResult(System.Func{`0,System.Boolean})
   id: WhenResult(System.Func{`0,System.Boolean})
@@ -209,6 +239,34 @@ items:
   nameWithType.vb: Shield(Of TResult).WhenResult(Func(Of TResult, Boolean))
   fullName.vb: Kevlar.Shield(Of TResult).WhenResult(System.Func(Of TResult, Boolean))
   name.vb: WhenResult(Func(Of TResult, Boolean))
+- uid: Kevlar.Shield`1.WhenResultContext(System.Func{Kevlar.HandlingEvent{`0},System.Boolean})
+  commentId: M:Kevlar.Shield`1.WhenResultContext(System.Func{Kevlar.HandlingEvent{`0},System.Boolean})
+  id: WhenResultContext(System.Func{Kevlar.HandlingEvent{`0},System.Boolean})
+  parent: Kevlar.Shield`1
+  langs:
+  - csharp
+  - vb
+  name: WhenResultContext(Func<HandlingEvent<TResult>, bool>)
+  nameWithType: Shield<TResult>.WhenResultContext(Func<HandlingEvent<TResult>, bool>)
+  fullName: Kevlar.Shield<TResult>.WhenResultContext(System.Func<Kevlar.HandlingEvent<TResult>, bool>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Starts a result handling clause using the typed outcome and active execution context.
+  example: []
+  syntax:
+    content: public ShieldBuilder<TResult> WhenResultContext(Func<HandlingEvent<TResult>, bool> predicate)
+    parameters:
+    - id: predicate
+      type: System.Func{Kevlar.HandlingEvent{{TResult}},System.Boolean}
+    return:
+      type: Kevlar.ShieldBuilder{{TResult}}
+    content.vb: Public Function WhenResultContext(predicate As Func(Of HandlingEvent(Of TResult), Boolean)) As ShieldBuilder(Of TResult)
+  overload: Kevlar.Shield`1.WhenResultContext*
+  nameWithType.vb: Shield(Of TResult).WhenResultContext(Func(Of HandlingEvent(Of TResult), Boolean))
+  fullName.vb: Kevlar.Shield(Of TResult).WhenResultContext(System.Func(Of Kevlar.HandlingEvent(Of TResult), Boolean))
+  name.vb: WhenResultContext(Func(Of HandlingEvent(Of TResult), Boolean))
 - uid: Kevlar.Shield`1.WhenResult(`0)
   commentId: M:Kevlar.Shield`1.WhenResult(`0)
   id: WhenResult(`0)
@@ -3457,6 +3515,70 @@ references:
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.boolean
   - name: )
+- uid: Kevlar.Shield`1.WhenContext*
+  commentId: Overload:Kevlar.Shield`1.WhenContext
+  isExternal: true
+  href: Kevlar.Shield-1.html#Kevlar_Shield_1_WhenContext_System_Func_Kevlar_HandlingEvent__0__System_Boolean__
+  name: WhenContext
+  nameWithType: Shield<TResult>.WhenContext
+  fullName: Kevlar.Shield<TResult>.WhenContext
+  nameWithType.vb: Shield(Of TResult).WhenContext
+  fullName.vb: Kevlar.Shield(Of TResult).WhenContext
+- uid: System.Func{Kevlar.HandlingEvent{{TResult}},System.Boolean}
+  commentId: T:System.Func{Kevlar.HandlingEvent{`0},System.Boolean}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<HandlingEvent<TResult>, bool>
+  nameWithType: Func<HandlingEvent<TResult>, bool>
+  fullName: System.Func<Kevlar.HandlingEvent<TResult>, bool>
+  nameWithType.vb: Func(Of HandlingEvent(Of TResult), Boolean)
+  fullName.vb: System.Func(Of Kevlar.HandlingEvent(Of TResult), Boolean)
+  name.vb: Func(Of HandlingEvent(Of TResult), Boolean)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.HandlingEvent`1
+    name: HandlingEvent
+    isExternal: true
+    href: Kevlar.HandlingEvent-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: bool
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.HandlingEvent`1
+    name: HandlingEvent
+    isExternal: true
+    href: Kevlar.HandlingEvent-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: Boolean
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: )
 - uid: Kevlar.Shield`1.WhenResult*
   commentId: Overload:Kevlar.Shield`1.WhenResult
   isExternal: true
@@ -3507,6 +3629,15 @@ references:
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.boolean
   - name: )
+- uid: Kevlar.Shield`1.WhenResultContext*
+  commentId: Overload:Kevlar.Shield`1.WhenResultContext
+  isExternal: true
+  href: Kevlar.Shield-1.html#Kevlar_Shield_1_WhenResultContext_System_Func_Kevlar_HandlingEvent__0__System_Boolean__
+  name: WhenResultContext
+  nameWithType: Shield<TResult>.WhenResultContext
+  fullName: Kevlar.Shield<TResult>.WhenResultContext
+  nameWithType.vb: Shield(Of TResult).WhenResultContext
+  fullName.vb: Kevlar.Shield(Of TResult).WhenResultContext
 - uid: '{TResult}'
   commentId: '!:TResult'
   definition: TResult

@@ -1,32 +1,29 @@
 ### YamlMime:ManagedReference
 items:
-- uid: Kevlar.HandlingClause
-  commentId: T:Kevlar.HandlingClause
-  id: HandlingClause
+- uid: Kevlar.HandlingEvent
+  commentId: T:Kevlar.HandlingEvent
+  id: HandlingEvent
   parent: Kevlar
   children:
-  - Kevlar.HandlingClause.Default
-  - Kevlar.HandlingClause.IsContextAware
-  - Kevlar.HandlingClause.ShouldHandle``1(Kevlar.Outcome{``0}@)
-  - Kevlar.HandlingClause.ShouldHandle``1(Kevlar.Outcome{``0}@,Kevlar.KevlarContext,System.Int32,System.Int32)
+  - Kevlar.HandlingEvent.Attempt
+  - Kevlar.HandlingEvent.Context
+  - Kevlar.HandlingEvent.Exception
+  - Kevlar.HandlingEvent.StrategyIndex
   langs:
   - csharp
   - vb
-  name: HandlingClause
-  nameWithType: HandlingClause
-  fullName: Kevlar.HandlingClause
+  name: HandlingEvent
+  nameWithType: HandlingEvent
+  fullName: Kevlar.HandlingEvent
   type: Struct
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: >-
-    Decides whether an outcome is a handled failure. Custom reactive strategies receive the
-
-    active clause through a <code>Use</code> factory and should consult it instead of duplicating filters.
+  summary: Context supplied to an exception handling predicate.
   example: []
   syntax:
-    content: public readonly struct HandlingClause
-    content.vb: Public Structure HandlingClause
+    content: public readonly struct HandlingEvent
+    content.vb: Public Structure HandlingEvent
   inheritedMembers:
   - System.ValueType.Equals(System.Object)
   - System.ValueType.GetHashCode
@@ -34,121 +31,98 @@ items:
   - System.Object.GetType
   - System.Object.Equals(System.Object,System.Object)
   - System.Object.ReferenceEquals(System.Object,System.Object)
-- uid: Kevlar.HandlingClause.ShouldHandle``1(Kevlar.Outcome{``0}@)
-  commentId: M:Kevlar.HandlingClause.ShouldHandle``1(Kevlar.Outcome{`0}@)
-  id: ShouldHandle``1(Kevlar.Outcome{``0}@)
-  parent: Kevlar.HandlingClause
+- uid: Kevlar.HandlingEvent.Exception
+  commentId: P:Kevlar.HandlingEvent.Exception
+  id: Exception
+  parent: Kevlar.HandlingEvent
   langs:
   - csharp
   - vb
-  name: ShouldHandle<T>(in Outcome<T>)
-  nameWithType: HandlingClause.ShouldHandle<T>(in Outcome<T>)
-  fullName: Kevlar.HandlingClause.ShouldHandle<T>(in Kevlar.Outcome<T>)
-  type: Method
+  name: Exception
+  nameWithType: HandlingEvent.Exception
+  fullName: Kevlar.HandlingEvent.Exception
+  type: Property
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Returns whether <code class="paramref">outcome</code> is a handled failure.
+  summary: The exception being classified.
   example: []
   syntax:
-    content: public bool ShouldHandle<T>(in Outcome<T> outcome)
-    parameters:
-    - id: outcome
-      type: Kevlar.Outcome{{T}}
-    typeParameters:
-    - id: T
+    content: public Exception Exception { get; }
+    parameters: []
     return:
-      type: System.Boolean
-    content.vb: Public Function ShouldHandle(Of T)(outcome As Outcome(Of T)) As Boolean
-  overload: Kevlar.HandlingClause.ShouldHandle*
-  nameWithType.vb: HandlingClause.ShouldHandle(Of T)(Outcome(Of T))
-  fullName.vb: Kevlar.HandlingClause.ShouldHandle(Of T)(Kevlar.Outcome(Of T))
-  name.vb: ShouldHandle(Of T)(Outcome(Of T))
-- uid: Kevlar.HandlingClause.ShouldHandle``1(Kevlar.Outcome{``0}@,Kevlar.KevlarContext,System.Int32,System.Int32)
-  commentId: M:Kevlar.HandlingClause.ShouldHandle``1(Kevlar.Outcome{`0}@,Kevlar.KevlarContext,System.Int32,System.Int32)
-  id: ShouldHandle``1(Kevlar.Outcome{``0}@,Kevlar.KevlarContext,System.Int32,System.Int32)
-  parent: Kevlar.HandlingClause
+      type: System.Exception
+    content.vb: Public ReadOnly Property Exception As Exception
+  overload: Kevlar.HandlingEvent.Exception*
+- uid: Kevlar.HandlingEvent.Context
+  commentId: P:Kevlar.HandlingEvent.Context
+  id: Context
+  parent: Kevlar.HandlingEvent
   langs:
   - csharp
   - vb
-  name: ShouldHandle<T>(in Outcome<T>, KevlarContext, int, int)
-  nameWithType: HandlingClause.ShouldHandle<T>(in Outcome<T>, KevlarContext, int, int)
-  fullName: Kevlar.HandlingClause.ShouldHandle<T>(in Kevlar.Outcome<T>, Kevlar.KevlarContext, int, int)
-  type: Method
+  name: Context
+  nameWithType: HandlingEvent.Context
+  fullName: Kevlar.HandlingEvent.Context
+  type: Property
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Returns whether an outcome is handled for the active execution and strategy.
+  summary: The active execution context. Do not retain this pooled object.
   example: []
   syntax:
-    content: public bool ShouldHandle<T>(in Outcome<T> outcome, KevlarContext context, int attempt = 0, int strategyIndex = -1)
-    parameters:
-    - id: outcome
-      type: Kevlar.Outcome{{T}}
-    - id: context
+    content: public KevlarContext Context { get; }
+    parameters: []
+    return:
       type: Kevlar.KevlarContext
-    - id: attempt
-      type: System.Int32
-    - id: strategyIndex
-      type: System.Int32
-    typeParameters:
-    - id: T
-    return:
-      type: System.Boolean
-    content.vb: Public Function ShouldHandle(Of T)(outcome As Outcome(Of T), context As KevlarContext, attempt As Integer = 0, strategyIndex As Integer = -1) As Boolean
-  overload: Kevlar.HandlingClause.ShouldHandle*
-  nameWithType.vb: HandlingClause.ShouldHandle(Of T)(Outcome(Of T), KevlarContext, Integer, Integer)
-  fullName.vb: Kevlar.HandlingClause.ShouldHandle(Of T)(Kevlar.Outcome(Of T), Kevlar.KevlarContext, Integer, Integer)
-  name.vb: ShouldHandle(Of T)(Outcome(Of T), KevlarContext, Integer, Integer)
-- uid: Kevlar.HandlingClause.Default
-  commentId: P:Kevlar.HandlingClause.Default
-  id: Default
-  parent: Kevlar.HandlingClause
+    content.vb: Public ReadOnly Property Context As KevlarContext
+  overload: Kevlar.HandlingEvent.Context*
+- uid: Kevlar.HandlingEvent.Attempt
+  commentId: P:Kevlar.HandlingEvent.Attempt
+  id: Attempt
+  parent: Kevlar.HandlingEvent
   langs:
   - csharp
   - vb
-  name: Default
-  nameWithType: HandlingClause.Default
-  fullName: Kevlar.HandlingClause.Default
+  name: Attempt
+  nameWithType: HandlingEvent.Attempt
+  fullName: Kevlar.HandlingEvent.Attempt
   type: Property
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: >-
-    The default handling clause: ordinary errors, excluding cancellation, Kevlar fail-fast
-
-    rejections, and fatal runtime exceptions.
+  summary: The zero-based attempt number for retry and hedging; zero for other strategies.
   example: []
   syntax:
-    content: public static HandlingClause Default { get; }
+    content: public int Attempt { get; }
     parameters: []
     return:
-      type: Kevlar.HandlingClause
-    content.vb: Public Shared ReadOnly Property [Default] As HandlingClause
-  overload: Kevlar.HandlingClause.Default*
-- uid: Kevlar.HandlingClause.IsContextAware
-  commentId: P:Kevlar.HandlingClause.IsContextAware
-  id: IsContextAware
-  parent: Kevlar.HandlingClause
+      type: System.Int32
+    content.vb: Public ReadOnly Property Attempt As Integer
+  overload: Kevlar.HandlingEvent.Attempt*
+- uid: Kevlar.HandlingEvent.StrategyIndex
+  commentId: P:Kevlar.HandlingEvent.StrategyIndex
+  id: StrategyIndex
+  parent: Kevlar.HandlingEvent
   langs:
   - csharp
   - vb
-  name: IsContextAware
-  nameWithType: HandlingClause.IsContextAware
-  fullName: Kevlar.HandlingClause.IsContextAware
+  name: StrategyIndex
+  nameWithType: HandlingEvent.StrategyIndex
+  fullName: Kevlar.HandlingEvent.StrategyIndex
   type: Property
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Whether this clause consults execution or strategy context.
+  summary: The zero-based index of the strategy evaluating the outcome.
   example: []
   syntax:
-    content: public bool IsContextAware { get; }
+    content: public int StrategyIndex { get; }
     parameters: []
     return:
-      type: System.Boolean
-    content.vb: Public ReadOnly Property IsContextAware As Boolean
-  overload: Kevlar.HandlingClause.IsContextAware*
+      type: System.Int32
+    content.vb: Public ReadOnly Property StrategyIndex As Integer
+  overload: Kevlar.HandlingEvent.StrategyIndex*
 references:
 - uid: Kevlar
   commentId: N:Kevlar
@@ -374,82 +348,28 @@ references:
   name: System
   nameWithType: System
   fullName: System
-- uid: Kevlar.HandlingClause.ShouldHandle*
-  commentId: Overload:Kevlar.HandlingClause.ShouldHandle
+- uid: Kevlar.HandlingEvent.Exception*
+  commentId: Overload:Kevlar.HandlingEvent.Exception
   isExternal: true
-  href: Kevlar.HandlingClause.html#Kevlar_HandlingClause_ShouldHandle__1_Kevlar_Outcome___0___
-  name: ShouldHandle
-  nameWithType: HandlingClause.ShouldHandle
-  fullName: Kevlar.HandlingClause.ShouldHandle
-- uid: Kevlar.Outcome{{T}}
-  commentId: T:Kevlar.Outcome{`0}
-  parent: Kevlar
-  definition: Kevlar.Outcome`1
-  href: Kevlar.Outcome-1.html
-  name: Outcome<T>
-  nameWithType: Outcome<T>
-  fullName: Kevlar.Outcome<T>
-  nameWithType.vb: Outcome(Of T)
-  fullName.vb: Kevlar.Outcome(Of T)
-  name.vb: Outcome(Of T)
-  spec.csharp:
-  - uid: Kevlar.Outcome`1
-    name: Outcome
-    isExternal: true
-    href: Kevlar.Outcome-1.html
-  - name: <
-  - name: T
-  - name: '>'
-  spec.vb:
-  - uid: Kevlar.Outcome`1
-    name: Outcome
-    isExternal: true
-    href: Kevlar.Outcome-1.html
-  - name: (
-  - name: Of
-  - name: " "
-  - name: T
-  - name: )
-- uid: System.Boolean
-  commentId: T:System.Boolean
+  href: Kevlar.HandlingEvent.html#Kevlar_HandlingEvent_Exception
+  name: Exception
+  nameWithType: HandlingEvent.Exception
+  fullName: Kevlar.HandlingEvent.Exception
+- uid: System.Exception
+  commentId: T:System.Exception
   parent: System
   isExternal: true
-  href: https://learn.microsoft.com/dotnet/api/system.boolean
-  name: bool
-  nameWithType: bool
-  fullName: bool
-  nameWithType.vb: Boolean
-  fullName.vb: Boolean
-  name.vb: Boolean
-- uid: Kevlar.Outcome`1
-  commentId: T:Kevlar.Outcome`1
-  parent: Kevlar
+  href: https://learn.microsoft.com/dotnet/api/system.exception
+  name: Exception
+  nameWithType: Exception
+  fullName: System.Exception
+- uid: Kevlar.HandlingEvent.Context*
+  commentId: Overload:Kevlar.HandlingEvent.Context
   isExternal: true
-  href: Kevlar.Outcome-1.html
-  name: Outcome<T>
-  nameWithType: Outcome<T>
-  fullName: Kevlar.Outcome<T>
-  nameWithType.vb: Outcome(Of T)
-  fullName.vb: Kevlar.Outcome(Of T)
-  name.vb: Outcome(Of T)
-  spec.csharp:
-  - uid: Kevlar.Outcome`1
-    name: Outcome
-    isExternal: true
-    href: Kevlar.Outcome-1.html
-  - name: <
-  - name: T
-  - name: '>'
-  spec.vb:
-  - uid: Kevlar.Outcome`1
-    name: Outcome
-    isExternal: true
-    href: Kevlar.Outcome-1.html
-  - name: (
-  - name: Of
-  - name: " "
-  - name: T
-  - name: )
+  href: Kevlar.HandlingEvent.html#Kevlar_HandlingEvent_Context
+  name: Context
+  nameWithType: HandlingEvent.Context
+  fullName: Kevlar.HandlingEvent.Context
 - uid: Kevlar.KevlarContext
   commentId: T:Kevlar.KevlarContext
   parent: Kevlar
@@ -458,6 +378,13 @@ references:
   name: KevlarContext
   nameWithType: KevlarContext
   fullName: Kevlar.KevlarContext
+- uid: Kevlar.HandlingEvent.Attempt*
+  commentId: Overload:Kevlar.HandlingEvent.Attempt
+  isExternal: true
+  href: Kevlar.HandlingEvent.html#Kevlar_HandlingEvent_Attempt
+  name: Attempt
+  nameWithType: HandlingEvent.Attempt
+  fullName: Kevlar.HandlingEvent.Attempt
 - uid: System.Int32
   commentId: T:System.Int32
   parent: System
@@ -469,25 +396,10 @@ references:
   nameWithType.vb: Integer
   fullName.vb: Integer
   name.vb: Integer
-- uid: Kevlar.HandlingClause.Default*
-  commentId: Overload:Kevlar.HandlingClause.Default
+- uid: Kevlar.HandlingEvent.StrategyIndex*
+  commentId: Overload:Kevlar.HandlingEvent.StrategyIndex
   isExternal: true
-  href: Kevlar.HandlingClause.html#Kevlar_HandlingClause_Default
-  name: Default
-  nameWithType: HandlingClause.Default
-  fullName: Kevlar.HandlingClause.Default
-- uid: Kevlar.HandlingClause
-  commentId: T:Kevlar.HandlingClause
-  parent: Kevlar
-  isExternal: true
-  href: Kevlar.HandlingClause.html
-  name: HandlingClause
-  nameWithType: HandlingClause
-  fullName: Kevlar.HandlingClause
-- uid: Kevlar.HandlingClause.IsContextAware*
-  commentId: Overload:Kevlar.HandlingClause.IsContextAware
-  isExternal: true
-  href: Kevlar.HandlingClause.html#Kevlar_HandlingClause_IsContextAware
-  name: IsContextAware
-  nameWithType: HandlingClause.IsContextAware
-  fullName: Kevlar.HandlingClause.IsContextAware
+  href: Kevlar.HandlingEvent.html#Kevlar_HandlingEvent_StrategyIndex
+  name: StrategyIndex
+  nameWithType: HandlingEvent.StrategyIndex
+  fullName: Kevlar.HandlingEvent.StrategyIndex

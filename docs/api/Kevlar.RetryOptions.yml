@@ -10,6 +10,7 @@ items:
   - Kevlar.RetryOptions.DelayGenerator
   - Kevlar.RetryOptions.DelayGeneratorAsync
   - Kevlar.RetryOptions.HandlesException
+  - Kevlar.RetryOptions.HandlesExceptionWithContext
   - Kevlar.RetryOptions.MaxDelay
   - Kevlar.RetryOptions.MaxRetries
   - Kevlar.RetryOptions.OnRetry
@@ -102,6 +103,29 @@ items:
   seealso:
   - linkId: Kevlar.HandlingClause
     commentId: T:Kevlar.HandlingClause
+- uid: Kevlar.RetryOptions.HandlesExceptionWithContext
+  commentId: P:Kevlar.RetryOptions.HandlesExceptionWithContext
+  id: HandlesExceptionWithContext
+  parent: Kevlar.RetryOptions
+  langs:
+  - csharp
+  - vb
+  name: HandlesExceptionWithContext
+  nameWithType: RetryOptions.HandlesExceptionWithContext
+  fullName: Kevlar.RetryOptions.HandlesExceptionWithContext
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Locally handles exceptions using execution context and attempt metadata.
+  example: []
+  syntax:
+    content: public Func<HandlingEvent, bool>? HandlesExceptionWithContext { get; set; }
+    parameters: []
+    return:
+      type: System.Func{Kevlar.HandlingEvent,System.Boolean}
+    content.vb: Public Property HandlesExceptionWithContext As Func(Of HandlingEvent, Boolean)
+  overload: Kevlar.RetryOptions.HandlesExceptionWithContext*
 - uid: Kevlar.RetryOptions.MaxRetries
   commentId: P:Kevlar.RetryOptions.MaxRetries
   id: MaxRetries
@@ -639,6 +663,60 @@ references:
   - name: ','
   - name: " "
   - name: TResult
+  - name: )
+- uid: Kevlar.RetryOptions.HandlesExceptionWithContext*
+  commentId: Overload:Kevlar.RetryOptions.HandlesExceptionWithContext
+  isExternal: true
+  href: Kevlar.RetryOptions.html#Kevlar_RetryOptions_HandlesExceptionWithContext
+  name: HandlesExceptionWithContext
+  nameWithType: RetryOptions.HandlesExceptionWithContext
+  fullName: Kevlar.RetryOptions.HandlesExceptionWithContext
+- uid: System.Func{Kevlar.HandlingEvent,System.Boolean}
+  commentId: T:System.Func{Kevlar.HandlingEvent,System.Boolean}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<HandlingEvent, bool>
+  nameWithType: Func<HandlingEvent, bool>
+  fullName: System.Func<Kevlar.HandlingEvent, bool>
+  nameWithType.vb: Func(Of HandlingEvent, Boolean)
+  fullName.vb: System.Func(Of Kevlar.HandlingEvent, Boolean)
+  name.vb: Func(Of HandlingEvent, Boolean)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.HandlingEvent
+    name: HandlingEvent
+    isExternal: true
+    href: Kevlar.HandlingEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: bool
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.HandlingEvent
+    name: HandlingEvent
+    isExternal: true
+    href: Kevlar.HandlingEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: Boolean
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
   - name: )
 - uid: System.Int32.MaxValue
   commentId: F:System.Int32.MaxValue

@@ -51,6 +51,7 @@ items:
   - Kevlar.Shield.Use(Kevlar.Strategy)
   - Kevlar.Shield.Use(System.Func{Kevlar.HandlingClause,Kevlar.Strategy})
   - Kevlar.Shield.When(System.Func{System.Exception,System.Boolean})
+  - Kevlar.Shield.WhenContext(System.Func{Kevlar.HandlingEvent,System.Boolean})
   - Kevlar.Shield.When``1
   - Kevlar.Shield.When``1(System.Func{``0,System.Boolean})
   langs:
@@ -114,6 +115,7 @@ items:
   - Kevlar.Shield.Kevlar.ShieldExtensions.Use(System.Func{Kevlar.HandlingClause,Kevlar.Strategy})
   - Kevlar.Shield.Kevlar.ShieldExtensions.When(System.Func{System.Exception,System.Boolean})
   - Kevlar.Shield.Kevlar.ShieldExtensions.WhenAnyError
+  - Kevlar.Shield.Kevlar.ShieldExtensions.WhenContext(System.Func{Kevlar.HandlingEvent,System.Boolean})
   - Kevlar.Shield.Kevlar.ShieldExtensions.When``1
   - Kevlar.Shield.Kevlar.ShieldExtensions.When``1(System.Func{{TException},System.Boolean})
   - Kevlar.Shield.Kevlar.ShieldExtensions.WithName(System.String)
@@ -863,6 +865,34 @@ items:
   nameWithType.vb: Shield.When(Func(Of Exception, Boolean))
   fullName.vb: Kevlar.Shield.When(System.Func(Of System.Exception, Boolean))
   name.vb: When(Func(Of Exception, Boolean))
+- uid: Kevlar.Shield.WhenContext(System.Func{Kevlar.HandlingEvent,System.Boolean})
+  commentId: M:Kevlar.Shield.WhenContext(System.Func{Kevlar.HandlingEvent,System.Boolean})
+  id: WhenContext(System.Func{Kevlar.HandlingEvent,System.Boolean})
+  parent: Kevlar.Shield
+  langs:
+  - csharp
+  - vb
+  name: WhenContext(Func<HandlingEvent, bool>)
+  nameWithType: Shield.WhenContext(Func<HandlingEvent, bool>)
+  fullName: Kevlar.Shield.WhenContext(System.Func<Kevlar.HandlingEvent, bool>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Starts a handling clause using the active execution and strategy context.
+  example: []
+  syntax:
+    content: public static ShieldBuilder WhenContext(Func<HandlingEvent, bool> predicate)
+    parameters:
+    - id: predicate
+      type: System.Func{Kevlar.HandlingEvent,System.Boolean}
+    return:
+      type: Kevlar.ShieldBuilder
+    content.vb: Public Shared Function WhenContext(predicate As Func(Of HandlingEvent, Boolean)) As ShieldBuilder
+  overload: Kevlar.Shield.WhenContext*
+  nameWithType.vb: Shield.WhenContext(Func(Of HandlingEvent, Boolean))
+  fullName.vb: Kevlar.Shield.WhenContext(System.Func(Of Kevlar.HandlingEvent, Boolean))
+  name.vb: WhenContext(Func(Of HandlingEvent, Boolean))
 - uid: Kevlar.Shield.For``1
   commentId: M:Kevlar.Shield.For``1
   id: For``1
@@ -3252,6 +3282,77 @@ references:
     name: Shield
     isExternal: true
     href: Kevlar.Shield.html
+  - name: )
+- uid: Kevlar.Shield.Kevlar.ShieldExtensions.WhenContext(System.Func{Kevlar.HandlingEvent,System.Boolean})
+  commentId: M:Kevlar.ShieldExtensions.WhenContext(Kevlar.Shield,System.Func{Kevlar.HandlingEvent,System.Boolean})
+  parent: Kevlar.ShieldExtensions
+  definition: Kevlar.ShieldExtensions.WhenContext(Kevlar.Shield,System.Func{Kevlar.HandlingEvent,System.Boolean})
+  href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_WhenContext_Kevlar_Shield_System_Func_Kevlar_HandlingEvent_System_Boolean__
+  name: WhenContext(Shield, Func<HandlingEvent, bool>)
+  nameWithType: ShieldExtensions.WhenContext(Shield, Func<HandlingEvent, bool>)
+  fullName: Kevlar.ShieldExtensions.WhenContext(Kevlar.Shield, System.Func<Kevlar.HandlingEvent, bool>)
+  nameWithType.vb: ShieldExtensions.WhenContext(Shield, Func(Of HandlingEvent, Boolean))
+  fullName.vb: Kevlar.ShieldExtensions.WhenContext(Kevlar.Shield, System.Func(Of Kevlar.HandlingEvent, Boolean))
+  name.vb: WhenContext(Shield, Func(Of HandlingEvent, Boolean))
+  spec.csharp:
+  - uid: Kevlar.ShieldExtensions.WhenContext(Kevlar.Shield,System.Func{Kevlar.HandlingEvent,System.Boolean})
+    name: WhenContext
+    isExternal: true
+    href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_WhenContext_Kevlar_Shield_System_Func_Kevlar_HandlingEvent_System_Boolean__
+  - name: (
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
+  - name: ','
+  - name: " "
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.HandlingEvent
+    name: HandlingEvent
+    isExternal: true
+    href: Kevlar.HandlingEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: bool
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: '>'
+  - name: )
+  spec.vb:
+  - uid: Kevlar.ShieldExtensions.WhenContext(Kevlar.Shield,System.Func{Kevlar.HandlingEvent,System.Boolean})
+    name: WhenContext
+    isExternal: true
+    href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_WhenContext_Kevlar_Shield_System_Func_Kevlar_HandlingEvent_System_Boolean__
+  - name: (
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
+  - name: ','
+  - name: " "
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.HandlingEvent
+    name: HandlingEvent
+    isExternal: true
+    href: Kevlar.HandlingEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: Boolean
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: )
   - name: )
 - uid: Kevlar.Shield.Kevlar.ShieldExtensions.When``1
   commentId: M:Kevlar.ShieldExtensions.When``1(Kevlar.Shield)
@@ -6045,6 +6146,76 @@ references:
     isExternal: true
     href: Kevlar.Shield.html
   - name: )
+- uid: Kevlar.ShieldExtensions.WhenContext(Kevlar.Shield,System.Func{Kevlar.HandlingEvent,System.Boolean})
+  commentId: M:Kevlar.ShieldExtensions.WhenContext(Kevlar.Shield,System.Func{Kevlar.HandlingEvent,System.Boolean})
+  isExternal: true
+  href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_WhenContext_Kevlar_Shield_System_Func_Kevlar_HandlingEvent_System_Boolean__
+  name: WhenContext(Shield, Func<HandlingEvent, bool>)
+  nameWithType: ShieldExtensions.WhenContext(Shield, Func<HandlingEvent, bool>)
+  fullName: Kevlar.ShieldExtensions.WhenContext(Kevlar.Shield, System.Func<Kevlar.HandlingEvent, bool>)
+  nameWithType.vb: ShieldExtensions.WhenContext(Shield, Func(Of HandlingEvent, Boolean))
+  fullName.vb: Kevlar.ShieldExtensions.WhenContext(Kevlar.Shield, System.Func(Of Kevlar.HandlingEvent, Boolean))
+  name.vb: WhenContext(Shield, Func(Of HandlingEvent, Boolean))
+  spec.csharp:
+  - uid: Kevlar.ShieldExtensions.WhenContext(Kevlar.Shield,System.Func{Kevlar.HandlingEvent,System.Boolean})
+    name: WhenContext
+    isExternal: true
+    href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_WhenContext_Kevlar_Shield_System_Func_Kevlar_HandlingEvent_System_Boolean__
+  - name: (
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
+  - name: ','
+  - name: " "
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.HandlingEvent
+    name: HandlingEvent
+    isExternal: true
+    href: Kevlar.HandlingEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: bool
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: '>'
+  - name: )
+  spec.vb:
+  - uid: Kevlar.ShieldExtensions.WhenContext(Kevlar.Shield,System.Func{Kevlar.HandlingEvent,System.Boolean})
+    name: WhenContext
+    isExternal: true
+    href: Kevlar.ShieldExtensions.html#Kevlar_ShieldExtensions_WhenContext_Kevlar_Shield_System_Func_Kevlar_HandlingEvent_System_Boolean__
+  - name: (
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
+  - name: ','
+  - name: " "
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.HandlingEvent
+    name: HandlingEvent
+    isExternal: true
+    href: Kevlar.HandlingEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: Boolean
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: )
+  - name: )
 - uid: Kevlar.ShieldExtensions.When``1(Kevlar.Shield)
   commentId: M:Kevlar.ShieldExtensions.When``1(Kevlar.Shield)
   isExternal: true
@@ -8195,6 +8366,60 @@ references:
     name: Exception
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.exception
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: Boolean
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: )
+- uid: Kevlar.Shield.WhenContext*
+  commentId: Overload:Kevlar.Shield.WhenContext
+  isExternal: true
+  href: Kevlar.Shield.html#Kevlar_Shield_WhenContext_System_Func_Kevlar_HandlingEvent_System_Boolean__
+  name: WhenContext
+  nameWithType: Shield.WhenContext
+  fullName: Kevlar.Shield.WhenContext
+- uid: System.Func{Kevlar.HandlingEvent,System.Boolean}
+  commentId: T:System.Func{Kevlar.HandlingEvent,System.Boolean}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<HandlingEvent, bool>
+  nameWithType: Func<HandlingEvent, bool>
+  fullName: System.Func<Kevlar.HandlingEvent, bool>
+  nameWithType.vb: Func(Of HandlingEvent, Boolean)
+  fullName.vb: System.Func(Of Kevlar.HandlingEvent, Boolean)
+  name.vb: Func(Of HandlingEvent, Boolean)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.HandlingEvent
+    name: HandlingEvent
+    isExternal: true
+    href: Kevlar.HandlingEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: bool
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.HandlingEvent
+    name: HandlingEvent
+    isExternal: true
+    href: Kevlar.HandlingEvent.html
   - name: ','
   - name: " "
   - uid: System.Boolean

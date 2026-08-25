@@ -7,7 +7,9 @@ items:
   children:
   - Kevlar.FallbackOptions`1.#ctor
   - Kevlar.FallbackOptions`1.HandlesException
+  - Kevlar.FallbackOptions`1.HandlesExceptionWithContext
   - Kevlar.FallbackOptions`1.HandlesResult
+  - Kevlar.FallbackOptions`1.HandlesResultWithContext
   - Kevlar.FallbackOptions`1.OnFallback
   - Kevlar.FallbackOptions`1.OnFallbackAsync
   langs:
@@ -106,6 +108,31 @@ items:
     commentId: T:Kevlar.HandlingClause
   nameWithType.vb: FallbackOptions(Of TResult).HandlesException
   fullName.vb: Kevlar.FallbackOptions(Of TResult).HandlesException
+- uid: Kevlar.FallbackOptions`1.HandlesExceptionWithContext
+  commentId: P:Kevlar.FallbackOptions`1.HandlesExceptionWithContext
+  id: HandlesExceptionWithContext
+  parent: Kevlar.FallbackOptions`1
+  langs:
+  - csharp
+  - vb
+  name: HandlesExceptionWithContext
+  nameWithType: FallbackOptions<TResult>.HandlesExceptionWithContext
+  fullName: Kevlar.FallbackOptions<TResult>.HandlesExceptionWithContext
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Locally handles exceptions using the typed outcome and execution context.
+  example: []
+  syntax:
+    content: public Func<HandlingEvent<TResult>, bool>? HandlesExceptionWithContext { get; set; }
+    parameters: []
+    return:
+      type: System.Func{Kevlar.HandlingEvent{{TResult}},System.Boolean}
+    content.vb: Public Property HandlesExceptionWithContext As Func(Of HandlingEvent(Of TResult), Boolean)
+  overload: Kevlar.FallbackOptions`1.HandlesExceptionWithContext*
+  nameWithType.vb: FallbackOptions(Of TResult).HandlesExceptionWithContext
+  fullName.vb: Kevlar.FallbackOptions(Of TResult).HandlesExceptionWithContext
 - uid: Kevlar.FallbackOptions`1.HandlesResult
   commentId: P:Kevlar.FallbackOptions`1.HandlesResult
   id: HandlesResult
@@ -143,6 +170,31 @@ items:
     commentId: T:Kevlar.HandlingClause
   nameWithType.vb: FallbackOptions(Of TResult).HandlesResult
   fullName.vb: Kevlar.FallbackOptions(Of TResult).HandlesResult
+- uid: Kevlar.FallbackOptions`1.HandlesResultWithContext
+  commentId: P:Kevlar.FallbackOptions`1.HandlesResultWithContext
+  id: HandlesResultWithContext
+  parent: Kevlar.FallbackOptions`1
+  langs:
+  - csharp
+  - vb
+  name: HandlesResultWithContext
+  nameWithType: FallbackOptions<TResult>.HandlesResultWithContext
+  fullName: Kevlar.FallbackOptions<TResult>.HandlesResultWithContext
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Locally handles results using the typed outcome and execution context.
+  example: []
+  syntax:
+    content: public Func<HandlingEvent<TResult>, bool>? HandlesResultWithContext { get; set; }
+    parameters: []
+    return:
+      type: System.Func{Kevlar.HandlingEvent{{TResult}},System.Boolean}
+    content.vb: Public Property HandlesResultWithContext As Func(Of HandlingEvent(Of TResult), Boolean)
+  overload: Kevlar.FallbackOptions`1.HandlesResultWithContext*
+  nameWithType.vb: FallbackOptions(Of TResult).HandlesResultWithContext
+  fullName.vb: Kevlar.FallbackOptions(Of TResult).HandlesResultWithContext
 - uid: Kevlar.FallbackOptions`1.OnFallback
   commentId: P:Kevlar.FallbackOptions`1.OnFallback
   id: OnFallback
@@ -581,6 +633,70 @@ references:
   - name: " "
   - name: TResult
   - name: )
+- uid: Kevlar.FallbackOptions`1.HandlesExceptionWithContext*
+  commentId: Overload:Kevlar.FallbackOptions`1.HandlesExceptionWithContext
+  isExternal: true
+  href: Kevlar.FallbackOptions-1.html#Kevlar_FallbackOptions_1_HandlesExceptionWithContext
+  name: HandlesExceptionWithContext
+  nameWithType: FallbackOptions<TResult>.HandlesExceptionWithContext
+  fullName: Kevlar.FallbackOptions<TResult>.HandlesExceptionWithContext
+  nameWithType.vb: FallbackOptions(Of TResult).HandlesExceptionWithContext
+  fullName.vb: Kevlar.FallbackOptions(Of TResult).HandlesExceptionWithContext
+- uid: System.Func{Kevlar.HandlingEvent{{TResult}},System.Boolean}
+  commentId: T:System.Func{Kevlar.HandlingEvent{`0},System.Boolean}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<HandlingEvent<TResult>, bool>
+  nameWithType: Func<HandlingEvent<TResult>, bool>
+  fullName: System.Func<Kevlar.HandlingEvent<TResult>, bool>
+  nameWithType.vb: Func(Of HandlingEvent(Of TResult), Boolean)
+  fullName.vb: System.Func(Of Kevlar.HandlingEvent(Of TResult), Boolean)
+  name.vb: Func(Of HandlingEvent(Of TResult), Boolean)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.HandlingEvent`1
+    name: HandlingEvent
+    isExternal: true
+    href: Kevlar.HandlingEvent-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: bool
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.HandlingEvent`1
+    name: HandlingEvent
+    isExternal: true
+    href: Kevlar.HandlingEvent-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: Boolean
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: )
 - uid: Kevlar.FallbackOptions`1.HandlesException
   commentId: P:Kevlar.FallbackOptions`1.HandlesException
   isExternal: true
@@ -640,6 +756,15 @@ references:
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.boolean
   - name: )
+- uid: Kevlar.FallbackOptions`1.HandlesResultWithContext*
+  commentId: Overload:Kevlar.FallbackOptions`1.HandlesResultWithContext
+  isExternal: true
+  href: Kevlar.FallbackOptions-1.html#Kevlar_FallbackOptions_1_HandlesResultWithContext
+  name: HandlesResultWithContext
+  nameWithType: FallbackOptions<TResult>.HandlesResultWithContext
+  fullName: Kevlar.FallbackOptions<TResult>.HandlesResultWithContext
+  nameWithType.vb: FallbackOptions(Of TResult).HandlesResultWithContext
+  fullName.vb: Kevlar.FallbackOptions(Of TResult).HandlesResultWithContext
 - uid: Kevlar.FallbackOptions`1.OnFallback*
   commentId: Overload:Kevlar.FallbackOptions`1.OnFallback
   isExternal: true

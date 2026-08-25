@@ -24,6 +24,8 @@ items:
   - Kevlar.FallbackOptions
   - Kevlar.FallbackOptions`1
   - Kevlar.HandlingClause
+  - Kevlar.HandlingEvent
+  - Kevlar.HandlingEvent`1
   - Kevlar.HedgeActionGenerator
   - Kevlar.HedgeActionGeneratorEvent
   - Kevlar.HedgeActionGeneratorEvent`1
@@ -153,6 +155,41 @@ references:
   name: HandlingClause
   nameWithType: HandlingClause
   fullName: Kevlar.HandlingClause
+- uid: Kevlar.HandlingEvent
+  commentId: T:Kevlar.HandlingEvent
+  isExternal: true
+  href: Kevlar.HandlingEvent.html
+  name: HandlingEvent
+  nameWithType: HandlingEvent
+  fullName: Kevlar.HandlingEvent
+- uid: Kevlar.HandlingEvent`1
+  commentId: T:Kevlar.HandlingEvent`1
+  isExternal: true
+  href: Kevlar.HandlingEvent-1.html
+  name: HandlingEvent<TResult>
+  nameWithType: HandlingEvent<TResult>
+  fullName: Kevlar.HandlingEvent<TResult>
+  nameWithType.vb: HandlingEvent(Of TResult)
+  fullName.vb: Kevlar.HandlingEvent(Of TResult)
+  name.vb: HandlingEvent(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.HandlingEvent`1
+    name: HandlingEvent
+    isExternal: true
+    href: Kevlar.HandlingEvent-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.HandlingEvent`1
+    name: HandlingEvent
+    isExternal: true
+    href: Kevlar.HandlingEvent-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
 - uid: Kevlar.Jitter
   commentId: T:Kevlar.Jitter
   parent: Kevlar

@@ -16,6 +16,7 @@ items:
   - Kevlar.ShieldBuilder.Hedge(System.Action{Kevlar.HedgeOptions})
   - Kevlar.ShieldBuilder.Hedge(System.Int32,System.TimeSpan)
   - Kevlar.ShieldBuilder.Or(System.Func{System.Exception,System.Boolean})
+  - Kevlar.ShieldBuilder.OrContext(System.Func{Kevlar.HandlingEvent,System.Boolean})
   - Kevlar.ShieldBuilder.Or``1
   - Kevlar.ShieldBuilder.Or``1(System.Func{``0,System.Boolean})
   - Kevlar.ShieldBuilder.RateLimit(System.Action{Kevlar.RateLimitOptions})
@@ -183,6 +184,34 @@ items:
   nameWithType.vb: ShieldBuilder.Or(Func(Of Exception, Boolean))
   fullName.vb: Kevlar.ShieldBuilder.Or(System.Func(Of System.Exception, Boolean))
   name.vb: Or(Func(Of Exception, Boolean))
+- uid: Kevlar.ShieldBuilder.OrContext(System.Func{Kevlar.HandlingEvent,System.Boolean})
+  commentId: M:Kevlar.ShieldBuilder.OrContext(System.Func{Kevlar.HandlingEvent,System.Boolean})
+  id: OrContext(System.Func{Kevlar.HandlingEvent,System.Boolean})
+  parent: Kevlar.ShieldBuilder
+  langs:
+  - csharp
+  - vb
+  name: OrContext(Func<HandlingEvent, bool>)
+  nameWithType: ShieldBuilder.OrContext(Func<HandlingEvent, bool>)
+  fullName: Kevlar.ShieldBuilder.OrContext(System.Func<Kevlar.HandlingEvent, bool>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Returns a new builder that also handles exceptions selected using execution context.
+  example: []
+  syntax:
+    content: public ShieldBuilder OrContext(Func<HandlingEvent, bool> predicate)
+    parameters:
+    - id: predicate
+      type: System.Func{Kevlar.HandlingEvent,System.Boolean}
+    return:
+      type: Kevlar.ShieldBuilder
+    content.vb: Public Function OrContext(predicate As Func(Of HandlingEvent, Boolean)) As ShieldBuilder
+  overload: Kevlar.ShieldBuilder.OrContext*
+  nameWithType.vb: ShieldBuilder.OrContext(Func(Of HandlingEvent, Boolean))
+  fullName.vb: Kevlar.ShieldBuilder.OrContext(System.Func(Of Kevlar.HandlingEvent, Boolean))
+  name.vb: OrContext(Func(Of HandlingEvent, Boolean))
 - uid: Kevlar.ShieldBuilder.Retry(System.Int32)
   commentId: M:Kevlar.ShieldBuilder.Retry(System.Int32)
   id: Retry(System.Int32)
@@ -1201,6 +1230,60 @@ references:
     name: Exception
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.exception
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: Boolean
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: )
+- uid: Kevlar.ShieldBuilder.OrContext*
+  commentId: Overload:Kevlar.ShieldBuilder.OrContext
+  isExternal: true
+  href: Kevlar.ShieldBuilder.html#Kevlar_ShieldBuilder_OrContext_System_Func_Kevlar_HandlingEvent_System_Boolean__
+  name: OrContext
+  nameWithType: ShieldBuilder.OrContext
+  fullName: Kevlar.ShieldBuilder.OrContext
+- uid: System.Func{Kevlar.HandlingEvent,System.Boolean}
+  commentId: T:System.Func{Kevlar.HandlingEvent,System.Boolean}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<HandlingEvent, bool>
+  nameWithType: Func<HandlingEvent, bool>
+  fullName: System.Func<Kevlar.HandlingEvent, bool>
+  nameWithType.vb: Func(Of HandlingEvent, Boolean)
+  fullName.vb: System.Func(Of Kevlar.HandlingEvent, Boolean)
+  name.vb: Func(Of HandlingEvent, Boolean)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.HandlingEvent
+    name: HandlingEvent
+    isExternal: true
+    href: Kevlar.HandlingEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: bool
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.HandlingEvent
+    name: HandlingEvent
+    isExternal: true
+    href: Kevlar.HandlingEvent.html
   - name: ','
   - name: " "
   - uid: System.Boolean

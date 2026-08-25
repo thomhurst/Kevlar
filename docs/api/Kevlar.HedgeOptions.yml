@@ -11,6 +11,7 @@ items:
   - Kevlar.HedgeOptions.DelayGenerator
   - Kevlar.HedgeOptions.DelayGeneratorAsync
   - Kevlar.HedgeOptions.HandlesException
+  - Kevlar.HedgeOptions.HandlesExceptionWithContext
   - Kevlar.HedgeOptions.MaxAttempts
   - Kevlar.HedgeOptions.OnHedge
   - Kevlar.HedgeOptions.OnHedgeAsync
@@ -111,6 +112,29 @@ items:
   seealso:
   - linkId: Kevlar.HandlingClause
     commentId: T:Kevlar.HandlingClause
+- uid: Kevlar.HedgeOptions.HandlesExceptionWithContext
+  commentId: P:Kevlar.HedgeOptions.HandlesExceptionWithContext
+  id: HandlesExceptionWithContext
+  parent: Kevlar.HedgeOptions
+  langs:
+  - csharp
+  - vb
+  name: HandlesExceptionWithContext
+  nameWithType: HedgeOptions.HandlesExceptionWithContext
+  fullName: Kevlar.HedgeOptions.HandlesExceptionWithContext
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Locally handles exceptions using execution context and attempt metadata.
+  example: []
+  syntax:
+    content: public Func<HandlingEvent, bool>? HandlesExceptionWithContext { get; set; }
+    parameters: []
+    return:
+      type: System.Func{Kevlar.HandlingEvent,System.Boolean}
+    content.vb: Public Property HandlesExceptionWithContext As Func(Of HandlingEvent, Boolean)
+  overload: Kevlar.HedgeOptions.HandlesExceptionWithContext*
 - uid: Kevlar.HedgeOptions.MaxAttempts
   commentId: P:Kevlar.HedgeOptions.MaxAttempts
   id: MaxAttempts
@@ -683,6 +707,60 @@ references:
   - name: ','
   - name: " "
   - name: TResult
+  - name: )
+- uid: Kevlar.HedgeOptions.HandlesExceptionWithContext*
+  commentId: Overload:Kevlar.HedgeOptions.HandlesExceptionWithContext
+  isExternal: true
+  href: Kevlar.HedgeOptions.html#Kevlar_HedgeOptions_HandlesExceptionWithContext
+  name: HandlesExceptionWithContext
+  nameWithType: HedgeOptions.HandlesExceptionWithContext
+  fullName: Kevlar.HedgeOptions.HandlesExceptionWithContext
+- uid: System.Func{Kevlar.HandlingEvent,System.Boolean}
+  commentId: T:System.Func{Kevlar.HandlingEvent,System.Boolean}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<HandlingEvent, bool>
+  nameWithType: Func<HandlingEvent, bool>
+  fullName: System.Func<Kevlar.HandlingEvent, bool>
+  nameWithType.vb: Func(Of HandlingEvent, Boolean)
+  fullName.vb: System.Func(Of Kevlar.HandlingEvent, Boolean)
+  name.vb: Func(Of HandlingEvent, Boolean)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.HandlingEvent
+    name: HandlingEvent
+    isExternal: true
+    href: Kevlar.HandlingEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: bool
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.HandlingEvent
+    name: HandlingEvent
+    isExternal: true
+    href: Kevlar.HandlingEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: Boolean
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
   - name: )
 - uid: Kevlar.HedgeOptions.MaxAttempts*
   commentId: Overload:Kevlar.HedgeOptions.MaxAttempts

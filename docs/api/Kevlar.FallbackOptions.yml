@@ -7,6 +7,7 @@ items:
   children:
   - Kevlar.FallbackOptions.#ctor
   - Kevlar.FallbackOptions.HandlesException
+  - Kevlar.FallbackOptions.HandlesExceptionWithContext
   - Kevlar.FallbackOptions.OnFallback
   - Kevlar.FallbackOptions.OnFallbackAsync
   langs:
@@ -95,6 +96,29 @@ items:
   seealso:
   - linkId: Kevlar.HandlingClause
     commentId: T:Kevlar.HandlingClause
+- uid: Kevlar.FallbackOptions.HandlesExceptionWithContext
+  commentId: P:Kevlar.FallbackOptions.HandlesExceptionWithContext
+  id: HandlesExceptionWithContext
+  parent: Kevlar.FallbackOptions
+  langs:
+  - csharp
+  - vb
+  name: HandlesExceptionWithContext
+  nameWithType: FallbackOptions.HandlesExceptionWithContext
+  fullName: Kevlar.FallbackOptions.HandlesExceptionWithContext
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Locally handles exceptions using execution context and strategy metadata.
+  example: []
+  syntax:
+    content: public Func<HandlingEvent, bool>? HandlesExceptionWithContext { get; set; }
+    parameters: []
+    return:
+      type: System.Func{Kevlar.HandlingEvent,System.Boolean}
+    content.vb: Public Property HandlesExceptionWithContext As Func(Of HandlingEvent, Boolean)
+  overload: Kevlar.FallbackOptions.HandlesExceptionWithContext*
 - uid: Kevlar.FallbackOptions.OnFallback
   commentId: P:Kevlar.FallbackOptions.OnFallback
   id: OnFallback
@@ -481,6 +505,60 @@ references:
   - name: ','
   - name: " "
   - name: TResult
+  - name: )
+- uid: Kevlar.FallbackOptions.HandlesExceptionWithContext*
+  commentId: Overload:Kevlar.FallbackOptions.HandlesExceptionWithContext
+  isExternal: true
+  href: Kevlar.FallbackOptions.html#Kevlar_FallbackOptions_HandlesExceptionWithContext
+  name: HandlesExceptionWithContext
+  nameWithType: FallbackOptions.HandlesExceptionWithContext
+  fullName: Kevlar.FallbackOptions.HandlesExceptionWithContext
+- uid: System.Func{Kevlar.HandlingEvent,System.Boolean}
+  commentId: T:System.Func{Kevlar.HandlingEvent,System.Boolean}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<HandlingEvent, bool>
+  nameWithType: Func<HandlingEvent, bool>
+  fullName: System.Func<Kevlar.HandlingEvent, bool>
+  nameWithType.vb: Func(Of HandlingEvent, Boolean)
+  fullName.vb: System.Func(Of Kevlar.HandlingEvent, Boolean)
+  name.vb: Func(Of HandlingEvent, Boolean)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.HandlingEvent
+    name: HandlingEvent
+    isExternal: true
+    href: Kevlar.HandlingEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: bool
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.HandlingEvent
+    name: HandlingEvent
+    isExternal: true
+    href: Kevlar.HandlingEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: Boolean
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
   - name: )
 - uid: Kevlar.FallbackOptions.OnFallback*
   commentId: Overload:Kevlar.FallbackOptions.OnFallback
