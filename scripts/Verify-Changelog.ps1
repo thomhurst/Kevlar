@@ -64,6 +64,10 @@ if ($unreleasedHeadingCount -ne 1)
 {
     $errors.Add("CHANGELOG.md must contain exactly one ## [Unreleased] heading; found $unreleasedHeadingCount.")
 }
+elseif (-not (Test-ReleaseHasEntry ([pscustomobject]@{ Index = $unreleasedIndex }) $lines))
+{
+    $errors.Add('Unreleased has no entry under an allowed section.')
+}
 
 $versionComponentPattern = '(?:0|[1-9][0-9]*)'
 $releasePattern = [regex]"^## \[(?<version>$versionComponentPattern\.$versionComponentPattern\.$versionComponentPattern)\] - (?<date>[0-9]{4}-[0-9]{2}-[0-9]{2})$"
