@@ -335,43 +335,81 @@ internal sealed class HedgingStrategy : Strategy
         int attemptNumber,
         Outcome<T>? outcome)
     {
+        if (_actionGenerator is not null)
+        {
+            return StartGeneratedHedgeAttempt(next, context, attemptNumber, outcome);
+        }
+
         var cancellation = CancellationTokenSourcePool.Shared.RentLinked(context.CancellationToken);
         var fork = context.Fork(cancellation.Token);
         try
         {
-            Func<CancellationToken, ValueTask<T>>? generatedAction = null;
-            if (_actionGenerator is not null)
-            {
-                Func<CancellationToken, ValueTask<T>> originalAction =
-                    token => InvokeOriginalAction(next, fork, token);
-                try
-                {
-                    generatedAction = _actionGenerator.Generate(attemptNumber, fork, originalAction, outcome);
-                }
-                catch (Exception exception)
-                {
-                    KevlarMetrics.Hedge(context.ShieldName);
-                    return new StartedAttempt<T>(
-                        new ValueTask<Outcome<T>>(Outcome<T>.FromException(exception)),
-                        cancellation,
-                        fork);
-                }
+            KevlarMetrics.Hedge(context.ShieldName);
+            return new StartedAttempt<T>(next.InvokeAsync(fork), cancellation, fork);
+        }
+        catch
+        {
+            ReleaseAttempt(fork, cancellation);
+            throw;
+        }
+    }
 
-                context.CancellationToken.ThrowIfCancellationRequested();
+    private StartedAttempt<T> StartGeneratedHedgeAttempt<T, TState>(
+        Continuation<T, TState> next,
+        KevlarContext context,
+        int attemptNumber,
+        Outcome<T>? outcome)
+    {
+        var lifetime = HedgeAttemptLifetime.RentLinked(context.CancellationToken);
+        var fork = context.Fork(lifetime.Token);
+        var originalActionLease = new OriginalActionLease<T, TState>(next, lifetime);
+        lifetime.Attach(fork, originalActionLease);
+        try
+        {
+            Func<CancellationToken, ValueTask<T>>? generatedAction;
+            try
+            {
+                generatedAction = _actionGenerator!.Generate(
+                    attemptNumber,
+                    fork,
+                    originalActionLease.Invoke,
+                    outcome);
+            }
+            catch (Exception exception)
+            {
+                KevlarMetrics.Hedge(context.ShieldName);
+                return new StartedAttempt<T>(
+                    new ValueTask<Outcome<T>>(Outcome<T>.FromException(exception)),
+                    lifetime,
+                    fork);
             }
 
+            context.CancellationToken.ThrowIfCancellationRequested();
             KevlarMetrics.Hedge(context.ShieldName);
             var execution = generatedAction is null
                 ? next.InvokeAsync(fork)
                 : InvokeGeneratedAction(generatedAction, fork.CancellationToken);
-            return new StartedAttempt<T>(execution, cancellation, fork);
+            return new StartedAttempt<T>(execution, lifetime, fork);
         }
         catch
         {
-            KevlarContext.Return(fork);
-            cancellation.Dispose();
+            ReleaseAttempt(fork, lifetime);
             throw;
         }
+    }
+
+    private static void ReleaseAttempt(
+        KevlarContext context,
+        CancellationTokenSource cancellation)
+    {
+        if (cancellation is HedgeAttemptLifetime lifetime)
+        {
+            lifetime.Release();
+            return;
+        }
+
+        KevlarContext.Return(context);
+        cancellation.Dispose();
     }
 
     private static ValueTask<T> GetOriginalResultAsync<T>(ValueTask<Outcome<T>> execution)
@@ -387,10 +425,28 @@ internal sealed class HedgingStrategy : Strategy
 
     private static ValueTask<T> InvokeOriginalAction<T, TState>(
         Continuation<T, TState> next,
-        KevlarContext attemptContext,
+        HedgeAttemptLifetime lifetime,
+        object lease,
         CancellationToken cancellationToken)
     {
-        var invocationContext = attemptContext.Fork(cancellationToken);
+        if (!lifetime.TryRetain(lease))
+        {
+            throw new InvalidOperationException(
+                "The original action cannot be invoked after its generated hedge action completes.");
+        }
+
+        var attemptContext = lifetime.Context;
+        KevlarContext invocationContext;
+        try
+        {
+            invocationContext = attemptContext.Fork(cancellationToken);
+        }
+        catch
+        {
+            lifetime.Release();
+            throw;
+        }
+
         ValueTask<Outcome<T>> execution;
         try
         {
@@ -399,12 +455,13 @@ internal sealed class HedgingStrategy : Strategy
         catch
         {
             KevlarContext.Return(invocationContext);
+            lifetime.Release();
             throw;
         }
 
         if (!execution.IsCompletedSuccessfully)
         {
-            return AwaitOriginalResultAsync(execution, invocationContext, attemptContext);
+            return AwaitOriginalResultAsync(execution, invocationContext, attemptContext, lifetime);
         }
 
         try
@@ -415,6 +472,7 @@ internal sealed class HedgingStrategy : Strategy
         {
             attemptContext.CaptureCompletionProperties(invocationContext.PropertiesForCompletion);
             KevlarContext.Return(invocationContext);
+            lifetime.Release();
         }
     }
 
@@ -427,7 +485,8 @@ internal sealed class HedgingStrategy : Strategy
     private static async ValueTask<T> AwaitOriginalResultAsync<T>(
         ValueTask<Outcome<T>> execution,
         KevlarContext invocationContext,
-        KevlarContext attemptContext)
+        KevlarContext attemptContext,
+        HedgeAttemptLifetime lifetime)
     {
         try
         {
@@ -438,6 +497,7 @@ internal sealed class HedgingStrategy : Strategy
         {
             attemptContext.CaptureCompletionProperties(invocationContext.PropertiesForCompletion);
             KevlarContext.Return(invocationContext);
+            lifetime.Release();
         }
     }
 
@@ -573,7 +633,10 @@ internal sealed class HedgingStrategy : Strategy
 
     private readonly struct HedgeAttempt<T>
     {
-        public HedgeAttempt(Task<Outcome<T>> task, CancellationTokenSource cancellation, KevlarContext context)
+        public HedgeAttempt(
+            Task<Outcome<T>> task,
+            CancellationTokenSource cancellation,
+            KevlarContext context)
         {
             Task = task;
             Cancellation = cancellation;
@@ -586,16 +649,15 @@ internal sealed class HedgingStrategy : Strategy
 
         public KevlarContext Context { get; }
 
-        public void Dispose()
-        {
-            KevlarContext.Return(Context);
-            Cancellation.Dispose();
-        }
+        public void Dispose() => ReleaseAttempt(Context, Cancellation);
     }
 
     private readonly struct StartedAttempt<T>
     {
-        public StartedAttempt(ValueTask<Outcome<T>> execution, CancellationTokenSource cancellation, KevlarContext context)
+        public StartedAttempt(
+            ValueTask<Outcome<T>> execution,
+            CancellationTokenSource cancellation,
+            KevlarContext context)
         {
             Execution = execution;
             Cancellation = cancellation;
@@ -610,10 +672,114 @@ internal sealed class HedgingStrategy : Strategy
 
         public HedgeAttempt<T> AsPending() => new(Execution.AsTask(), Cancellation, Context);
 
-        public void Dispose()
+        public void Dispose() => ReleaseAttempt(Context, Cancellation);
+    }
+
+    private sealed class OriginalActionLease<T, TState>(
+        Continuation<T, TState> next,
+        HedgeAttemptLifetime lifetime)
+    {
+        public ValueTask<T> Invoke(CancellationToken cancellationToken) =>
+            InvokeOriginalAction(next, lifetime, this, cancellationToken);
+    }
+
+    private sealed class HedgeAttemptLifetime : CancellationTokenSource
+    {
+        private static readonly ObjectPool<HedgeAttemptLifetime, PoolPolicy> Pool = new(
+            maxCapacity: KevlarContext.PoolCapacity);
+
+        private KevlarContext? _context;
+        private object? _lease;
+        private CancellationTokenRegistration _parentRegistration;
+        private int _referenceCount;
+
+        private HedgeAttemptLifetime()
         {
-            KevlarContext.Return(Context);
-            Cancellation.Dispose();
+        }
+
+        public KevlarContext Context => _context!;
+
+        public static HedgeAttemptLifetime RentLinked(CancellationToken cancellationToken)
+        {
+            var lifetime = Pool.Rent();
+            Volatile.Write(ref lifetime._referenceCount, 1);
+            lifetime._parentRegistration = cancellationToken.Register(
+                static state => ((HedgeAttemptLifetime)state!).Cancel(),
+                lifetime);
+            return lifetime;
+        }
+
+        public void Attach(KevlarContext context, object lease)
+        {
+            _context = context;
+            Volatile.Write(ref _lease, lease);
+        }
+
+        public bool TryRetain(object lease)
+        {
+            while (ReferenceEquals(Volatile.Read(ref _lease), lease))
+            {
+                var referenceCount = Volatile.Read(ref _referenceCount);
+                if (referenceCount == 0)
+                {
+                    return false;
+                }
+
+                if (Interlocked.CompareExchange(
+                        ref _referenceCount,
+                        referenceCount + 1,
+                        referenceCount) == referenceCount)
+                {
+                    if (ReferenceEquals(Volatile.Read(ref _lease), lease))
+                    {
+                        return true;
+                    }
+
+                    Release();
+                    return false;
+                }
+            }
+
+            return false;
+        }
+
+        public void Release()
+        {
+            if (Interlocked.Decrement(ref _referenceCount) != 0)
+            {
+                return;
+            }
+
+            var context = _context!;
+            _context = null;
+            Volatile.Write(ref _lease, null);
+            _parentRegistration.Dispose();
+            _parentRegistration = default;
+            KevlarContext.Return(context);
+            Pool.Return(this);
+        }
+
+        private bool Reset()
+        {
+#if NETSTANDARD2_0
+            Dispose();
+            return false;
+#else
+            if (TryReset())
+            {
+                return true;
+            }
+
+            Dispose();
+            return false;
+#endif
+        }
+
+        private readonly struct PoolPolicy : IPooledObjectPolicy<HedgeAttemptLifetime>
+        {
+            public HedgeAttemptLifetime Create() => new();
+
+            public bool TryReset(HedgeAttemptLifetime lifetime) => lifetime.Reset();
         }
     }
 }

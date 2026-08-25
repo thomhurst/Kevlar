@@ -738,6 +738,108 @@ public class HedgingActionGeneratorTests
     }
 
     [Test]
+    [NotInParallel]
+    public async Task Detached_Original_Action_Keeps_Attempt_Context_Leased()
+    {
+        var originalStarted = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseOriginal = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        Task<int>? originalAction = null;
+        KevlarContext? attemptContext = null;
+        var attempts = 0;
+        var shield = Shield.For<int>().Hedge(options =>
+        {
+            options.MaxAttempts = 2;
+            options.Delay = Timeout.InfiniteTimeSpan;
+            options.ActionGenerator = hedge =>
+            {
+                attemptContext = hedge.Context;
+                return async token =>
+                {
+                    originalAction = hedge.OriginalAction(token).AsTask();
+                    await originalStarted.Task;
+                    return 42;
+                };
+            };
+        });
+
+        var result = await shield.ExecuteAsync(async _ =>
+        {
+            if (Interlocked.Increment(ref attempts) == 1)
+            {
+                throw new InvalidOperationException("primary");
+            }
+
+            originalStarted.SetResult();
+            await releaseOriginal.Task;
+            return 43;
+        });
+
+        await Assert.That(result).IsEqualTo(42);
+
+        var rentedContexts = new ConcurrentBag<KevlarContext>();
+        var allRented = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseRentals = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var rentalCount = KevlarContext.PoolCapacity + 2;
+        var rentalsStarted = 0;
+        var rentals = Enumerable.Range(0, rentalCount)
+            .Select(_ => Shield.Empty.ExecuteWithContextAsync(async context =>
+            {
+                rentedContexts.Add(context);
+                if (Interlocked.Increment(ref rentalsStarted) == rentalCount)
+                {
+                    allRented.SetResult();
+                }
+
+                await releaseRentals.Task;
+                return 0;
+            }).AsTask())
+            .ToArray();
+
+        try
+        {
+            await allRented.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await Assert.That(rentedContexts.Any(context =>
+                ReferenceEquals(context, attemptContext))).IsFalse();
+        }
+        finally
+        {
+            releaseRentals.TrySetResult();
+        }
+
+        await Task.WhenAll(rentals);
+
+        releaseOriginal.SetResult();
+        await Assert.That(await originalAction!).IsEqualTo(43);
+    }
+
+    [Test]
+    public async Task Retained_Original_Action_Cannot_Run_After_Generated_Action_Completes()
+    {
+        Func<CancellationToken, ValueTask<int>>? originalAction = null;
+        var shield = Shield.For<int>().Hedge(options =>
+        {
+            options.MaxAttempts = 2;
+            options.Delay = Timeout.InfiniteTimeSpan;
+            options.ActionGenerator = hedge =>
+            {
+                originalAction = hedge.OriginalAction;
+                return static _ => new ValueTask<int>(42);
+            };
+        });
+
+        var result = await shield.ExecuteAsync(static _ =>
+            ValueTask.FromException<int>(new InvalidOperationException("primary")));
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(async () => await originalAction!(CancellationToken.None))
+            .Throws<InvalidOperationException>();
+    }
+
+    [Test]
     public async Task Void_Generated_Action_Is_Awaited_To_Completion()
     {
         var actionCompleted = false;
