@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Kevlar.Analyzers;
+using Kevlar.Chaos;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -1322,6 +1323,7 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.Retry(options => options.OnRetryAsync = static _ => ValueTask.CompletedTask).ExecuteWithContext(static _ => 1);",
             "_ = Shield.Retry(options => options.OnRetryAsync = static _ => ValueTask.CompletedTask).ExecuteOutcome(static _ => 1);",
             "_ = Shield.Empty.UseRateLimiter((System.Threading.RateLimiting.RateLimiter)null!, options => options.OnRejectedAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
+            "_ = ChaosShield.Behavior(options => options.Behavior = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
         };
 
         await AssertEachAsync(cases, "KEV012", "KEV004", "KEV011");
@@ -1497,6 +1499,7 @@ public class PipelineHazardAnalyzerTests
             using System.Threading;
             using System.Threading.Tasks;
             using Kevlar;
+            using Kevlar.Chaos;
             using Kevlar.Extensions.RateLimiting;
 
             {{declarations}}
@@ -1510,6 +1513,7 @@ public class PipelineHazardAnalyzerTests
             .Split(Path.PathSeparator)
             .Select(path => (MetadataReference)MetadataReference.CreateFromFile(path))
             .Append(MetadataReference.CreateFromFile(typeof(Shield).Assembly.Location))
+            .Append(MetadataReference.CreateFromFile(typeof(ChaosShield).Assembly.Location))
             .Append(MetadataReference.CreateFromFile(
                 typeof(Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions).Assembly.Location));
         return CSharpCompilation.Create(

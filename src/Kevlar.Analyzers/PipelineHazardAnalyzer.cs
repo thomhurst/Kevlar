@@ -2063,8 +2063,10 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     }
 
     private static bool IsAsyncConfigurationProperty(IPropertySymbol property) =>
-        property.ContainingNamespace.ToDisplayString().StartsWith("Kevlar", StringComparison.Ordinal)
-        && property.Name is
+        (property is { Name: "Behavior", ContainingType.Name: "ChaosBehaviorOptions" }
+            && property.ContainingNamespace.ToDisplayString() == "Kevlar.Chaos")
+        || (property.ContainingNamespace.ToDisplayString().StartsWith("Kevlar", StringComparison.Ordinal)
+            && property.Name is
             "OnRetryAsync"
             or "DelayGeneratorAsync"
             or "OnTimeoutAsync"
@@ -2072,7 +2074,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             or "OnFallbackAsync"
             or "OnStateChangedAsync"
             or "BreakDurationGenerator"
-            or "OnRejectedAsync";
+            or "OnRejectedAsync");
 
     private static bool IsReactiveStrategy(IMethodSymbol method, KnownTypes knownTypes) =>
         (method.Name is "Retry" or "RetryForever" or "Hedge" or "CircuitBreaker")
