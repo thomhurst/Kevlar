@@ -1471,6 +1471,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             return true;
         }
 
+        if (IsReturnedTaskWrapper(current, semanticModel, cancellationToken))
+        {
+            return true;
+        }
+
         if (current.Ancestors()
                 .TakeWhile(static node => node is not AnonymousFunctionExpressionSyntax
                     and not StatementSyntax)
@@ -1524,6 +1529,39 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 && IsTaskLike(returnType),
             _ => false,
         };
+
+    private static bool IsReturnedTaskWrapper(
+        SyntaxNode value,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        var current = value;
+        while (current.Parent is ParenthesizedExpressionSyntax or CastExpressionSyntax)
+        {
+            current = current.Parent;
+        }
+
+        if (current.Parent is not ArgumentSyntax
+            {
+                Parent.Parent: BaseObjectCreationExpressionSyntax creation,
+            }
+            || !IsTaskLike(semanticModel.GetTypeInfo(creation, cancellationToken).Type))
+        {
+            return false;
+        }
+
+        current = creation;
+        while (current.Parent is ParenthesizedExpressionSyntax or CastExpressionSyntax)
+        {
+            current = current.Parent;
+        }
+
+        return IsTaskReturningFunction(current, semanticModel, cancellationToken)
+            && (current.Parent is ReturnStatementSyntax
+                || current.Parent is ArrowExpressionClauseSyntax
+                || current.Parent is LambdaExpressionSyntax lambda
+                    && lambda.ExpressionBody == current);
+    }
 
     private static bool IsSynchronouslyObservedThroughLocal(
         InvocationExpressionSyntax invocation,
@@ -5286,6 +5324,10 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             AddSynchronousCallbackType(compilation, "Kevlar.RateLimitOptions");
             AddSynchronousCallbackType(compilation, "Kevlar.ConcurrencyLimitOptions");
             AddSynchronousCallbackType(compilation, "Kevlar.Chaos.ChaosOptions");
+            AddSynchronousCallbackType(compilation, "Kevlar.Chaos.ChaosBehaviorOptions");
+            AddSynchronousCallbackType(compilation, "Kevlar.Chaos.ChaosFaultOptions");
+            AddSynchronousCallbackType(compilation, "Kevlar.Chaos.ChaosLatencyOptions");
+            AddSynchronousCallbackType(compilation, "Kevlar.Chaos.ChaosOutcomeOptions`1");
             AddSynchronousCallbackType(compilation, "Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions");
             var assemblyName = compilation.AssemblyName;
             IsTestAssembly = assemblyName is not null
@@ -5376,7 +5418,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        private static bool TryGetSynchronousCallbackEventType(
+        private bool TryGetSynchronousCallbackEventType(
             IPropertySymbol property,
             out INamedTypeSymbol eventType)
         {
@@ -5386,29 +5428,27 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 return false;
             }
 
-            var isNotification = callbackType is
+            if (callbackType.TypeKind != TypeKind.Delegate
+                || callbackType.TypeArguments.Length == 0
+                || callbackType.TypeArguments[0] is not INamedTypeSymbol callbackEventType
+                || !IsContextBearingCallbackArgument(callbackEventType))
+            {
+                return false;
+            }
+
+            var isSynchronousAction = callbackType is
                 {
                     Name: "Action",
                     Arity: 1,
                     ContainingNamespace.Name: "System",
-                }
-                && property.Name is "OnRetry"
-                    or "OnTimeout"
-                    or "OnStateChanged"
-                    or "OnHedge"
-                    or "OnFallback"
-                    or "OnInjected"
-                    or "OnRejected";
-            var isHandlingPredicate = callbackType is
+                };
+            var isSynchronousFunc = callbackType is
                 {
                     Name: "Func",
-                    Arity: 2,
                     ContainingNamespace.Name: "System",
                 }
-                && callbackType.TypeArguments[1].SpecialType == SpecialType.System_Boolean
-                && property.Name == "HandlesExceptionWithContext";
-            if ((isNotification || isHandlingPredicate)
-                && callbackType.TypeArguments[0] is INamedTypeSymbol callbackEventType)
+                && !IsTaskLike(callbackType.TypeArguments[callbackType.TypeArguments.Length - 1]);
+            if (isSynchronousAction || isSynchronousFunc)
             {
                 eventType = callbackEventType;
                 return true;
@@ -5416,6 +5456,12 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
             return false;
         }
+
+        private bool IsContextBearingCallbackArgument(INamedTypeSymbol type) =>
+            IsEventContextReference(type)
+            || type.GetMembers("Context")
+                .OfType<IPropertySymbol>()
+                .Any(property => !property.IsStatic && IsEventContextReference(property.Type));
 
         private static bool Is(INamedTypeSymbol type, INamedTypeSymbol? expected) =>
             expected is not null

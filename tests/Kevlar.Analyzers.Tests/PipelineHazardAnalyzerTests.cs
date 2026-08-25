@@ -627,6 +627,50 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV013_Inspects_Context_Bearing_Synchronous_Funcs()
+    {
+        var cases = new[]
+        {
+            """
+            _ = Shield.For<int>().Retry(options => options.HandlesResultWithContext = item =>
+            {
+                _ = AuditAsync(item.Context);
+                return true;
+            });
+            """,
+            """
+            _ = Shield.Retry(options => options.DelayGenerator = item =>
+            {
+                _ = AuditAsync(item.Context);
+                return TimeSpan.Zero;
+            });
+            """,
+            """
+            _ = ChaosShield.Latency(options => options.Predicate = context =>
+            {
+                _ = AuditAsync(context);
+                return true;
+            });
+            """,
+        };
+
+        foreach (var body in cases)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                {{body}}
+
+                static Task AuditAsync(KevlarContext context) => Task.CompletedTask;
+                """);
+
+            await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+            await AssertRuleAsync(
+                Without(diagnostics, "KEV013"),
+                "KEV014",
+                DiagnosticSeverity.Warning);
+        }
+    }
+
+    [Test]
     public async Task KEV013_Inspects_Unobserved_Task_Calls_In_Expression_Lambdas()
     {
         var diagnostics = await AnalyzeBodyAsync("""
@@ -1186,6 +1230,20 @@ public class PipelineHazardAnalyzerTests
         var diagnostics = await AnalyzeBodyAsync("""
             _ = Shield.Retry(options => options.OnRetryAsync = async item =>
                 await Task.Run(() => Consume(item.Context)));
+
+            static void Consume(KevlarContext context) =>
+                Console.WriteLine(context.ShieldName);
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Returned_ValueTask_Wrappers()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetryAsync = item =>
+                new ValueTask(Task.Run(() => Consume(item.Context))));
 
             static void Consume(KevlarContext context) =>
                 Console.WriteLine(context.ShieldName);
