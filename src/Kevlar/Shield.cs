@@ -116,7 +116,7 @@ public sealed class Shield
     /// <summary>Adds a concurrency limit strategy configured via <paramref name="configure"/>.</summary>
     public static Shield ConcurrencyLimit(Action<ConcurrencyLimitOptions> configure) => ShieldExtensions.ConcurrencyLimit(Empty, configure);
 
-    /// <summary>Races up to <paramref name="maxAttempts"/> concurrent attempts staggered by <paramref name="delay"/>; first acceptable outcome wins.</summary>
+    /// <summary>Races the primary with up to <paramref name="maxHedgedAttempts"/> additional attempts staggered by <paramref name="delay"/>; first acceptable outcome wins.</summary>
     /// <remarks>
     /// Hedging on an untyped <see cref="Shield"/> runs the execution delegate more than once,
     /// concurrently, and only its exceptions can select a winner. The delegate must therefore be
@@ -124,7 +124,7 @@ public sealed class Shield
     /// hedge that later loses. Prefer <see cref="For{TResult}"/>, where result clauses decide which
     /// attempt is acceptable, or confirm the action is safe to repeat.
     /// </remarks>
-    public static Shield Hedge(int maxAttempts, TimeSpan delay) => ShieldExtensions.Hedge(Empty, maxAttempts, delay);
+    public static Shield Hedge(int maxHedgedAttempts, TimeSpan delay) => ShieldExtensions.Hedge(Empty, maxHedgedAttempts, delay);
 
     /// <summary>Adds a hedging strategy configured via <paramref name="configure"/>.</summary>
     /// <remarks>

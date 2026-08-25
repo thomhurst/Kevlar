@@ -5,13 +5,79 @@ namespace Kevlar.Tests;
 public class HedgingTests
 {
     [Test]
+    public async Task MaxHedgedAttempts_Defaults_To_One_Extra_Attempt()
+    {
+        await Assert.That(new HedgeOptions().MaxHedgedAttempts).IsEqualTo(1);
+        await Assert.That(new HedgeOptions<int>().MaxHedgedAttempts).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Hedge_N_Makes_N_Plus_One_Executions_When_All_Fail()
+    {
+        var attempts = 0;
+        var hedges = 0;
+        var shield = Shield.Hedge(options =>
+        {
+            options.MaxHedgedAttempts = 2;
+            options.Delay = System.Threading.Timeout.InfiniteTimeSpan;
+            options.OnHedge = _ => hedges++;
+        });
+
+        await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
+        {
+            Interlocked.Increment(ref attempts);
+            throw new InvalidOperationException();
+        })).Throws<InvalidOperationException>();
+
+        await Assert.That(attempts).IsEqualTo(3);
+        await Assert.That(hedges).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task Retry_And_Hedge_Use_The_Same_Additional_Attempt_Counting()
+    {
+        var retryAttempts = 0;
+        var hedgeAttempts = 0;
+
+        await Assert.That(async () => await Shield.Retry(2).ExecuteAsync<int>(_ =>
+        {
+            Interlocked.Increment(ref retryAttempts);
+            throw new InvalidOperationException();
+        })).Throws<InvalidOperationException>();
+        await Assert.That(async () => await Shield.Hedge(2, Timeout.InfiniteTimeSpan).ExecuteAsync<int>(_ =>
+        {
+            Interlocked.Increment(ref hedgeAttempts);
+            throw new InvalidOperationException();
+        })).Throws<InvalidOperationException>();
+
+        await Assert.That(retryAttempts).IsEqualTo(3);
+        await Assert.That(hedgeAttempts).IsEqualTo(retryAttempts);
+    }
+
+    [Test]
+    public async Task Hedge_Zero_Extra_Attempts_Is_Equivalent_To_No_Hedging()
+    {
+        var hedges = 0;
+        var shield = Shield.Hedge(options =>
+        {
+            options.MaxHedgedAttempts = 0;
+            options.OnHedge = _ => hedges++;
+        });
+
+        var result = shield.Execute(static _ => 42);
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(hedges).IsEqualTo(0);
+    }
+
+    [Test]
     public async Task SuppressAdditionalAttempts_Skips_Hedges_And_Notification()
     {
         var attempts = 0;
         var notifications = 0;
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 3;
+            options.MaxHedgedAttempts = 2;
             options.Delay = TimeSpan.Zero;
             options.OnHedge = _ => notifications++;
         });
@@ -38,7 +104,7 @@ public class HedgingTests
         var attempts = 0;
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = System.Threading.Timeout.InfiniteTimeSpan;
         });
 
@@ -63,7 +129,7 @@ public class HedgingTests
         var attempts = 0;
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 3;
+            options.MaxHedgedAttempts = 2;
             options.Delay = System.Threading.Timeout.InfiniteTimeSpan;
         });
 
@@ -83,7 +149,7 @@ public class HedgingTests
         var slowGate = new TaskCompletionSource();
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = TimeSpan.Zero;
         });
 
@@ -114,7 +180,7 @@ public class HedgingTests
         var shield = Shield
             .Hedge(options =>
             {
-                options.MaxAttempts = 2;
+                options.MaxHedgedAttempts = 1;
                 options.Delay = TimeSpan.FromSeconds(1);
                 options.OnHedge = hedge => hedges.Add(hedge.AttemptNumber);
             })
@@ -143,7 +209,7 @@ public class HedgingTests
     [Test]
     public async Task Synchronous_Execution_Is_Not_Supported()
     {
-        var shield = Shield.Hedge(2, TimeSpan.Zero);
+        var shield = Shield.Hedge(1, TimeSpan.Zero);
 
         await Assert.That(() => shield.Execute(_ => 1)).Throws<NotSupportedException>();
     }

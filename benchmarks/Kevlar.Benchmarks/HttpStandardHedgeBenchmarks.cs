@@ -64,7 +64,7 @@ public class HttpStandardHedgeBenchmarks
             .Or<ConcurrencyLimitExceededException>()
             .Or<CircuitOpenException>()
             .OrResult(HttpShield.IsTransient)
-            .Hedge(2, TimeSpan.FromSeconds(1));
+            .Hedge(1, TimeSpan.FromSeconds(1));
 
     private static ShieldHttpHandlerOptions CreateHandlerOptions()
     {

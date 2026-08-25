@@ -24,11 +24,11 @@ This is the classic "total timeout outside, attempt timeout inside" pattern — 
 
 Order also defines how retry and hedging multiply work:
 
-- `Retry(r).Hedge(h)` creates at most `r + 1` hedge groups, each containing at most `h`
-  attempts. A new group starts only after the previous group is exhausted.
-- `Hedge(h).Retry(r)` creates at most `h` hedge attempts, each with its own retry loop of at
+- `Retry(r).Hedge(h)` creates at most `r + 1` hedge groups, each containing at most `h + 1`
+  attempts (the original plus `h` hedges). A new group starts only after the previous group is exhausted.
+- `Hedge(h).Retry(r)` creates at most `h + 1` attempts, each with its own retry loop of at
   most `r + 1` invocations.
-- The maximum in either order is `(r + 1) × h`, but a winner, unhandled exception, or caller
+- The maximum in either order is `(r + 1) × (h + 1)`, but a winner, unhandled exception, or caller
   cancellation stops the outer strategy from multiplying more work.
 
 Timeout position follows the same rule. `Timeout(t).Hedge(h)` is one total budget around every

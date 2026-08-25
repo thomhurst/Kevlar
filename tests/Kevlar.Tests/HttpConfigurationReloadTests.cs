@@ -177,7 +177,7 @@ public class HttpConfigurationReloadTests
     {
         var configuration = BuildConfiguration(
             ("TotalTimeout", "00:00:20"),
-            ("MaxAttempts", "3"),
+            ("MaxHedgedAttempts", "3"),
             ("HedgeDelay", "00:00:00.250"),
             ("AttemptTimeout", "00:00:02"),
             ("MaxConcurrency", "4"),
@@ -203,7 +203,7 @@ public class HttpConfigurationReloadTests
 
         await Assert.That(bound).IsNotNull();
         await Assert.That(bound!.TotalTimeout).IsEqualTo(TimeSpan.FromSeconds(20));
-        await Assert.That(bound.MaxAttempts).IsEqualTo(3);
+        await Assert.That(bound.MaxHedgedAttempts).IsEqualTo(3);
         await Assert.That(bound.HedgeDelay).IsEqualTo(TimeSpan.FromMilliseconds(250));
         await Assert.That(bound.AttemptTimeout).IsEqualTo(TimeSpan.FromSeconds(2));
         await Assert.That(bound.MaxConcurrency).IsEqualTo(4);
@@ -325,6 +325,19 @@ public class HttpConfigurationReloadTests
             .Throws<InvalidOperationException>()
             .WithMessage(
                 "Configuration key 'Clients:GitHub:MaxQueue' is not supported; use 'QueueLimit'.");
+    }
+
+    [Test]
+    public async Task Legacy_MaxAttempts_Key_Is_Rejected_With_Its_Full_Path()
+    {
+        var builder = new ServiceCollection().AddHttpClient("legacy");
+        var configuration = BuildConfiguration(("Clients:GitHub:MaxAttempts", "2"))
+            .GetSection("Clients:GitHub");
+
+        await Assert.That(() => builder.AddStandardHedgeShield(configuration))
+            .Throws<InvalidOperationException>()
+            .WithMessage(
+                "Configuration key 'Clients:GitHub:MaxAttempts' is not supported; use 'MaxHedgedAttempts'.");
     }
 
     [Test]
@@ -706,15 +719,16 @@ public class HttpConfigurationReloadTests
     public async Task Hedge_Section_Binds_Endpoints_And_Routes_Attempts()
     {
         var configuration = BuildConfiguration(
-            ("MaxAttempts", "2"),
+            ("MaxHedgedAttempts", "2"),
             ("HedgeDelay", "00:00:00"),
             ("Endpoints:0:Uri", "https://one.example"),
-            ("Endpoints:1:Uri", "https://two.example"));
+            ("Endpoints:1:Uri", "https://two.example"),
+            ("Endpoints:2:Uri", "https://three.example"));
         var hosts = new ConcurrentBag<string>();
         var transport = new FuncHandler((request, _) =>
         {
             hosts.Add(request.RequestUri!.Host);
-            var status = request.RequestUri.Host == "two.example"
+            var status = request.RequestUri.Host == "three.example"
                 ? HttpStatusCode.OK
                 : HttpStatusCode.InternalServerError;
             return Task.FromResult(new HttpResponseMessage(status));
@@ -731,8 +745,8 @@ public class HttpConfigurationReloadTests
 
         await Assert.That(client.Timeout).IsEqualTo(Timeout.InfiniteTimeSpan);
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-        await Assert.That(hosts).Contains("one.example");
-        await Assert.That(hosts).Contains("two.example");
+        await Assert.That(hosts).IsEquivalentTo(
+            ["one.example", "two.example", "three.example"]);
     }
 
     [Test]

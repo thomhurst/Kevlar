@@ -142,7 +142,7 @@ public class OutcomeAndContextTests
         var observer = new ProxyObserverStrategy();
         var shield = Shield
             .Use(observer)
-            .Hedge(2, TimeSpan.Zero);
+            .Hedge(1, TimeSpan.Zero);
 
         var actual = await Assert.That(async () => await shield.ExecuteAsync<int>(
                 _ => throw new TestProxyException(original)))

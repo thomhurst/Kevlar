@@ -276,7 +276,7 @@ public class ExecuteOutcomeTests
         var observed = -1;
         var releasePrimary = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
-        var result = await Shield.Hedge(2, TimeSpan.Zero).ExecuteWithContextAsync(
+        var result = await Shield.Hedge(1, TimeSpan.Zero).ExecuteWithContextAsync(
             0,
             static (_, _) => { },
             async (_, context) =>
@@ -307,7 +307,7 @@ public class ExecuteOutcomeTests
         var observed = -1;
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = TimeSpan.Zero;
             options.OnHedge = hedge =>
             {
@@ -343,7 +343,7 @@ public class ExecuteOutcomeTests
         var containsKey = true;
         var attempts = 0;
 
-        _ = await Shield.Hedge(2, TimeSpan.Zero).ExecuteWithContextAsync(
+        _ = await Shield.Hedge(1, TimeSpan.Zero).ExecuteWithContextAsync(
             key,
             static (state, properties) => properties.Set(state, 42),
             async (state, context) =>
@@ -368,8 +368,8 @@ public class ExecuteOutcomeTests
         var attempts = 0;
         var observed = -1;
         var shield = Shield
-            .Hedge(2, Timeout.InfiniteTimeSpan)
-            .Hedge(2, TimeSpan.Zero);
+            .Hedge(1, Timeout.InfiniteTimeSpan)
+            .Hedge(1, TimeSpan.Zero);
 
         _ = await shield.ExecuteWithContextAsync(
             0,
@@ -399,7 +399,7 @@ public class ExecuteOutcomeTests
         var retainedRemovedKey = true;
         var shield = Shield.For<int>().Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = Timeout.InfiniteTimeSpan;
             options.ActionGenerator = hedge => token => hedge.OriginalAction(token);
         });
@@ -433,7 +433,7 @@ public class ExecuteOutcomeTests
         var observedWinner = -1;
         var shield = Shield.For<int>().Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = Timeout.InfiniteTimeSpan;
             options.ActionGenerator = hedge => async token =>
             {
@@ -466,7 +466,7 @@ public class ExecuteOutcomeTests
         var observed = -1;
         var shield = Shield.For<int>().Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = Timeout.InfiniteTimeSpan;
             options.HandlesException = static _ => true;
             options.HandlesResultWithContext = handling =>
@@ -498,7 +498,7 @@ public class ExecuteOutcomeTests
         var retainedRemovedKey = true;
         var shield = Shield.Empty
             .Use(new PostHedgePropertyStrategy())
-            .Hedge(2, TimeSpan.Zero);
+            .Hedge(1, TimeSpan.Zero);
 
         _ = await shield.ExecuteWithContextAsync(
             0,

@@ -143,7 +143,7 @@ public class GrpcStreamingResilienceTests
         var loserCancelled = new TaskCompletionSource(
             TaskCreationOptions.RunContinuationsAsynchronously);
         var interceptor = new ShieldStreamingClientInterceptor(
-            Shield.Hedge(2, TimeSpan.Zero));
+            Shield.Hedge(1, TimeSpan.Zero));
         using var call = interceptor.AsyncServerStreamingCall(
             new StreamRequest(),
             Context(ServerStreamingMethod),
@@ -666,7 +666,7 @@ public class GrpcStreamingResilienceTests
         var readStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var releaseRead = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var interceptor = new ShieldStreamingClientInterceptor(
-            Shield.Hedge(2, TimeSpan.FromMilliseconds(50)));
+            Shield.Hedge(1, TimeSpan.FromMilliseconds(50)));
         using var call = interceptor.AsyncServerStreamingCall(
             new StreamRequest(),
             Context(ServerStreamingMethod),
@@ -943,7 +943,7 @@ public class GrpcStreamingResilienceTests
     {
         var attempts = 0;
         var interceptor = new ShieldStreamingClientInterceptor(
-            Shield.When(static _ => true).Hedge(2, TimeSpan.FromMilliseconds(100)));
+            Shield.When(static _ => true).Hedge(1, TimeSpan.FromMilliseconds(100)));
         using var call = interceptor.AsyncServerStreamingCall(
             new StreamRequest(),
             Context(

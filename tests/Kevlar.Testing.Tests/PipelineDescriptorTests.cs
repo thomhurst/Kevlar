@@ -47,7 +47,7 @@ public class PipelineDescriptorTests
             })
             .Hedge(options =>
             {
-                options.MaxAttempts = 3;
+                options.MaxHedgedAttempts = 2;
                 options.Delay = TimeSpan.FromMilliseconds(25);
                 options.DelayGenerator = static _ => TimeSpan.Zero;
                 options.OnHedge = _ => { };
@@ -103,7 +103,7 @@ public class PipelineDescriptorTests
         await Assert.That(concurrency.HasNotification).IsTrue();
 
         var hedge = descriptor.AssertContainsSingle<HedgeStrategyDescriptor>();
-        await Assert.That(hedge.MaxAttempts).IsEqualTo(3);
+        await Assert.That(hedge.MaxHedgedAttempts).IsEqualTo(2);
         await Assert.That(hedge.Delay).IsEqualTo(TimeSpan.FromMilliseconds(25));
         await Assert.That(hedge.HasDelayGenerator).IsTrue();
         await Assert.That(hedge.HasNotification).IsTrue();

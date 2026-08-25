@@ -72,7 +72,7 @@ public class CallerContextTests
         var attempt = 0;
         var shield = Shield.For<int>()
             .When<InvalidOperationException>()
-            .Hedge(2, TimeSpan.Zero);
+            .Hedge(1, TimeSpan.Zero);
 
         var result = await shield.ExecuteWithContextAsync(
             observations,

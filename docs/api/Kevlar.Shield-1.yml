@@ -759,18 +759,18 @@ items:
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Races up to <code class="paramref">maxAttempts</code> concurrent attempts staggered by <code class="paramref">delay</code>; first acceptable outcome wins.
+  summary: Races the primary with up to <code class="paramref">maxHedgedAttempts</code> additional attempts staggered by <code class="paramref">delay</code>; first acceptable outcome wins.
   example: []
   syntax:
-    content: public Shield<TResult> Hedge(int maxAttempts, TimeSpan delay)
+    content: public Shield<TResult> Hedge(int maxHedgedAttempts, TimeSpan delay)
     parameters:
-    - id: maxAttempts
+    - id: maxHedgedAttempts
       type: System.Int32
     - id: delay
       type: System.TimeSpan
     return:
       type: Kevlar.Shield`1
-    content.vb: Public Function Hedge(maxAttempts As Integer, delay As TimeSpan) As Shield(Of TResult)
+    content.vb: Public Function Hedge(maxHedgedAttempts As Integer, delay As TimeSpan) As Shield(Of TResult)
   overload: Kevlar.Shield`1.Hedge*
   nameWithType.vb: Shield(Of TResult).Hedge(Integer, TimeSpan)
   fullName.vb: Kevlar.Shield(Of TResult).Hedge(Integer, System.TimeSpan)

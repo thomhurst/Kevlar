@@ -564,15 +564,15 @@ items:
   summary: Races concurrent attempts; a handled outcome launches the next attempt immediately.
   example: []
   syntax:
-    content: public Shield<TResult> Hedge(int maxAttempts, TimeSpan delay)
+    content: public Shield<TResult> Hedge(int maxHedgedAttempts, TimeSpan delay)
     parameters:
-    - id: maxAttempts
+    - id: maxHedgedAttempts
       type: System.Int32
     - id: delay
       type: System.TimeSpan
     return:
       type: Kevlar.Shield{{TResult}}
-    content.vb: Public Function Hedge(maxAttempts As Integer, delay As TimeSpan) As Shield(Of TResult)
+    content.vb: Public Function Hedge(maxHedgedAttempts As Integer, delay As TimeSpan) As Shield(Of TResult)
   overload: Kevlar.ShieldBuilder`1.Hedge*
   nameWithType.vb: ShieldBuilder(Of TResult).Hedge(Integer, TimeSpan)
   fullName.vb: Kevlar.ShieldBuilder(Of TResult).Hedge(Integer, System.TimeSpan)

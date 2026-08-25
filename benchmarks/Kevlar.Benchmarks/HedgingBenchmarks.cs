@@ -15,29 +15,29 @@ namespace Kevlar.Benchmarks;
 [CategoriesColumn]
 public class HedgingBenchmarks
 {
-    private static readonly Shield<int> KevlarHedge = Shield.For<int>().Hedge(2, TimeSpan.FromSeconds(10));
-    private static readonly Shield<int> FixedLaunch = Shield.For<int>().Hedge(2, TimeSpan.Zero);
+    private static readonly Shield<int> KevlarHedge = Shield.For<int>().Hedge(1, TimeSpan.FromSeconds(10));
+    private static readonly Shield<int> FixedLaunch = Shield.For<int>().Hedge(1, TimeSpan.Zero);
     private static readonly Shield<int> SyncHookLaunch = Shield.For<int>().Hedge(options =>
     {
-        options.MaxAttempts = 2;
+        options.MaxHedgedAttempts = 1;
         options.Delay = TimeSpan.Zero;
         options.OnHedge = static _ => { };
     });
     private static readonly Shield<int> CompletedAsyncHookLaunch = Shield.For<int>().Hedge(options =>
     {
-        options.MaxAttempts = 2;
+        options.MaxHedgedAttempts = 1;
         options.Delay = TimeSpan.Zero;
         options.OnHedgeAsync = static _ => ValueTask.CompletedTask;
     });
     private static readonly Shield<int> YieldingAsyncHookLaunch = Shield.For<int>().Hedge(options =>
     {
-        options.MaxAttempts = 2;
+        options.MaxHedgedAttempts = 1;
         options.Delay = TimeSpan.Zero;
         options.OnHedgeAsync = static async _ => await Task.Yield();
     });
     private static readonly Shield<int> GeneratedLaunch = Shield.For<int>().Hedge(options =>
     {
-        options.MaxAttempts = 2;
+        options.MaxHedgedAttempts = 1;
         options.Delay = TimeSpan.Zero;
         options.ActionGenerator = static hedge => hedge.OriginalAction;
     });

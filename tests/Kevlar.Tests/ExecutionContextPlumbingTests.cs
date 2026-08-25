@@ -161,7 +161,7 @@ public class ExecutionContextPlumbingTests
         var before = new ConcurrentBag<int>();
         var after = new ConcurrentBag<int>();
         var shield = Shield
-            .Hedge(2, TimeSpan.Zero)
+            .Hedge(1, TimeSpan.Zero)
             .Use(new IndexCapturingStrategy(before, after));
 
         await shield.ExecuteAsync(static _ => ValueTask.CompletedTask);

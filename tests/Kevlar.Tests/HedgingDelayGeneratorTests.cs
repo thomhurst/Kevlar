@@ -16,7 +16,7 @@ public class HedgingDelayGeneratorTests
         var attempts = new AsyncCounter("hedge attempts");
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 3;
+            options.MaxHedgedAttempts = 2;
             options.DelayGenerator = hedge => hedge.AttemptNumber == 2
                 ? TimeSpan.FromMilliseconds(100)
                 : TimeSpan.FromMilliseconds(300);
@@ -59,7 +59,7 @@ public class HedgingDelayGeneratorTests
         var generatorCalls = 0;
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.DelayGenerator = _ =>
             {
                 generatorCalls++;
@@ -92,7 +92,7 @@ public class HedgingDelayGeneratorTests
         var attempts = new AsyncCounter("hedge attempts");
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = TimeSpan.FromDays(1);
             options.DelayGenerator = _ => TimeSpan.Zero;
         });
@@ -119,7 +119,7 @@ public class HedgingDelayGeneratorTests
         var attempts = new AsyncCounter("hedge attempts");
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 3;
+            options.MaxHedgedAttempts = 2;
             options.DelayGenerator = hedge =>
             {
                 var delay = hedge.Context.Properties.GetOrDefault(DelayKey);
@@ -159,7 +159,7 @@ public class HedgingDelayGeneratorTests
         var observed = TimeSpan.Zero;
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.DelayGenerator = hedge =>
             {
                 observed = hedge.Context.Properties.GetOrDefault(DelayKey);
@@ -193,7 +193,7 @@ public class HedgingDelayGeneratorTests
         var attempts = 0;
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.DelayGeneratorAsync = async hedge =>
             {
                 entered.SetResult();
@@ -222,7 +222,7 @@ public class HedgingDelayGeneratorTests
         var expected = new InvalidOperationException("delay failed");
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.DelayGenerator = _ => throw expected;
         });
 
@@ -241,7 +241,7 @@ public class HedgingDelayGeneratorTests
         var attempts = new AsyncCounter("hedge attempts");
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.DelayGenerator = _ => TimeSpan.FromTicks(-2);
         });
 
@@ -266,7 +266,7 @@ public class HedgingDelayGeneratorTests
         var attempts = new AsyncCounter("hedge attempts");
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.DelayGenerator = _ => TimeSpan.MaxValue;
         }).WithTimeProvider(time);
 
@@ -295,7 +295,7 @@ public class HedgingDelayGeneratorTests
         var calls = 0;
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.DelayGenerator = _ =>
             {
                 calls++;
@@ -313,7 +313,7 @@ public class HedgingDelayGeneratorTests
         var attempts = new AsyncCounter("typed hedge attempts");
         var shield = Shield.For<int>().Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.DelayGenerator = _ => TimeSpan.Zero;
         });
 

@@ -1,7 +1,7 @@
 namespace Kevlar;
 
 /// <summary>
-/// Configuration for a hedging strategy: launch up to <see cref="MaxAttempts"/> concurrent
+/// Configuration for a hedging strategy: launch up to <see cref="MaxHedgedAttempts"/> additional
 /// attempts, staggered by <see cref="Delay"/>, and return the first acceptable outcome.
 /// A handled failure always launches the next attempt immediately.
 /// </summary>
@@ -33,8 +33,8 @@ public sealed class HedgeOptions
     internal bool HasHandlingOverride =>
         HandlesException is not null || HandlesExceptionWithContext is not null;
 
-    /// <summary>Total attempts including the original. Default 2.</summary>
-    public int MaxAttempts { get; set; } = 2;
+    /// <summary>Maximum additional attempts after the original. Default 1.</summary>
+    public int MaxHedgedAttempts { get; set; } = 1;
 
     /// <summary>
     /// Time to wait before launching the next attempt while the current ones are still running.

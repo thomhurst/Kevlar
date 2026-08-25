@@ -125,7 +125,7 @@ public sealed class ShieldBuilder
     /// hedge that later loses. Prefer <c>Shield.For&lt;T&gt;()</c>, where result clauses decide which
     /// attempt is acceptable, or confirm the action is safe to repeat.
     /// </remarks>
-    public Shield Hedge(int maxAttempts, TimeSpan delay) => Seal().Hedge(maxAttempts, delay);
+    public Shield Hedge(int maxHedgedAttempts, TimeSpan delay) => Seal().Hedge(maxHedgedAttempts, delay);
 
     /// <summary>Adds a hedging strategy configured via <paramref name="configure"/>.</summary>
     /// <remarks>

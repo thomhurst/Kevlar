@@ -497,7 +497,7 @@ items:
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: 'Appends hedging: up to <code class="paramref">maxAttempts</code> concurrent attempts staggered by <code class="paramref">delay</code>.'
+  summary: 'Appends hedging: up to <code class="paramref">maxHedgedAttempts</code> additional attempts staggered by <code class="paramref">delay</code>.'
   remarks: >-
     Hedging on an untyped <xref href="Kevlar.Shield" data-throw-if-not-resolved="false"></xref> runs the execution delegate more than once,
 
@@ -510,17 +510,17 @@ items:
     attempt is acceptable, or confirm the action is safe to repeat.
   example: []
   syntax:
-    content: public static Shield Hedge(this Shield shield, int maxAttempts, TimeSpan delay)
+    content: public static Shield Hedge(this Shield shield, int maxHedgedAttempts, TimeSpan delay)
     parameters:
     - id: shield
       type: Kevlar.Shield
-    - id: maxAttempts
+    - id: maxHedgedAttempts
       type: System.Int32
     - id: delay
       type: System.TimeSpan
     return:
       type: Kevlar.Shield
-    content.vb: Public Shared Function Hedge(shield As Shield, maxAttempts As Integer, delay As TimeSpan) As Shield
+    content.vb: Public Shared Function Hedge(shield As Shield, maxHedgedAttempts As Integer, delay As TimeSpan) As Shield
   overload: Kevlar.ShieldExtensions.Hedge*
   nameWithType.vb: ShieldExtensions.Hedge(Shield, Integer, TimeSpan)
   fullName.vb: Kevlar.ShieldExtensions.Hedge(Kevlar.Shield, Integer, System.TimeSpan)

@@ -12,12 +12,12 @@ Unlike a [retry](retry.md), hedging doesn't wait for the first attempt to *fail*
 
 ```csharp
 // Fire a second attempt if the first hasn't answered within 100ms.
-Shield.Hedge(maxAttempts: 2, delay: TimeSpan.FromMilliseconds(100));
+Shield.Hedge(maxHedgedAttempts: 1, delay: TimeSpan.FromMilliseconds(100));
 
 Shield.Hedge(o =>
 {
-    o.MaxAttempts = 2;                        // default 2 (total attempts, incl. the first)
-    o.Delay = TimeSpan.FromSeconds(1);        // default 1s
+    o.MaxHedgedAttempts = 1;                  // default 1 (plus the original attempt)
+    o.Delay = TimeSpan.FromSeconds(1);         // default 1s
     o.OnHedge = e => logger.LogInformation("Hedge attempt {AttemptNumber}", e.AttemptNumber);
     o.OnHedgeAsync = static _ => ValueTask.CompletedTask;
 });
@@ -29,7 +29,7 @@ API reference: [`HedgeOptions`](pathname:///api/Kevlar.HedgeOptions.html) and [`
 
 | Option | Default | What it does |
 |---|---|---|
-| `MaxAttempts` | `2` | Total attempts, including the first |
+| `MaxHedgedAttempts` | `1` | Maximum additional attempts after the original |
 | `Delay` | `1s` | Wait before launching the next attempt (see special values below) |
 | `DelayGenerator` | — | Select a delay for each pending hedge from its attempt number, context, and elapsed execution time |
 | `DelayGeneratorAsync` | — | Awaited delay selector; runs after `DelayGenerator` and determines the delay when both are set |
@@ -59,7 +59,7 @@ var replicas = new Func<CancellationToken, ValueTask<string>>[]
 };
 var shield = Shield.For<string>().Hedge(o =>
 {
-    o.MaxAttempts = replicas.Length;
+    o.MaxHedgedAttempts = replicas.Length - 1;
     o.Delay = TimeSpan.FromMilliseconds(100);
     o.ActionGenerator = hedge =>
         ct => replicas[hedge.AttemptNumber - 1](ct);
@@ -82,7 +82,7 @@ approximately 100ms and 400ms. A handled failure still launches the next attempt
 var hedgeDelay = new KevlarKey<TimeSpan>("hedge-delay");
 var adaptiveHedge = Shield.Hedge(options =>
 {
-    options.MaxAttempts = 3;
+    options.MaxHedgedAttempts = 2;
     options.DelayGenerator = hedge =>
         hedge.Context.Properties.GetOrDefault(hedgeDelay, TimeSpan.FromMilliseconds(100));
 });
@@ -142,6 +142,6 @@ Avoid it for writes that aren't idempotent (you may execute them twice!) and for
 ```csharp
 var shield = Shield
     .Timeout(TimeSpan.FromSeconds(2))
-    .Hedge(maxAttempts: 2, delay: TimeSpan.FromMilliseconds(100))
+    .Hedge(maxHedgedAttempts: 1, delay: TimeSpan.FromMilliseconds(100))
     .CircuitBreaker(o => o.FailureRatio = 0.5);
 ```

@@ -193,7 +193,7 @@ public class AmbientContextContractTests
 
         var hedge = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = TimeSpan.Zero;
             options.OnHedge = _ => Record(observations, "hedge");
         });
@@ -218,7 +218,7 @@ public class AmbientContextContractTests
         var attemptsStarted = new AsyncCounter("hedge attempts with ambient context");
         var releaseSecond = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var attemptNumber = 0;
-        var shield = Shield.Hedge(2, TimeSpan.Zero);
+        var shield = Shield.Hedge(1, TimeSpan.Zero);
         Ambient.Value = "caller";
 
         var execution = shield.ExecuteAsync<int>(async token =>

@@ -16,8 +16,8 @@ items:
   - Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelay
   - Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelayGenerator
   - Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelayGeneratorAsync
-  - Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxAttempts
   - Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxConcurrency
+  - Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxHedgedAttempts
   - Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaximumBufferSize
   - Kevlar.Extensions.Http.StandardHedgeShieldOptions.MinimumThroughput
   - Kevlar.Extensions.Http.StandardHedgeShieldOptions.QueueLimit
@@ -94,29 +94,29 @@ items:
       type: System.TimeSpan
     content.vb: Public Property TotalTimeout As TimeSpan
   overload: Kevlar.Extensions.Http.StandardHedgeShieldOptions.TotalTimeout*
-- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxAttempts
-  commentId: P:Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxAttempts
-  id: MaxAttempts
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxHedgedAttempts
+  commentId: P:Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxHedgedAttempts
+  id: MaxHedgedAttempts
   parent: Kevlar.Extensions.Http.StandardHedgeShieldOptions
   langs:
   - csharp
   - vb
-  name: MaxAttempts
-  nameWithType: StandardHedgeShieldOptions.MaxAttempts
-  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxAttempts
+  name: MaxHedgedAttempts
+  nameWithType: StandardHedgeShieldOptions.MaxHedgedAttempts
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxHedgedAttempts
   type: Property
   assemblies:
   - Kevlar.Extensions.Http
   namespace: Kevlar.Extensions.Http
-  summary: Total attempts including the original. Default 2.
+  summary: Maximum additional attempts after the original. Default 1.
   example: []
   syntax:
-    content: public int MaxAttempts { get; set; }
+    content: public int MaxHedgedAttempts { get; set; }
     parameters: []
     return:
       type: System.Int32
-    content.vb: Public Property MaxAttempts As Integer
-  overload: Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxAttempts*
+    content.vb: Public Property MaxHedgedAttempts As Integer
+  overload: Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxHedgedAttempts*
 - uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelay
   commentId: P:Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelay
   id: HedgeDelay
@@ -814,13 +814,13 @@ references:
   name: TimeSpan
   nameWithType: TimeSpan
   fullName: System.TimeSpan
-- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxAttempts*
-  commentId: Overload:Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxAttempts
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxHedgedAttempts*
+  commentId: Overload:Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxHedgedAttempts
   isExternal: true
-  href: Kevlar.Extensions.Http.StandardHedgeShieldOptions.html#Kevlar_Extensions_Http_StandardHedgeShieldOptions_MaxAttempts
-  name: MaxAttempts
-  nameWithType: StandardHedgeShieldOptions.MaxAttempts
-  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxAttempts
+  href: Kevlar.Extensions.Http.StandardHedgeShieldOptions.html#Kevlar_Extensions_Http_StandardHedgeShieldOptions_MaxHedgedAttempts
+  name: MaxHedgedAttempts
+  nameWithType: StandardHedgeShieldOptions.MaxHedgedAttempts
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxHedgedAttempts
 - uid: System.Int32
   commentId: T:System.Int32
   parent: System

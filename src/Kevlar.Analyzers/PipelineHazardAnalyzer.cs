@@ -225,7 +225,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 invocation.Syntax.GetLocation()));
         }
 
-        if (IsUntypedHedge(invocation.TargetMethod, knownTypes))
+        if (IsUntypedHedge(invocation, knownTypes))
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 UntypedHedgeRule,
@@ -1903,13 +1903,15 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             && IsKevlarFluentMethod(method, knownTypes);
     }
 
-    private static bool IsUntypedHedge(IMethodSymbol method, KnownTypes knownTypes)
+    private static bool IsUntypedHedge(IInvocationOperation invocation, KnownTypes knownTypes)
     {
-        method = Normalize(method);
+        var method = Normalize(invocation.TargetMethod);
         return method.Name == "Hedge"
             && method.ReturnType is INamedTypeSymbol returnType
             && knownTypes.IsUntypedShield(returnType)
-            && IsKevlarFluentMethod(method, knownTypes);
+            && IsKevlarFluentMethod(method, knownTypes)
+            && (!TryGetConstantMaxHedgedAttempts(invocation, out var maxHedgedAttempts)
+                || maxHedgedAttempts > 0);
     }
 
     private static bool IsStatefulStrategy(IMethodSymbol method, KnownTypes knownTypes) =>
@@ -2188,12 +2190,203 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
+        return TryGetConstantMaxHedgedAttempts(invocation, out var maxHedgedAttempts)
+            ? maxHedgedAttempts > 0
+            : invocation.Arguments.Any(static argument => argument.Parameter?.Name == "configure");
+    }
+
+    private static bool TryGetConstantMaxHedgedAttempts(
+        IInvocationOperation invocation,
+        out int maxHedgedAttempts)
+    {
         foreach (var argument in invocation.Arguments)
         {
-            if (argument.Parameter?.Name == "maxAttempts"
-                && argument.Value.ConstantValue is { HasValue: true, Value: int maxAttempts })
+            if (argument.Parameter?.Name == "maxHedgedAttempts"
+                && argument.Value.ConstantValue is { HasValue: true, Value: int value })
             {
-                return maxAttempts > 1;
+                maxHedgedAttempts = value;
+                return true;
+            }
+
+            if (argument.Parameter?.Name == "configure"
+                && TryGetConfiguredMaxHedgedAttempts(argument.Value, out maxHedgedAttempts))
+            {
+                return true;
+            }
+        }
+
+        maxHedgedAttempts = default;
+        return false;
+    }
+
+    private static bool TryGetConfiguredMaxHedgedAttempts(
+        IOperation operation,
+        out int maxHedgedAttempts)
+    {
+        operation = Unwrap(operation)!;
+        if (operation is IDelegateCreationOperation delegateCreation)
+        {
+            operation = Unwrap(delegateCreation.Target)!;
+        }
+
+        if (operation is not IAnonymousFunctionOperation anonymousFunction)
+        {
+            maxHedgedAttempts = default;
+            return false;
+        }
+
+        if (anonymousFunction.Symbol.IsAsync)
+        {
+            maxHedgedAttempts = default;
+            return false;
+        }
+
+        maxHedgedAttempts = 1;
+        var found = true;
+        return AnalyzeHedgeConfigurator(
+            anonymousFunction.Body,
+            anonymousFunction.Symbol.Parameters[0],
+            ref found,
+            ref maxHedgedAttempts)
+            && found;
+    }
+
+    private static bool AnalyzeHedgeConfigurator(
+        IOperation operation,
+        IParameterSymbol configuratorParameter,
+        ref bool found,
+        ref int maxHedgedAttempts)
+    {
+        operation = Unwrap(operation)!;
+        if (operation is ISimpleAssignmentOperation assignment)
+        {
+            if (IsConfiguredHedgeAttemptProperty(assignment.Target, configuratorParameter))
+            {
+                if (ContainsParameterReference(assignment.Value, configuratorParameter)
+                    || assignment.Value.ConstantValue is not { HasValue: true, Value: int value })
+                {
+                    return false;
+                }
+
+                maxHedgedAttempts = value;
+                found = true;
+                return true;
+            }
+
+            if ((!IsDirectConfiguratorProperty(assignment.Target, configuratorParameter)
+                    && ContainsParameterReference(assignment.Target, configuratorParameter))
+                || ContainsParameterReference(assignment.Value, configuratorParameter))
+            {
+                return false;
+            }
+        }
+
+        if (operation is IVariableInitializerOperation initializer
+            && ContainsParameterReference(initializer.Value, configuratorParameter))
+        {
+            return false;
+        }
+
+        if (operation is IDeconstructionAssignmentOperation deconstruction
+            && ContainsParameterReference(deconstruction.Value, configuratorParameter))
+        {
+            return false;
+        }
+
+        if (operation is ICompoundAssignmentOperation compoundAssignment
+            && IsConfiguredHedgeAttemptProperty(compoundAssignment.Target, configuratorParameter))
+        {
+            return false;
+        }
+
+        if (operation is IIncrementOrDecrementOperation increment
+            && IsConfiguredHedgeAttemptProperty(increment.Target, configuratorParameter))
+        {
+            return false;
+        }
+
+        if (operation is IAnonymousFunctionOperation)
+        {
+            return true;
+        }
+
+        if (operation is IConditionalOperation
+            or ICoalesceOperation
+            or IConditionalAccessOperation
+            or ILoopOperation
+            or ISwitchOperation
+            or ISwitchExpressionOperation
+            or ITryOperation
+            or IInvocationOperation
+            or IObjectCreationOperation
+            or ILocalFunctionOperation
+            or IBinaryOperation
+            {
+                OperatorKind: BinaryOperatorKind.ConditionalAnd
+                    or BinaryOperatorKind.ConditionalOr,
+            })
+        {
+            return false;
+        }
+
+        foreach (var child in operation.ChildOperations)
+        {
+            if (!AnalyzeHedgeConfigurator(
+                    child,
+                    configuratorParameter,
+                    ref found,
+                    ref maxHedgedAttempts))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool IsConfiguredHedgeAttemptProperty(
+        IOperation target,
+        IParameterSymbol configuratorParameter) =>
+        target is IPropertyReferenceOperation
+        {
+            Property:
+            {
+                Name: "MaxHedgedAttempts",
+                ContainingType.Name: "HedgeOptions",
+            } property,
+            Instance: { } instance,
+        }
+        && property.ContainingNamespace.ToDisplayString() == "Kevlar"
+        && ReferencesParameter(instance, configuratorParameter);
+
+    private static bool IsDirectConfiguratorProperty(
+        IOperation target,
+        IParameterSymbol configuratorParameter) =>
+        target is IPropertyReferenceOperation { Instance: { } instance }
+        && ReferencesParameter(instance, configuratorParameter);
+
+    private static bool ReferencesParameter(
+        IOperation operation,
+        IParameterSymbol configuratorParameter) =>
+        Unwrap(operation) is IParameterReferenceOperation parameterReference
+        && SymbolEqualityComparer.Default.Equals(
+            parameterReference.Parameter,
+            configuratorParameter);
+
+    private static bool ContainsParameterReference(
+        IOperation operation,
+        IParameterSymbol configuratorParameter)
+    {
+        if (ReferencesParameter(operation, configuratorParameter))
+        {
+            return true;
+        }
+
+        foreach (var child in operation.ChildOperations)
+        {
+            if (ContainsParameterReference(child, configuratorParameter))
+            {
+                return true;
             }
         }
 

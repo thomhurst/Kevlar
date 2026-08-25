@@ -203,7 +203,7 @@ var shield = Shield.When<HttpRequestException>()
         options.ConsecutiveFailures = 5;
         options.HandlesException = exception => exception is TimeoutExceededException;
     })
-    .Hedge(maxAttempts: 2, delay: TimeSpan.FromMilliseconds(100)); // ambient clause again
+    .Hedge(maxHedgedAttempts: 2, delay: TimeSpan.FromMilliseconds(100)); // ambient clause again
 ```
 
 `HandlesException` is available on retry, circuit-breaker, hedging, and fallback options. Their

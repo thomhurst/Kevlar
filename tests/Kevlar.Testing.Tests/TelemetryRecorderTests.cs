@@ -110,7 +110,7 @@ public class TelemetryRecorderTests
 
         var hedge = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = TimeSpan.Zero;
             options.OnHedge = recorder.Record;
         }).WithName("hedge");
@@ -245,7 +245,7 @@ public class TelemetryRecorderTests
                 return 0;
             });
 
-        await Shield.Hedge(2, TimeSpan.Zero).WithName(name).ExecuteOutcomeAsync<int>(static _ =>
+        await Shield.Hedge(1, TimeSpan.Zero).WithName(name).ExecuteOutcomeAsync<int>(static _ =>
             ValueTask.FromException<int>(new InvalidOperationException()));
         await Shield.For<int>().When<InvalidOperationException>().FallbackTo(42).WithName(name)
             .ExecuteAsync<int>(static _ => throw new InvalidOperationException());

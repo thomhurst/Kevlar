@@ -18,7 +18,7 @@ public class OptionsValidationTests
             new(() => Shield.CircuitBreaker(options => options.MinimumThroughput = 0), "CircuitBreakerOptions", "MinimumThroughput", "0"),
             new(() => Shield.CircuitBreaker(options => options.SamplingWindow = TimeSpan.Zero), "CircuitBreakerOptions", "SamplingWindow", "00:00:00"),
             new(() => Shield.CircuitBreaker(options => options.BreakDuration = TimeSpan.Zero), "CircuitBreakerOptions", "BreakDuration", "00:00:00"),
-            new(() => Shield.Hedge(options => options.MaxAttempts = 0), "HedgeOptions", "MaxAttempts", "0"),
+            new(() => Shield.Hedge(options => options.MaxHedgedAttempts = -1), "HedgeOptions", "MaxHedgedAttempts", "-1"),
             new(() => Shield.Hedge(options => options.Delay = TimeSpan.FromSeconds(-1)), "HedgeOptions", "Delay", "-00:00:01"),
             new(() => Shield.RateLimit(options => options.Permits = 0), "RateLimitOptions", "Permits", "0"),
             new(() => Shield.RateLimit(options => options.Window = TimeSpan.Zero), "RateLimitOptions", "Window", "00:00:00"),
@@ -48,7 +48,7 @@ public class OptionsValidationTests
             new(() => Shield.CircuitBreaker(0, TimeSpan.FromSeconds(1)), typeof(Shield), nameof(Shield.CircuitBreaker), [typeof(int), typeof(TimeSpan)]),
             new(() => Shield.RateLimit(0, TimeSpan.FromSeconds(1)), typeof(Shield), nameof(Shield.RateLimit), [typeof(int), typeof(TimeSpan)]),
             new(() => Shield.ConcurrencyLimit(0), typeof(Shield), nameof(Shield.ConcurrencyLimit), [typeof(int), typeof(int)]),
-            new(() => Shield.Hedge(0, TimeSpan.Zero), typeof(Shield), nameof(Shield.Hedge), [typeof(int), typeof(TimeSpan)]),
+            new(() => Shield.Hedge(-1, TimeSpan.Zero), typeof(Shield), nameof(Shield.Hedge), [typeof(int), typeof(TimeSpan)]),
             new(() => Shield.For<int>().Retry(-1), typeof(Shield<int>), nameof(Shield<int>.Retry), [typeof(int)]),
             new(() => Shield.When<InvalidOperationException>().Retry(-1), typeof(ShieldBuilder), nameof(ShieldBuilder.Retry), [typeof(int)]),
         ];
@@ -184,14 +184,14 @@ public class OptionsValidationTests
     [Test]
     public async Task Hedge_Rejects_Invalid_Options()
     {
-        await Assert.That(() => Shield.Hedge(0, TimeSpan.Zero)).Throws<ArgumentOutOfRangeException>();
-        await Assert.That(() => Shield.Hedge(2, TimeSpan.FromSeconds(-5))).Throws<ArgumentOutOfRangeException>();
+        await Assert.That(() => Shield.Hedge(-1, TimeSpan.Zero)).Throws<ArgumentOutOfRangeException>();
+        await Assert.That(() => Shield.Hedge(1, TimeSpan.FromSeconds(-5))).Throws<ArgumentOutOfRangeException>();
     }
 
     [Test]
     public async Task Hedge_Accepts_The_Infinite_Delay_Sentinel()
     {
-        var shield = Shield.Hedge(2, System.Threading.Timeout.InfiniteTimeSpan);
+        var shield = Shield.Hedge(1, System.Threading.Timeout.InfiniteTimeSpan);
         var result = await shield.ExecuteAsync(_ => new ValueTask<int>(1));
         await Assert.That(result).IsEqualTo(1);
     }

@@ -580,7 +580,7 @@ public class MetricsTests
     public async Task Hedged_Attempts_Are_Counted()
     {
         using var listener = new KevlarMeterListener();
-        var shield = Shield.Hedge(2, TimeSpan.Zero).WithName("metrics-hedge");
+        var shield = Shield.Hedge(1, TimeSpan.Zero).WithName("metrics-hedge");
 
         await shield.ExecuteAsync(_ => new ValueTask<int>(1));
 
@@ -595,7 +595,7 @@ public class MetricsTests
         var attempts = 0;
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = TimeSpan.Zero;
             options.OnHedge = _ => cancellation.Cancel();
         }).WithName("metrics-suppressed-hedge");

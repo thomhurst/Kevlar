@@ -105,7 +105,7 @@ public class StrategyHandlingOverrideTests
         var attempts = 0;
         var shield = Shield.For<int>().When<InvalidOperationException>().Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = System.Threading.Timeout.InfiniteTimeSpan;
             options.HandlesResult = result => result < 0;
         });

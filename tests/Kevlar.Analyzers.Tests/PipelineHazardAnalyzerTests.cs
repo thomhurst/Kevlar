@@ -363,7 +363,7 @@ public class PipelineHazardAnalyzerTests
                         .CircuitBreaker(2, TimeSpan.FromSeconds(1))
                         .RateLimit(10, TimeSpan.FromSeconds(1))
                         .ConcurrencyLimit(2)
-                        .Hedge(1, TimeSpan.Zero)
+                        .Hedge(0, TimeSpan.Zero)
                         .When<TimeoutException>()
                         .Or<InvalidOperationException>()
                         .Retry(1, Backoff.None)
@@ -485,20 +485,34 @@ public class PipelineHazardAnalyzerTests
     {
         var cases = new[]
         {
-            "_ = Shield.Hedge(2, TimeSpan.Zero).Execute(_ => 1);",
-            "Shield.Empty.Hedge(2, TimeSpan.Zero).Execute(_ => { });",
-            "_ = Shield.For<int>().Hedge(2, TimeSpan.Zero).Execute(_ => 1);",
-            "var shield = Shield.Hedge(2, TimeSpan.Zero); var alias = shield; _ = alias.Execute(_ => 1);",
-            "Shield? shield = Shield.Hedge(2, TimeSpan.Zero); _ = shield?.Execute(_ => 1);",
+            "_ = Shield.Hedge(1, TimeSpan.Zero).Execute(_ => 1);",
+            "Shield.Empty.Hedge(1, TimeSpan.Zero).Execute(_ => { });",
+            "_ = Shield.For<int>().Hedge(1, TimeSpan.Zero).Execute(_ => 1);",
+            "var shield = Shield.Hedge(1, TimeSpan.Zero); var alias = shield; _ = alias.Execute(_ => 1);",
+            "Shield? shield = Shield.Hedge(1, TimeSpan.Zero); _ = shield?.Execute(_ => 1);",
             "var shield = ShieldExtensions.Hedge(Shield.Empty, 2, TimeSpan.Zero); _ = shield.Execute(_ => 1);",
-            "_ = Shield.Empty.Wrap(Shield.Hedge(2, TimeSpan.Zero)).Execute(_ => 1);",
-            "_ = Shield.Compose(Shield.Empty, Shield.Hedge(2, TimeSpan.Zero)).Execute(_ => 1);",
-            "_ = Shield.Compose([Shield.Hedge(2, TimeSpan.Zero)]).Execute(_ => 1);",
-            "_ = Shield.Compose([.. new[] { Shield.Hedge(2, TimeSpan.Zero) }]).Execute(_ => 1);",
-            "var parts = new[] { Shield.Hedge(2, TimeSpan.Zero) }; _ = Shield.Compose(parts).Execute(_ => 1);",
-            "_ = Shield<int>.Empty.Wrap(Shield.Hedge(2, TimeSpan.Zero)).Execute(_ => 1);",
-            "_ = Shield.Hedge(2, TimeSpan.Zero).ExecuteOutcome(_ => 1);",
-            "_ = Shield.For<int>().Hedge(2, TimeSpan.Zero).ExecuteOutcome(_ => 1);",
+            "_ = Shield.Empty.Wrap(Shield.Hedge(1, TimeSpan.Zero)).Execute(_ => 1);",
+            "_ = Shield.Compose(Shield.Empty, Shield.Hedge(1, TimeSpan.Zero)).Execute(_ => 1);",
+            "_ = Shield.Compose([Shield.Hedge(1, TimeSpan.Zero)]).Execute(_ => 1);",
+            "_ = Shield.Compose([.. new[] { Shield.Hedge(1, TimeSpan.Zero) }]).Execute(_ => 1);",
+            "var parts = new[] { Shield.Hedge(1, TimeSpan.Zero) }; _ = Shield.Compose(parts).Execute(_ => 1);",
+            "_ = Shield<int>.Empty.Wrap(Shield.Hedge(1, TimeSpan.Zero)).Execute(_ => 1);",
+            "_ = Shield.Hedge(options => options.MaxHedgedAttempts = 1).Execute(_ => 1);",
+            "_ = Shield.Hedge(options => options.MaxHedgedAttempts += 0).Execute(_ => 1);",
+            "_ = Shield.Hedge(options => { options.MaxHedgedAttempts = 0; options.MaxHedgedAttempts += 1; }).Execute(_ => 1);",
+            "var replacement = new HedgeOptions(); _ = Shield.Hedge(options => { options = replacement; options.MaxHedgedAttempts = 0; }).Execute(_ => 1);",
+            "_ = Shield.Hedge(options => { options.MaxHedgedAttempts = 0; var alias = options; alias.MaxHedgedAttempts = 1; }).Execute(_ => 1);",
+            "_ = Shield.Hedge(options => { options.MaxHedgedAttempts = 0; var aliases = new[] { options }; aliases[0].MaxHedgedAttempts = 1; }).Execute(_ => 1);",
+            "var mutator = new System.Collections.Generic.Dictionary<HedgeOptions, int>(); _ = Shield.Hedge(options => { options.MaxHedgedAttempts = 0; mutator[options] = 1; }).Execute(_ => 1);",
+            "_ = Shield.Hedge(options => { options.MaxHedgedAttempts = 0; var (alias, _) = (options, 0); alias.MaxHedgedAttempts = 1; }).Execute(_ => 1);",
+            "var skip = true; _ = Shield.Hedge(options => { _ = skip switch { true => 1, false => (options.MaxHedgedAttempts = 0) }; }).Execute(_ => 1);",
+            "var other = new HedgeOptions(); _ = Shield.Hedge(options => other.MaxHedgedAttempts = 0).Execute(_ => 1);",
+            "_ = Shield.Hedge(options => { Action deferred = () => options.MaxHedgedAttempts = 0; }).Execute(_ => 1);",
+            "var disable = false; _ = Shield.Hedge(options => { _ = disable && (options.MaxHedgedAttempts = 0) == 0; }).Execute(_ => 1);",
+            "_ = Shield.Hedge(options => { options.MaxHedgedAttempts = 0; _ = new WeakReference<HedgeOptions>(options); }).Execute(_ => 1);",
+            "_ = Shield.Hedge(async options => { options.MaxHedgedAttempts = 1; await Task.Yield(); options.MaxHedgedAttempts = 0; }).Execute(_ => 1);",
+            "_ = Shield.Hedge(1, TimeSpan.Zero).ExecuteOutcome(_ => 1);",
+            "_ = Shield.For<int>().Hedge(1, TimeSpan.Zero).ExecuteOutcome(_ => 1);",
         };
 
         await AssertEachAsync(cases, "KEV002", "KEV006");
@@ -512,13 +526,13 @@ public class PipelineHazardAnalyzerTests
 
             public class TestSubject
             {
-                public int Run() => KShield.Hedge(2, TimeSpan.Zero).Execute(_ => 1);
+                public int Run() => KShield.Hedge(1, TimeSpan.Zero).Execute(_ => 1);
             }
             """);
         var genericDiagnostics = await AnalyzeSourceAsync("""
             public class TestSubject
             {
-                public T Run<T>() => Shield.For<T>().Hedge(2, TimeSpan.Zero).Execute(_ => default!);
+                public T Run<T>() => Shield.For<T>().Hedge(1, TimeSpan.Zero).Execute(_ => default!);
             }
             """);
 
@@ -531,18 +545,17 @@ public class PipelineHazardAnalyzerTests
     {
         var cases = new[]
         {
-            "_ = Shield.Hedge(2, TimeSpan.Zero).ExecuteAsync(_ => new ValueTask<int>(1));",
+            "_ = Shield.Hedge(1, TimeSpan.Zero).ExecuteAsync(_ => new ValueTask<int>(1));",
             "var shield = CreateShield(); _ = shield.Execute(_ => 1);",
-            "var shield = Shield.Hedge(2, TimeSpan.Zero); shield = Shield.Empty; _ = shield.Execute(_ => 1);",
+            "var shield = Shield.Hedge(1, TimeSpan.Zero); shield = Shield.Empty; _ = shield.Execute(_ => 1);",
             "_ = Shield.Empty.Execute(_ => 1);",
-            "_ = Shield.Hedge(1, TimeSpan.Zero).Execute(_ => 1);",
+            "_ = Shield.Hedge(0, TimeSpan.Zero).Execute(_ => 1);",
             "var attempts = DateTime.Now.Day; _ = Shield.Hedge(attempts, TimeSpan.Zero).Execute(_ => 1);",
-            "_ = Shield.Hedge(options => options.MaxAttempts = 2).Execute(_ => 1);",
         };
 
         foreach (var body in cases)
         {
-            var diagnostics = await AnalyzeBodyAsync(body, "private static Shield CreateShield() => Shield.Hedge(2, TimeSpan.Zero);");
+            var diagnostics = await AnalyzeBodyAsync(body, "private static Shield CreateShield() => Shield.Hedge(1, TimeSpan.Zero);");
             await Assert.That(Without(diagnostics, "KEV006")).IsEmpty();
         }
     }
@@ -552,8 +565,8 @@ public class PipelineHazardAnalyzerTests
     {
         var cases = new[]
         {
-            "var parts = new[] { Shield.Hedge(2, TimeSpan.Zero) }; parts[0] = Shield.Empty; _ = Shield.Compose(parts).Execute(_ => 1);",
-            "var parts = new[] { Shield.Hedge(2, TimeSpan.Zero) }; var alias = parts; alias[0] = Shield.Empty; _ = Shield.Compose(parts).Execute(_ => 1);",
+            "var parts = new[] { Shield.Hedge(1, TimeSpan.Zero) }; parts[0] = Shield.Empty; _ = Shield.Compose(parts).Execute(_ => 1);",
+            "var parts = new[] { Shield.Hedge(1, TimeSpan.Zero) }; var alias = parts; alias[0] = Shield.Empty; _ = Shield.Compose(parts).Execute(_ => 1);",
         };
 
         foreach (var body in cases)
@@ -568,17 +581,53 @@ public class PipelineHazardAnalyzerTests
     {
         var cases = new[]
         {
-            "_ = Shield.Hedge(2, TimeSpan.Zero);",
-            "_ = Shield.Hedge(options => options.MaxAttempts = 2);",
-            "_ = Shield.Empty.Hedge(2, TimeSpan.Zero);",
-            "_ = Shield.Empty.Hedge(options => options.MaxAttempts = 2);",
+            "_ = Shield.Hedge(1, TimeSpan.Zero);",
+            "_ = Shield.Hedge(options => options.MaxHedgedAttempts = 1);",
+            "_ = Shield.Hedge(options => options.MaxHedgedAttempts += 0);",
+            "_ = Shield.Hedge(options => { options.MaxHedgedAttempts = 0; options.MaxHedgedAttempts += 1; });",
+            "var replacement = new HedgeOptions(); _ = Shield.Hedge(options => { options = replacement; options.MaxHedgedAttempts = 0; });",
+            "_ = Shield.Hedge(options => { options.MaxHedgedAttempts = 0; var alias = options; alias.MaxHedgedAttempts = 1; });",
+            "_ = Shield.Hedge(options => { options.MaxHedgedAttempts = 0; var aliases = new[] { options }; aliases[0].MaxHedgedAttempts = 1; });",
+            "var mutator = new System.Collections.Generic.Dictionary<HedgeOptions, int>(); _ = Shield.Hedge(options => { options.MaxHedgedAttempts = 0; mutator[options] = 1; });",
+            "_ = Shield.Hedge(options => { options.MaxHedgedAttempts = 0; var (alias, _) = (options, 0); alias.MaxHedgedAttempts = 1; });",
+            "var skip = true; _ = Shield.Hedge(options => { _ = skip switch { true => 1, false => (options.MaxHedgedAttempts = 0) }; });",
+            "_ = Shield.Empty.Hedge(1, TimeSpan.Zero);",
+            "_ = Shield.Empty.Hedge(options => options.MaxHedgedAttempts = 1);",
             "_ = ShieldExtensions.Hedge(Shield.Empty, 2, TimeSpan.Zero);",
-            "_ = Shield.When<InvalidOperationException>().Hedge(2, TimeSpan.Zero);",
-            "_ = Shield.When<InvalidOperationException>().Hedge(options => options.MaxAttempts = 2);",
-            "_ = Shield.Timeout(TimeSpan.FromSeconds(1)).Hedge(2, TimeSpan.Zero).Retry(1);",
+            "_ = Shield.When<InvalidOperationException>().Hedge(1, TimeSpan.Zero);",
+            "_ = Shield.When<InvalidOperationException>().Hedge(options => options.MaxHedgedAttempts = 1);",
+            "_ = Shield.Timeout(TimeSpan.FromSeconds(1)).Hedge(1, TimeSpan.Zero).Retry(1);",
+            "var other = new HedgeOptions(); _ = Shield.Hedge(options => other.MaxHedgedAttempts = 0);",
+            "_ = Shield.Hedge(options => { Action deferred = () => options.MaxHedgedAttempts = 0; });",
+            "var disable = false; _ = Shield.Hedge(options => { _ = disable && (options.MaxHedgedAttempts = 0) == 0; });",
+            "var keepDefault = true; _ = Shield.Hedge(options => { _ = keepDefault || (options.MaxHedgedAttempts = 0) == 0; });",
+            "int? configured = 1; _ = Shield.Hedge(options => { _ = configured ?? (options.MaxHedgedAttempts = 0); });",
+            "_ = Shield.Hedge(options => { options.MaxHedgedAttempts = 0; _ = new WeakReference<HedgeOptions>(options); });",
+            "_ = Shield.Hedge(async options => { options.MaxHedgedAttempts = 1; await Task.Yield(); options.MaxHedgedAttempts = 0; });",
         };
 
         await AssertEachAsync(cases, "KEV006");
+    }
+
+    [Test]
+    public async Task KEV006_Skips_Zero_Attempt_Hedges()
+    {
+        var cases = new[]
+        {
+            "_ = Shield.Hedge(0, TimeSpan.Zero);",
+            "_ = Shield.Empty.Hedge(0, TimeSpan.Zero);",
+            "_ = ShieldExtensions.Hedge(Shield.Empty, 0, TimeSpan.Zero);",
+            "_ = Shield.Timeout(TimeSpan.FromSeconds(1)).Hedge(0, TimeSpan.Zero);",
+            "_ = Shield.Hedge(options => options.MaxHedgedAttempts = 0);",
+            "_ = Shield.Empty.Hedge(options => options.MaxHedgedAttempts = 0);",
+            "_ = Shield.When<InvalidOperationException>().Hedge(options => { options.Delay = TimeSpan.Zero; options.MaxHedgedAttempts = 0; });",
+        };
+
+        foreach (var body in cases)
+        {
+            var diagnostics = await AnalyzeBodyAsync(body);
+            await Assert.That(diagnostics).IsEmpty();
+        }
     }
 
     [Test]
@@ -586,11 +635,11 @@ public class PipelineHazardAnalyzerTests
     {
         var cases = new[]
         {
-            "_ = Shield.For<int>().Hedge(2, TimeSpan.Zero);",
-            "_ = Shield.For<int>().Hedge(options => options.MaxAttempts = 2);",
-            "_ = Shield.For<int>().When<InvalidOperationException>().Hedge(2, TimeSpan.Zero);",
-            "_ = Shield.For<int>().WhenResult(0).Hedge(options => options.MaxAttempts = 2);",
-            "_ = Shield.Empty.For<int>().Hedge(2, TimeSpan.Zero);",
+            "_ = Shield.For<int>().Hedge(1, TimeSpan.Zero);",
+            "_ = Shield.For<int>().Hedge(options => options.MaxHedgedAttempts = 1);",
+            "_ = Shield.For<int>().When<InvalidOperationException>().Hedge(1, TimeSpan.Zero);",
+            "_ = Shield.For<int>().WhenResult(0).Hedge(options => options.MaxHedgedAttempts = 1);",
+            "_ = Shield.Empty.For<int>().Hedge(1, TimeSpan.Zero);",
             "_ = Shield.For<int>().Retry(1);",
         };
 
@@ -604,7 +653,7 @@ public class PipelineHazardAnalyzerTests
     [Test]
     public async Task KEV006_Diagnostic_Contract_And_Suppression_Are_Exact()
     {
-        const string construction = "Shield.Hedge(2, TimeSpan.Zero)";
+        const string construction = "Shield.Hedge(1, TimeSpan.Zero)";
         var source = $$"""
             public class TestSubject
             {
@@ -614,7 +663,7 @@ public class PipelineHazardAnalyzerTests
         var diagnostics = await AnalyzeSourceAsync(source);
         var suppressed = await AnalyzeBodyAsync("""
             #pragma warning disable KEV006 // The documented action is idempotent.
-            _ = Shield.Hedge(2, TimeSpan.Zero);
+            _ = Shield.Hedge(1, TimeSpan.Zero);
             #pragma warning restore KEV006
             """);
 
@@ -837,7 +886,7 @@ public class PipelineHazardAnalyzerTests
         var cases = new[]
         {
             "_ = Shield.For<int>().Retry(1).FallbackTo(0);",
-            "_ = Shield.For<int>().Hedge(2, TimeSpan.Zero).FallbackTo(0);",
+            "_ = Shield.For<int>().Hedge(1, TimeSpan.Zero).FallbackTo(0);",
             "_ = Shield.For<int>().CircuitBreaker(2, TimeSpan.FromSeconds(1)).FallbackTo(0);",
             "_ = Shield.For<int>().CircuitBreaker(options => options.ConsecutiveFailures = 2).FallbackTo(0);",
             "_ = Shield.For<int>().CircuitBreaker(options => options.BreakDuration = TimeSpan.FromSeconds(1)).FallbackTo(0);",
@@ -1038,7 +1087,7 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.WhenContext((HandlingEvent handling) => handling.Attempt == 0).Retry(1).CircuitBreaker(2, TimeSpan.FromSeconds(1));",
             "_ = Shield.When<InvalidOperationException>().Or<TimeoutException>().Retry(1).CircuitBreaker(2, TimeSpan.FromSeconds(1));",
             "_ = Shield.When<InvalidOperationException>().Retry(1).RetryForever(Backoff.None);",
-            "_ = Shield.For<int>().WhenResult(0).Retry(1).Hedge(2, TimeSpan.Zero);",
+            "_ = Shield.For<int>().WhenResult(0).Retry(1).Hedge(1, TimeSpan.Zero);",
             "_ = Shield.For<int>().When<InvalidOperationException>().FallbackTo(0).Retry(1);",
             "_ = Shield.For<int>().WhenResultIsDefault().Retry(1).CircuitBreaker(2, TimeSpan.FromSeconds(1));",
             "var outer = Shield.When<InvalidOperationException>().Retry(1); _ = outer.CircuitBreaker(2, TimeSpan.FromSeconds(1));",
@@ -1200,7 +1249,7 @@ public class PipelineHazardAnalyzerTests
         {
             "_ = Shield.Retry(3);",
             "_ = Shield.For<int>().CircuitBreaker(3, TimeSpan.FromSeconds(1));",
-            "_ = Shield.Empty.Hedge(2, TimeSpan.Zero);",
+            "_ = Shield.Empty.Hedge(1, TimeSpan.Zero);",
             "_ = Shield.For<int>().FallbackTo(0);",
             "var baseline = Shield.Empty; _ = baseline.RetryForever();",
             "_ = Shield.Empty.WhenAnyError().Wrap(Shield.Empty).Retry(1);",
@@ -1274,7 +1323,7 @@ public class PipelineHazardAnalyzerTests
             }
             """);
         var generated = await AnalyzeBodyAsync(
-            "_ = Shield.Hedge(2, TimeSpan.Zero).Execute(_ => 1); _ = Shield.For<int>().Retry(1).FallbackTo(0);",
+            "_ = Shield.Hedge(1, TimeSpan.Zero).Execute(_ => 1); _ = Shield.For<int>().Retry(1).FallbackTo(0);",
             isGenerated: true);
 
         await Assert.That(unrelated).IsEmpty();

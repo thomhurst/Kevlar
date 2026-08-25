@@ -162,7 +162,7 @@ public class TimeControlTests
         var timeProvider = new FakeTimeProvider();
         var attempts = 0;
         var shield = Shield
-            .Hedge(2, TimeSpan.FromSeconds(1))
+            .Hedge(1, TimeSpan.FromSeconds(1))
             .WithTimeProvider(timeProvider);
 
         var execution = shield.ExecuteAsync<int>(async token =>

@@ -102,7 +102,7 @@ public class AllocationBudgetTests
         .CircuitBreaker(5, TimeSpan.FromMinutes(1))
         .ConcurrencyLimit(1024);
     private readonly Shield<int> _primaryWinsHedge = Shield.For<int>()
-        .Hedge(2, TimeSpan.FromMinutes(1));
+        .Hedge(1, TimeSpan.FromMinutes(1));
     private readonly PartitionedShield<int> _partitioned = new(static _ => Shield.Empty);
     private readonly Dictionary<KevlarKey<int>, int> _keyDictionary = new()
     {
@@ -131,15 +131,15 @@ public class AllocationBudgetTests
     private readonly Shield _voidExecutionFallback = Shield
         .When<InvalidOperationException>()
         .Fallback(static (_, _) => ValueTask.CompletedTask);
-    private readonly Shield _parallelHedge = Shield.Hedge(2, TimeSpan.Zero);
+    private readonly Shield _parallelHedge = Shield.Hedge(1, TimeSpan.Zero);
     private readonly Shield _syncDelayGeneratedHedge = Shield.Hedge(options =>
     {
-        options.MaxAttempts = 2;
+        options.MaxHedgedAttempts = 1;
         options.DelayGenerator = static _ => TimeSpan.Zero;
     });
     private readonly Shield<int> _typedGeneratedHedge = Shield.For<int>().Hedge(options =>
     {
-        options.MaxAttempts = 2;
+        options.MaxHedgedAttempts = 1;
         options.Delay = Timeout.InfiniteTimeSpan;
         options.ActionGenerator = static hedge =>
             hedge.Outcome is { Exception: InvalidOperationException }

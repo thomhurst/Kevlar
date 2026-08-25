@@ -10,7 +10,7 @@ items:
   - Kevlar.Testing.HedgeStrategyDescriptor.HasDelayGenerator
   - Kevlar.Testing.HedgeStrategyDescriptor.HasHandlingOverride
   - Kevlar.Testing.HedgeStrategyDescriptor.HasNotification
-  - Kevlar.Testing.HedgeStrategyDescriptor.MaxAttempts
+  - Kevlar.Testing.HedgeStrategyDescriptor.MaxHedgedAttempts
   langs:
   - csharp
   - vb
@@ -39,29 +39,29 @@ items:
   - System.Object.Equals(System.Object,System.Object)
   - System.Object.ReferenceEquals(System.Object,System.Object)
   - System.Object.GetHashCode
-- uid: Kevlar.Testing.HedgeStrategyDescriptor.MaxAttempts
-  commentId: P:Kevlar.Testing.HedgeStrategyDescriptor.MaxAttempts
-  id: MaxAttempts
+- uid: Kevlar.Testing.HedgeStrategyDescriptor.MaxHedgedAttempts
+  commentId: P:Kevlar.Testing.HedgeStrategyDescriptor.MaxHedgedAttempts
+  id: MaxHedgedAttempts
   parent: Kevlar.Testing.HedgeStrategyDescriptor
   langs:
   - csharp
   - vb
-  name: MaxAttempts
-  nameWithType: HedgeStrategyDescriptor.MaxAttempts
-  fullName: Kevlar.Testing.HedgeStrategyDescriptor.MaxAttempts
+  name: MaxHedgedAttempts
+  nameWithType: HedgeStrategyDescriptor.MaxHedgedAttempts
+  fullName: Kevlar.Testing.HedgeStrategyDescriptor.MaxHedgedAttempts
   type: Property
   assemblies:
   - Kevlar.Testing
   namespace: Kevlar.Testing
-  summary: The maximum total attempts, including the primary.
+  summary: The maximum additional attempts after the primary.
   example: []
   syntax:
-    content: public int MaxAttempts { get; }
+    content: public int MaxHedgedAttempts { get; }
     parameters: []
     return:
       type: System.Int32
-    content.vb: Public ReadOnly Property MaxAttempts As Integer
-  overload: Kevlar.Testing.HedgeStrategyDescriptor.MaxAttempts*
+    content.vb: Public ReadOnly Property MaxHedgedAttempts As Integer
+  overload: Kevlar.Testing.HedgeStrategyDescriptor.MaxHedgedAttempts*
 - uid: Kevlar.Testing.HedgeStrategyDescriptor.Delay
   commentId: P:Kevlar.Testing.HedgeStrategyDescriptor.Delay
   id: Delay
@@ -450,13 +450,13 @@ references:
   name: System
   nameWithType: System
   fullName: System
-- uid: Kevlar.Testing.HedgeStrategyDescriptor.MaxAttempts*
-  commentId: Overload:Kevlar.Testing.HedgeStrategyDescriptor.MaxAttempts
+- uid: Kevlar.Testing.HedgeStrategyDescriptor.MaxHedgedAttempts*
+  commentId: Overload:Kevlar.Testing.HedgeStrategyDescriptor.MaxHedgedAttempts
   isExternal: true
-  href: Kevlar.Testing.HedgeStrategyDescriptor.html#Kevlar_Testing_HedgeStrategyDescriptor_MaxAttempts
-  name: MaxAttempts
-  nameWithType: HedgeStrategyDescriptor.MaxAttempts
-  fullName: Kevlar.Testing.HedgeStrategyDescriptor.MaxAttempts
+  href: Kevlar.Testing.HedgeStrategyDescriptor.html#Kevlar_Testing_HedgeStrategyDescriptor_MaxHedgedAttempts
+  name: MaxHedgedAttempts
+  nameWithType: HedgeStrategyDescriptor.MaxHedgedAttempts
+  fullName: Kevlar.Testing.HedgeStrategyDescriptor.MaxHedgedAttempts
 - uid: System.Int32
   commentId: T:System.Int32
   parent: System

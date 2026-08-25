@@ -26,7 +26,7 @@ Kevlar.Testing.HedgeStrategyDescriptor
 Kevlar.Testing.HedgeStrategyDescriptor.Delay.get -> System.TimeSpan
 Kevlar.Testing.HedgeStrategyDescriptor.HasActionGenerator.get -> bool
 Kevlar.Testing.HedgeStrategyDescriptor.HasNotification.get -> bool
-Kevlar.Testing.HedgeStrategyDescriptor.MaxAttempts.get -> int
+Kevlar.Testing.HedgeStrategyDescriptor.MaxHedgedAttempts.get -> int
 Kevlar.Testing.RateLimitStrategyDescriptor
 Kevlar.Testing.RateLimitStrategyDescriptor.Burst.get -> int
 Kevlar.Testing.RateLimitStrategyDescriptor.Permits.get -> int

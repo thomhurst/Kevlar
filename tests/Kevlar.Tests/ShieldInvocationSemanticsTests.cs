@@ -13,7 +13,7 @@ public class ShieldInvocationSemanticsTests
             Shield.ConcurrencyLimit(1),
             Shield.RateLimit(1, TimeSpan.FromSeconds(1)),
             Shield.Retry(0, Backoff.None),
-            Shield.Hedge(1, TimeSpan.Zero),
+            Shield.Hedge(0, TimeSpan.Zero),
         ];
 
         foreach (var shield in shields)
@@ -25,7 +25,7 @@ public class ShieldInvocationSemanticsTests
             .IsTrue();
         await Assert.That(Shield.For<int>().FallbackTo(0).InvokesContinuationAtMostOnce).IsTrue();
         await Assert.That(Shield.For<int>().Retry(0, Backoff.None).InvokesContinuationAtMostOnce).IsTrue();
-        await Assert.That(Shield.For<int>().Hedge(1, TimeSpan.Zero).InvokesContinuationAtMostOnce).IsTrue();
+        await Assert.That(Shield.For<int>().Hedge(0, TimeSpan.Zero).InvokesContinuationAtMostOnce).IsTrue();
     }
 
     [Test]
@@ -34,7 +34,7 @@ public class ShieldInvocationSemanticsTests
         Shield[] shields =
         [
             Shield.Retry(1, Backoff.None),
-            Shield.Hedge(2, TimeSpan.Zero),
+            Shield.Hedge(1, TimeSpan.Zero),
             Shield.Timeout(TimeSpan.FromSeconds(1)).Retry(1, Backoff.None),
             Shield.Use(new CustomStrategy()),
         ];
@@ -45,7 +45,7 @@ public class ShieldInvocationSemanticsTests
         }
 
         await Assert.That(Shield.For<int>().Retry(1, Backoff.None).InvokesContinuationAtMostOnce).IsFalse();
-        await Assert.That(Shield.For<int>().Hedge(2, TimeSpan.Zero).InvokesContinuationAtMostOnce).IsFalse();
+        await Assert.That(Shield.For<int>().Hedge(1, TimeSpan.Zero).InvokesContinuationAtMostOnce).IsFalse();
     }
 
     [Test]
