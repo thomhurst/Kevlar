@@ -11,12 +11,14 @@ namespace Kevlar;
 /// result values (<c>WhenResult</c>) as well as exceptions. The first strategy in a chain is the
 /// outermost.
 /// </summary>
-public sealed class Shield<TResult>
+public sealed class Shield<TResult> : IShieldLifecycle
 {
     internal readonly Strategy[] Strategies;
     internal readonly StrategyNode? Head;
     internal readonly OutcomeJudge? Ambient;
     internal readonly TimeProvider? Time;
+
+    Strategy[] IShieldLifecycle.Strategies => Strategies;
 
     internal Shield(Strategy[] strategies, OutcomeJudge? ambient, string? name, TimeProvider? timeProvider)
     {

@@ -1,9 +1,11 @@
 using System.Diagnostics.Metrics;
 using System.Threading.RateLimiting;
 using Kevlar.Extensions.RateLimiting;
+using Kevlar.Extensions.DependencyInjection;
 using Kevlar.Testing;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Kevlar.Extensions.RateLimiting.Tests;
 
@@ -125,6 +127,32 @@ public class RateLimiterAdapterTests
 
     private static string NormalizeLimiterName(string name) =>
         name.Replace("RateLimiter", "RateLimit", StringComparison.Ordinal);
+
+    [Test]
+    public async Task Registry_Disposes_Limiter_Only_When_Owned()
+    {
+        var options = new ConcurrencyLimiterOptions
+        {
+            PermitLimit = 1,
+            QueueLimit = 0,
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+        };
+        var owned = new ConcurrencyLimiter(options);
+        using var userOwned = new ConcurrencyLimiter(options);
+        using var services = new ServiceCollection()
+            .AddShield("owned", Shield.Empty.UseRateLimiter(owned, ownsLimiter: true))
+            .AddShield("user", Shield.Empty.UseRateLimiter(userOwned, ownsLimiter: false))
+            .BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        _ = registry.GetShield("owned");
+        _ = registry.GetShield("user");
+
+        registry.Dispose();
+
+        await Assert.That(() => owned.AttemptAcquire()).Throws<ObjectDisposedException>();
+        using var lease = userOwned.AttemptAcquire();
+        await Assert.That(lease.IsAcquired).IsTrue();
+    }
 
     [Test]
     public async Task Fixed_Window_Preserves_Retry_After_And_Hook_Order()

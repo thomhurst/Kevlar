@@ -2,6 +2,8 @@ using System.Globalization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Kevlar.Extensions.DependencyInjection;
 
@@ -312,6 +314,73 @@ public static class KevlarServiceCollectionExtensions
             name,
             typeof(TResult),
             sp => sp.GetRequiredKeyedService<IShieldProvider<TResult>>(name)));
+        return services;
+    }
+
+    /// <summary>
+    /// Registers a named shield rebuilt from the corresponding named
+    /// <see cref="IOptionsMonitor{TOptions}"/> value whenever it changes.
+    /// </summary>
+    public static IServiceCollection AddReloadingShield<
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] TOptions>(
+        this IServiceCollection services,
+        string name,
+        Func<TOptions, IServiceProvider, Shield> build,
+        Action<Exception>? onReloadFailure = null)
+        where TOptions : class
+    {
+        if (services is null) { throw new ArgumentNullException(nameof(services)); }
+        if (name is null) { throw new ArgumentNullException(nameof(name)); }
+        if (build is null) { throw new ArgumentNullException(nameof(build)); }
+
+        services.AddKevlar();
+        services.AddKeyedSingleton<IShieldProvider>(name, (serviceProvider, _) =>
+            new OptionsReloadingShieldProvider<TOptions>(
+                serviceProvider.GetRequiredService<IOptionsMonitor<TOptions>>(),
+                name,
+                options => build(options, serviceProvider).WithName(name),
+                onReloadFailure));
+        services.AddSingleton(new ShieldRegistration(
+            name,
+            null,
+            serviceProvider => serviceProvider.GetRequiredKeyedService<IShieldProvider>(name)));
+        services.AddKeyedSingleton(
+            name,
+            (serviceProvider, _) => serviceProvider.GetRequiredService<IKevlarRegistry>().GetShield(name));
+        return services;
+    }
+
+    /// <summary>
+    /// Registers a named result-aware shield rebuilt from the corresponding named
+    /// <see cref="IOptionsMonitor{TOptions}"/> value whenever it changes.
+    /// </summary>
+    public static IServiceCollection AddReloadingShield<
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] TOptions,
+        TResult>(
+        this IServiceCollection services,
+        string name,
+        Func<TOptions, IServiceProvider, Shield<TResult>> build,
+        Action<Exception>? onReloadFailure = null)
+        where TOptions : class
+    {
+        if (services is null) { throw new ArgumentNullException(nameof(services)); }
+        if (name is null) { throw new ArgumentNullException(nameof(name)); }
+        if (build is null) { throw new ArgumentNullException(nameof(build)); }
+
+        services.AddKevlar();
+        services.AddKeyedSingleton<IShieldProvider<TResult>>(name, (serviceProvider, _) =>
+            new OptionsReloadingShieldProvider<TOptions, TResult>(
+                serviceProvider.GetRequiredService<IOptionsMonitor<TOptions>>(),
+                name,
+                options => build(options, serviceProvider).WithName(name),
+                onReloadFailure));
+        services.AddSingleton(new ShieldRegistration(
+            name,
+            typeof(TResult),
+            serviceProvider => serviceProvider.GetRequiredKeyedService<IShieldProvider<TResult>>(name)));
+        services.AddKeyedSingleton(
+            name,
+            (serviceProvider, _) => serviceProvider.GetRequiredService<IKevlarRegistry>().GetShield<TResult>(name));
         return services;
     }
 

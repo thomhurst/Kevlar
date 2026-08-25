@@ -16,13 +16,15 @@ namespace Kevlar;
 /// they were created in. Composing that shield into others (via <c>Wrap</c> or <c>Compose</c>)
 /// intentionally shares the state; creating a new shield creates fresh state.
 /// </remarks>
-public sealed class Shield
+public sealed class Shield : IShieldLifecycle
 {
     internal readonly Strategy[] Strategies;
     internal readonly StrategyNode? Head;
     internal readonly OutcomeJudge? Ambient;
     internal readonly TimeProvider? Time;
     private readonly bool _hasVoidFallback;
+
+    Strategy[] IShieldLifecycle.Strategies => Strategies;
 
     internal Shield(Strategy[] strategies, OutcomeJudge? ambient, string? name, TimeProvider? timeProvider)
     {

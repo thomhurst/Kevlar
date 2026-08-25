@@ -41,6 +41,9 @@ All notable changes to this project are documented here. The format follows
   values explicit and avoids ambiguity between value and delegate overloads.
 - Named DI registrations now expose symmetric configuration overloads, typed
   `IShieldProvider<TResult>` snapshots, and `AddReloadingShield<TResult>`.
+- `IKevlarRegistry` now supports thread-safe late-bound `GetOrAdd`, `TryAdd`, and `Remove`, retries
+  failed factories, reloads shields from named `IOptionsMonitor<TOptions>` values, and disposes
+  resolved disposable strategies. Rate-limiter adapters can transfer limiter ownership explicitly.
 - Invalid values supplied through strategy options now throw `KevlarConfigurationException`;
   direct shorthand overloads continue to throw `ArgumentOutOfRangeException` with the invoked
   public parameter name.

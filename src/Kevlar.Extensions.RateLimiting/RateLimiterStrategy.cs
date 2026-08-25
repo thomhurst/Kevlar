@@ -4,7 +4,7 @@ using Kevlar.Internal;
 
 namespace Kevlar.Extensions.RateLimiting;
 
-internal sealed class RateLimiterStrategy : Strategy
+internal sealed class RateLimiterStrategy : Strategy, IDisposable, IAsyncDisposable
 {
     private static readonly IReadOnlyDictionary<string, object?> EmptyMetadata =
         new ReadOnlyDictionary<string, object?>(new Dictionary<string, object?>());
@@ -15,6 +15,7 @@ internal sealed class RateLimiterStrategy : Strategy
     private readonly Func<RateLimiterAdapterRejectedEvent, ValueTask>? _onRejectedAsync;
     private readonly string _description;
     private readonly string _telemetryName;
+    private object? _ownedLimiter;
 
     protected internal override bool InvokesContinuationAtMostOnce => true;
 
@@ -23,7 +24,8 @@ internal sealed class RateLimiterStrategy : Strategy
     internal RateLimiterStrategy(
         RateLimitLeaseAcquirer acquireLease,
         RateLimiterAdapterOptions options,
-        string description)
+        string description,
+        object? ownedLimiter = null)
     {
         if (options.PermitCount <= 0)
         {
@@ -36,6 +38,36 @@ internal sealed class RateLimiterStrategy : Strategy
         _onRejectedAsync = options.OnRejectedAsync;
         _description = description;
         _telemetryName = options.Name ?? "RateLimiterAdapter";
+        _ownedLimiter = ownedLimiter;
+    }
+
+    public void Dispose()
+    {
+        var limiter = Interlocked.Exchange(ref _ownedLimiter, null);
+        if (limiter is IDisposable disposable)
+        {
+            disposable.Dispose();
+        }
+        else if (limiter is IAsyncDisposable asyncDisposable)
+        {
+            asyncDisposable.DisposeAsync().AsTask().GetAwaiter().GetResult();
+        }
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        var limiter = Interlocked.Exchange(ref _ownedLimiter, null);
+        if (limiter is IAsyncDisposable asyncDisposable)
+        {
+            return asyncDisposable.DisposeAsync();
+        }
+
+        if (limiter is IDisposable disposable)
+        {
+            disposable.Dispose();
+        }
+
+        return default;
     }
 
     public override string Describe() => _description;

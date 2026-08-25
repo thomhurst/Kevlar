@@ -1,6 +1,13 @@
 using Microsoft.Extensions.Primitives;
+using Microsoft.Extensions.Options;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Kevlar.Extensions.DependencyInjection;
+
+internal interface IReloadingProvider : IDisposable
+{
+    IReadOnlyList<IShieldLifecycle> Snapshots { get; }
+}
 
 internal sealed class ReloadingShieldProvider(
     Func<Shield> factory,
@@ -34,8 +41,51 @@ internal sealed class ReloadingShieldProvider<TResult>(
 {
 }
 
-internal abstract class ReloadingProvider<TShield> : IDisposable
-    where TShield : class
+internal sealed class OptionsReloadingShieldProvider<
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] TOptions>(
+    IOptionsMonitor<TOptions> monitor,
+    string name,
+    Func<TOptions, Shield> factory,
+    Action<Exception>? onReloadFailure)
+    : ReloadingProvider<Shield>(
+        () => factory(monitor.Get(name)),
+        reload => monitor.OnChange((_, changedName) =>
+        {
+            if (string.Equals(name, changedName, StringComparison.Ordinal))
+            {
+                reload();
+            }
+        })!,
+        onReloadFailure)
+    , IShieldProvider
+    where TOptions : class
+{
+}
+
+internal sealed class OptionsReloadingShieldProvider<
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] TOptions,
+    TResult>(
+    IOptionsMonitor<TOptions> monitor,
+    string name,
+    Func<TOptions, Shield<TResult>> factory,
+    Action<Exception>? onReloadFailure)
+    : ReloadingProvider<Shield<TResult>>(
+        () => factory(monitor.Get(name)),
+        reload => monitor.OnChange((_, changedName) =>
+        {
+            if (string.Equals(name, changedName, StringComparison.Ordinal))
+            {
+                reload();
+            }
+        })!,
+        onReloadFailure)
+    , IShieldProvider<TResult>
+    where TOptions : class
+{
+}
+
+internal abstract class ReloadingProvider<TShield> : IReloadingProvider
+    where TShield : class, IShieldLifecycle
 {
     private readonly object _reloadLock = new();
     private readonly Func<TShield> _factory;
@@ -43,12 +93,36 @@ internal abstract class ReloadingProvider<TShield> : IDisposable
     private readonly TimeSpan _debounceDelay;
     private readonly ITimer _reloadTimer;
     private readonly IDisposable? _subscription;
+    private readonly List<TShield> _snapshots = [];
     private TShield _current = null!;
     private bool _disposed;
 
     protected ReloadingProvider(
         Func<TShield> factory,
         Func<IChangeToken> reloadTokenFactory,
+        Action<Exception>? onReloadFailure,
+        TimeSpan debounceDelay,
+        TimeProvider timeProvider)
+        : this(
+            factory,
+            reload => ChangeToken.OnChange(reloadTokenFactory, reload),
+            onReloadFailure,
+            debounceDelay,
+            timeProvider)
+    {
+    }
+
+    protected ReloadingProvider(
+        Func<TShield> factory,
+        Func<Action, IDisposable> subscribe,
+        Action<Exception>? onReloadFailure)
+        : this(factory, subscribe, onReloadFailure, TimeSpan.Zero, TimeProvider.System)
+    {
+    }
+
+    private ReloadingProvider(
+        Func<TShield> factory,
+        Func<Action, IDisposable> subscribe,
         Action<Exception>? onReloadFailure,
         TimeSpan debounceDelay,
         TimeProvider timeProvider)
@@ -63,10 +137,11 @@ internal abstract class ReloadingProvider<TShield> : IDisposable
             Timeout.InfiniteTimeSpan);
         try
         {
-            _subscription = ChangeToken.OnChange(reloadTokenFactory, ScheduleReload);
+            _subscription = subscribe(ScheduleReload);
             lock (_reloadLock)
             {
                 _current = factory();
+                _snapshots.Add(_current);
             }
         }
         catch
@@ -78,6 +153,17 @@ internal abstract class ReloadingProvider<TShield> : IDisposable
     }
 
     public TShield Current => Volatile.Read(ref _current);
+
+    IReadOnlyList<IShieldLifecycle> IReloadingProvider.Snapshots
+    {
+        get
+        {
+            lock (_reloadLock)
+            {
+                return _snapshots.Cast<IShieldLifecycle>().ToArray();
+            }
+        }
+    }
 
     public void Dispose()
     {
@@ -141,6 +227,7 @@ internal abstract class ReloadingProvider<TShield> : IDisposable
             try
             {
                 var replacement = _factory();
+                _snapshots.Add(replacement);
                 Volatile.Write(ref _current, replacement);
             }
             catch (Exception exception)

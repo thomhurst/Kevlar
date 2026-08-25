@@ -79,6 +79,11 @@ internal interface IFallbackStrategyInspection
     bool HasNotification { get; }
 }
 
+internal interface IShieldLifecycle
+{
+    Strategy[] Strategies { get; }
+}
+
 /// <summary>
 /// The rest of a shield pipeline, from a strategy's point of view. Invoking it runs every
 /// remaining strategy and finally the user's delegate. It may be invoked multiple times
