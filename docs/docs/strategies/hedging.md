@@ -121,7 +121,7 @@ flags untyped `Hedge(...)` for exactly this reason.
 
 - Losing attempts are cancelled through their token (use the token you're handed!).
 - Caller cancellation prevents any later hedge delegate from running, even when it races a completed stagger delay or occurs inside a delay generator, `OnHedge`, or `OnHedgeAsync`. A cancellation already observable at the launch boundary suppresses callbacks.
-- Launch ordering is `OnHedge`, awaited `OnHedgeAsync`, action generation, metrics, then the selected operation. Callback or generator failures preserve their exception identity, cancel in-flight attempts, and are not counted as launched hedges.
+- Launch ordering is `OnHedge`, awaited `OnHedgeAsync`, action generation, metrics, then the selected operation. Callback failures are reported through `KevlarDiagnostics.OnCallbackError` and do not suppress the launch. Generator failures preserve their exception identity, cancel in-flight attempts, and are not counted as launched hedges.
 - Each attempt gets a forked context — `Properties` are copied at launch time, so attempts don't see each other's writes.
 - Callback contexts are pooled. Do not retain them after the synchronous callback or returned `ValueTask` completes; a generated action's isolated context remains valid until that attempt completes.
 - Callbacks and generators run without a strategy lock. They may re-enter the same shield, and concurrent shield executions may invoke them concurrently; keep captured state thread-safe.

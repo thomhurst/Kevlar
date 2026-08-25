@@ -1011,7 +1011,7 @@
   "Kevlar.Testing.StrategyStateSnapshot.Kind": "Kevlar.Testing.StrategyStateSnapshot.yml",
   "Kevlar.Testing.StrategyStateSnapshot.StrategyIndex": "Kevlar.Testing.StrategyStateSnapshot.yml",
   "Kevlar.Testing.TelemetryRecorder": "Kevlar.Testing.TelemetryRecorder.yml",
-  "Kevlar.Testing.TelemetryRecorder.#ctor(System.Boolean)": "Kevlar.Testing.TelemetryRecorder.yml",
+  "Kevlar.Testing.TelemetryRecorder.#ctor(System.Boolean,System.Boolean)": "Kevlar.Testing.TelemetryRecorder.yml",
   "Kevlar.Testing.TelemetryRecorder.Callbacks": "Kevlar.Testing.TelemetryRecorder.yml",
   "Kevlar.Testing.TelemetryRecorder.Dispose": "Kevlar.Testing.TelemetryRecorder.yml",
   "Kevlar.Testing.TelemetryRecorder.Metrics": "Kevlar.Testing.TelemetryRecorder.yml",

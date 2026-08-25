@@ -167,7 +167,9 @@ public class TelemetryRecorderTests
     [Test]
     public async Task Records_Callback_Errors_From_Diagnostics()
     {
-        using var recorder = new TelemetryRecorder(captureMetrics: false);
+        using var recorder = new TelemetryRecorder(
+            captureMetrics: false,
+            captureCallbackErrors: true);
         var callbackFailure = new IOException("callback");
         var shield = Shield.Retry(options =>
         {
@@ -184,6 +186,28 @@ public class TelemetryRecorderTests
         await Assert.That(record.ShieldName).IsEqualTo("recorded-callback-error");
         await Assert.That(record.StrategyIndex).IsEqualTo(0);
         await Assert.That(ReferenceEquals(record.Exception, callbackFailure)).IsTrue();
+    }
+
+    [Test]
+    public async Task Callback_Error_Capture_Is_Opt_In()
+    {
+        using var unrelated = new TelemetryRecorder(captureMetrics: false);
+        using var capturing = new TelemetryRecorder(
+            captureMetrics: false,
+            captureCallbackErrors: true);
+        var shield = Shield.Retry(options =>
+        {
+            options.MaxRetries = 1;
+            options.Backoff = Backoff.None;
+            options.OnRetry = static _ => throw new IOException("callback");
+        });
+
+        _ = await shield.ExecuteOutcomeAsync<int>(static _ =>
+            throw new InvalidOperationException("operation"));
+
+        await Assert.That(unrelated.Callbacks).IsEmpty();
+        await Assert.That(capturing.Callbacks.Single().Kind)
+            .IsEqualTo(CallbackKind.CallbackError);
     }
 
     [Test]

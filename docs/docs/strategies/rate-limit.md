@@ -103,8 +103,9 @@ only each returned lease.
 
 The delegate must return a fresh acquired or rejected lease for each call. Rejection metrics and
 hooks follow the built-in contract: metric first, then `OnRejected`, then awaited
-`OnRejectedAsync`; a hook failure replaces `RateLimiterAdapterRejectedException`. Cancellation while
-queued is cancellation, not rejection, so hooks do not run.
+`OnRejectedAsync`. Hook failures are reported through `KevlarDiagnostics.OnCallbackError`, and
+`RateLimiterAdapterRejectedException` remains the outcome. Cancellation while queued is cancellation,
+not rejection, so hooks do not run.
 
 ## Options
 

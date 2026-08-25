@@ -87,9 +87,9 @@ callback to `options.OnFallback` as shown above.
 
 The `FallbackEvent<T>` carries the failure that triggered it as a typed `Outcome<T>` — `Outcome.Exception` when an exception was handled, `Outcome.Result` when a result value was. No casting, no boxing.
 
-`OnFallback` runs before the fallback value or factory. If the callback throws, its exact
-exception becomes the pipeline outcome and the factory is not called. A later execution is
-unaffected. Async factory failures are likewise preserved as the pipeline outcome.
+`OnFallback` runs before the fallback value or factory. Callback failures are reported through
+`KevlarDiagnostics.OnCallbackError`; they do not replace the protected outcome or skip recovery.
+Fallback factory failures are preserved as the pipeline outcome.
 
 ## Notifications
 

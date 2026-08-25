@@ -5,7 +5,7 @@ items:
   id: TelemetryRecorder
   parent: Kevlar.Testing
   children:
-  - Kevlar.Testing.TelemetryRecorder.#ctor(System.Boolean)
+  - Kevlar.Testing.TelemetryRecorder.#ctor(System.Boolean,System.Boolean)
   - Kevlar.Testing.TelemetryRecorder.Callbacks
   - Kevlar.Testing.TelemetryRecorder.Dispose
   - Kevlar.Testing.TelemetryRecorder.Metrics
@@ -50,32 +50,39 @@ items:
   - System.Object.Equals(System.Object,System.Object)
   - System.Object.ReferenceEquals(System.Object,System.Object)
   - System.Object.GetHashCode
-- uid: Kevlar.Testing.TelemetryRecorder.#ctor(System.Boolean)
-  commentId: M:Kevlar.Testing.TelemetryRecorder.#ctor(System.Boolean)
-  id: '#ctor(System.Boolean)'
+- uid: Kevlar.Testing.TelemetryRecorder.#ctor(System.Boolean,System.Boolean)
+  commentId: M:Kevlar.Testing.TelemetryRecorder.#ctor(System.Boolean,System.Boolean)
+  id: '#ctor(System.Boolean,System.Boolean)'
   parent: Kevlar.Testing.TelemetryRecorder
   langs:
   - csharp
   - vb
-  name: TelemetryRecorder(bool)
-  nameWithType: TelemetryRecorder.TelemetryRecorder(bool)
-  fullName: Kevlar.Testing.TelemetryRecorder.TelemetryRecorder(bool)
+  name: TelemetryRecorder(bool, bool)
+  nameWithType: TelemetryRecorder.TelemetryRecorder(bool, bool)
+  fullName: Kevlar.Testing.TelemetryRecorder.TelemetryRecorder(bool, bool)
   type: Constructor
   assemblies:
   - Kevlar.Testing
   namespace: Kevlar.Testing
-  summary: Creates a recorder, optionally subscribing to Kevlar metrics.
+  summary: Creates a recorder with optional process-wide metric and callback-error capture.
   example: []
   syntax:
-    content: public TelemetryRecorder(bool captureMetrics = true)
+    content: public TelemetryRecorder(bool captureMetrics = true, bool captureCallbackErrors = false)
     parameters:
     - id: captureMetrics
       type: System.Boolean
-    content.vb: Public Sub New(captureMetrics As Boolean = True)
+      description: Whether to subscribe to Kevlar metrics.
+    - id: captureCallbackErrors
+      type: System.Boolean
+      description: >-
+        Whether to subscribe to process-wide callback-error diagnostics. Leave disabled when recording
+
+        callbacks assigned directly to a shield to preserve per-pipeline isolation.
+    content.vb: Public Sub New(captureMetrics As Boolean = True, captureCallbackErrors As Boolean = False)
   overload: Kevlar.Testing.TelemetryRecorder.#ctor*
-  nameWithType.vb: TelemetryRecorder.New(Boolean)
-  fullName.vb: Kevlar.Testing.TelemetryRecorder.New(Boolean)
-  name.vb: New(Boolean)
+  nameWithType.vb: TelemetryRecorder.New(Boolean, Boolean)
+  fullName.vb: Kevlar.Testing.TelemetryRecorder.New(Boolean, Boolean)
+  name.vb: New(Boolean, Boolean)
 - uid: Kevlar.Testing.TelemetryRecorder.Record(Kevlar.RetryEvent)
   commentId: M:Kevlar.Testing.TelemetryRecorder.Record(Kevlar.RetryEvent)
   id: Record(Kevlar.RetryEvent)
@@ -737,7 +744,7 @@ references:
 - uid: Kevlar.Testing.TelemetryRecorder.#ctor*
   commentId: Overload:Kevlar.Testing.TelemetryRecorder.#ctor
   isExternal: true
-  href: Kevlar.Testing.TelemetryRecorder.html#Kevlar_Testing_TelemetryRecorder__ctor_System_Boolean_
+  href: Kevlar.Testing.TelemetryRecorder.html#Kevlar_Testing_TelemetryRecorder__ctor_System_Boolean_System_Boolean_
   name: TelemetryRecorder
   nameWithType: TelemetryRecorder.TelemetryRecorder
   fullName: Kevlar.Testing.TelemetryRecorder.TelemetryRecorder

@@ -163,7 +163,7 @@ Kevlar.Testing.TelemetryRecorder.Record(Kevlar.TimeoutEvent item) -> void
 Kevlar.Testing.TelemetryRecorder.Record<TResult>(Kevlar.FallbackEvent<TResult> item) -> void
 Kevlar.Testing.TelemetryRecorder.Record<TResult>(Kevlar.CircuitBreakerBreakDurationEvent<TResult> item, System.TimeSpan breakDuration) -> System.Threading.Tasks.ValueTask<System.TimeSpan>
 Kevlar.Testing.TelemetryRecorder.Record<TResult>(Kevlar.RetryEvent<TResult> item) -> void
-Kevlar.Testing.TelemetryRecorder.TelemetryRecorder(bool captureMetrics = true) -> void
+Kevlar.Testing.TelemetryRecorder.TelemetryRecorder(bool captureMetrics = true, bool captureCallbackErrors = false) -> void
 Kevlar.Testing.TelemetryRecorder.WaitForCallbackCountAsync(int count, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Kevlar.Testing.TelemetryRecorder.WaitForMetricCountAsync(int count, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 static Kevlar.Testing.ShieldExecutionExtensions.WaitForPendingAsync(this System.Threading.Tasks.Task! execution, System.Func<bool>! workStarted, string! workDescription, int maxYields = 100, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask

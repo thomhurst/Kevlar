@@ -49,7 +49,7 @@ When cancellation signals overlap, the outcome is decided after the delegate com
 2. Otherwise, if the timeout fired, any `OperationCanceledException` from the delegate becomes `TimeoutExceededException`; the original cancellation is available as `InnerException`.
 3. If neither the caller nor timeout has fired, an `OperationCanceledException` is preserved unchanged.
 
-This caller-first rule also applies to nested timeouts. A cancelled outer timeout is treated as the inner timeout's caller, so only the winning scope reports `OnTimeout`. The strategy restores the prior context token and completes timer cleanup before invoking `OnTimeout`; if the callback throws, that exception is surfaced without contaminating later executions.
+This caller-first rule also applies to nested timeouts. A cancelled outer timeout is treated as the inner timeout's caller, so only the winning scope reports `OnTimeout`. The strategy restores the prior context token and completes timer cleanup before invoking `OnTimeout`; callback failures are reported through `KevlarDiagnostics.OnCallbackError` without replacing the timeout outcome.
 
 ## Dynamic timeouts and asynchronous notifications
 
@@ -80,10 +80,11 @@ Invalid `TimeoutOptions` values—and invalid durations returned by `TimeoutGene
 offending value.
 
 After a timeout wins, Kevlar records timeout metrics, restores the caller token, disposes timer state,
-then invokes `OnTimeout` followed by awaited `OnTimeoutAsync`. A callback exception or cancellation
-is surfaced unchanged instead of `TimeoutExceededException`. Hooks may run concurrently when a shield
-is reused, so callbacks must be thread-safe and must not assume serialization. Truly asynchronous
-generators and hooks block the calling thread when used through synchronous `Execute`.
+then invokes `OnTimeout` followed by awaited `OnTimeoutAsync`. Callback exceptions and cancellations
+are reported through `KevlarDiagnostics.OnCallbackError`; `TimeoutExceededException` remains the
+outcome. Hooks may run concurrently when a shield is reused, so callbacks must be thread-safe and
+must not assume serialization. Truly asynchronous generators and hooks block the calling thread when
+used through synchronous `Execute`.
 
 ## Total vs per-attempt
 
