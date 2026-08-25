@@ -30,12 +30,20 @@ internal sealed class LoggingStrategy(LoggingRegistration registration)
         }
     }
 
-    void IShieldNameObserver.OnShieldNamed(Strategy[] strategies, string shieldName) =>
-        ShieldLoggingExtensions.AttachCircuitListeners(
-            strategies,
-            _listener,
-            _listener,
-            shieldName);
+    void IShieldNameObserver.OnStrategyNamed(
+        Strategy strategy,
+        string shieldName,
+        int strategyIndex)
+    {
+        if (strategy is CircuitBreakerStrategy circuitBreaker)
+        {
+            circuitBreaker.Core.AttachTelemetryListener(
+                _listener,
+                _listener,
+                shieldName,
+                strategyIndex);
+        }
+    }
 
     public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
         Continuation<T, TState> next,

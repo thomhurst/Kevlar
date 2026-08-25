@@ -110,6 +110,16 @@ public static class ShieldLoggingExtensions
         var strategyIndex = -1;
         foreach (var strategy in strategies)
         {
+            if (strategy is LoggingStrategy logging)
+            {
+                if (previous is not null && ReferenceEquals(logging.Listener, previous))
+                {
+                    continue;
+                }
+
+                break;
+            }
+
             if (strategy is ITransparentStrategy)
             {
                 continue;

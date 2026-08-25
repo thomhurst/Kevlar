@@ -565,10 +565,14 @@ public class LoggingTests
             .WithLogging(outerLogger);
         var inner = Shield.CircuitBreaker(options => options.Monitor = innerMonitor)
             .WithLogging(innerLogger);
-        var composed = outer.Wrap(inner);
+        var appendedMonitor = new CircuitBreakerMonitor();
+        var composed = outer.Wrap(inner)
+            .WithName("composed")
+            .CircuitBreaker(options => options.Monitor = appendedMonitor);
 
         outerMonitor.Isolate();
         innerMonitor.Isolate();
+        appendedMonitor.Isolate();
 
         var outerTransitions = outerLogger.Collector.GetSnapshot()
             .Where(record => record.Id == new EventId(1003, "CircuitState"))
@@ -577,11 +581,15 @@ public class LoggingTests
             .Where(record => record.Id == new EventId(1003, "CircuitState"))
             .ToArray();
         await Assert.That(outerTransitions.Length).IsEqualTo(1);
-        await Assert.That(innerTransitions.Length).IsEqualTo(1);
+        await Assert.That(innerTransitions.Length).IsEqualTo(2);
         await Assert.That(outerTransitions[0].GetStructuredStateValue("StrategyIndex"))
             .IsEqualTo("0");
         await Assert.That(innerTransitions[0].GetStructuredStateValue("StrategyIndex"))
             .IsEqualTo("1");
+        await Assert.That(innerTransitions[1].GetStructuredStateValue("StrategyIndex"))
+            .IsEqualTo("2");
+        await Assert.That(innerTransitions.All(record =>
+            record.GetStructuredStateValue("ShieldName") == "composed")).IsTrue();
         GC.KeepAlive(composed);
     }
 
