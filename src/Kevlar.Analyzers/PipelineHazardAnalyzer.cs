@@ -2052,8 +2052,12 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 anonymousFunction,
                 anonymousFunction.Symbol.Parameters[0],
                 context)
-            || TryGetConfiguredMaxHedgedAttempts(operation, out var maxHedgedAttempts)
+            || (TryGetConfiguredMaxHedgedAttempts(operation, out var maxHedgedAttempts)
                 && maxHedgedAttempts == 0)
+            || HasStaticallyDisabledChaosBehavior(
+                anonymousFunction,
+                anonymousFunction.Symbol.Parameters[0],
+                context))
         {
             memberName = null;
             return false;
@@ -2064,6 +2068,91 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             anonymousFunction.Symbol.Parameters[0],
             context,
             out memberName);
+    }
+
+    private static bool HasStaticallyDisabledChaosBehavior(
+        IAnonymousFunctionOperation anonymousFunction,
+        IParameterSymbol configuratorParameter,
+        OperationAnalysisContext context)
+    {
+        if (configuratorParameter.Type is not INamedTypeSymbol
+            {
+                Name: "ChaosBehaviorOptions",
+            } options
+            || options.ContainingNamespace.ToDisplayString() != "Kevlar.Chaos")
+        {
+            return false;
+        }
+
+        var canEnable = false;
+        var hasInjectionRateAssignment = false;
+        var injectionRateAlwaysZero = true;
+        var canGenerateInjectionRate = false;
+        AnalyzeChaosAssignments(
+            anonymousFunction.Body,
+            configuratorParameter,
+            context,
+            ref canEnable,
+            ref hasInjectionRateAssignment,
+            ref injectionRateAlwaysZero,
+            ref canGenerateInjectionRate);
+
+        return !canEnable
+            || hasInjectionRateAssignment
+                && injectionRateAlwaysZero
+                && !canGenerateInjectionRate;
+    }
+
+    private static void AnalyzeChaosAssignments(
+        IOperation operation,
+        IParameterSymbol configuratorParameter,
+        OperationAnalysisContext context,
+        ref bool canEnable,
+        ref bool hasInjectionRateAssignment,
+        ref bool injectionRateAlwaysZero,
+        ref bool canGenerateInjectionRate)
+    {
+        operation = Unwrap(operation)!;
+        if (operation is IAnonymousFunctionOperation)
+        {
+            return;
+        }
+
+        if (operation is IAssignmentOperation
+            {
+                Target: IPropertyReferenceOperation property,
+                Value: { } value,
+            }
+            && property.Instance is { } instance
+            && ReferencesConfiguratorParameter(instance, configuratorParameter, context))
+        {
+            switch (property.Property.Name)
+            {
+                case "Enabled":
+                    canEnable |= value.ConstantValue is not { HasValue: true, Value: false };
+                    break;
+                case "InjectionRate":
+                    hasInjectionRateAssignment = true;
+                    injectionRateAlwaysZero &= value.ConstantValue is { HasValue: true, Value: double rate }
+                        && rate <= 0;
+                    break;
+                case "InjectionRateGenerator":
+                    canGenerateInjectionRate |= value.ConstantValue is not { HasValue: true, Value: null };
+                    break;
+            }
+        }
+
+        foreach (var child in operation.ChildOperations)
+        {
+            AnalyzeChaosAssignments(
+                child,
+                configuratorParameter,
+                context,
+                ref canEnable,
+                ref hasInjectionRateAssignment,
+                ref injectionRateAlwaysZero,
+                ref canGenerateInjectionRate);
+        }
     }
 
     private static bool HasStaticallyDisabledRetries(
@@ -2253,19 +2342,29 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         return referencesParameter;
     }
 
-    private static bool IsAsyncConfigurationProperty(IPropertySymbol property) =>
-        (property is { Name: "Behavior", ContainingType.Name: "ChaosBehaviorOptions" }
-            && property.ContainingNamespace.ToDisplayString() == "Kevlar.Chaos")
-        || (property.ContainingNamespace.ToDisplayString().StartsWith("Kevlar", StringComparison.Ordinal)
-            && property.Name is
-            "OnRetryAsync"
-            or "DelayGeneratorAsync"
-            or "OnTimeoutAsync"
-            or "TimeoutGenerator"
-            or "OnFallbackAsync"
-            or "OnStateChangedAsync"
-            or "BreakDurationGenerator"
-            or "OnRejectedAsync");
+    private static bool IsAsyncConfigurationProperty(IPropertySymbol property)
+    {
+        var containingType = property.ContainingType.Name;
+        var containingNamespace = property.ContainingNamespace.ToDisplayString();
+        return containingNamespace switch
+        {
+            "Kevlar" => containingType switch
+            {
+                "RetryOptions" => property.Name is "OnRetryAsync" or "DelayGeneratorAsync",
+                "HedgeOptions" => property.Name == "DelayGeneratorAsync",
+                "TimeoutOptions" => property.Name is "OnTimeoutAsync" or "TimeoutGenerator",
+                "FallbackOptions" => property.Name == "OnFallbackAsync",
+                "CircuitBreakerOptions" => property.Name is "OnStateChangedAsync" or "BreakDurationGenerator",
+                "RateLimitOptions" or "ConcurrencyLimitOptions" => property.Name == "OnRejectedAsync",
+                _ => false,
+            },
+            "Kevlar.Chaos" =>
+                containingType == "ChaosBehaviorOptions" && property.Name == "Behavior",
+            "Kevlar.Extensions.RateLimiting" =>
+                containingType == "RateLimiterAdapterOptions" && property.Name == "OnRejectedAsync",
+            _ => false,
+        };
+    }
 
     private static bool IsReactiveStrategy(IMethodSymbol method, KnownTypes knownTypes) =>
         (method.Name is "Retry" or "RetryForever" or "Hedge" or "CircuitBreaker")

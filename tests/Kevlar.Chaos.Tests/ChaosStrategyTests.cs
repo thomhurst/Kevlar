@@ -412,6 +412,31 @@ public class ChaosStrategyTests
     }
 
     [Test]
+    [Arguments(false, 1.0)]
+    [Arguments(true, 0.0)]
+    public async Task Sync_Execution_Allows_Statically_Disabled_Behavior(
+        bool enabled,
+        double injectionRate)
+    {
+        var behaviorCalls = 0;
+        var shield = ChaosShield.Behavior(options =>
+        {
+            options.Enabled = enabled;
+            options.InjectionRate = injectionRate;
+            options.Behavior = _ =>
+            {
+                behaviorCalls++;
+                return ValueTask.CompletedTask;
+            };
+        });
+
+        var result = shield.Execute(_ => 42);
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(behaviorCalls).IsEqualTo(0);
+    }
+
+    [Test]
     public async Task Dynamic_Generator_Failures_Are_Preserved_As_Outcomes()
     {
         var generatedFailure = new TestException("generator");

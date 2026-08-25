@@ -338,7 +338,7 @@ public sealed class Shield<TResult> : IShieldLifecycle
             JudgeOrDefault,
             null,
             null,
-            fallbackIsAsync: FallbackDelegate.IsAsync(fallback)));
+            fallbackIsAsync: true));
     }
 
     /// <summary>Replaces handled outcomes with the result of <paramref name="fallback"/> and configures notifications.</summary>
@@ -362,7 +362,7 @@ public sealed class Shield<TResult> : IShieldLifecycle
             judge,
             options.OnFallback,
             options.OnFallbackAsync,
-            fallbackIsAsync: FallbackDelegate.IsAsync(fallback),
+            fallbackIsAsync: true,
             hasHandlingOverride: options.HasHandlingOverride,
             telemetryName: options.Name));
     }
@@ -376,7 +376,7 @@ public sealed class Shield<TResult> : IShieldLifecycle
             JudgeOrDefault,
             null,
             null,
-            fallbackIsAsync: FallbackDelegate.IsAsync(fallback)));
+            fallbackIsAsync: true));
     }
 
     /// <summary>
@@ -403,7 +403,7 @@ public sealed class Shield<TResult> : IShieldLifecycle
             judge,
             options.OnFallback,
             options.OnFallbackAsync,
-            fallbackIsAsync: FallbackDelegate.IsAsync(fallback),
+            fallbackIsAsync: true,
             hasHandlingOverride: options.HasHandlingOverride,
             telemetryName: options.Name));
     }

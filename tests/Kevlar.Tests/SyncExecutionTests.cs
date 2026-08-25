@@ -176,15 +176,11 @@ public class SyncExecutionTests
     }
 
     [Test]
-    public async Task Sync_Execute_Rejects_Async_Fallback_Recovery_Before_Invoking_The_Action()
+    public async Task Sync_Execute_Rejects_Forwarded_Async_Fallback_Recovery_Before_Invoking_The_Action()
     {
         var actionInvoked = false;
-        var typed = Shield.For<int>().Fallback(static async _ =>
-        {
-            await Task.Yield();
-            return 42;
-        });
-        var untyped = Shield.Empty.Fallback(static async _ => await Task.Yield());
+        var typed = Shield.For<int>().Fallback(static token => RecoverAsync(token));
+        var untyped = Shield.Empty.Fallback(static token => RecoverVoidAsync(token));
         Exception? typedException = null;
         Exception? untypedException = null;
 
@@ -231,15 +227,28 @@ public class SyncExecutionTests
     }
 
     [Test]
-    public async Task Sync_Execute_Allows_Completed_Fallback_Recovery()
+    public async Task Sync_Execute_Rejects_Async_Shaped_Fallback_Even_When_It_Completes_Synchronously()
     {
         var typed = Shield.For<int>().Fallback(static _ => new ValueTask<int>(42));
         var untyped = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask);
 
-        var result = typed.Execute(_ => throw new InvalidOperationException());
-        untyped.Execute(_ => throw new InvalidOperationException());
+        await Assert.That(() => typed.Execute(_ => throw new InvalidOperationException()))
+            .Throws<NotSupportedException>();
+        await Assert.That(() => untyped.Execute(_ => throw new InvalidOperationException()))
+            .Throws<NotSupportedException>();
+    }
 
-        await Assert.That(result).IsEqualTo(42);
+    private static async ValueTask<int> RecoverAsync(CancellationToken cancellationToken)
+    {
+        await Task.Yield();
+        cancellationToken.ThrowIfCancellationRequested();
+        return 42;
+    }
+
+    private static async ValueTask RecoverVoidAsync(CancellationToken cancellationToken)
+    {
+        await Task.Yield();
+        cancellationToken.ThrowIfCancellationRequested();
     }
 
     [Test]

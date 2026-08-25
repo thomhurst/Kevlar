@@ -58,12 +58,12 @@ the calling thread until they complete, so prefer `ExecuteAsync` for delayed or 
 
 | Pipeline configuration | Synchronous `Execute` behavior |
 |---|---|
-| Empty shield, fixed timeout, constant or synchronously completing fallback, or synchronous callbacks | Runs on the calling thread |
+| Empty shield, fixed timeout, constant fallback, or synchronous callbacks | Runs on the calling thread |
 | Retry delay, queued rate limit, or queued concurrency limit | Blocks the calling thread until the delay or queue admission completes |
 | `TimeoutGeneratorSync` or `BreakDurationGeneratorSync` | Invokes the generator synchronously; no async transition is introduced |
 | `CircuitBreakerMonitor.Isolate()` / `Reset()` with `OnStateChangedAsync` | Blocks until the observer completes; the observer runs on the thread pool |
 | Multi-attempt hedging | Throws `NotSupportedException` before the action runs |
-| An `async` fallback recovery delegate, `OnRetryAsync`, `DelayGeneratorAsync`, `OnTimeoutAsync`, `OnFallbackAsync`, `OnStateChangedAsync`, any `OnRejectedAsync`, `TimeoutGenerator`, or `BreakDurationGenerator` | Throws `NotSupportedException` before the action runs; use `ExecuteAsync` or the synchronous counterpart |
+| A `ValueTask`-returning fallback recovery delegate, `OnRetryAsync`, `DelayGeneratorAsync`, `OnTimeoutAsync`, `OnFallbackAsync`, `OnStateChangedAsync`, any `OnRejectedAsync`, `TimeoutGenerator`, `BreakDurationGenerator`, or an injectable `ChaosBehaviorOptions.Behavior` | Throws `NotSupportedException` before the action runs; use `ExecuteAsync` or the synchronous counterpart |
 | Custom strategy returning an incomplete `ValueTask` | Blocks at the execution boundary; custom code must avoid capturing a single-threaded `SynchronizationContext` |
 
 [`KEV012`](analyzers.md#kev012-async-configuration-with-synchronous-execute) catches inline async

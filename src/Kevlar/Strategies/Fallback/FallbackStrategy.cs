@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using Kevlar.Internal;
 
 namespace Kevlar.Strategies;
@@ -242,10 +241,4 @@ internal sealed class VoidFallbackStrategy : Strategy, IFallbackStrategyInspecti
             return Outcome<T>.FromException(fallbackFailure);
         }
     }
-}
-
-internal static class FallbackDelegate
-{
-    public static bool IsAsync(Delegate fallback) =>
-        fallback.Method.IsDefined(typeof(AsyncStateMachineAttribute), inherit: false);
 }

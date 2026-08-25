@@ -334,7 +334,7 @@ public static class ShieldExtensions
             shield.JudgeOrDefault,
             null,
             null,
-            fallbackIsAsync: FallbackDelegate.IsAsync(fallback)));
+            fallbackIsAsync: true));
     }
 
     /// <summary>
@@ -361,7 +361,7 @@ public static class ShieldExtensions
             judge,
             options.OnFallback,
             options.OnFallbackAsync,
-            fallbackIsAsync: FallbackDelegate.IsAsync(fallback),
+            fallbackIsAsync: true,
             hasHandlingOverride: options.HasHandlingOverride,
             telemetryName: options.Name));
     }
@@ -381,7 +381,7 @@ public static class ShieldExtensions
             shield.JudgeOrDefault,
             null,
             null,
-            fallbackIsAsync: FallbackDelegate.IsAsync(fallback)));
+            fallbackIsAsync: true));
     }
 
     /// <summary>
@@ -408,7 +408,7 @@ public static class ShieldExtensions
             judge,
             options.OnFallback,
             options.OnFallbackAsync,
-            fallbackIsAsync: FallbackDelegate.IsAsync(fallback),
+            fallbackIsAsync: true,
             hasHandlingOverride: options.HasHandlingOverride));
     }
 
