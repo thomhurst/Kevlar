@@ -110,9 +110,11 @@ All notable changes to this project are documented here. The format follows
 | `RetryForever(backoff: null)` | `RetryForever()` |
 | ambient handling flowed past `Wrap`/`Compose` | `Wrap`/`Compose` seals the clause |
 | `maxQueue` / `MaxQueue` | `queueLimit` / `QueueLimit` |
+| `Kevlar.Extensions.DependencyInjection.BackoffKind` | `Kevlar.BackoffKind` |
 | `jitter: false` / `RetryDefinition.Jitter = false` | `jitter: Jitter.None` / `RetryDefinition.Jitter = Jitter.None` |
 | `jitter: true` / `RetryDefinition.Jitter = true` | `jitter: Jitter.Equal` / `RetryDefinition.Jitter = Jitter.Equal` |
-| `RetryEvent.Attempt` / `RetryEvent<TResult>.Attempt` / `HedgeEvent.Attempt` | `AttemptNumber` |
+| `RetryEvent.Attempt` / `RetryEvent<TResult>.Attempt` | `RetryNumber` |
+| `HedgeEvent.Attempt` | `AttemptNumber` |
 <!-- upgrade-from-0.x:end -->
 
 The replacement forms compile together:
@@ -131,6 +133,7 @@ _ = Shield.Empty.Wrap(Shield.Retry(1));
 - Typed constant-value `Fallback(value)` overloads; use `FallbackTo(value)`.
 - Nullable `RetryForever(Backoff? backoff = null)` overloads; use either explicit replacement.
 - Mutable clause-builder behavior where ignored return values changed later chains.
+- Public `StrategyNode`; pipeline nodes are implementation details and are now internal.
 
 ### Fixed
 

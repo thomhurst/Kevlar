@@ -194,7 +194,27 @@ foreach ($line in $lines | Where-Object { $_ -match '^### ' })
     }
 }
 
-$deadApiPattern = [regex]'FallbackWithNotifications|\bonFallback\s*:|\bWhenDefault\(|\bOrDefault\(|\bOrWhen\(|WhenResultDefault|OrResultDefault|\bHedgingOptions\b|\bHedgingStrategyDescriptor\b|\bStrategyKind\.Hedging\b|\bStandardHedgingShieldOptions\b|\bAddStandardHedgingShield\b|\bVoidShield\b|\bVoidShieldBuilder\b|\bPartitionedVoidShield\b|\bmaxQueue\b|\bMaxQueue\b'
+$deadApiPatterns = @(
+    'FallbackWithNotifications'
+    '\bonFallback\s*:'
+    '\bWhenDefault\('
+    '\bOrDefault\('
+    '\bOrWhen\('
+    'WhenResultDefault'
+    'OrResultDefault'
+    '\bHedgingOptions\b'
+    '\bHedgingStrategyDescriptor\b'
+    '\bStrategyKind\.Hedging\b'
+    '\bStandardHedgingShieldOptions\b'
+    '\bAddStandardHedgingShield\b'
+    '\bVoidShield\b'
+    '\bVoidShieldBuilder\b'
+    '\bPartitionedVoidShield\b'
+    '\bmaxQueue\b'
+    '\bMaxQueue\b'
+    '\bKevlar\.Extensions\.DependencyInjection\.BackoffKind\b'
+)
+$deadApiPattern = [regex]($deadApiPatterns -join '|')
 $documents = @($changelogPath, (Join-Path $repositoryRoot 'README.md')) + @(
     Get-ChildItem -LiteralPath (Join-Path $repositoryRoot 'docs') -Recurse -File -Include '*.md', '*.mdx' |
         ForEach-Object FullName)
