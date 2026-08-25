@@ -11,6 +11,10 @@ internal static class StandardHttpConfigurationBinder
 
         BindTimeout(configuration, nameof(options.TotalTimeout), options.TotalTimeout);
         BindRetry(configuration.GetSection(nameof(options.Retry)), options.Retry);
+        SetBool(
+            configuration,
+            nameof(options.UseRetryAfterHeader),
+            value => options.UseRetryAfterHeader = value);
         BindCircuitBreaker(configuration.GetSection(nameof(options.CircuitBreaker)), options.CircuitBreaker);
         BindConcurrencyLimit(configuration.GetSection(nameof(options.ConcurrencyLimit)), options);
         BindTimeout(configuration, nameof(options.AttemptTimeout), options.AttemptTimeout);
@@ -225,7 +229,10 @@ internal static class StandardHttpConfigurationBinder
         IConfiguration configuration,
         StandardHttpShieldOptions options)
     {
-        Ensure(options.TotalTimeout.Timeout > TimeSpan.Zero, TimeoutSection(configuration, nameof(options.TotalTimeout)), "must be positive");
+        Ensure(
+            IsValidStandardTimeout(options.TotalTimeout),
+            TimeoutSection(configuration, nameof(options.TotalTimeout)),
+            "must be positive or Timeout.InfiniteTimeSpan");
         Ensure(options.Retry.MaxRetries >= 0, configuration.GetSection("Retry:MaxRetries"), "must not be negative");
         Ensure(options.Retry.MaxDelay is null || options.Retry.MaxDelay >= TimeSpan.Zero, configuration.GetSection("Retry:MaxDelay"), "must not be negative");
         ValidateCircuitBreaker(configuration.GetSection(nameof(options.CircuitBreaker)), options.CircuitBreaker);
@@ -235,7 +242,18 @@ internal static class StandardHttpConfigurationBinder
             Ensure(concurrency.QueueLimit >= 0, configuration.GetSection("ConcurrencyLimit:QueueLimit"), "must not be negative");
         }
 
-        Ensure(options.AttemptTimeout.Timeout > TimeSpan.Zero, TimeoutSection(configuration, nameof(options.AttemptTimeout)), "must be positive");
+        Ensure(
+            IsValidStandardTimeout(options.AttemptTimeout),
+            TimeoutSection(configuration, nameof(options.AttemptTimeout)),
+            "must be positive or Timeout.InfiniteTimeSpan");
+        Ensure(
+            options.TotalTimeout.Timeout == Timeout.InfiniteTimeSpan
+                || options.AttemptTimeout.Timeout == Timeout.InfiniteTimeSpan
+                || options.TotalTimeout.TimeoutGenerator is not null
+                || options.AttemptTimeout.TimeoutGenerator is not null
+                || options.AttemptTimeout.Timeout <= options.TotalTimeout.Timeout,
+            TimeoutSection(configuration, nameof(options.AttemptTimeout)),
+            "must not exceed TotalTimeout");
         Ensure(options.Handler.MaximumBufferSize > 0, configuration.GetSection("Handler:MaximumBufferSize"), "must be positive");
         if (options.Handler.Routing is { } routing)
         {
@@ -307,6 +325,9 @@ internal static class StandardHttpConfigurationBinder
             ? section
             : section.GetSection(nameof(TimeoutOptions.Timeout));
     }
+
+    private static bool IsValidStandardTimeout(TimeoutOptions options) =>
+        options.Timeout > TimeSpan.Zero || options.Timeout == Timeout.InfiniteTimeSpan;
 
     private static void Ensure(bool condition, IConfigurationSection section, string requirement)
     {

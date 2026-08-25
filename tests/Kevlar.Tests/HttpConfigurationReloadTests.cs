@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Net;
+using System.Net.Http.Headers;
 using Kevlar.Extensions.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -70,6 +71,7 @@ public class HttpConfigurationReloadTests
             ("Retry:BaseDelay", "00:00:00.100"),
             ("Retry:BackoffMaxDelay", "00:00:02"),
             ("Retry:MaxDelay", "00:00:01"),
+            ("UseRetryAfterHeader", "false"),
             ("CircuitBreaker:ConsecutiveFailures", "2"),
             ("CircuitBreaker:FailureRatio", ""),
             ("CircuitBreaker:MinimumThroughput", "5"),
@@ -103,6 +105,7 @@ public class HttpConfigurationReloadTests
         await Assert.That(bound.Retry.MaxRetries).IsEqualTo(4);
         await Assert.That(bound.Retry.Backoff.ToString()).IsEqualTo("linear 100ms steps, equal jitter, cap 2s");
         await Assert.That(bound.Retry.MaxDelay).IsEqualTo(TimeSpan.FromSeconds(1));
+        await Assert.That(bound.UseRetryAfterHeader).IsFalse();
         await Assert.That(bound.CircuitBreaker.ConsecutiveFailures).IsEqualTo(2);
         await Assert.That(bound.CircuitBreaker.FailureRatio).IsNull();
         await Assert.That(bound.CircuitBreaker.MinimumThroughput).IsEqualTo(5);
@@ -243,7 +246,7 @@ public class HttpConfigurationReloadTests
     }
 
     [Test]
-    [Arguments("TotalTimeout", "00:00:00", "must be positive")]
+    [Arguments("TotalTimeout", "00:00:00", "must be positive or Timeout.InfiniteTimeSpan")]
     [Arguments("Retry:MaxRetries", "-1", "must not be negative")]
     [Arguments("Retry:MaxDelay", "-00:00:01", "must not be negative")]
     [Arguments("Retry:BaseDelay", "-00:00:01", "must not be negative")]
@@ -256,7 +259,7 @@ public class HttpConfigurationReloadTests
     [Arguments("CircuitBreaker:BreakDuration", "00:00:00", "must be positive")]
     [Arguments("ConcurrencyLimit:MaxConcurrency", "0", "must be positive")]
     [Arguments("ConcurrencyLimit:QueueLimit", "-1", "must not be negative")]
-    [Arguments("AttemptTimeout", "00:00:00", "must be positive")]
+    [Arguments("AttemptTimeout", "00:00:00", "must be positive or Timeout.InfiniteTimeSpan")]
     [Arguments("Handler:MaximumBufferSize", "0", "must be positive")]
     [Arguments("Handler:Routing:Endpoints:0:Weight", "0", "must be positive")]
     public async Task Invalid_Standard_Ranges_Report_Exact_Paths(
@@ -347,6 +350,84 @@ public class HttpConfigurationReloadTests
         }
 
         await Assert.That(transport.Calls).IsEqualTo(4);
+    }
+
+    [Test]
+    public async Task Configuration_Bound_RetryAfter_Survives_Reload()
+    {
+        var configuration = BuildConfiguration(
+            ("Retry:MaxRetries", "1"),
+            ("Retry:Backoff", "None"));
+        var transport = new FuncHandler((_, _) =>
+        {
+            var response = new HttpResponseMessage(HttpStatusCode.TooManyRequests);
+            response.Headers.RetryAfter = new RetryConditionHeaderValue(TimeSpan.FromSeconds(2));
+            return Task.FromResult(response);
+        });
+        CancellationTokenSource? requestCancellation = null;
+        TimeSpan? observedDelay = null;
+        var services = new ServiceCollection();
+        services.AddHttpClient("client")
+            .ConfigurePrimaryHttpMessageHandler(() => transport)
+            .AddStandardShield(
+                configuration,
+                (_, options) => options.Retry.OnRetry = retry =>
+                {
+                    observedDelay = retry.Delay;
+                    requestCancellation!.Cancel();
+                });
+        using var provider = services.BuildServiceProvider();
+        var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("client");
+
+        async Task AssertRetryAfterAsync()
+        {
+            observedDelay = null;
+            using var cancellation = new CancellationTokenSource();
+            requestCancellation = cancellation;
+            await Assert.That(async () => await client.GetAsync(
+                    "https://example.test/",
+                    cancellation.Token))
+                .Throws<OperationCanceledException>();
+            await Assert.That(observedDelay).IsEqualTo(TimeSpan.FromSeconds(2));
+        }
+
+        await AssertRetryAfterAsync();
+        configuration["Retry:MaxRetries"] = "2";
+        configuration.Reload();
+        await AssertRetryAfterAsync();
+    }
+
+    [Test]
+    public async Task AttemptTimeout_Cannot_Exceed_TotalTimeout_In_Configuration()
+    {
+        var configuration = BuildConfiguration(
+            ("TotalTimeout", "00:00:05"),
+            ("AttemptTimeout", "00:00:06"));
+        var builder = new ServiceCollection().AddHttpClient("client");
+
+        var exception = await Assert.That(() => builder.AddStandardShield(configuration))
+            .Throws<InvalidOperationException>();
+
+        await Assert.That(exception!.Message).Contains("AttemptTimeout");
+        await Assert.That(exception.Message).Contains("TotalTimeout");
+    }
+
+    [Test]
+    public async Task Infinite_Timeouts_Are_Accepted_From_Configuration()
+    {
+        var configuration = BuildConfiguration(
+            ("TotalTimeout", "-00:00:00.001"),
+            ("AttemptTimeout", "-00:00:00.001"));
+        StandardHttpShieldOptions? bound = null;
+        var services = new ServiceCollection();
+        services.AddHttpClient("client")
+            .AddStandardShield(configuration, (_, options) => bound = options);
+        using var provider = services.BuildServiceProvider();
+
+        _ = provider.GetRequiredService<IHttpClientFactory>().CreateClient("client");
+
+        await Assert.That(bound!.TotalTimeout.Timeout).IsEqualTo(Timeout.InfiniteTimeSpan);
+        await Assert.That(bound.AttemptTimeout.Timeout).IsEqualTo(Timeout.InfiniteTimeSpan);
     }
 
     [Test]

@@ -57,8 +57,11 @@ services.AddHttpClient("api")
 ```
 
 `StandardHttpShieldOptions` exposes the total timeout, typed retry and circuit-breaker options,
-optional concurrency limiter, attempt timeout, and handler replay/routing options. Invalid strategy
-values fail while the registration is built; handler replay/routing values fail when
+optional concurrency limiter, attempt timeout, and handler replay/routing options. Replacing
+`Retry` still honours `Retry-After` by default; set `UseRetryAfterHeader = false` to opt out. Set
+either timeout's `Timeout` to `Timeout.InfiniteTimeSpan` to omit that stage. A finite attempt timeout
+cannot exceed a finite total timeout. Invalid strategy values fail while the registration is built;
+handler replay/routing values fail when
 `HttpClientFactory` builds its handler pipeline, before a request is sent.
 
 The breaker is a `CircuitBreakerOptions<HttpResponseMessage>`, so `HandlesResult` can replace the
@@ -117,7 +120,7 @@ services.AddHttpClient("api")
 Timeouts accept either a scalar (`TotalTimeout`) or the options-shaped
 `TotalTimeout:Timeout` key. Retry keys are `MaxRetries`, `Backoff` (`None`, `Constant`, `Linear`,
 or `Exponential`), `BaseDelay`, `Factor`, `Jitter` (`None`, `Equal`, `Full`, or `Decorrelated`),
-`BackoffMaxDelay`, and `MaxDelay`. Circuit
+`BackoffMaxDelay`, and `MaxDelay`; `UseRetryAfterHeader` is a root standard-shield key. Circuit
 breaker, concurrency-limit, handler, routing, and endpoint keys match their public option-property
 names. Endpoint entries accept either a URI scalar or `Uri` plus optional `Weight` children.
 
@@ -218,6 +221,11 @@ shape.
 ### `HttpShield.RetryAfter`
 
 A `DelayGenerator` for retry options: when the failed response carries a `Retry-After` header (delta or date form), the retry waits what the server asked for. The server's suggestion is used only when it's *longer* than the computed backoff; no header → normal backoff applies.
+
+The standard shield composes this with a custom synchronous `Retry.DelayGenerator` and uses the
+longer result. Set `UseRetryAfterHeader` to `false` when the custom generator must have exclusive
+control. An asynchronous delay generator still runs afterward, following the normal retry callback
+ordering.
 
 The standard shield caps every retry delay at 10 seconds, so one excessive server suggestion cannot
 impose an unbounded wait. Custom shields can cap server-suggested delays directly:

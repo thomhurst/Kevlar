@@ -61,10 +61,12 @@ public static class HttpShield
 
         Validate(options);
 
-        var shield = WhenTransient(
-                Shield.Timeout(timeout => Copy(options.TotalTimeout, timeout))
-                    .For<HttpResponseMessage>())
-            .Retry(retry => Copy(options.Retry, retry))
+        var pipelineStart = IsDisabled(options.TotalTimeout)
+            ? Shield.For<HttpResponseMessage>()
+            : Shield.Timeout(timeout => Copy(options.TotalTimeout, timeout))
+                .For<HttpResponseMessage>();
+        var shield = WhenTransient(pipelineStart)
+            .Retry(retry => Copy(options.Retry, retry, options.UseRetryAfterHeader))
             .CircuitBreaker(circuitBreaker => Copy(options.CircuitBreaker, circuitBreaker));
 
         if (options.ConcurrencyLimit is { } concurrencyLimit)
@@ -72,7 +74,9 @@ public static class HttpShield
             shield = shield.ConcurrencyLimit(target => Copy(concurrencyLimit, target));
         }
 
-        return shield.Timeout(timeout => Copy(options.AttemptTimeout, timeout));
+        return IsDisabled(options.AttemptTimeout)
+            ? shield
+            : shield.Timeout(timeout => Copy(options.AttemptTimeout, timeout));
     }
 
     /// <summary>
@@ -153,6 +157,17 @@ public static class HttpShield
         ValidateTimeout(options.TotalTimeout, nameof(StandardHttpShieldOptions.TotalTimeout));
         ValidateTimeout(options.AttemptTimeout, nameof(StandardHttpShieldOptions.AttemptTimeout));
 
+        if (!IsDisabled(options.TotalTimeout)
+            && !IsDisabled(options.AttemptTimeout)
+            && options.TotalTimeout.TimeoutGenerator is null
+            && options.AttemptTimeout.TimeoutGenerator is null
+            && options.AttemptTimeout.Timeout > options.TotalTimeout.Timeout)
+        {
+            throw new KevlarConfigurationException(
+                "StandardHttpShieldOptions.AttemptTimeout.Timeout must not exceed " +
+                "StandardHttpShieldOptions.TotalTimeout.Timeout.");
+        }
+
         if (options.Retry is null)
         {
             throw new ArgumentException("StandardHttpShieldOptions.Retry cannot be null.", nameof(options));
@@ -176,13 +191,17 @@ public static class HttpShield
             throw new ArgumentException($"StandardHttpShieldOptions.{propertyName} cannot be null.", "options");
         }
 
-        if (timeout.Timeout <= TimeSpan.Zero)
+        if (timeout.Timeout <= TimeSpan.Zero
+            && timeout.Timeout != System.Threading.Timeout.InfiniteTimeSpan)
         {
-            throw new ArgumentOutOfRangeException(
-                "options",
-                $"StandardHttpShieldOptions.{propertyName}.Timeout must be positive.");
+            throw new KevlarConfigurationException(
+                $"StandardHttpShieldOptions.{propertyName}.Timeout must be positive or " +
+                "Timeout.InfiniteTimeSpan.");
         }
     }
+
+    private static bool IsDisabled(TimeoutOptions timeout) =>
+        timeout.Timeout == System.Threading.Timeout.InfiniteTimeSpan;
 
     private static void Copy(TimeoutOptions source, TimeoutOptions target)
     {
@@ -194,13 +213,16 @@ public static class HttpShield
 
     private static void Copy(
         RetryOptions<HttpResponseMessage> source,
-        RetryOptions<HttpResponseMessage> target)
+        RetryOptions<HttpResponseMessage> target,
+        bool useRetryAfterHeader)
     {
         var onRetry = source.OnRetry;
         target.MaxRetries = source.MaxRetries;
         target.Backoff = source.Backoff;
-        target.MaxDelay = source.MaxDelay;
-        target.DelayGenerator = source.DelayGenerator;
+        target.MaxDelay = source.MaxDelay ?? StandardHttpShieldOptions.DefaultRetryMaxDelay;
+        target.DelayGenerator = ComposeRetryDelayGenerator(
+            source.DelayGenerator,
+            useRetryAfterHeader);
         target.DelayGeneratorAsync = source.DelayGeneratorAsync;
         target.HandlesException = source.HandlesException;
         target.HandlesResult = source.HandlesResult;
@@ -210,6 +232,33 @@ public static class HttpShield
             onRetry?.Invoke(retry);
         };
         target.OnRetryAsync = source.OnRetryAsync;
+    }
+
+    private static Func<RetryEvent<HttpResponseMessage>, TimeSpan?>? ComposeRetryDelayGenerator(
+        Func<RetryEvent<HttpResponseMessage>, TimeSpan?>? custom,
+        bool useRetryAfterHeader)
+    {
+        if (!useRetryAfterHeader)
+        {
+            return custom;
+        }
+
+        if (custom is null)
+        {
+            return RetryAfter;
+        }
+
+        return retry => Longer(custom(retry), RetryAfter(retry));
+    }
+
+    private static TimeSpan? Longer(TimeSpan? first, TimeSpan? second)
+    {
+        if (first is null)
+        {
+            return second;
+        }
+
+        return second is null || first >= second ? first : second;
     }
 
     private static void Copy(

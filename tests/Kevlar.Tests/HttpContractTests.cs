@@ -366,6 +366,83 @@ public class HttpContractTests
     }
 
     [Test]
+    public async Task Replacing_Retry_Options_Keeps_RetryAfter()
+    {
+        var options = new StandardHttpShieldOptions
+        {
+            Retry = new RetryOptions<HttpResponseMessage>
+            {
+                MaxRetries = 1,
+                Backoff = Backoff.None,
+            },
+        };
+
+        var delay = await ObserveStandardRetryDelay(
+            options,
+            retryAfter: TimeSpan.FromSeconds(2));
+
+        await Assert.That(delay).IsEqualTo(TimeSpan.FromSeconds(2));
+    }
+
+    [Test]
+    public async Task Replacing_Retry_Options_Keeps_Standard_MaxDelay()
+    {
+        var options = new StandardHttpShieldOptions
+        {
+            Retry = new RetryOptions<HttpResponseMessage>
+            {
+                MaxRetries = 1,
+                Backoff = Backoff.None,
+            },
+        };
+
+        var delay = await ObserveStandardRetryDelay(
+            options,
+            retryAfter: TimeSpan.FromMinutes(1));
+
+        await Assert.That(delay).IsEqualTo(TimeSpan.FromSeconds(10));
+    }
+
+    [Test]
+    public async Task UseRetryAfterHeader_False_Ignores_Header()
+    {
+        var options = new StandardHttpShieldOptions
+        {
+            UseRetryAfterHeader = false,
+            Retry = new RetryOptions<HttpResponseMessage>
+            {
+                MaxRetries = 1,
+                Backoff = Backoff.Constant(TimeSpan.FromSeconds(3)),
+            },
+        };
+
+        var delay = await ObserveStandardRetryDelay(
+            options,
+            retryAfter: TimeSpan.FromSeconds(7));
+
+        await Assert.That(delay).IsEqualTo(TimeSpan.FromSeconds(3));
+    }
+
+    [Test]
+    [Arguments(2, 5)]
+    [Arguments(7, 7)]
+    public async Task Custom_DelayGenerator_Composes_With_RetryAfter(
+        int retryAfterSeconds,
+        int expectedSeconds)
+    {
+        var options = new StandardHttpShieldOptions();
+        options.Retry.MaxRetries = 1;
+        options.Retry.Backoff = Backoff.None;
+        options.Retry.DelayGenerator = static _ => TimeSpan.FromSeconds(5);
+
+        var delay = await ObserveStandardRetryDelay(
+            options,
+            retryAfter: TimeSpan.FromSeconds(retryAfterSeconds));
+
+        await Assert.That(delay).IsEqualTo(TimeSpan.FromSeconds(expectedSeconds));
+    }
+
+    [Test]
     public async Task Standard_Default_Retry_MaxDelay_Is_Ten_Seconds() =>
         await Assert.That(new StandardHttpShieldOptions().Retry.MaxDelay)
             .IsEqualTo(TimeSpan.FromSeconds(10));
@@ -375,6 +452,68 @@ public class HttpContractTests
         await Assert.That(HttpShield.Standard().ToString()).IsEqualTo(
             "Timeout(30s) → [when HttpRequestException | TaskCanceledException matching predicate | TimeoutExceededException | result predicate] "
             + "Retry(3, exponential 250ms ×2, equal jitter, cap 30s, ≤10s) → CircuitBreaker(50% over 30s, min 10, break 15s) → Timeout(10s)");
+
+    [Test]
+    public async Task AttemptTimeout_Greater_Than_TotalTimeout_Throws_At_Build()
+    {
+        var options = new StandardHttpShieldOptions();
+        options.TotalTimeout.Timeout = TimeSpan.FromSeconds(5);
+        options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(6);
+
+        var exception = await Assert.That(() => HttpShield.Standard(options))
+            .Throws<KevlarConfigurationException>();
+
+        await Assert.That(exception!.Message).Contains("AttemptTimeout.Timeout");
+        await Assert.That(exception.Message).Contains("TotalTimeout.Timeout");
+    }
+
+    [Test]
+    public async Task Infinite_TotalTimeout_Disables_Total_Timeout()
+    {
+        var options = new StandardHttpShieldOptions();
+        options.TotalTimeout.Timeout = Timeout.InfiniteTimeSpan;
+
+        await Assert.That(HttpShield.Standard(options).ToString()).IsEqualTo(
+            "[when HttpRequestException | TaskCanceledException matching predicate | TimeoutExceededException | result predicate] "
+            + "Retry(3, exponential 250ms ×2, equal jitter, cap 30s, ≤10s) → CircuitBreaker(50% over 30s, min 10, break 15s) → Timeout(10s)");
+    }
+
+    [Test]
+    public async Task Infinite_AttemptTimeout_Disables_Per_Attempt_Timeout()
+    {
+        var options = new StandardHttpShieldOptions();
+        options.AttemptTimeout.Timeout = Timeout.InfiniteTimeSpan;
+
+        await Assert.That(HttpShield.Standard(options).ToString()).IsEqualTo(
+            "Timeout(30s) → [when HttpRequestException | TaskCanceledException matching predicate | TimeoutExceededException | result predicate] "
+            + "Retry(3, exponential 250ms ×2, equal jitter, cap 30s, ≤10s) → CircuitBreaker(50% over 30s, min 10, break 15s)");
+    }
+
+    [Test]
+    [Arguments(true, 0)]
+    [Arguments(true, -2)]
+    [Arguments(false, 0)]
+    [Arguments(false, -2)]
+    public async Task Zero_Or_Negative_Timeouts_Throw_With_Property_Name(
+        bool total,
+        long ticks)
+    {
+        var options = new StandardHttpShieldOptions();
+        var propertyName = total ? "TotalTimeout.Timeout" : "AttemptTimeout.Timeout";
+        if (total)
+        {
+            options.TotalTimeout.Timeout = TimeSpan.FromTicks(ticks);
+        }
+        else
+        {
+            options.AttemptTimeout.Timeout = TimeSpan.FromTicks(ticks);
+        }
+
+        var exception = await Assert.That(() => HttpShield.Standard(options))
+            .Throws<KevlarConfigurationException>();
+
+        await Assert.That(exception!.Message).Contains(propertyName);
+    }
 
     [Test]
     public async Task Configured_Standard_Has_Custom_Stages()
@@ -403,7 +542,7 @@ public class HttpContractTests
 
         await Assert.That(HttpShield.Standard(options).ToString()).IsEqualTo(
             "Timeout(20s) → [when HttpRequestException | TaskCanceledException matching predicate | TimeoutExceededException | result predicate] "
-            + "Retry(1, no delay) → CircuitBreaker(8 consecutive, break 5s) → ConcurrencyLimit(12, queue 4) → Timeout(3s)");
+            + "Retry(1, no delay, ≤10s) → CircuitBreaker(8 consecutive, break 5s) → ConcurrencyLimit(12, queue 4) → Timeout(3s)");
     }
 
     [Test]
@@ -626,7 +765,7 @@ public class HttpContractTests
         var exception = await Assert.That(() => builder.AddStandardShield(options =>
         {
             options.AttemptTimeout.Timeout = TimeSpan.Zero;
-        })).Throws<ArgumentOutOfRangeException>();
+        })).Throws<KevlarConfigurationException>();
 
         await Assert.That(exception!.Message).Contains("AttemptTimeout.Timeout");
     }
@@ -1066,6 +1205,33 @@ public class HttpContractTests
 
         var task = shield.ExecuteAsync(_ => new ValueTask<HttpResponseMessage>(
             ++calls == 1 ? firstAttempt() : new HttpResponseMessage(HttpStatusCode.OK))).AsTask();
+        await WaitUntilAsync(() => observed.HasValue);
+        timeProvider.Advance(observed!.Value);
+        using var response = await task;
+        return observed.Value;
+    }
+
+    private static async Task<TimeSpan> ObserveStandardRetryDelay(
+        StandardHttpShieldOptions options,
+        TimeSpan retryAfter)
+    {
+        var timeProvider = new FakeTimeProvider();
+        var calls = 0;
+        TimeSpan? observed = null;
+        options.Retry.OnRetry = retry => observed = retry.Delay;
+        var shield = HttpShield.Standard(options).WithTimeProvider(timeProvider);
+        var task = shield.ExecuteAsync(_ =>
+        {
+            var response = new HttpResponseMessage(
+                ++calls == 1 ? HttpStatusCode.TooManyRequests : HttpStatusCode.OK);
+            if (calls == 1)
+            {
+                response.Headers.RetryAfter = new RetryConditionHeaderValue(retryAfter);
+            }
+
+            return new ValueTask<HttpResponseMessage>(response);
+        }).AsTask();
+
         await WaitUntilAsync(() => observed.HasValue);
         timeProvider.Advance(observed!.Value);
         using var response = await task;
