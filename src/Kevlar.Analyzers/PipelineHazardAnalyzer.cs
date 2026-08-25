@@ -1811,12 +1811,6 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         out SyntaxNode capturedContext)
     {
         operation = Unwrap(operation)!;
-        if (ContainsEventContextReference(operation.Type, knownTypes))
-        {
-            capturedContext = operation.Syntax;
-            return true;
-        }
-
         if (operation is IConditionalOperation conditional
             && (TryFindDeferredStateContext(
                     conditional.WhenTrue,
@@ -1873,15 +1867,21 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             visitedLocals ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
             if (visitedLocals.Add(localReference.Local)
                 && TryGetStableInitializer(localReference, context, out var initializer)
-                && initializer is not null
-                && TryFindDeferredStateContext(
+                && initializer is not null)
+            {
+                if (TryFindDeferredStateContext(
                     initializer,
                     context,
                     knownTypes,
                     visitedLocals,
                     out capturedContext))
-            {
-                return true;
+                {
+                    return true;
+                }
+
+                visitedLocals.Remove(localReference.Local);
+                capturedContext = null!;
+                return false;
             }
 
             visitedLocals.Remove(localReference.Local);
@@ -2030,9 +2030,32 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             }
         }
 
+        if (IsKnownCompositeState(operation))
+        {
+            capturedContext = null!;
+            return false;
+        }
+
+        if (ContainsEventContextReference(operation.Type, knownTypes))
+        {
+            capturedContext = operation.Syntax;
+            return true;
+        }
+
         capturedContext = null!;
         return false;
     }
+
+    private static bool IsKnownCompositeState(IOperation operation) =>
+        operation is IConditionalOperation
+            or ICoalesceOperation
+            or ISwitchExpressionOperation
+            or IArrayCreationOperation
+            or ITupleOperation
+            or IObjectCreationOperation
+            or IWithOperation
+            or IAnonymousObjectCreationOperation
+        || operation.Syntax is CollectionExpressionSyntax or SpreadElementSyntax;
 
     private static bool ContainsEventContextReference(ITypeSymbol? type, KnownTypes knownTypes) =>
         knownTypes.IsEventContextReference(type)
@@ -2224,6 +2247,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     {
         foreach (var operation in DescendantOperations(root))
         {
+            if (ContainsReferenceOwnedByNestedAnonymousFunction(operation, root))
+            {
+                continue;
+            }
+
             if (operation is IPropertyReferenceOperation property
                 && ContainsEventContextReference(property.Property.Type, knownTypes))
             {
@@ -2296,6 +2324,22 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         }
 
         capturedContext = null!;
+        return false;
+    }
+
+    private static bool ContainsReferenceOwnedByNestedAnonymousFunction(
+        IOperation operation,
+        IOperation root)
+    {
+        for (var current = operation; current is not null; current = current.Parent)
+        {
+            if (current is IAnonymousFunctionOperation anonymous
+                && root.Syntax.Span.Contains(anonymous.Syntax.Span))
+            {
+                return ContainsAnonymousOwnedReference(operation, anonymous.Symbol);
+            }
+        }
+
         return false;
     }
 

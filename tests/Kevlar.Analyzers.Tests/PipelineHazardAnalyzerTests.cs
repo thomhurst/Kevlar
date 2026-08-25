@@ -1622,6 +1622,44 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Ignores_Nested_Scheduler_Delegate_Parameters()
+    {
+        var selectors = new[]
+        {
+            "(RetryEvent other) => other.RetryNumber",
+            "(RetryEvent other) => { var copy = other; return copy.RetryNumber; }",
+        };
+        foreach (var selector in selectors)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                {
+                    _ = Task.Run(() => Consume({{selector}}));
+                });
+
+                static void Consume(Func<RetryEvent, int> selector) { }
+                """);
+
+            await Assert.That(diagnostics).IsEmpty();
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Provably_Empty_Deferred_State()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                ThreadPool.QueueUserWorkItem(
+                    static _ => { },
+                    new RetryEvent[0]);
+            });
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
     public async Task KEV014_Inspects_Erased_Collection_Expression_Values()
     {
         var diagnostics = await AnalyzeBodyAsync("""
