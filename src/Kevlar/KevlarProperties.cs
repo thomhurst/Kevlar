@@ -15,6 +15,7 @@ public sealed class KevlarProperties
     private PropertySlot? _firstItem;
     private Dictionary<PropertyIdentity, PropertySlot>? _items;
     private int _count;
+    private KevlarProperties? _mutationTarget;
 
 #if DEBUG
     private bool _returnedToPool;
@@ -42,6 +43,7 @@ public sealed class KevlarProperties
         ThrowIfReturnedToPool();
         var identity = GetIdentity(key);
         Set(identity, value);
+        _mutationTarget?.Set(identity, value);
     }
 
     /// <summary>Attempts to read the value stored under the given key.</summary>
@@ -87,6 +89,17 @@ public sealed class KevlarProperties
     {
         ThrowIfReturnedToPool();
         var identity = GetIdentity(key);
+        var removed = Remove(identity);
+        if (removed)
+        {
+            _mutationTarget?.Remove(identity);
+        }
+
+        return removed;
+    }
+
+    private bool Remove(PropertyIdentity identity)
+    {
         var slot = Find(identity);
         if (slot is not { HasValue: true })
         {
@@ -97,6 +110,8 @@ public sealed class KevlarProperties
         _count--;
         return true;
     }
+
+    internal void MirrorMutationsTo(KevlarProperties? target) => _mutationTarget = target;
 
     internal void Clear()
     {

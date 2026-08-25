@@ -114,6 +114,7 @@ public sealed class KevlarContext
         _completionProperties ??= new KevlarProperties();
         _completionProperties.Clear();
         properties.CopyTo(_completionProperties);
+        _properties.MirrorMutationsTo(_completionProperties);
         _hasCompletionProperties = true;
     }
 
@@ -200,6 +201,7 @@ public sealed class KevlarContext
             context.ShieldName = null;
             context.StrategyIndex = -1;
             context.TimeProvider = TimeProvider.System;
+            context._properties.MirrorMutationsTo(null);
             context._properties.Clear();
             context._completionProperties?.Clear();
             context._hasCompletionProperties = false;

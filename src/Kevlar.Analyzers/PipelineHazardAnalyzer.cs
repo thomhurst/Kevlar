@@ -1891,7 +1891,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         method = Normalize(method);
         return IsExecution(method, knownTypes)
             && !method.ReturnsVoid
-            && !knownTypes.IsNonGenericValueTask(method.ReturnType);
+            && !knownTypes.IsNonGenericExecutionResult(method.ReturnType);
     }
 
     private static bool IsVoidFallback(IMethodSymbol method, KnownTypes knownTypes)
@@ -2226,7 +2226,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         private readonly INamedTypeSymbol? _shieldRateLimiterExtensions;
         private readonly INamedTypeSymbol? _partitionedShield;
         private readonly INamedTypeSymbol? _partitionedShieldOfT;
+        private readonly INamedTypeSymbol? _outcome;
+        private readonly INamedTypeSymbol? _task;
+        private readonly INamedTypeSymbol? _taskOfT;
         private readonly INamedTypeSymbol? _valueTask;
+        private readonly INamedTypeSymbol? _valueTaskOfT;
 
         internal KnownTypes(Compilation compilation)
         {
@@ -2241,7 +2245,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 "Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions");
             _partitionedShield = compilation.GetTypeByMetadataName("Kevlar.PartitionedShield`1");
             _partitionedShieldOfT = compilation.GetTypeByMetadataName("Kevlar.PartitionedShield`2");
+            _outcome = compilation.GetTypeByMetadataName("Kevlar.Outcome");
+            _task = compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
+            _taskOfT = compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1");
             _valueTask = compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask");
+            _valueTaskOfT = compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
             var assemblyName = compilation.AssemblyName;
             IsTestAssembly = assemblyName is not null
                 && (assemblyName.EndsWith(".Test", StringComparison.OrdinalIgnoreCase)
@@ -2269,8 +2277,13 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         internal bool IsPartitionedShield(INamedTypeSymbol type) =>
             Is(type, _partitionedShield) || Is(type, _partitionedShieldOfT);
 
-        internal bool IsNonGenericValueTask(ITypeSymbol type) =>
-            type is INamedTypeSymbol namedType && Is(namedType, _valueTask);
+        internal bool IsNonGenericExecutionResult(ITypeSymbol type) =>
+            type is INamedTypeSymbol namedType
+            && (Is(namedType, _outcome)
+                || Is(namedType, _task)
+                || Is(namedType, _valueTask)
+                || ((Is(namedType, _taskOfT) || Is(namedType, _valueTaskOfT))
+                    && IsNonGenericExecutionResult(namedType.TypeArguments[0])));
 
         private static bool Is(INamedTypeSymbol type, INamedTypeSymbol? expected) =>
             expected is not null

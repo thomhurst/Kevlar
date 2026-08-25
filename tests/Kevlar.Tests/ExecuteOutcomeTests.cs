@@ -4,6 +4,8 @@ public class ExecuteOutcomeTests
 {
     private static readonly KevlarKey<int> AttemptCount = new("attempt-count");
     private static readonly KevlarKey<int> WinningAttempt = new("winning-attempt");
+    private static readonly KevlarKey<int> OuterStrategyWrite = new("outer-strategy-write");
+    private static readonly KevlarKey<int> RemovedByOuterStrategy = new("removed-by-outer-strategy");
 
     [Test]
     public async Task Void_ExecuteOutcomeAsync_Returns_Success()
@@ -288,6 +290,72 @@ public class ExecuteOutcomeTests
         await Assert.That(containsKey).IsFalse();
     }
 
+    [Test]
+    public async Task OnCompleted_Sees_Winning_Properties_Through_Nested_Hedges()
+    {
+        var attempts = 0;
+        var observed = -1;
+        var shield = Shield
+            .Hedge(2, Timeout.InfiniteTimeSpan)
+            .Hedge(2, TimeSpan.Zero);
+
+        _ = await shield.ExecuteWithContextAsync(
+            0,
+            static (_, _) => { },
+            async (_, context) =>
+            {
+                var attempt = Interlocked.Increment(ref attempts);
+                context.Properties.Set(WinningAttempt, attempt);
+                if (attempt == 1)
+                {
+                    await Task.Delay(Timeout.InfiniteTimeSpan, context.CancellationToken);
+                }
+
+                return 42;
+            },
+            (_, properties) => observed = properties.GetOrDefault(WinningAttempt, -1));
+
+        await Assert.That(attempts).IsEqualTo(2);
+        await Assert.That(observed).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task OnCompleted_Sees_Post_Hedge_Strategy_Writes_And_Removals()
+    {
+        var attempts = 0;
+        var observedWinner = -1;
+        var observedOuterWrite = -1;
+        var retainedRemovedKey = true;
+        var shield = Shield.Empty
+            .Use(new PostHedgePropertyStrategy())
+            .Hedge(2, TimeSpan.Zero);
+
+        _ = await shield.ExecuteWithContextAsync(
+            0,
+            static (_, properties) => properties.Set(RemovedByOuterStrategy, 1),
+            async (_, context) =>
+            {
+                var attempt = Interlocked.Increment(ref attempts);
+                context.Properties.Set(WinningAttempt, attempt);
+                if (attempt == 1)
+                {
+                    await Task.Delay(Timeout.InfiniteTimeSpan, context.CancellationToken);
+                }
+
+                return 42;
+            },
+            (_, properties) =>
+            {
+                observedWinner = properties.GetOrDefault(WinningAttempt, -1);
+                observedOuterWrite = properties.GetOrDefault(OuterStrategyWrite, -1);
+                retainedRemovedKey = properties.Contains(RemovedByOuterStrategy);
+            });
+
+        await Assert.That(observedWinner).IsEqualTo(2);
+        await Assert.That(observedOuterWrite).IsEqualTo(42);
+        await Assert.That(retainedRemovedKey).IsFalse();
+    }
+
     private static void ThrowOriginal() => throw new InvalidOperationException("boom");
 
     private sealed class PropertyWritingStrategy : Strategy
@@ -298,6 +366,19 @@ public class ExecuteOutcomeTests
         {
             context.Properties.Set(AttemptCount, 1);
             return await next.InvokeAsync(context);
+        }
+    }
+
+    private sealed class PostHedgePropertyStrategy : Strategy
+    {
+        public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+            Continuation<T, TState> next,
+            KevlarContext context)
+        {
+            var outcome = await next.InvokeAsync(context);
+            context.Properties.Set(OuterStrategyWrite, 42);
+            context.Properties.Remove(RemovedByOuterStrategy);
+            return outcome;
         }
     }
 }

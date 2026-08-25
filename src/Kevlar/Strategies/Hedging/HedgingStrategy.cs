@@ -534,7 +534,7 @@ internal sealed class HedgingStrategy : Strategy
 
     private static void CopyAttemptProperties(KevlarContext source, KevlarContext target)
     {
-        target.CaptureCompletionProperties(source.Properties);
+        target.CaptureCompletionProperties(source.PropertiesForCompletion);
     }
 
     private static void Cleanup<T>(HedgeAttempt<T> attempt)
