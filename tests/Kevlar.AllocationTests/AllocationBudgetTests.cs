@@ -114,6 +114,11 @@ public class AllocationBudgetTests
         .When<InvalidOperationException>()
         .Fallback(static (_, _) => ValueTask.CompletedTask);
     private readonly Shield _parallelHedge = Shield.Hedge(2, TimeSpan.Zero);
+    private readonly Shield _syncDelayGeneratedHedge = Shield.Hedge(options =>
+    {
+        options.MaxAttempts = 2;
+        options.DelayGenerator = static _ => TimeSpan.Zero;
+    });
     private readonly Shield<int> _typedGeneratedHedge = Shield.For<int>().Hedge(options =>
     {
         options.MaxAttempts = 2;
@@ -126,6 +131,7 @@ public class AllocationBudgetTests
     private readonly Counter _retryCounter = new();
     private readonly Counter _asyncDelayRetryCounter = new();
     private readonly ParallelHedgeState _parallelHedgeState = new();
+    private readonly ParallelHedgeState _syncDelayGeneratedHedgeState = new();
     private readonly int _metadataValue = 42;
 
     public AllocationBudgetTests() => _ = _partitioned.GetShield(42);
@@ -287,6 +293,14 @@ public class AllocationBudgetTests
                 static (state, cancellationToken) => state.ExecuteAsync(cancellationToken))
                 .GetAwaiter().GetResult();
             test._parallelHedgeState.WaitForLoserCompletion();
+        }, AllocationScope.AllThreads);
+        AssertBudget("sync delay generator launches second attempt", 3_072, this, static test =>
+        {
+            test._syncDelayGeneratedHedge.ExecuteAsync(
+                test._syncDelayGeneratedHedgeState,
+                static (state, cancellationToken) => state.ExecuteAsync(cancellationToken))
+                .GetAwaiter().GetResult();
+            test._syncDelayGeneratedHedgeState.WaitForLoserCompletion();
         }, AllocationScope.AllThreads);
         // The eight-byte margin catches boxing the typed Outcome<int> while allowing
         // the existing generator-path allocations.

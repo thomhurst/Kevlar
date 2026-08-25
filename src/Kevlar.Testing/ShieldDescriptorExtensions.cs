@@ -81,6 +81,7 @@ public static class ShieldDescriptorExtensions
                 description,
                 hedging.MaxAttempts,
                 hedging.Delay,
+                hedging.HasDelayGenerator,
                 hedging.HasNotification,
                 hedging.HasActionGenerator,
                 hedging.HasHandlingOverride),

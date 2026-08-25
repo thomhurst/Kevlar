@@ -34,6 +34,12 @@ public sealed class HedgeOptions<TResult>
     /// <inheritdoc cref="HedgeOptions.Delay"/>
     public TimeSpan Delay { get; set; } = TimeSpan.FromSeconds(1);
 
+    /// <inheritdoc cref="HedgeOptions.DelayGenerator"/>
+    public Func<HedgeDelayEvent, TimeSpan>? DelayGenerator { get; set; }
+
+    /// <inheritdoc cref="HedgeOptions.DelayGeneratorAsync"/>
+    public Func<HedgeDelayEvent, ValueTask<TimeSpan>>? DelayGeneratorAsync { get; set; }
+
     /// <inheritdoc cref="HedgeOptions.OnHedge"/>
     public Action<HedgeEvent>? OnHedge { get; set; }
 
@@ -52,6 +58,8 @@ public sealed class HedgeOptions<TResult>
         HandlesException = HandlesException,
         MaxAttempts = MaxAttempts,
         Delay = Delay,
+        DelayGenerator = DelayGenerator,
+        DelayGeneratorAsync = DelayGeneratorAsync,
         OnHedge = OnHedge,
         OnHedgeAsync = OnHedgeAsync,
         ActionGenerator = actionGenerator,

@@ -330,6 +330,10 @@ Kevlar.CircuitBreakerOptions<TResult>.SamplingWindow.get -> System.TimeSpan
 Kevlar.CircuitBreakerOptions<TResult>.SamplingWindow.set -> void
 Kevlar.HedgeOptions<TResult>.ActionGenerator.get -> System.Func<Kevlar.HedgeActionGeneratorEvent<TResult>, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>?>?
 Kevlar.HedgeOptions<TResult>.ActionGenerator.set -> void
+Kevlar.HedgeOptions<TResult>.DelayGenerator.get -> System.Func<Kevlar.HedgeDelayEvent, System.TimeSpan>?
+Kevlar.HedgeOptions<TResult>.DelayGenerator.set -> void
+Kevlar.HedgeOptions<TResult>.DelayGeneratorAsync.get -> System.Func<Kevlar.HedgeDelayEvent, System.Threading.Tasks.ValueTask<System.TimeSpan>>?
+Kevlar.HedgeOptions<TResult>.DelayGeneratorAsync.set -> void
 Kevlar.HedgeOptions<TResult>.Delay.get -> System.TimeSpan
 Kevlar.HedgeOptions<TResult>.Delay.set -> void
 Kevlar.HedgeOptions<TResult>.HandlesException.get -> System.Func<System.Exception!, bool>?
@@ -340,6 +344,15 @@ Kevlar.HedgeOptions<TResult>.OnHedge.get -> System.Action<Kevlar.HedgeEvent>?
 Kevlar.HedgeOptions<TResult>.OnHedge.set -> void
 Kevlar.HedgeOptions<TResult>.OnHedgeAsync.get -> System.Func<Kevlar.HedgeEvent, System.Threading.Tasks.ValueTask>?
 Kevlar.HedgeOptions<TResult>.OnHedgeAsync.set -> void
+Kevlar.HedgeDelayEvent
+Kevlar.HedgeDelayEvent.HedgeDelayEvent() -> void
+Kevlar.HedgeDelayEvent.AttemptNumber.get -> int
+Kevlar.HedgeDelayEvent.Context.get -> Kevlar.KevlarContext!
+Kevlar.HedgeDelayEvent.Elapsed.get -> System.TimeSpan
+Kevlar.HedgeOptions.DelayGenerator.get -> System.Func<Kevlar.HedgeDelayEvent, System.TimeSpan>?
+Kevlar.HedgeOptions.DelayGenerator.set -> void
+Kevlar.HedgeOptions.DelayGeneratorAsync.get -> System.Func<Kevlar.HedgeDelayEvent, System.Threading.Tasks.ValueTask<System.TimeSpan>>?
+Kevlar.HedgeOptions.DelayGeneratorAsync.set -> void
 Kevlar.KevlarProxyException
 Kevlar.KevlarProxyException.KevlarProxyException(System.Exception! originalException) -> void
 Kevlar.KevlarProxyException.OriginalException.get -> System.Exception!

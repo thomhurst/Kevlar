@@ -75,6 +75,7 @@ static Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor<TResult>(this Kev
 Kevlar.Testing.CircuitBreakerStrategyDescriptor.HasHandlingOverride.get -> bool
 Kevlar.Testing.FallbackStrategyDescriptor.HasHandlingOverride.get -> bool
 Kevlar.Testing.HedgeStrategyDescriptor.HasHandlingOverride.get -> bool
+Kevlar.Testing.HedgeStrategyDescriptor.HasDelayGenerator.get -> bool
 Kevlar.Testing.RetryStrategyDescriptor.HasHandlingOverride.get -> bool
 Kevlar.Testing.CircuitBreakerStateSnapshot
 Kevlar.Testing.CircuitBreakerStateSnapshot.State.get -> Kevlar.CircuitState
