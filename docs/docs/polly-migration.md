@@ -315,7 +315,7 @@ required.
 |---|---|---|
 | Retry | 3 retries; constant 2 s; no jitter | 3 retries; exponential from 250 ms; equal jitter; 30 s cap |
 | Circuit breaker | failure ratio 0.1; minimum throughput 100; sampling 30 s; break 5 s | 5 consecutive failures; break 15 s; ratio mode uses minimum throughput 10 and sampling window 30 s |
-| Hedging | `MaxHedgedAttempts = 1` means 2 total attempts; delay 2 s | `MaxAttempts = 2` counts the original; delay 1 s |
+| Hedging | 1 additional attempt (2 total); delay 2 s | 1 additional attempt (2 total); delay 1 s |
 | Concurrency | permit limit 1,000; queue limit 0 | maximum concurrency 10; queue limit 0 |
 
 The retry timing contract is executable. Polly waits exactly six seconds for three default retries;
@@ -484,7 +484,7 @@ if (pollyHedgeOptions.MaxHedgedAttempts != 1 || pollyHedgeOptions.Delay != TimeS
 {
     throw new InvalidOperationException("Polly hedging defaults changed.");
 }
-if (kevlarHedgeOptions.MaxAttempts != 2 || kevlarHedgeOptions.Delay != TimeSpan.FromSeconds(1) ||
+if (kevlarHedgeOptions.MaxHedgedAttempts != 1 || kevlarHedgeOptions.Delay != TimeSpan.FromSeconds(1) ||
     kevlarHedgeAttempts != 2 || kevlarHedgeResult != 42)
 {
     throw new InvalidOperationException("Kevlar hedging defaults changed.");

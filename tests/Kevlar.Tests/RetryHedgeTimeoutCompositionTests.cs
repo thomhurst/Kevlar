@@ -17,7 +17,7 @@ public class RetryHedgeTimeoutCompositionTests
             })
             .Hedge(options =>
             {
-                options.MaxAttempts = 3;
+                options.MaxHedgedAttempts = 2;
                 options.Delay = System.Threading.Timeout.InfiniteTimeSpan;
                 options.OnHedge = hedge => events.Add($"hedge-{hedge.AttemptNumber}");
             });
@@ -46,7 +46,7 @@ public class RetryHedgeTimeoutCompositionTests
             .When<InvalidOperationException>()
             .Hedge(options =>
             {
-                options.MaxAttempts = 3;
+                options.MaxHedgedAttempts = 2;
                 options.Delay = System.Threading.Timeout.InfiniteTimeSpan;
                 options.OnHedge = hedge => events.Add($"hedge-{hedge.AttemptNumber}");
             })
@@ -79,7 +79,7 @@ public class RetryHedgeTimeoutCompositionTests
         var shield = Shield.For<int>()
             .WhenResult(-1)
             .Retry(1, Backoff.None)
-            .Hedge(3, System.Threading.Timeout.InfiniteTimeSpan);
+            .Hedge(2, System.Threading.Timeout.InfiniteTimeSpan);
 
         var result = await shield.ExecuteAsync(_ =>
             new ValueTask<int>(Interlocked.Increment(ref invocations) == 6 ? 42 : -1));
@@ -130,7 +130,7 @@ public class RetryHedgeTimeoutCompositionTests
         var shield = Shield
             .When<InvalidOperationException>()
             .Retry(2, Backoff.None)
-            .Hedge(3, System.Threading.Timeout.InfiniteTimeSpan);
+            .Hedge(2, System.Threading.Timeout.InfiniteTimeSpan);
 
         await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
         {
@@ -169,7 +169,7 @@ public class RetryHedgeTimeoutCompositionTests
             })
             .Hedge(options =>
             {
-                options.MaxAttempts = 3;
+                options.MaxHedgedAttempts = 2;
                 options.Delay = TimeSpan.FromSeconds(10);
                 options.OnHedge = _ => hedgeEvents++;
             })
@@ -203,7 +203,7 @@ public class RetryHedgeTimeoutCompositionTests
         var attemptNumber = 0;
         var shield = Shield
             .When<TimeoutExceededException>()
-            .Hedge(2, TimeSpan.Zero)
+            .Hedge(1, TimeSpan.Zero)
             .Timeout(options =>
             {
                 options.Timeout = TimeSpan.FromSeconds(1);
@@ -247,9 +247,9 @@ public class RetryHedgeTimeoutCompositionTests
                     options.Backoff = Backoff.None;
                     options.OnRetry = _ => onRetry();
                 })
-                .Hedge(2, TimeSpan.Zero)
+                .Hedge(1, TimeSpan.Zero)
             : shield
-                .Hedge(2, TimeSpan.Zero)
+                .Hedge(1, TimeSpan.Zero)
                 .Retry(options =>
                 {
                     options.MaxRetries = 2;

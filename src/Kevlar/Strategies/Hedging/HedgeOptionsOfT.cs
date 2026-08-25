@@ -37,8 +37,8 @@ public sealed class HedgeOptions<TResult>
         || HandlesExceptionWithContext is not null
         || HandlesResultWithContext is not null;
 
-    /// <inheritdoc cref="HedgeOptions.MaxAttempts"/>
-    public int MaxAttempts { get; set; } = 2;
+    /// <inheritdoc cref="HedgeOptions.MaxHedgedAttempts"/>
+    public int MaxHedgedAttempts { get; set; } = 1;
 
     /// <inheritdoc cref="HedgeOptions.Delay"/>
     public TimeSpan Delay { get; set; } = TimeSpan.FromSeconds(1);
@@ -65,7 +65,7 @@ public sealed class HedgeOptions<TResult>
     internal HedgeOptions ToUntyped(HedgeActionGenerator? actionGenerator = null) => new()
     {
         HandlesException = HandlesException,
-        MaxAttempts = MaxAttempts,
+        MaxHedgedAttempts = MaxHedgedAttempts,
         Delay = Delay,
         DelayGenerator = DelayGenerator,
         DelayGeneratorAsync = DelayGeneratorAsync,

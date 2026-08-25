@@ -104,7 +104,7 @@ public class HttpReplayTests
             });
         });
         using var invoker = CreateInvoker(
-            HttpShield.WhenTransient().Hedge(2, TimeSpan.Zero),
+            HttpShield.WhenTransient().Hedge(1, TimeSpan.Zero),
             new ShieldHttpHandlerOptions(),
             transport);
         using var request = new HttpRequestMessage(HttpMethod.Get, "https://origin.example/api");
@@ -651,7 +651,7 @@ public class HttpReplayTests
         var policy = HttpShield.WhenTransient()
             .Hedge(options =>
             {
-                options.MaxAttempts = 2;
+                options.MaxHedgedAttempts = 1;
                 options.Delay = TimeSpan.FromMilliseconds(250);
                 options.OnHedgeAsync = async _ =>
                 {
@@ -773,7 +773,7 @@ public class HttpReplayTests
             new HttpEndpoint(new Uri("https://first.example")),
             new HttpEndpoint(new Uri("https://second.example")));
         using var invoker = CreateInvoker(
-            HttpShield.WhenTransient().Hedge(2, TimeSpan.Zero),
+            HttpShield.WhenTransient().Hedge(1, TimeSpan.Zero),
             options,
             transport);
         using var request = new HttpRequestMessage(HttpMethod.Get, "https://origin.example/path?q=1");
@@ -1024,7 +1024,7 @@ public class HttpReplayTests
             options.Endpoints.Add(new HttpEndpoint(new Uri("https://second.example"), 1));
             options.SelectionMode = HttpEndpointSelectionMode.Weighted;
             options.Seed = 1729;
-            options.MaxAttempts = 1;
+            options.MaxHedgedAttempts = 0;
         });
         using var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("standard-hedge");
 
@@ -1099,7 +1099,7 @@ public class HttpReplayTests
         var routingPolicy = Shield.For<HttpResponseMessage>()
             .When<CircuitOpenException>()
             .OrResult(HttpShield.IsTransient)
-            .Hedge(2, TimeSpan.Zero);
+            .Hedge(1, TimeSpan.Zero);
         using var invoker = CreateInvoker(routingPolicy, options, transport);
 
         for (var requestIndex = 0; requestIndex < 2; requestIndex++)
@@ -1250,7 +1250,7 @@ public class HttpReplayTests
                 Interlocked.Increment(ref predicateCalls);
                 return true;
             })
-            .Hedge(3, TimeSpan.Zero);
+            .Hedge(2, TimeSpan.Zero);
         using var invoker = CreateInvoker(policy, new ShieldHttpHandlerOptions(), transport);
         using var request = new HttpRequestMessage(HttpMethod.Get, "https://origin.example/api");
 

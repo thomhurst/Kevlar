@@ -6,7 +6,7 @@ namespace Kevlar.Strategies;
 internal sealed class HedgingStrategy : Strategy
 {
     private readonly OutcomeJudge _judge;
-    private readonly int _maxAttempts;
+    private readonly int _maxHedgedAttempts;
     private readonly TimeSpan _delay;
     private readonly Func<HedgeDelayEvent, TimeSpan>? _delayGenerator;
     private readonly Func<HedgeDelayEvent, ValueTask<TimeSpan>>? _delayGeneratorAsync;
@@ -26,11 +26,11 @@ internal sealed class HedgingStrategy : Strategy
         Type optionsType)
     {
         ConfigurationValidation.ThrowIf(
-            options.MaxAttempts < 1,
+            options.MaxHedgedAttempts < 0,
             optionsType,
-            nameof(options.MaxAttempts),
-            options.MaxAttempts,
-            "must be at least 1");
+            nameof(options.MaxHedgedAttempts),
+            options.MaxHedgedAttempts,
+            "must be non-negative");
         ConfigurationValidation.ThrowIf(
             options.Delay < TimeSpan.Zero && options.Delay != System.Threading.Timeout.InfiniteTimeSpan,
             optionsType,
@@ -45,7 +45,7 @@ internal sealed class HedgingStrategy : Strategy
             "must not exceed the runtime timer limit");
 
         _judge = judge;
-        _maxAttempts = options.MaxAttempts;
+        _maxHedgedAttempts = options.MaxHedgedAttempts;
         _delay = options.Delay;
         _delayGenerator = options.DelayGenerator;
         _delayGeneratorAsync = options.DelayGeneratorAsync;
@@ -71,7 +71,7 @@ internal sealed class HedgingStrategy : Strategy
 
     internal override bool HasHandlingOverride { get; }
 
-    internal int MaxAttempts => _maxAttempts;
+    internal int MaxHedgedAttempts => _maxHedgedAttempts;
 
     internal TimeSpan Delay => _delay;
 
@@ -81,17 +81,17 @@ internal sealed class HedgingStrategy : Strategy
 
     internal bool HasActionGenerator => _actionGenerator is not null;
 
-    protected internal override bool InvokesContinuationAtMostOnce => _maxAttempts == 1;
+    protected internal override bool InvokesContinuationAtMostOnce => _maxHedgedAttempts == 0;
 
     internal override bool RequiresContinuationOverlapIsolation => false;
 
     public override string Describe() =>
-        $"Hedge({_maxAttempts} attempts, delay {(HasDelayGenerator ? "generator" : DescribeHelper.Time(_delay))})";
+        $"Hedge({_maxHedgedAttempts} extra, delay {(HasDelayGenerator ? "generator" : DescribeHelper.Time(_delay))})";
 
     public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
         var strategyIndex = context.StrategyIndex;
-        if (_maxAttempts == 1
+        if (_maxHedgedAttempts == 0
             || context.Properties.SuppressAdditionalAttempts)
         {
             return next.InvokeAsync(context);
@@ -110,7 +110,7 @@ internal sealed class HedgingStrategy : Strategy
                 next,
                 context,
                 primary.AsPending(),
-                launched: 1,
+                hedgesLaunched: 0,
                 default,
                 startedAt,
                 strategyIndex);
@@ -145,7 +145,7 @@ internal sealed class HedgingStrategy : Strategy
             next,
             context,
             initial: null,
-            launched: 1,
+            hedgesLaunched: 0,
             outcome,
             startedAt,
             strategyIndex);
@@ -155,7 +155,7 @@ internal sealed class HedgingStrategy : Strategy
         Continuation<T, TState> next,
         KevlarContext context,
         HedgeAttempt<T>? initial,
-        int launched,
+        int hedgesLaunched,
         Outcome<T>? lastOutcome,
         long startedAt,
         int strategyIndex)
@@ -170,8 +170,8 @@ internal sealed class HedgingStrategy : Strategy
             }
             else
             {
-                pending.Add(await StartHedgeAttemptAsync(next, context, launched + 1, lastOutcome).ConfigureAwait(false));
-                launched++;
+                pending.Add(await StartHedgeAttemptAsync(next, context, 2, lastOutcome).ConfigureAwait(false));
+                hedgesLaunched++;
             }
 
             while (true)
@@ -184,19 +184,19 @@ internal sealed class HedgingStrategy : Strategy
                     : null;
                 var delay = _delay;
 
-                if (completed is null && launched < _maxAttempts)
+                if (completed is null && hedgesLaunched < _maxHedgedAttempts)
                 {
-                    delay = await GetDelayAsync(launched + 1, context, startedAt).ConfigureAwait(false);
+                    delay = await GetDelayAsync(hedgesLaunched + 2, context, startedAt).ConfigureAwait(false);
                     if (delay == TimeSpan.Zero)
                     {
-                        pending.Add(await StartHedgeAttemptAsync(next, context, launched + 1, lastOutcome).ConfigureAwait(false));
-                        launched++;
+                        pending.Add(await StartHedgeAttemptAsync(next, context, hedgesLaunched + 2, lastOutcome).ConfigureAwait(false));
+                        hedgesLaunched++;
                         continue;
                     }
                 }
 
                 if (completed is null
-                    && launched < _maxAttempts
+                    && hedgesLaunched < _maxHedgedAttempts
                     && delay != System.Threading.Timeout.InfiniteTimeSpan)
                 {
                     using var delayCancellation = CancellationTokenSourcePool.Shared.RentLinked(context.CancellationToken);
@@ -205,8 +205,8 @@ internal sealed class HedgingStrategy : Strategy
 
                     if (winner == delayTask)
                     {
-                        pending.Add(await StartHedgeAttemptAsync(next, context, launched + 1, lastOutcome).ConfigureAwait(false));
-                        launched++;
+                        pending.Add(await StartHedgeAttemptAsync(next, context, hedgesLaunched + 2, lastOutcome).ConfigureAwait(false));
+                        hedgesLaunched++;
                         continue;
                     }
 
@@ -233,7 +233,8 @@ internal sealed class HedgingStrategy : Strategy
                         judgingContext,
                         completedAttempt.Attempt,
                         strategyIndex);
-                    if (!shouldHandle || launched == _maxAttempts && pending.Count == 0)
+                    if (!shouldHandle
+                        || hedgesLaunched == _maxHedgedAttempts && pending.Count == 0)
                     {
                         if (!ReferenceEquals(judgingContext, completedAttempt.Context))
                         {
@@ -255,10 +256,10 @@ internal sealed class HedgingStrategy : Strategy
 
                 lastOutcome = outcome;
 
-                if (launched < _maxAttempts)
+                if (hedgesLaunched < _maxHedgedAttempts)
                 {
-                    pending.Add(await StartHedgeAttemptAsync(next, context, launched + 1, lastOutcome).ConfigureAwait(false));
-                    launched++;
+                    pending.Add(await StartHedgeAttemptAsync(next, context, hedgesLaunched + 2, lastOutcome).ConfigureAwait(false));
+                    hedgesLaunched++;
                 }
                 else if (pending.Count == 0)
                 {

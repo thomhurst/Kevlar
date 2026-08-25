@@ -123,7 +123,7 @@ public class ContextAwarePredicateTests
                 observedAttempts.Add(handling.Attempt);
                 return handling.Outcome.TryGetResult(out var result) && result < 0;
             })
-            .Hedge(maxAttempts: 2, delay: Timeout.InfiniteTimeSpan);
+            .Hedge(maxHedgedAttempts: 1, delay: Timeout.InfiniteTimeSpan);
 
         var result = await shield.ExecuteAsync(_ =>
             new ValueTask<int>(++executions == 1 ? -1 : 42));
@@ -143,7 +143,7 @@ public class ContextAwarePredicateTests
                 observedValues.Add(handling.Context.Properties.GetOrDefault(HedgeAttempt));
                 return handling.Outcome.TryGetResult(out var result) && result < 0;
             })
-            .Hedge(maxAttempts: 2, delay: Timeout.InfiniteTimeSpan);
+            .Hedge(maxHedgedAttempts: 1, delay: Timeout.InfiniteTimeSpan);
 
         var result = await shield.ExecuteWithContextAsync(async context =>
         {
@@ -177,7 +177,7 @@ public class ContextAwarePredicateTests
             })
             .Hedge(options =>
             {
-                options.MaxAttempts = 2;
+                options.MaxHedgedAttempts = 1;
                 options.Delay = Timeout.InfiniteTimeSpan;
                 options.ActionGenerator = hedge => _ => hedge.OriginalAction(cancellation.Token);
             });
@@ -217,7 +217,7 @@ public class ContextAwarePredicateTests
             })
             .Hedge(options =>
             {
-                options.MaxAttempts = 2;
+                options.MaxHedgedAttempts = 1;
                 options.Delay = Timeout.InfiniteTimeSpan;
                 options.ActionGenerator = hedge => async token =>
                 {
@@ -264,7 +264,7 @@ public class ContextAwarePredicateTests
             })
             .Hedge(options =>
             {
-                options.MaxAttempts = 2;
+                options.MaxHedgedAttempts = 1;
                 options.Delay = Timeout.InfiniteTimeSpan;
                 options.ActionGenerator = hedge => async token =>
                 {

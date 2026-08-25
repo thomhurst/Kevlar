@@ -259,10 +259,13 @@ public sealed class Shield<TResult>
         return Append(new ConcurrencyLimitStrategy(options));
     }
 
-    /// <summary>Races up to <paramref name="maxAttempts"/> concurrent attempts staggered by <paramref name="delay"/>; first acceptable outcome wins.</summary>
-    public Shield<TResult> Hedge(int maxAttempts, TimeSpan delay)
+    /// <summary>Races the primary with up to <paramref name="maxHedgedAttempts"/> additional attempts staggered by <paramref name="delay"/>; first acceptable outcome wins.</summary>
+    public Shield<TResult> Hedge(int maxHedgedAttempts, TimeSpan delay)
     {
-        Throw.IfOutOfRange(maxAttempts < 1, nameof(maxAttempts), "Maximum attempts must be at least 1.");
+        Throw.IfOutOfRange(
+            maxHedgedAttempts < 0,
+            nameof(maxHedgedAttempts),
+            "Maximum hedged attempts must be non-negative.");
         Throw.IfOutOfRange(
             delay < TimeSpan.Zero && delay != System.Threading.Timeout.InfiniteTimeSpan,
             nameof(delay),
@@ -270,7 +273,7 @@ public sealed class Shield<TResult>
         Throw.IfOutOfRange(delay > DelayHelper.MaximumDelay, nameof(delay), "Delay exceeds the runtime timer limit.");
         return Hedge(options =>
         {
-            options.MaxAttempts = maxAttempts;
+            options.MaxHedgedAttempts = maxHedgedAttempts;
             options.Delay = delay;
         });
     }

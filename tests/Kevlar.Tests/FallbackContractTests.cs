@@ -219,7 +219,7 @@ public class FallbackContractTests
                     return new ValueTask<int>(42);
                 },
                 options => options.OnFallback = _ => eventCalls++)
-            .Hedge(3, Timeout.InfiniteTimeSpan);
+            .Hedge(2, Timeout.InfiniteTimeSpan);
 
         var result = await shield.ExecuteAsync<int>(_ =>
         {
@@ -239,11 +239,11 @@ public class FallbackContractTests
     {
         await Assert.That(() =>
         {
-            _ = Shield.For<int>().Hedge(2, TimeSpan.Zero).FallbackTo(-1);
+            _ = Shield.For<int>().Hedge(1, TimeSpan.Zero).FallbackTo(-1);
         }).Throws<InvalidOperationException>();
         await Assert.That(() =>
         {
-            _ = Shield.Hedge(2, TimeSpan.Zero).Fallback((_, _) => default);
+            _ = Shield.Hedge(1, TimeSpan.Zero).Fallback((_, _) => default);
         }).Throws<InvalidOperationException>();
     }
 

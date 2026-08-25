@@ -65,7 +65,7 @@ public class GrpcResilienceTests
     {
         await using var server = await GrpcTestServer.StartAsync();
         var shield = hedge
-            ? GrpcShield.WhenTransient().Hedge(1, TimeSpan.Zero)
+            ? GrpcShield.WhenTransient().Hedge(0, TimeSpan.Zero)
             : GrpcShield.WhenTransient().Retry(0, Backoff.None);
         using var call = server.Client(shield).UnaryAsync(
             new TestRequest { Scenario = "headers_wait" });
@@ -503,7 +503,7 @@ public class GrpcResilienceTests
         var firstResponse = new TaskCompletionSource<TestReply>(TaskCreationOptions.RunContinuationsAsynchronously);
         var firstDisposed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var attempts = 0;
-        var interceptor = new ShieldUnaryClientInterceptor(Shield.Hedge(2, TimeSpan.Zero));
+        var interceptor = new ShieldUnaryClientInterceptor(Shield.Hedge(1, TimeSpan.Zero));
         var invoker = new DelegateCallInvoker((_, options) =>
         {
             var attempt = Interlocked.Increment(ref attempts);
@@ -581,7 +581,7 @@ public class GrpcResilienceTests
                 pending.TrySetException(new RpcException(new Status(StatusCode.Cancelled, "cancelled")));
             });
         }).Intercept(new ShieldUnaryClientInterceptor(
-            GrpcShield.WhenTransient().Hedge(2, TimeSpan.Zero)));
+            GrpcShield.WhenTransient().Hedge(1, TimeSpan.Zero)));
         var client = new Resilience.ResilienceClient(invoker);
         using var call = client.UnaryAsync(new TestRequest());
 
@@ -758,7 +758,7 @@ public class GrpcResilienceTests
     public async Task Hedge_Cancels_The_Losing_Loopback_Rpc()
     {
         await using var server = await GrpcTestServer.StartAsync();
-        var client = server.Client(Shield.Hedge(2, TimeSpan.Zero));
+        var client = server.Client(Shield.Hedge(1, TimeSpan.Zero));
 
         using var call = client.UnaryAsync(new TestRequest { Scenario = "hedge" });
         var response = await call.ResponseAsync;

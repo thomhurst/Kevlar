@@ -17,7 +17,7 @@ public class HedgingActionGeneratorTests
         var generatedAttempts = new List<int>();
         var shield = Shield.For<int>().Hedge(options =>
         {
-            options.MaxAttempts = 3;
+            options.MaxHedgedAttempts = 2;
             options.Delay = Timeout.InfiniteTimeSpan;
             options.ActionGenerator = hedge =>
             {
@@ -43,7 +43,7 @@ public class HedgingActionGeneratorTests
         var generatedAttempts = new List<int>();
         var shield = Shield.For<int>().Hedge(options =>
         {
-            options.MaxAttempts = 4;
+            options.MaxHedgedAttempts = 3;
             options.Delay = Timeout.InfiniteTimeSpan;
             options.ActionGenerator = hedge =>
             {
@@ -73,7 +73,7 @@ public class HedgingActionGeneratorTests
             .Use(new PropertySeedingStrategy(key, "abc-123"))
             .Hedge(options =>
             {
-                options.MaxAttempts = 2;
+                options.MaxHedgedAttempts = 1;
                 options.Delay = Timeout.InfiniteTimeSpan;
                 options.ActionGenerator = hedge =>
                 {
@@ -102,7 +102,7 @@ public class HedgingActionGeneratorTests
         var primaryCancelled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var shield = Shield.For<int>().Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = TimeSpan.Zero;
             options.ActionGenerator = hedge =>
             {
@@ -131,7 +131,7 @@ public class HedgingActionGeneratorTests
         var attempts = 0;
         var shield = Shield.Hedge(options =>
             {
-                options.MaxAttempts = 2;
+                options.MaxHedgedAttempts = 1;
                 options.Delay = Timeout.InfiniteTimeSpan;
                 options.ActionGenerator = HedgeActionGenerator.Create<int>(hedge =>
                 {
@@ -160,7 +160,7 @@ public class HedgingActionGeneratorTests
         var generatedCalls = 0;
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = Timeout.InfiniteTimeSpan;
             options.ActionGenerator = HedgeActionGenerator.Create(hedge =>
             {
@@ -190,7 +190,7 @@ public class HedgingActionGeneratorTests
         var releaseHook = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = Timeout.InfiniteTimeSpan;
             options.OnHedge = _ => order.Add("sync-hook");
             options.OnHedgeAsync = async _ =>
@@ -230,7 +230,7 @@ public class HedgingActionGeneratorTests
         var primaryCancelled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = TimeSpan.Zero;
             options.OnHedgeAsync = async _ =>
             {
@@ -256,7 +256,7 @@ public class HedgingActionGeneratorTests
         var expected = new ApplicationException("hook");
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = Timeout.InfiniteTimeSpan;
             options.OnHedgeAsync = _ => ValueTask.FromException(expected);
         });
@@ -275,7 +275,7 @@ public class HedgingActionGeneratorTests
         var attempts = 0;
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = TimeSpan.Zero;
             options.OnHedgeAsync = _ =>
             {
@@ -309,7 +309,7 @@ public class HedgingActionGeneratorTests
         var expected = new InvalidOperationException("generated");
         var shield = Shield.When<InvalidOperationException>().Hedge(options =>
         {
-            options.MaxAttempts = 3;
+            options.MaxHedgedAttempts = 2;
             options.Delay = Timeout.InfiniteTimeSpan;
             options.ActionGenerator = HedgeActionGenerator.Create<int>(hedge =>
                 hedge.AttemptNumber == 2
@@ -328,7 +328,7 @@ public class HedgingActionGeneratorTests
     {
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = Timeout.InfiniteTimeSpan;
             options.ActionGenerator = HedgeActionGenerator.Create<string>(_ => null);
         });
@@ -350,7 +350,7 @@ public class HedgingActionGeneratorTests
         var releasePrimary = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var shield = Shield.For<int>().Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = TimeSpan.Zero;
             options.ActionGenerator = _ =>
             {
@@ -383,7 +383,7 @@ public class HedgingActionGeneratorTests
         var contexts = new ConcurrentDictionary<int, KevlarContext>();
         var shield = Shield.For<int>().Hedge(options =>
         {
-            options.MaxAttempts = 3;
+            options.MaxHedgedAttempts = 2;
             options.Delay = TimeSpan.Zero;
             options.ActionGenerator = hedge =>
             {
@@ -435,7 +435,7 @@ public class HedgingActionGeneratorTests
         var nestedResult = 0;
         shield = Shield.For<int>().Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = Timeout.InfiniteTimeSpan;
             options.ActionGenerator = _ =>
             {
@@ -463,7 +463,7 @@ public class HedgingActionGeneratorTests
         var shield = Shield.Use(new PropertySeedingStrategy(key, "abc-123"))
             .Hedge(options =>
             {
-                options.MaxAttempts = 2;
+                options.MaxHedgedAttempts = 1;
                 options.Delay = Timeout.InfiniteTimeSpan;
                 options.OnHedgeAsync = async hedge =>
                 {
@@ -498,7 +498,7 @@ public class HedgingActionGeneratorTests
         var generatedAttempts = new List<int>();
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = Timeout.InfiniteTimeSpan;
             options.ActionGenerator = HedgeActionGenerator.Create(hedge =>
             {
@@ -528,7 +528,7 @@ public class HedgingActionGeneratorTests
         var actionStarted = false;
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = Timeout.InfiniteTimeSpan;
             options.ActionGenerator = HedgeActionGenerator.Create<int>(_ =>
             {
@@ -556,7 +556,7 @@ public class HedgingActionGeneratorTests
         var expected = new ApplicationException("generated-sync");
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = Timeout.InfiniteTimeSpan;
             options.ActionGenerator = HedgeActionGenerator.Create<int>(_ =>
                 _ => throw expected);
@@ -574,7 +574,7 @@ public class HedgingActionGeneratorTests
         var expected = new ApplicationException("generated-async");
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = Timeout.InfiniteTimeSpan;
             options.ActionGenerator = HedgeActionGenerator.Create<int>(_ => async _ =>
             {
@@ -595,7 +595,7 @@ public class HedgingActionGeneratorTests
         var attempts = 0;
         var shield = Shield.For<int>().Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = Timeout.InfiniteTimeSpan;
             options.ActionGenerator = hedge =>
                 async token => (await hedge.OriginalAction(token)) + 1;
@@ -619,7 +619,7 @@ public class HedgingActionGeneratorTests
         var attempts = 0;
         var shield = Shield.For<int>().Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = Timeout.InfiniteTimeSpan;
             options.ActionGenerator = hedge =>
                 async token => (await hedge.OriginalAction(token)) + 1;
@@ -649,7 +649,7 @@ public class HedgingActionGeneratorTests
         var observedToken = default(CancellationToken);
         var shield = Shield.For<int>().Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = Timeout.InfiniteTimeSpan;
             options.ActionGenerator = hedge =>
                 _ => hedge.OriginalAction(cancellation.Token);
@@ -678,7 +678,7 @@ public class HedgingActionGeneratorTests
         var observedToken = default(CancellationToken);
         var shield = Shield.For<int>().Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = Timeout.InfiniteTimeSpan;
             options.ActionGenerator = hedge =>
                 _ => hedge.OriginalAction(cancellation.Token);
@@ -711,7 +711,7 @@ public class HedgingActionGeneratorTests
         var attempts = 0;
         var shield = Shield.For<int>().Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = Timeout.InfiniteTimeSpan;
             options.ActionGenerator = hedge =>
             {
@@ -761,7 +761,7 @@ public class HedgingActionGeneratorTests
         var observedProperty = 0;
         var shield = Shield.For<int>().Hedge(options =>
             {
-                options.MaxAttempts = 2;
+                options.MaxHedgedAttempts = 1;
                 options.Delay = Timeout.InfiniteTimeSpan;
                 options.ActionGenerator = hedge => async token =>
                 {
@@ -808,7 +808,7 @@ public class HedgingActionGeneratorTests
         var attempts = 0;
         var shield = Shield.For<int>().Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = Timeout.InfiniteTimeSpan;
             options.ActionGenerator = hedge =>
             {
@@ -883,7 +883,7 @@ public class HedgingActionGeneratorTests
         Func<CancellationToken, ValueTask<int>>? originalAction = null;
         var shield = Shield.For<int>().Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = Timeout.InfiniteTimeSpan;
             options.ActionGenerator = hedge =>
             {
@@ -916,7 +916,7 @@ public class HedgingActionGeneratorTests
             var attempts = 0;
             var shield = Shield.For<int>().Hedge(options =>
             {
-                options.MaxAttempts = 2;
+                options.MaxHedgedAttempts = 1;
                 options.Delay = Timeout.InfiniteTimeSpan;
                 options.ActionGenerator = hedge =>
                 {
@@ -973,7 +973,7 @@ public class HedgingActionGeneratorTests
         var calls = 0;
         var shield = Shield.For<int>().Hedge(options =>
             {
-                options.MaxAttempts = 2;
+                options.MaxHedgedAttempts = 1;
                 options.Delay = Timeout.InfiniteTimeSpan;
                 options.ActionGenerator = hedge =>
                 {
@@ -1018,7 +1018,7 @@ public class HedgingActionGeneratorTests
         var generatedActions = 0;
         var shield = Shield.For<int>().Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = Timeout.InfiniteTimeSpan;
             options.ActionGenerator = hedge =>
             {
@@ -1057,7 +1057,7 @@ public class HedgingActionGeneratorTests
         var actionCompleted = false;
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = Timeout.InfiniteTimeSpan;
             options.ActionGenerator = HedgeActionGenerator.Create(_ => async _ =>
             {
@@ -1078,7 +1078,7 @@ public class HedgingActionGeneratorTests
         var attempts = 0;
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = Timeout.InfiniteTimeSpan;
             options.ActionGenerator = HedgeActionGenerator.Create(hedge =>
                 token => hedge.OriginalAction(token));

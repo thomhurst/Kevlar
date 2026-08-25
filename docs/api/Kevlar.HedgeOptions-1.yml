@@ -14,7 +14,7 @@ items:
   - Kevlar.HedgeOptions`1.HandlesExceptionWithContext
   - Kevlar.HedgeOptions`1.HandlesResult
   - Kevlar.HedgeOptions`1.HandlesResultWithContext
-  - Kevlar.HedgeOptions`1.MaxAttempts
+  - Kevlar.HedgeOptions`1.MaxHedgedAttempts
   - Kevlar.HedgeOptions`1.OnHedge
   - Kevlar.HedgeOptions`1.OnHedgeAsync
   langs:
@@ -199,31 +199,31 @@ items:
   overload: Kevlar.HedgeOptions`1.HandlesResultWithContext*
   nameWithType.vb: HedgeOptions(Of TResult).HandlesResultWithContext
   fullName.vb: Kevlar.HedgeOptions(Of TResult).HandlesResultWithContext
-- uid: Kevlar.HedgeOptions`1.MaxAttempts
-  commentId: P:Kevlar.HedgeOptions`1.MaxAttempts
-  id: MaxAttempts
+- uid: Kevlar.HedgeOptions`1.MaxHedgedAttempts
+  commentId: P:Kevlar.HedgeOptions`1.MaxHedgedAttempts
+  id: MaxHedgedAttempts
   parent: Kevlar.HedgeOptions`1
   langs:
   - csharp
   - vb
-  name: MaxAttempts
-  nameWithType: HedgeOptions<TResult>.MaxAttempts
-  fullName: Kevlar.HedgeOptions<TResult>.MaxAttempts
+  name: MaxHedgedAttempts
+  nameWithType: HedgeOptions<TResult>.MaxHedgedAttempts
+  fullName: Kevlar.HedgeOptions<TResult>.MaxHedgedAttempts
   type: Property
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Total attempts including the original. Default 2.
+  summary: Maximum additional attempts after the original. Default 1.
   example: []
   syntax:
-    content: public int MaxAttempts { get; set; }
+    content: public int MaxHedgedAttempts { get; set; }
     parameters: []
     return:
       type: System.Int32
-    content.vb: Public Property MaxAttempts As Integer
-  overload: Kevlar.HedgeOptions`1.MaxAttempts*
-  nameWithType.vb: HedgeOptions(Of TResult).MaxAttempts
-  fullName.vb: Kevlar.HedgeOptions(Of TResult).MaxAttempts
+    content.vb: Public Property MaxHedgedAttempts As Integer
+  overload: Kevlar.HedgeOptions`1.MaxHedgedAttempts*
+  nameWithType.vb: HedgeOptions(Of TResult).MaxHedgedAttempts
+  fullName.vb: Kevlar.HedgeOptions(Of TResult).MaxHedgedAttempts
 - uid: Kevlar.HedgeOptions`1.Delay
   commentId: P:Kevlar.HedgeOptions`1.Delay
   id: Delay
@@ -919,15 +919,15 @@ references:
   fullName: Kevlar.HedgeOptions<TResult>.HandlesResultWithContext
   nameWithType.vb: HedgeOptions(Of TResult).HandlesResultWithContext
   fullName.vb: Kevlar.HedgeOptions(Of TResult).HandlesResultWithContext
-- uid: Kevlar.HedgeOptions`1.MaxAttempts*
-  commentId: Overload:Kevlar.HedgeOptions`1.MaxAttempts
+- uid: Kevlar.HedgeOptions`1.MaxHedgedAttempts*
+  commentId: Overload:Kevlar.HedgeOptions`1.MaxHedgedAttempts
   isExternal: true
-  href: Kevlar.HedgeOptions-1.html#Kevlar_HedgeOptions_1_MaxAttempts
-  name: MaxAttempts
-  nameWithType: HedgeOptions<TResult>.MaxAttempts
-  fullName: Kevlar.HedgeOptions<TResult>.MaxAttempts
-  nameWithType.vb: HedgeOptions(Of TResult).MaxAttempts
-  fullName.vb: Kevlar.HedgeOptions(Of TResult).MaxAttempts
+  href: Kevlar.HedgeOptions-1.html#Kevlar_HedgeOptions_1_MaxHedgedAttempts
+  name: MaxHedgedAttempts
+  nameWithType: HedgeOptions<TResult>.MaxHedgedAttempts
+  fullName: Kevlar.HedgeOptions<TResult>.MaxHedgedAttempts
+  nameWithType.vb: HedgeOptions(Of TResult).MaxHedgedAttempts
+  fullName.vb: Kevlar.HedgeOptions(Of TResult).MaxHedgedAttempts
 - uid: System.Int32
   commentId: T:System.Int32
   parent: System

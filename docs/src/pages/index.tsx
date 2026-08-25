@@ -41,7 +41,7 @@ const advancedSample = `var search = Shield.For<HttpResponseMessage>()
         o.SamplingWindow = TimeSpan.FromSeconds(30);
         o.Monitor = monitor;
     })
-    .Hedge(maxAttempts: 2, delay: TimeSpan.FromMilliseconds(150))
+    .Hedge(maxHedgedAttempts: 1, delay: TimeSpan.FromMilliseconds(150))
     .Timeout(TimeSpan.FromSeconds(2))
     .WithName("search");`;
 

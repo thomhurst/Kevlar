@@ -162,7 +162,7 @@ public class HttpResilienceTests
         var shield = Shield.For<HttpResponseMessage>()
             .When<HttpRequestException>()
             .OrResult(HttpShield.IsTransient)
-            .Hedge(maxAttempts: 2, delay: TimeSpan.FromMilliseconds(100));
+            .Hedge(maxHedgedAttempts: 1, delay: TimeSpan.FromMilliseconds(100));
 
         var stopwatch = Stopwatch.StartNew();
         using var response = await shield.ExecuteAsync(ct => new ValueTask<HttpResponseMessage>(Client.GetAsync(server.Url, ct)));

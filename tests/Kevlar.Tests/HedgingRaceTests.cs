@@ -14,7 +14,7 @@ public class HedgingRaceTests
         var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 3;
+            options.MaxHedgedAttempts = 2;
             options.Delay = TimeSpan.FromSeconds(1);
             options.OnHedge = _ => hedgeEvents++;
         }).WithTimeProvider(timeProvider);
@@ -48,7 +48,7 @@ public class HedgingRaceTests
         var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 3;
+            options.MaxHedgedAttempts = 2;
             options.Delay = System.Threading.Timeout.InfiniteTimeSpan;
             options.OnHedge = _ => hedgeEvents++;
         });
@@ -80,7 +80,7 @@ public class HedgingRaceTests
         var secondStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 3;
+            options.MaxHedgedAttempts = 2;
             options.Delay = TimeSpan.FromSeconds(1);
             options.OnHedge = _ => hedgeEvents++;
         }).WithTimeProvider(timeProvider);
@@ -121,7 +121,7 @@ public class HedgingRaceTests
         };
         var allStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var attempts = 0;
-        var shield = Shield.Hedge(2, TimeSpan.Zero);
+        var shield = Shield.Hedge(1, TimeSpan.Zero);
 
         var execution = shield.ExecuteAsync(async _ =>
         {
@@ -168,7 +168,7 @@ public class HedgingRaceTests
         var forkObserver = new ForkPropertyObserver(key, participantCount: 2);
         var shield = Shield
             .Use(parentObserver)
-            .Hedge(2, TimeSpan.Zero)
+            .Hedge(1, TimeSpan.Zero)
             .Use(forkObserver);
 
         var result = await shield.ExecuteAsync(_ => new ValueTask<int>(42));
@@ -192,7 +192,7 @@ public class HedgingRaceTests
         var attempts = 0;
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = TimeSpan.Zero;
             options.OnHedge = _ =>
             {
@@ -229,7 +229,7 @@ public class HedgingRaceTests
         var hedgeEvents = 0;
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = TimeSpan.Zero;
             options.OnHedge = _ =>
             {
@@ -253,7 +253,7 @@ public class HedgingRaceTests
     [Test]
     public async Task Repeated_Late_Loser_Failures_Do_Not_Contaminate_Pooled_State()
     {
-        var shield = Shield.Hedge(2, TimeSpan.Zero);
+        var shield = Shield.Hedge(1, TimeSpan.Zero);
 
         for (var iteration = 0; iteration < 32; iteration++)
         {
@@ -290,7 +290,7 @@ public class HedgingRaceTests
     [Test]
     public async Task Concurrent_Executions_Of_One_Shield_Isolate_Attempts()
     {
-        var shield = Shield.Hedge(2, TimeSpan.Zero);
+        var shield = Shield.Hedge(1, TimeSpan.Zero);
         var executions = Enumerable.Range(0, 64).Select(async executionId =>
         {
             var attempts = 0;
@@ -327,7 +327,7 @@ public class HedgingRaceTests
         var allStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var attempts = 0;
         var unhandled = new ArgumentException("unhandled");
-        var shield = Shield.When<InvalidOperationException>().Hedge(2, TimeSpan.Zero);
+        var shield = Shield.When<InvalidOperationException>().Hedge(1, TimeSpan.Zero);
 
         var execution = shield.ExecuteOutcomeAsync<int>(async token =>
         {

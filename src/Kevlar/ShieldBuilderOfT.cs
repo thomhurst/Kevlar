@@ -152,7 +152,7 @@ public sealed class ShieldBuilder<TResult>
     public Shield<TResult> CircuitBreaker(Action<CircuitBreakerOptions<TResult>> configure) => Seal().CircuitBreaker(configure);
 
     /// <summary>Races concurrent attempts; a handled outcome launches the next attempt immediately.</summary>
-    public Shield<TResult> Hedge(int maxAttempts, TimeSpan delay) => Seal().Hedge(maxAttempts, delay);
+    public Shield<TResult> Hedge(int maxHedgedAttempts, TimeSpan delay) => Seal().Hedge(maxHedgedAttempts, delay);
 
     /// <summary>Adds a hedging strategy configured via <paramref name="configure"/>.</summary>
     public Shield<TResult> Hedge(Action<HedgeOptions<TResult>> configure) => Seal().Hedge(configure);

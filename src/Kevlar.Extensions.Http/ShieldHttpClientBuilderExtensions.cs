@@ -350,7 +350,7 @@ public static class ShieldHttpClientBuilderExtensions
             .Or<CircuitOpenException>()
             .Hedge(hedge =>
             {
-                hedge.MaxAttempts = options.MaxAttempts;
+                hedge.MaxHedgedAttempts = options.MaxHedgedAttempts;
                 hedge.Delay = options.HedgeDelay;
                 hedge.DelayGenerator = options.HedgeDelayGenerator;
                 hedge.DelayGeneratorAsync = options.HedgeDelayGeneratorAsync;

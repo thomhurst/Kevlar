@@ -50,6 +50,10 @@ All notable changes to this project are documented here. The format follows
 - `StandardHttpShieldOptions.CircuitBreaker` now uses
   `CircuitBreakerOptions<HttpResponseMessage>`, exposing typed result predicates for the standard
   HTTP breaker.
+- `MaxHedgedAttempts` counts additional attempts after the original, matching Polly and retry's
+  `MaxRetries` convention. Its default is 1, so the default hedge still makes up to 2 total attempts.
+  Rename `MaxAttempts` configuration keys and named arguments; reduce previous values by one to
+  preserve the same total attempt count.
 
 ## [1.0.0] - 2026-08-24
 
@@ -153,6 +157,7 @@ All notable changes to this project are documented here. The format follows
 | `RateLimiterRejectedEvent` | `RateLimiterAdapterRejectedEvent` |
 | adapter `RateLimitExceededException` | `RateLimiterAdapterRejectedException` |
 | `StandardHttpShieldOptions.CircuitBreaker` as `CircuitBreakerOptions` | `CircuitBreakerOptions<HttpResponseMessage>` |
+| `Hedge(maxAttempts: n, ...)` / `options.MaxAttempts` | `Hedge(maxHedgedAttempts: n, ...)` / `options.MaxHedgedAttempts` |
 <!-- upgrade-from-0.x:end -->
 
 The replacement forms compile together:

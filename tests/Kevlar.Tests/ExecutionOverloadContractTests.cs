@@ -194,7 +194,7 @@ public class ExecutionOverloadContractTests
         Shield[] shields =
         [
             Shield.Retry(2, Backoff.None),
-            Shield.Hedge(3, System.Threading.Timeout.InfiniteTimeSpan),
+            Shield.Hedge(2, System.Threading.Timeout.InfiniteTimeSpan),
         ];
 
         foreach (var shield in shields)

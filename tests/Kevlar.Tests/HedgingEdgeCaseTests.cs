@@ -8,7 +8,7 @@ public class HedgingEdgeCaseTests
         var hedges = new List<int>();
         var shield = Shield.Hedge(options =>
         {
-            options.MaxAttempts = 3;
+            options.MaxHedgedAttempts = 2;
             options.Delay = System.Threading.Timeout.InfiniteTimeSpan;
             options.OnHedge = hedge => hedges.Add(hedge.AttemptNumber);
         });
@@ -24,7 +24,7 @@ public class HedgingEdgeCaseTests
     {
         var loserCancelled = new TaskCompletionSource();
         var attempts = 0;
-        var shield = Shield.Hedge(2, TimeSpan.Zero);
+        var shield = Shield.Hedge(1, TimeSpan.Zero);
 
         var result = await shield.ExecuteAsync(async token =>
         {
@@ -50,7 +50,7 @@ public class HedgingEdgeCaseTests
             .WhenResult(value => value < 0)
             .Hedge(options =>
             {
-                options.MaxAttempts = 2;
+                options.MaxHedgedAttempts = 1;
                 options.Delay = System.Threading.Timeout.InfiniteTimeSpan;
             });
 
@@ -72,7 +72,7 @@ public class HedgingEdgeCaseTests
             .WhenResult(value => value < 0)
             .Hedge(options =>
             {
-                options.MaxAttempts = 2;
+                options.MaxHedgedAttempts = 1;
                 options.Delay = System.Threading.Timeout.InfiniteTimeSpan;
             });
 
@@ -92,7 +92,7 @@ public class HedgingEdgeCaseTests
         using var cancellation = new CancellationTokenSource();
         var started = 0;
         var attemptsStarted = new AsyncCounter("hedged attempts");
-        var shield = Shield.Hedge(2, TimeSpan.Zero);
+        var shield = Shield.Hedge(1, TimeSpan.Zero);
 
         var task = shield.ExecuteAsync(async token =>
         {
@@ -111,8 +111,8 @@ public class HedgingEdgeCaseTests
     [Test]
     public async Task A_Single_Attempt_Hedge_Runs_Synchronously()
     {
-        // MaxAttempts of 1 means no hedging at all, so the synchronous path is allowed.
-        var result = Shield.Hedge(1, TimeSpan.FromSeconds(1)).Execute(_ => 5);
+        // MaxHedgedAttempts of 1 means no hedging at all, so the synchronous path is allowed.
+        var result = Shield.Hedge(0, TimeSpan.FromSeconds(1)).Execute(_ => 5);
         await Assert.That(result).IsEqualTo(5);
     }
 
@@ -124,7 +124,7 @@ public class HedgingEdgeCaseTests
             .When<InvalidOperationException>()
             .Hedge(options =>
             {
-                options.MaxAttempts = 3;
+                options.MaxHedgedAttempts = 2;
                 options.Delay = System.Threading.Timeout.InfiniteTimeSpan;
             });
 
@@ -149,7 +149,7 @@ public class HedgingEdgeCaseTests
             .Use(new PropertySeedingStrategy(key, "abc-123"))
             .Hedge(options =>
             {
-                options.MaxAttempts = 2;
+                options.MaxHedgedAttempts = 1;
                 options.Delay = System.Threading.Timeout.InfiniteTimeSpan;
                 options.OnHedge = hedge => seenOnHedge = hedge.Context.Properties.GetOrDefault(key, "missing");
             });

@@ -6,8 +6,8 @@ public sealed class StandardHedgeShieldOptions
     /// <summary>The maximum duration of the complete request. Default 30 seconds.</summary>
     public TimeSpan TotalTimeout { get; set; } = TimeSpan.FromSeconds(30);
 
-    /// <summary>Total attempts including the original. Default 2.</summary>
-    public int MaxAttempts { get; set; } = 2;
+    /// <summary>Maximum additional attempts after the original. Default 1.</summary>
+    public int MaxHedgedAttempts { get; set; } = 1;
 
     /// <summary>The delay before another hedged attempt starts. Default 1 second.</summary>
     public TimeSpan HedgeDelay { get; set; } = TimeSpan.FromSeconds(1);

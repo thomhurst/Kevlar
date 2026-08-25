@@ -118,7 +118,7 @@ public class DatabaseResilienceTests
 
         var shield = Shield
             .Timeout(TimeSpan.FromSeconds(10))
-            .Hedge(maxAttempts: 2, delay: TimeSpan.FromMilliseconds(50));
+            .Hedge(maxHedgedAttempts: 1, delay: TimeSpan.FromMilliseconds(50));
 
         var result = await shield.ExecuteAsync(async ct =>
         {

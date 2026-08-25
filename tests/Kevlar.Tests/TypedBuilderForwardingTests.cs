@@ -34,11 +34,11 @@ public class TypedBuilderForwardingTests
                 options.ConsecutiveFailures = 2;
                 options.BreakDuration = TimeSpan.FromSeconds(3);
             }), typeof(CircuitBreakerStrategy)),
-            (builder.Hedge(2, TimeSpan.Zero), typeof(HedgingStrategy)),
+            (builder.Hedge(1, TimeSpan.Zero), typeof(HedgingStrategy)),
             (builder.Hedge(options =>
             {
                 hedgeConfigured = true;
-                options.MaxAttempts = 2;
+                options.MaxHedgedAttempts = 1;
                 options.Delay = TimeSpan.Zero;
             }), typeof(HedgingStrategy)),
             (builder.Use(_ => PassThroughStrategy.Instance), typeof(PassThroughStrategy)),

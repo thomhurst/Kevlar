@@ -44,8 +44,8 @@ uncancellable and ignoring cancellation is deliberate.
 ## KEV002: synchronous hedging
 
 Multi-attempt hedging races concurrent attempts and therefore supports only asynchronous execution.
-Synchronous `Execute` throws for a shield containing a hedge with a known `MaxAttempts` greater than
-one, so use `ExecuteAsync` or remove hedging:
+Synchronous `Execute` throws for a shield containing a hedge with a known `MaxHedgedAttempts` greater than
+zero, so use `ExecuteAsync` or remove hedging:
 
 ```csharp
 var hedged = Shield.Hedge(2, delay: TimeSpan.FromMilliseconds(50));
@@ -149,7 +149,7 @@ real dependency — and a losing hedge has still done its work. Duplicate writes
 observable unless the action is idempotent:
 
 ```csharp
-var shield = Shield.Hedge(maxAttempts: 2, delay: TimeSpan.FromMilliseconds(50)); // KEV006
+var shield = Shield.Hedge(maxHedgedAttempts: 2, delay: TimeSpan.FromMilliseconds(50)); // KEV006
 ```
 
 Build a result-aware shield so a [result clause](handling-failures.md#result-clauses) can decide
@@ -158,7 +158,7 @@ which attempt is acceptable:
 ```csharp
 var shield = Shield.For<HttpResponseMessage>()
     .WhenResult(response => (int)response.StatusCode >= 500)
-    .Hedge(maxAttempts: 2, delay: TimeSpan.FromMilliseconds(50));
+    .Hedge(maxHedgedAttempts: 2, delay: TimeSpan.FromMilliseconds(50));
 ```
 
 If the untyped shape is deliberate — the action is a genuinely idempotent read — suppress the

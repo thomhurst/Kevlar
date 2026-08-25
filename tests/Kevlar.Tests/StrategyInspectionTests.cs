@@ -46,17 +46,17 @@ public class StrategyInspectionTests
 
         var notifiedHedge = GetStrategy<HedgingStrategy>(Shield.Hedge(options =>
         {
-            options.MaxAttempts = 4;
+            options.MaxHedgedAttempts = 3;
             options.Delay = TimeSpan.FromMilliseconds(17);
             options.DelayGenerator = static _ => TimeSpan.Zero;
             options.OnHedge = static _ => { };
         }));
-        var fixedHedge = GetStrategy<HedgingStrategy>(Shield.Hedge(2, TimeSpan.Zero));
-        await Assert.That(notifiedHedge.MaxAttempts).IsEqualTo(4);
+        var fixedHedge = GetStrategy<HedgingStrategy>(Shield.Hedge(1, TimeSpan.Zero));
+        await Assert.That(notifiedHedge.MaxHedgedAttempts).IsEqualTo(3);
         await Assert.That(notifiedHedge.Delay).IsEqualTo(TimeSpan.FromMilliseconds(17));
         await Assert.That(notifiedHedge.HasDelayGenerator).IsTrue();
         await Assert.That(notifiedHedge.HasNotification).IsTrue();
-        await Assert.That(fixedHedge.MaxAttempts).IsEqualTo(2);
+        await Assert.That(fixedHedge.MaxHedgedAttempts).IsEqualTo(1);
         await Assert.That(fixedHedge.Delay).IsEqualTo(TimeSpan.Zero);
         await Assert.That(fixedHedge.HasDelayGenerator).IsFalse();
         await Assert.That(fixedHedge.HasNotification).IsFalse();

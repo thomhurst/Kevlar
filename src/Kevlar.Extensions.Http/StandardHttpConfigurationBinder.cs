@@ -28,9 +28,10 @@ internal static class StandardHttpConfigurationBinder
     {
         var options = new StandardHedgeShieldOptions();
 
-        RejectLegacyQueueKey(configuration);
+        RejectLegacyKey(configuration, "MaxQueue", nameof(options.QueueLimit));
+        RejectLegacyKey(configuration, "MaxAttempts", nameof(options.MaxHedgedAttempts));
         SetTimeSpan(configuration, nameof(options.TotalTimeout), value => options.TotalTimeout = value);
-        SetInt(configuration, nameof(options.MaxAttempts), value => options.MaxAttempts = value);
+        SetInt(configuration, nameof(options.MaxHedgedAttempts), value => options.MaxHedgedAttempts = value);
         SetTimeSpan(configuration, nameof(options.HedgeDelay), value => options.HedgeDelay = value);
         SetTimeSpan(configuration, nameof(options.AttemptTimeout), value => options.AttemptTimeout = value);
         SetInt(configuration, nameof(options.MaxConcurrency), value => options.MaxConcurrency = value);
@@ -154,8 +155,8 @@ internal static class StandardHttpConfigurationBinder
             return;
         }
 
-        RejectLegacyQueueKey(section);
         var options = standard.ConcurrencyLimit ?? new ConcurrencyLimitOptions();
+        RejectLegacyKey(section, "MaxQueue", nameof(options.QueueLimit));
         SetInt(section, nameof(options.MaxConcurrency), value => options.MaxConcurrency = value);
         SetInt(section, nameof(options.QueueLimit), value => options.QueueLimit = value);
         standard.ConcurrencyLimit = options;
@@ -212,16 +213,18 @@ internal static class StandardHttpConfigurationBinder
         }
     }
 
-    private static void RejectLegacyQueueKey(IConfiguration configuration)
+    private static void RejectLegacyKey(
+        IConfiguration configuration,
+        string legacyKey,
+        string replacementKey)
     {
-        const string legacyKey = "MaxQueue";
         if (configuration[legacyKey] is not null)
         {
             var path = configuration is IConfigurationSection { Path.Length: > 0 } section
                 ? ConfigurationPath.Combine(section.Path, legacyKey)
                 : legacyKey;
             throw new InvalidOperationException(
-                $"Configuration key '{path}' is not supported; use 'QueueLimit'.");
+                $"Configuration key '{path}' is not supported; use '{replacementKey}'.");
         }
     }
 
@@ -269,7 +272,7 @@ internal static class StandardHttpConfigurationBinder
         StandardHedgeShieldOptions options)
     {
         Ensure(options.TotalTimeout > TimeSpan.Zero, configuration.GetSection(nameof(options.TotalTimeout)), "must be positive");
-        Ensure(options.MaxAttempts >= 1, configuration.GetSection(nameof(options.MaxAttempts)), "must be at least 1");
+        Ensure(options.MaxHedgedAttempts >= 0, configuration.GetSection(nameof(options.MaxHedgedAttempts)), "must not be negative");
         Ensure(
             options.HedgeDelay >= TimeSpan.Zero || options.HedgeDelay == Timeout.InfiniteTimeSpan,
             configuration.GetSection(nameof(options.HedgeDelay)),

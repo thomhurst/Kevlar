@@ -68,7 +68,7 @@ public class DocsConsistencyTests
                 return 1;
             });
 
-        await Shield.Hedge(2, TimeSpan.Zero)
+        await Shield.Hedge(1, TimeSpan.Zero)
             .WithName("docs-hedge")
             .ExecuteAsync(_ => new ValueTask<int>(1));
 

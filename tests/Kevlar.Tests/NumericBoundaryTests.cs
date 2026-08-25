@@ -91,7 +91,7 @@ public class NumericBoundaryTests
             () => Shield.Timeout(TimeSpan.MaxValue),
             "timeout");
         await AssertOutOfRangeAsync(
-            () => Shield.Hedge(2, TimeSpan.MaxValue),
+            () => Shield.Hedge(1, TimeSpan.MaxValue),
             "delay");
     }
 

@@ -32,7 +32,7 @@ public class EventStrategyIndexTests
 
         var hedge = TypedPrefix().Hedge(options =>
         {
-            options.MaxAttempts = 2;
+            options.MaxHedgedAttempts = 1;
             options.Delay = TimeSpan.Zero;
             options.OnHedge = item => observed["hedge"] = item.Context.StrategyIndex;
             options.ActionGenerator = item =>

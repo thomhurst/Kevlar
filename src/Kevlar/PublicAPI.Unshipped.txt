@@ -256,9 +256,13 @@ Kevlar.RetryOptions<TResult>.HandlesException.set -> void
 Kevlar.RetryOptions<TResult>.HandlesResult.get -> System.Func<TResult, bool>?
 Kevlar.RetryOptions<TResult>.HandlesResult.set -> void
 Kevlar.Shield<TResult>.CircuitBreaker(System.Action<Kevlar.CircuitBreakerOptions<TResult>!>! configure) -> Kevlar.Shield<TResult>!
+Kevlar.Shield<TResult>.Hedge(int maxHedgedAttempts, System.TimeSpan delay) -> Kevlar.Shield<TResult>!
 Kevlar.Shield<TResult>.Hedge(System.Action<Kevlar.HedgeOptions<TResult>!>! configure) -> Kevlar.Shield<TResult>!
 Kevlar.ShieldBuilder<TResult>.CircuitBreaker(System.Action<Kevlar.CircuitBreakerOptions<TResult>!>! configure) -> Kevlar.Shield<TResult>!
+Kevlar.ShieldBuilder<TResult>.Hedge(int maxHedgedAttempts, System.TimeSpan delay) -> Kevlar.Shield<TResult>!
 Kevlar.ShieldBuilder<TResult>.Hedge(System.Action<Kevlar.HedgeOptions<TResult>!>! configure) -> Kevlar.Shield<TResult>!
+*REMOVED*Kevlar.Shield<TResult>.Hedge(int maxAttempts, System.TimeSpan delay) -> Kevlar.Shield<TResult>!
+*REMOVED*Kevlar.ShieldBuilder<TResult>.Hedge(int maxAttempts, System.TimeSpan delay) -> Kevlar.Shield<TResult>!
 *REMOVED*Kevlar.Shield<TResult>.CircuitBreaker(System.Action<Kevlar.CircuitBreakerOptions!>! configure) -> Kevlar.Shield<TResult>!
 *REMOVED*Kevlar.Shield<TResult>.Hedge(System.Action<Kevlar.HedgingOptions!>! configure) -> Kevlar.Shield<TResult>!
 *REMOVED*Kevlar.ShieldBuilder<TResult>.CircuitBreaker(System.Action<Kevlar.CircuitBreakerOptions!>! configure) -> Kevlar.Shield<TResult>!
@@ -296,13 +300,19 @@ Kevlar.HedgeOptions
 Kevlar.HedgeOptions.Delay.get -> System.TimeSpan
 Kevlar.HedgeOptions.Delay.set -> void
 Kevlar.HedgeOptions.HedgeOptions() -> void
-Kevlar.HedgeOptions.MaxAttempts.get -> int
-Kevlar.HedgeOptions.MaxAttempts.set -> void
+Kevlar.HedgeOptions.MaxHedgedAttempts.get -> int
+Kevlar.HedgeOptions.MaxHedgedAttempts.set -> void
 Kevlar.HedgeOptions.OnHedge.get -> System.Action<Kevlar.HedgeEvent>?
 Kevlar.HedgeOptions.OnHedge.set -> void
 Kevlar.ShieldBuilder.Hedge(System.Action<Kevlar.HedgeOptions!>! configure) -> Kevlar.Shield!
+Kevlar.ShieldBuilder.Hedge(int maxHedgedAttempts, System.TimeSpan delay) -> Kevlar.Shield!
 static Kevlar.Shield.Hedge(System.Action<Kevlar.HedgeOptions!>! configure) -> Kevlar.Shield!
+static Kevlar.Shield.Hedge(int maxHedgedAttempts, System.TimeSpan delay) -> Kevlar.Shield!
 static Kevlar.ShieldExtensions.Hedge(this Kevlar.Shield! shield, System.Action<Kevlar.HedgeOptions!>! configure) -> Kevlar.Shield!
+static Kevlar.ShieldExtensions.Hedge(this Kevlar.Shield! shield, int maxHedgedAttempts, System.TimeSpan delay) -> Kevlar.Shield!
+*REMOVED*Kevlar.ShieldBuilder.Hedge(int maxAttempts, System.TimeSpan delay) -> Kevlar.Shield!
+*REMOVED*static Kevlar.Shield.Hedge(int maxAttempts, System.TimeSpan delay) -> Kevlar.Shield!
+*REMOVED*static Kevlar.ShieldExtensions.Hedge(this Kevlar.Shield! shield, int maxAttempts, System.TimeSpan delay) -> Kevlar.Shield!
 static Kevlar.Shield.Fallback(System.Func<System.Exception!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback) -> Kevlar.Shield!
 static Kevlar.Shield.Fallback(System.Func<System.Exception!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback, System.Action<Kevlar.FallbackOptions!>! configure) -> Kevlar.Shield!
 static Kevlar.Shield.Fallback(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback) -> Kevlar.Shield!
@@ -364,8 +374,8 @@ Kevlar.HedgeOptions<TResult>.Delay.get -> System.TimeSpan
 Kevlar.HedgeOptions<TResult>.Delay.set -> void
 Kevlar.HedgeOptions<TResult>.HandlesException.get -> System.Func<System.Exception!, bool>?
 Kevlar.HedgeOptions<TResult>.HandlesException.set -> void
-Kevlar.HedgeOptions<TResult>.MaxAttempts.get -> int
-Kevlar.HedgeOptions<TResult>.MaxAttempts.set -> void
+Kevlar.HedgeOptions<TResult>.MaxHedgedAttempts.get -> int
+Kevlar.HedgeOptions<TResult>.MaxHedgedAttempts.set -> void
 Kevlar.HedgeOptions<TResult>.OnHedge.get -> System.Action<Kevlar.HedgeEvent>?
 Kevlar.HedgeOptions<TResult>.OnHedge.set -> void
 Kevlar.HedgeOptions<TResult>.OnHedgeAsync.get -> System.Func<Kevlar.HedgeEvent, System.Threading.Tasks.ValueTask>?

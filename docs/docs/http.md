@@ -165,7 +165,7 @@ using Kevlar.Extensions.Http;
 var configuration = new ConfigurationBuilder()
     .AddInMemoryCollection(new Dictionary<string, string?>
     {
-        ["MaxAttempts"] = "2",
+        ["MaxHedgedAttempts"] = "1",
         ["HedgeDelay"] = "00:00:00.500",
         ["SelectionMode"] = "Weighted",
         ["Endpoints:0:Uri"] = "https://api-a.example",
@@ -295,7 +295,7 @@ services.AddHttpClient("routed")
         options.Endpoints.Add(new HttpEndpoint(new Uri("https://api-a.example"), weight: 3));
         options.Endpoints.Add(new HttpEndpoint(new Uri("https://api-b.example"), weight: 1));
         options.SelectionMode = HttpEndpointSelectionMode.Weighted;
-        options.MaxAttempts = 2;
+        options.MaxHedgedAttempts = 1;
         options.HedgeDelay = TimeSpan.FromMilliseconds(500);
         options.HedgeDelayGenerator = hedge => hedge.Elapsed < TimeSpan.FromSeconds(1)
             ? TimeSpan.FromMilliseconds(100)
@@ -303,9 +303,9 @@ services.AddHttpClient("routed")
     });
 ```
 
-`AddStandardHedgeShield` installs a 30s total timeout and up to two hedged attempts. Each endpoint
+`AddStandardHedgeShield` installs a 30s total timeout and one additional hedged attempt (two total). Each endpoint
 gets its own 10-concurrent/zero-queue limiter, 50%-over-30s circuit breaker (minimum 10 attempts,
-15s break), and 10s attempt timeout. Configure those defaults through `TotalTimeout`, `MaxAttempts`,
+15s break), and 10s attempt timeout. Configure those defaults through `TotalTimeout`, `MaxHedgedAttempts`,
 `HedgeDelay`, `HedgeDelayGenerator`, `HedgeDelayGeneratorAsync`, `MaxConcurrency`, `QueueLimit`,
 `FailureRatio` or `ConsecutiveFailures`,
 `MinimumThroughput`, `SamplingWindow`, `BreakDuration`, and `AttemptTimeout`.
@@ -331,7 +331,7 @@ routing.Endpoints.Add(new HttpEndpoint(new Uri("https://api-b.example")));
 
 services.AddHttpClient("routed")
     .AddShield(
-        HttpShield.WhenTransient().Hedge(2, delay: TimeSpan.Zero),
+        HttpShield.WhenTransient().Hedge(1, delay: TimeSpan.Zero),
         new ShieldHttpHandlerOptions { Routing = routing });
 ```
 
