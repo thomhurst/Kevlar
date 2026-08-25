@@ -220,6 +220,9 @@ $deadApiPatterns = @(
     '\bRetryEvent\.Attempt\b'
     '\bRetryEvent<[^>]+>\.Attempt\b'
     '\bHedgeEvent\.Attempt\b'
+    '\bRetryForever\s*\(\s*backoff\s*:\s*null\s*\)'
+    '\bjitter\s*:\s*(?:true|false)\b'
+    '\bRetryDefinition\s*\.\s*Jitter\s*=\s*(?:true|false)\b'
 )
 $deadApiPattern = [regex]($deadApiPatterns -join '|')
 $documents = @($changelogPath, (Join-Path $repositoryRoot 'README.md')) + @(
