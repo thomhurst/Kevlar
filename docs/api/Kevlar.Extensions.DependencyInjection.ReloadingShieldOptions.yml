@@ -68,6 +68,10 @@ items:
   - Kevlar.Extensions.DependencyInjection
   namespace: Kevlar.Extensions.DependencyInjection
   summary: Gets or sets how long configuration changes are coalesced before rebuilding the shield.
+  remarks: >-
+    The delay must be nonnegative and no greater than <code>uint.MaxValue - 1</code> milliseconds,
+
+    the runtime timer limit.
   example: []
   syntax:
     content: public TimeSpan DebounceDelay { get; set; }

@@ -54,6 +54,7 @@ public class ReloadingShieldTests
     {
         var configuration = BuildConfiguration();
         var negativeDelay = new ReloadingShieldOptions { DebounceDelay = TimeSpan.FromTicks(-1) };
+        var excessiveDelay = new ReloadingShieldOptions { DebounceDelay = TimeSpan.FromDays(50) };
         var missingClock = new ReloadingShieldOptions { TimeProvider = null! };
 
         var delayError = await Assert.That(() => new ServiceCollection().AddReloadingShield(
@@ -66,8 +67,14 @@ public class ReloadingShieldTests
                 configuration,
                 missingClock))
             .Throws<ArgumentException>();
+        var excessiveDelayError = await Assert.That(() => new ServiceCollection().AddReloadingShield(
+                "dynamic",
+                configuration,
+                excessiveDelay))
+            .Throws<ArgumentOutOfRangeException>();
 
         await Assert.That(delayError!.ParamName).IsEqualTo("options");
+        await Assert.That(excessiveDelayError!.ParamName).IsEqualTo("options");
         await Assert.That(clockError!.ParamName).IsEqualTo("options");
     }
 

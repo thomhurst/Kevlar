@@ -10,6 +10,9 @@ namespace Kevlar.Extensions.DependencyInjection;
 /// <summary>Registers Kevlar shields with the service collection.</summary>
 public static class KevlarServiceCollectionExtensions
 {
+    private static readonly TimeSpan MaximumTimerDelay =
+        TimeSpan.FromMilliseconds(uint.MaxValue - 1d);
+
     /// <summary>Registers the <see cref="IKevlarRegistry"/>. Called automatically by the <c>AddShield</c> overloads.</summary>
     public static IServiceCollection AddKevlar(this IServiceCollection services)
     {
@@ -456,6 +459,13 @@ public static class KevlarServiceCollectionExtensions
             throw new ArgumentOutOfRangeException(
                 nameof(options),
                 "DebounceDelay cannot be negative.");
+        }
+
+        if (options.DebounceDelay > MaximumTimerDelay)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(options),
+                "DebounceDelay exceeds the runtime timer limit.");
         }
 
         if (options.TimeProvider is null)

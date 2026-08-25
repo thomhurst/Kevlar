@@ -6,6 +6,10 @@ public sealed class ReloadingShieldOptions
     /// <summary>
     /// Gets or sets how long configuration changes are coalesced before rebuilding the shield.
     /// </summary>
+    /// <remarks>
+    /// The delay must be nonnegative and no greater than <c>uint.MaxValue - 1</c> milliseconds,
+    /// the runtime timer limit.
+    /// </remarks>
     public TimeSpan DebounceDelay { get; set; } = TimeSpan.FromMilliseconds(250);
 
     /// <summary>Gets or sets the clock used to schedule reloads.</summary>
