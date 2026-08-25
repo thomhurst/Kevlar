@@ -101,6 +101,7 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.For<int>().CircuitBreaker(2, TimeSpan.FromSeconds(1)).Execute(_ => 1);",
             "await Shield.For<int>().RateLimit(10, TimeSpan.FromSeconds(1)).ExecuteAsync(_ => new ValueTask<int>(1));",
             "await Shield.For<int>().ConcurrencyLimit(2).ExecuteOutcomeAsync(_ => new ValueTask<int>(1));",
+            "_ = Shield.Empty.UseRateLimiter((System.Threading.RateLimiting.RateLimiter)null!).Execute(_ => 1);",
             "await Shield.CircuitBreaker(2, TimeSpan.FromSeconds(1)).ExecuteAsync(_ => Task.FromResult(1));",
             "await Shield.For<int>().RateLimit(10, TimeSpan.FromSeconds(1)).ExecuteOutcomeAsync(_ => Task.FromResult(1));",
             "Shield.CircuitBreaker(2, TimeSpan.FromSeconds(1)).Execute(_ => { });",
