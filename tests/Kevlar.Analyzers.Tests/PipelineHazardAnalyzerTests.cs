@@ -35,6 +35,24 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Flags_Async_Lambda_Event_Use_After_Await()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                await Task.Yield();
+                _ = item.Context.ShieldName;
+            });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
     public async Task KEV013_Allows_Awaited_And_Synchronous_Callbacks()
     {
         var diagnostics = await AnalyzeBodyAsync("""

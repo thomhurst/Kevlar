@@ -365,6 +365,16 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                          .OfType<AnonymousFunctionExpressionSyntax>()
                          .Any(ancestor => expression.Span.Contains(ancestor.Span))))
         {
+            if (!anonymous.AsyncKeyword.IsKind(SyntaxKind.None)
+                && TryFindAsyncAnonymousFunctionContext(
+                    anonymous,
+                    context,
+                    knownTypes,
+                    out capturedContext))
+            {
+                return true;
+            }
+
             foreach (var invocation in GetCallbackInvocations(
                          anonymous.Body,
                          context.SemanticModel,
@@ -439,40 +449,87 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             {
                 var declaration = syntaxReference.GetSyntax(context.CancellationToken);
                 var body = GetFunctionBody(declaration);
-                if (body is null)
+                if (body is not null
+                    && TryFindPostAwaitEventContext(
+                        body,
+                        eventParameterNames,
+                        out capturedContext))
                 {
-                    continue;
-                }
-
-                var nodes = body.DescendantNodesAndSelf(descendIntoChildren: static node =>
-                        node is not AnonymousFunctionExpressionSyntax
-                            and not LocalFunctionStatementSyntax)
-                    .ToArray();
-                var firstAwait = nodes.OfType<AwaitExpressionSyntax>()
-                    .Select(static awaitExpression => awaitExpression.SpanStart)
-                    .DefaultIfEmpty(int.MaxValue)
-                    .Min();
-                var retainedNames = new HashSet<string>(eventParameterNames, StringComparer.Ordinal);
-                foreach (var declarator in nodes.OfType<VariableDeclaratorSyntax>()
-                             .Where(declarator => declarator.SpanStart < firstAwait)
-                             .OrderBy(static declarator => declarator.SpanStart))
-                {
-                    if (declarator.Initializer?.Value is { } initializer
-                        && IsRetainedAliasExpression(initializer, retainedNames))
-                    {
-                        retainedNames.Add(declarator.Identifier.ValueText);
-                    }
-                }
-
-                foreach (var identifier in nodes
-                             .OfType<IdentifierNameSyntax>()
-                             .Where(identifier => identifier.SpanStart > firstAwait
-                                 && retainedNames.Contains(identifier.Identifier.ValueText)))
-                {
-                    capturedContext = identifier;
                     return true;
                 }
             }
+        }
+
+        capturedContext = null!;
+        return false;
+    }
+
+    private static bool TryFindAsyncAnonymousFunctionContext(
+        AnonymousFunctionExpressionSyntax anonymous,
+        SyntaxNodeAnalysisContext context,
+        KnownTypes knownTypes,
+        out SyntaxNode capturedContext)
+    {
+        var parameters = (anonymous switch
+        {
+            SimpleLambdaExpressionSyntax simple => (IEnumerable<ParameterSyntax>)[simple.Parameter],
+            ParenthesizedLambdaExpressionSyntax parenthesized => parenthesized.ParameterList.Parameters,
+            AnonymousMethodExpressionSyntax { ParameterList: { } parameterList } => parameterList.Parameters,
+            _ => [],
+        }).ToArray();
+        var delegateParameters = (context.SemanticModel.GetTypeInfo(
+                anonymous,
+                context.CancellationToken).ConvertedType as INamedTypeSymbol)
+            ?.DelegateInvokeMethod?.Parameters;
+        var eventParameterNames = new HashSet<string>(StringComparer.Ordinal);
+        if (delegateParameters is { } symbols)
+        {
+            for (var index = 0; index < Math.Min(parameters.Length, symbols.Length); index++)
+            {
+                if (ContainsEventContextReference(symbols[index].Type, knownTypes))
+                {
+                    eventParameterNames.Add(parameters[index].Identifier.ValueText);
+                }
+            }
+        }
+
+        return TryFindPostAwaitEventContext(
+            anonymous.Body,
+            eventParameterNames,
+            out capturedContext);
+    }
+
+    private static bool TryFindPostAwaitEventContext(
+        SyntaxNode body,
+        HashSet<string> eventParameterNames,
+        out SyntaxNode capturedContext)
+    {
+        var nodes = body.DescendantNodesAndSelf(descendIntoChildren: static node =>
+                node is not AnonymousFunctionExpressionSyntax
+                    and not LocalFunctionStatementSyntax)
+            .ToArray();
+        var firstAwait = nodes.OfType<AwaitExpressionSyntax>()
+            .Select(static awaitExpression => awaitExpression.SpanStart)
+            .DefaultIfEmpty(int.MaxValue)
+            .Min();
+        var retainedNames = new HashSet<string>(eventParameterNames, StringComparer.Ordinal);
+        foreach (var declarator in nodes.OfType<VariableDeclaratorSyntax>()
+                     .Where(declarator => declarator.SpanStart < firstAwait)
+                     .OrderBy(static declarator => declarator.SpanStart))
+        {
+            if (declarator.Initializer?.Value is { } initializer
+                && IsRetainedAliasExpression(initializer, retainedNames))
+            {
+                retainedNames.Add(declarator.Identifier.ValueText);
+            }
+        }
+
+        foreach (var identifier in nodes.OfType<IdentifierNameSyntax>()
+                     .Where(identifier => identifier.SpanStart > firstAwait
+                         && retainedNames.Contains(identifier.Identifier.ValueText)))
+        {
+            capturedContext = identifier;
+            return true;
         }
 
         capturedContext = null!;
