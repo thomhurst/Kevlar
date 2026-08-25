@@ -43,6 +43,31 @@ Run other project-specific suites when their package changes. CI builds on Windo
 enforces discovered-test floors, runs deterministic model and stress checks for core changes, and
 publishes coverage artifacts. See `.github/workflows/ci.yml` for the authoritative matrix.
 
+### Coverage and mutation gates
+
+The Linux coverage job merges the repository test suites into Cobertura XML and an HTML report. It
+excludes tests, benchmarks, generated code, and code marked with
+`ExcludeFromCodeCoverageAttribute`, then enforces the checked-in line and branch baselines. Download
+the `coverage-report` workflow artifact to inspect either format. To reproduce the final check from
+already-collected Cobertura files:
+
+```powershell
+dotnet tool restore
+dotnet reportgenerator '-reports:artifacts/coverage/raw/*.cobertura.xml' '-targetdir:artifacts/coverage/report' '-reporttypes:Cobertura;Html'
+./.github/scripts/Assert-Coverage.ps1 -Report artifacts/coverage/report/Cobertura.xml -MinimumLinePercent 94 -MinimumBranchPercent 89
+```
+
+Core strategy mutation testing runs on its scheduled workflow and on demand. The Stryker
+configuration, report threshold, and break threshold live under `src/Kevlar`; the audited baseline
+and surviving mutations are documented in `.github/mutation-baseline.md`.
+
+```powershell
+dotnet tool restore
+Push-Location src/Kevlar
+dotnet stryker --config-file stryker-config.json
+Pop-Location
+```
+
 ## Performance changes
 
 Keep hot paths allocation-conscious. For a performance-sensitive change, add or update a
@@ -59,7 +84,7 @@ allocations.
 
 User documentation lives under `docs/docs`; navigation is explicit in `docs/sidebars.ts`. Every C#
 fence in README and the documentation is compiled unless an adjacent `doc-test-ignore` comment
-gives a concrete reason.
+gives a concrete reason. Use `doc-test-run` for safe behavioral samples.
 
 ```powershell
 Push-Location docs
@@ -78,6 +103,31 @@ Package-consuming snippet checks require locally packed packages and a unique ve
 dotnet pack Kevlar.slnx -c Release -p:Version=0.0.0-local
 ./scripts/Verify-DocSnippets.ps1 -PackagesPath artifacts/package/release -Version 0.0.0-local
 ```
+
+Complete snippets need no directive. Declaration-only and mixed examples use
+`doc-test-declaration`, `doc-test-tail-declaration`, or `doc-test-strategy-member`. An intentionally
+incomplete example must have an adjacent `doc-test-ignore` comment with a concrete reason.
+
+## Package and publish compatibility
+
+`Verify-Packages.ps1` validates package layout, symbols, deterministic output, SourceLink, clean
+consumers, analyzers, trimming, single-file publishing, and NativeAOT. Build and pack first:
+
+```powershell
+dotnet build Kevlar.slnx -c Release
+dotnet pack Kevlar.slnx -c Release --no-build
+./scripts/Verify-Packages.ps1 -PackagesPath artifacts/package/release -Version 0.0.0-local
+```
+
+NativeAOT validation runs on Linux. Install its prerequisites before reproducing that part locally:
+
+```bash
+sudo apt-get update
+sudo apt-get install --yes clang zlib1g-dev
+```
+
+`Verify-PublishCompatibility.ps1` is normally invoked by `Verify-Packages.ps1`; run the wrapper so
+package layout, dependency versions, and consumers are checked together.
 
 ## Pull requests
 

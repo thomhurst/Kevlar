@@ -2,22 +2,127 @@
 sidebar_position: 15
 ---
 
-# Testing Your Shields
+# Testing your shields
 
-## Inspecting pipeline shape
-
-Install `Kevlar.Testing` in the test project only:
+Install `Kevlar.Testing` in the test project. It provides deterministic time helpers, immutable
+pipeline and state snapshots, assertion helpers, and a telemetry recorder.
 
 ```shell
 dotnet add package Kevlar.Testing
 ```
 
-`GetDescriptor()` returns an immutable snapshot. Strategy kinds, execution order, and the typed configuration properties are stable contracts. `Description` is diagnostic text only; display it in failures, but do not parse it. Descriptors never expose a mutable strategy, callback, monitor, or `TimeProvider` instance.
+This page covers tests that consume Kevlar. Repository build, coverage, mutation, documentation,
+and package-publishing checks belong in the
+[contributor guide](https://github.com/thomhurst/Kevlar/blob/main/CONTRIBUTING.md).
 
-In a TUnit `[Test]`, use the framework-independent shape assertions alongside TUnit's value assertions:
+## Deterministic time with TimeProvider
 
-<!-- doc-test-ignore: The executable documentation harness owns Main; this TUnit example is compiled by Kevlar.Testing.Tests. -->
+Every Kevlar delay, timeout, break duration, sampling window, rate-limit window, and hedge delay
+uses a `TimeProvider`. Start the execution, wait until it has scheduled work, then advance its
+`FakeTimeProvider`. The test below performs three attempts and advances twenty seconds without
+sleeping.
+
+`FakeTimeProvider`, `WaitForPendingAsync`, and `AdvanceUntilAsync` require a test project targeting
+.NET 8 or later; they are not included in the `netstandard2.0` compatibility asset.
+
+<!-- doc-test-run: testing-fake-time-retry -->
 ```csharp
+using Kevlar.Testing;
+using Microsoft.Extensions.Time.Testing;
+
+var timeProvider = new FakeTimeProvider();
+var startedAt = timeProvider.GetUtcNow();
+var attempts = 0;
+var shield = Shield
+    .Retry(2, Backoff.Constant(TimeSpan.FromSeconds(10)))
+    .WithTimeProvider(timeProvider);
+
+var execution = shield.ExecuteAsync<int>(_ =>
+{
+    var attempt = Interlocked.Increment(ref attempts);
+    return attempt < 3
+        ? ValueTask.FromException<int>(new InvalidOperationException())
+        : new ValueTask<int>(42);
+}).AsTask();
+
+await execution.WaitForPendingAsync(
+    () => Volatile.Read(ref attempts) == 1,
+    "the first retry delay");
+await timeProvider.AdvanceUntilAsync(
+    TimeSpan.FromSeconds(10),
+    () => Volatile.Read(ref attempts) == 3,
+    "all retry attempts",
+    maxAdvances: 2);
+
+var result = await execution;
+if (result != 42 || attempts != 3 || timeProvider.GetUtcNow() - startedAt != TimeSpan.FromSeconds(20))
+{
+    throw new InvalidOperationException("The retry did not follow the expected fake-time schedule.");
+}
+```
+
+`WaitForPendingAsync` and `AdvanceUntilAsync` are bounded. Their exceptions report the condition,
+task status or fake UTC time, and the exhausted yield or advance count. Use only caller-owned
+state—such as an attempt counter, callback flag, or deadline—as the condition.
+
+Advancing before the execution starts cannot satisfy a delay that has not been scheduled. This
+negative example uses a one-second test timeout to prove the task remains pending, then cancels it
+so the executable documentation check cannot leak work.
+
+<!-- doc-test-run: testing-advance-before-schedule -->
+```csharp
+#pragma warning disable CA2007 // Negative example deliberately uses Task.WhenAny as a test timeout.
+using Kevlar.Testing;
+using Microsoft.Extensions.Time.Testing;
+
+var timeProvider = new FakeTimeProvider();
+var attempts = 0;
+using var cancellation = new CancellationTokenSource();
+var shield = Shield
+    .Retry(1, Backoff.Constant(TimeSpan.FromSeconds(10)))
+    .WithTimeProvider(timeProvider);
+
+timeProvider.Advance(TimeSpan.FromSeconds(10)); // Too early: no retry delay exists yet.
+var execution = shield.ExecuteAsync<int>(_ =>
+{
+    Interlocked.Increment(ref attempts);
+    return ValueTask.FromException<int>(new InvalidOperationException());
+}, cancellation.Token).AsTask();
+
+await execution.WaitForPendingAsync(
+    () => Volatile.Read(ref attempts) == 1,
+    "the retry delay scheduled after the early advance");
+var timeout = Task.Delay(TimeSpan.FromSeconds(1));
+if (!ReferenceEquals(await Task.WhenAny(execution, timeout), timeout))
+{
+    throw new InvalidOperationException("The retry unexpectedly completed without another advance.");
+}
+
+cancellation.Cancel();
+try
+{
+    await execution;
+}
+catch (OperationCanceledException)
+{
+    // Expected cleanup after proving the task stayed pending.
+}
+#pragma warning restore CA2007
+```
+
+`WithTimeProvider` returns a new immutable shield. Copies share stateful strategy instances;
+circuit breakers and rate limiters normalize different providers onto one monotonic elapsed-time
+timeline. Advance time through the provider—changing UTC alone does not advance strategy windows.
+
+## Asserting pipeline shape
+
+`GetDescriptor()` returns an immutable snapshot. Assert stable strategy kinds, order, and typed
+configuration properties; do not parse `Description`, which is diagnostic text.
+
+<!-- doc-test-run: testing-pipeline-shape -->
+```csharp
+using Kevlar.Testing;
+
 var shield = Shield
     .Timeout(TimeSpan.FromSeconds(2))
     .Retry(3, Backoff.Constant(TimeSpan.FromMilliseconds(50)))
@@ -26,24 +131,48 @@ var shield = Shield
 var descriptor = shield.GetDescriptor()
     .AssertStrategyCount(2)
     .AssertStrategyOrder(StrategyKind.Timeout, StrategyKind.Retry);
-
 var retry = descriptor.AssertContainsSingle<RetryStrategyDescriptor>();
-await TUnit.Assertions.Assert.That(retry.MaxRetries).IsEqualTo(3);
-await TUnit.Assertions.Assert.That(descriptor.Name).IsEqualTo("catalog");
+
+if (retry.MaxRetries != 3 || descriptor.Name != "catalog")
+{
+    throw new InvalidOperationException("The pipeline descriptor did not match the test contract.");
+}
 ```
 
-`AssertContains<TDescriptor>()` checks presence when repeats are valid. `AssertContainsSingle<TDescriptor>()` also rejects duplicates. All shape failures throw `ShieldAssertionException` with expected and actual pipeline details.
+`AssertContains<TDescriptor>()` allows repeated strategies;
+`AssertContainsSingle<TDescriptor>()` rejects duplicates. Shape failures throw
+`ShieldAssertionException` with expected and actual details.
 
-## Recording telemetry and callbacks
+For live state, `GetStateSnapshot()` reports immutable circuit-breaker, rate-limiter, and
+concurrency-limiter observations. Stateless strategies are omitted, and a snapshot is not a
+reservation: another execution may change the strategy immediately after capture.
 
-`TelemetryRecorder` is an opt-in test listener. It captures immutable snapshots of Kevlar meter
-measurements and exposes `Record` overloads that can be assigned directly to strategy callbacks.
-The recorder copies metric tags and callback values immediately; it never retains a pooled
-`KevlarContext`.
-
-<!-- doc-test-ignore: The executable documentation harness owns Main; this TUnit example is compiled by Kevlar.Testing.Tests. -->
+<!-- doc-test-run: testing-state-snapshot -->
 ```csharp
-using var telemetry = new TelemetryRecorder();
+using Kevlar.Testing;
+
+var shield = Shield.ConcurrencyLimit(1, queueLimit: 1);
+await shield.ExecuteAsync(static _ => ValueTask.CompletedTask);
+
+var state = shield.GetStateSnapshot();
+var limiter = state.Strategies.OfType<ConcurrencyLimitStateSnapshot>().Single();
+if (state.ContractVersion != 1 || limiter.AvailablePermits != 1)
+{
+    throw new InvalidOperationException("The limiter did not return to its idle state.");
+}
+```
+
+## Recording telemetry
+
+`TelemetryRecorder` captures immutable callback and metric snapshots without retaining a pooled
+`KevlarContext`. Its `Record` overloads can be assigned directly to retry, fallback, timeout,
+hedge, and circuit-transition callbacks.
+
+<!-- doc-test-run: testing-telemetry-recorder -->
+```csharp
+using Kevlar.Testing;
+
+using var telemetry = new TelemetryRecorder(captureMetrics: false);
 var shield = Shield.Retry(options =>
 {
     options.MaxRetries = 1;
@@ -56,207 +185,139 @@ await shield.ExecuteOutcomeAsync<int>(static _ =>
 await telemetry.WaitForCallbackCountAsync(1);
 
 var retry = telemetry.Callbacks.Single();
-await TUnit.Assertions.Assert.That(retry.Kind).IsEqualTo(CallbackKind.Retry);
-await TUnit.Assertions.Assert.That(retry.RetryNumber).IsEqualTo(1);
-await TUnit.Assertions.Assert.That(retry.ShieldName).IsEqualTo("catalog");
-
-var execution = telemetry.Metrics.Single(record =>
-    record.InstrumentName == "kevlar.executions");
-await TUnit.Assertions.Assert.That(
-    execution.Tags["kevlar.execution.outcome"]).IsEqualTo("failure");
-```
-
-The callback overloads cover typed and untyped retries and fallbacks, plus timeout, hedge, and
-circuit-transition notifications. `WaitForMetricCountAsync` and `WaitForCallbackCountAsync` are
-cancellation-aware, so tests can await concurrent pipelines without polling. Metric records retain
-the documented low-cardinality tags; unnamed shields simply omit `kevlar.shield.name`.
-
-Dispose the recorder at the end of each test to detach its `MeterListener`. Metric capture is
-available on .NET 8 and later, matching core telemetry; callback recording remains available on
-`netstandard2.0`. Construct with `captureMetrics: false` when a test needs callbacks only.
-
-## Probing live resilience state
-
-`GetStateSnapshot()` returns an immutable snapshot of circuit-breaker, rate-limiter, and
-concurrency-limiter state. The snapshot contract is explicitly versioned; `ContractVersion == 1`
-contains only stable state values and the original strategy index, never mutable strategy objects.
-Stateless strategies are omitted.
-
-<!-- doc-test-ignore: The executable documentation harness owns Main; this TUnit example is compiled by Kevlar.Testing.Tests. -->
-```csharp
-var shield = Shield.ConcurrencyLimit(1, queueLimit: 1);
-var probe = new ExecutionProbe();
-
-await shield.ExecuteAsync(probe.Wrap(static _ => ValueTask.CompletedTask));
-
-var state = shield.GetStateSnapshot();
-var limiter = state.Strategies.OfType<ConcurrencyLimitStateSnapshot>().Single();
-await TUnit.Assertions.Assert.That(state.ContractVersion).IsEqualTo(1);
-await TUnit.Assertions.Assert.That(limiter.AvailablePermits).IsEqualTo(1);
-await TUnit.Assertions.Assert.That(probe.AttemptCount).IsEqualTo(1);
-```
-
-`ExecutionProbe.Wrap` supports typed and untyped asynchronous delegates. It counts each delegate
-invocation as an attempt and records cancellation only while that attempt is active.
-`WaitForAttemptCountAsync` and `WaitForCancellationCountAsync` let concurrent tests synchronize
-without parsing diagnostics or adding hooks to production pipelines.
-
-Snapshots are observations, not reservations: another execution may change state immediately after
-capture. Composed shields that share a stateful strategy report that same underlying state. Rate
-limits use the shield's configured `TimeProvider`, so tests can advance `FakeTimeProvider` before
-capturing replenished availability.
-
-## Documentation snippet gates
-
-Every C# fence in the README and Docusaurus documentation is compiled on pull requests. The harness extracts source directly from Markdown, generates isolated call sites, and restores Kevlar from the locally packed `.nupkg` files. This keeps documentation as the single source of truth and catches stale package IDs, API names, and overloads.
-
-Complete snippets need no marker. A fragment that intentionally depends on omitted application code must place an explicit reason immediately before its fence:
-
-```markdown
-<!-- doc-test-ignore: Application transport implementation is omitted. -->
-```
-
-Class-level declarations use `doc-test-declaration`; mixed blocks can split declarations from call sites with `doc-test-tail-declaration`; isolated custom strategy members use `doc-test-strategy-member`; safe behavioral samples use `doc-test-run`. Unknown or malformed directives fail validation. Shell `dotnet add package` IDs and `dotnet run --project` paths are validated separately.
-
-After packing with a chosen version, run the same package-consumer check locally:
-
-```powershell
-./scripts/Verify-DocSnippets.ps1 -PackagesPath artifacts/package/release -Version $packageVersion -NoImplicitUsings
-```
-
-Every delay, timeout and time window in Kevlar runs on a `TimeProvider`. Swap in a fake and your tests never actually wait:
-
-```csharp
-using Kevlar.Testing;
-using Microsoft.Extensions.Time.Testing;   // Microsoft.Extensions.TimeProvider.Testing package
-
-var time = new FakeTimeProvider();
-var shield = Shield
-    .Retry(3, Backoff.Constant(TimeSpan.FromSeconds(10)))
-    .WithTimeProvider(time);
-
-var pending = shield.ExecuteAsync(ct => FlakyAsync(ct)).AsTask();
-
-time.Advance(TimeSpan.FromSeconds(10));   // first retry delay elapses instantly
-time.Advance(TimeSpan.FromSeconds(10));   // second
-time.Advance(TimeSpan.FromSeconds(10));   // third
-
-var result = await pending;
-```
-
-`WithTimeProvider` returns a new shield (shields are immutable) with every time-dependent strategy — retry backoff, timeouts, circuit breaker break durations and sampling windows, rate-limit windows, hedging delays — driven by the provider you supply.
-
-Copies still share stateful strategies. Circuit breakers and rate limiters normalize each provider's monotonic timestamp onto one elapsed-time timeline, so copies can safely use providers with different UTC epochs. Move time with the provider's normal advance mechanism; changing UTC alone does not advance break durations or sampling windows.
-
-:::warning Advance *after* the execution is in flight
-Start the execution first (note the `.AsTask()` without `await`), *then* advance time. If you advance before the shield has scheduled its delay, there's nothing to advance past and the pending task will hang waiting for a tick that already happened.
-:::
-
-### Bounded deterministic helpers
-
-On .NET 8 and later, `Kevlar.Testing` references `Microsoft.Extensions.TimeProvider.Testing` and adds bounded helpers for pending executions and fake-time advancement. Conditions read only state owned by your test; the helpers never expose or retain a pooled `KevlarContext` or mutable strategy object.
-
-<!-- doc-test-ignore: TUnit owns test discovery; this complete example is covered by Kevlar.Testing.Tests. -->
-```csharp
-using Kevlar.Testing;
-using Microsoft.Extensions.Time.Testing;
-using TUnit.Assertions;
-using TUnit.Core;
-
-[Test]
-public async Task Retries_Without_Sleeps()
+if (retry.Kind != CallbackKind.Retry || retry.RetryNumber != 1 || retry.ShieldName != "catalog")
 {
-    var time = new FakeTimeProvider();
-    var attempts = 0;
-    var shield = Shield
-        .Retry(2, Backoff.Constant(TimeSpan.FromSeconds(10)))
-        .WithTimeProvider(time);
-    var execution = shield.ExecuteAsync<int>(_ =>
-    {
-        var attempt = Interlocked.Increment(ref attempts);
-        return attempt < 3
-            ? ValueTask.FromException<int>(new InvalidOperationException())
-            : new ValueTask<int>(42);
-    }).AsTask();
-
-    await execution.WaitForPendingAsync(
-        () => Volatile.Read(ref attempts) == 1,
-        "the first retry delay");
-    await time.AdvanceUntilAsync(
-        TimeSpan.FromSeconds(10),
-        () => Volatile.Read(ref attempts) == 3,
-        "all retry attempts",
-        maxAdvances: 2);
-
-    await Assert.That(await execution).IsEqualTo(42);
+    throw new InvalidOperationException("The expected retry callback was not recorded.");
 }
 ```
 
-Both helpers use finite scheduler/advance counts. `WaitForPendingAsync` reports the condition, execution status, and scheduler-yield bound when progress is not observed. `AdvanceUntilAsync` reports the condition, fake UTC time, and advance bound. Use a caller-owned counter, gate, callback flag, or fake-clock deadline as the condition; then await the execution normally to inspect its result or exception.
+Callback recording works from the `netstandard2.0` asset. Metric capture needs the .NET 8 or
+.NET 10 `Kevlar.Testing` asset because `MeterListener` is unavailable in the compatibility asset.
+Use `captureMetrics: false` for callback-only tests, and always dispose the recorder to detach its
+listener. `WaitForMetricCountAsync` and `WaitForCallbackCountAsync` avoid polling concurrent tests.
 
-## Testing circuit breakers
+## Testing HTTP shields
 
-Drive the breaker through its state machine without real clocks:
+Test `Retry-After` with the same fake clock used by the shield. This example returns HTTP 429 once,
+asserts that the server's three-second delay is observed, then succeeds.
 
+<!-- doc-test-run: testing-http-retry-after -->
 ```csharp
-var time = new FakeTimeProvider();
-var monitor = new CircuitBreakerMonitor();
-var shield = Shield
-    .CircuitBreaker(consecutiveFailures: 2, breakDuration: TimeSpan.FromSeconds(30))
-    .WithTimeProvider(time);
+using System.Net;
+using Kevlar.Extensions.Http;
+using Kevlar.Testing;
+using Microsoft.Extensions.Time.Testing;
 
-// Trip it:
-for (var i = 0; i < 2; i++)
-    await Assert.ThrowsAsync<InvalidOperationException>(
-        () => shield.ExecuteAsync(ct => throw new InvalidOperationException()).AsTask());
+var timeProvider = new FakeTimeProvider();
+var startedAt = timeProvider.GetUtcNow();
+var attempts = 0;
+HttpResponseMessage? rejectedResponse = null;
+var shield = HttpShield.WhenTransient()
+    .Retry(options =>
+    {
+        options.MaxRetries = 1;
+        options.Backoff = Backoff.None;
+        options.DelayGenerator = HttpShield.RetryAfter(TimeSpan.FromSeconds(5));
+    })
+    .WithTimeProvider(timeProvider);
 
-// Now open — rejects instantly:
-await Assert.ThrowsAsync<CircuitOpenException>(
-    () => shield.ExecuteAsync(ct => SucceedAsync(ct)).AsTask());
+var execution = shield.ExecuteAsync(_ =>
+{
+    if (Interlocked.Increment(ref attempts) == 1)
+    {
+        rejectedResponse = new HttpResponseMessage(HttpStatusCode.TooManyRequests);
+        rejectedResponse.Headers.RetryAfter =
+            new System.Net.Http.Headers.RetryConditionHeaderValue(TimeSpan.FromSeconds(3));
+        return new ValueTask<HttpResponseMessage>(rejectedResponse);
+    }
 
-// After the break duration, one probe is allowed:
-time.Advance(TimeSpan.FromSeconds(30));
-var result = await shield.ExecuteAsync(ct => SucceedAsync(ct));   // closes the circuit
+    return new ValueTask<HttpResponseMessage>(new HttpResponseMessage(HttpStatusCode.OK));
+}).AsTask();
+
+await execution.WaitForPendingAsync(
+    () => Volatile.Read(ref attempts) == 1,
+    "the Retry-After delay");
+await timeProvider.AdvanceUntilAsync(
+    TimeSpan.FromSeconds(3),
+    () => Volatile.Read(ref attempts) == 2,
+    "the retried HTTP operation",
+    maxAdvances: 1);
+
+using var response = await execution;
+rejectedResponse?.Dispose();
+if (response.StatusCode != HttpStatusCode.OK || attempts != 2 ||
+    timeProvider.GetUtcNow() - startedAt != TimeSpan.FromSeconds(3))
+{
+    throw new InvalidOperationException("Retry-After was not honored.");
+}
 ```
 
-## Forcing outcomes without a real dependency
+For handler-level replay tests, use a recording `HttpMessageHandler`. Return a transient response,
+then success; assert two sends, distinct request objects, and preserved method, URI, headers,
+options, and content. A POST or one-shot body should remain single-send unless the test explicitly
+sets `AllowUnsafeMethodReplay`, selects bounded buffering, or supplies a `RequestFactory`. See
+[safe request replay](http.md#safe-request-replay) for the ownership rules.
 
-Shields don't care where the delegate's failures come from, so a plain counter is usually all the fake you need:
+## Testing partitioned shields
 
+Trip one partition and prove another still succeeds. This tests isolation through public behavior
+instead of inspecting cache internals.
+
+<!-- doc-test-run: testing-partition-isolation -->
 ```csharp
-var calls = 0;
-var shield = Shield.Retry(2);
+var partitions = new PartitionedShield<string>(_ =>
+    Shield.CircuitBreaker(
+        consecutiveFailures: 1,
+        breakDuration: TimeSpan.FromMinutes(1)));
+var north = partitions.GetShield("north");
+var south = partitions.GetShield("south");
 
-var result = await shield.ExecuteAsync(ct =>
+var failure = await north.ExecuteOutcomeAsync<int>(static _ =>
+    ValueTask.FromException<int>(new InvalidOperationException("north failed")));
+var rejected = await north.ExecuteOutcomeAsync<int>(static _ => new ValueTask<int>(1));
+var southResult = await south.ExecuteAsync(static _ => new ValueTask<int>(42));
+
+if (failure.Exception is not InvalidOperationException ||
+    rejected.Exception is not CircuitOpenException || southResult != 42 || partitions.Count != 2)
 {
-    calls++;
-    if (calls < 3) throw new HttpRequestException("boom");
-    return new ValueTask<string>("ok");
+    throw new InvalidOperationException("Partition state was not isolated.");
+}
+```
+
+Use the same key to test shared state and different keys to test isolation. Capacity and idle
+expiration tests can assert `Count`, `CreatedCount`, `CapacityEvictionCount`, and
+`ExpirationEvictionCount`; advance the configured fake clock before calling `PruneExpired()`.
+
+## Chaos in tests
+
+Chaos strategies are disabled by default. In a test, enable a 100% injection rate and fixed seed so
+the expected fault is deterministic and the dependency delegate cannot run.
+
+<!-- doc-test-run: testing-chaos-fault -->
+```csharp
+using Kevlar.Chaos;
+
+var dependencyCalls = 0;
+var shield = ChaosShield.Fault(options =>
+{
+    options.Enabled = true;
+    options.InjectionRate = 1;
+    options.Seed = 42;
+    options.Exception = new IOException("injected");
 });
 
-// calls == 3: initial attempt + 2 retries
+var outcome = await shield.ExecuteOutcomeAsync<int>(_ =>
+{
+    Interlocked.Increment(ref dependencyCalls);
+    return new ValueTask<int>(42);
+});
+
+if (outcome.Exception is not IOException { Message: "injected" } || dependencyCalls != 0)
+{
+    throw new InvalidOperationException("The deterministic chaos fault was not injected.");
+}
 ```
 
-For assertion-friendly, no-throw checks, use [`ExecuteOutcomeAsync`](executing.md#no-throw-execution) and inspect the `Outcome<T>` instead of catching.
-
-## Publish compatibility
-
-Package verification publishes and runs clean package-consuming applications through
-trimmed, single-file, and NativeAOT configurations. The matrix covers all Kevlar
-strategies, typed and untyped execution, configuration-bound dependency injection,
-and HTTP and gRPC extension integration on .NET 10. A trimmed .NET 8 application provides the
-compatibility baseline. NativeAOT runs on Linux CI; the script reports unsupported
-local platforms explicitly.
-
-Run the complete package check after packing a local version:
-
-On Linux, install the NativeAOT prerequisites first:
-
-```bash
-sudo apt-get update && sudo apt-get install --yes clang zlib1g-dev
-```
-
-```powershell
-dotnet pack Kevlar.slnx -c Release -p:Version=0.0.0-local
-./scripts/Verify-Packages.ps1 -PackagesPath artifacts/package/release -Version 0.0.0-local
-```
+Prefer a separate seeded shield per scenario: concurrent callers can consume one shield's random
+sequence in different orders. Keep production chaos opt-in and bounded; broader rollout guidance
+is on the [chaos engineering](chaos.md) page.
