@@ -13,6 +13,7 @@ Install the Kevlar packages that correspond to the Polly integrations you use:
 dotnet add package Kevlar
 dotnet add package Kevlar.Extensions.DependencyInjection
 dotnet add package Kevlar.Extensions.Http
+dotnet add package Kevlar.Extensions.Grpc
 dotnet add package Kevlar.Extensions.RateLimiting
 dotnet add package Kevlar.Testing
 dotnet add package Kevlar.Chaos
@@ -115,16 +116,20 @@ Kevlar pools `KevlarContext` automatically. Use `ExecuteWithContextAsync`, a `Ke
 ```csharp
 var tenantKey = new KevlarKey<string>("tenant");
 var contextShield = Shield.Empty.WithName("catalog");
-await contextShield.ExecuteWithContextAsync(context =>
-{
-    context.Properties.Set(tenantKey, "north");
-    if (context.ShieldName != "catalog" || context.Properties.GetOrDefault(tenantKey, "missing") != "north")
+await contextShield.ExecuteWithContextAsync(
+    (tenantKey, tenant: "north"),
+    static (state, properties) => properties.Set(state.tenantKey, state.tenant),
+    static (state, context) =>
     {
-        throw new InvalidOperationException("Context mapping failed.");
-    }
+        if (context.ShieldName != "catalog"
+            || context.Properties.GetOrDefault(state.tenantKey, "missing") != state.tenant)
+        {
+            throw new InvalidOperationException("Context mapping failed.");
+        }
 
-    return ValueTask.CompletedTask;
-}, cancellationToken);
+        return ValueTask.CompletedTask;
+    },
+    cancellationToken);
 ```
 
 | Polly v8 | Kevlar |
