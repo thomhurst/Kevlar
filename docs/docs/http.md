@@ -38,6 +38,8 @@ services.AddHttpClient("api")
         options.TotalTimeout.Timeout = TimeSpan.FromSeconds(20);
         options.Retry.MaxRetries = 2;
         options.CircuitBreaker.FailureRatio = 0.25;
+        options.CircuitBreaker.HandlesResult = response =>
+            response.StatusCode == HttpStatusCode.ServiceUnavailable;
         options.ConcurrencyLimit = new ConcurrencyLimitOptions
         {
             MaxConcurrency = 100,
@@ -49,10 +51,13 @@ services.AddHttpClient("api")
     });
 ```
 
-`StandardHttpShieldOptions` exposes the total timeout, typed retry options, circuit breaker,
+`StandardHttpShieldOptions` exposes the total timeout, typed retry and circuit-breaker options,
 optional concurrency limiter, attempt timeout, and handler replay/routing options. Invalid strategy
 values fail while the registration is built; handler replay/routing values fail when
 `HttpClientFactory` builds its handler pipeline, before a request is sent.
+
+The breaker is a `CircuitBreakerOptions<HttpResponseMessage>`, so `HandlesResult` can replace the
+standard transient-result clause for that stage without changing retry handling.
 
 For dependency-aware setup, use the service-provider overload:
 

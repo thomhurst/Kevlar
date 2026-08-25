@@ -127,7 +127,7 @@ internal static class StandardHttpConfigurationBinder
 
     private static void BindCircuitBreaker(
         IConfiguration section,
-        CircuitBreakerOptions options)
+        CircuitBreakerOptions<HttpResponseMessage> options)
     {
         SetNullableInt(section, nameof(options.ConsecutiveFailures), value => options.ConsecutiveFailures = value);
         SetNullableDouble(section, nameof(options.FailureRatio), value => options.FailureRatio = value);
@@ -269,7 +269,7 @@ internal static class StandardHttpConfigurationBinder
 
     private static void ValidateCircuitBreaker(
         IConfiguration section,
-        CircuitBreakerOptions options) =>
+        CircuitBreakerOptions<HttpResponseMessage> options) =>
         ValidateCircuitBreaker(
             section,
             options.ConsecutiveFailures,

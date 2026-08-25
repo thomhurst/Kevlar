@@ -114,6 +114,64 @@ public static class KevlarServiceCollectionExtensions
         services.AddKevlar();
         services.AddSingleton(new ShieldRegistration(name, typeof(TResult), factory));
         services.AddKeyedSingleton(name, (sp, _) => sp.GetRequiredService<IKevlarRegistry>().GetShield<TResult>(name));
+        services.AddKeyedSingleton<IShieldProvider<TResult>>(
+            name,
+            (sp, _) => new FixedShieldProvider<TResult>(
+                sp.GetRequiredService<IKevlarRegistry>().GetShield<TResult>(name)));
+        return services;
+    }
+
+    /// <summary>
+    /// Registers a named result-aware shield bound from <paramref name="configuration"/>.
+    /// The shield carries <paramref name="name"/> as its diagnostic name.
+    /// </summary>
+    public static IServiceCollection AddShield<TResult>(
+        this IServiceCollection services,
+        string name,
+        IConfiguration configuration)
+    {
+        if (configuration is null) { throw new ArgumentNullException(nameof(configuration)); }
+
+        return services.AddShield<TResult>(name, _ =>
+            BindDefinition(configuration).Build<TResult>().WithName(name));
+    }
+
+    /// <summary>
+    /// Registers a named, reload-aware result-aware shield bound from
+    /// <paramref name="configuration"/>. Invalid replacements retain the last known-good
+    /// snapshot and are reported to <paramref name="onReloadFailure"/> when supplied.
+    /// </summary>
+    /// <remarks>
+    /// Each successful replacement has fresh strategy state. Resolve the keyed
+    /// <see cref="IShieldProvider{TResult}"/> to observe future replacements, or call
+    /// <see cref="IKevlarRegistry.GetShield{TResult}(string)"/> once per operation. A keyed
+    /// <see cref="Shield{TResult}"/> is an immutable snapshot and does not update after resolution.
+    /// Exceptions thrown by <paramref name="onReloadFailure"/> are suppressed.
+    /// </remarks>
+    public static IServiceCollection AddReloadingShield<TResult>(
+        this IServiceCollection services,
+        string name,
+        IConfiguration configuration,
+        Action<Exception>? onReloadFailure = null)
+    {
+        if (services is null) { throw new ArgumentNullException(nameof(services)); }
+        if (name is null) { throw new ArgumentNullException(nameof(name)); }
+        if (configuration is null) { throw new ArgumentNullException(nameof(configuration)); }
+
+        services.AddKevlar();
+        services.AddKeyedSingleton<IShieldProvider<TResult>>(
+            name,
+            (_, _) => new ReloadingShieldProvider<TResult>(
+                () => BindDefinition(configuration).Build<TResult>().WithName(name),
+                configuration.GetReloadToken,
+                onReloadFailure));
+        services.AddSingleton(new ShieldRegistration(
+            name,
+            typeof(TResult),
+            sp => sp.GetRequiredKeyedService<IShieldProvider<TResult>>(name)));
+        services.AddKeyedSingleton(
+            name,
+            (sp, _) => sp.GetRequiredService<IKevlarRegistry>().GetShield<TResult>(name));
         return services;
     }
 
