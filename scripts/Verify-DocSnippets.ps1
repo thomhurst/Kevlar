@@ -61,15 +61,35 @@ foreach ($documentPath in $documentPaths)
     $lineOffset = 0
     if ($documentPath -eq $changelogPath)
     {
-        $releaseHeading = $lines |
-            Select-String -Pattern '^## \[[0-9]+\.[0-9]+\.[0-9]+\] - [0-9]{4}-[0-9]{2}-[0-9]{2}$' |
-            Select-Object -First 1
-        if ($null -eq $releaseHeading)
+        if ($Version -notmatch '^(?<version>[0-9]+\.[0-9]+\.[0-9]+)(?:[-+].+)?$')
         {
-            throw 'No versioned release heading found in CHANGELOG.md.'
+            throw "Package version '$Version' is not a semantic version."
         }
 
-        $lineOffset = $releaseHeading.LineNumber - 1
+        $releaseVersion = $Matches['version']
+        $releaseHeadings = @($lines |
+            Select-String -Pattern "^## \[$([regex]::Escape($releaseVersion))\] - [0-9]{4}-[0-9]{2}-[0-9]{2}$")
+        if ($releaseHeadings.Count -gt 1)
+        {
+            throw "Multiple $releaseVersion release headings found in CHANGELOG.md."
+        }
+
+        $selectedHeading = if ($releaseHeadings.Count -eq 1)
+        {
+            $releaseHeadings[0]
+        }
+        else
+        {
+            $unreleasedHeadings = @($lines | Select-String -SimpleMatch '## [Unreleased]')
+            if ($unreleasedHeadings.Count -ne 1)
+            {
+                throw 'CHANGELOG.md must contain exactly one ## [Unreleased] heading.'
+            }
+
+            $unreleasedHeadings[0]
+        }
+
+        $lineOffset = $selectedHeading.LineNumber - 1
         $end = $lines.Count
         for ($index = $lineOffset + 1; $index -lt $lines.Count; $index++)
         {

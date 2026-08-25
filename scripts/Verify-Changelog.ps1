@@ -10,6 +10,7 @@ $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $changelogPath = Join-Path $repositoryRoot 'CHANGELOG.md'
 $lines = @(Get-Content -LiteralPath $changelogPath)
 $errors = [System.Collections.Generic.List[string]]::new()
+$allowedSections = @('Added', 'Changed', 'Deprecated', 'Removed', 'Fixed', 'Security')
 
 function Get-ReleaseNotes([object]$Release, [string[]]$ChangelogLines)
 {
@@ -29,6 +30,32 @@ function Get-ReleaseNotes([object]$Release, [string[]]$ChangelogLines)
     }
 
     ($ChangelogLines[($Release.Index + 1)..($end - 1)] -join [Environment]::NewLine).Trim()
+}
+
+function Test-ReleaseHasEntry([object]$Release, [string[]]$ChangelogLines)
+{
+    $insideAllowedSection = $false
+    for ($index = $Release.Index + 1; $index -lt $ChangelogLines.Count; $index++)
+    {
+        $line = $ChangelogLines[$index]
+        if ($line -match '^## ' -or $line -match '^\[(?:Unreleased|[0-9])')
+        {
+            break
+        }
+
+        if ($line -match '^### (?<section>.+)$')
+        {
+            $insideAllowedSection = $allowedSections -contains $Matches['section']
+            continue
+        }
+
+        if ($insideAllowedSection -and $line -match '^\s*[-*]\s+\S')
+        {
+            return $true
+        }
+    }
+
+    return $false
 }
 
 $unreleasedIndex = [Array]::IndexOf($lines, '## [Unreleased]')
@@ -142,9 +169,9 @@ for ($index = 0; $index -lt $releases.Count; $index++)
         }
     }
 
-    if ([string]::IsNullOrWhiteSpace((Get-ReleaseNotes $release $lines)))
+    if (-not (Test-ReleaseHasEntry $release $lines))
     {
-        $errors.Add("Release $($release.Version) has no notes.")
+        $errors.Add("Release $($release.Version) has no entry under an allowed section.")
     }
 }
 
@@ -158,7 +185,6 @@ if ($releases.Count -gt 0)
     }
 }
 
-$allowedSections = @('Added', 'Changed', 'Deprecated', 'Removed', 'Fixed', 'Security')
 foreach ($line in $lines | Where-Object { $_ -match '^### ' })
 {
     $section = $line.Substring(4)
@@ -168,15 +194,32 @@ foreach ($line in $lines | Where-Object { $_ -match '^### ' })
     }
 }
 
-$deadApiPattern = [regex]'FallbackWithNotifications|\bWhenDefault\(|\bOrDefault\(|\bOrWhen\(|WhenResultDefault|OrResultDefault|\bKEV005\b|\bHedgingOptions\b'
+$deadApiPattern = [regex]'FallbackWithNotifications|\bWhenDefault\(|\bOrDefault\(|\bOrWhen\(|WhenResultDefault|OrResultDefault|\bHedgingOptions\b|\bHedgingStrategyDescriptor\b|\bStrategyKind\.Hedging\b|\bStandardHedgingShieldOptions\b|\bAddStandardHedgingShield\b'
 $documents = @($changelogPath, (Join-Path $repositoryRoot 'README.md')) + @(
     Get-ChildItem -LiteralPath (Join-Path $repositoryRoot 'docs') -Recurse -File -Include '*.md', '*.mdx' |
         ForEach-Object FullName)
 foreach ($document in $documents)
 {
+    $documentLines = @(Get-Content -LiteralPath $document)
+    $relativePath = [IO.Path]::GetRelativePath($repositoryRoot, $document).Replace('\', '/')
+    $startMarkers = @($documentLines | Select-String -Pattern '^<!-- upgrade-from-0\.x:start -->$')
+    $endMarkers = @($documentLines | Select-String -Pattern '^<!-- upgrade-from-0\.x:end -->$')
+    if ($startMarkers.Count -ne $endMarkers.Count -or $startMarkers.Count -gt 1)
+    {
+        $errors.Add("$relativePath has unbalanced or duplicate upgrade-table markers: $($startMarkers.Count) start and $($endMarkers.Count) end markers.")
+    }
+    elseif ($startMarkers.Count -eq 1 -and $startMarkers[0].LineNumber -ge $endMarkers[0].LineNumber)
+    {
+        $errors.Add("$relativePath upgrade-table markers are out of order.")
+    }
+    elseif ($document -eq $changelogPath -and $startMarkers.Count -eq 0)
+    {
+        $errors.Add('CHANGELOG.md is missing its upgrade-table marker pair.')
+    }
+
     $insideUpgradeTable = $false
     $lineNumber = 0
-    foreach ($line in Get-Content -LiteralPath $document)
+    foreach ($line in $documentLines)
     {
         $lineNumber++
         if ($line -eq '<!-- upgrade-from-0.x:start -->')
@@ -191,7 +234,6 @@ foreach ($document in $documents)
         }
         if (-not $insideUpgradeTable -and $deadApiPattern.IsMatch($line))
         {
-            $relativePath = [IO.Path]::GetRelativePath($repositoryRoot, $document).Replace('\', '/')
             $errors.Add("$relativePath`:$lineNumber contains a dead pre-release API name.")
         }
     }
