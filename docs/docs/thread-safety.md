@@ -24,10 +24,10 @@ Options and configuration definitions are mutable setup objects. Do not mutate o
 instance concurrently. Fluent factories read and validate them while building a strategy; later
 changes do not reconfigure an already-built shield.
 
-The direct `ShieldDelegatingHandler(shield, options)` constructor is the exception: the handler
-retains that `ShieldHttpHandlerOptions` instance and reads it during requests. Treat the options as
-immutable after construction; mutating it can change live replay or routing behavior and racing
-mutations are unsafe. `IHttpClientBuilder.AddShield(...)` snapshots its supplied handler options.
+HTTP handler options are the exception: `ShieldDelegatingHandler(shield, options)` and the
+`IHttpClientBuilder.AddShield(...)` options overloads retain the exact `ShieldHttpHandlerOptions`
+instance supplied directly or by the options factory. Treat it as immutable after handoff;
+mutating it can change live replay or routing behavior, and racing mutations are unsafe.
 
 The following public mutable types follow that rule:
 
