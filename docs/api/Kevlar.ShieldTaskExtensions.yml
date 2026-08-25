@@ -58,7 +58,7 @@ items:
   - System.Object.ReferenceEquals(System.Object,System.Object)
   - System.Object.GetHashCode
 - uid: Kevlar.ShieldTaskExtensions.ExecuteAsync``1(Kevlar.Shield,System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
-  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteAsync``1(Kevlar.Shield,System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
+  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteAsync``1(Kevlar.Shield,System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task{`0}},System.Threading.CancellationToken)
   id: ExecuteAsync``1(Kevlar.Shield,System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
   isExtensionMethod: true
   parent: Kevlar.ShieldTaskExtensions
@@ -93,7 +93,7 @@ items:
   fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteAsync(Of T)(Kevlar.Shield, System.Func(Of System.Threading.CancellationToken, System.Threading.Tasks.Task(Of T)), System.Threading.CancellationToken)
   name.vb: ExecuteAsync(Of T)(Shield, Func(Of CancellationToken, Task(Of T)), CancellationToken)
 - uid: Kevlar.ShieldTaskExtensions.ExecuteAsync``2(Kevlar.Shield,``1,System.Func{``1,System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
-  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteAsync``2(Kevlar.Shield,``1,System.Func{``1,System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
+  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteAsync``2(Kevlar.Shield,``1,System.Func{``1,System.Threading.CancellationToken,System.Threading.Tasks.Task{`0}},System.Threading.CancellationToken)
   id: ExecuteAsync``2(Kevlar.Shield,``1,System.Func{``1,System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
   isExtensionMethod: true
   parent: Kevlar.ShieldTaskExtensions
@@ -131,7 +131,7 @@ items:
   fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteAsync(Of T, TState)(Kevlar.Shield, TState, System.Func(Of TState, System.Threading.CancellationToken, System.Threading.Tasks.Task(Of T)), System.Threading.CancellationToken)
   name.vb: ExecuteAsync(Of T, TState)(Shield, TState, Func(Of TState, CancellationToken, Task(Of T)), CancellationToken)
 - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.Shield,``1,System.Action{``1,Kevlar.KevlarProperties},System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
-  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.Shield,``1,System.Action{``1,Kevlar.KevlarProperties},System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
+  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.Shield,``1,System.Action{``1,Kevlar.KevlarProperties},System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{`0}},System.Threading.CancellationToken)
   id: ExecuteWithContextAsync``2(Kevlar.Shield,``1,System.Action{``1,Kevlar.KevlarProperties},System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
   isExtensionMethod: true
   parent: Kevlar.ShieldTaskExtensions
@@ -171,7 +171,7 @@ items:
   fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Of T, TState)(Kevlar.Shield, TState, System.Action(Of TState, Kevlar.KevlarProperties), System.Func(Of TState, Kevlar.KevlarContext, System.Threading.Tasks.Task(Of T)), System.Threading.CancellationToken)
   name.vb: ExecuteWithContextAsync(Of T, TState)(Shield, TState, Action(Of TState, KevlarProperties), Func(Of TState, KevlarContext, Task(Of T)), CancellationToken)
 - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
-  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
+  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{`0}},System.Threading.CancellationToken)
   id: ExecuteWithContextAsync``1(Kevlar.Shield,System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
   isExtensionMethod: true
   parent: Kevlar.ShieldTaskExtensions
@@ -354,7 +354,7 @@ items:
   fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Kevlar.Shield, System.Func(Of Kevlar.KevlarContext, System.Threading.Tasks.Task), System.Threading.CancellationToken)
   name.vb: ExecuteWithContextAsync(Shield, Func(Of KevlarContext, Task), CancellationToken)
 - uid: Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync``1(Kevlar.Shield,System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
-  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync``1(Kevlar.Shield,System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
+  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync``1(Kevlar.Shield,System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task{`0}},System.Threading.CancellationToken)
   id: ExecuteOutcomeAsync``1(Kevlar.Shield,System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
   isExtensionMethod: true
   parent: Kevlar.ShieldTaskExtensions
@@ -389,7 +389,7 @@ items:
   fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync(Of T)(Kevlar.Shield, System.Func(Of System.Threading.CancellationToken, System.Threading.Tasks.Task(Of T)), System.Threading.CancellationToken)
   name.vb: ExecuteOutcomeAsync(Of T)(Shield, Func(Of CancellationToken, Task(Of T)), CancellationToken)
 - uid: Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync``2(Kevlar.Shield,``1,System.Func{``1,System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
-  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync``2(Kevlar.Shield,``1,System.Func{``1,System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
+  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync``2(Kevlar.Shield,``1,System.Func{``1,System.Threading.CancellationToken,System.Threading.Tasks.Task{`0}},System.Threading.CancellationToken)
   id: ExecuteOutcomeAsync``2(Kevlar.Shield,``1,System.Func{``1,System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
   isExtensionMethod: true
   parent: Kevlar.ShieldTaskExtensions
@@ -427,7 +427,7 @@ items:
   fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync(Of T, TState)(Kevlar.Shield, TState, System.Func(Of TState, System.Threading.CancellationToken, System.Threading.Tasks.Task(Of T)), System.Threading.CancellationToken)
   name.vb: ExecuteOutcomeAsync(Of T, TState)(Shield, TState, Func(Of TState, CancellationToken, Task(Of T)), CancellationToken)
 - uid: Kevlar.ShieldTaskExtensions.ExecuteAsync``1(Kevlar.Shield{``0},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
-  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteAsync``1(Kevlar.Shield{``0},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
+  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteAsync``1(Kevlar.Shield{`0},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task{`0}},System.Threading.CancellationToken)
   id: ExecuteAsync``1(Kevlar.Shield{``0},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
   isExtensionMethod: true
   parent: Kevlar.ShieldTaskExtensions
@@ -462,7 +462,7 @@ items:
   fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteAsync(Of TResult)(Kevlar.Shield(Of TResult), System.Func(Of System.Threading.CancellationToken, System.Threading.Tasks.Task(Of TResult)), System.Threading.CancellationToken)
   name.vb: ExecuteAsync(Of TResult)(Shield(Of TResult), Func(Of CancellationToken, Task(Of TResult)), CancellationToken)
 - uid: Kevlar.ShieldTaskExtensions.ExecuteAsync``2(Kevlar.Shield{``0},``1,System.Func{``1,System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
-  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteAsync``2(Kevlar.Shield{``0},``1,System.Func{``1,System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
+  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteAsync``2(Kevlar.Shield{`0},``1,System.Func{``1,System.Threading.CancellationToken,System.Threading.Tasks.Task{`0}},System.Threading.CancellationToken)
   id: ExecuteAsync``2(Kevlar.Shield{``0},``1,System.Func{``1,System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
   isExtensionMethod: true
   parent: Kevlar.ShieldTaskExtensions
@@ -500,7 +500,7 @@ items:
   fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteAsync(Of TResult, TState)(Kevlar.Shield(Of TResult), TState, System.Func(Of TState, System.Threading.CancellationToken, System.Threading.Tasks.Task(Of TResult)), System.Threading.CancellationToken)
   name.vb: ExecuteAsync(Of TResult, TState)(Shield(Of TResult), TState, Func(Of TState, CancellationToken, Task(Of TResult)), CancellationToken)
 - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.Shield{``0},``1,System.Action{``1,Kevlar.KevlarProperties},System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
-  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.Shield{``0},``1,System.Action{``1,Kevlar.KevlarProperties},System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
+  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``2(Kevlar.Shield{`0},``1,System.Action{``1,Kevlar.KevlarProperties},System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{`0}},System.Threading.CancellationToken)
   id: ExecuteWithContextAsync``2(Kevlar.Shield{``0},``1,System.Action{``1,Kevlar.KevlarProperties},System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
   isExtensionMethod: true
   parent: Kevlar.ShieldTaskExtensions
@@ -540,7 +540,7 @@ items:
   fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Of TResult, TState)(Kevlar.Shield(Of TResult), TState, System.Action(Of TState, Kevlar.KevlarProperties), System.Func(Of TState, Kevlar.KevlarContext, System.Threading.Tasks.Task(Of TResult)), System.Threading.CancellationToken)
   name.vb: ExecuteWithContextAsync(Of TResult, TState)(Shield(Of TResult), TState, Action(Of TState, KevlarProperties), Func(Of TState, KevlarContext, Task(Of TResult)), CancellationToken)
 - uid: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield{``0},System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
-  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield{``0},System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
+  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync``1(Kevlar.Shield{`0},System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{`0}},System.Threading.CancellationToken)
   id: ExecuteWithContextAsync``1(Kevlar.Shield{``0},System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
   isExtensionMethod: true
   parent: Kevlar.ShieldTaskExtensions
@@ -578,7 +578,7 @@ items:
   fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync(Of TResult)(Kevlar.Shield(Of TResult), System.Func(Of Kevlar.KevlarContext, System.Threading.Tasks.Task(Of TResult)), System.Threading.CancellationToken)
   name.vb: ExecuteWithContextAsync(Of TResult)(Shield(Of TResult), Func(Of KevlarContext, Task(Of TResult)), CancellationToken)
 - uid: Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync``1(Kevlar.Shield{``0},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
-  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync``1(Kevlar.Shield{``0},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
+  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync``1(Kevlar.Shield{`0},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task{`0}},System.Threading.CancellationToken)
   id: ExecuteOutcomeAsync``1(Kevlar.Shield{``0},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
   isExtensionMethod: true
   parent: Kevlar.ShieldTaskExtensions
@@ -613,7 +613,7 @@ items:
   fullName.vb: Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync(Of TResult)(Kevlar.Shield(Of TResult), System.Func(Of System.Threading.CancellationToken, System.Threading.Tasks.Task(Of TResult)), System.Threading.CancellationToken)
   name.vb: ExecuteOutcomeAsync(Of TResult)(Shield(Of TResult), Func(Of CancellationToken, Task(Of TResult)), CancellationToken)
 - uid: Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync``2(Kevlar.Shield{``0},``1,System.Func{``1,System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
-  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync``2(Kevlar.Shield{``0},``1,System.Func{``1,System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
+  commentId: M:Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync``2(Kevlar.Shield{`0},``1,System.Func{``1,System.Threading.CancellationToken,System.Threading.Tasks.Task{`0}},System.Threading.CancellationToken)
   id: ExecuteOutcomeAsync``2(Kevlar.Shield{``0},``1,System.Func{``1,System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}},System.Threading.CancellationToken)
   isExtensionMethod: true
   parent: Kevlar.ShieldTaskExtensions
@@ -1012,7 +1012,7 @@ references:
   nameWithType: Shield
   fullName: Kevlar.Shield
 - uid: System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task{{T}}}
-  commentId: T:System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}}
+  commentId: T:System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task{`0}}
   parent: System
   definition: System.Func`2
   href: https://learn.microsoft.com/dotnet/api/system.func-2
@@ -1075,7 +1075,7 @@ references:
   nameWithType: CancellationToken
   fullName: System.Threading.CancellationToken
 - uid: System.Threading.Tasks.ValueTask{{T}}
-  commentId: T:System.Threading.Tasks.ValueTask{``0}
+  commentId: T:System.Threading.Tasks.ValueTask{`0}
   parent: System.Threading.Tasks
   definition: System.Threading.Tasks.ValueTask`1
   href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
@@ -1171,7 +1171,7 @@ references:
   nameWithType: TState
   fullName: TState
 - uid: System.Func{{TState},System.Threading.CancellationToken,System.Threading.Tasks.Task{{T}}}
-  commentId: T:System.Func{``1,System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}}
+  commentId: T:System.Func{``1,System.Threading.CancellationToken,System.Threading.Tasks.Task{`0}}
   parent: System
   definition: System.Func`3
   href: https://learn.microsoft.com/dotnet/api/system.func-3
@@ -1324,7 +1324,7 @@ references:
     href: Kevlar.KevlarProperties.html
   - name: )
 - uid: System.Func{{TState},Kevlar.KevlarContext,System.Threading.Tasks.Task{{T}}}
-  commentId: T:System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}}
+  commentId: T:System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{`0}}
   parent: System
   definition: System.Func`3
   href: https://learn.microsoft.com/dotnet/api/system.func-3
@@ -1419,7 +1419,7 @@ references:
   - name: T2
   - name: )
 - uid: System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{{T}}}
-  commentId: T:System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}}
+  commentId: T:System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{`0}}
   parent: System
   definition: System.Func`2
   href: https://learn.microsoft.com/dotnet/api/system.func-2
@@ -1689,7 +1689,7 @@ references:
   nameWithType: ShieldTaskExtensions.ExecuteOutcomeAsync
   fullName: Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync
 - uid: System.Threading.Tasks.ValueTask{Kevlar.Outcome{{T}}}
-  commentId: T:System.Threading.Tasks.ValueTask{Kevlar.Outcome{``0}}
+  commentId: T:System.Threading.Tasks.ValueTask{Kevlar.Outcome{`0}}
   parent: System.Threading.Tasks
   definition: System.Threading.Tasks.ValueTask`1
   href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
@@ -1761,7 +1761,7 @@ references:
   - name: TResult
   - name: )
 - uid: System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task{{TResult}}}
-  commentId: T:System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}}
+  commentId: T:System.Func{System.Threading.CancellationToken,System.Threading.Tasks.Task{`0}}
   parent: System
   definition: System.Func`2
   href: https://learn.microsoft.com/dotnet/api/system.func-2
@@ -1874,7 +1874,7 @@ references:
   - name: TResult
   - name: )
 - uid: System.Func{{TState},System.Threading.CancellationToken,System.Threading.Tasks.Task{{TResult}}}
-  commentId: T:System.Func{``1,System.Threading.CancellationToken,System.Threading.Tasks.Task{``0}}
+  commentId: T:System.Func{``1,System.Threading.CancellationToken,System.Threading.Tasks.Task{`0}}
   parent: System
   definition: System.Func`3
   href: https://learn.microsoft.com/dotnet/api/system.func-3
@@ -1935,7 +1935,7 @@ references:
   - name: )
   - name: )
 - uid: System.Func{{TState},Kevlar.KevlarContext,System.Threading.Tasks.Task{{TResult}}}
-  commentId: T:System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}}
+  commentId: T:System.Func{``1,Kevlar.KevlarContext,System.Threading.Tasks.Task{`0}}
   parent: System
   definition: System.Func`3
   href: https://learn.microsoft.com/dotnet/api/system.func-3
@@ -1996,7 +1996,7 @@ references:
   - name: )
   - name: )
 - uid: System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{{TResult}}}
-  commentId: T:System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{``0}}
+  commentId: T:System.Func{Kevlar.KevlarContext,System.Threading.Tasks.Task{`0}}
   parent: System
   definition: System.Func`2
   href: https://learn.microsoft.com/dotnet/api/system.func-2

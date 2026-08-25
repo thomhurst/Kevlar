@@ -40,7 +40,7 @@ items:
   - System.Object.ReferenceEquals(System.Object,System.Object)
   - System.Object.GetHashCode
 - uid: Kevlar.ShieldResultExtensions.WhenResultIsNull``1(Kevlar.Shield{``0})
-  commentId: M:Kevlar.ShieldResultExtensions.WhenResultIsNull``1(Kevlar.Shield{``0})
+  commentId: M:Kevlar.ShieldResultExtensions.WhenResultIsNull``1(Kevlar.Shield{`0})
   id: WhenResultIsNull``1(Kevlar.Shield{``0})
   isExtensionMethod: true
   parent: Kevlar.ShieldResultExtensions
@@ -82,7 +82,7 @@ items:
   fullName.vb: Kevlar.ShieldResultExtensions.WhenResultIsNull(Of TResult)(Kevlar.Shield(Of TResult))
   name.vb: WhenResultIsNull(Of TResult)(Shield(Of TResult))
 - uid: Kevlar.ShieldResultExtensions.OrResultIsNull``1(Kevlar.ShieldBuilder{``0})
-  commentId: M:Kevlar.ShieldResultExtensions.OrResultIsNull``1(Kevlar.ShieldBuilder{``0})
+  commentId: M:Kevlar.ShieldResultExtensions.OrResultIsNull``1(Kevlar.ShieldBuilder{`0})
   id: OrResultIsNull``1(Kevlar.ShieldBuilder{``0})
   isExtensionMethod: true
   parent: Kevlar.ShieldResultExtensions
@@ -554,7 +554,7 @@ references:
   - name: (
   - name: )
 - uid: Kevlar.ShieldResultExtensions.WhenResultIsNull``1(Kevlar.Shield{``0})
-  commentId: M:Kevlar.ShieldResultExtensions.WhenResultIsNull``1(Kevlar.Shield{``0})
+  commentId: M:Kevlar.ShieldResultExtensions.WhenResultIsNull``1(Kevlar.Shield{`0})
   isExternal: true
   href: Kevlar.ShieldResultExtensions.html#Kevlar_ShieldResultExtensions_WhenResultIsNull__1_Kevlar_Shield___0__
   name: WhenResultIsNull<TResult>(Shield<TResult>)

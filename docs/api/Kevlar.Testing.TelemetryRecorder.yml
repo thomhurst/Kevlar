@@ -97,7 +97,7 @@ items:
     content.vb: Public Sub Record(item As RetryEvent)
   overload: Kevlar.Testing.TelemetryRecorder.Record*
 - uid: Kevlar.Testing.TelemetryRecorder.Record``1(Kevlar.RetryEvent{``0})
-  commentId: M:Kevlar.Testing.TelemetryRecorder.Record``1(Kevlar.RetryEvent{``0})
+  commentId: M:Kevlar.Testing.TelemetryRecorder.Record``1(Kevlar.RetryEvent{`0})
   id: Record``1(Kevlar.RetryEvent{``0})
   parent: Kevlar.Testing.TelemetryRecorder
   langs:
@@ -194,7 +194,7 @@ items:
     content.vb: Public Sub Record(item As FallbackEvent)
   overload: Kevlar.Testing.TelemetryRecorder.Record*
 - uid: Kevlar.Testing.TelemetryRecorder.Record``1(Kevlar.FallbackEvent{``0})
-  commentId: M:Kevlar.Testing.TelemetryRecorder.Record``1(Kevlar.FallbackEvent{``0})
+  commentId: M:Kevlar.Testing.TelemetryRecorder.Record``1(Kevlar.FallbackEvent{`0})
   id: Record``1(Kevlar.FallbackEvent{``0})
   parent: Kevlar.Testing.TelemetryRecorder
   langs:
@@ -691,7 +691,7 @@ references:
   nameWithType: Kevlar
   fullName: Kevlar
 - uid: Kevlar.RetryEvent{{TResult}}
-  commentId: T:Kevlar.RetryEvent{``0}
+  commentId: T:Kevlar.RetryEvent{`0}
   parent: Kevlar
   definition: Kevlar.RetryEvent`1
   name: RetryEvent<TResult>
@@ -769,7 +769,7 @@ references:
   nameWithType: FallbackEvent
   fullName: Kevlar.FallbackEvent
 - uid: Kevlar.FallbackEvent{{TResult}}
-  commentId: T:Kevlar.FallbackEvent{``0}
+  commentId: T:Kevlar.FallbackEvent{`0}
   parent: Kevlar
   definition: Kevlar.FallbackEvent`1
   name: FallbackEvent<TResult>

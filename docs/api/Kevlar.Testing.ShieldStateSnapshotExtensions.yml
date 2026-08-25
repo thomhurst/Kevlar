@@ -59,7 +59,7 @@ items:
     content.vb: Public Shared Function GetStateSnapshot(shield As Shield) As ShieldStateSnapshot
   overload: Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot*
 - uid: Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot``1(Kevlar.Shield{``0})
-  commentId: M:Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot``1(Kevlar.Shield{``0})
+  commentId: M:Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot``1(Kevlar.Shield{`0})
   id: GetStateSnapshot``1(Kevlar.Shield{``0})
   isExtensionMethod: true
   parent: Kevlar.Testing.ShieldStateSnapshotExtensions

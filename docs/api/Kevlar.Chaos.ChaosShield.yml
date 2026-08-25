@@ -93,7 +93,7 @@ items:
   fullName.vb: Kevlar.Chaos.ChaosShield.Fault(System.Action(Of Kevlar.Chaos.ChaosFaultOptions))
   name.vb: Fault(Action(Of ChaosFaultOptions))
 - uid: Kevlar.Chaos.ChaosShield.Outcome``1(System.Action{Kevlar.Chaos.ChaosOutcomeOptions{``0}})
-  commentId: M:Kevlar.Chaos.ChaosShield.Outcome``1(System.Action{Kevlar.Chaos.ChaosOutcomeOptions{``0}})
+  commentId: M:Kevlar.Chaos.ChaosShield.Outcome``1(System.Action{Kevlar.Chaos.ChaosOutcomeOptions{`0}})
   id: Outcome``1(System.Action{Kevlar.Chaos.ChaosOutcomeOptions{``0}})
   parent: Kevlar.Chaos.ChaosShield
   langs:
@@ -553,7 +553,7 @@ references:
   nameWithType: ChaosShield.Outcome
   fullName: Kevlar.Chaos.ChaosShield.Outcome
 - uid: System.Action{Kevlar.Chaos.ChaosOutcomeOptions{{TResult}}}
-  commentId: T:System.Action{Kevlar.Chaos.ChaosOutcomeOptions{``0}}
+  commentId: T:System.Action{Kevlar.Chaos.ChaosOutcomeOptions{`0}}
   parent: System
   definition: System.Action`1
   href: https://learn.microsoft.com/dotnet/api/system.action-1

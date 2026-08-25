@@ -35,7 +35,7 @@ items:
   - System.Object.ReferenceEquals(System.Object,System.Object)
   - System.Object.GetHashCode
 - uid: Kevlar.HedgeActionGenerator.Create``1(System.Func{Kevlar.HedgeActionGeneratorEvent{``0},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{``0}}})
-  commentId: M:Kevlar.HedgeActionGenerator.Create``1(System.Func{Kevlar.HedgeActionGeneratorEvent{``0},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{``0}}})
+  commentId: M:Kevlar.HedgeActionGenerator.Create``1(System.Func{Kevlar.HedgeActionGeneratorEvent{`0},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{`0}}})
   id: Create``1(System.Func{Kevlar.HedgeActionGeneratorEvent{``0},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{``0}}})
   parent: Kevlar.HedgeActionGenerator
   langs:
@@ -102,7 +102,7 @@ items:
   name.vb: Create(Func(Of HedgeActionGeneratorEvent, Func(Of CancellationToken, ValueTask)))
 references:
 - uid: Kevlar.HedgeActionGenerator.Create``1(System.Func{Kevlar.HedgeActionGeneratorEvent{``0},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{``0}}})
-  commentId: M:Kevlar.HedgeActionGenerator.Create``1(System.Func{Kevlar.HedgeActionGeneratorEvent{``0},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{``0}}})
+  commentId: M:Kevlar.HedgeActionGenerator.Create``1(System.Func{Kevlar.HedgeActionGeneratorEvent{`0},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{`0}}})
   isExternal: true
   href: Kevlar.HedgeActionGenerator.html#Kevlar_HedgeActionGenerator_Create__1_System_Func_Kevlar_HedgeActionGeneratorEvent___0__System_Func_System_Threading_CancellationToken_System_Threading_Tasks_ValueTask___0____
   name: Create<TResult>(Func<HedgeActionGeneratorEvent<TResult>, Func<CancellationToken, ValueTask<TResult>>>)
@@ -530,7 +530,7 @@ references:
   nameWithType: HedgeActionGenerator.Create
   fullName: Kevlar.HedgeActionGenerator.Create
 - uid: System.Func{Kevlar.HedgeActionGeneratorEvent{{TResult}},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{{TResult}}}}
-  commentId: T:System.Func{Kevlar.HedgeActionGeneratorEvent{``0},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{``0}}}
+  commentId: T:System.Func{Kevlar.HedgeActionGeneratorEvent{`0},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{`0}}}
   parent: System
   definition: System.Func`2
   href: https://learn.microsoft.com/dotnet/api/system.func-2

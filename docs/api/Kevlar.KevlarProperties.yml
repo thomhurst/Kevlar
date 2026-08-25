@@ -41,7 +41,7 @@ items:
   - System.Object.ReferenceEquals(System.Object,System.Object)
   - System.Object.GetHashCode
 - uid: Kevlar.KevlarProperties.Set``1(Kevlar.KevlarKey{``0},``0)
-  commentId: M:Kevlar.KevlarProperties.Set``1(Kevlar.KevlarKey{``0},``0)
+  commentId: M:Kevlar.KevlarProperties.Set``1(Kevlar.KevlarKey{`0},``0)
   id: Set``1(Kevlar.KevlarKey{``0},``0)
   parent: Kevlar.KevlarProperties
   langs:
@@ -71,7 +71,7 @@ items:
   fullName.vb: Kevlar.KevlarProperties.Set(Of T)(Kevlar.KevlarKey(Of T), T)
   name.vb: Set(Of T)(KevlarKey(Of T), T)
 - uid: Kevlar.KevlarProperties.TryGet``1(Kevlar.KevlarKey{``0},``0@)
-  commentId: M:Kevlar.KevlarProperties.TryGet``1(Kevlar.KevlarKey{``0},``0@)
+  commentId: M:Kevlar.KevlarProperties.TryGet``1(Kevlar.KevlarKey{`0},``0@)
   id: TryGet``1(Kevlar.KevlarKey{``0},``0@)
   parent: Kevlar.KevlarProperties
   langs:
@@ -103,7 +103,7 @@ items:
   fullName.vb: Kevlar.KevlarProperties.TryGet(Of T)(Kevlar.KevlarKey(Of T), T)
   name.vb: TryGet(Of T)(KevlarKey(Of T), T)
 - uid: Kevlar.KevlarProperties.GetOrDefault``1(Kevlar.KevlarKey{``0},``0)
-  commentId: M:Kevlar.KevlarProperties.GetOrDefault``1(Kevlar.KevlarKey{``0},``0)
+  commentId: M:Kevlar.KevlarProperties.GetOrDefault``1(Kevlar.KevlarKey{`0},``0)
   id: GetOrDefault``1(Kevlar.KevlarKey{``0},``0)
   parent: Kevlar.KevlarProperties
   langs:
@@ -135,7 +135,7 @@ items:
   fullName.vb: Kevlar.KevlarProperties.GetOrDefault(Of T)(Kevlar.KevlarKey(Of T), T)
   name.vb: GetOrDefault(Of T)(KevlarKey(Of T), T)
 - uid: Kevlar.KevlarProperties.Contains``1(Kevlar.KevlarKey{``0})
-  commentId: M:Kevlar.KevlarProperties.Contains``1(Kevlar.KevlarKey{``0})
+  commentId: M:Kevlar.KevlarProperties.Contains``1(Kevlar.KevlarKey{`0})
   id: Contains``1(Kevlar.KevlarKey{``0})
   parent: Kevlar.KevlarProperties
   langs:
@@ -165,7 +165,7 @@ items:
   fullName.vb: Kevlar.KevlarProperties.Contains(Of T)(Kevlar.KevlarKey(Of T))
   name.vb: Contains(Of T)(KevlarKey(Of T))
 - uid: Kevlar.KevlarProperties.Remove``1(Kevlar.KevlarKey{``0})
-  commentId: M:Kevlar.KevlarProperties.Remove``1(Kevlar.KevlarKey{``0})
+  commentId: M:Kevlar.KevlarProperties.Remove``1(Kevlar.KevlarKey{`0})
   id: Remove``1(Kevlar.KevlarKey{``0})
   parent: Kevlar.KevlarProperties
   langs:
@@ -455,7 +455,7 @@ references:
   nameWithType: KevlarProperties.Set
   fullName: Kevlar.KevlarProperties.Set
 - uid: Kevlar.KevlarKey{{T}}
-  commentId: T:Kevlar.KevlarKey{``0}
+  commentId: T:Kevlar.KevlarKey{`0}
   parent: Kevlar
   definition: Kevlar.KevlarKey`1
   href: Kevlar.KevlarKey-1.html

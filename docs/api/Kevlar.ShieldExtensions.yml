@@ -781,7 +781,7 @@ items:
     content.vb: Public Shared Function Wrap(outer As Shield, inner As Shield) As Shield
   overload: Kevlar.ShieldExtensions.Wrap*
 - uid: Kevlar.ShieldExtensions.Wrap``1(Kevlar.Shield,Kevlar.Shield{``0})
-  commentId: M:Kevlar.ShieldExtensions.Wrap``1(Kevlar.Shield,Kevlar.Shield{``0})
+  commentId: M:Kevlar.ShieldExtensions.Wrap``1(Kevlar.Shield,Kevlar.Shield{`0})
   id: Wrap``1(Kevlar.Shield,Kevlar.Shield{``0})
   isExtensionMethod: true
   parent: Kevlar.ShieldExtensions

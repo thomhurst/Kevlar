@@ -590,7 +590,7 @@ references:
   nameWithType: KevlarContext
   fullName: Kevlar.KevlarContext
 - uid: System.Threading.Tasks.ValueTask{Kevlar.Outcome{{T}}}
-  commentId: T:System.Threading.Tasks.ValueTask{Kevlar.Outcome{``0}}
+  commentId: T:System.Threading.Tasks.ValueTask{Kevlar.Outcome{`0}}
   parent: System.Threading.Tasks
   definition: System.Threading.Tasks.ValueTask`1
   href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1

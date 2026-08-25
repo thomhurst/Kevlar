@@ -136,7 +136,7 @@ items:
   fullName.vb: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.RateLimit(Kevlar.Shield, Kevlar.Extensions.RateLimiting.RateLimitLeaseAcquirer, System.Action(Of Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions))
   name.vb: RateLimit(Shield, RateLimitLeaseAcquirer, Action(Of RateLimiterAdapterOptions))
 - uid: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.RateLimit``1(Kevlar.Shield{``0},System.Threading.RateLimiting.RateLimiter,System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
-  commentId: M:Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.RateLimit``1(Kevlar.Shield{``0},System.Threading.RateLimiting.RateLimiter,System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
+  commentId: M:Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.RateLimit``1(Kevlar.Shield{`0},System.Threading.RateLimiting.RateLimiter,System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
   id: RateLimit``1(Kevlar.Shield{``0},System.Threading.RateLimiting.RateLimiter,System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
   isExtensionMethod: true
   parent: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions
@@ -171,7 +171,7 @@ items:
   fullName.vb: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.RateLimit(Of TResult)(Kevlar.Shield(Of TResult), System.Threading.RateLimiting.RateLimiter, System.Action(Of Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions))
   name.vb: RateLimit(Of TResult)(Shield(Of TResult), RateLimiter, Action(Of RateLimiterAdapterOptions))
 - uid: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.RateLimit``1(Kevlar.Shield{``0},System.Threading.RateLimiting.PartitionedRateLimiter{Kevlar.KevlarContext},System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
-  commentId: M:Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.RateLimit``1(Kevlar.Shield{``0},System.Threading.RateLimiting.PartitionedRateLimiter{Kevlar.KevlarContext},System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
+  commentId: M:Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.RateLimit``1(Kevlar.Shield{`0},System.Threading.RateLimiting.PartitionedRateLimiter{Kevlar.KevlarContext},System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
   id: RateLimit``1(Kevlar.Shield{``0},System.Threading.RateLimiting.PartitionedRateLimiter{Kevlar.KevlarContext},System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
   isExtensionMethod: true
   parent: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions
@@ -206,7 +206,7 @@ items:
   fullName.vb: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.RateLimit(Of TResult)(Kevlar.Shield(Of TResult), System.Threading.RateLimiting.PartitionedRateLimiter(Of Kevlar.KevlarContext), System.Action(Of Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions))
   name.vb: RateLimit(Of TResult)(Shield(Of TResult), PartitionedRateLimiter(Of KevlarContext), Action(Of RateLimiterAdapterOptions))
 - uid: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.RateLimit``1(Kevlar.Shield{``0},Kevlar.Extensions.RateLimiting.RateLimitLeaseAcquirer,System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
-  commentId: M:Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.RateLimit``1(Kevlar.Shield{``0},Kevlar.Extensions.RateLimiting.RateLimitLeaseAcquirer,System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
+  commentId: M:Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.RateLimit``1(Kevlar.Shield{`0},Kevlar.Extensions.RateLimiting.RateLimitLeaseAcquirer,System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
   id: RateLimit``1(Kevlar.Shield{``0},Kevlar.Extensions.RateLimiting.RateLimitLeaseAcquirer,System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
   isExtensionMethod: true
   parent: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions

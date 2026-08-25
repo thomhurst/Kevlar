@@ -125,7 +125,7 @@ items:
   fullName.vb: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryGetShield(String, Kevlar.Shield)
   name.vb: TryGetShield(String, Shield)
 - uid: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryGetShield``1(System.String,Kevlar.Shield{``0}@)
-  commentId: M:Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryGetShield``1(System.String,Kevlar.Shield{``0}@)
+  commentId: M:Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryGetShield``1(System.String,Kevlar.Shield{`0}@)
   id: TryGetShield``1(System.String,Kevlar.Shield{``0}@)
   parent: Kevlar.Extensions.DependencyInjection.IKevlarRegistry
   langs:

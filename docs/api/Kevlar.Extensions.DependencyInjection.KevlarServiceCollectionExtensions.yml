@@ -226,7 +226,7 @@ items:
   fullName.vb: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield(Microsoft.Extensions.DependencyInjection.IServiceCollection, String, Microsoft.Extensions.Configuration.IConfiguration, System.Action(Of System.Exception))
   name.vb: AddReloadingShield(IServiceCollection, String, IConfiguration, Action(Of Exception))
 - uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Kevlar.Shield{``0})
-  commentId: M:Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Kevlar.Shield{``0})
+  commentId: M:Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Kevlar.Shield{`0})
   id: AddShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Kevlar.Shield{``0})
   isExtensionMethod: true
   parent: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions
@@ -261,7 +261,7 @@ items:
   fullName.vb: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(Of TResult)(Microsoft.Extensions.DependencyInjection.IServiceCollection, String, Kevlar.Shield(Of TResult))
   name.vb: AddShield(Of TResult)(IServiceCollection, String, Shield(Of TResult))
 - uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,Kevlar.Shield{``0}})
-  commentId: M:Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,Kevlar.Shield{``0}})
+  commentId: M:Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,Kevlar.Shield{`0}})
   id: AddShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,Kevlar.Shield{``0}})
   isExtensionMethod: true
   parent: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions
@@ -296,7 +296,7 @@ items:
   fullName.vb: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(Of TResult)(Microsoft.Extensions.DependencyInjection.IServiceCollection, String, System.Func(Of System.IServiceProvider, Kevlar.Shield(Of TResult)))
   name.vb: AddShield(Of TResult)(IServiceCollection, String, Func(Of IServiceProvider, Shield(Of TResult)))
 - uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,``0,Kevlar.Shield},System.Action{Kevlar.PartitionedShieldOptions},System.Collections.Generic.IEqualityComparer{``0})
-  commentId: M:Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,``0,Kevlar.Shield},System.Action{Kevlar.PartitionedShieldOptions},System.Collections.Generic.IEqualityComparer{``0})
+  commentId: M:Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,``0,Kevlar.Shield},System.Action{Kevlar.PartitionedShieldOptions},System.Collections.Generic.IEqualityComparer{`0})
   id: AddPartitionedShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,``0,Kevlar.Shield},System.Action{Kevlar.PartitionedShieldOptions},System.Collections.Generic.IEqualityComparer{``0})
   isExtensionMethod: true
   parent: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions
@@ -335,7 +335,7 @@ items:
   fullName.vb: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield(Of TKey)(Microsoft.Extensions.DependencyInjection.IServiceCollection, String, System.Func(Of System.IServiceProvider, TKey, Kevlar.Shield), System.Action(Of Kevlar.PartitionedShieldOptions), System.Collections.Generic.IEqualityComparer(Of TKey))
   name.vb: AddPartitionedShield(Of TKey)(IServiceCollection, String, Func(Of IServiceProvider, TKey, Shield), Action(Of PartitionedShieldOptions), IEqualityComparer(Of TKey))
 - uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield``2(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,``0,Kevlar.Shield{``1}},System.Action{Kevlar.PartitionedShieldOptions},System.Collections.Generic.IEqualityComparer{``0})
-  commentId: M:Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield``2(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,``0,Kevlar.Shield{``1}},System.Action{Kevlar.PartitionedShieldOptions},System.Collections.Generic.IEqualityComparer{``0})
+  commentId: M:Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield``2(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,``0,Kevlar.Shield{`1}},System.Action{Kevlar.PartitionedShieldOptions},System.Collections.Generic.IEqualityComparer{`0})
   id: AddPartitionedShield``2(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,``0,Kevlar.Shield{``1}},System.Action{Kevlar.PartitionedShieldOptions},System.Collections.Generic.IEqualityComparer{``0})
   isExtensionMethod: true
   parent: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions
@@ -1087,7 +1087,7 @@ references:
   - name: TResult
   - name: )
 - uid: System.Func{System.IServiceProvider,Kevlar.Shield{{TResult}}}
-  commentId: T:System.Func{System.IServiceProvider,Kevlar.Shield{``0}}
+  commentId: T:System.Func{System.IServiceProvider,Kevlar.Shield{`0}}
   parent: System
   definition: System.Func`2
   href: https://learn.microsoft.com/dotnet/api/system.func-2
@@ -1365,7 +1365,7 @@ references:
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.collections.generic
 - uid: System.Func{System.IServiceProvider,{TKey},Kevlar.Shield{{TResult}}}
-  commentId: T:System.Func{System.IServiceProvider,``0,Kevlar.Shield{``1}}
+  commentId: T:System.Func{System.IServiceProvider,``0,Kevlar.Shield{`1}}
   parent: System
   definition: System.Func`3
   href: https://learn.microsoft.com/dotnet/api/system.func-3

@@ -33,7 +33,7 @@ items:
   - System.Object.Equals(System.Object,System.Object)
   - System.Object.ReferenceEquals(System.Object,System.Object)
 - uid: Kevlar.HandlingClause.ShouldHandle``1(Kevlar.Outcome{``0}@)
-  commentId: M:Kevlar.HandlingClause.ShouldHandle``1(Kevlar.Outcome{``0}@)
+  commentId: M:Kevlar.HandlingClause.ShouldHandle``1(Kevlar.Outcome{`0}@)
   id: ShouldHandle``1(Kevlar.Outcome{``0}@)
   parent: Kevlar.HandlingClause
   langs:
@@ -321,7 +321,7 @@ references:
   nameWithType: HandlingClause.ShouldHandle
   fullName: Kevlar.HandlingClause.ShouldHandle
 - uid: Kevlar.Outcome{{T}}
-  commentId: T:Kevlar.Outcome{``0}
+  commentId: T:Kevlar.Outcome{`0}
   parent: Kevlar
   definition: Kevlar.Outcome`1
   href: Kevlar.Outcome-1.html

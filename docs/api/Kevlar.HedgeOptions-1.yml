@@ -928,7 +928,7 @@ references:
   nameWithType.vb: HedgeOptions(Of TResult).ActionGenerator
   fullName.vb: Kevlar.HedgeOptions(Of TResult).ActionGenerator
 - uid: System.Func{Kevlar.HedgeActionGeneratorEvent{{TResult}},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{{TResult}}}}
-  commentId: T:System.Func{Kevlar.HedgeActionGeneratorEvent{``0},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{``0}}}
+  commentId: T:System.Func{Kevlar.HedgeActionGeneratorEvent{`0},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{`0}}}
   parent: System
   definition: System.Func`2
   href: https://learn.microsoft.com/dotnet/api/system.func-2

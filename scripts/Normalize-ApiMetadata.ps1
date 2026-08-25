@@ -42,7 +42,15 @@ foreach ($metadataFile in Get-ChildItem -LiteralPath $resolvedMetadataPath -Filt
             }
         }
 
-        $normalizedLines.Add($line)
+        $normalizedLine = $line
+        if ($line -match '^[ \t]*commentId:')
+        {
+            $normalizedLine = $line `
+                -replace '(?<=\{)``(?=\d+\})', '`' `
+                -replace '^(\s*commentId:\s+T:Kevlar\.Shield\{)`0\}$', '${1}`1}'
+        }
+
+        $normalizedLines.Add($normalizedLine)
     }
 
     $normalized = $normalizedLines -join "`n"

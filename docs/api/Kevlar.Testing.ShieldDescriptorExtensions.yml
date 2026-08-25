@@ -59,7 +59,7 @@ items:
     content.vb: Public Shared Function GetDescriptor(shield As Shield) As ShieldDescriptor
   overload: Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor*
 - uid: Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor``1(Kevlar.Shield{``0})
-  commentId: M:Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor``1(Kevlar.Shield{``0})
+  commentId: M:Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor``1(Kevlar.Shield{`0})
   id: GetDescriptor``1(Kevlar.Shield{``0})
   isExtensionMethod: true
   parent: Kevlar.Testing.ShieldDescriptorExtensions

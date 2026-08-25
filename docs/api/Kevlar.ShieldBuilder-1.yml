@@ -1532,7 +1532,7 @@ references:
   nameWithType: TResult
   fullName: TResult
 - uid: Kevlar.ShieldResultExtensions.OrResultIsNull``1(Kevlar.ShieldBuilder{``0})
-  commentId: M:Kevlar.ShieldResultExtensions.OrResultIsNull``1(Kevlar.ShieldBuilder{``0})
+  commentId: M:Kevlar.ShieldResultExtensions.OrResultIsNull``1(Kevlar.ShieldBuilder{`0})
   isExternal: true
   href: Kevlar.ShieldResultExtensions.html#Kevlar_ShieldResultExtensions_OrResultIsNull__1_Kevlar_ShieldBuilder___0__
   name: OrResultIsNull<TResult>(ShieldBuilder<TResult>)
