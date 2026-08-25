@@ -77,11 +77,6 @@ internal sealed class CircuitBreakerStrategy : Strategy
                 out var rejection,
                 out var admissionGeneration))
         {
-            if (recordState)
-            {
-                RecordState(alias);
-            }
-
             KevlarMetrics.Rejection(context, "circuit_open", rejection!, _core.TelemetryName);
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(rejection!));
         }
@@ -181,11 +176,6 @@ internal sealed class CircuitBreakerStrategy : Strategy
     {
         if (!entry.Allowed)
         {
-            if (recordState)
-            {
-                RecordState(alias);
-            }
-
             KevlarMetrics.Rejection(
                 context,
                 "circuit_open",

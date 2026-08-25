@@ -27,8 +27,6 @@ internal sealed class RateLimitStrategy : Strategy
     private readonly Action<RateLimitRejectedEvent>? _onRejected;
     private readonly Func<RateLimitRejectedEvent, ValueTask>? _onRejectedAsync;
     private readonly string _telemetryName;
-    private readonly Lock _metricsPublicationGate = new();
-    private readonly HashSet<StrategyMetricAlias> _metricsAliases = [];
     private readonly object _queueGate = new();
 
     private double _theoreticalArrival = double.NegativeInfinity;
@@ -85,6 +83,7 @@ internal sealed class RateLimitStrategy : Strategy
         _onRejected = options.OnRejected;
         _onRejectedAsync = options.OnRejectedAsync;
         _telemetryName = options.Name ?? "RateLimit";
+        _metricsRegistration = KevlarMetrics.RegisterRateStateSource(this);
     }
 
     public override string Describe()

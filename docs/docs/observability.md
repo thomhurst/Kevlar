@@ -78,12 +78,12 @@ services.AddOpenTelemetry().WithMetrics(metrics => metrics
 | `kevlar.execution.duration` | Histogram | `s` | `net8.0` | completed public execution duration | `kevlar.shield.name`, `kevlar.execution.outcome` (`success`/`failure`) |
 | `kevlar.strategy.events` | Counter | `{event}` | `net8.0` | built-in strategy and caller-recorded events | `kevlar.shield.name`, `kevlar.strategy.index`, `kevlar.strategy.name`, `kevlar.event.name`, `kevlar.event.severity`, `kevlar.attempt.number`, optional `exception.type`, optional `kevlar.operation.key` |
 | `kevlar.attempt.duration` | Histogram | `ms` | `net8.0` | retry attempt duration, including the initial attempt | `kevlar.shield.name`, `kevlar.strategy.index`, `kevlar.strategy.name`, `kevlar.event.name`, `kevlar.event.severity`, `kevlar.attempt.number`, optional `exception.type`, optional `kevlar.operation.key` |
-| `kevlar.circuit_breaker.state` | Gauge | `{state}` | `net10.0` | last observed circuit state: closed `0`, open `1`, half-open `2`, isolated `3` | `kevlar.shield.name`, `kevlar.strategy.index` |
-| `kevlar.concurrency_limit.inflight` | Gauge | `{execution}` | `net10.0` | executions holding a permit | `kevlar.shield.name`, `kevlar.strategy.index` |
-| `kevlar.concurrency_limit.queued` | Gauge | `{execution}` | `net10.0` | executions waiting for a permit | `kevlar.shield.name`, `kevlar.strategy.index` |
-| `kevlar.concurrency_limit.capacity` | Gauge | `{execution}` | `net10.0` | configured concurrency permit capacity | `kevlar.shield.name`, `kevlar.strategy.index` |
-| `kevlar.rate_limit.available` | Gauge | `{permit}` | `net10.0` | immediately available burst permits at the last limiter operation | `kevlar.shield.name`, `kevlar.strategy.index` |
-| `kevlar.rate_limit.queued` | Gauge | `{execution}` | `net10.0` | executions waiting for a rate-limit permit | `kevlar.shield.name`, `kevlar.strategy.index` |
+| `kevlar.circuit_breaker.state` | ObservableGauge | `{state}` | `net10.0` | current circuit state: closed `0`, open `1`, half-open `2`, isolated `3` | `kevlar.shield.name`, `kevlar.strategy.index` |
+| `kevlar.concurrency_limit.inflight` | ObservableGauge | `{execution}` | `net10.0` | executions holding a permit | `kevlar.shield.name`, `kevlar.strategy.index` |
+| `kevlar.concurrency_limit.queued` | ObservableGauge | `{execution}` | `net10.0` | executions waiting for a permit | `kevlar.shield.name`, `kevlar.strategy.index` |
+| `kevlar.concurrency_limit.capacity` | ObservableGauge | `{execution}` | `net10.0` | configured concurrency permit capacity | `kevlar.shield.name`, `kevlar.strategy.index` |
+| `kevlar.rate_limit.available` | ObservableGauge | `{permit}` | `net10.0` | immediately available burst permits at collection time | `kevlar.shield.name`, `kevlar.strategy.index` |
+| `kevlar.rate_limit.queued` | ObservableGauge | `{execution}` | `net10.0` | executions waiting for a rate-limit permit | `kevlar.shield.name`, `kevlar.strategy.index` |
 | `kevlar.chaos.injections` | Counter | `{injection}` | `net8.0` | chaos injections applied | `kevlar.chaos.kind`, `kevlar.shield.name`, `kevlar.chaos.operation`, `kevlar.chaos.environment` |
 
 Each public execution call records exactly one `kevlar.executions` measurement after its final outcome: recovery through fallback is `success`; exceptions, caller cancellation, timeout, and strategy rejection are `failure`. Retry and hedge attempts do not add execution measurements of their own.
@@ -133,7 +133,7 @@ its `Events` property and `WaitForEventCountAsync`. Kevlar intentionally does no
 `ActivitySource` spans: use the metrics and listener hook to enrich the tracing system already owned
 by the application or transport.
 
-The gauges are synchronous last-value measurements emitted when strategy state changes. They aggregate by shield name and carry a bounded `kevlar.strategy.index` attribute (the strategy's zero-based pipeline position), so independent stateful strategies in one named pipeline remain distinct. Shared strategies update up to 64 observed name/index aliases; additional aliases omit state-gauge measurements to bound memory, transition work, and series growth. The gauges do not use observable callbacks or global strategy registries, so telemetry never keeps an abandoned shield alive.
+The state gauges are observable instruments sampled only when the metrics reader collects them. They read the strategies' existing synchronized state instead of publishing from execution paths, so enabling state metrics adds no state-publication locks or listener callbacks to each execution. Listener failures therefore remain confined to collection. Gauges aggregate by shield name and carry a bounded `kevlar.strategy.index` attribute (the strategy's zero-based pipeline position), so independent stateful strategies in one named pipeline remain distinct. Shared strategies expose up to 64 observed name/index aliases; additional aliases are omitted to bound memory and series growth. Registrations hold strategy instances weakly and discard collected registrations during observation, so telemetry does not keep an abandoned shield alive.
 
 This executable example verifies a completed execution with `MeterListener`:
 

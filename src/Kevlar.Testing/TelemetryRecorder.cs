@@ -199,7 +199,11 @@ public sealed class TelemetryRecorder : IDisposable, IKevlarTelemetryListener
 
     /// <summary>Waits until at least <paramref name="count"/> telemetry events have been captured.</summary>
     public Task WaitForEventCountAsync(int count, CancellationToken cancellationToken = default) =>
-        WaitForCountAsync(static recorder => recorder._events.Count, count, cancellationToken);
+        WaitForCountAsync(
+            static recorder => recorder._events.Count,
+            count,
+            collectObservableMetrics: false,
+            cancellationToken);
 
     /// <inheritdoc />
     void IKevlarTelemetryListener.OnEvent(in KevlarTelemetryEvent telemetryEvent)

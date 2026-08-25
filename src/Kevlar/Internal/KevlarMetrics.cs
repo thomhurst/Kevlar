@@ -20,6 +20,9 @@ internal static class KevlarMetrics
     private const int _minimumCachedStrategyIndex = -1;
     private const int _maximumCachedStrategyIndex = 63;
     private static readonly object[] _boxedStrategyIndexes = CreateBoxedStrategyIndexes();
+#endif
+
+#if NET9_0_OR_GREATER
     private static readonly StateMetricRegistry<CircuitBreakerStrategy> CircuitStates = new();
     private static readonly StateMetricRegistry<ConcurrencyLimitStrategy> ConcurrencyStates = new();
     private static readonly StateMetricRegistry<RateLimitStrategy> RateStates = new();
@@ -375,12 +378,6 @@ internal static class KevlarMetrics
 #endif
     }
 
-    public static void RecordCircuitState(
-        string? shieldName,
-        int strategyIndex,
-        CircuitState state)
-    {
-#if NET9_0_OR_GREATER
     public static StateMetricRegistration<CircuitBreakerStrategy> RegisterCircuitStateSource(
         CircuitBreakerStrategy strategy) =>
 #if NET9_0_OR_GREATER
@@ -467,6 +464,263 @@ internal static class KevlarMetrics
         KevlarTelemetrySeverity.Error => "error",
         _ => "information",
     };
+
+#if NET9_0_OR_GREATER
+    internal sealed class StateMetricRegistration<TStrategy>
+        where TStrategy : class
+    {
+        private readonly Lock _gate = new();
+        private readonly StateMetricRegistry<TStrategy> _registry;
+        private readonly WeakReference<TStrategy> _strategy;
+        private StateMetricObservation[] _observations = [];
+        private int _published;
+
+        public StateMetricRegistration(
+            TStrategy strategy,
+            StateMetricRegistry<TStrategy> registry)
+        {
+            _strategy = new WeakReference<TStrategy>(strategy);
+            _registry = registry;
+        }
+
+        public StateMetricObservation[] Observations => Volatile.Read(ref _observations);
+
+        public bool HasObservations => Observations.Length != 0;
+
+        public bool TryGetStrategy(out TStrategy? strategy) => _strategy.TryGetTarget(out strategy);
+
+        public void Add(StrategyMetricAlias alias, TimeProvider? timeProvider = null)
+        {
+            var observations = Volatile.Read(ref _observations);
+            if (HasCurrentObservation(observations, alias, timeProvider))
+            {
+                return;
+            }
+
+            lock (_gate)
+            {
+                observations = _observations;
+                if (TryUpdate(observations, alias, timeProvider))
+                {
+                    return;
+                }
+
+                if (observations.Length >= MaxTrackedStrategyAliases)
+                {
+                    var live = WithoutCollectedObservations(observations);
+                    if (!ReferenceEquals(live, observations))
+                    {
+                        observations = live;
+                        Volatile.Write(ref _observations, observations);
+                    }
+
+                    if (observations.Length >= MaxTrackedStrategyAliases)
+                    {
+                        return;
+                    }
+                }
+
+                var updated = new StateMetricObservation[observations.Length + 1];
+                observations.CopyTo(updated, 0);
+                updated[^1] = new StateMetricObservation(alias, timeProvider);
+                Volatile.Write(ref _observations, updated);
+            }
+
+            if (observations.Length == 0
+                && Interlocked.Exchange(ref _published, 1) == 0)
+            {
+                _registry.Publish(this);
+            }
+        }
+
+        public void RemoveCollectedObservations()
+        {
+            lock (_gate)
+            {
+                var observations = _observations;
+                var live = WithoutCollectedObservations(observations);
+                if (!ReferenceEquals(live, observations))
+                {
+                    Volatile.Write(ref _observations, live);
+                }
+            }
+        }
+
+        private static bool HasCurrentObservation(
+            StateMetricObservation[] observations,
+            StrategyMetricAlias alias,
+            TimeProvider? timeProvider)
+        {
+            foreach (var observation in observations)
+            {
+                if (observation.Alias == alias)
+                {
+                    return observation.TryGetTimeProvider(out var currentTimeProvider)
+                        && ReferenceEquals(currentTimeProvider, timeProvider);
+                }
+            }
+
+            return false;
+        }
+
+        private static StateMetricObservation[] WithoutCollectedObservations(
+            StateMetricObservation[] observations)
+        {
+            var firstCollected = -1;
+            for (var index = 0; index < observations.Length; index++)
+            {
+                if (!observations[index].TryGetTimeProvider(out _))
+                {
+                    firstCollected = index;
+                    break;
+                }
+            }
+
+            if (firstCollected < 0)
+            {
+                return observations;
+            }
+
+            var live = new StateMetricObservation[observations.Length - 1];
+            Array.Copy(observations, live, firstCollected);
+            var count = firstCollected;
+            for (var index = firstCollected + 1; index < observations.Length; index++)
+            {
+                var observation = observations[index];
+                if (observation.TryGetTimeProvider(out _))
+                {
+                    live[count++] = observation;
+                }
+            }
+
+            Array.Resize(ref live, count);
+            return live;
+        }
+
+        private static bool TryUpdate(
+            StateMetricObservation[] observations,
+            StrategyMetricAlias alias,
+            TimeProvider? timeProvider)
+        {
+            foreach (var observation in observations)
+            {
+                if (observation.Alias == alias)
+                {
+                    if (!observation.TryGetTimeProvider(out var currentTimeProvider)
+                        || !ReferenceEquals(currentTimeProvider, timeProvider))
+                    {
+                        observation.SetTimeProvider(timeProvider);
+                    }
+
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    }
+
+    internal sealed class StateMetricRegistry<TStrategy>
+        where TStrategy : class
+    {
+        private readonly Lock _gate = new();
+        private WeakReference<StateMetricRegistration<TStrategy>>[] _registrations = [];
+
+        public StateMetricRegistration<TStrategy> Register(TStrategy strategy) => new(strategy, this);
+
+        public void Publish(StateMetricRegistration<TStrategy> registration)
+        {
+            lock (_gate)
+            {
+                var registrations = _registrations;
+                var updated = new WeakReference<StateMetricRegistration<TStrategy>>[registrations.Length + 1];
+                var count = 0;
+                foreach (var reference in registrations)
+                {
+                    if (reference is not null && reference.TryGetTarget(out _))
+                    {
+                        updated[count++] = reference;
+                    }
+                }
+
+                updated[count++] = new WeakReference<StateMetricRegistration<TStrategy>>(registration);
+                if (count != updated.Length)
+                {
+                    Array.Resize(ref updated, count);
+                }
+
+                Volatile.Write(ref _registrations, updated);
+            }
+        }
+
+        public IEnumerable<Measurement<long>> Observe(Func<TStrategy, TimeProvider?, long> observe)
+        {
+            var registrations = Volatile.Read(ref _registrations);
+            var hasCollectedRegistration = false;
+            foreach (var reference in registrations)
+            {
+                if (reference is null
+                    || !reference.TryGetTarget(out var registration)
+                    || !registration.TryGetStrategy(out var strategy))
+                {
+                    hasCollectedRegistration = true;
+                    continue;
+                }
+
+                var hasCollectedObservation = false;
+                foreach (var observation in registration.Observations)
+                {
+                    if (!observation.TryGetTimeProvider(out var timeProvider))
+                    {
+                        hasCollectedObservation = true;
+                        continue;
+                    }
+
+                    yield return new Measurement<long>(
+                        observe(strategy!, timeProvider),
+                        StateTags(observation.Alias.ShieldName, observation.Alias.StrategyIndex));
+                }
+
+                if (hasCollectedObservation)
+                {
+                    registration.RemoveCollectedObservations();
+                }
+            }
+
+            if (hasCollectedRegistration)
+            {
+                RemoveCollectedRegistrations();
+            }
+        }
+
+        private void RemoveCollectedRegistrations()
+        {
+            lock (_gate)
+            {
+                var registrations = _registrations;
+                var live = new WeakReference<StateMetricRegistration<TStrategy>>[registrations.Length];
+                var count = 0;
+                foreach (var reference in registrations)
+                {
+                    if (reference is not null
+                        && reference.TryGetTarget(out var registration)
+                        && registration.TryGetStrategy(out _))
+                    {
+                        live[count++] = reference;
+                    }
+                }
+
+                if (count == registrations.Length)
+                {
+                    return;
+                }
+
+                Array.Resize(ref live, count);
+                Volatile.Write(ref _registrations, live);
+            }
+        }
+    }
+#endif
 #endif
 
     private static string StateName(CircuitState state) => state switch
@@ -518,6 +772,20 @@ internal static class KevlarMetrics
         "concurrency_limit" => "ConcurrencyLimit",
         _ => "Rejection",
     };
+
+#if !NET9_0_OR_GREATER
+    internal sealed class StateMetricRegistration<TStrategy>
+        where TStrategy : class
+    {
+        public static StateMetricRegistration<TStrategy> Disabled { get; } = new();
+
+        public bool HasObservations => false;
+
+        public void Add(StrategyMetricAlias alias, TimeProvider? timeProvider = null)
+        {
+        }
+    }
+#endif
 }
 
 internal readonly record struct StrategyMetricAlias(string? ShieldName, int StrategyIndex);

@@ -16,11 +16,9 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
     private readonly Action<ConcurrencyLimitRejectedEvent>? _onRejected;
     private readonly Func<ConcurrencyLimitRejectedEvent, ValueTask>? _onRejectedAsync;
     private readonly string _telemetryName;
-    private int _available;
-    private int _queued;
-    private int _running;
     private int _waiters;
     private long _pending;
+    private long _state;
     private readonly KevlarMetrics.StateMetricRegistration<ConcurrencyLimitStrategy> _metricsRegistration;
 
     protected internal override bool InvokesContinuationAtMostOnce => true;
@@ -62,6 +60,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
         _onRejected = options.OnRejected;
         _onRejectedAsync = options.OnRejectedAsync;
         _telemetryName = options.Name ?? "ConcurrencyLimit";
+        _metricsRegistration = KevlarMetrics.RegisterConcurrencyStateSource(this);
     }
 
     public override string Describe() =>
@@ -73,8 +72,6 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
         RegisterMetricsAlias(alias);
         if (!TryReserveCapacity())
         {
-            Interlocked.Decrement(ref _pending);
-            RecordState(alias);
             return RejectAsync<T>(context);
         }
 

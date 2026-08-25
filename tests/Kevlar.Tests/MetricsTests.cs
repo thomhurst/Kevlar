@@ -273,7 +273,7 @@ public class MetricsTests
             .All(instrument => instrument is Histogram<double>)).IsTrue();
         await Assert.That(listener.Instruments
             .Where(instrument => instrument.Name is not ("kevlar.execution.duration" or "kevlar.attempt.duration"))
-            .All(instrument => instrument is Counter<long> or Gauge<long>)).IsTrue();
+            .All(instrument => instrument is Counter<long> or ObservableGauge<long>)).IsTrue();
         await Assert.That(listener.Instruments.All(instrument => instrument.Meter.Name == "Kevlar")).IsTrue();
         await Assert.That(listener.Instruments.All(instrument => instrument.Meter.Version == "1.0")).IsTrue();
         await Assert.That(listener.Instruments.All(instrument =>
