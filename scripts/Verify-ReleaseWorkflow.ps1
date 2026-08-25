@@ -7,6 +7,31 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
 $workflow = Get-Content -LiteralPath $WorkflowPath -Raw
+$changelogStepStart = $workflow.IndexOf('- name: Verify changelog and release notes', [StringComparison]::Ordinal)
+$changelogStepEnd = if ($changelogStepStart -lt 0)
+{
+    -1
+}
+else
+{
+    $workflow.IndexOf('- name:', $changelogStepStart + 1, [StringComparison]::Ordinal)
+}
+if ($changelogStepStart -lt 0 -or $changelogStepEnd -lt 0)
+{
+    throw "Changelog verification step was not found in '$WorkflowPath'."
+}
+
+$changelogStep = $workflow.Substring($changelogStepStart, $changelogStepEnd - $changelogStepStart)
+foreach ($requiredText in @(
+    'RELEASE_VERSION: ${{ steps.gitversion.outputs.semVer }}',
+    './scripts/Get-ReleaseNotes.ps1 -Version $env:RELEASE_VERSION'))
+{
+    if (-not $changelogStep.Contains($requiredText, [StringComparison]::Ordinal))
+    {
+        throw "Changelog verification is missing '$requiredText'."
+    }
+}
+
 $publishStart = $workflow.IndexOf("`n  publish:", [StringComparison]::Ordinal)
 if ($publishStart -lt 0)
 {
@@ -100,7 +125,7 @@ try
         [Text.UTF8Encoding]::new($false))
 
     & (Join-Path $PSScriptRoot 'Get-ReleaseNotes.ps1') `
-        -Version '1.2.3' `
+        -Version '1.2.3-pr.274.75' `
         -ChangelogPath $fixturePath `
         -OutputPath $outputPath
 
@@ -117,7 +142,7 @@ try
         [Text.UTF8Encoding]::new($false))
 
     & (Join-Path $PSScriptRoot 'Get-ReleaseNotes.ps1') `
-        -Version '2.0.0' `
+        -Version '2.0.0-alpha.1+build.42' `
         -ChangelogPath $fixturePath `
         -OutputPath $outputPath
 

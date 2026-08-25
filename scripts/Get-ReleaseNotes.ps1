@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)]
-    [ValidatePattern('^[0-9]+\.[0-9]+\.[0-9]+$')]
+    [ValidatePattern('^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$')]
     [string]$Version,
 
     [string]$ChangelogPath = (Join-Path (Split-Path -Parent $PSScriptRoot) 'CHANGELOG.md'),
@@ -14,8 +14,9 @@ Set-StrictMode -Version Latest
 
 $lines = @(Get-Content -LiteralPath $ChangelogPath)
 $start = -1
+$releaseVersion = $Version.Split('+', 2)[0].Split('-', 2)[0]
 
-foreach ($heading in @("## [$Version]", '## [Unreleased]', '## Unreleased'))
+foreach ($heading in @("## [$releaseVersion]", '## [Unreleased]', '## Unreleased'))
 {
     for ($index = 0; $index -lt $lines.Count; $index++)
     {
