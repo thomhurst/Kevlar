@@ -359,9 +359,7 @@ jobs:
         env:
           RELEASE_VERSION: ${{ steps.gitversion.outputs.semVer }}
         run: |
-          $tag = "v$env:RELEASE_VERSION"
-          git tag $tag $env:GITHUB_SHA
-          git push origin "refs/tags/$tag"
+          ./scripts/Push-ReleaseTag.ps1 -Version $env:RELEASE_VERSION -Commit $env:GITHUB_SHA
 
       - name: NuGet login
         if: inputs.release_dry_run != true

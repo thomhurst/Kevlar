@@ -35,6 +35,7 @@ function Assert-StepGuarded([string]$StepName)
 Assert-Contains 'Publish branch guard' "github.ref == 'refs/heads/main'"
 Assert-Contains 'Publish approval environment' 'environment: nuget'
 Assert-Contains 'Changelog release notes' './scripts/Get-ReleaseNotes.ps1'
+Assert-Contains 'Retry-safe release tag' './scripts/Push-ReleaseTag.ps1'
 Assert-Contains 'GitHub release notes file' '--notes-file "$RELEASE_NOTES_PATH"'
 Assert-Contains 'Release tag verification' '--verify-tag'
 Assert-Contains 'NuGet package push' 'dotnet nuget push packages/*.nupkg'
@@ -89,11 +90,67 @@ try
     {
         throw "Release-note extraction mismatch: '$actualNotes'."
     }
+
+    [IO.File]::WriteAllText(
+        $fixturePath,
+        "# Changelog`n`n## Unreleased`n`n### Added`n`n- Pending release note.`n",
+        [Text.UTF8Encoding]::new($false))
+
+    & (Join-Path $PSScriptRoot 'Get-ReleaseNotes.ps1') `
+        -Version '2.0.0' `
+        -ChangelogPath $fixturePath `
+        -OutputPath $outputPath
+
+    $actualNotes = (Get-Content -LiteralPath $outputPath -Raw).Trim() -replace '\r\n?', "`n"
+    $expectedNotes = "### Added`n`n- Pending release note."
+    if ($actualNotes -ne $expectedNotes)
+    {
+        throw "Unreleased-note extraction mismatch: '$actualNotes'."
+    }
+
+    $remotePath = Join-Path $resolvedTemporaryRoot 'remote.git'
+    $workPath = Join-Path $resolvedTemporaryRoot 'work'
+    & git init --bare $remotePath | Out-Null
+    & git init $workPath | Out-Null
+    & git -C $workPath config user.email 'verification@example.invalid'
+    & git -C $workPath config user.name 'Release Verification'
+    [IO.File]::WriteAllText((Join-Path $workPath 'file.txt'), 'first', [Text.UTF8Encoding]::new($false))
+    & git -C $workPath add file.txt
+    & git -C $workPath commit -m 'first' | Out-Null
+    & git -C $workPath remote add origin $remotePath
+    $firstCommit = (& git -C $workPath rev-parse HEAD).Trim()
+
+    $pushTagScript = Join-Path $PSScriptRoot 'Push-ReleaseTag.ps1'
+    & $pushTagScript -Version '1.2.3' -Commit $firstCommit -WorkingDirectory $workPath
+    & $pushTagScript -Version '1.2.3' -Commit $firstCommit -WorkingDirectory $workPath
+
+    [IO.File]::WriteAllText((Join-Path $workPath 'file.txt'), 'second', [Text.UTF8Encoding]::new($false))
+    & git -C $workPath add file.txt
+    & git -C $workPath commit -m 'second' | Out-Null
+    $secondCommit = (& git -C $workPath rev-parse HEAD).Trim()
+
+    $mismatchRejected = $false
+    try
+    {
+        & $pushTagScript -Version '1.2.3' -Commit $secondCommit -WorkingDirectory $workPath
+    }
+    catch
+    {
+        $mismatchRejected = $true
+    }
+
+    if (-not $mismatchRejected)
+    {
+        throw 'Release tag verification accepted an existing tag on a different commit.'
+    }
 }
 finally
 {
     if ($resolvedTemporaryRoot.StartsWith([IO.Path]::GetTempPath(), [StringComparison]::OrdinalIgnoreCase))
     {
+        Get-ChildItem -LiteralPath $resolvedTemporaryRoot -Recurse -Force | ForEach-Object {
+            $_.Attributes = [IO.FileAttributes]::Normal
+        }
         [IO.Directory]::Delete($resolvedTemporaryRoot, $true)
     }
 }

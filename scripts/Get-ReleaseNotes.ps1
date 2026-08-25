@@ -13,21 +13,28 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
 $lines = @(Get-Content -LiteralPath $ChangelogPath)
-$heading = "## [$Version]"
 $start = -1
 
-for ($index = 0; $index -lt $lines.Count; $index++)
+foreach ($heading in @("## [$Version]", '## [Unreleased]', '## Unreleased'))
 {
-    if ($lines[$index] -eq $heading -or $lines[$index].StartsWith("$heading - ", [StringComparison]::Ordinal))
+    for ($index = 0; $index -lt $lines.Count; $index++)
     {
-        $start = $index + 1
+        if ($lines[$index] -eq $heading -or $lines[$index].StartsWith("$heading - ", [StringComparison]::Ordinal))
+        {
+            $start = $index + 1
+            break
+        }
+    }
+
+    if ($start -ge 0)
+    {
         break
     }
 }
 
 if ($start -lt 0)
 {
-    throw "Release $Version was not found in '$ChangelogPath'."
+    throw "Release $Version and the Unreleased section were not found in '$ChangelogPath'."
 }
 
 $end = $lines.Count
