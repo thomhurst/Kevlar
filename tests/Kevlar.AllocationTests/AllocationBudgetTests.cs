@@ -78,7 +78,7 @@ public class AllocationBudgetTests
         .WhenResult(-1)
         .Retry(3, Backoff.None);
     private readonly Shield<int> _contextTypedJudge = Shield.For<int>()
-        .WhenResult(static handling =>
+        .WhenResultContext(static handling =>
             handling.Outcome.TryGetResult(out var result) && result < 0)
         .Retry(3, Backoff.None);
     private readonly Shield _composed = Shield

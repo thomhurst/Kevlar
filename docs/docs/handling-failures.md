@@ -163,12 +163,14 @@ with `WhenAnyError()`, which resets *handling* to Kevlar's default.
 
 Use a `HandlingEvent` predicate when handling depends on the current attempt, execution
 properties, or strategy position. `Attempt` is zero-based for retry and hedging, and zero for
-circuit breakers and fallbacks.
+circuit breakers and fallbacks. Start with `WhenContext`, continue exception or outcome
+alternatives with `OrContext`, and use `WhenResultContext` / `OrResultContext` when only successful
+typed results should reach the predicate.
 
 ```csharp
 var isRead = new KevlarKey<bool>("is-read");
 var contextual = Shield
-    .When((HandlingEvent handling) =>
+    .WhenContext(handling =>
         handling.Exception is TimeoutExceededException
         && handling.Attempt < 2
         && handling.Context.Properties.GetOrDefault(isRead))

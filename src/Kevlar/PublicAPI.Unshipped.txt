@@ -436,12 +436,12 @@ Kevlar.RetryOptions<TResult>.HandlesExceptionWithContext.get -> System.Func<Kevl
 Kevlar.RetryOptions<TResult>.HandlesExceptionWithContext.set -> void
 Kevlar.RetryOptions<TResult>.HandlesResultWithContext.get -> System.Func<Kevlar.HandlingEvent<TResult>, bool>?
 Kevlar.RetryOptions<TResult>.HandlesResultWithContext.set -> void
-Kevlar.Shield<TResult>.When(System.Func<Kevlar.HandlingEvent<TResult>, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
-Kevlar.Shield<TResult>.WhenResult(System.Func<Kevlar.HandlingEvent<TResult>, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
-Kevlar.ShieldBuilder.Or(System.Func<Kevlar.HandlingEvent, bool>! predicate) -> Kevlar.ShieldBuilder!
-Kevlar.ShieldBuilder<TResult>.Or(System.Func<Kevlar.HandlingEvent<TResult>, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
-Kevlar.ShieldBuilder<TResult>.OrResult(System.Func<Kevlar.HandlingEvent<TResult>, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
-static Kevlar.Shield.When(System.Func<Kevlar.HandlingEvent, bool>! predicate) -> Kevlar.ShieldBuilder!
-static Kevlar.ShieldExtensions.When(this Kevlar.Shield! shield, System.Func<Kevlar.HandlingEvent, bool>! predicate) -> Kevlar.ShieldBuilder!
+Kevlar.Shield<TResult>.WhenContext(System.Func<Kevlar.HandlingEvent<TResult>, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
+Kevlar.Shield<TResult>.WhenResultContext(System.Func<Kevlar.HandlingEvent<TResult>, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
+Kevlar.ShieldBuilder.OrContext(System.Func<Kevlar.HandlingEvent, bool>! predicate) -> Kevlar.ShieldBuilder!
+Kevlar.ShieldBuilder<TResult>.OrContext(System.Func<Kevlar.HandlingEvent<TResult>, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
+Kevlar.ShieldBuilder<TResult>.OrResultContext(System.Func<Kevlar.HandlingEvent<TResult>, bool>! predicate) -> Kevlar.ShieldBuilder<TResult>!
+static Kevlar.Shield.WhenContext(System.Func<Kevlar.HandlingEvent, bool>! predicate) -> Kevlar.ShieldBuilder!
+static Kevlar.ShieldExtensions.WhenContext(this Kevlar.Shield! shield, System.Func<Kevlar.HandlingEvent, bool>! predicate) -> Kevlar.ShieldBuilder!
 Kevlar.HandlingClause.ShouldHandle<T>(in Kevlar.Outcome<T> outcome, Kevlar.KevlarContext! context, int attempt = 0, int strategyIndex = -1) -> bool
 Kevlar.KevlarContext.StrategyIndex.get -> int

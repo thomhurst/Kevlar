@@ -71,20 +71,18 @@ public sealed class Shield<TResult>
         => new ShieldBuilder<TResult>(this).Or(predicate);
 
     /// <summary>Starts a handling clause for exceptions matching <paramref name="predicate"/>. Use <see cref="WhenAnyError"/> to return to default handling.</summary>
-    [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
     public ShieldBuilder<TResult> When(Func<Exception, bool> predicate) => new ShieldBuilder<TResult>(this).Or(predicate);
 
     /// <summary>Starts a handling clause using the typed outcome and active execution context.</summary>
-    public ShieldBuilder<TResult> When(Func<HandlingEvent<TResult>, bool> predicate) =>
-        new ShieldBuilder<TResult>(this).Or(predicate);
+    public ShieldBuilder<TResult> WhenContext(Func<HandlingEvent<TResult>, bool> predicate) =>
+        new ShieldBuilder<TResult>(this).OrContext(predicate);
 
     /// <summary>Starts a handling clause for results matching <paramref name="predicate"/>. Use <see cref="WhenAnyError"/> to return to default handling.</summary>
-    [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
     public ShieldBuilder<TResult> WhenResult(Func<TResult, bool> predicate) => new ShieldBuilder<TResult>(this).OrResult(predicate);
 
     /// <summary>Starts a result handling clause using the typed outcome and active execution context.</summary>
-    public ShieldBuilder<TResult> WhenResult(Func<HandlingEvent<TResult>, bool> predicate) =>
-        new ShieldBuilder<TResult>(this).OrResult(predicate);
+    public ShieldBuilder<TResult> WhenResultContext(Func<HandlingEvent<TResult>, bool> predicate) =>
+        new ShieldBuilder<TResult>(this).OrResultContext(predicate);
 
     /// <summary>Starts a handling clause for results equal to <paramref name="result"/>. Use <see cref="WhenAnyError"/> to return to default handling.</summary>
     public ShieldBuilder<TResult> WhenResult(TResult result) => new ShieldBuilder<TResult>(this).OrResult(result);

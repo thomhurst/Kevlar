@@ -90,7 +90,7 @@ context-aware clause:
 
 ```csharp
 var attemptAware = Shield
-    .When((HandlingEvent handling) =>
+    .WhenContext(handling =>
         handling.Exception is TimeoutExceededException && handling.Attempt < 2)
     .Retry(3, Backoff.None);
 ```

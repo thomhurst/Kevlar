@@ -631,7 +631,7 @@ public class PipelineHazardAnalyzerTests
         {
             "Shield.When<InvalidOperationException>();",
             "Shield.When<InvalidOperationException>().Or<TimeoutException>();",
-            "Shield.When((HandlingEvent handling) => handling.Attempt == 0);",
+            "Shield.WhenContext((HandlingEvent handling) => handling.Attempt == 0);",
             "Shield.When<InvalidOperationException>().Or<TimeoutException>().Or(static exception => exception is null);",
             "_ = Shield.When<InvalidOperationException>();",
             "_ = Shield.Empty.When<InvalidOperationException>();",
@@ -1027,7 +1027,7 @@ public class PipelineHazardAnalyzerTests
         var cases = new[]
         {
             "_ = Shield.When<InvalidOperationException>().Retry(1).CircuitBreaker(2, TimeSpan.FromSeconds(1));",
-            "_ = Shield.When((HandlingEvent handling) => handling.Attempt == 0).Retry(1).CircuitBreaker(2, TimeSpan.FromSeconds(1));",
+            "_ = Shield.WhenContext((HandlingEvent handling) => handling.Attempt == 0).Retry(1).CircuitBreaker(2, TimeSpan.FromSeconds(1));",
             "_ = Shield.When<InvalidOperationException>().Or<TimeoutException>().Retry(1).CircuitBreaker(2, TimeSpan.FromSeconds(1));",
             "_ = Shield.When<InvalidOperationException>().Retry(1).RetryForever(Backoff.None);",
             "_ = Shield.For<int>().WhenResult(0).Retry(1).Hedge(2, TimeSpan.Zero);",

@@ -271,7 +271,42 @@ public class ApiShapeTests
         await Assert.That(errors[0].Id).IsEqualTo("CS0121");
     }
 
-    private static CSharpCompilation CreateCompilation(string source)
+    [Test]
+    public async Task Handling_Predicates_Remain_Unambiguous_For_CSharp_12_Consumers()
+    {
+        var compilation = CreateCompilation(
+            """
+            using Kevlar;
+
+            public static class Consumer
+            {
+                public static void Build()
+                {
+                    _ = Shield.When(_ => true);
+                    _ = Shield.Empty.When(_ => true);
+                    _ = Shield.For<int>().When(_ => true);
+                    _ = Shield.For<int>().WhenResult(_ => true);
+                    _ = Shield.When<System.Exception>().Or(_ => true);
+                    _ = Shield.For<int>().When<System.Exception>().Or(_ => true).OrResult(_ => true);
+
+                    _ = Shield.WhenContext(handling => handling.Attempt == 0);
+                    _ = Shield.For<int>().WhenResultContext(handling => handling.Attempt == 0);
+                }
+            }
+            """,
+            LanguageVersion.CSharp12);
+
+        var errors = compilation.GetDiagnostics()
+            .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+            .Select(static diagnostic => $"{diagnostic.Id}: {diagnostic.GetMessage()}")
+            .ToArray();
+
+        await Assert.That(errors).IsEmpty();
+    }
+
+    private static CSharpCompilation CreateCompilation(
+        string source,
+        LanguageVersion languageVersion = LanguageVersion.Preview)
     {
         var references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)
             .Split(Path.PathSeparator)
@@ -282,7 +317,7 @@ public class ApiShapeTests
 
         return CSharpCompilation.Create(
             "FallbackApiShape",
-            [CSharpSyntaxTree.ParseText(source)],
+            [CSharpSyntaxTree.ParseText(source, new CSharpParseOptions(languageVersion))],
             references,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
     }

@@ -183,7 +183,6 @@ public static class ShieldExtensions
     }
 
     /// <summary>Starts a handling clause for exceptions matching <paramref name="predicate"/>. Use <see cref="WhenAnyError"/> to return to default handling.</summary>
-    [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
     public static ShieldBuilder When(this Shield shield, Func<Exception, bool> predicate)
     {
         Throw.IfNull(shield, nameof(shield));
@@ -191,10 +190,10 @@ public static class ShieldExtensions
     }
 
     /// <summary>Starts a handling clause using the active execution and strategy context.</summary>
-    public static ShieldBuilder When(this Shield shield, Func<HandlingEvent, bool> predicate)
+    public static ShieldBuilder WhenContext(this Shield shield, Func<HandlingEvent, bool> predicate)
     {
         Throw.IfNull(shield, nameof(shield));
-        return new ShieldBuilder(shield).Or(predicate);
+        return new ShieldBuilder(shield).OrContext(predicate);
     }
 
     /// <summary>

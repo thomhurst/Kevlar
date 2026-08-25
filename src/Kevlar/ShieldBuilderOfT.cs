@@ -73,7 +73,6 @@ public sealed class ShieldBuilder<TResult>
     }
 
     /// <summary>Returns a new builder that also handles exceptions matching <paramref name="predicate"/>, whatever their type.</summary>
-    [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
     public ShieldBuilder<TResult> Or(Func<Exception, bool> predicate)
     {
         Throw.IfNull(predicate, nameof(predicate));
@@ -81,14 +80,13 @@ public sealed class ShieldBuilder<TResult>
     }
 
     /// <summary>Returns a new builder that also handles outcomes selected using execution context.</summary>
-    public ShieldBuilder<TResult> Or(Func<HandlingEvent<TResult>, bool> predicate)
+    public ShieldBuilder<TResult> OrContext(Func<HandlingEvent<TResult>, bool> predicate)
     {
         Throw.IfNull(predicate, nameof(predicate));
         return WithContext(predicate, "custom");
     }
 
     /// <summary>Returns a new builder that also handles results matching <paramref name="predicate"/>.</summary>
-    [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
     public ShieldBuilder<TResult> OrResult(Func<TResult, bool> predicate)
     {
         Throw.IfNull(predicate, nameof(predicate));
@@ -96,7 +94,7 @@ public sealed class ShieldBuilder<TResult>
     }
 
     /// <summary>Returns a new builder that also handles results selected using execution context.</summary>
-    public ShieldBuilder<TResult> OrResult(Func<HandlingEvent<TResult>, bool> predicate)
+    public ShieldBuilder<TResult> OrResultContext(Func<HandlingEvent<TResult>, bool> predicate)
     {
         Throw.IfNull(predicate, nameof(predicate));
         return WithContext(
