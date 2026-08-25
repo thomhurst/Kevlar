@@ -201,8 +201,9 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
 
     private void CompleteExecution()
     {
-        Interlocked.Decrement(ref _pending);
+        // Keep the capacity reservation until permit ownership has been published.
         ReleasePermit();
+        Interlocked.Decrement(ref _pending);
     }
 
     private static OperationCanceledException NormalizeCancellation(
