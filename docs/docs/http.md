@@ -271,10 +271,11 @@ using var request = new HttpRequestMessage(HttpMethod.Post, "orders")
 using var response = await httpClient.SendAsync(request, cancellationToken);
 ```
 
-The property initializer runs once for each context created for the request, including retry,
-hedging, and endpoint-local strategy contexts. Pooled properties are cleared after execution, so
-values do not leak to later requests. `DisableReplay` affects only this request. To allow an unsafe
-method for one known-idempotent request, set
+The property initializer runs once for the outer request execution and once for each separately
+executed endpoint-local shield. Retries reuse their context, while hedges copy the initialized
+properties into forked contexts instead of rerunning the initializer. Pooled properties are cleared
+after execution, so values do not leak to later requests. `DisableReplay` affects only this request.
+To allow an unsafe method for one known-idempotent request, set
 `KevlarHttp.GetRequestOptions(request).AllowReplay = true`; content must still satisfy the normal
 replay-safety rules.
 
@@ -295,7 +296,8 @@ services.AddHttpClient("api")
             : readShield);
 ```
 
-For isolated, bounded state per request key, connect a `PartitionedShield` directly:
+For isolated, bounded state per request key, connect a [`PartitionedShield`](partitioning.md)
+directly:
 
 ```csharp
 using Kevlar.Extensions.Http;
