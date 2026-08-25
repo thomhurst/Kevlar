@@ -18,7 +18,8 @@ internal sealed class LoggingStrategy(LoggingRegistration registration)
     void IStrategyAppendObserver.OnStrategyAppended(
         Strategy strategy,
         string? shieldName,
-        int strategyIndex)
+        int strategyIndex,
+        object scopeOwner)
     {
         if (strategy is CircuitBreakerStrategy circuitBreaker)
         {
@@ -26,14 +27,16 @@ internal sealed class LoggingStrategy(LoggingRegistration registration)
                 previous: null,
                 _listener,
                 shieldName,
-                strategyIndex);
+                strategyIndex,
+                scopeOwner);
         }
     }
 
     void IShieldNameObserver.OnStrategyNamed(
         Strategy strategy,
         string shieldName,
-        int strategyIndex)
+        int strategyIndex,
+        object scopeOwner)
     {
         if (strategy is CircuitBreakerStrategy circuitBreaker)
         {
@@ -41,7 +44,8 @@ internal sealed class LoggingStrategy(LoggingRegistration registration)
                 _listener,
                 _listener,
                 shieldName,
-                strategyIndex);
+                strategyIndex,
+                scopeOwner);
         }
     }
 

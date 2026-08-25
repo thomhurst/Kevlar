@@ -132,7 +132,8 @@ public static class ShieldLoggingExtensions
                     previous,
                     listener,
                     shieldName,
-                    strategyIndex);
+                    strategyIndex,
+                    scopeOwner: null);
             }
         }
     }

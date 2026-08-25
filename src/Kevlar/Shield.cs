@@ -251,7 +251,7 @@ public sealed class Shield : IShieldLifecycle
 
         var strategies = Concat(parts);
         var composed = new Shield(strategies, null, name, time, appliedDecorators);
-        StrategyAppendObserver.NotifyComposition(strategies, name);
+        StrategyAppendObserver.NotifyComposition(strategies, name, composed);
         return composed;
     }
 
@@ -813,7 +813,7 @@ public sealed class Shield : IShieldLifecycle
         Array.Copy(Strategies, strategies, Strategies.Length);
         strategies[Strategies.Length] = strategy;
         var shield = new Shield(strategies, ambient ?? Ambient, Name, Time, AppliedDecorators);
-        StrategyAppendObserver.Notify(Strategies, strategy, Name);
+        StrategyAppendObserver.Notify(Strategies, strategy, Name, shield);
         return shield;
     }
 

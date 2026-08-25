@@ -228,6 +228,10 @@ public class LoggingTests
 
         await Assert.That(await execution).IsEqualTo(42);
         await Assert.That(observedDelay).IsEqualTo(delay);
+        var hedgeRecord = logger.Collector.GetSnapshot()
+            .Single(record => record.Id == new EventId(1004, "Hedge"));
+        await Assert.That(hedgeRecord.GetStructuredStateValue("Delay"))
+            .IsEqualTo(delay.ToString());
     }
 
     [Test]
@@ -747,6 +751,30 @@ public class LoggingTests
 
     [Test]
     [NotInParallel]
+    public async Task Discarded_Composition_Retires_Its_Circuit_Listener_Metadata()
+    {
+        var logger = new FakeLogger();
+        var monitor = new CircuitBreakerMonitor();
+        var source = Shield.CircuitBreaker(options => options.Monitor = monitor)
+            .WithName("source")
+            .WithLogging(logger);
+        var discarded = CreateDiscardedComposition(source);
+
+        Collect(discarded);
+        await Assert.That(discarded.IsAlive).IsFalse();
+        monitor.Isolate();
+
+        var transition = logger.Collector.GetSnapshot()
+            .Single(record => record.Id == new EventId(1003, "CircuitState"));
+        await Assert.That(transition.GetStructuredStateValue("ShieldName"))
+            .IsEqualTo("source");
+        await Assert.That(transition.GetStructuredStateValue("StrategyIndex"))
+            .IsEqualTo("0");
+        GC.KeepAlive(source);
+    }
+
+    [Test]
+    [NotInParallel]
     public async Task Isolated_Logs_Error()
     {
         var logger = new FakeLogger();
@@ -845,6 +873,26 @@ public class LoggingTests
         });
         listener.Start();
         return listener;
+    }
+
+    [System.Runtime.CompilerServices.MethodImpl(
+        System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    private static WeakReference CreateDiscardedComposition(Shield source)
+    {
+        var derived = Shield.Timeout(TimeSpan.FromSeconds(1))
+            .WithName("temporary")
+            .Wrap(source);
+        return new WeakReference(derived);
+    }
+
+    private static void Collect(WeakReference reference)
+    {
+        for (var attempt = 0; reference.IsAlive && attempt < 10; attempt++)
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+        }
     }
 
     private sealed class TestException(string message) : Exception(message);

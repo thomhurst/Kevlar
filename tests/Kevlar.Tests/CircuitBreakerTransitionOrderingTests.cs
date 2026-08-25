@@ -547,7 +547,8 @@ public class CircuitBreakerTransitionOrderingTests
             previous: null,
             listener: live,
             shieldName: "live",
-            strategyIndex: 0);
+            strategyIndex: 0,
+            scopeOwner: null);
         var registrations = (Array)typeof(CircuitBreakerCore)
             .GetField("_telemetryRegistrations", BindingFlags.Instance | BindingFlags.NonPublic)!
             .GetValue(core)!;
@@ -565,7 +566,8 @@ public class CircuitBreakerTransitionOrderingTests
             previous: null,
             listener: listener,
             shieldName: "transient",
-            strategyIndex: 0);
+            strategyIndex: 0,
+            scopeOwner: null);
         return new WeakReference(listener);
     }
 

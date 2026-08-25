@@ -278,7 +278,7 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
             }
             case KevlarLogEventKind.Hedge:
                 LoggerMessages.Hedge(logger, telemetryEvent.ShieldName, telemetryEvent.StrategyIndex,
-                    telemetryEvent.AttemptNumber, outcome, telemetryEvent.Exception);
+                    telemetryEvent.AttemptNumber, telemetryEvent.Delay, outcome, telemetryEvent.Exception);
                 break;
             case KevlarLogEventKind.Fallback:
                 LoggerMessages.Fallback(logger, telemetryEvent.ShieldName, telemetryEvent.StrategyIndex,
@@ -356,9 +356,9 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
                 break;
             case KevlarLogEventKind.Hedge:
                 logger.Log(level, eventId, telemetryEvent.Exception,
-                    "Shield {ShieldName} strategy {StrategyIndex} started hedge attempt {Attempt}; outcome {Outcome}",
+                    "Shield {ShieldName} strategy {StrategyIndex} started hedge attempt {Attempt} after {Delay}; outcome {Outcome}",
                     telemetryEvent.ShieldName, telemetryEvent.StrategyIndex,
-                    telemetryEvent.AttemptNumber, outcome);
+                    telemetryEvent.AttemptNumber, telemetryEvent.Delay, outcome);
                 break;
             case KevlarLogEventKind.Fallback:
                 logger.Log(level, eventId, telemetryEvent.Exception,

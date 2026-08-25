@@ -455,7 +455,7 @@ public sealed class Shield<TResult> : IShieldLifecycle
                 AppliedDecorators,
                 ShieldDecoration.HasResilienceStrategies(Strategies),
                 inner.AppliedDecorators));
-        StrategyAppendObserver.NotifyComposition(strategies, Name ?? inner.Name);
+        StrategyAppendObserver.NotifyComposition(strategies, Name ?? inner.Name, wrapped);
         return wrapped;
     }
 
@@ -477,7 +477,7 @@ public sealed class Shield<TResult> : IShieldLifecycle
                 AppliedDecorators,
                 ShieldDecoration.HasResilienceStrategies(Strategies),
                 inner.AppliedDecorators));
-        StrategyAppendObserver.NotifyComposition(strategies, Name ?? inner.Name);
+        StrategyAppendObserver.NotifyComposition(strategies, Name ?? inner.Name, wrapped);
         return wrapped;
     }
 
@@ -515,7 +515,7 @@ public sealed class Shield<TResult> : IShieldLifecycle
 
         var strategies = Shield.Concat(parts);
         var composed = new Shield<TResult>(strategies, null, name, time, appliedDecorators);
-        StrategyAppendObserver.NotifyComposition(strategies, name);
+        StrategyAppendObserver.NotifyComposition(strategies, name, composed);
         return composed;
     }
 
@@ -523,8 +523,9 @@ public sealed class Shield<TResult> : IShieldLifecycle
     public Shield<TResult> WithName(string name)
     {
         Throw.IfNull(name, nameof(name));
-        ShieldNameObserver.Notify(Strategies, name);
-        return new Shield<TResult>(Strategies, Ambient, name, Time, AppliedDecorators);
+        var named = new Shield<TResult>(Strategies, Ambient, name, Time, AppliedDecorators);
+        ShieldNameObserver.Notify(Strategies, name, named);
+        return named;
     }
 
     /// <summary>Returns a copy of this shield using the given <see cref="TimeProvider"/> for delays, timeouts and time windows.</summary>
@@ -725,7 +726,7 @@ public sealed class Shield<TResult> : IShieldLifecycle
         Array.Copy(Strategies, strategies, Strategies.Length);
         strategies[Strategies.Length] = strategy;
         var shield = new Shield<TResult>(strategies, ambient ?? Ambient, Name, Time, AppliedDecorators);
-        StrategyAppendObserver.Notify(Strategies, strategy, Name);
+        StrategyAppendObserver.Notify(Strategies, strategy, Name, shield);
         return shield;
     }
 

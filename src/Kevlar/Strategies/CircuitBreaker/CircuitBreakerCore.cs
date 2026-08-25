@@ -58,7 +58,8 @@ internal sealed class CircuitBreakerCore
         IKevlarTelemetryListener? previous,
         IKevlarTelemetryListener listener,
         string? shieldName,
-        int strategyIndex)
+        int strategyIndex,
+        object? scopeOwner = null)
     {
         lock (_telemetryGate)
         {
@@ -72,17 +73,25 @@ internal sealed class CircuitBreakerCore
                     continue;
                 }
 
+                if (registration.ScopeOwner is { } owner
+                    && !owner.TryGetTarget(out _))
+                {
+                    continue;
+                }
+
                 if (previous is not null
                     && ReferenceEquals(registered, previous)
                     && registration.ShieldName == shieldName
-                    && registration.StrategyIndex == strategyIndex)
+                    && registration.StrategyIndex == strategyIndex
+                    && registration.HasScopeOwner(scopeOwner))
                 {
                     continue;
                 }
 
                 if (ReferenceEquals(registered, listener)
                     && registration.ShieldName == shieldName
-                    && registration.StrategyIndex == strategyIndex)
+                    && registration.StrategyIndex == strategyIndex
+                    && registration.HasScopeOwner(scopeOwner))
                 {
                     registeredForShield = true;
                 }
@@ -92,7 +101,11 @@ internal sealed class CircuitBreakerCore
 
             if (!registeredForShield)
             {
-                updated.Add(new CircuitTelemetryRegistration(listener, shieldName, strategyIndex));
+                updated.Add(new CircuitTelemetryRegistration(
+                    listener,
+                    shieldName,
+                    strategyIndex,
+                    scopeOwner));
             }
 
             Volatile.Write(ref _telemetryRegistrations, updated.ToArray());
@@ -1252,7 +1265,7 @@ internal sealed class CircuitBreakerCore
 
     private void RecordAttachedTelemetry(CircuitBreakerStateChangedEvent stateChange)
     {
-        var registrations = Volatile.Read(ref _telemetryRegistrations);
+        var registrations = GetLiveTelemetryRegistrations();
         var context = stateChange.Context;
         var previousShieldName = context.ShieldName;
         var previousStrategyIndex = context.StrategyIndex;
@@ -1260,7 +1273,9 @@ internal sealed class CircuitBreakerCore
         {
             foreach (var registration in registrations)
             {
-                if (!registration.Listener.TryGetTarget(out var listener))
+                if (!registration.Listener.TryGetTarget(out var listener)
+                    || registration.ScopeOwner is { } owner
+                        && !owner.TryGetTarget(out _))
                 {
                     continue;
                 }
@@ -1291,6 +1306,42 @@ internal sealed class CircuitBreakerCore
         }
     }
 
+    private CircuitTelemetryRegistration[] GetLiveTelemetryRegistrations()
+    {
+        var registrations = Volatile.Read(ref _telemetryRegistrations);
+        var hasExpiredRegistration = false;
+        foreach (var registration in registrations)
+        {
+            if (!registration.IsAlive)
+            {
+                hasExpiredRegistration = true;
+                break;
+            }
+        }
+
+        if (!hasExpiredRegistration)
+        {
+            return registrations;
+        }
+
+        lock (_telemetryGate)
+        {
+            registrations = _telemetryRegistrations;
+            var live = new List<CircuitTelemetryRegistration>(registrations.Length);
+            foreach (var registration in registrations)
+            {
+                if (registration.IsAlive)
+                {
+                    live.Add(registration);
+                }
+            }
+
+            var result = live.ToArray();
+            Volatile.Write(ref _telemetryRegistrations, result);
+            return result;
+        }
+    }
+
     private static string TelemetryEventName(CircuitState state) => state switch
     {
         CircuitState.Open => "circuit_opened",
@@ -1308,15 +1359,32 @@ internal sealed class CircuitBreakerCore
     private readonly record struct CircuitTelemetryRegistration(
         WeakReference<IKevlarTelemetryListener> Listener,
         string? ShieldName,
-        int StrategyIndex)
+        int StrategyIndex,
+        WeakReference<object>? ScopeOwner)
     {
         public CircuitTelemetryRegistration(
             IKevlarTelemetryListener listener,
             string? shieldName,
-            int strategyIndex)
-            : this(new WeakReference<IKevlarTelemetryListener>(listener), shieldName, strategyIndex)
+            int strategyIndex,
+            object? scopeOwner)
+            : this(
+                new WeakReference<IKevlarTelemetryListener>(listener),
+                shieldName,
+                strategyIndex,
+                scopeOwner is null ? null : new WeakReference<object>(scopeOwner))
         {
         }
+
+        public bool HasScopeOwner(object? scopeOwner) =>
+            ScopeOwner is null
+                ? scopeOwner is null
+                : scopeOwner is not null
+                    && ScopeOwner.TryGetTarget(out var registeredOwner)
+                    && ReferenceEquals(registeredOwner, scopeOwner);
+
+        public bool IsAlive =>
+            Listener.TryGetTarget(out _)
+            && (ScopeOwner is null || ScopeOwner.TryGetTarget(out _));
     }
 
     private static void AddFailure(ref Exception? failure, Exception next)

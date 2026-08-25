@@ -62,13 +62,14 @@ internal static partial class LoggerMessages
         Exception? exception);
 
     [LoggerMessage(EventId = 1004, EventName = "Hedge", Level = LogLevel.Information,
-        Message = "Shield {ShieldName} strategy {StrategyIndex} started hedge attempt {Attempt}; outcome {Outcome}",
+        Message = "Shield {ShieldName} strategy {StrategyIndex} started hedge attempt {Attempt} after {Delay}; outcome {Outcome}",
         SkipEnabledCheck = true)]
     public static partial void Hedge(
         ILogger logger,
         string? shieldName,
         int strategyIndex,
         int attempt,
+        TimeSpan delay,
         string outcome,
         Exception? exception);
 

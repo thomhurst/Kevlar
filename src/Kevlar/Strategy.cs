@@ -148,12 +148,20 @@ internal interface ITransparentStrategy
 
 internal interface IStrategyAppendObserver
 {
-    void OnStrategyAppended(Strategy strategy, string? shieldName, int strategyIndex);
+    void OnStrategyAppended(
+        Strategy strategy,
+        string? shieldName,
+        int strategyIndex,
+        object scopeOwner);
 }
 
 internal interface IShieldNameObserver
 {
-    void OnStrategyNamed(Strategy strategy, string shieldName, int strategyIndex);
+    void OnStrategyNamed(
+        Strategy strategy,
+        string shieldName,
+        int strategyIndex,
+        object scopeOwner);
 }
 
 internal static class StrategyAppendObserver
@@ -161,20 +169,24 @@ internal static class StrategyAppendObserver
     public static void Notify(
         Strategy[] strategies,
         Strategy appended,
-        string? shieldName)
+        string? shieldName,
+        object scopeOwner)
     {
         var strategyIndex = strategies.Count(static strategy => strategy is not ITransparentStrategy);
         for (var index = strategies.Length - 1; index >= 0; index--)
         {
             if (strategies[index] is IStrategyAppendObserver observer)
             {
-                observer.OnStrategyAppended(appended, shieldName, strategyIndex);
+                observer.OnStrategyAppended(appended, shieldName, strategyIndex, scopeOwner);
                 break;
             }
         }
     }
 
-    public static void NotifyComposition(Strategy[] strategies, string? shieldName)
+    public static void NotifyComposition(
+        Strategy[] strategies,
+        string? shieldName,
+        object scopeOwner)
     {
         var strategyIndex = 0;
         for (var appendedIndex = 0; appendedIndex < strategies.Length; appendedIndex++)
@@ -184,7 +196,11 @@ internal static class StrategyAppendObserver
             {
                 if (strategies[observerIndex] is IStrategyAppendObserver observer)
                 {
-                    observer.OnStrategyAppended(appended, shieldName, strategyIndex);
+                    observer.OnStrategyAppended(
+                        appended,
+                        shieldName,
+                        strategyIndex,
+                        scopeOwner);
                     break;
                 }
             }
@@ -199,7 +215,10 @@ internal static class StrategyAppendObserver
 
 internal static class ShieldNameObserver
 {
-    public static void Notify(Strategy[] strategies, string shieldName)
+    public static void Notify(
+        Strategy[] strategies,
+        string shieldName,
+        object scopeOwner)
     {
         IShieldNameObserver? observer = null;
         var strategyIndex = 0;
@@ -213,7 +232,7 @@ internal static class ShieldNameObserver
 
             if (strategy is not ITransparentStrategy)
             {
-                observer?.OnStrategyNamed(strategy, shieldName, strategyIndex);
+                observer?.OnStrategyNamed(strategy, shieldName, strategyIndex, scopeOwner);
                 strategyIndex++;
             }
         }

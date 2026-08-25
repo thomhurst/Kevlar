@@ -299,7 +299,10 @@ public static class ShieldExtensions
                 outer.AppliedDecorators,
                 ShieldDecoration.HasResilienceStrategies(outer.Strategies),
                 inner.AppliedDecorators));
-        StrategyAppendObserver.NotifyComposition(strategies, outer.Name ?? inner.Name);
+        StrategyAppendObserver.NotifyComposition(
+            strategies,
+            outer.Name ?? inner.Name,
+            wrapped);
         return wrapped;
     }
 
@@ -322,7 +325,10 @@ public static class ShieldExtensions
                 outer.AppliedDecorators,
                 ShieldDecoration.HasResilienceStrategies(outer.Strategies),
                 inner.AppliedDecorators));
-        StrategyAppendObserver.NotifyComposition(strategies, outer.Name ?? inner.Name);
+        StrategyAppendObserver.NotifyComposition(
+            strategies,
+            outer.Name ?? inner.Name,
+            wrapped);
         return wrapped;
     }
 
@@ -442,13 +448,14 @@ public static class ShieldExtensions
     {
         Throw.IfNull(shield, nameof(shield));
         Throw.IfNull(name, nameof(name));
-        ShieldNameObserver.Notify(shield.Strategies, name);
-        return new Shield(
+        var named = new Shield(
             shield.Strategies,
             shield.Ambient,
             name,
             shield.Time,
             shield.AppliedDecorators);
+        ShieldNameObserver.Notify(shield.Strategies, name, named);
+        return named;
     }
 
     /// <summary>Returns a copy of this shield using the given <see cref="TimeProvider"/> for delays, timeouts and time windows.</summary>
