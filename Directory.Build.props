@@ -4,6 +4,8 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <VersionPrefix Condition="'$(VersionPrefix)' == ''">0.0.0</VersionPrefix>
+    <VersionSuffix Condition="'$(VersionSuffix)' == '' and '$(Version)' == ''">local</VersionSuffix>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
@@ -30,7 +32,7 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/thomhurst/Kevlar</RepositoryUrl>
     <PackageProjectUrl>https://github.com/thomhurst/Kevlar</PackageProjectUrl>
-    <!-- Version comes from GitVersion in CI (-p:Version=...); local builds use the SDK default. -->
+    <!-- CI supplies Version from GitVersion; local packages remain visibly non-publishable. -->
   </PropertyGroup>
 
 </Project>
