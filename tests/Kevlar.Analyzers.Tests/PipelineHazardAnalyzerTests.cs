@@ -1324,6 +1324,7 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.Retry(options => options.OnRetryAsync = static _ => ValueTask.CompletedTask).ExecuteOutcome(static _ => 1);",
             "_ = Shield.Empty.UseRateLimiter((System.Threading.RateLimiting.RateLimiter)null!, options => options.OnRejectedAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
             "_ = ChaosShield.Behavior(options => options.Behavior = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
+            "_ = Shield.Retry(options => { var alias = options; alias.OnRetryAsync = static _ => ValueTask.CompletedTask; }).Execute(_ => 1);",
         };
 
         await AssertEachAsync(cases, "KEV012", "KEV004", "KEV011");
@@ -1339,6 +1340,8 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.CircuitBreaker(options => { options.ConsecutiveFailures = 1; options.BreakDurationGeneratorSync = static _ => TimeSpan.FromSeconds(1); }).Execute(_ => 1);",
             "_ = Shield.Retry(options => options.OnRetryAsync = null).Execute(_ => 1);",
             "_ = Shield.Retry(options => options.OnRetry = _ => options.OnRetryAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
+            "var unrelated = new TimeoutOptions(); _ = Shield.Retry(_ => unrelated.TimeoutGenerator = static _ => new ValueTask<TimeSpan>(TimeSpan.FromSeconds(1))).Execute(_ => 1);",
+            "_ = Shield.Retry(options => { var alias = options; alias = new RetryOptions(); alias.OnRetryAsync = static _ => ValueTask.CompletedTask; }).Execute(_ => 1);",
             "Action<RetryOptions> configure = static options => options.OnRetryAsync = static _ => ValueTask.CompletedTask; _ = Shield.Retry(configure).Execute(_ => 1);",
         };
 

@@ -169,7 +169,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             if (FindInPipeline(
                     GetReceiver(invocation),
                     context,
-                    candidate => TryFindAsyncConfiguration(candidate, out asyncMember),
+                    candidate => TryFindAsyncConfiguration(candidate, context, out asyncMember),
                     knownTypes,
                     stopAtHandlingClause: false,
                     stopAtCompositionBoundary: false,
@@ -1711,18 +1711,40 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         ILocalReferenceOperation localReference,
         OperationAnalysisContext context,
         out IOperation? initializer)
-        => TryGetInitializer(localReference, context, requireSingleUse: false, out initializer);
+        => TryGetInitializer(
+            localReference,
+            context,
+            requireSingleUse: false,
+            allowMemberMutation: false,
+            out initializer);
+
+    private static bool TryGetStableAliasInitializer(
+        ILocalReferenceOperation localReference,
+        OperationAnalysisContext context,
+        out IOperation? initializer)
+        => TryGetInitializer(
+            localReference,
+            context,
+            requireSingleUse: false,
+            allowMemberMutation: true,
+            out initializer);
 
     private static bool TryGetSingleUseInitializer(
         ILocalReferenceOperation localReference,
         OperationAnalysisContext context,
         out IOperation? initializer)
-        => TryGetInitializer(localReference, context, requireSingleUse: true, out initializer);
+        => TryGetInitializer(
+            localReference,
+            context,
+            requireSingleUse: true,
+            allowMemberMutation: false,
+            out initializer);
 
     private static bool TryGetInitializer(
         ILocalReferenceOperation localReference,
         OperationAnalysisContext context,
         bool requireSingleUse,
+        bool allowMemberMutation,
         out IOperation? initializer)
     {
         var local = localReference.Local;
@@ -1763,7 +1785,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     local))
             {
                 referenceCount++;
-                if (IsWritten(identifier)
+                if ((allowMemberMutation ? IsReassigned(identifier) : IsWritten(identifier))
                     || local.Type is IArrayTypeSymbol
                         && IsEscapingArrayReference(identifier, localReference.Syntax)
                     || requireSingleUse && referenceCount > 1)
@@ -1992,12 +2014,13 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
     private static bool TryFindAsyncConfiguration(
         IInvocationOperation invocation,
+        OperationAnalysisContext context,
         out string? memberName)
     {
         foreach (var argument in invocation.Arguments)
         {
             if (argument.Parameter?.Name == "configure"
-                && TryFindAsyncConfiguration(argument.Value, out memberName))
+                && TryFindAsyncConfiguration(argument.Value, context, out memberName))
             {
                 return true;
             }
@@ -2009,27 +2032,37 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
     private static bool TryFindAsyncConfiguration(
         IOperation operation,
+        OperationAnalysisContext context,
         out string? memberName)
     {
         operation = Unwrap(operation)!;
         if (operation is IDelegateCreationOperation delegateCreation)
         {
-            return TryFindAsyncConfiguration(
-                delegateCreation.Target,
-                allowAnonymousFunction: true,
-                out memberName);
+            operation = Unwrap(delegateCreation.Target)!;
         }
 
-        return TryFindAsyncConfiguration(operation, allowAnonymousFunction: true, out memberName);
+        if (operation is not IAnonymousFunctionOperation anonymousFunction
+            || anonymousFunction.Symbol.Parameters.Length != 1)
+        {
+            memberName = null;
+            return false;
+        }
+
+        return TryFindAsyncConfiguration(
+            anonymousFunction.Body,
+            anonymousFunction.Symbol.Parameters[0],
+            context,
+            out memberName);
     }
 
     private static bool TryFindAsyncConfiguration(
         IOperation operation,
-        bool allowAnonymousFunction,
+        IParameterSymbol configuratorParameter,
+        OperationAnalysisContext context,
         out string? memberName)
     {
         operation = Unwrap(operation)!;
-        if (operation is IAnonymousFunctionOperation && !allowAnonymousFunction)
+        if (operation is IAnonymousFunctionOperation)
         {
             memberName = null;
             return false;
@@ -2040,6 +2073,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 Target: IPropertyReferenceOperation propertyReference,
                 Value: { } value,
             }
+            && propertyReference.Instance is { } instance
+            && ReferencesConfiguratorParameter(instance, configuratorParameter, context)
             && IsAsyncConfigurationProperty(propertyReference.Property)
             && value.ConstantValue is not { HasValue: true, Value: null })
         {
@@ -2050,9 +2085,10 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         foreach (var child in operation.ChildOperations)
         {
             if (TryFindAsyncConfiguration(
-                    child,
-                    allowAnonymousFunction: false,
-                    out memberName))
+                child,
+                configuratorParameter,
+                context,
+                out memberName))
             {
                 return true;
             }
@@ -2060,6 +2096,73 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         memberName = null;
         return false;
+    }
+
+    private static bool IsReassigned(IdentifierNameSyntax identifier)
+    {
+        foreach (var ancestor in identifier.Ancestors())
+        {
+            switch (ancestor)
+            {
+                case MemberAccessExpressionSyntax memberAccess
+                    when memberAccess.Expression.Span.Contains(identifier.Span):
+                case ElementAccessExpressionSyntax elementAccess
+                    when elementAccess.Expression.Span.Contains(identifier.Span):
+                    return false;
+                case AssignmentExpressionSyntax assignment when assignment.Left.Span.Contains(identifier.Span):
+                    return true;
+                case PrefixUnaryExpressionSyntax prefix
+                    when prefix.IsKind(SyntaxKind.PreIncrementExpression)
+                        || prefix.IsKind(SyntaxKind.PreDecrementExpression):
+                    return true;
+                case PostfixUnaryExpressionSyntax postfix
+                    when postfix.IsKind(SyntaxKind.PostIncrementExpression)
+                        || postfix.IsKind(SyntaxKind.PostDecrementExpression):
+                    return true;
+                case ArgumentSyntax argument when !argument.RefKindKeyword.IsKind(SyntaxKind.None):
+                    return true;
+                case StatementSyntax:
+                    return false;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool ReferencesConfiguratorParameter(
+        IOperation operation,
+        IParameterSymbol configuratorParameter,
+        OperationAnalysisContext context,
+        HashSet<ISymbol>? visitedLocals = null)
+    {
+        operation = Unwrap(operation)!;
+        if (operation is IParameterReferenceOperation parameterReference)
+        {
+            return SymbolEqualityComparer.Default.Equals(
+                parameterReference.Parameter,
+                configuratorParameter);
+        }
+
+        if (operation is not ILocalReferenceOperation localReference)
+        {
+            return false;
+        }
+
+        visitedLocals ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+        if (!visitedLocals.Add(localReference.Local)
+            || !TryGetStableAliasInitializer(localReference, context, out var initializer)
+            || initializer is null)
+        {
+            return false;
+        }
+
+        var referencesParameter = ReferencesConfiguratorParameter(
+            initializer,
+            configuratorParameter,
+            context,
+            visitedLocals);
+        visitedLocals.Remove(localReference.Local);
+        return referencesParameter;
     }
 
     private static bool IsAsyncConfigurationProperty(IPropertySymbol property) =>
