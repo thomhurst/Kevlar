@@ -116,6 +116,81 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Inspects_Invoked_Async_Local_Functions()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                async void Start()
+                {
+                    await Task.Yield();
+                    _ = item.Context.ShieldName;
+                }
+
+                Start();
+            });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Invoked_Delegates_After_Await()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                await Task.Yield();
+                Action use = () => Console.WriteLine(item.Context.ShieldName);
+                use();
+            });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Nameof_After_Await()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                await Task.Yield();
+                _ = nameof(item);
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV013");
+    }
+
+    [Test]
+    public async Task KEV014_Requires_Reachable_Suspension_Before_Event_Use()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                if (Environment.TickCount == 0)
+                {
+                    await Task.Yield();
+                    return;
+                }
+
+                _ = item.Context.ShieldName;
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV013");
+    }
+
+    [Test]
     public async Task KEV014_Inspects_Combined_Async_Delegates()
     {
         var diagnostics = await AnalyzeBodyAsync("""
@@ -334,17 +409,21 @@ public class PipelineHazardAnalyzerTests
     [Test]
     public async Task KEV014_Ignores_Reassigned_Async_Event_Aliases()
     {
-        var diagnostics = await AnalyzeBodyAsync("""
-            _ = Shield.Retry(options => options.OnRetry = async item =>
-            {
-                var retained = item;
-                retained = default;
-                await Task.Yield();
-                _ = retained.Context.ShieldName;
-            });
-            """);
+        var assignments = new[] { "retained = default;", "{ retained = default; }" };
+        foreach (var assignment in assignments)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = async item =>
+                {
+                    var retained = item;
+                    {{assignment}}
+                    await Task.Yield();
+                    _ = retained.Context.ShieldName;
+                });
+                """);
 
-        await AssertRuleAsync(diagnostics, "KEV013");
+            await AssertRuleAsync(diagnostics, "KEV013");
+        }
     }
 
     [Test]
@@ -359,6 +438,37 @@ public class PipelineHazardAnalyzerTests
                     _ = Shield.Retry(options => options.OnRetry = async item =>
                     {
                         _event = item;
+                        await Task.Yield();
+                        _ = _event.Context.ShieldName;
+                    });
+            }
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Follows_Event_Fields_On_Paths_Reaching_Await()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        _event = item;
+                        if (Environment.TickCount == 0)
+                        {
+                            _event = default;
+                            return;
+                        }
+
                         await Task.Yield();
                         _ = _event.Context.ShieldName;
                     });
@@ -1445,6 +1555,28 @@ public class PipelineHazardAnalyzerTests
                 Without(diagnostics, "KEV013"),
                 "KEV014",
                 DiagnosticSeverity.Warning);
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Nested_Delegate_Event_Parameters()
+    {
+        var selectors = new[]
+        {
+            "(RetryEvent other) => other.RetryNumber",
+            "(RetryEvent other) => other.Context.ShieldName.Length",
+            "(RetryEvent other) => { var copy = other; return copy.RetryNumber; }",
+        };
+        foreach (var selector in selectors)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                    ProcessAsync({{selector}}));
+
+                static Task ProcessAsync(Func<RetryEvent, int> selector) => Task.CompletedTask;
+                """);
+
+            await AssertRuleAsync(diagnostics, "KEV013");
         }
     }
 

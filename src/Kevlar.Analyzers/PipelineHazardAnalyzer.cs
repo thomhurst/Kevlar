@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.FlowAnalysis;
 using Microsoft.CodeAnalysis.Operations;
 
 namespace Kevlar.Analyzers;
@@ -401,12 +402,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                          .OfType<AnonymousFunctionExpressionSyntax>()
                          .Any(ancestor => expression.Span.Contains(ancestor.Span))))
         {
-            if (!anonymous.AsyncKeyword.IsKind(SyntaxKind.None)
-                && TryFindAsyncAnonymousFunctionContext(
-                    anonymous,
-                    context,
-                    knownTypes,
-                    out capturedContext))
+            if (TryFindAnonymousFunctionContext(
+                anonymous,
+                context,
+                knownTypes,
+                out capturedContext))
             {
                 return true;
             }
@@ -489,6 +489,10 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     && TryFindPostAwaitEventContext(
                         body,
                         eventParameterNames,
+                        declaration.SyntaxTree == context.SemanticModel.SyntaxTree
+                            ? context.SemanticModel
+                            : null,
+                        context.CancellationToken,
                         out capturedContext))
                 {
                     return true;
@@ -500,7 +504,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static bool TryFindAsyncAnonymousFunctionContext(
+    private static bool TryFindAnonymousFunctionContext(
         AnonymousFunctionExpressionSyntax anonymous,
         SyntaxNodeAnalysisContext context,
         KnownTypes knownTypes,
@@ -532,22 +536,32 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         return TryFindPostAwaitEventContext(
             anonymous.Body,
             eventParameterNames,
+            context.SemanticModel,
+            context.CancellationToken,
             out capturedContext);
     }
 
     private static bool TryFindPostAwaitEventContext(
         SyntaxNode body,
         HashSet<string> eventParameterNames,
-        out SyntaxNode capturedContext)
+        SemanticModel? semanticModel,
+        CancellationToken cancellationToken,
+        out SyntaxNode capturedContext,
+        HashSet<LocalFunctionStatementSyntax>? callPath = null)
     {
         var nodes = body.DescendantNodesAndSelf(descendIntoChildren: static node =>
                 node is not AnonymousFunctionExpressionSyntax
                     and not LocalFunctionStatementSyntax)
             .ToArray();
-        var firstAwait = nodes.OfType<AwaitExpressionSyntax>()
+        var awaits = nodes.OfType<AwaitExpressionSyntax>().ToArray();
+        var firstAwait = awaits
             .Select(static awaitExpression => awaitExpression.SpanStart)
             .DefaultIfEmpty(int.MaxValue)
             .Min();
+        var controlFlowGraph = TryCreateControlFlowGraph(
+            body,
+            semanticModel,
+            cancellationToken);
         var retainedNames = new HashSet<string>(eventParameterNames, StringComparer.Ordinal);
         foreach (var alias in nodes
                      .Where(node => node.SpanStart < firstAwait
@@ -572,15 +586,19 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             {
                 retainedNames.Add(name);
             }
-            else
+            else if (IsUnconditionalAliasWrite(alias, body))
             {
                 retainedNames.Remove(name);
             }
         }
 
         foreach (var identifier in nodes.OfType<IdentifierNameSyntax>()
-                     .Where(identifier => identifier.SpanStart > firstAwait
-                         && retainedNames.Contains(identifier.Identifier.ValueText)))
+                     .Where(identifier => retainedNames.Contains(identifier.Identifier.ValueText)
+                         && IsRuntimeValueReference(identifier)
+                         && awaits.Any(awaitExpression => CanReachAfterSuspension(
+                             awaitExpression,
+                             identifier,
+                             controlFlowGraph))))
         {
             capturedContext = identifier;
             return true;
@@ -592,15 +610,34 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             .ToLookup(
                 static function => function.Identifier.ValueText,
                 StringComparer.Ordinal);
-        foreach (var invocation in nodes.OfType<InvocationExpressionSyntax>()
-                     .Where(invocation => invocation.SpanStart > firstAwait))
+        callPath ??= [];
+        foreach (var invocation in nodes.OfType<InvocationExpressionSyntax>())
         {
+            var invokedAfterSuspension = awaits.Any(awaitExpression =>
+                CanReachAfterSuspension(
+                    awaitExpression,
+                    invocation,
+                    controlFlowGraph));
             if (TryFindRetainedContextInLocalFunction(
                 invocation,
                 localFunctions,
                 retainedNames,
-                [],
+                invokedAfterSuspension,
+                semanticModel,
+                cancellationToken,
+                callPath,
                 out capturedContext))
+            {
+                return true;
+            }
+
+            if (invokedAfterSuspension
+                && TryFindRetainedContextInInvokedDelegate(
+                    invocation,
+                    retainedNames,
+                    semanticModel,
+                    cancellationToken,
+                    out capturedContext))
             {
                 return true;
             }
@@ -614,6 +651,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         InvocationExpressionSyntax invocation,
         ILookup<string, LocalFunctionStatementSyntax> localFunctions,
         HashSet<string> retainedNames,
+        bool invokedAfterSuspension,
+        SemanticModel? semanticModel,
+        CancellationToken cancellationToken,
         HashSet<LocalFunctionStatementSyntax> callPath,
         out SyntaxNode capturedContext)
     {
@@ -643,6 +683,23 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 functionRetainedNames.Remove(parameter.Identifier.ValueText);
             }
 
+            if (!invokedAfterSuspension)
+            {
+                if (function.Modifiers.Any(SyntaxKind.AsyncKeyword)
+                    && TryFindPostAwaitEventContext(
+                        functionBody,
+                        functionRetainedNames,
+                        semanticModel,
+                        cancellationToken,
+                        out capturedContext,
+                        nestedCallPath))
+                {
+                    return true;
+                }
+
+                continue;
+            }
+
             var functionNodes = functionBody.DescendantNodesAndSelf(
                     descendIntoChildren: static node =>
                         node is not AnonymousFunctionExpressionSyntax
@@ -650,7 +707,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 .ToArray();
             foreach (var retainedIdentifier in functionNodes.OfType<IdentifierNameSyntax>()
                          .Where(candidate => functionRetainedNames.Contains(
-                             candidate.Identifier.ValueText)))
+                                 candidate.Identifier.ValueText)
+                             && IsRuntimeValueReference(candidate)))
             {
                 capturedContext = retainedIdentifier;
                 return true;
@@ -662,6 +720,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     nestedInvocation,
                     localFunctions,
                     functionRetainedNames,
+                    invokedAfterSuspension: true,
+                    semanticModel,
+                    cancellationToken,
                     nestedCallPath,
                     out capturedContext))
                 {
@@ -673,6 +734,245 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         capturedContext = null!;
         return false;
     }
+
+    private static bool TryFindRetainedContextInInvokedDelegate(
+        InvocationExpressionSyntax invocation,
+        HashSet<string> retainedNames,
+        SemanticModel? semanticModel,
+        CancellationToken cancellationToken,
+        out SyntaxNode capturedContext)
+    {
+        if (semanticModel is null
+            || invocation.Expression is not IdentifierNameSyntax identifier
+            || semanticModel.GetSymbolInfo(identifier, cancellationToken).Symbol
+                is not ILocalSymbol local
+            || !TryGetStableLocalInitializer(
+                local,
+                semanticModel,
+                cancellationToken,
+                identifier,
+                out var initializer))
+        {
+            capturedContext = null!;
+            return false;
+        }
+
+        foreach (var anonymous in initializer.DescendantNodesAndSelf()
+                     .OfType<AnonymousFunctionExpressionSyntax>())
+        {
+            var capturedNames = new HashSet<string>(retainedNames, StringComparer.Ordinal);
+            foreach (var parameter in GetAnonymousFunctionParameters(anonymous))
+            {
+                capturedNames.Remove(parameter.Identifier.ValueText);
+            }
+
+            foreach (var capturedIdentifier in anonymous.Body
+                         .DescendantNodesAndSelf(descendIntoChildren: static node =>
+                             node is not AnonymousFunctionExpressionSyntax
+                                 and not LocalFunctionStatementSyntax)
+                         .OfType<IdentifierNameSyntax>()
+                         .Where(candidate => capturedNames.Contains(candidate.Identifier.ValueText)
+                             && IsRuntimeValueReference(candidate)))
+            {
+                capturedContext = capturedIdentifier;
+                return true;
+            }
+        }
+
+        capturedContext = null!;
+        return false;
+    }
+
+    private static IEnumerable<ParameterSyntax> GetAnonymousFunctionParameters(
+        AnonymousFunctionExpressionSyntax anonymous) => anonymous switch
+    {
+        SimpleLambdaExpressionSyntax simple => [simple.Parameter],
+        ParenthesizedLambdaExpressionSyntax parenthesized => parenthesized.ParameterList.Parameters,
+        AnonymousMethodExpressionSyntax { ParameterList: { } parameterList } =>
+            parameterList.Parameters,
+        _ => [],
+    };
+
+    private static bool IsRuntimeValueReference(IdentifierNameSyntax identifier) =>
+        !identifier.Ancestors().OfType<InvocationExpressionSyntax>().Any(invocation =>
+            invocation.Expression is IdentifierNameSyntax name
+            && name.Identifier.ValueText == "nameof"
+            && invocation.ArgumentList.Span.Contains(identifier.Span));
+
+    private static bool IsUnconditionalAliasWrite(SyntaxNode alias, SyntaxNode body)
+    {
+        for (var current = alias.Parent; current is not null && current != body; current = current.Parent)
+        {
+            if (current is IfStatementSyntax
+                or ElseClauseSyntax
+                or SwitchStatementSyntax
+                or SwitchExpressionSyntax
+                or ConditionalExpressionSyntax
+                or ForStatementSyntax
+                or ForEachStatementSyntax
+                or WhileStatementSyntax
+                or DoStatementSyntax
+                or TryStatementSyntax
+                or CatchClauseSyntax)
+            {
+                return false;
+            }
+        }
+
+        return body.Span.Contains(alias.Span);
+    }
+
+    private static ControlFlowGraph? TryCreateControlFlowGraph(
+        SyntaxNode body,
+        SemanticModel? semanticModel,
+        CancellationToken cancellationToken)
+    {
+        if (semanticModel is null || semanticModel.SyntaxTree != body.SyntaxTree)
+        {
+            return null;
+        }
+
+        try
+        {
+            return GetContainingFunction(body) is { } function
+                ? TryCreateFunctionControlFlowGraph(
+                    function,
+                    semanticModel,
+                    cancellationToken)
+                : null;
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException)
+        {
+            return null;
+        }
+    }
+
+    private static ControlFlowGraph? TryCreateFunctionControlFlowGraph(
+        SyntaxNode function,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        if (function is BaseMethodDeclarationSyntax or AccessorDeclarationSyntax)
+        {
+            return ControlFlowGraph.Create(function, semanticModel, cancellationToken);
+        }
+
+        if (GetContainingFunction(function.Parent) is not { } containingFunction
+            || TryCreateFunctionControlFlowGraph(
+                containingFunction,
+                semanticModel,
+                cancellationToken) is not { } containingGraph)
+        {
+            return null;
+        }
+
+        if (function is LocalFunctionStatementSyntax localFunction
+            && semanticModel.GetDeclaredSymbol(localFunction, cancellationToken)
+                is IMethodSymbol symbol)
+        {
+            return containingGraph.GetLocalFunctionControlFlowGraph(symbol, cancellationToken);
+        }
+
+        if (function is AnonymousFunctionExpressionSyntax anonymous)
+        {
+            foreach (var block in containingGraph.Blocks)
+            {
+                foreach (var operation in block.Operations
+                             .Concat(block.BranchValue is { } branchValue
+                                 ? [branchValue]
+                                 : []))
+                {
+                    var flowAnonymous = DescendantOperations(operation)
+                        .OfType<IFlowAnonymousFunctionOperation>()
+                        .FirstOrDefault(candidate => candidate.Syntax == anonymous);
+                    if (flowAnonymous is not null)
+                    {
+                        return containingGraph.GetAnonymousFunctionControlFlowGraph(
+                            flowAnonymous,
+                            cancellationToken);
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static SyntaxNode? GetContainingFunction(SyntaxNode? node) =>
+        node?.AncestorsAndSelf().FirstOrDefault(static candidate =>
+            candidate is BaseMethodDeclarationSyntax
+                or AccessorDeclarationSyntax
+                or LocalFunctionStatementSyntax
+                or AnonymousFunctionExpressionSyntax);
+
+    private static bool CanReachAfterSuspension(
+        AwaitExpressionSyntax awaitExpression,
+        SyntaxNode candidate,
+        ControlFlowGraph? controlFlowGraph)
+    {
+        if (awaitExpression.SpanStart >= candidate.SpanStart)
+        {
+            return false;
+        }
+
+        if (controlFlowGraph is null)
+        {
+            return true;
+        }
+
+        var awaitBlocks = controlFlowGraph.Blocks
+            .Where(block => block.IsReachable
+                && ContainsOperationSyntax(block, awaitExpression))
+            .ToArray();
+        var candidateBlocks = new HashSet<BasicBlock>(controlFlowGraph.Blocks
+            .Where(block => block.IsReachable && ContainsOperationSyntax(block, candidate)));
+        foreach (var awaitBlock in awaitBlocks)
+        {
+            if (candidateBlocks.Contains(awaitBlock))
+            {
+                return true;
+            }
+
+            var pending = new Queue<BasicBlock>();
+            var visited = new HashSet<BasicBlock>();
+            EnqueueSuccessor(awaitBlock.FallThroughSuccessor, pending);
+            EnqueueSuccessor(awaitBlock.ConditionalSuccessor, pending);
+            while (pending.Count > 0)
+            {
+                var block = pending.Dequeue();
+                if (!visited.Add(block))
+                {
+                    continue;
+                }
+
+                if (candidateBlocks.Contains(block))
+                {
+                    return true;
+                }
+
+                EnqueueSuccessor(block.FallThroughSuccessor, pending);
+                EnqueueSuccessor(block.ConditionalSuccessor, pending);
+            }
+        }
+
+        return false;
+    }
+
+    private static void EnqueueSuccessor(
+        ControlFlowBranch? branch,
+        Queue<BasicBlock> pending)
+    {
+        if (branch?.Destination is { IsReachable: true } destination)
+        {
+            pending.Enqueue(destination);
+        }
+    }
+
+    private static bool ContainsOperationSyntax(BasicBlock block, SyntaxNode syntax) =>
+        block.Operations.Any(operation => DescendantOperations(operation)
+            .Any(candidate => candidate.Syntax == syntax))
+        || block.BranchValue is { } branchValue
+            && DescendantOperations(branchValue).Any(candidate => candidate.Syntax == syntax);
 
     private static string? GetAssignedName(ExpressionSyntax expression) => expression switch
     {
@@ -769,13 +1069,24 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 stack.Push(initializerOperation);
             }
 
-            if (current is IDelegateCreationOperation or IAnonymousFunctionOperation)
+            if (current is IAnonymousFunctionOperation anonymous)
             {
-                foreach (var descendant in DescendantOperations(current).Skip(1))
+                foreach (var descendant in DescendantOperations(anonymous).Skip(1))
                 {
+                    if (ContainsAnonymousOwnedReference(descendant, anonymous.Symbol))
+                    {
+                        continue;
+                    }
+
                     stack.Push(descendant);
                 }
 
+                continue;
+            }
+
+            if (current is IDelegateCreationOperation delegateCreation)
+            {
+                stack.Push(delegateCreation.Target);
                 continue;
             }
 
@@ -785,6 +1096,18 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             }
         }
     }
+
+    private static bool ContainsAnonymousOwnedReference(
+        IOperation operation,
+        IMethodSymbol anonymousSymbol) => DescendantOperations(operation).Any(candidate =>
+            (candidate is IParameterReferenceOperation parameterReference
+                && SymbolEqualityComparer.Default.Equals(
+                    parameterReference.Parameter.ContainingSymbol,
+                    anonymousSymbol))
+            || (candidate is ILocalReferenceOperation localReference
+                && SymbolEqualityComparer.Default.Equals(
+                    localReference.Local.ContainingSymbol,
+                    anonymousSymbol)));
 
     private static IEnumerable<IOperation> GetRetainedValueParts(IOperation operation)
     {
