@@ -101,7 +101,7 @@ public class HttpConfigurationReloadTests
         await Assert.That(bound).IsNotNull();
         await Assert.That(bound!.TotalTimeout.Timeout).IsEqualTo(TimeSpan.FromSeconds(20));
         await Assert.That(bound.Retry.MaxRetries).IsEqualTo(4);
-        await Assert.That(bound.Retry.Backoff.ToString()).IsEqualTo("linear 100ms steps ≤2s");
+        await Assert.That(bound.Retry.Backoff.ToString()).IsEqualTo("linear 100ms steps, equal jitter, cap 2s");
         await Assert.That(bound.Retry.MaxDelay).IsEqualTo(TimeSpan.FromSeconds(1));
         await Assert.That(bound.CircuitBreaker.ConsecutiveFailures).IsEqualTo(2);
         await Assert.That(bound.CircuitBreaker.FailureRatio).IsNull();
@@ -123,8 +123,8 @@ public class HttpConfigurationReloadTests
     [Test]
     [Arguments("None", "no delay")]
     [Arguments("Constant", "constant 100ms")]
-    [Arguments("Linear", "linear 100ms steps ≤2s")]
-    [Arguments("Exponential", "exponential 100ms ×3 ≤2s")]
+    [Arguments("Linear", "linear 100ms steps, cap 2s")]
+    [Arguments("Exponential", "exponential 100ms ×3, cap 2s")]
     public async Task Standard_Section_Binds_Each_Backoff(
         string kind,
         string expected)
@@ -133,7 +133,7 @@ public class HttpConfigurationReloadTests
             ("Retry:Backoff", kind),
             ("Retry:BaseDelay", "00:00:00.100"),
             ("Retry:Factor", "3"),
-            ("Retry:Jitter", "false"),
+            ("Retry:Jitter", "None"),
             ("Retry:BackoffMaxDelay", "00:00:02"));
         StandardHttpShieldOptions? bound = null;
         var services = new ServiceCollection();

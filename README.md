@@ -35,7 +35,7 @@ var user = await shield.ExecuteAsync(
 ```
 
 That reads in execution order: the 30-second timeout wraps the retries, which wrap the circuit
-breaker. `Retry(3)` uses exponential backoff with jitter by default. The cancellation token passed
+breaker. `Retry(3)` uses exponential backoff with equal jitter by default. The cancellation token passed
 to your delegate is important—it is how timeouts and abandoned attempts stop the underlying work.
 
 Build shields once and reuse them. They are immutable and thread-safe. Reuse also matters for

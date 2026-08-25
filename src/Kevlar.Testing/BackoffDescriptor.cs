@@ -8,7 +8,7 @@ public sealed class BackoffDescriptor
         TimeSpan? baseDelay,
         double? factor,
         TimeSpan? maxDelay,
-        bool? jitter)
+        Jitter? jitter)
     {
         Kind = kind;
         BaseDelay = baseDelay;
@@ -29,6 +29,6 @@ public sealed class BackoffDescriptor
     /// <summary>The linear or exponential delay cap, when configured.</summary>
     public TimeSpan? MaxDelay { get; }
 
-    /// <summary>Whether exponential jitter is enabled, when applicable.</summary>
-    public bool? Jitter { get; }
+    /// <summary>The jitter mode for built-in backoffs, when applicable.</summary>
+    public Jitter? Jitter { get; }
 }

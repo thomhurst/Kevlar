@@ -18,6 +18,10 @@ public class AllocationBudgetTests
         Outcome<int>.FromException(RecoverableFailure);
 
     private readonly Shield _empty = Shield.Empty;
+    private readonly Backoff _equalJitter = Backoff.Exponential(
+        TimeSpan.FromMilliseconds(1),
+        factor: 1,
+        jitter: Jitter.Equal);
     private readonly Shield _retry = Shield.Retry(3, Backoff.None);
     private readonly Shield _asyncDelayRetry = Shield.Retry(options =>
     {
@@ -122,6 +126,7 @@ public class AllocationBudgetTests
     public void Documented_Hot_Paths_Allocate_Zero_Bytes_Per_Operation()
     {
         AssertZero("empty sync", this, static test => test._empty.Execute(static _ => 42));
+        AssertZero("equal jitter", this, static test => _ = test._equalJitter.GetDelay(1));
         AssertZero("empty async", this, static test =>
             test._empty.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("empty async state", this, static test =>

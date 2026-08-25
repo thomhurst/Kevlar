@@ -93,7 +93,7 @@ const features: FeatureItem[] = [
     accent: 'SAFE',
     description: (
       <>
-        <code>Shield.Retry(3)</code> includes exponential backoff with jitter,
+        <code>Shield.Retry(3)</code> includes exponential backoff with equal jitter,
         capped at 30 seconds—the production setting you wanted anyway.
       </>
     ),

@@ -1,7 +1,7 @@
 Kevlar.Testing.BackoffDescriptor
 Kevlar.Testing.BackoffDescriptor.BaseDelay.get -> System.TimeSpan?
 Kevlar.Testing.BackoffDescriptor.Factor.get -> double?
-Kevlar.Testing.BackoffDescriptor.Jitter.get -> bool?
+Kevlar.Testing.BackoffDescriptor.Jitter.get -> Kevlar.Jitter?
 Kevlar.Testing.BackoffDescriptor.Kind.get -> Kevlar.BackoffKind
 Kevlar.Testing.BackoffDescriptor.MaxDelay.get -> System.TimeSpan?
 Kevlar.Testing.CircuitBreakerStrategyDescriptor

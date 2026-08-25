@@ -89,21 +89,21 @@ public class ConfigurationBindingTests
         var shield = provider.GetRequiredService<IKevlarRegistry>().GetShield("tuned");
 
         await Assert.That(shield.ToString())
-            .IsEqualTo("tuned: Timeout(30s) → Retry(5, constant 1s) → CircuitBreaker(50% over 30s, min 20, break 15s)");
+            .IsEqualTo("tuned: Timeout(30s) → Retry(5, constant 1s, equal jitter) → CircuitBreaker(50% over 30s, min 20, break 15s)");
     }
 
     [Test]
     [Arguments("none", "no delay")]
     [Arguments("CONSTANT", "constant 1s")]
     [Arguments("Linear", "linear 1s steps")]
-    [Arguments("eXpOnEnTiAl", "exponential 1s ×2 ≤30s")]
+    [Arguments("eXpOnEnTiAl", "exponential 1s ×2, cap 30s")]
     public async Task RetryDefinition_Binds_BackoffKind_From_Configuration(string value, string expected)
     {
         var configuration = BuildConfiguration(
             ("Retry:MaxRetries", "1"),
             ("Retry:Backoff", value),
             ("Retry:BaseDelay", "00:00:01"),
-            ("Retry:Jitter", "false"),
+            ("Retry:Jitter", "None"),
             ("Retry:MaxDelay", ""));
         var services = new ServiceCollection();
         services.AddShield("backoff", configuration);
@@ -128,6 +128,39 @@ public class ConfigurationBindingTests
     }
 
     [Test]
+    [Arguments("None", "exponential 1s ×2, cap 30s")]
+    [Arguments("equal", "exponential 1s ×2, equal jitter, cap 30s")]
+    [Arguments("FULL", "exponential 1s ×2, full jitter, cap 30s")]
+    [Arguments("Decorrelated", "exponential 1s ×2, decorrelated jitter, cap 30s")]
+    public async Task RetryDefinition_Binds_Jitter_From_Configuration(string value, string expected)
+    {
+        var configuration = BuildConfiguration(
+            ("Retry:MaxRetries", "1"),
+            ("Retry:BaseDelay", "00:00:01"),
+            ("Retry:Jitter", value));
+        var services = new ServiceCollection();
+        services.AddShield("jitter", configuration);
+        using var provider = services.BuildServiceProvider();
+
+        var shield = provider.GetRequiredService<IKevlarRegistry>().GetShield("jitter");
+
+        await Assert.That(shield.ToString()).IsEqualTo($"jitter: Retry(1, {expected})");
+    }
+
+    [Test]
+    public async Task Invalid_Jitter_Throws_With_Path()
+    {
+        var configuration = BuildConfiguration(("Retry:Jitter", "randomish"));
+        var services = new ServiceCollection();
+        services.AddShield("invalid", configuration);
+        using var provider = services.BuildServiceProvider();
+
+        await Assert.That(() => provider.GetRequiredService<IKevlarRegistry>().GetShield("invalid"))
+            .Throws<InvalidOperationException>()
+            .WithMessage("Configuration value 'randomish' for 'Retry:Jitter' is not a Jitter.");
+    }
+
+    [Test]
     public async Task Custom_BackoffKind_Throws_With_Path()
     {
         var configuration = BuildConfiguration(("Retry:Backoff", "Custom"));
@@ -148,7 +181,7 @@ public class ConfigurationBindingTests
         var definition = new ShieldDefinition { Retry = new RetryDefinition() };
 
         await Assert.That(definition.Build().ToString())
-            .IsEqualTo("Retry(3, exponential 250ms ×2 +jitter ≤30s)");
+            .IsEqualTo("Retry(3, exponential 250ms ×2, equal jitter, cap 30s)");
     }
 
     [Test]
@@ -160,7 +193,7 @@ public class ConfigurationBindingTests
             ("Retry:Backoff", "exponential"),
             ("Retry:BaseDelay", "00:00:00.100"),
             ("Retry:Factor", "3"),
-            ("Retry:Jitter", "false"),
+            ("Retry:Jitter", "None"),
             ("Retry:MaxDelay", "00:00:02"),
             ("CircuitBreaker:FailureRatio", "0.25"),
             ("CircuitBreaker:MinimumThroughput", "4"),
@@ -180,7 +213,7 @@ public class ConfigurationBindingTests
         var shield = provider.GetRequiredService<IKevlarRegistry>().GetShield("complete");
 
         await Assert.That(shield.ToString()).IsEqualTo(
-            "complete: Timeout(20s) → Retry(2, exponential 100ms ×3 ≤2s) → CircuitBreaker(25% over 8s, min 4, break 5s) → RateLimit(5/10s, burst 7, queue 2) → ConcurrencyLimit(3, queue 4) → Timeout(1s)");
+            "complete: Timeout(20s) → Retry(2, exponential 100ms ×3, cap 2s) → CircuitBreaker(25% over 8s, min 4, break 5s) → RateLimit(5/10s, burst 7, queue 2) → ConcurrencyLimit(3, queue 4) → Timeout(1s)");
     }
 
     [Test]
@@ -229,7 +262,7 @@ public class ConfigurationBindingTests
         var shield = provider.GetRequiredService<IKevlarRegistry>().GetShield("defaults");
 
         await Assert.That(shield.ToString()).IsEqualTo(
-            "defaults: Retry(3, exponential 250ms ×2 +jitter ≤30s) → CircuitBreaker(50% over 30s, min 10, break 15s) → RateLimit(100/1s) → ConcurrencyLimit(10)");
+            "defaults: Retry(3, exponential 250ms ×2, equal jitter, cap 30s) → CircuitBreaker(50% over 30s, min 10, break 15s) → RateLimit(100/1s) → ConcurrencyLimit(10)");
     }
 
     [Test]
@@ -302,7 +335,7 @@ public class ConfigurationBindingTests
         var shield = provider.GetRequiredService<IKevlarRegistry>().GetShield("nullable");
 
         await Assert.That(shield.ToString()).IsEqualTo(
-            "nullable: Retry(0, exponential 250ms ×2 +jitter ≤30s) → CircuitBreaker(50% over 30s, min 10, break 15s) → RateLimit(5/1s)");
+            "nullable: Retry(0, exponential 250ms ×2, equal jitter, cap 30s) → CircuitBreaker(50% over 30s, min 10, break 15s) → RateLimit(5/1s)");
     }
 
     [Test]

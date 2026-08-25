@@ -7,8 +7,19 @@ Kevlar.BackoffKind.None = 0 -> Kevlar.BackoffKind
 abstract Kevlar.Backoff.Kind.get -> Kevlar.BackoffKind
 virtual Kevlar.Backoff.Factor.get -> double?
 virtual Kevlar.Backoff.InitialDelay.get -> System.TimeSpan?
-virtual Kevlar.Backoff.Jitter.get -> bool?
+virtual Kevlar.Backoff.Jitter.get -> Kevlar.Jitter?
 virtual Kevlar.Backoff.MaxDelay.get -> System.TimeSpan?
+Kevlar.Jitter
+Kevlar.Jitter.Decorrelated = 3 -> Kevlar.Jitter
+Kevlar.Jitter.Equal = 1 -> Kevlar.Jitter
+Kevlar.Jitter.Full = 2 -> Kevlar.Jitter
+Kevlar.Jitter.None = 0 -> Kevlar.Jitter
+*REMOVED*static Kevlar.Backoff.Constant(System.TimeSpan delay) -> Kevlar.Backoff!
+*REMOVED*static Kevlar.Backoff.Exponential(System.TimeSpan initialDelay, double factor = 2, System.TimeSpan? maxDelay = null, bool jitter = true) -> Kevlar.Backoff!
+*REMOVED*static Kevlar.Backoff.Linear(System.TimeSpan step, System.TimeSpan? maxDelay = null) -> Kevlar.Backoff!
+static Kevlar.Backoff.Constant(System.TimeSpan delay, Kevlar.Jitter jitter = Kevlar.Jitter.None) -> Kevlar.Backoff!
+static Kevlar.Backoff.Exponential(System.TimeSpan initialDelay, double factor = 2, System.TimeSpan? maxDelay = null, Kevlar.Jitter jitter = Kevlar.Jitter.Equal) -> Kevlar.Backoff!
+static Kevlar.Backoff.Linear(System.TimeSpan step, System.TimeSpan? maxDelay = null, Kevlar.Jitter jitter = Kevlar.Jitter.None) -> Kevlar.Backoff!
 Kevlar.HandlingClause
 *REMOVED*Kevlar.StrategyNode
 Kevlar.KevlarProxyException

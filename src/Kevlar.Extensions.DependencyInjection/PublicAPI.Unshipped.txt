@@ -5,6 +5,8 @@
 *REMOVED*Kevlar.Extensions.DependencyInjection.BackoffKind.None = 0 -> Kevlar.Extensions.DependencyInjection.BackoffKind
 *REMOVED*Kevlar.Extensions.DependencyInjection.RetryDefinition.Backoff.get -> Kevlar.Extensions.DependencyInjection.BackoffKind
 Kevlar.Extensions.DependencyInjection.RetryDefinition.Backoff.get -> Kevlar.BackoffKind
+*REMOVED*Kevlar.Extensions.DependencyInjection.RetryDefinition.Jitter.get -> bool
+Kevlar.Extensions.DependencyInjection.RetryDefinition.Jitter.get -> Kevlar.Jitter
 Kevlar.Extensions.DependencyInjection.IShieldProvider
 Kevlar.Extensions.DependencyInjection.IShieldProvider.Current.get -> Kevlar.Shield!
 static Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! name, Microsoft.Extensions.Configuration.IConfiguration! configuration, System.Action<System.Exception!>? onReloadFailure = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!

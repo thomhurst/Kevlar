@@ -99,8 +99,8 @@ internal static class StandardHttpConfigurationBinder
             ? 2d
             : ParseDouble(section.GetSection("Factor"), factorValue);
         var jitter = jitterValue is null
-            ? true
-            : ParseBool(section.GetSection("Jitter"), jitterValue);
+            ? Jitter.Equal
+            : ParseEnum<Jitter>(section, "Jitter", jitterValue);
         var backoffMaxDelay = backoffMaxDelayValue is null
             ? TimeSpan.FromSeconds(30)
             : ParseNullableTimeSpan(section.GetSection("BackoffMaxDelay"), backoffMaxDelayValue);
@@ -118,8 +118,8 @@ internal static class StandardHttpConfigurationBinder
         options.Backoff = kind switch
         {
             RetryBackoffKind.None => Backoff.None,
-            RetryBackoffKind.Constant => Backoff.Constant(baseDelay),
-            RetryBackoffKind.Linear => Backoff.Linear(baseDelay, backoffMaxDelay),
+            RetryBackoffKind.Constant => Backoff.Constant(baseDelay, jitter),
+            RetryBackoffKind.Linear => Backoff.Linear(baseDelay, backoffMaxDelay, jitter),
             RetryBackoffKind.Exponential => Backoff.Exponential(baseDelay, factor, backoffMaxDelay, jitter),
             _ => throw new InvalidOperationException("Unsupported retry backoff."),
         };
