@@ -189,9 +189,11 @@ internal sealed class PartitionCache<TKey, TShield>
                 }
                 else if (_creations.TryGetValue(key, out creation!))
                 {
-                    createsUnretained = _evictionCallback.Value is
-                        { Active: true, OwnsReservation: true }
-                        && _entries.Count + _reservedSlots >= _maximumPartitions;
+                    var callback = _evictionCallback.Value;
+                    createsUnretained = callback is { Active: true }
+                        && (callback.Blocks(creation)
+                            || (callback.OwnsReservation
+                                && _entries.Count + _reservedSlots >= _maximumPartitions));
                 }
                 else
                 {
@@ -207,7 +209,10 @@ internal sealed class PartitionCache<TKey, TShield>
             _mutationGate.Release();
         }
 
-        await NotifyAutomaticEvictionsAsync(expired, PartitionEvictionReason.Idle)
+        await NotifyAutomaticEvictionsAsync(
+                expired,
+                PartitionEvictionReason.Idle,
+                creates ? creation : null)
             .ConfigureAwait(false);
 
         if (retained is not null)
@@ -337,13 +342,18 @@ internal sealed class PartitionCache<TKey, TShield>
                     continue;
                 }
 
-                await NotifyEvictedAsync(expired, PartitionEvictionReason.Idle).ConfigureAwait(false);
+                await NotifyEvictedAsync(
+                        expired,
+                        PartitionEvictionReason.Idle,
+                        blockedCreation: creation)
+                    .ConfigureAwait(false);
                 if (capacityEviction is not null)
                 {
                     await NotifyEvictedAsync(
                             capacityEviction,
                             PartitionEvictionReason.Capacity,
-                            ownsReservation: true)
+                            ownsReservation: true,
+                            blockedCreation: creation)
                         .ConfigureAwait(false);
                 }
 
@@ -523,7 +533,8 @@ internal sealed class PartitionCache<TKey, TShield>
     private async ValueTask NotifyEvictedAsync(
         List<Entry>? entries,
         PartitionEvictionReason reason,
-        bool ownsReservation = false)
+        bool ownsReservation = false,
+        Creation? blockedCreation = null)
     {
         if (entries is null)
         {
@@ -532,14 +543,16 @@ internal sealed class PartitionCache<TKey, TShield>
 
         foreach (var entry in entries)
         {
-            await NotifyEvictedAsync(entry, reason, ownsReservation).ConfigureAwait(false);
+            await NotifyEvictedAsync(entry, reason, ownsReservation, blockedCreation)
+                .ConfigureAwait(false);
         }
     }
 
     private async ValueTask NotifyEvictedAsync(
         Entry entry,
         PartitionEvictionReason reason,
-        bool ownsReservation = false)
+        bool ownsReservation = false,
+        Creation? blockedCreation = null)
     {
         try
         {
@@ -557,7 +570,7 @@ internal sealed class PartitionCache<TKey, TShield>
 
         var notification = new PartitionEvictionNotification(entry.Key, entry.Shield, reason);
         var previousScope = _evictionCallback.Value;
-        var scope = new EvictionCallbackScope(ownsReservation);
+        var scope = new EvictionCallbackScope(ownsReservation, blockedCreation);
         _evictionCallback.Value = scope;
         try
         {
@@ -591,11 +604,17 @@ internal sealed class PartitionCache<TKey, TShield>
 
     private async ValueTask NotifyAutomaticEvictionsAsync(
         List<Entry>? entries,
-        PartitionEvictionReason reason)
+        PartitionEvictionReason reason,
+        Creation? blockedCreation = null)
     {
         try
         {
-            await NotifyEvictedAsync(entries, reason, ownsReservation: true).ConfigureAwait(false);
+            await NotifyEvictedAsync(
+                    entries,
+                    reason,
+                    ownsReservation: true,
+                    blockedCreation: blockedCreation)
+                .ConfigureAwait(false);
         }
         finally
         {
@@ -782,13 +801,17 @@ internal sealed class PartitionCache<TKey, TShield>
         }
     }
 
-    private sealed class EvictionCallbackScope(bool ownsReservation)
+    private sealed class EvictionCallbackScope(
+        bool ownsReservation,
+        Creation? blockedCreation)
     {
         private int _active = 1;
 
         public bool Active => Volatile.Read(ref _active) != 0;
 
         public bool OwnsReservation { get; } = ownsReservation;
+
+        public bool Blocks(Creation creation) => ReferenceEquals(blockedCreation, creation);
 
         public void Deactivate() => Volatile.Write(ref _active, 0);
     }

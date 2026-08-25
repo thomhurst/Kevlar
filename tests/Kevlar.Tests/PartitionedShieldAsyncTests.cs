@@ -357,6 +357,41 @@ public class PartitionedShieldAsyncTests
     }
 
     [Test]
+    public async Task Eviction_Callback_Does_Not_Join_Its_Publisher_After_Freeing_Capacity()
+    {
+        PartitionedShield<string>? provider = null;
+        Shield? callbackShield = null;
+        var factoryCalls = 0;
+        provider = new PartitionedShield<string>(
+            key => Shield.Empty.WithName($"{key}-{Interlocked.Increment(ref factoryCalls)}"),
+            new PartitionedShieldOptions
+            {
+                MaximumPartitions = 2,
+                OnEvictedAsync = async item =>
+                {
+                    if ((string)item.Key == "first")
+                    {
+                        _ = await provider!.TryRemoveAsync("retained");
+                        callbackShield = await provider.GetShieldAsync("publisher");
+                    }
+                },
+            });
+        _ = provider.GetShield("first");
+        _ = provider.GetShield("retained");
+
+        var published = await provider.GetShieldAsync("publisher")
+            .AsTask()
+            .WaitAsync(TimeSpan.FromSeconds(5));
+
+        await Assert.That(callbackShield).IsNotNull();
+        await Assert.That(callbackShield).IsNotSameReferenceAs(published);
+        await Assert.That(provider.TryGetShield("publisher", out var retained)).IsTrue();
+        await Assert.That(retained).IsSameReferenceAs(published);
+        await Assert.That(factoryCalls).IsEqualTo(4);
+        await Assert.That(provider.Count).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Explicit_Removal_Callback_Joins_An_Unrelated_Creation()
     {
         var pendingFactoryEntered = new TaskCompletionSource(
