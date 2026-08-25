@@ -4,6 +4,12 @@
 
 ### Breaking changes
 
+- Strategy callback events now expose their position through public
+  `KevlarContext.StrategyIndex`; the duplicate properties on limiter rejection events were removed.
+  Circuit transitions use `CircuitBreakerStateChangedEvent` and carry execution context, while
+  manual monitor transitions carry a detached context at index `-1`. Typed circuit-breaker
+  duration generators receive `CircuitBreakerBreakDurationEvent<TResult>` with a directly stored
+  outcome and failure statistics. Typed retry events likewise store their outcome without boxing.
 - `HedgeOptions<TResult>.ActionGenerator` is now a strongly typed delegate. Assign the generator
   directly instead of wrapping it with `HedgeActionGenerator.Create<TResult>(...)`; the erased
   wrapper remains available on untyped `HedgeOptions`. Typed generator events now expose the latest

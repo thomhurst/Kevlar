@@ -7,7 +7,7 @@ public class ConcurrencyTests
     [Test]
     public async Task A_Failure_Storm_Produces_Exactly_One_Open_Transition()
     {
-        var transitions = new List<CircuitStateChangedEvent>();
+        var transitions = new List<CircuitBreakerStateChangedEvent>();
         var gate = new object();
         var shield = Shield.CircuitBreaker(options =>
         {
@@ -25,7 +25,7 @@ public class ConcurrencyTests
         await Task.WhenAll(Enumerable.Range(0, 32).Select(_ =>
             shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException()).AsTask()));
 
-        List<CircuitStateChangedEvent> snapshot;
+        List<CircuitBreakerStateChangedEvent> snapshot;
         lock (gate)
         {
             snapshot = [.. transitions];

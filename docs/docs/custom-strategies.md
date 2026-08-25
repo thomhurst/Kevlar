@@ -140,6 +140,7 @@ The context flows through the whole pipeline:
 - `context.TimeProvider` — **always use this instead of `DateTime`/`Stopwatch`/`Task.Delay`**, so your strategy stays [testable with `FakeTimeProvider`](testing.md) like the built-ins.
 - `context.CancellationToken` — the current token. Strategies such as timeouts *replace* this for the layers beneath them — which is why delegates must use the token they're handed rather than a captured one.
 - `context.IsSynchronous` — `true` under `Execute`; branch on it if your strategy would otherwise block or break a sync caller (hedging throws for sync callers this way).
+- `context.StrategyIndex` — the current strategy's zero-based pipeline position. Nested execution restores the outer index before its strategy resumes, and hedge forks preserve the inner position.
 - `context.Properties` — a typed property bag: `Set(key, value)`, `TryGet(key, out value)`, `GetOrDefault(key)`, keyed by `KevlarKey<T>`:
 
 <!-- doc-test-declaration: split-before=context.Properties -->

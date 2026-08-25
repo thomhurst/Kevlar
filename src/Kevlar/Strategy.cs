@@ -31,6 +31,8 @@ public abstract class Strategy
     /// </remarks>
     protected internal virtual bool InvokesContinuationAtMostOnce => false;
 
+    internal virtual bool RequiresContinuationOverlapIsolation => !InvokesContinuationAtMostOnce;
+
     /// <summary>
     /// The handling clause this reactive strategy acts on, or <see langword="null"/> for a
     /// proactive strategy. Override this when the strategy receives a clause through a
@@ -117,7 +119,13 @@ public readonly struct Continuation<T, TState>
 
     private ValueTask<Outcome<T>> InvokeStrategyAsync(StrategyNode node, KevlarContext context)
     {
+        if (node.RequiresOverlapIsolation && !context.TryEnterStrategy(node.Index))
+        {
+            return InvokeStrategyWithForkAsync(node, context);
+        }
+
         ValueTask<Outcome<T>> execution;
+        var previousStrategyIndex = node.Index - 1;
 
         try
         {
@@ -128,15 +136,41 @@ public readonly struct Continuation<T, TState>
         }
         catch (Exception exception)
         {
+            context.StrategyIndex = previousStrategyIndex;
+            ExitStrategyIfRequired(node, context);
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(exception));
         }
 
-        return execution.IsCompletedSuccessfully
-            ? execution
-            : AwaitStrategyAsync(execution);
+        if (execution.IsCompletedSuccessfully)
+        {
+            context.StrategyIndex = previousStrategyIndex;
+            ExitStrategyIfRequired(node, context);
+            return execution;
+        }
+
+        return AwaitStrategyAsync(execution, context, previousStrategyIndex, node);
     }
 
-    private static async ValueTask<Outcome<T>> AwaitStrategyAsync(ValueTask<Outcome<T>> execution)
+    private async ValueTask<Outcome<T>> InvokeStrategyWithForkAsync(
+        StrategyNode node,
+        KevlarContext context)
+    {
+        var fork = context.Fork(context.CancellationToken);
+        try
+        {
+            return await InvokeStrategyAsync(node, fork).ConfigureAwait(false);
+        }
+        finally
+        {
+            KevlarContext.Return(fork);
+        }
+    }
+
+    private static async ValueTask<Outcome<T>> AwaitStrategyAsync(
+        ValueTask<Outcome<T>> execution,
+        KevlarContext context,
+        int previousStrategyIndex,
+        StrategyNode node)
     {
         try
         {
@@ -146,16 +180,34 @@ public readonly struct Continuation<T, TState>
         {
             return Outcome<T>.FromException(exception);
         }
+        finally
+        {
+            context.StrategyIndex = previousStrategyIndex;
+            ExitStrategyIfRequired(node, context);
+        }
+    }
+
+    private static void ExitStrategyIfRequired(StrategyNode node, KevlarContext context)
+    {
+        if (node.RequiresOverlapIsolation)
+        {
+            context.ExitStrategy(node.Index);
+        }
     }
 }
 
 internal sealed class StrategyNode
 {
-    internal StrategyNode(Strategy strategy, StrategyNode? next, int index)
+    internal StrategyNode(
+        Strategy strategy,
+        StrategyNode? next,
+        int index,
+        bool requiresOverlapIsolation)
     {
         Strategy = strategy;
         Next = next;
         Index = index;
+        RequiresOverlapIsolation = requiresOverlapIsolation;
     }
 
     internal Strategy Strategy { get; }
@@ -163,4 +215,6 @@ internal sealed class StrategyNode
     internal StrategyNode? Next { get; }
 
     internal int Index { get; }
+
+    internal bool RequiresOverlapIsolation { get; }
 }

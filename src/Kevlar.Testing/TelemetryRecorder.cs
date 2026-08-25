@@ -74,35 +74,69 @@ public sealed class TelemetryRecorder : IDisposable
 
     /// <summary>Records an untyped retry callback.</summary>
     public void Record(RetryEvent item) => AddCallback(new CallbackRecord(
-        0, CallbackKind.Retry, item.Context.ShieldName, retryNumber: item.RetryNumber,
+        0, CallbackKind.Retry, item.Context.ShieldName,
+        strategyIndex: item.Context.StrategyIndex, retryNumber: item.RetryNumber,
         delay: item.Delay, exception: item.Exception, result: item.Result));
 
     /// <summary>Records a typed retry callback.</summary>
     public void Record<TResult>(RetryEvent<TResult> item) => AddCallback(new CallbackRecord(
-        0, CallbackKind.Retry, item.Context.ShieldName, retryNumber: item.RetryNumber,
+        0, CallbackKind.Retry, item.Context.ShieldName,
+        strategyIndex: item.Context.StrategyIndex, retryNumber: item.RetryNumber,
         delay: item.Delay, exception: item.Outcome.Exception, result: item.Outcome.Result));
 
     /// <summary>Records a timeout callback.</summary>
     public void Record(TimeoutEvent item) => AddCallback(new CallbackRecord(
-        0, CallbackKind.Timeout, item.Context.ShieldName, timeout: item.Timeout));
+        0, CallbackKind.Timeout, item.Context.ShieldName,
+        strategyIndex: item.Context.StrategyIndex, timeout: item.Timeout));
 
     /// <summary>Records a hedge callback.</summary>
     public void Record(HedgeEvent item) => AddCallback(new CallbackRecord(
-        0, CallbackKind.Hedge, item.Context.ShieldName, attemptNumber: item.AttemptNumber));
+        0, CallbackKind.Hedge, item.Context.ShieldName,
+        strategyIndex: item.Context.StrategyIndex, attemptNumber: item.AttemptNumber));
 
     /// <summary>Records an untyped fallback callback.</summary>
     public void Record(FallbackEvent item) => AddCallback(new CallbackRecord(
-        0, CallbackKind.Fallback, item.Context.ShieldName, exception: item.Exception));
+        0, CallbackKind.Fallback, item.Context.ShieldName,
+        strategyIndex: item.Context.StrategyIndex, exception: item.Exception));
 
     /// <summary>Records a typed fallback callback.</summary>
     public void Record<TResult>(FallbackEvent<TResult> item) => AddCallback(new CallbackRecord(
         0, CallbackKind.Fallback, item.Context.ShieldName,
+        strategyIndex: item.Context.StrategyIndex,
         exception: item.Outcome.Exception, result: item.Outcome.Result));
 
     /// <summary>Records a circuit-breaker transition callback.</summary>
-    public void Record(CircuitStateChangedEvent item) => AddCallback(new CallbackRecord(
-        0, CallbackKind.CircuitTransition, exception: item.LastException,
+    public void Record(CircuitBreakerStateChangedEvent item) => AddCallback(new CallbackRecord(
+        0, CallbackKind.CircuitTransition, shieldName: item.Context.ShieldName,
+        strategyIndex: item.Context.StrategyIndex,
+        exception: item.LastException,
         from: item.From, to: item.To));
+
+    /// <summary>Records an untyped circuit-breaker break-duration callback.</summary>
+    public ValueTask<TimeSpan> Record(
+        CircuitBreakerBreakDurationEvent item,
+        TimeSpan breakDuration) =>
+        RecordBreakDuration(
+            item.Context,
+            item.Exception,
+            item.Result,
+            item.FailureRate,
+            item.FailureCount,
+            item.ConsecutiveFailures,
+            breakDuration);
+
+    /// <summary>Records a typed circuit-breaker break-duration callback.</summary>
+    public ValueTask<TimeSpan> Record<TResult>(
+        CircuitBreakerBreakDurationEvent<TResult> item,
+        TimeSpan breakDuration) =>
+        RecordBreakDuration(
+            item.Context,
+            item.Outcome.Exception,
+            item.Outcome.Result,
+            item.FailureRate,
+            item.FailureCount,
+            item.ConsecutiveFailures,
+            breakDuration);
 
     /// <summary>Waits until at least <paramref name="count"/> metrics have been captured.</summary>
     public Task WaitForMetricCountAsync(int count, CancellationToken cancellationToken = default) =>
@@ -185,6 +219,28 @@ public sealed class TelemetryRecorder : IDisposable
         }
 
         signal.TrySetResult(true);
+    }
+
+    private ValueTask<TimeSpan> RecordBreakDuration(
+        KevlarContext context,
+        Exception? exception,
+        object? result,
+        double failureRate,
+        long failureCount,
+        int consecutiveFailures,
+        TimeSpan breakDuration)
+    {
+        AddCallback(new CallbackRecord(
+            0,
+            CallbackKind.CircuitBreakDuration,
+            context.ShieldName,
+            strategyIndex: context.StrategyIndex,
+            exception: exception,
+            result: result,
+            failureRate: failureRate,
+            failureCount: failureCount,
+            consecutiveFailures: consecutiveFailures));
+        return new ValueTask<TimeSpan>(breakDuration);
     }
 
     private async Task WaitForCountAsync(

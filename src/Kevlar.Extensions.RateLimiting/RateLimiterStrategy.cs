@@ -169,7 +169,6 @@ internal sealed class RateLimiterStrategy : Strategy
             retryAfter,
             metadata,
             _permitCount,
-            context.StrategyIndex,
             context);
         try
         {

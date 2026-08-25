@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Reflection;
 using Microsoft.Extensions.Time.Testing;
 
@@ -139,6 +140,37 @@ public class ExecutionContextPlumbingTests
     }
 
     [Test]
+    public async Task Custom_Strategy_Can_Read_Its_Index_Before_And_After_Nested_Execution()
+    {
+        var before = new ConcurrentBag<int>();
+        var after = new ConcurrentBag<int>();
+        var shield = Shield
+            .Use(new IndexCapturingStrategy(new ConcurrentBag<int>(), new ConcurrentBag<int>()))
+            .Use(new IndexCapturingStrategy(before, after))
+            .Use(new IndexCapturingStrategy(new ConcurrentBag<int>(), new ConcurrentBag<int>()));
+
+        await shield.ExecuteAsync(static _ => ValueTask.CompletedTask);
+
+        await Assert.That(before).IsEquivalentTo([1]);
+        await Assert.That(after).IsEquivalentTo([1]);
+    }
+
+    [Test]
+    public async Task Hedge_Forks_Keep_The_Inner_Strategy_Index()
+    {
+        var before = new ConcurrentBag<int>();
+        var after = new ConcurrentBag<int>();
+        var shield = Shield
+            .Hedge(2, TimeSpan.Zero)
+            .Use(new IndexCapturingStrategy(before, after));
+
+        await shield.ExecuteAsync(static _ => ValueTask.CompletedTask);
+
+        await Assert.That(before).IsEquivalentTo([1, 1]);
+        await Assert.That(after).IsEquivalentTo([1, 1]);
+    }
+
+    [Test]
     public async Task Exception_Proxy_Never_Leaks_From_Public_Outcome_Members()
     {
         var original = new InvalidOperationException("original");
@@ -190,6 +222,21 @@ public class ExecutionContextPlumbingTests
         return parameter.ParameterType.IsValueType
             ? Activator.CreateInstance(parameter.ParameterType)
             : null;
+    }
+
+    private sealed class IndexCapturingStrategy(
+        ConcurrentBag<int> before,
+        ConcurrentBag<int> after) : Strategy
+    {
+        public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+            Continuation<T, TState> next,
+            KevlarContext context)
+        {
+            before.Add(context.StrategyIndex);
+            var outcome = await next.InvokeAsync(context);
+            after.Add(context.StrategyIndex);
+            return outcome;
+        }
     }
 
     private static Exception CaptureReflectionFailure(Action action)

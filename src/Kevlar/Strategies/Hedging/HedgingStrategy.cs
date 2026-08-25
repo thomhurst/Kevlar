@@ -63,6 +63,8 @@ internal sealed class HedgingStrategy : Strategy
 
     protected internal override bool InvokesContinuationAtMostOnce => _maxAttempts == 1;
 
+    internal override bool RequiresContinuationOverlapIsolation => false;
+
     public override string Describe() =>
         $"Hedge({_maxAttempts} attempts, delay {(HasDelayGenerator ? "generator" : DescribeHelper.Time(_delay))})";
 
