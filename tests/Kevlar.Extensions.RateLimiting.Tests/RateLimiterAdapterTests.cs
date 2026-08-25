@@ -36,6 +36,29 @@ public class RateLimiterAdapterTests
         await Assert.That(actionInvoked).IsFalse();
     }
 
+    [Test]
+    public async Task Synchronous_Execution_Rejects_Delegate_Lease_Acquisition()
+    {
+        var acquisitionInvoked = false;
+        var actionInvoked = false;
+        var shield = Shield.Empty.UseRateLimiter((_, _) =>
+        {
+            acquisitionInvoked = true;
+            throw new InvalidOperationException("acquisition must not run");
+        });
+
+        var exception = await Assert.That(() => shield.Execute(_ =>
+            {
+                actionInvoked = true;
+                return 1;
+            }))
+            .Throws<NotSupportedException>();
+
+        await Assert.That(exception!.Message).Contains(nameof(RateLimitLeaseAcquirer));
+        await Assert.That(acquisitionInvoked).IsFalse();
+        await Assert.That(actionInvoked).IsFalse();
+    }
+
     private static readonly KevlarKey<string> TenantKey = new("tenant");
 
     [Test]

@@ -16,19 +16,33 @@ internal sealed class RateLimiterStrategy : Strategy, IDisposable, IAsyncDisposa
     private readonly Func<RateLimiterAdapterRejectedEvent, ValueTask>? _onRejectedAsync;
     private readonly string _description;
     private readonly string _telemetryName;
+    private readonly bool _supportsSynchronousExecution;
     private OwnedLimiterLease? _ownedLimiter;
 
     protected internal override bool InvokesContinuationAtMostOnce => true;
 
     protected internal override bool IsDuplicateReferenceUnsafe => true;
 
-    protected internal override string? SynchronousExecutionUnsupportedReason =>
-        _onRejectedAsync is null ? null : "RateLimiterAdapterOptions.OnRejectedAsync";
+    protected internal override string? SynchronousExecutionUnsupportedReason
+    {
+        get
+        {
+            if (!_supportsSynchronousExecution)
+            {
+                return nameof(RateLimitLeaseAcquirer);
+            }
+
+            return _onRejectedAsync is null
+                ? null
+                : "RateLimiterAdapterOptions.OnRejectedAsync";
+        }
+    }
 
     internal RateLimiterStrategy(
         RateLimitLeaseAcquirer acquireLease,
         RateLimiterAdapterOptions options,
         string description,
+        bool supportsSynchronousExecution,
         object? ownedLimiter = null)
     {
         if (options.PermitCount <= 0)
@@ -42,6 +56,7 @@ internal sealed class RateLimiterStrategy : Strategy, IDisposable, IAsyncDisposa
         _onRejectedAsync = options.OnRejectedAsync;
         _description = description;
         _telemetryName = options.Name ?? "RateLimiterAdapter";
+        _supportsSynchronousExecution = supportsSynchronousExecution;
         _ownedLimiter = ownedLimiter is null ? null : OwnedLimiterLease.Acquire(ownedLimiter);
     }
 
