@@ -35,11 +35,12 @@ Remember that `Retry(3)` means one initial attempt plus at most three retries.
 
 ## Why did my POST run once or throw `HttpRequestReplayException`?
 
-HTTP retries and hedges need a fresh request per attempt. Unsafe methods and non-replayable content
-stay single-attempt unless `AllowUnsafeMethodReplay`, buffering, or a `RequestFactory` explicitly
-makes replay safe. A `HttpRequestReplayException` indicates a replay configuration failure such as
-a null request from the factory or content exceeding the requested buffer limit. See
-[HTTP replay safety](http.md#safe-request-replay).
+HTTP retries and hedges need a fresh request per attempt. Method safety and content replayability
+are separate requirements. POST, PATCH, and custom methods require `AllowUnsafeMethodReplay = true`
+or a `RequestFactory`. Their content must also be replayable: select buffering, supply a
+`RequestFactory`, or use content supported by the `NoBuffer` policy. A `HttpRequestReplayException`
+indicates a replay configuration failure such as a null request from the factory or content
+exceeding the requested buffer limit. See [HTTP replay safety](http.md#safe-request-replay).
 
 Do not enable unsafe replay blindly. Prefer idempotency keys and server-side deduplication for
 operations that create or mutate data.
@@ -84,9 +85,10 @@ and resolve a fresh registry/provider snapshot. See [thread safety](thread-safet
 ## Why did my circuit breaker never open?
 
 Reuse one shield instance. Building a new shield per request creates a new circuit breaker with
-empty state. Confirm that the breaker handles the observed exception or result and that its
-throughput threshold is reached within the sampling window. The
-[circuit-breaker guide](strategies/circuit-breaker.md) covers consecutive and ratio modes.
+empty state. Confirm that the breaker handles the observed exception or result. Consecutive mode
+opens after its configured number of consecutive handled failures. Ratio mode opens only after its
+failure-ratio and minimum-throughput thresholds are met within the sampling window. The
+[circuit-breaker guide](strategies/circuit-breaker.md) covers both modes.
 
 ## Still stuck?
 

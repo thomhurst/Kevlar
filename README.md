@@ -149,6 +149,8 @@ configuration-bound shields and `IKevlarRegistry`.
 
 ## Community
 
-Read the [contribution guide](CONTRIBUTING.md), [security policy](SECURITY.md),
-[code of conduct](CODE_OF_CONDUCT.md), and [changelog](CHANGELOG.md). Use the guided issue forms for
-bugs, feature requests, and questions; report vulnerabilities privately.
+Read the [contribution guide](https://github.com/thomhurst/Kevlar/blob/main/CONTRIBUTING.md),
+[security policy](https://github.com/thomhurst/Kevlar/blob/main/SECURITY.md),
+[code of conduct](https://github.com/thomhurst/Kevlar/blob/main/CODE_OF_CONDUCT.md), and
+[changelog](https://github.com/thomhurst/Kevlar/blob/main/CHANGELOG.md). Use the guided issue forms
+for bugs, feature requests, and questions; report vulnerabilities privately.
