@@ -47,6 +47,7 @@ internal static class KevlarTelemetry
         CircuitState? fromState = null,
         CircuitState? toState = null,
         TimeSpan? retryAfter = null,
+        string? rejectionKind = null,
         CallbackErrorKind? callbackKind = null,
         bool localOnly = false)
     {
@@ -78,6 +79,7 @@ internal static class KevlarTelemetry
             fromState,
             toState,
             retryAfter,
+            rejectionKind,
             callbackKind,
             context);
 

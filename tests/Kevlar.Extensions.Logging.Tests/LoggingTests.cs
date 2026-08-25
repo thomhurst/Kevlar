@@ -112,10 +112,36 @@ public class LoggingTests
 
     [Test]
     [NotInParallel]
+    public async Task Breaker_Opened_Logs_Generated_Break_Duration()
+    {
+        var logger = new FakeLogger();
+        var generatedDuration = TimeSpan.FromSeconds(17);
+        var shield = Shield.CircuitBreaker(options =>
+        {
+            options.ConsecutiveFailures = 1;
+            options.BreakDuration = TimeSpan.FromSeconds(1);
+            options.BreakDurationGenerator = _ => new ValueTask<TimeSpan>(generatedDuration);
+        }).WithLogging(logger);
+
+        _ = await shield.ExecuteOutcomeAsync<int>(static _ =>
+            new ValueTask<int>(Task.FromException<int>(new TestException("failure"))));
+
+        var record = logger.Collector.GetSnapshot().Single();
+        await Assert.That(record.GetStructuredStateValue("BreakDuration"))
+            .IsEqualTo(generatedDuration.ToString());
+    }
+
+    [Test]
+    [NotInParallel]
     public async Task Open_Circuit_Rejection_Uses_A_Rejection_Event()
     {
         var logger = new FakeLogger();
-        var shield = Shield.CircuitBreaker(1, TimeSpan.FromMinutes(1)).WithLogging(logger);
+        var shield = Shield.CircuitBreaker(options =>
+        {
+            options.Name = "checkout-breaker";
+            options.ConsecutiveFailures = 1;
+            options.BreakDuration = TimeSpan.FromMinutes(1);
+        }).WithLogging(logger);
 
         _ = await shield.ExecuteOutcomeAsync<int>(static _ =>
             new ValueTask<int>(Task.FromException<int>(new TestException("failure"))));
@@ -166,13 +192,22 @@ public class LoggingTests
     public async Task RateLimit_And_Concurrency_Rejections_Log()
     {
         var logger = new FakeLogger();
-        var rateLimit = Shield.RateLimit(1, TimeSpan.FromMinutes(1)).WithLogging(logger);
+        var rateLimit = Shield.RateLimit(options =>
+        {
+            options.Name = "tenant-budget";
+            options.Permits = 1;
+            options.Window = TimeSpan.FromMinutes(1);
+        }).WithLogging(logger);
         await rateLimit.ExecuteAsync(static _ => ValueTask.CompletedTask);
         _ = await rateLimit.ExecuteOutcomeAsync(static _ => ValueTask.CompletedTask);
 
         var entered = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var concurrency = Shield.ConcurrencyLimit(1).WithLogging(logger);
+        var concurrency = Shield.ConcurrencyLimit(options =>
+        {
+            options.Name = "database-pool";
+            options.MaxConcurrency = 1;
+        }).WithLogging(logger);
         var first = concurrency.ExecuteAsync(async _ =>
         {
             entered.TrySetResult(true);
@@ -268,6 +303,11 @@ public class LoggingTests
         _ = await disabled.ExecuteAsync(static _ => new ValueTask<int>(-1));
 
         await Assert.That(logger.LatestRecord.Level).IsEqualTo(LogLevel.Information);
+        await Assert.That(logger.LatestRecord.GetStructuredStateValue("Attempt")).IsEqualTo("1");
+        await Assert.That(logger.LatestRecord.GetStructuredStateValue("Delay"))
+            .IsEqualTo(TimeSpan.Zero.ToString());
+        await Assert.That(logger.LatestRecord.GetStructuredStateValue("Outcome"))
+            .IsEqualTo("result:-1");
         await Assert.That(logger.Collector.Count).IsEqualTo(count);
         await Assert.That(formatterCalls).IsEqualTo(0);
     }
@@ -304,6 +344,36 @@ public class LoggingTests
 
         await Assert.That(logger.LatestRecord.Scopes.Any(scope =>
             scope?.ToString() == "Kevlar shield checkout")).IsTrue();
+    }
+
+    [Test]
+    [NotInParallel]
+    public async Task Scope_Disposal_Continues_After_One_Scope_Fails()
+    {
+        var failure = new TestException("scope");
+        var failingScope = new TrackingScope(failure);
+        var survivingScope = new TrackingScope();
+        CallbackErrorEvent? reported = null;
+        Action<CallbackErrorEvent> handler = callback => reported = callback;
+        KevlarDiagnostics.OnCallbackError += handler;
+        try
+        {
+            var shield = Shield.Retry(1, Backoff.None)
+                .WithLogging(new ScopeLogger(failingScope), options => options.IncludeScopes = true)
+                .WithLogging(new ScopeLogger(survivingScope), options => options.IncludeScopes = true);
+
+            _ = await shield.ExecuteOutcomeAsync<int>(static _ =>
+                new ValueTask<int>(Task.FromException<int>(new TestException("execution"))));
+
+            await Assert.That(failingScope.IsDisposed).IsTrue();
+            await Assert.That(survivingScope.IsDisposed).IsTrue();
+            await Assert.That(reported?.Kind).IsEqualTo(CallbackErrorKind.Logging);
+            await Assert.That(ReferenceEquals(reported?.Exception, failure)).IsTrue();
+        }
+        finally
+        {
+            KevlarDiagnostics.OnCallbackError -= handler;
+        }
     }
 
     [Test]
@@ -510,5 +580,35 @@ public class LoggingTests
             TState state,
             Exception? exception,
             Func<TState, Exception?, string> formatter) => throw Failure;
+    }
+
+    private sealed class ScopeLogger(IDisposable scope) : ILogger
+    {
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => scope;
+
+        public bool IsEnabled(LogLevel logLevel) => false;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+        }
+    }
+
+    private sealed class TrackingScope(Exception? failure = null) : IDisposable
+    {
+        public bool IsDisposed { get; private set; }
+
+        public void Dispose()
+        {
+            IsDisposed = true;
+            if (failure is not null)
+            {
+                throw failure;
+            }
+        }
     }
 }

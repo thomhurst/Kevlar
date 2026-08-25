@@ -21,6 +21,7 @@ public readonly struct KevlarTelemetryEvent
         CircuitState? fromState,
         CircuitState? toState,
         TimeSpan? retryAfter,
+        string? rejectionKind,
         CallbackErrorKind? callbackKind,
         KevlarContext context)
     {
@@ -39,6 +40,7 @@ public readonly struct KevlarTelemetryEvent
         FromState = fromState;
         ToState = toState;
         RetryAfter = retryAfter;
+        RejectionKind = rejectionKind;
         CallbackKind = callbackKind;
         _context = context;
     }
@@ -87,6 +89,8 @@ public readonly struct KevlarTelemetryEvent
 
     /// <summary>The estimated time until a rejected execution may be retried.</summary>
     public TimeSpan? RetryAfter { get; }
+
+    internal string? RejectionKind { get; }
 
     /// <summary>The callback family that failed, when this is a callback-error event.</summary>
     public CallbackErrorKind? CallbackKind { get; }

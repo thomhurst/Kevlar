@@ -641,7 +641,7 @@ internal sealed class CircuitBreakerCore
             _openTimeProvider = timeProvider;
             _openUntilTimestamp = GetCurrentTimestamp(timeProvider)
                 + (duration.TotalSeconds * Stopwatch.Frequency);
-            return ChangeState(CircuitState.Open, reservation.Context);
+            return ChangeState(CircuitState.Open, reservation.Context, duration);
         }
     }
 
@@ -869,13 +869,17 @@ internal sealed class CircuitBreakerCore
         public double TimestampScale { get; }
     }
 
-    private TransitionPublication ChangeState(CircuitState next, KevlarContext context)
+    private TransitionPublication ChangeState(
+        CircuitState next,
+        KevlarContext context,
+        TimeSpan? breakDuration = null)
     {
         var transition = new CircuitBreakerStateChangedEvent(
             _state,
             next,
             _lastException,
-            context);
+            context,
+            breakDuration ?? (next == CircuitState.Open ? _breakDuration : default));
         _state = next;
         if (next is CircuitState.Open or CircuitState.Isolated)
         {
@@ -1235,7 +1239,7 @@ internal sealed class CircuitBreakerCore
             context.AttemptNumber,
             isSuccess: stateChange.To == CircuitState.Closed,
             stateChange.LastException,
-            delay: stateChange.To == CircuitState.Open ? _breakDuration : default,
+            delay: stateChange.BreakDuration,
             fromState: stateChange.From,
             toState: stateChange.To);
 
@@ -1272,7 +1276,7 @@ internal sealed class CircuitBreakerCore
                     context.AttemptNumber,
                     isSuccess: stateChange.To == CircuitState.Closed,
                     stateChange.LastException,
-                    delay: stateChange.To == CircuitState.Open ? _breakDuration : default,
+                    delay: stateChange.BreakDuration,
                     fromState: stateChange.From,
                     toState: stateChange.To,
                     localOnly: true);

@@ -1,3 +1,4 @@
+using System.Runtime.ExceptionServices;
 using Microsoft.Extensions.Logging;
 
 namespace Kevlar.Extensions.Logging;
@@ -116,9 +117,24 @@ internal sealed class LoggingScopeCollection(List<IDisposable> scopes) : IDispos
 {
     public void Dispose()
     {
+        Exception? failure = null;
         for (var index = scopes.Count - 1; index >= 0; index--)
         {
-            scopes[index].Dispose();
+            try
+            {
+                scopes[index].Dispose();
+            }
+            catch (Exception exception)
+            {
+                failure = failure is null
+                    ? exception
+                    : new AggregateException(failure, exception);
+            }
+        }
+
+        if (failure is not null)
+        {
+            ExceptionDispatchInfo.Capture(failure).Throw();
         }
     }
 }

@@ -283,7 +283,8 @@ internal static class KevlarMetrics
             context.AttemptNumber,
             isSuccess: false,
             exception,
-            retryAfter: (exception as ExecutionRejectedException)?.RetryAfter);
+            retryAfter: (exception as ExecutionRejectedException)?.RetryAfter,
+            rejectionKind: kind);
     }
 
     public static void CircuitTransition(CircuitState from, CircuitState to)
