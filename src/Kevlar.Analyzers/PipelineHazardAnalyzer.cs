@@ -5353,20 +5353,34 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 _synchronousCallbackTypes.Add(type);
                 foreach (var property in type.GetMembers().OfType<IPropertySymbol>())
                 {
-                    if (property.Type is INamedTypeSymbol
+                    if (property.Type is not INamedTypeSymbol callbackType)
+                    {
+                        continue;
+                    }
+
+                    var isNotification = callbackType is
                         {
                             Name: "Action",
                             Arity: 1,
                             ContainingNamespace.Name: "System",
-                        } callbackType
-                        && callbackType.TypeArguments[0] is INamedTypeSymbol eventType
+                        }
                         && property.Name is "OnRetry"
                             or "OnTimeout"
                             or "OnStateChanged"
                             or "OnHedge"
                             or "OnFallback"
                             or "OnInjected"
-                            or "OnRejected")
+                            or "OnRejected";
+                    var isHandlingPredicate = callbackType is
+                        {
+                            Name: "Func",
+                            Arity: 2,
+                            ContainingNamespace.Name: "System",
+                        }
+                        && callbackType.TypeArguments[1].SpecialType == SpecialType.System_Boolean
+                        && property.Name == "HandlesExceptionWithContext";
+                    if ((isNotification || isHandlingPredicate)
+                        && callbackType.TypeArguments[0] is INamedTypeSymbol eventType)
                     {
                         _eventContextContainerTypes.Add(eventType.OriginalDefinition);
                     }

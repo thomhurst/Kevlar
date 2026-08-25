@@ -1252,6 +1252,26 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Flags_Handling_Event_Captured_By_Deferred_Work()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.HandlesExceptionWithContext = item =>
+            {
+                _ = Task.Run(() => Consume(item));
+                return true;
+            });
+
+            static void Consume(HandlingEvent item) =>
+                Console.WriteLine(item.Context.ShieldName);
+            """);
+
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
     public async Task KEV014_Flags_Sibling_Assembly_Events_Forwarded_To_Deferred_Work()
     {
         var chaosDiagnostics = await AnalyzeBodyAsync("""
