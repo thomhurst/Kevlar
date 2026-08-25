@@ -89,6 +89,8 @@ internal sealed class RetryStrategy : Strategy
 
     protected internal override bool InvokesContinuationAtMostOnce => _maxRetries == 0;
 
+    internal override bool RequiresContinuationOverlapIsolation => false;
+
     public override string Describe()
     {
         var cap = _maxDelay is { } max ? $", ≤{DescribeHelper.Time(max)}" : string.Empty;

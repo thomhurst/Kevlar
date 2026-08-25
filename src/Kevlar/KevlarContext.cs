@@ -25,6 +25,7 @@ public sealed class KevlarContext
     private readonly KevlarProperties _properties = new();
 
     private CancellationToken _cancellationToken;
+    private long _activeStrategyMask;
     private bool _isSynchronous;
     private string? _shieldName;
     private int _strategyIndex = -1;
@@ -168,6 +169,37 @@ public sealed class KevlarContext
         return fork;
     }
 
+    internal bool TryEnterStrategy(int strategyIndex)
+    {
+        var bit = 1L << (strategyIndex & 63);
+        while (true)
+        {
+            var current = Volatile.Read(ref _activeStrategyMask);
+            if ((current & bit) != 0)
+            {
+                return false;
+            }
+
+            if (Interlocked.CompareExchange(ref _activeStrategyMask, current | bit, current) == current)
+            {
+                return true;
+            }
+        }
+    }
+
+    internal void ExitStrategy(int strategyIndex)
+    {
+        var bit = ~(1L << (strategyIndex & 63));
+        while (true)
+        {
+            var current = Volatile.Read(ref _activeStrategyMask);
+            if (Interlocked.CompareExchange(ref _activeStrategyMask, current & bit, current) == current)
+            {
+                return;
+            }
+        }
+    }
+
     /// <summary>
     /// Clears the debug pooling guard on a context that Kevlar's own pool tests inspect after it
     /// went back to the pool. A no-op in release builds, where the guard does not exist.
@@ -216,6 +248,7 @@ public sealed class KevlarContext
             context.IsSynchronous = false;
             context.ShieldName = null;
             context.StrategyIndex = -1;
+            context._activeStrategyMask = 0;
             context.TimeProvider = TimeProvider.System;
             context._properties.Clear();
             return true;

@@ -123,6 +123,8 @@ public class EventStrategyIndexTests
 
         await Assert.That(outcome.Exception).IsNull();
         await Assert.That(outer.StrategyIndexAfterContinuations).IsEqualTo(0);
+        await Assert.That(inner.FirstStrategyIndexAfterRelease).IsEqualTo(1);
+        await Assert.That(inner.SecondStrategyIndexAfterRelease).IsEqualTo(1);
     }
 
     private static Shield Prefix() => Shield.Use(new PassThroughStrategy());
@@ -172,6 +174,10 @@ public class EventStrategyIndexTests
         public TaskCompletionSource ReleaseSecond { get; } = new(
             TaskCreationOptions.RunContinuationsAsynchronously);
 
+        public int FirstStrategyIndexAfterRelease { get; private set; } = -1;
+
+        public int SecondStrategyIndexAfterRelease { get; private set; } = -1;
+
         public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
             Continuation<T, TState> next,
             KevlarContext context)
@@ -183,6 +189,15 @@ public class EventStrategyIndexTests
             }
 
             await (invocation == 1 ? ReleaseFirst.Task : ReleaseSecond.Task);
+            if (invocation == 1)
+            {
+                FirstStrategyIndexAfterRelease = context.StrategyIndex;
+            }
+            else
+            {
+                SecondStrategyIndexAfterRelease = context.StrategyIndex;
+            }
+
             return await next.InvokeAsync(context);
         }
     }
