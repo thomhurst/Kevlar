@@ -5,35 +5,37 @@ namespace Kevlar.Extensions.Logging;
 internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
     : IKevlarTelemetryListener, IKevlarResultTelemetryListener
 {
-    bool IKevlarResultTelemetryListener.ShouldCaptureResult
+    bool IKevlarResultTelemetryListener.ShouldCaptureResult(
+        in KevlarTelemetryEvent telemetryEvent)
     {
-        get
+        if (!TryMap(in telemetryEvent, out var kind, out _, out var defaultLevel))
         {
-            for (var current = registration; current is not null; current = current.Next)
-            {
-                if (!current.Options.CanAcquire())
-                {
-                    continue;
-                }
+            return false;
+        }
 
-                try
-                {
-                    for (var level = LogLevel.Trace; level < LogLevel.None; level++)
-                    {
-                        if (current.Logger.IsEnabled(level))
-                        {
-                            return true;
-                        }
-                    }
-                }
-                catch
+        var logEvent = new KevlarLogEvent(kind, in telemetryEvent);
+        for (var current = registration; current is not null; current = current.Next)
+        {
+            if (!current.Options.CanAcquire())
+            {
+                continue;
+            }
+
+            try
+            {
+                var level = current.Options.SeverityProvider?.Invoke(logEvent) ?? defaultLevel;
+                if (level != LogLevel.None && current.Logger.IsEnabled(level))
                 {
                     return true;
                 }
             }
-
-            return false;
+            catch
+            {
+                return true;
+            }
         }
+
+        return false;
     }
 
     public void OnEvent(in KevlarTelemetryEvent telemetryEvent)

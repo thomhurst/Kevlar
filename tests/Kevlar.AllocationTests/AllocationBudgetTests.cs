@@ -162,7 +162,7 @@ public class AllocationBudgetTests
     private readonly Shield<int> _disabledLogging = Shield.For<int>()
         .WhenResult(-1)
         .Retry(1, Backoff.None)
-        .WithLogging(NullLogger.Instance, static options =>
+        .WithLogging(EnabledNoopLogger.Instance, static options =>
         {
             options.SeverityProvider = static _ => LogLevel.None;
             options.ResultFormatter = static _ => throw new InvalidOperationException(

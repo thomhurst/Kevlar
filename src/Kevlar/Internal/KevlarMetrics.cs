@@ -241,18 +241,14 @@ internal static class KevlarMetrics
             return;
         }
 
-        KevlarTelemetry.Record(
+        KevlarTelemetry.RecordResult(
             context,
             strategyName,
             eventName: "fallback",
             KevlarTelemetrySeverity.Warning,
             context.StrategyIndex,
             context.AttemptNumber,
-            outcome.IsSuccess,
-            outcome.Exception,
-            result: KevlarTelemetry.ShouldCaptureResult(context) && outcome.IsSuccess
-                ? outcome.Result
-                : null);
+            in outcome);
     }
 
     public static void Rejection(

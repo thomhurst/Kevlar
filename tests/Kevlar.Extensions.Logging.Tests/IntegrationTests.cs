@@ -100,7 +100,8 @@ public class IntegrationTests
         using var provider = services.BuildServiceProvider();
         var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("payments");
 
-        using var response = await client.GetAsync("https://example.test/orders/42?token=secret");
+        using var response = await client.GetAsync(
+            "https://user:password@example.test/orders/42?token=secret");
 
         var retry = logs.Collector.GetSnapshot()
             .Single(record => record.Id == new EventId(1001, "Retry"));
@@ -110,6 +111,7 @@ public class IntegrationTests
         await Assert.That(retry.GetStructuredStateValue("RequestUri"))
             .IsEqualTo("https://example.test/orders/42");
         await Assert.That(retry.Message).DoesNotContain("secret");
+        await Assert.That(retry.Message).DoesNotContain("password");
     }
 
     [Test]

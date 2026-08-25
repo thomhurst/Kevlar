@@ -316,7 +316,9 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         {
             if (uri.IsAbsoluteUri)
             {
-                return uri.GetLeftPart(UriPartial.Path);
+                return uri.GetComponents(
+                    UriComponents.SchemeAndServer | UriComponents.Path,
+                    UriFormat.UriEscaped);
             }
 
             var value = uri.OriginalString;

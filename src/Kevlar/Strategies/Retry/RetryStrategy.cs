@@ -248,18 +248,14 @@ internal sealed class RetryStrategy : Strategy
 
                 if (KevlarTelemetry.IsEventEnabled(context))
                 {
-                    KevlarTelemetry.Record(
+                    KevlarTelemetry.RecordResult(
                         context,
                         strategyName: _telemetryName,
                         eventName: "retry",
                         KevlarTelemetrySeverity.Warning,
                         strategyIndex,
                         attempt,
-                        isSuccess: outcome.IsSuccess,
-                        outcome.Exception,
-                        result: KevlarTelemetry.ShouldCaptureResult(context) && outcome.IsSuccess
-                            ? outcome.Result
-                            : null,
+                        in outcome,
                         delay: delay);
                 }
 

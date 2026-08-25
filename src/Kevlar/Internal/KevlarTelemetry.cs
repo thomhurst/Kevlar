@@ -14,12 +14,14 @@ internal static class KevlarTelemetry
     public static bool IsEventEnabled(KevlarContext context) =>
         EventEnabled || context.TelemetryListener is not null;
 
-    public static bool ShouldCaptureResult(KevlarContext context)
+    public static bool ShouldCaptureResult(
+        KevlarContext context,
+        in KevlarTelemetryEvent telemetryEvent)
     {
         foreach (var listener in Volatile.Read(ref _listeners))
         {
             if (listener is not IKevlarResultTelemetryListener resultListener
-                || resultListener.ShouldCaptureResult)
+                || resultListener.ShouldCaptureResult(in telemetryEvent))
             {
                 return true;
             }
@@ -27,7 +29,58 @@ internal static class KevlarTelemetry
 
         return context.TelemetryListener is { } contextListener
             && (contextListener is not IKevlarResultTelemetryListener contextResultListener
-                || contextResultListener.ShouldCaptureResult);
+                || contextResultListener.ShouldCaptureResult(in telemetryEvent));
+    }
+
+    public static void RecordResult<T>(
+        KevlarContext context,
+        string strategyName,
+        string eventName,
+        KevlarTelemetrySeverity severity,
+        int strategyIndex,
+        int attemptNumber,
+        in Outcome<T> outcome,
+        TimeSpan delay = default)
+    {
+        object? result = null;
+        if (outcome.IsSuccess)
+        {
+            var preview = new KevlarTelemetryEvent(
+                eventName,
+                severity,
+                context.ShieldName,
+                strategyName,
+                strategyIndex,
+                attemptNumber,
+                isSuccess: true,
+                exception: null,
+                duration: default,
+                operationKey: null,
+                result: null,
+                delay,
+                fromState: null,
+                toState: null,
+                retryAfter: null,
+                rejectionKind: null,
+                callbackKind: null,
+                context);
+            if (ShouldCaptureResult(context, in preview))
+            {
+                result = outcome.Result;
+            }
+        }
+
+        Record(
+            context,
+            strategyName,
+            eventName,
+            severity,
+            strategyIndex,
+            attemptNumber,
+            outcome.IsSuccess,
+            outcome.Exception,
+            result: result,
+            delay: delay);
     }
 
     public static IDisposable Subscribe(IKevlarTelemetryListener listener)
