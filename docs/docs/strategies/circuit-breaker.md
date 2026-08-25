@@ -89,6 +89,13 @@ Closed ──(threshold crossed)──► Open ──(BreakDuration elapses)─�
 - **HalfOpen** — after the break duration, exactly **one** probe execution is allowed through. Success closes the circuit and resets metrics; failure re-opens it for another `BreakDuration`. Concurrent callers during the probe are rejected (`RetryAfter == null`).
 - **Isolated** — manually forced open via the monitor; rejected until `Reset()`.
 
+After the break duration elapses, `CircuitBreakerMonitor.State` reports `HalfOpen` immediately,
+even before another execution arrives. Admission remains lazy: the actual `Open` → `HalfOpen`
+transition and its state-change callbacks occur when the next execution claims the probe slot.
+Executions admitted before the current open/half-open generation cannot later close or re-open the
+circuit. The exception that opened the circuit is retained for open rejections, then released when
+the circuit closes or is reset.
+
 :::info Unhandled exceptions don't move the circuit
 An exception outside the breaker's handling clause says nothing about downstream health — it counts
 as neither success nor failure. This includes caller cancellation unless the clause explicitly

@@ -166,6 +166,11 @@ public class StrategyModelTests
                 case CircuitCommandKind.Advance:
                     timeProvider.Advance(TimeSpan.FromSeconds(command.Amount));
                     elapsedSeconds += command.Amount;
+                    if (state == CircuitState.Open && elapsedSeconds >= openUntil)
+                    {
+                        state = CircuitState.HalfOpen;
+                    }
+
                     break;
 
                 case CircuitCommandKind.MoveUtcBackward:

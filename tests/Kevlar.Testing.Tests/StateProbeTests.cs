@@ -6,6 +6,30 @@ namespace Kevlar.Testing.Tests;
 public class StateProbeTests
 {
     [Test]
+    public async Task Circuit_Snapshot_Reports_Time_Derived_HalfOpen_State()
+    {
+        var timeProvider = new FakeTimeProvider();
+        var monitor = new CircuitBreakerMonitor();
+        var shield = Shield
+            .CircuitBreaker(options =>
+            {
+                options.ConsecutiveFailures = 1;
+                options.BreakDuration = TimeSpan.FromSeconds(30);
+                options.Monitor = monitor;
+            })
+            .WithTimeProvider(timeProvider);
+
+        await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+        timeProvider.Advance(TimeSpan.FromSeconds(30));
+
+        var snapshot = shield.GetStateSnapshot().Strategies
+            .OfType<CircuitBreakerStateSnapshot>()
+            .Single();
+        await Assert.That(snapshot.State).IsEqualTo(CircuitState.HalfOpen);
+        await Assert.That(snapshot.State).IsEqualTo(monitor.State);
+    }
+
+    [Test]
     public async Task StateSnapshot_Reports_Circuit_And_Limiter_State()
     {
         var timeProvider = new FakeTimeProvider();

@@ -75,7 +75,7 @@ internal sealed class CircuitBreakerStrategy : Strategy
                 context.TimeProvider,
                 context,
                 out var rejection,
-                out var admittedProbeGeneration))
+                out var admissionGeneration))
         {
             if (recordState)
             {
@@ -94,7 +94,7 @@ internal sealed class CircuitBreakerStrategy : Strategy
             }
             catch
             {
-                _core.AbandonProbe(admittedProbeGeneration);
+                _core.AbandonProbe(admissionGeneration);
                 throw;
             }
         }
@@ -102,41 +102,45 @@ internal sealed class CircuitBreakerStrategy : Strategy
         var execution = next.InvokeAsync(context);
         // Stryker disable once all: Route selection is performance-only; both branches call Complete.
         return execution.IsCompletedSuccessfully
-            ? new ValueTask<Outcome<T>>(Complete(execution.Result, context, admittedProbeGeneration, alias, recordState))
-            : AwaitOutcomeAsync(execution, context, admittedProbeGeneration, alias, recordState);
+            ? new ValueTask<Outcome<T>>(Complete(execution.Result, context, admissionGeneration, alias, recordState))
+            : AwaitOutcomeAsync(execution, context, admissionGeneration, alias, recordState);
     }
 
     private async ValueTask<Outcome<T>> AwaitOutcomeAsync<T>(
         ValueTask<Outcome<T>> execution,
         KevlarContext context,
-        long admittedProbeGeneration,
+        long admissionGeneration,
         StrategyMetricAlias alias,
         bool recordState)
     {
         // Stryker disable once all: ConfigureAwait is execution-context policy, not outcome behavior.
         var outcome = await execution.ConfigureAwait(false);
-        return Complete(outcome, context, admittedProbeGeneration, alias, recordState);
+        return Complete(outcome, context, admissionGeneration, alias, recordState);
     }
 
     private Outcome<T> Complete<T>(
         Outcome<T> outcome,
         KevlarContext context,
-        long admittedProbeGeneration,
+        long admissionGeneration,
         StrategyMetricAlias alias,
         bool recordState)
     {
         if (_judge.ShouldHandle(in outcome, context, attempt: 0, alias.StrategyIndex))
         {
-            _core.RecordFailure(context.TimeProvider, outcome.Exception, context);
+            _core.RecordFailure(
+                context.TimeProvider,
+                outcome.Exception,
+                context,
+                admissionGeneration);
         }
         else if (outcome.Exception is null)
         {
-            _core.RecordSuccess(context.TimeProvider, context);
+            _core.RecordSuccess(context.TimeProvider, context, admissionGeneration);
         }
         else
         {
             // An unhandled exception says nothing about downstream health; don't move the circuit.
-            _core.AbandonProbe(admittedProbeGeneration);
+            _core.AbandonProbe(admissionGeneration);
         }
 
         if (recordState)
@@ -288,18 +292,18 @@ internal sealed class CircuitBreakerStrategy : Strategy
             }
             catch
             {
-                _core.AbandonProbe(entry.AdmittedProbeGeneration);
+                _core.AbandonProbe(entry.AdmissionGeneration);
                 throw;
             }
         }
 
         var execution = next.InvokeAsync(context);
         return execution.IsCompletedSuccessfully
-            ? CompleteConfigured(execution.Result, context, entry.AdmittedProbeGeneration, alias, recordState)
+            ? CompleteConfigured(execution.Result, context, entry.AdmissionGeneration, alias, recordState)
             : AwaitConfiguredOutcomeAsync(
                 execution,
                 context,
-                entry.AdmittedProbeGeneration,
+                entry.AdmissionGeneration,
                 alias,
                 recordState);
     }
@@ -307,7 +311,7 @@ internal sealed class CircuitBreakerStrategy : Strategy
     private async ValueTask<Outcome<T>> AwaitConfiguredOutcomeAsync<T>(
         ValueTask<Outcome<T>> execution,
         KevlarContext context,
-        long admittedProbeGeneration,
+        long admissionGeneration,
         StrategyMetricAlias alias,
         bool recordState)
     {
@@ -315,7 +319,7 @@ internal sealed class CircuitBreakerStrategy : Strategy
         return await CompleteConfigured(
             outcome,
             context,
-            admittedProbeGeneration,
+            admissionGeneration,
             alias,
             recordState).ConfigureAwait(false);
     }
@@ -323,22 +327,29 @@ internal sealed class CircuitBreakerStrategy : Strategy
     private ValueTask<Outcome<T>> CompleteConfigured<T>(
         Outcome<T> outcome,
         KevlarContext context,
-        long admittedProbeGeneration,
+        long admissionGeneration,
         StrategyMetricAlias alias,
         bool recordState)
     {
         ValueTask recording;
         if (_judge.ShouldHandle(in outcome, context, attempt: 0, alias.StrategyIndex))
         {
-            recording = _core.RecordFailureAsync(context.TimeProvider, in outcome, context);
+            recording = _core.RecordFailureAsync(
+                context.TimeProvider,
+                in outcome,
+                context,
+                admissionGeneration);
         }
         else if (outcome.Exception is null)
         {
-            recording = _core.RecordSuccessAsync(context.TimeProvider, context);
+            recording = _core.RecordSuccessAsync(
+                context.TimeProvider,
+                context,
+                admissionGeneration);
         }
         else
         {
-            _core.AbandonProbe(admittedProbeGeneration);
+            _core.AbandonProbe(admissionGeneration);
             recording = default;
         }
 
