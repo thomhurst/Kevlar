@@ -149,6 +149,33 @@ public class SyncExecutionTests
     }
 
     [Test]
+    public async Task Sync_Zero_Retries_Ignores_Unreachable_Async_Callbacks()
+    {
+        var callbackInvoked = false;
+        var shield = Shield.Retry(options =>
+        {
+            options.MaxRetries = 0;
+            options.DelayGeneratorAsync = _ =>
+            {
+                callbackInvoked = true;
+                return new ValueTask<TimeSpan?>(TimeSpan.Zero);
+            };
+            options.OnRetryAsync = _ =>
+            {
+                callbackInvoked = true;
+                return ValueTask.CompletedTask;
+            };
+        });
+
+        var result = shield.Execute(_ => 42);
+        var outcome = shield.ExecuteOutcome(_ => 43);
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(outcome.Result).IsEqualTo(43);
+        await Assert.That(callbackInvoked).IsFalse();
+    }
+
+    [Test]
     public async Task Extension_Strategy_Can_Reject_Synchronous_Execution()
     {
         var actionInvoked = false;
