@@ -72,6 +72,12 @@ This executable check gives the total budget 1.5 seconds and each attempt one se
 attempt reaches its inner timeout; the outer timeout then stops the second attempt before a third
 can start:
 
+Install the test clock used by this deterministic example:
+
+```bash
+dotnet add package Microsoft.Extensions.TimeProvider.Testing
+```
+
 <!-- doc-test-run: getting-started-timeout-order -->
 ```csharp
 using Microsoft.Extensions.Time.Testing;
