@@ -263,7 +263,7 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         }
         catch
         {
-            provider.Dispose();
+            Retire(provider);
             throw;
         }
     });

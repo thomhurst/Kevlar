@@ -296,6 +296,7 @@ internal abstract class ReloadingProvider<TShield> : IReloadingProvider
                 return;
             }
 
+            reclaimable = CollectReclaimableSnapshots();
             try
             {
                 var replacement = _factory();
@@ -311,11 +312,20 @@ internal abstract class ReloadingProvider<TShield> : IReloadingProvider
                 }
                 _retiredSnapshots.Add(new ShieldRetirement(_current, _current));
                 Volatile.Write(ref _current, replacement);
-                reclaimable = CollectReclaimableSnapshots();
             }
             catch (Exception exception)
             {
                 failure = exception;
+            }
+
+            var additional = CollectReclaimableSnapshots();
+            if (reclaimable is null)
+            {
+                reclaimable = additional;
+            }
+            else if (additional is not null)
+            {
+                reclaimable.AddRange(additional);
             }
         }
 

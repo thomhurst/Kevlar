@@ -627,7 +627,7 @@ public class DynamicRegistryTests
         var monitor = new MutableOptionsMonitor<ReloadOptions>();
         monitor.Set("claimed-reload", new ReloadOptions(), notify: false);
         var strategy = new BlockingAsyncDisposableStrategy();
-        var fresh = new DisposableStrategy();
+        var rejected = new List<(WeakReference Owner, DisposableStrategy Strategy)>();
         Exception? reported = null;
         using var services = new ServiceCollection()
             .AddSingleton<IOptionsMonitor<ReloadOptions>>(monitor)
@@ -635,7 +635,7 @@ public class DynamicRegistryTests
                 "claimed-reload",
                 (options, _) => options.Retries == 0
                     ? Shield.Empty
-                    : Shield.Compose(Shield.Use(strategy), Shield.Use(fresh)),
+                    : CreateRejectedReload(strategy, rejected),
                 exception => reported = exception)
             .BuildServiceProvider();
         var provider = services.GetRequiredKeyedService<IShieldProvider>("claimed-reload");
@@ -653,6 +653,15 @@ public class DynamicRegistryTests
 
             await Assert.That(ReferenceEquals(provider.Current, original)).IsTrue();
             await Assert.That(reported).IsTypeOf<InvalidOperationException>();
+            Collect(rejected[0].Owner);
+            await Assert.That(rejected[0].Owner.IsAlive).IsFalse();
+
+            monitor.Set("claimed-reload", new ReloadOptions { Retries = 2 });
+
+            Collect(rejected[1].Owner);
+            _ = registry.GetOrAdd("claimed-reload-reclaim", _ => Shield.Empty);
+            await Assert.That(rejected[0].Strategy.DisposeCount).IsEqualTo(1);
+            await Assert.That(rejected[1].Strategy.DisposeCount).IsEqualTo(0);
         }
         finally
         {
@@ -663,7 +672,83 @@ public class DynamicRegistryTests
         registry.Dispose();
 
         await Assert.That(strategy.DisposeCount).IsEqualTo(1);
+        await Assert.That(rejected.Select(candidate => candidate.Strategy.DisposeCount))
+            .IsEquivalentTo([1, 1]);
+    }
+
+    [Test]
+    public async Task Rejected_Initial_Reload_Provider_Retires_Unclaimed_Strategies()
+    {
+        var monitor = new MutableOptionsMonitor<ReloadOptions>();
+        monitor.Set("claimed-initial", new ReloadOptions(), notify: false);
+        var claimed = new BlockingAsyncDisposableStrategy();
+        var fresh = new DisposableStrategy();
+        WeakReference? rejected = null;
+        using var services = new ServiceCollection()
+            .AddSingleton<IOptionsMonitor<ReloadOptions>>(monitor)
+            .AddReloadingShield<ReloadOptions>(
+                "claimed-initial",
+                (_, _) => CreateRejectedInitialProvider(claimed, fresh, out rejected))
+            .BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        var retired = ResolveAndRemove(registry, "claimed-initial-retired", claimed);
+        Collect(retired);
+        var scavenging = Task.Run(() =>
+            registry.GetOrAdd("claimed-initial-scavenge", _ => Shield.Empty));
+        await claimed.DisposalStarted.WaitAsync(TimeSpan.FromSeconds(5));
+
+        try
+        {
+            await Assert.That(RejectInitialReloadProvider(services)).IsTrue();
+            Collect(rejected!);
+            await Assert.That(rejected!.IsAlive).IsFalse();
+            _ = registry.GetOrAdd("claimed-initial-reclaim", _ => Shield.Empty);
+            await Assert.That(fresh.DisposeCount).IsEqualTo(1);
+        }
+        finally
+        {
+            claimed.ReleaseDisposal();
+            _ = await scavenging.WaitAsync(TimeSpan.FromSeconds(5));
+        }
+
+        registry.Dispose();
+
+        await Assert.That(claimed.DisposeCount).IsEqualTo(1);
         await Assert.That(fresh.DisposeCount).IsEqualTo(1);
+    }
+
+    private static Shield CreateRejectedReload(
+        Strategy claimed,
+        ICollection<(WeakReference Owner, DisposableStrategy Strategy)> rejected)
+    {
+        var fresh = new DisposableStrategy();
+        var shield = new Shield([claimed, fresh], ambient: null, name: null, timeProvider: null);
+        rejected.Add((new WeakReference(shield), fresh));
+        return shield;
+    }
+
+    private static Shield CreateRejectedInitialProvider(
+        Strategy claimed,
+        DisposableStrategy fresh,
+        out WeakReference owner)
+    {
+        var shield = new Shield([claimed, fresh], ambient: null, name: null, timeProvider: null);
+        owner = new WeakReference(shield);
+        return shield;
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static bool RejectInitialReloadProvider(IServiceProvider services)
+    {
+        try
+        {
+            _ = services.GetRequiredKeyedService<IShieldProvider>("claimed-initial");
+            return false;
+        }
+        catch (InvalidOperationException)
+        {
+            return true;
+        }
     }
 
     [Test]
@@ -1074,11 +1159,22 @@ public class DynamicRegistryTests
 
     private static void Collect(WeakReference reference)
     {
-        for (var attempt = 0; attempt < 5 && reference.IsAlive; attempt++)
+        var collected = false;
+        for (var attempt = 0; attempt < 5; attempt++)
         {
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
+
+            if (!reference.IsAlive)
+            {
+                if (collected)
+                {
+                    return;
+                }
+
+                collected = true;
+            }
         }
     }
 
