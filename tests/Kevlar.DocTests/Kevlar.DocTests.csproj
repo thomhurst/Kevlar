@@ -15,6 +15,7 @@
     <PackageReference Include="Kevlar.Extensions.Http" VersionOverride="$(KevlarPackageVersion)" />
     <PackageReference Include="Kevlar.Extensions.RateLimiting" VersionOverride="$(KevlarPackageVersion)" />
     <PackageReference Include="Kevlar.Testing" VersionOverride="$(KevlarPackageVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
     <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" VersionOverride="$(TestExtensionsTimeProviderVersion)" />

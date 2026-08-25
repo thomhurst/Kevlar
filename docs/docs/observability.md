@@ -12,6 +12,9 @@ Shields describe their configured pipeline, publish metrics through built-in `Me
 
 <!-- doc-test-run: pipeline-description -->
 ```csharp
+using Kevlar;
+using OpenTelemetry.Metrics;
+
 var shield = Shield
     .Timeout(TimeSpan.FromSeconds(30))
     .Retry(3)
@@ -55,6 +58,8 @@ services.AddOpenTelemetry().WithMetrics(metrics => metrics
 Applications that reference the optional `Kevlar.Chaos` package can register its meter separately:
 
 ```csharp
+using Kevlar.Chaos;
+
 services.AddOpenTelemetry().WithMetrics(metrics => metrics
     .AddMeter(ChaosDiagnostics.MeterName));
 ```

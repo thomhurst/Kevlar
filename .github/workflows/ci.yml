@@ -224,7 +224,7 @@ jobs:
         shell: pwsh
         env:
           PACKAGE_VERSION: ${{ steps.gitversion.outputs.semVer }}
-        run: ./scripts/Verify-DocSnippets.ps1 -PackagesPath artifacts/package/release -Version $env:PACKAGE_VERSION
+        run: ./scripts/Verify-DocSnippets.ps1 -PackagesPath artifacts/package/release -Version $env:PACKAGE_VERSION -NoImplicitUsings
 
       - name: Upload packages
         if: matrix.os == 'ubuntu-latest'

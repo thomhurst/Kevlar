@@ -160,6 +160,8 @@ var registeredPipeline = pollyProvider
 Kevlar registers built shields and resolves them through `IKevlarRegistry` or keyed services:
 
 ```csharp
+using Kevlar.Extensions.DependencyInjection;
+
 var kevlarServices = new ServiceCollection();
 kevlarServices.AddShield("catalog", Shield.Retry(3));
 using var kevlarProvider = kevlarServices.BuildServiceProvider();
@@ -186,6 +188,8 @@ pollyHttpServices.AddHttpClient("catalog")
 ```
 
 ```csharp
+using Kevlar.Extensions.Http;
+
 var kevlarHttpServices = new ServiceCollection();
 kevlarHttpServices.AddHttpClient("catalog")
     .AddStandardShield(options => options.Retry.MaxRetries = 3);
@@ -243,6 +247,8 @@ if (pollyDescriptor.Strategies.Count != 1)
 ```
 
 ```csharp
+using Kevlar.Testing;
+
 var kevlarDescriptor = Shield.Retry()
     .GetDescriptor()
     .AssertStrategyCount(1)
@@ -266,6 +272,8 @@ var chaosPipeline = new ResiliencePipelineBuilder()
 Kevlar's equivalent strategies live in `Kevlar.Chaos`:
 
 ```csharp
+using Kevlar.Chaos;
+
 var chaosMigrationShield = ChaosShield.Fault(options =>
 {
     options.Enabled = true;
@@ -301,6 +309,8 @@ base value.
 
 <!-- doc-test-run: migration-retry-defaults -->
 ```csharp
+using Kevlar.Testing;
+
 var pollyClock = new FakeTimeProvider();
 var pollyStartedAt = pollyClock.GetUtcNow();
 var pollyAttempts = 0;
@@ -361,6 +371,8 @@ real waiting.
 
 <!-- doc-test-run: migration-breaker-hedging-defaults -->
 ```csharp
+using Kevlar.Testing;
+
 var pollyBreakerClock = new FakeTimeProvider();
 var pollyBreakerOptions = new CircuitBreakerStrategyOptions();
 var pollyBreaker = new ResiliencePipelineBuilder

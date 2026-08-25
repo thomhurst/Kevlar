@@ -73,6 +73,8 @@ var shield = Shield.Empty.UseRateLimiter(
 Use `PartitionedRateLimiter<KevlarContext>` when partition selection depends on execution metadata:
 
 ```csharp
+using Kevlar.Extensions.RateLimiting;
+
 var tenantKey = new KevlarKey<string>("tenant");
 using var limiter = PartitionedRateLimiter.Create<KevlarContext, string>(context =>
     RateLimitPartition.Get(
