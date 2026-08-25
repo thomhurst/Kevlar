@@ -49,6 +49,11 @@ Thread safety does not make the protected delegate idempotent. Hedging can invok
 retry can invoke it sequentially more than once. Synchronize shared application state and use typed
 result handling to select acceptable hedge outcomes.
 
+User callbacks and generators must also tolerate concurrent invocation when a shield is shared.
+This includes retry, timeout, fallback, limiter, hedging, and chaos hooks. Do not capture
+unsynchronized mutable state unless the specific callback contract guarantees serialization;
+circuit-breaker transition notifications are one such serialized contract.
+
 `KevlarProperties` copies entries for hedge attempts, not object graphs. If a property value is a
 mutable list, stream, request, or domain object, attempts still see the same reference unless the
 application supplies an independent value. Prefer immutable property values or an attempt-specific
