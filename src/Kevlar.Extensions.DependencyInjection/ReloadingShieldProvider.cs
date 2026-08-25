@@ -8,7 +8,7 @@ internal interface IReloadingProvider : IDisposable
 {
     IReadOnlyList<Strategy> Strategies { get; }
 
-    IReadOnlyList<ShieldRetirement> Retire();
+    (IReadOnlyList<ShieldRetirement> Retirements, Exception? CleanupFailure) Retire();
 
     void SetLifecycleHandlers(
         Action<IReadOnlyList<ShieldRetirement>> retirementHandler,
@@ -182,16 +182,25 @@ internal abstract class ReloadingProvider<TShield> : IReloadingProvider
         }
     }
 
-    IReadOnlyList<ShieldRetirement> IReloadingProvider.Retire()
+    (IReadOnlyList<ShieldRetirement> Retirements, Exception? CleanupFailure) IReloadingProvider.Retire()
     {
-        Dispose();
+        Exception? cleanupFailure = null;
+        try
+        {
+            Dispose();
+        }
+        catch (Exception exception)
+        {
+            cleanupFailure = exception;
+        }
+
         lock (_reloadLock)
         {
             var retirements = new List<ShieldRetirement>(_retiredSnapshots.Count + 1);
             retirements.AddRange(_retiredSnapshots);
             retirements.Add(new ShieldRetirement(_current, _current));
             _retiredSnapshots.Clear();
-            return retirements;
+            return (retirements, cleanupFailure);
         }
     }
 
@@ -281,6 +290,8 @@ internal abstract class ReloadingProvider<TShield> : IReloadingProvider
                     failure = exception;
                 }
             }
+
+            Reclaim(reclaimable);
         }
 
         Action<Action>? publicationGuard;
@@ -297,8 +308,6 @@ internal abstract class ReloadingProvider<TShield> : IReloadingProvider
         {
             publicationGuard(Publish);
         }
-
-        Reclaim(reclaimable);
 
         ReportFailure(failure);
     }

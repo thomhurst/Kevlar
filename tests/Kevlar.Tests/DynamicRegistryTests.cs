@@ -341,6 +341,63 @@ public class DynamicRegistryTests
     }
 
     [Test]
+    public async Task Reload_Retirement_Handoff_Remains_Inside_Publication_Guard()
+    {
+        using var publicationReturned = new ManualResetEventSlim();
+        using var releasePublication = new ManualResetEventSlim();
+        using var handedOff = new ManualResetEventSlim();
+        var monitor = new MutableOptionsMonitor<ReloadOptions>();
+        monitor.Set("handoff", new ReloadOptions(), notify: false);
+        using var provider = new OptionsReloadingShieldProvider<ReloadOptions>(
+            monitor,
+            "handoff",
+            static _ => Shield.Use(new DisposableStrategy()),
+            onReloadFailure: null);
+        var blockPublication = 0;
+        ((IReloadingProvider)provider).SetLifecycleHandlers(
+            retirements =>
+            {
+                if (retirements.Count > 0)
+                {
+                    handedOff.Set();
+                }
+            },
+            publish =>
+            {
+                publish();
+                if (Volatile.Read(ref blockPublication) != 0)
+                {
+                    publicationReturned.Set();
+                    if (!releasePublication.Wait(TimeSpan.FromSeconds(5)))
+                    {
+                        throw new TimeoutException("The publication guard was not released.");
+                    }
+                }
+            });
+
+        var retired = ReplaceCurrentSnapshot(provider, monitor, "handoff");
+        Collect(retired);
+        await Assert.That(retired.IsAlive).IsFalse();
+        Volatile.Write(ref blockPublication, 1);
+        var reload = Task.Factory.StartNew(
+            () => monitor.Set("handoff", new ReloadOptions()),
+            CancellationToken.None,
+            TaskCreationOptions.LongRunning,
+            TaskScheduler.Default);
+
+        try
+        {
+            await Assert.That(publicationReturned.Wait(TimeSpan.FromSeconds(5))).IsTrue();
+            await Assert.That(handedOff.IsSet).IsTrue();
+        }
+        finally
+        {
+            releasePublication.Set();
+            await reload;
+        }
+    }
+
+    [Test]
     public async Task Typed_Options_Monitor_Reload_Publishes_Typed_Shield()
     {
         var monitor = new MutableOptionsMonitor<ReloadOptions>();
@@ -389,6 +446,32 @@ public class DynamicRegistryTests
         services.Dispose();
 
         await Assert.That(strategy.DisposeCount).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Remove_Captures_Reload_Retirements_When_Subscription_Disposal_Fails()
+    {
+        var strategy = new DisposableStrategy();
+        var services = new ServiceCollection()
+            .AddSingleton<IOptionsMonitor<ReloadOptions>>(new ThrowingSubscriptionOptionsMonitor())
+            .AddReloadingShield<ReloadOptions>(
+                "throwing-subscription",
+                (_, _) => Shield.Use(strategy))
+            .BuildServiceProvider();
+
+        try
+        {
+            _ = services.GetRequiredKeyedService<IShieldProvider>("throwing-subscription");
+            var registry = services.GetRequiredService<IKevlarRegistry>();
+
+            await Assert.That(registry.Remove("throwing-subscription")).IsTrue();
+            await Assert.That(() => registry.Dispose()).Throws<InvalidOperationException>();
+            await Assert.That(strategy.DisposeCount).IsEqualTo(1);
+        }
+        finally
+        {
+            services.Dispose();
+        }
     }
 
     [Test]
@@ -736,5 +819,19 @@ public class DynamicRegistryTests
         public ReloadOptions Get(string? name) => CurrentValue;
 
         public IDisposable OnChange(Action<ReloadOptions, string?> listener) => null!;
+    }
+
+    private sealed class ThrowingSubscriptionOptionsMonitor : IOptionsMonitor<ReloadOptions>
+    {
+        public ReloadOptions CurrentValue { get; } = new();
+
+        public ReloadOptions Get(string? name) => CurrentValue;
+
+        public IDisposable OnChange(Action<ReloadOptions, string?> listener) => new ThrowingDisposable();
+
+        private sealed class ThrowingDisposable : IDisposable
+        {
+            public void Dispose() => throw new InvalidOperationException("subscription cleanup failed");
+        }
     }
 }

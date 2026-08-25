@@ -505,10 +505,16 @@ internal sealed class KevlarRegistry : IKevlarRegistry
     {
         if (value is IReloadingProvider provider)
         {
-            _reloadingProviders.TryRemove(provider, out _);
-            foreach (var retirement in provider.Retire())
+            var (retirements, cleanupFailure) = provider.Retire();
+            foreach (var retirement in retirements)
             {
                 _retirements.TryAdd(retirement, 0);
+            }
+
+            _reloadingProviders.TryRemove(provider, out _);
+            if (cleanupFailure is not null)
+            {
+                _retirementFailures.Enqueue(cleanupFailure);
             }
 
             return;
