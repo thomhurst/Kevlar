@@ -35,6 +35,9 @@ All notable changes to this project are documented here. The format follows
   values explicit and avoids ambiguity between value and delegate overloads.
 - Named DI registrations now expose symmetric configuration overloads, typed
   `IShieldProvider<TResult>` snapshots, and `AddReloadingShield<TResult>`.
+- Invalid values supplied through strategy options now throw `KevlarConfigurationException`;
+  direct shorthand overloads continue to throw `ArgumentOutOfRangeException` with the invoked
+  public parameter name.
 - The System.Threading.RateLimiting adapter now uses `UseRateLimiter(...)`,
   `RateLimiterAdapterRejectedEvent`, and `RateLimiterAdapterRejectedException`. The distinct names
   separate adapter-backed strategies from Kevlar's built-in `RateLimit(...)` strategy.
@@ -132,6 +135,10 @@ All notable changes to this project are documented here. The format follows
 | `jitter: true` / `RetryDefinition.Jitter = true` | `jitter: Jitter.Equal` / `RetryDefinition.Jitter = Jitter.Equal` |
 | `RetryEvent.Attempt` / `RetryEvent<TResult>.Attempt` | `RetryNumber` |
 | `HedgeEvent.Attempt` | `AttemptNumber` |
+| adapter `.RateLimit(limiter)` | `.UseRateLimiter(limiter)` |
+| `RateLimiterRejectedEvent` | `RateLimiterAdapterRejectedEvent` |
+| adapter `RateLimitExceededException` | `RateLimiterAdapterRejectedException` |
+| `StandardHttpShieldOptions.CircuitBreaker` as `CircuitBreakerOptions` | `CircuitBreakerOptions<HttpResponseMessage>` |
 <!-- upgrade-from-0.x:end -->
 
 The replacement forms compile together:

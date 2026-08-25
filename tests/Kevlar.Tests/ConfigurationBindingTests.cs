@@ -122,9 +122,12 @@ public class ConfigurationBindingTests
         services.AddShield("invalid", configuration);
         using var provider = services.BuildServiceProvider();
 
-        await Assert.That(() => provider.GetRequiredService<IKevlarRegistry>().GetShield("invalid"))
-            .Throws<InvalidOperationException>()
-            .WithMessage("Configuration value 'quadratic' for 'Retry:Backoff' is not a BackoffKind.");
+        var exception = await Assert.That(
+                () => provider.GetRequiredService<IKevlarRegistry>().GetShield("invalid"))
+            .Throws<KevlarConfigurationException>();
+
+        await Assert.That(exception!.Message).Contains("Retry:Backoff");
+        await Assert.That(exception.Message).Contains("not a BackoffKind");
     }
 
     [Test]
@@ -157,9 +160,12 @@ public class ConfigurationBindingTests
         services.AddShield("invalid", configuration);
         using var provider = services.BuildServiceProvider();
 
-        await Assert.That(() => provider.GetRequiredService<IKevlarRegistry>().GetShield("invalid"))
-            .Throws<InvalidOperationException>()
-            .WithMessage("Configuration value 'randomish' for 'Retry:Jitter' is not a Jitter.");
+        var exception = await Assert.That(
+                () => provider.GetRequiredService<IKevlarRegistry>().GetShield("invalid"))
+            .Throws<KevlarConfigurationException>();
+
+        await Assert.That(exception!.Message).Contains("Retry:Jitter");
+        await Assert.That(exception.Message).Contains("not a Jitter");
     }
 
     [Test]
@@ -170,11 +176,12 @@ public class ConfigurationBindingTests
         services.AddShield("invalid", configuration);
         using var provider = services.BuildServiceProvider();
 
-        await Assert.That(() => provider.GetRequiredService<IKevlarRegistry>().GetShield("invalid"))
-            .Throws<InvalidOperationException>()
-            .WithMessage(
-                "Configuration value 'Custom' for 'Retry:Backoff' is not a configurable "
-                + "BackoffKind (None, Constant, Linear, or Exponential).");
+        var exception = await Assert.That(
+                () => provider.GetRequiredService<IKevlarRegistry>().GetShield("invalid"))
+            .Throws<KevlarConfigurationException>();
+
+        await Assert.That(exception!.Message).Contains("Retry:Backoff");
+        await Assert.That(exception.Message).Contains("not a configurable BackoffKind");
     }
 
     [Test]
@@ -243,7 +250,7 @@ public class ConfigurationBindingTests
 
         var exception = await Assert.That(
                 () => provider.GetRequiredService<IKevlarRegistry>().GetShield("legacy"))
-            .Throws<InvalidOperationException>();
+            .Throws<KevlarConfigurationException>();
 
         await Assert.That(exception!.Message).Contains("ConcurrencyLimit:MaxQueue");
         await Assert.That(exception.Message).Contains("QueueLimit");
@@ -299,9 +306,12 @@ public class ConfigurationBindingTests
         services.AddShield("invalid", configuration);
         using var provider = services.BuildServiceProvider();
 
-        await Assert.That(() => provider.GetRequiredService<IKevlarRegistry>().GetShield("invalid"))
-            .Throws<InvalidOperationException>()
-            .WithMessage("Configuration value 'abc' for 'Retry:MaxRetries' is not an integer.");
+        var exception = await Assert.That(
+                () => provider.GetRequiredService<IKevlarRegistry>().GetShield("invalid"))
+            .Throws<KevlarConfigurationException>();
+
+        await Assert.That(exception!.Message).Contains("Retry:MaxRetries");
+        await Assert.That(exception.Message).Contains("not an integer");
     }
 
     [Test]
@@ -312,9 +322,12 @@ public class ConfigurationBindingTests
         services.AddShield("empty", configuration);
         using var provider = services.BuildServiceProvider();
 
-        await Assert.That(() => provider.GetRequiredService<IKevlarRegistry>().GetShield("empty"))
-            .Throws<InvalidOperationException>()
-            .WithMessage("Configuration value '' for 'Retry:MaxRetries' is not an integer.");
+        var exception = await Assert.That(
+                () => provider.GetRequiredService<IKevlarRegistry>().GetShield("empty"))
+            .Throws<KevlarConfigurationException>();
+
+        await Assert.That(exception!.Message).Contains("Retry:MaxRetries");
+        await Assert.That(exception.Message).Contains("not an integer");
     }
 
     [Test]

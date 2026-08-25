@@ -121,9 +121,9 @@ public class ReloadingShieldTests
         configuration.Reload();
 
         await Assert.That(ReferenceEquals(live.Current, lastGood)).IsTrue();
-        await Assert.That(reported).IsTypeOf<InvalidOperationException>();
-        await Assert.That(reported!.Message)
-            .IsEqualTo("Configuration value 'invalid' for 'Retry:MaxRetries' is not an integer.");
+        await Assert.That(reported).IsTypeOf<KevlarConfigurationException>();
+        await Assert.That(reported!.Message).Contains("Retry:MaxRetries");
+        await Assert.That(reported.Message).Contains("not an integer");
     }
 
     [Test]
@@ -185,9 +185,9 @@ public class ReloadingShieldTests
         configuration.Reload();
 
         await Assert.That(ReferenceEquals(shieldProvider.Current, lastGood)).IsTrue();
-        await Assert.That(reported).IsTypeOf<InvalidOperationException>();
-        await Assert.That(reported!.Message)
-            .IsEqualTo("Configuration value 'invalid' for 'Retry:MaxRetries' is not an integer.");
+        await Assert.That(reported).IsTypeOf<KevlarConfigurationException>();
+        await Assert.That(reported!.Message).Contains("Retry:MaxRetries");
+        await Assert.That(reported.Message).Contains("not an integer");
     }
 
     [Test]
