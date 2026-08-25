@@ -141,6 +141,11 @@ public sealed class ShieldBuilder<TResult>
     /// <summary>Creates and appends a custom strategy using the accumulated handling clause.</summary>
     public Shield<TResult> Use(Func<HandlingClause, Strategy> factory) => Seal().Use(factory);
 
+    /// <summary>
+    /// Appends a custom strategy. The accumulated handling clause remains ambient for later strategies.
+    /// </summary>
+    public Shield<TResult> Use(Strategy strategy) => Seal().Use(strategy);
+
     /// <summary>Replaces handled outcomes with <paramref name="fallbackValue"/>.</summary>
     public Shield<TResult> FallbackTo(TResult fallbackValue) => Seal().FallbackTo(fallbackValue);
 
@@ -169,6 +174,11 @@ public sealed class ShieldBuilder<TResult>
 
     /// <summary>Cancels executions that exceed <paramref name="timeout"/>. The handling clauses remain ambient for later strategies.</summary>
     public Shield<TResult> Timeout(TimeSpan timeout) => Seal().Timeout(timeout);
+
+    /// <summary>
+    /// Adds a configured timeout. The handling clause remains ambient for later strategies.
+    /// </summary>
+    public Shield<TResult> Timeout(Action<TimeoutOptions> configure) => Seal().Timeout(configure);
 
     /// <summary>Limits throughput. The handling clauses remain ambient for later strategies.</summary>
     public Shield<TResult> RateLimit(int permits, TimeSpan perWindow) => Seal().RateLimit(permits, perWindow);
