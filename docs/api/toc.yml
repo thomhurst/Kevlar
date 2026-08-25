@@ -115,6 +115,9 @@ items:
   - uid: Kevlar.KevlarProxyException
     name: KevlarProxyException
     type: Class
+  - uid: Kevlar.Outcome
+    name: Outcome
+    type: Struct
   - uid: Kevlar.Outcome`1
     name: Outcome<T>
     type: Struct

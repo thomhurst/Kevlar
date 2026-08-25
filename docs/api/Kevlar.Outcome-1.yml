@@ -13,6 +13,7 @@ items:
   - Kevlar.Outcome`1.Result
   - Kevlar.Outcome`1.ToString
   - Kevlar.Outcome`1.TryGetResult(`0@)
+  - Kevlar.Outcome`1.op_Implicit(Kevlar.Outcome{`0})~Kevlar.Outcome
   langs:
   - csharp
   - vb
@@ -99,6 +100,34 @@ items:
   overload: Kevlar.Outcome`1.FromException*
   nameWithType.vb: Outcome(Of T).FromException(Exception)
   fullName.vb: Kevlar.Outcome(Of T).FromException(System.Exception)
+- uid: Kevlar.Outcome`1.op_Implicit(Kevlar.Outcome{`0})~Kevlar.Outcome
+  commentId: M:Kevlar.Outcome`1.op_Implicit(Kevlar.Outcome{`0})~Kevlar.Outcome
+  id: op_Implicit(Kevlar.Outcome{`0})~Kevlar.Outcome
+  parent: Kevlar.Outcome`1
+  langs:
+  - csharp
+  - vb
+  name: implicit operator Outcome(Outcome<T>)
+  nameWithType: Outcome<T>.implicit operator Outcome(Outcome<T>)
+  fullName: Kevlar.Outcome<T>.implicit operator Kevlar.Outcome(Kevlar.Outcome<T>)
+  type: Operator
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Converts a result-bearing outcome to its void success-or-failure representation.
+  example: []
+  syntax:
+    content: public static implicit operator Outcome(Outcome<T> outcome)
+    parameters:
+    - id: outcome
+      type: Kevlar.Outcome`1
+    return:
+      type: Kevlar.Outcome
+    content.vb: Public Shared Widening Operator CType(outcome As Outcome(Of T)) As Outcome
+  overload: Kevlar.Outcome`1.op_Implicit*
+  nameWithType.vb: Outcome(Of T).CType(Outcome(Of T))
+  fullName.vb: Kevlar.Outcome(Of T).CType(Kevlar.Outcome(Of T))
+  name.vb: CType(Outcome(Of T))
 - uid: Kevlar.Outcome`1.TryGetResult(`0@)
   commentId: M:Kevlar.Outcome`1.TryGetResult(`0@)
   id: TryGetResult(`0@)
@@ -529,6 +558,27 @@ references:
   name: Exception
   nameWithType: Exception
   fullName: System.Exception
+- uid: Kevlar.Outcome`1.op_Implicit*
+  commentId: Overload:Kevlar.Outcome`1.op_Implicit
+  href: Kevlar.Outcome-1.html#Kevlar_Outcome_1_op_Implicit_Kevlar_Outcome__0___Kevlar_Outcome
+  name: implicit operator
+  nameWithType: Outcome<T>.implicit operator
+  fullName: Kevlar.Outcome<T>.implicit operator
+  nameWithType.vb: Outcome(Of T).CType
+  fullName.vb: Kevlar.Outcome(Of T).CType
+  name.vb: CType
+  spec.csharp:
+  - name: implicit
+  - name: " "
+  - name: operator
+- uid: Kevlar.Outcome
+  commentId: T:Kevlar.Outcome
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Outcome.html
+  name: Outcome
+  nameWithType: Outcome
+  fullName: Kevlar.Outcome
 - uid: Kevlar.Outcome`1.TryGetResult*
   commentId: Overload:Kevlar.Outcome`1.TryGetResult
   isExternal: true

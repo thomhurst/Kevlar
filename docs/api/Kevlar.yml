@@ -41,6 +41,7 @@ items:
   - Kevlar.KevlarKey`1
   - Kevlar.KevlarProperties
   - Kevlar.KevlarProxyException
+  - Kevlar.Outcome
   - Kevlar.Outcome`1
   - Kevlar.PartitionedShieldOptions
   - Kevlar.PartitionedShield`1
@@ -250,6 +251,14 @@ references:
   name: KevlarProperties
   nameWithType: KevlarProperties
   fullName: Kevlar.KevlarProperties
+- uid: Kevlar.Outcome
+  commentId: T:Kevlar.Outcome
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Outcome.html
+  name: Outcome
+  nameWithType: Outcome
+  fullName: Kevlar.Outcome
 - uid: Kevlar.Outcome`1
   commentId: T:Kevlar.Outcome`1
   parent: Kevlar
