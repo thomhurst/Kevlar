@@ -342,6 +342,15 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 out capturedContext);
         }
 
+        if (TryFindAsyncVoidMethodGroupContext(
+                expression,
+                context,
+                knownTypes,
+                out capturedContext))
+        {
+            return true;
+        }
+
         foreach (var anonymous in expression.DescendantNodesAndSelf()
                      .OfType<AnonymousFunctionExpressionSyntax>()
                      .Where(candidate => !candidate.Ancestors()
@@ -381,6 +390,49 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     {
                         return true;
                     }
+                }
+            }
+        }
+
+        capturedContext = null!;
+        return false;
+    }
+
+    private static bool TryFindAsyncVoidMethodGroupContext(
+        ExpressionSyntax expression,
+        SyntaxNodeAnalysisContext context,
+        KnownTypes knownTypes,
+        out SyntaxNode capturedContext)
+    {
+        var symbolInfo = context.SemanticModel.GetSymbolInfo(
+            expression,
+            context.CancellationToken);
+        var methods = symbolInfo.Symbol is IMethodSymbol method
+            ? [method]
+            : symbolInfo.CandidateSymbols.OfType<IMethodSymbol>();
+
+        foreach (var candidate in methods.Where(static method => method.IsAsync && method.ReturnsVoid))
+        {
+            foreach (var syntaxReference in candidate.DeclaringSyntaxReferences)
+            {
+                var declaration = syntaxReference.GetSyntax(context.CancellationToken);
+                if (!declaration.DescendantNodes().OfType<AwaitExpressionSyntax>().Any())
+                {
+                    continue;
+                }
+
+                var eventParameterNames = new HashSet<string>(
+                    candidate.Parameters
+                        .Where(parameter => ContainsEventContextReference(parameter.Type, knownTypes))
+                        .Select(static parameter => parameter.Name),
+                    StringComparer.Ordinal);
+                foreach (var identifier in declaration.DescendantNodes()
+                             .OfType<IdentifierNameSyntax>()
+                             .Where(identifier => eventParameterNames.Contains(
+                                 identifier.Identifier.ValueText)))
+                {
+                    capturedContext = identifier;
+                    return true;
                 }
             }
         }
@@ -607,7 +659,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     && IsTaskLike(resultContainingType);
             }
 
-            if ((method.Name == "GetResult"
+            if ((IsFrameworkAwaiterGetResult(method)
                     && consumer.ArgumentList.Arguments.Count == 0)
                 || (method.Name == "Wait"
                     && consumer.ArgumentList.Arguments.Count == 0
@@ -656,6 +708,24 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 consumerInvocation,
                 semanticModel,
                 cancellationToken);
+    }
+
+    private static bool IsFrameworkAwaiterGetResult(IMethodSymbol method)
+    {
+        if (method.Name != "GetResult")
+        {
+            return false;
+        }
+
+        var definition = method.ContainingType.OriginalDefinition.ToDisplayString();
+        return definition is "System.Runtime.CompilerServices.TaskAwaiter"
+            or "System.Runtime.CompilerServices.TaskAwaiter<TResult>"
+            or "System.Runtime.CompilerServices.ValueTaskAwaiter<TResult>"
+            or "System.Runtime.CompilerServices.ValueTaskAwaiter"
+            or "System.Runtime.CompilerServices.ConfiguredTaskAwaitable.ConfiguredTaskAwaiter"
+            or "System.Runtime.CompilerServices.ConfiguredTaskAwaitable<TResult>.ConfiguredTaskAwaiter"
+            or "System.Runtime.CompilerServices.ConfiguredValueTaskAwaitable.ConfiguredValueTaskAwaiter"
+            or "System.Runtime.CompilerServices.ConfiguredValueTaskAwaitable<TResult>.ConfiguredValueTaskAwaiter";
     }
 
     private static bool IsTaskLike(ITypeSymbol? type)

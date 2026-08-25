@@ -106,6 +106,30 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Inspects_Async_Void_Method_Group_After_Await()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = RetryAsyncVoid);
+
+                private static async void RetryAsyncVoid(RetryEvent item)
+                {
+                    await Task.Yield();
+                    _ = item.Context.ShieldName;
+                }
+            }
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
     public async Task KEV013_Follows_Stable_Callback_Local_Initializers()
     {
         var trailingStatements = new[] { "", "callback = _ => { };" };
@@ -288,12 +312,14 @@ public class PipelineHazardAnalyzerTests
         var statements = new[]
         {
             "AuditAsync(item).GetAwaiter().GetResult();",
+            "AuditAsync(item).ConfigureAwait(false).GetAwaiter().GetResult();",
             "AuditAsync(item).Wait();",
             "_ = AuditAsync(item).Result;",
             "Task.WaitAll(AuditAsync(item));",
             "Task.WhenAll(AuditAsync(item), FlushAsync()).GetAwaiter().GetResult();",
             "Task.WhenAll(new[] { AuditAsync(item), FlushAsync() }).GetAwaiter().GetResult();",
             "AuditValueAsync(item).AsTask().GetAwaiter().GetResult();",
+            "AuditValueAsync(item).ConfigureAwait(false).GetAwaiter().GetResult();",
             "AuditValueAsync(item).AsTask().Wait();",
         };
         foreach (var statement in statements)
@@ -312,6 +338,32 @@ public class PipelineHazardAnalyzerTests
 
             await Assert.That(diagnostics).IsEmpty();
         }
+    }
+
+    [Test]
+    public async Task KEV013_Rejects_Unrelated_GetResult_Extensions()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public static class TaskExtensions
+            {
+                public static void GetResult(this Task task) { }
+            }
+
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                        AuditAsync(item).GetResult());
+
+                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            }
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
     }
 
     [Test]
