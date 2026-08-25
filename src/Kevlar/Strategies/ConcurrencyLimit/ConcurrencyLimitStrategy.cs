@@ -30,7 +30,9 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
 
     internal (int Available, int Running, int Queued) CaptureState()
     {
-        var available = Math.Min(_maxConcurrency, Math.Max(0, Volatile.Read(ref _available)));
+        var available = Math.Min(
+            _maxConcurrency,
+            Math.Max(0, Volatile.Read(ref _available) + _semaphore.CurrentCount));
         var queued = Math.Min(_queueLimit, Math.Max(0, Volatile.Read(ref _queued)));
         return (available, _maxConcurrency - available, queued);
     }

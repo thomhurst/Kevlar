@@ -1661,6 +1661,34 @@ public class MetricsTests
     }
 
     [Test]
+    public async Task Concurrency_Parked_Permit_Is_Reported_As_Available()
+    {
+        var strategy = new ConcurrencyLimitStrategy(new ConcurrencyLimitOptions
+        {
+            MaxConcurrency = 1,
+            QueueLimit = 1,
+        });
+        var acquire = typeof(ConcurrencyLimitStrategy).GetMethod(
+            "TryAcquirePermit",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        var release = typeof(ConcurrencyLimitStrategy).GetMethod(
+            "ReleasePermit",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+        var waiters = typeof(ConcurrencyLimitStrategy).GetField(
+            "_waiters",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+
+        await Assert.That((bool)acquire.Invoke(strategy, null)!).IsTrue();
+        waiters.SetValue(strategy, 1);
+        release.Invoke(strategy, null);
+        waiters.SetValue(strategy, 0);
+
+        var state = strategy.CaptureState();
+        await Assert.That(state.Available).IsEqualTo(1);
+        await Assert.That(state.Running).IsEqualTo(0);
+    }
+
+    [Test]
     public async Task State_Registry_Compaction_Tolerates_Collected_Entries()
     {
         var registry = new KevlarMetrics.StateMetricRegistry<object>();
@@ -1710,6 +1738,36 @@ public class MetricsTests
         await Assert.That(observations.Length).IsEqualTo(1);
         GC.KeepAlive(strategy);
         GC.KeepAlive(secondProvider);
+    }
+
+    [Test]
+    public async Task State_Registration_Reclaims_Dead_Aliases_Before_Enforcing_Cap()
+    {
+        var registry = new KevlarMetrics.StateMetricRegistry<object>();
+        var strategy = new object();
+        var registration = registry.Register(strategy);
+        var providers = Enumerable.Range(0, KevlarMetrics.MaxTrackedStrategyAliases)
+            .Select(index => AddCollectibleStateObservation(
+                registration,
+                $"metrics-collected-alias-{index}"))
+            .ToArray();
+
+        for (var attempt = 0; providers.Any(static provider => provider.IsAlive) && attempt < 10; attempt++)
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+        }
+
+        var liveProvider = new FakeTimeProvider();
+        var liveAlias = new StrategyMetricAlias("metrics-live-after-collected-aliases", 0);
+        registration.Add(liveAlias, liveProvider);
+
+        await Assert.That(providers.All(static provider => !provider.IsAlive)).IsTrue();
+        await Assert.That(registration.Observations.Select(static observation => observation.Alias))
+            .IsEquivalentTo([liveAlias]);
+        GC.KeepAlive(strategy);
+        GC.KeepAlive(liveProvider);
     }
 
     [Test]
@@ -1961,9 +2019,16 @@ public class MetricsTests
         System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
     private static WeakReference AddCollectibleStateObservation(
         KevlarMetrics.StateMetricRegistration<object> registration)
+        => AddCollectibleStateObservation(registration, "metrics-republished-state");
+
+    [System.Runtime.CompilerServices.MethodImpl(
+        System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    private static WeakReference AddCollectibleStateObservation(
+        KevlarMetrics.StateMetricRegistration<object> registration,
+        string alias)
     {
         var timeProvider = new FakeTimeProvider();
-        registration.Add(new StrategyMetricAlias("metrics-republished-state", 0), timeProvider);
+        registration.Add(new StrategyMetricAlias(alias, 0), timeProvider);
         return new WeakReference(timeProvider);
     }
 
