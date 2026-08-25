@@ -300,7 +300,15 @@ internal abstract class ReloadingProvider<TShield> : IReloadingProvider
             {
                 var replacement = _factory();
                 ShieldRetirement.Track(replacement);
-                _validatePublication?.Invoke(replacement);
+                try
+                {
+                    _validatePublication?.Invoke(replacement);
+                }
+                catch
+                {
+                    _retiredSnapshots.Add(new ShieldRetirement(replacement, replacement));
+                    throw;
+                }
                 _retiredSnapshots.Add(new ShieldRetirement(_current, _current));
                 Volatile.Write(ref _current, replacement);
                 reclaimable = CollectReclaimableSnapshots();

@@ -27,6 +27,7 @@ internal sealed class RegistryEntry
     private readonly IServiceProvider _serviceProvider;
     private readonly ShieldRegistration _registration;
     private readonly Action<object> _validatePublication;
+    private readonly Action<object> _retireRejectedValue;
     private Lazy<object> _value;
     private object? _resolved;
     private Action<object>? _retirementHandler;
@@ -35,11 +36,13 @@ internal sealed class RegistryEntry
     public RegistryEntry(
         IServiceProvider serviceProvider,
         ShieldRegistration registration,
-        Action<object> validatePublication)
+        Action<object> validatePublication,
+        Action<object> retireRejectedValue)
     {
         _serviceProvider = serviceProvider;
         _registration = registration;
         _validatePublication = validatePublication;
+        _retireRejectedValue = retireRejectedValue;
         _value = CreateValue();
     }
 
@@ -93,7 +96,15 @@ internal sealed class RegistryEntry
                 ShieldRetirement.Track(shield);
             }
 
-            _validatePublication(value);
+            try
+            {
+                _validatePublication(value);
+            }
+            catch
+            {
+                _retireRejectedValue(value);
+                throw;
+            }
 
             Action<object>? retirementHandler = null;
             lock (_retirementLock)
@@ -125,6 +136,7 @@ internal sealed class KevlarRegistry : IKevlarRegistry
     private readonly object _lifecycleLock = new();
     private HashSet<Strategy>? _reclamationRetainedStrategies;
     private int _activeOperations;
+    private int _pendingDeferredDisposals;
     private int _reclamationThreadId;
     private bool _reclaiming;
     private bool _disposed;
@@ -136,7 +148,7 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         {
             // Last registration for a given name wins, matching standard DI override behaviour.
             _entries[(registration.Name, registration.ResultType)] =
-                new RegistryEntry(_serviceProvider, registration, ValidatePublication);
+                new RegistryEntry(_serviceProvider, registration, ValidatePublication, Retire);
         }
     }
 
@@ -176,7 +188,8 @@ internal sealed class KevlarRegistry : IKevlarRegistry
             _ => new RegistryEntry(
                 _serviceProvider,
                 new ShieldRegistration(name, null, services => factory(services)),
-                ValidatePublication));
+                ValidatePublication,
+                Retire));
         return TryResolve(entry, out Shield? shield)
             ? shield
             : throw new InvalidOperationException($"The factory for shield '{name}' returned an incompatible value.");
@@ -195,7 +208,8 @@ internal sealed class KevlarRegistry : IKevlarRegistry
             _ => new RegistryEntry(
                 _serviceProvider,
                 new ShieldRegistration(name, resultType, services => factory(services)),
-                ValidatePublication));
+                ValidatePublication,
+                Retire));
         return TryResolve(entry, out Shield<TResult>? shield)
             ? shield
             : throw new InvalidOperationException(
@@ -211,7 +225,8 @@ internal sealed class KevlarRegistry : IKevlarRegistry
             new RegistryEntry(
                 _serviceProvider,
                 new ShieldRegistration(name, null, services => factory(services)),
-                ValidatePublication));
+                ValidatePublication,
+                Retire));
     });
 
     public bool TryAdd<TResult>(string name, Func<IServiceProvider, Shield<TResult>> factory) => Read(() =>
@@ -224,7 +239,8 @@ internal sealed class KevlarRegistry : IKevlarRegistry
             new RegistryEntry(
                 _serviceProvider,
                 new ShieldRegistration(name, resultType, services => factory(services)),
-                ValidatePublication));
+                ValidatePublication,
+                Retire));
     });
 
     public bool Remove(string name) => Remove(name, resultType: null);
@@ -269,7 +285,10 @@ internal sealed class KevlarRegistry : IKevlarRegistry
 
         foreach (var strategy in GetStrategies(values))
         {
-            TryDispose(strategy, failures);
+            if (_strategyDisposals.TryClaim(strategy))
+            {
+                TryDispose(strategy, failures);
+            }
         }
 
         ThrowDisposalFailures(failures);
@@ -292,6 +311,11 @@ internal sealed class KevlarRegistry : IKevlarRegistry
 
         foreach (var strategy in GetStrategies(values))
         {
+            if (!_strategyDisposals.TryClaim(strategy))
+            {
+                continue;
+            }
+
             try
             {
                 if (strategy is IAsyncDisposable asyncDisposable)
@@ -422,7 +446,7 @@ internal sealed class KevlarRegistry : IKevlarRegistry
             }
 
             _disposed = true;
-            while (_activeOperations > 0 || _reclaiming)
+            while (_activeOperations > 0 || _reclaiming || _pendingDeferredDisposals > 0)
             {
                 Monitor.Wait(_lifecycleLock);
             }
@@ -577,13 +601,20 @@ internal sealed class KevlarRegistry : IKevlarRegistry
 
             deferredAsyncDisposals = [];
             ReclaimRetirementsCore(reclaimable, deferredAsyncDisposals);
+            if (deferredAsyncDisposals.Count > 0)
+            {
+                BeginDeferredDisposals();
+            }
         }
         finally
         {
             EndReclamation();
         }
 
-        CompleteDeferredDisposals(deferredAsyncDisposals);
+        if (deferredAsyncDisposals.Count > 0)
+        {
+            CompleteDeferredDisposals(deferredAsyncDisposals);
+        }
     }
 
     private void ReclaimRetirements(IReadOnlyList<ShieldRetirement> reclaimable)
@@ -630,16 +661,40 @@ internal sealed class KevlarRegistry : IKevlarRegistry
 
     private void CompleteDeferredDisposals(List<IAsyncDisposable> deferredAsyncDisposals)
     {
-        foreach (var disposable in deferredAsyncDisposals)
+        try
         {
-            try
+            foreach (var disposable in deferredAsyncDisposals)
             {
-                disposable.DisposeAsync().AsTask().GetAwaiter().GetResult();
+                try
+                {
+                    disposable.DisposeAsync().AsTask().GetAwaiter().GetResult();
+                }
+                catch (Exception exception)
+                {
+                    _retirementFailures.Enqueue(exception);
+                }
             }
-            catch (Exception exception)
-            {
-                _retirementFailures.Enqueue(exception);
-            }
+        }
+        finally
+        {
+            EndDeferredDisposals();
+        }
+    }
+
+    private void BeginDeferredDisposals()
+    {
+        lock (_lifecycleLock)
+        {
+            _pendingDeferredDisposals++;
+        }
+    }
+
+    private void EndDeferredDisposals()
+    {
+        lock (_lifecycleLock)
+        {
+            _pendingDeferredDisposals--;
+            Monitor.PulseAll(_lifecycleLock);
         }
     }
 

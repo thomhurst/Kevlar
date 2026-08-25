@@ -555,17 +555,85 @@ public class DynamicRegistryTests
     }
 
     [Test]
+    public async Task Rejected_Publication_Retires_Unclaimed_Strategies()
+    {
+        using var services = new ServiceCollection().AddKevlar().BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        var claimed = new BlockingAsyncDisposableStrategy();
+        var fresh = new DisposableStrategy();
+        var retired = ResolveAndRemove(registry, "rejected-publication-retired", claimed);
+        Collect(retired);
+        var scavenging = Task.Run(() =>
+            registry.GetOrAdd("rejected-publication-scavenge", _ => Shield.Empty));
+        await claimed.DisposalStarted.WaitAsync(TimeSpan.FromSeconds(5));
+
+        try
+        {
+            _ = await Assert.That(() => registry.GetOrAdd(
+                    "rejected-publication",
+                    _ => Shield.Compose(Shield.Use(claimed), Shield.Use(fresh))))
+                .Throws<InvalidOperationException>();
+        }
+        finally
+        {
+            claimed.ReleaseDisposal();
+            _ = await scavenging.WaitAsync(TimeSpan.FromSeconds(5));
+        }
+
+        registry.Dispose();
+
+        await Assert.That(claimed.DisposeCount).IsEqualTo(1);
+        await Assert.That(fresh.DisposeCount).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Registry_Dispose_Waits_For_Pending_Async_Retirement()
+    {
+        using var services = new ServiceCollection().AddKevlar().BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        var disposalFailure = new InvalidOperationException("deferred disposal failed");
+        var strategy = new BlockingAsyncDisposableStrategy(disposalFailure);
+        var retired = ResolveAndRemove(registry, "pending-shutdown", strategy);
+        Collect(retired);
+        var scavenging = Task.Run(() =>
+            registry.GetOrAdd("pending-shutdown-scavenge", _ => Shield.Empty));
+        await strategy.DisposalStarted.WaitAsync(TimeSpan.FromSeconds(5));
+        var disposing = Task.Run(registry.Dispose);
+
+        try
+        {
+            if (disposing.Wait(TimeSpan.FromMilliseconds(100)))
+            {
+                throw new InvalidOperationException("Registry disposal completed before deferred cleanup.");
+            }
+        }
+        finally
+        {
+            strategy.ReleaseDisposal();
+        }
+
+        _ = await scavenging.WaitAsync(TimeSpan.FromSeconds(5));
+        _ = await Assert.That(async () => await disposing)
+            .Throws<InvalidOperationException>()
+            .WithMessage(disposalFailure.Message);
+        await Assert.That(strategy.DisposeCount).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Pending_Async_Retirement_Cannot_Republish_Through_Reload()
     {
         var monitor = new MutableOptionsMonitor<ReloadOptions>();
         monitor.Set("claimed-reload", new ReloadOptions(), notify: false);
         var strategy = new BlockingAsyncDisposableStrategy();
+        var fresh = new DisposableStrategy();
         Exception? reported = null;
         using var services = new ServiceCollection()
             .AddSingleton<IOptionsMonitor<ReloadOptions>>(monitor)
             .AddReloadingShield<ReloadOptions>(
                 "claimed-reload",
-                (options, _) => options.Retries == 0 ? Shield.Empty : Shield.Use(strategy),
+                (options, _) => options.Retries == 0
+                    ? Shield.Empty
+                    : Shield.Compose(Shield.Use(strategy), Shield.Use(fresh)),
                 exception => reported = exception)
             .BuildServiceProvider();
         var provider = services.GetRequiredKeyedService<IShieldProvider>("claimed-reload");
@@ -589,6 +657,11 @@ public class DynamicRegistryTests
             strategy.ReleaseDisposal();
             _ = await scavenging.WaitAsync(TimeSpan.FromSeconds(5));
         }
+
+        registry.Dispose();
+
+        await Assert.That(strategy.DisposeCount).IsEqualTo(1);
+        await Assert.That(fresh.DisposeCount).IsEqualTo(1);
     }
 
     [Test]
@@ -1081,7 +1154,8 @@ public class DynamicRegistryTests
         }
     }
 
-    private sealed class BlockingAsyncDisposableStrategy : Strategy, IAsyncDisposable
+    private sealed class BlockingAsyncDisposableStrategy(Exception? disposalFailure = null)
+        : Strategy, IAsyncDisposable
     {
         private readonly TaskCompletionSource _disposalStarted =
             new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -1098,6 +1172,10 @@ public class DynamicRegistryTests
             _disposalStarted.TrySetResult();
             await _releaseDisposal.Task;
             Interlocked.Increment(ref _disposeCount);
+            if (disposalFailure is not null)
+            {
+                throw disposalFailure;
+            }
         }
 
         public void ReleaseDisposal() => _releaseDisposal.TrySetResult();
