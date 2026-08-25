@@ -143,6 +143,30 @@ public class VoidFallbackTests
     }
 
     [Test]
+    public async Task A_Void_Fallback_Cannot_Be_Lifted_Into_A_Typed_Shield()
+    {
+        var shield = Shield.Fallback(static _ => default);
+
+        await Assert.That(() => shield.For<int>())
+            .Throws<InvalidOperationException>()
+            .WithMessageContaining("Shield.For<T>()");
+    }
+
+    [Test]
+    public async Task A_Void_Fallback_Cannot_Be_Wrapped_Into_A_Typed_Shield()
+    {
+        var voidFallback = Shield.Fallback(static _ => default);
+        var typed = Shield.For<int>();
+
+        await Assert.That(() => typed.Wrap(voidFallback))
+            .Throws<InvalidOperationException>()
+            .WithMessageContaining("Shield.For<T>()");
+        await Assert.That(() => voidFallback.Wrap(typed))
+            .Throws<InvalidOperationException>()
+            .WithMessageContaining("Shield.For<T>()");
+    }
+
+    [Test]
     public async Task A_Throwing_Fallback_Surfaces_Its_Own_Exception()
     {
         var shield = Shield.When<InvalidOperationException>()

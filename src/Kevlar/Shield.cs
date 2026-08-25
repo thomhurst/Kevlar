@@ -515,12 +515,15 @@ public sealed class Shield
     {
         if (_hasVoidFallback)
         {
-            throw new InvalidOperationException(
-                "Fallback on a non-generic Shield applies only to void executions. " +
-                "For executions that return a value, build a result-aware shield with " +
-                "Shield.For<T>() and use its Fallback overloads.");
+            throw CreateVoidFallbackResultException();
         }
     }
+
+    internal static InvalidOperationException CreateVoidFallbackResultException() =>
+        new(
+            "Fallback on a non-generic Shield applies only to void executions. " +
+            "For executions that return a value, build a result-aware shield with " +
+            "Shield.For<T>() and use its Fallback overloads.");
 
     internal static string Describe(string? name, Strategy[] strategies)
     {
