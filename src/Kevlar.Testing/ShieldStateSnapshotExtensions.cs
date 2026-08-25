@@ -27,6 +27,44 @@ public static class ShieldStateSnapshotExtensions
         return Capture(shield.Strategies, shield.TimeOrSystem);
     }
 
+    /// <summary>Captures the current retention and eviction state of a partitioned provider.</summary>
+    public static PartitionedShieldStateSnapshot GetStateSnapshot<TKey>(
+        this PartitionedShield<TKey> shield)
+        where TKey : notnull
+    {
+        if (shield is null)
+        {
+            throw new ArgumentNullException(nameof(shield));
+        }
+
+        var state = shield.CaptureState();
+        return new PartitionedShieldStateSnapshot(
+            state.Count,
+            state.CreatedCount,
+            state.CapacityEvictionCount,
+            state.ExpirationEvictionCount,
+            state.ClearedEvictionCount);
+    }
+
+    /// <summary>Captures the current retention and eviction state of a typed partitioned provider.</summary>
+    public static PartitionedShieldStateSnapshot GetStateSnapshot<TKey, TResult>(
+        this PartitionedShield<TKey, TResult> shield)
+        where TKey : notnull
+    {
+        if (shield is null)
+        {
+            throw new ArgumentNullException(nameof(shield));
+        }
+
+        var state = shield.CaptureState();
+        return new PartitionedShieldStateSnapshot(
+            state.Count,
+            state.CreatedCount,
+            state.CapacityEvictionCount,
+            state.ExpirationEvictionCount,
+            state.ClearedEvictionCount);
+    }
+
     private static ShieldStateSnapshot Capture(Strategy[] strategies, TimeProvider timeProvider)
     {
         var snapshots = new List<StrategyStateSnapshot>();

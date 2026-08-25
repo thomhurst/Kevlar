@@ -10,6 +10,9 @@ namespace Kevlar.StressTests;
 internal static class StressRunner
 {
     private const int MeasurementRounds = 4;
+    private const int PartitionExecutions = 1_000_000;
+    private const int PartitionKeys = 10_000;
+    private const int MaximumPartitions = 1_000;
 
     private static readonly Shield KevlarShield = Shield
         .Timeout(TimeSpan.FromSeconds(10))
@@ -43,6 +46,7 @@ internal static class StressRunner
 
         await WarmUpAsync("Polly", ExecutePollyAsync, options);
         await WarmUpAsync("Kevlar", ExecuteKevlarAsync, options);
+        await RunPartitionStressAsync();
 
         var phases = new List<StressPhaseResult>(MeasurementRounds * 2);
         for (var round = 0; round < MeasurementRounds; round++)
@@ -197,6 +201,36 @@ internal static class StressRunner
         GC.Collect(2, GCCollectionMode.Forced, blocking: true, compacting: true);
         GC.WaitForPendingFinalizers();
         GC.Collect(2, GCCollectionMode.Forced, blocking: true, compacting: true);
+    }
+
+    private static async Task RunPartitionStressAsync()
+    {
+        Console.WriteLine(
+            $"Stress-testing {PartitionExecutions:N0} partition executions across " +
+            $"{PartitionKeys:N0} keys with a {MaximumPartitions:N0}-partition bound...");
+        var partitions = PartitionedShield<int>.CreateAsync(
+            static key => new ValueTask<Shield>(Shield.Retry(key & 1, Backoff.None)),
+            new PartitionedShieldOptions { MaximumPartitions = MaximumPartitions });
+
+        for (var operation = 0; operation < PartitionExecutions; operation++)
+        {
+            var shield = await partitions.GetShieldAsync(operation % PartitionKeys).ConfigureAwait(false);
+            var result = await shield.ExecuteAsync(static _ => new ValueTask<int>(42)).ConfigureAwait(false);
+            if (result != 42)
+            {
+                throw new InvalidOperationException($"Partition workload returned {result}; expected 42.");
+            }
+        }
+
+        if (partitions.Count > MaximumPartitions)
+        {
+            throw new InvalidOperationException(
+                $"Partition retention exceeded its bound: {partitions.Count} > {MaximumPartitions}.");
+        }
+
+        Console.WriteLine(
+            $"Partition stress complete: {partitions.Count:N0} retained, " +
+            $"{partitions.EvictionCount:N0} evicted.");
     }
 
     private static ValueTask<int> ExecuteKevlarAsync() =>

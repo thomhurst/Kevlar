@@ -17,4 +17,19 @@ public sealed class PartitionedShieldOptions
 
     /// <summary>Gets or sets the time source used for idle expiry. Defaults to system time.</summary>
     public TimeProvider TimeProvider { get; set; } = TimeProvider.System;
+
+    /// <summary>Invoked after a partition is created and retained.</summary>
+    public Action<PartitionCreatedNotification>? OnCreated { get; set; }
+
+    /// <summary>Invoked and awaited after <see cref="OnCreated"/>.</summary>
+    public Func<PartitionCreatedNotification, ValueTask>? OnCreatedAsync { get; set; }
+
+    /// <summary>Invoked after a partition is removed from the provider.</summary>
+    public Action<PartitionEvictionNotification>? OnEvicted { get; set; }
+
+    /// <summary>
+    /// Invoked and awaited after <see cref="OnEvicted"/> and before an automatically evicted
+    /// partition's slot is reused.
+    /// </summary>
+    public Func<PartitionEvictionNotification, ValueTask>? OnEvictedAsync { get; set; }
 }
