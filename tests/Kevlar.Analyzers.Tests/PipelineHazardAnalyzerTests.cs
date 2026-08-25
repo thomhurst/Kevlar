@@ -139,6 +139,28 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Inspects_Invoked_Async_Delegate_Locals()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                Action start = async () =>
+                {
+                    await Task.Yield();
+                    _ = item.Context.ShieldName;
+                };
+                start();
+            });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
     public async Task KEV014_Inspects_Invoked_Delegates_After_Await()
     {
         var diagnostics = await AnalyzeBodyAsync("""

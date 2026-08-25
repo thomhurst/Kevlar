@@ -422,6 +422,20 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     continue;
                 }
 
+                if (TryGetInvokedStableDelegateInitializer(
+                        invocation,
+                        context.SemanticModel,
+                        context.CancellationToken,
+                        out var delegateInitializer)
+                    && TryFindEventContextExpression(
+                        delegateInitializer,
+                        context,
+                        knownTypes,
+                        out capturedContext))
+                {
+                    return true;
+                }
+
                 if (invocation.Expression is MemberAccessExpressionSyntax memberAccess
                     && context.SemanticModel.GetSymbolInfo(
                         invocation,
@@ -1330,16 +1344,51 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
     private static bool IsUnobservedAsyncInvocation(
         InvocationExpressionSyntax invocation,
-        SyntaxNodeAnalysisContext context) =>
-        context.SemanticModel.GetSymbolInfo(
-            invocation,
-            context.CancellationToken).Symbol is IMethodSymbol method
-        && !IsDeferredScheduler(method)
-        && StartsAsynchronousWork(method)
-        && !IsSynchronouslyObserved(
-            invocation,
-            context.SemanticModel,
-            context.CancellationToken);
+        SyntaxNodeAnalysisContext context)
+    {
+        if (TryGetInvokedStableDelegateInitializer(
+                invocation,
+                context.SemanticModel,
+                context.CancellationToken,
+                out var initializer)
+            && StartsAsynchronousWork(initializer, context))
+        {
+            return true;
+        }
+
+        return context.SemanticModel.GetSymbolInfo(
+                invocation,
+                context.CancellationToken).Symbol is IMethodSymbol method
+            && !IsDeferredScheduler(method)
+            && StartsAsynchronousWork(method)
+            && !IsSynchronouslyObserved(
+                invocation,
+                context.SemanticModel,
+                context.CancellationToken);
+    }
+
+    private static bool TryGetInvokedStableDelegateInitializer(
+        InvocationExpressionSyntax invocation,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken,
+        out ExpressionSyntax initializer)
+    {
+        if (invocation.Expression is IdentifierNameSyntax identifier
+            && semanticModel.GetSymbolInfo(identifier, cancellationToken).Symbol
+                is ILocalSymbol { Type.TypeKind: TypeKind.Delegate } local
+            && TryGetStableLocalInitializer(
+                local,
+                semanticModel,
+                cancellationToken,
+                identifier,
+                out initializer))
+        {
+            return true;
+        }
+
+        initializer = null!;
+        return false;
+    }
 
     private static bool IsSynchronouslyObserved(
         InvocationExpressionSyntax invocation,
