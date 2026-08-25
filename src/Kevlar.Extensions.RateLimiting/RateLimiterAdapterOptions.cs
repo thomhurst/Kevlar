@@ -4,7 +4,7 @@ namespace Kevlar.Extensions.RateLimiting;
 /// <remarks>
 /// Rejections record the standard Kevlar rejection metric, invoke <see cref="OnRejected"/>, then
 /// invoke and await <see cref="OnRejectedAsync"/>. A callback failure replaces the
-/// <see cref="RateLimitExceededException"/> that would otherwise be returned.
+/// <see cref="RateLimiterAdapterRejectedException"/> that would otherwise be returned.
 /// </remarks>
 public sealed class RateLimiterAdapterOptions
 {
@@ -12,8 +12,8 @@ public sealed class RateLimiterAdapterOptions
     public int PermitCount { get; set; } = 1;
 
     /// <summary>Invoked synchronously when a lease rejects an execution.</summary>
-    public Action<RateLimiterRejectedEvent>? OnRejected { get; set; }
+    public Action<RateLimiterAdapterRejectedEvent>? OnRejected { get; set; }
 
     /// <summary>Invoked and awaited after <see cref="OnRejected"/> for a rejected lease.</summary>
-    public Func<RateLimiterRejectedEvent, ValueTask>? OnRejectedAsync { get; set; }
+    public Func<RateLimiterAdapterRejectedEvent, ValueTask>? OnRejectedAsync { get; set; }
 }

@@ -16,7 +16,7 @@ namespace Kevlar;
 /// <item><c>kevlar.timeouts</c> — executions cancelled by a timeout strategy; attribute <c>kevlar.shield.name</c></item>
 /// <item><c>kevlar.hedges</c> — extra hedged attempts launched; attribute <c>kevlar.shield.name</c></item>
 /// <item><c>kevlar.fallbacks</c> — outcomes replaced by a fallback; attribute <c>kevlar.shield.name</c></item>
-/// <item><c>kevlar.rejections</c> — fail-fast rejections; attributes <c>kevlar.shield.name</c>, <c>kevlar.rejection.type</c> (<c>circuit_open</c>/<c>rate_limit</c>/<c>concurrency_limit</c>)</item>
+/// <item><c>kevlar.rejections</c> — fail-fast rejections; attributes <c>kevlar.shield.name</c>, <c>kevlar.rejection.type</c> (<c>circuit_open</c>/<c>rate_limit</c>/<c>rate_limiter_adapter</c>/<c>concurrency_limit</c>)</item>
 /// <item><c>kevlar.circuit_breaker.transitions</c> — circuit state changes; attributes <c>kevlar.circuit_breaker.state.from</c>, <c>kevlar.circuit_breaker.state.to</c></item>
 /// <item><c>kevlar.execution.duration</c> — execution duration histogram in seconds; attributes <c>kevlar.shield.name</c>, <c>kevlar.execution.outcome</c></item>
 /// <item><c>kevlar.circuit_breaker.state</c> — current state gauge (<c>closed=0</c>, <c>open=1</c>, <c>half_open=2</c>, <c>isolated=3</c>)</item>

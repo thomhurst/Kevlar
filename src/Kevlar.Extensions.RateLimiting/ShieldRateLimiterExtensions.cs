@@ -8,7 +8,7 @@ namespace Kevlar.Extensions.RateLimiting;
 public static class ShieldRateLimiterExtensions
 {
     /// <summary>Appends a strategy backed by <paramref name="limiter"/>.</summary>
-    public static Shield RateLimit(
+    public static Shield UseRateLimiter(
         this Shield shield,
         RateLimiter limiter,
         Action<RateLimiterAdapterOptions>? configure = null)
@@ -24,7 +24,7 @@ public static class ShieldRateLimiterExtensions
     /// <summary>
     /// Appends a strategy backed by a context-aware <paramref name="limiter"/>.
     /// </summary>
-    public static Shield RateLimit(
+    public static Shield UseRateLimiter(
         this Shield shield,
         PartitionedRateLimiter<KevlarContext> limiter,
         Action<RateLimiterAdapterOptions>? configure = null)
@@ -38,7 +38,7 @@ public static class ShieldRateLimiterExtensions
     }
 
     /// <summary>Appends a strategy backed by caller-provided asynchronous lease acquisition.</summary>
-    public static Shield RateLimit(
+    public static Shield UseRateLimiter(
         this Shield shield,
         RateLimitLeaseAcquirer acquireLease,
         Action<RateLimiterAdapterOptions>? configure = null)
@@ -52,7 +52,7 @@ public static class ShieldRateLimiterExtensions
     }
 
     /// <summary>Appends a strategy backed by <paramref name="limiter"/>.</summary>
-    public static Shield<TResult> RateLimit<TResult>(
+    public static Shield<TResult> UseRateLimiter<TResult>(
         this Shield<TResult> shield,
         RateLimiter limiter,
         Action<RateLimiterAdapterOptions>? configure = null)
@@ -68,7 +68,7 @@ public static class ShieldRateLimiterExtensions
     /// <summary>
     /// Appends a strategy backed by a context-aware <paramref name="limiter"/>.
     /// </summary>
-    public static Shield<TResult> RateLimit<TResult>(
+    public static Shield<TResult> UseRateLimiter<TResult>(
         this Shield<TResult> shield,
         PartitionedRateLimiter<KevlarContext> limiter,
         Action<RateLimiterAdapterOptions>? configure = null)
@@ -82,7 +82,7 @@ public static class ShieldRateLimiterExtensions
     }
 
     /// <summary>Appends a strategy backed by caller-provided asynchronous lease acquisition.</summary>
-    public static Shield<TResult> RateLimit<TResult>(
+    public static Shield<TResult> UseRateLimiter<TResult>(
         this Shield<TResult> shield,
         RateLimitLeaseAcquirer acquireLease,
         Action<RateLimiterAdapterOptions>? configure = null)
@@ -108,7 +108,7 @@ public static class ShieldRateLimiterExtensions
         return new RateLimiterStrategy(
             (permitCount, context) => limiter.AcquireAsync(permitCount, context.CancellationToken),
             options,
-            "framework");
+            $"RateLimiter({GetLimiterName(limiter.GetType())})");
     }
 
     private static Strategy CreateStrategy(
@@ -127,7 +127,7 @@ public static class ShieldRateLimiterExtensions
                 permitCount,
                 context.CancellationToken),
             options,
-            "partitioned-framework");
+            "RateLimiter(Partitioned)");
     }
 
     private static Strategy CreateStrategy(
@@ -139,7 +139,10 @@ public static class ShieldRateLimiterExtensions
             throw new ArgumentNullException(nameof(acquireLease));
         }
 
-        return new RateLimiterStrategy(acquireLease, CreateOptions(configure), "delegate");
+        return new RateLimiterStrategy(
+            acquireLease,
+            CreateOptions(configure),
+            "RateLimiter(Delegate)");
     }
 
     private static RateLimiterAdapterOptions CreateOptions(
@@ -148,6 +151,15 @@ public static class ShieldRateLimiterExtensions
         var options = new RateLimiterAdapterOptions();
         configure?.Invoke(options);
         return options;
+    }
+
+    private static string GetLimiterName(Type limiterType)
+    {
+        const string suffix = "RateLimiter";
+        var name = limiterType.Name;
+        return name.EndsWith(suffix, StringComparison.Ordinal)
+            ? name.Substring(0, name.Length - suffix.Length)
+            : name;
     }
 }
 

@@ -503,9 +503,10 @@ Kevlar uses one `CircuitBreakerMonitor`, attached one-to-one to a breaker strate
 ## Rate limiting
 
 Polly's `AddRateLimiter(new SlidingWindowRateLimiter(...))` maps to the
-`Kevlar.Extensions.RateLimiting` adapter's `RateLimit` extension. Polly throws
-`RateLimiterRejectedException`; Kevlar throws `RateLimitExceededException`. Core
-`Shield.RateLimit` is Kevlar's allocation-conscious token-bucket implementation, while the adapter
+`Kevlar.Extensions.RateLimiting` adapter's `UseRateLimiter` extension. Polly throws
+`RateLimiterRejectedException`; the Kevlar adapter throws `RateLimiterAdapterRejectedException`.
+Core `Shield.RateLimit` throws `RateLimitExceededException` and remains Kevlar's
+allocation-conscious token-bucket implementation, while the adapter
 accepts `RateLimiter`, `PartitionedRateLimiter<KevlarContext>`, or a custom lease acquirer.
 
 ## Semantic differences

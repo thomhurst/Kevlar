@@ -829,7 +829,7 @@ using var limiter = new ConcurrencyLimiter(new ConcurrencyLimiterOptions
     QueueLimit = 0,
     QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
 });
-if (await Shield.Empty.RateLimit(limiter).ExecuteAsync(static _ => new ValueTask<int>(42)) != 42)
+if (await Shield.Empty.UseRateLimiter(limiter).ExecuteAsync(static _ => new ValueTask<int>(42)) != 42)
 {
     throw new InvalidOperationException("Rate limiting adapter execution failed.");
 }
