@@ -112,7 +112,7 @@ public class AllocationBudgetTests
         .ConcurrencyLimit(1024);
     private readonly Shield<int> _primaryWinsHedge = Shield.For<int>()
         .Hedge(1, TimeSpan.FromMinutes(1));
-    private readonly Shield _singleAttemptHedge = Shield.Hedge(1, TimeSpan.Zero);
+    private readonly Shield _singleAttemptHedge = Shield.Hedge(0, TimeSpan.Zero);
     private readonly PartitionedShield<int> _partitioned = new(static _ => Shield.Empty);
     private readonly Dictionary<KevlarKey<int>, int> _keyDictionary = new()
     {

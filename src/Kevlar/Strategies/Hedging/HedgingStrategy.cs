@@ -6,7 +6,7 @@ namespace Kevlar.Strategies;
 internal sealed class HedgingStrategy : Strategy
 {
     protected internal override string? SynchronousExecutionUnsupportedReason =>
-        _maxAttempts > 1 ? "hedging" : null;
+        _maxHedgedAttempts > 0 ? "hedging" : null;
     private readonly OutcomeJudge _judge;
     private readonly int _maxHedgedAttempts;
     private readonly TimeSpan _delay;
