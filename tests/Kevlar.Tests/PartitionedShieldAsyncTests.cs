@@ -405,6 +405,40 @@ public class PartitionedShieldAsyncTests
     }
 
     [Test]
+    public async Task Explicit_Removal_Callback_Retains_Its_Last_Cold_Lookup()
+    {
+        PartitionedShield<string>? provider = null;
+        Shield? firstNested = null;
+        Shield? secondNested = null;
+        provider = new PartitionedShield<string>(
+            key => Shield.Empty.WithName(key),
+            new PartitionedShieldOptions
+            {
+                MaximumPartitions = 1,
+                OnEvictedAsync = async item =>
+                {
+                    if ((string)item.Key == "removed")
+                    {
+                        firstNested = await provider!.GetShieldAsync("first-nested");
+                        secondNested = await provider.GetShieldAsync("second-nested");
+                    }
+                },
+            });
+        _ = provider.GetShield("removed");
+
+        _ = await provider.TryRemoveAsync("removed");
+
+        await Assert.That(firstNested).IsNotNull();
+        await Assert.That(secondNested).IsNotNull();
+        await Assert.That(provider.TryGetShield("first-nested", out _)).IsFalse();
+        await Assert.That(provider.TryGetShield("second-nested", out var retained)).IsTrue();
+        await Assert.That(retained).IsSameReferenceAs(secondNested);
+        await Assert.That(provider.Count).IsEqualTo(1);
+        await Assert.That(provider.CreatedCount).IsEqualTo(3);
+        await Assert.That(provider.CapacityEvictionCount).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Evicted_Resources_Can_Be_Disposed_By_Key()
     {
         var resources = new ConcurrentDictionary<string, DisposableResource>();

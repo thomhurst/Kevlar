@@ -281,7 +281,8 @@ internal sealed class PartitionCache<TKey, TShield>
                         }
                         else
                         {
-                            if (_evictionCallback.Value?.Active == true
+                            if (_evictionCallback.Value is
+                                { Active: true, OwnsReservation: true }
                                 && _entries.Count + _reservedSlots >= _maximumPartitions)
                             {
                                 // This callback owns capacity that cannot be reused before it
