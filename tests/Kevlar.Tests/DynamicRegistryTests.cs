@@ -391,7 +391,8 @@ public class DynamicRegistryTests
                         throw new TimeoutException("The publication guard was not released.");
                     }
                 }
-            });
+            },
+            static _ => { });
 
         var retired = ReplaceCurrentSnapshot(provider, monitor, "handoff");
         Collect(retired);
@@ -554,6 +555,43 @@ public class DynamicRegistryTests
     }
 
     [Test]
+    public async Task Pending_Async_Retirement_Cannot_Republish_Through_Reload()
+    {
+        var monitor = new MutableOptionsMonitor<ReloadOptions>();
+        monitor.Set("claimed-reload", new ReloadOptions(), notify: false);
+        var strategy = new BlockingAsyncDisposableStrategy();
+        Exception? reported = null;
+        using var services = new ServiceCollection()
+            .AddSingleton<IOptionsMonitor<ReloadOptions>>(monitor)
+            .AddReloadingShield<ReloadOptions>(
+                "claimed-reload",
+                (options, _) => options.Retries == 0 ? Shield.Empty : Shield.Use(strategy),
+                exception => reported = exception)
+            .BuildServiceProvider();
+        var provider = services.GetRequiredKeyedService<IShieldProvider>("claimed-reload");
+        var original = provider.Current;
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        var retired = ResolveAndRemove(registry, "claimed-reload-retired", strategy);
+        Collect(retired);
+        var scavenging = Task.Run(() =>
+            registry.GetOrAdd("claimed-reload-scavenge", _ => Shield.Empty));
+        await strategy.DisposalStarted.WaitAsync(TimeSpan.FromSeconds(5));
+
+        try
+        {
+            monitor.Set("claimed-reload", new ReloadOptions { Retries = 1 });
+
+            await Assert.That(ReferenceEquals(provider.Current, original)).IsTrue();
+            await Assert.That(reported).IsTypeOf<InvalidOperationException>();
+        }
+        finally
+        {
+            strategy.ReleaseDisposal();
+            _ = await scavenging.WaitAsync(TimeSpan.FromSeconds(5));
+        }
+    }
+
+    [Test]
     public async Task Execution_Started_Before_Resolution_Delays_Retirement()
     {
         using var services = new ServiceCollection().AddKevlar().BuildServiceProvider();
@@ -575,6 +613,29 @@ public class DynamicRegistryTests
 
         release.SetResult();
         await execution;
+    }
+
+    [Test]
+    public async Task Derived_Execution_Retains_Downstream_Owners_Before_Entry()
+    {
+        using var services = new ServiceCollection().AddKevlar().BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        var downstream = new DisposableStrategy();
+        var blocker = new BlockingContinuationStrategy();
+        var (execution, registered, derived) = StartDerivedExecution(
+            registry,
+            blocker,
+            downstream);
+        await blocker.Started.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Collect(registered);
+        Collect(derived);
+        _ = registry.GetOrAdd("downstream-owner-scavenge", _ => Shield.Empty);
+
+        await Assert.That(downstream.DisposeCount).IsEqualTo(0);
+
+        blocker.Release();
+        await execution.WaitAsync(TimeSpan.FromSeconds(5));
     }
 
     [Test]
@@ -874,6 +935,19 @@ public class DynamicRegistryTests
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
+    private static (Task Execution, WeakReference Registered, WeakReference Derived) StartDerivedExecution(
+        IKevlarRegistry registry,
+        BlockingContinuationStrategy blocker,
+        DisposableStrategy downstream)
+    {
+        var registered = registry.GetOrAdd("downstream-owner", _ => Shield.Use(downstream));
+        var derived = Shield.Compose(Shield.Use(blocker), registered);
+        var execution = derived.ExecuteAsync(static _ => ValueTask.CompletedTask).AsTask();
+        _ = registry.Remove("downstream-owner");
+        return (execution, new WeakReference(registered), new WeakReference(derived));
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
     private static WeakReference ResolveAndRemove(
         IKevlarRegistry registry,
         DisposableStrategy shared,
@@ -984,6 +1058,27 @@ public class DynamicRegistryTests
         public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
             Continuation<T, TState> next,
             KevlarContext context) => next.InvokeAsync(context);
+    }
+
+    private sealed class BlockingContinuationStrategy : Strategy
+    {
+        private readonly TaskCompletionSource _started =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _release =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task Started => _started.Task;
+
+        public void Release() => _release.TrySetResult();
+
+        public override async ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+            Continuation<T, TState> next,
+            KevlarContext context)
+        {
+            _started.TrySetResult();
+            await _release.Task;
+            return await next.InvokeAsync(context);
+        }
     }
 
     private sealed class BlockingAsyncDisposableStrategy : Strategy, IAsyncDisposable

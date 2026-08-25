@@ -23,7 +23,7 @@ public sealed class Shield : IShieldLifecycle
     internal readonly OutcomeJudge? Ambient;
     internal readonly TimeProvider? Time;
     private readonly bool _hasVoidFallback;
-    private readonly object[] _strategyOwners;
+    private readonly StrategyOwnerSet _strategyOwners;
 
     Strategy[] IShieldLifecycle.Strategies => Strategies;
 
@@ -31,11 +31,11 @@ public sealed class Shield : IShieldLifecycle
     {
         ValidateChain(strategies);
         Strategies = strategies;
-        Head = BuildChain(strategies);
+        _strategyOwners = GetStrategyOwners(strategies);
+        Head = BuildChain(strategies, _strategyOwners);
         Ambient = ambient;
         Name = name;
         Time = timeProvider;
-        _strategyOwners = GetStrategyOwners(strategies);
 
         foreach (var strategy in strategies)
         {
@@ -790,26 +790,28 @@ public sealed class Shield : IShieldLifecycle
         return new Shield(strategies, ambient ?? Ambient, Name, Time);
     }
 
-    internal static StrategyNode? BuildChain(Strategy[] strategies)
+    internal static StrategyNode? BuildChain(Strategy[] strategies, StrategyOwnerSet shieldOwners)
     {
         StrategyNode? next = null;
+        var shieldOwnerReference = new WeakReference<StrategyOwnerSet>(shieldOwners);
         for (var i = strategies.Length - 1; i >= 0; i--)
         {
             next = new StrategyNode(
                 strategies[i],
                 next,
                 i,
-                i > 0 && strategies[i - 1].RequiresContinuationOverlapIsolation);
+                i > 0 && strategies[i - 1].RequiresContinuationOverlapIsolation,
+                shieldOwnerReference);
         }
 
         return next;
     }
 
-    internal static object[] GetStrategyOwners(Strategy[] strategies)
+    internal static StrategyOwnerSet GetStrategyOwners(Strategy[] strategies)
     {
         if (strategies.Length == 0)
         {
-            return [];
+            return new StrategyOwnerSet([]);
         }
 
         var owners = new object[strategies.Length];
@@ -818,7 +820,7 @@ public sealed class Shield : IShieldLifecycle
             owners[index] = strategies[index].GetShieldOwner();
         }
 
-        return owners;
+        return new StrategyOwnerSet(owners);
     }
 
     internal static Strategy[] Concat(Strategy[] first, Strategy[] second)

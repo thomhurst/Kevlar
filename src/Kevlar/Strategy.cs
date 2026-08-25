@@ -183,7 +183,7 @@ public readonly struct Continuation<T, TState>
 
         ValueTask<Outcome<T>> execution;
         var previousStrategyIndex = node.Index - 1;
-        var shieldOwner = node.Strategy.GetShieldOwner();
+        var shieldOwner = node.GetShieldOwner();
         var executionTracker = node.Strategy.ExecutionTracker;
         executionTracker?.Enter();
 
@@ -283,12 +283,14 @@ internal sealed class StrategyNode
         Strategy strategy,
         StrategyNode? next,
         int index,
-        bool requiresOverlapIsolation)
+        bool requiresOverlapIsolation,
+        WeakReference<StrategyOwnerSet> shieldOwners)
     {
         Strategy = strategy;
         Next = next;
         Index = index;
         RequiresOverlapIsolation = requiresOverlapIsolation;
+        _shieldOwners = shieldOwners;
     }
 
     internal Strategy Strategy { get; }
@@ -298,4 +300,27 @@ internal sealed class StrategyNode
     internal int Index { get; }
 
     internal bool RequiresOverlapIsolation { get; }
+
+    private readonly WeakReference<StrategyOwnerSet> _shieldOwners;
+
+    internal object GetShieldOwner()
+    {
+        if (_shieldOwners.TryGetTarget(out var owners))
+        {
+            return owners;
+        }
+
+        var rebuiltOwners = new List<object>();
+        for (StrategyNode? node = this; node is not null; node = node.Next)
+        {
+            rebuiltOwners.Add(node.Strategy.GetShieldOwner());
+        }
+
+        return new StrategyOwnerSet(rebuiltOwners.ToArray());
+    }
+}
+
+internal sealed class StrategyOwnerSet(object[] owners)
+{
+    private readonly object[] _owners = owners;
 }

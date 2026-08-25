@@ -12,7 +12,8 @@ internal interface IReloadingProvider : IDisposable
 
     void SetLifecycleHandlers(
         Action<IReadOnlyList<ShieldRetirement>> retirementHandler,
-        Action<Action> publicationGuard);
+        Action<Action> publicationGuard,
+        Action<object> validatePublication);
 }
 
 internal sealed class ReloadingShieldProvider(
@@ -103,6 +104,7 @@ internal abstract class ReloadingProvider<TShield> : IReloadingProvider
     private readonly StrategyDisposalTracker _strategyDisposals = new();
     private Action<IReadOnlyList<ShieldRetirement>>? _retirementHandler;
     private Action<Action>? _publicationGuard;
+    private Action<object>? _validatePublication;
     private TShield _current = null!;
     private bool _initialized;
     private bool _reloadPending;
@@ -217,12 +219,14 @@ internal abstract class ReloadingProvider<TShield> : IReloadingProvider
 
     void IReloadingProvider.SetLifecycleHandlers(
         Action<IReadOnlyList<ShieldRetirement>> retirementHandler,
-        Action<Action> publicationGuard)
+        Action<Action> publicationGuard,
+        Action<object> validatePublication)
     {
         lock (_reloadLock)
         {
             _retirementHandler = retirementHandler;
             _publicationGuard = publicationGuard;
+            _validatePublication = validatePublication;
         }
     }
 
@@ -296,6 +300,7 @@ internal abstract class ReloadingProvider<TShield> : IReloadingProvider
             {
                 var replacement = _factory();
                 ShieldRetirement.Track(replacement);
+                _validatePublication?.Invoke(replacement);
                 _retiredSnapshots.Add(new ShieldRetirement(_current, _current));
                 Volatile.Write(ref _current, replacement);
                 reclaimable = CollectReclaimableSnapshots();

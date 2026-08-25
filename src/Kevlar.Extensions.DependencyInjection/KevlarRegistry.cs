@@ -235,9 +235,21 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         where TProvider : class, IReloadingProvider => Read(() =>
     {
         var provider = factory();
-        _reloadingProviders.TryAdd(provider, 0);
-        provider.SetLifecycleHandlers(ReclaimRetirements, ProtectPublication);
-        return provider;
+        try
+        {
+            ValidatePublication(provider);
+            _reloadingProviders.TryAdd(provider, 0);
+            provider.SetLifecycleHandlers(
+                ReclaimRetirements,
+                ProtectPublication,
+                ValidatePublication);
+            return provider;
+        }
+        catch
+        {
+            provider.Dispose();
+            throw;
+        }
     });
 
     public void Dispose()

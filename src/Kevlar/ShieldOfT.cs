@@ -17,7 +17,7 @@ public sealed class Shield<TResult> : IShieldLifecycle
     internal readonly StrategyNode? Head;
     internal readonly OutcomeJudge? Ambient;
     internal readonly TimeProvider? Time;
-    private readonly object[] _strategyOwners;
+    private readonly StrategyOwnerSet _strategyOwners;
 
     Strategy[] IShieldLifecycle.Strategies => Strategies;
 
@@ -38,11 +38,11 @@ public sealed class Shield<TResult> : IShieldLifecycle
         }
 
         Strategies = strategies;
-        Head = Shield.BuildChain(strategies);
+        _strategyOwners = Shield.GetStrategyOwners(strategies);
+        Head = Shield.BuildChain(strategies, _strategyOwners);
         Ambient = ambient;
         Name = name;
         Time = timeProvider;
-        _strategyOwners = Shield.GetStrategyOwners(strategies);
     }
 
     /// <summary>The shield's diagnostic name, if assigned via <see cref="WithName"/>.</summary>
