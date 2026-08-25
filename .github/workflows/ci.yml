@@ -351,6 +351,9 @@ jobs:
       - name: Collect rate limiting adapter coverage
         run: dotnet run --project tests/Kevlar.Extensions.RateLimiting.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 20 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/rate-limiting.cobertura.xml --coverage-output-format cobertura
 
+      - name: Collect logging integration coverage
+        run: dotnet run --project tests/Kevlar.Extensions.Logging.Tests -c Release -f net10.0 --no-build -- --timeout 5m --minimum-expected-tests 19 --zero-tests-policy strict --coverage --coverage-settings .github/coverage.runsettings --coverage-output ${{ github.workspace }}/artifacts/coverage/raw/logging.cobertura.xml --coverage-output-format cobertura
+
       - name: Merge coverage reports
         run: dotnet reportgenerator '-reports:artifacts/coverage/raw/*.cobertura.xml' '-targetdir:artifacts/coverage/report' '-reporttypes:Cobertura;Html'
 
