@@ -236,7 +236,7 @@ var result = await shield.ExecuteAsync(ct =>
 // calls == 3: initial attempt + 2 retries
 ```
 
-For assertion-friendly, no-throw checks, use [`ExecuteOutcomeAsync`](executing.md#no-throw-execution) and inspect the `Outcome<T>` instead of catching.
+For assertion-friendly, no-throw checks, use [`ExecuteOutcomeAsync`](executing.md#outcomes-without-exceptions) and inspect the `Outcome<T>` instead of catching.
 
 ## Publish compatibility
 
