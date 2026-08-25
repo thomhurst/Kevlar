@@ -6,6 +6,7 @@ items:
   parent: Kevlar.Extensions.Logging
   children:
   - Kevlar.Extensions.Logging.KevlarLogEventKind.CallbackError
+  - Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitRejected
   - Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitState
   - Kevlar.Extensions.Logging.KevlarLogEventKind.ConcurrencyLimitRejected
   - Kevlar.Extensions.Logging.KevlarLogEventKind.Fallback
@@ -186,6 +187,26 @@ items:
   example: []
   syntax:
     content: CallbackError = 7
+    return:
+      type: Kevlar.Extensions.Logging.KevlarLogEventKind
+- uid: Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitRejected
+  commentId: F:Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitRejected
+  id: CircuitRejected
+  parent: Kevlar.Extensions.Logging.KevlarLogEventKind
+  langs:
+  - csharp
+  - vb
+  name: CircuitRejected
+  nameWithType: KevlarLogEventKind.CircuitRejected
+  fullName: Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitRejected
+  type: Field
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: An open or isolated circuit rejected an execution.
+  example: []
+  syntax:
+    content: CircuitRejected = 8
     return:
       type: Kevlar.Extensions.Logging.KevlarLogEventKind
 references:

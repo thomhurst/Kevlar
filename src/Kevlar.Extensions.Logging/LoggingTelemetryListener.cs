@@ -146,6 +146,16 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
                         telemetryEvent.Delay, outcome, telemetryEvent.Exception);
                 }
                 break;
+            case KevlarLogEventKind.CircuitRejected:
+            {
+                var circuitState = telemetryEvent.Exception is CircuitOpenException { IsIsolated: true }
+                    ? CircuitState.Isolated
+                    : CircuitState.Open;
+                LoggerMessages.CircuitRejected(logger, telemetryEvent.ShieldName,
+                    telemetryEvent.StrategyIndex, telemetryEvent.AttemptNumber,
+                    circuitState, telemetryEvent.RetryAfter, outcome, telemetryEvent.Exception);
+                break;
+            }
             case KevlarLogEventKind.Hedge:
                 LoggerMessages.Hedge(logger, telemetryEvent.ShieldName, telemetryEvent.StrategyIndex,
                     telemetryEvent.AttemptNumber, outcome, telemetryEvent.Exception);
@@ -247,9 +257,9 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
                 eventId = new EventId(1007, "ConcurrencyLimitRejected");
                 level = LogLevel.Warning;
                 return true;
-            case "rejection" when telemetryEvent.StrategyName == "CircuitBreaker":
-                kind = KevlarLogEventKind.CircuitState;
-                eventId = new EventId(1003, "CircuitState");
+            case "rejection" when telemetryEvent.Exception is CircuitOpenException:
+                kind = KevlarLogEventKind.CircuitRejected;
+                eventId = new EventId(1003, "CircuitRejected");
                 level = LogLevel.Error;
                 return true;
             default:

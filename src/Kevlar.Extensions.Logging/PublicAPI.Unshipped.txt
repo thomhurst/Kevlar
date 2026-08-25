@@ -17,6 +17,7 @@ Kevlar.Extensions.Logging.KevlarLogEvent.StrategyName.get -> string!
 Kevlar.Extensions.Logging.KevlarLogEvent.ToState.get -> Kevlar.CircuitState?
 Kevlar.Extensions.Logging.KevlarLogEventKind
 Kevlar.Extensions.Logging.KevlarLogEventKind.CallbackError = 7 -> Kevlar.Extensions.Logging.KevlarLogEventKind
+Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitRejected = 8 -> Kevlar.Extensions.Logging.KevlarLogEventKind
 Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitState = 2 -> Kevlar.Extensions.Logging.KevlarLogEventKind
 Kevlar.Extensions.Logging.KevlarLogEventKind.ConcurrencyLimitRejected = 6 -> Kevlar.Extensions.Logging.KevlarLogEventKind
 Kevlar.Extensions.Logging.KevlarLogEventKind.Fallback = 4 -> Kevlar.Extensions.Logging.KevlarLogEventKind

@@ -760,6 +760,7 @@ internal static class KevlarMetrics
         CallbackErrorKind.RateLimitRejected => "rate_limit_rejected",
         CallbackErrorKind.RateLimiterAdapterRejected => "rate_limiter_adapter_rejected",
         CallbackErrorKind.ChaosInjected => "chaos_injected",
+        CallbackErrorKind.Logging => "logging",
         _ => throw new ArgumentOutOfRangeException(nameof(kind)),
     };
 

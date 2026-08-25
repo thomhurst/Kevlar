@@ -112,6 +112,30 @@ public class IntegrationTests
         await Assert.That(retry.Message).DoesNotContain("secret");
     }
 
+    [Test]
+    [NotInParallel]
+    public async Task AddKevlarLogging_Decorates_PerRequest_Selected_Shields()
+    {
+        var logs = new FakeLoggerProvider();
+        var services = new ServiceCollection();
+        services.AddLogging(builder => builder.AddProvider(logs));
+        services.AddKevlarLogging();
+        services.AddHttpClient("selected")
+            .ConfigurePrimaryHttpMessageHandler(() => new SequenceHandler(
+                HttpStatusCode.InternalServerError,
+                HttpStatusCode.OK))
+            .AddShield(static (_, _) => HttpShield.WhenTransient().Retry(1, Backoff.None));
+        using var provider = services.BuildServiceProvider();
+        var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("selected");
+
+        using var response = await client.GetAsync("https://example.test/selected");
+
+        var retry = logs.Collector.GetSnapshot()
+            .Single(record => record.Id == new EventId(1001, "Retry"));
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(retry.GetStructuredStateValue("ShieldName")).IsEqualTo("selected");
+    }
+
     private static ValueTask<int> Fail(CancellationToken _) =>
         new(Task.FromException<int>(new TestException("failure")));
 

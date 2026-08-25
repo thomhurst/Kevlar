@@ -26,4 +26,7 @@ public enum KevlarLogEventKind
 
     /// <summary>A user callback threw.</summary>
     CallbackError,
+
+    /// <summary>An open or isolated circuit rejected an execution.</summary>
+    CircuitRejected,
 }

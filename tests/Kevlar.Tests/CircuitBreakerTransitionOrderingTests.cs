@@ -1,5 +1,8 @@
 using System.Collections.Concurrent;
 using System.Diagnostics.Metrics;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using Kevlar.Strategies;
 using Microsoft.Extensions.Time.Testing;
 
 namespace Kevlar.Tests;
@@ -521,6 +524,51 @@ public class CircuitBreakerTransitionOrderingTests
         }
     }
 
+    [Test]
+    [NotInParallel]
+    public async Task Attaching_Telemetry_Prunes_Collected_Listeners()
+    {
+        var core = new CircuitBreakerCore(
+            new CircuitBreakerOptions(),
+            breakDurationGenerator: null,
+            recordState: static _ => { },
+            optionsType: typeof(CircuitBreakerOptions));
+        var transient = AttachTransientListener(core);
+        for (var attempt = 0; attempt < 10 && transient.IsAlive; attempt++)
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+        }
+
+        await Assert.That(transient.IsAlive).IsFalse();
+        var live = new NoopTelemetryListener();
+        core.AttachTelemetryListener(
+            previous: null,
+            listener: live,
+            shieldName: "live",
+            strategyIndex: 0);
+        var registrations = (Array)typeof(CircuitBreakerCore)
+            .GetField("_telemetryRegistrations", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .GetValue(core)!;
+
+        await Assert.That(registrations.Length).IsEqualTo(1);
+        GC.KeepAlive(live);
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static WeakReference AttachTransientListener(
+        CircuitBreakerCore core)
+    {
+        var listener = new NoopTelemetryListener();
+        core.AttachTelemetryListener(
+            previous: null,
+            listener: listener,
+            shieldName: "transient",
+            strategyIndex: 0);
+        return new WeakReference(listener);
+    }
+
     private static async Task WaitForStateAsync(CircuitBreakerMonitor monitor, CircuitState expected)
     {
         var timeout = DateTime.UtcNow + TimeSpan.FromSeconds(5);
@@ -530,5 +578,12 @@ public class CircuitBreakerTransitionOrderingTests
         }
 
         await Assert.That(monitor.State).IsEqualTo(expected);
+    }
+
+    private sealed class NoopTelemetryListener : IKevlarTelemetryListener
+    {
+        public void OnEvent(in KevlarTelemetryEvent telemetryEvent)
+        {
+        }
     }
 }

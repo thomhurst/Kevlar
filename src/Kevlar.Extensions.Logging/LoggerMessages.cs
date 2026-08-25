@@ -48,6 +48,19 @@ internal static partial class LoggerMessages
         string outcome,
         Exception? exception);
 
+    [LoggerMessage(EventId = 1003, EventName = "CircuitRejected", Level = LogLevel.Error,
+        Message = "Shield {ShieldName} strategy {StrategyIndex} rejected attempt {Attempt} because the circuit is {CircuitState}; retry after {RetryAfter}; outcome {Outcome}",
+        SkipEnabledCheck = true)]
+    public static partial void CircuitRejected(
+        ILogger logger,
+        string? shieldName,
+        int strategyIndex,
+        int attempt,
+        CircuitState circuitState,
+        TimeSpan? retryAfter,
+        string outcome,
+        Exception? exception);
+
     [LoggerMessage(EventId = 1004, EventName = "Hedge", Level = LogLevel.Information,
         Message = "Shield {ShieldName} strategy {StrategyIndex} started hedge attempt {Attempt}; outcome {Outcome}",
         SkipEnabledCheck = true)]

@@ -406,6 +406,7 @@
   "Kevlar.Extensions.Logging.KevlarLogEvent.ToState": "Kevlar.Extensions.Logging.KevlarLogEvent.yml",
   "Kevlar.Extensions.Logging.KevlarLogEventKind": "Kevlar.Extensions.Logging.KevlarLogEventKind.yml",
   "Kevlar.Extensions.Logging.KevlarLogEventKind.CallbackError": "Kevlar.Extensions.Logging.KevlarLogEventKind.yml",
+  "Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitRejected": "Kevlar.Extensions.Logging.KevlarLogEventKind.yml",
   "Kevlar.Extensions.Logging.KevlarLogEventKind.CircuitState": "Kevlar.Extensions.Logging.KevlarLogEventKind.yml",
   "Kevlar.Extensions.Logging.KevlarLogEventKind.ConcurrencyLimitRejected": "Kevlar.Extensions.Logging.KevlarLogEventKind.yml",
   "Kevlar.Extensions.Logging.KevlarLogEventKind.Fallback": "Kevlar.Extensions.Logging.KevlarLogEventKind.yml",

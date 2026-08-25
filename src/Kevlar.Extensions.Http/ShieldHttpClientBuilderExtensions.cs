@@ -83,7 +83,8 @@ public static class ShieldHttpClientBuilderExtensions
         }
 
         return builder.AddHttpMessageHandler(services =>
-            new ShieldDelegatingHandler(request => shieldSelector(request, services)));
+            new ShieldDelegatingHandler(request =>
+                Decorate(services, shieldSelector(request, services), builder.Name)));
     }
 
     /// <summary>Selects a bounded partition shield from each request.</summary>

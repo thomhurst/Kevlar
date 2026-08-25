@@ -63,28 +63,38 @@ internal sealed class CircuitBreakerCore
         lock (_telemetryGate)
         {
             var registrations = _telemetryRegistrations;
-            if (previous is not null)
+            var updated = new List<CircuitTelemetryRegistration>(registrations.Length + 1);
+            var replaced = false;
+            foreach (var registration in registrations)
             {
-                for (var index = 0; index < registrations.Length; index++)
+                if (!registration.Listener.TryGetTarget(out var registered))
                 {
-                    if (registrations[index].Listener.TryGetTarget(out var registered)
-                        && ReferenceEquals(registered, previous))
+                    continue;
+                }
+
+                if (previous is not null && ReferenceEquals(registered, previous))
+                {
+                    if (!replaced)
                     {
-                        var replacement = (CircuitTelemetryRegistration[])registrations.Clone();
-                        replacement[index] = new CircuitTelemetryRegistration(
+                        updated.Add(new CircuitTelemetryRegistration(
                             listener,
                             shieldName,
-                            strategyIndex);
-                        Volatile.Write(ref _telemetryRegistrations, replacement);
-                        return;
+                            strategyIndex));
+                        replaced = true;
                     }
+
+                    continue;
                 }
+
+                updated.Add(registration);
             }
 
-            var updated = new CircuitTelemetryRegistration[registrations.Length + 1];
-            Array.Copy(registrations, updated, registrations.Length);
-            updated[^1] = new CircuitTelemetryRegistration(listener, shieldName, strategyIndex);
-            Volatile.Write(ref _telemetryRegistrations, updated);
+            if (!replaced)
+            {
+                updated.Add(new CircuitTelemetryRegistration(listener, shieldName, strategyIndex));
+            }
+
+            Volatile.Write(ref _telemetryRegistrations, updated.ToArray());
         }
     }
 

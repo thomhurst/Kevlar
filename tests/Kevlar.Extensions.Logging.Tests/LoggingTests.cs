@@ -1,3 +1,4 @@
+using System.Diagnostics.Metrics;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Time.Testing;
@@ -107,6 +108,28 @@ public class LoggingTests
         await Assert.That(record.GetStructuredStateValue("ToState")).IsEqualTo("Open");
         await Assert.That(record.GetStructuredStateValue("BreakDuration"))
             .IsEqualTo(breakDuration.ToString());
+    }
+
+    [Test]
+    [NotInParallel]
+    public async Task Open_Circuit_Rejection_Uses_A_Rejection_Event()
+    {
+        var logger = new FakeLogger();
+        var shield = Shield.CircuitBreaker(1, TimeSpan.FromMinutes(1)).WithLogging(logger);
+
+        _ = await shield.ExecuteOutcomeAsync<int>(static _ =>
+            new ValueTask<int>(Task.FromException<int>(new TestException("failure"))));
+        _ = await shield.ExecuteOutcomeAsync<int>(static _ => new ValueTask<int>(42));
+
+        var rejection = logger.Collector.GetSnapshot()
+            .Single(record => record.Id.Name == "CircuitRejected");
+        await Assert.That(rejection.Level).IsEqualTo(LogLevel.Error);
+        await Assert.That(rejection.GetStructuredStateValue("Attempt")).IsEqualTo("0");
+        await Assert.That(rejection.GetStructuredStateValue("CircuitState")).IsEqualTo("Open");
+        await Assert.That(rejection.GetStructuredStateValue("RetryAfter")).IsNotNull();
+        await Assert.That(rejection.Message).Contains("circuit is Open");
+        await Assert.That(rejection.StructuredState?.Any(pair => pair.Key == "FromState") ?? false)
+            .IsFalse();
     }
 
     [Test]
@@ -289,14 +312,18 @@ public class LoggingTests
     {
         var logger = new FakeLogger();
         var formatterFailure = new TestException("formatter");
+        var shieldName = $"logging-{Guid.NewGuid():N}";
+        var measurements = new List<string>();
         CallbackErrorEvent? reported = null;
         Action<CallbackErrorEvent> handler = callback => reported = callback;
+        using var listener = CreateCallbackErrorListener(shieldName, measurements);
         KevlarDiagnostics.OnCallbackError += handler;
         try
         {
             var shield = Shield.For<int>()
                 .WhenResult(-1)
                 .Retry(1, Backoff.None)
+                .WithName(shieldName)
                 .WithLogging(logger, options => options.ResultFormatter = _ => throw formatterFailure);
 
             var result = await shield.ExecuteAsync(static _ => new ValueTask<int>(-1));
@@ -304,6 +331,7 @@ public class LoggingTests
             await Assert.That(result).IsEqualTo(-1);
             await Assert.That(reported?.Kind).IsEqualTo(CallbackErrorKind.Logging);
             await Assert.That(ReferenceEquals(reported?.Exception, formatterFailure)).IsTrue();
+            await Assert.That(measurements).IsEquivalentTo(["logging"]);
             await Assert.That(logger.Collector.GetSnapshot().Any(record =>
                 record.Id == new EventId(1008, "CallbackError"))).IsTrue();
         }
@@ -423,6 +451,47 @@ public class LoggingTests
         await Assert.That(record.GetStructuredStateValue("FromState")).IsEqualTo("Closed");
         await Assert.That(record.GetStructuredStateValue("ToState")).IsEqualTo("Isolated");
         GC.KeepAlive(shield);
+    }
+
+    private static MeterListener CreateCallbackErrorListener(
+        string shieldName,
+        List<string> measurements)
+    {
+        var listener = new MeterListener
+        {
+            InstrumentPublished = (instrument, activeListener) =>
+            {
+                if (instrument.Meter.Name == KevlarDiagnostics.MeterName
+                    && instrument.Name == "kevlar.callback_errors")
+                {
+                    activeListener.EnableMeasurementEvents(instrument);
+                }
+            },
+        };
+        listener.SetMeasurementEventCallback<long>((_, _, tags, _) =>
+        {
+            string? observedShield = null;
+            string? kind = null;
+            foreach (var tag in tags)
+            {
+                if (tag.Key == "kevlar.shield.name")
+                {
+                    observedShield = tag.Value?.ToString();
+                }
+                else if (tag.Key == "kevlar.callback.kind")
+                {
+                    kind = tag.Value?.ToString();
+                }
+            }
+
+            if (string.Equals(observedShield, shieldName, StringComparison.Ordinal)
+                && kind is not null)
+            {
+                measurements.Add(kind);
+            }
+        });
+        listener.Start();
+        return listener;
     }
 
     private sealed class TestException(string message) : Exception(message);
