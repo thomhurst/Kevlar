@@ -195,7 +195,7 @@ public static class KevlarServiceCollectionExtensions
             {
                 retryDefinition.Factor = factor;
             }
-            if (ReadBool(retry, nameof(RetryDefinition.Jitter)) is { } jitter)
+            if (ReadJitter(retry, nameof(RetryDefinition.Jitter)) is { } jitter)
             {
                 retryDefinition.Jitter = jitter;
             }
@@ -305,9 +305,6 @@ public static class KevlarServiceCollectionExtensions
             ? ParseDouble(configuration, key, value)
             : null;
 
-    private static bool? ReadBool(IConfiguration configuration, string key) =>
-        Read(configuration, key) is { } value ? ParseBool(configuration, key, value) : null;
-
     private static TimeSpan? ReadTimeSpan(IConfiguration configuration, string key) =>
         Read(configuration, key) is { } value
             ? ParseTimeSpan(configuration, key, value)
@@ -322,6 +319,11 @@ public static class KevlarServiceCollectionExtensions
         where TEnum : struct, Enum =>
         Read(configuration, key) is { } value
             ? ParseEnum<TEnum>(configuration, key, value)
+            : null;
+
+    private static Jitter? ReadJitter(IConfiguration configuration, string key) =>
+        Read(configuration, key) is { } value
+            ? ParseJitter(configuration, key, value)
             : null;
 
     private static BackoffKind? ReadBackoffKind(IConfiguration configuration, string key)
@@ -357,11 +359,6 @@ public static class KevlarServiceCollectionExtensions
             ? parsed
             : throw InvalidValue(configuration, key, value, "a number");
 
-    private static bool ParseBool(IConfiguration configuration, string key, string value) =>
-        bool.TryParse(value, out var parsed)
-            ? parsed
-            : throw InvalidValue(configuration, key, value, "a Boolean");
-
     private static TimeSpan ParseTimeSpan(IConfiguration configuration, string key, string value) =>
         TimeSpan.TryParse(value, CultureInfo.InvariantCulture, out var parsed)
             ? parsed
@@ -370,8 +367,14 @@ public static class KevlarServiceCollectionExtensions
     private static TEnum ParseEnum<TEnum>(IConfiguration configuration, string key, string value)
         where TEnum : struct, Enum =>
         Enum.TryParse<TEnum>(value, ignoreCase: true, out var parsed)
+        && Enum.IsDefined(typeof(TEnum), parsed)
             ? parsed
             : throw InvalidValue(configuration, key, value, $"a {typeof(TEnum).Name}");
+
+    private static Jitter ParseJitter(IConfiguration configuration, string key, string value) =>
+        bool.TryParse(value, out var enabled)
+            ? enabled ? Jitter.Equal : Jitter.None
+            : ParseEnum<Jitter>(configuration, key, value);
 
     private static InvalidOperationException InvalidValue(
         IConfiguration configuration,

@@ -46,7 +46,7 @@ public class NumericBoundaryTests
             BackoffKind.None => Backoff.None,
             BackoffKind.Constant => Backoff.Constant(TimeSpan.Zero),
             BackoffKind.Linear => Backoff.Linear(TimeSpan.FromTicks(1)),
-            BackoffKind.Exponential => Backoff.Exponential(TimeSpan.FromTicks(1), jitter: false),
+            BackoffKind.Exponential => Backoff.Exponential(TimeSpan.FromTicks(1), jitter: Jitter.None),
             BackoffKind.Custom => Backoff.Custom(_ => TimeSpan.Zero),
             _ => throw new ArgumentOutOfRangeException(nameof(kind)),
         };
@@ -60,7 +60,7 @@ public class NumericBoundaryTests
     {
         var cap = TimeSpan.FromSeconds(2);
         var linear = Backoff.Linear(TimeSpan.MaxValue, cap);
-        var exponential = Backoff.Exponential(TimeSpan.MaxValue, double.MaxValue, cap, jitter: false);
+        var exponential = Backoff.Exponential(TimeSpan.MaxValue, double.MaxValue, cap, jitter: Jitter.None);
         var custom = Backoff.Custom(_ => TimeSpan.MaxValue);
 
         await Assert.That(linear.GetDelay(int.MaxValue)).IsEqualTo(cap);
@@ -71,7 +71,7 @@ public class NumericBoundaryTests
     [Test]
     public async Task Zero_Exponential_Backoff_Remains_Zero_When_The_Power_Overflows()
     {
-        var backoff = Backoff.Exponential(TimeSpan.Zero, double.MaxValue, jitter: false);
+        var backoff = Backoff.Exponential(TimeSpan.Zero, double.MaxValue, jitter: Jitter.None);
 
         await Assert.That(backoff.GetDelay(3)).IsEqualTo(TimeSpan.Zero);
     }

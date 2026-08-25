@@ -295,8 +295,8 @@ public class DependencyInjectionContractTests
     [Test]
     [Arguments(BackoffKind.None, "no delay, ≤4s")]
     [Arguments(BackoffKind.Constant, "constant 2s, ≤4s")]
-    [Arguments(BackoffKind.Linear, "linear 2s steps ≤4s")]
-    [Arguments(BackoffKind.Exponential, "exponential 2s ×3 ≤4s")]
+    [Arguments(BackoffKind.Linear, "linear 2s steps, cap 4s")]
+    [Arguments(BackoffKind.Exponential, "exponential 2s ×3, cap 4s")]
     public async Task Every_BackoffKind_Binds_All_Applicable_Knobs(BackoffKind kind, string expected)
     {
         var definition = new ShieldDefinition
@@ -307,7 +307,7 @@ public class DependencyInjectionContractTests
                 Backoff = kind,
                 BaseDelay = TimeSpan.FromSeconds(2),
                 Factor = 3,
-                Jitter = false,
+                Jitter = Jitter.None,
                 MaxDelay = TimeSpan.FromSeconds(4),
             },
         };

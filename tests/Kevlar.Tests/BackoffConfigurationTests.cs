@@ -7,32 +7,32 @@ public class BackoffConfigurationTests
     {
         var cases = new[]
         {
-            new ExpectedConfiguration(Backoff.None, BackoffKind.None, TimeSpan.Zero, null, null, null),
+            new ExpectedConfiguration(Backoff.None, BackoffKind.None, TimeSpan.Zero, null, null, Jitter.None),
             new ExpectedConfiguration(
                 Backoff.Constant(TimeSpan.FromMilliseconds(100)),
                 BackoffKind.Constant,
                 TimeSpan.FromMilliseconds(100),
                 null,
                 null,
-                null),
+                Jitter.None),
             new ExpectedConfiguration(
                 Backoff.Linear(TimeSpan.FromMilliseconds(200), TimeSpan.FromSeconds(2)),
                 BackoffKind.Linear,
                 TimeSpan.FromMilliseconds(200),
                 null,
                 TimeSpan.FromSeconds(2),
-                null),
+                Jitter.None),
             new ExpectedConfiguration(
                 Backoff.Exponential(
                     TimeSpan.FromMilliseconds(250),
                     factor: 3,
                     maxDelay: TimeSpan.FromSeconds(30),
-                    jitter: false),
+                    jitter: Jitter.None),
                 BackoffKind.Exponential,
                 TimeSpan.FromMilliseconds(250),
                 3,
                 TimeSpan.FromSeconds(30),
-                false),
+                Jitter.None),
             new ExpectedConfiguration(Backoff.Custom(_ => TimeSpan.Zero), BackoffKind.Custom, null, null, null, null),
         };
 
@@ -52,5 +52,5 @@ public class BackoffConfigurationTests
         TimeSpan? InitialDelay,
         double? Factor,
         TimeSpan? MaxDelay,
-        bool? Jitter);
+        Jitter? Jitter);
 }

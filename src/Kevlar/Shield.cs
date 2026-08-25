@@ -505,7 +505,7 @@ public sealed class Shield
 
     /// <summary>
     /// Describes the pipeline, outermost strategy first, e.g.
-    /// <c>Timeout(30s) → Retry(3, exponential 250ms ×2 +jitter ≤30s) → CircuitBreaker(5 consecutive, break 30s)</c>.
+    /// <c>Timeout(30s) → Retry(3, exponential 250ms ×2, equal jitter, cap 30s) → CircuitBreaker(5 consecutive, break 30s)</c>.
     /// </summary>
     public override string ToString() => Describe(Name, Strategies);
 

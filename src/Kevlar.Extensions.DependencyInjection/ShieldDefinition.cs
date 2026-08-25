@@ -125,8 +125,8 @@ public sealed class RetryDefinition
     /// <summary>Exponential growth factor. Default 2.</summary>
     public double Factor { get; set; } = 2.0;
 
-    /// <summary>Whether exponential delays are jittered. Default true.</summary>
-    public bool Jitter { get; set; } = true;
+    /// <summary>The jitter mode applied to built-in backoff delays. Default equal jitter.</summary>
+    public Jitter Jitter { get; set; } = Jitter.Equal;
 
     /// <summary>An absolute upper bound applied to every delay. Default 30s for exponential.</summary>
     public TimeSpan? MaxDelay { get; set; }
@@ -134,8 +134,8 @@ public sealed class RetryDefinition
     internal Backoff BuildBackoff() => Backoff switch
     {
         BackoffKind.None => Kevlar.Backoff.None,
-        BackoffKind.Constant => Kevlar.Backoff.Constant(BaseDelay ?? TimeSpan.FromSeconds(1)),
-        BackoffKind.Linear => Kevlar.Backoff.Linear(BaseDelay ?? TimeSpan.FromMilliseconds(500), MaxDelay),
+        BackoffKind.Constant => Kevlar.Backoff.Constant(BaseDelay ?? TimeSpan.FromSeconds(1), Jitter),
+        BackoffKind.Linear => Kevlar.Backoff.Linear(BaseDelay ?? TimeSpan.FromMilliseconds(500), MaxDelay, Jitter),
         BackoffKind.Exponential => Kevlar.Backoff.Exponential(
             BaseDelay ?? TimeSpan.FromMilliseconds(250),
             Factor,

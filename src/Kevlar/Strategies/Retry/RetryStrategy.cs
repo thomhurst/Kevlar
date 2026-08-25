@@ -124,6 +124,7 @@ internal sealed class RetryStrategy : Strategy
         ValueTask<Outcome<T>> execution,
         bool firstOutcomeShouldRetry)
     {
+        var previousBackoffDelay = TimeSpan.Zero;
         for (var retriesUsed = 0; ; retriesUsed++)
         {
             var outcome = await execution.ConfigureAwait(false);
@@ -137,12 +138,14 @@ internal sealed class RetryStrategy : Strategy
 
             var attempt = retriesUsed + 1;
             KevlarMetrics.Retry(context.ShieldName);
-            var delay = _backoff.GetDelay(attempt);
+            var delay = _backoff.GetDelay(attempt, previousBackoffDelay);
 
             if (_maxDelay is { } cap && delay > cap)
             {
                 delay = cap;
             }
+
+            previousBackoffDelay = delay;
 
             if (_delayGenerator is not null
                 || _delayGeneratorAsync is not null
