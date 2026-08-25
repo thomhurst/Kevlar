@@ -430,3 +430,26 @@ static Kevlar.ShieldExtensions.ConcurrencyLimit(this Kevlar.Shield! shield, int 
 Kevlar.HedgeEvent.AttemptNumber.get -> int
 Kevlar.RetryEvent.RetryNumber.get -> int
 Kevlar.RetryEvent<TResult>.RetryNumber.get -> int
+*REMOVED*Kevlar.CircuitOpenException.RetryAfter.get -> System.TimeSpan?
+*REMOVED*Kevlar.KevlarException.KevlarException(string! message, System.Exception! innerException) -> void
+*REMOVED*Kevlar.RateLimitExceededException.RetryAfter.get -> System.TimeSpan?
+Kevlar.CircuitOpenException.CircuitOpenException() -> void
+Kevlar.CircuitOpenException.CircuitOpenException(string! message) -> void
+Kevlar.CircuitOpenException.CircuitOpenException(string! message, System.Exception! innerException) -> void
+Kevlar.ConcurrencyLimitExceededException.ConcurrencyLimitExceededException(string! message) -> void
+Kevlar.ConcurrencyLimitExceededException.ConcurrencyLimitExceededException(string! message, System.Exception! innerException) -> void
+Kevlar.ExecutionRejectedException
+Kevlar.ExecutionRejectedException.ExecutionRejectedException() -> void
+Kevlar.ExecutionRejectedException.ExecutionRejectedException(string! message) -> void
+Kevlar.ExecutionRejectedException.ExecutionRejectedException(string! message, System.Exception? innerException) -> void
+Kevlar.ExecutionRejectedException.ExecutionRejectedException(string! message, System.TimeSpan? retryAfter, System.Exception? innerException = null) -> void
+Kevlar.ExecutionRejectedException.RetryAfter.get -> System.TimeSpan?
+Kevlar.KevlarException.KevlarException(string! message, System.Exception? innerException) -> void
+Kevlar.KevlarException.KevlarException() -> void
+Kevlar.RateLimitExceededException.RateLimitExceededException() -> void
+Kevlar.RateLimitExceededException.RateLimitExceededException(string! message) -> void
+Kevlar.RateLimitExceededException.RateLimitExceededException(string! message, System.Exception! innerException) -> void
+Kevlar.TimeoutExceededException.TimeoutExceededException() -> void
+Kevlar.TimeoutExceededException.TimeoutExceededException(string! message) -> void
+Kevlar.TimeoutExceededException.TimeoutExceededException(string! message, System.Exception! innerException) -> void
+Kevlar.TimeoutExceededException.TimeoutExceededException(System.TimeSpan timeout, System.OperationCanceledException! innerException) -> void
