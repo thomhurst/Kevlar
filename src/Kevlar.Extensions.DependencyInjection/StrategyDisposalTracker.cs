@@ -1,0 +1,28 @@
+using System.Runtime.CompilerServices;
+
+namespace Kevlar.Extensions.DependencyInjection;
+
+internal sealed class StrategyDisposalTracker
+{
+    private readonly ConditionalWeakTable<Strategy, DisposalClaim> _claims = new();
+
+    public bool TryClaim(Strategy strategy)
+    {
+        if (strategy is not IDisposable && strategy is not IAsyncDisposable)
+        {
+            return false;
+        }
+
+        var claim = _claims.GetValue(strategy, static _ => new DisposalClaim());
+        return Interlocked.Exchange(ref claim.IsClaimed, 1) == 0;
+    }
+
+    public bool IsClaimed(Strategy strategy) =>
+        _claims.TryGetValue(strategy, out var claim)
+        && Volatile.Read(ref claim.IsClaimed) != 0;
+
+    private sealed class DisposalClaim
+    {
+        public int IsClaimed;
+    }
+}

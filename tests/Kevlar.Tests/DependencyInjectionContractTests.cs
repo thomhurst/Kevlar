@@ -162,6 +162,16 @@ public class DependencyInjectionContractTests
         await AssertNullNameAsync(() => registry.GetShield<int>(null!));
         await AssertNullNameAsync(() => registry.TryGetShield(null!, out _));
         await AssertNullNameAsync(() => registry.TryGetShield<int>(null!, out _));
+        await AssertNullNameAsync(() => registry.GetOrAdd(null!, static _ => Shield.Empty));
+        await AssertNullNameAsync(() => registry.GetOrAdd<int>(null!, static _ => Shield<int>.Empty));
+        await AssertNullNameAsync(() => registry.TryAdd(null!, static _ => Shield.Empty));
+        await AssertNullNameAsync(() => registry.TryAdd<int>(null!, static _ => Shield<int>.Empty));
+        await AssertNullNameAsync(() => registry.Remove(null!));
+        await AssertNullNameAsync(() => registry.Remove<int>(null!));
+        await AssertNullParameterAsync(() => registry.GetOrAdd("name", null!), "factory");
+        await AssertNullParameterAsync(() => registry.GetOrAdd<int>("name", null!), "factory");
+        await AssertNullParameterAsync(() => registry.TryAdd("name", null!), "factory");
+        await AssertNullParameterAsync(() => registry.TryAdd<int>("name", null!), "factory");
     }
 
     [Test]
@@ -173,6 +183,9 @@ public class DependencyInjectionContractTests
         Func<IServiceProvider, Shield<int>> typedFactory = static _ => Shield<int>.Empty;
         Func<IServiceProvider, string, Shield> partitionedFactory = static (_, _) => Shield.Empty;
         Func<IServiceProvider, string, Shield<int>> typedPartitionedFactory =
+            static (_, _) => Shield<int>.Empty;
+        Func<object, IServiceProvider, Shield> optionsFactory = static (_, _) => Shield.Empty;
+        Func<object, IServiceProvider, Shield<int>> typedOptionsFactory =
             static (_, _) => Shield<int>.Empty;
 
         await AssertNullParameterAsync(
@@ -207,6 +220,32 @@ public class DependencyInjectionContractTests
             () => KevlarServiceCollectionExtensions.AddShield<int>(null!, "name", typedFactory),
             "services");
         await AssertNullParameterAsync(() => services.AddShield<int>(null!, typedFactory), "name");
+        await AssertNullParameterAsync(
+            () => KevlarServiceCollectionExtensions.AddReloadingShield<object>(
+                null!,
+                "name",
+                optionsFactory),
+            "services");
+        await AssertNullParameterAsync(
+            () => services.AddReloadingShield<object>(null!, optionsFactory),
+            "name");
+        await AssertNullParameterAsync(
+            () => services.AddReloadingShield<object>(
+                "name",
+                (Func<object, IServiceProvider, Shield>)null!),
+            "build");
+        await AssertNullParameterAsync(
+            () => KevlarServiceCollectionExtensions.AddReloadingShield<object, int>(
+                null!,
+                "name",
+                typedOptionsFactory),
+            "services");
+        await AssertNullParameterAsync(
+            () => services.AddReloadingShield<object, int>(null!, typedOptionsFactory),
+            "name");
+        await AssertNullParameterAsync(
+            () => services.AddReloadingShield<object, int>("name", null!),
+            "build");
         await AssertNullParameterAsync(
             () => KevlarServiceCollectionExtensions.AddPartitionedShield(
                 null!,

@@ -1,10 +1,11 @@
 using System.Collections.ObjectModel;
+using System.Runtime.CompilerServices;
 using System.Threading.RateLimiting;
 using Kevlar.Internal;
 
 namespace Kevlar.Extensions.RateLimiting;
 
-internal sealed class RateLimiterStrategy : Strategy
+internal sealed class RateLimiterStrategy : Strategy, IDisposable, IAsyncDisposable
 {
     private static readonly IReadOnlyDictionary<string, object?> EmptyMetadata =
         new ReadOnlyDictionary<string, object?>(new Dictionary<string, object?>());
@@ -15,6 +16,7 @@ internal sealed class RateLimiterStrategy : Strategy
     private readonly Func<RateLimiterAdapterRejectedEvent, ValueTask>? _onRejectedAsync;
     private readonly string _description;
     private readonly string _telemetryName;
+    private OwnedLimiterLease? _ownedLimiter;
 
     protected internal override bool InvokesContinuationAtMostOnce => true;
 
@@ -23,7 +25,8 @@ internal sealed class RateLimiterStrategy : Strategy
     internal RateLimiterStrategy(
         RateLimitLeaseAcquirer acquireLease,
         RateLimiterAdapterOptions options,
-        string description)
+        string description,
+        object? ownedLimiter = null)
     {
         if (options.PermitCount <= 0)
         {
@@ -36,6 +39,17 @@ internal sealed class RateLimiterStrategy : Strategy
         _onRejectedAsync = options.OnRejectedAsync;
         _description = description;
         _telemetryName = options.Name ?? "RateLimiterAdapter";
+        _ownedLimiter = ownedLimiter is null ? null : OwnedLimiterLease.Acquire(ownedLimiter);
+    }
+
+    public void Dispose()
+    {
+        Interlocked.Exchange(ref _ownedLimiter, null)?.Dispose();
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        return Interlocked.Exchange(ref _ownedLimiter, null)?.DisposeAsync() ?? default;
     }
 
     public override string Describe() => _description;
@@ -247,4 +261,88 @@ internal sealed class RateLimiterStrategy : Strategy
 
     private static ValueTask<Outcome<T>> Failure<T>(Exception exception) =>
         new(Outcome<T>.FromException(exception));
+}
+
+internal sealed class OwnedLimiterLease : IDisposable, IAsyncDisposable
+{
+    private static readonly ConditionalWeakTable<object, OwnedLimiter> Limiters = new();
+    private OwnedLimiter? _owner;
+
+    private OwnedLimiterLease(OwnedLimiter owner)
+    {
+        _owner = owner;
+    }
+
+    public static OwnedLimiterLease Acquire(object limiter) =>
+        Limiters.GetValue(limiter, static value => new OwnedLimiter(value)).Acquire();
+
+    public void Dispose() => Interlocked.Exchange(ref _owner, null)?.Release();
+
+    public ValueTask DisposeAsync() =>
+        Interlocked.Exchange(ref _owner, null)?.ReleaseAsync() ?? default;
+
+    private sealed class OwnedLimiter(object limiter)
+    {
+        private object? _limiter = limiter;
+        private int _leases;
+
+        public OwnedLimiterLease Acquire()
+        {
+            lock (this)
+            {
+                if (_limiter is null)
+                {
+                    throw new ObjectDisposedException(nameof(limiter));
+                }
+
+                _leases++;
+                return new OwnedLimiterLease(this);
+            }
+        }
+
+        public void Release()
+        {
+            var released = ReleaseCore();
+            if (released is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+            else if (released is IAsyncDisposable asyncDisposable)
+            {
+                asyncDisposable.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            }
+        }
+
+        public ValueTask ReleaseAsync()
+        {
+            var released = ReleaseCore();
+            if (released is IAsyncDisposable asyncDisposable)
+            {
+                return asyncDisposable.DisposeAsync();
+            }
+
+            if (released is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+
+            return default;
+        }
+
+        private object? ReleaseCore()
+        {
+            lock (this)
+            {
+                _leases--;
+                if (_leases != 0)
+                {
+                    return null;
+                }
+
+                var released = _limiter;
+                _limiter = null;
+                return released;
+            }
+        }
+    }
 }

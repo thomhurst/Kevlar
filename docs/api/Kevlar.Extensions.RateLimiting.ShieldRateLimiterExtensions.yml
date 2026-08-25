@@ -6,11 +6,11 @@ items:
   parent: Kevlar.Extensions.RateLimiting
   children:
   - Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter(Kevlar.Shield,Kevlar.Extensions.RateLimiting.RateLimitLeaseAcquirer,System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
-  - Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter(Kevlar.Shield,System.Threading.RateLimiting.PartitionedRateLimiter{Kevlar.KevlarContext},System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
-  - Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter(Kevlar.Shield,System.Threading.RateLimiting.RateLimiter,System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
+  - Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter(Kevlar.Shield,System.Threading.RateLimiting.PartitionedRateLimiter{Kevlar.KevlarContext},System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions},System.Boolean)
+  - Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter(Kevlar.Shield,System.Threading.RateLimiting.RateLimiter,System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions},System.Boolean)
   - Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter``1(Kevlar.Shield{``0},Kevlar.Extensions.RateLimiting.RateLimitLeaseAcquirer,System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
-  - Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter``1(Kevlar.Shield{``0},System.Threading.RateLimiting.PartitionedRateLimiter{Kevlar.KevlarContext},System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
-  - Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter``1(Kevlar.Shield{``0},System.Threading.RateLimiting.RateLimiter,System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
+  - Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter``1(Kevlar.Shield{``0},System.Threading.RateLimiting.PartitionedRateLimiter{Kevlar.KevlarContext},System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions},System.Boolean)
+  - Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter``1(Kevlar.Shield{``0},System.Threading.RateLimiting.RateLimiter,System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions},System.Boolean)
   langs:
   - csharp
   - vb
@@ -36,17 +36,17 @@ items:
   - System.Object.Equals(System.Object,System.Object)
   - System.Object.ReferenceEquals(System.Object,System.Object)
   - System.Object.GetHashCode
-- uid: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter(Kevlar.Shield,System.Threading.RateLimiting.RateLimiter,System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
-  commentId: M:Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter(Kevlar.Shield,System.Threading.RateLimiting.RateLimiter,System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
-  id: UseRateLimiter(Kevlar.Shield,System.Threading.RateLimiting.RateLimiter,System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
+- uid: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter(Kevlar.Shield,System.Threading.RateLimiting.RateLimiter,System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions},System.Boolean)
+  commentId: M:Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter(Kevlar.Shield,System.Threading.RateLimiting.RateLimiter,System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions},System.Boolean)
+  id: UseRateLimiter(Kevlar.Shield,System.Threading.RateLimiting.RateLimiter,System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions},System.Boolean)
   isExtensionMethod: true
   parent: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions
   langs:
   - csharp
   - vb
-  name: UseRateLimiter(Shield, RateLimiter, Action<RateLimiterAdapterOptions>?)
-  nameWithType: ShieldRateLimiterExtensions.UseRateLimiter(Shield, RateLimiter, Action<RateLimiterAdapterOptions>?)
-  fullName: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter(Kevlar.Shield, System.Threading.RateLimiting.RateLimiter, System.Action<Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions>?)
+  name: UseRateLimiter(Shield, RateLimiter, Action<RateLimiterAdapterOptions>?, bool)
+  nameWithType: ShieldRateLimiterExtensions.UseRateLimiter(Shield, RateLimiter, Action<RateLimiterAdapterOptions>?, bool)
+  fullName: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter(Kevlar.Shield, System.Threading.RateLimiting.RateLimiter, System.Action<Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions>?, bool)
   type: Method
   assemblies:
   - Kevlar.Extensions.RateLimiting
@@ -54,7 +54,7 @@ items:
   summary: Appends a strategy backed by <code class="paramref">limiter</code>.
   example: []
   syntax:
-    content: public static Shield UseRateLimiter(this Shield shield, RateLimiter limiter, Action<RateLimiterAdapterOptions>? configure = null)
+    content: public static Shield UseRateLimiter(this Shield shield, RateLimiter limiter, Action<RateLimiterAdapterOptions>? configure = null, bool ownsLimiter = false)
     parameters:
     - id: shield
       type: Kevlar.Shield
@@ -62,24 +62,26 @@ items:
       type: System.Threading.RateLimiting.RateLimiter
     - id: configure
       type: System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions}
+    - id: ownsLimiter
+      type: System.Boolean
     return:
       type: Kevlar.Shield
-    content.vb: Public Shared Function UseRateLimiter(shield As Shield, limiter As RateLimiter, configure As Action(Of RateLimiterAdapterOptions) = Nothing) As Shield
+    content.vb: Public Shared Function UseRateLimiter(shield As Shield, limiter As RateLimiter, configure As Action(Of RateLimiterAdapterOptions) = Nothing, ownsLimiter As Boolean = False) As Shield
   overload: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter*
-  nameWithType.vb: ShieldRateLimiterExtensions.UseRateLimiter(Shield, RateLimiter, Action(Of RateLimiterAdapterOptions))
-  fullName.vb: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter(Kevlar.Shield, System.Threading.RateLimiting.RateLimiter, System.Action(Of Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions))
-  name.vb: UseRateLimiter(Shield, RateLimiter, Action(Of RateLimiterAdapterOptions))
-- uid: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter(Kevlar.Shield,System.Threading.RateLimiting.PartitionedRateLimiter{Kevlar.KevlarContext},System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
-  commentId: M:Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter(Kevlar.Shield,System.Threading.RateLimiting.PartitionedRateLimiter{Kevlar.KevlarContext},System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
-  id: UseRateLimiter(Kevlar.Shield,System.Threading.RateLimiting.PartitionedRateLimiter{Kevlar.KevlarContext},System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
+  nameWithType.vb: ShieldRateLimiterExtensions.UseRateLimiter(Shield, RateLimiter, Action(Of RateLimiterAdapterOptions), Boolean)
+  fullName.vb: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter(Kevlar.Shield, System.Threading.RateLimiting.RateLimiter, System.Action(Of Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions), Boolean)
+  name.vb: UseRateLimiter(Shield, RateLimiter, Action(Of RateLimiterAdapterOptions), Boolean)
+- uid: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter(Kevlar.Shield,System.Threading.RateLimiting.PartitionedRateLimiter{Kevlar.KevlarContext},System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions},System.Boolean)
+  commentId: M:Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter(Kevlar.Shield,System.Threading.RateLimiting.PartitionedRateLimiter{Kevlar.KevlarContext},System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions},System.Boolean)
+  id: UseRateLimiter(Kevlar.Shield,System.Threading.RateLimiting.PartitionedRateLimiter{Kevlar.KevlarContext},System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions},System.Boolean)
   isExtensionMethod: true
   parent: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions
   langs:
   - csharp
   - vb
-  name: UseRateLimiter(Shield, PartitionedRateLimiter<KevlarContext>, Action<RateLimiterAdapterOptions>?)
-  nameWithType: ShieldRateLimiterExtensions.UseRateLimiter(Shield, PartitionedRateLimiter<KevlarContext>, Action<RateLimiterAdapterOptions>?)
-  fullName: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter(Kevlar.Shield, System.Threading.RateLimiting.PartitionedRateLimiter<Kevlar.KevlarContext>, System.Action<Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions>?)
+  name: UseRateLimiter(Shield, PartitionedRateLimiter<KevlarContext>, Action<RateLimiterAdapterOptions>?, bool)
+  nameWithType: ShieldRateLimiterExtensions.UseRateLimiter(Shield, PartitionedRateLimiter<KevlarContext>, Action<RateLimiterAdapterOptions>?, bool)
+  fullName: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter(Kevlar.Shield, System.Threading.RateLimiting.PartitionedRateLimiter<Kevlar.KevlarContext>, System.Action<Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions>?, bool)
   type: Method
   assemblies:
   - Kevlar.Extensions.RateLimiting
@@ -87,7 +89,7 @@ items:
   summary: Appends a strategy backed by a context-aware <code class="paramref">limiter</code>.
   example: []
   syntax:
-    content: public static Shield UseRateLimiter(this Shield shield, PartitionedRateLimiter<KevlarContext> limiter, Action<RateLimiterAdapterOptions>? configure = null)
+    content: public static Shield UseRateLimiter(this Shield shield, PartitionedRateLimiter<KevlarContext> limiter, Action<RateLimiterAdapterOptions>? configure = null, bool ownsLimiter = false)
     parameters:
     - id: shield
       type: Kevlar.Shield
@@ -95,13 +97,15 @@ items:
       type: System.Threading.RateLimiting.PartitionedRateLimiter{Kevlar.KevlarContext}
     - id: configure
       type: System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions}
+    - id: ownsLimiter
+      type: System.Boolean
     return:
       type: Kevlar.Shield
-    content.vb: Public Shared Function UseRateLimiter(shield As Shield, limiter As PartitionedRateLimiter(Of KevlarContext), configure As Action(Of RateLimiterAdapterOptions) = Nothing) As Shield
+    content.vb: Public Shared Function UseRateLimiter(shield As Shield, limiter As PartitionedRateLimiter(Of KevlarContext), configure As Action(Of RateLimiterAdapterOptions) = Nothing, ownsLimiter As Boolean = False) As Shield
   overload: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter*
-  nameWithType.vb: ShieldRateLimiterExtensions.UseRateLimiter(Shield, PartitionedRateLimiter(Of KevlarContext), Action(Of RateLimiterAdapterOptions))
-  fullName.vb: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter(Kevlar.Shield, System.Threading.RateLimiting.PartitionedRateLimiter(Of Kevlar.KevlarContext), System.Action(Of Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions))
-  name.vb: UseRateLimiter(Shield, PartitionedRateLimiter(Of KevlarContext), Action(Of RateLimiterAdapterOptions))
+  nameWithType.vb: ShieldRateLimiterExtensions.UseRateLimiter(Shield, PartitionedRateLimiter(Of KevlarContext), Action(Of RateLimiterAdapterOptions), Boolean)
+  fullName.vb: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter(Kevlar.Shield, System.Threading.RateLimiting.PartitionedRateLimiter(Of Kevlar.KevlarContext), System.Action(Of Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions), Boolean)
+  name.vb: UseRateLimiter(Shield, PartitionedRateLimiter(Of KevlarContext), Action(Of RateLimiterAdapterOptions), Boolean)
 - uid: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter(Kevlar.Shield,Kevlar.Extensions.RateLimiting.RateLimitLeaseAcquirer,System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
   commentId: M:Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter(Kevlar.Shield,Kevlar.Extensions.RateLimiting.RateLimitLeaseAcquirer,System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
   id: UseRateLimiter(Kevlar.Shield,Kevlar.Extensions.RateLimiting.RateLimitLeaseAcquirer,System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
@@ -135,17 +139,17 @@ items:
   nameWithType.vb: ShieldRateLimiterExtensions.UseRateLimiter(Shield, RateLimitLeaseAcquirer, Action(Of RateLimiterAdapterOptions))
   fullName.vb: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter(Kevlar.Shield, Kevlar.Extensions.RateLimiting.RateLimitLeaseAcquirer, System.Action(Of Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions))
   name.vb: UseRateLimiter(Shield, RateLimitLeaseAcquirer, Action(Of RateLimiterAdapterOptions))
-- uid: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter``1(Kevlar.Shield{``0},System.Threading.RateLimiting.RateLimiter,System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
-  commentId: M:Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter``1(Kevlar.Shield{`0},System.Threading.RateLimiting.RateLimiter,System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
-  id: UseRateLimiter``1(Kevlar.Shield{``0},System.Threading.RateLimiting.RateLimiter,System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
+- uid: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter``1(Kevlar.Shield{``0},System.Threading.RateLimiting.RateLimiter,System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions},System.Boolean)
+  commentId: M:Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter``1(Kevlar.Shield{`0},System.Threading.RateLimiting.RateLimiter,System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions},System.Boolean)
+  id: UseRateLimiter``1(Kevlar.Shield{``0},System.Threading.RateLimiting.RateLimiter,System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions},System.Boolean)
   isExtensionMethod: true
   parent: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions
   langs:
   - csharp
   - vb
-  name: UseRateLimiter<TResult>(Shield<TResult>, RateLimiter, Action<RateLimiterAdapterOptions>?)
-  nameWithType: ShieldRateLimiterExtensions.UseRateLimiter<TResult>(Shield<TResult>, RateLimiter, Action<RateLimiterAdapterOptions>?)
-  fullName: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter<TResult>(Kevlar.Shield<TResult>, System.Threading.RateLimiting.RateLimiter, System.Action<Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions>?)
+  name: UseRateLimiter<TResult>(Shield<TResult>, RateLimiter, Action<RateLimiterAdapterOptions>?, bool)
+  nameWithType: ShieldRateLimiterExtensions.UseRateLimiter<TResult>(Shield<TResult>, RateLimiter, Action<RateLimiterAdapterOptions>?, bool)
+  fullName: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter<TResult>(Kevlar.Shield<TResult>, System.Threading.RateLimiting.RateLimiter, System.Action<Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions>?, bool)
   type: Method
   assemblies:
   - Kevlar.Extensions.RateLimiting
@@ -153,7 +157,7 @@ items:
   summary: Appends a strategy backed by <code class="paramref">limiter</code>.
   example: []
   syntax:
-    content: public static Shield<TResult> UseRateLimiter<TResult>(this Shield<TResult> shield, RateLimiter limiter, Action<RateLimiterAdapterOptions>? configure = null)
+    content: public static Shield<TResult> UseRateLimiter<TResult>(this Shield<TResult> shield, RateLimiter limiter, Action<RateLimiterAdapterOptions>? configure = null, bool ownsLimiter = false)
     parameters:
     - id: shield
       type: Kevlar.Shield{{TResult}}
@@ -161,26 +165,28 @@ items:
       type: System.Threading.RateLimiting.RateLimiter
     - id: configure
       type: System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions}
+    - id: ownsLimiter
+      type: System.Boolean
     typeParameters:
     - id: TResult
     return:
       type: Kevlar.Shield{{TResult}}
-    content.vb: Public Shared Function UseRateLimiter(Of TResult)(shield As Shield(Of TResult), limiter As RateLimiter, configure As Action(Of RateLimiterAdapterOptions) = Nothing) As Shield(Of TResult)
+    content.vb: Public Shared Function UseRateLimiter(Of TResult)(shield As Shield(Of TResult), limiter As RateLimiter, configure As Action(Of RateLimiterAdapterOptions) = Nothing, ownsLimiter As Boolean = False) As Shield(Of TResult)
   overload: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter*
-  nameWithType.vb: ShieldRateLimiterExtensions.UseRateLimiter(Of TResult)(Shield(Of TResult), RateLimiter, Action(Of RateLimiterAdapterOptions))
-  fullName.vb: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter(Of TResult)(Kevlar.Shield(Of TResult), System.Threading.RateLimiting.RateLimiter, System.Action(Of Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions))
-  name.vb: UseRateLimiter(Of TResult)(Shield(Of TResult), RateLimiter, Action(Of RateLimiterAdapterOptions))
-- uid: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter``1(Kevlar.Shield{``0},System.Threading.RateLimiting.PartitionedRateLimiter{Kevlar.KevlarContext},System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
-  commentId: M:Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter``1(Kevlar.Shield{`0},System.Threading.RateLimiting.PartitionedRateLimiter{Kevlar.KevlarContext},System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
-  id: UseRateLimiter``1(Kevlar.Shield{``0},System.Threading.RateLimiting.PartitionedRateLimiter{Kevlar.KevlarContext},System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
+  nameWithType.vb: ShieldRateLimiterExtensions.UseRateLimiter(Of TResult)(Shield(Of TResult), RateLimiter, Action(Of RateLimiterAdapterOptions), Boolean)
+  fullName.vb: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter(Of TResult)(Kevlar.Shield(Of TResult), System.Threading.RateLimiting.RateLimiter, System.Action(Of Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions), Boolean)
+  name.vb: UseRateLimiter(Of TResult)(Shield(Of TResult), RateLimiter, Action(Of RateLimiterAdapterOptions), Boolean)
+- uid: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter``1(Kevlar.Shield{``0},System.Threading.RateLimiting.PartitionedRateLimiter{Kevlar.KevlarContext},System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions},System.Boolean)
+  commentId: M:Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter``1(Kevlar.Shield{`0},System.Threading.RateLimiting.PartitionedRateLimiter{Kevlar.KevlarContext},System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions},System.Boolean)
+  id: UseRateLimiter``1(Kevlar.Shield{``0},System.Threading.RateLimiting.PartitionedRateLimiter{Kevlar.KevlarContext},System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions},System.Boolean)
   isExtensionMethod: true
   parent: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions
   langs:
   - csharp
   - vb
-  name: UseRateLimiter<TResult>(Shield<TResult>, PartitionedRateLimiter<KevlarContext>, Action<RateLimiterAdapterOptions>?)
-  nameWithType: ShieldRateLimiterExtensions.UseRateLimiter<TResult>(Shield<TResult>, PartitionedRateLimiter<KevlarContext>, Action<RateLimiterAdapterOptions>?)
-  fullName: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter<TResult>(Kevlar.Shield<TResult>, System.Threading.RateLimiting.PartitionedRateLimiter<Kevlar.KevlarContext>, System.Action<Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions>?)
+  name: UseRateLimiter<TResult>(Shield<TResult>, PartitionedRateLimiter<KevlarContext>, Action<RateLimiterAdapterOptions>?, bool)
+  nameWithType: ShieldRateLimiterExtensions.UseRateLimiter<TResult>(Shield<TResult>, PartitionedRateLimiter<KevlarContext>, Action<RateLimiterAdapterOptions>?, bool)
+  fullName: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter<TResult>(Kevlar.Shield<TResult>, System.Threading.RateLimiting.PartitionedRateLimiter<Kevlar.KevlarContext>, System.Action<Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions>?, bool)
   type: Method
   assemblies:
   - Kevlar.Extensions.RateLimiting
@@ -188,7 +194,7 @@ items:
   summary: Appends a strategy backed by a context-aware <code class="paramref">limiter</code>.
   example: []
   syntax:
-    content: public static Shield<TResult> UseRateLimiter<TResult>(this Shield<TResult> shield, PartitionedRateLimiter<KevlarContext> limiter, Action<RateLimiterAdapterOptions>? configure = null)
+    content: public static Shield<TResult> UseRateLimiter<TResult>(this Shield<TResult> shield, PartitionedRateLimiter<KevlarContext> limiter, Action<RateLimiterAdapterOptions>? configure = null, bool ownsLimiter = false)
     parameters:
     - id: shield
       type: Kevlar.Shield{{TResult}}
@@ -196,15 +202,17 @@ items:
       type: System.Threading.RateLimiting.PartitionedRateLimiter{Kevlar.KevlarContext}
     - id: configure
       type: System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions}
+    - id: ownsLimiter
+      type: System.Boolean
     typeParameters:
     - id: TResult
     return:
       type: Kevlar.Shield{{TResult}}
-    content.vb: Public Shared Function UseRateLimiter(Of TResult)(shield As Shield(Of TResult), limiter As PartitionedRateLimiter(Of KevlarContext), configure As Action(Of RateLimiterAdapterOptions) = Nothing) As Shield(Of TResult)
+    content.vb: Public Shared Function UseRateLimiter(Of TResult)(shield As Shield(Of TResult), limiter As PartitionedRateLimiter(Of KevlarContext), configure As Action(Of RateLimiterAdapterOptions) = Nothing, ownsLimiter As Boolean = False) As Shield(Of TResult)
   overload: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter*
-  nameWithType.vb: ShieldRateLimiterExtensions.UseRateLimiter(Of TResult)(Shield(Of TResult), PartitionedRateLimiter(Of KevlarContext), Action(Of RateLimiterAdapterOptions))
-  fullName.vb: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter(Of TResult)(Kevlar.Shield(Of TResult), System.Threading.RateLimiting.PartitionedRateLimiter(Of Kevlar.KevlarContext), System.Action(Of Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions))
-  name.vb: UseRateLimiter(Of TResult)(Shield(Of TResult), PartitionedRateLimiter(Of KevlarContext), Action(Of RateLimiterAdapterOptions))
+  nameWithType.vb: ShieldRateLimiterExtensions.UseRateLimiter(Of TResult)(Shield(Of TResult), PartitionedRateLimiter(Of KevlarContext), Action(Of RateLimiterAdapterOptions), Boolean)
+  fullName.vb: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter(Of TResult)(Kevlar.Shield(Of TResult), System.Threading.RateLimiting.PartitionedRateLimiter(Of Kevlar.KevlarContext), System.Action(Of Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions), Boolean)
+  name.vb: UseRateLimiter(Of TResult)(Shield(Of TResult), PartitionedRateLimiter(Of KevlarContext), Action(Of RateLimiterAdapterOptions), Boolean)
 - uid: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter``1(Kevlar.Shield{``0},Kevlar.Extensions.RateLimiting.RateLimitLeaseAcquirer,System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
   commentId: M:Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter``1(Kevlar.Shield{`0},Kevlar.Extensions.RateLimiting.RateLimitLeaseAcquirer,System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
   id: UseRateLimiter``1(Kevlar.Shield{``0},Kevlar.Extensions.RateLimiting.RateLimitLeaseAcquirer,System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions})
@@ -516,7 +524,7 @@ references:
 - uid: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter*
   commentId: Overload:Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter
   isExternal: true
-  href: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.html#Kevlar_Extensions_RateLimiting_ShieldRateLimiterExtensions_UseRateLimiter_Kevlar_Shield_System_Threading_RateLimiting_RateLimiter_System_Action_Kevlar_Extensions_RateLimiting_RateLimiterAdapterOptions__
+  href: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.html#Kevlar_Extensions_RateLimiting_ShieldRateLimiterExtensions_UseRateLimiter_Kevlar_Shield_System_Threading_RateLimiting_RateLimiter_System_Action_Kevlar_Extensions_RateLimiting_RateLimiterAdapterOptions__System_Boolean_
   name: UseRateLimiter
   nameWithType: ShieldRateLimiterExtensions.UseRateLimiter
   fullName: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions.UseRateLimiter
@@ -571,6 +579,17 @@ references:
     isExternal: true
     href: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.html
   - name: )
+- uid: System.Boolean
+  commentId: T:System.Boolean
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.boolean
+  name: bool
+  nameWithType: bool
+  fullName: bool
+  nameWithType.vb: Boolean
+  fullName.vb: Boolean
+  name.vb: Boolean
 - uid: Kevlar
   commentId: N:Kevlar
   isExternal: true

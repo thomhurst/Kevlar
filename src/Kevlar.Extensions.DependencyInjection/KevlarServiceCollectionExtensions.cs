@@ -2,6 +2,8 @@ using System.Globalization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Kevlar.Extensions.DependencyInjection;
 
@@ -17,7 +19,9 @@ public static class KevlarServiceCollectionExtensions
     public static IServiceCollection AddKevlar(this IServiceCollection services)
     {
         if (services is null) { throw new ArgumentNullException(nameof(services)); }
-        services.TryAddSingleton<IKevlarRegistry>(sp => new KevlarRegistry(sp, sp.GetServices<ShieldRegistration>()));
+        services.TryAddSingleton<KevlarRegistry>(sp =>
+            new KevlarRegistry(sp, sp.GetServices<ShieldRegistration>()));
+        services.TryAddSingleton<IKevlarRegistry>(sp => sp.GetRequiredService<KevlarRegistry>());
         return services;
     }
 
@@ -155,12 +159,14 @@ public static class KevlarServiceCollectionExtensions
         services.AddKevlar();
         services.AddKeyedSingleton<IShieldProvider>(
             name,
-            (_, _) => new ReloadingShieldProvider(
-                () => BuildConfiguredShield(configuration).WithName(name),
-                configuration.GetReloadToken,
-                onReloadFailure,
-                debounceDelay,
-                timeProvider));
+            (serviceProvider, _) => serviceProvider
+                .GetRequiredService<KevlarRegistry>()
+                .CreateReloadingProvider(() => new ReloadingShieldProvider(
+                    () => BuildConfiguredShield(configuration).WithName(name),
+                    configuration.GetReloadToken,
+                    onReloadFailure,
+                    debounceDelay,
+                    timeProvider)));
         services.AddSingleton(new ShieldRegistration(
             name,
             null,
@@ -302,16 +308,83 @@ public static class KevlarServiceCollectionExtensions
         services.AddKevlar();
         services.AddKeyedSingleton<IShieldProvider<TResult>>(
             name,
-            (_, _) => new ReloadingShieldProvider<TResult>(
-                () => BuildConfiguredShield<TResult>(configuration).WithName(name),
-                configuration.GetReloadToken,
-                onReloadFailure,
-                debounceDelay,
-                timeProvider));
+            (serviceProvider, _) => serviceProvider
+                .GetRequiredService<KevlarRegistry>()
+                .CreateReloadingProvider(() => new ReloadingShieldProvider<TResult>(
+                    () => BuildConfiguredShield<TResult>(configuration).WithName(name),
+                    configuration.GetReloadToken,
+                    onReloadFailure,
+                    debounceDelay,
+                    timeProvider)));
         services.AddSingleton(new ShieldRegistration(
             name,
             typeof(TResult),
             sp => sp.GetRequiredKeyedService<IShieldProvider<TResult>>(name)));
+        return services;
+    }
+
+    /// <summary>
+    /// Registers a named shield rebuilt from the corresponding named
+    /// <see cref="IOptionsMonitor{TOptions}"/> value whenever it changes.
+    /// </summary>
+    public static IServiceCollection AddReloadingShield<
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] TOptions>(
+        this IServiceCollection services,
+        string name,
+        Func<TOptions, IServiceProvider, Shield> build,
+        Action<Exception>? onReloadFailure = null)
+        where TOptions : class
+    {
+        if (services is null) { throw new ArgumentNullException(nameof(services)); }
+        if (name is null) { throw new ArgumentNullException(nameof(name)); }
+        if (build is null) { throw new ArgumentNullException(nameof(build)); }
+
+        PrepareRegistration(services, name, replace: false);
+        services.AddKevlar();
+        services.AddKeyedSingleton<IShieldProvider>(name, (serviceProvider, _) => serviceProvider
+            .GetRequiredService<KevlarRegistry>()
+            .CreateReloadingProvider(() => new OptionsReloadingShieldProvider<TOptions>(
+                serviceProvider.GetRequiredService<IOptionsMonitor<TOptions>>(),
+                name,
+                options => build(options, serviceProvider).WithName(name),
+                onReloadFailure)));
+        services.AddSingleton(new ShieldRegistration(
+            name,
+            null,
+            serviceProvider => serviceProvider.GetRequiredKeyedService<IShieldProvider>(name)));
+        return services;
+    }
+
+    /// <summary>
+    /// Registers a named result-aware shield rebuilt from the corresponding named
+    /// <see cref="IOptionsMonitor{TOptions}"/> value whenever it changes.
+    /// </summary>
+    public static IServiceCollection AddReloadingShield<
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] TOptions,
+        TResult>(
+        this IServiceCollection services,
+        string name,
+        Func<TOptions, IServiceProvider, Shield<TResult>> build,
+        Action<Exception>? onReloadFailure = null)
+        where TOptions : class
+    {
+        if (services is null) { throw new ArgumentNullException(nameof(services)); }
+        if (name is null) { throw new ArgumentNullException(nameof(name)); }
+        if (build is null) { throw new ArgumentNullException(nameof(build)); }
+
+        PrepareRegistration(services, name, replace: false);
+        services.AddKevlar();
+        services.AddKeyedSingleton<IShieldProvider<TResult>>(name, (serviceProvider, _) => serviceProvider
+            .GetRequiredService<KevlarRegistry>()
+            .CreateReloadingProvider(() => new OptionsReloadingShieldProvider<TOptions, TResult>(
+                serviceProvider.GetRequiredService<IOptionsMonitor<TOptions>>(),
+                name,
+                options => build(options, serviceProvider).WithName(name),
+                onReloadFailure)));
+        services.AddSingleton(new ShieldRegistration(
+            name,
+            typeof(TResult),
+            serviceProvider => serviceProvider.GetRequiredKeyedService<IShieldProvider<TResult>>(name)));
         return services;
     }
 

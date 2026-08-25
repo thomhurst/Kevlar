@@ -34,11 +34,13 @@ public class ApiShapeTests
 
         await Assert.That(typedShapes).IsEquivalentTo(untypedShapes);
         var untypedReloadShapes = reloadingMethods
-            .Where(static method => !method.IsGenericMethodDefinition)
+            .Where(static method => !method.GetGenericArguments().Any(
+                static argument => argument.Name == "TResult"))
             .Select(Shape)
             .ToArray();
         var typedReloadShapes = reloadingMethods
-            .Where(static method => method.IsGenericMethodDefinition)
+            .Where(static method => method.GetGenericArguments().Any(
+                static argument => argument.Name == "TResult"))
             .Select(Shape)
             .ToArray();
 

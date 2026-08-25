@@ -187,10 +187,18 @@ var keyedShield = kevlarProvider.GetRequiredKeyedService<Shield>("catalog");
 ```
 
 `AddKevlar`, `AddShield`, `AddReloadingShield`, and [`AddPartitionedShield`](partitioning.md) cover fixed,
-configuration-bound, reload-aware, and partitioned registrations. Polly's mutable
-`ResiliencePipelineRegistry<TKey>.GetOrAddPipeline` and `TryAddBuilder` have no Kevlar equivalent;
-Kevlar registrations are fixed when the service provider is built. Both providers expose `TryGet`
-forms for lookup.
+configuration-bound, reload-aware, and partitioned registrations. Dynamic registry operations map
+as follows:
+
+| Polly registry | Kevlar registry |
+|---|---|
+| `GetOrAddPipeline(key, ...)` | `IKevlarRegistry.GetOrAdd(name, factory)` |
+| `TryAddBuilder(key, ...)` | `IKevlarRegistry.TryAdd(name, factory)` |
+| remove a registry entry | `IKevlarRegistry.Remove(name)` |
+| `EnableReloads<TOptions>()` | `AddReloadingShield<TOptions>(name, build)` using named `IOptionsMonitor<TOptions>` |
+
+Kevlar's dynamic names are string-keyed and registry-only; keyed DI services still must be declared
+before the service provider is built. Both providers expose non-throwing lookup forms.
 
 ## HTTP
 

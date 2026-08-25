@@ -63,6 +63,35 @@ Registry semantics worth knowing:
 Use [`AddPartitionedShield`](partitioning.md#dependency-injection) when one registration must retain
 independent shield state per tenant, endpoint, or other key while remaining bounded.
 
+## Dynamic shields
+
+Use `GetOrAdd` for names discovered after the service provider is built. One factory runs for each
+name and result type, even under concurrent first access. Factory failures are not cached, so a
+later call can recover. `TryAdd` installs a lazy factory only when the name is free; `Remove`
+forgets the registration without disposing a shield already held by a caller.
+
+```csharp
+using Kevlar;
+using Kevlar.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
+
+using var dynamicServices = new ServiceCollection().AddKevlar().BuildServiceProvider();
+var dynamicRegistry = dynamicServices.GetRequiredService<IKevlarRegistry>();
+var tenantShield = dynamicRegistry.GetOrAdd(
+    "tenant-north",
+    static _ => Shield.Retry(3));
+
+if (!dynamicRegistry.TryAdd("plugin", static _ => Shield.Timeout(TimeSpan.FromSeconds(5))))
+{
+    throw new InvalidOperationException("The plugin shield was already registered.");
+}
+```
+
+Dynamic names are registry-only: Microsoft DI's keyed-service table is fixed when the provider is
+built. Register with `AddShield` before build when `[FromKeyedServices]` resolution is required.
+The registry is thread-safe and is disposed with the service provider. Disposal rejects later
+lookups and disposes resolved strategies that implement `IDisposable`/`IAsyncDisposable`.
+
 ## Binding shields from configuration
 
 `AddShield(name, IConfiguration)` builds a shield from a configuration section, so retry counts,
@@ -163,6 +192,29 @@ reloads remain active. Each successful replacement starts with fresh circuit-bre
 rate-limiter, and concurrency-limiter state. The provider performs no binding, locking, or
 allocation while reading `Current`; all rebuild work occurs on configuration change. Disposing
 the service provider removes the change-token subscription.
+
+Named options can drive the same atomic replacement model without the fixed `ShieldDefinition`
+schema. The options name and shield name are the same; a change for another name is ignored.
+
+<!-- doc-test-declaration: split-before=services.AddReloadingShield -->
+```csharp
+using Kevlar;
+using Kevlar.Extensions.DependencyInjection;
+
+public sealed class CatalogResilienceOptions
+{
+    public int MaxRetries { get; set; } = 3;
+}
+
+services.AddReloadingShield<CatalogResilienceOptions>(
+    "catalog",
+    static (options, _) => Shield.Retry(options.MaxRetries),
+    error => Console.Error.WriteLine(error.Message));
+```
+
+Resolve `IOptionsMonitor<CatalogResilienceOptions>` through normal Microsoft options registration.
+Successful changes publish a fresh shield; build or validation failures retain the prior snapshot
+and reach the failure callback. Use `AddReloadingShield<TOptions, TResult>` for typed shields.
 
 ## Consuming as a keyed service
 

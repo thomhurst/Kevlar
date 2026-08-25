@@ -14,6 +14,8 @@ items:
   - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception},System.Boolean)
   - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
   - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception},System.Boolean)
+  - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{``0,System.IServiceProvider,Kevlar.Shield},System.Action{System.Exception})
+  - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield``2(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{``0,System.IServiceProvider,Kevlar.Shield{``1}},System.Action{System.Exception})
   - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Kevlar.Shield)
   - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Kevlar.Shield,System.Boolean)
   - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration)
@@ -773,6 +775,87 @@ items:
   nameWithType.vb: KevlarServiceCollectionExtensions.AddReloadingShield(Of TResult)(IServiceCollection, String, ReloadingShieldOptions, IConfiguration, Action(Of Exception), Boolean)
   fullName.vb: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield(Of TResult)(Microsoft.Extensions.DependencyInjection.IServiceCollection, String, Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions, Microsoft.Extensions.Configuration.IConfiguration, System.Action(Of System.Exception), Boolean)
   name.vb: AddReloadingShield(Of TResult)(IServiceCollection, String, ReloadingShieldOptions, IConfiguration, Action(Of Exception), Boolean)
+- uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{``0,System.IServiceProvider,Kevlar.Shield},System.Action{System.Exception})
+  commentId: M:Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{``0,System.IServiceProvider,Kevlar.Shield},System.Action{System.Exception})
+  id: AddReloadingShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{``0,System.IServiceProvider,Kevlar.Shield},System.Action{System.Exception})
+  isExtensionMethod: true
+  parent: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions
+  langs:
+  - csharp
+  - vb
+  name: AddReloadingShield<TOptions>(IServiceCollection, string, Func<TOptions, IServiceProvider, Shield>, Action<Exception>?)
+  nameWithType: KevlarServiceCollectionExtensions.AddReloadingShield<TOptions>(IServiceCollection, string, Func<TOptions, IServiceProvider, Shield>, Action<Exception>?)
+  fullName: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield<TOptions>(Microsoft.Extensions.DependencyInjection.IServiceCollection, string, System.Func<TOptions, System.IServiceProvider, Kevlar.Shield>, System.Action<System.Exception>?)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: >-
+    Registers a named shield rebuilt from the corresponding named
+
+    <xref href="Microsoft.Extensions.Options.IOptionsMonitor%601" data-throw-if-not-resolved="false"></xref> value whenever it changes.
+  example: []
+  syntax:
+    content: 'public static IServiceCollection AddReloadingShield<TOptions>(this IServiceCollection services, string name, Func<TOptions, IServiceProvider, Shield> build, Action<Exception>? onReloadFailure = null) where TOptions : class'
+    parameters:
+    - id: services
+      type: Microsoft.Extensions.DependencyInjection.IServiceCollection
+    - id: name
+      type: System.String
+    - id: build
+      type: System.Func{{TOptions},System.IServiceProvider,Kevlar.Shield}
+    - id: onReloadFailure
+      type: System.Action{System.Exception}
+    typeParameters:
+    - id: TOptions
+    return:
+      type: Microsoft.Extensions.DependencyInjection.IServiceCollection
+    content.vb: Public Shared Function AddReloadingShield(Of TOptions As Class)(services As IServiceCollection, name As String, build As Func(Of TOptions, IServiceProvider, Shield), onReloadFailure As Action(Of Exception) = Nothing) As IServiceCollection
+  overload: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield*
+  nameWithType.vb: KevlarServiceCollectionExtensions.AddReloadingShield(Of TOptions)(IServiceCollection, String, Func(Of TOptions, IServiceProvider, Shield), Action(Of Exception))
+  fullName.vb: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield(Of TOptions)(Microsoft.Extensions.DependencyInjection.IServiceCollection, String, System.Func(Of TOptions, System.IServiceProvider, Kevlar.Shield), System.Action(Of System.Exception))
+  name.vb: AddReloadingShield(Of TOptions)(IServiceCollection, String, Func(Of TOptions, IServiceProvider, Shield), Action(Of Exception))
+- uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield``2(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{``0,System.IServiceProvider,Kevlar.Shield{``1}},System.Action{System.Exception})
+  commentId: M:Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield``2(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{``0,System.IServiceProvider,Kevlar.Shield{`1}},System.Action{System.Exception})
+  id: AddReloadingShield``2(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{``0,System.IServiceProvider,Kevlar.Shield{``1}},System.Action{System.Exception})
+  isExtensionMethod: true
+  parent: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions
+  langs:
+  - csharp
+  - vb
+  name: AddReloadingShield<TOptions, TResult>(IServiceCollection, string, Func<TOptions, IServiceProvider, Shield<TResult>>, Action<Exception>?)
+  nameWithType: KevlarServiceCollectionExtensions.AddReloadingShield<TOptions, TResult>(IServiceCollection, string, Func<TOptions, IServiceProvider, Shield<TResult>>, Action<Exception>?)
+  fullName: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield<TOptions, TResult>(Microsoft.Extensions.DependencyInjection.IServiceCollection, string, System.Func<TOptions, System.IServiceProvider, Kevlar.Shield<TResult>>, System.Action<System.Exception>?)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: >-
+    Registers a named result-aware shield rebuilt from the corresponding named
+
+    <xref href="Microsoft.Extensions.Options.IOptionsMonitor%601" data-throw-if-not-resolved="false"></xref> value whenever it changes.
+  example: []
+  syntax:
+    content: 'public static IServiceCollection AddReloadingShield<TOptions, TResult>(this IServiceCollection services, string name, Func<TOptions, IServiceProvider, Shield<TResult>> build, Action<Exception>? onReloadFailure = null) where TOptions : class'
+    parameters:
+    - id: services
+      type: Microsoft.Extensions.DependencyInjection.IServiceCollection
+    - id: name
+      type: System.String
+    - id: build
+      type: System.Func{{TOptions},System.IServiceProvider,Kevlar.Shield{{TResult}}}
+    - id: onReloadFailure
+      type: System.Action{System.Exception}
+    typeParameters:
+    - id: TOptions
+    - id: TResult
+    return:
+      type: Microsoft.Extensions.DependencyInjection.IServiceCollection
+    content.vb: Public Shared Function AddReloadingShield(Of TOptions As Class, TResult)(services As IServiceCollection, name As String, build As Func(Of TOptions, IServiceProvider, Shield(Of TResult)), onReloadFailure As Action(Of Exception) = Nothing) As IServiceCollection
+  overload: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield*
+  nameWithType.vb: KevlarServiceCollectionExtensions.AddReloadingShield(Of TOptions, TResult)(IServiceCollection, String, Func(Of TOptions, IServiceProvider, Shield(Of TResult)), Action(Of Exception))
+  fullName.vb: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield(Of TOptions, TResult)(Microsoft.Extensions.DependencyInjection.IServiceCollection, String, System.Func(Of TOptions, System.IServiceProvider, Kevlar.Shield(Of TResult)), System.Action(Of System.Exception))
+  name.vb: AddReloadingShield(Of TOptions, TResult)(IServiceCollection, String, Func(Of TOptions, IServiceProvider, Shield(Of TResult)), Action(Of Exception))
 - uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,``0,Kevlar.Shield},System.Action{Kevlar.PartitionedShieldOptions},System.Collections.Generic.IEqualityComparer{``0})
   commentId: M:Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,``0,Kevlar.Shield},System.Action{Kevlar.PartitionedShieldOptions},System.Collections.Generic.IEqualityComparer{`0})
   id: AddPartitionedShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,``0,Kevlar.Shield},System.Action{Kevlar.PartitionedShieldOptions},System.Collections.Generic.IEqualityComparer{``0})
@@ -1666,6 +1749,188 @@ references:
   - name: " "
   - name: TResult
   - name: )
+- uid: Microsoft.Extensions.Options.IOptionsMonitor`1
+  commentId: T:Microsoft.Extensions.Options.IOptionsMonitor`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/microsoft.extensions.options.ioptionsmonitor-1
+  name: IOptionsMonitor<TOptions>
+  nameWithType: IOptionsMonitor<TOptions>
+  fullName: Microsoft.Extensions.Options.IOptionsMonitor<TOptions>
+  nameWithType.vb: IOptionsMonitor(Of TOptions)
+  fullName.vb: Microsoft.Extensions.Options.IOptionsMonitor(Of TOptions)
+  name.vb: IOptionsMonitor(Of TOptions)
+  spec.csharp:
+  - uid: Microsoft.Extensions.Options.IOptionsMonitor`1
+    name: IOptionsMonitor
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions.options.ioptionsmonitor-1
+  - name: <
+  - name: TOptions
+  - name: '>'
+  spec.vb:
+  - uid: Microsoft.Extensions.Options.IOptionsMonitor`1
+    name: IOptionsMonitor
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions.options.ioptionsmonitor-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TOptions
+  - name: )
+- uid: System.Func{{TOptions},System.IServiceProvider,Kevlar.Shield}
+  commentId: T:System.Func{``0,System.IServiceProvider,Kevlar.Shield}
+  parent: System
+  definition: System.Func`3
+  href: https://learn.microsoft.com/dotnet/api/system.func-3
+  name: Func<TOptions, IServiceProvider, Shield>
+  nameWithType: Func<TOptions, IServiceProvider, Shield>
+  fullName: System.Func<TOptions, System.IServiceProvider, Kevlar.Shield>
+  nameWithType.vb: Func(Of TOptions, IServiceProvider, Shield)
+  fullName.vb: System.Func(Of TOptions, System.IServiceProvider, Kevlar.Shield)
+  name.vb: Func(Of TOptions, IServiceProvider, Shield)
+  spec.csharp:
+  - uid: System.Func`3
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-3
+  - name: <
+  - name: TOptions
+  - name: ','
+  - name: " "
+  - uid: System.IServiceProvider
+    name: IServiceProvider
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iserviceprovider
+  - name: ','
+  - name: " "
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`3
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-3
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TOptions
+  - name: ','
+  - name: " "
+  - uid: System.IServiceProvider
+    name: IServiceProvider
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iserviceprovider
+  - name: ','
+  - name: " "
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
+  - name: )
+- uid: System.Func`3
+  commentId: T:System.Func`3
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.func-3
+  name: Func<T1, T2, TResult>
+  nameWithType: Func<T1, T2, TResult>
+  fullName: System.Func<T1, T2, TResult>
+  nameWithType.vb: Func(Of T1, T2, TResult)
+  fullName.vb: System.Func(Of T1, T2, TResult)
+  name.vb: Func(Of T1, T2, TResult)
+  spec.csharp:
+  - uid: System.Func`3
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-3
+  - name: <
+  - name: T1
+  - name: ','
+  - name: " "
+  - name: T2
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`3
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-3
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T1
+  - name: ','
+  - name: " "
+  - name: T2
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: System.Func{{TOptions},System.IServiceProvider,Kevlar.Shield{{TResult}}}
+  commentId: T:System.Func{``0,System.IServiceProvider,Kevlar.Shield{`1}}
+  parent: System
+  definition: System.Func`3
+  href: https://learn.microsoft.com/dotnet/api/system.func-3
+  name: Func<TOptions, IServiceProvider, Shield<TResult>>
+  nameWithType: Func<TOptions, IServiceProvider, Shield<TResult>>
+  fullName: System.Func<TOptions, System.IServiceProvider, Kevlar.Shield<TResult>>
+  nameWithType.vb: Func(Of TOptions, IServiceProvider, Shield(Of TResult))
+  fullName.vb: System.Func(Of TOptions, System.IServiceProvider, Kevlar.Shield(Of TResult))
+  name.vb: Func(Of TOptions, IServiceProvider, Shield(Of TResult))
+  spec.csharp:
+  - uid: System.Func`3
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-3
+  - name: <
+  - name: TOptions
+  - name: ','
+  - name: " "
+  - uid: System.IServiceProvider
+    name: IServiceProvider
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iserviceprovider
+  - name: ','
+  - name: " "
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`3
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-3
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TOptions
+  - name: ','
+  - name: " "
+  - uid: System.IServiceProvider
+    name: IServiceProvider
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iserviceprovider
+  - name: ','
+  - name: " "
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+  - name: )
 - uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield*
   commentId: Overload:Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield
   isExternal: true
@@ -1789,46 +2054,6 @@ references:
   - name: Of
   - name: " "
   - name: TKey
-  - name: )
-- uid: System.Func`3
-  commentId: T:System.Func`3
-  isExternal: true
-  href: https://learn.microsoft.com/dotnet/api/system.func-3
-  name: Func<T1, T2, TResult>
-  nameWithType: Func<T1, T2, TResult>
-  fullName: System.Func<T1, T2, TResult>
-  nameWithType.vb: Func(Of T1, T2, TResult)
-  fullName.vb: System.Func(Of T1, T2, TResult)
-  name.vb: Func(Of T1, T2, TResult)
-  spec.csharp:
-  - uid: System.Func`3
-    name: Func
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.func-3
-  - name: <
-  - name: T1
-  - name: ','
-  - name: " "
-  - name: T2
-  - name: ','
-  - name: " "
-  - name: TResult
-  - name: '>'
-  spec.vb:
-  - uid: System.Func`3
-    name: Func
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.func-3
-  - name: (
-  - name: Of
-  - name: " "
-  - name: T1
-  - name: ','
-  - name: " "
-  - name: T2
-  - name: ','
-  - name: " "
-  - name: TResult
   - name: )
 - uid: System.Collections.Generic.IEqualityComparer`1
   commentId: T:System.Collections.Generic.IEqualityComparer`1

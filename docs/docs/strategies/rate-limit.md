@@ -54,7 +54,9 @@ var shield = Shield.Empty.UseRateLimiter(limiter, options =>
 await shield.ExecuteAsync(static _ => ValueTask.CompletedTask);
 ```
 
-The caller owns the `RateLimiter`; the adapter never disposes it. Every returned `RateLimitLease`
+The caller owns the `RateLimiter` by default. Pass `ownsLimiter: true` when a shield registered in
+`IKevlarRegistry` should transfer limiter ownership to the registry; registry disposal then
+disposes the limiter exactly once. Every returned `RateLimitLease`
 is held until the protected execution completes and is then disposed exactly once. Rejected lease
 metadata is copied before disposal. `MetadataName.RetryAfter` becomes
 `RateLimiterAdapterRejectedException.RetryAfter`, and the complete immutable snapshot is available from
@@ -98,8 +100,9 @@ and never retain it. One `PartitionedRateLimiter<KevlarContext>` instance shares
 across every shield using it, including shields returned by Kevlar's
 [`PartitionedShield<TKey>`](../partitioning.md).
 Partition retention follows the limiter implementation; keep attacker-controlled key cardinality
-bounded. The caller owns and disposes the partitioned limiter and its child limiters; Kevlar owns
-only each returned lease.
+bounded. The caller owns and disposes the partitioned limiter and its child limiters by default.
+The same `ownsLimiter: true` opt-in transfers ownership when registry disposal governs the shield
+lifetime; Kevlar always owns each returned lease.
 
 The delegate must return a fresh acquired or rejected lease for each call. Rejection metrics and
 hooks follow the built-in contract: metric first, then `OnRejected`, then awaited

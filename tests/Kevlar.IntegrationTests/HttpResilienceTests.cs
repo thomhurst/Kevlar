@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Net;
 using Kevlar.Extensions.Http;
+using Kevlar.Extensions.DependencyInjection;
 using Kevlar.IntegrationTests.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -197,6 +198,27 @@ public class HttpResilienceTests
         using var response = await client.GetAsync(server.Url);
 
         await Assert.That(await response.Content.ReadAsStringAsync()).IsEqualTo("factory ok");
+        await Assert.That(server.CallCount).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task HttpClientFactory_Can_Use_Dynamic_Registry_Shield()
+    {
+        await using var server = FlakyHttpServer.Start((call, context) => call == 1
+            ? FlakyHttpServer.Respond(context, 503)
+            : FlakyHttpServer.Respond(context, 200, "dynamic registry"));
+        var services = new ServiceCollection();
+        services.AddKevlar();
+        services.AddHttpClient("dynamic-registry")
+            .AddShield(serviceProvider => serviceProvider
+                .GetRequiredService<IKevlarRegistry>()
+                .GetOrAdd("http-dynamic", _ => HttpShield.WhenTransient().Retry(1, Backoff.None)));
+        using var provider = services.BuildServiceProvider();
+        using var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("dynamic-registry");
+
+        using var response = await client.GetAsync(server.Url);
+
+        await Assert.That(await response.Content.ReadAsStringAsync()).IsEqualTo("dynamic registry");
         await Assert.That(server.CallCount).IsEqualTo(2);
     }
 

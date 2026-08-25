@@ -21,6 +21,9 @@ namespace Kevlar;
 /// </remarks>
 public abstract class Strategy
 {
+    private StrategyExecutionTracker? _executionTracker;
+    private WeakReference<object>? _shieldOwner;
+
     /// <summary>
     /// Gets whether this strategy guarantees invoking its continuation at most once per execution.
     /// </summary>
@@ -70,6 +73,55 @@ public abstract class Strategy
     /// when duplicate use could deadlock or corrupt their accounting.
     /// </summary>
     protected internal virtual bool IsDuplicateReferenceUnsafe => false;
+
+    internal StrategyExecutionTracker EnableExecutionTracking()
+    {
+        var tracker = Volatile.Read(ref _executionTracker);
+        if (tracker is not null)
+        {
+            return tracker;
+        }
+
+        var created = new StrategyExecutionTracker();
+        return Interlocked.CompareExchange(ref _executionTracker, created, null) ?? created;
+    }
+
+    internal StrategyExecutionTracker? ExecutionTracker => Volatile.Read(ref _executionTracker);
+
+    internal object GetShieldOwner()
+    {
+        while (true)
+        {
+            var reference = Volatile.Read(ref _shieldOwner);
+            if (reference is not null && reference.TryGetTarget(out var owner))
+            {
+                return owner;
+            }
+
+            owner = new object();
+            var replacement = new WeakReference<object>(owner);
+            if (ReferenceEquals(
+                    Interlocked.CompareExchange(ref _shieldOwner, replacement, reference),
+                    reference))
+            {
+                return owner;
+            }
+        }
+    }
+
+    internal bool HasShieldOwner() =>
+        Volatile.Read(ref _shieldOwner)?.TryGetTarget(out _) == true;
+}
+
+internal sealed class StrategyExecutionTracker
+{
+    private int _activeExecutions;
+
+    public int ActiveExecutions => Volatile.Read(ref _activeExecutions);
+
+    public void Enter() => Interlocked.Increment(ref _activeExecutions);
+
+    public void Exit() => Interlocked.Decrement(ref _activeExecutions);
 }
 
 internal interface IFallbackStrategyInspection
@@ -77,6 +129,11 @@ internal interface IFallbackStrategyInspection
     Type? ResultType { get; }
 
     bool HasNotification { get; }
+}
+
+internal interface IShieldLifecycle
+{
+    Strategy[] Strategies { get; }
 }
 
 /// <summary>
@@ -126,6 +183,9 @@ public readonly struct Continuation<T, TState>
 
         ValueTask<Outcome<T>> execution;
         var previousStrategyIndex = node.Index - 1;
+        var shieldOwner = node.GetShieldOwner();
+        var executionTracker = node.Strategy.ExecutionTracker;
+        executionTracker?.Enter();
 
         try
         {
@@ -138,6 +198,8 @@ public readonly struct Continuation<T, TState>
         {
             context.StrategyIndex = previousStrategyIndex;
             ExitStrategyIfRequired(node, context);
+            executionTracker?.Exit();
+            GC.KeepAlive(shieldOwner);
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(exception));
         }
 
@@ -145,10 +207,18 @@ public readonly struct Continuation<T, TState>
         {
             context.StrategyIndex = previousStrategyIndex;
             ExitStrategyIfRequired(node, context);
+            executionTracker?.Exit();
+            GC.KeepAlive(shieldOwner);
             return execution;
         }
 
-        return AwaitStrategyAsync(execution, context, previousStrategyIndex, node);
+        return AwaitStrategyAsync(
+            execution,
+            context,
+            previousStrategyIndex,
+            node,
+            executionTracker,
+            shieldOwner);
     }
 
     private async ValueTask<Outcome<T>> InvokeStrategyWithForkAsync(
@@ -170,7 +240,9 @@ public readonly struct Continuation<T, TState>
         ValueTask<Outcome<T>> execution,
         KevlarContext context,
         int previousStrategyIndex,
-        StrategyNode node)
+        StrategyNode node,
+        StrategyExecutionTracker? executionTracker,
+        object shieldOwner)
     {
         try
         {
@@ -184,7 +256,16 @@ public readonly struct Continuation<T, TState>
         {
             context.StrategyIndex = previousStrategyIndex;
             ExitStrategyIfRequired(node, context);
+            executionTracker?.Exit();
+            ReleaseShieldOwner(ref shieldOwner);
         }
+    }
+
+    private static void ReleaseShieldOwner(ref object shieldOwner)
+    {
+        var completedOwner = shieldOwner;
+        shieldOwner = null!;
+        GC.KeepAlive(completedOwner);
     }
 
     private static void ExitStrategyIfRequired(StrategyNode node, KevlarContext context)
@@ -202,12 +283,14 @@ internal sealed class StrategyNode
         Strategy strategy,
         StrategyNode? next,
         int index,
-        bool requiresOverlapIsolation)
+        bool requiresOverlapIsolation,
+        WeakReference<StrategyOwnerSet> shieldOwners)
     {
         Strategy = strategy;
         Next = next;
         Index = index;
         RequiresOverlapIsolation = requiresOverlapIsolation;
+        _shieldOwners = shieldOwners;
     }
 
     internal Strategy Strategy { get; }
@@ -217,4 +300,27 @@ internal sealed class StrategyNode
     internal int Index { get; }
 
     internal bool RequiresOverlapIsolation { get; }
+
+    private readonly WeakReference<StrategyOwnerSet> _shieldOwners;
+
+    internal object GetShieldOwner()
+    {
+        if (_shieldOwners.TryGetTarget(out var owners))
+        {
+            return owners;
+        }
+
+        var rebuiltOwners = new List<object>();
+        for (StrategyNode? node = this; node is not null; node = node.Next)
+        {
+            rebuiltOwners.Add(node.Strategy.GetShieldOwner());
+        }
+
+        return new StrategyOwnerSet(rebuiltOwners.ToArray());
+    }
+}
+
+internal sealed class StrategyOwnerSet(object[] owners)
+{
+    private readonly object[] _owners = owners;
 }

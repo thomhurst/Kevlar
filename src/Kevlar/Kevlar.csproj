@@ -24,6 +24,7 @@
     <InternalsVisibleTo Include="Kevlar.Testing" />
     <InternalsVisibleTo Include="Kevlar.Extensions.Http" />
     <InternalsVisibleTo Include="Kevlar.Extensions.RateLimiting" />
+    <InternalsVisibleTo Include="Kevlar.Extensions.DependencyInjection" />
   </ItemGroup>
 
 </Project>

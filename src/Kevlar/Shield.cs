@@ -16,19 +16,23 @@ namespace Kevlar;
 /// they were created in. Composing that shield into others (via <c>Wrap</c> or <c>Compose</c>)
 /// intentionally shares the state; creating a new shield creates fresh state.
 /// </remarks>
-public sealed class Shield
+public sealed class Shield : IShieldLifecycle
 {
     internal readonly Strategy[] Strategies;
     internal readonly StrategyNode? Head;
     internal readonly OutcomeJudge? Ambient;
     internal readonly TimeProvider? Time;
     private readonly bool _hasVoidFallback;
+    private readonly StrategyOwnerSet _strategyOwners;
+
+    Strategy[] IShieldLifecycle.Strategies => Strategies;
 
     internal Shield(Strategy[] strategies, OutcomeJudge? ambient, string? name, TimeProvider? timeProvider)
     {
         ValidateChain(strategies);
         Strategies = strategies;
-        Head = BuildChain(strategies);
+        _strategyOwners = GetStrategyOwners(strategies);
+        Head = BuildChain(strategies, _strategyOwners);
         Ambient = ambient;
         Name = name;
         Time = timeProvider;
@@ -786,19 +790,37 @@ public sealed class Shield
         return new Shield(strategies, ambient ?? Ambient, Name, Time);
     }
 
-    internal static StrategyNode? BuildChain(Strategy[] strategies)
+    internal static StrategyNode? BuildChain(Strategy[] strategies, StrategyOwnerSet shieldOwners)
     {
         StrategyNode? next = null;
+        var shieldOwnerReference = new WeakReference<StrategyOwnerSet>(shieldOwners);
         for (var i = strategies.Length - 1; i >= 0; i--)
         {
             next = new StrategyNode(
                 strategies[i],
                 next,
                 i,
-                i > 0 && strategies[i - 1].RequiresContinuationOverlapIsolation);
+                i > 0 && strategies[i - 1].RequiresContinuationOverlapIsolation,
+                shieldOwnerReference);
         }
 
         return next;
+    }
+
+    internal static StrategyOwnerSet GetStrategyOwners(Strategy[] strategies)
+    {
+        if (strategies.Length == 0)
+        {
+            return new StrategyOwnerSet([]);
+        }
+
+        var owners = new object[strategies.Length];
+        for (var index = 0; index < strategies.Length; index++)
+        {
+            owners[index] = strategies[index].GetShieldOwner();
+        }
+
+        return new StrategyOwnerSet(owners);
     }
 
     internal static Strategy[] Concat(Strategy[] first, Strategy[] second)

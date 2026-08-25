@@ -11,14 +11,15 @@ public static class ShieldRateLimiterExtensions
     public static Shield UseRateLimiter(
         this Shield shield,
         RateLimiter limiter,
-        Action<RateLimiterAdapterOptions>? configure = null)
+        Action<RateLimiterAdapterOptions>? configure = null,
+        bool ownsLimiter = false)
     {
         if (shield is null)
         {
             throw new ArgumentNullException(nameof(shield));
         }
 
-        return shield.Use(CreateStrategy(limiter, configure));
+        return shield.Use(CreateStrategy(limiter, configure, ownsLimiter));
     }
 
     /// <summary>
@@ -27,14 +28,15 @@ public static class ShieldRateLimiterExtensions
     public static Shield UseRateLimiter(
         this Shield shield,
         PartitionedRateLimiter<KevlarContext> limiter,
-        Action<RateLimiterAdapterOptions>? configure = null)
+        Action<RateLimiterAdapterOptions>? configure = null,
+        bool ownsLimiter = false)
     {
         if (shield is null)
         {
             throw new ArgumentNullException(nameof(shield));
         }
 
-        return shield.Use(CreateStrategy(limiter, configure));
+        return shield.Use(CreateStrategy(limiter, configure, ownsLimiter));
     }
 
     /// <summary>Appends a strategy backed by caller-provided asynchronous lease acquisition.</summary>
@@ -55,14 +57,15 @@ public static class ShieldRateLimiterExtensions
     public static Shield<TResult> UseRateLimiter<TResult>(
         this Shield<TResult> shield,
         RateLimiter limiter,
-        Action<RateLimiterAdapterOptions>? configure = null)
+        Action<RateLimiterAdapterOptions>? configure = null,
+        bool ownsLimiter = false)
     {
         if (shield is null)
         {
             throw new ArgumentNullException(nameof(shield));
         }
 
-        return shield.Use(CreateStrategy(limiter, configure));
+        return shield.Use(CreateStrategy(limiter, configure, ownsLimiter));
     }
 
     /// <summary>
@@ -71,14 +74,15 @@ public static class ShieldRateLimiterExtensions
     public static Shield<TResult> UseRateLimiter<TResult>(
         this Shield<TResult> shield,
         PartitionedRateLimiter<KevlarContext> limiter,
-        Action<RateLimiterAdapterOptions>? configure = null)
+        Action<RateLimiterAdapterOptions>? configure = null,
+        bool ownsLimiter = false)
     {
         if (shield is null)
         {
             throw new ArgumentNullException(nameof(shield));
         }
 
-        return shield.Use(CreateStrategy(limiter, configure));
+        return shield.Use(CreateStrategy(limiter, configure, ownsLimiter));
     }
 
     /// <summary>Appends a strategy backed by caller-provided asynchronous lease acquisition.</summary>
@@ -97,7 +101,8 @@ public static class ShieldRateLimiterExtensions
 
     private static Strategy CreateStrategy(
         RateLimiter limiter,
-        Action<RateLimiterAdapterOptions>? configure)
+        Action<RateLimiterAdapterOptions>? configure,
+        bool ownsLimiter)
     {
         if (limiter is null)
         {
@@ -108,12 +113,14 @@ public static class ShieldRateLimiterExtensions
         return new RateLimiterStrategy(
             (permitCount, context) => limiter.AcquireAsync(permitCount, context.CancellationToken),
             options,
-            $"RateLimiter({GetLimiterName(limiter.GetType())})");
+            $"RateLimiter({GetLimiterName(limiter.GetType())})",
+            ownsLimiter ? limiter : null);
     }
 
     private static Strategy CreateStrategy(
         PartitionedRateLimiter<KevlarContext> limiter,
-        Action<RateLimiterAdapterOptions>? configure)
+        Action<RateLimiterAdapterOptions>? configure,
+        bool ownsLimiter)
     {
         if (limiter is null)
         {
@@ -127,7 +134,8 @@ public static class ShieldRateLimiterExtensions
                 permitCount,
                 context.CancellationToken),
             options,
-            "RateLimiter(Partitioned)");
+            "RateLimiter(Partitioned)",
+            ownsLimiter ? limiter : null);
     }
 
     private static Strategy CreateStrategy(

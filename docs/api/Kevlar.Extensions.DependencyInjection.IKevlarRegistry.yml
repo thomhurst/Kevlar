@@ -5,8 +5,14 @@ items:
   id: IKevlarRegistry
   parent: Kevlar.Extensions.DependencyInjection
   children:
+  - Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetOrAdd(System.String,System.Func{System.IServiceProvider,Kevlar.Shield})
+  - Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetOrAdd``1(System.String,System.Func{System.IServiceProvider,Kevlar.Shield{``0}})
   - Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetShield(System.String)
   - Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetShield``1(System.String)
+  - Kevlar.Extensions.DependencyInjection.IKevlarRegistry.Remove(System.String)
+  - Kevlar.Extensions.DependencyInjection.IKevlarRegistry.Remove``1(System.String)
+  - Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryAdd(System.String,System.Func{System.IServiceProvider,Kevlar.Shield})
+  - Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryAdd``1(System.String,System.Func{System.IServiceProvider,Kevlar.Shield{``0}})
   - Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryGetShield(System.String,Kevlar.Shield@)
   - Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryGetShield``1(System.String,Kevlar.Shield{``0}@)
   langs:
@@ -21,15 +27,20 @@ items:
   namespace: Kevlar.Extensions.DependencyInjection
   summary: Resolves named shields registered via <code>AddShield</code>.
   remarks: >-
-    Each registration factory runs at most once. Ordinary shields and factory exceptions are
+    Each registration factory runs at most once after a successful build; failed factories may be
 
-    cached. Reload-aware registrations cache their provider; <xref href="Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetShield(System.String)" data-throw-if-not-resolved="false"></xref>
+    retried. Reload-aware registrations cache their provider; <xref href="Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetShield(System.String)" data-throw-if-not-resolved="false"></xref> returns
 
-    returns that provider's current snapshot. Names are case-sensitive; an empty name is valid.
+    that provider's current snapshot. Names are case-sensitive; an empty name is valid. Removing a
+
+    registration does not dispose shields already returned to callers.
   example: []
   syntax:
-    content: public interface IKevlarRegistry
-    content.vb: Public Interface IKevlarRegistry
+    content: 'public interface IKevlarRegistry : IDisposable, IAsyncDisposable'
+    content.vb: Public Interface IKevlarRegistry Inherits IDisposable, IAsyncDisposable
+  inheritedMembers:
+  - System.IDisposable.Dispose
+  - System.IAsyncDisposable.DisposeAsync
 - uid: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetShield(System.String)
   commentId: M:Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetShield(System.String)
   id: GetShield(System.String)
@@ -162,6 +173,188 @@ items:
   nameWithType.vb: IKevlarRegistry.TryGetShield(Of TResult)(String, Shield(Of TResult))
   fullName.vb: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryGetShield(Of TResult)(String, Kevlar.Shield(Of TResult))
   name.vb: TryGetShield(Of TResult)(String, Shield(Of TResult))
+- uid: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetOrAdd(System.String,System.Func{System.IServiceProvider,Kevlar.Shield})
+  commentId: M:Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetOrAdd(System.String,System.Func{System.IServiceProvider,Kevlar.Shield})
+  id: GetOrAdd(System.String,System.Func{System.IServiceProvider,Kevlar.Shield})
+  parent: Kevlar.Extensions.DependencyInjection.IKevlarRegistry
+  langs:
+  - csharp
+  - vb
+  name: GetOrAdd(string, Func<IServiceProvider, Shield>)
+  nameWithType: IKevlarRegistry.GetOrAdd(string, Func<IServiceProvider, Shield>)
+  fullName: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetOrAdd(string, System.Func<System.IServiceProvider, Kevlar.Shield>)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: Returns an existing shield or atomically builds and registers one.
+  example: []
+  syntax:
+    content: Shield GetOrAdd(string name, Func<IServiceProvider, Shield> factory)
+    parameters:
+    - id: name
+      type: System.String
+    - id: factory
+      type: System.Func{System.IServiceProvider,Kevlar.Shield}
+    return:
+      type: Kevlar.Shield
+    content.vb: Function GetOrAdd(name As String, factory As Func(Of IServiceProvider, Shield)) As Shield
+  overload: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetOrAdd*
+  nameWithType.vb: IKevlarRegistry.GetOrAdd(String, Func(Of IServiceProvider, Shield))
+  fullName.vb: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetOrAdd(String, System.Func(Of System.IServiceProvider, Kevlar.Shield))
+  name.vb: GetOrAdd(String, Func(Of IServiceProvider, Shield))
+- uid: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetOrAdd``1(System.String,System.Func{System.IServiceProvider,Kevlar.Shield{``0}})
+  commentId: M:Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetOrAdd``1(System.String,System.Func{System.IServiceProvider,Kevlar.Shield{`0}})
+  id: GetOrAdd``1(System.String,System.Func{System.IServiceProvider,Kevlar.Shield{``0}})
+  parent: Kevlar.Extensions.DependencyInjection.IKevlarRegistry
+  langs:
+  - csharp
+  - vb
+  name: GetOrAdd<TResult>(string, Func<IServiceProvider, Shield<TResult>>)
+  nameWithType: IKevlarRegistry.GetOrAdd<TResult>(string, Func<IServiceProvider, Shield<TResult>>)
+  fullName: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetOrAdd<TResult>(string, System.Func<System.IServiceProvider, Kevlar.Shield<TResult>>)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: Returns an existing result-aware shield or atomically builds and registers one.
+  example: []
+  syntax:
+    content: Shield<TResult> GetOrAdd<TResult>(string name, Func<IServiceProvider, Shield<TResult>> factory)
+    parameters:
+    - id: name
+      type: System.String
+    - id: factory
+      type: System.Func{System.IServiceProvider,Kevlar.Shield{{TResult}}}
+    typeParameters:
+    - id: TResult
+    return:
+      type: Kevlar.Shield{{TResult}}
+    content.vb: Function GetOrAdd(Of TResult)(name As String, factory As Func(Of IServiceProvider, Shield(Of TResult))) As Shield(Of TResult)
+  overload: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetOrAdd*
+  nameWithType.vb: IKevlarRegistry.GetOrAdd(Of TResult)(String, Func(Of IServiceProvider, Shield(Of TResult)))
+  fullName.vb: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetOrAdd(Of TResult)(String, System.Func(Of System.IServiceProvider, Kevlar.Shield(Of TResult)))
+  name.vb: GetOrAdd(Of TResult)(String, Func(Of IServiceProvider, Shield(Of TResult)))
+- uid: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryAdd(System.String,System.Func{System.IServiceProvider,Kevlar.Shield})
+  commentId: M:Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryAdd(System.String,System.Func{System.IServiceProvider,Kevlar.Shield})
+  id: TryAdd(System.String,System.Func{System.IServiceProvider,Kevlar.Shield})
+  parent: Kevlar.Extensions.DependencyInjection.IKevlarRegistry
+  langs:
+  - csharp
+  - vb
+  name: TryAdd(string, Func<IServiceProvider, Shield>)
+  nameWithType: IKevlarRegistry.TryAdd(string, Func<IServiceProvider, Shield>)
+  fullName: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryAdd(string, System.Func<System.IServiceProvider, Kevlar.Shield>)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: Attempts to add a shield factory without building it.
+  example: []
+  syntax:
+    content: bool TryAdd(string name, Func<IServiceProvider, Shield> factory)
+    parameters:
+    - id: name
+      type: System.String
+    - id: factory
+      type: System.Func{System.IServiceProvider,Kevlar.Shield}
+    return:
+      type: System.Boolean
+    content.vb: Function TryAdd(name As String, factory As Func(Of IServiceProvider, Shield)) As Boolean
+  overload: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryAdd*
+  nameWithType.vb: IKevlarRegistry.TryAdd(String, Func(Of IServiceProvider, Shield))
+  fullName.vb: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryAdd(String, System.Func(Of System.IServiceProvider, Kevlar.Shield))
+  name.vb: TryAdd(String, Func(Of IServiceProvider, Shield))
+- uid: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryAdd``1(System.String,System.Func{System.IServiceProvider,Kevlar.Shield{``0}})
+  commentId: M:Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryAdd``1(System.String,System.Func{System.IServiceProvider,Kevlar.Shield{`0}})
+  id: TryAdd``1(System.String,System.Func{System.IServiceProvider,Kevlar.Shield{``0}})
+  parent: Kevlar.Extensions.DependencyInjection.IKevlarRegistry
+  langs:
+  - csharp
+  - vb
+  name: TryAdd<TResult>(string, Func<IServiceProvider, Shield<TResult>>)
+  nameWithType: IKevlarRegistry.TryAdd<TResult>(string, Func<IServiceProvider, Shield<TResult>>)
+  fullName: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryAdd<TResult>(string, System.Func<System.IServiceProvider, Kevlar.Shield<TResult>>)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: Attempts to add a result-aware shield factory without building it.
+  example: []
+  syntax:
+    content: bool TryAdd<TResult>(string name, Func<IServiceProvider, Shield<TResult>> factory)
+    parameters:
+    - id: name
+      type: System.String
+    - id: factory
+      type: System.Func{System.IServiceProvider,Kevlar.Shield{{TResult}}}
+    typeParameters:
+    - id: TResult
+    return:
+      type: System.Boolean
+    content.vb: Function TryAdd(Of TResult)(name As String, factory As Func(Of IServiceProvider, Shield(Of TResult))) As Boolean
+  overload: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryAdd*
+  nameWithType.vb: IKevlarRegistry.TryAdd(Of TResult)(String, Func(Of IServiceProvider, Shield(Of TResult)))
+  fullName.vb: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryAdd(Of TResult)(String, System.Func(Of System.IServiceProvider, Kevlar.Shield(Of TResult)))
+  name.vb: TryAdd(Of TResult)(String, Func(Of IServiceProvider, Shield(Of TResult)))
+- uid: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.Remove(System.String)
+  commentId: M:Kevlar.Extensions.DependencyInjection.IKevlarRegistry.Remove(System.String)
+  id: Remove(System.String)
+  parent: Kevlar.Extensions.DependencyInjection.IKevlarRegistry
+  langs:
+  - csharp
+  - vb
+  name: Remove(string)
+  nameWithType: IKevlarRegistry.Remove(string)
+  fullName: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.Remove(string)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: Removes an untyped registration without disposing shields already held by callers.
+  example: []
+  syntax:
+    content: bool Remove(string name)
+    parameters:
+    - id: name
+      type: System.String
+    return:
+      type: System.Boolean
+    content.vb: Function Remove(name As String) As Boolean
+  overload: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.Remove*
+  nameWithType.vb: IKevlarRegistry.Remove(String)
+  fullName.vb: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.Remove(String)
+  name.vb: Remove(String)
+- uid: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.Remove``1(System.String)
+  commentId: M:Kevlar.Extensions.DependencyInjection.IKevlarRegistry.Remove``1(System.String)
+  id: Remove``1(System.String)
+  parent: Kevlar.Extensions.DependencyInjection.IKevlarRegistry
+  langs:
+  - csharp
+  - vb
+  name: Remove<TResult>(string)
+  nameWithType: IKevlarRegistry.Remove<TResult>(string)
+  fullName: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.Remove<TResult>(string)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: Removes a typed registration without disposing shields already held by callers.
+  example: []
+  syntax:
+    content: bool Remove<TResult>(string name)
+    parameters:
+    - id: name
+      type: System.String
+    typeParameters:
+    - id: TResult
+    return:
+      type: System.Boolean
+    content.vb: Function Remove(Of TResult)(name As String) As Boolean
+  overload: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.Remove*
+  nameWithType.vb: IKevlarRegistry.Remove(Of TResult)(String)
+  fullName.vb: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.Remove(Of TResult)(String)
+  name.vb: Remove(Of TResult)(String)
 references:
 - uid: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetShield(System.String)
   commentId: M:Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetShield(System.String)
@@ -230,6 +423,73 @@ references:
     name: DependencyInjection
     isExternal: true
     href: Kevlar.Extensions.DependencyInjection.html
+- uid: System.IDisposable.Dispose
+  commentId: M:System.IDisposable.Dispose
+  parent: System.IDisposable
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.idisposable.dispose
+  name: Dispose()
+  nameWithType: IDisposable.Dispose()
+  fullName: System.IDisposable.Dispose()
+  spec.csharp:
+  - uid: System.IDisposable.Dispose
+    name: Dispose
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.idisposable.dispose
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.IDisposable.Dispose
+    name: Dispose
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.idisposable.dispose
+  - name: (
+  - name: )
+- uid: System.IAsyncDisposable.DisposeAsync
+  commentId: M:System.IAsyncDisposable.DisposeAsync
+  parent: System.IAsyncDisposable
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.iasyncdisposable.disposeasync
+  name: DisposeAsync()
+  nameWithType: IAsyncDisposable.DisposeAsync()
+  fullName: System.IAsyncDisposable.DisposeAsync()
+  spec.csharp:
+  - uid: System.IAsyncDisposable.DisposeAsync
+    name: DisposeAsync
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iasyncdisposable.disposeasync
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.IAsyncDisposable.DisposeAsync
+    name: DisposeAsync
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iasyncdisposable.disposeasync
+  - name: (
+  - name: )
+- uid: System.IDisposable
+  commentId: T:System.IDisposable
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.idisposable
+  name: IDisposable
+  nameWithType: IDisposable
+  fullName: System.IDisposable
+- uid: System.IAsyncDisposable
+  commentId: T:System.IAsyncDisposable
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.iasyncdisposable
+  name: IAsyncDisposable
+  nameWithType: IAsyncDisposable
+  fullName: System.IAsyncDisposable
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
 - uid: System.Collections.Generic.KeyNotFoundException
   commentId: T:System.Collections.Generic.KeyNotFoundException
   isExternal: true
@@ -263,13 +523,6 @@ references:
   name: Shield
   nameWithType: Shield
   fullName: Kevlar.Shield
-- uid: System
-  commentId: N:System
-  isExternal: true
-  href: https://learn.microsoft.com/dotnet/api/system
-  name: System
-  nameWithType: System
-  fullName: System
 - uid: Kevlar
   commentId: N:Kevlar
   isExternal: true
@@ -353,3 +606,160 @@ references:
   nameWithType.vb: Boolean
   fullName.vb: Boolean
   name.vb: Boolean
+- uid: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetOrAdd*
+  commentId: Overload:Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetOrAdd
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.html#Kevlar_Extensions_DependencyInjection_IKevlarRegistry_GetOrAdd_System_String_System_Func_System_IServiceProvider_Kevlar_Shield__
+  name: GetOrAdd
+  nameWithType: IKevlarRegistry.GetOrAdd
+  fullName: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetOrAdd
+- uid: System.Func{System.IServiceProvider,Kevlar.Shield}
+  commentId: T:System.Func{System.IServiceProvider,Kevlar.Shield}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<IServiceProvider, Shield>
+  nameWithType: Func<IServiceProvider, Shield>
+  fullName: System.Func<System.IServiceProvider, Kevlar.Shield>
+  nameWithType.vb: Func(Of IServiceProvider, Shield)
+  fullName.vb: System.Func(Of System.IServiceProvider, Kevlar.Shield)
+  name.vb: Func(Of IServiceProvider, Shield)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: System.IServiceProvider
+    name: IServiceProvider
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iserviceprovider
+  - name: ','
+  - name: " "
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.IServiceProvider
+    name: IServiceProvider
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iserviceprovider
+  - name: ','
+  - name: " "
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
+  - name: )
+- uid: System.Func`2
+  commentId: T:System.Func`2
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<T, TResult>
+  nameWithType: Func<T, TResult>
+  fullName: System.Func<T, TResult>
+  nameWithType.vb: Func(Of T, TResult)
+  fullName.vb: System.Func(Of T, TResult)
+  name.vb: Func(Of T, TResult)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: System.Func{System.IServiceProvider,Kevlar.Shield{{TResult}}}
+  commentId: T:System.Func{System.IServiceProvider,Kevlar.Shield{`0}}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<IServiceProvider, Shield<TResult>>
+  nameWithType: Func<IServiceProvider, Shield<TResult>>
+  fullName: System.Func<System.IServiceProvider, Kevlar.Shield<TResult>>
+  nameWithType.vb: Func(Of IServiceProvider, Shield(Of TResult))
+  fullName.vb: System.Func(Of System.IServiceProvider, Kevlar.Shield(Of TResult))
+  name.vb: Func(Of IServiceProvider, Shield(Of TResult))
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: System.IServiceProvider
+    name: IServiceProvider
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iserviceprovider
+  - name: ','
+  - name: " "
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.IServiceProvider
+    name: IServiceProvider
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iserviceprovider
+  - name: ','
+  - name: " "
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+  - name: )
+- uid: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryAdd*
+  commentId: Overload:Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryAdd
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.html#Kevlar_Extensions_DependencyInjection_IKevlarRegistry_TryAdd_System_String_System_Func_System_IServiceProvider_Kevlar_Shield__
+  name: TryAdd
+  nameWithType: IKevlarRegistry.TryAdd
+  fullName: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryAdd
+- uid: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.Remove*
+  commentId: Overload:Kevlar.Extensions.DependencyInjection.IKevlarRegistry.Remove
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.html#Kevlar_Extensions_DependencyInjection_IKevlarRegistry_Remove_System_String_
+  name: Remove
+  nameWithType: IKevlarRegistry.Remove
+  fullName: Kevlar.Extensions.DependencyInjection.IKevlarRegistry.Remove
