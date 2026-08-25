@@ -607,6 +607,26 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV013_Inspects_Unobserved_Task_Calls_In_Handling_Predicates()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.HandlesExceptionWithContext = item =>
+            {
+                _ = AuditAsync(item);
+                return true;
+            });
+
+            static Task AuditAsync(HandlingEvent item) => Task.CompletedTask;
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
     public async Task KEV013_Inspects_Unobserved_Task_Calls_In_Expression_Lambdas()
     {
         var diagnostics = await AnalyzeBodyAsync("""
@@ -1158,6 +1178,20 @@ public class PipelineHazardAnalyzerTests
 
             await Assert.That(diagnostics).IsEmpty();
         }
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Awaited_TaskRun()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetryAsync = async item =>
+                await Task.Run(() => Consume(item.Context)));
+
+            static void Consume(KevlarContext context) =>
+                Console.WriteLine(context.ShieldName);
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
     }
 
     [Test]

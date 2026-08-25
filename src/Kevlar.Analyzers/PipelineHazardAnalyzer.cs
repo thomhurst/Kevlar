@@ -1465,6 +1465,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             current = consumer;
         }
 
+        if (current.Parent is AwaitExpressionSyntax)
+        {
+            return true;
+        }
+
         if (current.Ancestors()
                 .TakeWhile(static node => node is not AnonymousFunctionExpressionSyntax
                     and not StatementSyntax)
@@ -5269,20 +5274,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         internal bool IsTestAssembly { get; }
 
         internal bool IsSynchronousCallback(IPropertySymbol property) =>
-            property.Type is INamedTypeSymbol
-            {
-                Name: "Action",
-                Arity: 1,
-                ContainingNamespace.Name: "System",
-            }
-            && _synchronousCallbackTypes.Contains(property.ContainingType.OriginalDefinition)
-            && property.Name is "OnRetry"
-                or "OnTimeout"
-                or "OnStateChanged"
-                or "OnHedge"
-                or "OnFallback"
-                or "OnInjected"
-                or "OnRejected";
+            _synchronousCallbackTypes.Contains(property.ContainingType.OriginalDefinition)
+            && TryGetSynchronousCallbackEventType(property, out _);
 
         internal bool IsShield(INamedTypeSymbol type) =>
             Is(type, _shield) || Is(type, _shieldOfT);
@@ -5353,39 +5346,53 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 _synchronousCallbackTypes.Add(type);
                 foreach (var property in type.GetMembers().OfType<IPropertySymbol>())
                 {
-                    if (property.Type is not INamedTypeSymbol callbackType)
-                    {
-                        continue;
-                    }
-
-                    var isNotification = callbackType is
-                        {
-                            Name: "Action",
-                            Arity: 1,
-                            ContainingNamespace.Name: "System",
-                        }
-                        && property.Name is "OnRetry"
-                            or "OnTimeout"
-                            or "OnStateChanged"
-                            or "OnHedge"
-                            or "OnFallback"
-                            or "OnInjected"
-                            or "OnRejected";
-                    var isHandlingPredicate = callbackType is
-                        {
-                            Name: "Func",
-                            Arity: 2,
-                            ContainingNamespace.Name: "System",
-                        }
-                        && callbackType.TypeArguments[1].SpecialType == SpecialType.System_Boolean
-                        && property.Name == "HandlesExceptionWithContext";
-                    if ((isNotification || isHandlingPredicate)
-                        && callbackType.TypeArguments[0] is INamedTypeSymbol eventType)
+                    if (TryGetSynchronousCallbackEventType(property, out var eventType))
                     {
                         _eventContextContainerTypes.Add(eventType.OriginalDefinition);
                     }
                 }
             }
+        }
+
+        private static bool TryGetSynchronousCallbackEventType(
+            IPropertySymbol property,
+            out INamedTypeSymbol eventType)
+        {
+            eventType = null!;
+            if (property.Type is not INamedTypeSymbol callbackType)
+            {
+                return false;
+            }
+
+            var isNotification = callbackType is
+                {
+                    Name: "Action",
+                    Arity: 1,
+                    ContainingNamespace.Name: "System",
+                }
+                && property.Name is "OnRetry"
+                    or "OnTimeout"
+                    or "OnStateChanged"
+                    or "OnHedge"
+                    or "OnFallback"
+                    or "OnInjected"
+                    or "OnRejected";
+            var isHandlingPredicate = callbackType is
+                {
+                    Name: "Func",
+                    Arity: 2,
+                    ContainingNamespace.Name: "System",
+                }
+                && callbackType.TypeArguments[1].SpecialType == SpecialType.System_Boolean
+                && property.Name == "HandlesExceptionWithContext";
+            if ((isNotification || isHandlingPredicate)
+                && callbackType.TypeArguments[0] is INamedTypeSymbol callbackEventType)
+            {
+                eventType = callbackEventType;
+                return true;
+            }
+
+            return false;
         }
 
         private static bool Is(INamedTypeSymbol type, INamedTypeSymbol? expected) =>
