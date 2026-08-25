@@ -7,6 +7,7 @@ public static class ShieldDescriptorExtensions
 {
     private const string RateLimiterAdapterStrategyTypeName =
         "Kevlar.Extensions.RateLimiting.RateLimiterStrategy";
+    private const string RateLimiterAdapterAssemblyName = "Kevlar.Extensions.RateLimiting";
 
     /// <summary>Describes an untyped shield without executing it.</summary>
     public static ShieldDescriptor GetDescriptor(this Shield shield)
@@ -92,7 +93,7 @@ public static class ShieldDescriptorExtensions
                 fallback.ResultType,
                 fallback.HasNotification,
                 strategy.HasHandlingOverride),
-            _ when strategy.GetType().FullName == RateLimiterAdapterStrategyTypeName =>
+            _ when IsRateLimiterAdapterStrategy(strategy.GetType()) =>
                 new CustomStrategyDescriptor(
                     StrategyKind.RateLimiterAdapter,
                     description,
@@ -104,6 +105,13 @@ public static class ShieldDescriptorExtensions
                 strategy.ReactiveJudge is { } judge ? new HandlingClause(judge) : null),
         };
     }
+
+    private static bool IsRateLimiterAdapterStrategy(Type strategyType) =>
+        string.Equals(strategyType.FullName, RateLimiterAdapterStrategyTypeName, StringComparison.Ordinal) &&
+        string.Equals(
+            strategyType.Assembly.GetName().Name,
+            RateLimiterAdapterAssemblyName,
+            StringComparison.Ordinal);
 
     private static CircuitBreakerStrategyDescriptor DescribeCircuitBreaker(
         string description,

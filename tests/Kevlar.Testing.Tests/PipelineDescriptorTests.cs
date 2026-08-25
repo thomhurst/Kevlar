@@ -207,6 +207,18 @@ public class PipelineDescriptorTests
     }
 
     [Test]
+    public async Task Adapter_Type_Name_In_Another_Assembly_Remains_Custom()
+    {
+        var custom = Shield.When<ArgumentException>()
+            .Use(clause => new global::Kevlar.Extensions.RateLimiting.RateLimiterStrategy(clause))
+            .GetDescriptor()
+            .AssertContainsSingle<CustomStrategyDescriptor>();
+
+        await Assert.That(custom.Kind).IsEqualTo(StrategyKind.Custom);
+        await Assert.That(custom.Handling.HasValue).IsTrue();
+    }
+
+    [Test]
     public async Task Descriptor_Is_An_Immutable_Snapshot_For_Unnamed_Untyped_Shields()
     {
         var shield = Shield.Empty
