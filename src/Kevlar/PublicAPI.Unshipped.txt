@@ -80,6 +80,7 @@ Kevlar.ShieldBuilder.Timeout(System.Action<Kevlar.TimeoutOptions!>! configure) -
 Kevlar.ShieldBuilder<TResult>.Timeout(System.Action<Kevlar.TimeoutOptions!>! configure) -> Kevlar.Shield<TResult>!
 virtual Kevlar.Strategy.Handling.get -> Kevlar.HandlingClause?
 virtual Kevlar.Strategy.InvokesContinuationAtMostOnce.get -> bool
+virtual Kevlar.Strategy.SynchronousExecutionUnsupportedReason.get -> string?
 Kevlar.Shield<TResult>.InvokesContinuationAtMostOnce.get -> bool
 Kevlar.CircuitBreakerBreakDurationEvent
 Kevlar.CircuitBreakerBreakDurationEvent.CircuitBreakerBreakDurationEvent() -> void

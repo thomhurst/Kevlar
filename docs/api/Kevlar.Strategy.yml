@@ -11,6 +11,7 @@ items:
   - Kevlar.Strategy.Handling
   - Kevlar.Strategy.InvokesContinuationAtMostOnce
   - Kevlar.Strategy.IsDuplicateReferenceUnsafe
+  - Kevlar.Strategy.SynchronousExecutionUnsupportedReason
   langs:
   - csharp
   - vb
@@ -201,6 +202,32 @@ items:
       type: System.Nullable{Kevlar.HandlingClause}
     content.vb: Protected Overridable ReadOnly Property Handling As HandlingClause?
   overload: Kevlar.Strategy.Handling*
+- uid: Kevlar.Strategy.SynchronousExecutionUnsupportedReason
+  commentId: P:Kevlar.Strategy.SynchronousExecutionUnsupportedReason
+  id: SynchronousExecutionUnsupportedReason
+  parent: Kevlar.Strategy
+  langs:
+  - csharp
+  - vb
+  name: SynchronousExecutionUnsupportedReason
+  nameWithType: Strategy.SynchronousExecutionUnsupportedReason
+  fullName: Kevlar.Strategy.SynchronousExecutionUnsupportedReason
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Gets the configured feature that requires asynchronous execution, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a>
+
+    when this strategy supports synchronous execution.
+  example: []
+  syntax:
+    content: protected virtual string? SynchronousExecutionUnsupportedReason { get; }
+    parameters: []
+    return:
+      type: System.String
+    content.vb: Protected Overridable ReadOnly Property SynchronousExecutionUnsupportedReason As String
+  overload: Kevlar.Strategy.SynchronousExecutionUnsupportedReason*
 - uid: Kevlar.Strategy.IsDuplicateReferenceUnsafe
   commentId: P:Kevlar.Strategy.IsDuplicateReferenceUnsafe
   id: IsDuplicateReferenceUnsafe
@@ -819,6 +846,13 @@ references:
   - name: " "
   - name: T
   - name: )
+- uid: Kevlar.Strategy.SynchronousExecutionUnsupportedReason*
+  commentId: Overload:Kevlar.Strategy.SynchronousExecutionUnsupportedReason
+  isExternal: true
+  href: Kevlar.Strategy.html#Kevlar_Strategy_SynchronousExecutionUnsupportedReason
+  name: SynchronousExecutionUnsupportedReason
+  nameWithType: Strategy.SynchronousExecutionUnsupportedReason
+  fullName: Kevlar.Strategy.SynchronousExecutionUnsupportedReason
 - uid: Kevlar.Strategy.IsDuplicateReferenceUnsafe*
   commentId: Overload:Kevlar.Strategy.IsDuplicateReferenceUnsafe
   isExternal: true

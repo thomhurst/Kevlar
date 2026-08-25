@@ -61,7 +61,7 @@ internal sealed class TimeoutStrategy : Strategy
 
     internal bool HasNotification => _onTimeout is not null || _onTimeoutAsync is not null;
 
-    internal override string? SynchronousExecutionUnsupportedReason =>
+    protected internal override string? SynchronousExecutionUnsupportedReason =>
         _hasAsyncTimeoutGenerator
             ? "TimeoutOptions.TimeoutGenerator"
             : _onTimeoutAsync is not null

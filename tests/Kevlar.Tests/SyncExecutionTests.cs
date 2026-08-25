@@ -149,6 +149,23 @@ public class SyncExecutionTests
     }
 
     [Test]
+    public async Task Extension_Strategy_Can_Reject_Synchronous_Execution()
+    {
+        var actionInvoked = false;
+        var shield = Shield.Use(new ExternalAsyncOnlyStrategy());
+
+        var exception = await Assert.That(() => shield.Execute(_ =>
+            {
+                actionInvoked = true;
+                return 42;
+            }))
+            .Throws<NotSupportedException>();
+
+        await Assert.That(exception!.Message).Contains("ExternalAsyncOnlyStrategy.Callback");
+        await Assert.That(actionInvoked).IsFalse();
+    }
+
+    [Test]
     public async Task Sync_Timeout_Generator_Remains_Synchronous()
     {
         var generatorInvoked = false;
@@ -314,6 +331,16 @@ public class SyncExecutionTests
     }
 
     private static int ThrowDeep() => throw new InvalidOperationException("deep");
+
+    private sealed class ExternalAsyncOnlyStrategy : Strategy
+    {
+        protected internal override string? SynchronousExecutionUnsupportedReason =>
+            "ExternalAsyncOnlyStrategy.Callback";
+
+        public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+            Continuation<T, TState> next,
+            KevlarContext context) => next.InvokeAsync(context);
+    }
 
     private sealed class NonPumpingSynchronizationContext : SynchronizationContext
     {

@@ -35,7 +35,7 @@ internal sealed class FallbackStrategy<TResult> : Strategy, IFallbackStrategyIns
 
     internal override bool IsFallback => true;
 
-    internal override string? SynchronousExecutionUnsupportedReason =>
+    protected internal override string? SynchronousExecutionUnsupportedReason =>
         _onFallbackAsync is null ? null : "FallbackOptions.OnFallbackAsync";
 
     Type? IFallbackStrategyInspection.ResultType => typeof(TResult);
@@ -175,7 +175,7 @@ internal sealed class VoidFallbackStrategy : Strategy, IFallbackStrategyInspecti
 
     internal override bool IsFallback => true;
 
-    internal override string? SynchronousExecutionUnsupportedReason =>
+    protected internal override string? SynchronousExecutionUnsupportedReason =>
         _onFallbackAsync is null ? null : "FallbackOptions.OnFallbackAsync";
 
     Type? IFallbackStrategyInspection.ResultType => null;

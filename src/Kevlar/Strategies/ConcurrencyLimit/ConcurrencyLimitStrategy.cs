@@ -31,7 +31,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
 
     internal bool HasNotification => _onRejected is not null || _onRejectedAsync is not null;
 
-    internal override string? SynchronousExecutionUnsupportedReason =>
+    protected internal override string? SynchronousExecutionUnsupportedReason =>
         _onRejectedAsync is null ? null : "ConcurrencyLimitOptions.OnRejectedAsync";
 
     internal (int Available, int Running, int Queued) CaptureState()

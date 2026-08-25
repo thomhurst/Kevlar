@@ -931,6 +931,7 @@
   "Kevlar.Strategy.Handling": "Kevlar.Strategy.yml",
   "Kevlar.Strategy.InvokesContinuationAtMostOnce": "Kevlar.Strategy.yml",
   "Kevlar.Strategy.IsDuplicateReferenceUnsafe": "Kevlar.Strategy.yml",
+  "Kevlar.Strategy.SynchronousExecutionUnsupportedReason": "Kevlar.Strategy.yml",
   "Kevlar.Testing": "Kevlar.Testing.yml",
   "Kevlar.Testing.BackoffDescriptor": "Kevlar.Testing.BackoffDescriptor.yml",
   "Kevlar.Testing.BackoffDescriptor.BaseDelay": "Kevlar.Testing.BackoffDescriptor.yml",

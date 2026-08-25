@@ -94,7 +94,7 @@ internal sealed class CircuitBreakerStrategy : Strategy
 
     internal CircuitBreakerCore Core => _core;
 
-    internal override string? SynchronousExecutionUnsupportedReason =>
+    protected internal override string? SynchronousExecutionUnsupportedReason =>
         _core.SynchronousExecutionUnsupportedReason;
 
     public override string Describe() => _core.Describe();

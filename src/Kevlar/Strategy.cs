@@ -64,7 +64,11 @@ public abstract class Strategy
     /// <summary>Whether this reactive strategy replaces ambient handling with local predicates.</summary>
     internal virtual bool HasHandlingOverride => false;
 
-    internal virtual string? SynchronousExecutionUnsupportedReason => null;
+    /// <summary>
+    /// Gets the configured feature that requires asynchronous execution, or <see langword="null"/>
+    /// when this strategy supports synchronous execution.
+    /// </summary>
+    protected internal virtual string? SynchronousExecutionUnsupportedReason => null;
 
     /// <summary>Marks fallback strategies for chain-order validation.</summary>
     internal virtual bool IsFallback => false;
