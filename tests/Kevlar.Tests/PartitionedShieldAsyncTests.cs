@@ -170,6 +170,39 @@ public class PartitionedShieldAsyncTests
     }
 
     [Test]
+    public async Task Lifecycle_Callbacks_Can_Reenter_The_Provider()
+    {
+        PartitionedShield<string>? provider = null;
+        var createdCallbacks = 0;
+        var evictedCallbacks = 0;
+        provider = new PartitionedShield<string>(
+            static _ => Shield.Empty,
+            new PartitionedShieldOptions
+            {
+                MaximumPartitions = 1,
+                OnCreatedAsync = async item =>
+                {
+                    _ = item;
+                    _ = await provider!.TryRemoveAsync("missing");
+                    Interlocked.Increment(ref createdCallbacks);
+                },
+                OnEvictedAsync = async item =>
+                {
+                    _ = item;
+                    _ = await provider!.TryRemoveAsync("missing");
+                    Interlocked.Increment(ref evictedCallbacks);
+                },
+            });
+
+        _ = await provider.GetShieldAsync("first").AsTask().WaitAsync(TimeSpan.FromSeconds(5));
+        _ = await provider.GetShieldAsync("second").AsTask().WaitAsync(TimeSpan.FromSeconds(5));
+
+        await Assert.That(createdCallbacks).IsEqualTo(2);
+        await Assert.That(evictedCallbacks).IsEqualTo(1);
+        await Assert.That(provider.Count).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Evicted_Resources_Can_Be_Disposed_By_Key()
     {
         var resources = new ConcurrentDictionary<string, DisposableResource>();

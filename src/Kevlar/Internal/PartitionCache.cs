@@ -190,12 +190,13 @@ internal sealed class PartitionCache<TKey, TShield>
                 }
             }
 
-            await NotifyEvictedAsync(expired, PartitionEvictionReason.Idle).ConfigureAwait(false);
         }
         finally
         {
             _mutationGate.Release();
         }
+
+        await NotifyEvictedAsync(expired, PartitionEvictionReason.Idle).ConfigureAwait(false);
 
         if (retained is not null)
         {
@@ -233,20 +234,41 @@ internal sealed class PartitionCache<TKey, TShield>
 
     private async ValueTask PublishAsync(TKey key, TShield shield, Creation creation)
     {
-        await _mutationGate.WaitAsync().ConfigureAwait(false);
-        try
+        while (true)
         {
             List<Entry>? expired;
             Entry? capacityEviction = null;
-            lock (_gate)
+            var published = false;
+
+            await _mutationGate.WaitAsync().ConfigureAwait(false);
+            try
             {
-                expired = PruneExpiredUnderLock();
-                if (_entries.Count == _maximumPartitions)
+                lock (_gate)
                 {
-                    capacityEviction = _leastRecentlyUsed!;
-                    RemoveEntry(capacityEviction);
-                    _capacityEvictionCount++;
+                    expired = PruneExpiredUnderLock();
+                    if (expired is null)
+                    {
+                        if (_entries.Count == _maximumPartitions)
+                        {
+                            capacityEviction = _leastRecentlyUsed!;
+                            RemoveEntry(capacityEviction);
+                            _capacityEvictionCount++;
+                        }
+                        else
+                        {
+                            var entry = new Entry(key, shield, Timestamp());
+                            _entries.Add(key, entry);
+                            AddMostRecentlyUsed(entry);
+                            _createdCount++;
+                            _creations.Remove(key);
+                            published = true;
+                        }
+                    }
                 }
+            }
+            finally
+            {
+                _mutationGate.Release();
             }
 
             await NotifyEvictedAsync(expired, PartitionEvictionReason.Idle).ConfigureAwait(false);
@@ -256,31 +278,22 @@ internal sealed class PartitionCache<TKey, TShield>
                     .ConfigureAwait(false);
             }
 
-            lock (_gate)
+            if (published)
             {
-                var entry = new Entry(key, shield, Timestamp());
-                _entries.Add(key, entry);
-                AddMostRecentlyUsed(entry);
-                _createdCount++;
-                _creations.Remove(key);
+                await NotifyCreatedAsync(key, shield).ConfigureAwait(false);
+                creation.Succeed(shield);
+                return;
             }
-
-            await NotifyCreatedAsync(key, shield).ConfigureAwait(false);
-            creation.Succeed(shield);
-        }
-        finally
-        {
-            _mutationGate.Release();
         }
     }
 
     private async ValueTask<TShield?> TryGetSlowAsync(TKey key)
     {
+        TShield? shield = null;
+        List<Entry>? expired;
         await _mutationGate.WaitAsync().ConfigureAwait(false);
         try
         {
-            TShield? shield = null;
-            List<Entry>? expired;
             lock (_gate)
             {
                 expired = PruneExpiredUnderLock();
@@ -290,23 +303,23 @@ internal sealed class PartitionCache<TKey, TShield>
                     shield = entry.Shield;
                 }
             }
-
-            await NotifyEvictedAsync(expired, PartitionEvictionReason.Idle).ConfigureAwait(false);
-            return shield;
         }
         finally
         {
             _mutationGate.Release();
         }
+
+        await NotifyEvictedAsync(expired, PartitionEvictionReason.Idle).ConfigureAwait(false);
+        return shield;
     }
 
     private async ValueTask<bool> TryRemoveSlowAsync(TKey key)
     {
+        Entry? removed = null;
+        List<Entry>? expired;
         await _mutationGate.WaitAsync().ConfigureAwait(false);
         try
         {
-            Entry? removed = null;
-            List<Entry>? expired;
             lock (_gate)
             {
                 expired = PruneExpiredUnderLock();
@@ -316,27 +329,27 @@ internal sealed class PartitionCache<TKey, TShield>
                     _clearedEvictionCount++;
                 }
             }
-
-            await NotifyEvictedAsync(expired, PartitionEvictionReason.Idle).ConfigureAwait(false);
-            if (removed is not null)
-            {
-                await NotifyEvictedAsync(removed, PartitionEvictionReason.Cleared).ConfigureAwait(false);
-            }
-
-            return removed is not null;
         }
         finally
         {
             _mutationGate.Release();
         }
+
+        await NotifyEvictedAsync(expired, PartitionEvictionReason.Idle).ConfigureAwait(false);
+        if (removed is not null)
+        {
+            await NotifyEvictedAsync(removed, PartitionEvictionReason.Cleared).ConfigureAwait(false);
+        }
+
+        return removed is not null;
     }
 
     private async ValueTask ClearSlowAsync()
     {
+        Entry[] removed;
         await _mutationGate.WaitAsync().ConfigureAwait(false);
         try
         {
-            Entry[] removed;
             lock (_gate)
             {
                 removed = _entries.Values.ToArray();
@@ -345,36 +358,36 @@ internal sealed class PartitionCache<TKey, TShield>
                 _mostRecentlyUsed = null;
                 _clearedEvictionCount += removed.Length;
             }
-
-            foreach (var entry in removed)
-            {
-                await NotifyEvictedAsync(entry, PartitionEvictionReason.Cleared).ConfigureAwait(false);
-            }
         }
         finally
         {
             _mutationGate.Release();
+        }
+
+        foreach (var entry in removed)
+        {
+            await NotifyEvictedAsync(entry, PartitionEvictionReason.Cleared).ConfigureAwait(false);
         }
     }
 
     private async ValueTask<int> PruneExpiredSlowAsync()
     {
+        List<Entry>? expired;
         await _mutationGate.WaitAsync().ConfigureAwait(false);
         try
         {
-            List<Entry>? expired;
             lock (_gate)
             {
                 expired = PruneExpiredUnderLock();
             }
-
-            await NotifyEvictedAsync(expired, PartitionEvictionReason.Idle).ConfigureAwait(false);
-            return expired?.Count ?? 0;
         }
         finally
         {
             _mutationGate.Release();
         }
+
+        await NotifyEvictedAsync(expired, PartitionEvictionReason.Idle).ConfigureAwait(false);
+        return expired?.Count ?? 0;
     }
 
     private List<Entry>? PruneExpiredUnderLock()
