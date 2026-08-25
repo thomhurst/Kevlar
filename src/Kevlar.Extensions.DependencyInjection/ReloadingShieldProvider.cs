@@ -166,10 +166,34 @@ internal abstract class ReloadingProvider<TShield> : IReloadingProvider
                 Reload();
             }
         }
-        catch
+        catch (Exception initializationFailure)
         {
-            _subscription?.Dispose();
-            _reloadTimer.Dispose();
+            Exception? cleanupFailure = null;
+            try
+            {
+                _subscription?.Dispose();
+            }
+            catch (Exception exception)
+            {
+                cleanupFailure = exception;
+            }
+
+            try
+            {
+                _reloadTimer.Dispose();
+            }
+            catch (Exception exception)
+            {
+                cleanupFailure = cleanupFailure is null
+                    ? exception
+                    : new AggregateException(cleanupFailure, exception);
+            }
+
+            if (cleanupFailure is not null)
+            {
+                throw new AggregateException(initializationFailure, cleanupFailure);
+            }
+
             throw;
         }
     }

@@ -523,6 +523,44 @@ public class DynamicRegistryTests
     }
 
     [Test]
+    public async Task Reclaimed_NonDisposable_Strategy_Can_Be_Registered_Again()
+    {
+        using var services = new ServiceCollection().AddKevlar().BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        var strategy = new NonDisposableStrategy();
+        var retired = ResolveAndRemove(registry, "non-disposable-retired", strategy);
+
+        Collect(retired);
+        _ = registry.GetOrAdd("non-disposable-scavenge", _ => Shield.Empty);
+        var republished = registry.GetOrAdd(
+            "non-disposable-republished",
+            _ => Shield.Use(strategy));
+
+        await Assert.That(republished.Strategies.Single()).IsSameReferenceAs(strategy);
+    }
+
+    [Test]
+    public async Task Initial_Reload_Failure_Preserves_Subscription_Cleanup_Failure()
+    {
+        var initialFailure = new InvalidOperationException("initial reload build failed");
+        using var services = new ServiceCollection()
+            .AddSingleton<IOptionsMonitor<ReloadOptions>>(new ThrowingSubscriptionOptionsMonitor())
+            .AddReloadingShield<ReloadOptions>(
+                "throwing-initial-reload",
+                (_, _) => throw initialFailure)
+            .BuildServiceProvider();
+
+        var failure = await Assert.That(() =>
+                services.GetRequiredKeyedService<IShieldProvider>("throwing-initial-reload"))
+            .Throws<AggregateException>();
+
+        await Assert.That(failure!.InnerExceptions.Any(
+            exception => ReferenceEquals(exception, initialFailure))).IsTrue();
+        await Assert.That(failure.InnerExceptions.Any(
+            static exception => exception.Message == "subscription cleanup failed")).IsTrue();
+    }
+
+    [Test]
     public async Task Async_Retirement_Can_Reenter_Registry_After_Yielding()
     {
         using var services = new ServiceCollection().AddKevlar().BuildServiceProvider();
@@ -1254,6 +1292,13 @@ public class DynamicRegistryTests
 
         public void Dispose() => Interlocked.Increment(ref _disposeCount);
 
+        public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+            Continuation<T, TState> next,
+            KevlarContext context) => next.InvokeAsync(context);
+    }
+
+    private sealed class NonDisposableStrategy : Strategy
+    {
         public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
             Continuation<T, TState> next,
             KevlarContext context) => next.InvokeAsync(context);

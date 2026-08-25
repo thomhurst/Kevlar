@@ -8,6 +8,11 @@ internal sealed class StrategyDisposalTracker
 
     public bool TryClaim(Strategy strategy)
     {
+        if (strategy is not IDisposable && strategy is not IAsyncDisposable)
+        {
+            return false;
+        }
+
         var claim = _claims.GetValue(strategy, static _ => new DisposalClaim());
         return Interlocked.Exchange(ref claim.IsClaimed, 1) == 0;
     }
