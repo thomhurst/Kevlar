@@ -2051,7 +2051,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         if (HasStaticallyDisabledRetries(
                 anonymousFunction,
                 anonymousFunction.Symbol.Parameters[0],
-                context))
+                context)
+            || TryGetConfiguredMaxHedgedAttempts(operation, out var maxHedgedAttempts)
+                && maxHedgedAttempts == 0)
         {
             memberName = null;
             return false;
