@@ -1,5 +1,7 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using Kevlar.Chaos;
 using Kevlar.Extensions.DependencyInjection;
 using Kevlar.Extensions.Grpc;
@@ -98,6 +100,70 @@ public class DocsConsistencyTests
     }
 
     [Test]
+    public async Task Support_Policy_TFM_Table_Matches_Packable_Projects()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var projects = ReadPackableProjectTargets(repositoryRoot);
+        var documented = ReadSupportTargets(repositoryRoot);
+
+        await Assert.That(documented.Keys).IsEquivalentTo(projects.Keys);
+        foreach (var (package, targets) in projects)
+        {
+            await Assert.That(documented[package]).IsEquivalentTo(targets);
+        }
+    }
+
+    [Test]
+    public async Task Support_Policy_Packability_Defaults_To_True()
+    {
+        var defaultProject = XDocument.Parse("<Project Sdk=\"Microsoft.NET.Sdk\" />");
+        var disabledProject = XDocument.Parse(
+            """
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup>
+                <IsPackable>false</IsPackable>
+              </PropertyGroup>
+            </Project>
+            """);
+
+        await Assert.That(IsPackableProject(defaultProject)).IsTrue();
+        await Assert.That(IsPackableProject(disabledProject)).IsFalse();
+    }
+
+    [Test]
+    public async Task Thread_Safety_Page_Mentions_Every_Public_Stateful_Contract()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var documentation = File.ReadAllText(Path.Combine(repositoryRoot, "docs", "docs", "thread-safety.md"));
+        var statefulTypes = ShippedAssemblies
+            .SelectMany(static assembly => assembly.ExportedTypes)
+            .Where(static type => type.IsClass && !type.IsAbstract)
+            .Where(static type => type.GetFields(
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
+                .Any(static field => !field.IsInitOnly && !field.IsLiteral))
+            .Select(DocumentationTypeName)
+            .Concat(new[]
+            {
+                typeof(Shield),
+                typeof(Shield<>),
+                typeof(ShieldBuilder),
+                typeof(ShieldBuilder<>),
+                typeof(PartitionedShield<>),
+                typeof(PartitionedShield<,>),
+                typeof(Strategy),
+                typeof(IKevlarRegistry),
+                typeof(IShieldProvider),
+            }.Select(DocumentationTypeName))
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal);
+        var missingTypes = statefulTypes
+            .Where(type => !documentation.Contains($"`{type}`", StringComparison.Ordinal))
+            .ToArray();
+
+        await Assert.That(missingTypes).IsEmpty();
+    }
+
+    [Test]
     public async Task Migration_Guide_Mentions_Every_Public_Extension_Entry_Point()
     {
         var repositoryRoot = FindRepositoryRoot();
@@ -138,6 +204,72 @@ public class DocsConsistencyTests
                     cells[3],
                     cells[4].Trim('`'),
                     cells[6]));
+    }
+
+    private static Dictionary<string, HashSet<string>> ReadSupportTargets(string repositoryRoot)
+    {
+        var path = Path.Combine(repositoryRoot, "docs", "docs", "support-policy.md");
+        var rows = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+        var insideTable = false;
+        foreach (var line in File.ReadLines(path))
+        {
+            if (line == "<!-- supported-tfms:start -->")
+            {
+                insideTable = true;
+                continue;
+            }
+
+            if (line == "<!-- supported-tfms:end -->")
+            {
+                break;
+            }
+
+            if (!insideTable || !line.StartsWith("| `", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var cells = line.Split('|', StringSplitOptions.TrimEntries);
+            var package = cells[1].Trim('`');
+            var targets = Regex.Matches(cells[2], "`([^`]+)`")
+                .Select(static match => match.Groups[1].Value)
+                .ToHashSet(StringComparer.Ordinal);
+            rows.Add(package, targets);
+        }
+
+        return rows;
+    }
+
+    private static Dictionary<string, HashSet<string>> ReadPackableProjectTargets(string repositoryRoot) =>
+        Directory
+            .EnumerateFiles(Path.Combine(repositoryRoot, "src"), "*.csproj", SearchOption.AllDirectories)
+            .Select(static path => (Path: path, Project: XDocument.Load(path)))
+            .Where(static item => IsPackableProject(item.Project))
+            .ToDictionary(
+                static item => Path.GetFileNameWithoutExtension(item.Path),
+                static item => item.Project
+                    .Descendants()
+                    .Where(static element => element.Name.LocalName is "TargetFramework" or "TargetFrameworks")
+                    .SelectMany(static element => element.Value.Split(';', StringSplitOptions.RemoveEmptyEntries))
+                    .ToHashSet(StringComparer.Ordinal),
+                StringComparer.Ordinal);
+
+    private static bool IsPackableProject(XDocument project) =>
+        !string.Equals(
+            project.Descendants("IsPackable").FirstOrDefault()?.Value,
+            "false",
+            StringComparison.OrdinalIgnoreCase);
+
+    private static string DocumentationTypeName(Type type)
+    {
+        var marker = type.Name.IndexOf('`');
+        if (marker < 0)
+        {
+            return type.Name;
+        }
+
+        var arguments = string.Join(", ", type.GetGenericArguments().Select(static argument => argument.Name));
+        return $"{type.Name[..marker]}<{arguments}>";
     }
 
     private static string FindRepositoryRoot()

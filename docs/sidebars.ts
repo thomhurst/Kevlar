@@ -42,6 +42,9 @@ const sidebars: SidebarsConfig = {
     'performance',
     'benchmarks',
     'stress-tests',
+    'support-policy',
+    'thread-safety',
+    'faq',
   ],
 };
 

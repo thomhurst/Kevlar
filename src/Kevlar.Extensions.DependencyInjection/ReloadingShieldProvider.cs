@@ -2,17 +2,35 @@ using Microsoft.Extensions.Primitives;
 
 namespace Kevlar.Extensions.DependencyInjection;
 
-internal sealed class ReloadingShieldProvider : IShieldProvider, IDisposable
+internal sealed class ReloadingShieldProvider(
+    Func<Shield> factory,
+    Func<IChangeToken> reloadTokenFactory,
+    Action<Exception>? onReloadFailure)
+    : ReloadingProvider<Shield>(factory, reloadTokenFactory, onReloadFailure), IShieldProvider
+{
+}
+
+internal sealed class ReloadingShieldProvider<TResult>(
+    Func<Shield<TResult>> factory,
+    Func<IChangeToken> reloadTokenFactory,
+    Action<Exception>? onReloadFailure)
+    : ReloadingProvider<Shield<TResult>>(factory, reloadTokenFactory, onReloadFailure),
+        IShieldProvider<TResult>
+{
+}
+
+internal abstract class ReloadingProvider<TShield> : IDisposable
+    where TShield : class
 {
     private readonly object _reloadLock = new();
-    private readonly Func<Shield> _factory;
+    private readonly Func<TShield> _factory;
     private readonly Action<Exception>? _onReloadFailure;
     private readonly IDisposable _subscription;
-    private Shield _current;
+    private TShield _current = null!;
     private bool _disposed;
 
-    public ReloadingShieldProvider(
-        Func<Shield> factory,
+    protected ReloadingProvider(
+        Func<TShield> factory,
         Func<IChangeToken> reloadTokenFactory,
         Action<Exception>? onReloadFailure)
     {
@@ -34,7 +52,7 @@ internal sealed class ReloadingShieldProvider : IShieldProvider, IDisposable
         }
     }
 
-    public Shield Current => Volatile.Read(ref _current);
+    public TShield Current => Volatile.Read(ref _current);
 
     public void Dispose()
     {

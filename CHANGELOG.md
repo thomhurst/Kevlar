@@ -16,6 +16,9 @@
 - Typed constant-value `Fallback(value)` is now `FallbackTo(value)` on `Shield<TResult>` and
   `ShieldBuilder<TResult>`. Delegate factories remain `Fallback(...)`. This makes null fallback
   values explicit and avoids ambiguity between value and delegate overloads.
+- `StandardHttpShieldOptions.CircuitBreaker` now uses
+  `CircuitBreakerOptions<HttpResponseMessage>`, exposing typed result predicates for the standard
+  HTTP breaker.
 
 Handling clauses now use one spelling per position. `When…` starts a clause on `Shield` or
 `Shield<TResult>`; only `Or…` continues it on a builder. `Shield.For<TResult>()` now returns
@@ -36,6 +39,7 @@ Handling clauses now use one spelling per position. `When…` starts a clause on
 | `StrategyKind.Hedging` | `StrategyKind.Hedge` |
 | `StandardHedgingShieldOptions` | `StandardHedgeShieldOptions` |
 | `AddStandardHedgingShield(...)` | `AddStandardHedgeShield(...)` |
+| `StandardHttpShieldOptions.CircuitBreaker` as `CircuitBreakerOptions` | `CircuitBreakerOptions<HttpResponseMessage>` |
 
 `OrWhen` is gone: `Or(Func<Exception, bool>)` now mirrors `When(Func<Exception, bool>)`, so the
 untyped predicate has the same spelling in both clause positions. `WhenDefault`/`OrDefault` were
@@ -56,6 +60,8 @@ build spelled these `WhenResultDefault`/`OrResultDefault`; the `Is` makes the re
 
 ### Changed
 
+- Named DI registrations now expose symmetric configuration overloads, typed
+  `IShieldProvider<TResult>` snapshots, and `AddReloadingShield<TResult>`.
 - Handling-clause builders now match their shield counterparts for configured timeouts, direct
   custom strategies, and void fallbacks that do not need the handled exception.
 - Every NuGet package now embeds the canonical Kevlar icon, links release notes, and carries a

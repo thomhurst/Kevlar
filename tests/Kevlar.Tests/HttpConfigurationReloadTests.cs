@@ -108,6 +108,8 @@ public class HttpConfigurationReloadTests
         await Assert.That(bound.CircuitBreaker.MinimumThroughput).IsEqualTo(5);
         await Assert.That(bound.CircuitBreaker.SamplingWindow).IsEqualTo(TimeSpan.FromSeconds(8));
         await Assert.That(bound.CircuitBreaker.BreakDuration).IsEqualTo(TimeSpan.FromSeconds(4));
+        await Assert.That(bound.CircuitBreaker)
+            .IsTypeOf<CircuitBreakerOptions<HttpResponseMessage>>();
         await Assert.That(bound.ConcurrencyLimit!.MaxConcurrency).IsEqualTo(3);
         await Assert.That(bound.ConcurrencyLimit.QueueLimit).IsEqualTo(4);
         await Assert.That(bound.AttemptTimeout.Timeout).IsEqualTo(TimeSpan.FromSeconds(2));

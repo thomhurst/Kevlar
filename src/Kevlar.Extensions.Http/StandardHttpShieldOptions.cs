@@ -20,7 +20,7 @@ public sealed class StandardHttpShieldOptions
     /// Configures the circuit breaker. Defaults to a 50% failure ratio over 30 seconds, with a
     /// minimum throughput of 10 and a 15-second break.
     /// </summary>
-    public CircuitBreakerOptions CircuitBreaker { get; set; } = new()
+    public CircuitBreakerOptions<HttpResponseMessage> CircuitBreaker { get; set; } = new()
     {
         FailureRatio = 0.5,
     };

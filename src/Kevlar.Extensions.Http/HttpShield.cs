@@ -213,7 +213,7 @@ public static class HttpShield
     }
 
     private static void Copy(
-        CircuitBreakerOptions source,
+        CircuitBreakerOptions<HttpResponseMessage> source,
         CircuitBreakerOptions<HttpResponseMessage> target)
     {
         target.ConsecutiveFailures = source.ConsecutiveFailures;
@@ -223,6 +223,7 @@ public static class HttpShield
         target.BreakDuration = source.BreakDuration;
         target.BreakDurationGenerator = source.BreakDurationGenerator;
         target.HandlesException = source.HandlesException;
+        target.HandlesResult = source.HandlesResult;
         target.Monitor = source.Monitor;
         target.OnStateChanged = source.OnStateChanged;
         target.OnStateChangedAsync = source.OnStateChangedAsync;
