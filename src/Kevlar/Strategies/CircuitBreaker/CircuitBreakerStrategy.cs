@@ -18,7 +18,8 @@ internal sealed class CircuitBreakerStrategy : Strategy
             options.HasHandlingOverride,
             options.BreakDurationGenerator is null
                 ? null
-                : CircuitBreakerBreakDurationGenerator.Create(options.BreakDurationGenerator))
+                : CircuitBreakerBreakDurationGenerator.Create(options.BreakDurationGenerator),
+            options.GetType())
     {
     }
 
@@ -26,12 +27,14 @@ internal sealed class CircuitBreakerStrategy : Strategy
         CircuitBreakerOptions options,
         OutcomeJudge judge,
         bool hasHandlingOverride,
-        CircuitBreakerBreakDurationGenerator? breakDurationGenerator)
+        CircuitBreakerBreakDurationGenerator? breakDurationGenerator,
+        Type optionsType)
     {
         _core = new CircuitBreakerCore(
             options,
             breakDurationGenerator,
-            RecordTransitionState);
+            RecordTransitionState,
+            optionsType);
         _judge = judge;
         HasHandlingOverride = hasHandlingOverride;
     }
@@ -45,7 +48,8 @@ internal sealed class CircuitBreakerStrategy : Strategy
             options.HasHandlingOverride,
             options.BreakDurationGenerator is null
                 ? null
-                : CircuitBreakerBreakDurationGenerator.Create(options.BreakDurationGenerator));
+                : CircuitBreakerBreakDurationGenerator.Create(options.BreakDurationGenerator),
+            options.GetType());
 
     internal override OutcomeJudge? ReactiveJudge => _judge;
 

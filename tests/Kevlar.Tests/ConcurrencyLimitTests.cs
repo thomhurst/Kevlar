@@ -24,11 +24,11 @@ public class BulkheadTests
     {
         await Assert.That(() => Shield.ConcurrencyLimit(maxConcurrency: 0))
             .Throws<ArgumentOutOfRangeException>()
-            .WithMessage("MaxConcurrency must be positive. (Parameter 'options')");
+            .WithMessage("MaxConcurrency must be positive. (Parameter 'maxConcurrency')");
 
         await Assert.That(() => Shield.ConcurrencyLimit(maxConcurrency: 1, queueLimit: -1))
             .Throws<ArgumentOutOfRangeException>()
-            .WithMessage("QueueLimit must not be negative. (Parameter 'options')");
+            .WithMessage("QueueLimit must not be negative. (Parameter 'queueLimit')");
     }
 
     [Test]

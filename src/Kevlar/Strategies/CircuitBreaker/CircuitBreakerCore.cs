@@ -28,6 +28,7 @@ internal sealed class CircuitBreakerCore
     private readonly Action<CircuitBreakerStateChangedEvent>? _onStateChanged;
     private readonly Func<CircuitBreakerStateChangedEvent, ValueTask>? _onStateChangedAsync;
     private readonly CircuitBreakerMonitor? _monitor;
+    private readonly Type _optionsType;
     private readonly Queue<TransitionPublication> _pendingTransitions = new();
     private readonly AsyncLocal<TransitionPublication?>? _ambientPublication;
 
@@ -53,23 +54,48 @@ internal sealed class CircuitBreakerCore
     public CircuitBreakerCore(
         CircuitBreakerOptions options,
         CircuitBreakerBreakDurationGenerator? breakDurationGenerator,
-        Action<CircuitState> recordState)
+        Action<CircuitState> recordState,
+        Type optionsType)
     {
-        Throw.IfOutOfRange(options.ConsecutiveFailures is <= 0, nameof(options.ConsecutiveFailures), "ConsecutiveFailures must be positive.");
-        Throw.IfOutOfRange(
+        ConfigurationValidation.ThrowIf(
+            options.ConsecutiveFailures is <= 0,
+            optionsType,
+            nameof(options.ConsecutiveFailures),
+            options.ConsecutiveFailures,
+            "must be positive when set");
+        ConfigurationValidation.ThrowIf(
             options.FailureRatio is { } ratio && (double.IsNaN(ratio) || ratio <= 0 || ratio > 1),
+            optionsType,
             nameof(options.FailureRatio),
-            "FailureRatio must be between 0 (exclusive) and 1 (inclusive).");
-        Throw.IfOutOfRange(
+            options.FailureRatio,
+            "must be between 0 (exclusive) and 1 (inclusive)");
+        ConfigurationValidation.ThrowIf(
             options.ConsecutiveFailures is not null && options.FailureRatio is not null,
-            nameof(options),
-            "ConsecutiveFailures and FailureRatio select different trip modes and cannot both be set. " +
-            "Clear ConsecutiveFailures to trip on the failure ratio within SamplingWindow, clear " +
+            optionsType,
+            $"{nameof(options.ConsecutiveFailures)} and {nameof(options.FailureRatio)}",
+            $"{options.ConsecutiveFailures} and {options.FailureRatio}",
+            "select different trip modes and cannot both be set; " +
+            "Clear ConsecutiveFailures to trip on the failure ratio within SamplingWindow or clear " +
             "FailureRatio to trip on consecutive failures, or leave both unset to trip after 5 " +
-            "consecutive failures.");
-        Throw.IfOutOfRange(options.MinimumThroughput < 1, nameof(options), "MinimumThroughput must be at least 1.");
-        Throw.IfOutOfRange(options.SamplingWindow <= TimeSpan.Zero, nameof(options), "SamplingWindow must be positive.");
-        Throw.IfOutOfRange(options.BreakDuration <= TimeSpan.Zero, nameof(options), "BreakDuration must be positive.");
+            "consecutive failures");
+        ConfigurationValidation.ThrowIf(
+            options.MinimumThroughput < 1,
+            optionsType,
+            nameof(options.MinimumThroughput),
+            options.MinimumThroughput,
+            "must be at least 1");
+        ConfigurationValidation.ThrowIf(
+            options.SamplingWindow <= TimeSpan.Zero,
+            optionsType,
+            nameof(options.SamplingWindow),
+            options.SamplingWindow,
+            "must be positive");
+        ConfigurationValidation.ThrowIf(
+            options.BreakDuration <= TimeSpan.Zero,
+            optionsType,
+            nameof(options.BreakDuration),
+            options.BreakDuration,
+            "must be positive");
 
         _failureRatio = options.FailureRatio;
         _consecutiveFailureLimit = options.FailureRatio is null ? options.ConsecutiveFailures ?? 5 : null;
@@ -82,6 +108,7 @@ internal sealed class CircuitBreakerCore
         _breakDurationGenerator = breakDurationGenerator;
         _onStateChanged = options.OnStateChanged;
         _onStateChangedAsync = options.OnStateChangedAsync;
+        _optionsType = optionsType;
         _ambientPublication = options.OnStateChangedAsync is null
             ? null
             : new AsyncLocal<TransitionPublication?>();
@@ -537,11 +564,13 @@ internal sealed class CircuitBreakerCore
         _openingGeneration++;
     }
 
-    private static void ValidateGeneratedBreakDuration(TimeSpan duration) =>
-        Throw.IfOutOfRange(
+    private void ValidateGeneratedBreakDuration(TimeSpan duration) =>
+        ConfigurationValidation.ThrowIf(
             duration <= TimeSpan.Zero,
-            nameof(duration),
-            "Generated break duration must be positive.");
+            _optionsType,
+            nameof(CircuitBreakerOptions.BreakDurationGenerator),
+            duration,
+            "must return a positive duration");
 
     private readonly record struct OpeningReservation(
         long Generation,

@@ -42,6 +42,10 @@ Configure either `ConsecutiveFailures` *or* `FailureRatio` — not both. When ne
 | `HandlesException` | — | Local exception predicate; replaces the ambient clause for this breaker |
 | `HandlesResult` (`CircuitBreakerOptions<T>`) | — | Local result predicate on `Shield<T>`; replaces the ambient clause together with `HandlesException` |
 
+Invalid option values throw [`KevlarConfigurationException`](../exceptions.md#configuration-failures)
+and identify the options type, property, and offending value. This also applies when
+`BreakDurationGenerator` returns a non-positive duration.
+
 ### Dynamic break duration
 
 Use `BreakDurationGenerator` when the dependency supplies a recovery hint or different failures need different cooling periods:

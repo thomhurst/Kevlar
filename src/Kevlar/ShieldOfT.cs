@@ -103,7 +103,11 @@ public sealed class Shield<TResult>
     /// The number of <em>retries</em>, not the number of attempts: <c>Retry(3)</c> makes up to 4
     /// total attempts — the initial call plus 3 retries.
     /// </param>
-    public Shield<TResult> Retry(int maxRetries = 3) => Retry(options => options.MaxRetries = maxRetries);
+    public Shield<TResult> Retry(int maxRetries = 3)
+    {
+        Throw.IfOutOfRange(maxRetries < 0, nameof(maxRetries), "Max retries must not be negative.");
+        return Retry(options => options.MaxRetries = maxRetries);
+    }
 
     /// <summary>Retries handled outcomes up to <paramref name="maxRetries"/> times with the given backoff.</summary>
     /// <param name="maxRetries">
@@ -111,11 +115,16 @@ public sealed class Shield<TResult>
     /// total attempts — the initial call plus 3 retries.
     /// </param>
     /// <param name="backoff">The delay computation applied between attempts.</param>
-    public Shield<TResult> Retry(int maxRetries, Backoff backoff) => Retry(options =>
+    public Shield<TResult> Retry(int maxRetries, Backoff backoff)
     {
-        options.MaxRetries = maxRetries;
-        options.Backoff = backoff;
-    });
+        Throw.IfOutOfRange(maxRetries < 0, nameof(maxRetries), "Max retries must not be negative.");
+        Throw.IfNull(backoff, nameof(backoff));
+        return Retry(options =>
+        {
+            options.MaxRetries = maxRetries;
+            options.Backoff = backoff;
+        });
+    }
 
     /// <summary>
     /// Adds a retry strategy configured via <paramref name="configure"/>. The options expose
@@ -152,7 +161,12 @@ public sealed class Shield<TResult>
     }
 
     /// <summary>Cancels executions that exceed <paramref name="timeout"/>, surfacing <see cref="TimeoutExceededException"/>.</summary>
-    public Shield<TResult> Timeout(TimeSpan timeout) => Timeout(options => options.Timeout = timeout);
+    public Shield<TResult> Timeout(TimeSpan timeout)
+    {
+        Throw.IfOutOfRange(timeout <= TimeSpan.Zero, nameof(timeout), "Timeout must be positive.");
+        Throw.IfOutOfRange(timeout > DelayHelper.MaximumDelay, nameof(timeout), "Timeout exceeds the runtime timer limit.");
+        return Timeout(options => options.Timeout = timeout);
+    }
 
     /// <summary>Adds a timeout strategy configured via <paramref name="configure"/>.</summary>
     public Shield<TResult> Timeout(Action<TimeoutOptions> configure)
@@ -164,11 +178,16 @@ public sealed class Shield<TResult>
     }
 
     /// <summary>Breaks the circuit for <paramref name="breakDuration"/> after <paramref name="consecutiveFailures"/> consecutive handled outcomes.</summary>
-    public Shield<TResult> CircuitBreaker(int consecutiveFailures, TimeSpan breakDuration) => CircuitBreaker(options =>
+    public Shield<TResult> CircuitBreaker(int consecutiveFailures, TimeSpan breakDuration)
     {
-        options.ConsecutiveFailures = consecutiveFailures;
-        options.BreakDuration = breakDuration;
-    });
+        Throw.IfOutOfRange(consecutiveFailures <= 0, nameof(consecutiveFailures), "Consecutive failures must be positive.");
+        Throw.IfOutOfRange(breakDuration <= TimeSpan.Zero, nameof(breakDuration), "Break duration must be positive.");
+        return CircuitBreaker(options =>
+        {
+            options.ConsecutiveFailures = consecutiveFailures;
+            options.BreakDuration = breakDuration;
+        });
+    }
 
     /// <summary>Adds a circuit breaker strategy configured via <paramref name="configure"/>.</summary>
     public Shield<TResult> CircuitBreaker(Action<CircuitBreakerOptions<TResult>> configure)
@@ -181,11 +200,16 @@ public sealed class Shield<TResult>
     }
 
     /// <summary>Limits throughput to <paramref name="permits"/> executions per <paramref name="perWindow"/> (token bucket).</summary>
-    public Shield<TResult> RateLimit(int permits, TimeSpan perWindow) => RateLimit(options =>
+    public Shield<TResult> RateLimit(int permits, TimeSpan perWindow)
     {
-        options.Permits = permits;
-        options.Window = perWindow;
-    });
+        Throw.IfOutOfRange(permits <= 0, nameof(permits), "Permits must be positive.");
+        Throw.IfOutOfRange(perWindow <= TimeSpan.Zero, nameof(perWindow), "Window must be positive.");
+        return RateLimit(options =>
+        {
+            options.Permits = permits;
+            options.Window = perWindow;
+        });
+    }
 
     /// <summary>Adds a rate limit strategy configured via <paramref name="configure"/>.</summary>
     public Shield<TResult> RateLimit(Action<RateLimitOptions> configure)
@@ -197,11 +221,16 @@ public sealed class Shield<TResult>
     }
 
     /// <summary>Caps concurrent executions at <paramref name="maxConcurrency"/> with an optional wait queue.</summary>
-    public Shield<TResult> ConcurrencyLimit(int maxConcurrency, int queueLimit = 0) => ConcurrencyLimit(options =>
+    public Shield<TResult> ConcurrencyLimit(int maxConcurrency, int queueLimit = 0)
     {
-        options.MaxConcurrency = maxConcurrency;
-        options.QueueLimit = queueLimit;
-    });
+        Throw.IfOutOfRange(maxConcurrency <= 0, nameof(maxConcurrency), "MaxConcurrency must be positive.");
+        Throw.IfOutOfRange(queueLimit < 0, nameof(queueLimit), "QueueLimit must not be negative.");
+        return ConcurrencyLimit(options =>
+        {
+            options.MaxConcurrency = maxConcurrency;
+            options.QueueLimit = queueLimit;
+        });
+    }
 
     /// <summary>Adds a concurrency limit strategy configured via <paramref name="configure"/>.</summary>
     public Shield<TResult> ConcurrencyLimit(Action<ConcurrencyLimitOptions> configure)
@@ -213,11 +242,20 @@ public sealed class Shield<TResult>
     }
 
     /// <summary>Races up to <paramref name="maxAttempts"/> concurrent attempts staggered by <paramref name="delay"/>; first acceptable outcome wins.</summary>
-    public Shield<TResult> Hedge(int maxAttempts, TimeSpan delay) => Hedge(options =>
+    public Shield<TResult> Hedge(int maxAttempts, TimeSpan delay)
     {
-        options.MaxAttempts = maxAttempts;
-        options.Delay = delay;
-    });
+        Throw.IfOutOfRange(maxAttempts < 1, nameof(maxAttempts), "Maximum attempts must be at least 1.");
+        Throw.IfOutOfRange(
+            delay < TimeSpan.Zero && delay != System.Threading.Timeout.InfiniteTimeSpan,
+            nameof(delay),
+            "Delay must be non-negative or Timeout.InfiniteTimeSpan.");
+        Throw.IfOutOfRange(delay > DelayHelper.MaximumDelay, nameof(delay), "Delay exceeds the runtime timer limit.");
+        return Hedge(options =>
+        {
+            options.MaxAttempts = maxAttempts;
+            options.Delay = delay;
+        });
+    }
 
     /// <summary>Adds a hedging strategy configured via <paramref name="configure"/>.</summary>
     public Shield<TResult> Hedge(Action<HedgeOptions<TResult>> configure)

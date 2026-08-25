@@ -15,15 +15,34 @@ internal sealed class HedgingStrategy : Strategy
     private readonly HedgeActionGenerator? _actionGenerator;
 
     public HedgingStrategy(HedgeOptions options, OutcomeJudge judge)
-        : this(options, judge, options.HasHandlingOverride)
+        : this(options, judge, options.HasHandlingOverride, options.GetType())
     {
     }
 
-    private HedgingStrategy(HedgeOptions options, OutcomeJudge judge, bool hasHandlingOverride)
+    private HedgingStrategy(
+        HedgeOptions options,
+        OutcomeJudge judge,
+        bool hasHandlingOverride,
+        Type optionsType)
     {
-        Throw.IfOutOfRange(options.MaxAttempts < 1, nameof(options), "MaxAttempts must be at least 1.");
-        Throw.IfOutOfRange(options.Delay < TimeSpan.Zero && options.Delay != System.Threading.Timeout.InfiniteTimeSpan, nameof(options), "Delay must be non-negative or Timeout.InfiniteTimeSpan.");
-        Throw.IfOutOfRange(options.Delay > DelayHelper.MaximumDelay, nameof(options.Delay), "Delay exceeds the runtime timer limit.");
+        ConfigurationValidation.ThrowIf(
+            options.MaxAttempts < 1,
+            optionsType,
+            nameof(options.MaxAttempts),
+            options.MaxAttempts,
+            "must be at least 1");
+        ConfigurationValidation.ThrowIf(
+            options.Delay < TimeSpan.Zero && options.Delay != System.Threading.Timeout.InfiniteTimeSpan,
+            optionsType,
+            nameof(options.Delay),
+            options.Delay,
+            "must be non-negative or Timeout.InfiniteTimeSpan");
+        ConfigurationValidation.ThrowIf(
+            options.Delay > DelayHelper.MaximumDelay,
+            optionsType,
+            nameof(options.Delay),
+            options.Delay,
+            "must not exceed the runtime timer limit");
 
         _judge = judge;
         _maxAttempts = options.MaxAttempts;
@@ -43,7 +62,8 @@ internal sealed class HedgingStrategy : Strategy
                     ? null
                     : HedgeActionGenerator.Create(options.ActionGenerator)),
             judge,
-            options.HasHandlingOverride);
+            options.HasHandlingOverride,
+            options.GetType());
 
     internal void ValidateResultType(Type resultType) => _actionGenerator?.ValidateResultType(resultType);
 

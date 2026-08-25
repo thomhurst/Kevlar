@@ -75,6 +75,9 @@ build spelled these `WhenResultDefault`/`OrResultDefault`; the `Is` makes the re
 - Hedging now supports synchronous and asynchronous per-attempt delay generators with access to
   the attempt number, execution context, and elapsed time. Standard endpoint-aware HTTP hedging
   exposes the same adaptive delay hooks, and `Kevlar.Testing` reports whether one is configured.
+- Invalid values supplied through strategy options now throw
+  `KevlarConfigurationException`, while direct shorthand overloads continue to throw
+  `ArgumentOutOfRangeException` with the invoked public parameter name.
 - Named DI registrations now expose symmetric configuration overloads, typed
   `IShieldProvider<TResult>` snapshots, and `AddReloadingShield<TResult>`.
 - Handling-clause builders now match their shield counterparts for configured timeouts, direct
