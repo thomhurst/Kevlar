@@ -217,6 +217,9 @@ $deadApiPatterns = @(
     '\bmaxQueue\b'
     '\bMaxQueue\b'
     '\bKevlar\.Extensions\.DependencyInjection\.BackoffKind\b'
+    '\bRetryEvent\.Attempt\b'
+    '\bRetryEvent<[^>]+>\.Attempt\b'
+    '\bHedgeEvent\.Attempt\b'
 )
 $deadApiPattern = [regex]($deadApiPatterns -join '|')
 $documents = @($changelogPath, (Join-Path $repositoryRoot 'README.md')) + @(
