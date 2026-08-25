@@ -4,6 +4,10 @@
 
 ### Breaking changes
 
+- `HedgeOptions<TResult>.ActionGenerator` is now a strongly typed delegate. Assign the generator
+  directly instead of wrapping it with `HedgeActionGenerator.Create<TResult>(...)`; the erased
+  wrapper remains available on untyped `HedgeOptions`. Typed generator events now expose the latest
+  available `Outcome<TResult>`.
 - Untyped `Fallback(...)` continues to return `Shield`. The pre-release `VoidShield`,
   `VoidShieldBuilder`, and `PartitionedVoidShield<TKey>` types and their satellite overloads were
   removed. Result-returning execution through a void fallback is guarded by the restored `KEV005`

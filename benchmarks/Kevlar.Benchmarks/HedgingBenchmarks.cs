@@ -39,8 +39,7 @@ public class HedgingBenchmarks
     {
         options.MaxAttempts = 2;
         options.Delay = TimeSpan.Zero;
-        options.ActionGenerator = HedgeActionGenerator.Create<int>(
-            static hedge => hedge.OriginalAction);
+        options.ActionGenerator = static hedge => hedge.OriginalAction;
     });
 
     private static readonly ResiliencePipeline<int> PollyHedge = new ResiliencePipelineBuilder<int>()

@@ -37,10 +37,11 @@ Shield.Hedge(o =>
 
 ### Selecting another target
 
-Use `HedgeActionGenerator.Create<TResult>` to send a hedge to a different replica without boxing
-the result. The generator runs after both hedge callbacks and receives the isolated attempt context.
-`OriginalAction` includes strategies nested inside the hedge, so returning it preserves the inner
-pipeline. Returning another operation replaces that inner pipeline for that attempt.
+Set the typed `ActionGenerator` to send a hedge to a different replica without boxing the result.
+The generator runs after both hedge callbacks and receives the isolated attempt context plus the
+latest handled outcome, when one is available. `OriginalAction` includes strategies nested inside
+the hedge, so returning it preserves the inner pipeline. Returning another operation replaces that
+inner pipeline for that attempt.
 
 ```csharp
 var replicas = new Func<CancellationToken, ValueTask<string>>[]
@@ -53,16 +54,16 @@ var shield = Shield.For<string>().Hedge(o =>
 {
     o.MaxAttempts = replicas.Length;
     o.Delay = TimeSpan.FromMilliseconds(100);
-    o.ActionGenerator = HedgeActionGenerator.Create<string>(hedge =>
-        ct => replicas[hedge.AttemptNumber - 1](ct));
+    o.ActionGenerator = hedge =>
+        ct => replicas[hedge.AttemptNumber - 1](ct);
 });
 
 // The original callback is attempt 1; generated callbacks are attempts 2 and 3.
 var response = await shield.ExecuteAsync(ct => replicas[0](ct));
 ```
 
-For a void execution, use the non-generic `HedgeActionGenerator.Create` overload. A generator must
-match the execution result type; a mismatch fails before the additional operation starts.
+For an untyped or void shield, use `HedgeActionGenerator.Create`. Lifting an untyped generator into
+a shield with a different result type fails while that typed shield is built.
 
 ### Special delay values
 
