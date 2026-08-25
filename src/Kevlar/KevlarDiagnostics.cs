@@ -73,16 +73,23 @@ public static class KevlarDiagnostics
             // Telemetry listeners are diagnostics too and cannot affect execution.
         }
 
-        Internal.KevlarTelemetry.Record(
-            context,
-            strategyName: "Callback",
-            eventName: "callback_error",
-            KevlarTelemetrySeverity.Error,
-            context.StrategyIndex,
-            context.AttemptNumber,
-            isSuccess: false,
-            exception,
-            callbackKind: kind);
+        try
+        {
+            Internal.KevlarTelemetry.Record(
+                context,
+                strategyName: "Callback",
+                eventName: "callback_error",
+                KevlarTelemetrySeverity.Error,
+                context.StrategyIndex,
+                context.AttemptNumber,
+                isSuccess: false,
+                exception,
+                callbackKind: kind);
+        }
+        catch
+        {
+            // Telemetry listeners are diagnostics too and cannot affect execution.
+        }
 
         var callbackError = new CallbackErrorEvent(
             kind,

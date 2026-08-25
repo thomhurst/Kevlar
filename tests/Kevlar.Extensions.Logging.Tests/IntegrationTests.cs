@@ -136,6 +136,32 @@ public class IntegrationTests
         await Assert.That(retry.GetStructuredStateValue("ShieldName")).IsEqualTo("selected");
     }
 
+    [Test]
+    [NotInParallel]
+    public async Task AddKevlarLogging_Decorates_Partition_Selected_Shields()
+    {
+        var logs = new FakeLoggerProvider();
+        var partitions = new PartitionedShield<string, HttpResponseMessage>(
+            static _ => HttpShield.WhenTransient().Retry(1, Backoff.None));
+        var services = new ServiceCollection();
+        services.AddLogging(builder => builder.AddProvider(logs));
+        services.AddKevlarLogging();
+        services.AddHttpClient("partitioned")
+            .ConfigurePrimaryHttpMessageHandler(() => new SequenceHandler(
+                HttpStatusCode.InternalServerError,
+                HttpStatusCode.OK))
+            .AddShield(partitions, static _ => "tenant");
+        using var provider = services.BuildServiceProvider();
+        var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("partitioned");
+
+        using var response = await client.GetAsync("https://example.test/partitioned");
+
+        var retry = logs.Collector.GetSnapshot()
+            .Single(record => record.Id == new EventId(1001, "Retry"));
+        await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
+        await Assert.That(retry.GetStructuredStateValue("ShieldName")).IsEqualTo("partitioned");
+    }
+
     private static ValueTask<int> Fail(CancellationToken _) =>
         new(Task.FromException<int>(new TestException("failure")));
 

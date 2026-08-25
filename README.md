@@ -158,7 +158,7 @@ configuration-bound shields and `IKevlarRegistry`.
 | [`Kevlar.Chaos`](https://www.nuget.org/packages/Kevlar.Chaos) | Controlled latency, faults, outcomes and custom behaviour |
 | [`Kevlar.Extensions.DependencyInjection`](https://www.nuget.org/packages/Kevlar.Extensions.DependencyInjection) | Named and configuration-bound shields for Microsoft DI |
 | [`Kevlar.Extensions.Http`](https://www.nuget.org/packages/Kevlar.Extensions.Http) | `HttpClientFactory` integration, request replay and transient-fault handling |
-| [`Kevlar.Extensions.Logging`](docs/docs/logging.md) | Structured `ILogger` events for every built-in strategy |
+| [`Kevlar.Extensions.Logging`](https://www.nuget.org/packages/Kevlar.Extensions.Logging) | Structured `ILogger` events for every built-in strategy |
 | [`Kevlar.Extensions.Grpc`](https://www.nuget.org/packages/Kevlar.Extensions.Grpc) | gRPC client resilience for unary and streaming calls |
 | [`Kevlar.Extensions.RateLimiting`](https://www.nuget.org/packages/Kevlar.Extensions.RateLimiting) | Adapters for `System.Threading.RateLimiting` and custom leases |
 | [`Kevlar.Analyzers`](https://www.nuget.org/packages/Kevlar.Analyzers) | Compile-time checks for common resilience mistakes |

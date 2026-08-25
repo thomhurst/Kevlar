@@ -109,9 +109,13 @@ public static class ShieldHttpClientBuilderExtensions
             throw new ArgumentNullException(nameof(keySelector));
         }
 
-        return builder.AddHttpMessageHandler(() =>
+        return builder.AddHttpMessageHandler(services =>
             new ShieldDelegatingHandler(
-                request => partitions.GetShieldAsync(keySelector(request)),
+                request => GetDecoratedPartitionAsync(
+                    services,
+                    partitions,
+                    keySelector(request),
+                    builder.Name),
                 new ShieldHttpHandlerOptions()));
     }
 
@@ -407,6 +411,17 @@ public static class ShieldHttpClientBuilderExtensions
 
         return shield;
     }
+
+    private static async ValueTask<Shield<TResult>> GetDecoratedPartitionAsync<TKey, TResult>(
+        IServiceProvider serviceProvider,
+        PartitionedShield<TKey, TResult> partitions,
+        TKey key,
+        string? name)
+        where TKey : notnull =>
+        Decorate(
+            serviceProvider,
+            await partitions.GetShieldAsync(key).ConfigureAwait(false),
+            name);
 
     private static void ValidateHedgeConfiguration(IConfiguration configuration)
     {

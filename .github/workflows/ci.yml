@@ -86,6 +86,7 @@ jobs:
             --max-retries 3 --retry-wait-time 2
             --exclude 'https://github\.com/thomhurst/Kevlar/blob/main/(CONTRIBUTING|SECURITY|CODE_OF_CONDUCT)\.md'
             --exclude '^https://github\.com/thomhurst/Kevlar/tree/main/samples/'
+            --exclude '^https://www\.nuget\.org/packages/Kevlar\.Extensions\.Logging/?$'
             README.md CONTRIBUTING.md SECURITY.md CODE_OF_CONDUCT.md "docs/docs/**/*.md"
           fail: true
           failIfEmpty: true
