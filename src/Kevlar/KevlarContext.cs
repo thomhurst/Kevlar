@@ -110,13 +110,20 @@ public sealed class KevlarContext
     internal KevlarProperties PropertiesForCompletion =>
         _hasCompletionProperties ? _completionProperties! : _properties;
 
-    internal void CaptureCompletionProperties(KevlarProperties properties)
+    internal void CaptureCompletionProperties(
+        KevlarProperties properties,
+        KevlarProperties? baseline = null)
     {
         lock (_completionPropertiesLock)
         {
             _completionProperties ??= new KevlarProperties();
             _completionProperties.Clear();
             properties.CopyTo(_completionProperties);
+            if (baseline is not null)
+            {
+                _properties.ApplyChangesSince(baseline, _completionProperties);
+            }
+
             _properties.MirrorMutationsTo(_completionProperties);
             _hasCompletionProperties = true;
         }

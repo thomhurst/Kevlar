@@ -461,7 +461,7 @@ internal sealed class HedgingStrategy : Strategy
 
         if (!execution.IsCompletedSuccessfully)
         {
-            return AwaitOriginalResultAsync(execution, invocationContext, attemptContext, lifetime);
+            return AwaitOriginalResultAsync(execution, invocationContext, lifetime);
         }
 
         try
@@ -470,7 +470,7 @@ internal sealed class HedgingStrategy : Strategy
         }
         finally
         {
-            attemptContext.CaptureCompletionProperties(invocationContext.PropertiesForCompletion);
+            lifetime.CaptureCompletionProperties(invocationContext.PropertiesForCompletion);
             KevlarContext.Return(invocationContext);
             lifetime.Release();
         }
@@ -485,7 +485,6 @@ internal sealed class HedgingStrategy : Strategy
     private static async ValueTask<T> AwaitOriginalResultAsync<T>(
         ValueTask<Outcome<T>> execution,
         KevlarContext invocationContext,
-        KevlarContext attemptContext,
         HedgeAttemptLifetime lifetime)
     {
         try
@@ -495,7 +494,7 @@ internal sealed class HedgingStrategy : Strategy
         }
         finally
         {
-            attemptContext.CaptureCompletionProperties(invocationContext.PropertiesForCompletion);
+            lifetime.CaptureCompletionProperties(invocationContext.PropertiesForCompletion);
             KevlarContext.Return(invocationContext);
             lifetime.Release();
         }
@@ -688,6 +687,7 @@ internal sealed class HedgingStrategy : Strategy
         private static readonly ObjectPool<HedgeAttemptLifetime, PoolPolicy> Pool = new(
             maxCapacity: KevlarContext.PoolCapacity);
 
+        private readonly KevlarProperties _initialProperties = new();
         private KevlarContext? _context;
         private object? _lease;
         private CancellationTokenRegistration _parentRegistration;
@@ -712,8 +712,13 @@ internal sealed class HedgingStrategy : Strategy
         public void Attach(KevlarContext context, object lease)
         {
             _context = context;
+            _initialProperties.Clear();
+            context.Properties.CopyTo(_initialProperties);
             Volatile.Write(ref _lease, lease);
         }
+
+        public void CaptureCompletionProperties(KevlarProperties properties) =>
+            Context.CaptureCompletionProperties(properties, _initialProperties);
 
         public bool TryRetain(object lease)
         {

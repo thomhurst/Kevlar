@@ -5,6 +5,9 @@ namespace Kevlar.Tests;
 public class HedgingActionGeneratorTests
 {
     private static readonly KevlarKey<int> ConcurrentOriginalAction = new("concurrent-original-action");
+    private static readonly KevlarKey<int> GeneratedContextRemoval = new("generated-context-removal");
+    private static readonly KevlarKey<int> GeneratedContextWrite = new("generated-context-write");
+    private static readonly KevlarKey<int> OriginalContextWrite = new("original-context-write");
 
     [Test]
     public async Task Typed_Generator_Selects_A_Distinct_Action()
@@ -694,6 +697,59 @@ public class HedgingActionGeneratorTests
 
         await Assert.That(result).IsEqualTo(42);
         await Assert.That(observedToken).IsEqualTo(cancellation.Token);
+    }
+
+    [Test]
+    public async Task Original_Action_Preserves_Later_Generator_Context_Writes()
+    {
+        var releaseOriginal = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var observedGeneratedProperty = 0;
+        var observedOriginalProperty = 0;
+        var retainedRemovedProperty = false;
+        var attempts = 0;
+        var shield = Shield.For<int>().Hedge(options =>
+        {
+            options.MaxAttempts = 2;
+            options.Delay = Timeout.InfiniteTimeSpan;
+            options.ActionGenerator = hedge =>
+            {
+                var original = hedge.OriginalAction(hedge.Context.CancellationToken).AsTask();
+                hedge.Context.Properties.Set(GeneratedContextWrite, 42);
+                hedge.Context.Properties.Remove(GeneratedContextRemoval);
+                return async _ =>
+                {
+                    releaseOriginal.SetResult();
+                    return await original;
+                };
+            };
+        });
+
+        var result = await shield.ExecuteWithContextAsync(
+            0,
+            static (_, properties) => properties.Set(GeneratedContextRemoval, 99),
+            async (_, context) =>
+            {
+                if (Interlocked.Increment(ref attempts) == 1)
+                {
+                    throw new InvalidOperationException("primary");
+                }
+
+                await releaseOriginal.Task;
+                context.Properties.Set(OriginalContextWrite, 43);
+                return 42;
+            },
+            (_, properties) =>
+            {
+                observedGeneratedProperty = properties.GetOrDefault(GeneratedContextWrite);
+                observedOriginalProperty = properties.GetOrDefault(OriginalContextWrite);
+                retainedRemovedProperty = properties.Contains(GeneratedContextRemoval);
+            });
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(observedGeneratedProperty).IsEqualTo(42);
+        await Assert.That(observedOriginalProperty).IsEqualTo(43);
+        await Assert.That(retainedRemovedProperty).IsFalse();
     }
 
     [Test]
