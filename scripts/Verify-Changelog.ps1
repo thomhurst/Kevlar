@@ -39,7 +39,7 @@ if ($unreleasedIndex -lt 0)
 
 $versionComponentPattern = '(?:0|[1-9][0-9]*)'
 $releasePattern = [regex]"^## \[(?<version>$versionComponentPattern\.$versionComponentPattern\.$versionComponentPattern)\] - (?<date>[0-9]{4}-[0-9]{2}-[0-9]{2})$"
-$versionHeadingCandidatePattern = [regex]'^##\s*\[?\s*[0-9]+\.[0-9]+\.[0-9]+'
+$versionHeadingCandidatePattern = [regex]'^##\s*\[?\s*v?\s*[0-9]+\.[0-9]+\.[0-9]+'
 $releases = [System.Collections.Generic.List[object]]::new()
 for ($index = 0; $index -lt $lines.Count; $index++)
 {
