@@ -1,21 +1,21 @@
 ### YamlMime:ManagedReference
 items:
-- uid: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent
-  commentId: T:Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent
-  id: RateLimiterRejectedEvent
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent
+  commentId: T:Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent
+  id: RateLimiterAdapterRejectedEvent
   parent: Kevlar.Extensions.RateLimiting
   children:
-  - Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.Context
-  - Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.Metadata
-  - Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.PermitCount
-  - Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.RetryAfter
-  - Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.StrategyIndex
+  - Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.Context
+  - Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.Metadata
+  - Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.PermitCount
+  - Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.RetryAfter
+  - Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.StrategyIndex
   langs:
   - csharp
   - vb
-  name: RateLimiterRejectedEvent
-  nameWithType: RateLimiterRejectedEvent
-  fullName: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent
+  name: RateLimiterAdapterRejectedEvent
+  nameWithType: RateLimiterAdapterRejectedEvent
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent
   type: Struct
   assemblies:
   - Kevlar.Extensions.RateLimiting
@@ -23,8 +23,8 @@ items:
   summary: Describes an execution rejected by an adapted rate limiter.
   example: []
   syntax:
-    content: public readonly struct RateLimiterRejectedEvent
-    content.vb: Public Structure RateLimiterRejectedEvent
+    content: public readonly struct RateLimiterAdapterRejectedEvent
+    content.vb: Public Structure RateLimiterAdapterRejectedEvent
   inheritedMembers:
   - System.ValueType.Equals(System.Object)
   - System.ValueType.GetHashCode
@@ -32,16 +32,16 @@ items:
   - System.Object.GetType
   - System.Object.Equals(System.Object,System.Object)
   - System.Object.ReferenceEquals(System.Object,System.Object)
-- uid: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.RetryAfter
-  commentId: P:Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.RetryAfter
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.RetryAfter
+  commentId: P:Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.RetryAfter
   id: RetryAfter
-  parent: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent
+  parent: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent
   langs:
   - csharp
   - vb
   name: RetryAfter
-  nameWithType: RateLimiterRejectedEvent.RetryAfter
-  fullName: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.RetryAfter
+  nameWithType: RateLimiterAdapterRejectedEvent.RetryAfter
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.RetryAfter
   type: Property
   assemblies:
   - Kevlar.Extensions.RateLimiting
@@ -54,17 +54,17 @@ items:
     return:
       type: System.Nullable{System.TimeSpan}
     content.vb: Public ReadOnly Property RetryAfter As TimeSpan?
-  overload: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.RetryAfter*
-- uid: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.Metadata
-  commentId: P:Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.Metadata
+  overload: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.RetryAfter*
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.Metadata
+  commentId: P:Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.Metadata
   id: Metadata
-  parent: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent
+  parent: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent
   langs:
   - csharp
   - vb
   name: Metadata
-  nameWithType: RateLimiterRejectedEvent.Metadata
-  fullName: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.Metadata
+  nameWithType: RateLimiterAdapterRejectedEvent.Metadata
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.Metadata
   type: Property
   assemblies:
   - Kevlar.Extensions.RateLimiting
@@ -77,17 +77,17 @@ items:
     return:
       type: System.Collections.Generic.IReadOnlyDictionary{System.String,System.Object}
     content.vb: Public ReadOnly Property Metadata As IReadOnlyDictionary(Of String, Object)
-  overload: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.Metadata*
-- uid: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.PermitCount
-  commentId: P:Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.PermitCount
+  overload: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.Metadata*
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.PermitCount
+  commentId: P:Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.PermitCount
   id: PermitCount
-  parent: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent
+  parent: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent
   langs:
   - csharp
   - vb
   name: PermitCount
-  nameWithType: RateLimiterRejectedEvent.PermitCount
-  fullName: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.PermitCount
+  nameWithType: RateLimiterAdapterRejectedEvent.PermitCount
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.PermitCount
   type: Property
   assemblies:
   - Kevlar.Extensions.RateLimiting
@@ -100,17 +100,17 @@ items:
     return:
       type: System.Int32
     content.vb: Public ReadOnly Property PermitCount As Integer
-  overload: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.PermitCount*
-- uid: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.StrategyIndex
-  commentId: P:Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.StrategyIndex
+  overload: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.PermitCount*
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.StrategyIndex
+  commentId: P:Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.StrategyIndex
   id: StrategyIndex
-  parent: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent
+  parent: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent
   langs:
   - csharp
   - vb
   name: StrategyIndex
-  nameWithType: RateLimiterRejectedEvent.StrategyIndex
-  fullName: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.StrategyIndex
+  nameWithType: RateLimiterAdapterRejectedEvent.StrategyIndex
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.StrategyIndex
   type: Property
   assemblies:
   - Kevlar.Extensions.RateLimiting
@@ -123,17 +123,17 @@ items:
     return:
       type: System.Int32
     content.vb: Public ReadOnly Property StrategyIndex As Integer
-  overload: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.StrategyIndex*
-- uid: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.Context
-  commentId: P:Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.Context
+  overload: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.StrategyIndex*
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.Context
+  commentId: P:Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.Context
   id: Context
-  parent: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent
+  parent: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent
   langs:
   - csharp
   - vb
   name: Context
-  nameWithType: RateLimiterRejectedEvent.Context
-  fullName: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.Context
+  nameWithType: RateLimiterAdapterRejectedEvent.Context
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.Context
   type: Property
   assemblies:
   - Kevlar.Extensions.RateLimiting
@@ -149,7 +149,7 @@ items:
     return:
       type: Kevlar.KevlarContext
     content.vb: Public ReadOnly Property Context As KevlarContext
-  overload: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.Context*
+  overload: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.Context*
 references:
 - uid: Kevlar.Extensions.RateLimiting
   commentId: N:Kevlar.Extensions.RateLimiting
@@ -405,13 +405,13 @@ references:
   name: System
   nameWithType: System
   fullName: System
-- uid: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.RetryAfter*
-  commentId: Overload:Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.RetryAfter
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.RetryAfter*
+  commentId: Overload:Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.RetryAfter
   isExternal: true
-  href: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.html#Kevlar_Extensions_RateLimiting_RateLimiterRejectedEvent_RetryAfter
+  href: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.html#Kevlar_Extensions_RateLimiting_RateLimiterAdapterRejectedEvent_RetryAfter
   name: RetryAfter
-  nameWithType: RateLimiterRejectedEvent.RetryAfter
-  fullName: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.RetryAfter
+  nameWithType: RateLimiterAdapterRejectedEvent.RetryAfter
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.RetryAfter
 - uid: System.Nullable{System.TimeSpan}
   commentId: T:System.Nullable{System.TimeSpan}
   parent: System
@@ -460,13 +460,13 @@ references:
   - name: " "
   - name: T
   - name: )
-- uid: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.Metadata*
-  commentId: Overload:Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.Metadata
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.Metadata*
+  commentId: Overload:Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.Metadata
   isExternal: true
-  href: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.html#Kevlar_Extensions_RateLimiting_RateLimiterRejectedEvent_Metadata
+  href: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.html#Kevlar_Extensions_RateLimiting_RateLimiterAdapterRejectedEvent_Metadata
   name: Metadata
-  nameWithType: RateLimiterRejectedEvent.Metadata
-  fullName: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.Metadata
+  nameWithType: RateLimiterAdapterRejectedEvent.Metadata
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.Metadata
 - uid: System.Collections.Generic.IReadOnlyDictionary{System.String,System.Object}
   commentId: T:System.Collections.Generic.IReadOnlyDictionary{System.String,System.Object}
   parent: System.Collections.Generic
@@ -585,13 +585,13 @@ references:
     name: Generic
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.collections.generic
-- uid: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.PermitCount*
-  commentId: Overload:Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.PermitCount
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.PermitCount*
+  commentId: Overload:Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.PermitCount
   isExternal: true
-  href: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.html#Kevlar_Extensions_RateLimiting_RateLimiterRejectedEvent_PermitCount
+  href: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.html#Kevlar_Extensions_RateLimiting_RateLimiterAdapterRejectedEvent_PermitCount
   name: PermitCount
-  nameWithType: RateLimiterRejectedEvent.PermitCount
-  fullName: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.PermitCount
+  nameWithType: RateLimiterAdapterRejectedEvent.PermitCount
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.PermitCount
 - uid: System.Int32
   commentId: T:System.Int32
   parent: System
@@ -603,20 +603,20 @@ references:
   nameWithType.vb: Integer
   fullName.vb: Integer
   name.vb: Integer
-- uid: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.StrategyIndex*
-  commentId: Overload:Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.StrategyIndex
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.StrategyIndex*
+  commentId: Overload:Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.StrategyIndex
   isExternal: true
-  href: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.html#Kevlar_Extensions_RateLimiting_RateLimiterRejectedEvent_StrategyIndex
+  href: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.html#Kevlar_Extensions_RateLimiting_RateLimiterAdapterRejectedEvent_StrategyIndex
   name: StrategyIndex
-  nameWithType: RateLimiterRejectedEvent.StrategyIndex
-  fullName: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.StrategyIndex
-- uid: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.Context*
-  commentId: Overload:Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.Context
+  nameWithType: RateLimiterAdapterRejectedEvent.StrategyIndex
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.StrategyIndex
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.Context*
+  commentId: Overload:Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.Context
   isExternal: true
-  href: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.html#Kevlar_Extensions_RateLimiting_RateLimiterRejectedEvent_Context
+  href: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.html#Kevlar_Extensions_RateLimiting_RateLimiterAdapterRejectedEvent_Context
   name: Context
-  nameWithType: RateLimiterRejectedEvent.Context
-  fullName: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.Context
+  nameWithType: RateLimiterAdapterRejectedEvent.Context
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.Context
 - uid: Kevlar.KevlarContext
   commentId: T:Kevlar.KevlarContext
   parent: Kevlar

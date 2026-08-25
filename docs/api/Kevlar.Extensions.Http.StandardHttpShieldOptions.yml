@@ -126,11 +126,11 @@ items:
     minimum throughput of 10 and a 15-second break.
   example: []
   syntax:
-    content: public CircuitBreakerOptions CircuitBreaker { get; set; }
+    content: public CircuitBreakerOptions<HttpResponseMessage> CircuitBreaker { get; set; }
     parameters: []
     return:
-      type: Kevlar.CircuitBreakerOptions
-    content.vb: Public Property CircuitBreaker As CircuitBreakerOptions
+      type: Kevlar.CircuitBreakerOptions{System.Net.Http.HttpResponseMessage}
+    content.vb: Public Property CircuitBreaker As CircuitBreakerOptions(Of HttpResponseMessage)
   overload: Kevlar.Extensions.Http.StandardHttpShieldOptions.CircuitBreaker*
 - uid: Kevlar.Extensions.Http.StandardHttpShieldOptions.ConcurrencyLimit
   commentId: P:Kevlar.Extensions.Http.StandardHttpShieldOptions.ConcurrencyLimit
@@ -561,14 +561,66 @@ references:
   name: CircuitBreaker
   nameWithType: StandardHttpShieldOptions.CircuitBreaker
   fullName: Kevlar.Extensions.Http.StandardHttpShieldOptions.CircuitBreaker
-- uid: Kevlar.CircuitBreakerOptions
-  commentId: T:Kevlar.CircuitBreakerOptions
+- uid: Kevlar.CircuitBreakerOptions{System.Net.Http.HttpResponseMessage}
+  commentId: T:Kevlar.CircuitBreakerOptions{System.Net.Http.HttpResponseMessage}
   parent: Kevlar
+  definition: Kevlar.CircuitBreakerOptions`1
+  name: CircuitBreakerOptions<HttpResponseMessage>
+  nameWithType: CircuitBreakerOptions<HttpResponseMessage>
+  fullName: Kevlar.CircuitBreakerOptions<System.Net.Http.HttpResponseMessage>
+  nameWithType.vb: CircuitBreakerOptions(Of HttpResponseMessage)
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of System.Net.Http.HttpResponseMessage)
+  name.vb: CircuitBreakerOptions(Of HttpResponseMessage)
+  spec.csharp:
+  - uid: Kevlar.CircuitBreakerOptions`1
+    name: CircuitBreakerOptions
+    isExternal: true
+  - name: <
+  - uid: System.Net.Http.HttpResponseMessage
+    name: HttpResponseMessage
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.net.http.httpresponsemessage
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.CircuitBreakerOptions`1
+    name: CircuitBreakerOptions
+    isExternal: true
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.Net.Http.HttpResponseMessage
+    name: HttpResponseMessage
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.net.http.httpresponsemessage
+  - name: )
+- uid: Kevlar.CircuitBreakerOptions`1
+  commentId: T:Kevlar.CircuitBreakerOptions`1
   isExternal: true
-  href: Kevlar.CircuitBreakerOptions.html
-  name: CircuitBreakerOptions
-  nameWithType: CircuitBreakerOptions
-  fullName: Kevlar.CircuitBreakerOptions
+  href: Kevlar.CircuitBreakerOptions-1.html
+  name: CircuitBreakerOptions<TResult>
+  nameWithType: CircuitBreakerOptions<TResult>
+  fullName: Kevlar.CircuitBreakerOptions<TResult>
+  nameWithType.vb: CircuitBreakerOptions(Of TResult)
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult)
+  name.vb: CircuitBreakerOptions(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.CircuitBreakerOptions`1
+    name: CircuitBreakerOptions
+    isExternal: true
+    href: Kevlar.CircuitBreakerOptions-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.CircuitBreakerOptions`1
+    name: CircuitBreakerOptions
+    isExternal: true
+    href: Kevlar.CircuitBreakerOptions-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
 - uid: Kevlar.Extensions.Http.StandardHttpShieldOptions.ConcurrencyLimit*
   commentId: Overload:Kevlar.Extensions.Http.StandardHttpShieldOptions.ConcurrencyLimit
   isExternal: true

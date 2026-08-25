@@ -26,6 +26,7 @@ items:
   - Kevlar.HedgeActionGenerator
   - Kevlar.HedgeActionGeneratorEvent
   - Kevlar.HedgeActionGeneratorEvent`1
+  - Kevlar.HedgeDelayEvent
   - Kevlar.HedgeEvent
   - Kevlar.HedgeOptions
   - Kevlar.HedgeOptions`1
@@ -416,7 +417,6 @@ references:
   fullName: Kevlar.CircuitBreakerMonitor
 - uid: Kevlar.CircuitBreakerOptions
   commentId: T:Kevlar.CircuitBreakerOptions
-  parent: Kevlar
   isExternal: true
   href: Kevlar.CircuitBreakerOptions.html
   name: CircuitBreakerOptions
@@ -595,6 +595,13 @@ references:
   - name: " "
   - name: TResult
   - name: )
+- uid: Kevlar.HedgeDelayEvent
+  commentId: T:Kevlar.HedgeDelayEvent
+  isExternal: true
+  href: Kevlar.HedgeDelayEvent.html
+  name: HedgeDelayEvent
+  nameWithType: HedgeDelayEvent
+  fullName: Kevlar.HedgeDelayEvent
 - uid: Kevlar.HedgeOptions
   commentId: T:Kevlar.HedgeOptions
   isExternal: true

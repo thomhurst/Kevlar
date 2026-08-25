@@ -8,6 +8,7 @@ items:
   - Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition
   - Kevlar.Extensions.DependencyInjection.IKevlarRegistry
   - Kevlar.Extensions.DependencyInjection.IShieldProvider
+  - Kevlar.Extensions.DependencyInjection.IShieldProvider`1
   - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions
   - Kevlar.Extensions.DependencyInjection.RateLimitDefinition
   - Kevlar.Extensions.DependencyInjection.RetryDefinition
@@ -36,6 +37,34 @@ references:
   name: IShieldProvider
   nameWithType: IShieldProvider
   fullName: Kevlar.Extensions.DependencyInjection.IShieldProvider
+- uid: Kevlar.Extensions.DependencyInjection.IShieldProvider`1
+  commentId: T:Kevlar.Extensions.DependencyInjection.IShieldProvider`1
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.IShieldProvider-1.html
+  name: IShieldProvider<TResult>
+  nameWithType: IShieldProvider<TResult>
+  fullName: Kevlar.Extensions.DependencyInjection.IShieldProvider<TResult>
+  nameWithType.vb: IShieldProvider(Of TResult)
+  fullName.vb: Kevlar.Extensions.DependencyInjection.IShieldProvider(Of TResult)
+  name.vb: IShieldProvider(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.Extensions.DependencyInjection.IShieldProvider`1
+    name: IShieldProvider
+    isExternal: true
+    href: Kevlar.Extensions.DependencyInjection.IShieldProvider-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Extensions.DependencyInjection.IShieldProvider`1
+    name: IShieldProvider
+    isExternal: true
+    href: Kevlar.Extensions.DependencyInjection.IShieldProvider-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
 - uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions
   commentId: T:Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions
   isExternal: true

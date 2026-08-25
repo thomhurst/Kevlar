@@ -9,10 +9,12 @@ items:
   - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,``0,Kevlar.Shield},System.Action{Kevlar.PartitionedShieldOptions},System.Collections.Generic.IEqualityComparer{``0})
   - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield``2(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,``0,Kevlar.Shield{``1}},System.Action{Kevlar.PartitionedShieldOptions},System.Collections.Generic.IEqualityComparer{``0})
   - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
+  - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
   - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Kevlar.Shield)
   - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration)
   - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,Kevlar.Shield})
   - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Kevlar.Shield{``0})
+  - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration)
   - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,Kevlar.Shield{``0}})
   langs:
   - csharp
@@ -295,6 +297,96 @@ items:
   nameWithType.vb: KevlarServiceCollectionExtensions.AddShield(Of TResult)(IServiceCollection, String, Func(Of IServiceProvider, Shield(Of TResult)))
   fullName.vb: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(Of TResult)(Microsoft.Extensions.DependencyInjection.IServiceCollection, String, System.Func(Of System.IServiceProvider, Kevlar.Shield(Of TResult)))
   name.vb: AddShield(Of TResult)(IServiceCollection, String, Func(Of IServiceProvider, Shield(Of TResult)))
+- uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration)
+  commentId: M:Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration)
+  id: AddShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration)
+  isExtensionMethod: true
+  parent: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions
+  langs:
+  - csharp
+  - vb
+  name: AddShield<TResult>(IServiceCollection, string, IConfiguration)
+  nameWithType: KevlarServiceCollectionExtensions.AddShield<TResult>(IServiceCollection, string, IConfiguration)
+  fullName: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield<TResult>(Microsoft.Extensions.DependencyInjection.IServiceCollection, string, Microsoft.Extensions.Configuration.IConfiguration)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: >-
+    Registers a named result-aware shield bound from <code class="paramref">configuration</code>.
+
+    The shield carries <code class="paramref">name</code> as its diagnostic name.
+  example: []
+  syntax:
+    content: public static IServiceCollection AddShield<TResult>(this IServiceCollection services, string name, IConfiguration configuration)
+    parameters:
+    - id: services
+      type: Microsoft.Extensions.DependencyInjection.IServiceCollection
+    - id: name
+      type: System.String
+    - id: configuration
+      type: Microsoft.Extensions.Configuration.IConfiguration
+    typeParameters:
+    - id: TResult
+    return:
+      type: Microsoft.Extensions.DependencyInjection.IServiceCollection
+    content.vb: Public Shared Function AddShield(Of TResult)(services As IServiceCollection, name As String, configuration As IConfiguration) As IServiceCollection
+  overload: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield*
+  nameWithType.vb: KevlarServiceCollectionExtensions.AddShield(Of TResult)(IServiceCollection, String, IConfiguration)
+  fullName.vb: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(Of TResult)(Microsoft.Extensions.DependencyInjection.IServiceCollection, String, Microsoft.Extensions.Configuration.IConfiguration)
+  name.vb: AddShield(Of TResult)(IServiceCollection, String, IConfiguration)
+- uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
+  commentId: M:Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
+  id: AddReloadingShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
+  isExtensionMethod: true
+  parent: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions
+  langs:
+  - csharp
+  - vb
+  name: AddReloadingShield<TResult>(IServiceCollection, string, IConfiguration, Action<Exception>?)
+  nameWithType: KevlarServiceCollectionExtensions.AddReloadingShield<TResult>(IServiceCollection, string, IConfiguration, Action<Exception>?)
+  fullName: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield<TResult>(Microsoft.Extensions.DependencyInjection.IServiceCollection, string, Microsoft.Extensions.Configuration.IConfiguration, System.Action<System.Exception>?)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: >-
+    Registers a named, reload-aware result-aware shield bound from
+
+    <code class="paramref">configuration</code>. Invalid replacements retain the last known-good
+
+    snapshot and are reported to <code class="paramref">onReloadFailure</code> when supplied.
+  remarks: >-
+    Each successful replacement has fresh strategy state. Resolve the keyed
+
+    <xref href="Kevlar.Extensions.DependencyInjection.IShieldProvider%601" data-throw-if-not-resolved="false"></xref> to observe future replacements, or call
+
+    <xref href="Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetShield%60%601(System.String)" data-throw-if-not-resolved="false"></xref> once per operation. A keyed
+
+    <xref href="Kevlar.Shield%601" data-throw-if-not-resolved="false"></xref> is an immutable snapshot and does not update after resolution.
+
+    Exceptions thrown by <code class="paramref">onReloadFailure</code> are suppressed.
+  example: []
+  syntax:
+    content: public static IServiceCollection AddReloadingShield<TResult>(this IServiceCollection services, string name, IConfiguration configuration, Action<Exception>? onReloadFailure = null)
+    parameters:
+    - id: services
+      type: Microsoft.Extensions.DependencyInjection.IServiceCollection
+    - id: name
+      type: System.String
+    - id: configuration
+      type: Microsoft.Extensions.Configuration.IConfiguration
+    - id: onReloadFailure
+      type: System.Action{System.Exception}
+    typeParameters:
+    - id: TResult
+    return:
+      type: Microsoft.Extensions.DependencyInjection.IServiceCollection
+    content.vb: Public Shared Function AddReloadingShield(Of TResult)(services As IServiceCollection, name As String, configuration As IConfiguration, onReloadFailure As Action(Of Exception) = Nothing) As IServiceCollection
+  overload: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield*
+  nameWithType.vb: KevlarServiceCollectionExtensions.AddReloadingShield(Of TResult)(IServiceCollection, String, IConfiguration, Action(Of Exception))
+  fullName.vb: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield(Of TResult)(Microsoft.Extensions.DependencyInjection.IServiceCollection, String, Microsoft.Extensions.Configuration.IConfiguration, System.Action(Of System.Exception))
+  name.vb: AddReloadingShield(Of TResult)(IServiceCollection, String, IConfiguration, Action(Of Exception))
 - uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,``0,Kevlar.Shield},System.Action{Kevlar.PartitionedShieldOptions},System.Collections.Generic.IEqualityComparer{``0})
   commentId: M:Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,``0,Kevlar.Shield},System.Action{Kevlar.PartitionedShieldOptions},System.Collections.Generic.IEqualityComparer{`0})
   id: AddPartitionedShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,System.Func{System.IServiceProvider,``0,Kevlar.Shield},System.Action{Kevlar.PartitionedShieldOptions},System.Collections.Generic.IEqualityComparer{``0})
@@ -1138,6 +1230,34 @@ references:
   - name: " "
   - name: TResult
   - name: )
+  - name: )
+- uid: Kevlar.Extensions.DependencyInjection.IShieldProvider`1
+  commentId: T:Kevlar.Extensions.DependencyInjection.IShieldProvider`1
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.IShieldProvider-1.html
+  name: IShieldProvider<TResult>
+  nameWithType: IShieldProvider<TResult>
+  fullName: Kevlar.Extensions.DependencyInjection.IShieldProvider<TResult>
+  nameWithType.vb: IShieldProvider(Of TResult)
+  fullName.vb: Kevlar.Extensions.DependencyInjection.IShieldProvider(Of TResult)
+  name.vb: IShieldProvider(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.Extensions.DependencyInjection.IShieldProvider`1
+    name: IShieldProvider
+    isExternal: true
+    href: Kevlar.Extensions.DependencyInjection.IShieldProvider-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Extensions.DependencyInjection.IShieldProvider`1
+    name: IShieldProvider
+    isExternal: true
+    href: Kevlar.Extensions.DependencyInjection.IShieldProvider-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
   - name: )
 - uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield*
   commentId: Overload:Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield

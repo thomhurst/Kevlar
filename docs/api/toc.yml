@@ -70,6 +70,9 @@ items:
   - uid: Kevlar.HedgeActionGeneratorEvent`1
     name: HedgeActionGeneratorEvent<TResult>
     type: Struct
+  - uid: Kevlar.HedgeDelayEvent
+    name: HedgeDelayEvent
+    type: Struct
   - uid: Kevlar.HedgeEvent
     name: HedgeEvent
     type: Struct
@@ -219,6 +222,9 @@ items:
   - uid: Kevlar.Extensions.DependencyInjection.IShieldProvider
     name: IShieldProvider
     type: Interface
+  - uid: Kevlar.Extensions.DependencyInjection.IShieldProvider`1
+    name: IShieldProvider<TResult>
+    type: Interface
   - uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions
     name: KevlarServiceCollectionExtensions
     type: Class
@@ -294,9 +300,12 @@ items:
   - uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions
     name: RateLimiterAdapterOptions
     type: Class
-  - uid: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent
-    name: RateLimiterRejectedEvent
+  - uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent
+    name: RateLimiterAdapterRejectedEvent
     type: Struct
+  - uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException
+    name: RateLimiterAdapterRejectedException
+    type: Class
   - uid: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions
     name: ShieldRateLimiterExtensions
     type: Class

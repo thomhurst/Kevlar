@@ -466,7 +466,6 @@ references:
   - name: )
 - uid: Kevlar.CircuitBreakerOptions
   commentId: T:Kevlar.CircuitBreakerOptions
-  parent: Kevlar
   isExternal: true
   href: Kevlar.CircuitBreakerOptions.html
   name: CircuitBreakerOptions

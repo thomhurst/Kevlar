@@ -6,7 +6,8 @@ items:
   children:
   - Kevlar.Extensions.RateLimiting.RateLimitLeaseAcquirer
   - Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions
-  - Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent
+  - Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent
+  - Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException
   - Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions
   langs:
   - csharp
@@ -25,13 +26,20 @@ references:
   name: RateLimiterAdapterOptions
   nameWithType: RateLimiterAdapterOptions
   fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions
-- uid: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent
-  commentId: T:Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent
+  commentId: T:Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent
   isExternal: true
-  href: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent.html
-  name: RateLimiterRejectedEvent
-  nameWithType: RateLimiterRejectedEvent
-  fullName: Kevlar.Extensions.RateLimiting.RateLimiterRejectedEvent
+  href: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.html
+  name: RateLimiterAdapterRejectedEvent
+  nameWithType: RateLimiterAdapterRejectedEvent
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException
+  commentId: T:Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException
+  isExternal: true
+  href: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.html
+  name: RateLimiterAdapterRejectedException
+  nameWithType: RateLimiterAdapterRejectedException
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException
 - uid: Kevlar.Extensions.RateLimiting.RateLimitLeaseAcquirer
   commentId: T:Kevlar.Extensions.RateLimiting.RateLimitLeaseAcquirer
   parent: Kevlar.Extensions.RateLimiting

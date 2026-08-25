@@ -1,43 +1,38 @@
 ### YamlMime:ManagedReference
 items:
-- uid: Kevlar.ExecutionRejectedException
-  commentId: T:Kevlar.ExecutionRejectedException
-  id: ExecutionRejectedException
-  parent: Kevlar
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException
+  commentId: T:Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException
+  id: RateLimiterAdapterRejectedException
+  parent: Kevlar.Extensions.RateLimiting
   children:
-  - Kevlar.ExecutionRejectedException.#ctor
-  - Kevlar.ExecutionRejectedException.#ctor(System.String)
-  - Kevlar.ExecutionRejectedException.#ctor(System.String,System.Exception)
-  - Kevlar.ExecutionRejectedException.#ctor(System.String,System.Nullable{System.TimeSpan},System.Exception)
-  - Kevlar.ExecutionRejectedException.RetryAfter
+  - Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.#ctor
+  - Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.#ctor(System.Nullable{System.TimeSpan})
+  - Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.#ctor(System.String)
+  - Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.#ctor(System.String,System.Exception)
   langs:
   - csharp
   - vb
-  name: ExecutionRejectedException
-  nameWithType: ExecutionRejectedException
-  fullName: Kevlar.ExecutionRejectedException
+  name: RateLimiterAdapterRejectedException
+  nameWithType: RateLimiterAdapterRejectedException
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException
   type: Class
   assemblies:
-  - Kevlar
-  namespace: Kevlar
-  summary: Base class for executions rejected by a Kevlar strategy.
+  - Kevlar.Extensions.RateLimiting
+  namespace: Kevlar.Extensions.RateLimiting
+  summary: Thrown when a System.Threading.RateLimiting adapter rejects an execution.
   example: []
   syntax:
-    content: 'public abstract class ExecutionRejectedException : KevlarException, ISerializable'
-    content.vb: Public MustInherit Class ExecutionRejectedException Inherits KevlarException Implements ISerializable
+    content: 'public sealed class RateLimiterAdapterRejectedException : ExecutionRejectedException, ISerializable'
+    content.vb: Public NotInheritable Class RateLimiterAdapterRejectedException Inherits ExecutionRejectedException Implements ISerializable
   inheritance:
   - System.Object
   - System.Exception
   - Kevlar.KevlarException
-  derivedClasses:
-  - Kevlar.CircuitOpenException
-  - Kevlar.ConcurrencyLimitExceededException
-  - Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException
-  - Kevlar.RateLimitExceededException
-  - Kevlar.TimeoutExceededException
+  - Kevlar.ExecutionRejectedException
   implements:
   - System.Runtime.Serialization.ISerializable
   inheritedMembers:
+  - Kevlar.ExecutionRejectedException.RetryAfter
   - System.Exception.GetBaseException
   - System.Exception.ToString
   - System.Exception.GetType
@@ -49,150 +44,151 @@ items:
   - System.Exception.Source
   - System.Exception.HResult
   - System.Exception.StackTrace
-  - System.Exception.SerializeObjectState
-  - System.Object.MemberwiseClone
   - System.Object.Equals(System.Object)
   - System.Object.Equals(System.Object,System.Object)
   - System.Object.ReferenceEquals(System.Object,System.Object)
   - System.Object.GetHashCode
-- uid: Kevlar.ExecutionRejectedException.#ctor
-  commentId: M:Kevlar.ExecutionRejectedException.#ctor
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.#ctor
+  commentId: M:Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.#ctor
   id: '#ctor'
-  parent: Kevlar.ExecutionRejectedException
+  parent: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException
   langs:
   - csharp
   - vb
-  name: ExecutionRejectedException()
-  nameWithType: ExecutionRejectedException.ExecutionRejectedException()
-  fullName: Kevlar.ExecutionRejectedException.ExecutionRejectedException()
+  name: RateLimiterAdapterRejectedException()
+  nameWithType: RateLimiterAdapterRejectedException.RateLimiterAdapterRejectedException()
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.RateLimiterAdapterRejectedException()
   type: Constructor
   assemblies:
-  - Kevlar
-  namespace: Kevlar
-  summary: Initializes a rejection with no retry estimate.
+  - Kevlar.Extensions.RateLimiting
+  namespace: Kevlar.Extensions.RateLimiting
+  summary: Initializes an adapter rejection without a retry estimate.
   example: []
   syntax:
-    content: protected ExecutionRejectedException()
-    content.vb: Protected Sub New()
-  overload: Kevlar.ExecutionRejectedException.#ctor*
-  nameWithType.vb: ExecutionRejectedException.New()
-  fullName.vb: Kevlar.ExecutionRejectedException.New()
+    content: public RateLimiterAdapterRejectedException()
+    content.vb: Public Sub New()
+  overload: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.#ctor*
+  nameWithType.vb: RateLimiterAdapterRejectedException.New()
+  fullName.vb: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.New()
   name.vb: New()
-- uid: Kevlar.ExecutionRejectedException.#ctor(System.String)
-  commentId: M:Kevlar.ExecutionRejectedException.#ctor(System.String)
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.#ctor(System.String)
+  commentId: M:Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.#ctor(System.String)
   id: '#ctor(System.String)'
-  parent: Kevlar.ExecutionRejectedException
+  parent: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException
   langs:
   - csharp
   - vb
-  name: ExecutionRejectedException(string)
-  nameWithType: ExecutionRejectedException.ExecutionRejectedException(string)
-  fullName: Kevlar.ExecutionRejectedException.ExecutionRejectedException(string)
+  name: RateLimiterAdapterRejectedException(string)
+  nameWithType: RateLimiterAdapterRejectedException.RateLimiterAdapterRejectedException(string)
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.RateLimiterAdapterRejectedException(string)
   type: Constructor
   assemblies:
-  - Kevlar
-  namespace: Kevlar
-  summary: Initializes a rejection with no retry estimate.
+  - Kevlar.Extensions.RateLimiting
+  namespace: Kevlar.Extensions.RateLimiting
+  summary: Initializes an adapter rejection with a custom message.
   example: []
   syntax:
-    content: protected ExecutionRejectedException(string message)
+    content: public RateLimiterAdapterRejectedException(string message)
     parameters:
     - id: message
       type: System.String
-    content.vb: Protected Sub New(message As String)
-  overload: Kevlar.ExecutionRejectedException.#ctor*
-  nameWithType.vb: ExecutionRejectedException.New(String)
-  fullName.vb: Kevlar.ExecutionRejectedException.New(String)
+    content.vb: Public Sub New(message As String)
+  overload: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.#ctor*
+  nameWithType.vb: RateLimiterAdapterRejectedException.New(String)
+  fullName.vb: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.New(String)
   name.vb: New(String)
-- uid: Kevlar.ExecutionRejectedException.#ctor(System.String,System.Exception)
-  commentId: M:Kevlar.ExecutionRejectedException.#ctor(System.String,System.Exception)
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.#ctor(System.String,System.Exception)
+  commentId: M:Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.#ctor(System.String,System.Exception)
   id: '#ctor(System.String,System.Exception)'
-  parent: Kevlar.ExecutionRejectedException
+  parent: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException
   langs:
   - csharp
   - vb
-  name: ExecutionRejectedException(string, Exception?)
-  nameWithType: ExecutionRejectedException.ExecutionRejectedException(string, Exception?)
-  fullName: Kevlar.ExecutionRejectedException.ExecutionRejectedException(string, System.Exception?)
+  name: RateLimiterAdapterRejectedException(string, Exception)
+  nameWithType: RateLimiterAdapterRejectedException.RateLimiterAdapterRejectedException(string, Exception)
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.RateLimiterAdapterRejectedException(string, System.Exception)
   type: Constructor
   assemblies:
-  - Kevlar
-  namespace: Kevlar
-  summary: Initializes a rejection with no retry estimate and a cause.
+  - Kevlar.Extensions.RateLimiting
+  namespace: Kevlar.Extensions.RateLimiting
+  summary: Initializes an adapter rejection with a custom message and cause.
   example: []
   syntax:
-    content: protected ExecutionRejectedException(string message, Exception? innerException)
+    content: public RateLimiterAdapterRejectedException(string message, Exception innerException)
     parameters:
     - id: message
       type: System.String
     - id: innerException
       type: System.Exception
-    content.vb: Protected Sub New(message As String, innerException As Exception)
-  overload: Kevlar.ExecutionRejectedException.#ctor*
-  nameWithType.vb: ExecutionRejectedException.New(String, Exception)
-  fullName.vb: Kevlar.ExecutionRejectedException.New(String, System.Exception)
+    content.vb: Public Sub New(message As String, innerException As Exception)
+  overload: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.#ctor*
+  nameWithType.vb: RateLimiterAdapterRejectedException.New(String, Exception)
+  fullName.vb: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.New(String, System.Exception)
   name.vb: New(String, Exception)
-- uid: Kevlar.ExecutionRejectedException.#ctor(System.String,System.Nullable{System.TimeSpan},System.Exception)
-  commentId: M:Kevlar.ExecutionRejectedException.#ctor(System.String,System.Nullable{System.TimeSpan},System.Exception)
-  id: '#ctor(System.String,System.Nullable{System.TimeSpan},System.Exception)'
-  parent: Kevlar.ExecutionRejectedException
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.#ctor(System.Nullable{System.TimeSpan})
+  commentId: M:Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.#ctor(System.Nullable{System.TimeSpan})
+  id: '#ctor(System.Nullable{System.TimeSpan})'
+  parent: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException
   langs:
   - csharp
   - vb
-  name: ExecutionRejectedException(string, TimeSpan?, Exception?)
-  nameWithType: ExecutionRejectedException.ExecutionRejectedException(string, TimeSpan?, Exception?)
-  fullName: Kevlar.ExecutionRejectedException.ExecutionRejectedException(string, System.TimeSpan?, System.Exception?)
+  name: RateLimiterAdapterRejectedException(TimeSpan?)
+  nameWithType: RateLimiterAdapterRejectedException.RateLimiterAdapterRejectedException(TimeSpan?)
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.RateLimiterAdapterRejectedException(System.TimeSpan?)
   type: Constructor
   assemblies:
-  - Kevlar
-  namespace: Kevlar
-  summary: Initializes a rejection with an optional retry estimate and cause.
+  - Kevlar.Extensions.RateLimiting
+  namespace: Kevlar.Extensions.RateLimiting
+  summary: Initializes an adapter rejection with an optional retry estimate.
   example: []
   syntax:
-    content: protected ExecutionRejectedException(string message, TimeSpan? retryAfter, Exception? innerException = null)
+    content: public RateLimiterAdapterRejectedException(TimeSpan? retryAfter)
     parameters:
-    - id: message
-      type: System.String
     - id: retryAfter
       type: System.Nullable{System.TimeSpan}
-    - id: innerException
-      type: System.Exception
-    content.vb: Protected Sub New(message As String, retryAfter As TimeSpan?, innerException As Exception = Nothing)
-  overload: Kevlar.ExecutionRejectedException.#ctor*
-  nameWithType.vb: ExecutionRejectedException.New(String, TimeSpan?, Exception)
-  fullName.vb: Kevlar.ExecutionRejectedException.New(String, System.TimeSpan?, System.Exception)
-  name.vb: New(String, TimeSpan?, Exception)
-- uid: Kevlar.ExecutionRejectedException.RetryAfter
-  commentId: P:Kevlar.ExecutionRejectedException.RetryAfter
-  id: RetryAfter
-  parent: Kevlar.ExecutionRejectedException
-  langs:
-  - csharp
-  - vb
-  name: RetryAfter
-  nameWithType: ExecutionRejectedException.RetryAfter
-  fullName: Kevlar.ExecutionRejectedException.RetryAfter
-  type: Property
-  assemblies:
-  - Kevlar
-  namespace: Kevlar
-  summary: Estimated time until execution may be attempted again, when known.
-  example: []
-  syntax:
-    content: public TimeSpan? RetryAfter { get; }
-    parameters: []
-    return:
-      type: System.Nullable{System.TimeSpan}
-    content.vb: Public ReadOnly Property RetryAfter As TimeSpan?
-  overload: Kevlar.ExecutionRejectedException.RetryAfter*
+    content.vb: Public Sub New(retryAfter As TimeSpan?)
+  overload: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.#ctor*
+  nameWithType.vb: RateLimiterAdapterRejectedException.New(TimeSpan?)
+  fullName.vb: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.New(System.TimeSpan?)
+  name.vb: New(TimeSpan?)
 references:
-- uid: Kevlar
-  commentId: N:Kevlar
+- uid: Kevlar.Extensions.RateLimiting
+  commentId: N:Kevlar.Extensions.RateLimiting
   isExternal: true
   href: Kevlar.html
-  name: Kevlar
-  nameWithType: Kevlar
-  fullName: Kevlar
+  name: Kevlar.Extensions.RateLimiting
+  nameWithType: Kevlar.Extensions.RateLimiting
+  fullName: Kevlar.Extensions.RateLimiting
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+    href: Kevlar.Extensions.html
+  - name: .
+  - uid: Kevlar.Extensions.RateLimiting
+    name: RateLimiting
+    isExternal: true
+    href: Kevlar.Extensions.RateLimiting.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+    href: Kevlar.Extensions.html
+  - name: .
+  - uid: Kevlar.Extensions.RateLimiting
+    name: RateLimiting
+    isExternal: true
+    href: Kevlar.Extensions.RateLimiting.html
 - uid: System.Object
   commentId: T:System.Object
   parent: System
@@ -220,6 +216,14 @@ references:
   name: KevlarException
   nameWithType: KevlarException
   fullName: Kevlar.KevlarException
+- uid: Kevlar.ExecutionRejectedException
+  commentId: T:Kevlar.ExecutionRejectedException
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.ExecutionRejectedException.html
+  name: ExecutionRejectedException
+  nameWithType: ExecutionRejectedException
+  fullName: Kevlar.ExecutionRejectedException
 - uid: System.Runtime.Serialization.ISerializable
   commentId: T:System.Runtime.Serialization.ISerializable
   parent: System.Runtime.Serialization
@@ -228,6 +232,14 @@ references:
   name: ISerializable
   nameWithType: ISerializable
   fullName: System.Runtime.Serialization.ISerializable
+- uid: Kevlar.ExecutionRejectedException.RetryAfter
+  commentId: P:Kevlar.ExecutionRejectedException.RetryAfter
+  parent: Kevlar.ExecutionRejectedException
+  isExternal: true
+  href: Kevlar.ExecutionRejectedException.html#Kevlar_ExecutionRejectedException_RetryAfter
+  name: RetryAfter
+  nameWithType: ExecutionRejectedException.RetryAfter
+  fullName: Kevlar.ExecutionRejectedException.RetryAfter
 - uid: System.Exception.GetBaseException
   commentId: M:System.Exception.GetBaseException
   parent: System.Exception
@@ -358,38 +370,6 @@ references:
   name: StackTrace
   nameWithType: Exception.StackTrace
   fullName: System.Exception.StackTrace
-- uid: System.Exception.SerializeObjectState
-  commentId: E:System.Exception.SerializeObjectState
-  parent: System.Exception
-  isExternal: true
-  href: https://learn.microsoft.com/dotnet/api/system.exception.serializeobjectstate
-  name: SerializeObjectState
-  nameWithType: Exception.SerializeObjectState
-  fullName: System.Exception.SerializeObjectState
-- uid: System.Object.MemberwiseClone
-  commentId: M:System.Object.MemberwiseClone
-  parent: System.Object
-  isExternal: true
-  href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
-  name: MemberwiseClone()
-  nameWithType: object.MemberwiseClone()
-  fullName: object.MemberwiseClone()
-  nameWithType.vb: Object.MemberwiseClone()
-  fullName.vb: Object.MemberwiseClone()
-  spec.csharp:
-  - uid: System.Object.MemberwiseClone
-    name: MemberwiseClone
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
-  - name: (
-  - name: )
-  spec.vb:
-  - uid: System.Object.MemberwiseClone
-    name: MemberwiseClone
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
-  - name: (
-  - name: )
 - uid: System.Object.Equals(System.Object)
   commentId: M:System.Object.Equals(System.Object)
   parent: System.Object
@@ -544,6 +524,13 @@ references:
   name: System
   nameWithType: System
   fullName: System
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
 - uid: System.Runtime.Serialization
   commentId: N:System.Runtime.Serialization
   isExternal: true
@@ -581,15 +568,15 @@ references:
     name: Serialization
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.runtime.serialization
-- uid: Kevlar.ExecutionRejectedException.#ctor*
-  commentId: Overload:Kevlar.ExecutionRejectedException.#ctor
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.#ctor*
+  commentId: Overload:Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.#ctor
   isExternal: true
-  href: Kevlar.ExecutionRejectedException.html#Kevlar_ExecutionRejectedException__ctor
-  name: ExecutionRejectedException
-  nameWithType: ExecutionRejectedException.ExecutionRejectedException
-  fullName: Kevlar.ExecutionRejectedException.ExecutionRejectedException
-  nameWithType.vb: ExecutionRejectedException.New
-  fullName.vb: Kevlar.ExecutionRejectedException.New
+  href: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.html#Kevlar_Extensions_RateLimiting_RateLimiterAdapterRejectedException__ctor
+  name: RateLimiterAdapterRejectedException
+  nameWithType: RateLimiterAdapterRejectedException.RateLimiterAdapterRejectedException
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.RateLimiterAdapterRejectedException
+  nameWithType.vb: RateLimiterAdapterRejectedException.New
+  fullName.vb: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.New
   name.vb: New
 - uid: System.String
   commentId: T:System.String
@@ -650,10 +637,3 @@ references:
   - name: " "
   - name: T
   - name: )
-- uid: Kevlar.ExecutionRejectedException.RetryAfter*
-  commentId: Overload:Kevlar.ExecutionRejectedException.RetryAfter
-  isExternal: true
-  href: Kevlar.ExecutionRejectedException.html#Kevlar_ExecutionRejectedException_RetryAfter
-  name: RetryAfter
-  nameWithType: ExecutionRejectedException.RetryAfter
-  fullName: Kevlar.ExecutionRejectedException.RetryAfter

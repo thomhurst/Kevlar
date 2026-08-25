@@ -7,6 +7,7 @@ items:
   children:
   - Kevlar.Testing.HedgeStrategyDescriptor.Delay
   - Kevlar.Testing.HedgeStrategyDescriptor.HasActionGenerator
+  - Kevlar.Testing.HedgeStrategyDescriptor.HasDelayGenerator
   - Kevlar.Testing.HedgeStrategyDescriptor.HasHandlingOverride
   - Kevlar.Testing.HedgeStrategyDescriptor.HasNotification
   - Kevlar.Testing.HedgeStrategyDescriptor.MaxAttempts
@@ -83,6 +84,29 @@ items:
       type: System.TimeSpan
     content.vb: Public ReadOnly Property Delay As TimeSpan
   overload: Kevlar.Testing.HedgeStrategyDescriptor.Delay*
+- uid: Kevlar.Testing.HedgeStrategyDescriptor.HasDelayGenerator
+  commentId: P:Kevlar.Testing.HedgeStrategyDescriptor.HasDelayGenerator
+  id: HasDelayGenerator
+  parent: Kevlar.Testing.HedgeStrategyDescriptor
+  langs:
+  - csharp
+  - vb
+  name: HasDelayGenerator
+  nameWithType: HedgeStrategyDescriptor.HasDelayGenerator
+  fullName: Kevlar.Testing.HedgeStrategyDescriptor.HasDelayGenerator
+  type: Property
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Whether a per-attempt delay generator is configured.
+  example: []
+  syntax:
+    content: public bool HasDelayGenerator { get; }
+    parameters: []
+    return:
+      type: System.Boolean
+    content.vb: Public ReadOnly Property HasDelayGenerator As Boolean
+  overload: Kevlar.Testing.HedgeStrategyDescriptor.HasDelayGenerator*
 - uid: Kevlar.Testing.HedgeStrategyDescriptor.HasNotification
   commentId: P:Kevlar.Testing.HedgeStrategyDescriptor.HasNotification
   id: HasNotification
@@ -450,13 +474,13 @@ references:
   name: TimeSpan
   nameWithType: TimeSpan
   fullName: System.TimeSpan
-- uid: Kevlar.Testing.HedgeStrategyDescriptor.HasNotification*
-  commentId: Overload:Kevlar.Testing.HedgeStrategyDescriptor.HasNotification
+- uid: Kevlar.Testing.HedgeStrategyDescriptor.HasDelayGenerator*
+  commentId: Overload:Kevlar.Testing.HedgeStrategyDescriptor.HasDelayGenerator
   isExternal: true
-  href: Kevlar.Testing.HedgeStrategyDescriptor.html#Kevlar_Testing_HedgeStrategyDescriptor_HasNotification
-  name: HasNotification
-  nameWithType: HedgeStrategyDescriptor.HasNotification
-  fullName: Kevlar.Testing.HedgeStrategyDescriptor.HasNotification
+  href: Kevlar.Testing.HedgeStrategyDescriptor.html#Kevlar_Testing_HedgeStrategyDescriptor_HasDelayGenerator
+  name: HasDelayGenerator
+  nameWithType: HedgeStrategyDescriptor.HasDelayGenerator
+  fullName: Kevlar.Testing.HedgeStrategyDescriptor.HasDelayGenerator
 - uid: System.Boolean
   commentId: T:System.Boolean
   parent: System
@@ -468,6 +492,13 @@ references:
   nameWithType.vb: Boolean
   fullName.vb: Boolean
   name.vb: Boolean
+- uid: Kevlar.Testing.HedgeStrategyDescriptor.HasNotification*
+  commentId: Overload:Kevlar.Testing.HedgeStrategyDescriptor.HasNotification
+  isExternal: true
+  href: Kevlar.Testing.HedgeStrategyDescriptor.html#Kevlar_Testing_HedgeStrategyDescriptor_HasNotification
+  name: HasNotification
+  nameWithType: HedgeStrategyDescriptor.HasNotification
+  fullName: Kevlar.Testing.HedgeStrategyDescriptor.HasNotification
 - uid: Kevlar.Testing.HedgeStrategyDescriptor.HasActionGenerator*
   commentId: Overload:Kevlar.Testing.HedgeStrategyDescriptor.HasActionGenerator
   isExternal: true

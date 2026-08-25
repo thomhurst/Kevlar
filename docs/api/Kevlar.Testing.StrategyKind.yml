@@ -11,6 +11,7 @@ items:
   - Kevlar.Testing.StrategyKind.Fallback
   - Kevlar.Testing.StrategyKind.Hedge
   - Kevlar.Testing.StrategyKind.RateLimit
+  - Kevlar.Testing.StrategyKind.RateLimiterAdapter
   - Kevlar.Testing.StrategyKind.Retry
   - Kevlar.Testing.StrategyKind.Timeout
   langs:
@@ -186,6 +187,26 @@ items:
   example: []
   syntax:
     content: Fallback = 7
+    return:
+      type: Kevlar.Testing.StrategyKind
+- uid: Kevlar.Testing.StrategyKind.RateLimiterAdapter
+  commentId: F:Kevlar.Testing.StrategyKind.RateLimiterAdapter
+  id: RateLimiterAdapter
+  parent: Kevlar.Testing.StrategyKind
+  langs:
+  - csharp
+  - vb
+  name: RateLimiterAdapter
+  nameWithType: StrategyKind.RateLimiterAdapter
+  fullName: Kevlar.Testing.StrategyKind.RateLimiterAdapter
+  type: Field
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: A strategy backed by System.Threading.RateLimiting.
+  example: []
+  syntax:
+    content: RateLimiterAdapter = 8
     return:
       type: Kevlar.Testing.StrategyKind
 references:

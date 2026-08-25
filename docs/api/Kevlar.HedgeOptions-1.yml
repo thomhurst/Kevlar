@@ -8,6 +8,8 @@ items:
   - Kevlar.HedgeOptions`1.#ctor
   - Kevlar.HedgeOptions`1.ActionGenerator
   - Kevlar.HedgeOptions`1.Delay
+  - Kevlar.HedgeOptions`1.DelayGenerator
+  - Kevlar.HedgeOptions`1.DelayGeneratorAsync
   - Kevlar.HedgeOptions`1.HandlesException
   - Kevlar.HedgeOptions`1.HandlesResult
   - Kevlar.HedgeOptions`1.MaxAttempts
@@ -202,6 +204,66 @@ items:
   overload: Kevlar.HedgeOptions`1.Delay*
   nameWithType.vb: HedgeOptions(Of TResult).Delay
   fullName.vb: Kevlar.HedgeOptions(Of TResult).Delay
+- uid: Kevlar.HedgeOptions`1.DelayGenerator
+  commentId: P:Kevlar.HedgeOptions`1.DelayGenerator
+  id: DelayGenerator
+  parent: Kevlar.HedgeOptions`1
+  langs:
+  - csharp
+  - vb
+  name: DelayGenerator
+  nameWithType: HedgeOptions<TResult>.DelayGenerator
+  fullName: Kevlar.HedgeOptions<TResult>.DelayGenerator
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Selects the delay before each additional attempt while earlier attempts remain pending.
+
+    The generated value replaces <xref href="Kevlar.HedgeOptions.Delay" data-throw-if-not-resolved="false"></xref> for that attempt. Negative values are
+
+    treated as <xref href="System.TimeSpan.Zero" data-throw-if-not-resolved="false"></xref> and values above the runtime timer limit are clamped.
+  example: []
+  syntax:
+    content: public Func<HedgeDelayEvent, TimeSpan>? DelayGenerator { get; set; }
+    parameters: []
+    return:
+      type: System.Func{Kevlar.HedgeDelayEvent,System.TimeSpan}
+    content.vb: Public Property DelayGenerator As Func(Of HedgeDelayEvent, TimeSpan)
+  overload: Kevlar.HedgeOptions`1.DelayGenerator*
+  nameWithType.vb: HedgeOptions(Of TResult).DelayGenerator
+  fullName.vb: Kevlar.HedgeOptions(Of TResult).DelayGenerator
+- uid: Kevlar.HedgeOptions`1.DelayGeneratorAsync
+  commentId: P:Kevlar.HedgeOptions`1.DelayGeneratorAsync
+  id: DelayGeneratorAsync
+  parent: Kevlar.HedgeOptions`1
+  langs:
+  - csharp
+  - vb
+  name: DelayGeneratorAsync
+  nameWithType: HedgeOptions<TResult>.DelayGeneratorAsync
+  fullName: Kevlar.HedgeOptions<TResult>.DelayGeneratorAsync
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Asynchronously selects the delay before each additional attempt while earlier attempts
+
+    remain pending. When both generators are configured, this generator runs second and its
+
+    value determines the delay.
+  example: []
+  syntax:
+    content: public Func<HedgeDelayEvent, ValueTask<TimeSpan>>? DelayGeneratorAsync { get; set; }
+    parameters: []
+    return:
+      type: System.Func{Kevlar.HedgeDelayEvent,System.Threading.Tasks.ValueTask{System.TimeSpan}}
+    content.vb: Public Property DelayGeneratorAsync As Func(Of HedgeDelayEvent, ValueTask(Of TimeSpan))
+  overload: Kevlar.HedgeOptions`1.DelayGeneratorAsync*
+  nameWithType.vb: HedgeOptions(Of TResult).DelayGeneratorAsync
+  fullName.vb: Kevlar.HedgeOptions(Of TResult).DelayGeneratorAsync
 - uid: Kevlar.HedgeOptions`1.OnHedge
   commentId: P:Kevlar.HedgeOptions`1.OnHedge
   id: OnHedge
@@ -783,6 +845,139 @@ references:
   name: TimeSpan
   nameWithType: TimeSpan
   fullName: System.TimeSpan
+- uid: Kevlar.HedgeOptions.Delay
+  commentId: P:Kevlar.HedgeOptions.Delay
+  isExternal: true
+  href: Kevlar.HedgeOptions.html#Kevlar_HedgeOptions_Delay
+  name: Delay
+  nameWithType: HedgeOptions.Delay
+  fullName: Kevlar.HedgeOptions.Delay
+- uid: Kevlar.HedgeOptions`1.DelayGenerator*
+  commentId: Overload:Kevlar.HedgeOptions`1.DelayGenerator
+  isExternal: true
+  href: Kevlar.HedgeOptions-1.html#Kevlar_HedgeOptions_1_DelayGenerator
+  name: DelayGenerator
+  nameWithType: HedgeOptions<TResult>.DelayGenerator
+  fullName: Kevlar.HedgeOptions<TResult>.DelayGenerator
+  nameWithType.vb: HedgeOptions(Of TResult).DelayGenerator
+  fullName.vb: Kevlar.HedgeOptions(Of TResult).DelayGenerator
+- uid: System.Func{Kevlar.HedgeDelayEvent,System.TimeSpan}
+  commentId: T:System.Func{Kevlar.HedgeDelayEvent,System.TimeSpan}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<HedgeDelayEvent, TimeSpan>
+  nameWithType: Func<HedgeDelayEvent, TimeSpan>
+  fullName: System.Func<Kevlar.HedgeDelayEvent, System.TimeSpan>
+  nameWithType.vb: Func(Of HedgeDelayEvent, TimeSpan)
+  fullName.vb: System.Func(Of Kevlar.HedgeDelayEvent, System.TimeSpan)
+  name.vb: Func(Of HedgeDelayEvent, TimeSpan)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.HedgeDelayEvent
+    name: HedgeDelayEvent
+    isExternal: true
+    href: Kevlar.HedgeDelayEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.HedgeDelayEvent
+    name: HedgeDelayEvent
+    isExternal: true
+    href: Kevlar.HedgeDelayEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: )
+- uid: Kevlar.HedgeOptions`1.DelayGeneratorAsync*
+  commentId: Overload:Kevlar.HedgeOptions`1.DelayGeneratorAsync
+  isExternal: true
+  href: Kevlar.HedgeOptions-1.html#Kevlar_HedgeOptions_1_DelayGeneratorAsync
+  name: DelayGeneratorAsync
+  nameWithType: HedgeOptions<TResult>.DelayGeneratorAsync
+  fullName: Kevlar.HedgeOptions<TResult>.DelayGeneratorAsync
+  nameWithType.vb: HedgeOptions(Of TResult).DelayGeneratorAsync
+  fullName.vb: Kevlar.HedgeOptions(Of TResult).DelayGeneratorAsync
+- uid: System.Func{Kevlar.HedgeDelayEvent,System.Threading.Tasks.ValueTask{System.TimeSpan}}
+  commentId: T:System.Func{Kevlar.HedgeDelayEvent,System.Threading.Tasks.ValueTask{System.TimeSpan}}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<HedgeDelayEvent, ValueTask<TimeSpan>>
+  nameWithType: Func<HedgeDelayEvent, ValueTask<TimeSpan>>
+  fullName: System.Func<Kevlar.HedgeDelayEvent, System.Threading.Tasks.ValueTask<System.TimeSpan>>
+  nameWithType.vb: Func(Of HedgeDelayEvent, ValueTask(Of TimeSpan))
+  fullName.vb: System.Func(Of Kevlar.HedgeDelayEvent, System.Threading.Tasks.ValueTask(Of System.TimeSpan))
+  name.vb: Func(Of HedgeDelayEvent, ValueTask(Of TimeSpan))
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.HedgeDelayEvent
+    name: HedgeDelayEvent
+    isExternal: true
+    href: Kevlar.HedgeDelayEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '>'
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.HedgeDelayEvent
+    name: HedgeDelayEvent
+    isExternal: true
+    href: Kevlar.HedgeDelayEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: )
+  - name: )
 - uid: Kevlar.HedgeOptions`1.OnHedge*
   commentId: Overload:Kevlar.HedgeOptions`1.OnHedge
   isExternal: true
