@@ -27,6 +27,7 @@ items:
   - System.Object
   - Kevlar.Chaos.ChaosOptions
   inheritedMembers:
+  - Kevlar.Chaos.ChaosOptions.Name
   - Kevlar.Chaos.ChaosOptions.Enabled
   - Kevlar.Chaos.ChaosOptions.InjectionRate
   - Kevlar.Chaos.ChaosOptions.InjectionRateGenerator
@@ -156,6 +157,14 @@ references:
   name: ChaosOptions
   nameWithType: ChaosOptions
   fullName: Kevlar.Chaos.ChaosOptions
+- uid: Kevlar.Chaos.ChaosOptions.Name
+  commentId: P:Kevlar.Chaos.ChaosOptions.Name
+  parent: Kevlar.Chaos.ChaosOptions
+  isExternal: true
+  href: Kevlar.Chaos.ChaosOptions.html#Kevlar_Chaos_ChaosOptions_Name
+  name: Name
+  nameWithType: ChaosOptions.Name
+  fullName: Kevlar.Chaos.ChaosOptions.Name
 - uid: Kevlar.Chaos.ChaosOptions.Enabled
   commentId: P:Kevlar.Chaos.ChaosOptions.Enabled
   parent: Kevlar.Chaos.ChaosOptions

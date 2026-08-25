@@ -356,7 +356,8 @@ public static class ShieldExtensions
             judge,
             options.OnFallback,
             options.OnFallbackAsync,
-            options.HasHandlingOverride));
+            options.HasHandlingOverride,
+            options.Name));
     }
 
     /// <summary>

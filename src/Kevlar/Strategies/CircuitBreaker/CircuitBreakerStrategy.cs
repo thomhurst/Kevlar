@@ -82,7 +82,7 @@ internal sealed class CircuitBreakerStrategy : Strategy
                 RecordState(alias);
             }
 
-            KevlarMetrics.Rejection(context.ShieldName, "circuit_open");
+            KevlarMetrics.Rejection(context, "circuit_open", rejection!, _core.TelemetryName);
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(rejection!));
         }
 
@@ -280,7 +280,11 @@ internal sealed class CircuitBreakerStrategy : Strategy
                 RecordState(alias);
             }
 
-            KevlarMetrics.Rejection(context.ShieldName, "circuit_open");
+            KevlarMetrics.Rejection(
+                context,
+                "circuit_open",
+                entry.Rejection!,
+                _core.TelemetryName);
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(entry.Rejection!));
         }
 

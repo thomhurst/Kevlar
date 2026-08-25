@@ -8,6 +8,7 @@ items:
   - Kevlar.FallbackOptions.#ctor
   - Kevlar.FallbackOptions.HandlesException
   - Kevlar.FallbackOptions.HandlesExceptionWithContext
+  - Kevlar.FallbackOptions.Name
   - Kevlar.FallbackOptions.OnFallback
   - Kevlar.FallbackOptions.OnFallbackAsync
   langs:
@@ -63,6 +64,29 @@ items:
   nameWithType.vb: FallbackOptions.New()
   fullName.vb: Kevlar.FallbackOptions.New()
   name.vb: New()
+- uid: Kevlar.FallbackOptions.Name
+  commentId: P:Kevlar.FallbackOptions.Name
+  id: Name
+  parent: Kevlar.FallbackOptions
+  langs:
+  - csharp
+  - vb
+  name: Name
+  nameWithType: FallbackOptions.Name
+  fullName: Kevlar.FallbackOptions.Name
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: An optional low-cardinality name used by strategy telemetry.
+  example: []
+  syntax:
+    content: public string? Name { get; set; }
+    parameters: []
+    return:
+      type: System.String
+    content.vb: Public Property Name As String
+  overload: Kevlar.FallbackOptions.Name*
 - uid: Kevlar.FallbackOptions.HandlesException
   commentId: P:Kevlar.FallbackOptions.HandlesException
   id: HandlesException
@@ -419,6 +443,24 @@ references:
   nameWithType.vb: FallbackOptions.New
   fullName.vb: Kevlar.FallbackOptions.New
   name.vb: New
+- uid: Kevlar.FallbackOptions.Name*
+  commentId: Overload:Kevlar.FallbackOptions.Name
+  isExternal: true
+  href: Kevlar.FallbackOptions.html#Kevlar_FallbackOptions_Name
+  name: Name
+  nameWithType: FallbackOptions.Name
+  fullName: Kevlar.FallbackOptions.Name
+- uid: System.String
+  commentId: T:System.String
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.string
+  name: string
+  nameWithType: string
+  fullName: string
+  nameWithType.vb: String
+  fullName.vb: String
+  name.vb: String
 - uid: Kevlar.HandlingClause
   commentId: T:Kevlar.HandlingClause
   parent: Kevlar

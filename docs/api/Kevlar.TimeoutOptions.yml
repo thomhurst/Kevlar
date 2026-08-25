@@ -6,6 +6,7 @@ items:
   parent: Kevlar
   children:
   - Kevlar.TimeoutOptions.#ctor
+  - Kevlar.TimeoutOptions.Name
   - Kevlar.TimeoutOptions.OnTimeout
   - Kevlar.TimeoutOptions.OnTimeoutAsync
   - Kevlar.TimeoutOptions.Timeout
@@ -63,6 +64,29 @@ items:
   nameWithType.vb: TimeoutOptions.New()
   fullName.vb: Kevlar.TimeoutOptions.New()
   name.vb: New()
+- uid: Kevlar.TimeoutOptions.Name
+  commentId: P:Kevlar.TimeoutOptions.Name
+  id: Name
+  parent: Kevlar.TimeoutOptions
+  langs:
+  - csharp
+  - vb
+  name: Name
+  nameWithType: TimeoutOptions.Name
+  fullName: Kevlar.TimeoutOptions.Name
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: An optional low-cardinality name used by strategy telemetry.
+  example: []
+  syntax:
+    content: public string? Name { get; set; }
+    parameters: []
+    return:
+      type: System.String
+    content.vb: Public Property Name As String
+  overload: Kevlar.TimeoutOptions.Name*
 - uid: Kevlar.TimeoutOptions.Timeout
   commentId: P:Kevlar.TimeoutOptions.Timeout
   id: Timeout
@@ -420,6 +444,24 @@ references:
   nameWithType.vb: TimeoutOptions.New
   fullName.vb: Kevlar.TimeoutOptions.New
   name.vb: New
+- uid: Kevlar.TimeoutOptions.Name*
+  commentId: Overload:Kevlar.TimeoutOptions.Name
+  isExternal: true
+  href: Kevlar.TimeoutOptions.html#Kevlar_TimeoutOptions_Name
+  name: Name
+  nameWithType: TimeoutOptions.Name
+  fullName: Kevlar.TimeoutOptions.Name
+- uid: System.String
+  commentId: T:System.String
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.string
+  name: string
+  nameWithType: string
+  fullName: string
+  nameWithType.vb: String
+  fullName.vb: String
+  name.vb: String
 - uid: Kevlar.TimeoutOptions.Timeout*
   commentId: Overload:Kevlar.TimeoutOptions.Timeout
   isExternal: true

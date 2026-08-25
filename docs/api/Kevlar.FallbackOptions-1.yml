@@ -10,6 +10,7 @@ items:
   - Kevlar.FallbackOptions`1.HandlesExceptionWithContext
   - Kevlar.FallbackOptions`1.HandlesResult
   - Kevlar.FallbackOptions`1.HandlesResultWithContext
+  - Kevlar.FallbackOptions`1.Name
   - Kevlar.FallbackOptions`1.OnFallback
   - Kevlar.FallbackOptions`1.OnFallbackAsync
   langs:
@@ -73,6 +74,31 @@ items:
   nameWithType.vb: FallbackOptions(Of TResult).New()
   fullName.vb: Kevlar.FallbackOptions(Of TResult).New()
   name.vb: New()
+- uid: Kevlar.FallbackOptions`1.Name
+  commentId: P:Kevlar.FallbackOptions`1.Name
+  id: Name
+  parent: Kevlar.FallbackOptions`1
+  langs:
+  - csharp
+  - vb
+  name: Name
+  nameWithType: FallbackOptions<TResult>.Name
+  fullName: Kevlar.FallbackOptions<TResult>.Name
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: An optional low-cardinality name used by strategy telemetry.
+  example: []
+  syntax:
+    content: public string? Name { get; set; }
+    parameters: []
+    return:
+      type: System.String
+    content.vb: Public Property Name As String
+  overload: Kevlar.FallbackOptions`1.Name*
+  nameWithType.vb: FallbackOptions(Of TResult).Name
+  fullName.vb: Kevlar.FallbackOptions(Of TResult).Name
 - uid: Kevlar.FallbackOptions`1.HandlesException
   commentId: P:Kevlar.FallbackOptions`1.HandlesException
   id: HandlesException
@@ -535,6 +561,26 @@ references:
   nameWithType.vb: FallbackOptions(Of TResult).New
   fullName.vb: Kevlar.FallbackOptions(Of TResult).New
   name.vb: New
+- uid: Kevlar.FallbackOptions`1.Name*
+  commentId: Overload:Kevlar.FallbackOptions`1.Name
+  isExternal: true
+  href: Kevlar.FallbackOptions-1.html#Kevlar_FallbackOptions_1_Name
+  name: Name
+  nameWithType: FallbackOptions<TResult>.Name
+  fullName: Kevlar.FallbackOptions<TResult>.Name
+  nameWithType.vb: FallbackOptions(Of TResult).Name
+  fullName.vb: Kevlar.FallbackOptions(Of TResult).Name
+- uid: System.String
+  commentId: T:System.String
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.string
+  name: string
+  nameWithType: string
+  fullName: string
+  nameWithType.vb: String
+  fullName.vb: String
+  name.vb: String
 - uid: Kevlar.HandlingClause
   commentId: T:Kevlar.HandlingClause
   parent: Kevlar

@@ -243,8 +243,8 @@ telemetryServices.AddOpenTelemetry()
 
 Polly's `resilience.polly.strategy.events`, `resilience.polly.pipeline.duration`, and
 `resilience.polly.attempt.duration` map to the instruments in the
-[observability table](observability.md#metrics). Kevlar has strategy callbacks and metrics but no
-`ConfigureTelemetry(loggerFactory)` equivalent or built-in `ILogger` integration today.
+[observability table](observability.md#metrics). Kevlar's `KevlarDiagnostics.Listen` is the
+event-stream equivalent; there is no built-in `ILogger` integration today.
 
 ## Testing
 

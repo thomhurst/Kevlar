@@ -9,6 +9,9 @@ namespace Kevlar;
 /// </remarks>
 public sealed class TimeoutOptions
 {
+    /// <summary>An optional low-cardinality name used by strategy telemetry.</summary>
+    public string? Name { get; set; }
+
     /// <summary>The maximum time an execution may take. The default is 30 seconds.</summary>
     public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(30);
 

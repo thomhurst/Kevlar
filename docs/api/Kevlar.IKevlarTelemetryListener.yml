@@ -1,0 +1,75 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.IKevlarTelemetryListener
+  commentId: T:Kevlar.IKevlarTelemetryListener
+  id: IKevlarTelemetryListener
+  parent: Kevlar
+  children:
+  - Kevlar.IKevlarTelemetryListener.OnEvent(Kevlar.KevlarTelemetryEvent@)
+  langs:
+  - csharp
+  - vb
+  name: IKevlarTelemetryListener
+  nameWithType: IKevlarTelemetryListener
+  fullName: Kevlar.IKevlarTelemetryListener
+  type: Interface
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Receives synchronous strategy telemetry without changing execution outcomes.
+  example: []
+  syntax:
+    content: public interface IKevlarTelemetryListener
+    content.vb: Public Interface IKevlarTelemetryListener
+  derivedClasses:
+  - Kevlar.Testing.TelemetryRecorder
+- uid: Kevlar.IKevlarTelemetryListener.OnEvent(Kevlar.KevlarTelemetryEvent@)
+  commentId: M:Kevlar.IKevlarTelemetryListener.OnEvent(Kevlar.KevlarTelemetryEvent@)
+  id: OnEvent(Kevlar.KevlarTelemetryEvent@)
+  parent: Kevlar.IKevlarTelemetryListener
+  langs:
+  - csharp
+  - vb
+  name: OnEvent(in KevlarTelemetryEvent)
+  nameWithType: IKevlarTelemetryListener.OnEvent(in KevlarTelemetryEvent)
+  fullName: Kevlar.IKevlarTelemetryListener.OnEvent(in Kevlar.KevlarTelemetryEvent)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Handles one telemetry event.
+  remarks: Exceptions thrown by a listener are ignored by Kevlar.
+  example: []
+  syntax:
+    content: void OnEvent(in KevlarTelemetryEvent telemetryEvent)
+    parameters:
+    - id: telemetryEvent
+      type: Kevlar.KevlarTelemetryEvent
+    content.vb: Sub OnEvent(telemetryEvent As KevlarTelemetryEvent)
+  overload: Kevlar.IKevlarTelemetryListener.OnEvent*
+  nameWithType.vb: IKevlarTelemetryListener.OnEvent(KevlarTelemetryEvent)
+  fullName.vb: Kevlar.IKevlarTelemetryListener.OnEvent(Kevlar.KevlarTelemetryEvent)
+  name.vb: OnEvent(KevlarTelemetryEvent)
+references:
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: Kevlar.IKevlarTelemetryListener.OnEvent*
+  commentId: Overload:Kevlar.IKevlarTelemetryListener.OnEvent
+  isExternal: true
+  href: Kevlar.IKevlarTelemetryListener.html#Kevlar_IKevlarTelemetryListener_OnEvent_Kevlar_KevlarTelemetryEvent__
+  name: OnEvent
+  nameWithType: IKevlarTelemetryListener.OnEvent
+  fullName: Kevlar.IKevlarTelemetryListener.OnEvent
+- uid: Kevlar.KevlarTelemetryEvent
+  commentId: T:Kevlar.KevlarTelemetryEvent
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.KevlarTelemetryEvent.html
+  name: KevlarTelemetryEvent
+  nameWithType: KevlarTelemetryEvent
+  fullName: Kevlar.KevlarTelemetryEvent

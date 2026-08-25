@@ -315,7 +315,8 @@ public sealed class Shield<TResult>
             judge,
             options.OnFallback,
             options.OnFallbackAsync,
-            options.HasHandlingOverride));
+            options.HasHandlingOverride,
+            options.Name));
     }
 
     /// <summary>Replaces handled outcomes with the result of <paramref name="fallback"/>.</summary>
@@ -346,7 +347,8 @@ public sealed class Shield<TResult>
             judge,
             options.OnFallback,
             options.OnFallbackAsync,
-            options.HasHandlingOverride));
+            options.HasHandlingOverride,
+            options.Name));
     }
 
     /// <summary>Replaces handled outcomes with the result of <paramref name="fallback"/>, which receives the handled outcome.</summary>
@@ -380,7 +382,8 @@ public sealed class Shield<TResult>
             judge,
             options.OnFallback,
             options.OnFallbackAsync,
-            options.HasHandlingOverride));
+            options.HasHandlingOverride,
+            options.Name));
     }
 
     /// <summary>Appends a custom <see cref="Strategy"/> implementation to the pipeline.</summary>

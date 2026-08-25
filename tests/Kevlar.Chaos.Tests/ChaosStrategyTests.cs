@@ -142,6 +142,55 @@ public class ChaosStrategyTests
     }
 
     [Test]
+    [NotInParallel]
+    public async Task Fault_Telemetry_Uses_The_Injected_Exception()
+    {
+        var injected = new TestException("injected");
+        KevlarTelemetryEvent observed = default;
+        string? exceptionType = null;
+        using var subscription = KevlarDiagnostics.Listen(new CallbackTelemetryListener(telemetryEvent =>
+        {
+            if (telemetryEvent.EventName == "chaos_fault")
+            {
+                observed = telemetryEvent;
+            }
+        }));
+        using var metrics = new MeterListener();
+        metrics.InstrumentPublished = (instrument, listener) =>
+        {
+            if (instrument.Meter.Name == KevlarDiagnostics.MeterName
+                && instrument.Name == "kevlar.strategy.events")
+            {
+                listener.EnableMeasurementEvents(instrument);
+            }
+        };
+        metrics.SetMeasurementEventCallback<long>((_, _, tags, _) =>
+        {
+            foreach (var tag in tags)
+            {
+                if (tag.Key == "exception.type")
+                {
+                    exceptionType = tag.Value as string;
+                }
+            }
+        });
+        metrics.Start();
+        var shield = ChaosShield.Fault(options =>
+        {
+            options.Enabled = true;
+            options.Exception = injected;
+        });
+
+        var outcome = await shield.ExecuteOutcomeAsync(static _ => new ValueTask<int>(42));
+
+        await Assert.That(ReferenceEquals(outcome.Exception, injected)).IsTrue();
+        await Assert.That(observed.EventName).IsEqualTo("chaos_fault");
+        await Assert.That(observed.IsSuccess).IsFalse();
+        await Assert.That(ReferenceEquals(observed.Exception, injected)).IsTrue();
+        await Assert.That(exceptionType).IsEqualTo(typeof(TestException).FullName);
+    }
+
+    [Test]
     public async Task Typed_Outcome_Preserves_Result_Identity_And_Composes_With_Fallback()
     {
         var injected = new Payload("injected");
@@ -691,6 +740,12 @@ public class ChaosStrategyTests
     }
 
     private sealed record Payload(string Value);
+
+    private sealed class CallbackTelemetryListener(Action<KevlarTelemetryEvent> callback)
+        : IKevlarTelemetryListener
+    {
+        public void OnEvent(in KevlarTelemetryEvent telemetryEvent) => callback(telemetryEvent);
+    }
 
     private sealed class TestException(string message) : Exception(message);
 }

@@ -1,4 +1,6 @@
 #nullable enable
+Kevlar.Chaos.ChaosOptions.Name.get -> string?
+Kevlar.Chaos.ChaosOptions.Name.set -> void
 const Kevlar.Chaos.ChaosDiagnostics.MeterName = "Kevlar.Chaos" -> string!
 Kevlar.Chaos.ChaosBehaviorOptions
 Kevlar.Chaos.ChaosBehaviorOptions.Behavior.get -> System.Func<Kevlar.KevlarContext!, System.Threading.Tasks.ValueTask>?

@@ -1,0 +1,674 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.KevlarTelemetryEvent
+  commentId: T:Kevlar.KevlarTelemetryEvent
+  id: KevlarTelemetryEvent
+  parent: Kevlar
+  children:
+  - Kevlar.KevlarTelemetryEvent.AttemptNumber
+  - Kevlar.KevlarTelemetryEvent.Context
+  - Kevlar.KevlarTelemetryEvent.Duration
+  - Kevlar.KevlarTelemetryEvent.EventName
+  - Kevlar.KevlarTelemetryEvent.Exception
+  - Kevlar.KevlarTelemetryEvent.IsSuccess
+  - Kevlar.KevlarTelemetryEvent.OperationKey
+  - Kevlar.KevlarTelemetryEvent.Severity
+  - Kevlar.KevlarTelemetryEvent.ShieldName
+  - Kevlar.KevlarTelemetryEvent.StrategyIndex
+  - Kevlar.KevlarTelemetryEvent.StrategyName
+  langs:
+  - csharp
+  - vb
+  name: KevlarTelemetryEvent
+  nameWithType: KevlarTelemetryEvent
+  fullName: Kevlar.KevlarTelemetryEvent
+  type: Struct
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Describes one synchronous event emitted by a Kevlar strategy.
+  example: []
+  syntax:
+    content: public readonly struct KevlarTelemetryEvent
+    content.vb: Public Structure KevlarTelemetryEvent
+  inheritedMembers:
+  - System.ValueType.Equals(System.Object)
+  - System.ValueType.GetHashCode
+  - System.ValueType.ToString
+  - System.Object.GetType
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+- uid: Kevlar.KevlarTelemetryEvent.EventName
+  commentId: P:Kevlar.KevlarTelemetryEvent.EventName
+  id: EventName
+  parent: Kevlar.KevlarTelemetryEvent
+  langs:
+  - csharp
+  - vb
+  name: EventName
+  nameWithType: KevlarTelemetryEvent.EventName
+  fullName: Kevlar.KevlarTelemetryEvent.EventName
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The stable event name, such as <code>execution_attempt</code> or <code>retry</code>.
+  example: []
+  syntax:
+    content: public string EventName { get; }
+    parameters: []
+    return:
+      type: System.String
+    content.vb: Public ReadOnly Property EventName As String
+  overload: Kevlar.KevlarTelemetryEvent.EventName*
+- uid: Kevlar.KevlarTelemetryEvent.Severity
+  commentId: P:Kevlar.KevlarTelemetryEvent.Severity
+  id: Severity
+  parent: Kevlar.KevlarTelemetryEvent
+  langs:
+  - csharp
+  - vb
+  name: Severity
+  nameWithType: KevlarTelemetryEvent.Severity
+  fullName: Kevlar.KevlarTelemetryEvent.Severity
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The event severity.
+  example: []
+  syntax:
+    content: public KevlarTelemetrySeverity Severity { get; }
+    parameters: []
+    return:
+      type: Kevlar.KevlarTelemetrySeverity
+    content.vb: Public ReadOnly Property Severity As KevlarTelemetrySeverity
+  overload: Kevlar.KevlarTelemetryEvent.Severity*
+- uid: Kevlar.KevlarTelemetryEvent.ShieldName
+  commentId: P:Kevlar.KevlarTelemetryEvent.ShieldName
+  id: ShieldName
+  parent: Kevlar.KevlarTelemetryEvent
+  langs:
+  - csharp
+  - vb
+  name: ShieldName
+  nameWithType: KevlarTelemetryEvent.ShieldName
+  fullName: Kevlar.KevlarTelemetryEvent.ShieldName
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The executing shield name, if configured.
+  example: []
+  syntax:
+    content: public string? ShieldName { get; }
+    parameters: []
+    return:
+      type: System.String
+    content.vb: Public ReadOnly Property ShieldName As String
+  overload: Kevlar.KevlarTelemetryEvent.ShieldName*
+- uid: Kevlar.KevlarTelemetryEvent.StrategyName
+  commentId: P:Kevlar.KevlarTelemetryEvent.StrategyName
+  id: StrategyName
+  parent: Kevlar.KevlarTelemetryEvent
+  langs:
+  - csharp
+  - vb
+  name: StrategyName
+  nameWithType: KevlarTelemetryEvent.StrategyName
+  fullName: Kevlar.KevlarTelemetryEvent.StrategyName
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The stable strategy name.
+  example: []
+  syntax:
+    content: public string StrategyName { get; }
+    parameters: []
+    return:
+      type: System.String
+    content.vb: Public ReadOnly Property StrategyName As String
+  overload: Kevlar.KevlarTelemetryEvent.StrategyName*
+- uid: Kevlar.KevlarTelemetryEvent.StrategyIndex
+  commentId: P:Kevlar.KevlarTelemetryEvent.StrategyIndex
+  id: StrategyIndex
+  parent: Kevlar.KevlarTelemetryEvent
+  langs:
+  - csharp
+  - vb
+  name: StrategyIndex
+  nameWithType: KevlarTelemetryEvent.StrategyIndex
+  fullName: Kevlar.KevlarTelemetryEvent.StrategyIndex
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The zero-based strategy position, or <code>-1</code> for a caller-recorded event.
+  example: []
+  syntax:
+    content: public int StrategyIndex { get; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public ReadOnly Property StrategyIndex As Integer
+  overload: Kevlar.KevlarTelemetryEvent.StrategyIndex*
+- uid: Kevlar.KevlarTelemetryEvent.AttemptNumber
+  commentId: P:Kevlar.KevlarTelemetryEvent.AttemptNumber
+  id: AttemptNumber
+  parent: Kevlar.KevlarTelemetryEvent
+  langs:
+  - csharp
+  - vb
+  name: AttemptNumber
+  nameWithType: KevlarTelemetryEvent.AttemptNumber
+  fullName: Kevlar.KevlarTelemetryEvent.AttemptNumber
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The zero-based execution-attempt number.
+  example: []
+  syntax:
+    content: public int AttemptNumber { get; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public ReadOnly Property AttemptNumber As Integer
+  overload: Kevlar.KevlarTelemetryEvent.AttemptNumber*
+- uid: Kevlar.KevlarTelemetryEvent.IsSuccess
+  commentId: P:Kevlar.KevlarTelemetryEvent.IsSuccess
+  id: IsSuccess
+  parent: Kevlar.KevlarTelemetryEvent
+  langs:
+  - csharp
+  - vb
+  name: IsSuccess
+  nameWithType: KevlarTelemetryEvent.IsSuccess
+  fullName: Kevlar.KevlarTelemetryEvent.IsSuccess
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Whether the event's outcome succeeded.
+  example: []
+  syntax:
+    content: public bool IsSuccess { get; }
+    parameters: []
+    return:
+      type: System.Boolean
+    content.vb: Public ReadOnly Property IsSuccess As Boolean
+  overload: Kevlar.KevlarTelemetryEvent.IsSuccess*
+- uid: Kevlar.KevlarTelemetryEvent.Exception
+  commentId: P:Kevlar.KevlarTelemetryEvent.Exception
+  id: Exception
+  parent: Kevlar.KevlarTelemetryEvent
+  langs:
+  - csharp
+  - vb
+  name: Exception
+  nameWithType: KevlarTelemetryEvent.Exception
+  fullName: Kevlar.KevlarTelemetryEvent.Exception
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The associated exception, if any.
+  example: []
+  syntax:
+    content: public Exception? Exception { get; }
+    parameters: []
+    return:
+      type: System.Exception
+    content.vb: Public ReadOnly Property Exception As Exception
+  overload: Kevlar.KevlarTelemetryEvent.Exception*
+- uid: Kevlar.KevlarTelemetryEvent.Duration
+  commentId: P:Kevlar.KevlarTelemetryEvent.Duration
+  id: Duration
+  parent: Kevlar.KevlarTelemetryEvent
+  langs:
+  - csharp
+  - vb
+  name: Duration
+  nameWithType: KevlarTelemetryEvent.Duration
+  fullName: Kevlar.KevlarTelemetryEvent.Duration
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The measured attempt duration, or <xref href="System.TimeSpan.Zero" data-throw-if-not-resolved="false"></xref> when not applicable.
+  example: []
+  syntax:
+    content: public TimeSpan Duration { get; }
+    parameters: []
+    return:
+      type: System.TimeSpan
+    content.vb: Public ReadOnly Property Duration As TimeSpan
+  overload: Kevlar.KevlarTelemetryEvent.Duration*
+- uid: Kevlar.KevlarTelemetryEvent.OperationKey
+  commentId: P:Kevlar.KevlarTelemetryEvent.OperationKey
+  id: OperationKey
+  parent: Kevlar.KevlarTelemetryEvent
+  langs:
+  - csharp
+  - vb
+  name: OperationKey
+  nameWithType: KevlarTelemetryEvent.OperationKey
+  fullName: Kevlar.KevlarTelemetryEvent.OperationKey
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The bounded logical operation key supplied through <xref href="Kevlar.KevlarKeys.OperationKey" data-throw-if-not-resolved="false"></xref>.
+  example: []
+  syntax:
+    content: public string? OperationKey { get; }
+    parameters: []
+    return:
+      type: System.String
+    content.vb: Public ReadOnly Property OperationKey As String
+  overload: Kevlar.KevlarTelemetryEvent.OperationKey*
+- uid: Kevlar.KevlarTelemetryEvent.Context
+  commentId: P:Kevlar.KevlarTelemetryEvent.Context
+  id: Context
+  parent: Kevlar.KevlarTelemetryEvent
+  langs:
+  - csharp
+  - vb
+  name: Context
+  nameWithType: KevlarTelemetryEvent.Context
+  fullName: Kevlar.KevlarTelemetryEvent.Context
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The active execution context. It is valid only during the listener callback.
+  example: []
+  syntax:
+    content: public KevlarContext Context { get; }
+    parameters: []
+    return:
+      type: Kevlar.KevlarContext
+    content.vb: Public ReadOnly Property Context As KevlarContext
+  overload: Kevlar.KevlarTelemetryEvent.Context*
+references:
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: System.ValueType.Equals(System.Object)
+  commentId: M:System.ValueType.Equals(System.Object)
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  name: Equals(object)
+  nameWithType: ValueType.Equals(object)
+  fullName: System.ValueType.Equals(object)
+  nameWithType.vb: ValueType.Equals(Object)
+  fullName.vb: System.ValueType.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.ValueType.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.ValueType.GetHashCode
+  commentId: M:System.ValueType.GetHashCode
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  name: GetHashCode()
+  nameWithType: ValueType.GetHashCode()
+  fullName: System.ValueType.GetHashCode()
+  spec.csharp:
+  - uid: System.ValueType.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  - name: (
+  - name: )
+- uid: System.ValueType.ToString
+  commentId: M:System.ValueType.ToString
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  name: ToString()
+  nameWithType: ValueType.ToString()
+  fullName: System.ValueType.ToString()
+  spec.csharp:
+  - uid: System.ValueType.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  - name: (
+  - name: )
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.ValueType
+  commentId: T:System.ValueType
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype
+  name: ValueType
+  nameWithType: ValueType
+  fullName: System.ValueType
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.KevlarTelemetryEvent.EventName*
+  commentId: Overload:Kevlar.KevlarTelemetryEvent.EventName
+  isExternal: true
+  href: Kevlar.KevlarTelemetryEvent.html#Kevlar_KevlarTelemetryEvent_EventName
+  name: EventName
+  nameWithType: KevlarTelemetryEvent.EventName
+  fullName: Kevlar.KevlarTelemetryEvent.EventName
+- uid: System.String
+  commentId: T:System.String
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.string
+  name: string
+  nameWithType: string
+  fullName: string
+  nameWithType.vb: String
+  fullName.vb: String
+  name.vb: String
+- uid: Kevlar.KevlarTelemetryEvent.Severity*
+  commentId: Overload:Kevlar.KevlarTelemetryEvent.Severity
+  isExternal: true
+  href: Kevlar.KevlarTelemetryEvent.html#Kevlar_KevlarTelemetryEvent_Severity
+  name: Severity
+  nameWithType: KevlarTelemetryEvent.Severity
+  fullName: Kevlar.KevlarTelemetryEvent.Severity
+- uid: Kevlar.KevlarTelemetrySeverity
+  commentId: T:Kevlar.KevlarTelemetrySeverity
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.KevlarTelemetrySeverity.html
+  name: KevlarTelemetrySeverity
+  nameWithType: KevlarTelemetrySeverity
+  fullName: Kevlar.KevlarTelemetrySeverity
+- uid: Kevlar.KevlarTelemetryEvent.ShieldName*
+  commentId: Overload:Kevlar.KevlarTelemetryEvent.ShieldName
+  isExternal: true
+  href: Kevlar.KevlarTelemetryEvent.html#Kevlar_KevlarTelemetryEvent_ShieldName
+  name: ShieldName
+  nameWithType: KevlarTelemetryEvent.ShieldName
+  fullName: Kevlar.KevlarTelemetryEvent.ShieldName
+- uid: Kevlar.KevlarTelemetryEvent.StrategyName*
+  commentId: Overload:Kevlar.KevlarTelemetryEvent.StrategyName
+  isExternal: true
+  href: Kevlar.KevlarTelemetryEvent.html#Kevlar_KevlarTelemetryEvent_StrategyName
+  name: StrategyName
+  nameWithType: KevlarTelemetryEvent.StrategyName
+  fullName: Kevlar.KevlarTelemetryEvent.StrategyName
+- uid: Kevlar.KevlarTelemetryEvent.StrategyIndex*
+  commentId: Overload:Kevlar.KevlarTelemetryEvent.StrategyIndex
+  isExternal: true
+  href: Kevlar.KevlarTelemetryEvent.html#Kevlar_KevlarTelemetryEvent_StrategyIndex
+  name: StrategyIndex
+  nameWithType: KevlarTelemetryEvent.StrategyIndex
+  fullName: Kevlar.KevlarTelemetryEvent.StrategyIndex
+- uid: System.Int32
+  commentId: T:System.Int32
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.int32
+  name: int
+  nameWithType: int
+  fullName: int
+  nameWithType.vb: Integer
+  fullName.vb: Integer
+  name.vb: Integer
+- uid: Kevlar.KevlarTelemetryEvent.AttemptNumber*
+  commentId: Overload:Kevlar.KevlarTelemetryEvent.AttemptNumber
+  isExternal: true
+  href: Kevlar.KevlarTelemetryEvent.html#Kevlar_KevlarTelemetryEvent_AttemptNumber
+  name: AttemptNumber
+  nameWithType: KevlarTelemetryEvent.AttemptNumber
+  fullName: Kevlar.KevlarTelemetryEvent.AttemptNumber
+- uid: Kevlar.KevlarTelemetryEvent.IsSuccess*
+  commentId: Overload:Kevlar.KevlarTelemetryEvent.IsSuccess
+  isExternal: true
+  href: Kevlar.KevlarTelemetryEvent.html#Kevlar_KevlarTelemetryEvent_IsSuccess
+  name: IsSuccess
+  nameWithType: KevlarTelemetryEvent.IsSuccess
+  fullName: Kevlar.KevlarTelemetryEvent.IsSuccess
+- uid: System.Boolean
+  commentId: T:System.Boolean
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.boolean
+  name: bool
+  nameWithType: bool
+  fullName: bool
+  nameWithType.vb: Boolean
+  fullName.vb: Boolean
+  name.vb: Boolean
+- uid: Kevlar.KevlarTelemetryEvent.Exception*
+  commentId: Overload:Kevlar.KevlarTelemetryEvent.Exception
+  isExternal: true
+  href: Kevlar.KevlarTelemetryEvent.html#Kevlar_KevlarTelemetryEvent_Exception
+  name: Exception
+  nameWithType: KevlarTelemetryEvent.Exception
+  fullName: Kevlar.KevlarTelemetryEvent.Exception
+- uid: System.Exception
+  commentId: T:System.Exception
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.exception
+  name: Exception
+  nameWithType: Exception
+  fullName: System.Exception
+- uid: System.TimeSpan.Zero
+  commentId: F:System.TimeSpan.Zero
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.timespan.zero
+  name: Zero
+  nameWithType: TimeSpan.Zero
+  fullName: System.TimeSpan.Zero
+- uid: Kevlar.KevlarTelemetryEvent.Duration*
+  commentId: Overload:Kevlar.KevlarTelemetryEvent.Duration
+  isExternal: true
+  href: Kevlar.KevlarTelemetryEvent.html#Kevlar_KevlarTelemetryEvent_Duration
+  name: Duration
+  nameWithType: KevlarTelemetryEvent.Duration
+  fullName: Kevlar.KevlarTelemetryEvent.Duration
+- uid: System.TimeSpan
+  commentId: T:System.TimeSpan
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.timespan
+  name: TimeSpan
+  nameWithType: TimeSpan
+  fullName: System.TimeSpan
+- uid: Kevlar.KevlarKeys.OperationKey
+  commentId: P:Kevlar.KevlarKeys.OperationKey
+  isExternal: true
+  href: Kevlar.KevlarKeys.html#Kevlar_KevlarKeys_OperationKey
+  name: OperationKey
+  nameWithType: KevlarKeys.OperationKey
+  fullName: Kevlar.KevlarKeys.OperationKey
+- uid: Kevlar.KevlarTelemetryEvent.OperationKey*
+  commentId: Overload:Kevlar.KevlarTelemetryEvent.OperationKey
+  isExternal: true
+  href: Kevlar.KevlarTelemetryEvent.html#Kevlar_KevlarTelemetryEvent_OperationKey
+  name: OperationKey
+  nameWithType: KevlarTelemetryEvent.OperationKey
+  fullName: Kevlar.KevlarTelemetryEvent.OperationKey
+- uid: Kevlar.KevlarTelemetryEvent.Context*
+  commentId: Overload:Kevlar.KevlarTelemetryEvent.Context
+  isExternal: true
+  href: Kevlar.KevlarTelemetryEvent.html#Kevlar_KevlarTelemetryEvent_Context
+  name: Context
+  nameWithType: KevlarTelemetryEvent.Context
+  fullName: Kevlar.KevlarTelemetryEvent.Context
+- uid: Kevlar.KevlarContext
+  commentId: T:Kevlar.KevlarContext
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.KevlarContext.html
+  name: KevlarContext
+  nameWithType: KevlarContext
+  fullName: Kevlar.KevlarContext

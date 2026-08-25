@@ -13,6 +13,7 @@ items:
   - Kevlar.RetryOptions.HandlesExceptionWithContext
   - Kevlar.RetryOptions.MaxDelay
   - Kevlar.RetryOptions.MaxRetries
+  - Kevlar.RetryOptions.Name
   - Kevlar.RetryOptions.OnRetry
   - Kevlar.RetryOptions.OnRetryAsync
   langs:
@@ -68,6 +69,29 @@ items:
   nameWithType.vb: RetryOptions.New()
   fullName.vb: Kevlar.RetryOptions.New()
   name.vb: New()
+- uid: Kevlar.RetryOptions.Name
+  commentId: P:Kevlar.RetryOptions.Name
+  id: Name
+  parent: Kevlar.RetryOptions
+  langs:
+  - csharp
+  - vb
+  name: Name
+  nameWithType: RetryOptions.Name
+  fullName: Kevlar.RetryOptions.Name
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: An optional low-cardinality name used by strategy telemetry.
+  example: []
+  syntax:
+    content: public string? Name { get; set; }
+    parameters: []
+    return:
+      type: System.String
+    content.vb: Public Property Name As String
+  overload: Kevlar.RetryOptions.Name*
 - uid: Kevlar.RetryOptions.HandlesException
   commentId: P:Kevlar.RetryOptions.HandlesException
   id: HandlesException
@@ -568,6 +592,24 @@ references:
   nameWithType.vb: RetryOptions.New
   fullName.vb: Kevlar.RetryOptions.New
   name.vb: New
+- uid: Kevlar.RetryOptions.Name*
+  commentId: Overload:Kevlar.RetryOptions.Name
+  isExternal: true
+  href: Kevlar.RetryOptions.html#Kevlar_RetryOptions_Name
+  name: Name
+  nameWithType: RetryOptions.Name
+  fullName: Kevlar.RetryOptions.Name
+- uid: System.String
+  commentId: T:System.String
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.string
+  name: string
+  nameWithType: string
+  fullName: string
+  nameWithType.vb: String
+  fullName.vb: String
+  name.vb: String
 - uid: Kevlar.HandlingClause
   commentId: T:Kevlar.HandlingClause
   parent: Kevlar

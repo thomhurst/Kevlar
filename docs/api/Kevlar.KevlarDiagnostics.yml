@@ -5,6 +5,7 @@ items:
   id: KevlarDiagnostics
   parent: Kevlar
   children:
+  - Kevlar.KevlarDiagnostics.Listen(Kevlar.IKevlarTelemetryListener)
   - Kevlar.KevlarDiagnostics.MeterName
   - Kevlar.KevlarDiagnostics.OnCallbackError
   - Kevlar.KevlarDiagnostics.ReportCallbackError(Kevlar.CallbackErrorKind,Kevlar.KevlarContext,System.Exception)
@@ -34,7 +35,11 @@ items:
 
     <ul><li><code>kevlar.executions</code> — completed public execution calls, including empty shields and
 
-    pre-cancelled calls; attributes <code>kevlar.shield.name</code>, <code>kevlar.execution.outcome</code> (<code>success</code>/<code>failure</code>)</li><li><code>kevlar.retries</code> — retry attempts; attribute <code>kevlar.shield.name</code></li><li><code>kevlar.timeouts</code> — executions cancelled by a timeout strategy; attribute <code>kevlar.shield.name</code></li><li><code>kevlar.hedges</code> — extra hedged attempts launched; attribute <code>kevlar.shield.name</code></li><li><code>kevlar.fallbacks</code> — outcomes replaced by a fallback; attribute <code>kevlar.shield.name</code></li><li><code>kevlar.rejections</code> — fail-fast rejections; attributes <code>kevlar.shield.name</code>, <code>kevlar.rejection.type</code> (<code>circuit_open</code>/<code>rate_limit</code>/<code>rate_limiter_adapter</code>/<code>concurrency_limit</code>)</li><li><code>kevlar.circuit_breaker.transitions</code> — circuit state changes; attributes <code>kevlar.circuit_breaker.state.from</code>, <code>kevlar.circuit_breaker.state.to</code></li><li><code>kevlar.callback_errors</code> — exceptions thrown by notifications or observers; attributes <code>kevlar.shield.name</code>, <code>kevlar.callback.kind</code></li><li><code>kevlar.execution.duration</code> — execution duration histogram in seconds; attributes <code>kevlar.shield.name</code>, <code>kevlar.execution.outcome</code></li><li><code>kevlar.circuit_breaker.state</code> — current state gauge (<code>closed=0</code>, <code>open=1</code>, <code>half_open=2</code>, <code>isolated=3</code>)</li><li><code>kevlar.concurrency_limit.inflight</code>, <code>kevlar.concurrency_limit.queued</code>, and <code>kevlar.concurrency_limit.capacity</code> — concurrency-limit state gauges</li><li><code>kevlar.rate_limit.available</code> and <code>kevlar.rate_limit.queued</code> — rate-limit state gauges</li></ul>
+    pre-cancelled calls; attributes <code>kevlar.shield.name</code>, <code>kevlar.execution.outcome</code> (<code>success</code>/<code>failure</code>)</li><li><code>kevlar.retries</code> — retry attempts; attribute <code>kevlar.shield.name</code></li><li><code>kevlar.timeouts</code> — executions cancelled by a timeout strategy; attribute <code>kevlar.shield.name</code></li><li><code>kevlar.hedges</code> — extra hedged attempts launched; attribute <code>kevlar.shield.name</code></li><li><code>kevlar.fallbacks</code> — outcomes replaced by a fallback; attribute <code>kevlar.shield.name</code></li><li><code>kevlar.rejections</code> — fail-fast rejections; attributes <code>kevlar.shield.name</code>, <code>kevlar.rejection.type</code> (<code>circuit_open</code>/<code>rate_limit</code>/<code>rate_limiter_adapter</code>/<code>concurrency_limit</code>)</li><li><code>kevlar.circuit_breaker.transitions</code> — circuit state changes; attributes <code>kevlar.circuit_breaker.state.from</code>, <code>kevlar.circuit_breaker.state.to</code></li><li><code>kevlar.callback_errors</code> — exceptions thrown by notifications or observers; attributes <code>kevlar.shield.name</code>, <code>kevlar.callback.kind</code></li><li><code>kevlar.execution.duration</code> — execution duration histogram in seconds; attributes <code>kevlar.shield.name</code>, <code>kevlar.execution.outcome</code></li><li><code>kevlar.strategy.events</code> — strategy and custom events; attributes include shield,
+
+    strategy, event, severity, attempt, exception type, and an optional bounded operation key</li><li><code>kevlar.attempt.duration</code> — retry-attempt duration histogram in milliseconds with
+
+    the strategy-event attributes</li><li><code>kevlar.circuit_breaker.state</code> — current state gauge (<code>closed=0</code>, <code>open=1</code>, <code>half_open=2</code>, <code>isolated=3</code>)</li><li><code>kevlar.concurrency_limit.inflight</code>, <code>kevlar.concurrency_limit.queued</code>, and <code>kevlar.concurrency_limit.capacity</code> — concurrency-limit state gauges</li><li><code>kevlar.rate_limit.available</code> and <code>kevlar.rate_limit.queued</code> — rate-limit state gauges</li></ul>
 
 
     The <code>kevlar.shield.name</code> attribute is present only for shields named via <code>WithName</code>; an explicitly
@@ -107,6 +112,32 @@ items:
       type: System.Exception
     content.vb: Public Shared Sub ReportCallbackError(kind As CallbackErrorKind, context As KevlarContext, exception As Exception)
   overload: Kevlar.KevlarDiagnostics.ReportCallbackError*
+- uid: Kevlar.KevlarDiagnostics.Listen(Kevlar.IKevlarTelemetryListener)
+  commentId: M:Kevlar.KevlarDiagnostics.Listen(Kevlar.IKevlarTelemetryListener)
+  id: Listen(Kevlar.IKevlarTelemetryListener)
+  parent: Kevlar.KevlarDiagnostics
+  langs:
+  - csharp
+  - vb
+  name: Listen(IKevlarTelemetryListener)
+  nameWithType: KevlarDiagnostics.Listen(IKevlarTelemetryListener)
+  fullName: Kevlar.KevlarDiagnostics.Listen(Kevlar.IKevlarTelemetryListener)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Subscribes a listener to synchronous strategy telemetry.
+  example: []
+  syntax:
+    content: public static IDisposable Listen(IKevlarTelemetryListener listener)
+    parameters:
+    - id: listener
+      type: Kevlar.IKevlarTelemetryListener
+    return:
+      type: System.IDisposable
+      description: A subscription that removes the listener when disposed.
+    content.vb: Public Shared Function Listen(listener As IKevlarTelemetryListener) As IDisposable
+  overload: Kevlar.KevlarDiagnostics.Listen*
 - uid: Kevlar.KevlarDiagnostics.OnCallbackError
   commentId: E:Kevlar.KevlarDiagnostics.OnCallbackError
   id: OnCallbackError
@@ -425,6 +456,29 @@ references:
   name: Exception
   nameWithType: Exception
   fullName: System.Exception
+- uid: Kevlar.KevlarDiagnostics.Listen*
+  commentId: Overload:Kevlar.KevlarDiagnostics.Listen
+  isExternal: true
+  href: Kevlar.KevlarDiagnostics.html#Kevlar_KevlarDiagnostics_Listen_Kevlar_IKevlarTelemetryListener_
+  name: Listen
+  nameWithType: KevlarDiagnostics.Listen
+  fullName: Kevlar.KevlarDiagnostics.Listen
+- uid: Kevlar.IKevlarTelemetryListener
+  commentId: T:Kevlar.IKevlarTelemetryListener
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.IKevlarTelemetryListener.html
+  name: IKevlarTelemetryListener
+  nameWithType: IKevlarTelemetryListener
+  fullName: Kevlar.IKevlarTelemetryListener
+- uid: System.IDisposable
+  commentId: T:System.IDisposable
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.idisposable
+  name: IDisposable
+  nameWithType: IDisposable
+  fullName: System.IDisposable
 - uid: System.Action{Kevlar.CallbackErrorEvent}
   commentId: T:System.Action{Kevlar.CallbackErrorEvent}
   parent: System

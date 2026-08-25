@@ -31,6 +31,7 @@ public sealed class KevlarContext
 
     private CancellationToken _cancellationToken;
     private long _activeStrategyMask;
+    private int _attemptNumber;
     private bool _isSynchronous;
     private string? _shieldName;
     private int _strategyIndex = -1;
@@ -127,6 +128,12 @@ public sealed class KevlarContext
     internal KevlarProperties PropertiesForCompletion =>
         _hasCompletionProperties ? _completionProperties! : _properties;
 
+    internal int AttemptNumber
+    {
+        get => _attemptNumber;
+        set => _attemptNumber = value;
+    }
+
     internal void CaptureCompletionProperties(
         KevlarProperties properties,
         KevlarProperties? baseline = null)
@@ -166,6 +173,34 @@ public sealed class KevlarContext
         }
     }
 
+    /// <summary>Records a custom low-cardinality strategy event.</summary>
+    /// <param name="eventName">A stable event name from a bounded vocabulary.</param>
+    /// <param name="severity">The event severity.</param>
+    /// <param name="exception">An associated exception, if any. Exception messages are never metric tags.</param>
+    /// <param name="attemptNumber">
+    /// The zero-based attempt number, or <see langword="null"/> to use the active retry attempt.
+    /// </param>
+    /// <param name="strategyName">A stable low-cardinality custom strategy name.</param>
+    public void RecordEvent(
+        string eventName,
+        KevlarTelemetrySeverity severity = KevlarTelemetrySeverity.Information,
+        Exception? exception = null,
+        int? attemptNumber = null,
+        string? strategyName = null)
+    {
+        ThrowIfReturnedToPool();
+        Internal.Throw.IfNull(eventName, nameof(eventName));
+        Internal.KevlarTelemetry.Record(
+            this,
+            strategyName ?? "Custom",
+            eventName,
+            severity,
+            StrategyIndex,
+            attemptNumber ?? AttemptNumber,
+            isSuccess: exception is null,
+            exception);
+    }
+
     internal static KevlarContext Rent(CancellationToken cancellationToken, bool isSynchronous, TimeProvider timeProvider, string? shieldName)
     {
         var context = Pool.Rent();
@@ -176,6 +211,7 @@ public sealed class KevlarContext
         context.TimeProvider = timeProvider;
         context.ShieldName = shieldName;
         context.StrategyIndex = -1;
+        context.AttemptNumber = 0;
         return context;
     }
 
@@ -198,6 +234,7 @@ public sealed class KevlarContext
             TimeProvider = TimeProvider,
             ShieldName = ShieldName,
             StrategyIndex = StrategyIndex,
+            AttemptNumber = AttemptNumber,
         };
         Properties.CopyTo(snapshot.Properties);
         return snapshot;
@@ -211,6 +248,7 @@ public sealed class KevlarContext
     {
         var fork = Rent(cancellationToken, IsSynchronous, TimeProvider, ShieldName);
         fork.StrategyIndex = StrategyIndex;
+        fork.AttemptNumber = AttemptNumber;
 
         Properties.CopyTo(fork.Properties);
         fork._forkBaseline ??= new KevlarProperties();
@@ -300,6 +338,7 @@ public sealed class KevlarContext
             context.IsSynchronous = false;
             context.ShieldName = null;
             context.StrategyIndex = -1;
+            context.AttemptNumber = 0;
             context._activeStrategyMask = 0;
             context.TimeProvider = TimeProvider.System;
             context._properties.MirrorMutationsTo(null);

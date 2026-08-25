@@ -1,0 +1,101 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.KevlarTelemetrySeverity
+  commentId: T:Kevlar.KevlarTelemetrySeverity
+  id: KevlarTelemetrySeverity
+  parent: Kevlar
+  children:
+  - Kevlar.KevlarTelemetrySeverity.Error
+  - Kevlar.KevlarTelemetrySeverity.Information
+  - Kevlar.KevlarTelemetrySeverity.Warning
+  langs:
+  - csharp
+  - vb
+  name: KevlarTelemetrySeverity
+  nameWithType: KevlarTelemetrySeverity
+  fullName: Kevlar.KevlarTelemetrySeverity
+  type: Enum
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Classifies the operational significance of a Kevlar telemetry event.
+  example: []
+  syntax:
+    content: public enum KevlarTelemetrySeverity
+    content.vb: Public Enum KevlarTelemetrySeverity
+- uid: Kevlar.KevlarTelemetrySeverity.Information
+  commentId: F:Kevlar.KevlarTelemetrySeverity.Information
+  id: Information
+  parent: Kevlar.KevlarTelemetrySeverity
+  langs:
+  - csharp
+  - vb
+  name: Information
+  nameWithType: KevlarTelemetrySeverity.Information
+  fullName: Kevlar.KevlarTelemetrySeverity.Information
+  type: Field
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Routine diagnostic information.
+  example: []
+  syntax:
+    content: Information = 0
+    return:
+      type: Kevlar.KevlarTelemetrySeverity
+- uid: Kevlar.KevlarTelemetrySeverity.Warning
+  commentId: F:Kevlar.KevlarTelemetrySeverity.Warning
+  id: Warning
+  parent: Kevlar.KevlarTelemetrySeverity
+  langs:
+  - csharp
+  - vb
+  name: Warning
+  nameWithType: KevlarTelemetrySeverity.Warning
+  fullName: Kevlar.KevlarTelemetrySeverity.Warning
+  type: Field
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: A handled failure, delay, or degraded execution.
+  example: []
+  syntax:
+    content: Warning = 1
+    return:
+      type: Kevlar.KevlarTelemetrySeverity
+- uid: Kevlar.KevlarTelemetrySeverity.Error
+  commentId: F:Kevlar.KevlarTelemetrySeverity.Error
+  id: Error
+  parent: Kevlar.KevlarTelemetrySeverity
+  langs:
+  - csharp
+  - vb
+  name: Error
+  nameWithType: KevlarTelemetrySeverity.Error
+  fullName: Kevlar.KevlarTelemetrySeverity.Error
+  type: Field
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: An execution failure that was not recovered.
+  example: []
+  syntax:
+    content: Error = 2
+    return:
+      type: Kevlar.KevlarTelemetrySeverity
+references:
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: Kevlar.KevlarTelemetrySeverity
+  commentId: T:Kevlar.KevlarTelemetrySeverity
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.KevlarTelemetrySeverity.html
+  name: KevlarTelemetrySeverity
+  nameWithType: KevlarTelemetrySeverity
+  fullName: Kevlar.KevlarTelemetrySeverity

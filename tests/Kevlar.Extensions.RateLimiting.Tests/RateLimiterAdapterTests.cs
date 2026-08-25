@@ -36,6 +36,17 @@ public class RateLimiterAdapterTests
             metric.InstrumentName == "kevlar.rejections" &&
             metric.Tags.TryGetValue("kevlar.rejection.type", out var kind) &&
             Equals(kind, "rate_limiter_adapter"))).IsTrue();
+        var rejectionEvent = recorder.Events.Single(item =>
+            item.EventName == "rejection" && item.ShieldName == "coexisting-rate-limiters");
+        await Assert.That(ReferenceEquals(rejectionEvent.Exception, rejected.Exception)).IsTrue();
+        var strategyMetric = recorder.Metrics.Single(metric =>
+            metric.InstrumentName == "kevlar.strategy.events" &&
+            metric.Tags.TryGetValue("kevlar.shield.name", out var shieldName) &&
+            Equals(shieldName, "coexisting-rate-limiters") &&
+            metric.Tags.TryGetValue("kevlar.event.name", out var eventName) &&
+            Equals(eventName, "rejection"));
+        await Assert.That(strategyMetric.Tags["exception.type"])
+            .IsEqualTo(typeof(RateLimiterAdapterRejectedException).FullName);
         shield.GetDescriptor().AssertStrategyOrder(
             StrategyKind.RateLimit,
             StrategyKind.RateLimiterAdapter);

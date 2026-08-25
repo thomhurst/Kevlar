@@ -8,6 +8,9 @@ namespace Kevlar.Extensions.RateLimiting;
 /// </remarks>
 public sealed class RateLimiterAdapterOptions
 {
+    /// <summary>An optional low-cardinality name used by strategy telemetry.</summary>
+    public string? Name { get; set; }
+
     /// <summary>The number of permits acquired for each execution. Default 1.</summary>
     public int PermitCount { get; set; } = 1;
 

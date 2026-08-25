@@ -16,6 +16,7 @@ internal sealed class TimeoutStrategy : Strategy
     private readonly Func<KevlarContext, ValueTask<TimeSpan>>? _timeoutGenerator;
     private readonly Action<TimeoutEvent>? _onTimeout;
     private readonly Func<TimeoutEvent, ValueTask>? _onTimeoutAsync;
+    private readonly string _telemetryName;
 
     public TimeoutStrategy(TimeoutOptions options)
     {
@@ -35,6 +36,7 @@ internal sealed class TimeoutStrategy : Strategy
         _timeoutGenerator = options.TimeoutGenerator;
         _onTimeout = options.OnTimeout;
         _onTimeoutAsync = options.OnTimeoutAsync;
+        _telemetryName = options.Name ?? "Timeout";
     }
 
     public override string Describe() => _timeoutGenerator is null
@@ -234,7 +236,8 @@ internal sealed class TimeoutStrategy : Strategy
 
         if (timedOut)
         {
-            KevlarMetrics.Timeout(context.ShieldName);
+            var timeoutException = new TimeoutExceededException(timeout, cancellationException);
+            KevlarMetrics.Timeout(context, _telemetryName, timeoutException);
             var timeoutEvent = new TimeoutEvent(timeout, context);
             CallbackInvoker.Invoke(_onTimeout, timeoutEvent, CallbackErrorKind.Timeout, context);
             var notification = CallbackInvoker.InvokeAsync(
@@ -244,11 +247,10 @@ internal sealed class TimeoutStrategy : Strategy
                 context);
             if (!notification.IsCompletedSuccessfully)
             {
-                return AwaitTimeoutNotificationAsync<T>(notification, timeout, cancellationException);
+                return AwaitTimeoutNotificationAsync<T>(notification, timeoutException);
             }
 
-            return new ValueTask<Outcome<T>>(Outcome<T>.FromException(
-                new TimeoutExceededException(timeout, cancellationException)));
+            return new ValueTask<Outcome<T>>(Outcome<T>.FromException(timeoutException));
         }
 
         return new ValueTask<Outcome<T>>(outcome);
@@ -256,11 +258,10 @@ internal sealed class TimeoutStrategy : Strategy
 
     private static async ValueTask<Outcome<T>> AwaitTimeoutNotificationAsync<T>(
         ValueTask notification,
-        TimeSpan timeout,
-        OperationCanceledException cancellationException)
+        TimeoutExceededException timeoutException)
     {
         await notification.ConfigureAwait(false);
-        return Outcome<T>.FromException(new TimeoutExceededException(timeout, cancellationException));
+        return Outcome<T>.FromException(timeoutException);
     }
 
     private static void ValidateGeneratedTimeout(TimeSpan timeout)

@@ -8,6 +8,7 @@ items:
   - Kevlar.Testing.TelemetryRecorder.#ctor(System.Boolean,System.Boolean)
   - Kevlar.Testing.TelemetryRecorder.Callbacks
   - Kevlar.Testing.TelemetryRecorder.Dispose
+  - Kevlar.Testing.TelemetryRecorder.Events
   - Kevlar.Testing.TelemetryRecorder.Metrics
   - Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CallbackErrorEvent)
   - Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CircuitBreakerBreakDurationEvent,System.TimeSpan)
@@ -20,6 +21,7 @@ items:
   - Kevlar.Testing.TelemetryRecorder.Record``1(Kevlar.FallbackEvent{``0})
   - Kevlar.Testing.TelemetryRecorder.Record``1(Kevlar.RetryEvent{``0})
   - Kevlar.Testing.TelemetryRecorder.WaitForCallbackCountAsync(System.Int32,System.Threading.CancellationToken)
+  - Kevlar.Testing.TelemetryRecorder.WaitForEventCountAsync(System.Int32,System.Threading.CancellationToken)
   - Kevlar.Testing.TelemetryRecorder.WaitForMetricCountAsync(System.Int32,System.Threading.CancellationToken)
   langs:
   - csharp
@@ -37,12 +39,13 @@ items:
     <xref href="Kevlar.Testing.TelemetryRecorder.Record(Kevlar.RetryEvent)" data-throw-if-not-resolved="false"></xref> overloads directly to strategy notification options.
   example: []
   syntax:
-    content: 'public sealed class TelemetryRecorder : IDisposable'
-    content.vb: Public NotInheritable Class TelemetryRecorder Implements IDisposable
+    content: 'public sealed class TelemetryRecorder : IDisposable, IKevlarTelemetryListener'
+    content.vb: Public NotInheritable Class TelemetryRecorder Implements IDisposable, IKevlarTelemetryListener
   inheritance:
   - System.Object
   implements:
   - System.IDisposable
+  - Kevlar.IKevlarTelemetryListener
   inheritedMembers:
   - System.Object.GetType
   - System.Object.ToString
@@ -396,6 +399,36 @@ items:
   nameWithType.vb: TelemetryRecorder.WaitForCallbackCountAsync(Integer, CancellationToken)
   fullName.vb: Kevlar.Testing.TelemetryRecorder.WaitForCallbackCountAsync(Integer, System.Threading.CancellationToken)
   name.vb: WaitForCallbackCountAsync(Integer, CancellationToken)
+- uid: Kevlar.Testing.TelemetryRecorder.WaitForEventCountAsync(System.Int32,System.Threading.CancellationToken)
+  commentId: M:Kevlar.Testing.TelemetryRecorder.WaitForEventCountAsync(System.Int32,System.Threading.CancellationToken)
+  id: WaitForEventCountAsync(System.Int32,System.Threading.CancellationToken)
+  parent: Kevlar.Testing.TelemetryRecorder
+  langs:
+  - csharp
+  - vb
+  name: WaitForEventCountAsync(int, CancellationToken)
+  nameWithType: TelemetryRecorder.WaitForEventCountAsync(int, CancellationToken)
+  fullName: Kevlar.Testing.TelemetryRecorder.WaitForEventCountAsync(int, System.Threading.CancellationToken)
+  type: Method
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Waits until at least <code class="paramref">count</code> telemetry events have been captured.
+  example: []
+  syntax:
+    content: public Task WaitForEventCountAsync(int count, CancellationToken cancellationToken = default)
+    parameters:
+    - id: count
+      type: System.Int32
+    - id: cancellationToken
+      type: System.Threading.CancellationToken
+    return:
+      type: System.Threading.Tasks.Task
+    content.vb: Public Function WaitForEventCountAsync(count As Integer, cancellationToken As CancellationToken = Nothing) As Task
+  overload: Kevlar.Testing.TelemetryRecorder.WaitForEventCountAsync*
+  nameWithType.vb: TelemetryRecorder.WaitForEventCountAsync(Integer, CancellationToken)
+  fullName.vb: Kevlar.Testing.TelemetryRecorder.WaitForEventCountAsync(Integer, System.Threading.CancellationToken)
+  name.vb: WaitForEventCountAsync(Integer, CancellationToken)
 - uid: Kevlar.Testing.TelemetryRecorder.Dispose
   commentId: M:Kevlar.Testing.TelemetryRecorder.Dispose
   id: Dispose
@@ -417,6 +450,29 @@ items:
   overload: Kevlar.Testing.TelemetryRecorder.Dispose*
   implements:
   - System.IDisposable.Dispose
+- uid: Kevlar.Testing.TelemetryRecorder.Events
+  commentId: P:Kevlar.Testing.TelemetryRecorder.Events
+  id: Events
+  parent: Kevlar.Testing.TelemetryRecorder
+  langs:
+  - csharp
+  - vb
+  name: Events
+  nameWithType: TelemetryRecorder.Events
+  fullName: Kevlar.Testing.TelemetryRecorder.Events
+  type: Property
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Gets a stable snapshot of captured strategy telemetry events.
+  example: []
+  syntax:
+    content: public IReadOnlyList<TelemetryEventRecord> Events { get; }
+    parameters: []
+    return:
+      type: System.Collections.Generic.IReadOnlyList{Kevlar.Testing.TelemetryEventRecord}
+    content.vb: Public ReadOnly Property Events As IReadOnlyList(Of TelemetryEventRecord)
+  overload: Kevlar.Testing.TelemetryRecorder.Events*
 - uid: Kevlar.Testing.TelemetryRecorder.Metrics
   commentId: P:Kevlar.Testing.TelemetryRecorder.Metrics
   id: Metrics
@@ -539,6 +595,14 @@ references:
   name: IDisposable
   nameWithType: IDisposable
   fullName: System.IDisposable
+- uid: Kevlar.IKevlarTelemetryListener
+  commentId: T:Kevlar.IKevlarTelemetryListener
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.IKevlarTelemetryListener.html
+  name: IKevlarTelemetryListener
+  nameWithType: IKevlarTelemetryListener
+  fullName: Kevlar.IKevlarTelemetryListener
 - uid: System.Object.GetType
   commentId: M:System.Object.GetType
   parent: System.Object
@@ -741,6 +805,13 @@ references:
   name: System
   nameWithType: System
   fullName: System
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
 - uid: Kevlar.Testing.TelemetryRecorder.#ctor*
   commentId: Overload:Kevlar.Testing.TelemetryRecorder.#ctor
   isExternal: true
@@ -777,13 +848,6 @@ references:
   name: RetryEvent
   nameWithType: RetryEvent
   fullName: Kevlar.RetryEvent
-- uid: Kevlar
-  commentId: N:Kevlar
-  isExternal: true
-  href: Kevlar.html
-  name: Kevlar
-  nameWithType: Kevlar
-  fullName: Kevlar
 - uid: Kevlar.RetryEvent{{TResult}}
   commentId: T:Kevlar.RetryEvent{`0}
   parent: Kevlar
@@ -1179,6 +1243,13 @@ references:
   name: WaitForCallbackCountAsync
   nameWithType: TelemetryRecorder.WaitForCallbackCountAsync
   fullName: Kevlar.Testing.TelemetryRecorder.WaitForCallbackCountAsync
+- uid: Kevlar.Testing.TelemetryRecorder.WaitForEventCountAsync*
+  commentId: Overload:Kevlar.Testing.TelemetryRecorder.WaitForEventCountAsync
+  isExternal: true
+  href: Kevlar.Testing.TelemetryRecorder.html#Kevlar_Testing_TelemetryRecorder_WaitForEventCountAsync_System_Int32_System_Threading_CancellationToken_
+  name: WaitForEventCountAsync
+  nameWithType: TelemetryRecorder.WaitForEventCountAsync
+  fullName: Kevlar.Testing.TelemetryRecorder.WaitForEventCountAsync
 - uid: Kevlar.Testing.TelemetryRecorder.Dispose*
   commentId: Overload:Kevlar.Testing.TelemetryRecorder.Dispose
   isExternal: true
@@ -1208,34 +1279,34 @@ references:
     href: https://learn.microsoft.com/dotnet/api/system.idisposable.dispose
   - name: (
   - name: )
-- uid: Kevlar.Testing.TelemetryRecorder.Metrics*
-  commentId: Overload:Kevlar.Testing.TelemetryRecorder.Metrics
+- uid: Kevlar.Testing.TelemetryRecorder.Events*
+  commentId: Overload:Kevlar.Testing.TelemetryRecorder.Events
   isExternal: true
-  href: Kevlar.Testing.TelemetryRecorder.html#Kevlar_Testing_TelemetryRecorder_Metrics
-  name: Metrics
-  nameWithType: TelemetryRecorder.Metrics
-  fullName: Kevlar.Testing.TelemetryRecorder.Metrics
-- uid: System.Collections.Generic.IReadOnlyList{Kevlar.Testing.MetricRecord}
-  commentId: T:System.Collections.Generic.IReadOnlyList{Kevlar.Testing.MetricRecord}
+  href: Kevlar.Testing.TelemetryRecorder.html#Kevlar_Testing_TelemetryRecorder_Events
+  name: Events
+  nameWithType: TelemetryRecorder.Events
+  fullName: Kevlar.Testing.TelemetryRecorder.Events
+- uid: System.Collections.Generic.IReadOnlyList{Kevlar.Testing.TelemetryEventRecord}
+  commentId: T:System.Collections.Generic.IReadOnlyList{Kevlar.Testing.TelemetryEventRecord}
   parent: System.Collections.Generic
   definition: System.Collections.Generic.IReadOnlyList`1
   href: https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1
-  name: IReadOnlyList<MetricRecord>
-  nameWithType: IReadOnlyList<MetricRecord>
-  fullName: System.Collections.Generic.IReadOnlyList<Kevlar.Testing.MetricRecord>
-  nameWithType.vb: IReadOnlyList(Of MetricRecord)
-  fullName.vb: System.Collections.Generic.IReadOnlyList(Of Kevlar.Testing.MetricRecord)
-  name.vb: IReadOnlyList(Of MetricRecord)
+  name: IReadOnlyList<TelemetryEventRecord>
+  nameWithType: IReadOnlyList<TelemetryEventRecord>
+  fullName: System.Collections.Generic.IReadOnlyList<Kevlar.Testing.TelemetryEventRecord>
+  nameWithType.vb: IReadOnlyList(Of TelemetryEventRecord)
+  fullName.vb: System.Collections.Generic.IReadOnlyList(Of Kevlar.Testing.TelemetryEventRecord)
+  name.vb: IReadOnlyList(Of TelemetryEventRecord)
   spec.csharp:
   - uid: System.Collections.Generic.IReadOnlyList`1
     name: IReadOnlyList
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1
   - name: <
-  - uid: Kevlar.Testing.MetricRecord
-    name: MetricRecord
+  - uid: Kevlar.Testing.TelemetryEventRecord
+    name: TelemetryEventRecord
     isExternal: true
-    href: Kevlar.Testing.MetricRecord.html
+    href: Kevlar.Testing.TelemetryEventRecord.html
   - name: '>'
   spec.vb:
   - uid: System.Collections.Generic.IReadOnlyList`1
@@ -1245,10 +1316,10 @@ references:
   - name: (
   - name: Of
   - name: " "
-  - uid: Kevlar.Testing.MetricRecord
-    name: MetricRecord
+  - uid: Kevlar.Testing.TelemetryEventRecord
+    name: TelemetryEventRecord
     isExternal: true
-    href: Kevlar.Testing.MetricRecord.html
+    href: Kevlar.Testing.TelemetryEventRecord.html
   - name: )
 - uid: System.Collections.Generic.IReadOnlyList`1
   commentId: T:System.Collections.Generic.IReadOnlyList`1
@@ -1315,6 +1386,48 @@ references:
     name: Generic
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.collections.generic
+- uid: Kevlar.Testing.TelemetryRecorder.Metrics*
+  commentId: Overload:Kevlar.Testing.TelemetryRecorder.Metrics
+  isExternal: true
+  href: Kevlar.Testing.TelemetryRecorder.html#Kevlar_Testing_TelemetryRecorder_Metrics
+  name: Metrics
+  nameWithType: TelemetryRecorder.Metrics
+  fullName: Kevlar.Testing.TelemetryRecorder.Metrics
+- uid: System.Collections.Generic.IReadOnlyList{Kevlar.Testing.MetricRecord}
+  commentId: T:System.Collections.Generic.IReadOnlyList{Kevlar.Testing.MetricRecord}
+  parent: System.Collections.Generic
+  definition: System.Collections.Generic.IReadOnlyList`1
+  href: https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1
+  name: IReadOnlyList<MetricRecord>
+  nameWithType: IReadOnlyList<MetricRecord>
+  fullName: System.Collections.Generic.IReadOnlyList<Kevlar.Testing.MetricRecord>
+  nameWithType.vb: IReadOnlyList(Of MetricRecord)
+  fullName.vb: System.Collections.Generic.IReadOnlyList(Of Kevlar.Testing.MetricRecord)
+  name.vb: IReadOnlyList(Of MetricRecord)
+  spec.csharp:
+  - uid: System.Collections.Generic.IReadOnlyList`1
+    name: IReadOnlyList
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1
+  - name: <
+  - uid: Kevlar.Testing.MetricRecord
+    name: MetricRecord
+    isExternal: true
+    href: Kevlar.Testing.MetricRecord.html
+  - name: '>'
+  spec.vb:
+  - uid: System.Collections.Generic.IReadOnlyList`1
+    name: IReadOnlyList
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.collections.generic.ireadonlylist-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.Testing.MetricRecord
+    name: MetricRecord
+    isExternal: true
+    href: Kevlar.Testing.MetricRecord.html
+  - name: )
 - uid: Kevlar.Testing.TelemetryRecorder.Callbacks*
   commentId: Overload:Kevlar.Testing.TelemetryRecorder.Callbacks
   isExternal: true

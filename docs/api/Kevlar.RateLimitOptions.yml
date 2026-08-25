@@ -7,6 +7,7 @@ items:
   children:
   - Kevlar.RateLimitOptions.#ctor
   - Kevlar.RateLimitOptions.Burst
+  - Kevlar.RateLimitOptions.Name
   - Kevlar.RateLimitOptions.OnRejected
   - Kevlar.RateLimitOptions.OnRejectedAsync
   - Kevlar.RateLimitOptions.Permits
@@ -66,6 +67,29 @@ items:
   nameWithType.vb: RateLimitOptions.New()
   fullName.vb: Kevlar.RateLimitOptions.New()
   name.vb: New()
+- uid: Kevlar.RateLimitOptions.Name
+  commentId: P:Kevlar.RateLimitOptions.Name
+  id: Name
+  parent: Kevlar.RateLimitOptions
+  langs:
+  - csharp
+  - vb
+  name: Name
+  nameWithType: RateLimitOptions.Name
+  fullName: Kevlar.RateLimitOptions.Name
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: An optional low-cardinality name used by strategy telemetry.
+  example: []
+  syntax:
+    content: public string? Name { get; set; }
+    parameters: []
+    return:
+      type: System.String
+    content.vb: Public Property Name As String
+  overload: Kevlar.RateLimitOptions.Name*
 - uid: Kevlar.RateLimitOptions.Permits
   commentId: P:Kevlar.RateLimitOptions.Permits
   id: Permits
@@ -480,6 +504,24 @@ references:
   nameWithType.vb: RateLimitOptions.New
   fullName.vb: Kevlar.RateLimitOptions.New
   name.vb: New
+- uid: Kevlar.RateLimitOptions.Name*
+  commentId: Overload:Kevlar.RateLimitOptions.Name
+  isExternal: true
+  href: Kevlar.RateLimitOptions.html#Kevlar_RateLimitOptions_Name
+  name: Name
+  nameWithType: RateLimitOptions.Name
+  fullName: Kevlar.RateLimitOptions.Name
+- uid: System.String
+  commentId: T:System.String
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.string
+  name: string
+  nameWithType: string
+  fullName: string
+  nameWithType.vb: String
+  fullName.vb: String
+  name.vb: String
 - uid: Kevlar.RateLimitOptions.Permits*
   commentId: Overload:Kevlar.RateLimitOptions.Permits
   isExternal: true

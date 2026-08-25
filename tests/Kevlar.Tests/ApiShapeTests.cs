@@ -93,6 +93,7 @@ public class ApiShapeTests
             "ConcurrencyLimit",
             "Fallback",
             "Hedge",
+            "KevlarTelemetry",
             "RateLimit",
             "RateLimiter",
             "Retry",

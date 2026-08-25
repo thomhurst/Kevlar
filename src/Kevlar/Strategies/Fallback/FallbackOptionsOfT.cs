@@ -12,6 +12,9 @@ namespace Kevlar;
 /// </remarks>
 public sealed class FallbackOptions<TResult>
 {
+    /// <summary>An optional low-cardinality name used by strategy telemetry.</summary>
+    public string? Name { get; set; }
+
     /// <summary>
     /// Setting this — or <see cref="HandlesResult"/> — makes this fallback ignore the ambient
     /// <c>When…</c> handling clause; this predicate then selects the exceptions it handles.

@@ -7,6 +7,9 @@ namespace Kevlar;
 /// </summary>
 public sealed class CircuitBreakerOptions
 {
+    /// <summary>An optional low-cardinality name used by strategy telemetry.</summary>
+    public string? Name { get; set; }
+
     /// <summary>
     /// Setting this — or, on <see cref="CircuitBreakerOptions{TResult}"/>, its <c>HandlesResult</c>
     /// — makes this circuit breaker ignore the ambient <c>When…</c> handling clause; this predicate

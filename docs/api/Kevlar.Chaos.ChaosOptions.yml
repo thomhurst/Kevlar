@@ -11,6 +11,7 @@ items:
   - Kevlar.Chaos.ChaosOptions.Environment
   - Kevlar.Chaos.ChaosOptions.InjectionRate
   - Kevlar.Chaos.ChaosOptions.InjectionRateGenerator
+  - Kevlar.Chaos.ChaosOptions.Name
   - Kevlar.Chaos.ChaosOptions.OnInjected
   - Kevlar.Chaos.ChaosOptions.Operation
   - Kevlar.Chaos.ChaosOptions.Predicate
@@ -66,6 +67,29 @@ items:
   nameWithType.vb: ChaosOptions.New()
   fullName.vb: Kevlar.Chaos.ChaosOptions.New()
   name.vb: New()
+- uid: Kevlar.Chaos.ChaosOptions.Name
+  commentId: P:Kevlar.Chaos.ChaosOptions.Name
+  id: Name
+  parent: Kevlar.Chaos.ChaosOptions
+  langs:
+  - csharp
+  - vb
+  name: Name
+  nameWithType: ChaosOptions.Name
+  fullName: Kevlar.Chaos.ChaosOptions.Name
+  type: Property
+  assemblies:
+  - Kevlar.Chaos
+  namespace: Kevlar.Chaos
+  summary: An optional low-cardinality name used by strategy telemetry.
+  example: []
+  syntax:
+    content: public string? Name { get; set; }
+    parameters: []
+    return:
+      type: System.String
+    content.vb: Public Property Name As String
+  overload: Kevlar.Chaos.ChaosOptions.Name*
 - uid: Kevlar.Chaos.ChaosOptions.Enabled
   commentId: P:Kevlar.Chaos.ChaosOptions.Enabled
   id: Enabled
@@ -549,6 +573,24 @@ references:
   nameWithType.vb: ChaosOptions.New
   fullName.vb: Kevlar.Chaos.ChaosOptions.New
   name.vb: New
+- uid: Kevlar.Chaos.ChaosOptions.Name*
+  commentId: Overload:Kevlar.Chaos.ChaosOptions.Name
+  isExternal: true
+  href: Kevlar.Chaos.ChaosOptions.html#Kevlar_Chaos_ChaosOptions_Name
+  name: Name
+  nameWithType: ChaosOptions.Name
+  fullName: Kevlar.Chaos.ChaosOptions.Name
+- uid: System.String
+  commentId: T:System.String
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.string
+  name: string
+  nameWithType: string
+  fullName: string
+  nameWithType.vb: String
+  fullName.vb: String
+  name.vb: String
 - uid: Kevlar.Chaos.ChaosOptions.Enabled*
   commentId: Overload:Kevlar.Chaos.ChaosOptions.Enabled
   isExternal: true
@@ -772,17 +814,6 @@ references:
   name: Operation
   nameWithType: ChaosOptions.Operation
   fullName: Kevlar.Chaos.ChaosOptions.Operation
-- uid: System.String
-  commentId: T:System.String
-  parent: System
-  isExternal: true
-  href: https://learn.microsoft.com/dotnet/api/system.string
-  name: string
-  nameWithType: string
-  fullName: string
-  nameWithType.vb: String
-  fullName.vb: String
-  name.vb: String
 - uid: Kevlar.Chaos.ChaosScope.Environment
   commentId: P:Kevlar.Chaos.ChaosScope.Environment
   isExternal: true

@@ -33,6 +33,7 @@ items:
   - Kevlar.Testing.StrategyDescriptor
   - Kevlar.Testing.StrategyKind
   - Kevlar.Testing.StrategyStateSnapshot
+  - Kevlar.Testing.TelemetryEventRecord
   - Kevlar.Testing.TelemetryRecorder
   - Kevlar.Testing.TimeoutStrategyDescriptor
   langs:
@@ -259,6 +260,13 @@ references:
   name: StrategyStateSnapshot
   nameWithType: StrategyStateSnapshot
   fullName: Kevlar.Testing.StrategyStateSnapshot
+- uid: Kevlar.Testing.TelemetryEventRecord
+  commentId: T:Kevlar.Testing.TelemetryEventRecord
+  isExternal: true
+  href: Kevlar.Testing.TelemetryEventRecord.html
+  name: TelemetryEventRecord
+  nameWithType: TelemetryEventRecord
+  fullName: Kevlar.Testing.TelemetryEventRecord
 - uid: Kevlar.Testing.TelemetryRecorder
   commentId: T:Kevlar.Testing.TelemetryRecorder
   isExternal: true

@@ -15,6 +15,7 @@ internal abstract class ChaosStrategy : Strategy
     private readonly string? _requiredOperation;
     private readonly string? _requiredEnvironment;
     private readonly Action<ChaosEvent>? _onInjected;
+    private readonly string _telemetryName;
     private long _randomState;
 
     protected override bool InvokesContinuationAtMostOnce => true;
@@ -35,6 +36,7 @@ internal abstract class ChaosStrategy : Strategy
         _requiredOperation = options.Operation;
         _requiredEnvironment = options.Environment;
         _onInjected = options.OnInjected;
+        _telemetryName = options.Name ?? "Chaos";
         _randomState = options.Seed is { } seed
             ? seed
             : Interlocked.Add(ref _nextUnseeded, GoldenRatio);
@@ -95,7 +97,11 @@ internal abstract class ChaosStrategy : Strategy
         return true;
     }
 
-    protected void Notify(ChaosInjectionKind kind, KevlarContext context, ChaosDecision decision)
+    protected void Notify(
+        ChaosInjectionKind kind,
+        KevlarContext context,
+        ChaosDecision decision,
+        Exception? exception = null)
     {
         if (_onInjected is not null)
         {
@@ -109,12 +115,27 @@ internal abstract class ChaosStrategy : Strategy
                     decision.Rate,
                     decision.Sample));
             }
-            catch (Exception exception)
+            catch (Exception callbackException)
             {
-                KevlarDiagnostics.ReportCallbackError(CallbackErrorKind.ChaosInjected, context, exception);
+                KevlarDiagnostics.ReportCallbackError(
+                    CallbackErrorKind.ChaosInjected,
+                    context,
+                    callbackException);
             }
         }
         ChaosMetrics.Injection(kind, context.ShieldName, decision.Operation, decision.Environment);
+        context.RecordEvent(
+            kind switch
+            {
+                ChaosInjectionKind.Latency => "chaos_latency",
+                ChaosInjectionKind.Fault => "chaos_fault",
+                ChaosInjectionKind.Outcome => "chaos_outcome",
+                ChaosInjectionKind.Behavior => "chaos_behavior",
+                _ => "chaos_injection",
+            },
+            KevlarTelemetrySeverity.Warning,
+            exception,
+            strategyName: _telemetryName);
     }
 
     private double NextSample()

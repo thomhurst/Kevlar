@@ -9,6 +9,9 @@ namespace Kevlar;
 /// </remarks>
 public sealed class RetryOptions
 {
+    /// <summary>An optional low-cardinality name used by strategy telemetry.</summary>
+    public string? Name { get; set; }
+
     /// <summary>
     /// Setting this makes this retry ignore the ambient <c>When…</c> handling clause and handle
     /// only the exceptions this predicate selects.
@@ -81,6 +84,9 @@ public sealed class RetryOptions
 /// </remarks>
 public sealed class RetryOptions<TResult>
 {
+    /// <summary>An optional low-cardinality name used by strategy telemetry.</summary>
+    public string? Name { get; set; }
+
     /// <summary>
     /// The number of <em>retries</em> made after the initial attempt — not the number of attempts.
     /// <c>MaxRetries = 3</c> (the default) makes up to 4 total attempts: the initial call plus

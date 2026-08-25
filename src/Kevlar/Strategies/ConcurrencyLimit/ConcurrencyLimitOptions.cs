@@ -12,6 +12,9 @@ namespace Kevlar;
 /// </remarks>
 public sealed class ConcurrencyLimitOptions
 {
+    /// <summary>An optional low-cardinality name used by strategy telemetry.</summary>
+    public string? Name { get; set; }
+
     /// <summary>Maximum concurrent executions. Default 10.</summary>
     public int MaxConcurrency { get; set; } = 10;
 

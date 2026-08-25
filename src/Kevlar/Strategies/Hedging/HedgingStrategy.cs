@@ -13,6 +13,7 @@ internal sealed class HedgingStrategy : Strategy
     private readonly Action<HedgeEvent>? _onHedge;
     private readonly Func<HedgeEvent, ValueTask>? _onHedgeAsync;
     private readonly HedgeActionGenerator? _actionGenerator;
+    private readonly string _telemetryName;
 
     public HedgingStrategy(HedgeOptions options, OutcomeJudge judge)
         : this(options, judge, options.HasHandlingOverride, options.GetType())
@@ -52,6 +53,7 @@ internal sealed class HedgingStrategy : Strategy
         _onHedge = options.OnHedge;
         _onHedgeAsync = options.OnHedgeAsync;
         _actionGenerator = options.ActionGenerator;
+        _telemetryName = options.Name ?? "Hedge";
         HasHandlingOverride = hasHandlingOverride;
     }
 
@@ -379,6 +381,7 @@ internal sealed class HedgingStrategy : Strategy
     {
         var cancellation = CancellationTokenSourcePool.Shared.RentLinked(context.CancellationToken);
         var fork = context.Fork(cancellation.Token);
+        fork.AttemptNumber = 0;
         try
         {
             return new StartedAttempt<T>(next.InvokeAsync(fork), cancellation, fork, attempt: 0);
@@ -399,6 +402,7 @@ internal sealed class HedgingStrategy : Strategy
     {
         var cancellation = CancellationTokenSourcePool.Shared.RentLinked(context.CancellationToken);
         var fork = context.Fork(cancellation.Token);
+        fork.AttemptNumber = attemptNumber - 1;
         OriginalActionContextCapture<T>? contextCapture = null;
         try
         {
@@ -417,7 +421,7 @@ internal sealed class HedgingStrategy : Strategy
                 }
                 catch (Exception exception)
                 {
-                    KevlarMetrics.Hedge(context.ShieldName);
+                    KevlarMetrics.Hedge(context, _telemetryName, attemptNumber - 1, exception);
                     return new StartedAttempt<T>(
                         new ValueTask<Outcome<T>>(Outcome<T>.FromException(exception)),
                         cancellation,
@@ -429,7 +433,7 @@ internal sealed class HedgingStrategy : Strategy
                 context.CancellationToken.ThrowIfCancellationRequested();
             }
 
-            KevlarMetrics.Hedge(context.ShieldName);
+            KevlarMetrics.Hedge(context, _telemetryName, attemptNumber - 1);
             var execution = generatedAction is null
                 ? next.InvokeAsync(fork)
                 : InvokeGeneratedAction(generatedAction, fork.CancellationToken);

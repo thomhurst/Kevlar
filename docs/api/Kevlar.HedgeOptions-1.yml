@@ -15,6 +15,7 @@ items:
   - Kevlar.HedgeOptions`1.HandlesResult
   - Kevlar.HedgeOptions`1.HandlesResultWithContext
   - Kevlar.HedgeOptions`1.MaxHedgedAttempts
+  - Kevlar.HedgeOptions`1.Name
   - Kevlar.HedgeOptions`1.OnHedge
   - Kevlar.HedgeOptions`1.OnHedgeAsync
   langs:
@@ -71,6 +72,31 @@ items:
   nameWithType.vb: HedgeOptions(Of TResult).New()
   fullName.vb: Kevlar.HedgeOptions(Of TResult).New()
   name.vb: New()
+- uid: Kevlar.HedgeOptions`1.Name
+  commentId: P:Kevlar.HedgeOptions`1.Name
+  id: Name
+  parent: Kevlar.HedgeOptions`1
+  langs:
+  - csharp
+  - vb
+  name: Name
+  nameWithType: HedgeOptions<TResult>.Name
+  fullName: Kevlar.HedgeOptions<TResult>.Name
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: An optional low-cardinality name used by strategy telemetry.
+  example: []
+  syntax:
+    content: public string? Name { get; set; }
+    parameters: []
+    return:
+      type: System.String
+    content.vb: Public Property Name As String
+  overload: Kevlar.HedgeOptions`1.Name*
+  nameWithType.vb: HedgeOptions(Of TResult).Name
+  fullName.vb: Kevlar.HedgeOptions(Of TResult).Name
 - uid: Kevlar.HedgeOptions`1.HandlesException
   commentId: P:Kevlar.HedgeOptions`1.HandlesException
   id: HandlesException
@@ -689,6 +715,26 @@ references:
   nameWithType.vb: HedgeOptions(Of TResult).New
   fullName.vb: Kevlar.HedgeOptions(Of TResult).New
   name.vb: New
+- uid: Kevlar.HedgeOptions`1.Name*
+  commentId: Overload:Kevlar.HedgeOptions`1.Name
+  isExternal: true
+  href: Kevlar.HedgeOptions-1.html#Kevlar_HedgeOptions_1_Name
+  name: Name
+  nameWithType: HedgeOptions<TResult>.Name
+  fullName: Kevlar.HedgeOptions<TResult>.Name
+  nameWithType.vb: HedgeOptions(Of TResult).Name
+  fullName.vb: Kevlar.HedgeOptions(Of TResult).Name
+- uid: System.String
+  commentId: T:System.String
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.string
+  name: string
+  nameWithType: string
+  fullName: string
+  nameWithType.vb: String
+  fullName.vb: String
+  name.vb: String
 - uid: Kevlar.HandlingClause
   commentId: T:Kevlar.HandlingClause
   parent: Kevlar
