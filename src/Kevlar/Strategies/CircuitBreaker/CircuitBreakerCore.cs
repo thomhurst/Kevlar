@@ -72,6 +72,14 @@ internal sealed class CircuitBreakerCore
                     continue;
                 }
 
+                if (previous is not null
+                    && ReferenceEquals(registered, previous)
+                    && registration.ShieldName == shieldName
+                    && registration.StrategyIndex == strategyIndex)
+                {
+                    continue;
+                }
+
                 if (ReferenceEquals(registered, listener)
                     && registration.ShieldName == shieldName
                     && registration.StrategyIndex == strategyIndex)

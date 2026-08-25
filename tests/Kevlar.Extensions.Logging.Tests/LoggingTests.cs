@@ -677,6 +677,27 @@ public class LoggingTests
 
     [Test]
     [NotInParallel]
+    public async Task Repeated_Logging_Replaces_The_Circuit_Listener_Registration()
+    {
+        var firstLogger = new FakeLogger();
+        var secondLogger = new FakeLogger();
+        var monitor = new CircuitBreakerMonitor();
+        var shield = Shield.CircuitBreaker(options => options.Monitor = monitor)
+            .WithLogging(firstLogger)
+            .WithLogging(secondLogger);
+
+        monitor.Isolate();
+
+        var eventId = new EventId(1003, "CircuitState");
+        await Assert.That(firstLogger.Collector.GetSnapshot().Count(record => record.Id == eventId))
+            .IsEqualTo(1);
+        await Assert.That(secondLogger.Collector.GetSnapshot().Count(record => record.Id == eventId))
+            .IsEqualTo(1);
+        GC.KeepAlive(shield);
+    }
+
+    [Test]
+    [NotInParallel]
     public async Task Rejected_Composition_Does_Not_Change_Circuit_Listener_Metadata()
     {
         var logger = new FakeLogger();
