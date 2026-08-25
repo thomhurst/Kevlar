@@ -413,23 +413,44 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         foreach (var candidate in methods.Where(static method => method.IsAsync && method.ReturnsVoid))
         {
+            var eventParameterNames = new HashSet<string>(
+                candidate.Parameters
+                    .Where(parameter => ContainsEventContextReference(parameter.Type, knownTypes))
+                    .Select(static parameter => parameter.Name),
+                StringComparer.Ordinal);
+            if (eventParameterNames.Count == 0)
+            {
+                continue;
+            }
+
             foreach (var syntaxReference in candidate.DeclaringSyntaxReferences)
             {
                 var declaration = syntaxReference.GetSyntax(context.CancellationToken);
-                if (!declaration.DescendantNodes().OfType<AwaitExpressionSyntax>().Any())
+                SyntaxNode? body = declaration switch
+                {
+                    MethodDeclarationSyntax { Body: { } block } => block,
+                    MethodDeclarationSyntax { ExpressionBody.Expression: { } bodyExpression } => bodyExpression,
+                    LocalFunctionStatementSyntax { Body: { } block } => block,
+                    LocalFunctionStatementSyntax { ExpressionBody.Expression: { } bodyExpression } => bodyExpression,
+                    _ => null,
+                };
+                if (body is null)
                 {
                     continue;
                 }
 
-                var eventParameterNames = new HashSet<string>(
-                    candidate.Parameters
-                        .Where(parameter => ContainsEventContextReference(parameter.Type, knownTypes))
-                        .Select(static parameter => parameter.Name),
-                    StringComparer.Ordinal);
-                foreach (var identifier in declaration.DescendantNodes()
+                var nodes = body.DescendantNodesAndSelf(descendIntoChildren: static node =>
+                        node is not AnonymousFunctionExpressionSyntax
+                            and not LocalFunctionStatementSyntax)
+                    .ToArray();
+                var firstAwait = nodes.OfType<AwaitExpressionSyntax>()
+                    .Select(static awaitExpression => awaitExpression.SpanStart)
+                    .DefaultIfEmpty(int.MaxValue)
+                    .Min();
+                foreach (var identifier in nodes
                              .OfType<IdentifierNameSyntax>()
-                             .Where(identifier => eventParameterNames.Contains(
-                                 identifier.Identifier.ValueText)))
+                             .Where(identifier => identifier.SpanStart > firstAwait
+                                 && eventParameterNames.Contains(identifier.Identifier.ValueText)))
                 {
                     capturedContext = identifier;
                     return true;

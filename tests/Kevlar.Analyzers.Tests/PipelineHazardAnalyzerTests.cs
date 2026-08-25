@@ -130,6 +130,26 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Ignores_Async_Void_Event_Use_Before_Await()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = RetryAsyncVoid);
+
+                private static async void RetryAsyncVoid(RetryEvent item)
+                {
+                    _ = item.Context.ShieldName;
+                    await Task.Yield();
+                }
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV013");
+    }
+
+    [Test]
     public async Task KEV013_Follows_Stable_Callback_Local_Initializers()
     {
         var trailingStatements = new[] { "", "callback = _ => { };" };
