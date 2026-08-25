@@ -31,7 +31,7 @@ internal sealed class FaultChaosStrategy : ChaosStrategy
             throw new InvalidOperationException("The chaos exception generator returned null.");
         }
 
-        Notify(ChaosInjectionKind.Fault, context, decision);
+        Notify(ChaosInjectionKind.Fault, context, decision, exception);
         return new ValueTask<Outcome<T>>(Outcome<T>.FromException(exception));
     }
 }

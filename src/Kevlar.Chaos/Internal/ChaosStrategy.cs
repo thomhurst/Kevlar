@@ -97,7 +97,11 @@ internal abstract class ChaosStrategy : Strategy
         return true;
     }
 
-    protected void Notify(ChaosInjectionKind kind, KevlarContext context, ChaosDecision decision)
+    protected void Notify(
+        ChaosInjectionKind kind,
+        KevlarContext context,
+        ChaosDecision decision,
+        Exception? exception = null)
     {
         if (_onInjected is not null)
         {
@@ -111,9 +115,12 @@ internal abstract class ChaosStrategy : Strategy
                     decision.Rate,
                     decision.Sample));
             }
-            catch (Exception exception)
+            catch (Exception callbackException)
             {
-                KevlarDiagnostics.ReportCallbackError(CallbackErrorKind.ChaosInjected, context, exception);
+                KevlarDiagnostics.ReportCallbackError(
+                    CallbackErrorKind.ChaosInjected,
+                    context,
+                    callbackException);
             }
         }
         ChaosMetrics.Injection(kind, context.ShieldName, decision.Operation, decision.Environment);
@@ -127,6 +134,7 @@ internal abstract class ChaosStrategy : Strategy
                 _ => "chaos_injection",
             },
             KevlarTelemetrySeverity.Warning,
+            exception,
             strategyName: _telemetryName);
     }
 
