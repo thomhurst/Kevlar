@@ -15,7 +15,7 @@ public class DependencyInjectionTests
             {
                 fallbackCalls++;
                 return ValueTask.CompletedTask;
-            }));
+            }), replace: true);
         using var provider = services.BuildServiceProvider();
         var registry = provider.GetRequiredService<IKevlarRegistry>();
         var fallbackShield = registry.GetShield("shared");
@@ -62,17 +62,17 @@ public class DependencyInjectionTests
     }
 
     [Test]
-    public async Task Typed_And_Untyped_Policies_With_The_Same_Name_Coexist()
+    public async Task Typed_And_Untyped_Policies_With_Different_Names_Coexist()
     {
         var services = new ServiceCollection()
             .AddShield("shared", Shield.Retry(1, Backoff.None))
-            .AddShield("shared", Shield.For<int>().WhenResult(-1).FallbackTo(0))
+            .AddShield("shared-typed", Shield.For<int>().WhenResult(-1).FallbackTo(0))
             .BuildServiceProvider();
 
         var registry = services.GetRequiredService<IKevlarRegistry>();
 
         var untyped = registry.GetShield("shared");
-        var typed = registry.GetShield<int>("shared");
+        var typed = registry.GetShield<int>("shared-typed");
 
         await Assert.That(untyped).IsNotNull();
         var result = await typed.ExecuteAsync(_ => new ValueTask<int>(-1));

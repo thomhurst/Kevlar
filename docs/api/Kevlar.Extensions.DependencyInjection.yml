@@ -11,6 +11,7 @@ items:
   - Kevlar.Extensions.DependencyInjection.IShieldProvider`1
   - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions
   - Kevlar.Extensions.DependencyInjection.RateLimitDefinition
+  - Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions
   - Kevlar.Extensions.DependencyInjection.RetryDefinition
   - Kevlar.Extensions.DependencyInjection.ShieldDefinition
   langs:
@@ -72,6 +73,14 @@ references:
   name: KevlarServiceCollectionExtensions
   nameWithType: KevlarServiceCollectionExtensions
   fullName: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions
+- uid: Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions
+  commentId: T:Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions
+  parent: Kevlar.Extensions.DependencyInjection
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions.html
+  name: ReloadingShieldOptions
+  nameWithType: ReloadingShieldOptions
+  fullName: Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions
 - uid: Kevlar.Extensions.DependencyInjection.ShieldDefinition
   commentId: T:Kevlar.Extensions.DependencyInjection.ShieldDefinition
   isExternal: true

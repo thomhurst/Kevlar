@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Kevlar.Extensions.DependencyInjection;
 
-#pragma warning disable RS0026 // Partitioned registration overload parity intentionally keeps optional arguments.
+#pragma warning disable RS0026, RS0027 // Registration overload parity intentionally keeps optional arguments.
 
 /// <summary>Registers Kevlar shields with the service collection.</summary>
 public static class KevlarServiceCollectionExtensions
@@ -20,18 +20,35 @@ public static class KevlarServiceCollectionExtensions
 
     /// <summary>Registers a named shield, resolvable via <see cref="IKevlarRegistry.GetShield(string)"/> or as a keyed <see cref="Shield"/> service.</summary>
     public static IServiceCollection AddShield(this IServiceCollection services, string name, Shield shield)
+        => AddShield(services, name, shield, replace: false);
+
+    /// <summary>Registers a named shield, optionally replacing any shield with the same name.</summary>
+    public static IServiceCollection AddShield(
+        this IServiceCollection services,
+        string name,
+        Shield shield,
+        bool replace)
     {
         if (shield is null) { throw new ArgumentNullException(nameof(shield)); }
-        return services.AddShield(name, _ => shield);
+        return services.AddShield(name, _ => shield, replace);
     }
 
     /// <summary>Registers a named shield built from the service provider.</summary>
     public static IServiceCollection AddShield(this IServiceCollection services, string name, Func<IServiceProvider, Shield> factory)
+        => AddShield(services, name, factory, replace: false);
+
+    /// <summary>Registers a named shield built from the service provider, optionally replacing any shield with the same name.</summary>
+    public static IServiceCollection AddShield(
+        this IServiceCollection services,
+        string name,
+        Func<IServiceProvider, Shield> factory,
+        bool replace)
     {
         if (services is null) { throw new ArgumentNullException(nameof(services)); }
         if (name is null) { throw new ArgumentNullException(nameof(name)); }
         if (factory is null) { throw new ArgumentNullException(nameof(factory)); }
 
+        PrepareRegistration(services, name, replace);
         services.AddKevlar();
         services.AddSingleton(new ShieldRegistration(name, null, factory));
         services.AddKeyedSingleton(name, (sp, _) => sp.GetRequiredService<IKevlarRegistry>().GetShield(name));
@@ -48,11 +65,19 @@ public static class KevlarServiceCollectionExtensions
     /// its diagnostic name.
     /// </summary>
     public static IServiceCollection AddShield(this IServiceCollection services, string name, IConfiguration configuration)
+        => AddShield(services, name, configuration, replace: false);
+
+    /// <summary>Registers a named shield from configuration, optionally replacing any shield with the same name.</summary>
+    public static IServiceCollection AddShield(
+        this IServiceCollection services,
+        string name,
+        IConfiguration configuration,
+        bool replace)
     {
         if (configuration is null) { throw new ArgumentNullException(nameof(configuration)); }
 
         return services.AddShield(name, _ =>
-            BuildConfiguredShield(configuration).WithName(name));
+            BuildConfiguredShield(configuration).WithName(name), replace);
     }
 
     /// <summary>
@@ -62,10 +87,11 @@ public static class KevlarServiceCollectionExtensions
     /// snapshot and are reported to <paramref name="onReloadFailure"/> when supplied.
     /// </summary>
     /// <remarks>
-    /// Each successful replacement has fresh circuit-breaker, rate-limiter, and concurrency-
-    /// limiter state. Resolve the keyed <see cref="IShieldProvider"/> to observe future replacements,
-    /// or call <see cref="IKevlarRegistry.GetShield(string)"/> once per operation.
-    /// A keyed <see cref="Shield"/> is an immutable snapshot and does not update after resolution.
+    /// Changes are debounced for 250 milliseconds by default. Each successful replacement has
+    /// fresh circuit-breaker, rate-limiter, and concurrency-limiter state. Resolve the keyed
+    /// <see cref="IShieldProvider"/> to observe future replacements, or call
+    /// <see cref="IKevlarRegistry.GetShield(string)"/> once per operation. Reloading names do not
+    /// register a keyed <see cref="Shield"/>, preventing consumers from retaining a stale snapshot.
     /// Exceptions thrown by <paramref name="onReloadFailure"/> are suppressed so future reloads
     /// remain active.
     /// </remarks>
@@ -74,40 +100,116 @@ public static class KevlarServiceCollectionExtensions
         string name,
         IConfiguration configuration,
         Action<Exception>? onReloadFailure = null)
+        => AddReloadingShieldCore(
+            services,
+            name,
+            configuration,
+            new ReloadingShieldOptions(),
+            onReloadFailure,
+            replace: false);
+
+    /// <summary>Registers a named reload-aware shield, optionally replacing any shield with the same name.</summary>
+    public static IServiceCollection AddReloadingShield(
+        this IServiceCollection services,
+        string name,
+        IConfiguration configuration,
+        bool replace) =>
+        AddReloadingShieldCore(
+            services,
+            name,
+            configuration,
+            new ReloadingShieldOptions(),
+            onReloadFailure: null,
+            replace);
+
+    /// <summary>Registers a named reload-aware shield with failure reporting and explicit replacement.</summary>
+    public static IServiceCollection AddReloadingShield(
+        this IServiceCollection services,
+        string name,
+        IConfiguration configuration,
+        Action<Exception>? onReloadFailure,
+        bool replace) =>
+        AddReloadingShieldCore(
+            services,
+            name,
+            configuration,
+            new ReloadingShieldOptions(),
+            onReloadFailure,
+            replace);
+
+    /// <summary>Registers a named reload-aware shield with explicit reload options.</summary>
+    public static IServiceCollection AddReloadingShield(
+        this IServiceCollection services,
+        string name,
+        IConfiguration configuration,
+        ReloadingShieldOptions options,
+        Action<Exception>? onReloadFailure = null,
+        bool replace = false) =>
+        AddReloadingShieldCore(services, name, configuration, options, onReloadFailure, replace);
+
+    private static IServiceCollection AddReloadingShieldCore(
+        IServiceCollection services,
+        string name,
+        IConfiguration configuration,
+        ReloadingShieldOptions options,
+        Action<Exception>? onReloadFailure,
+        bool replace)
     {
         if (services is null) { throw new ArgumentNullException(nameof(services)); }
         if (name is null) { throw new ArgumentNullException(nameof(name)); }
         if (configuration is null) { throw new ArgumentNullException(nameof(configuration)); }
+        if (options is null) { throw new ArgumentNullException(nameof(options)); }
 
+        var (debounceDelay, timeProvider) = ValidateReloadingOptions(options);
+
+        PrepareRegistration(services, name, replace);
         services.AddKevlar();
         services.AddKeyedSingleton<IShieldProvider>(
             name,
             (_, _) => new ReloadingShieldProvider(
                 () => BuildConfiguredShield(configuration).WithName(name),
                 configuration.GetReloadToken,
-                onReloadFailure));
+                onReloadFailure,
+                debounceDelay,
+                timeProvider));
         services.AddSingleton(new ShieldRegistration(
             name,
             null,
             sp => sp.GetRequiredKeyedService<IShieldProvider>(name)));
-        services.AddKeyedSingleton(name, (sp, _) => sp.GetRequiredService<IKevlarRegistry>().GetShield(name));
         return services;
     }
 
     /// <summary>Registers a named result-aware shield, resolvable via <see cref="IKevlarRegistry.GetShield{TResult}(string)"/> or as a keyed <see cref="Shield{TResult}"/> service.</summary>
     public static IServiceCollection AddShield<TResult>(this IServiceCollection services, string name, Shield<TResult> shield)
+        => AddShield(services, name, shield, replace: false);
+
+    /// <summary>Registers a named result-aware shield, optionally replacing any shield with the same name.</summary>
+    public static IServiceCollection AddShield<TResult>(
+        this IServiceCollection services,
+        string name,
+        Shield<TResult> shield,
+        bool replace)
     {
         if (shield is null) { throw new ArgumentNullException(nameof(shield)); }
-        return services.AddShield(name, _ => shield);
+        return services.AddShield(name, _ => shield, replace);
     }
 
     /// <summary>Registers a named result-aware shield built from the service provider.</summary>
     public static IServiceCollection AddShield<TResult>(this IServiceCollection services, string name, Func<IServiceProvider, Shield<TResult>> factory)
+        => AddShield(services, name, factory, replace: false);
+
+    /// <summary>Registers a named result-aware shield built from the service provider, optionally replacing any shield with the same name.</summary>
+    public static IServiceCollection AddShield<TResult>(
+        this IServiceCollection services,
+        string name,
+        Func<IServiceProvider, Shield<TResult>> factory,
+        bool replace)
     {
         if (services is null) { throw new ArgumentNullException(nameof(services)); }
         if (name is null) { throw new ArgumentNullException(nameof(name)); }
         if (factory is null) { throw new ArgumentNullException(nameof(factory)); }
 
+        PrepareRegistration(services, name, replace);
         services.AddKevlar();
         services.AddSingleton(new ShieldRegistration(name, typeof(TResult), factory));
         services.AddKeyedSingleton(name, (sp, _) => sp.GetRequiredService<IKevlarRegistry>().GetShield<TResult>(name));
@@ -126,11 +228,19 @@ public static class KevlarServiceCollectionExtensions
         this IServiceCollection services,
         string name,
         IConfiguration configuration)
+        => AddShield<TResult>(services, name, configuration, replace: false);
+
+    /// <summary>Registers a named result-aware shield from configuration, optionally replacing any shield with the same name.</summary>
+    public static IServiceCollection AddShield<TResult>(
+        this IServiceCollection services,
+        string name,
+        IConfiguration configuration,
+        bool replace)
     {
         if (configuration is null) { throw new ArgumentNullException(nameof(configuration)); }
 
         return services.AddShield<TResult>(name, _ =>
-            BuildConfiguredShield<TResult>(configuration).WithName(name));
+            BuildConfiguredShield<TResult>(configuration).WithName(name), replace);
     }
 
     /// <summary>
@@ -139,10 +249,11 @@ public static class KevlarServiceCollectionExtensions
     /// snapshot and are reported to <paramref name="onReloadFailure"/> when supplied.
     /// </summary>
     /// <remarks>
-    /// Each successful replacement has fresh strategy state. Resolve the keyed
+    /// Changes are debounced for 250 milliseconds by default. Each successful replacement has
+    /// fresh strategy state. Resolve the keyed
     /// <see cref="IShieldProvider{TResult}"/> to observe future replacements, or call
-    /// <see cref="IKevlarRegistry.GetShield{TResult}(string)"/> once per operation. A keyed
-    /// <see cref="Shield{TResult}"/> is an immutable snapshot and does not update after resolution.
+    /// <see cref="IKevlarRegistry.GetShield{TResult}(string)"/> once per operation. Reloading names
+    /// do not register a keyed <see cref="Shield{TResult}"/>, preventing stale injection.
     /// Exceptions thrown by <paramref name="onReloadFailure"/> are suppressed.
     /// </remarks>
     public static IServiceCollection AddReloadingShield<TResult>(
@@ -150,25 +261,82 @@ public static class KevlarServiceCollectionExtensions
         string name,
         IConfiguration configuration,
         Action<Exception>? onReloadFailure = null)
+        => AddReloadingShieldCore<TResult>(
+            services,
+            name,
+            configuration,
+            new ReloadingShieldOptions(),
+            onReloadFailure,
+            replace: false);
+
+    /// <summary>Registers a named reload-aware result-aware shield, optionally replacing any shield with the same name.</summary>
+    public static IServiceCollection AddReloadingShield<TResult>(
+        this IServiceCollection services,
+        string name,
+        IConfiguration configuration,
+        bool replace) =>
+        AddReloadingShieldCore<TResult>(
+            services,
+            name,
+            configuration,
+            new ReloadingShieldOptions(),
+            onReloadFailure: null,
+            replace);
+
+    /// <summary>Registers a named reload-aware result-aware shield with failure reporting and explicit replacement.</summary>
+    public static IServiceCollection AddReloadingShield<TResult>(
+        this IServiceCollection services,
+        string name,
+        IConfiguration configuration,
+        Action<Exception>? onReloadFailure,
+        bool replace) =>
+        AddReloadingShieldCore<TResult>(
+            services,
+            name,
+            configuration,
+            new ReloadingShieldOptions(),
+            onReloadFailure,
+            replace);
+
+    /// <summary>Registers a named reload-aware result-aware shield with explicit reload options.</summary>
+    public static IServiceCollection AddReloadingShield<TResult>(
+        this IServiceCollection services,
+        string name,
+        IConfiguration configuration,
+        ReloadingShieldOptions options,
+        Action<Exception>? onReloadFailure = null,
+        bool replace = false) =>
+        AddReloadingShieldCore<TResult>(services, name, configuration, options, onReloadFailure, replace);
+
+    private static IServiceCollection AddReloadingShieldCore<TResult>(
+        IServiceCollection services,
+        string name,
+        IConfiguration configuration,
+        ReloadingShieldOptions options,
+        Action<Exception>? onReloadFailure,
+        bool replace)
     {
         if (services is null) { throw new ArgumentNullException(nameof(services)); }
         if (name is null) { throw new ArgumentNullException(nameof(name)); }
         if (configuration is null) { throw new ArgumentNullException(nameof(configuration)); }
+        if (options is null) { throw new ArgumentNullException(nameof(options)); }
 
+        var (debounceDelay, timeProvider) = ValidateReloadingOptions(options);
+
+        PrepareRegistration(services, name, replace);
         services.AddKevlar();
         services.AddKeyedSingleton<IShieldProvider<TResult>>(
             name,
             (_, _) => new ReloadingShieldProvider<TResult>(
                 () => BuildConfiguredShield<TResult>(configuration).WithName(name),
                 configuration.GetReloadToken,
-                onReloadFailure));
+                onReloadFailure,
+                debounceDelay,
+                timeProvider));
         services.AddSingleton(new ShieldRegistration(
             name,
             typeof(TResult),
             sp => sp.GetRequiredKeyedService<IShieldProvider<TResult>>(name)));
-        services.AddKeyedSingleton(
-            name,
-            (sp, _) => sp.GetRequiredService<IKevlarRegistry>().GetShield<TResult>(name));
         return services;
     }
 
@@ -220,6 +388,82 @@ public static class KevlarServiceCollectionExtensions
                 options,
                 comparer));
         return services;
+    }
+
+    private static void PrepareRegistration(IServiceCollection services, string name, bool replace)
+    {
+        var duplicate = services.Any(descriptor =>
+            !descriptor.IsKeyedService
+            && descriptor.ServiceType == typeof(ShieldRegistration)
+            && descriptor.ImplementationInstance is ShieldRegistration registration
+            && string.Equals(registration.Name, name, StringComparison.Ordinal));
+        if (!duplicate)
+        {
+            return;
+        }
+
+        if (!replace)
+        {
+            throw new InvalidOperationException($"A shield named '{name}' is already registered.");
+        }
+
+        for (var index = services.Count - 1; index >= 0; index--)
+        {
+            var descriptor = services[index];
+            if (IsRegistrationForName(descriptor, name)
+                || IsKeyedShieldServiceForName(descriptor, name))
+            {
+                services.RemoveAt(index);
+            }
+        }
+    }
+
+    private static bool IsRegistrationForName(ServiceDescriptor descriptor, string name) =>
+        !descriptor.IsKeyedService
+        && descriptor.ServiceType == typeof(ShieldRegistration)
+        && descriptor.ImplementationInstance is ShieldRegistration registration
+        && string.Equals(registration.Name, name, StringComparison.Ordinal);
+
+    private static bool IsKeyedShieldServiceForName(ServiceDescriptor descriptor, string name)
+    {
+        if (!descriptor.IsKeyedService
+            || descriptor.ServiceKey is not string key
+            || !string.Equals(key, name, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var serviceType = descriptor.ServiceType;
+        if (serviceType == typeof(Shield) || serviceType == typeof(IShieldProvider))
+        {
+            return true;
+        }
+
+        if (!serviceType.IsGenericType)
+        {
+            return false;
+        }
+
+        var definition = serviceType.GetGenericTypeDefinition();
+        return definition == typeof(Shield<>) || definition == typeof(IShieldProvider<>);
+    }
+
+    private static (TimeSpan DebounceDelay, TimeProvider TimeProvider) ValidateReloadingOptions(
+        ReloadingShieldOptions options)
+    {
+        if (options.DebounceDelay < TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(options),
+                "DebounceDelay cannot be negative.");
+        }
+
+        if (options.TimeProvider is null)
+        {
+            throw new ArgumentException("TimeProvider cannot be null.", nameof(options));
+        }
+
+        return (options.DebounceDelay, options.TimeProvider);
     }
 
     private static ShieldDefinition BindDefinition(IConfiguration configuration)
@@ -486,4 +730,4 @@ public static class KevlarServiceCollectionExtensions
     }
 }
 
-#pragma warning restore RS0026
+#pragma warning restore RS0026, RS0027

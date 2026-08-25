@@ -53,9 +53,11 @@ var httpShield = registry.GetShield<HttpResponseMessage>("downstream");
 
 Registry semantics worth knowing:
 
-- Shields are keyed by **name + result type** — an untyped `"api"` shield and a `Shield<HttpResponseMessage>` named `"api"` coexist independently.
-- Last registration for a given name wins, matching standard DI override behaviour.
+- Shield names are unique across untyped and result-aware registrations. A duplicate throws during
+  registration. Pass `replace: true` explicitly when replacement is intentional.
 - Ordinary factory registrations run lazily on first resolve and the result is cached — so every consumer shares one instance (and its strategy state), exactly like instance registrations.
+- A factory exception is not cached. Concurrent callers observing one failed attempt receive that
+  failure; the next resolve retries the factory and caches the first successful result.
 - `AddShield` registers the `IKevlarRegistry` for you (`AddKevlar()` exists if you ever need just the registry).
 
 Use [`AddPartitionedShield`](partitioning.md#dependency-injection) when one registration must retain
@@ -143,15 +145,17 @@ public sealed class GitHubClient(
 ```
 
 Registry consumers can call `registry.GetShield("github")` once per operation to obtain the
-current snapshot. A keyed `Shield` resolved from DI is also one immutable snapshot; it does not
-change after a reload. Every ordinary `AddShield` registration exposes an `IShieldProvider` too,
-but its `Current` snapshot remains fixed.
+current snapshot. Reloading names intentionally do not register a keyed `Shield`, because such a
+singleton would silently become stale; resolve the keyed `IShieldProvider` instead. Every ordinary
+`AddShield` registration exposes both a keyed shield and an `IShieldProvider`, whose `Current`
+snapshot remains fixed.
 
 The generic forms are symmetric: `AddReloadingShield<TResult>` publishes through
-`IShieldProvider<TResult>`, `registry.GetShield<TResult>(name)`, and a keyed `Shield<TResult>`.
-The keyed shield remains the snapshot captured when it was resolved; read the typed provider's
-`Current` once per operation to observe reloads.
+`IShieldProvider<TResult>` and `registry.GetShield<TResult>(name)`. It likewise omits a keyed
+`Shield<TResult>` so consumers cannot accidentally retain a stale snapshot.
 
+Changes are debounced for 250 milliseconds by default, coalescing file-watcher bursts into one
+rebuild. Pass a `ReloadingShieldOptions` instance to customize `DebounceDelay` or `TimeProvider`.
 On a valid change, Kevlar builds the entire replacement before one atomic publish. Operations
 already using the prior snapshot finish on it. Invalid configuration keeps the last known-good
 snapshot and invokes the optional failure callback; callback exceptions are contained so later

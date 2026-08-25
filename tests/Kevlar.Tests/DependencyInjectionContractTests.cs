@@ -51,16 +51,16 @@ public class DependencyInjectionContractTests
         var typed = Shield<int>.Empty;
         var services = new ServiceCollection()
             .AddShield("shared", _ => untyped)
-            .AddShield("shared", _ => typed)
+            .AddShield("shared-typed", _ => typed)
             .BuildServiceProvider();
         var registry = services.GetRequiredService<IKevlarRegistry>();
 
         var directUntyped = registry.GetShield("shared");
         var foundUntyped = registry.TryGetShield("shared", out var triedUntyped);
         var keyedUntyped = services.GetRequiredKeyedService<Shield>("shared");
-        var directTyped = registry.GetShield<int>("shared");
-        var foundTyped = registry.TryGetShield<int>("shared", out var triedTyped);
-        var keyedTyped = services.GetRequiredKeyedService<Shield<int>>("shared");
+        var directTyped = registry.GetShield<int>("shared-typed");
+        var foundTyped = registry.TryGetShield<int>("shared-typed", out var triedTyped);
+        var keyedTyped = services.GetRequiredKeyedService<Shield<int>>("shared-typed");
 
         await Assert.That(foundUntyped).IsTrue();
         await Assert.That(foundTyped).IsTrue();
@@ -92,27 +92,40 @@ public class DependencyInjectionContractTests
     }
 
     [Test]
-    public async Task Last_Duplicate_Registration_Wins_For_Every_Shield_Kind()
+    public async Task Duplicate_Name_Throws_Across_Shield_Shapes()
     {
         var first = Shield.Retry(1, Backoff.None);
-        var last = Shield.Timeout(TimeSpan.FromSeconds(1));
-        var firstTyped = Shield<int>.Empty;
-        var lastTyped = Shield.For<int>().FallbackTo(42);
-        using var provider = new ServiceCollection()
-            .AddShield("duplicate", first)
-            .AddShield("duplicate", last)
-            .AddShield("duplicate", firstTyped)
-            .AddShield("duplicate", lastTyped)
-            .BuildServiceProvider();
+        var services = new ServiceCollection().AddShield("duplicate", first);
 
+        var sameShape = await Assert.That(() => services.AddShield(
+                "duplicate",
+                Shield.Timeout(TimeSpan.FromSeconds(1))))
+            .Throws<InvalidOperationException>();
+        var typedShape = await Assert.That(() => services.AddShield(
+                "duplicate",
+                Shield<int>.Empty))
+            .Throws<InvalidOperationException>();
+
+        await Assert.That(sameShape!.Message)
+            .IsEqualTo("A shield named 'duplicate' is already registered.");
+        await Assert.That(typedShape!.Message).IsEqualTo(sameShape.Message);
+    }
+
+    [Test]
+    public async Task Replace_True_Overrides_Across_Shield_Shapes()
+    {
+        var replacement = Shield<int>.Empty;
+        using var provider = new ServiceCollection()
+            .AddShield("replace", Shield.Empty)
+            .AddShield("replace", replacement, replace: true)
+            .BuildServiceProvider();
         var registry = provider.GetRequiredService<IKevlarRegistry>();
 
-        await Assert.That(ReferenceEquals(registry.GetShield("duplicate"), last)).IsTrue();
-        await Assert.That(ReferenceEquals(provider.GetRequiredKeyedService<Shield>("duplicate"), last)).IsTrue();
-        await Assert.That(ReferenceEquals(registry.GetShield<int>("duplicate"), lastTyped)).IsTrue();
-        await Assert.That(ReferenceEquals(
-            provider.GetRequiredKeyedService<Shield<int>>("duplicate"),
-            lastTyped)).IsTrue();
+        await Assert.That(registry.TryGetShield("replace", out _)).IsFalse();
+        await Assert.That(registry.GetShield<int>("replace")).IsSameReferenceAs(replacement);
+        await Assert.That(provider.GetKeyedService<Shield>("replace")).IsNull();
+        await Assert.That(provider.GetRequiredKeyedService<Shield<int>>("replace"))
+            .IsSameReferenceAs(replacement);
     }
 
     [Test]
@@ -259,7 +272,7 @@ public class DependencyInjectionContractTests
     }
 
     [Test]
-    public async Task Factory_Failure_Is_Cached_With_The_Original_Instance()
+    public async Task Factory_Failure_Is_Retried_On_The_Next_Resolve()
     {
         var factoryCalls = 0;
         var failure = new InvalidOperationException("factory failed");
@@ -267,17 +280,80 @@ public class DependencyInjectionContractTests
             .AddShield("failing", _ =>
             {
                 factoryCalls++;
-                throw failure;
+                if (factoryCalls == 1)
+                {
+                    throw failure;
+                }
+
+                return Shield.Empty;
             })
             .BuildServiceProvider();
         var registry = provider.GetRequiredService<IKevlarRegistry>();
 
         var first = await Assert.That(() => registry.GetShield("failing")).Throws<InvalidOperationException>();
-        var second = await Assert.That(() => registry.GetShield("failing")).Throws<InvalidOperationException>();
+        var second = registry.GetShield("failing");
+
+        await Assert.That(factoryCalls).IsEqualTo(2);
+        await Assert.That(ReferenceEquals(first, failure)).IsTrue();
+        await Assert.That(second).IsSameReferenceAs(Shield.Empty);
+    }
+
+    [Test]
+    public async Task Concurrent_Failed_Resolve_Uses_One_Factory_Attempt()
+    {
+        const int WorkerCount = 32;
+        var factoryCalls = 0;
+        var failure = new InvalidOperationException("factory failed");
+        using var releaseFailure = new ManualResetEventSlim();
+        var factoryEntered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var provider = new ServiceCollection()
+            .AddShield("failing", _ =>
+            {
+                if (Interlocked.Increment(ref factoryCalls) == 1)
+                {
+                    factoryEntered.SetResult();
+                    releaseFailure.Wait();
+                    throw failure;
+                }
+
+                return Shield.Empty;
+            })
+            .BuildServiceProvider();
+        var registry = provider.GetRequiredService<IKevlarRegistry>();
+        using var ready = new CountdownEvent(WorkerCount);
+        using var start = new ManualResetEventSlim();
+        var resolutions = Enumerable.Range(0, WorkerCount)
+            .Select(_worker => Task.Factory.StartNew(
+                () =>
+                {
+                    ready.Signal();
+                    start.Wait();
+                    try
+                    {
+                        _ = registry.GetShield("failing");
+                        return null;
+                    }
+                    catch (Exception exception)
+                    {
+                        return exception;
+                    }
+                },
+                CancellationToken.None,
+                TaskCreationOptions.LongRunning,
+                TaskScheduler.Default))
+            .ToArray();
+
+        ready.Wait();
+        start.Set();
+        await factoryEntered.Task;
+        await Task.Delay(100);
+        releaseFailure.Set();
+        var failures = await Task.WhenAll(resolutions);
 
         await Assert.That(factoryCalls).IsEqualTo(1);
-        await Assert.That(ReferenceEquals(first, failure)).IsTrue();
-        await Assert.That(ReferenceEquals(second, failure)).IsTrue();
+        await Assert.That(failures.All(exception => ReferenceEquals(exception, failure))).IsTrue();
+        await Assert.That(registry.GetShield("failing")).IsSameReferenceAs(Shield.Empty);
+        await Assert.That(factoryCalls).IsEqualTo(2);
     }
 
     [Test]
