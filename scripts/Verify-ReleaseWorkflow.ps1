@@ -64,6 +64,15 @@ Assert-Contains 'Retry-safe release tag' './scripts/Push-ReleaseTag.ps1'
 Assert-Contains 'Retry-safe NuGet publication' './scripts/Push-NuGetRelease.ps1'
 Assert-Contains 'Retry-safe GitHub release' './scripts/Publish-GitHubRelease.ps1'
 
+$packageVerificationScript = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'Verify-Packages.ps1') -Raw
+foreach ($requiredVerification in @('Verify-ReleaseApiBaselines.ps1', 'Verify-PublicApi.ps1'))
+{
+    if (-not $packageVerificationScript.Contains($requiredVerification, [StringComparison]::Ordinal))
+    {
+        throw "Package verification must invoke '$requiredVerification' for stable releases."
+    }
+}
+
 Assert-StepGuarded 'Create and push release tag'
 Assert-StepGuarded 'NuGet login'
 Assert-StepGuarded 'Push to NuGet'
@@ -117,6 +126,43 @@ $resolvedTemporaryRoot = [IO.Path]::GetFullPath($temporaryRoot)
 
 try
 {
+    $apiFixtureRoot = Join-Path $resolvedTemporaryRoot 'api-baselines'
+    $apiFixtureSource = Join-Path $apiFixtureRoot 'src/Fixture'
+    [IO.Directory]::CreateDirectory($apiFixtureSource) | Out-Null
+    [IO.Directory]::CreateDirectory((Join-Path $apiFixtureRoot 'src/Kevlar.Analyzers')) | Out-Null
+    [IO.File]::WriteAllText(
+        (Join-Path $apiFixtureSource 'PublicAPI.Unshipped.txt'),
+        "#nullable enable`nFixture.NewApi`n",
+        [Text.UTF8Encoding]::new($false))
+    [IO.File]::WriteAllText(
+        (Join-Path $apiFixtureRoot 'src/Kevlar.Analyzers/AnalyzerReleases.Unshipped.md'),
+        "; Unshipped analyzer release`n",
+        [Text.UTF8Encoding]::new($false))
+
+    $baselineScript = Join-Path $PSScriptRoot 'Verify-ReleaseApiBaselines.ps1'
+    & $baselineScript -Version '1.0.0-preview.1' -RepositoryRoot $apiFixtureRoot
+
+    $unfrozenRejected = $false
+    try
+    {
+        & $baselineScript -Version '1.0.0' -RepositoryRoot $apiFixtureRoot
+    }
+    catch
+    {
+        $unfrozenRejected = $true
+    }
+
+    if (-not $unfrozenRejected)
+    {
+        throw 'Stable release verification accepted an unshipped public API.'
+    }
+
+    [IO.File]::WriteAllText(
+        (Join-Path $apiFixtureSource 'PublicAPI.Unshipped.txt'),
+        "#nullable enable`n",
+        [Text.UTF8Encoding]::new($false))
+    & $baselineScript -Version '1.0.0' -RepositoryRoot $apiFixtureRoot
+
     $fixturePath = Join-Path $resolvedTemporaryRoot 'CHANGELOG.md'
     $outputPath = Join-Path $resolvedTemporaryRoot 'notes.md'
     [IO.File]::WriteAllText(

@@ -229,6 +229,10 @@ function Get-ArchiveEntryHash([string]$ArchivePath, [string]$EntryPath)
 }
 
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
+& (Join-Path $PSScriptRoot 'Verify-ReleaseApiBaselines.ps1') `
+    -Version $Version `
+    -RepositoryRoot $repositoryRoot
+
 $buildPropertiesJson = & dotnet msbuild `
     (Join-Path $repositoryRoot 'src/Kevlar/Kevlar.csproj') `
     -nologo `
@@ -258,6 +262,13 @@ Assert-Equal 'SymbolPackageFormat' $buildProperties.SymbolPackageFormat 'snupkg'
 Assert-Equal 'SignAssembly' $buildProperties.SignAssembly 'false'
 
 $packageDirectory = (Resolve-Path -LiteralPath $PackagesPath).Path
+if ($Version -match '^\d+\.\d+\.\d+$' -or $env:GITHUB_REF -match '^refs/tags/v')
+{
+    & (Join-Path $PSScriptRoot 'Verify-PublicApi.ps1') `
+        -PackagesPath $packageDirectory `
+        -RepositoryRoot $repositoryRoot
+}
+
 $expectedRepositoryCommit = (& git rev-parse HEAD).Trim()
 if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($expectedRepositoryCommit))
 {
