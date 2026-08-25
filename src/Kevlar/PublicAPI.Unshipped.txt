@@ -135,12 +135,12 @@ static Kevlar.ShieldExtensions.Fallback(this Kevlar.Shield! shield, System.Func<
 Kevlar.HedgeActionGenerator
 Kevlar.HedgeActionGeneratorEvent
 Kevlar.HedgeActionGeneratorEvent.HedgeActionGeneratorEvent() -> void
-Kevlar.HedgeActionGeneratorEvent.Attempt.get -> int
+Kevlar.HedgeActionGeneratorEvent.AttemptNumber.get -> int
 Kevlar.HedgeActionGeneratorEvent.Context.get -> Kevlar.KevlarContext!
 Kevlar.HedgeActionGeneratorEvent.OriginalAction.get -> System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>!
 Kevlar.HedgeActionGeneratorEvent<TResult>
 Kevlar.HedgeActionGeneratorEvent<TResult>.HedgeActionGeneratorEvent() -> void
-Kevlar.HedgeActionGeneratorEvent<TResult>.Attempt.get -> int
+Kevlar.HedgeActionGeneratorEvent<TResult>.AttemptNumber.get -> int
 Kevlar.HedgeActionGeneratorEvent<TResult>.Context.get -> Kevlar.KevlarContext!
 Kevlar.HedgeActionGeneratorEvent<TResult>.OriginalAction.get -> System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>!
 Kevlar.HedgeOptions.ActionGenerator.get -> Kevlar.HedgeActionGenerator?
@@ -157,7 +157,7 @@ Kevlar.ConcurrencyLimitRejectedEvent
 Kevlar.ConcurrencyLimitRejectedEvent.ConcurrencyLimitRejectedEvent() -> void
 Kevlar.ConcurrencyLimitRejectedEvent.Context.get -> Kevlar.KevlarContext!
 Kevlar.ConcurrencyLimitRejectedEvent.MaxConcurrency.get -> int
-Kevlar.ConcurrencyLimitRejectedEvent.MaxQueue.get -> int
+Kevlar.ConcurrencyLimitRejectedEvent.QueueLimit.get -> int
 Kevlar.ConcurrencyLimitRejectedEvent.StrategyIndex.get -> int
 Kevlar.RateLimitOptions.OnRejected.get -> System.Action<Kevlar.RateLimitRejectedEvent>?
 Kevlar.RateLimitOptions.OnRejected.set -> void
@@ -321,3 +321,49 @@ Kevlar.HedgeOptions<TResult>.OnHedge.get -> System.Action<Kevlar.HedgeEvent>?
 Kevlar.HedgeOptions<TResult>.OnHedge.set -> void
 Kevlar.HedgeOptions<TResult>.OnHedgeAsync.get -> System.Func<Kevlar.HedgeEvent, System.Threading.Tasks.ValueTask>?
 Kevlar.HedgeOptions<TResult>.OnHedgeAsync.set -> void
+Kevlar.KevlarProxyException
+Kevlar.KevlarProxyException.KevlarProxyException(System.Exception! originalException) -> void
+Kevlar.KevlarProxyException.OriginalException.get -> System.Exception!
+*REMOVED*Kevlar.ConcurrencyLimitOptions.MaxQueue.get -> int
+*REMOVED*Kevlar.ConcurrencyLimitOptions.MaxQueue.set -> void
+*REMOVED*Kevlar.Shield<TResult>.ConcurrencyLimit(int maxConcurrency, int maxQueue = 0) -> Kevlar.Shield<TResult>!
+*REMOVED*Kevlar.ShieldBuilder.ConcurrencyLimit(int maxConcurrency, int maxQueue = 0) -> Kevlar.Shield!
+*REMOVED*Kevlar.ShieldBuilder<TResult>.ConcurrencyLimit(int maxConcurrency, int maxQueue = 0) -> Kevlar.Shield<TResult>!
+*REMOVED*static Kevlar.Shield.ConcurrencyLimit(int maxConcurrency, int maxQueue = 0) -> Kevlar.Shield!
+*REMOVED*static Kevlar.ShieldExtensions.ConcurrencyLimit(this Kevlar.Shield! shield, int maxConcurrency, int maxQueue = 0) -> Kevlar.Shield!
+Kevlar.ConcurrencyLimitOptions.QueueLimit.get -> int
+Kevlar.ConcurrencyLimitOptions.QueueLimit.set -> void
+Kevlar.Shield<TResult>.ConcurrencyLimit(int maxConcurrency, int queueLimit = 0) -> Kevlar.Shield<TResult>!
+Kevlar.ShieldBuilder.ConcurrencyLimit(int maxConcurrency, int queueLimit = 0) -> Kevlar.Shield!
+Kevlar.ShieldBuilder<TResult>.ConcurrencyLimit(int maxConcurrency, int queueLimit = 0) -> Kevlar.Shield<TResult>!
+static Kevlar.Shield.ConcurrencyLimit(int maxConcurrency, int queueLimit = 0) -> Kevlar.Shield!
+static Kevlar.ShieldExtensions.ConcurrencyLimit(this Kevlar.Shield! shield, int maxConcurrency, int queueLimit = 0) -> Kevlar.Shield!
+*REMOVED*Kevlar.HedgeEvent.Attempt.get -> int
+*REMOVED*Kevlar.RetryEvent.Attempt.get -> int
+*REMOVED*Kevlar.RetryEvent<TResult>.Attempt.get -> int
+Kevlar.HedgeEvent.AttemptNumber.get -> int
+Kevlar.RetryEvent.RetryNumber.get -> int
+Kevlar.RetryEvent<TResult>.RetryNumber.get -> int
+*REMOVED*Kevlar.CircuitOpenException.RetryAfter.get -> System.TimeSpan?
+*REMOVED*Kevlar.KevlarException.KevlarException(string! message, System.Exception! innerException) -> void
+*REMOVED*Kevlar.RateLimitExceededException.RetryAfter.get -> System.TimeSpan?
+Kevlar.CircuitOpenException.CircuitOpenException() -> void
+Kevlar.CircuitOpenException.CircuitOpenException(string! message) -> void
+Kevlar.CircuitOpenException.CircuitOpenException(string! message, System.Exception! innerException) -> void
+Kevlar.ConcurrencyLimitExceededException.ConcurrencyLimitExceededException(string! message) -> void
+Kevlar.ConcurrencyLimitExceededException.ConcurrencyLimitExceededException(string! message, System.Exception! innerException) -> void
+Kevlar.ExecutionRejectedException
+Kevlar.ExecutionRejectedException.ExecutionRejectedException() -> void
+Kevlar.ExecutionRejectedException.ExecutionRejectedException(string! message) -> void
+Kevlar.ExecutionRejectedException.ExecutionRejectedException(string! message, System.Exception? innerException) -> void
+Kevlar.ExecutionRejectedException.ExecutionRejectedException(string! message, System.TimeSpan? retryAfter, System.Exception? innerException = null) -> void
+Kevlar.ExecutionRejectedException.RetryAfter.get -> System.TimeSpan?
+Kevlar.KevlarException.KevlarException(string! message, System.Exception? innerException) -> void
+Kevlar.KevlarException.KevlarException() -> void
+Kevlar.RateLimitExceededException.RateLimitExceededException() -> void
+Kevlar.RateLimitExceededException.RateLimitExceededException(string! message) -> void
+Kevlar.RateLimitExceededException.RateLimitExceededException(string! message, System.Exception! innerException) -> void
+Kevlar.TimeoutExceededException.TimeoutExceededException() -> void
+Kevlar.TimeoutExceededException.TimeoutExceededException(string! message) -> void
+Kevlar.TimeoutExceededException.TimeoutExceededException(string! message, System.Exception! innerException) -> void
+Kevlar.TimeoutExceededException.TimeoutExceededException(System.TimeSpan timeout, System.OperationCanceledException! innerException) -> void
