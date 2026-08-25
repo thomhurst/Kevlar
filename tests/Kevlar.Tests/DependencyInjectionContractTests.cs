@@ -73,7 +73,7 @@ public class DependencyInjectionContractTests
     }
 
     [Test]
-    public async Task Void_Registry_TryGet_And_Keyed_Paths_Return_The_Same_Singleton()
+    public async Task Fallback_Shield_Registry_And_Keyed_Paths_Return_The_Same_Singleton()
     {
         var expected = Shield.Fallback(static _ => ValueTask.CompletedTask);
         using var services = new ServiceCollection()
@@ -81,9 +81,9 @@ public class DependencyInjectionContractTests
             .BuildServiceProvider();
         var registry = services.GetRequiredService<IKevlarRegistry>();
 
-        var direct = registry.GetVoidShield("void");
-        var found = registry.TryGetVoidShield("void", out var tried);
-        var keyed = services.GetRequiredKeyedService<VoidShield>("void");
+        var direct = registry.GetShield("void");
+        var found = registry.TryGetShield("void", out var tried);
+        var keyed = services.GetRequiredKeyedService<Shield>("void");
 
         await Assert.That(found).IsTrue();
         await Assert.That(ReferenceEquals(direct, expected)).IsTrue();
@@ -98,16 +98,11 @@ public class DependencyInjectionContractTests
         var last = Shield.Timeout(TimeSpan.FromSeconds(1));
         var firstTyped = Shield<int>.Empty;
         var lastTyped = Shield.For<int>().FallbackTo(42);
-        var firstVoid = Shield.Fallback(static _ => ValueTask.CompletedTask);
-        var lastVoid = Shield.Fallback(static _ => ValueTask.FromException(
-            new InvalidOperationException("last")));
         using var provider = new ServiceCollection()
             .AddShield("duplicate", first)
             .AddShield("duplicate", last)
             .AddShield("duplicate", firstTyped)
             .AddShield("duplicate", lastTyped)
-            .AddShield("duplicate", firstVoid)
-            .AddShield("duplicate", lastVoid)
             .BuildServiceProvider();
 
         var registry = provider.GetRequiredService<IKevlarRegistry>();
@@ -118,10 +113,6 @@ public class DependencyInjectionContractTests
         await Assert.That(ReferenceEquals(
             provider.GetRequiredKeyedService<Shield<int>>("duplicate"),
             lastTyped)).IsTrue();
-        await Assert.That(ReferenceEquals(registry.GetVoidShield("duplicate"), lastVoid)).IsTrue();
-        await Assert.That(ReferenceEquals(
-            provider.GetRequiredKeyedService<VoidShield>("duplicate"),
-            lastVoid)).IsTrue();
     }
 
     [Test]
@@ -158,8 +149,6 @@ public class DependencyInjectionContractTests
         await AssertNullNameAsync(() => registry.GetShield<int>(null!));
         await AssertNullNameAsync(() => registry.TryGetShield(null!, out _));
         await AssertNullNameAsync(() => registry.TryGetShield<int>(null!, out _));
-        await AssertNullNameAsync(() => registry.GetVoidShield(null!));
-        await AssertNullNameAsync(() => registry.TryGetVoidShield(null!, out _));
     }
 
     [Test]
@@ -169,13 +158,9 @@ public class DependencyInjectionContractTests
         var configuration = new ConfigurationBuilder().Build();
         Func<IServiceProvider, Shield> shieldFactory = static _ => Shield.Empty;
         Func<IServiceProvider, Shield<int>> typedFactory = static _ => Shield<int>.Empty;
-        Func<IServiceProvider, VoidShield> voidFactory = static _ =>
-            Shield.Fallback(static _ => ValueTask.CompletedTask);
         Func<IServiceProvider, string, Shield> partitionedFactory = static (_, _) => Shield.Empty;
         Func<IServiceProvider, string, Shield<int>> typedPartitionedFactory =
             static (_, _) => Shield<int>.Empty;
-        Func<IServiceProvider, string, VoidShield> voidPartitionedFactory = static (_, _) =>
-            Shield.Fallback(static _ => ValueTask.CompletedTask);
 
         await AssertNullParameterAsync(
             () => KevlarServiceCollectionExtensions.AddKevlar(null!),
@@ -197,16 +182,6 @@ public class DependencyInjectionContractTests
             () => services.AddShield("name", (IConfiguration)null!),
             "configuration");
         await AssertNullParameterAsync(
-            () => KevlarServiceCollectionExtensions.AddVoidShield(null!, "name", voidFactory),
-            "services");
-        await AssertNullParameterAsync(() => services.AddVoidShield(null!, voidFactory), "name");
-        await AssertNullParameterAsync(
-            () => services.AddVoidShield("name", (Func<IServiceProvider, VoidShield>)null!),
-            "factory");
-        await AssertNullParameterAsync(
-            () => services.AddShield("name", (VoidShield)null!),
-            "shield");
-        await AssertNullParameterAsync(
             () => services.AddShield<int>("name", (Func<IServiceProvider, Shield<int>>)null!),
             "factory");
         await AssertNullParameterAsync(
@@ -227,18 +202,6 @@ public class DependencyInjectionContractTests
             "name");
         await AssertNullParameterAsync(
             () => services.AddPartitionedShield<string>("name", null!),
-            "factory");
-        await AssertNullParameterAsync(
-            () => KevlarServiceCollectionExtensions.AddPartitionedVoidShield(
-                null!,
-                "name",
-                voidPartitionedFactory),
-            "services");
-        await AssertNullParameterAsync(
-            () => services.AddPartitionedVoidShield<string>(null!, voidPartitionedFactory),
-            "name");
-        await AssertNullParameterAsync(
-            () => services.AddPartitionedVoidShield<string>("name", null!),
             "factory");
         await AssertNullParameterAsync(
             () => KevlarServiceCollectionExtensions.AddPartitionedShield(
@@ -332,8 +295,8 @@ public class DependencyInjectionContractTests
     [Test]
     [Arguments(BackoffKind.None, "no delay, ≤4s")]
     [Arguments(BackoffKind.Constant, "constant 2s, ≤4s")]
-    [Arguments(BackoffKind.Linear, "linear 2s steps ≤4s")]
-    [Arguments(BackoffKind.Exponential, "exponential 2s ×3 ≤4s")]
+    [Arguments(BackoffKind.Linear, "linear 2s steps, cap 4s")]
+    [Arguments(BackoffKind.Exponential, "exponential 2s ×3, cap 4s")]
     public async Task Every_BackoffKind_Binds_All_Applicable_Knobs(BackoffKind kind, string expected)
     {
         var definition = new ShieldDefinition
@@ -344,7 +307,7 @@ public class DependencyInjectionContractTests
                 Backoff = kind,
                 BaseDelay = TimeSpan.FromSeconds(2),
                 Factor = 3,
-                Jitter = false,
+                Jitter = Jitter.None,
                 MaxDelay = TimeSpan.FromSeconds(4),
             },
         };

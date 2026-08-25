@@ -11,7 +11,7 @@ See the [exceptions reference](../exceptions.md) for failures the default retry 
 ## Quick forms
 
 ```csharp
-Shield.Retry(3);                                          // exponential + jitter (250ms base, 30s cap)
+Shield.Retry(3);                                          // exponential + equal jitter (250ms base, 30s cap)
 Shield.Retry(3, Backoff.Constant(TimeSpan.FromSeconds(1)));
 Shield.Retry(3, Backoff.Linear(TimeSpan.FromMilliseconds(500)));
 Shield.RetryForever(Backoff.Exponential(TimeSpan.FromSeconds(1), maxDelay: TimeSpan.FromMinutes(1)));
@@ -22,7 +22,7 @@ plus 3 retries. The same reading applies to `MaxRetries` in the options form, an
 overload on `Shield`, `Shield<T>`, and the `When…` builders.
 
 :::tip The default is the good one
-Bare `Shield.Retry(3)` gives exponential backoff **with jitter**, 250ms base, capped at 30s. Jitter prevents retry storms where every failed caller retries in lockstep; you'd have configured this anyway.
+Bare `Shield.Retry(3)` gives exponential backoff **with equal jitter**, 250ms base, capped at 30s. Jitter prevents retry storms where every failed caller retries in lockstep; you'd have configured this anyway.
 :::
 
 ## Backoff
@@ -33,14 +33,18 @@ Bare `Shield.Retry(3)` gives exponential backoff **with jitter**, 250ms base, ca
 Backoff.Constant(TimeSpan.FromSeconds(1));       // 1s, 1s, 1s, ...
 Backoff.Linear(TimeSpan.FromMilliseconds(500));  // 500ms, 1s, 1.5s, ...
 Backoff.Exponential(TimeSpan.FromSeconds(1));    // ~1s, ~2s, ~4s, ... (jittered)
+Backoff.Exponential(TimeSpan.FromSeconds(1), jitter: Jitter.Full);
+Backoff.Exponential(TimeSpan.FromSeconds(1), jitter: Jitter.Decorrelated);
 Backoff.Custom(attempt => TimeSpan.FromMilliseconds(100 * attempt));   // attempt is 1-based
 _ = Backoff.None;                                // no delay between attempts
 _ = Backoff.Default;                             // what bare Retry(n) uses
 ```
 
-- `Exponential(initialDelay, factor = 2.0, maxDelay = null, jitter = true)` — jitter scales each delay by a random factor in [0.5, 1.5) to avoid synchronized retry storms. `Backoff.Default` = `Exponential(250ms, maxDelay: 30s)`.
-- `Linear(step, maxDelay = null)` — step × attempt, no jitter.
-- When you don't pass a `maxDelay`, built-in backoffs still clamp at 1 day.
+- `Jitter.None` uses the exact curve; `Equal` scales it by [0.5, 1.5); `Full` selects [0, curve); `Decorrelated` selects [initial delay, previous delay × 3]. Decorrelated state is isolated per retry execution. Direct backoff consumers can carry the effective preceding delay through `GetDelay(attempt, previousDelay)`; pass zero for the first draw.
+- `Exponential(initialDelay, factor = 2.0, maxDelay = null, jitter = Jitter.Equal)` is the default curve. `Backoff.Default` = `Exponential(250ms, maxDelay: 30s)`.
+- `Constant(delay, jitter = Jitter.None)` and `Linear(step, maxDelay = null, jitter = Jitter.None)` also accept jitter explicitly.
+- Configuration accepts the enum names; legacy Boolean jitter values remain aliases for `Equal` and `None`.
+- Without `maxDelay`, built-in and custom backoffs clamp only at the runtime timer limit (`uint.MaxValue - 1` milliseconds, roughly 49.7 days). Use `maxDelay` for an application-specific cap.
 
 ## Full options
 

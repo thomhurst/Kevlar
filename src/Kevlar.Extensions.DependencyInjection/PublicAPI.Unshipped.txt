@@ -5,16 +5,13 @@
 *REMOVED*Kevlar.Extensions.DependencyInjection.BackoffKind.None = 0 -> Kevlar.Extensions.DependencyInjection.BackoffKind
 *REMOVED*Kevlar.Extensions.DependencyInjection.RetryDefinition.Backoff.get -> Kevlar.Extensions.DependencyInjection.BackoffKind
 Kevlar.Extensions.DependencyInjection.RetryDefinition.Backoff.get -> Kevlar.BackoffKind
+*REMOVED*Kevlar.Extensions.DependencyInjection.RetryDefinition.Jitter.get -> bool
+Kevlar.Extensions.DependencyInjection.RetryDefinition.Jitter.get -> Kevlar.Jitter
 Kevlar.Extensions.DependencyInjection.IShieldProvider
 Kevlar.Extensions.DependencyInjection.IShieldProvider.Current.get -> Kevlar.Shield!
 static Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! name, Microsoft.Extensions.Configuration.IConfiguration! configuration, System.Action<System.Exception!>? onReloadFailure = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield<TKey, TResult>(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! name, System.Func<System.IServiceProvider!, TKey, Kevlar.Shield<TResult>!>! factory, System.Action<Kevlar.PartitionedShieldOptions!>? configure = null, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 static Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedShield<TKey>(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! name, System.Func<System.IServiceProvider!, TKey, Kevlar.Shield!>! factory, System.Action<Kevlar.PartitionedShieldOptions!>? configure = null, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
-Kevlar.Extensions.DependencyInjection.IKevlarRegistry.GetVoidShield(string! name) -> Kevlar.VoidShield!
-Kevlar.Extensions.DependencyInjection.IKevlarRegistry.TryGetVoidShield(string! name, out Kevlar.VoidShield? shield) -> bool
-static Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddPartitionedVoidShield<TKey>(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! name, System.Func<System.IServiceProvider!, TKey, Kevlar.VoidShield!>! factory, System.Action<Kevlar.PartitionedShieldOptions!>? configure = null, System.Collections.Generic.IEqualityComparer<TKey>? comparer = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
-static Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! name, Kevlar.VoidShield! shield) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
-static Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddVoidShield(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! name, System.Func<System.IServiceProvider!, Kevlar.VoidShield!>! factory) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
 *REMOVED*Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxQueue.get -> int
 *REMOVED*Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.MaxQueue.set -> void
 Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition.QueueLimit.get -> int

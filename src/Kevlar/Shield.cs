@@ -22,6 +22,7 @@ public sealed class Shield
     internal readonly StrategyNode? Head;
     internal readonly OutcomeJudge? Ambient;
     internal readonly TimeProvider? Time;
+    private readonly bool _hasVoidFallback;
 
     internal Shield(Strategy[] strategies, OutcomeJudge? ambient, string? name, TimeProvider? timeProvider)
     {
@@ -31,6 +32,15 @@ public sealed class Shield
         Ambient = ambient;
         Name = name;
         Time = timeProvider;
+
+        foreach (var strategy in strategies)
+        {
+            if (strategy is VoidFallbackStrategy)
+            {
+                _hasVoidFallback = true;
+                break;
+            }
+        }
     }
 
     /// <summary>The shield's diagnostic name, if assigned via <c>WithName</c>.</summary>
@@ -134,7 +144,7 @@ public sealed class Shield
     /// A fallback is legitimately the outermost strategy: it recovers what everything chained
     /// inside it could not.
     /// </remarks>
-    public static VoidShield Fallback(Func<Exception, CancellationToken, ValueTask> fallback) =>
+    public static Shield Fallback(Func<Exception, CancellationToken, ValueTask> fallback) =>
         ShieldExtensions.Fallback(Empty, fallback);
 
     /// <summary>
@@ -142,17 +152,19 @@ public sealed class Shield
     /// failures and configures notifications. Applies to void executions only.
     /// </summary>
     /// <remarks>Runs <see cref="FallbackOptions.OnFallback"/>, then <see cref="FallbackOptions.OnFallbackAsync"/>, before recovery. A notification failure skips recovery.</remarks>
-    public static VoidShield Fallback(
+    public static Shield Fallback(
         Func<Exception, CancellationToken, ValueTask> fallback,
         Action<FallbackOptions> configure) =>
         ShieldExtensions.Fallback(Empty, fallback, configure);
 
     /// <summary>
     /// Starts a pipeline with a fallback that runs <paramref name="fallback"/> in place of handled
-    /// failures. Returns a <see cref="VoidShield"/>, which exposes only void execution overloads.
-    /// Use <c>Shield.For&lt;T&gt;().FallbackTo(…)</c> for constant values or its typed <c>Fallback(…)</c> overloads for factories.
+    /// failures. Applies to void executions only; result-returning executions fail with a
+    /// descriptive <see cref="InvalidOperationException"/>. Use
+    /// <c>Shield.For&lt;T&gt;().FallbackTo(…)</c> for constant values or its typed <c>Fallback(…)</c>
+    /// overloads for factories.
     /// </summary>
-    public static VoidShield Fallback(Func<CancellationToken, ValueTask> fallback) =>
+    public static Shield Fallback(Func<CancellationToken, ValueTask> fallback) =>
         ShieldExtensions.Fallback(Empty, fallback);
 
     /// <summary>
@@ -160,7 +172,7 @@ public sealed class Shield
     /// failures and configures notifications. Applies to void executions only.
     /// </summary>
     /// <remarks>Runs <see cref="FallbackOptions.OnFallback"/>, then <see cref="FallbackOptions.OnFallbackAsync"/>, before recovery. A notification failure skips recovery.</remarks>
-    public static VoidShield Fallback(
+    public static Shield Fallback(
         Func<CancellationToken, ValueTask> fallback,
         Action<FallbackOptions> configure) =>
         ShieldExtensions.Fallback(Empty, fallback, configure);
@@ -223,6 +235,7 @@ public sealed class Shield
     public ValueTask<T> ExecuteAsync<T>(Func<CancellationToken, ValueTask<T>> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
+        ThrowIfVoidFallbackResultExecution();
         return ShieldEngine.ExecuteAsync(Head, TimeOrSystem, Name, action, static (a, token) => a(token), cancellationToken);
     }
 
@@ -230,6 +243,7 @@ public sealed class Shield
     public ValueTask<T> ExecuteAsync<T, TState>(TState state, Func<TState, CancellationToken, ValueTask<T>> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
+        ThrowIfVoidFallbackResultExecution();
         return ShieldEngine.ExecuteAsync(Head, TimeOrSystem, Name, state, action, cancellationToken);
     }
 
@@ -245,6 +259,7 @@ public sealed class Shield
     {
         Throw.IfNull(initializeProperties, nameof(initializeProperties));
         Throw.IfNull(action, nameof(action));
+        ThrowIfVoidFallbackResultExecution();
         return ShieldEngine.ExecuteWithContextAsync(
             Head,
             TimeOrSystem,
@@ -353,6 +368,7 @@ public sealed class Shield
     public ValueTask<Outcome<T>> ExecuteOutcomeAsync<T>(Func<CancellationToken, ValueTask<T>> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
+        ThrowIfVoidFallbackResultExecution();
         return ShieldEngine.ExecuteOutcomeAsync(Head, TimeOrSystem, Name, action, static (a, token) => a(token), cancellationToken);
     }
 
@@ -363,6 +379,7 @@ public sealed class Shield
     public ValueTask<Outcome<T>> ExecuteOutcomeAsync<T, TState>(TState state, Func<TState, CancellationToken, ValueTask<T>> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
+        ThrowIfVoidFallbackResultExecution();
         return ShieldEngine.ExecuteOutcomeAsync(Head, TimeOrSystem, Name, state, action, cancellationToken);
     }
 
@@ -373,6 +390,7 @@ public sealed class Shield
     public T Execute<T>(Func<CancellationToken, T> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
+        ThrowIfVoidFallbackResultExecution();
         return ShieldEngine.ExecuteSync(Head, TimeOrSystem, Name, action, static (a, token) => a(token), cancellationToken);
     }
 
@@ -380,6 +398,7 @@ public sealed class Shield
     public T Execute<T, TState>(TState state, Func<TState, CancellationToken, T> action, CancellationToken cancellationToken = default)
     {
         Throw.IfNull(action, nameof(action));
+        ThrowIfVoidFallbackResultExecution();
         return ShieldEngine.ExecuteSync(Head, TimeOrSystem, Name, state, action, cancellationToken);
     }
 
@@ -395,6 +414,7 @@ public sealed class Shield
     {
         Throw.IfNull(initializeProperties, nameof(initializeProperties));
         Throw.IfNull(action, nameof(action));
+        ThrowIfVoidFallbackResultExecution();
         return ShieldEngine.ExecuteWithContextSync(
             Head,
             TimeOrSystem,
@@ -485,11 +505,25 @@ public sealed class Shield
 
     /// <summary>
     /// Describes the pipeline, outermost strategy first, e.g.
-    /// <c>Timeout(30s) → Retry(3, exponential 250ms ×2 +jitter ≤30s) → CircuitBreaker(5 consecutive, break 30s)</c>.
+    /// <c>Timeout(30s) → Retry(3, exponential 250ms ×2, equal jitter, cap 30s) → CircuitBreaker(5 consecutive, break 30s)</c>.
     /// </summary>
     public override string ToString() => Describe(Name, Strategies);
 
     // ── Internals ───────────────────────────────────────────────────────────────────────
+
+    private void ThrowIfVoidFallbackResultExecution()
+    {
+        if (_hasVoidFallback)
+        {
+            throw CreateVoidFallbackResultException();
+        }
+    }
+
+    internal static InvalidOperationException CreateVoidFallbackResultException() =>
+        new(
+            "Fallback on a non-generic Shield applies only to void executions. " +
+            "For executions that return a value, build a result-aware shield with " +
+            "Shield.For<T>() and use its Fallback overloads.");
 
     internal static string Describe(string? name, Strategy[] strategies)
     {

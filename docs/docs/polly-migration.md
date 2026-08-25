@@ -19,7 +19,7 @@ Kevlar's pipeline model translates 1:1 from Polly v8 — the "first strategy add
 | `CircuitBreakerManualControl` + `StateProvider` | one `CircuitBreakerMonitor` |
 | `AddConcurrencyLimiter(10, 20)` | `Shield.ConcurrencyLimit(10, queueLimit: 20)` |
 | Delegates must return `ValueTask` | `Task`-returning methods flow straight in: `shield.ExecuteAsync(ct => client.GetAsync(url, ct))` |
-| Retry default: constant 2s, no jitter | exponential + jitter, 30s cap |
+| Retry default: constant 2s, no jitter | exponential + equal jitter, 30s cap |
 | First strategy added is outermost | same rule — pipelines translate 1:1 |
 
 :::warning `TimeoutExceededException` is **not** a `System.TimeoutException`
@@ -103,7 +103,7 @@ Note the handling clause: written once, it covers the retry *and* the breaker. I
 
 ## Semantic differences worth knowing
 
-- **Retry defaults differ.** Polly's default is constant 2s delays with no jitter; Kevlar's is exponential-with-jitter from 250ms capped at 30s. If you relied on Polly's default timing, say so explicitly: `Shield.Retry(3, Backoff.Constant(TimeSpan.FromSeconds(2)))`.
+- **Retry defaults differ.** Polly's default is constant 2s delays with no jitter; Kevlar's is exponential with equal jitter from 250ms capped at 30s. If you relied on Polly's default timing, say so explicitly: `Shield.Retry(3, Backoff.Constant(TimeSpan.FromSeconds(2)))`.
 - **Standard HTTP retry delays are bounded.** `HttpShield.Standard()` honours `Retry-After` but caps every retry delay at 10 seconds by default. Set `StandardHttpShieldOptions.Retry.MaxDelay` to choose another bound.
 - **Handling clauses are ambient within one fluent chain.** A clause applies to every reactive strategy after it until replaced; call `WhenAnyError()` to return subsequent strategies to Kevlar's default. `Wrap` and `Compose` seal clauses at the composition boundary: strategies already inside keep their handling, while strategies appended afterwards use the default unless you declare a new local clause. For a Polly strategy with a distinct `ShouldHandle`, set that strategy's `HandlesException` / `HandlesResult` options; a local override fully replaces the ambient clause.
 - **Default handling is narrower.** Polly's default predicate handles every exception except

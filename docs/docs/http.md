@@ -87,7 +87,7 @@ var configuration = new ConfigurationBuilder()
         ["Http:Api:Retry:MaxRetries"] = "2",
         ["Http:Api:Retry:Backoff"] = "Exponential",
         ["Http:Api:Retry:BaseDelay"] = "00:00:00.100",
-        ["Http:Api:Retry:Jitter"] = "true",
+        ["Http:Api:Retry:Jitter"] = "Equal",
         ["Http:Api:AttemptTimeout"] = "00:00:05",
         ["Http:Api:Handler:MaximumBufferSize"] = "262144",
     })
@@ -102,7 +102,8 @@ services.AddHttpClient("api")
 
 Timeouts accept either a scalar (`TotalTimeout`) or the options-shaped
 `TotalTimeout:Timeout` key. Retry keys are `MaxRetries`, `Backoff` (`None`, `Constant`, `Linear`,
-or `Exponential`), `BaseDelay`, `Factor`, `Jitter`, `BackoffMaxDelay`, and `MaxDelay`. Circuit
+or `Exponential`), `BaseDelay`, `Factor`, `Jitter` (`None`, `Equal`, `Full`, or `Decorrelated`),
+`BackoffMaxDelay`, and `MaxDelay`. Circuit
 breaker, concurrency-limit, handler, routing, and endpoint keys match their public option-property
 names. Endpoint entries accept either a URI scalar or `Uri` plus optional `Weight` children.
 

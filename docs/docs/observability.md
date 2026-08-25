@@ -20,7 +20,7 @@ var shield = Shield
     .WithName("github");
 
 Console.WriteLine(shield);
-// github: Timeout(30s) → Retry(3, exponential 250ms ×2 +jitter ≤30s) → CircuitBreaker(5 consecutive, break 30s) → ConcurrencyLimit(10, queue 5)
+// github: Timeout(30s) → Retry(3, exponential 250ms ×2, equal jitter, cap 30s) → CircuitBreaker(5 consecutive, break 30s) → ConcurrencyLimit(10, queue 5)
 ```
 
 Log it once at startup and every incident review starts from the actual configuration, not the configuration someone remembers. Custom strategies participate by overriding `Strategy.Describe()`.

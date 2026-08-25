@@ -41,29 +41,6 @@ public static class KevlarServiceCollectionExtensions
         return services;
     }
 
-    /// <summary>Registers a named void-only shield.</summary>
-    public static IServiceCollection AddShield(this IServiceCollection services, string name, VoidShield shield)
-    {
-        if (shield is null) { throw new ArgumentNullException(nameof(shield)); }
-        return services.AddVoidShield(name, _ => shield);
-    }
-
-    /// <summary>Registers a named void-only shield built from the service provider.</summary>
-    public static IServiceCollection AddVoidShield(
-        this IServiceCollection services,
-        string name,
-        Func<IServiceProvider, VoidShield> factory)
-    {
-        if (services is null) { throw new ArgumentNullException(nameof(services)); }
-        if (name is null) { throw new ArgumentNullException(nameof(name)); }
-        if (factory is null) { throw new ArgumentNullException(nameof(factory)); }
-
-        services.AddKevlar();
-        services.AddSingleton(new ShieldRegistration(name, typeof(VoidShield), factory));
-        services.AddKeyedSingleton(name, (sp, _) => sp.GetRequiredService<IKevlarRegistry>().GetVoidShield(name));
-        return services;
-    }
-
     /// <summary>
     /// Registers a named shield bound from <paramref name="configuration"/> (see
     /// <see cref="ShieldDefinition"/> for the schema), so its retry counts, timeouts and breaker
@@ -165,29 +142,6 @@ public static class KevlarServiceCollectionExtensions
         return services;
     }
 
-    /// <summary>Registers a named, bounded void-only partition provider as a keyed singleton.</summary>
-    public static IServiceCollection AddPartitionedVoidShield<TKey>(
-        this IServiceCollection services,
-        string name,
-        Func<IServiceProvider, TKey, VoidShield> factory,
-        Action<PartitionedShieldOptions>? configure = null,
-        IEqualityComparer<TKey>? comparer = null)
-        where TKey : notnull
-    {
-        if (services is null) { throw new ArgumentNullException(nameof(services)); }
-        if (name is null) { throw new ArgumentNullException(nameof(name)); }
-        if (factory is null) { throw new ArgumentNullException(nameof(factory)); }
-
-        var options = new PartitionedShieldOptions();
-        configure?.Invoke(options);
-        services.AddKeyedSingleton<PartitionedVoidShield<TKey>>(name, (serviceProvider, _) =>
-            new PartitionedVoidShield<TKey>(
-                key => factory(serviceProvider, key),
-                options,
-                comparer));
-        return services;
-    }
-
     /// <summary>
     /// Registers a named, bounded result-aware partition provider as a keyed singleton service.
     /// </summary>
@@ -241,7 +195,7 @@ public static class KevlarServiceCollectionExtensions
             {
                 retryDefinition.Factor = factor;
             }
-            if (ReadBool(retry, nameof(RetryDefinition.Jitter)) is { } jitter)
+            if (ReadJitter(retry, nameof(RetryDefinition.Jitter)) is { } jitter)
             {
                 retryDefinition.Jitter = jitter;
             }
@@ -351,9 +305,6 @@ public static class KevlarServiceCollectionExtensions
             ? ParseDouble(configuration, key, value)
             : null;
 
-    private static bool? ReadBool(IConfiguration configuration, string key) =>
-        Read(configuration, key) is { } value ? ParseBool(configuration, key, value) : null;
-
     private static TimeSpan? ReadTimeSpan(IConfiguration configuration, string key) =>
         Read(configuration, key) is { } value
             ? ParseTimeSpan(configuration, key, value)
@@ -368,6 +319,11 @@ public static class KevlarServiceCollectionExtensions
         where TEnum : struct, Enum =>
         Read(configuration, key) is { } value
             ? ParseEnum<TEnum>(configuration, key, value)
+            : null;
+
+    private static Jitter? ReadJitter(IConfiguration configuration, string key) =>
+        Read(configuration, key) is { } value
+            ? ParseJitter(configuration, key, value)
             : null;
 
     private static BackoffKind? ReadBackoffKind(IConfiguration configuration, string key)
@@ -403,11 +359,6 @@ public static class KevlarServiceCollectionExtensions
             ? parsed
             : throw InvalidValue(configuration, key, value, "a number");
 
-    private static bool ParseBool(IConfiguration configuration, string key, string value) =>
-        bool.TryParse(value, out var parsed)
-            ? parsed
-            : throw InvalidValue(configuration, key, value, "a Boolean");
-
     private static TimeSpan ParseTimeSpan(IConfiguration configuration, string key, string value) =>
         TimeSpan.TryParse(value, CultureInfo.InvariantCulture, out var parsed)
             ? parsed
@@ -416,8 +367,14 @@ public static class KevlarServiceCollectionExtensions
     private static TEnum ParseEnum<TEnum>(IConfiguration configuration, string key, string value)
         where TEnum : struct, Enum =>
         Enum.TryParse<TEnum>(value, ignoreCase: true, out var parsed)
+        && Enum.IsDefined(typeof(TEnum), parsed)
             ? parsed
             : throw InvalidValue(configuration, key, value, $"a {typeof(TEnum).Name}");
+
+    private static Jitter ParseJitter(IConfiguration configuration, string key, string value) =>
+        bool.TryParse(value, out var enabled)
+            ? enabled ? Jitter.Equal : Jitter.None
+            : ParseEnum<Jitter>(configuration, key, value);
 
     private static InvalidOperationException InvalidValue(
         IConfiguration configuration,

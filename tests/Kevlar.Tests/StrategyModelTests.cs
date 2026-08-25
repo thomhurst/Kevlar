@@ -475,7 +475,7 @@ public class StrategyModelTests
         foreach (var command in commands)
         {
             var initial = TimeSpan.FromTicks(command.DelaySelector);
-            var delay = Backoff.Exponential(initial, factor: 2, maxDelay: TimeSpan.FromTicks(20), jitter: false)
+            var delay = Backoff.Exponential(initial, factor: 2, maxDelay: TimeSpan.FromTicks(20), jitter: Jitter.None)
                 .GetDelay(command.DelaySelector + 1);
             Ensure(delay >= TimeSpan.Zero && delay <= TimeSpan.FromTicks(20), 0, command, "backoff escaped its domain");
         }

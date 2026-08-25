@@ -165,7 +165,7 @@ var shield = Shield
     .WithName("github");
 
 logger.LogInformation("using {Shield}", shield);
-// github: Timeout(30s) → Retry(3, exponential 250ms ×2 +jitter ≤30s) → CircuitBreaker(5 consecutive, break 30s)
+// github: Timeout(30s) → Retry(3, exponential 250ms ×2, equal jitter, cap 30s) → CircuitBreaker(5 consecutive, break 30s)
 ```
 
 Log it at startup and code review becomes "read the log line".
