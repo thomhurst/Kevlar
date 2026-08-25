@@ -113,6 +113,8 @@ All notable changes to this project are documented here. The format follows
 | `builder.When(predicate)` | `builder.Or(predicate)` |
 | `builder.WhenResult(predicate)` / `builder.WhenResult(value)` | `builder.OrResult(predicate)` / `builder.OrResult(value)` |
 | `builder.WhenDefault()` | `builder.OrResultIsDefault()` |
+| `Shield.For<TResult>().Or<TException>()` / `.Or(predicate)` | `Shield.For<TResult>().When<TException>()` / `.When(predicate)` |
+| `ShieldBuilder<TResult> builder = Shield.For<TResult>()` | `Shield<TResult> shield = Shield.For<TResult>()` |
 | `HedgingOptions` | `HedgeOptions` |
 | `HedgingStrategyDescriptor` | `HedgeStrategyDescriptor` |
 | `StrategyKind.Hedging` | `StrategyKind.Hedge` |
