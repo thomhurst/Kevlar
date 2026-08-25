@@ -407,6 +407,49 @@ public class DependencyInjectionContractTests
         await Assert.That(exception.InnerException).IsTypeOf<KevlarConfigurationException>();
     }
 
+    [Test]
+    public async Task Bound_Validation_Failures_Report_Configuration_Path()
+    {
+        (string Key, string Value, bool Typed)[] cases =
+        [
+            ("Timeout", "00:00:00", false),
+            ("AttemptTimeout", "00:00:00", true),
+            ("ConcurrencyLimit:MaxConcurrency", "0", false),
+            ("Retry:BaseDelay", "-00:00:01", false),
+        ];
+
+        foreach (var item in cases)
+        {
+            var configuration = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    [$"Resilience:{item.Key}"] = item.Value,
+                })
+                .Build()
+                .GetSection("Resilience");
+            var services = new ServiceCollection();
+            if (item.Typed)
+            {
+                services.AddShield<int>("invalid", configuration);
+            }
+            else
+            {
+                services.AddShield("invalid", configuration);
+            }
+
+            using var provider = services.BuildServiceProvider();
+            var registry = provider.GetRequiredService<IKevlarRegistry>();
+            var exception = item.Typed
+                ? await Assert.That(() => registry.GetShield<int>("invalid"))
+                    .Throws<KevlarConfigurationException>()
+                : await Assert.That(() => registry.GetShield("invalid"))
+                    .Throws<KevlarConfigurationException>();
+
+            await Assert.That(exception!.Message).Contains("Resilience");
+            await Assert.That(exception.InnerException).IsTypeOf<KevlarConfigurationException>();
+        }
+    }
+
     private static async Task AssertNullNameAsync(Action action)
     {
         await AssertNullParameterAsync(action, "name");

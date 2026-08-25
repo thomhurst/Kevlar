@@ -331,7 +331,7 @@ public static class KevlarServiceCollectionExtensions
         {
             return BindDefinition(configuration).Build();
         }
-        catch (KevlarConfigurationException exception)
+        catch (Exception exception) when (IsConfigurationFailure(exception))
         {
             throw AddConfigurationPath(configuration, exception);
         }
@@ -343,7 +343,7 @@ public static class KevlarServiceCollectionExtensions
         {
             return BindDefinition(configuration).Build<TResult>();
         }
-        catch (KevlarConfigurationException exception)
+        catch (Exception exception) when (IsConfigurationFailure(exception))
         {
             throw AddConfigurationPath(configuration, exception);
         }
@@ -351,15 +351,20 @@ public static class KevlarServiceCollectionExtensions
 
     private static KevlarConfigurationException AddConfigurationPath(
         IConfiguration configuration,
-        KevlarConfigurationException exception)
+        Exception exception)
     {
         var path = configuration is IConfigurationSection section && !string.IsNullOrEmpty(section.Path)
             ? section.Path
             : "<root>";
+        var configurationException = exception as KevlarConfigurationException
+            ?? new KevlarConfigurationException(exception.Message, exception);
         return new KevlarConfigurationException(
-            $"Configuration section '{path}' is invalid: {exception.Message}",
-            exception);
+            $"Configuration section '{path}' is invalid: {configurationException.Message}",
+            configurationException);
     }
+
+    private static bool IsConfigurationFailure(Exception exception) =>
+        exception is KevlarConfigurationException or ArgumentException or InvalidOperationException;
 
     private static bool HasChildren(IConfigurationSection section) => section.GetChildren().Any();
 
