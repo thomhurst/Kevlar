@@ -416,6 +416,8 @@ public class DependencyInjectionContractTests
             ("AttemptTimeout", "00:00:00", true),
             ("ConcurrencyLimit:MaxConcurrency", "0", false),
             ("Retry:BaseDelay", "-00:00:01", false),
+            ("Retry:MaxRetries", "abc", true),
+            ("ConcurrencyLimit:MaxQueue", "5", false),
         ];
 
         foreach (var item in cases)
