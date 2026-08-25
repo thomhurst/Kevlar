@@ -19,6 +19,9 @@ an immediate disable path, monitor injection metrics, and expand gradually.
 ## Inject latency and faults
 
 ```csharp
+using Kevlar;
+using Kevlar.Chaos;
+
 var latency = ChaosShield.Latency(options =>
 {
     options.Enabled = true;

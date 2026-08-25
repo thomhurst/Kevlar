@@ -71,6 +71,31 @@ public class DocsConsistencyTests
         }
     }
 
+    [Test]
+    public async Task Package_Table_Lists_Every_Packable_Project()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var packagePattern = new System.Text.RegularExpressions.Regex(
+            @"^\| \[`(?<package>Kevlar(?:\.[^`]+)?)`\]\(https://www\.nuget\.org/packages/",
+            System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+        var documentedPackages = File.ReadLines(Path.Combine(repositoryRoot, "README.md"))
+            .Select(line => packagePattern.Match(line))
+            .Where(static match => match.Success)
+            .Select(static match => match.Groups["package"].Value)
+            .OrderBy(static package => package, StringComparer.Ordinal)
+            .ToArray();
+        var packableProjects = Directory
+            .EnumerateFiles(Path.Combine(repositoryRoot, "src"), "*.csproj", SearchOption.AllDirectories)
+            .Where(static path => System.Xml.Linq.XDocument.Load(path)
+                .Descendants("IsPackable")
+                .Any(static element => string.Equals(element.Value, "true", StringComparison.OrdinalIgnoreCase)))
+            .Select(static path => Path.GetFileNameWithoutExtension(path))
+            .OrderBy(static package => package, StringComparer.Ordinal)
+            .ToArray();
+
+        await Assert.That(documentedPackages).IsEquivalentTo(packableProjects);
+    }
+
     private static Dictionary<string, ExceptionDocRow> ReadExceptionRows()
     {
         var repositoryRoot = FindRepositoryRoot();

@@ -13,6 +13,9 @@ dotnet add package Kevlar.Extensions.Http
 ## The one-liner
 
 ```csharp
+using Kevlar.Extensions.Http;
+using Microsoft.Extensions.DependencyInjection;
+
 services.AddHttpClient("api")
     .AddStandardShield();
 ```

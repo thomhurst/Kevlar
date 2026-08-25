@@ -25,18 +25,28 @@ dotnet add package Kevlar
 ```csharp
 using Kevlar;
 
-var shield = Shield
+var shield = Shield.Retry(3);
+
+using var client = new HttpClient();
+using var response = await shield.ExecuteAsync(
+    ct => client.GetAsync("https://example.com", ct));
+```
+
+`Retry(3)` means three retries after the initial call: up to 4 total attempts. It uses exponential
+backoff with equal jitter by default. The cancellation token passed to your delegate is
+important—it is how timeouts and abandoned attempts stop the underlying work.
+
+When you combine strategies, the first strategy is the outermost, just like ASP.NET middleware:
+
+```csharp
+var productionShield = Shield
     .Timeout(TimeSpan.FromSeconds(30))
     .Retry(3)
     .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30));
-
-var user = await shield.ExecuteAsync(
-    ct => LoadUserAsync(id, ct), cancellationToken);
 ```
 
 That reads in execution order: the 30-second timeout wraps the retries, which wrap the circuit
-breaker. `Retry(3)` uses exponential backoff with equal jitter by default. The cancellation token passed
-to your delegate is important—it is how timeouts and abandoned attempts stop the underlying work.
+breaker.
 
 Build shields once and reuse them. They are immutable and thread-safe. Reuse also matters for
 stateful strategies: calls made through the same shield share its circuit breaker and limiter state.

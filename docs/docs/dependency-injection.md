@@ -13,6 +13,12 @@ dotnet add package Kevlar.Extensions.DependencyInjection
 ## Registering shields
 
 ```csharp
+using Kevlar;
+using Kevlar.Extensions.DependencyInjection;
+using Kevlar.Extensions.Http;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
 // A shield instance, under a name:
 services.AddShield("github",
     Shield.Timeout(TimeSpan.FromSeconds(10)).Retry(3));
@@ -74,7 +80,8 @@ independent shield state per tenant, endpoint, or other key while remaining boun
 ```
 
 ```csharp
-services.AddShield("github", builder.Configuration.GetSection("Resilience:GitHub"));
+var configuration = new ConfigurationBuilder().Build();
+services.AddShield("github", configuration.GetSection("Resilience:GitHub"));
 ```
 
 The schema is `ShieldDefinition`. `ShieldDefinition.Build()` always chains the sections it finds in one fixed order, outermost first:
@@ -93,9 +100,10 @@ Configuration cannot reorder that chain — the order is what makes a definition
 `AddReloadingShield` when future configuration reloads must affect new operations:
 
 ```csharp
+var configuration = new ConfigurationBuilder().Build();
 services.AddReloadingShield(
     "github",
-    builder.Configuration.GetSection("Resilience:GitHub"),
+    configuration.GetSection("Resilience:GitHub"),
     error => logger.LogError(error, "Rejected GitHub shield configuration"));
 ```
 
