@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Kevlar.Chaos;
 using Kevlar.Extensions.DependencyInjection;
 using Kevlar.Extensions.Grpc;
@@ -68,6 +69,34 @@ public class DocsConsistencyTests
             var outcome = Outcome<int>.FromException(exception);
             var expected = OutcomeJudge.Default.ShouldHandle(in outcome) ? "Yes" : "No";
             await Assert.That(rows[exception.GetType().Name].DefaultClause).IsEqualTo(expected);
+        }
+    }
+
+    [Test]
+    public async Task Migration_Guide_Mentions_Every_Public_Extension_Entry_Point()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var migrationGuide = await File.ReadAllTextAsync(
+            Path.Combine(repositoryRoot, "docs", "docs", "polly-migration.md"));
+        var extensionNames = ShippedAssemblies
+            .Where(static assembly => assembly.GetName().Name?.StartsWith(
+                "Kevlar.Extensions.",
+                StringComparison.Ordinal) is true)
+            .SelectMany(static assembly => assembly.ExportedTypes)
+            .SelectMany(static type => type.GetMethods(BindingFlags.Public | BindingFlags.Static))
+            .Where(static method => method.IsDefined(typeof(ExtensionAttribute), inherit: false))
+            .Select(static method => method.Name)
+            .Where(static name =>
+                name.StartsWith("Add", StringComparison.Ordinal) ||
+                name.StartsWith("With", StringComparison.Ordinal) ||
+                name.StartsWith("Use", StringComparison.Ordinal))
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+
+        foreach (var extensionName in extensionNames)
+        {
+            await Assert.That(migrationGuide).Contains(extensionName);
         }
     }
 
