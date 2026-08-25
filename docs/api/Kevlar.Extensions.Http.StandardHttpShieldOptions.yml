@@ -12,6 +12,7 @@ items:
   - Kevlar.Extensions.Http.StandardHttpShieldOptions.Handler
   - Kevlar.Extensions.Http.StandardHttpShieldOptions.Retry
   - Kevlar.Extensions.Http.StandardHttpShieldOptions.TotalTimeout
+  - Kevlar.Extensions.Http.StandardHttpShieldOptions.UseRetryAfterHeader
   langs:
   - csharp
   - vb
@@ -71,7 +72,10 @@ items:
   assemblies:
   - Kevlar.Extensions.Http
   namespace: Kevlar.Extensions.Http
-  summary: Configures the outer total timeout. Defaults to 30 seconds.
+  summary: >-
+    Configures the outer total timeout. Defaults to 30 seconds. Set
+
+    <xref href="System.Threading.Timeout.InfiniteTimeSpan" data-throw-if-not-resolved="false"></xref> to omit this stage.
   example: []
   syntax:
     content: public TimeoutOptions TotalTimeout { get; set; }
@@ -106,6 +110,36 @@ items:
       type: Kevlar.RetryOptions{System.Net.Http.HttpResponseMessage}
     content.vb: Public Property Retry As RetryOptions(Of HttpResponseMessage)
   overload: Kevlar.Extensions.Http.StandardHttpShieldOptions.Retry*
+- uid: Kevlar.Extensions.Http.StandardHttpShieldOptions.UseRetryAfterHeader
+  commentId: P:Kevlar.Extensions.Http.StandardHttpShieldOptions.UseRetryAfterHeader
+  id: UseRetryAfterHeader
+  parent: Kevlar.Extensions.Http.StandardHttpShieldOptions
+  langs:
+  - csharp
+  - vb
+  name: UseRetryAfterHeader
+  nameWithType: StandardHttpShieldOptions.UseRetryAfterHeader
+  fullName: Kevlar.Extensions.Http.StandardHttpShieldOptions.UseRetryAfterHeader
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: >-
+    Whether retry delays honour the response's <code>Retry-After</code> header. Defaults to
+
+    <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> and composes with
+
+    <xref href="Kevlar.RetryOptions%601.DelayGenerator" data-throw-if-not-resolved="false"></xref>
+
+    by using the longer delay.
+  example: []
+  syntax:
+    content: public bool UseRetryAfterHeader { get; set; }
+    parameters: []
+    return:
+      type: System.Boolean
+    content.vb: Public Property UseRetryAfterHeader As Boolean
+  overload: Kevlar.Extensions.Http.StandardHttpShieldOptions.UseRetryAfterHeader*
 - uid: Kevlar.Extensions.Http.StandardHttpShieldOptions.CircuitBreaker
   commentId: P:Kevlar.Extensions.Http.StandardHttpShieldOptions.CircuitBreaker
   id: CircuitBreaker
@@ -172,7 +206,10 @@ items:
   assemblies:
   - Kevlar.Extensions.Http
   namespace: Kevlar.Extensions.Http
-  summary: Configures the per-attempt timeout. Defaults to 10 seconds.
+  summary: >-
+    Configures the per-attempt timeout. Defaults to 10 seconds. Set
+
+    <xref href="System.Threading.Timeout.InfiniteTimeSpan" data-throw-if-not-resolved="false"></xref> to omit this stage.
   example: []
   syntax:
     content: public TimeoutOptions AttemptTimeout { get; set; }
@@ -463,6 +500,13 @@ references:
   nameWithType.vb: StandardHttpShieldOptions.New
   fullName.vb: Kevlar.Extensions.Http.StandardHttpShieldOptions.New
   name.vb: New
+- uid: System.Threading.Timeout.InfiniteTimeSpan
+  commentId: F:System.Threading.Timeout.InfiniteTimeSpan
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.threading.timeout.infinitetimespan
+  name: InfiniteTimeSpan
+  nameWithType: Timeout.InfiniteTimeSpan
+  fullName: System.Threading.Timeout.InfiniteTimeSpan
 - uid: Kevlar.Extensions.Http.StandardHttpShieldOptions.TotalTimeout*
   commentId: Overload:Kevlar.Extensions.Http.StandardHttpShieldOptions.TotalTimeout
   isExternal: true
@@ -555,6 +599,33 @@ references:
   - name: " "
   - name: TResult
   - name: )
+- uid: Kevlar.RetryOptions`1.DelayGenerator
+  commentId: P:Kevlar.RetryOptions`1.DelayGenerator
+  isExternal: true
+  href: Kevlar.RetryOptions-1.html#Kevlar_RetryOptions_1_DelayGenerator
+  name: DelayGenerator
+  nameWithType: RetryOptions<TResult>.DelayGenerator
+  fullName: Kevlar.RetryOptions<TResult>.DelayGenerator
+  nameWithType.vb: RetryOptions(Of TResult).DelayGenerator
+  fullName.vb: Kevlar.RetryOptions(Of TResult).DelayGenerator
+- uid: Kevlar.Extensions.Http.StandardHttpShieldOptions.UseRetryAfterHeader*
+  commentId: Overload:Kevlar.Extensions.Http.StandardHttpShieldOptions.UseRetryAfterHeader
+  isExternal: true
+  href: Kevlar.Extensions.Http.StandardHttpShieldOptions.html#Kevlar_Extensions_Http_StandardHttpShieldOptions_UseRetryAfterHeader
+  name: UseRetryAfterHeader
+  nameWithType: StandardHttpShieldOptions.UseRetryAfterHeader
+  fullName: Kevlar.Extensions.Http.StandardHttpShieldOptions.UseRetryAfterHeader
+- uid: System.Boolean
+  commentId: T:System.Boolean
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.boolean
+  name: bool
+  nameWithType: bool
+  fullName: bool
+  nameWithType.vb: Boolean
+  fullName.vb: Boolean
+  name.vb: Boolean
 - uid: Kevlar.Extensions.Http.StandardHttpShieldOptions.CircuitBreaker*
   commentId: Overload:Kevlar.Extensions.Http.StandardHttpShieldOptions.CircuitBreaker
   isExternal: true
