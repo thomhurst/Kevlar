@@ -40,10 +40,13 @@ to Microsoft's official [.NET support policy](https://dotnet.microsoft.com/en-us
 
 | Runtime | Track | Microsoft end of support | Kevlar policy |
 |---|---|---|---|
-| .NET 8 | LTS | November 10, 2026 | Supported through that date; use `netstandard2.0` afterward or upgrade |
+| .NET 8 | LTS | November 10, 2026 | Supported through that date; upgrade to a supported runtime afterward |
 | .NET 10 | LTS | November 14, 2028 | Supported through that date |
 
 Consumers must stay on the latest runtime patch to remain within Microsoft's support policy.
+Selecting a `netstandard` compatibility asset does not extend the support lifetime of the runtime
+hosting the application. After a runtime reaches end of support, upgrade the runtime or retarget a
+separately supported platform.
 Kevlar may keep an out-of-support TFM temporarily for migration, but no security or compatibility
 promise applies after its published end date.
 
