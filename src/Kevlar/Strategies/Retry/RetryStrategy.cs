@@ -115,6 +115,13 @@ internal sealed class RetryStrategy : Strategy
 
     internal bool HasNotification => _onRetry is not null || _onRetryAsync is not null;
 
+    internal override string? SynchronousExecutionUnsupportedReason =>
+        _delayGeneratorAsync is not null
+            ? "RetryOptions.DelayGeneratorAsync"
+            : _onRetryAsync is not null
+                ? "RetryOptions.OnRetryAsync"
+                : null;
+
     protected internal override bool InvokesContinuationAtMostOnce => _maxRetries == 0;
 
     internal override bool RequiresContinuationOverlapIsolation => false;

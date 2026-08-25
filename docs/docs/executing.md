@@ -12,7 +12,7 @@ await shield.ExecuteAsync(ct => SaveAsync(ct), cancellationToken);    // async v
 shield.Execute(ct => ComputeSync(ct));                                // sync (same shield!)
 ```
 
-The only exception: [hedging](strategies/hedging.md) is inherently concurrent and requires async execution.
+Multi-attempt [hedging](strategies/hedging.md) and asynchronous strategy callbacks require async execution.
 
 `Task` and `ValueTask` delegates both work — your existing `Task`-returning methods flow straight in, no wrapping:
 
@@ -51,7 +51,24 @@ Kevlar invokes the first user delegate inline when no preceding strategy defers 
 
 `ExecutionContext` still flows normally. `AsyncLocal<T>` values visible to the caller flow into actions and strategy callbacks, while parallel hedge attempts receive isolated logical snapshots so one attempt's mutations do not leak into another or a later execution. Calling Kevlar from work started under `ExecutionContext.SuppressFlow()` keeps that flow suppressed.
 
-Synchronous `Execute` never pumps a `SynchronizationContext`. Retry delays and limiter queues block the calling thread until they complete, so prefer `ExecuteAsync` for delayed or queued work. As with any .NET async API, synchronously blocking on the returned task while the user delegate itself awaits a single-threaded context can deadlock; await the operation instead.
+Synchronous `Execute` never pumps a `SynchronizationContext`. Retry delays and limiter queues block
+the calling thread until they complete, so prefer `ExecuteAsync` for delayed or queued work.
+
+## Synchronous execution compatibility
+
+| Pipeline configuration | Synchronous `Execute` behavior |
+|---|---|
+| Empty shield, fixed timeout, fallback, or synchronous callbacks | Runs on the calling thread |
+| Retry delay, queued rate limit, or queued concurrency limit | Blocks the calling thread until the delay or queue admission completes |
+| `TimeoutGeneratorSync` or `BreakDurationGeneratorSync` | Invokes the generator synchronously; no async transition is introduced |
+| `CircuitBreakerMonitor.Isolate()` / `Reset()` with `OnStateChangedAsync` | Blocks until the observer completes; the observer runs on the thread pool |
+| Multi-attempt hedging | Throws `NotSupportedException` before the action runs |
+| `OnRetryAsync`, `DelayGeneratorAsync`, `OnTimeoutAsync`, `OnFallbackAsync`, `OnStateChangedAsync`, any `OnRejectedAsync`, `TimeoutGenerator`, or `BreakDurationGenerator` | Throws `NotSupportedException` before the action runs; use `ExecuteAsync` or the synchronous counterpart |
+| Custom strategy returning an incomplete `ValueTask` | Blocks at the execution boundary; custom code must avoid capturing a single-threaded `SynchronizationContext` |
+
+[`KEV012`](analyzers.md#kev012-async-configuration-with-synchronous-execute) catches inline async
+configuration passed to `Execute`. A shield obtained from a field, parameter, or opaque factory may
+still contain async configuration, so the runtime check remains authoritative.
 
 ## Zero-closure hot paths
 

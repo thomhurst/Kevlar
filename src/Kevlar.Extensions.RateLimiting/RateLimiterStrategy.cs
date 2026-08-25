@@ -22,6 +22,9 @@ internal sealed class RateLimiterStrategy : Strategy, IDisposable, IAsyncDisposa
 
     protected internal override bool IsDuplicateReferenceUnsafe => true;
 
+    internal override string? SynchronousExecutionUnsupportedReason =>
+        _onRejectedAsync is null ? null : "RateLimiterAdapterOptions.OnRejectedAsync";
+
     internal RateLimiterStrategy(
         RateLimitLeaseAcquirer acquireLease,
         RateLimiterAdapterOptions options,

@@ -35,6 +35,11 @@ public class AllocationBudgetTests
         options.ConsecutiveFailures = 5;
         options.BreakDurationGenerator = static _ => new ValueTask<TimeSpan>(TimeSpan.FromMinutes(1));
     });
+    private readonly Shield _dynamicSyncBreaker = Shield.CircuitBreaker(options =>
+    {
+        options.ConsecutiveFailures = 5;
+        options.BreakDurationGeneratorSync = static _ => TimeSpan.FromMinutes(1);
+    });
     private readonly Shield _asyncTransitionBreaker = Shield.CircuitBreaker(options =>
     {
         options.ConsecutiveFailures = 5;
@@ -44,6 +49,10 @@ public class AllocationBudgetTests
     private readonly Shield _dynamicTimeout = Shield.Timeout(static options =>
     {
         options.TimeoutGenerator = static _ => new ValueTask<TimeSpan>(TimeSpan.FromMinutes(1));
+    });
+    private readonly Shield _dynamicSyncTimeout = Shield.Timeout(static options =>
+    {
+        options.TimeoutGeneratorSync = static _ => TimeSpan.FromMinutes(1);
     });
     private readonly Shield _disabledChaos = ChaosShield.Fault(static _ => { });
     private readonly Shield _excludedChaos = ChaosShield.Fault(static options =>
@@ -103,6 +112,7 @@ public class AllocationBudgetTests
         .ConcurrencyLimit(1024);
     private readonly Shield<int> _primaryWinsHedge = Shield.For<int>()
         .Hedge(1, TimeSpan.FromMinutes(1));
+    private readonly Shield _singleAttemptHedge = Shield.Hedge(1, TimeSpan.Zero);
     private readonly PartitionedShield<int> _partitioned = new(static _ => Shield.Empty);
     private readonly Dictionary<KevlarKey<int>, int> _keyDictionary = new()
     {
@@ -203,6 +213,24 @@ public class AllocationBudgetTests
                 .GetResult());
         AssertZero("retry sync happy path", this, static test =>
             test._retry.Execute(static _ => 42));
+        AssertZero("dynamic circuit sync happy path", this, static test =>
+            test._dynamicSyncBreaker.Execute(static _ => 42));
+        AssertZero("fixed circuit sync happy path", this, static test =>
+            test._breaker.Execute(static _ => 42));
+        AssertZero("dynamic timeout sync happy path", this, static test =>
+            test._dynamicSyncTimeout.Execute(static _ => 42));
+        AssertZero("fixed timeout sync happy path", this, static test =>
+            test._timeout.Execute(static _ => 42));
+        AssertZero("fallback sync pass-through", this, static test =>
+            test._fallback.Execute(static _ => 42));
+        AssertZero("rate limit sync uncontended", this, static test =>
+            test._rateLimit.Execute(static _ => 42));
+        AssertZero("concurrency sync uncontended", this, static test =>
+            test._concurrencyLimit.Execute(static _ => 42));
+        AssertZero("single-attempt hedge sync", this, static test =>
+            test._singleAttemptHedge.Execute(static _ => 42));
+        AssertZero("composed sync pipeline", this, static test =>
+            test._composed.Execute(static _ => 42));
         AssertZero("retry async happy path", this, static test =>
             test._retry.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("retry async delay generator happy path", this, static test =>

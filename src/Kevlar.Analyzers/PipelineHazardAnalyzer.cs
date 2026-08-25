@@ -120,6 +120,16 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         isEnabledByDefault: true,
         description: "Without an explicit handling clause, reactive strategies handle ordinary exceptions, including programming errors such as ArgumentException and InvalidOperationException. This hint makes that implicit policy visible so transient-failure pipelines can narrow it deliberately.");
 
+    /// <summary>The KEV012 rule.</summary>
+    public static readonly DiagnosticDescriptor AsyncConfigurationWithSynchronousExecuteRule = new(
+        id: "KEV012",
+        title: "Asynchronous strategy configuration requires ExecuteAsync",
+        messageFormat: "This shield configures '{0}', which cannot run through synchronous 'Execute'. Use 'ExecuteAsync' or configure its synchronous counterpart.",
+        category: "Reliability",
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "Asynchronous callbacks and generators can capture a SynchronizationContext. Kevlar rejects synchronous Execute for statically known asynchronous strategy configuration instead of blocking the calling thread.");
+
     /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
         ImmutableArray.Create(
@@ -132,7 +142,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             DiscardedChainResultRule,
             InheritedHandlingClauseRule,
             DefaultResultClauseOnValueTypeRule,
-            ImplicitDefaultHandlingRule);
+            ImplicitDefaultHandlingRule,
+            AsyncConfigurationWithSynchronousExecuteRule);
 
     /// <inheritdoc />
     public override void Initialize(AnalysisContext context)
@@ -151,6 +162,25 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeInvocation(OperationAnalysisContext context, KnownTypes knownTypes)
     {
         var invocation = (IInvocationOperation)context.Operation;
+
+        if (IsSynchronousExecute(invocation.TargetMethod, knownTypes))
+        {
+            string? asyncMember = null;
+            if (FindInPipeline(
+                    GetReceiver(invocation),
+                    context,
+                    candidate => TryFindAsyncConfiguration(candidate, out asyncMember),
+                    knownTypes,
+                    stopAtHandlingClause: false,
+                    stopAtCompositionBoundary: false,
+                    out _))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    AsyncConfigurationWithSynchronousExecuteRule,
+                    invocation.Syntax.GetLocation(),
+                    asyncMember!));
+            }
+        }
 
         if (IsSynchronousExecute(invocation.TargetMethod, knownTypes)
             && FindInPipeline(
@@ -1956,9 +1986,93 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     private static bool IsSynchronousExecute(IMethodSymbol method, KnownTypes knownTypes)
     {
         method = Normalize(method);
-        return method.Name is "Execute" or "ExecuteOutcome"
+        return method.Name is "Execute" or "ExecuteOutcome" or "ExecuteWithContext"
             && knownTypes.IsShield(method.ContainingType);
     }
+
+    private static bool TryFindAsyncConfiguration(
+        IInvocationOperation invocation,
+        out string? memberName)
+    {
+        foreach (var argument in invocation.Arguments)
+        {
+            if (argument.Parameter?.Name == "configure"
+                && TryFindAsyncConfiguration(argument.Value, out memberName))
+            {
+                return true;
+            }
+        }
+
+        memberName = null;
+        return false;
+    }
+
+    private static bool TryFindAsyncConfiguration(
+        IOperation operation,
+        out string? memberName)
+    {
+        operation = Unwrap(operation)!;
+        if (operation is IDelegateCreationOperation delegateCreation)
+        {
+            return TryFindAsyncConfiguration(
+                delegateCreation.Target,
+                allowAnonymousFunction: true,
+                out memberName);
+        }
+
+        return TryFindAsyncConfiguration(operation, allowAnonymousFunction: true, out memberName);
+    }
+
+    private static bool TryFindAsyncConfiguration(
+        IOperation operation,
+        bool allowAnonymousFunction,
+        out string? memberName)
+    {
+        operation = Unwrap(operation)!;
+        if (operation is IAnonymousFunctionOperation && !allowAnonymousFunction)
+        {
+            memberName = null;
+            return false;
+        }
+
+        if (operation is IAssignmentOperation
+            {
+                Target: IPropertyReferenceOperation propertyReference,
+                Value: { } value,
+            }
+            && IsAsyncConfigurationProperty(propertyReference.Property)
+            && value.ConstantValue is not { HasValue: true, Value: null })
+        {
+            memberName = $"{propertyReference.Property.ContainingType.Name}.{propertyReference.Property.Name}";
+            return true;
+        }
+
+        foreach (var child in operation.ChildOperations)
+        {
+            if (TryFindAsyncConfiguration(
+                    child,
+                    allowAnonymousFunction: false,
+                    out memberName))
+            {
+                return true;
+            }
+        }
+
+        memberName = null;
+        return false;
+    }
+
+    private static bool IsAsyncConfigurationProperty(IPropertySymbol property) =>
+        property.ContainingNamespace.ToDisplayString().StartsWith("Kevlar", StringComparison.Ordinal)
+        && property.Name is
+            "OnRetryAsync"
+            or "DelayGeneratorAsync"
+            or "OnTimeoutAsync"
+            or "TimeoutGenerator"
+            or "OnFallbackAsync"
+            or "OnStateChangedAsync"
+            or "BreakDurationGenerator"
+            or "OnRejectedAsync";
 
     private static bool IsReactiveStrategy(IMethodSymbol method, KnownTypes knownTypes) =>
         (method.Name is "Retry" or "RetryForever" or "Hedge" or "CircuitBreaker")

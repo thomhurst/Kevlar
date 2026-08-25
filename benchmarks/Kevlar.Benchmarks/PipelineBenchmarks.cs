@@ -88,4 +88,12 @@ public class PipelineBenchmarks
     [BenchmarkCategory("TokenBucketRatioFiveStrategyChain"), Benchmark]
     public ValueTask<int> Polly_TokenBucketRatioFiveStrategyChain() =>
         PollyDeep.ExecuteAsync(static _ => new ValueTask<int>(42));
+
+    [BenchmarkCategory("TokenBucketRatioFiveStrategyChainSync"), Benchmark(Baseline = true)]
+    public int Kevlar_TokenBucketRatioFiveStrategyChainSync() =>
+        KevlarDeep.Execute(static _ => 42);
+
+    [BenchmarkCategory("TokenBucketRatioFiveStrategyChainSync"), Benchmark]
+    public int Polly_TokenBucketRatioFiveStrategyChainSync() =>
+        PollyDeep.Execute(static _ => 42);
 }

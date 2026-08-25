@@ -12,6 +12,30 @@ namespace Kevlar.Extensions.RateLimiting.Tests;
 
 public class RateLimiterAdapterTests
 {
+    [Test]
+    public async Task Synchronous_Execution_Rejects_An_Async_Rejection_Callback()
+    {
+        using var limiter = new FixedWindowRateLimiter(new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 1,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+        });
+        var actionInvoked = false;
+        var shield = Shield.Empty.UseRateLimiter(limiter, options =>
+            options.OnRejectedAsync = static _ => ValueTask.CompletedTask);
+
+        var exception = await Assert.That(() => shield.Execute(_ =>
+            {
+                actionInvoked = true;
+                return 1;
+            }))
+            .Throws<NotSupportedException>();
+
+        await Assert.That(exception!.Message).Contains("RateLimiterAdapterOptions.OnRejectedAsync");
+        await Assert.That(actionInvoked).IsFalse();
+    }
+
     private static readonly KevlarKey<string> TenantKey = new("tenant");
 
     [Test]

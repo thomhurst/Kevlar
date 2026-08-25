@@ -53,9 +53,10 @@ This caller-first rule also applies to nested timeouts. A cancelled outer timeou
 
 ## Dynamic timeouts and asynchronous notifications
 
-Use `TimeoutGenerator` when the budget depends on the current execution context. The generator runs
-and is awaited before the timer is armed or the executed delegate starts. Its result overrides the
-fixed `Timeout` for that execution and must be positive and within the runtime timer limit:
+Use `TimeoutGenerator` when computing the budget requires asynchronous work, or
+`TimeoutGeneratorSync` when it is synchronous. The generator runs before the timer is armed or the
+executed delegate starts. Its result overrides the fixed `Timeout` for that execution and must be
+positive and within the runtime timer limit. Configure only one generator:
 
 ```csharp
 var shield = Shield.Timeout(o =>
@@ -83,8 +84,9 @@ After a timeout wins, Kevlar records timeout metrics, restores the caller token,
 then invokes `OnTimeout` followed by awaited `OnTimeoutAsync`. Callback exceptions and cancellations
 are reported through `KevlarDiagnostics.OnCallbackError`; `TimeoutExceededException` remains the
 outcome. Hooks may run concurrently when a shield is reused, so callbacks must be thread-safe and
-must not assume serialization. Truly asynchronous generators and hooks block the calling thread when
-used through synchronous `Execute`.
+must not assume serialization. `TimeoutGenerator`,
+`OnTimeoutAsync`, and other async callbacks require `ExecuteAsync`; synchronous `Execute` rejects the
+pipeline before the action starts. Use `TimeoutGeneratorSync` for synchronous execution.
 
 ## Total vs per-attempt
 

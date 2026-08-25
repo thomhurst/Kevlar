@@ -14,7 +14,7 @@ public class AnalyzerMetadataTests
         await Assert.That(cancellationRules.Select(static rule => rule.Id).SequenceEqual(["KEV001"]))
             .IsTrue();
         await Assert.That(pipelineRules.Select(static rule => rule.Id).SequenceEqual(
-            ["KEV002", "KEV003", "KEV004", "KEV005", "KEV006", "KEV007", "KEV008", "KEV009", "KEV010", "KEV011"]))
+            ["KEV002", "KEV003", "KEV004", "KEV005", "KEV006", "KEV007", "KEV008", "KEV009", "KEV010", "KEV011", "KEV012"]))
             .IsTrue();
 
         var allRules = cancellationRules.Concat(pipelineRules).ToArray();
@@ -29,7 +29,7 @@ public class AnalyzerMetadataTests
             .Concat(new PipelineHazardAnalyzer().SupportedDiagnostics)
             .ToDictionary(static rule => rule.Id, StringComparer.Ordinal);
 
-        foreach (var reliabilityRule in new[] { "KEV001", "KEV002", "KEV004", "KEV006" })
+        foreach (var reliabilityRule in new[] { "KEV001", "KEV002", "KEV004", "KEV006", "KEV012" })
         {
             await Assert.That(rules[reliabilityRule].Category).IsEqualTo("Reliability");
             await Assert.That(rules[reliabilityRule].DefaultSeverity).IsEqualTo(DiagnosticSeverity.Warning);

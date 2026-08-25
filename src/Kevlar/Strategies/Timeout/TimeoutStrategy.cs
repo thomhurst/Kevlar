@@ -14,6 +14,7 @@ internal sealed class TimeoutStrategy : Strategy
 
     private readonly TimeSpan _timeout;
     private readonly Func<KevlarContext, ValueTask<TimeSpan>>? _timeoutGenerator;
+    private readonly bool _hasAsyncTimeoutGenerator;
     private readonly Action<TimeoutEvent>? _onTimeout;
     private readonly Func<TimeoutEvent, ValueTask>? _onTimeoutAsync;
     private readonly string _telemetryName;
@@ -33,7 +34,18 @@ internal sealed class TimeoutStrategy : Strategy
             options.Timeout,
             "must not exceed the runtime timer limit");
         _timeout = options.Timeout;
-        _timeoutGenerator = options.TimeoutGenerator;
+        ConfigurationValidation.ThrowIf(
+            options.TimeoutGenerator is not null && options.TimeoutGeneratorSync is not null,
+            typeof(TimeoutOptions),
+            nameof(options.TimeoutGenerator),
+            options.TimeoutGenerator,
+            $"cannot be combined with {nameof(options.TimeoutGeneratorSync)}");
+        _hasAsyncTimeoutGenerator = options.TimeoutGenerator is not null;
+        var timeoutGeneratorSync = options.TimeoutGeneratorSync;
+        _timeoutGenerator = options.TimeoutGenerator
+            ?? (timeoutGeneratorSync is null
+                ? null
+                : context => new ValueTask<TimeSpan>(timeoutGeneratorSync(context)));
         _onTimeout = options.OnTimeout;
         _onTimeoutAsync = options.OnTimeoutAsync;
         _telemetryName = options.Name ?? "Timeout";
@@ -48,6 +60,13 @@ internal sealed class TimeoutStrategy : Strategy
     internal bool HasTimeoutGenerator => _timeoutGenerator is not null;
 
     internal bool HasNotification => _onTimeout is not null || _onTimeoutAsync is not null;
+
+    internal override string? SynchronousExecutionUnsupportedReason =>
+        _hasAsyncTimeoutGenerator
+            ? "TimeoutOptions.TimeoutGenerator"
+            : _onTimeoutAsync is not null
+                ? "TimeoutOptions.OnTimeoutAsync"
+                : null;
 
     public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {

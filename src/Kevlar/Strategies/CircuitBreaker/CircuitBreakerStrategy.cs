@@ -16,9 +16,7 @@ internal sealed class CircuitBreakerStrategy : Strategy
             options,
             judge,
             options.HasHandlingOverride,
-            options.BreakDurationGenerator is null
-                ? null
-                : CircuitBreakerBreakDurationGenerator.Create(options.BreakDurationGenerator),
+            CreateBreakDurationGenerator(options),
             options.GetType())
     {
     }
@@ -46,10 +44,47 @@ internal sealed class CircuitBreakerStrategy : Strategy
             options.ToUntyped(),
             judge,
             options.HasHandlingOverride,
-            options.BreakDurationGenerator is null
-                ? null
-                : CircuitBreakerBreakDurationGenerator.Create(options.BreakDurationGenerator),
+            CreateBreakDurationGenerator(options),
             options.GetType());
+
+    private static CircuitBreakerBreakDurationGenerator? CreateBreakDurationGenerator(
+        CircuitBreakerOptions options)
+    {
+        ThrowIfBothGeneratorsConfigured(
+            options.BreakDurationGenerator,
+            options.BreakDurationGeneratorSync,
+            options.GetType());
+        return options.BreakDurationGenerator is not null
+            ? CircuitBreakerBreakDurationGenerator.Create(options.BreakDurationGenerator)
+            : options.BreakDurationGeneratorSync is not null
+                ? CircuitBreakerBreakDurationGenerator.Create(options.BreakDurationGeneratorSync)
+                : null;
+    }
+
+    private static CircuitBreakerBreakDurationGenerator? CreateBreakDurationGenerator<TResult>(
+        CircuitBreakerOptions<TResult> options)
+    {
+        ThrowIfBothGeneratorsConfigured(
+            options.BreakDurationGenerator,
+            options.BreakDurationGeneratorSync,
+            options.GetType());
+        return options.BreakDurationGenerator is not null
+            ? CircuitBreakerBreakDurationGenerator.Create(options.BreakDurationGenerator)
+            : options.BreakDurationGeneratorSync is not null
+                ? CircuitBreakerBreakDurationGenerator.Create(options.BreakDurationGeneratorSync)
+                : null;
+    }
+
+    private static void ThrowIfBothGeneratorsConfigured(
+        Delegate? asynchronous,
+        Delegate? synchronous,
+        Type optionsType) =>
+        ConfigurationValidation.ThrowIf(
+            asynchronous is not null && synchronous is not null,
+            optionsType,
+            nameof(CircuitBreakerOptions.BreakDurationGenerator),
+            asynchronous,
+            $"cannot be combined with {nameof(CircuitBreakerOptions.BreakDurationGeneratorSync)}");
 
     internal override OutcomeJudge? ReactiveJudge => _judge;
 
@@ -58,6 +93,9 @@ internal sealed class CircuitBreakerStrategy : Strategy
     protected internal override bool IsDuplicateReferenceUnsafe => true;
 
     internal CircuitBreakerCore Core => _core;
+
+    internal override string? SynchronousExecutionUnsupportedReason =>
+        _core.SynchronousExecutionUnsupportedReason;
 
     public override string Describe() => _core.Describe();
 

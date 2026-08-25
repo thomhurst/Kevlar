@@ -53,6 +53,9 @@ internal sealed class RateLimitStrategy : Strategy
 
     internal bool HasNotification => _onRejected is not null || _onRejectedAsync is not null;
 
+    internal override string? SynchronousExecutionUnsupportedReason =>
+        _onRejectedAsync is null ? null : "RateLimitOptions.OnRejectedAsync";
+
     public RateLimitStrategy(RateLimitOptions options)
     {
         ConfigurationValidation.ThrowIf(
@@ -365,14 +368,19 @@ internal sealed class RateLimitStrategy : Strategy
 
                 if (wait == Timeout.InfiniteTimeSpan)
                 {
-                    await reservation.WaitForTurnAsync(context.CancellationToken).ConfigureAwait(false);
+                    var turn = reservation.WaitForTurnAsync(context.CancellationToken);
+                    if (context.IsSynchronous)
+                    {
+                        turn.GetAwaiter().GetResult();
+                    }
+                    else
+                    {
+                        await turn.ConfigureAwait(false);
+                    }
                 }
                 else
                 {
-                    await DelayHelper.CreateDelayTask(
-                        context.TimeProvider,
-                        wait,
-                        context.CancellationToken).ConfigureAwait(false);
+                    await DelayHelper.DelayAsync(context, wait).ConfigureAwait(false);
                 }
             }
         }

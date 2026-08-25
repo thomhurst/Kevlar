@@ -27,6 +27,7 @@ Generated code is ignored.
 | `KEV009` | Info | strategy inherits a handling clause declared earlier in the chain |
 | `KEV010` | Info | default-result clause is written for a value type, whose default is usually valid |
 | `KEV011` | Info | reactive strategy relies on implicit default handling, which includes programming errors |
+| `KEV012` | Warning | asynchronous strategy configuration is passed to synchronous `Execute` |
 
 ## KEV001: ignored execution cancellation
 
@@ -343,6 +344,36 @@ var shield = Shield.Retry(3);
 ```
 
 Disable it project-wide with `dotnet_diagnostic.KEV011.severity = none`.
+
+## KEV012: async configuration with synchronous Execute
+
+Synchronous `Execute` cannot safely run a user callback that may capture a single-threaded
+`SynchronizationContext`. Kevlar rejects known async callbacks and generators before the action or
+any strategy runs:
+
+```csharp
+var shield = Shield.Retry(options =>
+    options.OnRetryAsync = static _ => ValueTask.CompletedTask);
+
+var value = shield.Execute(static _ => 42); // KEV012 and NotSupportedException at runtime
+```
+
+Use `ExecuteAsync`, or choose the synchronous callback or generator when the work is synchronous:
+
+```csharp
+var shield = Shield.Timeout(options =>
+    options.TimeoutGeneratorSync = static context =>
+        context.ShieldName == "interactive"
+            ? TimeSpan.FromSeconds(2)
+            : TimeSpan.FromSeconds(30));
+
+var value = shield.Execute(static _ => 42);
+```
+
+The rule recognizes async property assignments in a configuration lambda on the same fluent chain.
+It does not guess through fields, parameters, local delegates, or opaque factories; the runtime check
+still protects those cases. `ExecuteAsync` and configurations containing only synchronous callbacks
+remain clean.
 
 ## Suppression
 

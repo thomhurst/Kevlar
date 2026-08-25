@@ -64,6 +64,8 @@ public abstract class Strategy
     /// <summary>Whether this reactive strategy replaces ambient handling with local predicates.</summary>
     internal virtual bool HasHandlingOverride => false;
 
+    internal virtual string? SynchronousExecutionUnsupportedReason => null;
+
     /// <summary>Marks fallback strategies for chain-order validation.</summary>
     internal virtual bool IsFallback => false;
 
@@ -291,6 +293,9 @@ internal sealed class StrategyNode
         Index = index;
         RequiresOverlapIsolation = requiresOverlapIsolation;
         _shieldOwners = shieldOwners;
+        SynchronousExecutionUnsupportedReason =
+            strategy.SynchronousExecutionUnsupportedReason
+            ?? next?.SynchronousExecutionUnsupportedReason;
     }
 
     internal Strategy Strategy { get; }
@@ -302,6 +307,8 @@ internal sealed class StrategyNode
     internal bool RequiresOverlapIsolation { get; }
 
     private readonly WeakReference<StrategyOwnerSet> _shieldOwners;
+
+    internal string? SynchronousExecutionUnsupportedReason { get; }
 
     internal object GetShieldOwner()
     {

@@ -103,6 +103,28 @@ public class LimiterRejectionHookTests
     }
 
     [Test]
+    public async Task Synchronous_Execution_Rejects_An_Async_Rejection_Hook()
+    {
+        var asyncHooks = 0;
+        var shield = Shield.RateLimit(options =>
+        {
+            options.Permits = 1;
+            options.Window = TimeSpan.FromMinutes(1);
+            options.OnRejectedAsync = _ =>
+            {
+                asyncHooks++;
+                return ValueTask.CompletedTask;
+            };
+        });
+
+        var exception = await Assert.That(() => shield.Execute(static _ => 1))
+            .Throws<NotSupportedException>();
+
+        await Assert.That(exception!.Message).Contains("RateLimitOptions.OnRejectedAsync");
+        await Assert.That(asyncHooks).IsEqualTo(0);
+    }
+
+    [Test]
     public async Task Synchronous_Rejection_Hook_Failure_Does_Not_Skip_Async_Hook()
     {
         var callbackFailure = new InvalidOperationException("sync rejection callback failed");
@@ -119,8 +141,8 @@ public class LimiterRejectionHookTests
             };
         });
 
-        shield.Execute(static _ => 1);
-        await Assert.That(() => shield.Execute(static _ => 2))
+        await shield.ExecuteAsync(static _ => new ValueTask<int>(1));
+        await Assert.That(async () => await shield.ExecuteAsync(static _ => new ValueTask<int>(2)))
             .Throws<RateLimitExceededException>();
 
         await Assert.That(asyncHooks).IsEqualTo(1);

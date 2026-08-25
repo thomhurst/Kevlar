@@ -21,6 +21,13 @@ public sealed class TimeoutOptions
     /// </summary>
     public Func<KevlarContext, ValueTask<TimeSpan>>? TimeoutGenerator { get; set; }
 
+    /// <summary>
+    /// Produces the timeout synchronously for each execution. The returned value must be positive
+    /// and no greater than the runtime timer limit. Cannot be combined with
+    /// <see cref="TimeoutGenerator"/>.
+    /// </summary>
+    public Func<KevlarContext, TimeSpan>? TimeoutGeneratorSync { get; set; }
+
     /// <summary>Invoked when an execution is cancelled because it exceeded the timeout.</summary>
     public Action<TimeoutEvent>? OnTimeout { get; set; }
 

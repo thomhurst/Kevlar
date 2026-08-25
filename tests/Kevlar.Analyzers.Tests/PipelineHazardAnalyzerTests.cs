@@ -1308,6 +1308,76 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV012_Flags_Known_Async_Configuration_Used_Synchronously()
+    {
+        var cases = new[]
+        {
+            "_ = Shield.Retry(options => options.OnRetryAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
+            "_ = Shield.Retry(options => options.DelayGeneratorAsync = static _ => new ValueTask<TimeSpan?>(TimeSpan.Zero)).Execute(_ => 1);",
+            "_ = Shield.Timeout(options => options.TimeoutGenerator = static _ => new ValueTask<TimeSpan>(TimeSpan.FromSeconds(1))).Execute(_ => 1);",
+            "_ = Shield.CircuitBreaker(options => { options.ConsecutiveFailures = 1; options.BreakDurationGenerator = static _ => new ValueTask<TimeSpan>(TimeSpan.FromSeconds(1)); }).Execute(_ => 1);",
+            "_ = Shield.RateLimit(options => options.OnRejectedAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
+            "_ = Shield.ConcurrencyLimit(options => options.OnRejectedAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
+            "_ = Shield.For<int>().FallbackTo(0, options => options.OnFallbackAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
+            "_ = Shield.Retry(options => options.OnRetryAsync = static _ => ValueTask.CompletedTask).ExecuteWithContext(static _ => 1);",
+            "_ = Shield.Retry(options => options.OnRetryAsync = static _ => ValueTask.CompletedTask).ExecuteOutcome(static _ => 1);",
+            "_ = Shield.Empty.UseRateLimiter((System.Threading.RateLimiting.RateLimiter)null!, options => options.OnRejectedAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
+        };
+
+        await AssertEachAsync(cases, "KEV012", "KEV004", "KEV011");
+    }
+
+    [Test]
+    public async Task KEV012_Skips_Async_Execution_Sync_Configuration_And_Unknown_Configuration()
+    {
+        var cases = new[]
+        {
+            "_ = await Shield.Retry(options => options.OnRetryAsync = static _ => ValueTask.CompletedTask).ExecuteAsync(_ => new ValueTask<int>(1));",
+            "_ = Shield.Timeout(options => options.TimeoutGeneratorSync = static _ => TimeSpan.FromSeconds(1)).Execute(_ => 1);",
+            "_ = Shield.CircuitBreaker(options => { options.ConsecutiveFailures = 1; options.BreakDurationGeneratorSync = static _ => TimeSpan.FromSeconds(1); }).Execute(_ => 1);",
+            "_ = Shield.Retry(options => options.OnRetryAsync = null).Execute(_ => 1);",
+            "_ = Shield.Retry(options => options.OnRetry = _ => options.OnRetryAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
+            "Action<RetryOptions> configure = static options => options.OnRetryAsync = static _ => ValueTask.CompletedTask; _ = Shield.Retry(configure).Execute(_ => 1);",
+        };
+
+        foreach (var body in cases)
+        {
+            var diagnostics = await AnalyzeBodyAsync(body);
+            await Assert.That(Without(diagnostics, "KEV004")).IsEmpty();
+        }
+    }
+
+    [Test]
+    public async Task KEV012_Diagnostic_Contract_And_Suppression_Are_Exact()
+    {
+        const string execution = "Shield.Retry(options => options.OnRetryAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1)";
+        var source = $$"""
+            public class TestSubject
+            {
+                public int Run() => {{execution}};
+            }
+            """;
+        var diagnostics = await AnalyzeSourceAsync(source);
+        var suppressed = await AnalyzeBodyAsync($$"""
+            #pragma warning disable KEV012 // This call is migrated separately.
+            _ = {{execution}};
+            #pragma warning restore KEV012
+            """);
+
+        await Assert.That(diagnostics.Length).IsEqualTo(1);
+        var diagnostic = diagnostics[0];
+        await Assert.That(diagnostic.Id).IsEqualTo("KEV012");
+        await Assert.That(diagnostic.Severity).IsEqualTo(DiagnosticSeverity.Warning);
+        await Assert.That(diagnostic.GetMessage()).IsEqualTo(
+            "This shield configures 'RetryOptions.OnRetryAsync', which cannot run through synchronous "
+            + "'Execute'. Use 'ExecuteAsync' or configure its synchronous counterpart.");
+        await Assert.That(diagnostic.Location.SourceSpan.Start)
+            .IsEqualTo(CreateSource(source).IndexOf(execution, StringComparison.Ordinal));
+        await Assert.That(diagnostic.Location.SourceSpan.Length).IsEqualTo(execution.Length);
+        await Assert.That(suppressed).IsEmpty();
+    }
+
+    [Test]
     public async Task Non_Kevlar_Methods_And_Generated_Code_Are_Ignored()
     {
         var unrelated = await AnalyzeSourceAsync("""

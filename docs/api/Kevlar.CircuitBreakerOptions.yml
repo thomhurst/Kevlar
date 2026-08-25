@@ -8,6 +8,7 @@ items:
   - Kevlar.CircuitBreakerOptions.#ctor
   - Kevlar.CircuitBreakerOptions.BreakDuration
   - Kevlar.CircuitBreakerOptions.BreakDurationGenerator
+  - Kevlar.CircuitBreakerOptions.BreakDurationGeneratorSync
   - Kevlar.CircuitBreakerOptions.ConsecutiveFailures
   - Kevlar.CircuitBreakerOptions.FailureRatio
   - Kevlar.CircuitBreakerOptions.HandlesException
@@ -299,6 +300,34 @@ items:
       type: System.Func{Kevlar.CircuitBreakerBreakDurationEvent,System.Threading.Tasks.ValueTask{System.TimeSpan}}
     content.vb: Public Property BreakDurationGenerator As Func(Of CircuitBreakerBreakDurationEvent, ValueTask(Of TimeSpan))
   overload: Kevlar.CircuitBreakerOptions.BreakDurationGenerator*
+- uid: Kevlar.CircuitBreakerOptions.BreakDurationGeneratorSync
+  commentId: P:Kevlar.CircuitBreakerOptions.BreakDurationGeneratorSync
+  id: BreakDurationGeneratorSync
+  parent: Kevlar.CircuitBreakerOptions
+  langs:
+  - csharp
+  - vb
+  name: BreakDurationGeneratorSync
+  nameWithType: CircuitBreakerOptions.BreakDurationGeneratorSync
+  fullName: Kevlar.CircuitBreakerOptions.BreakDurationGeneratorSync
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Produces the break duration synchronously when a handled outcome trips or re-opens the
+
+    circuit. The returned value must be positive. Cannot be combined with
+
+    <xref href="Kevlar.CircuitBreakerOptions.BreakDurationGenerator" data-throw-if-not-resolved="false"></xref>.
+  example: []
+  syntax:
+    content: public Func<CircuitBreakerBreakDurationEvent, TimeSpan>? BreakDurationGeneratorSync { get; set; }
+    parameters: []
+    return:
+      type: System.Func{Kevlar.CircuitBreakerBreakDurationEvent,System.TimeSpan}
+    content.vb: Public Property BreakDurationGeneratorSync As Func(Of CircuitBreakerBreakDurationEvent, TimeSpan)
+  overload: Kevlar.CircuitBreakerOptions.BreakDurationGeneratorSync*
 - uid: Kevlar.CircuitBreakerOptions.Monitor
   commentId: P:Kevlar.CircuitBreakerOptions.Monitor
   id: Monitor
@@ -1044,6 +1073,67 @@ references:
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.timespan
   - name: )
+  - name: )
+- uid: Kevlar.CircuitBreakerOptions.BreakDurationGenerator
+  commentId: P:Kevlar.CircuitBreakerOptions.BreakDurationGenerator
+  isExternal: true
+  href: Kevlar.CircuitBreakerOptions.html#Kevlar_CircuitBreakerOptions_BreakDurationGenerator
+  name: BreakDurationGenerator
+  nameWithType: CircuitBreakerOptions.BreakDurationGenerator
+  fullName: Kevlar.CircuitBreakerOptions.BreakDurationGenerator
+- uid: Kevlar.CircuitBreakerOptions.BreakDurationGeneratorSync*
+  commentId: Overload:Kevlar.CircuitBreakerOptions.BreakDurationGeneratorSync
+  isExternal: true
+  href: Kevlar.CircuitBreakerOptions.html#Kevlar_CircuitBreakerOptions_BreakDurationGeneratorSync
+  name: BreakDurationGeneratorSync
+  nameWithType: CircuitBreakerOptions.BreakDurationGeneratorSync
+  fullName: Kevlar.CircuitBreakerOptions.BreakDurationGeneratorSync
+- uid: System.Func{Kevlar.CircuitBreakerBreakDurationEvent,System.TimeSpan}
+  commentId: T:System.Func{Kevlar.CircuitBreakerBreakDurationEvent,System.TimeSpan}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<CircuitBreakerBreakDurationEvent, TimeSpan>
+  nameWithType: Func<CircuitBreakerBreakDurationEvent, TimeSpan>
+  fullName: System.Func<Kevlar.CircuitBreakerBreakDurationEvent, System.TimeSpan>
+  nameWithType.vb: Func(Of CircuitBreakerBreakDurationEvent, TimeSpan)
+  fullName.vb: System.Func(Of Kevlar.CircuitBreakerBreakDurationEvent, System.TimeSpan)
+  name.vb: Func(Of CircuitBreakerBreakDurationEvent, TimeSpan)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.CircuitBreakerBreakDurationEvent
+    name: CircuitBreakerBreakDurationEvent
+    isExternal: true
+    href: Kevlar.CircuitBreakerBreakDurationEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.CircuitBreakerBreakDurationEvent
+    name: CircuitBreakerBreakDurationEvent
+    isExternal: true
+    href: Kevlar.CircuitBreakerBreakDurationEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
   - name: )
 - uid: Kevlar.CircuitBreakerMonitor.Isolate
   commentId: M:Kevlar.CircuitBreakerMonitor.Isolate

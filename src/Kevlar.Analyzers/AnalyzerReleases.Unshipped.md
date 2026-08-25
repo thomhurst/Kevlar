@@ -16,3 +16,4 @@ KEV008 | Configuration | Warning | Fluent chaining result is discarded as a stat
 KEV009 | Configuration | Info | Strategy inherits a handling clause declared earlier in the chain
 KEV010 | Configuration | Info | Default-result clause handles a value type's default
 KEV011 | Configuration | Info | Reactive strategy uses implicit default handling
+KEV012 | Reliability | Warning | Asynchronous strategy configuration requires ExecuteAsync
