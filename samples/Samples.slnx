@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="ChaosTesting/ChaosTesting.csproj" />
+  <Project Path="ConsoleRetry/ConsoleRetry.csproj" />
+  <Project Path="GrpcClient/GrpcClient.csproj" />
+  <Project Path="PartitionedWorker/PartitionedWorker.csproj" />
+  <Project Path="WebApi/WebApi.csproj" />
+</Solution>

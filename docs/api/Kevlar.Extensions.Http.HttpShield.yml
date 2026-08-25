@@ -1,0 +1,1046 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Extensions.Http.HttpShield
+  commentId: T:Kevlar.Extensions.Http.HttpShield
+  id: HttpShield
+  parent: Kevlar.Extensions.Http
+  children:
+  - Kevlar.Extensions.Http.HttpShield.IsTransient(System.Net.Http.HttpResponseMessage)
+  - Kevlar.Extensions.Http.HttpShield.IsTransientException(System.Exception,System.Threading.CancellationToken)
+  - Kevlar.Extensions.Http.HttpShield.RetryAfter(Kevlar.RetryEvent{System.Net.Http.HttpResponseMessage})
+  - Kevlar.Extensions.Http.HttpShield.RetryAfter(System.TimeSpan)
+  - Kevlar.Extensions.Http.HttpShield.Standard
+  - Kevlar.Extensions.Http.HttpShield.Standard(Kevlar.Extensions.Http.StandardHttpShieldOptions)
+  - Kevlar.Extensions.Http.HttpShield.WhenTransient
+  langs:
+  - csharp
+  - vb
+  name: HttpShield
+  nameWithType: HttpShield
+  fullName: Kevlar.Extensions.Http.HttpShield
+  type: Class
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: Building blocks for HTTP resilience shields.
+  example: []
+  syntax:
+    content: public static class HttpShield
+    content.vb: Public Module HttpShield
+  inheritance:
+  - System.Object
+  inheritedMembers:
+  - System.Object.GetType
+  - System.Object.MemberwiseClone
+  - System.Object.ToString
+  - System.Object.Equals(System.Object)
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  - System.Object.GetHashCode
+- uid: Kevlar.Extensions.Http.HttpShield.IsTransient(System.Net.Http.HttpResponseMessage)
+  commentId: M:Kevlar.Extensions.Http.HttpShield.IsTransient(System.Net.Http.HttpResponseMessage)
+  id: IsTransient(System.Net.Http.HttpResponseMessage)
+  parent: Kevlar.Extensions.Http.HttpShield
+  langs:
+  - csharp
+  - vb
+  name: IsTransient(HttpResponseMessage)
+  nameWithType: HttpShield.IsTransient(HttpResponseMessage)
+  fullName: Kevlar.Extensions.Http.HttpShield.IsTransient(System.Net.Http.HttpResponseMessage)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: >-
+    Returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> for responses worth retrying: 5xx, 408 Request Timeout
+
+    and 429 Too Many Requests.
+  example: []
+  syntax:
+    content: public static bool IsTransient(HttpResponseMessage response)
+    parameters:
+    - id: response
+      type: System.Net.Http.HttpResponseMessage
+    return:
+      type: System.Boolean
+    content.vb: Public Shared Function IsTransient(response As HttpResponseMessage) As Boolean
+  overload: Kevlar.Extensions.Http.HttpShield.IsTransient*
+- uid: Kevlar.Extensions.Http.HttpShield.IsTransientException(System.Exception,System.Threading.CancellationToken)
+  commentId: M:Kevlar.Extensions.Http.HttpShield.IsTransientException(System.Exception,System.Threading.CancellationToken)
+  id: IsTransientException(System.Exception,System.Threading.CancellationToken)
+  parent: Kevlar.Extensions.Http.HttpShield
+  langs:
+  - csharp
+  - vb
+  name: IsTransientException(Exception?, CancellationToken)
+  nameWithType: HttpShield.IsTransientException(Exception?, CancellationToken)
+  fullName: Kevlar.Extensions.Http.HttpShield.IsTransientException(System.Exception?, System.Threading.CancellationToken)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: >-
+    Returns <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> for transient HTTP exceptions, including an
+
+    <xref href="System.Net.Http.HttpClient.Timeout" data-throw-if-not-resolved="false"></xref> cancellation when <code class="paramref">callerCancellationToken</code>
+
+    was not cancelled.
+  example: []
+  syntax:
+    content: public static bool IsTransientException(Exception? exception, CancellationToken callerCancellationToken)
+    parameters:
+    - id: exception
+      type: System.Exception
+    - id: callerCancellationToken
+      type: System.Threading.CancellationToken
+    return:
+      type: System.Boolean
+    content.vb: Public Shared Function IsTransientException(exception As Exception, callerCancellationToken As CancellationToken) As Boolean
+  overload: Kevlar.Extensions.Http.HttpShield.IsTransientException*
+  nameWithType.vb: HttpShield.IsTransientException(Exception, CancellationToken)
+  fullName.vb: Kevlar.Extensions.Http.HttpShield.IsTransientException(System.Exception, System.Threading.CancellationToken)
+  name.vb: IsTransientException(Exception, CancellationToken)
+- uid: Kevlar.Extensions.Http.HttpShield.WhenTransient
+  commentId: M:Kevlar.Extensions.Http.HttpShield.WhenTransient
+  id: WhenTransient
+  parent: Kevlar.Extensions.Http.HttpShield
+  langs:
+  - csharp
+  - vb
+  name: WhenTransient()
+  nameWithType: HttpShield.WhenTransient()
+  fullName: Kevlar.Extensions.Http.HttpShield.WhenTransient()
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: >-
+    Starts a shield that handles the usual transient HTTP failures:
+
+    <xref href="System.Net.Http.HttpRequestException" data-throw-if-not-resolved="false"></xref>, <xref href="System.Net.Http.HttpClient.Timeout" data-throw-if-not-resolved="false"></xref> cancellations,
+
+    Kevlar attempt timeouts, 5xx, 408 and 429.
+
+    Chain your strategies onto the returned builder.
+  example: []
+  syntax:
+    content: public static ShieldBuilder<HttpResponseMessage> WhenTransient()
+    return:
+      type: Kevlar.ShieldBuilder{System.Net.Http.HttpResponseMessage}
+    content.vb: Public Shared Function WhenTransient() As ShieldBuilder(Of HttpResponseMessage)
+  overload: Kevlar.Extensions.Http.HttpShield.WhenTransient*
+- uid: Kevlar.Extensions.Http.HttpShield.Standard
+  commentId: M:Kevlar.Extensions.Http.HttpShield.Standard
+  id: Standard
+  parent: Kevlar.Extensions.Http.HttpShield
+  langs:
+  - csharp
+  - vb
+  name: Standard()
+  nameWithType: HttpShield.Standard()
+  fullName: Kevlar.Extensions.Http.HttpShield.Standard()
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: >-
+    A production-ready pipeline, outermost first: 30s total timeout → 3 retries with
+
+    exponential jittered backoff honouring <code>Retry-After</code> headers (retried responses are
+
+    disposed) → circuit breaker (50% failure ratio over 30s, minimum 10 calls, 15s break) →
+
+    10s per-attempt timeout.
+  example: []
+  syntax:
+    content: public static Shield<HttpResponseMessage> Standard()
+    return:
+      type: Kevlar.Shield{System.Net.Http.HttpResponseMessage}
+    content.vb: Public Shared Function Standard() As Shield(Of HttpResponseMessage)
+  overload: Kevlar.Extensions.Http.HttpShield.Standard*
+- uid: Kevlar.Extensions.Http.HttpShield.Standard(Kevlar.Extensions.Http.StandardHttpShieldOptions)
+  commentId: M:Kevlar.Extensions.Http.HttpShield.Standard(Kevlar.Extensions.Http.StandardHttpShieldOptions)
+  id: Standard(Kevlar.Extensions.Http.StandardHttpShieldOptions)
+  parent: Kevlar.Extensions.Http.HttpShield
+  langs:
+  - csharp
+  - vb
+  name: Standard(StandardHttpShieldOptions)
+  nameWithType: HttpShield.Standard(StandardHttpShieldOptions)
+  fullName: Kevlar.Extensions.Http.HttpShield.Standard(Kevlar.Extensions.Http.StandardHttpShieldOptions)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: Builds the standard HTTP pipeline from <code class="paramref">options</code>.
+  example: []
+  syntax:
+    content: public static Shield<HttpResponseMessage> Standard(StandardHttpShieldOptions options)
+    parameters:
+    - id: options
+      type: Kevlar.Extensions.Http.StandardHttpShieldOptions
+    return:
+      type: Kevlar.Shield{System.Net.Http.HttpResponseMessage}
+    content.vb: Public Shared Function Standard(options As StandardHttpShieldOptions) As Shield(Of HttpResponseMessage)
+  overload: Kevlar.Extensions.Http.HttpShield.Standard*
+- uid: Kevlar.Extensions.Http.HttpShield.RetryAfter(Kevlar.RetryEvent{System.Net.Http.HttpResponseMessage})
+  commentId: M:Kevlar.Extensions.Http.HttpShield.RetryAfter(Kevlar.RetryEvent{System.Net.Http.HttpResponseMessage})
+  id: RetryAfter(Kevlar.RetryEvent{System.Net.Http.HttpResponseMessage})
+  parent: Kevlar.Extensions.Http.HttpShield
+  langs:
+  - csharp
+  - vb
+  name: RetryAfter(RetryEvent<HttpResponseMessage>)
+  nameWithType: HttpShield.RetryAfter(RetryEvent<HttpResponseMessage>)
+  fullName: Kevlar.Extensions.Http.HttpShield.RetryAfter(Kevlar.RetryEvent<System.Net.Http.HttpResponseMessage>)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: >-
+    A <xref href="Kevlar.RetryOptions%601.DelayGenerator" data-throw-if-not-resolved="false"></xref> honouring the response's
+
+    <code>Retry-After</code> header when present and longer than the computed backoff.
+  example: []
+  syntax:
+    content: public static TimeSpan? RetryAfter(RetryEvent<HttpResponseMessage> retry)
+    parameters:
+    - id: retry
+      type: Kevlar.RetryEvent{System.Net.Http.HttpResponseMessage}
+    return:
+      type: System.Nullable{System.TimeSpan}
+    content.vb: Public Shared Function RetryAfter(retry As RetryEvent(Of HttpResponseMessage)) As TimeSpan?
+  overload: Kevlar.Extensions.Http.HttpShield.RetryAfter*
+  nameWithType.vb: HttpShield.RetryAfter(RetryEvent(Of HttpResponseMessage))
+  fullName.vb: Kevlar.Extensions.Http.HttpShield.RetryAfter(Kevlar.RetryEvent(Of System.Net.Http.HttpResponseMessage))
+  name.vb: RetryAfter(RetryEvent(Of HttpResponseMessage))
+- uid: Kevlar.Extensions.Http.HttpShield.RetryAfter(System.TimeSpan)
+  commentId: M:Kevlar.Extensions.Http.HttpShield.RetryAfter(System.TimeSpan)
+  id: RetryAfter(System.TimeSpan)
+  parent: Kevlar.Extensions.Http.HttpShield
+  langs:
+  - csharp
+  - vb
+  name: RetryAfter(TimeSpan)
+  nameWithType: HttpShield.RetryAfter(TimeSpan)
+  fullName: Kevlar.Extensions.Http.HttpShield.RetryAfter(System.TimeSpan)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: >-
+    Creates a <xref href="Kevlar.RetryOptions%601.DelayGenerator" data-throw-if-not-resolved="false"></xref> that honours
+
+    <code>Retry-After</code> while capping the server suggestion at <code class="paramref">maxDelay</code>.
+
+    The computed backoff is never shortened.
+  example: []
+  syntax:
+    content: public static Func<RetryEvent<HttpResponseMessage>, TimeSpan?> RetryAfter(TimeSpan maxDelay)
+    parameters:
+    - id: maxDelay
+      type: System.TimeSpan
+    return:
+      type: System.Func{Kevlar.RetryEvent{System.Net.Http.HttpResponseMessage},System.Nullable{System.TimeSpan}}
+    content.vb: Public Shared Function RetryAfter(maxDelay As TimeSpan) As Func(Of RetryEvent(Of HttpResponseMessage), TimeSpan?)
+  overload: Kevlar.Extensions.Http.HttpShield.RetryAfter*
+  exceptions:
+  - type: System.ArgumentOutOfRangeException
+    commentId: T:System.ArgumentOutOfRangeException
+    description: <code class="paramref">maxDelay</code> is negative.
+references:
+- uid: Kevlar.Extensions.Http
+  commentId: N:Kevlar.Extensions.Http
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar.Extensions.Http
+  nameWithType: Kevlar.Extensions.Http
+  fullName: Kevlar.Extensions.Http
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+  - name: .
+  - uid: Kevlar.Extensions.Http
+    name: Http
+    isExternal: true
+    href: Kevlar.Extensions.Http.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+  - name: .
+  - uid: Kevlar.Extensions.Http
+    name: Http
+    isExternal: true
+    href: Kevlar.Extensions.Http.html
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.MemberwiseClone
+  commentId: M:System.Object.MemberwiseClone
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  name: MemberwiseClone()
+  nameWithType: object.MemberwiseClone()
+  fullName: object.MemberwiseClone()
+  nameWithType.vb: Object.MemberwiseClone()
+  fullName.vb: Object.MemberwiseClone()
+  spec.csharp:
+  - uid: System.Object.MemberwiseClone
+    name: MemberwiseClone
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.MemberwiseClone
+    name: MemberwiseClone
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  - name: (
+  - name: )
+- uid: System.Object.ToString
+  commentId: M:System.Object.ToString
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  name: ToString()
+  nameWithType: object.ToString()
+  fullName: object.ToString()
+  nameWithType.vb: Object.ToString()
+  fullName.vb: Object.ToString()
+  spec.csharp:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object)
+  commentId: M:System.Object.Equals(System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  name: Equals(object)
+  nameWithType: object.Equals(object)
+  fullName: object.Equals(object)
+  nameWithType.vb: Object.Equals(Object)
+  fullName.vb: Object.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetHashCode
+  commentId: M:System.Object.GetHashCode
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  name: GetHashCode()
+  nameWithType: object.GetHashCode()
+  fullName: object.GetHashCode()
+  nameWithType.vb: Object.GetHashCode()
+  fullName.vb: Object.GetHashCode()
+  spec.csharp:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.Extensions.Http.HttpShield.IsTransient*
+  commentId: Overload:Kevlar.Extensions.Http.HttpShield.IsTransient
+  isExternal: true
+  href: Kevlar.Extensions.Http.HttpShield.html#Kevlar_Extensions_Http_HttpShield_IsTransient_System_Net_Http_HttpResponseMessage_
+  name: IsTransient
+  nameWithType: HttpShield.IsTransient
+  fullName: Kevlar.Extensions.Http.HttpShield.IsTransient
+- uid: System.Net.Http.HttpResponseMessage
+  commentId: T:System.Net.Http.HttpResponseMessage
+  parent: System.Net.Http
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.net.http.httpresponsemessage
+  name: HttpResponseMessage
+  nameWithType: HttpResponseMessage
+  fullName: System.Net.Http.HttpResponseMessage
+- uid: System.Boolean
+  commentId: T:System.Boolean
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.boolean
+  name: bool
+  nameWithType: bool
+  fullName: bool
+  nameWithType.vb: Boolean
+  fullName.vb: Boolean
+  name.vb: Boolean
+- uid: System.Net.Http
+  commentId: N:System.Net.Http
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System.Net.Http
+  nameWithType: System.Net.Http
+  fullName: System.Net.Http
+  spec.csharp:
+  - uid: System
+    name: System
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system
+  - name: .
+  - uid: System.Net
+    name: Net
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.net
+  - name: .
+  - uid: System.Net.Http
+    name: Http
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.net.http
+  spec.vb:
+  - uid: System
+    name: System
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system
+  - name: .
+  - uid: System.Net
+    name: Net
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.net
+  - name: .
+  - uid: System.Net.Http
+    name: Http
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.net.http
+- uid: System.Net.Http.HttpClient.Timeout
+  commentId: P:System.Net.Http.HttpClient.Timeout
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.net.http.httpclient.timeout
+  name: Timeout
+  nameWithType: HttpClient.Timeout
+  fullName: System.Net.Http.HttpClient.Timeout
+- uid: Kevlar.Extensions.Http.HttpShield.IsTransientException*
+  commentId: Overload:Kevlar.Extensions.Http.HttpShield.IsTransientException
+  isExternal: true
+  href: Kevlar.Extensions.Http.HttpShield.html#Kevlar_Extensions_Http_HttpShield_IsTransientException_System_Exception_System_Threading_CancellationToken_
+  name: IsTransientException
+  nameWithType: HttpShield.IsTransientException
+  fullName: Kevlar.Extensions.Http.HttpShield.IsTransientException
+- uid: System.Exception
+  commentId: T:System.Exception
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.exception
+  name: Exception
+  nameWithType: Exception
+  fullName: System.Exception
+- uid: System.Threading.CancellationToken
+  commentId: T:System.Threading.CancellationToken
+  parent: System.Threading
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
+  name: CancellationToken
+  nameWithType: CancellationToken
+  fullName: System.Threading.CancellationToken
+- uid: System.Threading
+  commentId: N:System.Threading
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System.Threading
+  nameWithType: System.Threading
+  fullName: System.Threading
+  spec.csharp:
+  - uid: System
+    name: System
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system
+  - name: .
+  - uid: System.Threading
+    name: Threading
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading
+  spec.vb:
+  - uid: System
+    name: System
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system
+  - name: .
+  - uid: System.Threading
+    name: Threading
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading
+- uid: System.Net.Http.HttpRequestException
+  commentId: T:System.Net.Http.HttpRequestException
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.net.http.httprequestexception
+  name: HttpRequestException
+  nameWithType: HttpRequestException
+  fullName: System.Net.Http.HttpRequestException
+- uid: Kevlar.Extensions.Http.HttpShield.WhenTransient*
+  commentId: Overload:Kevlar.Extensions.Http.HttpShield.WhenTransient
+  isExternal: true
+  href: Kevlar.Extensions.Http.HttpShield.html#Kevlar_Extensions_Http_HttpShield_WhenTransient
+  name: WhenTransient
+  nameWithType: HttpShield.WhenTransient
+  fullName: Kevlar.Extensions.Http.HttpShield.WhenTransient
+- uid: Kevlar.ShieldBuilder{System.Net.Http.HttpResponseMessage}
+  commentId: T:Kevlar.ShieldBuilder{System.Net.Http.HttpResponseMessage}
+  parent: Kevlar
+  definition: Kevlar.ShieldBuilder`1
+  href: Kevlar.ShieldBuilder-1.html
+  name: ShieldBuilder<HttpResponseMessage>
+  nameWithType: ShieldBuilder<HttpResponseMessage>
+  fullName: Kevlar.ShieldBuilder<System.Net.Http.HttpResponseMessage>
+  nameWithType.vb: ShieldBuilder(Of HttpResponseMessage)
+  fullName.vb: Kevlar.ShieldBuilder(Of System.Net.Http.HttpResponseMessage)
+  name.vb: ShieldBuilder(Of HttpResponseMessage)
+  spec.csharp:
+  - uid: Kevlar.ShieldBuilder`1
+    name: ShieldBuilder
+    isExternal: true
+    href: Kevlar.ShieldBuilder-1.html
+  - name: <
+  - uid: System.Net.Http.HttpResponseMessage
+    name: HttpResponseMessage
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.net.http.httpresponsemessage
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.ShieldBuilder`1
+    name: ShieldBuilder
+    isExternal: true
+    href: Kevlar.ShieldBuilder-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.Net.Http.HttpResponseMessage
+    name: HttpResponseMessage
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.net.http.httpresponsemessage
+  - name: )
+- uid: Kevlar.ShieldBuilder`1
+  commentId: T:Kevlar.ShieldBuilder`1
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.ShieldBuilder-1.html
+  name: ShieldBuilder<TResult>
+  nameWithType: ShieldBuilder<TResult>
+  fullName: Kevlar.ShieldBuilder<TResult>
+  nameWithType.vb: ShieldBuilder(Of TResult)
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult)
+  name.vb: ShieldBuilder(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.ShieldBuilder`1
+    name: ShieldBuilder
+    isExternal: true
+    href: Kevlar.ShieldBuilder-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.ShieldBuilder`1
+    name: ShieldBuilder
+    isExternal: true
+    href: Kevlar.ShieldBuilder-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: Kevlar.Extensions.Http.HttpShield.Standard*
+  commentId: Overload:Kevlar.Extensions.Http.HttpShield.Standard
+  isExternal: true
+  href: Kevlar.Extensions.Http.HttpShield.html#Kevlar_Extensions_Http_HttpShield_Standard
+  name: Standard
+  nameWithType: HttpShield.Standard
+  fullName: Kevlar.Extensions.Http.HttpShield.Standard
+- uid: Kevlar.Shield{System.Net.Http.HttpResponseMessage}
+  commentId: T:Kevlar.Shield{System.Net.Http.HttpResponseMessage}
+  parent: Kevlar
+  definition: Kevlar.Shield`1
+  href: Kevlar.Shield-1.html
+  name: Shield<HttpResponseMessage>
+  nameWithType: Shield<HttpResponseMessage>
+  fullName: Kevlar.Shield<System.Net.Http.HttpResponseMessage>
+  nameWithType.vb: Shield(Of HttpResponseMessage)
+  fullName.vb: Kevlar.Shield(Of System.Net.Http.HttpResponseMessage)
+  name.vb: Shield(Of HttpResponseMessage)
+  spec.csharp:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: <
+  - uid: System.Net.Http.HttpResponseMessage
+    name: HttpResponseMessage
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.net.http.httpresponsemessage
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.Net.Http.HttpResponseMessage
+    name: HttpResponseMessage
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.net.http.httpresponsemessage
+  - name: )
+- uid: Kevlar.Shield`1
+  commentId: T:Kevlar.Shield`1
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Shield-1.html
+  name: Shield<TResult>
+  nameWithType: Shield<TResult>
+  fullName: Kevlar.Shield<TResult>
+  nameWithType.vb: Shield(Of TResult)
+  fullName.vb: Kevlar.Shield(Of TResult)
+  name.vb: Shield(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.Extensions.Http.StandardHttpShieldOptions
+  commentId: T:Kevlar.Extensions.Http.StandardHttpShieldOptions
+  parent: Kevlar.Extensions.Http
+  isExternal: true
+  href: Kevlar.Extensions.Http.StandardHttpShieldOptions.html
+  name: StandardHttpShieldOptions
+  nameWithType: StandardHttpShieldOptions
+  fullName: Kevlar.Extensions.Http.StandardHttpShieldOptions
+- uid: Kevlar.RetryOptions`1.DelayGenerator
+  commentId: P:Kevlar.RetryOptions`1.DelayGenerator
+  isExternal: true
+  href: Kevlar.RetryOptions-1.html#Kevlar_RetryOptions_1_DelayGenerator
+  name: DelayGenerator
+  nameWithType: RetryOptions<TResult>.DelayGenerator
+  fullName: Kevlar.RetryOptions<TResult>.DelayGenerator
+  nameWithType.vb: RetryOptions(Of TResult).DelayGenerator
+  fullName.vb: Kevlar.RetryOptions(Of TResult).DelayGenerator
+- uid: Kevlar.Extensions.Http.HttpShield.RetryAfter*
+  commentId: Overload:Kevlar.Extensions.Http.HttpShield.RetryAfter
+  isExternal: true
+  href: Kevlar.Extensions.Http.HttpShield.html#Kevlar_Extensions_Http_HttpShield_RetryAfter_Kevlar_RetryEvent_System_Net_Http_HttpResponseMessage__
+  name: RetryAfter
+  nameWithType: HttpShield.RetryAfter
+  fullName: Kevlar.Extensions.Http.HttpShield.RetryAfter
+- uid: Kevlar.RetryEvent{System.Net.Http.HttpResponseMessage}
+  commentId: T:Kevlar.RetryEvent{System.Net.Http.HttpResponseMessage}
+  parent: Kevlar
+  definition: Kevlar.RetryEvent`1
+  href: Kevlar.RetryEvent-1.html
+  name: RetryEvent<HttpResponseMessage>
+  nameWithType: RetryEvent<HttpResponseMessage>
+  fullName: Kevlar.RetryEvent<System.Net.Http.HttpResponseMessage>
+  nameWithType.vb: RetryEvent(Of HttpResponseMessage)
+  fullName.vb: Kevlar.RetryEvent(Of System.Net.Http.HttpResponseMessage)
+  name.vb: RetryEvent(Of HttpResponseMessage)
+  spec.csharp:
+  - uid: Kevlar.RetryEvent`1
+    name: RetryEvent
+    isExternal: true
+    href: Kevlar.RetryEvent-1.html
+  - name: <
+  - uid: System.Net.Http.HttpResponseMessage
+    name: HttpResponseMessage
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.net.http.httpresponsemessage
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.RetryEvent`1
+    name: RetryEvent
+    isExternal: true
+    href: Kevlar.RetryEvent-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.Net.Http.HttpResponseMessage
+    name: HttpResponseMessage
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.net.http.httpresponsemessage
+  - name: )
+- uid: System.Nullable{System.TimeSpan}
+  commentId: T:System.Nullable{System.TimeSpan}
+  parent: System
+  definition: System.Nullable`1
+  href: https://learn.microsoft.com/dotnet/api/system.timespan
+  name: TimeSpan?
+  nameWithType: TimeSpan?
+  fullName: System.TimeSpan?
+  spec.csharp:
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '?'
+  spec.vb:
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '?'
+- uid: Kevlar.RetryEvent`1
+  commentId: T:Kevlar.RetryEvent`1
+  isExternal: true
+  href: Kevlar.RetryEvent-1.html
+  name: RetryEvent<TResult>
+  nameWithType: RetryEvent<TResult>
+  fullName: Kevlar.RetryEvent<TResult>
+  nameWithType.vb: RetryEvent(Of TResult)
+  fullName.vb: Kevlar.RetryEvent(Of TResult)
+  name.vb: RetryEvent(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.RetryEvent`1
+    name: RetryEvent
+    isExternal: true
+    href: Kevlar.RetryEvent-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.RetryEvent`1
+    name: RetryEvent
+    isExternal: true
+    href: Kevlar.RetryEvent-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: System.Nullable`1
+  commentId: T:System.Nullable`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  name: Nullable<T>
+  nameWithType: Nullable<T>
+  fullName: System.Nullable<T>
+  nameWithType.vb: Nullable(Of T)
+  fullName.vb: System.Nullable(Of T)
+  name.vb: Nullable(Of T)
+  spec.csharp:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: System.ArgumentOutOfRangeException
+  commentId: T:System.ArgumentOutOfRangeException
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.argumentoutofrangeexception
+  name: ArgumentOutOfRangeException
+  nameWithType: ArgumentOutOfRangeException
+  fullName: System.ArgumentOutOfRangeException
+- uid: System.TimeSpan
+  commentId: T:System.TimeSpan
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.timespan
+  name: TimeSpan
+  nameWithType: TimeSpan
+  fullName: System.TimeSpan
+- uid: System.Func{Kevlar.RetryEvent{System.Net.Http.HttpResponseMessage},System.Nullable{System.TimeSpan}}
+  commentId: T:System.Func{Kevlar.RetryEvent{System.Net.Http.HttpResponseMessage},System.Nullable{System.TimeSpan}}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<RetryEvent<HttpResponseMessage>, TimeSpan?>
+  nameWithType: Func<RetryEvent<HttpResponseMessage>, TimeSpan?>
+  fullName: System.Func<Kevlar.RetryEvent<System.Net.Http.HttpResponseMessage>, System.TimeSpan?>
+  nameWithType.vb: Func(Of RetryEvent(Of HttpResponseMessage), TimeSpan?)
+  fullName.vb: System.Func(Of Kevlar.RetryEvent(Of System.Net.Http.HttpResponseMessage), System.TimeSpan?)
+  name.vb: Func(Of RetryEvent(Of HttpResponseMessage), TimeSpan?)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.RetryEvent`1
+    name: RetryEvent
+    isExternal: true
+    href: Kevlar.RetryEvent-1.html
+  - name: <
+  - uid: System.Net.Http.HttpResponseMessage
+    name: HttpResponseMessage
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.net.http.httpresponsemessage
+  - name: '>'
+  - name: ','
+  - name: " "
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '?'
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.RetryEvent`1
+    name: RetryEvent
+    isExternal: true
+    href: Kevlar.RetryEvent-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.Net.Http.HttpResponseMessage
+    name: HttpResponseMessage
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.net.http.httpresponsemessage
+  - name: )
+  - name: ','
+  - name: " "
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '?'
+  - name: )
+- uid: System.Func`2
+  commentId: T:System.Func`2
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<T, TResult>
+  nameWithType: Func<T, TResult>
+  fullName: System.Func<T, TResult>
+  nameWithType.vb: Func(Of T, TResult)
+  fullName.vb: System.Func(Of T, TResult)
+  name.vb: Func(Of T, TResult)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )

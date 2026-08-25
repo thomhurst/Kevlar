@@ -1,0 +1,1452 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+  commentId: T:Kevlar.Extensions.Http.StandardHedgeShieldOptions
+  id: StandardHedgeShieldOptions
+  parent: Kevlar.Extensions.Http
+  children:
+  - Kevlar.Extensions.Http.StandardHedgeShieldOptions.#ctor
+  - Kevlar.Extensions.Http.StandardHedgeShieldOptions.AllowUnsafeMethodReplay
+  - Kevlar.Extensions.Http.StandardHedgeShieldOptions.AttemptTimeout
+  - Kevlar.Extensions.Http.StandardHedgeShieldOptions.BreakDuration
+  - Kevlar.Extensions.Http.StandardHedgeShieldOptions.ConsecutiveFailures
+  - Kevlar.Extensions.Http.StandardHedgeShieldOptions.ContentReplayPolicy
+  - Kevlar.Extensions.Http.StandardHedgeShieldOptions.Endpoints
+  - Kevlar.Extensions.Http.StandardHedgeShieldOptions.FailureRatio
+  - Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelay
+  - Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelayGenerator
+  - Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelayGeneratorAsync
+  - Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxAttempts
+  - Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxConcurrency
+  - Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaximumBufferSize
+  - Kevlar.Extensions.Http.StandardHedgeShieldOptions.MinimumThroughput
+  - Kevlar.Extensions.Http.StandardHedgeShieldOptions.QueueLimit
+  - Kevlar.Extensions.Http.StandardHedgeShieldOptions.RequestFactory
+  - Kevlar.Extensions.Http.StandardHedgeShieldOptions.SamplingWindow
+  - Kevlar.Extensions.Http.StandardHedgeShieldOptions.Seed
+  - Kevlar.Extensions.Http.StandardHedgeShieldOptions.SelectionMode
+  - Kevlar.Extensions.Http.StandardHedgeShieldOptions.TotalTimeout
+  langs:
+  - csharp
+  - vb
+  name: StandardHedgeShieldOptions
+  nameWithType: StandardHedgeShieldOptions
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+  type: Class
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: Configures the standard endpoint-aware HTTP hedging pipeline.
+  example: []
+  syntax:
+    content: public sealed class StandardHedgeShieldOptions
+    content.vb: Public NotInheritable Class StandardHedgeShieldOptions
+  inheritance:
+  - System.Object
+  inheritedMembers:
+  - System.Object.GetType
+  - System.Object.ToString
+  - System.Object.Equals(System.Object)
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  - System.Object.GetHashCode
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.#ctor
+  commentId: M:Kevlar.Extensions.Http.StandardHedgeShieldOptions.#ctor
+  id: '#ctor'
+  parent: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+  langs:
+  - csharp
+  - vb
+  name: StandardHedgeShieldOptions()
+  nameWithType: StandardHedgeShieldOptions.StandardHedgeShieldOptions()
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.StandardHedgeShieldOptions()
+  type: Constructor
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  syntax:
+    content: public StandardHedgeShieldOptions()
+    content.vb: Public Sub New()
+  overload: Kevlar.Extensions.Http.StandardHedgeShieldOptions.#ctor*
+  nameWithType.vb: StandardHedgeShieldOptions.New()
+  fullName.vb: Kevlar.Extensions.Http.StandardHedgeShieldOptions.New()
+  name.vb: New()
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.TotalTimeout
+  commentId: P:Kevlar.Extensions.Http.StandardHedgeShieldOptions.TotalTimeout
+  id: TotalTimeout
+  parent: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+  langs:
+  - csharp
+  - vb
+  name: TotalTimeout
+  nameWithType: StandardHedgeShieldOptions.TotalTimeout
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.TotalTimeout
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: The maximum duration of the complete request. Default 30 seconds.
+  example: []
+  syntax:
+    content: public TimeSpan TotalTimeout { get; set; }
+    parameters: []
+    return:
+      type: System.TimeSpan
+    content.vb: Public Property TotalTimeout As TimeSpan
+  overload: Kevlar.Extensions.Http.StandardHedgeShieldOptions.TotalTimeout*
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxAttempts
+  commentId: P:Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxAttempts
+  id: MaxAttempts
+  parent: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+  langs:
+  - csharp
+  - vb
+  name: MaxAttempts
+  nameWithType: StandardHedgeShieldOptions.MaxAttempts
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxAttempts
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: Total attempts including the original. Default 2.
+  example: []
+  syntax:
+    content: public int MaxAttempts { get; set; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public Property MaxAttempts As Integer
+  overload: Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxAttempts*
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelay
+  commentId: P:Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelay
+  id: HedgeDelay
+  parent: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+  langs:
+  - csharp
+  - vb
+  name: HedgeDelay
+  nameWithType: StandardHedgeShieldOptions.HedgeDelay
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelay
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: The delay before another hedged attempt starts. Default 1 second.
+  example: []
+  syntax:
+    content: public TimeSpan HedgeDelay { get; set; }
+    parameters: []
+    return:
+      type: System.TimeSpan
+    content.vb: Public Property HedgeDelay As TimeSpan
+  overload: Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelay*
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelayGenerator
+  commentId: P:Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelayGenerator
+  id: HedgeDelayGenerator
+  parent: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+  langs:
+  - csharp
+  - vb
+  name: HedgeDelayGenerator
+  nameWithType: StandardHedgeShieldOptions.HedgeDelayGenerator
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelayGenerator
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: Selects the delay before each additional endpoint attempt.
+  example: []
+  syntax:
+    content: public Func<HedgeDelayEvent, TimeSpan>? HedgeDelayGenerator { get; set; }
+    parameters: []
+    return:
+      type: System.Func{Kevlar.HedgeDelayEvent,System.TimeSpan}
+    content.vb: Public Property HedgeDelayGenerator As Func(Of HedgeDelayEvent, TimeSpan)
+  overload: Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelayGenerator*
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelayGeneratorAsync
+  commentId: P:Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelayGeneratorAsync
+  id: HedgeDelayGeneratorAsync
+  parent: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+  langs:
+  - csharp
+  - vb
+  name: HedgeDelayGeneratorAsync
+  nameWithType: StandardHedgeShieldOptions.HedgeDelayGeneratorAsync
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelayGeneratorAsync
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: Asynchronously selects the delay before each additional endpoint attempt.
+  example: []
+  syntax:
+    content: public Func<HedgeDelayEvent, ValueTask<TimeSpan>>? HedgeDelayGeneratorAsync { get; set; }
+    parameters: []
+    return:
+      type: System.Func{Kevlar.HedgeDelayEvent,System.Threading.Tasks.ValueTask{System.TimeSpan}}
+    content.vb: Public Property HedgeDelayGeneratorAsync As Func(Of HedgeDelayEvent, ValueTask(Of TimeSpan))
+  overload: Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelayGeneratorAsync*
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.AttemptTimeout
+  commentId: P:Kevlar.Extensions.Http.StandardHedgeShieldOptions.AttemptTimeout
+  id: AttemptTimeout
+  parent: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+  langs:
+  - csharp
+  - vb
+  name: AttemptTimeout
+  nameWithType: StandardHedgeShieldOptions.AttemptTimeout
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.AttemptTimeout
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: The maximum duration of each endpoint attempt. Default 10 seconds.
+  example: []
+  syntax:
+    content: public TimeSpan AttemptTimeout { get; set; }
+    parameters: []
+    return:
+      type: System.TimeSpan
+    content.vb: Public Property AttemptTimeout As TimeSpan
+  overload: Kevlar.Extensions.Http.StandardHedgeShieldOptions.AttemptTimeout*
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxConcurrency
+  commentId: P:Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxConcurrency
+  id: MaxConcurrency
+  parent: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+  langs:
+  - csharp
+  - vb
+  name: MaxConcurrency
+  nameWithType: StandardHedgeShieldOptions.MaxConcurrency
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxConcurrency
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: Maximum concurrent attempts per endpoint. Default 10.
+  example: []
+  syntax:
+    content: public int MaxConcurrency { get; set; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public Property MaxConcurrency As Integer
+  overload: Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxConcurrency*
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.QueueLimit
+  commentId: P:Kevlar.Extensions.Http.StandardHedgeShieldOptions.QueueLimit
+  id: QueueLimit
+  parent: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+  langs:
+  - csharp
+  - vb
+  name: QueueLimit
+  nameWithType: StandardHedgeShieldOptions.QueueLimit
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.QueueLimit
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: Maximum attempts queued per endpoint. Default 0.
+  example: []
+  syntax:
+    content: public int QueueLimit { get; set; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public Property QueueLimit As Integer
+  overload: Kevlar.Extensions.Http.StandardHedgeShieldOptions.QueueLimit*
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.ConsecutiveFailures
+  commentId: P:Kevlar.Extensions.Http.StandardHedgeShieldOptions.ConsecutiveFailures
+  id: ConsecutiveFailures
+  parent: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+  langs:
+  - csharp
+  - vb
+  name: ConsecutiveFailures
+  nameWithType: StandardHedgeShieldOptions.ConsecutiveFailures
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.ConsecutiveFailures
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: Trips each endpoint circuit after this many consecutive transient failures.
+  example: []
+  syntax:
+    content: public int? ConsecutiveFailures { get; set; }
+    parameters: []
+    return:
+      type: System.Nullable{System.Int32}
+    content.vb: Public Property ConsecutiveFailures As Integer?
+  overload: Kevlar.Extensions.Http.StandardHedgeShieldOptions.ConsecutiveFailures*
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.FailureRatio
+  commentId: P:Kevlar.Extensions.Http.StandardHedgeShieldOptions.FailureRatio
+  id: FailureRatio
+  parent: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+  langs:
+  - csharp
+  - vb
+  name: FailureRatio
+  nameWithType: StandardHedgeShieldOptions.FailureRatio
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.FailureRatio
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: >-
+    Trips each endpoint circuit when its transient-failure ratio reaches this value.
+
+    Default 0.5. Set to <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> when using <xref href="Kevlar.Extensions.Http.StandardHedgeShieldOptions.ConsecutiveFailures" data-throw-if-not-resolved="false"></xref>.
+  example: []
+  syntax:
+    content: public double? FailureRatio { get; set; }
+    parameters: []
+    return:
+      type: System.Nullable{System.Double}
+    content.vb: Public Property FailureRatio As Double?
+  overload: Kevlar.Extensions.Http.StandardHedgeShieldOptions.FailureRatio*
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.MinimumThroughput
+  commentId: P:Kevlar.Extensions.Http.StandardHedgeShieldOptions.MinimumThroughput
+  id: MinimumThroughput
+  parent: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+  langs:
+  - csharp
+  - vb
+  name: MinimumThroughput
+  nameWithType: StandardHedgeShieldOptions.MinimumThroughput
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.MinimumThroughput
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: Minimum endpoint attempts sampled before failure-ratio breaking. Default 10.
+  example: []
+  syntax:
+    content: public int MinimumThroughput { get; set; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public Property MinimumThroughput As Integer
+  overload: Kevlar.Extensions.Http.StandardHedgeShieldOptions.MinimumThroughput*
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.SamplingWindow
+  commentId: P:Kevlar.Extensions.Http.StandardHedgeShieldOptions.SamplingWindow
+  id: SamplingWindow
+  parent: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+  langs:
+  - csharp
+  - vb
+  name: SamplingWindow
+  nameWithType: StandardHedgeShieldOptions.SamplingWindow
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.SamplingWindow
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: The endpoint circuit sampling window. Default 30 seconds.
+  example: []
+  syntax:
+    content: public TimeSpan SamplingWindow { get; set; }
+    parameters: []
+    return:
+      type: System.TimeSpan
+    content.vb: Public Property SamplingWindow As TimeSpan
+  overload: Kevlar.Extensions.Http.StandardHedgeShieldOptions.SamplingWindow*
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.BreakDuration
+  commentId: P:Kevlar.Extensions.Http.StandardHedgeShieldOptions.BreakDuration
+  id: BreakDuration
+  parent: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+  langs:
+  - csharp
+  - vb
+  name: BreakDuration
+  nameWithType: StandardHedgeShieldOptions.BreakDuration
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.BreakDuration
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: How long an endpoint circuit remains open. Default 15 seconds.
+  example: []
+  syntax:
+    content: public TimeSpan BreakDuration { get; set; }
+    parameters: []
+    return:
+      type: System.TimeSpan
+    content.vb: Public Property BreakDuration As TimeSpan
+  overload: Kevlar.Extensions.Http.StandardHedgeShieldOptions.BreakDuration*
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.SelectionMode
+  commentId: P:Kevlar.Extensions.Http.StandardHedgeShieldOptions.SelectionMode
+  id: SelectionMode
+  parent: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+  langs:
+  - csharp
+  - vb
+  name: SelectionMode
+  nameWithType: StandardHedgeShieldOptions.SelectionMode
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.SelectionMode
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: The endpoint ordering algorithm.
+  example: []
+  syntax:
+    content: public HttpEndpointSelectionMode SelectionMode { get; set; }
+    parameters: []
+    return:
+      type: Kevlar.Extensions.Http.HttpEndpointSelectionMode
+    content.vb: Public Property SelectionMode As HttpEndpointSelectionMode
+  overload: Kevlar.Extensions.Http.StandardHedgeShieldOptions.SelectionMode*
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.Seed
+  commentId: P:Kevlar.Extensions.Http.StandardHedgeShieldOptions.Seed
+  id: Seed
+  parent: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+  langs:
+  - csharp
+  - vb
+  name: Seed
+  nameWithType: StandardHedgeShieldOptions.Seed
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.Seed
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: The deterministic seed used by weighted endpoint ordering.
+  example: []
+  syntax:
+    content: public int Seed { get; set; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public Property Seed As Integer
+  overload: Kevlar.Extensions.Http.StandardHedgeShieldOptions.Seed*
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.Endpoints
+  commentId: P:Kevlar.Extensions.Http.StandardHedgeShieldOptions.Endpoints
+  id: Endpoints
+  parent: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+  langs:
+  - csharp
+  - vb
+  name: Endpoints
+  nameWithType: StandardHedgeShieldOptions.Endpoints
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.Endpoints
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: The endpoint authorities available to attempts. At least one is required.
+  example: []
+  syntax:
+    content: public IList<HttpEndpoint> Endpoints { get; }
+    parameters: []
+    return:
+      type: System.Collections.Generic.IList{Kevlar.Extensions.Http.HttpEndpoint}
+    content.vb: Public ReadOnly Property Endpoints As IList(Of HttpEndpoint)
+  overload: Kevlar.Extensions.Http.StandardHedgeShieldOptions.Endpoints*
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.ContentReplayPolicy
+  commentId: P:Kevlar.Extensions.Http.StandardHedgeShieldOptions.ContentReplayPolicy
+  id: ContentReplayPolicy
+  parent: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+  langs:
+  - csharp
+  - vb
+  name: ContentReplayPolicy
+  nameWithType: StandardHedgeShieldOptions.ContentReplayPolicy
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.ContentReplayPolicy
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: The request-content replay policy. The default never buffers caller content.
+  example: []
+  syntax:
+    content: public HttpContentReplayPolicy ContentReplayPolicy { get; set; }
+    parameters: []
+    return:
+      type: Kevlar.Extensions.Http.HttpContentReplayPolicy
+    content.vb: Public Property ContentReplayPolicy As HttpContentReplayPolicy
+  overload: Kevlar.Extensions.Http.StandardHedgeShieldOptions.ContentReplayPolicy*
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaximumBufferSize
+  commentId: P:Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaximumBufferSize
+  id: MaximumBufferSize
+  parent: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+  langs:
+  - csharp
+  - vb
+  name: MaximumBufferSize
+  nameWithType: StandardHedgeShieldOptions.MaximumBufferSize
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaximumBufferSize
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: The maximum buffered request-content size. Defaults to 1 MiB.
+  example: []
+  syntax:
+    content: public long MaximumBufferSize { get; set; }
+    parameters: []
+    return:
+      type: System.Int64
+    content.vb: Public Property MaximumBufferSize As Long
+  overload: Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaximumBufferSize*
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.AllowUnsafeMethodReplay
+  commentId: P:Kevlar.Extensions.Http.StandardHedgeShieldOptions.AllowUnsafeMethodReplay
+  id: AllowUnsafeMethodReplay
+  parent: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+  langs:
+  - csharp
+  - vb
+  name: AllowUnsafeMethodReplay
+  nameWithType: StandardHedgeShieldOptions.AllowUnsafeMethodReplay
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.AllowUnsafeMethodReplay
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: >-
+    Explicitly permits another attempt for methods other than GET, HEAD, OPTIONS, TRACE, PUT,
+
+    and DELETE. A request factory also counts as explicit opt-in.
+  example: []
+  syntax:
+    content: public bool AllowUnsafeMethodReplay { get; set; }
+    parameters: []
+    return:
+      type: System.Boolean
+    content.vb: Public Property AllowUnsafeMethodReplay As Boolean
+  overload: Kevlar.Extensions.Http.StandardHedgeShieldOptions.AllowUnsafeMethodReplay*
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.RequestFactory
+  commentId: P:Kevlar.Extensions.Http.StandardHedgeShieldOptions.RequestFactory
+  id: RequestFactory
+  parent: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+  langs:
+  - csharp
+  - vb
+  name: RequestFactory
+  nameWithType: StandardHedgeShieldOptions.RequestFactory
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.RequestFactory
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: >-
+    Optionally creates a fresh complete request for each zero-based attempt. Returned requests
+
+    are owned and disposed by the handler; returning the original request preserves caller ownership.
+  example: []
+  syntax:
+    content: public Func<HttpRequestMessage, int, CancellationToken, ValueTask<HttpRequestMessage>>? RequestFactory { get; set; }
+    parameters: []
+    return:
+      type: System.Func{System.Net.Http.HttpRequestMessage,System.Int32,System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{System.Net.Http.HttpRequestMessage}}
+    content.vb: Public Property RequestFactory As Func(Of HttpRequestMessage, Integer, CancellationToken, ValueTask(Of HttpRequestMessage))
+  overload: Kevlar.Extensions.Http.StandardHedgeShieldOptions.RequestFactory*
+references:
+- uid: Kevlar.Extensions.Http
+  commentId: N:Kevlar.Extensions.Http
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar.Extensions.Http
+  nameWithType: Kevlar.Extensions.Http
+  fullName: Kevlar.Extensions.Http
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+  - name: .
+  - uid: Kevlar.Extensions.Http
+    name: Http
+    isExternal: true
+    href: Kevlar.Extensions.Http.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+  - name: .
+  - uid: Kevlar.Extensions.Http
+    name: Http
+    isExternal: true
+    href: Kevlar.Extensions.Http.html
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.ToString
+  commentId: M:System.Object.ToString
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  name: ToString()
+  nameWithType: object.ToString()
+  fullName: object.ToString()
+  nameWithType.vb: Object.ToString()
+  fullName.vb: Object.ToString()
+  spec.csharp:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object)
+  commentId: M:System.Object.Equals(System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  name: Equals(object)
+  nameWithType: object.Equals(object)
+  fullName: object.Equals(object)
+  nameWithType.vb: Object.Equals(Object)
+  fullName.vb: Object.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetHashCode
+  commentId: M:System.Object.GetHashCode
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  name: GetHashCode()
+  nameWithType: object.GetHashCode()
+  fullName: object.GetHashCode()
+  nameWithType.vb: Object.GetHashCode()
+  fullName.vb: Object.GetHashCode()
+  spec.csharp:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.#ctor*
+  commentId: Overload:Kevlar.Extensions.Http.StandardHedgeShieldOptions.#ctor
+  isExternal: true
+  href: Kevlar.Extensions.Http.StandardHedgeShieldOptions.html#Kevlar_Extensions_Http_StandardHedgeShieldOptions__ctor
+  name: StandardHedgeShieldOptions
+  nameWithType: StandardHedgeShieldOptions.StandardHedgeShieldOptions
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.StandardHedgeShieldOptions
+  nameWithType.vb: StandardHedgeShieldOptions.New
+  fullName.vb: Kevlar.Extensions.Http.StandardHedgeShieldOptions.New
+  name.vb: New
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.TotalTimeout*
+  commentId: Overload:Kevlar.Extensions.Http.StandardHedgeShieldOptions.TotalTimeout
+  isExternal: true
+  href: Kevlar.Extensions.Http.StandardHedgeShieldOptions.html#Kevlar_Extensions_Http_StandardHedgeShieldOptions_TotalTimeout
+  name: TotalTimeout
+  nameWithType: StandardHedgeShieldOptions.TotalTimeout
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.TotalTimeout
+- uid: System.TimeSpan
+  commentId: T:System.TimeSpan
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.timespan
+  name: TimeSpan
+  nameWithType: TimeSpan
+  fullName: System.TimeSpan
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxAttempts*
+  commentId: Overload:Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxAttempts
+  isExternal: true
+  href: Kevlar.Extensions.Http.StandardHedgeShieldOptions.html#Kevlar_Extensions_Http_StandardHedgeShieldOptions_MaxAttempts
+  name: MaxAttempts
+  nameWithType: StandardHedgeShieldOptions.MaxAttempts
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxAttempts
+- uid: System.Int32
+  commentId: T:System.Int32
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.int32
+  name: int
+  nameWithType: int
+  fullName: int
+  nameWithType.vb: Integer
+  fullName.vb: Integer
+  name.vb: Integer
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelay*
+  commentId: Overload:Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelay
+  isExternal: true
+  href: Kevlar.Extensions.Http.StandardHedgeShieldOptions.html#Kevlar_Extensions_Http_StandardHedgeShieldOptions_HedgeDelay
+  name: HedgeDelay
+  nameWithType: StandardHedgeShieldOptions.HedgeDelay
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelay
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelayGenerator*
+  commentId: Overload:Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelayGenerator
+  isExternal: true
+  href: Kevlar.Extensions.Http.StandardHedgeShieldOptions.html#Kevlar_Extensions_Http_StandardHedgeShieldOptions_HedgeDelayGenerator
+  name: HedgeDelayGenerator
+  nameWithType: StandardHedgeShieldOptions.HedgeDelayGenerator
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelayGenerator
+- uid: System.Func{Kevlar.HedgeDelayEvent,System.TimeSpan}
+  commentId: T:System.Func{Kevlar.HedgeDelayEvent,System.TimeSpan}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<HedgeDelayEvent, TimeSpan>
+  nameWithType: Func<HedgeDelayEvent, TimeSpan>
+  fullName: System.Func<Kevlar.HedgeDelayEvent, System.TimeSpan>
+  nameWithType.vb: Func(Of HedgeDelayEvent, TimeSpan)
+  fullName.vb: System.Func(Of Kevlar.HedgeDelayEvent, System.TimeSpan)
+  name.vb: Func(Of HedgeDelayEvent, TimeSpan)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.HedgeDelayEvent
+    name: HedgeDelayEvent
+    isExternal: true
+    href: Kevlar.HedgeDelayEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.HedgeDelayEvent
+    name: HedgeDelayEvent
+    isExternal: true
+    href: Kevlar.HedgeDelayEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: )
+- uid: System.Func`2
+  commentId: T:System.Func`2
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<T, TResult>
+  nameWithType: Func<T, TResult>
+  fullName: System.Func<T, TResult>
+  nameWithType.vb: Func(Of T, TResult)
+  fullName.vb: System.Func(Of T, TResult)
+  name.vb: Func(Of T, TResult)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelayGeneratorAsync*
+  commentId: Overload:Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelayGeneratorAsync
+  isExternal: true
+  href: Kevlar.Extensions.Http.StandardHedgeShieldOptions.html#Kevlar_Extensions_Http_StandardHedgeShieldOptions_HedgeDelayGeneratorAsync
+  name: HedgeDelayGeneratorAsync
+  nameWithType: StandardHedgeShieldOptions.HedgeDelayGeneratorAsync
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelayGeneratorAsync
+- uid: System.Func{Kevlar.HedgeDelayEvent,System.Threading.Tasks.ValueTask{System.TimeSpan}}
+  commentId: T:System.Func{Kevlar.HedgeDelayEvent,System.Threading.Tasks.ValueTask{System.TimeSpan}}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<HedgeDelayEvent, ValueTask<TimeSpan>>
+  nameWithType: Func<HedgeDelayEvent, ValueTask<TimeSpan>>
+  fullName: System.Func<Kevlar.HedgeDelayEvent, System.Threading.Tasks.ValueTask<System.TimeSpan>>
+  nameWithType.vb: Func(Of HedgeDelayEvent, ValueTask(Of TimeSpan))
+  fullName.vb: System.Func(Of Kevlar.HedgeDelayEvent, System.Threading.Tasks.ValueTask(Of System.TimeSpan))
+  name.vb: Func(Of HedgeDelayEvent, ValueTask(Of TimeSpan))
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.HedgeDelayEvent
+    name: HedgeDelayEvent
+    isExternal: true
+    href: Kevlar.HedgeDelayEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '>'
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.HedgeDelayEvent
+    name: HedgeDelayEvent
+    isExternal: true
+    href: Kevlar.HedgeDelayEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: )
+  - name: )
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.AttemptTimeout*
+  commentId: Overload:Kevlar.Extensions.Http.StandardHedgeShieldOptions.AttemptTimeout
+  isExternal: true
+  href: Kevlar.Extensions.Http.StandardHedgeShieldOptions.html#Kevlar_Extensions_Http_StandardHedgeShieldOptions_AttemptTimeout
+  name: AttemptTimeout
+  nameWithType: StandardHedgeShieldOptions.AttemptTimeout
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.AttemptTimeout
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxConcurrency*
+  commentId: Overload:Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxConcurrency
+  isExternal: true
+  href: Kevlar.Extensions.Http.StandardHedgeShieldOptions.html#Kevlar_Extensions_Http_StandardHedgeShieldOptions_MaxConcurrency
+  name: MaxConcurrency
+  nameWithType: StandardHedgeShieldOptions.MaxConcurrency
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxConcurrency
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.QueueLimit*
+  commentId: Overload:Kevlar.Extensions.Http.StandardHedgeShieldOptions.QueueLimit
+  isExternal: true
+  href: Kevlar.Extensions.Http.StandardHedgeShieldOptions.html#Kevlar_Extensions_Http_StandardHedgeShieldOptions_QueueLimit
+  name: QueueLimit
+  nameWithType: StandardHedgeShieldOptions.QueueLimit
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.QueueLimit
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.ConsecutiveFailures*
+  commentId: Overload:Kevlar.Extensions.Http.StandardHedgeShieldOptions.ConsecutiveFailures
+  isExternal: true
+  href: Kevlar.Extensions.Http.StandardHedgeShieldOptions.html#Kevlar_Extensions_Http_StandardHedgeShieldOptions_ConsecutiveFailures
+  name: ConsecutiveFailures
+  nameWithType: StandardHedgeShieldOptions.ConsecutiveFailures
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.ConsecutiveFailures
+- uid: System.Nullable{System.Int32}
+  commentId: T:System.Nullable{System.Int32}
+  parent: System
+  definition: System.Nullable`1
+  href: https://learn.microsoft.com/dotnet/api/system.int32
+  name: int?
+  nameWithType: int?
+  fullName: int?
+  nameWithType.vb: Integer?
+  fullName.vb: Integer?
+  name.vb: Integer?
+  spec.csharp:
+  - uid: System.Int32
+    name: int
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: '?'
+  spec.vb:
+  - uid: System.Int32
+    name: Integer
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: '?'
+- uid: System.Nullable`1
+  commentId: T:System.Nullable`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  name: Nullable<T>
+  nameWithType: Nullable<T>
+  fullName: System.Nullable<T>
+  nameWithType.vb: Nullable(Of T)
+  fullName.vb: System.Nullable(Of T)
+  name.vb: Nullable(Of T)
+  spec.csharp:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.ConsecutiveFailures
+  commentId: P:Kevlar.Extensions.Http.StandardHedgeShieldOptions.ConsecutiveFailures
+  isExternal: true
+  href: Kevlar.Extensions.Http.StandardHedgeShieldOptions.html#Kevlar_Extensions_Http_StandardHedgeShieldOptions_ConsecutiveFailures
+  name: ConsecutiveFailures
+  nameWithType: StandardHedgeShieldOptions.ConsecutiveFailures
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.ConsecutiveFailures
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.FailureRatio*
+  commentId: Overload:Kevlar.Extensions.Http.StandardHedgeShieldOptions.FailureRatio
+  isExternal: true
+  href: Kevlar.Extensions.Http.StandardHedgeShieldOptions.html#Kevlar_Extensions_Http_StandardHedgeShieldOptions_FailureRatio
+  name: FailureRatio
+  nameWithType: StandardHedgeShieldOptions.FailureRatio
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.FailureRatio
+- uid: System.Nullable{System.Double}
+  commentId: T:System.Nullable{System.Double}
+  parent: System
+  definition: System.Nullable`1
+  href: https://learn.microsoft.com/dotnet/api/system.double
+  name: double?
+  nameWithType: double?
+  fullName: double?
+  nameWithType.vb: Double?
+  fullName.vb: Double?
+  name.vb: Double?
+  spec.csharp:
+  - uid: System.Double
+    name: double
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.double
+  - name: '?'
+  spec.vb:
+  - uid: System.Double
+    name: Double
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.double
+  - name: '?'
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.MinimumThroughput*
+  commentId: Overload:Kevlar.Extensions.Http.StandardHedgeShieldOptions.MinimumThroughput
+  isExternal: true
+  href: Kevlar.Extensions.Http.StandardHedgeShieldOptions.html#Kevlar_Extensions_Http_StandardHedgeShieldOptions_MinimumThroughput
+  name: MinimumThroughput
+  nameWithType: StandardHedgeShieldOptions.MinimumThroughput
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.MinimumThroughput
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.SamplingWindow*
+  commentId: Overload:Kevlar.Extensions.Http.StandardHedgeShieldOptions.SamplingWindow
+  isExternal: true
+  href: Kevlar.Extensions.Http.StandardHedgeShieldOptions.html#Kevlar_Extensions_Http_StandardHedgeShieldOptions_SamplingWindow
+  name: SamplingWindow
+  nameWithType: StandardHedgeShieldOptions.SamplingWindow
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.SamplingWindow
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.BreakDuration*
+  commentId: Overload:Kevlar.Extensions.Http.StandardHedgeShieldOptions.BreakDuration
+  isExternal: true
+  href: Kevlar.Extensions.Http.StandardHedgeShieldOptions.html#Kevlar_Extensions_Http_StandardHedgeShieldOptions_BreakDuration
+  name: BreakDuration
+  nameWithType: StandardHedgeShieldOptions.BreakDuration
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.BreakDuration
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.SelectionMode*
+  commentId: Overload:Kevlar.Extensions.Http.StandardHedgeShieldOptions.SelectionMode
+  isExternal: true
+  href: Kevlar.Extensions.Http.StandardHedgeShieldOptions.html#Kevlar_Extensions_Http_StandardHedgeShieldOptions_SelectionMode
+  name: SelectionMode
+  nameWithType: StandardHedgeShieldOptions.SelectionMode
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.SelectionMode
+- uid: Kevlar.Extensions.Http.HttpEndpointSelectionMode
+  commentId: T:Kevlar.Extensions.Http.HttpEndpointSelectionMode
+  parent: Kevlar.Extensions.Http
+  isExternal: true
+  href: Kevlar.Extensions.Http.HttpEndpointSelectionMode.html
+  name: HttpEndpointSelectionMode
+  nameWithType: HttpEndpointSelectionMode
+  fullName: Kevlar.Extensions.Http.HttpEndpointSelectionMode
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.Seed*
+  commentId: Overload:Kevlar.Extensions.Http.StandardHedgeShieldOptions.Seed
+  isExternal: true
+  href: Kevlar.Extensions.Http.StandardHedgeShieldOptions.html#Kevlar_Extensions_Http_StandardHedgeShieldOptions_Seed
+  name: Seed
+  nameWithType: StandardHedgeShieldOptions.Seed
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.Seed
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.Endpoints*
+  commentId: Overload:Kevlar.Extensions.Http.StandardHedgeShieldOptions.Endpoints
+  isExternal: true
+  href: Kevlar.Extensions.Http.StandardHedgeShieldOptions.html#Kevlar_Extensions_Http_StandardHedgeShieldOptions_Endpoints
+  name: Endpoints
+  nameWithType: StandardHedgeShieldOptions.Endpoints
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.Endpoints
+- uid: System.Collections.Generic.IList{Kevlar.Extensions.Http.HttpEndpoint}
+  commentId: T:System.Collections.Generic.IList{Kevlar.Extensions.Http.HttpEndpoint}
+  parent: System.Collections.Generic
+  definition: System.Collections.Generic.IList`1
+  href: https://learn.microsoft.com/dotnet/api/system.collections.generic.ilist-1
+  name: IList<HttpEndpoint>
+  nameWithType: IList<HttpEndpoint>
+  fullName: System.Collections.Generic.IList<Kevlar.Extensions.Http.HttpEndpoint>
+  nameWithType.vb: IList(Of HttpEndpoint)
+  fullName.vb: System.Collections.Generic.IList(Of Kevlar.Extensions.Http.HttpEndpoint)
+  name.vb: IList(Of HttpEndpoint)
+  spec.csharp:
+  - uid: System.Collections.Generic.IList`1
+    name: IList
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.collections.generic.ilist-1
+  - name: <
+  - uid: Kevlar.Extensions.Http.HttpEndpoint
+    name: HttpEndpoint
+    isExternal: true
+    href: Kevlar.Extensions.Http.HttpEndpoint.html
+  - name: '>'
+  spec.vb:
+  - uid: System.Collections.Generic.IList`1
+    name: IList
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.collections.generic.ilist-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.Extensions.Http.HttpEndpoint
+    name: HttpEndpoint
+    isExternal: true
+    href: Kevlar.Extensions.Http.HttpEndpoint.html
+  - name: )
+- uid: System.Collections.Generic.IList`1
+  commentId: T:System.Collections.Generic.IList`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.collections.generic.ilist-1
+  name: IList<T>
+  nameWithType: IList<T>
+  fullName: System.Collections.Generic.IList<T>
+  nameWithType.vb: IList(Of T)
+  fullName.vb: System.Collections.Generic.IList(Of T)
+  name.vb: IList(Of T)
+  spec.csharp:
+  - uid: System.Collections.Generic.IList`1
+    name: IList
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.collections.generic.ilist-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Collections.Generic.IList`1
+    name: IList
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.collections.generic.ilist-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: System.Collections.Generic
+  commentId: N:System.Collections.Generic
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System.Collections.Generic
+  nameWithType: System.Collections.Generic
+  fullName: System.Collections.Generic
+  spec.csharp:
+  - uid: System
+    name: System
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system
+  - name: .
+  - uid: System.Collections
+    name: Collections
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.collections
+  - name: .
+  - uid: System.Collections.Generic
+    name: Generic
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.collections.generic
+  spec.vb:
+  - uid: System
+    name: System
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system
+  - name: .
+  - uid: System.Collections
+    name: Collections
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.collections
+  - name: .
+  - uid: System.Collections.Generic
+    name: Generic
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.collections.generic
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.ContentReplayPolicy*
+  commentId: Overload:Kevlar.Extensions.Http.StandardHedgeShieldOptions.ContentReplayPolicy
+  isExternal: true
+  href: Kevlar.Extensions.Http.StandardHedgeShieldOptions.html#Kevlar_Extensions_Http_StandardHedgeShieldOptions_ContentReplayPolicy
+  name: ContentReplayPolicy
+  nameWithType: StandardHedgeShieldOptions.ContentReplayPolicy
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.ContentReplayPolicy
+- uid: Kevlar.Extensions.Http.HttpContentReplayPolicy
+  commentId: T:Kevlar.Extensions.Http.HttpContentReplayPolicy
+  parent: Kevlar.Extensions.Http
+  isExternal: true
+  href: Kevlar.Extensions.Http.HttpContentReplayPolicy.html
+  name: HttpContentReplayPolicy
+  nameWithType: HttpContentReplayPolicy
+  fullName: Kevlar.Extensions.Http.HttpContentReplayPolicy
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaximumBufferSize*
+  commentId: Overload:Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaximumBufferSize
+  isExternal: true
+  href: Kevlar.Extensions.Http.StandardHedgeShieldOptions.html#Kevlar_Extensions_Http_StandardHedgeShieldOptions_MaximumBufferSize
+  name: MaximumBufferSize
+  nameWithType: StandardHedgeShieldOptions.MaximumBufferSize
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaximumBufferSize
+- uid: System.Int64
+  commentId: T:System.Int64
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.int64
+  name: long
+  nameWithType: long
+  fullName: long
+  nameWithType.vb: Long
+  fullName.vb: Long
+  name.vb: Long
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.AllowUnsafeMethodReplay*
+  commentId: Overload:Kevlar.Extensions.Http.StandardHedgeShieldOptions.AllowUnsafeMethodReplay
+  isExternal: true
+  href: Kevlar.Extensions.Http.StandardHedgeShieldOptions.html#Kevlar_Extensions_Http_StandardHedgeShieldOptions_AllowUnsafeMethodReplay
+  name: AllowUnsafeMethodReplay
+  nameWithType: StandardHedgeShieldOptions.AllowUnsafeMethodReplay
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.AllowUnsafeMethodReplay
+- uid: System.Boolean
+  commentId: T:System.Boolean
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.boolean
+  name: bool
+  nameWithType: bool
+  fullName: bool
+  nameWithType.vb: Boolean
+  fullName.vb: Boolean
+  name.vb: Boolean
+- uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions.RequestFactory*
+  commentId: Overload:Kevlar.Extensions.Http.StandardHedgeShieldOptions.RequestFactory
+  isExternal: true
+  href: Kevlar.Extensions.Http.StandardHedgeShieldOptions.html#Kevlar_Extensions_Http_StandardHedgeShieldOptions_RequestFactory
+  name: RequestFactory
+  nameWithType: StandardHedgeShieldOptions.RequestFactory
+  fullName: Kevlar.Extensions.Http.StandardHedgeShieldOptions.RequestFactory
+- uid: System.Func{System.Net.Http.HttpRequestMessage,System.Int32,System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{System.Net.Http.HttpRequestMessage}}
+  commentId: T:System.Func{System.Net.Http.HttpRequestMessage,System.Int32,System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{System.Net.Http.HttpRequestMessage}}
+  parent: System
+  definition: System.Func`4
+  href: https://learn.microsoft.com/dotnet/api/system.func-4
+  name: Func<HttpRequestMessage, int, CancellationToken, ValueTask<HttpRequestMessage>>
+  nameWithType: Func<HttpRequestMessage, int, CancellationToken, ValueTask<HttpRequestMessage>>
+  fullName: System.Func<System.Net.Http.HttpRequestMessage, int, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<System.Net.Http.HttpRequestMessage>>
+  nameWithType.vb: Func(Of HttpRequestMessage, Integer, CancellationToken, ValueTask(Of HttpRequestMessage))
+  fullName.vb: System.Func(Of System.Net.Http.HttpRequestMessage, Integer, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask(Of System.Net.Http.HttpRequestMessage))
+  name.vb: Func(Of HttpRequestMessage, Integer, CancellationToken, ValueTask(Of HttpRequestMessage))
+  spec.csharp:
+  - uid: System.Func`4
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-4
+  - name: <
+  - uid: System.Net.Http.HttpRequestMessage
+    name: HttpRequestMessage
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.net.http.httprequestmessage
+  - name: ','
+  - name: " "
+  - uid: System.Int32
+    name: int
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: ','
+  - name: " "
+  - uid: System.Threading.CancellationToken
+    name: CancellationToken
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
+  - uid: System.Net.Http.HttpRequestMessage
+    name: HttpRequestMessage
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.net.http.httprequestmessage
+  - name: '>'
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`4
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-4
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.Net.Http.HttpRequestMessage
+    name: HttpRequestMessage
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.net.http.httprequestmessage
+  - name: ','
+  - name: " "
+  - uid: System.Int32
+    name: Integer
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: ','
+  - name: " "
+  - uid: System.Threading.CancellationToken
+    name: CancellationToken
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.Net.Http.HttpRequestMessage
+    name: HttpRequestMessage
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.net.http.httprequestmessage
+  - name: )
+  - name: )
+- uid: System.Func`4
+  commentId: T:System.Func`4
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.func-4
+  name: Func<T1, T2, T3, TResult>
+  nameWithType: Func<T1, T2, T3, TResult>
+  fullName: System.Func<T1, T2, T3, TResult>
+  nameWithType.vb: Func(Of T1, T2, T3, TResult)
+  fullName.vb: System.Func(Of T1, T2, T3, TResult)
+  name.vb: Func(Of T1, T2, T3, TResult)
+  spec.csharp:
+  - uid: System.Func`4
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-4
+  - name: <
+  - name: T1
+  - name: ','
+  - name: " "
+  - name: T2
+  - name: ','
+  - name: " "
+  - name: T3
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`4
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-4
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T1
+  - name: ','
+  - name: " "
+  - name: T2
+  - name: ','
+  - name: " "
+  - name: T3
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )

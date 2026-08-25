@@ -1,0 +1,719 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions
+  commentId: T:Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions
+  id: ShieldGrpcClientBuilderExtensions
+  parent: Kevlar.Extensions.Grpc
+  children:
+  - Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield)
+  - Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield})
+  - Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.String)
+  - Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield)
+  - Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield})
+  - Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.String)
+  langs:
+  - csharp
+  - vb
+  name: ShieldGrpcClientBuilderExtensions
+  nameWithType: ShieldGrpcClientBuilderExtensions
+  fullName: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions
+  type: Class
+  assemblies:
+  - Kevlar.Extensions.Grpc
+  namespace: Kevlar.Extensions.Grpc
+  summary: Adds Kevlar call resilience to gRPC clients registered through DI.
+  example: []
+  syntax:
+    content: public static class ShieldGrpcClientBuilderExtensions
+    content.vb: Public Module ShieldGrpcClientBuilderExtensions
+  inheritance:
+  - System.Object
+  inheritedMembers:
+  - System.Object.GetType
+  - System.Object.MemberwiseClone
+  - System.Object.ToString
+  - System.Object.Equals(System.Object)
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  - System.Object.GetHashCode
+- uid: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield)
+  commentId: M:Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield)
+  id: AddShieldUnaryInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield)
+  isExtensionMethod: true
+  parent: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions
+  langs:
+  - csharp
+  - vb
+  name: AddShieldUnaryInterceptor(IHttpClientBuilder, Shield)
+  nameWithType: ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor(IHttpClientBuilder, Shield)
+  fullName: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Kevlar.Shield)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Grpc
+  namespace: Kevlar.Extensions.Grpc
+  summary: Sends this client's asynchronous unary calls through the given shield.
+  example: []
+  syntax:
+    content: public static IHttpClientBuilder AddShieldUnaryInterceptor(this IHttpClientBuilder builder, Shield shield)
+    parameters:
+    - id: builder
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    - id: shield
+      type: Kevlar.Shield
+    return:
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    content.vb: Public Shared Function AddShieldUnaryInterceptor(builder As IHttpClientBuilder, shield As Shield) As IHttpClientBuilder
+  overload: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor*
+- uid: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield})
+  commentId: M:Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield})
+  id: AddShieldUnaryInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield})
+  isExtensionMethod: true
+  parent: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions
+  langs:
+  - csharp
+  - vb
+  name: AddShieldUnaryInterceptor(IHttpClientBuilder, Func<IServiceProvider, Shield>)
+  nameWithType: ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor(IHttpClientBuilder, Func<IServiceProvider, Shield>)
+  fullName: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Func<System.IServiceProvider, Kevlar.Shield>)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Grpc
+  namespace: Kevlar.Extensions.Grpc
+  summary: Sends this client's asynchronous unary calls through a shield resolved from DI.
+  example: []
+  syntax:
+    content: public static IHttpClientBuilder AddShieldUnaryInterceptor(this IHttpClientBuilder builder, Func<IServiceProvider, Shield> shieldFactory)
+    parameters:
+    - id: builder
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    - id: shieldFactory
+      type: System.Func{System.IServiceProvider,Kevlar.Shield}
+    return:
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    content.vb: Public Shared Function AddShieldUnaryInterceptor(builder As IHttpClientBuilder, shieldFactory As Func(Of IServiceProvider, Shield)) As IHttpClientBuilder
+  overload: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor*
+  nameWithType.vb: ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor(IHttpClientBuilder, Func(Of IServiceProvider, Shield))
+  fullName.vb: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Func(Of System.IServiceProvider, Kevlar.Shield))
+  name.vb: AddShieldUnaryInterceptor(IHttpClientBuilder, Func(Of IServiceProvider, Shield))
+- uid: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.String)
+  commentId: M:Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.String)
+  id: AddShieldUnaryInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.String)
+  isExtensionMethod: true
+  parent: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions
+  langs:
+  - csharp
+  - vb
+  name: AddShieldUnaryInterceptor(IHttpClientBuilder, string)
+  nameWithType: ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor(IHttpClientBuilder, string)
+  fullName: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, string)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Grpc
+  namespace: Kevlar.Extensions.Grpc
+  summary: >-
+    Sends this client's asynchronous unary calls through the named shield registered with
+
+    <xref href="Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IServiceCollection%2cSystem.String%2cKevlar.Shield)" data-throw-if-not-resolved="false"></xref>.
+  example: []
+  syntax:
+    content: public static IHttpClientBuilder AddShieldUnaryInterceptor(this IHttpClientBuilder builder, string shieldName)
+    parameters:
+    - id: builder
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    - id: shieldName
+      type: System.String
+    return:
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    content.vb: Public Shared Function AddShieldUnaryInterceptor(builder As IHttpClientBuilder, shieldName As String) As IHttpClientBuilder
+  overload: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor*
+  nameWithType.vb: ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor(IHttpClientBuilder, String)
+  fullName.vb: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, String)
+  name.vb: AddShieldUnaryInterceptor(IHttpClientBuilder, String)
+- uid: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield)
+  commentId: M:Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield)
+  id: AddShieldStreamingInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield)
+  isExtensionMethod: true
+  parent: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions
+  langs:
+  - csharp
+  - vb
+  name: AddShieldStreamingInterceptor(IHttpClientBuilder, Shield)
+  nameWithType: ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor(IHttpClientBuilder, Shield)
+  fullName: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Kevlar.Shield)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Grpc
+  namespace: Kevlar.Extensions.Grpc
+  summary: Sends this client's asynchronous streaming operations through the given shield.
+  example: []
+  syntax:
+    content: public static IHttpClientBuilder AddShieldStreamingInterceptor(this IHttpClientBuilder builder, Shield shield)
+    parameters:
+    - id: builder
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    - id: shield
+      type: Kevlar.Shield
+    return:
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    content.vb: Public Shared Function AddShieldStreamingInterceptor(builder As IHttpClientBuilder, shield As Shield) As IHttpClientBuilder
+  overload: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor*
+- uid: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield})
+  commentId: M:Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield})
+  id: AddShieldStreamingInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield})
+  isExtensionMethod: true
+  parent: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions
+  langs:
+  - csharp
+  - vb
+  name: AddShieldStreamingInterceptor(IHttpClientBuilder, Func<IServiceProvider, Shield>)
+  nameWithType: ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor(IHttpClientBuilder, Func<IServiceProvider, Shield>)
+  fullName: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Func<System.IServiceProvider, Kevlar.Shield>)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Grpc
+  namespace: Kevlar.Extensions.Grpc
+  summary: Sends this client's asynchronous streaming operations through a shield resolved from DI.
+  example: []
+  syntax:
+    content: public static IHttpClientBuilder AddShieldStreamingInterceptor(this IHttpClientBuilder builder, Func<IServiceProvider, Shield> shieldFactory)
+    parameters:
+    - id: builder
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    - id: shieldFactory
+      type: System.Func{System.IServiceProvider,Kevlar.Shield}
+    return:
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    content.vb: Public Shared Function AddShieldStreamingInterceptor(builder As IHttpClientBuilder, shieldFactory As Func(Of IServiceProvider, Shield)) As IHttpClientBuilder
+  overload: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor*
+  nameWithType.vb: ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor(IHttpClientBuilder, Func(Of IServiceProvider, Shield))
+  fullName.vb: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Func(Of System.IServiceProvider, Kevlar.Shield))
+  name.vb: AddShieldStreamingInterceptor(IHttpClientBuilder, Func(Of IServiceProvider, Shield))
+- uid: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.String)
+  commentId: M:Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.String)
+  id: AddShieldStreamingInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.String)
+  isExtensionMethod: true
+  parent: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions
+  langs:
+  - csharp
+  - vb
+  name: AddShieldStreamingInterceptor(IHttpClientBuilder, string)
+  nameWithType: ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor(IHttpClientBuilder, string)
+  fullName: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, string)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Grpc
+  namespace: Kevlar.Extensions.Grpc
+  summary: >-
+    Sends this client's asynchronous streaming operations through the named shield registered
+
+    with <xref href="Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IServiceCollection%2cSystem.String%2cKevlar.Shield)" data-throw-if-not-resolved="false"></xref>.
+  example: []
+  syntax:
+    content: public static IHttpClientBuilder AddShieldStreamingInterceptor(this IHttpClientBuilder builder, string shieldName)
+    parameters:
+    - id: builder
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    - id: shieldName
+      type: System.String
+    return:
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    content.vb: Public Shared Function AddShieldStreamingInterceptor(builder As IHttpClientBuilder, shieldName As String) As IHttpClientBuilder
+  overload: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor*
+  nameWithType.vb: ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor(IHttpClientBuilder, String)
+  fullName.vb: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, String)
+  name.vb: AddShieldStreamingInterceptor(IHttpClientBuilder, String)
+references:
+- uid: Kevlar.Extensions.Grpc
+  commentId: N:Kevlar.Extensions.Grpc
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar.Extensions.Grpc
+  nameWithType: Kevlar.Extensions.Grpc
+  fullName: Kevlar.Extensions.Grpc
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+  - name: .
+  - uid: Kevlar.Extensions.Grpc
+    name: Grpc
+    isExternal: true
+    href: Kevlar.Extensions.Grpc.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+  - name: .
+  - uid: Kevlar.Extensions.Grpc
+    name: Grpc
+    isExternal: true
+    href: Kevlar.Extensions.Grpc.html
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.MemberwiseClone
+  commentId: M:System.Object.MemberwiseClone
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  name: MemberwiseClone()
+  nameWithType: object.MemberwiseClone()
+  fullName: object.MemberwiseClone()
+  nameWithType.vb: Object.MemberwiseClone()
+  fullName.vb: Object.MemberwiseClone()
+  spec.csharp:
+  - uid: System.Object.MemberwiseClone
+    name: MemberwiseClone
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.MemberwiseClone
+    name: MemberwiseClone
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  - name: (
+  - name: )
+- uid: System.Object.ToString
+  commentId: M:System.Object.ToString
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  name: ToString()
+  nameWithType: object.ToString()
+  fullName: object.ToString()
+  nameWithType.vb: Object.ToString()
+  fullName.vb: Object.ToString()
+  spec.csharp:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object)
+  commentId: M:System.Object.Equals(System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  name: Equals(object)
+  nameWithType: object.Equals(object)
+  fullName: object.Equals(object)
+  nameWithType.vb: Object.Equals(Object)
+  fullName.vb: Object.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetHashCode
+  commentId: M:System.Object.GetHashCode
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  name: GetHashCode()
+  nameWithType: object.GetHashCode()
+  fullName: object.GetHashCode()
+  nameWithType.vb: Object.GetHashCode()
+  fullName.vb: Object.GetHashCode()
+  spec.csharp:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor*
+  commentId: Overload:Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor
+  isExternal: true
+  href: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.html#Kevlar_Extensions_Grpc_ShieldGrpcClientBuilderExtensions_AddShieldUnaryInterceptor_Microsoft_Extensions_DependencyInjection_IHttpClientBuilder_Kevlar_Shield_
+  name: AddShieldUnaryInterceptor
+  nameWithType: ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor
+  fullName: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldUnaryInterceptor
+- uid: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+  commentId: T:Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+  parent: Microsoft.Extensions.DependencyInjection
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/microsoft.extensions.dependencyinjection.ihttpclientbuilder
+  name: IHttpClientBuilder
+  nameWithType: IHttpClientBuilder
+  fullName: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+- uid: Kevlar.Shield
+  commentId: T:Kevlar.Shield
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Shield.html
+  name: Shield
+  nameWithType: Shield
+  fullName: Kevlar.Shield
+- uid: Microsoft.Extensions.DependencyInjection
+  commentId: N:Microsoft.Extensions.DependencyInjection
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/microsoft
+  name: Microsoft.Extensions.DependencyInjection
+  nameWithType: Microsoft.Extensions.DependencyInjection
+  fullName: Microsoft.Extensions.DependencyInjection
+  spec.csharp:
+  - uid: Microsoft
+    name: Microsoft
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft
+  - name: .
+  - uid: Microsoft.Extensions
+    name: Extensions
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions
+  - name: .
+  - uid: Microsoft.Extensions.DependencyInjection
+    name: DependencyInjection
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions.dependencyinjection
+  spec.vb:
+  - uid: Microsoft
+    name: Microsoft
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft
+  - name: .
+  - uid: Microsoft.Extensions
+    name: Extensions
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions
+  - name: .
+  - uid: Microsoft.Extensions.DependencyInjection
+    name: DependencyInjection
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions.dependencyinjection
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: System.Func{System.IServiceProvider,Kevlar.Shield}
+  commentId: T:System.Func{System.IServiceProvider,Kevlar.Shield}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<IServiceProvider, Shield>
+  nameWithType: Func<IServiceProvider, Shield>
+  fullName: System.Func<System.IServiceProvider, Kevlar.Shield>
+  nameWithType.vb: Func(Of IServiceProvider, Shield)
+  fullName.vb: System.Func(Of System.IServiceProvider, Kevlar.Shield)
+  name.vb: Func(Of IServiceProvider, Shield)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: System.IServiceProvider
+    name: IServiceProvider
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iserviceprovider
+  - name: ','
+  - name: " "
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.IServiceProvider
+    name: IServiceProvider
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iserviceprovider
+  - name: ','
+  - name: " "
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
+  - name: )
+- uid: System.Func`2
+  commentId: T:System.Func`2
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<T, TResult>
+  nameWithType: Func<T, TResult>
+  fullName: System.Func<T, TResult>
+  nameWithType.vb: Func(Of T, TResult)
+  fullName.vb: System.Func(Of T, TResult)
+  name.vb: Func(Of T, TResult)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Kevlar.Shield)
+  commentId: M:Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Kevlar.Shield)
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.html#Kevlar_Extensions_DependencyInjection_KevlarServiceCollectionExtensions_AddShield_Microsoft_Extensions_DependencyInjection_IServiceCollection_System_String_Kevlar_Shield_
+  name: AddShield(IServiceCollection, string, Shield)
+  nameWithType: KevlarServiceCollectionExtensions.AddShield(IServiceCollection, string, Shield)
+  fullName: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IServiceCollection, string, Kevlar.Shield)
+  nameWithType.vb: KevlarServiceCollectionExtensions.AddShield(IServiceCollection, String, Shield)
+  fullName.vb: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IServiceCollection, String, Kevlar.Shield)
+  name.vb: AddShield(IServiceCollection, String, Shield)
+  spec.csharp:
+  - uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Kevlar.Shield)
+    name: AddShield
+    isExternal: true
+    href: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.html#Kevlar_Extensions_DependencyInjection_KevlarServiceCollectionExtensions_AddShield_Microsoft_Extensions_DependencyInjection_IServiceCollection_System_String_Kevlar_Shield_
+  - name: (
+  - uid: Microsoft.Extensions.DependencyInjection.IServiceCollection
+    name: IServiceCollection
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions.dependencyinjection.iservicecollection
+  - name: ','
+  - name: " "
+  - uid: System.String
+    name: string
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.string
+  - name: ','
+  - name: " "
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
+  - name: )
+  spec.vb:
+  - uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Kevlar.Shield)
+    name: AddShield
+    isExternal: true
+    href: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.html#Kevlar_Extensions_DependencyInjection_KevlarServiceCollectionExtensions_AddShield_Microsoft_Extensions_DependencyInjection_IServiceCollection_System_String_Kevlar_Shield_
+  - name: (
+  - uid: Microsoft.Extensions.DependencyInjection.IServiceCollection
+    name: IServiceCollection
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions.dependencyinjection.iservicecollection
+  - name: ','
+  - name: " "
+  - uid: System.String
+    name: String
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.string
+  - name: ','
+  - name: " "
+  - uid: Kevlar.Shield
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield.html
+  - name: )
+- uid: System.String
+  commentId: T:System.String
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.string
+  name: string
+  nameWithType: string
+  fullName: string
+  nameWithType.vb: String
+  fullName.vb: String
+  name.vb: String
+- uid: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor*
+  commentId: Overload:Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor
+  isExternal: true
+  href: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.html#Kevlar_Extensions_Grpc_ShieldGrpcClientBuilderExtensions_AddShieldStreamingInterceptor_Microsoft_Extensions_DependencyInjection_IHttpClientBuilder_Kevlar_Shield_
+  name: AddShieldStreamingInterceptor
+  nameWithType: ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor
+  fullName: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions.AddShieldStreamingInterceptor

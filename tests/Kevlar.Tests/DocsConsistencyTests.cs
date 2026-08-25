@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using Kevlar.Chaos;
@@ -12,7 +13,7 @@ using Kevlar.Testing;
 
 namespace Kevlar.Tests;
 
-public class DocsConsistencyTests
+public partial class DocsConsistencyTests
 {
     private static readonly Assembly[] ShippedAssemblies =
     [
@@ -162,6 +163,47 @@ public class DocsConsistencyTests
     }
 
     [Test]
+    public async Task Every_Public_Runtime_Type_Has_A_Generated_Api_Page()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var manifestPath = Path.Combine(repositoryRoot, "docs", "api", ".manifest");
+        var generatedTypes = JsonSerializer.Deserialize<Dictionary<string, string>>(
+            File.ReadAllText(manifestPath))!;
+        var publicApiLines = Directory
+            .EnumerateFiles(Path.Combine(repositoryRoot, "src"), "PublicAPI.*.txt", SearchOption.AllDirectories)
+            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}Kevlar.Analyzers{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+            .SelectMany(File.ReadLines)
+            .ToArray();
+        var removedTypes = publicApiLines
+            .Where(IsRemovedTypeDeclaration)
+            .Select(line => NormalizeTypeUid(line[RemovedApiPrefix.Length..]))
+            .ToHashSet(StringComparer.Ordinal);
+        var publicTypes = publicApiLines
+            .Where(IsTypeDeclaration)
+            .Select(NormalizeTypeUid)
+            .Where(type => !removedTypes.Contains(type))
+            .Distinct(StringComparer.Ordinal);
+        var missingTypes = publicTypes
+            .Where(type => !generatedTypes.ContainsKey(type))
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+
+        await Assert.That(missingTypes).IsEmpty();
+    }
+
+    [Test]
+    public async Task Removed_Multi_Parameter_Generic_Types_Are_Recognized()
+    {
+        const string declaration = "*REMOVED*Kevlar.PartitionedShield<TKey, TResult>";
+
+        await Assert.That(IsRemovedTypeDeclaration(declaration)).IsTrue();
+        await Assert.That(NormalizeTypeUid(declaration[RemovedApiPrefix.Length..]))
+            .IsEqualTo("Kevlar.PartitionedShield`2");
+        await Assert.That(IsRemovedTypeDeclaration(
+            "*REMOVED*Kevlar.PartitionedShield<TKey, TResult>.Execute() -> void")).IsFalse();
+    }
+
+    [Test]
     public async Task Migration_Guide_Mentions_Every_Public_Extension_Entry_Point()
     {
         var repositoryRoot = FindRepositoryRoot();
@@ -281,6 +323,30 @@ public class DocsConsistencyTests
         return directory?.FullName
             ?? throw new InvalidOperationException("Could not locate the Kevlar repository root.");
     }
+
+    private const string RemovedApiPrefix = "*REMOVED*";
+
+    private static bool IsRemovedTypeDeclaration(string line) =>
+        line.StartsWith(RemovedApiPrefix, StringComparison.Ordinal) &&
+        IsTypeDeclaration(line[RemovedApiPrefix.Length..]);
+
+    private static bool IsTypeDeclaration(string line) =>
+        line.Length > 0 &&
+        !line.StartsWith('#') &&
+        !line.StartsWith("*REMOVED*", StringComparison.Ordinal) &&
+        !line.Contains(" -> ", StringComparison.Ordinal) &&
+        !line.Contains(" = ", StringComparison.Ordinal);
+
+    private static string NormalizeTypeUid(string typeDeclaration)
+    {
+        var match = GenericTypeRegex().Match(typeDeclaration);
+        return match.Success
+            ? $"{match.Groups["name"].Value}`{match.Groups["arguments"].Value.Split(',').Length}"
+            : typeDeclaration;
+    }
+
+    [GeneratedRegex("^(?<name>[^<]+)<(?<arguments>[^>]+)>$", RegexOptions.CultureInvariant)]
+    private static partial Regex GenericTypeRegex();
 
     private sealed record ExceptionDocRow(string Properties, string BaseClass, string DefaultClause);
 }

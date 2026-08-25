@@ -1,0 +1,477 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.HandlingEvent`1
+  commentId: T:Kevlar.HandlingEvent`1
+  id: HandlingEvent`1
+  parent: Kevlar
+  children:
+  - Kevlar.HandlingEvent`1.Attempt
+  - Kevlar.HandlingEvent`1.Context
+  - Kevlar.HandlingEvent`1.Outcome
+  - Kevlar.HandlingEvent`1.StrategyIndex
+  langs:
+  - csharp
+  - vb
+  name: HandlingEvent<TResult>
+  nameWithType: HandlingEvent<TResult>
+  fullName: Kevlar.HandlingEvent<TResult>
+  type: Struct
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Context supplied to a result-aware handling predicate.
+  example: []
+  syntax:
+    content: public readonly struct HandlingEvent<TResult>
+    typeParameters:
+    - id: TResult
+      description: The execution result type.
+    content.vb: Public Structure HandlingEvent(Of TResult)
+  inheritedMembers:
+  - System.ValueType.Equals(System.Object)
+  - System.ValueType.GetHashCode
+  - System.ValueType.ToString
+  - System.Object.GetType
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  nameWithType.vb: HandlingEvent(Of TResult)
+  fullName.vb: Kevlar.HandlingEvent(Of TResult)
+  name.vb: HandlingEvent(Of TResult)
+- uid: Kevlar.HandlingEvent`1.Outcome
+  commentId: P:Kevlar.HandlingEvent`1.Outcome
+  id: Outcome
+  parent: Kevlar.HandlingEvent`1
+  langs:
+  - csharp
+  - vb
+  name: Outcome
+  nameWithType: HandlingEvent<TResult>.Outcome
+  fullName: Kevlar.HandlingEvent<TResult>.Outcome
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The exception or result being classified.
+  example: []
+  syntax:
+    content: public Outcome<TResult> Outcome { get; }
+    parameters: []
+    return:
+      type: Kevlar.Outcome{{TResult}}
+    content.vb: Public ReadOnly Property Outcome As Outcome(Of TResult)
+  overload: Kevlar.HandlingEvent`1.Outcome*
+  nameWithType.vb: HandlingEvent(Of TResult).Outcome
+  fullName.vb: Kevlar.HandlingEvent(Of TResult).Outcome
+- uid: Kevlar.HandlingEvent`1.Context
+  commentId: P:Kevlar.HandlingEvent`1.Context
+  id: Context
+  parent: Kevlar.HandlingEvent`1
+  langs:
+  - csharp
+  - vb
+  name: Context
+  nameWithType: HandlingEvent<TResult>.Context
+  fullName: Kevlar.HandlingEvent<TResult>.Context
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The active execution context. Do not retain this pooled object.
+  example: []
+  syntax:
+    content: public KevlarContext Context { get; }
+    parameters: []
+    return:
+      type: Kevlar.KevlarContext
+    content.vb: Public ReadOnly Property Context As KevlarContext
+  overload: Kevlar.HandlingEvent`1.Context*
+  nameWithType.vb: HandlingEvent(Of TResult).Context
+  fullName.vb: Kevlar.HandlingEvent(Of TResult).Context
+- uid: Kevlar.HandlingEvent`1.Attempt
+  commentId: P:Kevlar.HandlingEvent`1.Attempt
+  id: Attempt
+  parent: Kevlar.HandlingEvent`1
+  langs:
+  - csharp
+  - vb
+  name: Attempt
+  nameWithType: HandlingEvent<TResult>.Attempt
+  fullName: Kevlar.HandlingEvent<TResult>.Attempt
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The zero-based attempt number for retry and hedging; zero for other strategies.
+  example: []
+  syntax:
+    content: public int Attempt { get; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public ReadOnly Property Attempt As Integer
+  overload: Kevlar.HandlingEvent`1.Attempt*
+  nameWithType.vb: HandlingEvent(Of TResult).Attempt
+  fullName.vb: Kevlar.HandlingEvent(Of TResult).Attempt
+- uid: Kevlar.HandlingEvent`1.StrategyIndex
+  commentId: P:Kevlar.HandlingEvent`1.StrategyIndex
+  id: StrategyIndex
+  parent: Kevlar.HandlingEvent`1
+  langs:
+  - csharp
+  - vb
+  name: StrategyIndex
+  nameWithType: HandlingEvent<TResult>.StrategyIndex
+  fullName: Kevlar.HandlingEvent<TResult>.StrategyIndex
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The zero-based index of the strategy evaluating the outcome.
+  example: []
+  syntax:
+    content: public int StrategyIndex { get; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public ReadOnly Property StrategyIndex As Integer
+  overload: Kevlar.HandlingEvent`1.StrategyIndex*
+  nameWithType.vb: HandlingEvent(Of TResult).StrategyIndex
+  fullName.vb: Kevlar.HandlingEvent(Of TResult).StrategyIndex
+references:
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: System.ValueType.Equals(System.Object)
+  commentId: M:System.ValueType.Equals(System.Object)
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  name: Equals(object)
+  nameWithType: ValueType.Equals(object)
+  fullName: System.ValueType.Equals(object)
+  nameWithType.vb: ValueType.Equals(Object)
+  fullName.vb: System.ValueType.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.ValueType.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.ValueType.GetHashCode
+  commentId: M:System.ValueType.GetHashCode
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  name: GetHashCode()
+  nameWithType: ValueType.GetHashCode()
+  fullName: System.ValueType.GetHashCode()
+  spec.csharp:
+  - uid: System.ValueType.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  - name: (
+  - name: )
+- uid: System.ValueType.ToString
+  commentId: M:System.ValueType.ToString
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  name: ToString()
+  nameWithType: ValueType.ToString()
+  fullName: System.ValueType.ToString()
+  spec.csharp:
+  - uid: System.ValueType.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  - name: (
+  - name: )
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.ValueType
+  commentId: T:System.ValueType
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype
+  name: ValueType
+  nameWithType: ValueType
+  fullName: System.ValueType
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.HandlingEvent`1.Outcome*
+  commentId: Overload:Kevlar.HandlingEvent`1.Outcome
+  isExternal: true
+  href: Kevlar.HandlingEvent-1.html#Kevlar_HandlingEvent_1_Outcome
+  name: Outcome
+  nameWithType: HandlingEvent<TResult>.Outcome
+  fullName: Kevlar.HandlingEvent<TResult>.Outcome
+  nameWithType.vb: HandlingEvent(Of TResult).Outcome
+  fullName.vb: Kevlar.HandlingEvent(Of TResult).Outcome
+- uid: Kevlar.Outcome{{TResult}}
+  commentId: T:Kevlar.Outcome{`0}
+  parent: Kevlar
+  definition: Kevlar.Outcome`1
+  href: Kevlar.Outcome-1.html
+  name: Outcome<TResult>
+  nameWithType: Outcome<TResult>
+  fullName: Kevlar.Outcome<TResult>
+  nameWithType.vb: Outcome(Of TResult)
+  fullName.vb: Kevlar.Outcome(Of TResult)
+  name.vb: Outcome(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.Outcome`1
+    name: Outcome
+    isExternal: true
+    href: Kevlar.Outcome-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Outcome`1
+    name: Outcome
+    isExternal: true
+    href: Kevlar.Outcome-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.Outcome`1
+  commentId: T:Kevlar.Outcome`1
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Outcome-1.html
+  name: Outcome<T>
+  nameWithType: Outcome<T>
+  fullName: Kevlar.Outcome<T>
+  nameWithType.vb: Outcome(Of T)
+  fullName.vb: Kevlar.Outcome(Of T)
+  name.vb: Outcome(Of T)
+  spec.csharp:
+  - uid: Kevlar.Outcome`1
+    name: Outcome
+    isExternal: true
+    href: Kevlar.Outcome-1.html
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Outcome`1
+    name: Outcome
+    isExternal: true
+    href: Kevlar.Outcome-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Kevlar.HandlingEvent`1.Context*
+  commentId: Overload:Kevlar.HandlingEvent`1.Context
+  isExternal: true
+  href: Kevlar.HandlingEvent-1.html#Kevlar_HandlingEvent_1_Context
+  name: Context
+  nameWithType: HandlingEvent<TResult>.Context
+  fullName: Kevlar.HandlingEvent<TResult>.Context
+  nameWithType.vb: HandlingEvent(Of TResult).Context
+  fullName.vb: Kevlar.HandlingEvent(Of TResult).Context
+- uid: Kevlar.KevlarContext
+  commentId: T:Kevlar.KevlarContext
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.KevlarContext.html
+  name: KevlarContext
+  nameWithType: KevlarContext
+  fullName: Kevlar.KevlarContext
+- uid: Kevlar.HandlingEvent`1.Attempt*
+  commentId: Overload:Kevlar.HandlingEvent`1.Attempt
+  isExternal: true
+  href: Kevlar.HandlingEvent-1.html#Kevlar_HandlingEvent_1_Attempt
+  name: Attempt
+  nameWithType: HandlingEvent<TResult>.Attempt
+  fullName: Kevlar.HandlingEvent<TResult>.Attempt
+  nameWithType.vb: HandlingEvent(Of TResult).Attempt
+  fullName.vb: Kevlar.HandlingEvent(Of TResult).Attempt
+- uid: System.Int32
+  commentId: T:System.Int32
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.int32
+  name: int
+  nameWithType: int
+  fullName: int
+  nameWithType.vb: Integer
+  fullName.vb: Integer
+  name.vb: Integer
+- uid: Kevlar.HandlingEvent`1.StrategyIndex*
+  commentId: Overload:Kevlar.HandlingEvent`1.StrategyIndex
+  isExternal: true
+  href: Kevlar.HandlingEvent-1.html#Kevlar_HandlingEvent_1_StrategyIndex
+  name: StrategyIndex
+  nameWithType: HandlingEvent<TResult>.StrategyIndex
+  fullName: Kevlar.HandlingEvent<TResult>.StrategyIndex
+  nameWithType.vb: HandlingEvent(Of TResult).StrategyIndex
+  fullName.vb: Kevlar.HandlingEvent(Of TResult).StrategyIndex

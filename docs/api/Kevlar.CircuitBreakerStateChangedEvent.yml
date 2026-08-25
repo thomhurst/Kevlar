@@ -1,0 +1,412 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.CircuitBreakerStateChangedEvent
+  commentId: T:Kevlar.CircuitBreakerStateChangedEvent
+  id: CircuitBreakerStateChangedEvent
+  parent: Kevlar
+  children:
+  - Kevlar.CircuitBreakerStateChangedEvent.Context
+  - Kevlar.CircuitBreakerStateChangedEvent.From
+  - Kevlar.CircuitBreakerStateChangedEvent.LastException
+  - Kevlar.CircuitBreakerStateChangedEvent.To
+  langs:
+  - csharp
+  - vb
+  name: CircuitBreakerStateChangedEvent
+  nameWithType: CircuitBreakerStateChangedEvent
+  fullName: Kevlar.CircuitBreakerStateChangedEvent
+  type: Struct
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Describes a circuit breaker state transition.
+  example: []
+  syntax:
+    content: public readonly struct CircuitBreakerStateChangedEvent
+    content.vb: Public Structure CircuitBreakerStateChangedEvent
+  inheritedMembers:
+  - System.ValueType.Equals(System.Object)
+  - System.ValueType.GetHashCode
+  - System.ValueType.ToString
+  - System.Object.GetType
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+- uid: Kevlar.CircuitBreakerStateChangedEvent.From
+  commentId: P:Kevlar.CircuitBreakerStateChangedEvent.From
+  id: From
+  parent: Kevlar.CircuitBreakerStateChangedEvent
+  langs:
+  - csharp
+  - vb
+  name: From
+  nameWithType: CircuitBreakerStateChangedEvent.From
+  fullName: Kevlar.CircuitBreakerStateChangedEvent.From
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The state the circuit left.
+  example: []
+  syntax:
+    content: public CircuitState From { get; }
+    parameters: []
+    return:
+      type: Kevlar.CircuitState
+    content.vb: Public ReadOnly Property From As CircuitState
+  overload: Kevlar.CircuitBreakerStateChangedEvent.From*
+- uid: Kevlar.CircuitBreakerStateChangedEvent.To
+  commentId: P:Kevlar.CircuitBreakerStateChangedEvent.To
+  id: To
+  parent: Kevlar.CircuitBreakerStateChangedEvent
+  langs:
+  - csharp
+  - vb
+  name: To
+  nameWithType: CircuitBreakerStateChangedEvent.To
+  fullName: Kevlar.CircuitBreakerStateChangedEvent.To
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The state the circuit entered.
+  example: []
+  syntax:
+    content: public CircuitState To { get; }
+    parameters: []
+    return:
+      type: Kevlar.CircuitState
+    content.vb: Public ReadOnly Property [To] As CircuitState
+  overload: Kevlar.CircuitBreakerStateChangedEvent.To*
+- uid: Kevlar.CircuitBreakerStateChangedEvent.LastException
+  commentId: P:Kevlar.CircuitBreakerStateChangedEvent.LastException
+  id: LastException
+  parent: Kevlar.CircuitBreakerStateChangedEvent
+  langs:
+  - csharp
+  - vb
+  name: LastException
+  nameWithType: CircuitBreakerStateChangedEvent.LastException
+  fullName: Kevlar.CircuitBreakerStateChangedEvent.LastException
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The exception from the failure that caused the transition, when applicable.
+  example: []
+  syntax:
+    content: public Exception? LastException { get; }
+    parameters: []
+    return:
+      type: System.Exception
+    content.vb: Public ReadOnly Property LastException As Exception
+  overload: Kevlar.CircuitBreakerStateChangedEvent.LastException*
+- uid: Kevlar.CircuitBreakerStateChangedEvent.Context
+  commentId: P:Kevlar.CircuitBreakerStateChangedEvent.Context
+  id: Context
+  parent: Kevlar.CircuitBreakerStateChangedEvent
+  langs:
+  - csharp
+  - vb
+  name: Context
+  nameWithType: CircuitBreakerStateChangedEvent.Context
+  fullName: Kevlar.CircuitBreakerStateChangedEvent.Context
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    The triggering execution context. Manual monitor transitions receive a detached context
+
+    with <xref href="Kevlar.KevlarContext.StrategyIndex" data-throw-if-not-resolved="false"></xref> equal to <code>-1</code>.
+  example: []
+  syntax:
+    content: public KevlarContext Context { get; }
+    parameters: []
+    return:
+      type: Kevlar.KevlarContext
+    content.vb: Public ReadOnly Property Context As KevlarContext
+  overload: Kevlar.CircuitBreakerStateChangedEvent.Context*
+references:
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: System.ValueType.Equals(System.Object)
+  commentId: M:System.ValueType.Equals(System.Object)
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  name: Equals(object)
+  nameWithType: ValueType.Equals(object)
+  fullName: System.ValueType.Equals(object)
+  nameWithType.vb: ValueType.Equals(Object)
+  fullName.vb: System.ValueType.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.ValueType.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.ValueType.GetHashCode
+  commentId: M:System.ValueType.GetHashCode
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  name: GetHashCode()
+  nameWithType: ValueType.GetHashCode()
+  fullName: System.ValueType.GetHashCode()
+  spec.csharp:
+  - uid: System.ValueType.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  - name: (
+  - name: )
+- uid: System.ValueType.ToString
+  commentId: M:System.ValueType.ToString
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  name: ToString()
+  nameWithType: ValueType.ToString()
+  fullName: System.ValueType.ToString()
+  spec.csharp:
+  - uid: System.ValueType.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  - name: (
+  - name: )
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.ValueType
+  commentId: T:System.ValueType
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype
+  name: ValueType
+  nameWithType: ValueType
+  fullName: System.ValueType
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.CircuitBreakerStateChangedEvent.From*
+  commentId: Overload:Kevlar.CircuitBreakerStateChangedEvent.From
+  isExternal: true
+  href: Kevlar.CircuitBreakerStateChangedEvent.html#Kevlar_CircuitBreakerStateChangedEvent_From
+  name: From
+  nameWithType: CircuitBreakerStateChangedEvent.From
+  fullName: Kevlar.CircuitBreakerStateChangedEvent.From
+- uid: Kevlar.CircuitState
+  commentId: T:Kevlar.CircuitState
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.CircuitState.html
+  name: CircuitState
+  nameWithType: CircuitState
+  fullName: Kevlar.CircuitState
+- uid: Kevlar.CircuitBreakerStateChangedEvent.To*
+  commentId: Overload:Kevlar.CircuitBreakerStateChangedEvent.To
+  isExternal: true
+  href: Kevlar.CircuitBreakerStateChangedEvent.html#Kevlar_CircuitBreakerStateChangedEvent_To
+  name: To
+  nameWithType: CircuitBreakerStateChangedEvent.To
+  fullName: Kevlar.CircuitBreakerStateChangedEvent.To
+- uid: Kevlar.CircuitBreakerStateChangedEvent.LastException*
+  commentId: Overload:Kevlar.CircuitBreakerStateChangedEvent.LastException
+  isExternal: true
+  href: Kevlar.CircuitBreakerStateChangedEvent.html#Kevlar_CircuitBreakerStateChangedEvent_LastException
+  name: LastException
+  nameWithType: CircuitBreakerStateChangedEvent.LastException
+  fullName: Kevlar.CircuitBreakerStateChangedEvent.LastException
+- uid: System.Exception
+  commentId: T:System.Exception
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.exception
+  name: Exception
+  nameWithType: Exception
+  fullName: System.Exception
+- uid: Kevlar.KevlarContext.StrategyIndex
+  commentId: P:Kevlar.KevlarContext.StrategyIndex
+  isExternal: true
+  href: Kevlar.KevlarContext.html#Kevlar_KevlarContext_StrategyIndex
+  name: StrategyIndex
+  nameWithType: KevlarContext.StrategyIndex
+  fullName: Kevlar.KevlarContext.StrategyIndex
+- uid: Kevlar.CircuitBreakerStateChangedEvent.Context*
+  commentId: Overload:Kevlar.CircuitBreakerStateChangedEvent.Context
+  isExternal: true
+  href: Kevlar.CircuitBreakerStateChangedEvent.html#Kevlar_CircuitBreakerStateChangedEvent_Context
+  name: Context
+  nameWithType: CircuitBreakerStateChangedEvent.Context
+  fullName: Kevlar.CircuitBreakerStateChangedEvent.Context
+- uid: Kevlar.KevlarContext
+  commentId: T:Kevlar.KevlarContext
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.KevlarContext.html
+  name: KevlarContext
+  nameWithType: KevlarContext
+  fullName: Kevlar.KevlarContext

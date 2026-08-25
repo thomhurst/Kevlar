@@ -119,6 +119,8 @@ chooses not to observe that token.
 non-generic `FallbackEvent` carrying the exact handled exception. Callback properties are
 snapshotted when the shield is built, so replacing them on the options later has no effect.
 
+API reference: [`FallbackOptions`](pathname:///api/Kevlar.FallbackOptions.html) and [`FallbackOptions<T>`](pathname:///api/Kevlar.FallbackOptions-1.html).
+
 Both option types expose `HandlesException`; `FallbackOptions<T>` also exposes `HandlesResult`.
 Setting either creates a [per-strategy override](../handling-failures.md#per-strategy-overrides)
 that fully replaces the ambient clause for this fallback. A result-only override does not recover

@@ -1,0 +1,663 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.TimeoutOptions
+  commentId: T:Kevlar.TimeoutOptions
+  id: TimeoutOptions
+  parent: Kevlar
+  children:
+  - Kevlar.TimeoutOptions.#ctor
+  - Kevlar.TimeoutOptions.OnTimeout
+  - Kevlar.TimeoutOptions.OnTimeoutAsync
+  - Kevlar.TimeoutOptions.Timeout
+  - Kevlar.TimeoutOptions.TimeoutGenerator
+  langs:
+  - csharp
+  - vb
+  name: TimeoutOptions
+  nameWithType: TimeoutOptions
+  fullName: Kevlar.TimeoutOptions
+  type: Class
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Configuration for a timeout strategy.
+  remarks: >-
+    <xref href="Kevlar.TimeoutOptions.TimeoutGenerator" data-throw-if-not-resolved="false"></xref> runs before the timeout timer is armed and overrides
+
+    <xref href="Kevlar.TimeoutOptions.Timeout" data-throw-if-not-resolved="false"></xref> for that execution. When a timeout wins, callbacks run in this order:
+
+    <xref href="Kevlar.TimeoutOptions.OnTimeout" data-throw-if-not-resolved="false"></xref>, then <xref href="Kevlar.TimeoutOptions.OnTimeoutAsync" data-throw-if-not-resolved="false"></xref>. Both callbacks run after timer
+
+    cleanup and restoration of the caller's cancellation token.
+  example: []
+  syntax:
+    content: public sealed class TimeoutOptions
+    content.vb: Public NotInheritable Class TimeoutOptions
+  inheritance:
+  - System.Object
+  inheritedMembers:
+  - System.Object.GetType
+  - System.Object.ToString
+  - System.Object.Equals(System.Object)
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  - System.Object.GetHashCode
+- uid: Kevlar.TimeoutOptions.#ctor
+  commentId: M:Kevlar.TimeoutOptions.#ctor
+  id: '#ctor'
+  parent: Kevlar.TimeoutOptions
+  langs:
+  - csharp
+  - vb
+  name: TimeoutOptions()
+  nameWithType: TimeoutOptions.TimeoutOptions()
+  fullName: Kevlar.TimeoutOptions.TimeoutOptions()
+  type: Constructor
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  syntax:
+    content: public TimeoutOptions()
+    content.vb: Public Sub New()
+  overload: Kevlar.TimeoutOptions.#ctor*
+  nameWithType.vb: TimeoutOptions.New()
+  fullName.vb: Kevlar.TimeoutOptions.New()
+  name.vb: New()
+- uid: Kevlar.TimeoutOptions.Timeout
+  commentId: P:Kevlar.TimeoutOptions.Timeout
+  id: Timeout
+  parent: Kevlar.TimeoutOptions
+  langs:
+  - csharp
+  - vb
+  name: Timeout
+  nameWithType: TimeoutOptions.Timeout
+  fullName: Kevlar.TimeoutOptions.Timeout
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The maximum time an execution may take. The default is 30 seconds.
+  example: []
+  syntax:
+    content: public TimeSpan Timeout { get; set; }
+    parameters: []
+    return:
+      type: System.TimeSpan
+    content.vb: Public Property Timeout As TimeSpan
+  overload: Kevlar.TimeoutOptions.Timeout*
+- uid: Kevlar.TimeoutOptions.TimeoutGenerator
+  commentId: P:Kevlar.TimeoutOptions.TimeoutGenerator
+  id: TimeoutGenerator
+  parent: Kevlar.TimeoutOptions
+  langs:
+  - csharp
+  - vb
+  name: TimeoutGenerator
+  nameWithType: TimeoutOptions.TimeoutGenerator
+  fullName: Kevlar.TimeoutOptions.TimeoutGenerator
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Produces and awaits the timeout for each execution. The returned value must be positive and
+
+    no greater than the runtime timer limit. The context is valid only until the callback completes.
+  example: []
+  syntax:
+    content: public Func<KevlarContext, ValueTask<TimeSpan>>? TimeoutGenerator { get; set; }
+    parameters: []
+    return:
+      type: System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{System.TimeSpan}}
+    content.vb: Public Property TimeoutGenerator As Func(Of KevlarContext, ValueTask(Of TimeSpan))
+  overload: Kevlar.TimeoutOptions.TimeoutGenerator*
+- uid: Kevlar.TimeoutOptions.OnTimeout
+  commentId: P:Kevlar.TimeoutOptions.OnTimeout
+  id: OnTimeout
+  parent: Kevlar.TimeoutOptions
+  langs:
+  - csharp
+  - vb
+  name: OnTimeout
+  nameWithType: TimeoutOptions.OnTimeout
+  fullName: Kevlar.TimeoutOptions.OnTimeout
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Invoked when an execution is cancelled because it exceeded the timeout.
+  example: []
+  syntax:
+    content: public Action<TimeoutEvent>? OnTimeout { get; set; }
+    parameters: []
+    return:
+      type: System.Action{Kevlar.TimeoutEvent}
+    content.vb: Public Property OnTimeout As Action(Of TimeoutEvent)
+  overload: Kevlar.TimeoutOptions.OnTimeout*
+- uid: Kevlar.TimeoutOptions.OnTimeoutAsync
+  commentId: P:Kevlar.TimeoutOptions.OnTimeoutAsync
+  id: OnTimeoutAsync
+  parent: Kevlar.TimeoutOptions
+  langs:
+  - csharp
+  - vb
+  name: OnTimeoutAsync
+  nameWithType: TimeoutOptions.OnTimeoutAsync
+  fullName: Kevlar.TimeoutOptions.OnTimeoutAsync
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Invoked and awaited after <xref href="Kevlar.TimeoutOptions.OnTimeout" data-throw-if-not-resolved="false"></xref> when an execution exceeds its timeout.
+
+    The event context is valid only until the callback completes.
+  example: []
+  syntax:
+    content: public Func<TimeoutEvent, ValueTask>? OnTimeoutAsync { get; set; }
+    parameters: []
+    return:
+      type: System.Func{Kevlar.TimeoutEvent,System.Threading.Tasks.ValueTask}
+    content.vb: Public Property OnTimeoutAsync As Func(Of TimeoutEvent, ValueTask)
+  overload: Kevlar.TimeoutOptions.OnTimeoutAsync*
+references:
+- uid: Kevlar.TimeoutOptions.TimeoutGenerator
+  commentId: P:Kevlar.TimeoutOptions.TimeoutGenerator
+  isExternal: true
+  href: Kevlar.TimeoutOptions.html#Kevlar_TimeoutOptions_TimeoutGenerator
+  name: TimeoutGenerator
+  nameWithType: TimeoutOptions.TimeoutGenerator
+  fullName: Kevlar.TimeoutOptions.TimeoutGenerator
+- uid: Kevlar.TimeoutOptions.Timeout
+  commentId: P:Kevlar.TimeoutOptions.Timeout
+  isExternal: true
+  href: Kevlar.TimeoutOptions.html#Kevlar_TimeoutOptions_Timeout
+  name: Timeout
+  nameWithType: TimeoutOptions.Timeout
+  fullName: Kevlar.TimeoutOptions.Timeout
+- uid: Kevlar.TimeoutOptions.OnTimeout
+  commentId: P:Kevlar.TimeoutOptions.OnTimeout
+  isExternal: true
+  href: Kevlar.TimeoutOptions.html#Kevlar_TimeoutOptions_OnTimeout
+  name: OnTimeout
+  nameWithType: TimeoutOptions.OnTimeout
+  fullName: Kevlar.TimeoutOptions.OnTimeout
+- uid: Kevlar.TimeoutOptions.OnTimeoutAsync
+  commentId: P:Kevlar.TimeoutOptions.OnTimeoutAsync
+  isExternal: true
+  href: Kevlar.TimeoutOptions.html#Kevlar_TimeoutOptions_OnTimeoutAsync
+  name: OnTimeoutAsync
+  nameWithType: TimeoutOptions.OnTimeoutAsync
+  fullName: Kevlar.TimeoutOptions.OnTimeoutAsync
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.ToString
+  commentId: M:System.Object.ToString
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  name: ToString()
+  nameWithType: object.ToString()
+  fullName: object.ToString()
+  nameWithType.vb: Object.ToString()
+  fullName.vb: Object.ToString()
+  spec.csharp:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object)
+  commentId: M:System.Object.Equals(System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  name: Equals(object)
+  nameWithType: object.Equals(object)
+  fullName: object.Equals(object)
+  nameWithType.vb: Object.Equals(Object)
+  fullName.vb: Object.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetHashCode
+  commentId: M:System.Object.GetHashCode
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  name: GetHashCode()
+  nameWithType: object.GetHashCode()
+  fullName: object.GetHashCode()
+  nameWithType.vb: Object.GetHashCode()
+  fullName.vb: Object.GetHashCode()
+  spec.csharp:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.TimeoutOptions.#ctor*
+  commentId: Overload:Kevlar.TimeoutOptions.#ctor
+  isExternal: true
+  href: Kevlar.TimeoutOptions.html#Kevlar_TimeoutOptions__ctor
+  name: TimeoutOptions
+  nameWithType: TimeoutOptions.TimeoutOptions
+  fullName: Kevlar.TimeoutOptions.TimeoutOptions
+  nameWithType.vb: TimeoutOptions.New
+  fullName.vb: Kevlar.TimeoutOptions.New
+  name.vb: New
+- uid: Kevlar.TimeoutOptions.Timeout*
+  commentId: Overload:Kevlar.TimeoutOptions.Timeout
+  isExternal: true
+  href: Kevlar.TimeoutOptions.html#Kevlar_TimeoutOptions_Timeout
+  name: Timeout
+  nameWithType: TimeoutOptions.Timeout
+  fullName: Kevlar.TimeoutOptions.Timeout
+- uid: System.TimeSpan
+  commentId: T:System.TimeSpan
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.timespan
+  name: TimeSpan
+  nameWithType: TimeSpan
+  fullName: System.TimeSpan
+- uid: Kevlar.TimeoutOptions.TimeoutGenerator*
+  commentId: Overload:Kevlar.TimeoutOptions.TimeoutGenerator
+  isExternal: true
+  href: Kevlar.TimeoutOptions.html#Kevlar_TimeoutOptions_TimeoutGenerator
+  name: TimeoutGenerator
+  nameWithType: TimeoutOptions.TimeoutGenerator
+  fullName: Kevlar.TimeoutOptions.TimeoutGenerator
+- uid: System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{System.TimeSpan}}
+  commentId: T:System.Func{Kevlar.KevlarContext,System.Threading.Tasks.ValueTask{System.TimeSpan}}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<KevlarContext, ValueTask<TimeSpan>>
+  nameWithType: Func<KevlarContext, ValueTask<TimeSpan>>
+  fullName: System.Func<Kevlar.KevlarContext, System.Threading.Tasks.ValueTask<System.TimeSpan>>
+  nameWithType.vb: Func(Of KevlarContext, ValueTask(Of TimeSpan))
+  fullName.vb: System.Func(Of Kevlar.KevlarContext, System.Threading.Tasks.ValueTask(Of System.TimeSpan))
+  name.vb: Func(Of KevlarContext, ValueTask(Of TimeSpan))
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.KevlarContext
+    name: KevlarContext
+    isExternal: true
+    href: Kevlar.KevlarContext.html
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '>'
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.KevlarContext
+    name: KevlarContext
+    isExternal: true
+    href: Kevlar.KevlarContext.html
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: )
+  - name: )
+- uid: System.Func`2
+  commentId: T:System.Func`2
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<T, TResult>
+  nameWithType: Func<T, TResult>
+  fullName: System.Func<T, TResult>
+  nameWithType.vb: Func(Of T, TResult)
+  fullName.vb: System.Func(Of T, TResult)
+  name.vb: Func(Of T, TResult)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.TimeoutOptions.OnTimeout*
+  commentId: Overload:Kevlar.TimeoutOptions.OnTimeout
+  isExternal: true
+  href: Kevlar.TimeoutOptions.html#Kevlar_TimeoutOptions_OnTimeout
+  name: OnTimeout
+  nameWithType: TimeoutOptions.OnTimeout
+  fullName: Kevlar.TimeoutOptions.OnTimeout
+- uid: System.Action{Kevlar.TimeoutEvent}
+  commentId: T:System.Action{Kevlar.TimeoutEvent}
+  parent: System
+  definition: System.Action`1
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<TimeoutEvent>
+  nameWithType: Action<TimeoutEvent>
+  fullName: System.Action<Kevlar.TimeoutEvent>
+  nameWithType.vb: Action(Of TimeoutEvent)
+  fullName.vb: System.Action(Of Kevlar.TimeoutEvent)
+  name.vb: Action(Of TimeoutEvent)
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - uid: Kevlar.TimeoutEvent
+    name: TimeoutEvent
+    isExternal: true
+    href: Kevlar.TimeoutEvent.html
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.TimeoutEvent
+    name: TimeoutEvent
+    isExternal: true
+    href: Kevlar.TimeoutEvent.html
+  - name: )
+- uid: System.Action`1
+  commentId: T:System.Action`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<T>
+  nameWithType: Action<T>
+  fullName: System.Action<T>
+  nameWithType.vb: Action(Of T)
+  fullName.vb: System.Action(Of T)
+  name.vb: Action(Of T)
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Kevlar.TimeoutOptions.OnTimeoutAsync*
+  commentId: Overload:Kevlar.TimeoutOptions.OnTimeoutAsync
+  isExternal: true
+  href: Kevlar.TimeoutOptions.html#Kevlar_TimeoutOptions_OnTimeoutAsync
+  name: OnTimeoutAsync
+  nameWithType: TimeoutOptions.OnTimeoutAsync
+  fullName: Kevlar.TimeoutOptions.OnTimeoutAsync
+- uid: System.Func{Kevlar.TimeoutEvent,System.Threading.Tasks.ValueTask}
+  commentId: T:System.Func{Kevlar.TimeoutEvent,System.Threading.Tasks.ValueTask}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<TimeoutEvent, ValueTask>
+  nameWithType: Func<TimeoutEvent, ValueTask>
+  fullName: System.Func<Kevlar.TimeoutEvent, System.Threading.Tasks.ValueTask>
+  nameWithType.vb: Func(Of TimeoutEvent, ValueTask)
+  fullName.vb: System.Func(Of Kevlar.TimeoutEvent, System.Threading.Tasks.ValueTask)
+  name.vb: Func(Of TimeoutEvent, ValueTask)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.TimeoutEvent
+    name: TimeoutEvent
+    isExternal: true
+    href: Kevlar.TimeoutEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.TimeoutEvent
+    name: TimeoutEvent
+    isExternal: true
+    href: Kevlar.TimeoutEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
+  - name: )

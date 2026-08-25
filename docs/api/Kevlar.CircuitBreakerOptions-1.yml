@@ -1,0 +1,1437 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.CircuitBreakerOptions`1
+  commentId: T:Kevlar.CircuitBreakerOptions`1
+  id: CircuitBreakerOptions`1
+  parent: Kevlar
+  children:
+  - Kevlar.CircuitBreakerOptions`1.#ctor
+  - Kevlar.CircuitBreakerOptions`1.BreakDuration
+  - Kevlar.CircuitBreakerOptions`1.BreakDurationGenerator
+  - Kevlar.CircuitBreakerOptions`1.ConsecutiveFailures
+  - Kevlar.CircuitBreakerOptions`1.FailureRatio
+  - Kevlar.CircuitBreakerOptions`1.HandlesException
+  - Kevlar.CircuitBreakerOptions`1.HandlesExceptionWithContext
+  - Kevlar.CircuitBreakerOptions`1.HandlesResult
+  - Kevlar.CircuitBreakerOptions`1.HandlesResultWithContext
+  - Kevlar.CircuitBreakerOptions`1.MinimumThroughput
+  - Kevlar.CircuitBreakerOptions`1.Monitor
+  - Kevlar.CircuitBreakerOptions`1.OnStateChanged
+  - Kevlar.CircuitBreakerOptions`1.OnStateChangedAsync
+  - Kevlar.CircuitBreakerOptions`1.SamplingWindow
+  langs:
+  - csharp
+  - vb
+  name: CircuitBreakerOptions<TResult>
+  nameWithType: CircuitBreakerOptions<TResult>
+  fullName: Kevlar.CircuitBreakerOptions<TResult>
+  type: Class
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Result-typed configuration for a circuit breaker strategy on a
+
+    <xref href="Kevlar.Shield%601" data-throw-if-not-resolved="false"></xref>.
+  remarks: >-
+    <xref href="Kevlar.CircuitBreakerOptions%601" data-throw-if-not-resolved="false"></xref> and <xref href="Kevlar.CircuitBreakerOptions" data-throw-if-not-resolved="false"></xref> are
+
+    standalone sibling types with matching shared property names and defaults.
+  example: []
+  syntax:
+    content: public sealed class CircuitBreakerOptions<TResult>
+    typeParameters:
+    - id: TResult
+    content.vb: Public NotInheritable Class CircuitBreakerOptions(Of TResult)
+  inheritance:
+  - System.Object
+  inheritedMembers:
+  - System.Object.GetType
+  - System.Object.ToString
+  - System.Object.Equals(System.Object)
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  - System.Object.GetHashCode
+  nameWithType.vb: CircuitBreakerOptions(Of TResult)
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult)
+  name.vb: CircuitBreakerOptions(Of TResult)
+- uid: Kevlar.CircuitBreakerOptions`1.#ctor
+  commentId: M:Kevlar.CircuitBreakerOptions`1.#ctor
+  id: '#ctor'
+  parent: Kevlar.CircuitBreakerOptions`1
+  langs:
+  - csharp
+  - vb
+  name: CircuitBreakerOptions()
+  nameWithType: CircuitBreakerOptions<TResult>.CircuitBreakerOptions()
+  fullName: Kevlar.CircuitBreakerOptions<TResult>.CircuitBreakerOptions()
+  type: Constructor
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  syntax:
+    content: public CircuitBreakerOptions()
+    content.vb: Public Sub New()
+  overload: Kevlar.CircuitBreakerOptions`1.#ctor*
+  nameWithType.vb: CircuitBreakerOptions(Of TResult).New()
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).New()
+  name.vb: New()
+- uid: Kevlar.CircuitBreakerOptions`1.HandlesException
+  commentId: P:Kevlar.CircuitBreakerOptions`1.HandlesException
+  id: HandlesException
+  parent: Kevlar.CircuitBreakerOptions`1
+  langs:
+  - csharp
+  - vb
+  name: HandlesException
+  nameWithType: CircuitBreakerOptions<TResult>.HandlesException
+  fullName: Kevlar.CircuitBreakerOptions<TResult>.HandlesException
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Setting this — or, on <xref href="Kevlar.CircuitBreakerOptions%601" data-throw-if-not-resolved="false"></xref>, its <code>HandlesResult</code>
+
+    — makes this circuit breaker ignore the ambient <code>When…</code> handling clause; this predicate
+
+    then selects the exceptions it handles.
+  remarks: >-
+    The ambient clause is started with <code>When…</code> on a shield and continued with <code>Or…</code> on
+
+    the builder it returns, and applies to every reactive strategy chained after it. These
+
+    properties replace that clause for this strategy alone; they do not narrow it.
+  example: []
+  syntax:
+    content: public Func<Exception, bool>? HandlesException { get; set; }
+    parameters: []
+    return:
+      type: System.Func{System.Exception,System.Boolean}
+    content.vb: Public Property HandlesException As Func(Of Exception, Boolean)
+  overload: Kevlar.CircuitBreakerOptions`1.HandlesException*
+  seealso:
+  - linkId: Kevlar.HandlingClause
+    commentId: T:Kevlar.HandlingClause
+  nameWithType.vb: CircuitBreakerOptions(Of TResult).HandlesException
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).HandlesException
+- uid: Kevlar.CircuitBreakerOptions`1.HandlesExceptionWithContext
+  commentId: P:Kevlar.CircuitBreakerOptions`1.HandlesExceptionWithContext
+  id: HandlesExceptionWithContext
+  parent: Kevlar.CircuitBreakerOptions`1
+  langs:
+  - csharp
+  - vb
+  name: HandlesExceptionWithContext
+  nameWithType: CircuitBreakerOptions<TResult>.HandlesExceptionWithContext
+  fullName: Kevlar.CircuitBreakerOptions<TResult>.HandlesExceptionWithContext
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Locally handles exceptions using the typed outcome and execution context.
+  example: []
+  syntax:
+    content: public Func<HandlingEvent<TResult>, bool>? HandlesExceptionWithContext { get; set; }
+    parameters: []
+    return:
+      type: System.Func{Kevlar.HandlingEvent{{TResult}},System.Boolean}
+    content.vb: Public Property HandlesExceptionWithContext As Func(Of HandlingEvent(Of TResult), Boolean)
+  overload: Kevlar.CircuitBreakerOptions`1.HandlesExceptionWithContext*
+  nameWithType.vb: CircuitBreakerOptions(Of TResult).HandlesExceptionWithContext
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).HandlesExceptionWithContext
+- uid: Kevlar.CircuitBreakerOptions`1.HandlesResult
+  commentId: P:Kevlar.CircuitBreakerOptions`1.HandlesResult
+  id: HandlesResult
+  parent: Kevlar.CircuitBreakerOptions`1
+  langs:
+  - csharp
+  - vb
+  name: HandlesResult
+  nameWithType: CircuitBreakerOptions<TResult>.HandlesResult
+  fullName: Kevlar.CircuitBreakerOptions<TResult>.HandlesResult
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Setting this — or <xref href="Kevlar.CircuitBreakerOptions%601.HandlesException" data-throw-if-not-resolved="false"></xref> — makes this circuit
+
+    breaker ignore the ambient <code>When…</code> handling clause; this predicate then selects the
+
+    results it handles.
+  remarks: >-
+    The ambient clause is started with <code>When…</code>/<code>WhenResult…</code> on a shield and continued
+
+    with <code>Or…</code> on the builder it returns, and applies to every reactive strategy chained
+
+    after it. These properties replace that clause for this strategy alone; they do not narrow it.
+  example: []
+  syntax:
+    content: public Func<TResult, bool>? HandlesResult { get; set; }
+    parameters: []
+    return:
+      type: System.Func{{TResult},System.Boolean}
+    content.vb: Public Property HandlesResult As Func(Of TResult, Boolean)
+  overload: Kevlar.CircuitBreakerOptions`1.HandlesResult*
+  seealso:
+  - linkId: Kevlar.HandlingClause
+    commentId: T:Kevlar.HandlingClause
+  nameWithType.vb: CircuitBreakerOptions(Of TResult).HandlesResult
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).HandlesResult
+- uid: Kevlar.CircuitBreakerOptions`1.HandlesResultWithContext
+  commentId: P:Kevlar.CircuitBreakerOptions`1.HandlesResultWithContext
+  id: HandlesResultWithContext
+  parent: Kevlar.CircuitBreakerOptions`1
+  langs:
+  - csharp
+  - vb
+  name: HandlesResultWithContext
+  nameWithType: CircuitBreakerOptions<TResult>.HandlesResultWithContext
+  fullName: Kevlar.CircuitBreakerOptions<TResult>.HandlesResultWithContext
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Locally handles results using the typed outcome and execution context.
+  example: []
+  syntax:
+    content: public Func<HandlingEvent<TResult>, bool>? HandlesResultWithContext { get; set; }
+    parameters: []
+    return:
+      type: System.Func{Kevlar.HandlingEvent{{TResult}},System.Boolean}
+    content.vb: Public Property HandlesResultWithContext As Func(Of HandlingEvent(Of TResult), Boolean)
+  overload: Kevlar.CircuitBreakerOptions`1.HandlesResultWithContext*
+  nameWithType.vb: CircuitBreakerOptions(Of TResult).HandlesResultWithContext
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).HandlesResultWithContext
+- uid: Kevlar.CircuitBreakerOptions`1.ConsecutiveFailures
+  commentId: P:Kevlar.CircuitBreakerOptions`1.ConsecutiveFailures
+  id: ConsecutiveFailures
+  parent: Kevlar.CircuitBreakerOptions`1
+  langs:
+  - csharp
+  - vb
+  name: ConsecutiveFailures
+  nameWithType: CircuitBreakerOptions<TResult>.ConsecutiveFailures
+  fullName: Kevlar.CircuitBreakerOptions<TResult>.ConsecutiveFailures
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Trips the circuit after this many consecutive handled failures.
+  example: []
+  syntax:
+    content: public int? ConsecutiveFailures { get; set; }
+    parameters: []
+    return:
+      type: System.Nullable{System.Int32}
+    content.vb: Public Property ConsecutiveFailures As Integer?
+  overload: Kevlar.CircuitBreakerOptions`1.ConsecutiveFailures*
+  nameWithType.vb: CircuitBreakerOptions(Of TResult).ConsecutiveFailures
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).ConsecutiveFailures
+- uid: Kevlar.CircuitBreakerOptions`1.FailureRatio
+  commentId: P:Kevlar.CircuitBreakerOptions`1.FailureRatio
+  id: FailureRatio
+  parent: Kevlar.CircuitBreakerOptions`1
+  langs:
+  - csharp
+  - vb
+  name: FailureRatio
+  nameWithType: CircuitBreakerOptions<TResult>.FailureRatio
+  fullName: Kevlar.CircuitBreakerOptions<TResult>.FailureRatio
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Trips the circuit when the ratio of handled failures within <xref href="Kevlar.CircuitBreakerOptions.SamplingWindow" data-throw-if-not-resolved="false"></xref>
+
+    reaches this value (0 to 1), provided at least <xref href="Kevlar.CircuitBreakerOptions.MinimumThroughput" data-throw-if-not-resolved="false"></xref> executions
+
+    were observed in the window.
+  example: []
+  syntax:
+    content: public double? FailureRatio { get; set; }
+    parameters: []
+    return:
+      type: System.Nullable{System.Double}
+    content.vb: Public Property FailureRatio As Double?
+  overload: Kevlar.CircuitBreakerOptions`1.FailureRatio*
+  nameWithType.vb: CircuitBreakerOptions(Of TResult).FailureRatio
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).FailureRatio
+- uid: Kevlar.CircuitBreakerOptions`1.MinimumThroughput
+  commentId: P:Kevlar.CircuitBreakerOptions`1.MinimumThroughput
+  id: MinimumThroughput
+  parent: Kevlar.CircuitBreakerOptions`1
+  langs:
+  - csharp
+  - vb
+  name: MinimumThroughput
+  nameWithType: CircuitBreakerOptions<TResult>.MinimumThroughput
+  fullName: Kevlar.CircuitBreakerOptions<TResult>.MinimumThroughput
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Minimum executions in the sampling window before <xref href="Kevlar.CircuitBreakerOptions.FailureRatio" data-throw-if-not-resolved="false"></xref> can trip the circuit. Default 10.
+  example: []
+  syntax:
+    content: public int MinimumThroughput { get; set; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public Property MinimumThroughput As Integer
+  overload: Kevlar.CircuitBreakerOptions`1.MinimumThroughput*
+  nameWithType.vb: CircuitBreakerOptions(Of TResult).MinimumThroughput
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).MinimumThroughput
+- uid: Kevlar.CircuitBreakerOptions`1.SamplingWindow
+  commentId: P:Kevlar.CircuitBreakerOptions`1.SamplingWindow
+  id: SamplingWindow
+  parent: Kevlar.CircuitBreakerOptions`1
+  langs:
+  - csharp
+  - vb
+  name: SamplingWindow
+  nameWithType: CircuitBreakerOptions<TResult>.SamplingWindow
+  fullName: Kevlar.CircuitBreakerOptions<TResult>.SamplingWindow
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The rolling window over which the failure ratio is measured. Default 30 seconds.
+  example: []
+  syntax:
+    content: public TimeSpan SamplingWindow { get; set; }
+    parameters: []
+    return:
+      type: System.TimeSpan
+    content.vb: Public Property SamplingWindow As TimeSpan
+  overload: Kevlar.CircuitBreakerOptions`1.SamplingWindow*
+  nameWithType.vb: CircuitBreakerOptions(Of TResult).SamplingWindow
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).SamplingWindow
+- uid: Kevlar.CircuitBreakerOptions`1.BreakDuration
+  commentId: P:Kevlar.CircuitBreakerOptions`1.BreakDuration
+  id: BreakDuration
+  parent: Kevlar.CircuitBreakerOptions`1
+  langs:
+  - csharp
+  - vb
+  name: BreakDuration
+  nameWithType: CircuitBreakerOptions<TResult>.BreakDuration
+  fullName: Kevlar.CircuitBreakerOptions<TResult>.BreakDuration
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: How long the circuit stays open before allowing a probe. Default 15 seconds.
+  example: []
+  syntax:
+    content: public TimeSpan BreakDuration { get; set; }
+    parameters: []
+    return:
+      type: System.TimeSpan
+    content.vb: Public Property BreakDuration As TimeSpan
+  overload: Kevlar.CircuitBreakerOptions`1.BreakDuration*
+  nameWithType.vb: CircuitBreakerOptions(Of TResult).BreakDuration
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).BreakDuration
+- uid: Kevlar.CircuitBreakerOptions`1.BreakDurationGenerator
+  commentId: P:Kevlar.CircuitBreakerOptions`1.BreakDurationGenerator
+  id: BreakDurationGenerator
+  parent: Kevlar.CircuitBreakerOptions`1
+  langs:
+  - csharp
+  - vb
+  name: BreakDurationGenerator
+  nameWithType: CircuitBreakerOptions<TResult>.BreakDurationGenerator
+  fullName: Kevlar.CircuitBreakerOptions<TResult>.BreakDurationGenerator
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Produces and awaits the break duration when a handled outcome trips or re-opens the
+
+    circuit. The returned value must be positive. The event context is valid only until the
+
+    callback completes. When configured, this value overrides <xref href="Kevlar.CircuitBreakerOptions.BreakDuration" data-throw-if-not-resolved="false"></xref>.
+  example: []
+  syntax:
+    content: public Func<CircuitBreakerBreakDurationEvent<TResult>, ValueTask<TimeSpan>>? BreakDurationGenerator { get; set; }
+    parameters: []
+    return:
+      type: System.Func{Kevlar.CircuitBreakerBreakDurationEvent{{TResult}},System.Threading.Tasks.ValueTask{System.TimeSpan}}
+    content.vb: Public Property BreakDurationGenerator As Func(Of CircuitBreakerBreakDurationEvent(Of TResult), ValueTask(Of TimeSpan))
+  overload: Kevlar.CircuitBreakerOptions`1.BreakDurationGenerator*
+  nameWithType.vb: CircuitBreakerOptions(Of TResult).BreakDurationGenerator
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).BreakDurationGenerator
+- uid: Kevlar.CircuitBreakerOptions`1.Monitor
+  commentId: P:Kevlar.CircuitBreakerOptions`1.Monitor
+  id: Monitor
+  parent: Kevlar.CircuitBreakerOptions`1
+  langs:
+  - csharp
+  - vb
+  name: Monitor
+  nameWithType: CircuitBreakerOptions<TResult>.Monitor
+  fullName: Kevlar.CircuitBreakerOptions<TResult>.Monitor
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    An optional monitor giving external code visibility of the circuit state plus manual
+
+    <xref href="Kevlar.CircuitBreakerMonitor.Isolate" data-throw-if-not-resolved="false"></xref> / <xref href="Kevlar.CircuitBreakerMonitor.Reset" data-throw-if-not-resolved="false"></xref> control.
+
+    A monitor can be bound to only one circuit breaker.
+  example: []
+  syntax:
+    content: public CircuitBreakerMonitor? Monitor { get; set; }
+    parameters: []
+    return:
+      type: Kevlar.CircuitBreakerMonitor
+    content.vb: Public Property Monitor As CircuitBreakerMonitor
+  overload: Kevlar.CircuitBreakerOptions`1.Monitor*
+  nameWithType.vb: CircuitBreakerOptions(Of TResult).Monitor
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).Monitor
+- uid: Kevlar.CircuitBreakerOptions`1.OnStateChanged
+  commentId: P:Kevlar.CircuitBreakerOptions`1.OnStateChanged
+  id: OnStateChanged
+  parent: Kevlar.CircuitBreakerOptions`1
+  langs:
+  - csharp
+  - vb
+  name: OnStateChanged
+  nameWithType: CircuitBreakerOptions<TResult>.OnStateChanged
+  fullName: Kevlar.CircuitBreakerOptions<TResult>.OnStateChanged
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Invoked on every state transition, before <xref href="Kevlar.CircuitBreakerOptions.OnStateChangedAsync" data-throw-if-not-resolved="false"></xref> and
+
+    <xref href="Kevlar.CircuitBreakerMonitor.StateChanged" data-throw-if-not-resolved="false"></xref>. Transitions are delivered serially
+
+    outside the circuit lock. Exceptions propagate after all observers run; multiple failures
+
+    are aggregated. The handler runs synchronously and blocks later transition publishers, so
+
+    it should not perform I/O, wait on external work, or otherwise run for a long time.
+  example: []
+  syntax:
+    content: public Action<CircuitBreakerStateChangedEvent>? OnStateChanged { get; set; }
+    parameters: []
+    return:
+      type: System.Action{Kevlar.CircuitBreakerStateChangedEvent}
+    content.vb: Public Property OnStateChanged As Action(Of CircuitBreakerStateChangedEvent)
+  overload: Kevlar.CircuitBreakerOptions`1.OnStateChanged*
+  nameWithType.vb: CircuitBreakerOptions(Of TResult).OnStateChanged
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).OnStateChanged
+- uid: Kevlar.CircuitBreakerOptions`1.OnStateChangedAsync
+  commentId: P:Kevlar.CircuitBreakerOptions`1.OnStateChangedAsync
+  id: OnStateChangedAsync
+  parent: Kevlar.CircuitBreakerOptions`1
+  langs:
+  - csharp
+  - vb
+  name: OnStateChangedAsync
+  nameWithType: CircuitBreakerOptions<TResult>.OnStateChangedAsync
+  fullName: Kevlar.CircuitBreakerOptions<TResult>.OnStateChangedAsync
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Invoked and awaited on every state transition, after <xref href="Kevlar.CircuitBreakerOptions.OnStateChanged" data-throw-if-not-resolved="false"></xref> and
+
+    before <xref href="Kevlar.CircuitBreakerMonitor.StateChanged" data-throw-if-not-resolved="false"></xref>. Transitions are delivered
+
+    serially outside the circuit lock.
+  example: []
+  syntax:
+    content: public Func<CircuitBreakerStateChangedEvent, ValueTask>? OnStateChangedAsync { get; set; }
+    parameters: []
+    return:
+      type: System.Func{Kevlar.CircuitBreakerStateChangedEvent,System.Threading.Tasks.ValueTask}
+    content.vb: Public Property OnStateChangedAsync As Func(Of CircuitBreakerStateChangedEvent, ValueTask)
+  overload: Kevlar.CircuitBreakerOptions`1.OnStateChangedAsync*
+  nameWithType.vb: CircuitBreakerOptions(Of TResult).OnStateChangedAsync
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).OnStateChangedAsync
+references:
+- uid: Kevlar.Shield`1
+  commentId: T:Kevlar.Shield`1
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Shield-1.html
+  name: Shield<TResult>
+  nameWithType: Shield<TResult>
+  fullName: Kevlar.Shield<TResult>
+  nameWithType.vb: Shield(Of TResult)
+  fullName.vb: Kevlar.Shield(Of TResult)
+  name.vb: Shield(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.CircuitBreakerOptions`1
+  commentId: T:Kevlar.CircuitBreakerOptions`1
+  isExternal: true
+  href: Kevlar.CircuitBreakerOptions-1.html
+  name: CircuitBreakerOptions<TResult>
+  nameWithType: CircuitBreakerOptions<TResult>
+  fullName: Kevlar.CircuitBreakerOptions<TResult>
+  nameWithType.vb: CircuitBreakerOptions(Of TResult)
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult)
+  name.vb: CircuitBreakerOptions(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.CircuitBreakerOptions`1
+    name: CircuitBreakerOptions
+    isExternal: true
+    href: Kevlar.CircuitBreakerOptions-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.CircuitBreakerOptions`1
+    name: CircuitBreakerOptions
+    isExternal: true
+    href: Kevlar.CircuitBreakerOptions-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.CircuitBreakerOptions
+  commentId: T:Kevlar.CircuitBreakerOptions
+  isExternal: true
+  href: Kevlar.CircuitBreakerOptions.html
+  name: CircuitBreakerOptions
+  nameWithType: CircuitBreakerOptions
+  fullName: Kevlar.CircuitBreakerOptions
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.ToString
+  commentId: M:System.Object.ToString
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  name: ToString()
+  nameWithType: object.ToString()
+  fullName: object.ToString()
+  nameWithType.vb: Object.ToString()
+  fullName.vb: Object.ToString()
+  spec.csharp:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object)
+  commentId: M:System.Object.Equals(System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  name: Equals(object)
+  nameWithType: object.Equals(object)
+  fullName: object.Equals(object)
+  nameWithType.vb: Object.Equals(Object)
+  fullName.vb: Object.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetHashCode
+  commentId: M:System.Object.GetHashCode
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  name: GetHashCode()
+  nameWithType: object.GetHashCode()
+  fullName: object.GetHashCode()
+  nameWithType.vb: Object.GetHashCode()
+  fullName.vb: Object.GetHashCode()
+  spec.csharp:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.CircuitBreakerOptions`1.#ctor*
+  commentId: Overload:Kevlar.CircuitBreakerOptions`1.#ctor
+  isExternal: true
+  href: Kevlar.CircuitBreakerOptions-1.html#Kevlar_CircuitBreakerOptions_1__ctor
+  name: CircuitBreakerOptions
+  nameWithType: CircuitBreakerOptions<TResult>.CircuitBreakerOptions
+  fullName: Kevlar.CircuitBreakerOptions<TResult>.CircuitBreakerOptions
+  nameWithType.vb: CircuitBreakerOptions(Of TResult).New
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).New
+  name.vb: New
+- uid: Kevlar.HandlingClause
+  commentId: T:Kevlar.HandlingClause
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.HandlingClause.html
+  name: HandlingClause
+  nameWithType: HandlingClause
+  fullName: Kevlar.HandlingClause
+- uid: Kevlar.CircuitBreakerOptions`1.HandlesException*
+  commentId: Overload:Kevlar.CircuitBreakerOptions`1.HandlesException
+  isExternal: true
+  href: Kevlar.CircuitBreakerOptions-1.html#Kevlar_CircuitBreakerOptions_1_HandlesException
+  name: HandlesException
+  nameWithType: CircuitBreakerOptions<TResult>.HandlesException
+  fullName: Kevlar.CircuitBreakerOptions<TResult>.HandlesException
+  nameWithType.vb: CircuitBreakerOptions(Of TResult).HandlesException
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).HandlesException
+- uid: System.Func{System.Exception,System.Boolean}
+  commentId: T:System.Func{System.Exception,System.Boolean}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<Exception, bool>
+  nameWithType: Func<Exception, bool>
+  fullName: System.Func<System.Exception, bool>
+  nameWithType.vb: Func(Of Exception, Boolean)
+  fullName.vb: System.Func(Of System.Exception, Boolean)
+  name.vb: Func(Of Exception, Boolean)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: System.Exception
+    name: Exception
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.exception
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: bool
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.Exception
+    name: Exception
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.exception
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: Boolean
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: )
+- uid: System.Func`2
+  commentId: T:System.Func`2
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<T, TResult>
+  nameWithType: Func<T, TResult>
+  fullName: System.Func<T, TResult>
+  nameWithType.vb: Func(Of T, TResult)
+  fullName.vb: System.Func(Of T, TResult)
+  name.vb: Func(Of T, TResult)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.CircuitBreakerOptions`1.HandlesExceptionWithContext*
+  commentId: Overload:Kevlar.CircuitBreakerOptions`1.HandlesExceptionWithContext
+  isExternal: true
+  href: Kevlar.CircuitBreakerOptions-1.html#Kevlar_CircuitBreakerOptions_1_HandlesExceptionWithContext
+  name: HandlesExceptionWithContext
+  nameWithType: CircuitBreakerOptions<TResult>.HandlesExceptionWithContext
+  fullName: Kevlar.CircuitBreakerOptions<TResult>.HandlesExceptionWithContext
+  nameWithType.vb: CircuitBreakerOptions(Of TResult).HandlesExceptionWithContext
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).HandlesExceptionWithContext
+- uid: System.Func{Kevlar.HandlingEvent{{TResult}},System.Boolean}
+  commentId: T:System.Func{Kevlar.HandlingEvent{`0},System.Boolean}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<HandlingEvent<TResult>, bool>
+  nameWithType: Func<HandlingEvent<TResult>, bool>
+  fullName: System.Func<Kevlar.HandlingEvent<TResult>, bool>
+  nameWithType.vb: Func(Of HandlingEvent(Of TResult), Boolean)
+  fullName.vb: System.Func(Of Kevlar.HandlingEvent(Of TResult), Boolean)
+  name.vb: Func(Of HandlingEvent(Of TResult), Boolean)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.HandlingEvent`1
+    name: HandlingEvent
+    isExternal: true
+    href: Kevlar.HandlingEvent-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: bool
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.HandlingEvent`1
+    name: HandlingEvent
+    isExternal: true
+    href: Kevlar.HandlingEvent-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: Boolean
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: )
+- uid: Kevlar.CircuitBreakerOptions`1.HandlesException
+  commentId: P:Kevlar.CircuitBreakerOptions`1.HandlesException
+  isExternal: true
+  href: Kevlar.CircuitBreakerOptions-1.html#Kevlar_CircuitBreakerOptions_1_HandlesException
+  name: HandlesException
+  nameWithType: CircuitBreakerOptions<TResult>.HandlesException
+  fullName: Kevlar.CircuitBreakerOptions<TResult>.HandlesException
+  nameWithType.vb: CircuitBreakerOptions(Of TResult).HandlesException
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).HandlesException
+- uid: Kevlar.CircuitBreakerOptions`1.HandlesResult*
+  commentId: Overload:Kevlar.CircuitBreakerOptions`1.HandlesResult
+  isExternal: true
+  href: Kevlar.CircuitBreakerOptions-1.html#Kevlar_CircuitBreakerOptions_1_HandlesResult
+  name: HandlesResult
+  nameWithType: CircuitBreakerOptions<TResult>.HandlesResult
+  fullName: Kevlar.CircuitBreakerOptions<TResult>.HandlesResult
+  nameWithType.vb: CircuitBreakerOptions(Of TResult).HandlesResult
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).HandlesResult
+- uid: System.Func{{TResult},System.Boolean}
+  commentId: T:System.Func{`0,System.Boolean}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<TResult, bool>
+  nameWithType: Func<TResult, bool>
+  fullName: System.Func<TResult, bool>
+  nameWithType.vb: Func(Of TResult, Boolean)
+  fullName.vb: System.Func(Of TResult, Boolean)
+  name.vb: Func(Of TResult, Boolean)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - name: TResult
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: bool
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: Boolean
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: )
+- uid: Kevlar.CircuitBreakerOptions`1.HandlesResultWithContext*
+  commentId: Overload:Kevlar.CircuitBreakerOptions`1.HandlesResultWithContext
+  isExternal: true
+  href: Kevlar.CircuitBreakerOptions-1.html#Kevlar_CircuitBreakerOptions_1_HandlesResultWithContext
+  name: HandlesResultWithContext
+  nameWithType: CircuitBreakerOptions<TResult>.HandlesResultWithContext
+  fullName: Kevlar.CircuitBreakerOptions<TResult>.HandlesResultWithContext
+  nameWithType.vb: CircuitBreakerOptions(Of TResult).HandlesResultWithContext
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).HandlesResultWithContext
+- uid: Kevlar.CircuitBreakerOptions`1.ConsecutiveFailures*
+  commentId: Overload:Kevlar.CircuitBreakerOptions`1.ConsecutiveFailures
+  isExternal: true
+  href: Kevlar.CircuitBreakerOptions-1.html#Kevlar_CircuitBreakerOptions_1_ConsecutiveFailures
+  name: ConsecutiveFailures
+  nameWithType: CircuitBreakerOptions<TResult>.ConsecutiveFailures
+  fullName: Kevlar.CircuitBreakerOptions<TResult>.ConsecutiveFailures
+  nameWithType.vb: CircuitBreakerOptions(Of TResult).ConsecutiveFailures
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).ConsecutiveFailures
+- uid: System.Nullable{System.Int32}
+  commentId: T:System.Nullable{System.Int32}
+  parent: System
+  definition: System.Nullable`1
+  href: https://learn.microsoft.com/dotnet/api/system.int32
+  name: int?
+  nameWithType: int?
+  fullName: int?
+  nameWithType.vb: Integer?
+  fullName.vb: Integer?
+  name.vb: Integer?
+  spec.csharp:
+  - uid: System.Int32
+    name: int
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: '?'
+  spec.vb:
+  - uid: System.Int32
+    name: Integer
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: '?'
+- uid: System.Nullable`1
+  commentId: T:System.Nullable`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  name: Nullable<T>
+  nameWithType: Nullable<T>
+  fullName: System.Nullable<T>
+  nameWithType.vb: Nullable(Of T)
+  fullName.vb: System.Nullable(Of T)
+  name.vb: Nullable(Of T)
+  spec.csharp:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Kevlar.CircuitBreakerOptions.SamplingWindow
+  commentId: P:Kevlar.CircuitBreakerOptions.SamplingWindow
+  isExternal: true
+  href: Kevlar.CircuitBreakerOptions.html#Kevlar_CircuitBreakerOptions_SamplingWindow
+  name: SamplingWindow
+  nameWithType: CircuitBreakerOptions.SamplingWindow
+  fullName: Kevlar.CircuitBreakerOptions.SamplingWindow
+- uid: Kevlar.CircuitBreakerOptions.MinimumThroughput
+  commentId: P:Kevlar.CircuitBreakerOptions.MinimumThroughput
+  isExternal: true
+  href: Kevlar.CircuitBreakerOptions.html#Kevlar_CircuitBreakerOptions_MinimumThroughput
+  name: MinimumThroughput
+  nameWithType: CircuitBreakerOptions.MinimumThroughput
+  fullName: Kevlar.CircuitBreakerOptions.MinimumThroughput
+- uid: Kevlar.CircuitBreakerOptions`1.FailureRatio*
+  commentId: Overload:Kevlar.CircuitBreakerOptions`1.FailureRatio
+  isExternal: true
+  href: Kevlar.CircuitBreakerOptions-1.html#Kevlar_CircuitBreakerOptions_1_FailureRatio
+  name: FailureRatio
+  nameWithType: CircuitBreakerOptions<TResult>.FailureRatio
+  fullName: Kevlar.CircuitBreakerOptions<TResult>.FailureRatio
+  nameWithType.vb: CircuitBreakerOptions(Of TResult).FailureRatio
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).FailureRatio
+- uid: System.Nullable{System.Double}
+  commentId: T:System.Nullable{System.Double}
+  parent: System
+  definition: System.Nullable`1
+  href: https://learn.microsoft.com/dotnet/api/system.double
+  name: double?
+  nameWithType: double?
+  fullName: double?
+  nameWithType.vb: Double?
+  fullName.vb: Double?
+  name.vb: Double?
+  spec.csharp:
+  - uid: System.Double
+    name: double
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.double
+  - name: '?'
+  spec.vb:
+  - uid: System.Double
+    name: Double
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.double
+  - name: '?'
+- uid: Kevlar.CircuitBreakerOptions.FailureRatio
+  commentId: P:Kevlar.CircuitBreakerOptions.FailureRatio
+  isExternal: true
+  href: Kevlar.CircuitBreakerOptions.html#Kevlar_CircuitBreakerOptions_FailureRatio
+  name: FailureRatio
+  nameWithType: CircuitBreakerOptions.FailureRatio
+  fullName: Kevlar.CircuitBreakerOptions.FailureRatio
+- uid: Kevlar.CircuitBreakerOptions`1.MinimumThroughput*
+  commentId: Overload:Kevlar.CircuitBreakerOptions`1.MinimumThroughput
+  isExternal: true
+  href: Kevlar.CircuitBreakerOptions-1.html#Kevlar_CircuitBreakerOptions_1_MinimumThroughput
+  name: MinimumThroughput
+  nameWithType: CircuitBreakerOptions<TResult>.MinimumThroughput
+  fullName: Kevlar.CircuitBreakerOptions<TResult>.MinimumThroughput
+  nameWithType.vb: CircuitBreakerOptions(Of TResult).MinimumThroughput
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).MinimumThroughput
+- uid: System.Int32
+  commentId: T:System.Int32
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.int32
+  name: int
+  nameWithType: int
+  fullName: int
+  nameWithType.vb: Integer
+  fullName.vb: Integer
+  name.vb: Integer
+- uid: Kevlar.CircuitBreakerOptions`1.SamplingWindow*
+  commentId: Overload:Kevlar.CircuitBreakerOptions`1.SamplingWindow
+  isExternal: true
+  href: Kevlar.CircuitBreakerOptions-1.html#Kevlar_CircuitBreakerOptions_1_SamplingWindow
+  name: SamplingWindow
+  nameWithType: CircuitBreakerOptions<TResult>.SamplingWindow
+  fullName: Kevlar.CircuitBreakerOptions<TResult>.SamplingWindow
+  nameWithType.vb: CircuitBreakerOptions(Of TResult).SamplingWindow
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).SamplingWindow
+- uid: System.TimeSpan
+  commentId: T:System.TimeSpan
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.timespan
+  name: TimeSpan
+  nameWithType: TimeSpan
+  fullName: System.TimeSpan
+- uid: Kevlar.CircuitBreakerOptions`1.BreakDuration*
+  commentId: Overload:Kevlar.CircuitBreakerOptions`1.BreakDuration
+  isExternal: true
+  href: Kevlar.CircuitBreakerOptions-1.html#Kevlar_CircuitBreakerOptions_1_BreakDuration
+  name: BreakDuration
+  nameWithType: CircuitBreakerOptions<TResult>.BreakDuration
+  fullName: Kevlar.CircuitBreakerOptions<TResult>.BreakDuration
+  nameWithType.vb: CircuitBreakerOptions(Of TResult).BreakDuration
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).BreakDuration
+- uid: Kevlar.CircuitBreakerOptions.BreakDuration
+  commentId: P:Kevlar.CircuitBreakerOptions.BreakDuration
+  isExternal: true
+  href: Kevlar.CircuitBreakerOptions.html#Kevlar_CircuitBreakerOptions_BreakDuration
+  name: BreakDuration
+  nameWithType: CircuitBreakerOptions.BreakDuration
+  fullName: Kevlar.CircuitBreakerOptions.BreakDuration
+- uid: Kevlar.CircuitBreakerOptions`1.BreakDurationGenerator*
+  commentId: Overload:Kevlar.CircuitBreakerOptions`1.BreakDurationGenerator
+  isExternal: true
+  href: Kevlar.CircuitBreakerOptions-1.html#Kevlar_CircuitBreakerOptions_1_BreakDurationGenerator
+  name: BreakDurationGenerator
+  nameWithType: CircuitBreakerOptions<TResult>.BreakDurationGenerator
+  fullName: Kevlar.CircuitBreakerOptions<TResult>.BreakDurationGenerator
+  nameWithType.vb: CircuitBreakerOptions(Of TResult).BreakDurationGenerator
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).BreakDurationGenerator
+- uid: System.Func{Kevlar.CircuitBreakerBreakDurationEvent{{TResult}},System.Threading.Tasks.ValueTask{System.TimeSpan}}
+  commentId: T:System.Func{Kevlar.CircuitBreakerBreakDurationEvent{`0},System.Threading.Tasks.ValueTask{System.TimeSpan}}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<CircuitBreakerBreakDurationEvent<TResult>, ValueTask<TimeSpan>>
+  nameWithType: Func<CircuitBreakerBreakDurationEvent<TResult>, ValueTask<TimeSpan>>
+  fullName: System.Func<Kevlar.CircuitBreakerBreakDurationEvent<TResult>, System.Threading.Tasks.ValueTask<System.TimeSpan>>
+  nameWithType.vb: Func(Of CircuitBreakerBreakDurationEvent(Of TResult), ValueTask(Of TimeSpan))
+  fullName.vb: System.Func(Of Kevlar.CircuitBreakerBreakDurationEvent(Of TResult), System.Threading.Tasks.ValueTask(Of System.TimeSpan))
+  name.vb: Func(Of CircuitBreakerBreakDurationEvent(Of TResult), ValueTask(Of TimeSpan))
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.CircuitBreakerBreakDurationEvent`1
+    name: CircuitBreakerBreakDurationEvent
+    isExternal: true
+    href: Kevlar.CircuitBreakerBreakDurationEvent-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '>'
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.CircuitBreakerBreakDurationEvent`1
+    name: CircuitBreakerBreakDurationEvent
+    isExternal: true
+    href: Kevlar.CircuitBreakerBreakDurationEvent-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: )
+  - name: )
+- uid: Kevlar.CircuitBreakerMonitor.Isolate
+  commentId: M:Kevlar.CircuitBreakerMonitor.Isolate
+  isExternal: true
+  href: Kevlar.CircuitBreakerMonitor.html#Kevlar_CircuitBreakerMonitor_Isolate
+  name: Isolate()
+  nameWithType: CircuitBreakerMonitor.Isolate()
+  fullName: Kevlar.CircuitBreakerMonitor.Isolate()
+  spec.csharp:
+  - uid: Kevlar.CircuitBreakerMonitor.Isolate
+    name: Isolate
+    isExternal: true
+    href: Kevlar.CircuitBreakerMonitor.html#Kevlar_CircuitBreakerMonitor_Isolate
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: Kevlar.CircuitBreakerMonitor.Isolate
+    name: Isolate
+    isExternal: true
+    href: Kevlar.CircuitBreakerMonitor.html#Kevlar_CircuitBreakerMonitor_Isolate
+  - name: (
+  - name: )
+- uid: Kevlar.CircuitBreakerMonitor.Reset
+  commentId: M:Kevlar.CircuitBreakerMonitor.Reset
+  isExternal: true
+  href: Kevlar.CircuitBreakerMonitor.html#Kevlar_CircuitBreakerMonitor_Reset
+  name: Reset()
+  nameWithType: CircuitBreakerMonitor.Reset()
+  fullName: Kevlar.CircuitBreakerMonitor.Reset()
+  spec.csharp:
+  - uid: Kevlar.CircuitBreakerMonitor.Reset
+    name: Reset
+    isExternal: true
+    href: Kevlar.CircuitBreakerMonitor.html#Kevlar_CircuitBreakerMonitor_Reset
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: Kevlar.CircuitBreakerMonitor.Reset
+    name: Reset
+    isExternal: true
+    href: Kevlar.CircuitBreakerMonitor.html#Kevlar_CircuitBreakerMonitor_Reset
+  - name: (
+  - name: )
+- uid: Kevlar.CircuitBreakerOptions`1.Monitor*
+  commentId: Overload:Kevlar.CircuitBreakerOptions`1.Monitor
+  isExternal: true
+  href: Kevlar.CircuitBreakerOptions-1.html#Kevlar_CircuitBreakerOptions_1_Monitor
+  name: Monitor
+  nameWithType: CircuitBreakerOptions<TResult>.Monitor
+  fullName: Kevlar.CircuitBreakerOptions<TResult>.Monitor
+  nameWithType.vb: CircuitBreakerOptions(Of TResult).Monitor
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).Monitor
+- uid: Kevlar.CircuitBreakerMonitor
+  commentId: T:Kevlar.CircuitBreakerMonitor
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.CircuitBreakerMonitor.html
+  name: CircuitBreakerMonitor
+  nameWithType: CircuitBreakerMonitor
+  fullName: Kevlar.CircuitBreakerMonitor
+- uid: Kevlar.CircuitBreakerOptions.OnStateChangedAsync
+  commentId: P:Kevlar.CircuitBreakerOptions.OnStateChangedAsync
+  isExternal: true
+  href: Kevlar.CircuitBreakerOptions.html#Kevlar_CircuitBreakerOptions_OnStateChangedAsync
+  name: OnStateChangedAsync
+  nameWithType: CircuitBreakerOptions.OnStateChangedAsync
+  fullName: Kevlar.CircuitBreakerOptions.OnStateChangedAsync
+- uid: Kevlar.CircuitBreakerMonitor.StateChanged
+  commentId: E:Kevlar.CircuitBreakerMonitor.StateChanged
+  isExternal: true
+  href: Kevlar.CircuitBreakerMonitor.html#Kevlar_CircuitBreakerMonitor_StateChanged
+  name: StateChanged
+  nameWithType: CircuitBreakerMonitor.StateChanged
+  fullName: Kevlar.CircuitBreakerMonitor.StateChanged
+- uid: Kevlar.CircuitBreakerOptions`1.OnStateChanged*
+  commentId: Overload:Kevlar.CircuitBreakerOptions`1.OnStateChanged
+  isExternal: true
+  href: Kevlar.CircuitBreakerOptions-1.html#Kevlar_CircuitBreakerOptions_1_OnStateChanged
+  name: OnStateChanged
+  nameWithType: CircuitBreakerOptions<TResult>.OnStateChanged
+  fullName: Kevlar.CircuitBreakerOptions<TResult>.OnStateChanged
+  nameWithType.vb: CircuitBreakerOptions(Of TResult).OnStateChanged
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).OnStateChanged
+- uid: System.Action{Kevlar.CircuitBreakerStateChangedEvent}
+  commentId: T:System.Action{Kevlar.CircuitBreakerStateChangedEvent}
+  parent: System
+  definition: System.Action`1
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<CircuitBreakerStateChangedEvent>
+  nameWithType: Action<CircuitBreakerStateChangedEvent>
+  fullName: System.Action<Kevlar.CircuitBreakerStateChangedEvent>
+  nameWithType.vb: Action(Of CircuitBreakerStateChangedEvent)
+  fullName.vb: System.Action(Of Kevlar.CircuitBreakerStateChangedEvent)
+  name.vb: Action(Of CircuitBreakerStateChangedEvent)
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - uid: Kevlar.CircuitBreakerStateChangedEvent
+    name: CircuitBreakerStateChangedEvent
+    isExternal: true
+    href: Kevlar.CircuitBreakerStateChangedEvent.html
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.CircuitBreakerStateChangedEvent
+    name: CircuitBreakerStateChangedEvent
+    isExternal: true
+    href: Kevlar.CircuitBreakerStateChangedEvent.html
+  - name: )
+- uid: System.Action`1
+  commentId: T:System.Action`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<T>
+  nameWithType: Action<T>
+  fullName: System.Action<T>
+  nameWithType.vb: Action(Of T)
+  fullName.vb: System.Action(Of T)
+  name.vb: Action(Of T)
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Kevlar.CircuitBreakerOptions.OnStateChanged
+  commentId: P:Kevlar.CircuitBreakerOptions.OnStateChanged
+  isExternal: true
+  href: Kevlar.CircuitBreakerOptions.html#Kevlar_CircuitBreakerOptions_OnStateChanged
+  name: OnStateChanged
+  nameWithType: CircuitBreakerOptions.OnStateChanged
+  fullName: Kevlar.CircuitBreakerOptions.OnStateChanged
+- uid: Kevlar.CircuitBreakerOptions`1.OnStateChangedAsync*
+  commentId: Overload:Kevlar.CircuitBreakerOptions`1.OnStateChangedAsync
+  isExternal: true
+  href: Kevlar.CircuitBreakerOptions-1.html#Kevlar_CircuitBreakerOptions_1_OnStateChangedAsync
+  name: OnStateChangedAsync
+  nameWithType: CircuitBreakerOptions<TResult>.OnStateChangedAsync
+  fullName: Kevlar.CircuitBreakerOptions<TResult>.OnStateChangedAsync
+  nameWithType.vb: CircuitBreakerOptions(Of TResult).OnStateChangedAsync
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).OnStateChangedAsync
+- uid: System.Func{Kevlar.CircuitBreakerStateChangedEvent,System.Threading.Tasks.ValueTask}
+  commentId: T:System.Func{Kevlar.CircuitBreakerStateChangedEvent,System.Threading.Tasks.ValueTask}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<CircuitBreakerStateChangedEvent, ValueTask>
+  nameWithType: Func<CircuitBreakerStateChangedEvent, ValueTask>
+  fullName: System.Func<Kevlar.CircuitBreakerStateChangedEvent, System.Threading.Tasks.ValueTask>
+  nameWithType.vb: Func(Of CircuitBreakerStateChangedEvent, ValueTask)
+  fullName.vb: System.Func(Of Kevlar.CircuitBreakerStateChangedEvent, System.Threading.Tasks.ValueTask)
+  name.vb: Func(Of CircuitBreakerStateChangedEvent, ValueTask)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.CircuitBreakerStateChangedEvent
+    name: CircuitBreakerStateChangedEvent
+    isExternal: true
+    href: Kevlar.CircuitBreakerStateChangedEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.CircuitBreakerStateChangedEvent
+    name: CircuitBreakerStateChangedEvent
+    isExternal: true
+    href: Kevlar.CircuitBreakerStateChangedEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
+  - name: )

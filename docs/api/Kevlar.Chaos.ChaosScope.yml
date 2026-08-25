@@ -1,0 +1,419 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Chaos.ChaosScope
+  commentId: T:Kevlar.Chaos.ChaosScope
+  id: ChaosScope
+  parent: Kevlar.Chaos
+  children:
+  - Kevlar.Chaos.ChaosScope.Begin(System.String,System.String)
+  - Kevlar.Chaos.ChaosScope.Environment
+  - Kevlar.Chaos.ChaosScope.Operation
+  langs:
+  - csharp
+  - vb
+  name: ChaosScope
+  nameWithType: ChaosScope
+  fullName: Kevlar.Chaos.ChaosScope
+  type: Class
+  assemblies:
+  - Kevlar.Chaos
+  namespace: Kevlar.Chaos
+  summary: Carries optional operation and environment labels used to bound chaos injection.
+  example: []
+  syntax:
+    content: public static class ChaosScope
+    content.vb: Public Module ChaosScope
+  inheritance:
+  - System.Object
+  inheritedMembers:
+  - System.Object.GetType
+  - System.Object.MemberwiseClone
+  - System.Object.ToString
+  - System.Object.Equals(System.Object)
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  - System.Object.GetHashCode
+- uid: Kevlar.Chaos.ChaosScope.Begin(System.String,System.String)
+  commentId: M:Kevlar.Chaos.ChaosScope.Begin(System.String,System.String)
+  id: Begin(System.String,System.String)
+  parent: Kevlar.Chaos.ChaosScope
+  langs:
+  - csharp
+  - vb
+  name: Begin(string?, string?)
+  nameWithType: ChaosScope.Begin(string?, string?)
+  fullName: Kevlar.Chaos.ChaosScope.Begin(string?, string?)
+  type: Method
+  assemblies:
+  - Kevlar.Chaos
+  namespace: Kevlar.Chaos
+  summary: Begins an asynchronous-flow scope. Omitted values inherit from the enclosing scope.
+  example: []
+  syntax:
+    content: public static IDisposable Begin(string? operation = null, string? environment = null)
+    parameters:
+    - id: operation
+      type: System.String
+      description: The operation label.
+    - id: environment
+      type: System.String
+      description: The environment label.
+    return:
+      type: System.IDisposable
+      description: A handle that restores the enclosing scope when disposed.
+    content.vb: Public Shared Function Begin(operation As String = Nothing, environment As String = Nothing) As IDisposable
+  overload: Kevlar.Chaos.ChaosScope.Begin*
+  nameWithType.vb: ChaosScope.Begin(String, String)
+  fullName.vb: Kevlar.Chaos.ChaosScope.Begin(String, String)
+  name.vb: Begin(String, String)
+- uid: Kevlar.Chaos.ChaosScope.Operation
+  commentId: P:Kevlar.Chaos.ChaosScope.Operation
+  id: Operation
+  parent: Kevlar.Chaos.ChaosScope
+  langs:
+  - csharp
+  - vb
+  name: Operation
+  nameWithType: ChaosScope.Operation
+  fullName: Kevlar.Chaos.ChaosScope.Operation
+  type: Property
+  assemblies:
+  - Kevlar.Chaos
+  namespace: Kevlar.Chaos
+  summary: Gets the current operation label, if any.
+  example: []
+  syntax:
+    content: public static string? Operation { get; }
+    parameters: []
+    return:
+      type: System.String
+    content.vb: Public Shared ReadOnly Property Operation As String
+  overload: Kevlar.Chaos.ChaosScope.Operation*
+- uid: Kevlar.Chaos.ChaosScope.Environment
+  commentId: P:Kevlar.Chaos.ChaosScope.Environment
+  id: Environment
+  parent: Kevlar.Chaos.ChaosScope
+  langs:
+  - csharp
+  - vb
+  name: Environment
+  nameWithType: ChaosScope.Environment
+  fullName: Kevlar.Chaos.ChaosScope.Environment
+  type: Property
+  assemblies:
+  - Kevlar.Chaos
+  namespace: Kevlar.Chaos
+  summary: Gets the current environment label, if any.
+  example: []
+  syntax:
+    content: public static string? Environment { get; }
+    parameters: []
+    return:
+      type: System.String
+    content.vb: Public Shared ReadOnly Property Environment As String
+  overload: Kevlar.Chaos.ChaosScope.Environment*
+references:
+- uid: Kevlar.Chaos
+  commentId: N:Kevlar.Chaos
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar.Chaos
+  nameWithType: Kevlar.Chaos
+  fullName: Kevlar.Chaos
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Chaos
+    name: Chaos
+    isExternal: true
+    href: Kevlar.Chaos.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Chaos
+    name: Chaos
+    isExternal: true
+    href: Kevlar.Chaos.html
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.MemberwiseClone
+  commentId: M:System.Object.MemberwiseClone
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  name: MemberwiseClone()
+  nameWithType: object.MemberwiseClone()
+  fullName: object.MemberwiseClone()
+  nameWithType.vb: Object.MemberwiseClone()
+  fullName.vb: Object.MemberwiseClone()
+  spec.csharp:
+  - uid: System.Object.MemberwiseClone
+    name: MemberwiseClone
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.MemberwiseClone
+    name: MemberwiseClone
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  - name: (
+  - name: )
+- uid: System.Object.ToString
+  commentId: M:System.Object.ToString
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  name: ToString()
+  nameWithType: object.ToString()
+  fullName: object.ToString()
+  nameWithType.vb: Object.ToString()
+  fullName.vb: Object.ToString()
+  spec.csharp:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object)
+  commentId: M:System.Object.Equals(System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  name: Equals(object)
+  nameWithType: object.Equals(object)
+  fullName: object.Equals(object)
+  nameWithType.vb: Object.Equals(Object)
+  fullName.vb: Object.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetHashCode
+  commentId: M:System.Object.GetHashCode
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  name: GetHashCode()
+  nameWithType: object.GetHashCode()
+  fullName: object.GetHashCode()
+  nameWithType.vb: Object.GetHashCode()
+  fullName.vb: Object.GetHashCode()
+  spec.csharp:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.Chaos.ChaosScope.Begin*
+  commentId: Overload:Kevlar.Chaos.ChaosScope.Begin
+  isExternal: true
+  href: Kevlar.Chaos.ChaosScope.html#Kevlar_Chaos_ChaosScope_Begin_System_String_System_String_
+  name: Begin
+  nameWithType: ChaosScope.Begin
+  fullName: Kevlar.Chaos.ChaosScope.Begin
+- uid: System.String
+  commentId: T:System.String
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.string
+  name: string
+  nameWithType: string
+  fullName: string
+  nameWithType.vb: String
+  fullName.vb: String
+  name.vb: String
+- uid: System.IDisposable
+  commentId: T:System.IDisposable
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.idisposable
+  name: IDisposable
+  nameWithType: IDisposable
+  fullName: System.IDisposable
+- uid: Kevlar.Chaos.ChaosScope.Operation*
+  commentId: Overload:Kevlar.Chaos.ChaosScope.Operation
+  isExternal: true
+  href: Kevlar.Chaos.ChaosScope.html#Kevlar_Chaos_ChaosScope_Operation
+  name: Operation
+  nameWithType: ChaosScope.Operation
+  fullName: Kevlar.Chaos.ChaosScope.Operation
+- uid: Kevlar.Chaos.ChaosScope.Environment*
+  commentId: Overload:Kevlar.Chaos.ChaosScope.Environment
+  isExternal: true
+  href: Kevlar.Chaos.ChaosScope.html#Kevlar_Chaos_ChaosScope_Environment
+  name: Environment
+  nameWithType: ChaosScope.Environment
+  fullName: Kevlar.Chaos.ChaosScope.Environment

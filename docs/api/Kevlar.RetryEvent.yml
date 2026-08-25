@@ -1,0 +1,585 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.RetryEvent
+  commentId: T:Kevlar.RetryEvent
+  id: RetryEvent
+  parent: Kevlar
+  children:
+  - Kevlar.RetryEvent.Context
+  - Kevlar.RetryEvent.Delay
+  - Kevlar.RetryEvent.Exception
+  - Kevlar.RetryEvent.Result
+  - Kevlar.RetryEvent.RetryNumber
+  langs:
+  - csharp
+  - vb
+  name: RetryEvent
+  nameWithType: RetryEvent
+  fullName: Kevlar.RetryEvent
+  type: Struct
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Describes a retry that is about to happen.
+  example: []
+  syntax:
+    content: public readonly struct RetryEvent
+    content.vb: Public Structure RetryEvent
+  inheritedMembers:
+  - System.ValueType.Equals(System.Object)
+  - System.ValueType.GetHashCode
+  - System.ValueType.ToString
+  - System.Object.GetType
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+- uid: Kevlar.RetryEvent.RetryNumber
+  commentId: P:Kevlar.RetryEvent.RetryNumber
+  id: RetryNumber
+  parent: Kevlar.RetryEvent
+  langs:
+  - csharp
+  - vb
+  name: RetryNumber
+  nameWithType: RetryEvent.RetryNumber
+  fullName: Kevlar.RetryEvent.RetryNumber
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The 1-based number of the retry about to be made (1 = first retry, i.e. second execution).
+  example: []
+  syntax:
+    content: public int RetryNumber { get; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public ReadOnly Property RetryNumber As Integer
+  overload: Kevlar.RetryEvent.RetryNumber*
+- uid: Kevlar.RetryEvent.Delay
+  commentId: P:Kevlar.RetryEvent.Delay
+  id: Delay
+  parent: Kevlar.RetryEvent
+  langs:
+  - csharp
+  - vb
+  name: Delay
+  nameWithType: RetryEvent.Delay
+  fullName: Kevlar.RetryEvent.Delay
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The delay that will be waited before the retry.
+  example: []
+  syntax:
+    content: public TimeSpan Delay { get; }
+    parameters: []
+    return:
+      type: System.TimeSpan
+    content.vb: Public ReadOnly Property Delay As TimeSpan
+  overload: Kevlar.RetryEvent.Delay*
+- uid: Kevlar.RetryEvent.Exception
+  commentId: P:Kevlar.RetryEvent.Exception
+  id: Exception
+  parent: Kevlar.RetryEvent
+  langs:
+  - csharp
+  - vb
+  name: Exception
+  nameWithType: RetryEvent.Exception
+  fullName: Kevlar.RetryEvent.Exception
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The exception from the failed attempt, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> when a result was handled.
+  example: []
+  syntax:
+    content: public Exception? Exception { get; }
+    parameters: []
+    return:
+      type: System.Exception
+    content.vb: Public ReadOnly Property Exception As Exception
+  overload: Kevlar.RetryEvent.Exception*
+- uid: Kevlar.RetryEvent.Result
+  commentId: P:Kevlar.RetryEvent.Result
+  id: Result
+  parent: Kevlar.RetryEvent
+  langs:
+  - csharp
+  - vb
+  name: Result
+  nameWithType: RetryEvent.Result
+  fullName: Kevlar.RetryEvent.Result
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    The handled result from the failed attempt, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> when an exception
+
+    occurred.
+  remarks: >-
+    The untyped event carries the result as <xref href="System.Object" data-throw-if-not-resolved="false"></xref>, so a value-type result is
+
+    boxed on every retry and has to be unboxed — and its type re-asserted — by the callback.
+
+    Configure the retry through <xref href="Kevlar.RetryOptions%601" data-throw-if-not-resolved="false"></xref> on a
+
+    <xref href="Kevlar.Shield%601" data-throw-if-not-resolved="false"></xref> to receive <xref href="Kevlar.RetryEvent%601" data-throw-if-not-resolved="false"></xref> instead: its
+
+    <xref href="Kevlar.RetryEvent%601.Outcome" data-throw-if-not-resolved="false"></xref> is a typed <xref href="Kevlar.Outcome%601" data-throw-if-not-resolved="false"></xref>, with
+
+    no boxing and no cast.
+  example: []
+  syntax:
+    content: public object? Result { get; }
+    parameters: []
+    return:
+      type: System.Object
+    content.vb: Public ReadOnly Property Result As Object
+  overload: Kevlar.RetryEvent.Result*
+- uid: Kevlar.RetryEvent.Context
+  commentId: P:Kevlar.RetryEvent.Context
+  id: Context
+  parent: Kevlar.RetryEvent
+  langs:
+  - csharp
+  - vb
+  name: Context
+  nameWithType: RetryEvent.Context
+  fullName: Kevlar.RetryEvent.Context
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    The ambient execution context. It is pooled; do not retain it or its property bag after
+
+    the callback (including an asynchronous callback) completes.
+  example: []
+  syntax:
+    content: public KevlarContext Context { get; }
+    parameters: []
+    return:
+      type: Kevlar.KevlarContext
+    content.vb: Public ReadOnly Property Context As KevlarContext
+  overload: Kevlar.RetryEvent.Context*
+references:
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: System.ValueType.Equals(System.Object)
+  commentId: M:System.ValueType.Equals(System.Object)
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  name: Equals(object)
+  nameWithType: ValueType.Equals(object)
+  fullName: System.ValueType.Equals(object)
+  nameWithType.vb: ValueType.Equals(Object)
+  fullName.vb: System.ValueType.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.ValueType.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.ValueType.GetHashCode
+  commentId: M:System.ValueType.GetHashCode
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  name: GetHashCode()
+  nameWithType: ValueType.GetHashCode()
+  fullName: System.ValueType.GetHashCode()
+  spec.csharp:
+  - uid: System.ValueType.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  - name: (
+  - name: )
+- uid: System.ValueType.ToString
+  commentId: M:System.ValueType.ToString
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  name: ToString()
+  nameWithType: ValueType.ToString()
+  fullName: System.ValueType.ToString()
+  spec.csharp:
+  - uid: System.ValueType.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  - name: (
+  - name: )
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.ValueType
+  commentId: T:System.ValueType
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype
+  name: ValueType
+  nameWithType: ValueType
+  fullName: System.ValueType
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.RetryEvent.RetryNumber*
+  commentId: Overload:Kevlar.RetryEvent.RetryNumber
+  isExternal: true
+  href: Kevlar.RetryEvent.html#Kevlar_RetryEvent_RetryNumber
+  name: RetryNumber
+  nameWithType: RetryEvent.RetryNumber
+  fullName: Kevlar.RetryEvent.RetryNumber
+- uid: System.Int32
+  commentId: T:System.Int32
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.int32
+  name: int
+  nameWithType: int
+  fullName: int
+  nameWithType.vb: Integer
+  fullName.vb: Integer
+  name.vb: Integer
+- uid: Kevlar.RetryEvent.Delay*
+  commentId: Overload:Kevlar.RetryEvent.Delay
+  isExternal: true
+  href: Kevlar.RetryEvent.html#Kevlar_RetryEvent_Delay
+  name: Delay
+  nameWithType: RetryEvent.Delay
+  fullName: Kevlar.RetryEvent.Delay
+- uid: System.TimeSpan
+  commentId: T:System.TimeSpan
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.timespan
+  name: TimeSpan
+  nameWithType: TimeSpan
+  fullName: System.TimeSpan
+- uid: Kevlar.RetryEvent.Exception*
+  commentId: Overload:Kevlar.RetryEvent.Exception
+  isExternal: true
+  href: Kevlar.RetryEvent.html#Kevlar_RetryEvent_Exception
+  name: Exception
+  nameWithType: RetryEvent.Exception
+  fullName: Kevlar.RetryEvent.Exception
+- uid: System.Exception
+  commentId: T:System.Exception
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.exception
+  name: Exception
+  nameWithType: Exception
+  fullName: System.Exception
+- uid: Kevlar.RetryOptions`1
+  commentId: T:Kevlar.RetryOptions`1
+  isExternal: true
+  href: Kevlar.RetryOptions-1.html
+  name: RetryOptions<TResult>
+  nameWithType: RetryOptions<TResult>
+  fullName: Kevlar.RetryOptions<TResult>
+  nameWithType.vb: RetryOptions(Of TResult)
+  fullName.vb: Kevlar.RetryOptions(Of TResult)
+  name.vb: RetryOptions(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.RetryOptions`1
+    name: RetryOptions
+    isExternal: true
+    href: Kevlar.RetryOptions-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.RetryOptions`1
+    name: RetryOptions
+    isExternal: true
+    href: Kevlar.RetryOptions-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.Shield`1
+  commentId: T:Kevlar.Shield`1
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Shield-1.html
+  name: Shield<TResult>
+  nameWithType: Shield<TResult>
+  fullName: Kevlar.Shield<TResult>
+  nameWithType.vb: Shield(Of TResult)
+  fullName.vb: Kevlar.Shield(Of TResult)
+  name.vb: Shield(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.RetryEvent`1
+  commentId: T:Kevlar.RetryEvent`1
+  isExternal: true
+  href: Kevlar.RetryEvent-1.html
+  name: RetryEvent<TResult>
+  nameWithType: RetryEvent<TResult>
+  fullName: Kevlar.RetryEvent<TResult>
+  nameWithType.vb: RetryEvent(Of TResult)
+  fullName.vb: Kevlar.RetryEvent(Of TResult)
+  name.vb: RetryEvent(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.RetryEvent`1
+    name: RetryEvent
+    isExternal: true
+    href: Kevlar.RetryEvent-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.RetryEvent`1
+    name: RetryEvent
+    isExternal: true
+    href: Kevlar.RetryEvent-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.RetryEvent`1.Outcome
+  commentId: P:Kevlar.RetryEvent`1.Outcome
+  isExternal: true
+  href: Kevlar.RetryEvent-1.html#Kevlar_RetryEvent_1_Outcome
+  name: Outcome
+  nameWithType: RetryEvent<TResult>.Outcome
+  fullName: Kevlar.RetryEvent<TResult>.Outcome
+  nameWithType.vb: RetryEvent(Of TResult).Outcome
+  fullName.vb: Kevlar.RetryEvent(Of TResult).Outcome
+- uid: Kevlar.Outcome`1
+  commentId: T:Kevlar.Outcome`1
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Outcome-1.html
+  name: Outcome<T>
+  nameWithType: Outcome<T>
+  fullName: Kevlar.Outcome<T>
+  nameWithType.vb: Outcome(Of T)
+  fullName.vb: Kevlar.Outcome(Of T)
+  name.vb: Outcome(Of T)
+  spec.csharp:
+  - uid: Kevlar.Outcome`1
+    name: Outcome
+    isExternal: true
+    href: Kevlar.Outcome-1.html
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Outcome`1
+    name: Outcome
+    isExternal: true
+    href: Kevlar.Outcome-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Kevlar.RetryEvent.Result*
+  commentId: Overload:Kevlar.RetryEvent.Result
+  isExternal: true
+  href: Kevlar.RetryEvent.html#Kevlar_RetryEvent_Result
+  name: Result
+  nameWithType: RetryEvent.Result
+  fullName: Kevlar.RetryEvent.Result
+- uid: Kevlar.RetryEvent.Context*
+  commentId: Overload:Kevlar.RetryEvent.Context
+  isExternal: true
+  href: Kevlar.RetryEvent.html#Kevlar_RetryEvent_Context
+  name: Context
+  nameWithType: RetryEvent.Context
+  fullName: Kevlar.RetryEvent.Context
+- uid: Kevlar.KevlarContext
+  commentId: T:Kevlar.KevlarContext
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.KevlarContext.html
+  name: KevlarContext
+  nameWithType: KevlarContext
+  fullName: Kevlar.KevlarContext

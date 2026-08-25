@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup Condition="'$(UsePackedPackages)' != 'true'">
+    <ProjectReference Include="..\..\src\Kevlar\Kevlar.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(UsePackedPackages)' == 'true'">
+    <PackageReference Include="Kevlar" VersionOverride="$(KevlarSamplePackageVersion)" />
+  </ItemGroup>
+</Project>

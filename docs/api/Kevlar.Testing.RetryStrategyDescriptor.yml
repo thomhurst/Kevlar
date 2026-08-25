@@ -1,0 +1,572 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Testing.RetryStrategyDescriptor
+  commentId: T:Kevlar.Testing.RetryStrategyDescriptor
+  id: RetryStrategyDescriptor
+  parent: Kevlar.Testing
+  children:
+  - Kevlar.Testing.RetryStrategyDescriptor.Backoff
+  - Kevlar.Testing.RetryStrategyDescriptor.HasDelayGenerator
+  - Kevlar.Testing.RetryStrategyDescriptor.HasHandlingOverride
+  - Kevlar.Testing.RetryStrategyDescriptor.HasNotification
+  - Kevlar.Testing.RetryStrategyDescriptor.MaxDelay
+  - Kevlar.Testing.RetryStrategyDescriptor.MaxRetries
+  langs:
+  - csharp
+  - vb
+  name: RetryStrategyDescriptor
+  nameWithType: RetryStrategyDescriptor
+  fullName: Kevlar.Testing.RetryStrategyDescriptor
+  type: Class
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Read-only retry configuration.
+  example: []
+  syntax:
+    content: 'public sealed class RetryStrategyDescriptor : StrategyDescriptor'
+    content.vb: Public NotInheritable Class RetryStrategyDescriptor Inherits StrategyDescriptor
+  inheritance:
+  - System.Object
+  - Kevlar.Testing.StrategyDescriptor
+  inheritedMembers:
+  - Kevlar.Testing.StrategyDescriptor.Kind
+  - Kevlar.Testing.StrategyDescriptor.Description
+  - Kevlar.Testing.StrategyDescriptor.HandlingClause
+  - System.Object.GetType
+  - System.Object.ToString
+  - System.Object.Equals(System.Object)
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  - System.Object.GetHashCode
+- uid: Kevlar.Testing.RetryStrategyDescriptor.MaxRetries
+  commentId: P:Kevlar.Testing.RetryStrategyDescriptor.MaxRetries
+  id: MaxRetries
+  parent: Kevlar.Testing.RetryStrategyDescriptor
+  langs:
+  - csharp
+  - vb
+  name: MaxRetries
+  nameWithType: RetryStrategyDescriptor.MaxRetries
+  fullName: Kevlar.Testing.RetryStrategyDescriptor.MaxRetries
+  type: Property
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Maximum retries after the initial attempt.
+  example: []
+  syntax:
+    content: public int MaxRetries { get; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public ReadOnly Property MaxRetries As Integer
+  overload: Kevlar.Testing.RetryStrategyDescriptor.MaxRetries*
+- uid: Kevlar.Testing.RetryStrategyDescriptor.Backoff
+  commentId: P:Kevlar.Testing.RetryStrategyDescriptor.Backoff
+  id: Backoff
+  parent: Kevlar.Testing.RetryStrategyDescriptor
+  langs:
+  - csharp
+  - vb
+  name: Backoff
+  nameWithType: RetryStrategyDescriptor.Backoff
+  fullName: Kevlar.Testing.RetryStrategyDescriptor.Backoff
+  type: Property
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: An inert snapshot of the backoff configuration.
+  example: []
+  syntax:
+    content: public BackoffDescriptor Backoff { get; }
+    parameters: []
+    return:
+      type: Kevlar.Testing.BackoffDescriptor
+    content.vb: Public ReadOnly Property Backoff As BackoffDescriptor
+  overload: Kevlar.Testing.RetryStrategyDescriptor.Backoff*
+- uid: Kevlar.Testing.RetryStrategyDescriptor.MaxDelay
+  commentId: P:Kevlar.Testing.RetryStrategyDescriptor.MaxDelay
+  id: MaxDelay
+  parent: Kevlar.Testing.RetryStrategyDescriptor
+  langs:
+  - csharp
+  - vb
+  name: MaxDelay
+  nameWithType: RetryStrategyDescriptor.MaxDelay
+  fullName: Kevlar.Testing.RetryStrategyDescriptor.MaxDelay
+  type: Property
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: The absolute delay cap, when configured.
+  example: []
+  syntax:
+    content: public TimeSpan? MaxDelay { get; }
+    parameters: []
+    return:
+      type: System.Nullable{System.TimeSpan}
+    content.vb: Public ReadOnly Property MaxDelay As TimeSpan?
+  overload: Kevlar.Testing.RetryStrategyDescriptor.MaxDelay*
+- uid: Kevlar.Testing.RetryStrategyDescriptor.HasDelayGenerator
+  commentId: P:Kevlar.Testing.RetryStrategyDescriptor.HasDelayGenerator
+  id: HasDelayGenerator
+  parent: Kevlar.Testing.RetryStrategyDescriptor
+  langs:
+  - csharp
+  - vb
+  name: HasDelayGenerator
+  nameWithType: RetryStrategyDescriptor.HasDelayGenerator
+  fullName: Kevlar.Testing.RetryStrategyDescriptor.HasDelayGenerator
+  type: Property
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Whether a synchronous or asynchronous delay generator is configured.
+  example: []
+  syntax:
+    content: public bool HasDelayGenerator { get; }
+    parameters: []
+    return:
+      type: System.Boolean
+    content.vb: Public ReadOnly Property HasDelayGenerator As Boolean
+  overload: Kevlar.Testing.RetryStrategyDescriptor.HasDelayGenerator*
+- uid: Kevlar.Testing.RetryStrategyDescriptor.HasNotification
+  commentId: P:Kevlar.Testing.RetryStrategyDescriptor.HasNotification
+  id: HasNotification
+  parent: Kevlar.Testing.RetryStrategyDescriptor
+  langs:
+  - csharp
+  - vb
+  name: HasNotification
+  nameWithType: RetryStrategyDescriptor.HasNotification
+  fullName: Kevlar.Testing.RetryStrategyDescriptor.HasNotification
+  type: Property
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Whether a synchronous or asynchronous retry notification is configured.
+  example: []
+  syntax:
+    content: public bool HasNotification { get; }
+    parameters: []
+    return:
+      type: System.Boolean
+    content.vb: Public ReadOnly Property HasNotification As Boolean
+  overload: Kevlar.Testing.RetryStrategyDescriptor.HasNotification*
+- uid: Kevlar.Testing.RetryStrategyDescriptor.HasHandlingOverride
+  commentId: P:Kevlar.Testing.RetryStrategyDescriptor.HasHandlingOverride
+  id: HasHandlingOverride
+  parent: Kevlar.Testing.RetryStrategyDescriptor
+  langs:
+  - csharp
+  - vb
+  name: HasHandlingOverride
+  nameWithType: RetryStrategyDescriptor.HasHandlingOverride
+  fullName: Kevlar.Testing.RetryStrategyDescriptor.HasHandlingOverride
+  type: Property
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Whether local predicates replace the ambient handling clause.
+  example: []
+  syntax:
+    content: public bool HasHandlingOverride { get; }
+    parameters: []
+    return:
+      type: System.Boolean
+    content.vb: Public ReadOnly Property HasHandlingOverride As Boolean
+  overload: Kevlar.Testing.RetryStrategyDescriptor.HasHandlingOverride*
+references:
+- uid: Kevlar.Testing
+  commentId: N:Kevlar.Testing
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar.Testing
+  nameWithType: Kevlar.Testing
+  fullName: Kevlar.Testing
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Testing
+    name: Testing
+    isExternal: true
+    href: Kevlar.Testing.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Testing
+    name: Testing
+    isExternal: true
+    href: Kevlar.Testing.html
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: Kevlar.Testing.StrategyDescriptor
+  commentId: T:Kevlar.Testing.StrategyDescriptor
+  parent: Kevlar.Testing
+  isExternal: true
+  href: Kevlar.Testing.StrategyDescriptor.html
+  name: StrategyDescriptor
+  nameWithType: StrategyDescriptor
+  fullName: Kevlar.Testing.StrategyDescriptor
+- uid: Kevlar.Testing.StrategyDescriptor.Kind
+  commentId: P:Kevlar.Testing.StrategyDescriptor.Kind
+  parent: Kevlar.Testing.StrategyDescriptor
+  isExternal: true
+  href: Kevlar.Testing.StrategyDescriptor.html#Kevlar_Testing_StrategyDescriptor_Kind
+  name: Kind
+  nameWithType: StrategyDescriptor.Kind
+  fullName: Kevlar.Testing.StrategyDescriptor.Kind
+- uid: Kevlar.Testing.StrategyDescriptor.Description
+  commentId: P:Kevlar.Testing.StrategyDescriptor.Description
+  parent: Kevlar.Testing.StrategyDescriptor
+  isExternal: true
+  href: Kevlar.Testing.StrategyDescriptor.html#Kevlar_Testing_StrategyDescriptor_Description
+  name: Description
+  nameWithType: StrategyDescriptor.Description
+  fullName: Kevlar.Testing.StrategyDescriptor.Description
+- uid: Kevlar.Testing.StrategyDescriptor.HandlingClause
+  commentId: P:Kevlar.Testing.StrategyDescriptor.HandlingClause
+  parent: Kevlar.Testing.StrategyDescriptor
+  isExternal: true
+  href: Kevlar.Testing.StrategyDescriptor.html#Kevlar_Testing_StrategyDescriptor_HandlingClause
+  name: HandlingClause
+  nameWithType: StrategyDescriptor.HandlingClause
+  fullName: Kevlar.Testing.StrategyDescriptor.HandlingClause
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.ToString
+  commentId: M:System.Object.ToString
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  name: ToString()
+  nameWithType: object.ToString()
+  fullName: object.ToString()
+  nameWithType.vb: Object.ToString()
+  fullName.vb: Object.ToString()
+  spec.csharp:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object)
+  commentId: M:System.Object.Equals(System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  name: Equals(object)
+  nameWithType: object.Equals(object)
+  fullName: object.Equals(object)
+  nameWithType.vb: Object.Equals(Object)
+  fullName.vb: Object.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetHashCode
+  commentId: M:System.Object.GetHashCode
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  name: GetHashCode()
+  nameWithType: object.GetHashCode()
+  fullName: object.GetHashCode()
+  nameWithType.vb: Object.GetHashCode()
+  fullName.vb: Object.GetHashCode()
+  spec.csharp:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.Testing.RetryStrategyDescriptor.MaxRetries*
+  commentId: Overload:Kevlar.Testing.RetryStrategyDescriptor.MaxRetries
+  isExternal: true
+  href: Kevlar.Testing.RetryStrategyDescriptor.html#Kevlar_Testing_RetryStrategyDescriptor_MaxRetries
+  name: MaxRetries
+  nameWithType: RetryStrategyDescriptor.MaxRetries
+  fullName: Kevlar.Testing.RetryStrategyDescriptor.MaxRetries
+- uid: System.Int32
+  commentId: T:System.Int32
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.int32
+  name: int
+  nameWithType: int
+  fullName: int
+  nameWithType.vb: Integer
+  fullName.vb: Integer
+  name.vb: Integer
+- uid: Kevlar.Testing.RetryStrategyDescriptor.Backoff*
+  commentId: Overload:Kevlar.Testing.RetryStrategyDescriptor.Backoff
+  isExternal: true
+  href: Kevlar.Testing.RetryStrategyDescriptor.html#Kevlar_Testing_RetryStrategyDescriptor_Backoff
+  name: Backoff
+  nameWithType: RetryStrategyDescriptor.Backoff
+  fullName: Kevlar.Testing.RetryStrategyDescriptor.Backoff
+- uid: Kevlar.Testing.BackoffDescriptor
+  commentId: T:Kevlar.Testing.BackoffDescriptor
+  parent: Kevlar.Testing
+  isExternal: true
+  href: Kevlar.Testing.BackoffDescriptor.html
+  name: BackoffDescriptor
+  nameWithType: BackoffDescriptor
+  fullName: Kevlar.Testing.BackoffDescriptor
+- uid: Kevlar.Testing.RetryStrategyDescriptor.MaxDelay*
+  commentId: Overload:Kevlar.Testing.RetryStrategyDescriptor.MaxDelay
+  isExternal: true
+  href: Kevlar.Testing.RetryStrategyDescriptor.html#Kevlar_Testing_RetryStrategyDescriptor_MaxDelay
+  name: MaxDelay
+  nameWithType: RetryStrategyDescriptor.MaxDelay
+  fullName: Kevlar.Testing.RetryStrategyDescriptor.MaxDelay
+- uid: System.Nullable{System.TimeSpan}
+  commentId: T:System.Nullable{System.TimeSpan}
+  parent: System
+  definition: System.Nullable`1
+  href: https://learn.microsoft.com/dotnet/api/system.timespan
+  name: TimeSpan?
+  nameWithType: TimeSpan?
+  fullName: System.TimeSpan?
+  spec.csharp:
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '?'
+  spec.vb:
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '?'
+- uid: System.Nullable`1
+  commentId: T:System.Nullable`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  name: Nullable<T>
+  nameWithType: Nullable<T>
+  fullName: System.Nullable<T>
+  nameWithType.vb: Nullable(Of T)
+  fullName.vb: System.Nullable(Of T)
+  name.vb: Nullable(Of T)
+  spec.csharp:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Kevlar.Testing.RetryStrategyDescriptor.HasDelayGenerator*
+  commentId: Overload:Kevlar.Testing.RetryStrategyDescriptor.HasDelayGenerator
+  isExternal: true
+  href: Kevlar.Testing.RetryStrategyDescriptor.html#Kevlar_Testing_RetryStrategyDescriptor_HasDelayGenerator
+  name: HasDelayGenerator
+  nameWithType: RetryStrategyDescriptor.HasDelayGenerator
+  fullName: Kevlar.Testing.RetryStrategyDescriptor.HasDelayGenerator
+- uid: System.Boolean
+  commentId: T:System.Boolean
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.boolean
+  name: bool
+  nameWithType: bool
+  fullName: bool
+  nameWithType.vb: Boolean
+  fullName.vb: Boolean
+  name.vb: Boolean
+- uid: Kevlar.Testing.RetryStrategyDescriptor.HasNotification*
+  commentId: Overload:Kevlar.Testing.RetryStrategyDescriptor.HasNotification
+  isExternal: true
+  href: Kevlar.Testing.RetryStrategyDescriptor.html#Kevlar_Testing_RetryStrategyDescriptor_HasNotification
+  name: HasNotification
+  nameWithType: RetryStrategyDescriptor.HasNotification
+  fullName: Kevlar.Testing.RetryStrategyDescriptor.HasNotification
+- uid: Kevlar.Testing.RetryStrategyDescriptor.HasHandlingOverride*
+  commentId: Overload:Kevlar.Testing.RetryStrategyDescriptor.HasHandlingOverride
+  isExternal: true
+  href: Kevlar.Testing.RetryStrategyDescriptor.html#Kevlar_Testing_RetryStrategyDescriptor_HasHandlingOverride
+  name: HasHandlingOverride
+  nameWithType: RetryStrategyDescriptor.HasHandlingOverride
+  fullName: Kevlar.Testing.RetryStrategyDescriptor.HasHandlingOverride

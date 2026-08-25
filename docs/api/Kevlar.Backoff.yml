@@ -1,0 +1,974 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Backoff
+  commentId: T:Kevlar.Backoff
+  id: Backoff
+  parent: Kevlar
+  children:
+  - Kevlar.Backoff.Constant(System.TimeSpan,Kevlar.Jitter)
+  - Kevlar.Backoff.Custom(System.Func{System.Int32,System.TimeSpan})
+  - Kevlar.Backoff.Default
+  - Kevlar.Backoff.Exponential(System.TimeSpan,System.Double,System.Nullable{System.TimeSpan},Kevlar.Jitter)
+  - Kevlar.Backoff.Factor
+  - Kevlar.Backoff.GetDelay(System.Int32)
+  - Kevlar.Backoff.GetDelay(System.Int32,System.TimeSpan)
+  - Kevlar.Backoff.InitialDelay
+  - Kevlar.Backoff.Jitter
+  - Kevlar.Backoff.Kind
+  - Kevlar.Backoff.Linear(System.TimeSpan,System.Nullable{System.TimeSpan},Kevlar.Jitter)
+  - Kevlar.Backoff.MaxDelay
+  - Kevlar.Backoff.None
+  langs:
+  - csharp
+  - vb
+  name: Backoff
+  nameWithType: Backoff
+  fullName: Kevlar.Backoff
+  type: Class
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Computes the delay before each retry attempt. Create instances through the static factories.
+  example: []
+  syntax:
+    content: public abstract class Backoff
+    content.vb: Public MustInherit Class Backoff
+  inheritance:
+  - System.Object
+  inheritedMembers:
+  - System.Object.GetType
+  - System.Object.MemberwiseClone
+  - System.Object.ToString
+  - System.Object.Equals(System.Object)
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  - System.Object.GetHashCode
+- uid: Kevlar.Backoff.Constant(System.TimeSpan,Kevlar.Jitter)
+  commentId: M:Kevlar.Backoff.Constant(System.TimeSpan,Kevlar.Jitter)
+  id: Constant(System.TimeSpan,Kevlar.Jitter)
+  parent: Kevlar.Backoff
+  langs:
+  - csharp
+  - vb
+  name: Constant(TimeSpan, Jitter)
+  nameWithType: Backoff.Constant(TimeSpan, Jitter)
+  fullName: Kevlar.Backoff.Constant(System.TimeSpan, Kevlar.Jitter)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The same base delay before every attempt, with optional jitter.
+  example: []
+  syntax:
+    content: public static Backoff Constant(TimeSpan delay, Jitter jitter = Jitter.None)
+    parameters:
+    - id: delay
+      type: System.TimeSpan
+    - id: jitter
+      type: Kevlar.Jitter
+    return:
+      type: Kevlar.Backoff
+    content.vb: Public Shared Function Constant(delay As TimeSpan, jitter As Jitter = Jitter.None) As Backoff
+  overload: Kevlar.Backoff.Constant*
+- uid: Kevlar.Backoff.Linear(System.TimeSpan,System.Nullable{System.TimeSpan},Kevlar.Jitter)
+  commentId: M:Kevlar.Backoff.Linear(System.TimeSpan,System.Nullable{System.TimeSpan},Kevlar.Jitter)
+  id: Linear(System.TimeSpan,System.Nullable{System.TimeSpan},Kevlar.Jitter)
+  parent: Kevlar.Backoff
+  langs:
+  - csharp
+  - vb
+  name: Linear(TimeSpan, TimeSpan?, Jitter)
+  nameWithType: Backoff.Linear(TimeSpan, TimeSpan?, Jitter)
+  fullName: Kevlar.Backoff.Linear(System.TimeSpan, System.TimeSpan?, Kevlar.Jitter)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: 'Linearly increasing base delay: <code class="paramref">step</code>, 2×step, 3×step…, with optional jitter.'
+  example: []
+  syntax:
+    content: public static Backoff Linear(TimeSpan step, TimeSpan? maxDelay = null, Jitter jitter = Jitter.None)
+    parameters:
+    - id: step
+      type: System.TimeSpan
+    - id: maxDelay
+      type: System.Nullable{System.TimeSpan}
+    - id: jitter
+      type: Kevlar.Jitter
+    return:
+      type: Kevlar.Backoff
+    content.vb: Public Shared Function Linear([step] As TimeSpan, maxDelay As TimeSpan? = Nothing, jitter As Jitter = Jitter.None) As Backoff
+  overload: Kevlar.Backoff.Linear*
+- uid: Kevlar.Backoff.Exponential(System.TimeSpan,System.Double,System.Nullable{System.TimeSpan},Kevlar.Jitter)
+  commentId: M:Kevlar.Backoff.Exponential(System.TimeSpan,System.Double,System.Nullable{System.TimeSpan},Kevlar.Jitter)
+  id: Exponential(System.TimeSpan,System.Double,System.Nullable{System.TimeSpan},Kevlar.Jitter)
+  parent: Kevlar.Backoff
+  langs:
+  - csharp
+  - vb
+  name: Exponential(TimeSpan, double, TimeSpan?, Jitter)
+  nameWithType: Backoff.Exponential(TimeSpan, double, TimeSpan?, Jitter)
+  fullName: Kevlar.Backoff.Exponential(System.TimeSpan, double, System.TimeSpan?, Kevlar.Jitter)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Exponentially increasing delay: <code class="paramref">initialDelay</code>, then multiplied by
+
+    <code class="paramref">factor</code> after each attempt. The default equal jitter scales each delay
+
+    by a random factor in [0.5, 1.5) to avoid synchronized retry storms. Decorrelated jitter
+
+    instead selects each delay between the initial delay and three times the preceding delay.
+  example: []
+  syntax:
+    content: public static Backoff Exponential(TimeSpan initialDelay, double factor = 2, TimeSpan? maxDelay = null, Jitter jitter = Jitter.Equal)
+    parameters:
+    - id: initialDelay
+      type: System.TimeSpan
+    - id: factor
+      type: System.Double
+    - id: maxDelay
+      type: System.Nullable{System.TimeSpan}
+    - id: jitter
+      type: Kevlar.Jitter
+    return:
+      type: Kevlar.Backoff
+    content.vb: Public Shared Function Exponential(initialDelay As TimeSpan, factor As Double = 2, maxDelay As TimeSpan? = Nothing, jitter As Jitter = Jitter.Equal) As Backoff
+  overload: Kevlar.Backoff.Exponential*
+  nameWithType.vb: Backoff.Exponential(TimeSpan, Double, TimeSpan?, Jitter)
+  fullName.vb: Kevlar.Backoff.Exponential(System.TimeSpan, Double, System.TimeSpan?, Kevlar.Jitter)
+  name.vb: Exponential(TimeSpan, Double, TimeSpan?, Jitter)
+- uid: Kevlar.Backoff.Custom(System.Func{System.Int32,System.TimeSpan})
+  commentId: M:Kevlar.Backoff.Custom(System.Func{System.Int32,System.TimeSpan})
+  id: Custom(System.Func{System.Int32,System.TimeSpan})
+  parent: Kevlar.Backoff
+  langs:
+  - csharp
+  - vb
+  name: Custom(Func<int, TimeSpan>)
+  nameWithType: Backoff.Custom(Func<int, TimeSpan>)
+  fullName: Kevlar.Backoff.Custom(System.Func<int, System.TimeSpan>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: A caller-supplied delay function receiving the 1-based retry attempt number.
+  remarks: >-
+    The returned delay is clamped rather than trusted: a negative delay becomes
+
+    <xref href="System.TimeSpan.Zero" data-throw-if-not-resolved="false"></xref> and anything above the runtime timer limit
+
+    (<code>uint.MaxValue - 1</code> milliseconds, roughly 49 days) becomes that limit. A retry's own
+
+    <xref href="Kevlar.RetryOptions.MaxDelay" data-throw-if-not-resolved="false"></xref> then caps what is left, so an arithmetic slip in
+
+    <code class="paramref">delayFactory</code> cannot wedge a pipeline on a delay it can never wait out.
+  example: []
+  syntax:
+    content: public static Backoff Custom(Func<int, TimeSpan> delayFactory)
+    parameters:
+    - id: delayFactory
+      type: System.Func{System.Int32,System.TimeSpan}
+    return:
+      type: Kevlar.Backoff
+    content.vb: Public Shared Function Custom(delayFactory As Func(Of Integer, TimeSpan)) As Backoff
+  overload: Kevlar.Backoff.Custom*
+  nameWithType.vb: Backoff.Custom(Func(Of Integer, TimeSpan))
+  fullName.vb: Kevlar.Backoff.Custom(System.Func(Of Integer, System.TimeSpan))
+  name.vb: Custom(Func(Of Integer, TimeSpan))
+- uid: Kevlar.Backoff.GetDelay(System.Int32)
+  commentId: M:Kevlar.Backoff.GetDelay(System.Int32)
+  id: GetDelay(System.Int32)
+  parent: Kevlar.Backoff
+  langs:
+  - csharp
+  - vb
+  name: GetDelay(int)
+  nameWithType: Backoff.GetDelay(int)
+  fullName: Kevlar.Backoff.GetDelay(int)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Returns the delay before the given 1-based retry attempt.
+  example: []
+  syntax:
+    content: public abstract TimeSpan GetDelay(int attempt)
+    parameters:
+    - id: attempt
+      type: System.Int32
+    return:
+      type: System.TimeSpan
+    content.vb: Public MustOverride Function GetDelay(attempt As Integer) As TimeSpan
+  overload: Kevlar.Backoff.GetDelay*
+  nameWithType.vb: Backoff.GetDelay(Integer)
+  fullName.vb: Kevlar.Backoff.GetDelay(Integer)
+  name.vb: GetDelay(Integer)
+- uid: Kevlar.Backoff.GetDelay(System.Int32,System.TimeSpan)
+  commentId: M:Kevlar.Backoff.GetDelay(System.Int32,System.TimeSpan)
+  id: GetDelay(System.Int32,System.TimeSpan)
+  parent: Kevlar.Backoff
+  langs:
+  - csharp
+  - vb
+  name: GetDelay(int, TimeSpan)
+  nameWithType: Backoff.GetDelay(int, TimeSpan)
+  fullName: Kevlar.Backoff.GetDelay(int, System.TimeSpan)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Returns the delay before the given retry attempt, using the preceding effective delay for
+
+    stateful jitter modes. Pass <xref href="System.TimeSpan.Zero" data-throw-if-not-resolved="false"></xref> for the first decorrelated draw.
+  example: []
+  syntax:
+    content: public virtual TimeSpan GetDelay(int attempt, TimeSpan previousDelay)
+    parameters:
+    - id: attempt
+      type: System.Int32
+    - id: previousDelay
+      type: System.TimeSpan
+    return:
+      type: System.TimeSpan
+    content.vb: Public Overridable Function GetDelay(attempt As Integer, previousDelay As TimeSpan) As TimeSpan
+  overload: Kevlar.Backoff.GetDelay*
+  nameWithType.vb: Backoff.GetDelay(Integer, TimeSpan)
+  fullName.vb: Kevlar.Backoff.GetDelay(Integer, System.TimeSpan)
+  name.vb: GetDelay(Integer, TimeSpan)
+- uid: Kevlar.Backoff.None
+  commentId: P:Kevlar.Backoff.None
+  id: None
+  parent: Kevlar.Backoff
+  langs:
+  - csharp
+  - vb
+  name: None
+  nameWithType: Backoff.None
+  fullName: Kevlar.Backoff.None
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: No delay between attempts.
+  example: []
+  syntax:
+    content: public static Backoff None { get; }
+    parameters: []
+    return:
+      type: Kevlar.Backoff
+    content.vb: Public Shared ReadOnly Property None As Backoff
+  overload: Kevlar.Backoff.None*
+- uid: Kevlar.Backoff.Default
+  commentId: P:Kevlar.Backoff.Default
+  id: Default
+  parent: Kevlar.Backoff
+  langs:
+  - csharp
+  - vb
+  name: Default
+  nameWithType: Backoff.Default
+  fullName: Kevlar.Backoff.Default
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Kevlar's default: exponential backoff starting at 250ms with a factor of 2, equal jitter,
+
+    capped at 30 seconds.
+  example: []
+  syntax:
+    content: public static Backoff Default { get; }
+    parameters: []
+    return:
+      type: Kevlar.Backoff
+    content.vb: Public Shared ReadOnly Property [Default] As Backoff
+  overload: Kevlar.Backoff.Default*
+- uid: Kevlar.Backoff.Kind
+  commentId: P:Kevlar.Backoff.Kind
+  id: Kind
+  parent: Kevlar.Backoff
+  langs:
+  - csharp
+  - vb
+  name: Kind
+  nameWithType: Backoff.Kind
+  fullName: Kevlar.Backoff.Kind
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The stable category of this backoff.
+  example: []
+  syntax:
+    content: public abstract BackoffKind Kind { get; }
+    parameters: []
+    return:
+      type: Kevlar.BackoffKind
+    content.vb: Public MustOverride ReadOnly Property Kind As BackoffKind
+  overload: Kevlar.Backoff.Kind*
+- uid: Kevlar.Backoff.InitialDelay
+  commentId: P:Kevlar.Backoff.InitialDelay
+  id: InitialDelay
+  parent: Kevlar.Backoff
+  langs:
+  - csharp
+  - vb
+  name: InitialDelay
+  nameWithType: Backoff.InitialDelay
+  fullName: Kevlar.Backoff.InitialDelay
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The constant delay, linear step, or exponential initial delay, when applicable.
+  example: []
+  syntax:
+    content: public virtual TimeSpan? InitialDelay { get; }
+    parameters: []
+    return:
+      type: System.Nullable{System.TimeSpan}
+    content.vb: Public Overridable ReadOnly Property InitialDelay As TimeSpan?
+  overload: Kevlar.Backoff.InitialDelay*
+- uid: Kevlar.Backoff.Factor
+  commentId: P:Kevlar.Backoff.Factor
+  id: Factor
+  parent: Kevlar.Backoff
+  langs:
+  - csharp
+  - vb
+  name: Factor
+  nameWithType: Backoff.Factor
+  fullName: Kevlar.Backoff.Factor
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The exponential multiplier, when applicable.
+  example: []
+  syntax:
+    content: public virtual double? Factor { get; }
+    parameters: []
+    return:
+      type: System.Nullable{System.Double}
+    content.vb: Public Overridable ReadOnly Property Factor As Double?
+  overload: Kevlar.Backoff.Factor*
+- uid: Kevlar.Backoff.MaxDelay
+  commentId: P:Kevlar.Backoff.MaxDelay
+  id: MaxDelay
+  parent: Kevlar.Backoff
+  langs:
+  - csharp
+  - vb
+  name: MaxDelay
+  nameWithType: Backoff.MaxDelay
+  fullName: Kevlar.Backoff.MaxDelay
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The linear or exponential delay cap, when configured.
+  example: []
+  syntax:
+    content: public virtual TimeSpan? MaxDelay { get; }
+    parameters: []
+    return:
+      type: System.Nullable{System.TimeSpan}
+    content.vb: Public Overridable ReadOnly Property MaxDelay As TimeSpan?
+  overload: Kevlar.Backoff.MaxDelay*
+- uid: Kevlar.Backoff.Jitter
+  commentId: P:Kevlar.Backoff.Jitter
+  id: Jitter
+  parent: Kevlar.Backoff
+  langs:
+  - csharp
+  - vb
+  name: Jitter
+  nameWithType: Backoff.Jitter
+  fullName: Kevlar.Backoff.Jitter
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The jitter mode for built-in backoffs, when applicable.
+  example: []
+  syntax:
+    content: public virtual Jitter? Jitter { get; }
+    parameters: []
+    return:
+      type: System.Nullable{Kevlar.Jitter}
+    content.vb: Public Overridable ReadOnly Property Jitter As Jitter?
+  overload: Kevlar.Backoff.Jitter*
+references:
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.MemberwiseClone
+  commentId: M:System.Object.MemberwiseClone
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  name: MemberwiseClone()
+  nameWithType: object.MemberwiseClone()
+  fullName: object.MemberwiseClone()
+  nameWithType.vb: Object.MemberwiseClone()
+  fullName.vb: Object.MemberwiseClone()
+  spec.csharp:
+  - uid: System.Object.MemberwiseClone
+    name: MemberwiseClone
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.MemberwiseClone
+    name: MemberwiseClone
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  - name: (
+  - name: )
+- uid: System.Object.ToString
+  commentId: M:System.Object.ToString
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  name: ToString()
+  nameWithType: object.ToString()
+  fullName: object.ToString()
+  nameWithType.vb: Object.ToString()
+  fullName.vb: Object.ToString()
+  spec.csharp:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object)
+  commentId: M:System.Object.Equals(System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  name: Equals(object)
+  nameWithType: object.Equals(object)
+  fullName: object.Equals(object)
+  nameWithType.vb: Object.Equals(Object)
+  fullName.vb: Object.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetHashCode
+  commentId: M:System.Object.GetHashCode
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  name: GetHashCode()
+  nameWithType: object.GetHashCode()
+  fullName: object.GetHashCode()
+  nameWithType.vb: Object.GetHashCode()
+  fullName.vb: Object.GetHashCode()
+  spec.csharp:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.Backoff.Constant*
+  commentId: Overload:Kevlar.Backoff.Constant
+  isExternal: true
+  href: Kevlar.Backoff.html#Kevlar_Backoff_Constant_System_TimeSpan_Kevlar_Jitter_
+  name: Constant
+  nameWithType: Backoff.Constant
+  fullName: Kevlar.Backoff.Constant
+- uid: System.TimeSpan
+  commentId: T:System.TimeSpan
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.timespan
+  name: TimeSpan
+  nameWithType: TimeSpan
+  fullName: System.TimeSpan
+- uid: Kevlar.Jitter
+  commentId: T:Kevlar.Jitter
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Jitter.html
+  name: Jitter
+  nameWithType: Jitter
+  fullName: Kevlar.Jitter
+- uid: Kevlar.Backoff
+  commentId: T:Kevlar.Backoff
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Backoff.html
+  name: Backoff
+  nameWithType: Backoff
+  fullName: Kevlar.Backoff
+- uid: Kevlar.Backoff.Linear*
+  commentId: Overload:Kevlar.Backoff.Linear
+  isExternal: true
+  href: Kevlar.Backoff.html#Kevlar_Backoff_Linear_System_TimeSpan_System_Nullable_System_TimeSpan__Kevlar_Jitter_
+  name: Linear
+  nameWithType: Backoff.Linear
+  fullName: Kevlar.Backoff.Linear
+- uid: System.Nullable{System.TimeSpan}
+  commentId: T:System.Nullable{System.TimeSpan}
+  parent: System
+  definition: System.Nullable`1
+  href: https://learn.microsoft.com/dotnet/api/system.timespan
+  name: TimeSpan?
+  nameWithType: TimeSpan?
+  fullName: System.TimeSpan?
+  spec.csharp:
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '?'
+  spec.vb:
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '?'
+- uid: System.Nullable`1
+  commentId: T:System.Nullable`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  name: Nullable<T>
+  nameWithType: Nullable<T>
+  fullName: System.Nullable<T>
+  nameWithType.vb: Nullable(Of T)
+  fullName.vb: System.Nullable(Of T)
+  name.vb: Nullable(Of T)
+  spec.csharp:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Kevlar.Backoff.Exponential*
+  commentId: Overload:Kevlar.Backoff.Exponential
+  isExternal: true
+  href: Kevlar.Backoff.html#Kevlar_Backoff_Exponential_System_TimeSpan_System_Double_System_Nullable_System_TimeSpan__Kevlar_Jitter_
+  name: Exponential
+  nameWithType: Backoff.Exponential
+  fullName: Kevlar.Backoff.Exponential
+- uid: System.Double
+  commentId: T:System.Double
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.double
+  name: double
+  nameWithType: double
+  fullName: double
+  nameWithType.vb: Double
+  fullName.vb: Double
+  name.vb: Double
+- uid: System.TimeSpan.Zero
+  commentId: F:System.TimeSpan.Zero
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.timespan.zero
+  name: Zero
+  nameWithType: TimeSpan.Zero
+  fullName: System.TimeSpan.Zero
+- uid: Kevlar.RetryOptions.MaxDelay
+  commentId: P:Kevlar.RetryOptions.MaxDelay
+  isExternal: true
+  href: Kevlar.RetryOptions.html#Kevlar_RetryOptions_MaxDelay
+  name: MaxDelay
+  nameWithType: RetryOptions.MaxDelay
+  fullName: Kevlar.RetryOptions.MaxDelay
+- uid: Kevlar.Backoff.Custom*
+  commentId: Overload:Kevlar.Backoff.Custom
+  isExternal: true
+  href: Kevlar.Backoff.html#Kevlar_Backoff_Custom_System_Func_System_Int32_System_TimeSpan__
+  name: Custom
+  nameWithType: Backoff.Custom
+  fullName: Kevlar.Backoff.Custom
+- uid: System.Func{System.Int32,System.TimeSpan}
+  commentId: T:System.Func{System.Int32,System.TimeSpan}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<int, TimeSpan>
+  nameWithType: Func<int, TimeSpan>
+  fullName: System.Func<int, System.TimeSpan>
+  nameWithType.vb: Func(Of Integer, TimeSpan)
+  fullName.vb: System.Func(Of Integer, System.TimeSpan)
+  name.vb: Func(Of Integer, TimeSpan)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: System.Int32
+    name: int
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: ','
+  - name: " "
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.Int32
+    name: Integer
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: ','
+  - name: " "
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: )
+- uid: System.Func`2
+  commentId: T:System.Func`2
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<T, TResult>
+  nameWithType: Func<T, TResult>
+  fullName: System.Func<T, TResult>
+  nameWithType.vb: Func(Of T, TResult)
+  fullName.vb: System.Func(Of T, TResult)
+  name.vb: Func(Of T, TResult)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.Backoff.GetDelay*
+  commentId: Overload:Kevlar.Backoff.GetDelay
+  isExternal: true
+  href: Kevlar.Backoff.html#Kevlar_Backoff_GetDelay_System_Int32_
+  name: GetDelay
+  nameWithType: Backoff.GetDelay
+  fullName: Kevlar.Backoff.GetDelay
+- uid: System.Int32
+  commentId: T:System.Int32
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.int32
+  name: int
+  nameWithType: int
+  fullName: int
+  nameWithType.vb: Integer
+  fullName.vb: Integer
+  name.vb: Integer
+- uid: Kevlar.Backoff.None*
+  commentId: Overload:Kevlar.Backoff.None
+  isExternal: true
+  href: Kevlar.Backoff.html#Kevlar_Backoff_None
+  name: None
+  nameWithType: Backoff.None
+  fullName: Kevlar.Backoff.None
+- uid: Kevlar.Backoff.Default*
+  commentId: Overload:Kevlar.Backoff.Default
+  isExternal: true
+  href: Kevlar.Backoff.html#Kevlar_Backoff_Default
+  name: Default
+  nameWithType: Backoff.Default
+  fullName: Kevlar.Backoff.Default
+- uid: Kevlar.Backoff.Kind*
+  commentId: Overload:Kevlar.Backoff.Kind
+  isExternal: true
+  href: Kevlar.Backoff.html#Kevlar_Backoff_Kind
+  name: Kind
+  nameWithType: Backoff.Kind
+  fullName: Kevlar.Backoff.Kind
+- uid: Kevlar.BackoffKind
+  commentId: T:Kevlar.BackoffKind
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.BackoffKind.html
+  name: BackoffKind
+  nameWithType: BackoffKind
+  fullName: Kevlar.BackoffKind
+- uid: Kevlar.Backoff.InitialDelay*
+  commentId: Overload:Kevlar.Backoff.InitialDelay
+  isExternal: true
+  href: Kevlar.Backoff.html#Kevlar_Backoff_InitialDelay
+  name: InitialDelay
+  nameWithType: Backoff.InitialDelay
+  fullName: Kevlar.Backoff.InitialDelay
+- uid: Kevlar.Backoff.Factor*
+  commentId: Overload:Kevlar.Backoff.Factor
+  isExternal: true
+  href: Kevlar.Backoff.html#Kevlar_Backoff_Factor
+  name: Factor
+  nameWithType: Backoff.Factor
+  fullName: Kevlar.Backoff.Factor
+- uid: System.Nullable{System.Double}
+  commentId: T:System.Nullable{System.Double}
+  parent: System
+  definition: System.Nullable`1
+  href: https://learn.microsoft.com/dotnet/api/system.double
+  name: double?
+  nameWithType: double?
+  fullName: double?
+  nameWithType.vb: Double?
+  fullName.vb: Double?
+  name.vb: Double?
+  spec.csharp:
+  - uid: System.Double
+    name: double
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.double
+  - name: '?'
+  spec.vb:
+  - uid: System.Double
+    name: Double
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.double
+  - name: '?'
+- uid: Kevlar.Backoff.MaxDelay*
+  commentId: Overload:Kevlar.Backoff.MaxDelay
+  isExternal: true
+  href: Kevlar.Backoff.html#Kevlar_Backoff_MaxDelay
+  name: MaxDelay
+  nameWithType: Backoff.MaxDelay
+  fullName: Kevlar.Backoff.MaxDelay
+- uid: Kevlar.Backoff.Jitter*
+  commentId: Overload:Kevlar.Backoff.Jitter
+  isExternal: true
+  href: Kevlar.Backoff.html#Kevlar_Backoff_Jitter
+  name: Jitter
+  nameWithType: Backoff.Jitter
+  fullName: Kevlar.Backoff.Jitter
+- uid: System.Nullable{Kevlar.Jitter}
+  commentId: T:System.Nullable{Kevlar.Jitter}
+  parent: System
+  definition: System.Nullable`1
+  href: Kevlar.Jitter.html
+  name: Jitter?
+  nameWithType: Jitter?
+  fullName: Kevlar.Jitter?
+  spec.csharp:
+  - uid: Kevlar.Jitter
+    name: Jitter
+    isExternal: true
+    href: Kevlar.Jitter.html
+  - name: '?'
+  spec.vb:
+  - uid: Kevlar.Jitter
+    name: Jitter
+    isExternal: true
+    href: Kevlar.Jitter.html
+  - name: '?'

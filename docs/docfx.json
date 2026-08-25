@@ -1,0 +1,48 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dotnet/docfx/main/schemas/docfx.schema.json",
+  "metadata": [
+    {
+      "src": [
+        {
+          "src": "../artifacts/bin",
+          "files": [
+            "Kevlar/release_net10.0/Kevlar.dll",
+            "Kevlar.Chaos/release_net10.0/Kevlar.Chaos.dll",
+            "Kevlar.Extensions.DependencyInjection/release_net10.0/Kevlar.Extensions.DependencyInjection.dll",
+            "Kevlar.Extensions.Grpc/release_net10.0/Kevlar.Extensions.Grpc.dll",
+            "Kevlar.Extensions.Http/release_net10.0/Kevlar.Extensions.Http.dll",
+            "Kevlar.Extensions.RateLimiting/release_net10.0/Kevlar.Extensions.RateLimiting.dll",
+            "Kevlar.Testing/release_net10.0/Kevlar.Testing.dll"
+          ]
+        }
+      ],
+      "dest": "api"
+    }
+  ],
+  "build": {
+    "content": [
+      {
+        "src": "api",
+        "files": [
+          "**.yml"
+        ]
+      },
+      {
+        "src": "api-landing",
+        "files": [
+          "**.md"
+        ]
+      }
+    ],
+    "output": "static/api",
+    "template": [
+      "default",
+      "modern"
+    ],
+    "globalMetadata": {
+      "_appName": "Kevlar API",
+      "_appTitle": "Kevlar API Reference",
+      "_enableSearch": true
+    }
+  }
+}

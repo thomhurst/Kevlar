@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup Condition="'$(UsePackedPackages)' != 'true'">
+    <ProjectReference Include="..\..\src\Kevlar\Kevlar.csproj" />
+    <ProjectReference Include="..\..\src\Kevlar.Extensions.DependencyInjection\Kevlar.Extensions.DependencyInjection.csproj" />
+    <ProjectReference Include="..\..\src\Kevlar.Extensions.Grpc\Kevlar.Extensions.Grpc.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(UsePackedPackages)' == 'true'">
+    <PackageReference Include="Kevlar" VersionOverride="$(KevlarSamplePackageVersion)" />
+    <PackageReference Include="Kevlar.Extensions.DependencyInjection" VersionOverride="$(KevlarSamplePackageVersion)" />
+    <PackageReference Include="Kevlar.Extensions.Grpc" VersionOverride="$(KevlarSamplePackageVersion)" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Grpc.Core.Api" />
+  </ItemGroup>
+</Project>

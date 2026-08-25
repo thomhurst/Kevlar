@@ -1,0 +1,125 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Jitter
+  commentId: T:Kevlar.Jitter
+  id: Jitter
+  parent: Kevlar
+  children:
+  - Kevlar.Jitter.Decorrelated
+  - Kevlar.Jitter.Equal
+  - Kevlar.Jitter.Full
+  - Kevlar.Jitter.None
+  langs:
+  - csharp
+  - vb
+  name: Jitter
+  nameWithType: Jitter
+  fullName: Kevlar.Jitter
+  type: Enum
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Controls randomization applied to built-in retry backoff delays.
+  example: []
+  syntax:
+    content: public enum Jitter
+    content.vb: Public Enum Jitter
+- uid: Kevlar.Jitter.None
+  commentId: F:Kevlar.Jitter.None
+  id: None
+  parent: Kevlar.Jitter
+  langs:
+  - csharp
+  - vb
+  name: None
+  nameWithType: Jitter.None
+  fullName: Kevlar.Jitter.None
+  type: Field
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Uses the exact delay produced by the backoff curve.
+  example: []
+  syntax:
+    content: None = 0
+    return:
+      type: Kevlar.Jitter
+- uid: Kevlar.Jitter.Equal
+  commentId: F:Kevlar.Jitter.Equal
+  id: Equal
+  parent: Kevlar.Jitter
+  langs:
+  - csharp
+  - vb
+  name: Equal
+  nameWithType: Jitter.Equal
+  fullName: Kevlar.Jitter.Equal
+  type: Field
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Scales each delay by a uniformly random factor in [0.5, 1.5).
+  example: []
+  syntax:
+    content: Equal = 1
+    return:
+      type: Kevlar.Jitter
+- uid: Kevlar.Jitter.Full
+  commentId: F:Kevlar.Jitter.Full
+  id: Full
+  parent: Kevlar.Jitter
+  langs:
+  - csharp
+  - vb
+  name: Full
+  nameWithType: Jitter.Full
+  fullName: Kevlar.Jitter.Full
+  type: Field
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Selects a uniformly random delay in [0, the backoff curve's delay).
+  example: []
+  syntax:
+    content: Full = 2
+    return:
+      type: Kevlar.Jitter
+- uid: Kevlar.Jitter.Decorrelated
+  commentId: F:Kevlar.Jitter.Decorrelated
+  id: Decorrelated
+  parent: Kevlar.Jitter
+  langs:
+  - csharp
+  - vb
+  name: Decorrelated
+  nameWithType: Jitter.Decorrelated
+  fullName: Kevlar.Jitter.Decorrelated
+  type: Field
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Selects each delay uniformly between the initial delay and three times the preceding
+
+    delay, capped by the configured maximum.
+  example: []
+  syntax:
+    content: Decorrelated = 3
+    return:
+      type: Kevlar.Jitter
+references:
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: Kevlar.Jitter
+  commentId: T:Kevlar.Jitter
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Jitter.html
+  name: Jitter
+  nameWithType: Jitter
+  fullName: Kevlar.Jitter

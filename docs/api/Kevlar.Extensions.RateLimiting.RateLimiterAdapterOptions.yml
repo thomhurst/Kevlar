@@ -1,0 +1,587 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions
+  commentId: T:Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions
+  id: RateLimiterAdapterOptions
+  parent: Kevlar.Extensions.RateLimiting
+  children:
+  - Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.#ctor
+  - Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejected
+  - Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejectedAsync
+  - Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.PermitCount
+  langs:
+  - csharp
+  - vb
+  name: RateLimiterAdapterOptions
+  nameWithType: RateLimiterAdapterOptions
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions
+  type: Class
+  assemblies:
+  - Kevlar.Extensions.RateLimiting
+  namespace: Kevlar.Extensions.RateLimiting
+  summary: Configuration for a framework or delegate-backed rate-limiter adapter.
+  remarks: >-
+    Rejections record the standard Kevlar rejection metric, invoke <xref href="Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejected" data-throw-if-not-resolved="false"></xref>, then
+
+    invoke and await <xref href="Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejectedAsync" data-throw-if-not-resolved="false"></xref>. A callback failure replaces the
+
+    <xref href="Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException" data-throw-if-not-resolved="false"></xref> that would otherwise be returned.
+  example: []
+  syntax:
+    content: public sealed class RateLimiterAdapterOptions
+    content.vb: Public NotInheritable Class RateLimiterAdapterOptions
+  inheritance:
+  - System.Object
+  inheritedMembers:
+  - System.Object.GetType
+  - System.Object.ToString
+  - System.Object.Equals(System.Object)
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  - System.Object.GetHashCode
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.#ctor
+  commentId: M:Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.#ctor
+  id: '#ctor'
+  parent: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions
+  langs:
+  - csharp
+  - vb
+  name: RateLimiterAdapterOptions()
+  nameWithType: RateLimiterAdapterOptions.RateLimiterAdapterOptions()
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.RateLimiterAdapterOptions()
+  type: Constructor
+  assemblies:
+  - Kevlar.Extensions.RateLimiting
+  namespace: Kevlar.Extensions.RateLimiting
+  syntax:
+    content: public RateLimiterAdapterOptions()
+    content.vb: Public Sub New()
+  overload: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.#ctor*
+  nameWithType.vb: RateLimiterAdapterOptions.New()
+  fullName.vb: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.New()
+  name.vb: New()
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.PermitCount
+  commentId: P:Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.PermitCount
+  id: PermitCount
+  parent: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions
+  langs:
+  - csharp
+  - vb
+  name: PermitCount
+  nameWithType: RateLimiterAdapterOptions.PermitCount
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.PermitCount
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.RateLimiting
+  namespace: Kevlar.Extensions.RateLimiting
+  summary: The number of permits acquired for each execution. Default 1.
+  example: []
+  syntax:
+    content: public int PermitCount { get; set; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public Property PermitCount As Integer
+  overload: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.PermitCount*
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejected
+  commentId: P:Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejected
+  id: OnRejected
+  parent: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions
+  langs:
+  - csharp
+  - vb
+  name: OnRejected
+  nameWithType: RateLimiterAdapterOptions.OnRejected
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejected
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.RateLimiting
+  namespace: Kevlar.Extensions.RateLimiting
+  summary: Invoked synchronously when a lease rejects an execution.
+  example: []
+  syntax:
+    content: public Action<RateLimiterAdapterRejectedEvent>? OnRejected { get; set; }
+    parameters: []
+    return:
+      type: System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent}
+    content.vb: Public Property OnRejected As Action(Of RateLimiterAdapterRejectedEvent)
+  overload: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejected*
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejectedAsync
+  commentId: P:Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejectedAsync
+  id: OnRejectedAsync
+  parent: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions
+  langs:
+  - csharp
+  - vb
+  name: OnRejectedAsync
+  nameWithType: RateLimiterAdapterOptions.OnRejectedAsync
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejectedAsync
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.RateLimiting
+  namespace: Kevlar.Extensions.RateLimiting
+  summary: Invoked and awaited after <xref href="Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejected" data-throw-if-not-resolved="false"></xref> for a rejected lease.
+  example: []
+  syntax:
+    content: public Func<RateLimiterAdapterRejectedEvent, ValueTask>? OnRejectedAsync { get; set; }
+    parameters: []
+    return:
+      type: System.Func{Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent,System.Threading.Tasks.ValueTask}
+    content.vb: Public Property OnRejectedAsync As Func(Of RateLimiterAdapterRejectedEvent, ValueTask)
+  overload: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejectedAsync*
+references:
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejected
+  commentId: P:Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejected
+  isExternal: true
+  href: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.html#Kevlar_Extensions_RateLimiting_RateLimiterAdapterOptions_OnRejected
+  name: OnRejected
+  nameWithType: RateLimiterAdapterOptions.OnRejected
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejected
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejectedAsync
+  commentId: P:Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejectedAsync
+  isExternal: true
+  href: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.html#Kevlar_Extensions_RateLimiting_RateLimiterAdapterOptions_OnRejectedAsync
+  name: OnRejectedAsync
+  nameWithType: RateLimiterAdapterOptions.OnRejectedAsync
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejectedAsync
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException
+  commentId: T:Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException
+  isExternal: true
+  href: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException.html
+  name: RateLimiterAdapterRejectedException
+  nameWithType: RateLimiterAdapterRejectedException
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException
+- uid: Kevlar.Extensions.RateLimiting
+  commentId: N:Kevlar.Extensions.RateLimiting
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar.Extensions.RateLimiting
+  nameWithType: Kevlar.Extensions.RateLimiting
+  fullName: Kevlar.Extensions.RateLimiting
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+  - name: .
+  - uid: Kevlar.Extensions.RateLimiting
+    name: RateLimiting
+    isExternal: true
+    href: Kevlar.Extensions.RateLimiting.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+  - name: .
+  - uid: Kevlar.Extensions.RateLimiting
+    name: RateLimiting
+    isExternal: true
+    href: Kevlar.Extensions.RateLimiting.html
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.ToString
+  commentId: M:System.Object.ToString
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  name: ToString()
+  nameWithType: object.ToString()
+  fullName: object.ToString()
+  nameWithType.vb: Object.ToString()
+  fullName.vb: Object.ToString()
+  spec.csharp:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object)
+  commentId: M:System.Object.Equals(System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  name: Equals(object)
+  nameWithType: object.Equals(object)
+  fullName: object.Equals(object)
+  nameWithType.vb: Object.Equals(Object)
+  fullName.vb: Object.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetHashCode
+  commentId: M:System.Object.GetHashCode
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  name: GetHashCode()
+  nameWithType: object.GetHashCode()
+  fullName: object.GetHashCode()
+  nameWithType.vb: Object.GetHashCode()
+  fullName.vb: Object.GetHashCode()
+  spec.csharp:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.#ctor*
+  commentId: Overload:Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.#ctor
+  isExternal: true
+  href: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.html#Kevlar_Extensions_RateLimiting_RateLimiterAdapterOptions__ctor
+  name: RateLimiterAdapterOptions
+  nameWithType: RateLimiterAdapterOptions.RateLimiterAdapterOptions
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.RateLimiterAdapterOptions
+  nameWithType.vb: RateLimiterAdapterOptions.New
+  fullName.vb: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.New
+  name.vb: New
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.PermitCount*
+  commentId: Overload:Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.PermitCount
+  isExternal: true
+  href: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.html#Kevlar_Extensions_RateLimiting_RateLimiterAdapterOptions_PermitCount
+  name: PermitCount
+  nameWithType: RateLimiterAdapterOptions.PermitCount
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.PermitCount
+- uid: System.Int32
+  commentId: T:System.Int32
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.int32
+  name: int
+  nameWithType: int
+  fullName: int
+  nameWithType.vb: Integer
+  fullName.vb: Integer
+  name.vb: Integer
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejected*
+  commentId: Overload:Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejected
+  isExternal: true
+  href: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.html#Kevlar_Extensions_RateLimiting_RateLimiterAdapterOptions_OnRejected
+  name: OnRejected
+  nameWithType: RateLimiterAdapterOptions.OnRejected
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejected
+- uid: System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent}
+  commentId: T:System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent}
+  parent: System
+  definition: System.Action`1
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<RateLimiterAdapterRejectedEvent>
+  nameWithType: Action<RateLimiterAdapterRejectedEvent>
+  fullName: System.Action<Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent>
+  nameWithType.vb: Action(Of RateLimiterAdapterRejectedEvent)
+  fullName.vb: System.Action(Of Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent)
+  name.vb: Action(Of RateLimiterAdapterRejectedEvent)
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent
+    name: RateLimiterAdapterRejectedEvent
+    isExternal: true
+    href: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.html
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent
+    name: RateLimiterAdapterRejectedEvent
+    isExternal: true
+    href: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.html
+  - name: )
+- uid: System.Action`1
+  commentId: T:System.Action`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<T>
+  nameWithType: Action<T>
+  fullName: System.Action<T>
+  nameWithType.vb: Action(Of T)
+  fullName.vb: System.Action(Of T)
+  name.vb: Action(Of T)
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejectedAsync*
+  commentId: Overload:Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejectedAsync
+  isExternal: true
+  href: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.html#Kevlar_Extensions_RateLimiting_RateLimiterAdapterOptions_OnRejectedAsync
+  name: OnRejectedAsync
+  nameWithType: RateLimiterAdapterOptions.OnRejectedAsync
+  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejectedAsync
+- uid: System.Func{Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent,System.Threading.Tasks.ValueTask}
+  commentId: T:System.Func{Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent,System.Threading.Tasks.ValueTask}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<RateLimiterAdapterRejectedEvent, ValueTask>
+  nameWithType: Func<RateLimiterAdapterRejectedEvent, ValueTask>
+  fullName: System.Func<Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent, System.Threading.Tasks.ValueTask>
+  nameWithType.vb: Func(Of RateLimiterAdapterRejectedEvent, ValueTask)
+  fullName.vb: System.Func(Of Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent, System.Threading.Tasks.ValueTask)
+  name.vb: Func(Of RateLimiterAdapterRejectedEvent, ValueTask)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent
+    name: RateLimiterAdapterRejectedEvent
+    isExternal: true
+    href: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent
+    name: RateLimiterAdapterRejectedEvent
+    isExternal: true
+    href: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
+  - name: )
+- uid: System.Func`2
+  commentId: T:System.Func`2
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<T, TResult>
+  nameWithType: Func<T, TResult>
+  fullName: System.Func<T, TResult>
+  nameWithType.vb: Func(Of T, TResult)
+  fullName.vb: System.Func(Of T, TResult)
+  name.vb: Func(Of T, TResult)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )

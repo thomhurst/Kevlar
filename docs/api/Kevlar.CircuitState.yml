@@ -1,0 +1,143 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.CircuitState
+  commentId: T:Kevlar.CircuitState
+  id: CircuitState
+  parent: Kevlar
+  children:
+  - Kevlar.CircuitState.Closed
+  - Kevlar.CircuitState.HalfOpen
+  - Kevlar.CircuitState.Isolated
+  - Kevlar.CircuitState.Open
+  langs:
+  - csharp
+  - vb
+  name: CircuitState
+  nameWithType: CircuitState
+  fullName: Kevlar.CircuitState
+  type: Enum
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The state of a circuit breaker.
+  example: []
+  syntax:
+    content: public enum CircuitState
+    content.vb: Public Enum CircuitState
+- uid: Kevlar.CircuitState.Closed
+  commentId: F:Kevlar.CircuitState.Closed
+  id: Closed
+  parent: Kevlar.CircuitState
+  langs:
+  - csharp
+  - vb
+  name: Closed
+  nameWithType: CircuitState.Closed
+  fullName: Kevlar.CircuitState.Closed
+  type: Field
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Executions flow normally; failures are being measured.
+  example: []
+  syntax:
+    content: Closed = 0
+    return:
+      type: Kevlar.CircuitState
+- uid: Kevlar.CircuitState.Open
+  commentId: F:Kevlar.CircuitState.Open
+  id: Open
+  parent: Kevlar.CircuitState
+  langs:
+  - csharp
+  - vb
+  name: Open
+  nameWithType: CircuitState.Open
+  fullName: Kevlar.CircuitState.Open
+  type: Field
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Executions are rejected until the break duration elapses.
+  example: []
+  syntax:
+    content: Open = 1
+    return:
+      type: Kevlar.CircuitState
+- uid: Kevlar.CircuitState.HalfOpen
+  commentId: F:Kevlar.CircuitState.HalfOpen
+  id: HalfOpen
+  parent: Kevlar.CircuitState
+  langs:
+  - csharp
+  - vb
+  name: HalfOpen
+  nameWithType: CircuitState.HalfOpen
+  fullName: Kevlar.CircuitState.HalfOpen
+  type: Field
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: A single probe execution is allowed to test recovery.
+  example: []
+  syntax:
+    content: HalfOpen = 2
+    return:
+      type: Kevlar.CircuitState
+- uid: Kevlar.CircuitState.Isolated
+  commentId: F:Kevlar.CircuitState.Isolated
+  id: Isolated
+  parent: Kevlar.CircuitState
+  langs:
+  - csharp
+  - vb
+  name: Isolated
+  nameWithType: CircuitState.Isolated
+  fullName: Kevlar.CircuitState.Isolated
+  type: Field
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Manually forced open; executions are rejected until <xref href="Kevlar.CircuitBreakerMonitor.Reset" data-throw-if-not-resolved="false"></xref>.
+  example: []
+  syntax:
+    content: Isolated = 3
+    return:
+      type: Kevlar.CircuitState
+references:
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: Kevlar.CircuitState
+  commentId: T:Kevlar.CircuitState
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.CircuitState.html
+  name: CircuitState
+  nameWithType: CircuitState
+  fullName: Kevlar.CircuitState
+- uid: Kevlar.CircuitBreakerMonitor.Reset
+  commentId: M:Kevlar.CircuitBreakerMonitor.Reset
+  isExternal: true
+  href: Kevlar.CircuitBreakerMonitor.html#Kevlar_CircuitBreakerMonitor_Reset
+  name: Reset()
+  nameWithType: CircuitBreakerMonitor.Reset()
+  fullName: Kevlar.CircuitBreakerMonitor.Reset()
+  spec.csharp:
+  - uid: Kevlar.CircuitBreakerMonitor.Reset
+    name: Reset
+    isExternal: true
+    href: Kevlar.CircuitBreakerMonitor.html#Kevlar_CircuitBreakerMonitor_Reset
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: Kevlar.CircuitBreakerMonitor.Reset
+    name: Reset
+    isExternal: true
+    href: Kevlar.CircuitBreakerMonitor.html#Kevlar_CircuitBreakerMonitor_Reset
+  - name: (
+  - name: )

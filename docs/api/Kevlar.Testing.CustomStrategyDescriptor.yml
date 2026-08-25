@@ -1,0 +1,426 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Testing.CustomStrategyDescriptor
+  commentId: T:Kevlar.Testing.CustomStrategyDescriptor
+  id: CustomStrategyDescriptor
+  parent: Kevlar.Testing
+  children:
+  - Kevlar.Testing.CustomStrategyDescriptor.Handling
+  - Kevlar.Testing.CustomStrategyDescriptor.StrategyType
+  langs:
+  - csharp
+  - vb
+  name: CustomStrategyDescriptor
+  nameWithType: CustomStrategyDescriptor
+  fullName: Kevlar.Testing.CustomStrategyDescriptor
+  type: Class
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Diagnostic description of a caller-defined strategy.
+  example: []
+  syntax:
+    content: 'public sealed class CustomStrategyDescriptor : StrategyDescriptor'
+    content.vb: Public NotInheritable Class CustomStrategyDescriptor Inherits StrategyDescriptor
+  inheritance:
+  - System.Object
+  - Kevlar.Testing.StrategyDescriptor
+  inheritedMembers:
+  - Kevlar.Testing.StrategyDescriptor.Kind
+  - Kevlar.Testing.StrategyDescriptor.Description
+  - Kevlar.Testing.StrategyDescriptor.HandlingClause
+  - System.Object.GetType
+  - System.Object.ToString
+  - System.Object.Equals(System.Object)
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  - System.Object.GetHashCode
+- uid: Kevlar.Testing.CustomStrategyDescriptor.StrategyType
+  commentId: P:Kevlar.Testing.CustomStrategyDescriptor.StrategyType
+  id: StrategyType
+  parent: Kevlar.Testing.CustomStrategyDescriptor
+  langs:
+  - csharp
+  - vb
+  name: StrategyType
+  nameWithType: CustomStrategyDescriptor.StrategyType
+  fullName: Kevlar.Testing.CustomStrategyDescriptor.StrategyType
+  type: Property
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: The caller-defined strategy type.
+  example: []
+  syntax:
+    content: public Type StrategyType { get; }
+    parameters: []
+    return:
+      type: System.Type
+    content.vb: Public ReadOnly Property StrategyType As Type
+  overload: Kevlar.Testing.CustomStrategyDescriptor.StrategyType*
+- uid: Kevlar.Testing.CustomStrategyDescriptor.Handling
+  commentId: P:Kevlar.Testing.CustomStrategyDescriptor.Handling
+  id: Handling
+  parent: Kevlar.Testing.CustomStrategyDescriptor
+  langs:
+  - csharp
+  - vb
+  name: Handling
+  nameWithType: CustomStrategyDescriptor.Handling
+  fullName: Kevlar.Testing.CustomStrategyDescriptor.Handling
+  type: Property
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: The strategy's declared handling clause, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> when proactive.
+  example: []
+  syntax:
+    content: public HandlingClause? Handling { get; }
+    parameters: []
+    return:
+      type: System.Nullable{Kevlar.HandlingClause}
+    content.vb: Public ReadOnly Property Handling As HandlingClause?
+  overload: Kevlar.Testing.CustomStrategyDescriptor.Handling*
+references:
+- uid: Kevlar.Testing
+  commentId: N:Kevlar.Testing
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar.Testing
+  nameWithType: Kevlar.Testing
+  fullName: Kevlar.Testing
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Testing
+    name: Testing
+    isExternal: true
+    href: Kevlar.Testing.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Testing
+    name: Testing
+    isExternal: true
+    href: Kevlar.Testing.html
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: Kevlar.Testing.StrategyDescriptor
+  commentId: T:Kevlar.Testing.StrategyDescriptor
+  parent: Kevlar.Testing
+  isExternal: true
+  href: Kevlar.Testing.StrategyDescriptor.html
+  name: StrategyDescriptor
+  nameWithType: StrategyDescriptor
+  fullName: Kevlar.Testing.StrategyDescriptor
+- uid: Kevlar.Testing.StrategyDescriptor.Kind
+  commentId: P:Kevlar.Testing.StrategyDescriptor.Kind
+  parent: Kevlar.Testing.StrategyDescriptor
+  isExternal: true
+  href: Kevlar.Testing.StrategyDescriptor.html#Kevlar_Testing_StrategyDescriptor_Kind
+  name: Kind
+  nameWithType: StrategyDescriptor.Kind
+  fullName: Kevlar.Testing.StrategyDescriptor.Kind
+- uid: Kevlar.Testing.StrategyDescriptor.Description
+  commentId: P:Kevlar.Testing.StrategyDescriptor.Description
+  parent: Kevlar.Testing.StrategyDescriptor
+  isExternal: true
+  href: Kevlar.Testing.StrategyDescriptor.html#Kevlar_Testing_StrategyDescriptor_Description
+  name: Description
+  nameWithType: StrategyDescriptor.Description
+  fullName: Kevlar.Testing.StrategyDescriptor.Description
+- uid: Kevlar.Testing.StrategyDescriptor.HandlingClause
+  commentId: P:Kevlar.Testing.StrategyDescriptor.HandlingClause
+  parent: Kevlar.Testing.StrategyDescriptor
+  isExternal: true
+  href: Kevlar.Testing.StrategyDescriptor.html#Kevlar_Testing_StrategyDescriptor_HandlingClause
+  name: HandlingClause
+  nameWithType: StrategyDescriptor.HandlingClause
+  fullName: Kevlar.Testing.StrategyDescriptor.HandlingClause
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.ToString
+  commentId: M:System.Object.ToString
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  name: ToString()
+  nameWithType: object.ToString()
+  fullName: object.ToString()
+  nameWithType.vb: Object.ToString()
+  fullName.vb: Object.ToString()
+  spec.csharp:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object)
+  commentId: M:System.Object.Equals(System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  name: Equals(object)
+  nameWithType: object.Equals(object)
+  fullName: object.Equals(object)
+  nameWithType.vb: Object.Equals(Object)
+  fullName.vb: Object.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetHashCode
+  commentId: M:System.Object.GetHashCode
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  name: GetHashCode()
+  nameWithType: object.GetHashCode()
+  fullName: object.GetHashCode()
+  nameWithType.vb: Object.GetHashCode()
+  fullName.vb: Object.GetHashCode()
+  spec.csharp:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.Testing.CustomStrategyDescriptor.StrategyType*
+  commentId: Overload:Kevlar.Testing.CustomStrategyDescriptor.StrategyType
+  isExternal: true
+  href: Kevlar.Testing.CustomStrategyDescriptor.html#Kevlar_Testing_CustomStrategyDescriptor_StrategyType
+  name: StrategyType
+  nameWithType: CustomStrategyDescriptor.StrategyType
+  fullName: Kevlar.Testing.CustomStrategyDescriptor.StrategyType
+- uid: System.Type
+  commentId: T:System.Type
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.type
+  name: Type
+  nameWithType: Type
+  fullName: System.Type
+- uid: Kevlar.Testing.CustomStrategyDescriptor.Handling*
+  commentId: Overload:Kevlar.Testing.CustomStrategyDescriptor.Handling
+  isExternal: true
+  href: Kevlar.Testing.CustomStrategyDescriptor.html#Kevlar_Testing_CustomStrategyDescriptor_Handling
+  name: Handling
+  nameWithType: CustomStrategyDescriptor.Handling
+  fullName: Kevlar.Testing.CustomStrategyDescriptor.Handling
+- uid: System.Nullable{Kevlar.HandlingClause}
+  commentId: T:System.Nullable{Kevlar.HandlingClause}
+  parent: System
+  definition: System.Nullable`1
+  href: Kevlar.HandlingClause.html
+  name: HandlingClause?
+  nameWithType: HandlingClause?
+  fullName: Kevlar.HandlingClause?
+  spec.csharp:
+  - uid: Kevlar.HandlingClause
+    name: HandlingClause
+    isExternal: true
+    href: Kevlar.HandlingClause.html
+  - name: '?'
+  spec.vb:
+  - uid: Kevlar.HandlingClause
+    name: HandlingClause
+    isExternal: true
+    href: Kevlar.HandlingClause.html
+  - name: '?'
+- uid: System.Nullable`1
+  commentId: T:System.Nullable`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  name: Nullable<T>
+  nameWithType: Nullable<T>
+  fullName: System.Nullable<T>
+  nameWithType.vb: Nullable(Of T)
+  fullName.vb: System.Nullable(Of T)
+  name.vb: Nullable(Of T)
+  spec.csharp:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )

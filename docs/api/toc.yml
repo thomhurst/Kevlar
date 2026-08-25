@@ -1,0 +1,418 @@
+### YamlMime:TableOfContent
+items:
+- uid: Kevlar
+  name: Kevlar
+  type: Namespace
+  items:
+  - uid: Kevlar.Backoff
+    name: Backoff
+    type: Class
+  - uid: Kevlar.BackoffKind
+    name: BackoffKind
+    type: Enum
+  - uid: Kevlar.CircuitBreakerBreakDurationEvent
+    name: CircuitBreakerBreakDurationEvent
+    type: Struct
+  - uid: Kevlar.CircuitBreakerBreakDurationEvent`1
+    name: CircuitBreakerBreakDurationEvent<TResult>
+    type: Struct
+  - uid: Kevlar.CircuitBreakerMonitor
+    name: CircuitBreakerMonitor
+    type: Class
+  - uid: Kevlar.CircuitBreakerOptions
+    name: CircuitBreakerOptions
+    type: Class
+  - uid: Kevlar.CircuitBreakerOptions`1
+    name: CircuitBreakerOptions<TResult>
+    type: Class
+  - uid: Kevlar.CircuitBreakerStateChangedEvent
+    name: CircuitBreakerStateChangedEvent
+    type: Struct
+  - uid: Kevlar.CircuitOpenException
+    name: CircuitOpenException
+    type: Class
+  - uid: Kevlar.CircuitState
+    name: CircuitState
+    type: Enum
+  - uid: Kevlar.ConcurrencyLimitExceededException
+    name: ConcurrencyLimitExceededException
+    type: Class
+  - uid: Kevlar.ConcurrencyLimitOptions
+    name: ConcurrencyLimitOptions
+    type: Class
+  - uid: Kevlar.ConcurrencyLimitRejectedEvent
+    name: ConcurrencyLimitRejectedEvent
+    type: Struct
+  - uid: Kevlar.Continuation`2
+    name: Continuation<T, TState>
+    type: Struct
+  - uid: Kevlar.ExecutionRejectedException
+    name: ExecutionRejectedException
+    type: Class
+  - uid: Kevlar.FallbackEvent
+    name: FallbackEvent
+    type: Struct
+  - uid: Kevlar.FallbackEvent`1
+    name: FallbackEvent<TResult>
+    type: Struct
+  - uid: Kevlar.FallbackOptions
+    name: FallbackOptions
+    type: Class
+  - uid: Kevlar.FallbackOptions`1
+    name: FallbackOptions<TResult>
+    type: Class
+  - uid: Kevlar.HandlingClause
+    name: HandlingClause
+    type: Struct
+  - uid: Kevlar.HandlingEvent
+    name: HandlingEvent
+    type: Struct
+  - uid: Kevlar.HandlingEvent`1
+    name: HandlingEvent<TResult>
+    type: Struct
+  - uid: Kevlar.HedgeActionGenerator
+    name: HedgeActionGenerator
+    type: Class
+  - uid: Kevlar.HedgeActionGeneratorEvent
+    name: HedgeActionGeneratorEvent
+    type: Struct
+  - uid: Kevlar.HedgeActionGeneratorEvent`1
+    name: HedgeActionGeneratorEvent<TResult>
+    type: Struct
+  - uid: Kevlar.HedgeDelayEvent
+    name: HedgeDelayEvent
+    type: Struct
+  - uid: Kevlar.HedgeEvent
+    name: HedgeEvent
+    type: Struct
+  - uid: Kevlar.HedgeOptions
+    name: HedgeOptions
+    type: Class
+  - uid: Kevlar.HedgeOptions`1
+    name: HedgeOptions<TResult>
+    type: Class
+  - uid: Kevlar.Jitter
+    name: Jitter
+    type: Enum
+  - uid: Kevlar.KevlarConfigurationException
+    name: KevlarConfigurationException
+    type: Class
+  - uid: Kevlar.KevlarContext
+    name: KevlarContext
+    type: Class
+  - uid: Kevlar.KevlarDiagnostics
+    name: KevlarDiagnostics
+    type: Class
+  - uid: Kevlar.KevlarException
+    name: KevlarException
+    type: Class
+  - uid: Kevlar.KevlarKey`1
+    name: KevlarKey<T>
+    type: Struct
+  - uid: Kevlar.KevlarProperties
+    name: KevlarProperties
+    type: Class
+  - uid: Kevlar.KevlarProxyException
+    name: KevlarProxyException
+    type: Class
+  - uid: Kevlar.Outcome`1
+    name: Outcome<T>
+    type: Struct
+  - uid: Kevlar.PartitionedShieldOptions
+    name: PartitionedShieldOptions
+    type: Class
+  - uid: Kevlar.PartitionedShield`1
+    name: PartitionedShield<TKey>
+    type: Class
+  - uid: Kevlar.PartitionedShield`2
+    name: PartitionedShield<TKey, TResult>
+    type: Class
+  - uid: Kevlar.RateLimitExceededException
+    name: RateLimitExceededException
+    type: Class
+  - uid: Kevlar.RateLimitOptions
+    name: RateLimitOptions
+    type: Class
+  - uid: Kevlar.RateLimitRejectedEvent
+    name: RateLimitRejectedEvent
+    type: Struct
+  - uid: Kevlar.RetryEvent
+    name: RetryEvent
+    type: Struct
+  - uid: Kevlar.RetryEvent`1
+    name: RetryEvent<TResult>
+    type: Struct
+  - uid: Kevlar.RetryOptions
+    name: RetryOptions
+    type: Class
+  - uid: Kevlar.RetryOptions`1
+    name: RetryOptions<TResult>
+    type: Class
+  - uid: Kevlar.Shield
+    name: Shield
+    type: Class
+  - uid: Kevlar.ShieldBuilder
+    name: ShieldBuilder
+    type: Class
+  - uid: Kevlar.ShieldBuilder`1
+    name: ShieldBuilder<TResult>
+    type: Class
+  - uid: Kevlar.ShieldExtensions
+    name: ShieldExtensions
+    type: Class
+  - uid: Kevlar.ShieldResultExtensions
+    name: ShieldResultExtensions
+    type: Class
+  - uid: Kevlar.ShieldTaskExtensions
+    name: ShieldTaskExtensions
+    type: Class
+  - uid: Kevlar.Shield`1
+    name: Shield<TResult>
+    type: Class
+  - uid: Kevlar.Strategy
+    name: Strategy
+    type: Class
+  - uid: Kevlar.TimeoutEvent
+    name: TimeoutEvent
+    type: Struct
+  - uid: Kevlar.TimeoutExceededException
+    name: TimeoutExceededException
+    type: Class
+  - uid: Kevlar.TimeoutOptions
+    name: TimeoutOptions
+    type: Class
+- uid: Kevlar.Chaos
+  name: Kevlar.Chaos
+  type: Namespace
+  items:
+  - uid: Kevlar.Chaos.ChaosBehaviorOptions
+    name: ChaosBehaviorOptions
+    type: Class
+  - uid: Kevlar.Chaos.ChaosDiagnostics
+    name: ChaosDiagnostics
+    type: Class
+  - uid: Kevlar.Chaos.ChaosEvent
+    name: ChaosEvent
+    type: Struct
+  - uid: Kevlar.Chaos.ChaosFaultOptions
+    name: ChaosFaultOptions
+    type: Class
+  - uid: Kevlar.Chaos.ChaosInjectedException
+    name: ChaosInjectedException
+    type: Class
+  - uid: Kevlar.Chaos.ChaosInjectionKind
+    name: ChaosInjectionKind
+    type: Enum
+  - uid: Kevlar.Chaos.ChaosLatencyOptions
+    name: ChaosLatencyOptions
+    type: Class
+  - uid: Kevlar.Chaos.ChaosOptions
+    name: ChaosOptions
+    type: Class
+  - uid: Kevlar.Chaos.ChaosOutcomeOptions`1
+    name: ChaosOutcomeOptions<TResult>
+    type: Class
+  - uid: Kevlar.Chaos.ChaosScope
+    name: ChaosScope
+    type: Class
+  - uid: Kevlar.Chaos.ChaosShield
+    name: ChaosShield
+    type: Class
+- uid: Kevlar.Extensions.DependencyInjection
+  name: Kevlar.Extensions.DependencyInjection
+  type: Namespace
+  items:
+  - uid: Kevlar.Extensions.DependencyInjection.CircuitBreakerDefinition
+    name: CircuitBreakerDefinition
+    type: Class
+  - uid: Kevlar.Extensions.DependencyInjection.ConcurrencyLimitDefinition
+    name: ConcurrencyLimitDefinition
+    type: Class
+  - uid: Kevlar.Extensions.DependencyInjection.IKevlarRegistry
+    name: IKevlarRegistry
+    type: Interface
+  - uid: Kevlar.Extensions.DependencyInjection.IShieldProvider
+    name: IShieldProvider
+    type: Interface
+  - uid: Kevlar.Extensions.DependencyInjection.IShieldProvider`1
+    name: IShieldProvider<TResult>
+    type: Interface
+  - uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions
+    name: KevlarServiceCollectionExtensions
+    type: Class
+  - uid: Kevlar.Extensions.DependencyInjection.RateLimitDefinition
+    name: RateLimitDefinition
+    type: Class
+  - uid: Kevlar.Extensions.DependencyInjection.RetryDefinition
+    name: RetryDefinition
+    type: Class
+  - uid: Kevlar.Extensions.DependencyInjection.ShieldDefinition
+    name: ShieldDefinition
+    type: Class
+- uid: Kevlar.Extensions.Grpc
+  name: Kevlar.Extensions.Grpc
+  type: Namespace
+  items:
+  - uid: Kevlar.Extensions.Grpc.GrpcShield
+    name: GrpcShield
+    type: Class
+  - uid: Kevlar.Extensions.Grpc.ShieldGrpcClientBuilderExtensions
+    name: ShieldGrpcClientBuilderExtensions
+    type: Class
+  - uid: Kevlar.Extensions.Grpc.ShieldStreamingClientInterceptor
+    name: ShieldStreamingClientInterceptor
+    type: Class
+  - uid: Kevlar.Extensions.Grpc.ShieldUnaryClientInterceptor
+    name: ShieldUnaryClientInterceptor
+    type: Class
+- uid: Kevlar.Extensions.Http
+  name: Kevlar.Extensions.Http
+  type: Namespace
+  items:
+  - uid: Kevlar.Extensions.Http.HttpContentReplayPolicy
+    name: HttpContentReplayPolicy
+    type: Enum
+  - uid: Kevlar.Extensions.Http.HttpEndpoint
+    name: HttpEndpoint
+    type: Class
+  - uid: Kevlar.Extensions.Http.HttpEndpointRoutingOptions
+    name: HttpEndpointRoutingOptions
+    type: Class
+  - uid: Kevlar.Extensions.Http.HttpEndpointSelectionMode
+    name: HttpEndpointSelectionMode
+    type: Enum
+  - uid: Kevlar.Extensions.Http.HttpRequestReplayException
+    name: HttpRequestReplayException
+    type: Class
+  - uid: Kevlar.Extensions.Http.HttpShield
+    name: HttpShield
+    type: Class
+  - uid: Kevlar.Extensions.Http.ShieldDelegatingHandler
+    name: ShieldDelegatingHandler
+    type: Class
+  - uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+    name: ShieldHttpClientBuilderExtensions
+    type: Class
+  - uid: Kevlar.Extensions.Http.ShieldHttpHandlerOptions
+    name: ShieldHttpHandlerOptions
+    type: Class
+  - uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+    name: StandardHedgeShieldOptions
+    type: Class
+  - uid: Kevlar.Extensions.Http.StandardHttpShieldOptions
+    name: StandardHttpShieldOptions
+    type: Class
+- uid: Kevlar.Extensions.RateLimiting
+  name: Kevlar.Extensions.RateLimiting
+  type: Namespace
+  items:
+  - uid: Kevlar.Extensions.RateLimiting.RateLimitLeaseAcquirer
+    name: RateLimitLeaseAcquirer
+    type: Delegate
+  - uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions
+    name: RateLimiterAdapterOptions
+    type: Class
+  - uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent
+    name: RateLimiterAdapterRejectedEvent
+    type: Struct
+  - uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException
+    name: RateLimiterAdapterRejectedException
+    type: Class
+  - uid: Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions
+    name: ShieldRateLimiterExtensions
+    type: Class
+- uid: Kevlar.Testing
+  name: Kevlar.Testing
+  type: Namespace
+  items:
+  - uid: Kevlar.Testing.BackoffDescriptor
+    name: BackoffDescriptor
+    type: Class
+  - uid: Kevlar.Testing.CallbackKind
+    name: CallbackKind
+    type: Enum
+  - uid: Kevlar.Testing.CallbackRecord
+    name: CallbackRecord
+    type: Class
+  - uid: Kevlar.Testing.CircuitBreakerStateSnapshot
+    name: CircuitBreakerStateSnapshot
+    type: Class
+  - uid: Kevlar.Testing.CircuitBreakerStrategyDescriptor
+    name: CircuitBreakerStrategyDescriptor
+    type: Class
+  - uid: Kevlar.Testing.ConcurrencyLimitStateSnapshot
+    name: ConcurrencyLimitStateSnapshot
+    type: Class
+  - uid: Kevlar.Testing.ConcurrencyLimitStrategyDescriptor
+    name: ConcurrencyLimitStrategyDescriptor
+    type: Class
+  - uid: Kevlar.Testing.CustomStrategyDescriptor
+    name: CustomStrategyDescriptor
+    type: Class
+  - uid: Kevlar.Testing.ExecutionProbe
+    name: ExecutionProbe
+    type: Class
+  - uid: Kevlar.Testing.ExecutionProbeSnapshot
+    name: ExecutionProbeSnapshot
+    type: Class
+  - uid: Kevlar.Testing.FakeTimeProviderExtensions
+    name: FakeTimeProviderExtensions
+    type: Class
+  - uid: Kevlar.Testing.FallbackStrategyDescriptor
+    name: FallbackStrategyDescriptor
+    type: Class
+  - uid: Kevlar.Testing.HandlingClauseDescriptor
+    name: HandlingClauseDescriptor
+    type: Class
+  - uid: Kevlar.Testing.HedgeStrategyDescriptor
+    name: HedgeStrategyDescriptor
+    type: Class
+  - uid: Kevlar.Testing.MetricRecord
+    name: MetricRecord
+    type: Class
+  - uid: Kevlar.Testing.RateLimitStateSnapshot
+    name: RateLimitStateSnapshot
+    type: Class
+  - uid: Kevlar.Testing.RateLimitStrategyDescriptor
+    name: RateLimitStrategyDescriptor
+    type: Class
+  - uid: Kevlar.Testing.RetryStrategyDescriptor
+    name: RetryStrategyDescriptor
+    type: Class
+  - uid: Kevlar.Testing.ShieldAssertionException
+    name: ShieldAssertionException
+    type: Class
+  - uid: Kevlar.Testing.ShieldDescriptor
+    name: ShieldDescriptor
+    type: Class
+  - uid: Kevlar.Testing.ShieldDescriptorAssertionExtensions
+    name: ShieldDescriptorAssertionExtensions
+    type: Class
+  - uid: Kevlar.Testing.ShieldDescriptorExtensions
+    name: ShieldDescriptorExtensions
+    type: Class
+  - uid: Kevlar.Testing.ShieldExecutionExtensions
+    name: ShieldExecutionExtensions
+    type: Class
+  - uid: Kevlar.Testing.ShieldStateSnapshot
+    name: ShieldStateSnapshot
+    type: Class
+  - uid: Kevlar.Testing.ShieldStateSnapshotExtensions
+    name: ShieldStateSnapshotExtensions
+    type: Class
+  - uid: Kevlar.Testing.StrategyDescriptor
+    name: StrategyDescriptor
+    type: Class
+  - uid: Kevlar.Testing.StrategyKind
+    name: StrategyKind
+    type: Enum
+  - uid: Kevlar.Testing.StrategyStateSnapshot
+    name: StrategyStateSnapshot
+    type: Class
+  - uid: Kevlar.Testing.TelemetryRecorder
+    name: TelemetryRecorder
+    type: Class
+  - uid: Kevlar.Testing.TimeoutStrategyDescriptor
+    name: TimeoutStrategyDescriptor
+    type: Class
+memberLayout: SamePage

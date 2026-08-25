@@ -1,0 +1,1349 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  commentId: T:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  id: ShieldHttpClientBuilderExtensions
+  parent: Kevlar.Extensions.Http
+  children:
+  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield{System.Net.Http.HttpResponseMessage})
+  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield{System.Net.Http.HttpResponseMessage},Kevlar.Extensions.Http.ShieldHttpHandlerOptions)
+  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}})
+  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}},System.Func{System.IServiceProvider,Kevlar.Extensions.Http.ShieldHttpHandlerOptions})
+  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
+  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHedgeShieldOptions},System.Action{System.Exception})
+  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHedgeShieldOptions})
+  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
+  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
+  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHttpShieldOptions},System.Action{System.Exception})
+  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHttpShieldOptions})
+  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHttpShieldOptions})
+  langs:
+  - csharp
+  - vb
+  name: ShieldHttpClientBuilderExtensions
+  nameWithType: ShieldHttpClientBuilderExtensions
+  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  type: Class
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: Adds Kevlar resilience to <xref href="Microsoft.Extensions.DependencyInjection.IHttpClientBuilder" data-throw-if-not-resolved="false"></xref> pipelines.
+  example: []
+  syntax:
+    content: public static class ShieldHttpClientBuilderExtensions
+    content.vb: Public Module ShieldHttpClientBuilderExtensions
+  inheritance:
+  - System.Object
+  inheritedMembers:
+  - System.Object.GetType
+  - System.Object.MemberwiseClone
+  - System.Object.ToString
+  - System.Object.Equals(System.Object)
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  - System.Object.GetHashCode
+- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield{System.Net.Http.HttpResponseMessage})
+  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield{System.Net.Http.HttpResponseMessage})
+  id: AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield{System.Net.Http.HttpResponseMessage})
+  isExtensionMethod: true
+  parent: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  langs:
+  - csharp
+  - vb
+  name: AddShield(IHttpClientBuilder, Shield<HttpResponseMessage>)
+  nameWithType: ShieldHttpClientBuilderExtensions.AddShield(IHttpClientBuilder, Shield<HttpResponseMessage>)
+  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Kevlar.Shield<System.Net.Http.HttpResponseMessage>)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: Sends this client's requests through the given shield.
+  example: []
+  syntax:
+    content: public static IHttpClientBuilder AddShield(this IHttpClientBuilder builder, Shield<HttpResponseMessage> shield)
+    parameters:
+    - id: builder
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    - id: shield
+      type: Kevlar.Shield{System.Net.Http.HttpResponseMessage}
+    return:
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    content.vb: Public Shared Function AddShield(builder As IHttpClientBuilder, shield As Shield(Of HttpResponseMessage)) As IHttpClientBuilder
+  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield*
+  nameWithType.vb: ShieldHttpClientBuilderExtensions.AddShield(IHttpClientBuilder, Shield(Of HttpResponseMessage))
+  fullName.vb: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Kevlar.Shield(Of System.Net.Http.HttpResponseMessage))
+  name.vb: AddShield(IHttpClientBuilder, Shield(Of HttpResponseMessage))
+- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield{System.Net.Http.HttpResponseMessage},Kevlar.Extensions.Http.ShieldHttpHandlerOptions)
+  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield{System.Net.Http.HttpResponseMessage},Kevlar.Extensions.Http.ShieldHttpHandlerOptions)
+  id: AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield{System.Net.Http.HttpResponseMessage},Kevlar.Extensions.Http.ShieldHttpHandlerOptions)
+  isExtensionMethod: true
+  parent: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  langs:
+  - csharp
+  - vb
+  name: AddShield(IHttpClientBuilder, Shield<HttpResponseMessage>, ShieldHttpHandlerOptions)
+  nameWithType: ShieldHttpClientBuilderExtensions.AddShield(IHttpClientBuilder, Shield<HttpResponseMessage>, ShieldHttpHandlerOptions)
+  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Kevlar.Shield<System.Net.Http.HttpResponseMessage>, Kevlar.Extensions.Http.ShieldHttpHandlerOptions)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: Sends this client's requests through the given shield with replay and routing options.
+  example: []
+  syntax:
+    content: public static IHttpClientBuilder AddShield(this IHttpClientBuilder builder, Shield<HttpResponseMessage> shield, ShieldHttpHandlerOptions options)
+    parameters:
+    - id: builder
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    - id: shield
+      type: Kevlar.Shield{System.Net.Http.HttpResponseMessage}
+    - id: options
+      type: Kevlar.Extensions.Http.ShieldHttpHandlerOptions
+    return:
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    content.vb: Public Shared Function AddShield(builder As IHttpClientBuilder, shield As Shield(Of HttpResponseMessage), options As ShieldHttpHandlerOptions) As IHttpClientBuilder
+  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield*
+  nameWithType.vb: ShieldHttpClientBuilderExtensions.AddShield(IHttpClientBuilder, Shield(Of HttpResponseMessage), ShieldHttpHandlerOptions)
+  fullName.vb: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Kevlar.Shield(Of System.Net.Http.HttpResponseMessage), Kevlar.Extensions.Http.ShieldHttpHandlerOptions)
+  name.vb: AddShield(IHttpClientBuilder, Shield(Of HttpResponseMessage), ShieldHttpHandlerOptions)
+- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}})
+  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}})
+  id: AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}})
+  isExtensionMethod: true
+  parent: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  langs:
+  - csharp
+  - vb
+  name: AddShield(IHttpClientBuilder, Func<IServiceProvider, Shield<HttpResponseMessage>>)
+  nameWithType: ShieldHttpClientBuilderExtensions.AddShield(IHttpClientBuilder, Func<IServiceProvider, Shield<HttpResponseMessage>>)
+  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Func<System.IServiceProvider, Kevlar.Shield<System.Net.Http.HttpResponseMessage>>)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: Sends this client's requests through a shield built from the service provider.
+  example: []
+  syntax:
+    content: public static IHttpClientBuilder AddShield(this IHttpClientBuilder builder, Func<IServiceProvider, Shield<HttpResponseMessage>> shieldFactory)
+    parameters:
+    - id: builder
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    - id: shieldFactory
+      type: System.Func{System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}}
+    return:
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    content.vb: Public Shared Function AddShield(builder As IHttpClientBuilder, shieldFactory As Func(Of IServiceProvider, Shield(Of HttpResponseMessage))) As IHttpClientBuilder
+  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield*
+  nameWithType.vb: ShieldHttpClientBuilderExtensions.AddShield(IHttpClientBuilder, Func(Of IServiceProvider, Shield(Of HttpResponseMessage)))
+  fullName.vb: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Func(Of System.IServiceProvider, Kevlar.Shield(Of System.Net.Http.HttpResponseMessage)))
+  name.vb: AddShield(IHttpClientBuilder, Func(Of IServiceProvider, Shield(Of HttpResponseMessage)))
+- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}},System.Func{System.IServiceProvider,Kevlar.Extensions.Http.ShieldHttpHandlerOptions})
+  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}},System.Func{System.IServiceProvider,Kevlar.Extensions.Http.ShieldHttpHandlerOptions})
+  id: AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}},System.Func{System.IServiceProvider,Kevlar.Extensions.Http.ShieldHttpHandlerOptions})
+  isExtensionMethod: true
+  parent: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  langs:
+  - csharp
+  - vb
+  name: AddShield(IHttpClientBuilder, Func<IServiceProvider, Shield<HttpResponseMessage>>, Func<IServiceProvider, ShieldHttpHandlerOptions>)
+  nameWithType: ShieldHttpClientBuilderExtensions.AddShield(IHttpClientBuilder, Func<IServiceProvider, Shield<HttpResponseMessage>>, Func<IServiceProvider, ShieldHttpHandlerOptions>)
+  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Func<System.IServiceProvider, Kevlar.Shield<System.Net.Http.HttpResponseMessage>>, System.Func<System.IServiceProvider, Kevlar.Extensions.Http.ShieldHttpHandlerOptions>)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: Sends this client's requests through service-provider-created shield and handler options.
+  example: []
+  syntax:
+    content: public static IHttpClientBuilder AddShield(this IHttpClientBuilder builder, Func<IServiceProvider, Shield<HttpResponseMessage>> shieldFactory, Func<IServiceProvider, ShieldHttpHandlerOptions> optionsFactory)
+    parameters:
+    - id: builder
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    - id: shieldFactory
+      type: System.Func{System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}}
+    - id: optionsFactory
+      type: System.Func{System.IServiceProvider,Kevlar.Extensions.Http.ShieldHttpHandlerOptions}
+    return:
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    content.vb: Public Shared Function AddShield(builder As IHttpClientBuilder, shieldFactory As Func(Of IServiceProvider, Shield(Of HttpResponseMessage)), optionsFactory As Func(Of IServiceProvider, ShieldHttpHandlerOptions)) As IHttpClientBuilder
+  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield*
+  nameWithType.vb: ShieldHttpClientBuilderExtensions.AddShield(IHttpClientBuilder, Func(Of IServiceProvider, Shield(Of HttpResponseMessage)), Func(Of IServiceProvider, ShieldHttpHandlerOptions))
+  fullName.vb: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Func(Of System.IServiceProvider, Kevlar.Shield(Of System.Net.Http.HttpResponseMessage)), System.Func(Of System.IServiceProvider, Kevlar.Extensions.Http.ShieldHttpHandlerOptions))
+  name.vb: AddShield(IHttpClientBuilder, Func(Of IServiceProvider, Shield(Of HttpResponseMessage)), Func(Of IServiceProvider, ShieldHttpHandlerOptions))
+- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
+  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
+  id: AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
+  isExtensionMethod: true
+  parent: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  langs:
+  - csharp
+  - vb
+  name: AddStandardShield(IHttpClientBuilder)
+  nameWithType: ShieldHttpClientBuilderExtensions.AddStandardShield(IHttpClientBuilder)
+  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: >-
+    Sends this client's requests through <xref href="Kevlar.Extensions.Http.HttpShield.Standard" data-throw-if-not-resolved="false"></xref> and uses its
+
+    attempt timeout instead of <xref href="System.Net.Http.HttpClient.Timeout" data-throw-if-not-resolved="false"></xref>.
+  example: []
+  syntax:
+    content: public static IHttpClientBuilder AddStandardShield(this IHttpClientBuilder builder)
+    parameters:
+    - id: builder
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    return:
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    content.vb: Public Shared Function AddStandardShield(builder As IHttpClientBuilder) As IHttpClientBuilder
+  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield*
+- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHttpShieldOptions})
+  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHttpShieldOptions})
+  id: AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHttpShieldOptions})
+  isExtensionMethod: true
+  parent: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  langs:
+  - csharp
+  - vb
+  name: AddStandardShield(IHttpClientBuilder, Action<StandardHttpShieldOptions>)
+  nameWithType: ShieldHttpClientBuilderExtensions.AddStandardShield(IHttpClientBuilder, Action<StandardHttpShieldOptions>)
+  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Action<Kevlar.Extensions.Http.StandardHttpShieldOptions>)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: >-
+    Configures and adds one shared standard shield for this client registration. The standard
+
+    attempt timeout replaces <xref href="System.Net.Http.HttpClient.Timeout" data-throw-if-not-resolved="false"></xref>.
+  example: []
+  syntax:
+    content: public static IHttpClientBuilder AddStandardShield(this IHttpClientBuilder builder, Action<StandardHttpShieldOptions> configure)
+    parameters:
+    - id: builder
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    - id: configure
+      type: System.Action{Kevlar.Extensions.Http.StandardHttpShieldOptions}
+    return:
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    content.vb: Public Shared Function AddStandardShield(builder As IHttpClientBuilder, configure As Action(Of StandardHttpShieldOptions)) As IHttpClientBuilder
+  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield*
+  nameWithType.vb: ShieldHttpClientBuilderExtensions.AddStandardShield(IHttpClientBuilder, Action(Of StandardHttpShieldOptions))
+  fullName.vb: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Action(Of Kevlar.Extensions.Http.StandardHttpShieldOptions))
+  name.vb: AddStandardShield(IHttpClientBuilder, Action(Of StandardHttpShieldOptions))
+- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHttpShieldOptions})
+  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHttpShieldOptions})
+  id: AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHttpShieldOptions})
+  isExtensionMethod: true
+  parent: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  langs:
+  - csharp
+  - vb
+  name: AddStandardShield(IHttpClientBuilder, Action<IServiceProvider, StandardHttpShieldOptions>)
+  nameWithType: ShieldHttpClientBuilderExtensions.AddStandardShield(IHttpClientBuilder, Action<IServiceProvider, StandardHttpShieldOptions>)
+  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Action<System.IServiceProvider, Kevlar.Extensions.Http.StandardHttpShieldOptions>)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: >-
+    Configures and adds a standard shield using the handler pipeline's service provider.
+
+    Configuration and shield creation run once per handler lifetime.
+  example: []
+  syntax:
+    content: public static IHttpClientBuilder AddStandardShield(this IHttpClientBuilder builder, Action<IServiceProvider, StandardHttpShieldOptions> configure)
+    parameters:
+    - id: builder
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    - id: configure
+      type: System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHttpShieldOptions}
+    return:
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    content.vb: Public Shared Function AddStandardShield(builder As IHttpClientBuilder, configure As Action(Of IServiceProvider, StandardHttpShieldOptions)) As IHttpClientBuilder
+  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield*
+  nameWithType.vb: ShieldHttpClientBuilderExtensions.AddStandardShield(IHttpClientBuilder, Action(Of IServiceProvider, StandardHttpShieldOptions))
+  fullName.vb: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Action(Of System.IServiceProvider, Kevlar.Extensions.Http.StandardHttpShieldOptions))
+  name.vb: AddStandardShield(IHttpClientBuilder, Action(Of IServiceProvider, StandardHttpShieldOptions))
+- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
+  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
+  id: AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
+  isExtensionMethod: true
+  parent: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  langs:
+  - csharp
+  - vb
+  name: AddStandardShield(IHttpClientBuilder, IConfiguration, Action<Exception>?)
+  nameWithType: ShieldHttpClientBuilderExtensions.AddStandardShield(IHttpClientBuilder, IConfiguration, Action<Exception>?)
+  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action<System.Exception>?)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: >-
+    Adds a reload-aware standard shield bound from a configuration section.
+
+    A valid change replaces the complete pipeline for subsequent requests.
+  example: []
+  syntax:
+    content: public static IHttpClientBuilder AddStandardShield(this IHttpClientBuilder builder, IConfiguration configuration, Action<Exception>? onReloadFailure = null)
+    parameters:
+    - id: builder
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    - id: configuration
+      type: Microsoft.Extensions.Configuration.IConfiguration
+    - id: onReloadFailure
+      type: System.Action{System.Exception}
+    return:
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    content.vb: Public Shared Function AddStandardShield(builder As IHttpClientBuilder, configuration As IConfiguration, onReloadFailure As Action(Of Exception) = Nothing) As IHttpClientBuilder
+  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield*
+  nameWithType.vb: ShieldHttpClientBuilderExtensions.AddStandardShield(IHttpClientBuilder, IConfiguration, Action(Of Exception))
+  fullName.vb: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action(Of System.Exception))
+  name.vb: AddStandardShield(IHttpClientBuilder, IConfiguration, Action(Of Exception))
+- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHttpShieldOptions},System.Action{System.Exception})
+  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHttpShieldOptions},System.Action{System.Exception})
+  id: AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHttpShieldOptions},System.Action{System.Exception})
+  isExtensionMethod: true
+  parent: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  langs:
+  - csharp
+  - vb
+  name: AddStandardShield(IHttpClientBuilder, IConfiguration, Action<IServiceProvider, StandardHttpShieldOptions>, Action<Exception>?)
+  nameWithType: ShieldHttpClientBuilderExtensions.AddStandardShield(IHttpClientBuilder, IConfiguration, Action<IServiceProvider, StandardHttpShieldOptions>, Action<Exception>?)
+  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action<System.IServiceProvider, Kevlar.Extensions.Http.StandardHttpShieldOptions>, System.Action<System.Exception>?)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: >-
+    Adds a reload-aware standard shield bound from configuration, then customized using the
+
+    handler pipeline's service provider. The callback runs for the initial snapshot and every
+
+    reload after configuration values have been applied.
+  example: []
+  syntax:
+    content: public static IHttpClientBuilder AddStandardShield(this IHttpClientBuilder builder, IConfiguration configuration, Action<IServiceProvider, StandardHttpShieldOptions> configure, Action<Exception>? onReloadFailure = null)
+    parameters:
+    - id: builder
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    - id: configuration
+      type: Microsoft.Extensions.Configuration.IConfiguration
+    - id: configure
+      type: System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHttpShieldOptions}
+    - id: onReloadFailure
+      type: System.Action{System.Exception}
+    return:
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    content.vb: Public Shared Function AddStandardShield(builder As IHttpClientBuilder, configuration As IConfiguration, configure As Action(Of IServiceProvider, StandardHttpShieldOptions), onReloadFailure As Action(Of Exception) = Nothing) As IHttpClientBuilder
+  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield*
+  nameWithType.vb: ShieldHttpClientBuilderExtensions.AddStandardShield(IHttpClientBuilder, IConfiguration, Action(Of IServiceProvider, StandardHttpShieldOptions), Action(Of Exception))
+  fullName.vb: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action(Of System.IServiceProvider, Kevlar.Extensions.Http.StandardHttpShieldOptions), System.Action(Of System.Exception))
+  name.vb: AddStandardShield(IHttpClientBuilder, IConfiguration, Action(Of IServiceProvider, StandardHttpShieldOptions), Action(Of Exception))
+- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHedgeShieldOptions})
+  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHedgeShieldOptions})
+  id: AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHedgeShieldOptions})
+  isExtensionMethod: true
+  parent: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  langs:
+  - csharp
+  - vb
+  name: AddStandardHedgeShield(IHttpClientBuilder, Action<StandardHedgeShieldOptions>)
+  nameWithType: ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(IHttpClientBuilder, Action<StandardHedgeShieldOptions>)
+  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Action<Kevlar.Extensions.Http.StandardHedgeShieldOptions>)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: >-
+    Adds a standard endpoint-aware pipeline: total timeout, hedging, per-endpoint concurrency
+
+    limit and circuit breaker, then per-attempt timeout.
+  example: []
+  syntax:
+    content: public static IHttpClientBuilder AddStandardHedgeShield(this IHttpClientBuilder builder, Action<StandardHedgeShieldOptions> configure)
+    parameters:
+    - id: builder
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    - id: configure
+      type: System.Action{Kevlar.Extensions.Http.StandardHedgeShieldOptions}
+    return:
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    content.vb: Public Shared Function AddStandardHedgeShield(builder As IHttpClientBuilder, configure As Action(Of StandardHedgeShieldOptions)) As IHttpClientBuilder
+  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield*
+  nameWithType.vb: ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(IHttpClientBuilder, Action(Of StandardHedgeShieldOptions))
+  fullName.vb: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Action(Of Kevlar.Extensions.Http.StandardHedgeShieldOptions))
+  name.vb: AddStandardHedgeShield(IHttpClientBuilder, Action(Of StandardHedgeShieldOptions))
+- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
+  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
+  id: AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
+  isExtensionMethod: true
+  parent: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  langs:
+  - csharp
+  - vb
+  name: AddStandardHedgeShield(IHttpClientBuilder, IConfiguration, Action<Exception>?)
+  nameWithType: ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(IHttpClientBuilder, IConfiguration, Action<Exception>?)
+  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action<System.Exception>?)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: >-
+    Adds a reload-aware standard hedging shield bound from a configuration section.
+
+    A valid change replaces the complete pipeline and all endpoint-local state.
+  example: []
+  syntax:
+    content: public static IHttpClientBuilder AddStandardHedgeShield(this IHttpClientBuilder builder, IConfiguration configuration, Action<Exception>? onReloadFailure = null)
+    parameters:
+    - id: builder
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    - id: configuration
+      type: Microsoft.Extensions.Configuration.IConfiguration
+    - id: onReloadFailure
+      type: System.Action{System.Exception}
+    return:
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    content.vb: Public Shared Function AddStandardHedgeShield(builder As IHttpClientBuilder, configuration As IConfiguration, onReloadFailure As Action(Of Exception) = Nothing) As IHttpClientBuilder
+  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield*
+  nameWithType.vb: ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(IHttpClientBuilder, IConfiguration, Action(Of Exception))
+  fullName.vb: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action(Of System.Exception))
+  name.vb: AddStandardHedgeShield(IHttpClientBuilder, IConfiguration, Action(Of Exception))
+- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHedgeShieldOptions},System.Action{System.Exception})
+  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHedgeShieldOptions},System.Action{System.Exception})
+  id: AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHedgeShieldOptions},System.Action{System.Exception})
+  isExtensionMethod: true
+  parent: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  langs:
+  - csharp
+  - vb
+  name: AddStandardHedgeShield(IHttpClientBuilder, IConfiguration, Action<IServiceProvider, StandardHedgeShieldOptions>, Action<Exception>?)
+  nameWithType: ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(IHttpClientBuilder, IConfiguration, Action<IServiceProvider, StandardHedgeShieldOptions>, Action<Exception>?)
+  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action<System.IServiceProvider, Kevlar.Extensions.Http.StandardHedgeShieldOptions>, System.Action<System.Exception>?)
+  type: Method
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: >-
+    Adds a reload-aware standard hedging shield bound from configuration, then customized
+
+    using the handler pipeline's service provider. The callback runs for every snapshot after
+
+    configuration values have been applied.
+  example: []
+  syntax:
+    content: public static IHttpClientBuilder AddStandardHedgeShield(this IHttpClientBuilder builder, IConfiguration configuration, Action<IServiceProvider, StandardHedgeShieldOptions> configure, Action<Exception>? onReloadFailure = null)
+    parameters:
+    - id: builder
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    - id: configuration
+      type: Microsoft.Extensions.Configuration.IConfiguration
+    - id: configure
+      type: System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHedgeShieldOptions}
+    - id: onReloadFailure
+      type: System.Action{System.Exception}
+    return:
+      type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+    content.vb: Public Shared Function AddStandardHedgeShield(builder As IHttpClientBuilder, configuration As IConfiguration, configure As Action(Of IServiceProvider, StandardHedgeShieldOptions), onReloadFailure As Action(Of Exception) = Nothing) As IHttpClientBuilder
+  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield*
+  nameWithType.vb: ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(IHttpClientBuilder, IConfiguration, Action(Of IServiceProvider, StandardHedgeShieldOptions), Action(Of Exception))
+  fullName.vb: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action(Of System.IServiceProvider, Kevlar.Extensions.Http.StandardHedgeShieldOptions), System.Action(Of System.Exception))
+  name.vb: AddStandardHedgeShield(IHttpClientBuilder, IConfiguration, Action(Of IServiceProvider, StandardHedgeShieldOptions), Action(Of Exception))
+references:
+- uid: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+  commentId: T:Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+  parent: Microsoft.Extensions.DependencyInjection
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/microsoft.extensions.dependencyinjection.ihttpclientbuilder
+  name: IHttpClientBuilder
+  nameWithType: IHttpClientBuilder
+  fullName: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
+- uid: Kevlar.Extensions.Http
+  commentId: N:Kevlar.Extensions.Http
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar.Extensions.Http
+  nameWithType: Kevlar.Extensions.Http
+  fullName: Kevlar.Extensions.Http
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+  - name: .
+  - uid: Kevlar.Extensions.Http
+    name: Http
+    isExternal: true
+    href: Kevlar.Extensions.Http.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+  - name: .
+  - uid: Kevlar.Extensions.Http
+    name: Http
+    isExternal: true
+    href: Kevlar.Extensions.Http.html
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.MemberwiseClone
+  commentId: M:System.Object.MemberwiseClone
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  name: MemberwiseClone()
+  nameWithType: object.MemberwiseClone()
+  fullName: object.MemberwiseClone()
+  nameWithType.vb: Object.MemberwiseClone()
+  fullName.vb: Object.MemberwiseClone()
+  spec.csharp:
+  - uid: System.Object.MemberwiseClone
+    name: MemberwiseClone
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.MemberwiseClone
+    name: MemberwiseClone
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  - name: (
+  - name: )
+- uid: System.Object.ToString
+  commentId: M:System.Object.ToString
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  name: ToString()
+  nameWithType: object.ToString()
+  fullName: object.ToString()
+  nameWithType.vb: Object.ToString()
+  fullName.vb: Object.ToString()
+  spec.csharp:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object)
+  commentId: M:System.Object.Equals(System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  name: Equals(object)
+  nameWithType: object.Equals(object)
+  fullName: object.Equals(object)
+  nameWithType.vb: Object.Equals(Object)
+  fullName.vb: Object.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetHashCode
+  commentId: M:System.Object.GetHashCode
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  name: GetHashCode()
+  nameWithType: object.GetHashCode()
+  fullName: object.GetHashCode()
+  nameWithType.vb: Object.GetHashCode()
+  fullName.vb: Object.GetHashCode()
+  spec.csharp:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+- uid: Microsoft.Extensions.DependencyInjection
+  commentId: N:Microsoft.Extensions.DependencyInjection
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/microsoft
+  name: Microsoft.Extensions.DependencyInjection
+  nameWithType: Microsoft.Extensions.DependencyInjection
+  fullName: Microsoft.Extensions.DependencyInjection
+  spec.csharp:
+  - uid: Microsoft
+    name: Microsoft
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft
+  - name: .
+  - uid: Microsoft.Extensions
+    name: Extensions
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions
+  - name: .
+  - uid: Microsoft.Extensions.DependencyInjection
+    name: DependencyInjection
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions.dependencyinjection
+  spec.vb:
+  - uid: Microsoft
+    name: Microsoft
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft
+  - name: .
+  - uid: Microsoft.Extensions
+    name: Extensions
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions
+  - name: .
+  - uid: Microsoft.Extensions.DependencyInjection
+    name: DependencyInjection
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions.dependencyinjection
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield*
+  commentId: Overload:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield
+  isExternal: true
+  href: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.html#Kevlar_Extensions_Http_ShieldHttpClientBuilderExtensions_AddShield_Microsoft_Extensions_DependencyInjection_IHttpClientBuilder_Kevlar_Shield_System_Net_Http_HttpResponseMessage__
+  name: AddShield
+  nameWithType: ShieldHttpClientBuilderExtensions.AddShield
+  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield
+- uid: Kevlar.Shield{System.Net.Http.HttpResponseMessage}
+  commentId: T:Kevlar.Shield{System.Net.Http.HttpResponseMessage}
+  parent: Kevlar
+  definition: Kevlar.Shield`1
+  href: Kevlar.Shield-1.html
+  name: Shield<HttpResponseMessage>
+  nameWithType: Shield<HttpResponseMessage>
+  fullName: Kevlar.Shield<System.Net.Http.HttpResponseMessage>
+  nameWithType.vb: Shield(Of HttpResponseMessage)
+  fullName.vb: Kevlar.Shield(Of System.Net.Http.HttpResponseMessage)
+  name.vb: Shield(Of HttpResponseMessage)
+  spec.csharp:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: <
+  - uid: System.Net.Http.HttpResponseMessage
+    name: HttpResponseMessage
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.net.http.httpresponsemessage
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.Net.Http.HttpResponseMessage
+    name: HttpResponseMessage
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.net.http.httpresponsemessage
+  - name: )
+- uid: Kevlar.Shield`1
+  commentId: T:Kevlar.Shield`1
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Shield-1.html
+  name: Shield<TResult>
+  nameWithType: Shield<TResult>
+  fullName: Kevlar.Shield<TResult>
+  nameWithType.vb: Shield(Of TResult)
+  fullName.vb: Kevlar.Shield(Of TResult)
+  name.vb: Shield(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: Kevlar.Extensions.Http.ShieldHttpHandlerOptions
+  commentId: T:Kevlar.Extensions.Http.ShieldHttpHandlerOptions
+  parent: Kevlar.Extensions.Http
+  isExternal: true
+  href: Kevlar.Extensions.Http.ShieldHttpHandlerOptions.html
+  name: ShieldHttpHandlerOptions
+  nameWithType: ShieldHttpHandlerOptions
+  fullName: Kevlar.Extensions.Http.ShieldHttpHandlerOptions
+- uid: System.Func{System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}}
+  commentId: T:System.Func{System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<IServiceProvider, Shield<HttpResponseMessage>>
+  nameWithType: Func<IServiceProvider, Shield<HttpResponseMessage>>
+  fullName: System.Func<System.IServiceProvider, Kevlar.Shield<System.Net.Http.HttpResponseMessage>>
+  nameWithType.vb: Func(Of IServiceProvider, Shield(Of HttpResponseMessage))
+  fullName.vb: System.Func(Of System.IServiceProvider, Kevlar.Shield(Of System.Net.Http.HttpResponseMessage))
+  name.vb: Func(Of IServiceProvider, Shield(Of HttpResponseMessage))
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: System.IServiceProvider
+    name: IServiceProvider
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iserviceprovider
+  - name: ','
+  - name: " "
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: <
+  - uid: System.Net.Http.HttpResponseMessage
+    name: HttpResponseMessage
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.net.http.httpresponsemessage
+  - name: '>'
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.IServiceProvider
+    name: IServiceProvider
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iserviceprovider
+  - name: ','
+  - name: " "
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.Net.Http.HttpResponseMessage
+    name: HttpResponseMessage
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.net.http.httpresponsemessage
+  - name: )
+  - name: )
+- uid: System.Func`2
+  commentId: T:System.Func`2
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<T, TResult>
+  nameWithType: Func<T, TResult>
+  fullName: System.Func<T, TResult>
+  nameWithType.vb: Func(Of T, TResult)
+  fullName.vb: System.Func(Of T, TResult)
+  name.vb: Func(Of T, TResult)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: System.Func{System.IServiceProvider,Kevlar.Extensions.Http.ShieldHttpHandlerOptions}
+  commentId: T:System.Func{System.IServiceProvider,Kevlar.Extensions.Http.ShieldHttpHandlerOptions}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<IServiceProvider, ShieldHttpHandlerOptions>
+  nameWithType: Func<IServiceProvider, ShieldHttpHandlerOptions>
+  fullName: System.Func<System.IServiceProvider, Kevlar.Extensions.Http.ShieldHttpHandlerOptions>
+  nameWithType.vb: Func(Of IServiceProvider, ShieldHttpHandlerOptions)
+  fullName.vb: System.Func(Of System.IServiceProvider, Kevlar.Extensions.Http.ShieldHttpHandlerOptions)
+  name.vb: Func(Of IServiceProvider, ShieldHttpHandlerOptions)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: System.IServiceProvider
+    name: IServiceProvider
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iserviceprovider
+  - name: ','
+  - name: " "
+  - uid: Kevlar.Extensions.Http.ShieldHttpHandlerOptions
+    name: ShieldHttpHandlerOptions
+    isExternal: true
+    href: Kevlar.Extensions.Http.ShieldHttpHandlerOptions.html
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.IServiceProvider
+    name: IServiceProvider
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iserviceprovider
+  - name: ','
+  - name: " "
+  - uid: Kevlar.Extensions.Http.ShieldHttpHandlerOptions
+    name: ShieldHttpHandlerOptions
+    isExternal: true
+    href: Kevlar.Extensions.Http.ShieldHttpHandlerOptions.html
+  - name: )
+- uid: Kevlar.Extensions.Http.HttpShield.Standard
+  commentId: M:Kevlar.Extensions.Http.HttpShield.Standard
+  isExternal: true
+  href: Kevlar.Extensions.Http.HttpShield.html#Kevlar_Extensions_Http_HttpShield_Standard
+  name: Standard()
+  nameWithType: HttpShield.Standard()
+  fullName: Kevlar.Extensions.Http.HttpShield.Standard()
+  spec.csharp:
+  - uid: Kevlar.Extensions.Http.HttpShield.Standard
+    name: Standard
+    isExternal: true
+    href: Kevlar.Extensions.Http.HttpShield.html#Kevlar_Extensions_Http_HttpShield_Standard
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: Kevlar.Extensions.Http.HttpShield.Standard
+    name: Standard
+    isExternal: true
+    href: Kevlar.Extensions.Http.HttpShield.html#Kevlar_Extensions_Http_HttpShield_Standard
+  - name: (
+  - name: )
+- uid: System.Net.Http.HttpClient.Timeout
+  commentId: P:System.Net.Http.HttpClient.Timeout
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.net.http.httpclient.timeout
+  name: Timeout
+  nameWithType: HttpClient.Timeout
+  fullName: System.Net.Http.HttpClient.Timeout
+- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield*
+  commentId: Overload:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield
+  isExternal: true
+  href: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.html#Kevlar_Extensions_Http_ShieldHttpClientBuilderExtensions_AddStandardShield_Microsoft_Extensions_DependencyInjection_IHttpClientBuilder_
+  name: AddStandardShield
+  nameWithType: ShieldHttpClientBuilderExtensions.AddStandardShield
+  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield
+- uid: System.Action{Kevlar.Extensions.Http.StandardHttpShieldOptions}
+  commentId: T:System.Action{Kevlar.Extensions.Http.StandardHttpShieldOptions}
+  parent: System
+  definition: System.Action`1
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<StandardHttpShieldOptions>
+  nameWithType: Action<StandardHttpShieldOptions>
+  fullName: System.Action<Kevlar.Extensions.Http.StandardHttpShieldOptions>
+  nameWithType.vb: Action(Of StandardHttpShieldOptions)
+  fullName.vb: System.Action(Of Kevlar.Extensions.Http.StandardHttpShieldOptions)
+  name.vb: Action(Of StandardHttpShieldOptions)
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - uid: Kevlar.Extensions.Http.StandardHttpShieldOptions
+    name: StandardHttpShieldOptions
+    isExternal: true
+    href: Kevlar.Extensions.Http.StandardHttpShieldOptions.html
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.Extensions.Http.StandardHttpShieldOptions
+    name: StandardHttpShieldOptions
+    isExternal: true
+    href: Kevlar.Extensions.Http.StandardHttpShieldOptions.html
+  - name: )
+- uid: System.Action`1
+  commentId: T:System.Action`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<T>
+  nameWithType: Action<T>
+  fullName: System.Action<T>
+  nameWithType.vb: Action(Of T)
+  fullName.vb: System.Action(Of T)
+  name.vb: Action(Of T)
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHttpShieldOptions}
+  commentId: T:System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHttpShieldOptions}
+  parent: System
+  definition: System.Action`2
+  href: https://learn.microsoft.com/dotnet/api/system.action-2
+  name: Action<IServiceProvider, StandardHttpShieldOptions>
+  nameWithType: Action<IServiceProvider, StandardHttpShieldOptions>
+  fullName: System.Action<System.IServiceProvider, Kevlar.Extensions.Http.StandardHttpShieldOptions>
+  nameWithType.vb: Action(Of IServiceProvider, StandardHttpShieldOptions)
+  fullName.vb: System.Action(Of System.IServiceProvider, Kevlar.Extensions.Http.StandardHttpShieldOptions)
+  name.vb: Action(Of IServiceProvider, StandardHttpShieldOptions)
+  spec.csharp:
+  - uid: System.Action`2
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-2
+  - name: <
+  - uid: System.IServiceProvider
+    name: IServiceProvider
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iserviceprovider
+  - name: ','
+  - name: " "
+  - uid: Kevlar.Extensions.Http.StandardHttpShieldOptions
+    name: StandardHttpShieldOptions
+    isExternal: true
+    href: Kevlar.Extensions.Http.StandardHttpShieldOptions.html
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`2
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.IServiceProvider
+    name: IServiceProvider
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iserviceprovider
+  - name: ','
+  - name: " "
+  - uid: Kevlar.Extensions.Http.StandardHttpShieldOptions
+    name: StandardHttpShieldOptions
+    isExternal: true
+    href: Kevlar.Extensions.Http.StandardHttpShieldOptions.html
+  - name: )
+- uid: System.Action`2
+  commentId: T:System.Action`2
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.action-2
+  name: Action<T1, T2>
+  nameWithType: Action<T1, T2>
+  fullName: System.Action<T1, T2>
+  nameWithType.vb: Action(Of T1, T2)
+  fullName.vb: System.Action(Of T1, T2)
+  name.vb: Action(Of T1, T2)
+  spec.csharp:
+  - uid: System.Action`2
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-2
+  - name: <
+  - name: T1
+  - name: ','
+  - name: " "
+  - name: T2
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`2
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-2
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T1
+  - name: ','
+  - name: " "
+  - name: T2
+  - name: )
+- uid: Microsoft.Extensions.Configuration.IConfiguration
+  commentId: T:Microsoft.Extensions.Configuration.IConfiguration
+  parent: Microsoft.Extensions.Configuration
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/microsoft.extensions.configuration.iconfiguration
+  name: IConfiguration
+  nameWithType: IConfiguration
+  fullName: Microsoft.Extensions.Configuration.IConfiguration
+- uid: System.Action{System.Exception}
+  commentId: T:System.Action{System.Exception}
+  parent: System
+  definition: System.Action`1
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<Exception>
+  nameWithType: Action<Exception>
+  fullName: System.Action<System.Exception>
+  nameWithType.vb: Action(Of Exception)
+  fullName.vb: System.Action(Of System.Exception)
+  name.vb: Action(Of Exception)
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - uid: System.Exception
+    name: Exception
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.exception
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.Exception
+    name: Exception
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.exception
+  - name: )
+- uid: Microsoft.Extensions.Configuration
+  commentId: N:Microsoft.Extensions.Configuration
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/microsoft
+  name: Microsoft.Extensions.Configuration
+  nameWithType: Microsoft.Extensions.Configuration
+  fullName: Microsoft.Extensions.Configuration
+  spec.csharp:
+  - uid: Microsoft
+    name: Microsoft
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft
+  - name: .
+  - uid: Microsoft.Extensions
+    name: Extensions
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions
+  - name: .
+  - uid: Microsoft.Extensions.Configuration
+    name: Configuration
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions.configuration
+  spec.vb:
+  - uid: Microsoft
+    name: Microsoft
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft
+  - name: .
+  - uid: Microsoft.Extensions
+    name: Extensions
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions
+  - name: .
+  - uid: Microsoft.Extensions.Configuration
+    name: Configuration
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions.configuration
+- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield*
+  commentId: Overload:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield
+  isExternal: true
+  href: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.html#Kevlar_Extensions_Http_ShieldHttpClientBuilderExtensions_AddStandardHedgeShield_Microsoft_Extensions_DependencyInjection_IHttpClientBuilder_System_Action_Kevlar_Extensions_Http_StandardHedgeShieldOptions__
+  name: AddStandardHedgeShield
+  nameWithType: ShieldHttpClientBuilderExtensions.AddStandardHedgeShield
+  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield
+- uid: System.Action{Kevlar.Extensions.Http.StandardHedgeShieldOptions}
+  commentId: T:System.Action{Kevlar.Extensions.Http.StandardHedgeShieldOptions}
+  parent: System
+  definition: System.Action`1
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<StandardHedgeShieldOptions>
+  nameWithType: Action<StandardHedgeShieldOptions>
+  fullName: System.Action<Kevlar.Extensions.Http.StandardHedgeShieldOptions>
+  nameWithType.vb: Action(Of StandardHedgeShieldOptions)
+  fullName.vb: System.Action(Of Kevlar.Extensions.Http.StandardHedgeShieldOptions)
+  name.vb: Action(Of StandardHedgeShieldOptions)
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+    name: StandardHedgeShieldOptions
+    isExternal: true
+    href: Kevlar.Extensions.Http.StandardHedgeShieldOptions.html
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+    name: StandardHedgeShieldOptions
+    isExternal: true
+    href: Kevlar.Extensions.Http.StandardHedgeShieldOptions.html
+  - name: )
+- uid: System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHedgeShieldOptions}
+  commentId: T:System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHedgeShieldOptions}
+  parent: System
+  definition: System.Action`2
+  href: https://learn.microsoft.com/dotnet/api/system.action-2
+  name: Action<IServiceProvider, StandardHedgeShieldOptions>
+  nameWithType: Action<IServiceProvider, StandardHedgeShieldOptions>
+  fullName: System.Action<System.IServiceProvider, Kevlar.Extensions.Http.StandardHedgeShieldOptions>
+  nameWithType.vb: Action(Of IServiceProvider, StandardHedgeShieldOptions)
+  fullName.vb: System.Action(Of System.IServiceProvider, Kevlar.Extensions.Http.StandardHedgeShieldOptions)
+  name.vb: Action(Of IServiceProvider, StandardHedgeShieldOptions)
+  spec.csharp:
+  - uid: System.Action`2
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-2
+  - name: <
+  - uid: System.IServiceProvider
+    name: IServiceProvider
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iserviceprovider
+  - name: ','
+  - name: " "
+  - uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+    name: StandardHedgeShieldOptions
+    isExternal: true
+    href: Kevlar.Extensions.Http.StandardHedgeShieldOptions.html
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`2
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.IServiceProvider
+    name: IServiceProvider
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.iserviceprovider
+  - name: ','
+  - name: " "
+  - uid: Kevlar.Extensions.Http.StandardHedgeShieldOptions
+    name: StandardHedgeShieldOptions
+    isExternal: true
+    href: Kevlar.Extensions.Http.StandardHedgeShieldOptions.html
+  - name: )

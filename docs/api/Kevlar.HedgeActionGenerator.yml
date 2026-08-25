@@ -1,0 +1,742 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.HedgeActionGenerator
+  commentId: T:Kevlar.HedgeActionGenerator
+  id: HedgeActionGenerator
+  parent: Kevlar
+  children:
+  - Kevlar.HedgeActionGenerator.Create(System.Func{Kevlar.HedgeActionGeneratorEvent,System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask}})
+  - Kevlar.HedgeActionGenerator.Create``1(System.Func{Kevlar.HedgeActionGeneratorEvent{``0},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{``0}}})
+  langs:
+  - csharp
+  - vb
+  name: HedgeActionGenerator
+  nameWithType: HedgeActionGenerator
+  fullName: Kevlar.HedgeActionGenerator
+  type: Class
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    A result-type-safe factory for selecting a different operation for each hedged attempt.
+
+    Create one with <xref href="Kevlar.HedgeActionGenerator.Create%60%601(System.Func%7bKevlar.HedgeActionGeneratorEvent%7b%60%600%7d%2cSystem.Func%7bSystem.Threading.CancellationToken%2cSystem.Threading.Tasks.ValueTask%7b%60%600%7d%7d%7d)" data-throw-if-not-resolved="false"></xref> or the void <xref href="Kevlar.HedgeActionGenerator.Create(System.Func%7bKevlar.HedgeActionGeneratorEvent%2cSystem.Func%7bSystem.Threading.CancellationToken%2cSystem.Threading.Tasks.ValueTask%7d%7d)" data-throw-if-not-resolved="false"></xref> overload.
+  example: []
+  syntax:
+    content: public sealed class HedgeActionGenerator
+    content.vb: Public NotInheritable Class HedgeActionGenerator
+  inheritance:
+  - System.Object
+  inheritedMembers:
+  - System.Object.GetType
+  - System.Object.ToString
+  - System.Object.Equals(System.Object)
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  - System.Object.GetHashCode
+- uid: Kevlar.HedgeActionGenerator.Create``1(System.Func{Kevlar.HedgeActionGeneratorEvent{``0},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{``0}}})
+  commentId: M:Kevlar.HedgeActionGenerator.Create``1(System.Func{Kevlar.HedgeActionGeneratorEvent{`0},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{`0}}})
+  id: Create``1(System.Func{Kevlar.HedgeActionGeneratorEvent{``0},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{``0}}})
+  parent: Kevlar.HedgeActionGenerator
+  langs:
+  - csharp
+  - vb
+  name: Create<TResult>(Func<HedgeActionGeneratorEvent<TResult>, Func<CancellationToken, ValueTask<TResult>>?>)
+  nameWithType: HedgeActionGenerator.Create<TResult>(Func<HedgeActionGeneratorEvent<TResult>, Func<CancellationToken, ValueTask<TResult>>?>)
+  fullName: Kevlar.HedgeActionGenerator.Create<TResult>(System.Func<Kevlar.HedgeActionGeneratorEvent<TResult>, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>?>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Creates a generator for operations returning <code class="typeparamref">TResult</code>.
+  remarks: >-
+    Return <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> to run <xref href="Kevlar.HedgeActionGeneratorEvent%601.OriginalAction" data-throw-if-not-resolved="false"></xref>.
+
+    The returned operation receives the isolated attempt cancellation token.
+  example: []
+  syntax:
+    content: public static HedgeActionGenerator Create<TResult>(Func<HedgeActionGeneratorEvent<TResult>, Func<CancellationToken, ValueTask<TResult>>?> generator)
+    parameters:
+    - id: generator
+      type: System.Func{Kevlar.HedgeActionGeneratorEvent{{TResult}},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{{TResult}}}}
+    typeParameters:
+    - id: TResult
+    return:
+      type: Kevlar.HedgeActionGenerator
+    content.vb: Public Shared Function Create(Of TResult)(generator As Func(Of HedgeActionGeneratorEvent(Of TResult), Func(Of CancellationToken, ValueTask(Of TResult)))) As HedgeActionGenerator
+  overload: Kevlar.HedgeActionGenerator.Create*
+  nameWithType.vb: HedgeActionGenerator.Create(Of TResult)(Func(Of HedgeActionGeneratorEvent(Of TResult), Func(Of CancellationToken, ValueTask(Of TResult))))
+  fullName.vb: Kevlar.HedgeActionGenerator.Create(Of TResult)(System.Func(Of Kevlar.HedgeActionGeneratorEvent(Of TResult), System.Func(Of System.Threading.CancellationToken, System.Threading.Tasks.ValueTask(Of TResult))))
+  name.vb: Create(Of TResult)(Func(Of HedgeActionGeneratorEvent(Of TResult), Func(Of CancellationToken, ValueTask(Of TResult))))
+- uid: Kevlar.HedgeActionGenerator.Create(System.Func{Kevlar.HedgeActionGeneratorEvent,System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask}})
+  commentId: M:Kevlar.HedgeActionGenerator.Create(System.Func{Kevlar.HedgeActionGeneratorEvent,System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask}})
+  id: Create(System.Func{Kevlar.HedgeActionGeneratorEvent,System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask}})
+  parent: Kevlar.HedgeActionGenerator
+  langs:
+  - csharp
+  - vb
+  name: Create(Func<HedgeActionGeneratorEvent, Func<CancellationToken, ValueTask>?>)
+  nameWithType: HedgeActionGenerator.Create(Func<HedgeActionGeneratorEvent, Func<CancellationToken, ValueTask>?>)
+  fullName: Kevlar.HedgeActionGenerator.Create(System.Func<Kevlar.HedgeActionGeneratorEvent, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>?>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Creates a generator for void-returning operations.
+  remarks: >-
+    Return <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> to run <xref href="Kevlar.HedgeActionGeneratorEvent.OriginalAction" data-throw-if-not-resolved="false"></xref>.
+
+    The returned operation receives the isolated attempt cancellation token.
+  example: []
+  syntax:
+    content: public static HedgeActionGenerator Create(Func<HedgeActionGeneratorEvent, Func<CancellationToken, ValueTask>?> generator)
+    parameters:
+    - id: generator
+      type: System.Func{Kevlar.HedgeActionGeneratorEvent,System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask}}
+    return:
+      type: Kevlar.HedgeActionGenerator
+    content.vb: Public Shared Function Create(generator As Func(Of HedgeActionGeneratorEvent, Func(Of CancellationToken, ValueTask))) As HedgeActionGenerator
+  overload: Kevlar.HedgeActionGenerator.Create*
+  nameWithType.vb: HedgeActionGenerator.Create(Func(Of HedgeActionGeneratorEvent, Func(Of CancellationToken, ValueTask)))
+  fullName.vb: Kevlar.HedgeActionGenerator.Create(System.Func(Of Kevlar.HedgeActionGeneratorEvent, System.Func(Of System.Threading.CancellationToken, System.Threading.Tasks.ValueTask)))
+  name.vb: Create(Func(Of HedgeActionGeneratorEvent, Func(Of CancellationToken, ValueTask)))
+references:
+- uid: Kevlar.HedgeActionGenerator.Create``1(System.Func{Kevlar.HedgeActionGeneratorEvent{``0},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{``0}}})
+  commentId: M:Kevlar.HedgeActionGenerator.Create``1(System.Func{Kevlar.HedgeActionGeneratorEvent{`0},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{`0}}})
+  isExternal: true
+  href: Kevlar.HedgeActionGenerator.html#Kevlar_HedgeActionGenerator_Create__1_System_Func_Kevlar_HedgeActionGeneratorEvent___0__System_Func_System_Threading_CancellationToken_System_Threading_Tasks_ValueTask___0____
+  name: Create<TResult>(Func<HedgeActionGeneratorEvent<TResult>, Func<CancellationToken, ValueTask<TResult>>>)
+  nameWithType: HedgeActionGenerator.Create<TResult>(Func<HedgeActionGeneratorEvent<TResult>, Func<CancellationToken, ValueTask<TResult>>>)
+  fullName: Kevlar.HedgeActionGenerator.Create<TResult>(System.Func<Kevlar.HedgeActionGeneratorEvent<TResult>, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>>)
+  nameWithType.vb: HedgeActionGenerator.Create(Of TResult)(Func(Of HedgeActionGeneratorEvent(Of TResult), Func(Of CancellationToken, ValueTask(Of TResult))))
+  fullName.vb: Kevlar.HedgeActionGenerator.Create(Of TResult)(System.Func(Of Kevlar.HedgeActionGeneratorEvent(Of TResult), System.Func(Of System.Threading.CancellationToken, System.Threading.Tasks.ValueTask(Of TResult))))
+  name.vb: Create(Of TResult)(Func(Of HedgeActionGeneratorEvent(Of TResult), Func(Of CancellationToken, ValueTask(Of TResult))))
+  spec.csharp:
+  - uid: Kevlar.HedgeActionGenerator.Create``1(System.Func{Kevlar.HedgeActionGeneratorEvent{``0},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{``0}}})
+    name: Create
+    isExternal: true
+    href: Kevlar.HedgeActionGenerator.html#Kevlar_HedgeActionGenerator_Create__1_System_Func_Kevlar_HedgeActionGeneratorEvent___0__System_Func_System_Threading_CancellationToken_System_Threading_Tasks_ValueTask___0____
+  - name: <
+  - name: TResult
+  - name: '>'
+  - name: (
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.HedgeActionGeneratorEvent`1
+    name: HedgeActionGeneratorEvent
+    isExternal: true
+    href: Kevlar.HedgeActionGeneratorEvent-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  - name: ','
+  - name: " "
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: System.Threading.CancellationToken
+    name: CancellationToken
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
+  - name: TResult
+  - name: '>'
+  - name: '>'
+  - name: '>'
+  - name: )
+  spec.vb:
+  - uid: Kevlar.HedgeActionGenerator.Create``1(System.Func{Kevlar.HedgeActionGeneratorEvent{``0},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{``0}}})
+    name: Create
+    isExternal: true
+    href: Kevlar.HedgeActionGenerator.html#Kevlar_HedgeActionGenerator_Create__1_System_Func_Kevlar_HedgeActionGeneratorEvent___0__System_Func_System_Threading_CancellationToken_System_Threading_Tasks_ValueTask___0____
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+  - name: (
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.HedgeActionGeneratorEvent`1
+    name: HedgeActionGeneratorEvent
+    isExternal: true
+    href: Kevlar.HedgeActionGeneratorEvent-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+  - name: ','
+  - name: " "
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.Threading.CancellationToken
+    name: CancellationToken
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+  - name: )
+  - name: )
+  - name: )
+- uid: Kevlar.HedgeActionGenerator.Create(System.Func{Kevlar.HedgeActionGeneratorEvent,System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask}})
+  commentId: M:Kevlar.HedgeActionGenerator.Create(System.Func{Kevlar.HedgeActionGeneratorEvent,System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask}})
+  isExternal: true
+  href: Kevlar.HedgeActionGenerator.html#Kevlar_HedgeActionGenerator_Create_System_Func_Kevlar_HedgeActionGeneratorEvent_System_Func_System_Threading_CancellationToken_System_Threading_Tasks_ValueTask___
+  name: Create(Func<HedgeActionGeneratorEvent, Func<CancellationToken, ValueTask>>)
+  nameWithType: HedgeActionGenerator.Create(Func<HedgeActionGeneratorEvent, Func<CancellationToken, ValueTask>>)
+  fullName: Kevlar.HedgeActionGenerator.Create(System.Func<Kevlar.HedgeActionGeneratorEvent, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>>)
+  nameWithType.vb: HedgeActionGenerator.Create(Func(Of HedgeActionGeneratorEvent, Func(Of CancellationToken, ValueTask)))
+  fullName.vb: Kevlar.HedgeActionGenerator.Create(System.Func(Of Kevlar.HedgeActionGeneratorEvent, System.Func(Of System.Threading.CancellationToken, System.Threading.Tasks.ValueTask)))
+  name.vb: Create(Func(Of HedgeActionGeneratorEvent, Func(Of CancellationToken, ValueTask)))
+  spec.csharp:
+  - uid: Kevlar.HedgeActionGenerator.Create(System.Func{Kevlar.HedgeActionGeneratorEvent,System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask}})
+    name: Create
+    isExternal: true
+    href: Kevlar.HedgeActionGenerator.html#Kevlar_HedgeActionGenerator_Create_System_Func_Kevlar_HedgeActionGeneratorEvent_System_Func_System_Threading_CancellationToken_System_Threading_Tasks_ValueTask___
+  - name: (
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.HedgeActionGeneratorEvent
+    name: HedgeActionGeneratorEvent
+    isExternal: true
+    href: Kevlar.HedgeActionGeneratorEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: System.Threading.CancellationToken
+    name: CancellationToken
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
+  - name: '>'
+  - name: '>'
+  - name: )
+  spec.vb:
+  - uid: Kevlar.HedgeActionGenerator.Create(System.Func{Kevlar.HedgeActionGeneratorEvent,System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask}})
+    name: Create
+    isExternal: true
+    href: Kevlar.HedgeActionGenerator.html#Kevlar_HedgeActionGenerator_Create_System_Func_Kevlar_HedgeActionGeneratorEvent_System_Func_System_Threading_CancellationToken_System_Threading_Tasks_ValueTask___
+  - name: (
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.HedgeActionGeneratorEvent
+    name: HedgeActionGeneratorEvent
+    isExternal: true
+    href: Kevlar.HedgeActionGeneratorEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.Threading.CancellationToken
+    name: CancellationToken
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
+  - name: )
+  - name: )
+  - name: )
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.ToString
+  commentId: M:System.Object.ToString
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  name: ToString()
+  nameWithType: object.ToString()
+  fullName: object.ToString()
+  nameWithType.vb: Object.ToString()
+  fullName.vb: Object.ToString()
+  spec.csharp:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object)
+  commentId: M:System.Object.Equals(System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  name: Equals(object)
+  nameWithType: object.Equals(object)
+  fullName: object.Equals(object)
+  nameWithType.vb: Object.Equals(Object)
+  fullName.vb: Object.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetHashCode
+  commentId: M:System.Object.GetHashCode
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  name: GetHashCode()
+  nameWithType: object.GetHashCode()
+  fullName: object.GetHashCode()
+  nameWithType.vb: Object.GetHashCode()
+  fullName.vb: Object.GetHashCode()
+  spec.csharp:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.HedgeActionGeneratorEvent`1.OriginalAction
+  commentId: P:Kevlar.HedgeActionGeneratorEvent`1.OriginalAction
+  isExternal: true
+  href: Kevlar.HedgeActionGeneratorEvent-1.html#Kevlar_HedgeActionGeneratorEvent_1_OriginalAction
+  name: OriginalAction
+  nameWithType: HedgeActionGeneratorEvent<TResult>.OriginalAction
+  fullName: Kevlar.HedgeActionGeneratorEvent<TResult>.OriginalAction
+  nameWithType.vb: HedgeActionGeneratorEvent(Of TResult).OriginalAction
+  fullName.vb: Kevlar.HedgeActionGeneratorEvent(Of TResult).OriginalAction
+- uid: Kevlar.HedgeActionGenerator.Create*
+  commentId: Overload:Kevlar.HedgeActionGenerator.Create
+  isExternal: true
+  href: Kevlar.HedgeActionGenerator.html#Kevlar_HedgeActionGenerator_Create__1_System_Func_Kevlar_HedgeActionGeneratorEvent___0__System_Func_System_Threading_CancellationToken_System_Threading_Tasks_ValueTask___0____
+  name: Create
+  nameWithType: HedgeActionGenerator.Create
+  fullName: Kevlar.HedgeActionGenerator.Create
+- uid: System.Func{Kevlar.HedgeActionGeneratorEvent{{TResult}},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{{TResult}}}}
+  commentId: T:System.Func{Kevlar.HedgeActionGeneratorEvent{`0},System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{`0}}}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<HedgeActionGeneratorEvent<TResult>, Func<CancellationToken, ValueTask<TResult>>>
+  nameWithType: Func<HedgeActionGeneratorEvent<TResult>, Func<CancellationToken, ValueTask<TResult>>>
+  fullName: System.Func<Kevlar.HedgeActionGeneratorEvent<TResult>, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>>
+  nameWithType.vb: Func(Of HedgeActionGeneratorEvent(Of TResult), Func(Of CancellationToken, ValueTask(Of TResult)))
+  fullName.vb: System.Func(Of Kevlar.HedgeActionGeneratorEvent(Of TResult), System.Func(Of System.Threading.CancellationToken, System.Threading.Tasks.ValueTask(Of TResult)))
+  name.vb: Func(Of HedgeActionGeneratorEvent(Of TResult), Func(Of CancellationToken, ValueTask(Of TResult)))
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.HedgeActionGeneratorEvent`1
+    name: HedgeActionGeneratorEvent
+    isExternal: true
+    href: Kevlar.HedgeActionGeneratorEvent-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  - name: ','
+  - name: " "
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: System.Threading.CancellationToken
+    name: CancellationToken
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
+  - name: TResult
+  - name: '>'
+  - name: '>'
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.HedgeActionGeneratorEvent`1
+    name: HedgeActionGeneratorEvent
+    isExternal: true
+    href: Kevlar.HedgeActionGeneratorEvent-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+  - name: ','
+  - name: " "
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.Threading.CancellationToken
+    name: CancellationToken
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+  - name: )
+  - name: )
+- uid: Kevlar.HedgeActionGenerator
+  commentId: T:Kevlar.HedgeActionGenerator
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.HedgeActionGenerator.html
+  name: HedgeActionGenerator
+  nameWithType: HedgeActionGenerator
+  fullName: Kevlar.HedgeActionGenerator
+- uid: System.Func`2
+  commentId: T:System.Func`2
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<T, TResult>
+  nameWithType: Func<T, TResult>
+  fullName: System.Func<T, TResult>
+  nameWithType.vb: Func(Of T, TResult)
+  fullName.vb: System.Func(Of T, TResult)
+  name.vb: Func(Of T, TResult)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.HedgeActionGeneratorEvent.OriginalAction
+  commentId: P:Kevlar.HedgeActionGeneratorEvent.OriginalAction
+  isExternal: true
+  href: Kevlar.HedgeActionGeneratorEvent.html#Kevlar_HedgeActionGeneratorEvent_OriginalAction
+  name: OriginalAction
+  nameWithType: HedgeActionGeneratorEvent.OriginalAction
+  fullName: Kevlar.HedgeActionGeneratorEvent.OriginalAction
+- uid: System.Func{Kevlar.HedgeActionGeneratorEvent,System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask}}
+  commentId: T:System.Func{Kevlar.HedgeActionGeneratorEvent,System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask}}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<HedgeActionGeneratorEvent, Func<CancellationToken, ValueTask>>
+  nameWithType: Func<HedgeActionGeneratorEvent, Func<CancellationToken, ValueTask>>
+  fullName: System.Func<Kevlar.HedgeActionGeneratorEvent, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>>
+  nameWithType.vb: Func(Of HedgeActionGeneratorEvent, Func(Of CancellationToken, ValueTask))
+  fullName.vb: System.Func(Of Kevlar.HedgeActionGeneratorEvent, System.Func(Of System.Threading.CancellationToken, System.Threading.Tasks.ValueTask))
+  name.vb: Func(Of HedgeActionGeneratorEvent, Func(Of CancellationToken, ValueTask))
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.HedgeActionGeneratorEvent
+    name: HedgeActionGeneratorEvent
+    isExternal: true
+    href: Kevlar.HedgeActionGeneratorEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: System.Threading.CancellationToken
+    name: CancellationToken
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
+  - name: '>'
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.HedgeActionGeneratorEvent
+    name: HedgeActionGeneratorEvent
+    isExternal: true
+    href: Kevlar.HedgeActionGeneratorEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.Threading.CancellationToken
+    name: CancellationToken
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
+  - name: )
+  - name: )

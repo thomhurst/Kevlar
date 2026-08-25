@@ -1,0 +1,179 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Extensions.DependencyInjection.IShieldProvider`1
+  commentId: T:Kevlar.Extensions.DependencyInjection.IShieldProvider`1
+  id: IShieldProvider`1
+  parent: Kevlar.Extensions.DependencyInjection
+  children:
+  - Kevlar.Extensions.DependencyInjection.IShieldProvider`1.Current
+  langs:
+  - csharp
+  - vb
+  name: IShieldProvider<TResult>
+  nameWithType: IShieldProvider<TResult>
+  fullName: Kevlar.Extensions.DependencyInjection.IShieldProvider<TResult>
+  type: Interface
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: Provides the current immutable snapshot of a named result-aware shield.
+  remarks: >-
+    Read <xref href="Kevlar.Extensions.DependencyInjection.IShieldProvider%601.Current" data-throw-if-not-resolved="false"></xref> once for each operation, then execute that snapshot. The read is
+
+    atomic and allocation-free. Providers registered by <code>AddReloadingShield&lt;TResult&gt;</code>
+
+    may publish a replacement; ordinary shield providers always return their original snapshot.
+  example: []
+  syntax:
+    content: public interface IShieldProvider<TResult>
+    typeParameters:
+    - id: TResult
+      description: The shield result type.
+    content.vb: Public Interface IShieldProvider(Of TResult)
+  nameWithType.vb: IShieldProvider(Of TResult)
+  fullName.vb: Kevlar.Extensions.DependencyInjection.IShieldProvider(Of TResult)
+  name.vb: IShieldProvider(Of TResult)
+- uid: Kevlar.Extensions.DependencyInjection.IShieldProvider`1.Current
+  commentId: P:Kevlar.Extensions.DependencyInjection.IShieldProvider`1.Current
+  id: Current
+  parent: Kevlar.Extensions.DependencyInjection.IShieldProvider`1
+  langs:
+  - csharp
+  - vb
+  name: Current
+  nameWithType: IShieldProvider<TResult>.Current
+  fullName: Kevlar.Extensions.DependencyInjection.IShieldProvider<TResult>.Current
+  type: Property
+  assemblies:
+  - Kevlar.Extensions.DependencyInjection
+  namespace: Kevlar.Extensions.DependencyInjection
+  summary: Gets the current last known-good shield snapshot.
+  example: []
+  syntax:
+    content: Shield<TResult> Current { get; }
+    parameters: []
+    return:
+      type: Kevlar.Shield{{TResult}}
+    content.vb: ReadOnly Property Current As Shield(Of TResult)
+  overload: Kevlar.Extensions.DependencyInjection.IShieldProvider`1.Current*
+  nameWithType.vb: IShieldProvider(Of TResult).Current
+  fullName.vb: Kevlar.Extensions.DependencyInjection.IShieldProvider(Of TResult).Current
+references:
+- uid: Kevlar.Extensions.DependencyInjection.IShieldProvider`1.Current
+  commentId: P:Kevlar.Extensions.DependencyInjection.IShieldProvider`1.Current
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.IShieldProvider-1.html#Kevlar_Extensions_DependencyInjection_IShieldProvider_1_Current
+  name: Current
+  nameWithType: IShieldProvider<TResult>.Current
+  fullName: Kevlar.Extensions.DependencyInjection.IShieldProvider<TResult>.Current
+  nameWithType.vb: IShieldProvider(Of TResult).Current
+  fullName.vb: Kevlar.Extensions.DependencyInjection.IShieldProvider(Of TResult).Current
+- uid: Kevlar.Extensions.DependencyInjection
+  commentId: N:Kevlar.Extensions.DependencyInjection
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar.Extensions.DependencyInjection
+  nameWithType: Kevlar.Extensions.DependencyInjection
+  fullName: Kevlar.Extensions.DependencyInjection
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+  - name: .
+  - uid: Kevlar.Extensions.DependencyInjection
+    name: DependencyInjection
+    isExternal: true
+    href: Kevlar.Extensions.DependencyInjection.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+  - name: .
+  - uid: Kevlar.Extensions.DependencyInjection
+    name: DependencyInjection
+    isExternal: true
+    href: Kevlar.Extensions.DependencyInjection.html
+- uid: Kevlar.Extensions.DependencyInjection.IShieldProvider`1.Current*
+  commentId: Overload:Kevlar.Extensions.DependencyInjection.IShieldProvider`1.Current
+  isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.IShieldProvider-1.html#Kevlar_Extensions_DependencyInjection_IShieldProvider_1_Current
+  name: Current
+  nameWithType: IShieldProvider<TResult>.Current
+  fullName: Kevlar.Extensions.DependencyInjection.IShieldProvider<TResult>.Current
+  nameWithType.vb: IShieldProvider(Of TResult).Current
+  fullName.vb: Kevlar.Extensions.DependencyInjection.IShieldProvider(Of TResult).Current
+- uid: Kevlar.Shield{{TResult}}
+  commentId: T:Kevlar.Shield{`1}
+  parent: Kevlar
+  definition: Kevlar.Shield`1
+  href: Kevlar.Shield-1.html
+  name: Shield<TResult>
+  nameWithType: Shield<TResult>
+  fullName: Kevlar.Shield<TResult>
+  nameWithType.vb: Shield(Of TResult)
+  fullName.vb: Kevlar.Shield(Of TResult)
+  name.vb: Shield(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.Shield`1
+  commentId: T:Kevlar.Shield`1
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Shield-1.html
+  name: Shield<TResult>
+  nameWithType: Shield<TResult>
+  fullName: Kevlar.Shield<TResult>
+  nameWithType.vb: Shield(Of TResult)
+  fullName.vb: Kevlar.Shield(Of TResult)
+  name.vb: Shield(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar

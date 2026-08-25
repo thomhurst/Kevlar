@@ -108,6 +108,8 @@ queued is cancellation, not rejection, so hooks do not run.
 
 ## Options
 
+API reference: [`RateLimitOptions`](pathname:///api/Kevlar.RateLimitOptions.html).
+
 | Option | Default | What it does |
 |---|---|---|
 | `Permits` | `100` | Executions allowed per window |

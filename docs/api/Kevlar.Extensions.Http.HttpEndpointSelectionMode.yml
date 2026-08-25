@@ -1,0 +1,115 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Extensions.Http.HttpEndpointSelectionMode
+  commentId: T:Kevlar.Extensions.Http.HttpEndpointSelectionMode
+  id: HttpEndpointSelectionMode
+  parent: Kevlar.Extensions.Http
+  children:
+  - Kevlar.Extensions.Http.HttpEndpointSelectionMode.Ordered
+  - Kevlar.Extensions.Http.HttpEndpointSelectionMode.Weighted
+  langs:
+  - csharp
+  - vb
+  name: HttpEndpointSelectionMode
+  nameWithType: HttpEndpointSelectionMode
+  fullName: Kevlar.Extensions.Http.HttpEndpointSelectionMode
+  type: Enum
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: Determines the per-request endpoint attempt order.
+  example: []
+  syntax:
+    content: public enum HttpEndpointSelectionMode
+    content.vb: Public Enum HttpEndpointSelectionMode
+- uid: Kevlar.Extensions.Http.HttpEndpointSelectionMode.Ordered
+  commentId: F:Kevlar.Extensions.Http.HttpEndpointSelectionMode.Ordered
+  id: Ordered
+  parent: Kevlar.Extensions.Http.HttpEndpointSelectionMode
+  langs:
+  - csharp
+  - vb
+  name: Ordered
+  nameWithType: HttpEndpointSelectionMode.Ordered
+  fullName: Kevlar.Extensions.Http.HttpEndpointSelectionMode.Ordered
+  type: Field
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: Use endpoints in their configured order.
+  example: []
+  syntax:
+    content: Ordered = 0
+    return:
+      type: Kevlar.Extensions.Http.HttpEndpointSelectionMode
+- uid: Kevlar.Extensions.Http.HttpEndpointSelectionMode.Weighted
+  commentId: F:Kevlar.Extensions.Http.HttpEndpointSelectionMode.Weighted
+  id: Weighted
+  parent: Kevlar.Extensions.Http.HttpEndpointSelectionMode
+  langs:
+  - csharp
+  - vb
+  name: Weighted
+  nameWithType: HttpEndpointSelectionMode.Weighted
+  fullName: Kevlar.Extensions.Http.HttpEndpointSelectionMode.Weighted
+  type: Field
+  assemblies:
+  - Kevlar.Extensions.Http
+  namespace: Kevlar.Extensions.Http
+  summary: Create a deterministic weighted order from <xref href="Kevlar.Extensions.Http.HttpEndpointRoutingOptions.Seed" data-throw-if-not-resolved="false"></xref>.
+  example: []
+  syntax:
+    content: Weighted = 1
+    return:
+      type: Kevlar.Extensions.Http.HttpEndpointSelectionMode
+references:
+- uid: Kevlar.Extensions.Http
+  commentId: N:Kevlar.Extensions.Http
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar.Extensions.Http
+  nameWithType: Kevlar.Extensions.Http
+  fullName: Kevlar.Extensions.Http
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+  - name: .
+  - uid: Kevlar.Extensions.Http
+    name: Http
+    isExternal: true
+    href: Kevlar.Extensions.Http.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+  - name: .
+  - uid: Kevlar.Extensions.Http
+    name: Http
+    isExternal: true
+    href: Kevlar.Extensions.Http.html
+- uid: Kevlar.Extensions.Http.HttpEndpointSelectionMode
+  commentId: T:Kevlar.Extensions.Http.HttpEndpointSelectionMode
+  parent: Kevlar.Extensions.Http
+  isExternal: true
+  href: Kevlar.Extensions.Http.HttpEndpointSelectionMode.html
+  name: HttpEndpointSelectionMode
+  nameWithType: HttpEndpointSelectionMode
+  fullName: Kevlar.Extensions.Http.HttpEndpointSelectionMode
+- uid: Kevlar.Extensions.Http.HttpEndpointRoutingOptions.Seed
+  commentId: P:Kevlar.Extensions.Http.HttpEndpointRoutingOptions.Seed
+  isExternal: true
+  href: Kevlar.Extensions.Http.HttpEndpointRoutingOptions.html#Kevlar_Extensions_Http_HttpEndpointRoutingOptions_Seed
+  name: Seed
+  nameWithType: HttpEndpointRoutingOptions.Seed
+  fullName: Kevlar.Extensions.Http.HttpEndpointRoutingOptions.Seed

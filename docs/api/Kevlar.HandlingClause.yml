@@ -1,0 +1,493 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.HandlingClause
+  commentId: T:Kevlar.HandlingClause
+  id: HandlingClause
+  parent: Kevlar
+  children:
+  - Kevlar.HandlingClause.Default
+  - Kevlar.HandlingClause.IsContextAware
+  - Kevlar.HandlingClause.ShouldHandle``1(Kevlar.Outcome{``0}@)
+  - Kevlar.HandlingClause.ShouldHandle``1(Kevlar.Outcome{``0}@,Kevlar.KevlarContext,System.Int32,System.Int32)
+  langs:
+  - csharp
+  - vb
+  name: HandlingClause
+  nameWithType: HandlingClause
+  fullName: Kevlar.HandlingClause
+  type: Struct
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Decides whether an outcome is a handled failure. Custom reactive strategies receive the
+
+    active clause through a <code>Use</code> factory and should consult it instead of duplicating filters.
+  example: []
+  syntax:
+    content: public readonly struct HandlingClause
+    content.vb: Public Structure HandlingClause
+  inheritedMembers:
+  - System.ValueType.Equals(System.Object)
+  - System.ValueType.GetHashCode
+  - System.ValueType.ToString
+  - System.Object.GetType
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+- uid: Kevlar.HandlingClause.ShouldHandle``1(Kevlar.Outcome{``0}@)
+  commentId: M:Kevlar.HandlingClause.ShouldHandle``1(Kevlar.Outcome{`0}@)
+  id: ShouldHandle``1(Kevlar.Outcome{``0}@)
+  parent: Kevlar.HandlingClause
+  langs:
+  - csharp
+  - vb
+  name: ShouldHandle<T>(in Outcome<T>)
+  nameWithType: HandlingClause.ShouldHandle<T>(in Outcome<T>)
+  fullName: Kevlar.HandlingClause.ShouldHandle<T>(in Kevlar.Outcome<T>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Returns whether <code class="paramref">outcome</code> is a handled failure.
+  example: []
+  syntax:
+    content: public bool ShouldHandle<T>(in Outcome<T> outcome)
+    parameters:
+    - id: outcome
+      type: Kevlar.Outcome{{T}}
+    typeParameters:
+    - id: T
+    return:
+      type: System.Boolean
+    content.vb: Public Function ShouldHandle(Of T)(outcome As Outcome(Of T)) As Boolean
+  overload: Kevlar.HandlingClause.ShouldHandle*
+  nameWithType.vb: HandlingClause.ShouldHandle(Of T)(Outcome(Of T))
+  fullName.vb: Kevlar.HandlingClause.ShouldHandle(Of T)(Kevlar.Outcome(Of T))
+  name.vb: ShouldHandle(Of T)(Outcome(Of T))
+- uid: Kevlar.HandlingClause.ShouldHandle``1(Kevlar.Outcome{``0}@,Kevlar.KevlarContext,System.Int32,System.Int32)
+  commentId: M:Kevlar.HandlingClause.ShouldHandle``1(Kevlar.Outcome{`0}@,Kevlar.KevlarContext,System.Int32,System.Int32)
+  id: ShouldHandle``1(Kevlar.Outcome{``0}@,Kevlar.KevlarContext,System.Int32,System.Int32)
+  parent: Kevlar.HandlingClause
+  langs:
+  - csharp
+  - vb
+  name: ShouldHandle<T>(in Outcome<T>, KevlarContext, int, int)
+  nameWithType: HandlingClause.ShouldHandle<T>(in Outcome<T>, KevlarContext, int, int)
+  fullName: Kevlar.HandlingClause.ShouldHandle<T>(in Kevlar.Outcome<T>, Kevlar.KevlarContext, int, int)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Returns whether an outcome is handled for the active execution and strategy.
+  example: []
+  syntax:
+    content: public bool ShouldHandle<T>(in Outcome<T> outcome, KevlarContext context, int attempt = 0, int strategyIndex = -1)
+    parameters:
+    - id: outcome
+      type: Kevlar.Outcome{{T}}
+    - id: context
+      type: Kevlar.KevlarContext
+    - id: attempt
+      type: System.Int32
+    - id: strategyIndex
+      type: System.Int32
+    typeParameters:
+    - id: T
+    return:
+      type: System.Boolean
+    content.vb: Public Function ShouldHandle(Of T)(outcome As Outcome(Of T), context As KevlarContext, attempt As Integer = 0, strategyIndex As Integer = -1) As Boolean
+  overload: Kevlar.HandlingClause.ShouldHandle*
+  nameWithType.vb: HandlingClause.ShouldHandle(Of T)(Outcome(Of T), KevlarContext, Integer, Integer)
+  fullName.vb: Kevlar.HandlingClause.ShouldHandle(Of T)(Kevlar.Outcome(Of T), Kevlar.KevlarContext, Integer, Integer)
+  name.vb: ShouldHandle(Of T)(Outcome(Of T), KevlarContext, Integer, Integer)
+- uid: Kevlar.HandlingClause.Default
+  commentId: P:Kevlar.HandlingClause.Default
+  id: Default
+  parent: Kevlar.HandlingClause
+  langs:
+  - csharp
+  - vb
+  name: Default
+  nameWithType: HandlingClause.Default
+  fullName: Kevlar.HandlingClause.Default
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    The default handling clause: ordinary errors, excluding cancellation, Kevlar fail-fast
+
+    rejections, and fatal runtime exceptions.
+  example: []
+  syntax:
+    content: public static HandlingClause Default { get; }
+    parameters: []
+    return:
+      type: Kevlar.HandlingClause
+    content.vb: Public Shared ReadOnly Property [Default] As HandlingClause
+  overload: Kevlar.HandlingClause.Default*
+- uid: Kevlar.HandlingClause.IsContextAware
+  commentId: P:Kevlar.HandlingClause.IsContextAware
+  id: IsContextAware
+  parent: Kevlar.HandlingClause
+  langs:
+  - csharp
+  - vb
+  name: IsContextAware
+  nameWithType: HandlingClause.IsContextAware
+  fullName: Kevlar.HandlingClause.IsContextAware
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Whether this clause consults execution or strategy context.
+  example: []
+  syntax:
+    content: public bool IsContextAware { get; }
+    parameters: []
+    return:
+      type: System.Boolean
+    content.vb: Public ReadOnly Property IsContextAware As Boolean
+  overload: Kevlar.HandlingClause.IsContextAware*
+references:
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: System.ValueType.Equals(System.Object)
+  commentId: M:System.ValueType.Equals(System.Object)
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  name: Equals(object)
+  nameWithType: ValueType.Equals(object)
+  fullName: System.ValueType.Equals(object)
+  nameWithType.vb: ValueType.Equals(Object)
+  fullName.vb: System.ValueType.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.ValueType.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.ValueType.GetHashCode
+  commentId: M:System.ValueType.GetHashCode
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  name: GetHashCode()
+  nameWithType: ValueType.GetHashCode()
+  fullName: System.ValueType.GetHashCode()
+  spec.csharp:
+  - uid: System.ValueType.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  - name: (
+  - name: )
+- uid: System.ValueType.ToString
+  commentId: M:System.ValueType.ToString
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  name: ToString()
+  nameWithType: ValueType.ToString()
+  fullName: System.ValueType.ToString()
+  spec.csharp:
+  - uid: System.ValueType.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  - name: (
+  - name: )
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.ValueType
+  commentId: T:System.ValueType
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype
+  name: ValueType
+  nameWithType: ValueType
+  fullName: System.ValueType
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.HandlingClause.ShouldHandle*
+  commentId: Overload:Kevlar.HandlingClause.ShouldHandle
+  isExternal: true
+  href: Kevlar.HandlingClause.html#Kevlar_HandlingClause_ShouldHandle__1_Kevlar_Outcome___0___
+  name: ShouldHandle
+  nameWithType: HandlingClause.ShouldHandle
+  fullName: Kevlar.HandlingClause.ShouldHandle
+- uid: Kevlar.Outcome{{T}}
+  commentId: T:Kevlar.Outcome{`0}
+  parent: Kevlar
+  definition: Kevlar.Outcome`1
+  href: Kevlar.Outcome-1.html
+  name: Outcome<T>
+  nameWithType: Outcome<T>
+  fullName: Kevlar.Outcome<T>
+  nameWithType.vb: Outcome(Of T)
+  fullName.vb: Kevlar.Outcome(Of T)
+  name.vb: Outcome(Of T)
+  spec.csharp:
+  - uid: Kevlar.Outcome`1
+    name: Outcome
+    isExternal: true
+    href: Kevlar.Outcome-1.html
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Outcome`1
+    name: Outcome
+    isExternal: true
+    href: Kevlar.Outcome-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: System.Boolean
+  commentId: T:System.Boolean
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.boolean
+  name: bool
+  nameWithType: bool
+  fullName: bool
+  nameWithType.vb: Boolean
+  fullName.vb: Boolean
+  name.vb: Boolean
+- uid: Kevlar.Outcome`1
+  commentId: T:Kevlar.Outcome`1
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Outcome-1.html
+  name: Outcome<T>
+  nameWithType: Outcome<T>
+  fullName: Kevlar.Outcome<T>
+  nameWithType.vb: Outcome(Of T)
+  fullName.vb: Kevlar.Outcome(Of T)
+  name.vb: Outcome(Of T)
+  spec.csharp:
+  - uid: Kevlar.Outcome`1
+    name: Outcome
+    isExternal: true
+    href: Kevlar.Outcome-1.html
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Outcome`1
+    name: Outcome
+    isExternal: true
+    href: Kevlar.Outcome-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Kevlar.KevlarContext
+  commentId: T:Kevlar.KevlarContext
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.KevlarContext.html
+  name: KevlarContext
+  nameWithType: KevlarContext
+  fullName: Kevlar.KevlarContext
+- uid: System.Int32
+  commentId: T:System.Int32
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.int32
+  name: int
+  nameWithType: int
+  fullName: int
+  nameWithType.vb: Integer
+  fullName.vb: Integer
+  name.vb: Integer
+- uid: Kevlar.HandlingClause.Default*
+  commentId: Overload:Kevlar.HandlingClause.Default
+  isExternal: true
+  href: Kevlar.HandlingClause.html#Kevlar_HandlingClause_Default
+  name: Default
+  nameWithType: HandlingClause.Default
+  fullName: Kevlar.HandlingClause.Default
+- uid: Kevlar.HandlingClause
+  commentId: T:Kevlar.HandlingClause
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.HandlingClause.html
+  name: HandlingClause
+  nameWithType: HandlingClause
+  fullName: Kevlar.HandlingClause
+- uid: Kevlar.HandlingClause.IsContextAware*
+  commentId: Overload:Kevlar.HandlingClause.IsContextAware
+  isExternal: true
+  href: Kevlar.HandlingClause.html#Kevlar_HandlingClause_IsContextAware
+  name: IsContextAware
+  nameWithType: HandlingClause.IsContextAware
+  fullName: Kevlar.HandlingClause.IsContextAware

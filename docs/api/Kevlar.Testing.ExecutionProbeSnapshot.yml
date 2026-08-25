@@ -1,0 +1,376 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Testing.ExecutionProbeSnapshot
+  commentId: T:Kevlar.Testing.ExecutionProbeSnapshot
+  id: ExecutionProbeSnapshot
+  parent: Kevlar.Testing
+  children:
+  - Kevlar.Testing.ExecutionProbeSnapshot.AttemptCount
+  - Kevlar.Testing.ExecutionProbeSnapshot.CancellationCount
+  - Kevlar.Testing.ExecutionProbeSnapshot.ContractVersion
+  langs:
+  - csharp
+  - vb
+  name: ExecutionProbeSnapshot
+  nameWithType: ExecutionProbeSnapshot
+  fullName: Kevlar.Testing.ExecutionProbeSnapshot
+  type: Class
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: An immutable, versioned snapshot of execution-probe observations.
+  example: []
+  syntax:
+    content: public sealed class ExecutionProbeSnapshot
+    content.vb: Public NotInheritable Class ExecutionProbeSnapshot
+  inheritance:
+  - System.Object
+  inheritedMembers:
+  - System.Object.GetType
+  - System.Object.ToString
+  - System.Object.Equals(System.Object)
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  - System.Object.GetHashCode
+- uid: Kevlar.Testing.ExecutionProbeSnapshot.ContractVersion
+  commentId: P:Kevlar.Testing.ExecutionProbeSnapshot.ContractVersion
+  id: ContractVersion
+  parent: Kevlar.Testing.ExecutionProbeSnapshot
+  langs:
+  - csharp
+  - vb
+  name: ContractVersion
+  nameWithType: ExecutionProbeSnapshot.ContractVersion
+  fullName: Kevlar.Testing.ExecutionProbeSnapshot.ContractVersion
+  type: Property
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Gets the snapshot contract version.
+  example: []
+  syntax:
+    content: public int ContractVersion { get; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public ReadOnly Property ContractVersion As Integer
+  overload: Kevlar.Testing.ExecutionProbeSnapshot.ContractVersion*
+- uid: Kevlar.Testing.ExecutionProbeSnapshot.AttemptCount
+  commentId: P:Kevlar.Testing.ExecutionProbeSnapshot.AttemptCount
+  id: AttemptCount
+  parent: Kevlar.Testing.ExecutionProbeSnapshot
+  langs:
+  - csharp
+  - vb
+  name: AttemptCount
+  nameWithType: ExecutionProbeSnapshot.AttemptCount
+  fullName: Kevlar.Testing.ExecutionProbeSnapshot.AttemptCount
+  type: Property
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Gets the number of delegate invocations.
+  example: []
+  syntax:
+    content: public int AttemptCount { get; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public ReadOnly Property AttemptCount As Integer
+  overload: Kevlar.Testing.ExecutionProbeSnapshot.AttemptCount*
+- uid: Kevlar.Testing.ExecutionProbeSnapshot.CancellationCount
+  commentId: P:Kevlar.Testing.ExecutionProbeSnapshot.CancellationCount
+  id: CancellationCount
+  parent: Kevlar.Testing.ExecutionProbeSnapshot
+  langs:
+  - csharp
+  - vb
+  name: CancellationCount
+  nameWithType: ExecutionProbeSnapshot.CancellationCount
+  fullName: Kevlar.Testing.ExecutionProbeSnapshot.CancellationCount
+  type: Property
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Gets the number of active attempt tokens that requested cancellation.
+  example: []
+  syntax:
+    content: public int CancellationCount { get; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public ReadOnly Property CancellationCount As Integer
+  overload: Kevlar.Testing.ExecutionProbeSnapshot.CancellationCount*
+references:
+- uid: Kevlar.Testing
+  commentId: N:Kevlar.Testing
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar.Testing
+  nameWithType: Kevlar.Testing
+  fullName: Kevlar.Testing
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Testing
+    name: Testing
+    isExternal: true
+    href: Kevlar.Testing.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Testing
+    name: Testing
+    isExternal: true
+    href: Kevlar.Testing.html
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.ToString
+  commentId: M:System.Object.ToString
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  name: ToString()
+  nameWithType: object.ToString()
+  fullName: object.ToString()
+  nameWithType.vb: Object.ToString()
+  fullName.vb: Object.ToString()
+  spec.csharp:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object)
+  commentId: M:System.Object.Equals(System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  name: Equals(object)
+  nameWithType: object.Equals(object)
+  fullName: object.Equals(object)
+  nameWithType.vb: Object.Equals(Object)
+  fullName.vb: Object.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetHashCode
+  commentId: M:System.Object.GetHashCode
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  name: GetHashCode()
+  nameWithType: object.GetHashCode()
+  fullName: object.GetHashCode()
+  nameWithType.vb: Object.GetHashCode()
+  fullName.vb: Object.GetHashCode()
+  spec.csharp:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.Testing.ExecutionProbeSnapshot.ContractVersion*
+  commentId: Overload:Kevlar.Testing.ExecutionProbeSnapshot.ContractVersion
+  isExternal: true
+  href: Kevlar.Testing.ExecutionProbeSnapshot.html#Kevlar_Testing_ExecutionProbeSnapshot_ContractVersion
+  name: ContractVersion
+  nameWithType: ExecutionProbeSnapshot.ContractVersion
+  fullName: Kevlar.Testing.ExecutionProbeSnapshot.ContractVersion
+- uid: System.Int32
+  commentId: T:System.Int32
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.int32
+  name: int
+  nameWithType: int
+  fullName: int
+  nameWithType.vb: Integer
+  fullName.vb: Integer
+  name.vb: Integer
+- uid: Kevlar.Testing.ExecutionProbeSnapshot.AttemptCount*
+  commentId: Overload:Kevlar.Testing.ExecutionProbeSnapshot.AttemptCount
+  isExternal: true
+  href: Kevlar.Testing.ExecutionProbeSnapshot.html#Kevlar_Testing_ExecutionProbeSnapshot_AttemptCount
+  name: AttemptCount
+  nameWithType: ExecutionProbeSnapshot.AttemptCount
+  fullName: Kevlar.Testing.ExecutionProbeSnapshot.AttemptCount
+- uid: Kevlar.Testing.ExecutionProbeSnapshot.CancellationCount*
+  commentId: Overload:Kevlar.Testing.ExecutionProbeSnapshot.CancellationCount
+  isExternal: true
+  href: Kevlar.Testing.ExecutionProbeSnapshot.html#Kevlar_Testing_ExecutionProbeSnapshot_CancellationCount
+  name: CancellationCount
+  nameWithType: ExecutionProbeSnapshot.CancellationCount
+  fullName: Kevlar.Testing.ExecutionProbeSnapshot.CancellationCount

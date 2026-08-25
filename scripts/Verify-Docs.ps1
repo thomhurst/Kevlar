@@ -374,4 +374,10 @@ if ($errors.Count -gt 0)
     exit 1
 }
 
-Write-Host "Verified $($visibleDocuments.Count) documentation pages: structure, canonical analyzer rules, and benchmark claims are valid."
+& (Join-Path $PSScriptRoot 'Verify-Samples.ps1')
+if ($LASTEXITCODE -ne 0)
+{
+    throw "Sample verification failed with exit code $LASTEXITCODE."
+}
+
+Write-Host "Verified $($visibleDocuments.Count) documentation pages: structure, canonical analyzer rules, benchmark claims, and samples are valid."

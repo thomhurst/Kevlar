@@ -62,6 +62,18 @@ jobs:
           cache: npm
           cache-dependency-path: docs/package-lock.json
 
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore local tools
+        run: dotnet tool restore
+
+      - name: Build API reference
+        shell: pwsh
+        run: ./scripts/Build-ApiDocs.ps1 -SkipMetadata
+
       - name: Verify documentation structure
         shell: pwsh
         run: ./scripts/Verify-Docs.ps1
@@ -73,6 +85,7 @@ jobs:
             --root-dir "${{ github.workspace }}" --no-progress
             --max-retries 3 --retry-wait-time 2
             --exclude 'https://github\.com/thomhurst/Kevlar/blob/main/(CONTRIBUTING|SECURITY|CODE_OF_CONDUCT)\.md'
+            --exclude '^https://github\.com/thomhurst/Kevlar/tree/main/samples/'
             README.md CONTRIBUTING.md SECURITY.md CODE_OF_CONDUCT.md "docs/docs/**/*.md"
           fail: true
           failIfEmpty: true
@@ -229,6 +242,40 @@ jobs:
           ./scripts/Verify-Changelog.ps1
           $notes = ./scripts/Get-ReleaseNotes.ps1 -Version $env:RELEASE_VERSION
           if ([string]::IsNullOrWhiteSpace(($notes | Out-String))) { throw "$env:RELEASE_VERSION release notes are empty." }
+
+      - name: Build API reference
+        if: matrix.os == 'ubuntu-latest'
+        shell: pwsh
+        run: ./scripts/Build-ApiDocs.ps1 -SkipBuild
+
+      - name: Verify API reference
+        if: matrix.os == 'ubuntu-latest'
+        shell: pwsh
+        run: |
+          ./scripts/Verify-ApiDocs.ps1
+          $apiChanges = @(git status --porcelain -- docs/api)
+          if ($apiChanges.Count -gt 0) {
+            $apiChanges | Write-Host
+            throw 'Generated API metadata is stale.'
+          }
+
+      - name: Build samples from packed packages
+        if: matrix.os == 'ubuntu-latest'
+        env:
+          PACKAGE_VERSION: ${{ steps.gitversion.outputs.semVer }}
+        run: dotnet build samples/Samples.slnx -c Release -warnaserror -p:UsePackedPackages=true -p:KevlarSamplePackageVersion=${{ steps.gitversion.outputs.semVer }}
+
+      - name: Run packed sample smoke tests
+        if: matrix.os == 'ubuntu-latest'
+        shell: pwsh
+        env:
+          PACKAGE_VERSION: ${{ steps.gitversion.outputs.semVer }}
+        run: ./scripts/Run-SampleSmokes.ps1 -UsePackedPackages -Version $env:PACKAGE_VERSION
+
+      - name: Verify documentation structure
+        if: matrix.os == 'ubuntu-latest'
+        shell: pwsh
+        run: ./scripts/Verify-Docs.ps1
 
       - name: Compile and execute documentation snippets
         if: matrix.os == 'ubuntu-latest'

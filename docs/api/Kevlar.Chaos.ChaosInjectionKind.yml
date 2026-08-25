@@ -1,0 +1,142 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Chaos.ChaosInjectionKind
+  commentId: T:Kevlar.Chaos.ChaosInjectionKind
+  id: ChaosInjectionKind
+  parent: Kevlar.Chaos
+  children:
+  - Kevlar.Chaos.ChaosInjectionKind.Behavior
+  - Kevlar.Chaos.ChaosInjectionKind.Fault
+  - Kevlar.Chaos.ChaosInjectionKind.Latency
+  - Kevlar.Chaos.ChaosInjectionKind.Outcome
+  langs:
+  - csharp
+  - vb
+  name: ChaosInjectionKind
+  nameWithType: ChaosInjectionKind
+  fullName: Kevlar.Chaos.ChaosInjectionKind
+  type: Enum
+  assemblies:
+  - Kevlar.Chaos
+  namespace: Kevlar.Chaos
+  summary: Identifies the kind of chaos injected into an execution.
+  example: []
+  syntax:
+    content: public enum ChaosInjectionKind
+    content.vb: Public Enum ChaosInjectionKind
+- uid: Kevlar.Chaos.ChaosInjectionKind.Latency
+  commentId: F:Kevlar.Chaos.ChaosInjectionKind.Latency
+  id: Latency
+  parent: Kevlar.Chaos.ChaosInjectionKind
+  langs:
+  - csharp
+  - vb
+  name: Latency
+  nameWithType: ChaosInjectionKind.Latency
+  fullName: Kevlar.Chaos.ChaosInjectionKind.Latency
+  type: Field
+  assemblies:
+  - Kevlar.Chaos
+  namespace: Kevlar.Chaos
+  summary: An artificial delay.
+  example: []
+  syntax:
+    content: Latency = 0
+    return:
+      type: Kevlar.Chaos.ChaosInjectionKind
+- uid: Kevlar.Chaos.ChaosInjectionKind.Fault
+  commentId: F:Kevlar.Chaos.ChaosInjectionKind.Fault
+  id: Fault
+  parent: Kevlar.Chaos.ChaosInjectionKind
+  langs:
+  - csharp
+  - vb
+  name: Fault
+  nameWithType: ChaosInjectionKind.Fault
+  fullName: Kevlar.Chaos.ChaosInjectionKind.Fault
+  type: Field
+  assemblies:
+  - Kevlar.Chaos
+  namespace: Kevlar.Chaos
+  summary: An exception outcome.
+  example: []
+  syntax:
+    content: Fault = 1
+    return:
+      type: Kevlar.Chaos.ChaosInjectionKind
+- uid: Kevlar.Chaos.ChaosInjectionKind.Outcome
+  commentId: F:Kevlar.Chaos.ChaosInjectionKind.Outcome
+  id: Outcome
+  parent: Kevlar.Chaos.ChaosInjectionKind
+  langs:
+  - csharp
+  - vb
+  name: Outcome
+  nameWithType: ChaosInjectionKind.Outcome
+  fullName: Kevlar.Chaos.ChaosInjectionKind.Outcome
+  type: Field
+  assemblies:
+  - Kevlar.Chaos
+  namespace: Kevlar.Chaos
+  summary: A caller-supplied result outcome.
+  example: []
+  syntax:
+    content: Outcome = 2
+    return:
+      type: Kevlar.Chaos.ChaosInjectionKind
+- uid: Kevlar.Chaos.ChaosInjectionKind.Behavior
+  commentId: F:Kevlar.Chaos.ChaosInjectionKind.Behavior
+  id: Behavior
+  parent: Kevlar.Chaos.ChaosInjectionKind
+  langs:
+  - csharp
+  - vb
+  name: Behavior
+  nameWithType: ChaosInjectionKind.Behavior
+  fullName: Kevlar.Chaos.ChaosInjectionKind.Behavior
+  type: Field
+  assemblies:
+  - Kevlar.Chaos
+  namespace: Kevlar.Chaos
+  summary: Caller-supplied asynchronous behavior.
+  example: []
+  syntax:
+    content: Behavior = 3
+    return:
+      type: Kevlar.Chaos.ChaosInjectionKind
+references:
+- uid: Kevlar.Chaos
+  commentId: N:Kevlar.Chaos
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar.Chaos
+  nameWithType: Kevlar.Chaos
+  fullName: Kevlar.Chaos
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Chaos
+    name: Chaos
+    isExternal: true
+    href: Kevlar.Chaos.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Chaos
+    name: Chaos
+    isExternal: true
+    href: Kevlar.Chaos.html
+- uid: Kevlar.Chaos.ChaosInjectionKind
+  commentId: T:Kevlar.Chaos.ChaosInjectionKind
+  parent: Kevlar.Chaos
+  isExternal: true
+  href: Kevlar.Chaos.ChaosInjectionKind.html
+  name: ChaosInjectionKind
+  nameWithType: ChaosInjectionKind
+  fullName: Kevlar.Chaos.ChaosInjectionKind

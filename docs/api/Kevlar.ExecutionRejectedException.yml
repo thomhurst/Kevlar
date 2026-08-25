@@ -1,0 +1,659 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.ExecutionRejectedException
+  commentId: T:Kevlar.ExecutionRejectedException
+  id: ExecutionRejectedException
+  parent: Kevlar
+  children:
+  - Kevlar.ExecutionRejectedException.#ctor
+  - Kevlar.ExecutionRejectedException.#ctor(System.String)
+  - Kevlar.ExecutionRejectedException.#ctor(System.String,System.Exception)
+  - Kevlar.ExecutionRejectedException.#ctor(System.String,System.Nullable{System.TimeSpan},System.Exception)
+  - Kevlar.ExecutionRejectedException.RetryAfter
+  langs:
+  - csharp
+  - vb
+  name: ExecutionRejectedException
+  nameWithType: ExecutionRejectedException
+  fullName: Kevlar.ExecutionRejectedException
+  type: Class
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Base class for executions rejected by a Kevlar strategy.
+  example: []
+  syntax:
+    content: 'public abstract class ExecutionRejectedException : KevlarException, ISerializable'
+    content.vb: Public MustInherit Class ExecutionRejectedException Inherits KevlarException Implements ISerializable
+  inheritance:
+  - System.Object
+  - System.Exception
+  - Kevlar.KevlarException
+  derivedClasses:
+  - Kevlar.CircuitOpenException
+  - Kevlar.ConcurrencyLimitExceededException
+  - Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException
+  - Kevlar.RateLimitExceededException
+  - Kevlar.TimeoutExceededException
+  implements:
+  - System.Runtime.Serialization.ISerializable
+  inheritedMembers:
+  - System.Exception.GetBaseException
+  - System.Exception.ToString
+  - System.Exception.GetType
+  - System.Exception.TargetSite
+  - System.Exception.Message
+  - System.Exception.Data
+  - System.Exception.InnerException
+  - System.Exception.HelpLink
+  - System.Exception.Source
+  - System.Exception.HResult
+  - System.Exception.StackTrace
+  - System.Exception.SerializeObjectState
+  - System.Object.MemberwiseClone
+  - System.Object.Equals(System.Object)
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  - System.Object.GetHashCode
+- uid: Kevlar.ExecutionRejectedException.#ctor
+  commentId: M:Kevlar.ExecutionRejectedException.#ctor
+  id: '#ctor'
+  parent: Kevlar.ExecutionRejectedException
+  langs:
+  - csharp
+  - vb
+  name: ExecutionRejectedException()
+  nameWithType: ExecutionRejectedException.ExecutionRejectedException()
+  fullName: Kevlar.ExecutionRejectedException.ExecutionRejectedException()
+  type: Constructor
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Initializes a rejection with no retry estimate.
+  example: []
+  syntax:
+    content: protected ExecutionRejectedException()
+    content.vb: Protected Sub New()
+  overload: Kevlar.ExecutionRejectedException.#ctor*
+  nameWithType.vb: ExecutionRejectedException.New()
+  fullName.vb: Kevlar.ExecutionRejectedException.New()
+  name.vb: New()
+- uid: Kevlar.ExecutionRejectedException.#ctor(System.String)
+  commentId: M:Kevlar.ExecutionRejectedException.#ctor(System.String)
+  id: '#ctor(System.String)'
+  parent: Kevlar.ExecutionRejectedException
+  langs:
+  - csharp
+  - vb
+  name: ExecutionRejectedException(string)
+  nameWithType: ExecutionRejectedException.ExecutionRejectedException(string)
+  fullName: Kevlar.ExecutionRejectedException.ExecutionRejectedException(string)
+  type: Constructor
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Initializes a rejection with no retry estimate.
+  example: []
+  syntax:
+    content: protected ExecutionRejectedException(string message)
+    parameters:
+    - id: message
+      type: System.String
+    content.vb: Protected Sub New(message As String)
+  overload: Kevlar.ExecutionRejectedException.#ctor*
+  nameWithType.vb: ExecutionRejectedException.New(String)
+  fullName.vb: Kevlar.ExecutionRejectedException.New(String)
+  name.vb: New(String)
+- uid: Kevlar.ExecutionRejectedException.#ctor(System.String,System.Exception)
+  commentId: M:Kevlar.ExecutionRejectedException.#ctor(System.String,System.Exception)
+  id: '#ctor(System.String,System.Exception)'
+  parent: Kevlar.ExecutionRejectedException
+  langs:
+  - csharp
+  - vb
+  name: ExecutionRejectedException(string, Exception?)
+  nameWithType: ExecutionRejectedException.ExecutionRejectedException(string, Exception?)
+  fullName: Kevlar.ExecutionRejectedException.ExecutionRejectedException(string, System.Exception?)
+  type: Constructor
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Initializes a rejection with no retry estimate and a cause.
+  example: []
+  syntax:
+    content: protected ExecutionRejectedException(string message, Exception? innerException)
+    parameters:
+    - id: message
+      type: System.String
+    - id: innerException
+      type: System.Exception
+    content.vb: Protected Sub New(message As String, innerException As Exception)
+  overload: Kevlar.ExecutionRejectedException.#ctor*
+  nameWithType.vb: ExecutionRejectedException.New(String, Exception)
+  fullName.vb: Kevlar.ExecutionRejectedException.New(String, System.Exception)
+  name.vb: New(String, Exception)
+- uid: Kevlar.ExecutionRejectedException.#ctor(System.String,System.Nullable{System.TimeSpan},System.Exception)
+  commentId: M:Kevlar.ExecutionRejectedException.#ctor(System.String,System.Nullable{System.TimeSpan},System.Exception)
+  id: '#ctor(System.String,System.Nullable{System.TimeSpan},System.Exception)'
+  parent: Kevlar.ExecutionRejectedException
+  langs:
+  - csharp
+  - vb
+  name: ExecutionRejectedException(string, TimeSpan?, Exception?)
+  nameWithType: ExecutionRejectedException.ExecutionRejectedException(string, TimeSpan?, Exception?)
+  fullName: Kevlar.ExecutionRejectedException.ExecutionRejectedException(string, System.TimeSpan?, System.Exception?)
+  type: Constructor
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Initializes a rejection with an optional retry estimate and cause.
+  example: []
+  syntax:
+    content: protected ExecutionRejectedException(string message, TimeSpan? retryAfter, Exception? innerException = null)
+    parameters:
+    - id: message
+      type: System.String
+    - id: retryAfter
+      type: System.Nullable{System.TimeSpan}
+    - id: innerException
+      type: System.Exception
+    content.vb: Protected Sub New(message As String, retryAfter As TimeSpan?, innerException As Exception = Nothing)
+  overload: Kevlar.ExecutionRejectedException.#ctor*
+  nameWithType.vb: ExecutionRejectedException.New(String, TimeSpan?, Exception)
+  fullName.vb: Kevlar.ExecutionRejectedException.New(String, System.TimeSpan?, System.Exception)
+  name.vb: New(String, TimeSpan?, Exception)
+- uid: Kevlar.ExecutionRejectedException.RetryAfter
+  commentId: P:Kevlar.ExecutionRejectedException.RetryAfter
+  id: RetryAfter
+  parent: Kevlar.ExecutionRejectedException
+  langs:
+  - csharp
+  - vb
+  name: RetryAfter
+  nameWithType: ExecutionRejectedException.RetryAfter
+  fullName: Kevlar.ExecutionRejectedException.RetryAfter
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Estimated time until execution may be attempted again, when known.
+  example: []
+  syntax:
+    content: public TimeSpan? RetryAfter { get; }
+    parameters: []
+    return:
+      type: System.Nullable{System.TimeSpan}
+    content.vb: Public ReadOnly Property RetryAfter As TimeSpan?
+  overload: Kevlar.ExecutionRejectedException.RetryAfter*
+references:
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System.Exception
+  commentId: T:System.Exception
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.exception
+  name: Exception
+  nameWithType: Exception
+  fullName: System.Exception
+- uid: Kevlar.KevlarException
+  commentId: T:Kevlar.KevlarException
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.KevlarException.html
+  name: KevlarException
+  nameWithType: KevlarException
+  fullName: Kevlar.KevlarException
+- uid: System.Runtime.Serialization.ISerializable
+  commentId: T:System.Runtime.Serialization.ISerializable
+  parent: System.Runtime.Serialization
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.runtime.serialization.iserializable
+  name: ISerializable
+  nameWithType: ISerializable
+  fullName: System.Runtime.Serialization.ISerializable
+- uid: System.Exception.GetBaseException
+  commentId: M:System.Exception.GetBaseException
+  parent: System.Exception
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.exception.getbaseexception
+  name: GetBaseException()
+  nameWithType: Exception.GetBaseException()
+  fullName: System.Exception.GetBaseException()
+  spec.csharp:
+  - uid: System.Exception.GetBaseException
+    name: GetBaseException
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.exception.getbaseexception
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Exception.GetBaseException
+    name: GetBaseException
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.exception.getbaseexception
+  - name: (
+  - name: )
+- uid: System.Exception.ToString
+  commentId: M:System.Exception.ToString
+  parent: System.Exception
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.exception.tostring
+  name: ToString()
+  nameWithType: Exception.ToString()
+  fullName: System.Exception.ToString()
+  spec.csharp:
+  - uid: System.Exception.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.exception.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Exception.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.exception.tostring
+  - name: (
+  - name: )
+- uid: System.Exception.GetType
+  commentId: M:System.Exception.GetType
+  parent: System.Exception
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.exception.gettype
+  name: GetType()
+  nameWithType: Exception.GetType()
+  fullName: System.Exception.GetType()
+  spec.csharp:
+  - uid: System.Exception.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.exception.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Exception.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.exception.gettype
+  - name: (
+  - name: )
+- uid: System.Exception.TargetSite
+  commentId: P:System.Exception.TargetSite
+  parent: System.Exception
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.exception.targetsite
+  name: TargetSite
+  nameWithType: Exception.TargetSite
+  fullName: System.Exception.TargetSite
+- uid: System.Exception.Message
+  commentId: P:System.Exception.Message
+  parent: System.Exception
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.exception.message
+  name: Message
+  nameWithType: Exception.Message
+  fullName: System.Exception.Message
+- uid: System.Exception.Data
+  commentId: P:System.Exception.Data
+  parent: System.Exception
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.exception.data
+  name: Data
+  nameWithType: Exception.Data
+  fullName: System.Exception.Data
+- uid: System.Exception.InnerException
+  commentId: P:System.Exception.InnerException
+  parent: System.Exception
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.exception.innerexception
+  name: InnerException
+  nameWithType: Exception.InnerException
+  fullName: System.Exception.InnerException
+- uid: System.Exception.HelpLink
+  commentId: P:System.Exception.HelpLink
+  parent: System.Exception
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.exception.helplink
+  name: HelpLink
+  nameWithType: Exception.HelpLink
+  fullName: System.Exception.HelpLink
+- uid: System.Exception.Source
+  commentId: P:System.Exception.Source
+  parent: System.Exception
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.exception.source
+  name: Source
+  nameWithType: Exception.Source
+  fullName: System.Exception.Source
+- uid: System.Exception.HResult
+  commentId: P:System.Exception.HResult
+  parent: System.Exception
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.exception.hresult
+  name: HResult
+  nameWithType: Exception.HResult
+  fullName: System.Exception.HResult
+- uid: System.Exception.StackTrace
+  commentId: P:System.Exception.StackTrace
+  parent: System.Exception
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.exception.stacktrace
+  name: StackTrace
+  nameWithType: Exception.StackTrace
+  fullName: System.Exception.StackTrace
+- uid: System.Exception.SerializeObjectState
+  commentId: E:System.Exception.SerializeObjectState
+  parent: System.Exception
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.exception.serializeobjectstate
+  name: SerializeObjectState
+  nameWithType: Exception.SerializeObjectState
+  fullName: System.Exception.SerializeObjectState
+- uid: System.Object.MemberwiseClone
+  commentId: M:System.Object.MemberwiseClone
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  name: MemberwiseClone()
+  nameWithType: object.MemberwiseClone()
+  fullName: object.MemberwiseClone()
+  nameWithType.vb: Object.MemberwiseClone()
+  fullName.vb: Object.MemberwiseClone()
+  spec.csharp:
+  - uid: System.Object.MemberwiseClone
+    name: MemberwiseClone
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.MemberwiseClone
+    name: MemberwiseClone
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object)
+  commentId: M:System.Object.Equals(System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  name: Equals(object)
+  nameWithType: object.Equals(object)
+  fullName: object.Equals(object)
+  nameWithType.vb: Object.Equals(Object)
+  fullName.vb: Object.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetHashCode
+  commentId: M:System.Object.GetHashCode
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  name: GetHashCode()
+  nameWithType: object.GetHashCode()
+  fullName: object.GetHashCode()
+  nameWithType.vb: Object.GetHashCode()
+  fullName.vb: Object.GetHashCode()
+  spec.csharp:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: System.Runtime.Serialization
+  commentId: N:System.Runtime.Serialization
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System.Runtime.Serialization
+  nameWithType: System.Runtime.Serialization
+  fullName: System.Runtime.Serialization
+  spec.csharp:
+  - uid: System
+    name: System
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system
+  - name: .
+  - uid: System.Runtime
+    name: Runtime
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.runtime
+  - name: .
+  - uid: System.Runtime.Serialization
+    name: Serialization
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.runtime.serialization
+  spec.vb:
+  - uid: System
+    name: System
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system
+  - name: .
+  - uid: System.Runtime
+    name: Runtime
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.runtime
+  - name: .
+  - uid: System.Runtime.Serialization
+    name: Serialization
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.runtime.serialization
+- uid: Kevlar.ExecutionRejectedException.#ctor*
+  commentId: Overload:Kevlar.ExecutionRejectedException.#ctor
+  isExternal: true
+  href: Kevlar.ExecutionRejectedException.html#Kevlar_ExecutionRejectedException__ctor
+  name: ExecutionRejectedException
+  nameWithType: ExecutionRejectedException.ExecutionRejectedException
+  fullName: Kevlar.ExecutionRejectedException.ExecutionRejectedException
+  nameWithType.vb: ExecutionRejectedException.New
+  fullName.vb: Kevlar.ExecutionRejectedException.New
+  name.vb: New
+- uid: System.String
+  commentId: T:System.String
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.string
+  name: string
+  nameWithType: string
+  fullName: string
+  nameWithType.vb: String
+  fullName.vb: String
+  name.vb: String
+- uid: System.Nullable{System.TimeSpan}
+  commentId: T:System.Nullable{System.TimeSpan}
+  parent: System
+  definition: System.Nullable`1
+  href: https://learn.microsoft.com/dotnet/api/system.timespan
+  name: TimeSpan?
+  nameWithType: TimeSpan?
+  fullName: System.TimeSpan?
+  spec.csharp:
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '?'
+  spec.vb:
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '?'
+- uid: System.Nullable`1
+  commentId: T:System.Nullable`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  name: Nullable<T>
+  nameWithType: Nullable<T>
+  fullName: System.Nullable<T>
+  nameWithType.vb: Nullable(Of T)
+  fullName.vb: System.Nullable(Of T)
+  name.vb: Nullable(Of T)
+  spec.csharp:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Nullable`1
+    name: Nullable
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Kevlar.ExecutionRejectedException.RetryAfter*
+  commentId: Overload:Kevlar.ExecutionRejectedException.RetryAfter
+  isExternal: true
+  href: Kevlar.ExecutionRejectedException.html#Kevlar_ExecutionRejectedException_RetryAfter
+  name: RetryAfter
+  nameWithType: ExecutionRejectedException.RetryAfter
+  fullName: Kevlar.ExecutionRejectedException.RetryAfter

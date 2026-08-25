@@ -1,0 +1,2406 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.ShieldBuilder`1
+  commentId: T:Kevlar.ShieldBuilder`1
+  id: ShieldBuilder`1
+  parent: Kevlar
+  children:
+  - Kevlar.ShieldBuilder`1.CircuitBreaker(System.Action{Kevlar.CircuitBreakerOptions{`0}})
+  - Kevlar.ShieldBuilder`1.CircuitBreaker(System.Int32,System.TimeSpan)
+  - Kevlar.ShieldBuilder`1.ConcurrencyLimit(System.Action{Kevlar.ConcurrencyLimitOptions})
+  - Kevlar.ShieldBuilder`1.ConcurrencyLimit(System.Int32,System.Int32)
+  - Kevlar.ShieldBuilder`1.Fallback(System.Func{Kevlar.Outcome{`0},System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{`0}})
+  - Kevlar.ShieldBuilder`1.Fallback(System.Func{Kevlar.Outcome{`0},System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{`0}},System.Action{Kevlar.FallbackOptions{`0}})
+  - Kevlar.ShieldBuilder`1.Fallback(System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{`0}})
+  - Kevlar.ShieldBuilder`1.Fallback(System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{`0}},System.Action{Kevlar.FallbackOptions{`0}})
+  - Kevlar.ShieldBuilder`1.FallbackTo(`0)
+  - Kevlar.ShieldBuilder`1.FallbackTo(`0,System.Action{Kevlar.FallbackOptions{`0}})
+  - Kevlar.ShieldBuilder`1.Hedge(System.Action{Kevlar.HedgeOptions{`0}})
+  - Kevlar.ShieldBuilder`1.Hedge(System.Int32,System.TimeSpan)
+  - Kevlar.ShieldBuilder`1.Or(System.Func{System.Exception,System.Boolean})
+  - Kevlar.ShieldBuilder`1.OrContext(System.Func{Kevlar.HandlingEvent{`0},System.Boolean})
+  - Kevlar.ShieldBuilder`1.OrResult(System.Func{`0,System.Boolean})
+  - Kevlar.ShieldBuilder`1.OrResult(`0)
+  - Kevlar.ShieldBuilder`1.OrResultContext(System.Func{Kevlar.HandlingEvent{`0},System.Boolean})
+  - Kevlar.ShieldBuilder`1.OrResultIsDefault
+  - Kevlar.ShieldBuilder`1.Or``1
+  - Kevlar.ShieldBuilder`1.Or``1(System.Func{``0,System.Boolean})
+  - Kevlar.ShieldBuilder`1.RateLimit(System.Action{Kevlar.RateLimitOptions})
+  - Kevlar.ShieldBuilder`1.RateLimit(System.Int32,System.TimeSpan)
+  - Kevlar.ShieldBuilder`1.Retry(System.Action{Kevlar.RetryOptions{`0}})
+  - Kevlar.ShieldBuilder`1.Retry(System.Int32)
+  - Kevlar.ShieldBuilder`1.Retry(System.Int32,Kevlar.Backoff)
+  - Kevlar.ShieldBuilder`1.RetryForever
+  - Kevlar.ShieldBuilder`1.RetryForever(Kevlar.Backoff)
+  - Kevlar.ShieldBuilder`1.Timeout(System.Action{Kevlar.TimeoutOptions})
+  - Kevlar.ShieldBuilder`1.Timeout(System.TimeSpan)
+  - Kevlar.ShieldBuilder`1.Use(Kevlar.Strategy)
+  - Kevlar.ShieldBuilder`1.Use(System.Func{Kevlar.HandlingClause,Kevlar.Strategy})
+  langs:
+  - csharp
+  - vb
+  name: ShieldBuilder<TResult>
+  nameWithType: ShieldBuilder<TResult>
+  fullName: Kevlar.ShieldBuilder<TResult>
+  type: Class
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    An immutable exception and result handling clause under construction for a
+
+    <xref href="Kevlar.Shield%601" data-throw-if-not-resolved="false"></xref> chain. Obtained via the <code>When</code>/<code>WhenResult</code> methods on
+
+    <xref href="Kevlar.Shield%601" data-throw-if-not-resolved="false"></xref> and finished by adding a strategy. The clause becomes the shield's
+
+    ambient handling for the strategy added here and reactive strategies chained afterwards.
+  remarks: >-
+    <p>
+
+    Start a clause with <code>When…</code> on a shield, then continue it with <code>Or…</code> on this builder:
+
+    <code>Shield.For&lt;T&gt;().When&lt;A&gt;().OrResult(r =&gt; …).Retry(3)</code>.
+
+    </p>
+
+    <p>
+
+    The builder is immutable. Each <code>Or…</code> returns a <em>new</em> builder holding the terms
+
+    accumulated so far plus the one just added, and leaves the builder it was called on untouched.
+
+    A builder held in a variable can therefore be branched into two chains safely: each branch gets
+
+    only its own terms. The corollary is that code must use the builder each <code>Or…</code>
+
+    <em>returns</em> — calling <code>Or…</code> and discarding the result adds nothing to anything.
+
+    Adding a strategy freezes the clause of that builder, so a shield already built is never
+
+    changed by further chaining either.
+
+    </p>
+
+    <p>
+
+    One strategy can opt out of the ambient clause: setting <code>HandlesException</code> or
+
+    <code>HandlesResult</code> on its options (<xref href="Kevlar.RetryOptions%601" data-throw-if-not-resolved="false"></xref>,
+
+    <xref href="Kevlar.CircuitBreakerOptions%601" data-throw-if-not-resolved="false"></xref>, <xref href="Kevlar.HedgeOptions%601" data-throw-if-not-resolved="false"></xref>,
+
+    <xref href="Kevlar.FallbackOptions%601" data-throw-if-not-resolved="false"></xref>) makes that strategy ignore the clause and handle only
+
+    what its own predicates select. Every other strategy in the chain keeps using the ambient clause.
+
+    </p>
+  example: []
+  syntax:
+    content: public sealed class ShieldBuilder<TResult>
+    typeParameters:
+    - id: TResult
+    content.vb: Public NotInheritable Class ShieldBuilder(Of TResult)
+  inheritance:
+  - System.Object
+  inheritedMembers:
+  - System.Object.GetType
+  - System.Object.ToString
+  - System.Object.Equals(System.Object)
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  - System.Object.GetHashCode
+  nameWithType.vb: ShieldBuilder(Of TResult)
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult)
+  name.vb: ShieldBuilder(Of TResult)
+- uid: Kevlar.ShieldBuilder`1.Or``1
+  commentId: M:Kevlar.ShieldBuilder`1.Or``1
+  id: Or``1
+  parent: Kevlar.ShieldBuilder`1
+  langs:
+  - csharp
+  - vb
+  name: Or<TException>()
+  nameWithType: ShieldBuilder<TResult>.Or<TException>()
+  fullName: Kevlar.ShieldBuilder<TResult>.Or<TException>()
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Returns a new builder that also handles exceptions of type <code class="typeparamref">TException</code>.
+  example: []
+  syntax:
+    content: 'public ShieldBuilder<TResult> Or<TException>() where TException : Exception'
+    typeParameters:
+    - id: TException
+    return:
+      type: Kevlar.ShieldBuilder`1
+    content.vb: Public Function [Or](Of TException As Exception)() As ShieldBuilder(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.Or*
+  nameWithType.vb: ShieldBuilder(Of TResult).Or(Of TException)()
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).Or(Of TException)()
+  name.vb: Or(Of TException)()
+- uid: Kevlar.ShieldBuilder`1.Or``1(System.Func{``0,System.Boolean})
+  commentId: M:Kevlar.ShieldBuilder`1.Or``1(System.Func{``0,System.Boolean})
+  id: Or``1(System.Func{``0,System.Boolean})
+  parent: Kevlar.ShieldBuilder`1
+  langs:
+  - csharp
+  - vb
+  name: Or<TException>(Func<TException, bool>)
+  nameWithType: ShieldBuilder<TResult>.Or<TException>(Func<TException, bool>)
+  fullName: Kevlar.ShieldBuilder<TResult>.Or<TException>(System.Func<TException, bool>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Returns a new builder that also handles exceptions of type <code class="typeparamref">TException</code> matching <code class="paramref">predicate</code>.
+  example: []
+  syntax:
+    content: 'public ShieldBuilder<TResult> Or<TException>(Func<TException, bool> predicate) where TException : Exception'
+    parameters:
+    - id: predicate
+      type: System.Func{{TException},System.Boolean}
+    typeParameters:
+    - id: TException
+    return:
+      type: Kevlar.ShieldBuilder`1
+    content.vb: Public Function [Or](Of TException As Exception)(predicate As Func(Of TException, Boolean)) As ShieldBuilder(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.Or*
+  nameWithType.vb: ShieldBuilder(Of TResult).Or(Of TException)(Func(Of TException, Boolean))
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).Or(Of TException)(System.Func(Of TException, Boolean))
+  name.vb: Or(Of TException)(Func(Of TException, Boolean))
+- uid: Kevlar.ShieldBuilder`1.Or(System.Func{System.Exception,System.Boolean})
+  commentId: M:Kevlar.ShieldBuilder`1.Or(System.Func{System.Exception,System.Boolean})
+  id: Or(System.Func{System.Exception,System.Boolean})
+  parent: Kevlar.ShieldBuilder`1
+  langs:
+  - csharp
+  - vb
+  name: Or(Func<Exception, bool>)
+  nameWithType: ShieldBuilder<TResult>.Or(Func<Exception, bool>)
+  fullName: Kevlar.ShieldBuilder<TResult>.Or(System.Func<System.Exception, bool>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Returns a new builder that also handles exceptions matching <code class="paramref">predicate</code>, whatever their type.
+  example: []
+  syntax:
+    content: public ShieldBuilder<TResult> Or(Func<Exception, bool> predicate)
+    parameters:
+    - id: predicate
+      type: System.Func{System.Exception,System.Boolean}
+    return:
+      type: Kevlar.ShieldBuilder`1
+    content.vb: Public Function [Or](predicate As Func(Of Exception, Boolean)) As ShieldBuilder(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.Or*
+  nameWithType.vb: ShieldBuilder(Of TResult).Or(Func(Of Exception, Boolean))
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).Or(System.Func(Of System.Exception, Boolean))
+  name.vb: Or(Func(Of Exception, Boolean))
+- uid: Kevlar.ShieldBuilder`1.OrContext(System.Func{Kevlar.HandlingEvent{`0},System.Boolean})
+  commentId: M:Kevlar.ShieldBuilder`1.OrContext(System.Func{Kevlar.HandlingEvent{`0},System.Boolean})
+  id: OrContext(System.Func{Kevlar.HandlingEvent{`0},System.Boolean})
+  parent: Kevlar.ShieldBuilder`1
+  langs:
+  - csharp
+  - vb
+  name: OrContext(Func<HandlingEvent<TResult>, bool>)
+  nameWithType: ShieldBuilder<TResult>.OrContext(Func<HandlingEvent<TResult>, bool>)
+  fullName: Kevlar.ShieldBuilder<TResult>.OrContext(System.Func<Kevlar.HandlingEvent<TResult>, bool>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Returns a new builder that also handles outcomes selected using execution context.
+  example: []
+  syntax:
+    content: public ShieldBuilder<TResult> OrContext(Func<HandlingEvent<TResult>, bool> predicate)
+    parameters:
+    - id: predicate
+      type: System.Func{Kevlar.HandlingEvent{{TResult}},System.Boolean}
+    return:
+      type: Kevlar.ShieldBuilder`1
+    content.vb: Public Function OrContext(predicate As Func(Of HandlingEvent(Of TResult), Boolean)) As ShieldBuilder(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.OrContext*
+  nameWithType.vb: ShieldBuilder(Of TResult).OrContext(Func(Of HandlingEvent(Of TResult), Boolean))
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).OrContext(System.Func(Of Kevlar.HandlingEvent(Of TResult), Boolean))
+  name.vb: OrContext(Func(Of HandlingEvent(Of TResult), Boolean))
+- uid: Kevlar.ShieldBuilder`1.OrResult(System.Func{`0,System.Boolean})
+  commentId: M:Kevlar.ShieldBuilder`1.OrResult(System.Func{`0,System.Boolean})
+  id: OrResult(System.Func{`0,System.Boolean})
+  parent: Kevlar.ShieldBuilder`1
+  langs:
+  - csharp
+  - vb
+  name: OrResult(Func<TResult, bool>)
+  nameWithType: ShieldBuilder<TResult>.OrResult(Func<TResult, bool>)
+  fullName: Kevlar.ShieldBuilder<TResult>.OrResult(System.Func<TResult, bool>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Returns a new builder that also handles results matching <code class="paramref">predicate</code>.
+  example: []
+  syntax:
+    content: public ShieldBuilder<TResult> OrResult(Func<TResult, bool> predicate)
+    parameters:
+    - id: predicate
+      type: System.Func{{TResult},System.Boolean}
+    return:
+      type: Kevlar.ShieldBuilder`1
+    content.vb: Public Function OrResult(predicate As Func(Of TResult, Boolean)) As ShieldBuilder(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.OrResult*
+  nameWithType.vb: ShieldBuilder(Of TResult).OrResult(Func(Of TResult, Boolean))
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).OrResult(System.Func(Of TResult, Boolean))
+  name.vb: OrResult(Func(Of TResult, Boolean))
+- uid: Kevlar.ShieldBuilder`1.OrResultContext(System.Func{Kevlar.HandlingEvent{`0},System.Boolean})
+  commentId: M:Kevlar.ShieldBuilder`1.OrResultContext(System.Func{Kevlar.HandlingEvent{`0},System.Boolean})
+  id: OrResultContext(System.Func{Kevlar.HandlingEvent{`0},System.Boolean})
+  parent: Kevlar.ShieldBuilder`1
+  langs:
+  - csharp
+  - vb
+  name: OrResultContext(Func<HandlingEvent<TResult>, bool>)
+  nameWithType: ShieldBuilder<TResult>.OrResultContext(Func<HandlingEvent<TResult>, bool>)
+  fullName: Kevlar.ShieldBuilder<TResult>.OrResultContext(System.Func<Kevlar.HandlingEvent<TResult>, bool>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Returns a new builder that also handles results selected using execution context.
+  example: []
+  syntax:
+    content: public ShieldBuilder<TResult> OrResultContext(Func<HandlingEvent<TResult>, bool> predicate)
+    parameters:
+    - id: predicate
+      type: System.Func{Kevlar.HandlingEvent{{TResult}},System.Boolean}
+    return:
+      type: Kevlar.ShieldBuilder`1
+    content.vb: Public Function OrResultContext(predicate As Func(Of HandlingEvent(Of TResult), Boolean)) As ShieldBuilder(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.OrResultContext*
+  nameWithType.vb: ShieldBuilder(Of TResult).OrResultContext(Func(Of HandlingEvent(Of TResult), Boolean))
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).OrResultContext(System.Func(Of Kevlar.HandlingEvent(Of TResult), Boolean))
+  name.vb: OrResultContext(Func(Of HandlingEvent(Of TResult), Boolean))
+- uid: Kevlar.ShieldBuilder`1.OrResult(`0)
+  commentId: M:Kevlar.ShieldBuilder`1.OrResult(`0)
+  id: OrResult(`0)
+  parent: Kevlar.ShieldBuilder`1
+  langs:
+  - csharp
+  - vb
+  name: OrResult(TResult)
+  nameWithType: ShieldBuilder<TResult>.OrResult(TResult)
+  fullName: Kevlar.ShieldBuilder<TResult>.OrResult(TResult)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Returns a new builder that also handles results equal to <code class="paramref">result</code>.
+  example: []
+  syntax:
+    content: public ShieldBuilder<TResult> OrResult(TResult result)
+    parameters:
+    - id: result
+      type: '{TResult}'
+    return:
+      type: Kevlar.ShieldBuilder`1
+    content.vb: Public Function OrResult(result As TResult) As ShieldBuilder(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.OrResult*
+  nameWithType.vb: ShieldBuilder(Of TResult).OrResult(TResult)
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).OrResult(TResult)
+- uid: Kevlar.ShieldBuilder`1.OrResultIsDefault
+  commentId: M:Kevlar.ShieldBuilder`1.OrResultIsDefault
+  id: OrResultIsDefault
+  parent: Kevlar.ShieldBuilder`1
+  langs:
+  - csharp
+  - vb
+  name: OrResultIsDefault()
+  nameWithType: ShieldBuilder<TResult>.OrResultIsDefault()
+  fullName: Kevlar.ShieldBuilder<TResult>.OrResultIsDefault()
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Returns a new builder that also handles results equal to <code>default(TResult)</code> — <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> for reference types.
+  remarks: >-
+    For a reference type prefer <xref href="Kevlar.ShieldResultExtensions.OrResultIsNull%60%601(Kevlar.ShieldBuilder%7b%60%600%7d)" data-throw-if-not-resolved="false"></xref>,
+
+    which says what it matches. This overload stays for value types and generic code, where
+
+    <code>default(TResult)</code> — <code>0</code>, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a> — may or may not be a failure.
+  example: []
+  syntax:
+    content: public ShieldBuilder<TResult> OrResultIsDefault()
+    return:
+      type: Kevlar.ShieldBuilder`1
+    content.vb: Public Function OrResultIsDefault() As ShieldBuilder(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.OrResultIsDefault*
+  nameWithType.vb: ShieldBuilder(Of TResult).OrResultIsDefault()
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).OrResultIsDefault()
+- uid: Kevlar.ShieldBuilder`1.Retry(System.Int32)
+  commentId: M:Kevlar.ShieldBuilder`1.Retry(System.Int32)
+  id: Retry(System.Int32)
+  parent: Kevlar.ShieldBuilder`1
+  langs:
+  - csharp
+  - vb
+  name: Retry(int)
+  nameWithType: ShieldBuilder<TResult>.Retry(int)
+  fullName: Kevlar.ShieldBuilder<TResult>.Retry(int)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Retries handled outcomes up to <code class="paramref">maxRetries</code> times with the default exponential jittered backoff.
+  example: []
+  syntax:
+    content: public Shield<TResult> Retry(int maxRetries = 3)
+    parameters:
+    - id: maxRetries
+      type: System.Int32
+      description: >-
+        The number of <em>retries</em>, not the number of attempts: <code>Retry(3)</code> makes up to 4
+
+        total attempts — the initial call plus 3 retries.
+    return:
+      type: Kevlar.Shield{{TResult}}
+    content.vb: Public Function Retry(maxRetries As Integer = 3) As Shield(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.Retry*
+  nameWithType.vb: ShieldBuilder(Of TResult).Retry(Integer)
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).Retry(Integer)
+  name.vb: Retry(Integer)
+- uid: Kevlar.ShieldBuilder`1.Retry(System.Int32,Kevlar.Backoff)
+  commentId: M:Kevlar.ShieldBuilder`1.Retry(System.Int32,Kevlar.Backoff)
+  id: Retry(System.Int32,Kevlar.Backoff)
+  parent: Kevlar.ShieldBuilder`1
+  langs:
+  - csharp
+  - vb
+  name: Retry(int, Backoff)
+  nameWithType: ShieldBuilder<TResult>.Retry(int, Backoff)
+  fullName: Kevlar.ShieldBuilder<TResult>.Retry(int, Kevlar.Backoff)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Retries handled outcomes up to <code class="paramref">maxRetries</code> times with the given backoff.
+  example: []
+  syntax:
+    content: public Shield<TResult> Retry(int maxRetries, Backoff backoff)
+    parameters:
+    - id: maxRetries
+      type: System.Int32
+      description: >-
+        The number of <em>retries</em>, not the number of attempts: <code>Retry(3)</code> makes up to 4
+
+        total attempts — the initial call plus 3 retries.
+    - id: backoff
+      type: Kevlar.Backoff
+      description: The delay computation applied between attempts.
+    return:
+      type: Kevlar.Shield{{TResult}}
+    content.vb: Public Function Retry(maxRetries As Integer, backoff As Backoff) As Shield(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.Retry*
+  nameWithType.vb: ShieldBuilder(Of TResult).Retry(Integer, Backoff)
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).Retry(Integer, Kevlar.Backoff)
+  name.vb: Retry(Integer, Backoff)
+- uid: Kevlar.ShieldBuilder`1.Retry(System.Action{Kevlar.RetryOptions{`0}})
+  commentId: M:Kevlar.ShieldBuilder`1.Retry(System.Action{Kevlar.RetryOptions{`0}})
+  id: Retry(System.Action{Kevlar.RetryOptions{`0}})
+  parent: Kevlar.ShieldBuilder`1
+  langs:
+  - csharp
+  - vb
+  name: Retry(Action<RetryOptions<TResult>>)
+  nameWithType: ShieldBuilder<TResult>.Retry(Action<RetryOptions<TResult>>)
+  fullName: Kevlar.ShieldBuilder<TResult>.Retry(System.Action<Kevlar.RetryOptions<TResult>>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Adds a retry strategy configured via <code class="paramref">configure</code>.
+  remarks: >-
+    <xref href="Kevlar.RetryOptions%601.MaxRetries" data-throw-if-not-resolved="false"></xref> counts <em>retries</em>, not attempts:
+
+    <code>MaxRetries = 3</code> makes up to 4 total attempts — the initial call plus 3 retries.
+  example: []
+  syntax:
+    content: public Shield<TResult> Retry(Action<RetryOptions<TResult>> configure)
+    parameters:
+    - id: configure
+      type: System.Action{Kevlar.RetryOptions{{TResult}}}
+    return:
+      type: Kevlar.Shield{{TResult}}
+    content.vb: Public Function Retry(configure As Action(Of RetryOptions(Of TResult))) As Shield(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.Retry*
+  nameWithType.vb: ShieldBuilder(Of TResult).Retry(Action(Of RetryOptions(Of TResult)))
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).Retry(System.Action(Of Kevlar.RetryOptions(Of TResult)))
+  name.vb: Retry(Action(Of RetryOptions(Of TResult)))
+- uid: Kevlar.ShieldBuilder`1.RetryForever
+  commentId: M:Kevlar.ShieldBuilder`1.RetryForever
+  id: RetryForever
+  parent: Kevlar.ShieldBuilder`1
+  langs:
+  - csharp
+  - vb
+  name: RetryForever()
+  nameWithType: ShieldBuilder<TResult>.RetryForever()
+  fullName: Kevlar.ShieldBuilder<TResult>.RetryForever()
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Retries handled outcomes indefinitely with the default exponential jittered backoff.
+  example: []
+  syntax:
+    content: public Shield<TResult> RetryForever()
+    return:
+      type: Kevlar.Shield{{TResult}}
+    content.vb: Public Function RetryForever() As Shield(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.RetryForever*
+  nameWithType.vb: ShieldBuilder(Of TResult).RetryForever()
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).RetryForever()
+- uid: Kevlar.ShieldBuilder`1.RetryForever(Kevlar.Backoff)
+  commentId: M:Kevlar.ShieldBuilder`1.RetryForever(Kevlar.Backoff)
+  id: RetryForever(Kevlar.Backoff)
+  parent: Kevlar.ShieldBuilder`1
+  langs:
+  - csharp
+  - vb
+  name: RetryForever(Backoff)
+  nameWithType: ShieldBuilder<TResult>.RetryForever(Backoff)
+  fullName: Kevlar.ShieldBuilder<TResult>.RetryForever(Kevlar.Backoff)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Retries handled outcomes indefinitely with the given backoff.
+  example: []
+  syntax:
+    content: public Shield<TResult> RetryForever(Backoff backoff)
+    parameters:
+    - id: backoff
+      type: Kevlar.Backoff
+      description: The delay computation applied between attempts.
+    return:
+      type: Kevlar.Shield{{TResult}}
+    content.vb: Public Function RetryForever(backoff As Backoff) As Shield(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.RetryForever*
+  nameWithType.vb: ShieldBuilder(Of TResult).RetryForever(Backoff)
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).RetryForever(Kevlar.Backoff)
+- uid: Kevlar.ShieldBuilder`1.CircuitBreaker(System.Int32,System.TimeSpan)
+  commentId: M:Kevlar.ShieldBuilder`1.CircuitBreaker(System.Int32,System.TimeSpan)
+  id: CircuitBreaker(System.Int32,System.TimeSpan)
+  parent: Kevlar.ShieldBuilder`1
+  langs:
+  - csharp
+  - vb
+  name: CircuitBreaker(int, TimeSpan)
+  nameWithType: ShieldBuilder<TResult>.CircuitBreaker(int, TimeSpan)
+  fullName: Kevlar.ShieldBuilder<TResult>.CircuitBreaker(int, System.TimeSpan)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Breaks the circuit for <code class="paramref">breakDuration</code> after <code class="paramref">consecutiveFailures</code> consecutive handled outcomes.
+  example: []
+  syntax:
+    content: public Shield<TResult> CircuitBreaker(int consecutiveFailures, TimeSpan breakDuration)
+    parameters:
+    - id: consecutiveFailures
+      type: System.Int32
+    - id: breakDuration
+      type: System.TimeSpan
+    return:
+      type: Kevlar.Shield{{TResult}}
+    content.vb: Public Function CircuitBreaker(consecutiveFailures As Integer, breakDuration As TimeSpan) As Shield(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.CircuitBreaker*
+  nameWithType.vb: ShieldBuilder(Of TResult).CircuitBreaker(Integer, TimeSpan)
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).CircuitBreaker(Integer, System.TimeSpan)
+  name.vb: CircuitBreaker(Integer, TimeSpan)
+- uid: Kevlar.ShieldBuilder`1.CircuitBreaker(System.Action{Kevlar.CircuitBreakerOptions{`0}})
+  commentId: M:Kevlar.ShieldBuilder`1.CircuitBreaker(System.Action{Kevlar.CircuitBreakerOptions{`0}})
+  id: CircuitBreaker(System.Action{Kevlar.CircuitBreakerOptions{`0}})
+  parent: Kevlar.ShieldBuilder`1
+  langs:
+  - csharp
+  - vb
+  name: CircuitBreaker(Action<CircuitBreakerOptions<TResult>>)
+  nameWithType: ShieldBuilder<TResult>.CircuitBreaker(Action<CircuitBreakerOptions<TResult>>)
+  fullName: Kevlar.ShieldBuilder<TResult>.CircuitBreaker(System.Action<Kevlar.CircuitBreakerOptions<TResult>>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Adds a circuit breaker strategy configured via <code class="paramref">configure</code>.
+  example: []
+  syntax:
+    content: public Shield<TResult> CircuitBreaker(Action<CircuitBreakerOptions<TResult>> configure)
+    parameters:
+    - id: configure
+      type: System.Action{Kevlar.CircuitBreakerOptions{{TResult}}}
+    return:
+      type: Kevlar.Shield{{TResult}}
+    content.vb: Public Function CircuitBreaker(configure As Action(Of CircuitBreakerOptions(Of TResult))) As Shield(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.CircuitBreaker*
+  nameWithType.vb: ShieldBuilder(Of TResult).CircuitBreaker(Action(Of CircuitBreakerOptions(Of TResult)))
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).CircuitBreaker(System.Action(Of Kevlar.CircuitBreakerOptions(Of TResult)))
+  name.vb: CircuitBreaker(Action(Of CircuitBreakerOptions(Of TResult)))
+- uid: Kevlar.ShieldBuilder`1.Hedge(System.Int32,System.TimeSpan)
+  commentId: M:Kevlar.ShieldBuilder`1.Hedge(System.Int32,System.TimeSpan)
+  id: Hedge(System.Int32,System.TimeSpan)
+  parent: Kevlar.ShieldBuilder`1
+  langs:
+  - csharp
+  - vb
+  name: Hedge(int, TimeSpan)
+  nameWithType: ShieldBuilder<TResult>.Hedge(int, TimeSpan)
+  fullName: Kevlar.ShieldBuilder<TResult>.Hedge(int, System.TimeSpan)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Races concurrent attempts; a handled outcome launches the next attempt immediately.
+  example: []
+  syntax:
+    content: public Shield<TResult> Hedge(int maxAttempts, TimeSpan delay)
+    parameters:
+    - id: maxAttempts
+      type: System.Int32
+    - id: delay
+      type: System.TimeSpan
+    return:
+      type: Kevlar.Shield{{TResult}}
+    content.vb: Public Function Hedge(maxAttempts As Integer, delay As TimeSpan) As Shield(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.Hedge*
+  nameWithType.vb: ShieldBuilder(Of TResult).Hedge(Integer, TimeSpan)
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).Hedge(Integer, System.TimeSpan)
+  name.vb: Hedge(Integer, TimeSpan)
+- uid: Kevlar.ShieldBuilder`1.Hedge(System.Action{Kevlar.HedgeOptions{`0}})
+  commentId: M:Kevlar.ShieldBuilder`1.Hedge(System.Action{Kevlar.HedgeOptions{`0}})
+  id: Hedge(System.Action{Kevlar.HedgeOptions{`0}})
+  parent: Kevlar.ShieldBuilder`1
+  langs:
+  - csharp
+  - vb
+  name: Hedge(Action<HedgeOptions<TResult>>)
+  nameWithType: ShieldBuilder<TResult>.Hedge(Action<HedgeOptions<TResult>>)
+  fullName: Kevlar.ShieldBuilder<TResult>.Hedge(System.Action<Kevlar.HedgeOptions<TResult>>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Adds a hedging strategy configured via <code class="paramref">configure</code>.
+  example: []
+  syntax:
+    content: public Shield<TResult> Hedge(Action<HedgeOptions<TResult>> configure)
+    parameters:
+    - id: configure
+      type: System.Action{Kevlar.HedgeOptions{{TResult}}}
+    return:
+      type: Kevlar.Shield{{TResult}}
+    content.vb: Public Function Hedge(configure As Action(Of HedgeOptions(Of TResult))) As Shield(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.Hedge*
+  nameWithType.vb: ShieldBuilder(Of TResult).Hedge(Action(Of HedgeOptions(Of TResult)))
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).Hedge(System.Action(Of Kevlar.HedgeOptions(Of TResult)))
+  name.vb: Hedge(Action(Of HedgeOptions(Of TResult)))
+- uid: Kevlar.ShieldBuilder`1.Use(System.Func{Kevlar.HandlingClause,Kevlar.Strategy})
+  commentId: M:Kevlar.ShieldBuilder`1.Use(System.Func{Kevlar.HandlingClause,Kevlar.Strategy})
+  id: Use(System.Func{Kevlar.HandlingClause,Kevlar.Strategy})
+  parent: Kevlar.ShieldBuilder`1
+  langs:
+  - csharp
+  - vb
+  name: Use(Func<HandlingClause, Strategy>)
+  nameWithType: ShieldBuilder<TResult>.Use(Func<HandlingClause, Strategy>)
+  fullName: Kevlar.ShieldBuilder<TResult>.Use(System.Func<Kevlar.HandlingClause, Kevlar.Strategy>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Creates and appends a custom strategy using the accumulated handling clause.
+  example: []
+  syntax:
+    content: public Shield<TResult> Use(Func<HandlingClause, Strategy> factory)
+    parameters:
+    - id: factory
+      type: System.Func{Kevlar.HandlingClause,Kevlar.Strategy}
+    return:
+      type: Kevlar.Shield{{TResult}}
+    content.vb: Public Function Use(factory As Func(Of HandlingClause, Strategy)) As Shield(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.Use*
+  nameWithType.vb: ShieldBuilder(Of TResult).Use(Func(Of HandlingClause, Strategy))
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).Use(System.Func(Of Kevlar.HandlingClause, Kevlar.Strategy))
+  name.vb: Use(Func(Of HandlingClause, Strategy))
+- uid: Kevlar.ShieldBuilder`1.Use(Kevlar.Strategy)
+  commentId: M:Kevlar.ShieldBuilder`1.Use(Kevlar.Strategy)
+  id: Use(Kevlar.Strategy)
+  parent: Kevlar.ShieldBuilder`1
+  langs:
+  - csharp
+  - vb
+  name: Use(Strategy)
+  nameWithType: ShieldBuilder<TResult>.Use(Strategy)
+  fullName: Kevlar.ShieldBuilder<TResult>.Use(Kevlar.Strategy)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Appends a custom strategy. The accumulated handling clause remains ambient for later strategies.
+  example: []
+  syntax:
+    content: public Shield<TResult> Use(Strategy strategy)
+    parameters:
+    - id: strategy
+      type: Kevlar.Strategy
+    return:
+      type: Kevlar.Shield{{TResult}}
+    content.vb: Public Function Use(strategy As Strategy) As Shield(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.Use*
+  nameWithType.vb: ShieldBuilder(Of TResult).Use(Strategy)
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).Use(Kevlar.Strategy)
+- uid: Kevlar.ShieldBuilder`1.FallbackTo(`0)
+  commentId: M:Kevlar.ShieldBuilder`1.FallbackTo(`0)
+  id: FallbackTo(`0)
+  parent: Kevlar.ShieldBuilder`1
+  langs:
+  - csharp
+  - vb
+  name: FallbackTo(TResult)
+  nameWithType: ShieldBuilder<TResult>.FallbackTo(TResult)
+  fullName: Kevlar.ShieldBuilder<TResult>.FallbackTo(TResult)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Replaces handled outcomes with <code class="paramref">fallbackValue</code>.
+  example: []
+  syntax:
+    content: public Shield<TResult> FallbackTo(TResult fallbackValue)
+    parameters:
+    - id: fallbackValue
+      type: '{TResult}'
+    return:
+      type: Kevlar.Shield{{TResult}}
+    content.vb: Public Function FallbackTo(fallbackValue As TResult) As Shield(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.FallbackTo*
+  nameWithType.vb: ShieldBuilder(Of TResult).FallbackTo(TResult)
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).FallbackTo(TResult)
+- uid: Kevlar.ShieldBuilder`1.FallbackTo(`0,System.Action{Kevlar.FallbackOptions{`0}})
+  commentId: M:Kevlar.ShieldBuilder`1.FallbackTo(`0,System.Action{Kevlar.FallbackOptions{`0}})
+  id: FallbackTo(`0,System.Action{Kevlar.FallbackOptions{`0}})
+  parent: Kevlar.ShieldBuilder`1
+  langs:
+  - csharp
+  - vb
+  name: FallbackTo(TResult, Action<FallbackOptions<TResult>>)
+  nameWithType: ShieldBuilder<TResult>.FallbackTo(TResult, Action<FallbackOptions<TResult>>)
+  fullName: Kevlar.ShieldBuilder<TResult>.FallbackTo(TResult, System.Action<Kevlar.FallbackOptions<TResult>>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Replaces handled outcomes with <code class="paramref">fallbackValue</code> and configures notifications.
+  example: []
+  syntax:
+    content: public Shield<TResult> FallbackTo(TResult fallbackValue, Action<FallbackOptions<TResult>> configure)
+    parameters:
+    - id: fallbackValue
+      type: '{TResult}'
+    - id: configure
+      type: System.Action{Kevlar.FallbackOptions{{TResult}}}
+    return:
+      type: Kevlar.Shield{{TResult}}
+    content.vb: Public Function FallbackTo(fallbackValue As TResult, configure As Action(Of FallbackOptions(Of TResult))) As Shield(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.FallbackTo*
+  nameWithType.vb: ShieldBuilder(Of TResult).FallbackTo(TResult, Action(Of FallbackOptions(Of TResult)))
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).FallbackTo(TResult, System.Action(Of Kevlar.FallbackOptions(Of TResult)))
+  name.vb: FallbackTo(TResult, Action(Of FallbackOptions(Of TResult)))
+- uid: Kevlar.ShieldBuilder`1.Fallback(System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{`0}})
+  commentId: M:Kevlar.ShieldBuilder`1.Fallback(System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{`0}})
+  id: Fallback(System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{`0}})
+  parent: Kevlar.ShieldBuilder`1
+  langs:
+  - csharp
+  - vb
+  name: Fallback(Func<CancellationToken, ValueTask<TResult>>)
+  nameWithType: ShieldBuilder<TResult>.Fallback(Func<CancellationToken, ValueTask<TResult>>)
+  fullName: Kevlar.ShieldBuilder<TResult>.Fallback(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Replaces handled outcomes with the result of <code class="paramref">fallback</code>.
+  example: []
+  syntax:
+    content: public Shield<TResult> Fallback(Func<CancellationToken, ValueTask<TResult>> fallback)
+    parameters:
+    - id: fallback
+      type: System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{{TResult}}}
+    return:
+      type: Kevlar.Shield{{TResult}}
+    content.vb: Public Function Fallback(fallback As Func(Of CancellationToken, ValueTask(Of TResult))) As Shield(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.Fallback*
+  nameWithType.vb: ShieldBuilder(Of TResult).Fallback(Func(Of CancellationToken, ValueTask(Of TResult)))
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).Fallback(System.Func(Of System.Threading.CancellationToken, System.Threading.Tasks.ValueTask(Of TResult)))
+  name.vb: Fallback(Func(Of CancellationToken, ValueTask(Of TResult)))
+- uid: Kevlar.ShieldBuilder`1.Fallback(System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{`0}},System.Action{Kevlar.FallbackOptions{`0}})
+  commentId: M:Kevlar.ShieldBuilder`1.Fallback(System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{`0}},System.Action{Kevlar.FallbackOptions{`0}})
+  id: Fallback(System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{`0}},System.Action{Kevlar.FallbackOptions{`0}})
+  parent: Kevlar.ShieldBuilder`1
+  langs:
+  - csharp
+  - vb
+  name: Fallback(Func<CancellationToken, ValueTask<TResult>>, Action<FallbackOptions<TResult>>)
+  nameWithType: ShieldBuilder<TResult>.Fallback(Func<CancellationToken, ValueTask<TResult>>, Action<FallbackOptions<TResult>>)
+  fullName: Kevlar.ShieldBuilder<TResult>.Fallback(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>, System.Action<Kevlar.FallbackOptions<TResult>>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Replaces handled outcomes with the result of <code class="paramref">fallback</code> and configures notifications.
+  example: []
+  syntax:
+    content: public Shield<TResult> Fallback(Func<CancellationToken, ValueTask<TResult>> fallback, Action<FallbackOptions<TResult>> configure)
+    parameters:
+    - id: fallback
+      type: System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{{TResult}}}
+    - id: configure
+      type: System.Action{Kevlar.FallbackOptions{{TResult}}}
+    return:
+      type: Kevlar.Shield{{TResult}}
+    content.vb: Public Function Fallback(fallback As Func(Of CancellationToken, ValueTask(Of TResult)), configure As Action(Of FallbackOptions(Of TResult))) As Shield(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.Fallback*
+  nameWithType.vb: ShieldBuilder(Of TResult).Fallback(Func(Of CancellationToken, ValueTask(Of TResult)), Action(Of FallbackOptions(Of TResult)))
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).Fallback(System.Func(Of System.Threading.CancellationToken, System.Threading.Tasks.ValueTask(Of TResult)), System.Action(Of Kevlar.FallbackOptions(Of TResult)))
+  name.vb: Fallback(Func(Of CancellationToken, ValueTask(Of TResult)), Action(Of FallbackOptions(Of TResult)))
+- uid: Kevlar.ShieldBuilder`1.Fallback(System.Func{Kevlar.Outcome{`0},System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{`0}})
+  commentId: M:Kevlar.ShieldBuilder`1.Fallback(System.Func{Kevlar.Outcome{`0},System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{`0}})
+  id: Fallback(System.Func{Kevlar.Outcome{`0},System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{`0}})
+  parent: Kevlar.ShieldBuilder`1
+  langs:
+  - csharp
+  - vb
+  name: Fallback(Func<Outcome<TResult>, CancellationToken, ValueTask<TResult>>)
+  nameWithType: ShieldBuilder<TResult>.Fallback(Func<Outcome<TResult>, CancellationToken, ValueTask<TResult>>)
+  fullName: Kevlar.ShieldBuilder<TResult>.Fallback(System.Func<Kevlar.Outcome<TResult>, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Replaces handled outcomes with the result of <code class="paramref">fallback</code>, which receives the handled outcome.
+  example: []
+  syntax:
+    content: public Shield<TResult> Fallback(Func<Outcome<TResult>, CancellationToken, ValueTask<TResult>> fallback)
+    parameters:
+    - id: fallback
+      type: System.Func{Kevlar.Outcome{{TResult}},System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{{TResult}}}
+    return:
+      type: Kevlar.Shield{{TResult}}
+    content.vb: Public Function Fallback(fallback As Func(Of Outcome(Of TResult), CancellationToken, ValueTask(Of TResult))) As Shield(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.Fallback*
+  nameWithType.vb: ShieldBuilder(Of TResult).Fallback(Func(Of Outcome(Of TResult), CancellationToken, ValueTask(Of TResult)))
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).Fallback(System.Func(Of Kevlar.Outcome(Of TResult), System.Threading.CancellationToken, System.Threading.Tasks.ValueTask(Of TResult)))
+  name.vb: Fallback(Func(Of Outcome(Of TResult), CancellationToken, ValueTask(Of TResult)))
+- uid: Kevlar.ShieldBuilder`1.Fallback(System.Func{Kevlar.Outcome{`0},System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{`0}},System.Action{Kevlar.FallbackOptions{`0}})
+  commentId: M:Kevlar.ShieldBuilder`1.Fallback(System.Func{Kevlar.Outcome{`0},System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{`0}},System.Action{Kevlar.FallbackOptions{`0}})
+  id: Fallback(System.Func{Kevlar.Outcome{`0},System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{`0}},System.Action{Kevlar.FallbackOptions{`0}})
+  parent: Kevlar.ShieldBuilder`1
+  langs:
+  - csharp
+  - vb
+  name: Fallback(Func<Outcome<TResult>, CancellationToken, ValueTask<TResult>>, Action<FallbackOptions<TResult>>)
+  nameWithType: ShieldBuilder<TResult>.Fallback(Func<Outcome<TResult>, CancellationToken, ValueTask<TResult>>, Action<FallbackOptions<TResult>>)
+  fullName: Kevlar.ShieldBuilder<TResult>.Fallback(System.Func<Kevlar.Outcome<TResult>, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>, System.Action<Kevlar.FallbackOptions<TResult>>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Replaces handled outcomes with the result of <code class="paramref">fallback</code>, which receives
+
+    the handled outcome, and configures notifications.
+  example: []
+  syntax:
+    content: public Shield<TResult> Fallback(Func<Outcome<TResult>, CancellationToken, ValueTask<TResult>> fallback, Action<FallbackOptions<TResult>> configure)
+    parameters:
+    - id: fallback
+      type: System.Func{Kevlar.Outcome{{TResult}},System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{{TResult}}}
+    - id: configure
+      type: System.Action{Kevlar.FallbackOptions{{TResult}}}
+    return:
+      type: Kevlar.Shield{{TResult}}
+    content.vb: Public Function Fallback(fallback As Func(Of Outcome(Of TResult), CancellationToken, ValueTask(Of TResult)), configure As Action(Of FallbackOptions(Of TResult))) As Shield(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.Fallback*
+  nameWithType.vb: ShieldBuilder(Of TResult).Fallback(Func(Of Outcome(Of TResult), CancellationToken, ValueTask(Of TResult)), Action(Of FallbackOptions(Of TResult)))
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).Fallback(System.Func(Of Kevlar.Outcome(Of TResult), System.Threading.CancellationToken, System.Threading.Tasks.ValueTask(Of TResult)), System.Action(Of Kevlar.FallbackOptions(Of TResult)))
+  name.vb: Fallback(Func(Of Outcome(Of TResult), CancellationToken, ValueTask(Of TResult)), Action(Of FallbackOptions(Of TResult)))
+- uid: Kevlar.ShieldBuilder`1.Timeout(System.TimeSpan)
+  commentId: M:Kevlar.ShieldBuilder`1.Timeout(System.TimeSpan)
+  id: Timeout(System.TimeSpan)
+  parent: Kevlar.ShieldBuilder`1
+  langs:
+  - csharp
+  - vb
+  name: Timeout(TimeSpan)
+  nameWithType: ShieldBuilder<TResult>.Timeout(TimeSpan)
+  fullName: Kevlar.ShieldBuilder<TResult>.Timeout(System.TimeSpan)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Cancels executions that exceed <code class="paramref">timeout</code>. The handling clauses remain ambient for later strategies.
+  example: []
+  syntax:
+    content: public Shield<TResult> Timeout(TimeSpan timeout)
+    parameters:
+    - id: timeout
+      type: System.TimeSpan
+    return:
+      type: Kevlar.Shield{{TResult}}
+    content.vb: Public Function Timeout(timeout As TimeSpan) As Shield(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.Timeout*
+  nameWithType.vb: ShieldBuilder(Of TResult).Timeout(TimeSpan)
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).Timeout(System.TimeSpan)
+- uid: Kevlar.ShieldBuilder`1.Timeout(System.Action{Kevlar.TimeoutOptions})
+  commentId: M:Kevlar.ShieldBuilder`1.Timeout(System.Action{Kevlar.TimeoutOptions})
+  id: Timeout(System.Action{Kevlar.TimeoutOptions})
+  parent: Kevlar.ShieldBuilder`1
+  langs:
+  - csharp
+  - vb
+  name: Timeout(Action<TimeoutOptions>)
+  nameWithType: ShieldBuilder<TResult>.Timeout(Action<TimeoutOptions>)
+  fullName: Kevlar.ShieldBuilder<TResult>.Timeout(System.Action<Kevlar.TimeoutOptions>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Adds a configured timeout. The handling clause remains ambient for later strategies.
+  example: []
+  syntax:
+    content: public Shield<TResult> Timeout(Action<TimeoutOptions> configure)
+    parameters:
+    - id: configure
+      type: System.Action{Kevlar.TimeoutOptions}
+    return:
+      type: Kevlar.Shield{{TResult}}
+    content.vb: Public Function Timeout(configure As Action(Of TimeoutOptions)) As Shield(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.Timeout*
+  nameWithType.vb: ShieldBuilder(Of TResult).Timeout(Action(Of TimeoutOptions))
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).Timeout(System.Action(Of Kevlar.TimeoutOptions))
+  name.vb: Timeout(Action(Of TimeoutOptions))
+- uid: Kevlar.ShieldBuilder`1.RateLimit(System.Int32,System.TimeSpan)
+  commentId: M:Kevlar.ShieldBuilder`1.RateLimit(System.Int32,System.TimeSpan)
+  id: RateLimit(System.Int32,System.TimeSpan)
+  parent: Kevlar.ShieldBuilder`1
+  langs:
+  - csharp
+  - vb
+  name: RateLimit(int, TimeSpan)
+  nameWithType: ShieldBuilder<TResult>.RateLimit(int, TimeSpan)
+  fullName: Kevlar.ShieldBuilder<TResult>.RateLimit(int, System.TimeSpan)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Limits throughput. The handling clauses remain ambient for later strategies.
+  example: []
+  syntax:
+    content: public Shield<TResult> RateLimit(int permits, TimeSpan perWindow)
+    parameters:
+    - id: permits
+      type: System.Int32
+    - id: perWindow
+      type: System.TimeSpan
+    return:
+      type: Kevlar.Shield{{TResult}}
+    content.vb: Public Function RateLimit(permits As Integer, perWindow As TimeSpan) As Shield(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.RateLimit*
+  nameWithType.vb: ShieldBuilder(Of TResult).RateLimit(Integer, TimeSpan)
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).RateLimit(Integer, System.TimeSpan)
+  name.vb: RateLimit(Integer, TimeSpan)
+- uid: Kevlar.ShieldBuilder`1.RateLimit(System.Action{Kevlar.RateLimitOptions})
+  commentId: M:Kevlar.ShieldBuilder`1.RateLimit(System.Action{Kevlar.RateLimitOptions})
+  id: RateLimit(System.Action{Kevlar.RateLimitOptions})
+  parent: Kevlar.ShieldBuilder`1
+  langs:
+  - csharp
+  - vb
+  name: RateLimit(Action<RateLimitOptions>)
+  nameWithType: ShieldBuilder<TResult>.RateLimit(Action<RateLimitOptions>)
+  fullName: Kevlar.ShieldBuilder<TResult>.RateLimit(System.Action<Kevlar.RateLimitOptions>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Adds a configured rate limit. The handling clauses remain ambient for later strategies.
+  example: []
+  syntax:
+    content: public Shield<TResult> RateLimit(Action<RateLimitOptions> configure)
+    parameters:
+    - id: configure
+      type: System.Action{Kevlar.RateLimitOptions}
+    return:
+      type: Kevlar.Shield{{TResult}}
+    content.vb: Public Function RateLimit(configure As Action(Of RateLimitOptions)) As Shield(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.RateLimit*
+  nameWithType.vb: ShieldBuilder(Of TResult).RateLimit(Action(Of RateLimitOptions))
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).RateLimit(System.Action(Of Kevlar.RateLimitOptions))
+  name.vb: RateLimit(Action(Of RateLimitOptions))
+- uid: Kevlar.ShieldBuilder`1.ConcurrencyLimit(System.Int32,System.Int32)
+  commentId: M:Kevlar.ShieldBuilder`1.ConcurrencyLimit(System.Int32,System.Int32)
+  id: ConcurrencyLimit(System.Int32,System.Int32)
+  parent: Kevlar.ShieldBuilder`1
+  langs:
+  - csharp
+  - vb
+  name: ConcurrencyLimit(int, int)
+  nameWithType: ShieldBuilder<TResult>.ConcurrencyLimit(int, int)
+  fullName: Kevlar.ShieldBuilder<TResult>.ConcurrencyLimit(int, int)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Caps concurrency. The handling clauses remain ambient for later strategies.
+  example: []
+  syntax:
+    content: public Shield<TResult> ConcurrencyLimit(int maxConcurrency, int queueLimit = 0)
+    parameters:
+    - id: maxConcurrency
+      type: System.Int32
+    - id: queueLimit
+      type: System.Int32
+    return:
+      type: Kevlar.Shield{{TResult}}
+    content.vb: Public Function ConcurrencyLimit(maxConcurrency As Integer, queueLimit As Integer = 0) As Shield(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.ConcurrencyLimit*
+  nameWithType.vb: ShieldBuilder(Of TResult).ConcurrencyLimit(Integer, Integer)
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).ConcurrencyLimit(Integer, Integer)
+  name.vb: ConcurrencyLimit(Integer, Integer)
+- uid: Kevlar.ShieldBuilder`1.ConcurrencyLimit(System.Action{Kevlar.ConcurrencyLimitOptions})
+  commentId: M:Kevlar.ShieldBuilder`1.ConcurrencyLimit(System.Action{Kevlar.ConcurrencyLimitOptions})
+  id: ConcurrencyLimit(System.Action{Kevlar.ConcurrencyLimitOptions})
+  parent: Kevlar.ShieldBuilder`1
+  langs:
+  - csharp
+  - vb
+  name: ConcurrencyLimit(Action<ConcurrencyLimitOptions>)
+  nameWithType: ShieldBuilder<TResult>.ConcurrencyLimit(Action<ConcurrencyLimitOptions>)
+  fullName: Kevlar.ShieldBuilder<TResult>.ConcurrencyLimit(System.Action<Kevlar.ConcurrencyLimitOptions>)
+  type: Method
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Adds a configured concurrency limit. The handling clauses remain ambient for later strategies.
+  example: []
+  syntax:
+    content: public Shield<TResult> ConcurrencyLimit(Action<ConcurrencyLimitOptions> configure)
+    parameters:
+    - id: configure
+      type: System.Action{Kevlar.ConcurrencyLimitOptions}
+    return:
+      type: Kevlar.Shield{{TResult}}
+    content.vb: Public Function ConcurrencyLimit(configure As Action(Of ConcurrencyLimitOptions)) As Shield(Of TResult)
+  overload: Kevlar.ShieldBuilder`1.ConcurrencyLimit*
+  nameWithType.vb: ShieldBuilder(Of TResult).ConcurrencyLimit(Action(Of ConcurrencyLimitOptions))
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).ConcurrencyLimit(System.Action(Of Kevlar.ConcurrencyLimitOptions))
+  name.vb: ConcurrencyLimit(Action(Of ConcurrencyLimitOptions))
+references:
+- uid: Kevlar.Shield`1
+  commentId: T:Kevlar.Shield`1
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Shield-1.html
+  name: Shield<TResult>
+  nameWithType: Shield<TResult>
+  fullName: Kevlar.Shield<TResult>
+  nameWithType.vb: Shield(Of TResult)
+  fullName.vb: Kevlar.Shield(Of TResult)
+  name.vb: Shield(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.RetryOptions`1
+  commentId: T:Kevlar.RetryOptions`1
+  isExternal: true
+  href: Kevlar.RetryOptions-1.html
+  name: RetryOptions<TResult>
+  nameWithType: RetryOptions<TResult>
+  fullName: Kevlar.RetryOptions<TResult>
+  nameWithType.vb: RetryOptions(Of TResult)
+  fullName.vb: Kevlar.RetryOptions(Of TResult)
+  name.vb: RetryOptions(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.RetryOptions`1
+    name: RetryOptions
+    isExternal: true
+    href: Kevlar.RetryOptions-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.RetryOptions`1
+    name: RetryOptions
+    isExternal: true
+    href: Kevlar.RetryOptions-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.CircuitBreakerOptions`1
+  commentId: T:Kevlar.CircuitBreakerOptions`1
+  isExternal: true
+  href: Kevlar.CircuitBreakerOptions-1.html
+  name: CircuitBreakerOptions<TResult>
+  nameWithType: CircuitBreakerOptions<TResult>
+  fullName: Kevlar.CircuitBreakerOptions<TResult>
+  nameWithType.vb: CircuitBreakerOptions(Of TResult)
+  fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult)
+  name.vb: CircuitBreakerOptions(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.CircuitBreakerOptions`1
+    name: CircuitBreakerOptions
+    isExternal: true
+    href: Kevlar.CircuitBreakerOptions-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.CircuitBreakerOptions`1
+    name: CircuitBreakerOptions
+    isExternal: true
+    href: Kevlar.CircuitBreakerOptions-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.HedgeOptions`1
+  commentId: T:Kevlar.HedgeOptions`1
+  isExternal: true
+  href: Kevlar.HedgeOptions-1.html
+  name: HedgeOptions<TResult>
+  nameWithType: HedgeOptions<TResult>
+  fullName: Kevlar.HedgeOptions<TResult>
+  nameWithType.vb: HedgeOptions(Of TResult)
+  fullName.vb: Kevlar.HedgeOptions(Of TResult)
+  name.vb: HedgeOptions(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.HedgeOptions`1
+    name: HedgeOptions
+    isExternal: true
+    href: Kevlar.HedgeOptions-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.HedgeOptions`1
+    name: HedgeOptions
+    isExternal: true
+    href: Kevlar.HedgeOptions-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.FallbackOptions`1
+  commentId: T:Kevlar.FallbackOptions`1
+  isExternal: true
+  href: Kevlar.FallbackOptions-1.html
+  name: FallbackOptions<TResult>
+  nameWithType: FallbackOptions<TResult>
+  fullName: Kevlar.FallbackOptions<TResult>
+  nameWithType.vb: FallbackOptions(Of TResult)
+  fullName.vb: Kevlar.FallbackOptions(Of TResult)
+  name.vb: FallbackOptions(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.FallbackOptions`1
+    name: FallbackOptions
+    isExternal: true
+    href: Kevlar.FallbackOptions-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.FallbackOptions`1
+    name: FallbackOptions
+    isExternal: true
+    href: Kevlar.FallbackOptions-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.ToString
+  commentId: M:System.Object.ToString
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  name: ToString()
+  nameWithType: object.ToString()
+  fullName: object.ToString()
+  nameWithType.vb: Object.ToString()
+  fullName.vb: Object.ToString()
+  spec.csharp:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object)
+  commentId: M:System.Object.Equals(System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  name: Equals(object)
+  nameWithType: object.Equals(object)
+  fullName: object.Equals(object)
+  nameWithType.vb: Object.Equals(Object)
+  fullName.vb: Object.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetHashCode
+  commentId: M:System.Object.GetHashCode
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  name: GetHashCode()
+  nameWithType: object.GetHashCode()
+  fullName: object.GetHashCode()
+  nameWithType.vb: Object.GetHashCode()
+  fullName.vb: Object.GetHashCode()
+  spec.csharp:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.ShieldBuilder`1.Or*
+  commentId: Overload:Kevlar.ShieldBuilder`1.Or
+  isExternal: true
+  href: Kevlar.ShieldBuilder-1.html#Kevlar_ShieldBuilder_1_Or__1
+  name: Or
+  nameWithType: ShieldBuilder<TResult>.Or
+  fullName: Kevlar.ShieldBuilder<TResult>.Or
+  nameWithType.vb: ShieldBuilder(Of TResult).Or
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).Or
+- uid: Kevlar.ShieldBuilder`1
+  commentId: T:Kevlar.ShieldBuilder`1
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.ShieldBuilder-1.html
+  name: ShieldBuilder<TResult>
+  nameWithType: ShieldBuilder<TResult>
+  fullName: Kevlar.ShieldBuilder<TResult>
+  nameWithType.vb: ShieldBuilder(Of TResult)
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult)
+  name.vb: ShieldBuilder(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.ShieldBuilder`1
+    name: ShieldBuilder
+    isExternal: true
+    href: Kevlar.ShieldBuilder-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.ShieldBuilder`1
+    name: ShieldBuilder
+    isExternal: true
+    href: Kevlar.ShieldBuilder-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: System.Func{{TException},System.Boolean}
+  commentId: T:System.Func{``0,System.Boolean}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<TException, bool>
+  nameWithType: Func<TException, bool>
+  fullName: System.Func<TException, bool>
+  nameWithType.vb: Func(Of TException, Boolean)
+  fullName.vb: System.Func(Of TException, Boolean)
+  name.vb: Func(Of TException, Boolean)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - name: TException
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: bool
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TException
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: Boolean
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: )
+- uid: System.Func`2
+  commentId: T:System.Func`2
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<T, TResult>
+  nameWithType: Func<T, TResult>
+  fullName: System.Func<T, TResult>
+  nameWithType.vb: Func(Of T, TResult)
+  fullName.vb: System.Func(Of T, TResult)
+  name.vb: Func(Of T, TResult)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: System.Func{System.Exception,System.Boolean}
+  commentId: T:System.Func{System.Exception,System.Boolean}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<Exception, bool>
+  nameWithType: Func<Exception, bool>
+  fullName: System.Func<System.Exception, bool>
+  nameWithType.vb: Func(Of Exception, Boolean)
+  fullName.vb: System.Func(Of System.Exception, Boolean)
+  name.vb: Func(Of Exception, Boolean)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: System.Exception
+    name: Exception
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.exception
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: bool
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.Exception
+    name: Exception
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.exception
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: Boolean
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: )
+- uid: Kevlar.ShieldBuilder`1.OrContext*
+  commentId: Overload:Kevlar.ShieldBuilder`1.OrContext
+  isExternal: true
+  href: Kevlar.ShieldBuilder-1.html#Kevlar_ShieldBuilder_1_OrContext_System_Func_Kevlar_HandlingEvent__0__System_Boolean__
+  name: OrContext
+  nameWithType: ShieldBuilder<TResult>.OrContext
+  fullName: Kevlar.ShieldBuilder<TResult>.OrContext
+  nameWithType.vb: ShieldBuilder(Of TResult).OrContext
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).OrContext
+- uid: System.Func{Kevlar.HandlingEvent{{TResult}},System.Boolean}
+  commentId: T:System.Func{Kevlar.HandlingEvent{`0},System.Boolean}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<HandlingEvent<TResult>, bool>
+  nameWithType: Func<HandlingEvent<TResult>, bool>
+  fullName: System.Func<Kevlar.HandlingEvent<TResult>, bool>
+  nameWithType.vb: Func(Of HandlingEvent(Of TResult), Boolean)
+  fullName.vb: System.Func(Of Kevlar.HandlingEvent(Of TResult), Boolean)
+  name.vb: Func(Of HandlingEvent(Of TResult), Boolean)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.HandlingEvent`1
+    name: HandlingEvent
+    isExternal: true
+    href: Kevlar.HandlingEvent-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: bool
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.HandlingEvent`1
+    name: HandlingEvent
+    isExternal: true
+    href: Kevlar.HandlingEvent-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: Boolean
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: )
+- uid: Kevlar.ShieldBuilder`1.OrResult*
+  commentId: Overload:Kevlar.ShieldBuilder`1.OrResult
+  isExternal: true
+  href: Kevlar.ShieldBuilder-1.html#Kevlar_ShieldBuilder_1_OrResult_System_Func__0_System_Boolean__
+  name: OrResult
+  nameWithType: ShieldBuilder<TResult>.OrResult
+  fullName: Kevlar.ShieldBuilder<TResult>.OrResult
+  nameWithType.vb: ShieldBuilder(Of TResult).OrResult
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).OrResult
+- uid: System.Func{{TResult},System.Boolean}
+  commentId: T:System.Func{`0,System.Boolean}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<TResult, bool>
+  nameWithType: Func<TResult, bool>
+  fullName: System.Func<TResult, bool>
+  nameWithType.vb: Func(Of TResult, Boolean)
+  fullName.vb: System.Func(Of TResult, Boolean)
+  name.vb: Func(Of TResult, Boolean)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - name: TResult
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: bool
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: Boolean
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: )
+- uid: Kevlar.ShieldBuilder`1.OrResultContext*
+  commentId: Overload:Kevlar.ShieldBuilder`1.OrResultContext
+  isExternal: true
+  href: Kevlar.ShieldBuilder-1.html#Kevlar_ShieldBuilder_1_OrResultContext_System_Func_Kevlar_HandlingEvent__0__System_Boolean__
+  name: OrResultContext
+  nameWithType: ShieldBuilder<TResult>.OrResultContext
+  fullName: Kevlar.ShieldBuilder<TResult>.OrResultContext
+  nameWithType.vb: ShieldBuilder(Of TResult).OrResultContext
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).OrResultContext
+- uid: '{TResult}'
+  commentId: '!:TResult'
+  definition: TResult
+  name: TResult
+  nameWithType: TResult
+  fullName: TResult
+- uid: TResult
+  name: TResult
+  nameWithType: TResult
+  fullName: TResult
+- uid: Kevlar.ShieldResultExtensions.OrResultIsNull``1(Kevlar.ShieldBuilder{``0})
+  commentId: M:Kevlar.ShieldResultExtensions.OrResultIsNull``1(Kevlar.ShieldBuilder{`0})
+  isExternal: true
+  href: Kevlar.ShieldResultExtensions.html#Kevlar_ShieldResultExtensions_OrResultIsNull__1_Kevlar_ShieldBuilder___0__
+  name: OrResultIsNull<TResult>(ShieldBuilder<TResult>)
+  nameWithType: ShieldResultExtensions.OrResultIsNull<TResult>(ShieldBuilder<TResult>)
+  fullName: Kevlar.ShieldResultExtensions.OrResultIsNull<TResult>(Kevlar.ShieldBuilder<TResult>)
+  nameWithType.vb: ShieldResultExtensions.OrResultIsNull(Of TResult)(ShieldBuilder(Of TResult))
+  fullName.vb: Kevlar.ShieldResultExtensions.OrResultIsNull(Of TResult)(Kevlar.ShieldBuilder(Of TResult))
+  name.vb: OrResultIsNull(Of TResult)(ShieldBuilder(Of TResult))
+  spec.csharp:
+  - uid: Kevlar.ShieldResultExtensions.OrResultIsNull``1(Kevlar.ShieldBuilder{``0})
+    name: OrResultIsNull
+    isExternal: true
+    href: Kevlar.ShieldResultExtensions.html#Kevlar_ShieldResultExtensions_OrResultIsNull__1_Kevlar_ShieldBuilder___0__
+  - name: <
+  - name: TResult
+  - name: '>'
+  - name: (
+  - uid: Kevlar.ShieldBuilder`1
+    name: ShieldBuilder
+    isExternal: true
+    href: Kevlar.ShieldBuilder-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  - name: )
+  spec.vb:
+  - uid: Kevlar.ShieldResultExtensions.OrResultIsNull``1(Kevlar.ShieldBuilder{``0})
+    name: OrResultIsNull
+    isExternal: true
+    href: Kevlar.ShieldResultExtensions.html#Kevlar_ShieldResultExtensions_OrResultIsNull__1_Kevlar_ShieldBuilder___0__
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+  - name: (
+  - uid: Kevlar.ShieldBuilder`1
+    name: ShieldBuilder
+    isExternal: true
+    href: Kevlar.ShieldBuilder-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+  - name: )
+- uid: Kevlar.ShieldBuilder`1.OrResultIsDefault*
+  commentId: Overload:Kevlar.ShieldBuilder`1.OrResultIsDefault
+  isExternal: true
+  href: Kevlar.ShieldBuilder-1.html#Kevlar_ShieldBuilder_1_OrResultIsDefault
+  name: OrResultIsDefault
+  nameWithType: ShieldBuilder<TResult>.OrResultIsDefault
+  fullName: Kevlar.ShieldBuilder<TResult>.OrResultIsDefault
+  nameWithType.vb: ShieldBuilder(Of TResult).OrResultIsDefault
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).OrResultIsDefault
+- uid: Kevlar.ShieldBuilder`1.Retry*
+  commentId: Overload:Kevlar.ShieldBuilder`1.Retry
+  isExternal: true
+  href: Kevlar.ShieldBuilder-1.html#Kevlar_ShieldBuilder_1_Retry_System_Int32_
+  name: Retry
+  nameWithType: ShieldBuilder<TResult>.Retry
+  fullName: Kevlar.ShieldBuilder<TResult>.Retry
+  nameWithType.vb: ShieldBuilder(Of TResult).Retry
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).Retry
+- uid: System.Int32
+  commentId: T:System.Int32
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.int32
+  name: int
+  nameWithType: int
+  fullName: int
+  nameWithType.vb: Integer
+  fullName.vb: Integer
+  name.vb: Integer
+- uid: Kevlar.Shield{{TResult}}
+  commentId: T:Kevlar.Shield{`1}
+  parent: Kevlar
+  definition: Kevlar.Shield`1
+  href: Kevlar.Shield-1.html
+  name: Shield<TResult>
+  nameWithType: Shield<TResult>
+  fullName: Kevlar.Shield<TResult>
+  nameWithType.vb: Shield(Of TResult)
+  fullName.vb: Kevlar.Shield(Of TResult)
+  name.vb: Shield(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.Backoff
+  commentId: T:Kevlar.Backoff
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Backoff.html
+  name: Backoff
+  nameWithType: Backoff
+  fullName: Kevlar.Backoff
+- uid: Kevlar.RetryOptions`1.MaxRetries
+  commentId: P:Kevlar.RetryOptions`1.MaxRetries
+  isExternal: true
+  href: Kevlar.RetryOptions-1.html#Kevlar_RetryOptions_1_MaxRetries
+  name: MaxRetries
+  nameWithType: RetryOptions<TResult>.MaxRetries
+  fullName: Kevlar.RetryOptions<TResult>.MaxRetries
+  nameWithType.vb: RetryOptions(Of TResult).MaxRetries
+  fullName.vb: Kevlar.RetryOptions(Of TResult).MaxRetries
+- uid: System.Action{Kevlar.RetryOptions{{TResult}}}
+  commentId: T:System.Action{Kevlar.RetryOptions{`0}}
+  parent: System
+  definition: System.Action`1
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<RetryOptions<TResult>>
+  nameWithType: Action<RetryOptions<TResult>>
+  fullName: System.Action<Kevlar.RetryOptions<TResult>>
+  nameWithType.vb: Action(Of RetryOptions(Of TResult))
+  fullName.vb: System.Action(Of Kevlar.RetryOptions(Of TResult))
+  name.vb: Action(Of RetryOptions(Of TResult))
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - uid: Kevlar.RetryOptions`1
+    name: RetryOptions
+    isExternal: true
+    href: Kevlar.RetryOptions-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.RetryOptions`1
+    name: RetryOptions
+    isExternal: true
+    href: Kevlar.RetryOptions-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+  - name: )
+- uid: System.Action`1
+  commentId: T:System.Action`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<T>
+  nameWithType: Action<T>
+  fullName: System.Action<T>
+  nameWithType.vb: Action(Of T)
+  fullName.vb: System.Action(Of T)
+  name.vb: Action(Of T)
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Kevlar.ShieldBuilder`1.RetryForever*
+  commentId: Overload:Kevlar.ShieldBuilder`1.RetryForever
+  isExternal: true
+  href: Kevlar.ShieldBuilder-1.html#Kevlar_ShieldBuilder_1_RetryForever
+  name: RetryForever
+  nameWithType: ShieldBuilder<TResult>.RetryForever
+  fullName: Kevlar.ShieldBuilder<TResult>.RetryForever
+  nameWithType.vb: ShieldBuilder(Of TResult).RetryForever
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).RetryForever
+- uid: Kevlar.ShieldBuilder`1.CircuitBreaker*
+  commentId: Overload:Kevlar.ShieldBuilder`1.CircuitBreaker
+  isExternal: true
+  href: Kevlar.ShieldBuilder-1.html#Kevlar_ShieldBuilder_1_CircuitBreaker_System_Int32_System_TimeSpan_
+  name: CircuitBreaker
+  nameWithType: ShieldBuilder<TResult>.CircuitBreaker
+  fullName: Kevlar.ShieldBuilder<TResult>.CircuitBreaker
+  nameWithType.vb: ShieldBuilder(Of TResult).CircuitBreaker
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).CircuitBreaker
+- uid: System.TimeSpan
+  commentId: T:System.TimeSpan
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.timespan
+  name: TimeSpan
+  nameWithType: TimeSpan
+  fullName: System.TimeSpan
+- uid: System.Action{Kevlar.CircuitBreakerOptions{{TResult}}}
+  commentId: T:System.Action{Kevlar.CircuitBreakerOptions{`0}}
+  parent: System
+  definition: System.Action`1
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<CircuitBreakerOptions<TResult>>
+  nameWithType: Action<CircuitBreakerOptions<TResult>>
+  fullName: System.Action<Kevlar.CircuitBreakerOptions<TResult>>
+  nameWithType.vb: Action(Of CircuitBreakerOptions(Of TResult))
+  fullName.vb: System.Action(Of Kevlar.CircuitBreakerOptions(Of TResult))
+  name.vb: Action(Of CircuitBreakerOptions(Of TResult))
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - uid: Kevlar.CircuitBreakerOptions`1
+    name: CircuitBreakerOptions
+    isExternal: true
+    href: Kevlar.CircuitBreakerOptions-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.CircuitBreakerOptions`1
+    name: CircuitBreakerOptions
+    isExternal: true
+    href: Kevlar.CircuitBreakerOptions-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+  - name: )
+- uid: Kevlar.ShieldBuilder`1.Hedge*
+  commentId: Overload:Kevlar.ShieldBuilder`1.Hedge
+  isExternal: true
+  href: Kevlar.ShieldBuilder-1.html#Kevlar_ShieldBuilder_1_Hedge_System_Int32_System_TimeSpan_
+  name: Hedge
+  nameWithType: ShieldBuilder<TResult>.Hedge
+  fullName: Kevlar.ShieldBuilder<TResult>.Hedge
+  nameWithType.vb: ShieldBuilder(Of TResult).Hedge
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).Hedge
+- uid: System.Action{Kevlar.HedgeOptions{{TResult}}}
+  commentId: T:System.Action{Kevlar.HedgeOptions{`0}}
+  parent: System
+  definition: System.Action`1
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<HedgeOptions<TResult>>
+  nameWithType: Action<HedgeOptions<TResult>>
+  fullName: System.Action<Kevlar.HedgeOptions<TResult>>
+  nameWithType.vb: Action(Of HedgeOptions(Of TResult))
+  fullName.vb: System.Action(Of Kevlar.HedgeOptions(Of TResult))
+  name.vb: Action(Of HedgeOptions(Of TResult))
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - uid: Kevlar.HedgeOptions`1
+    name: HedgeOptions
+    isExternal: true
+    href: Kevlar.HedgeOptions-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.HedgeOptions`1
+    name: HedgeOptions
+    isExternal: true
+    href: Kevlar.HedgeOptions-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+  - name: )
+- uid: Kevlar.ShieldBuilder`1.Use*
+  commentId: Overload:Kevlar.ShieldBuilder`1.Use
+  isExternal: true
+  href: Kevlar.ShieldBuilder-1.html#Kevlar_ShieldBuilder_1_Use_System_Func_Kevlar_HandlingClause_Kevlar_Strategy__
+  name: Use
+  nameWithType: ShieldBuilder<TResult>.Use
+  fullName: Kevlar.ShieldBuilder<TResult>.Use
+  nameWithType.vb: ShieldBuilder(Of TResult).Use
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).Use
+- uid: System.Func{Kevlar.HandlingClause,Kevlar.Strategy}
+  commentId: T:System.Func{Kevlar.HandlingClause,Kevlar.Strategy}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<HandlingClause, Strategy>
+  nameWithType: Func<HandlingClause, Strategy>
+  fullName: System.Func<Kevlar.HandlingClause, Kevlar.Strategy>
+  nameWithType.vb: Func(Of HandlingClause, Strategy)
+  fullName.vb: System.Func(Of Kevlar.HandlingClause, Kevlar.Strategy)
+  name.vb: Func(Of HandlingClause, Strategy)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.HandlingClause
+    name: HandlingClause
+    isExternal: true
+    href: Kevlar.HandlingClause.html
+  - name: ','
+  - name: " "
+  - uid: Kevlar.Strategy
+    name: Strategy
+    isExternal: true
+    href: Kevlar.Strategy.html
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.HandlingClause
+    name: HandlingClause
+    isExternal: true
+    href: Kevlar.HandlingClause.html
+  - name: ','
+  - name: " "
+  - uid: Kevlar.Strategy
+    name: Strategy
+    isExternal: true
+    href: Kevlar.Strategy.html
+  - name: )
+- uid: Kevlar.Strategy
+  commentId: T:Kevlar.Strategy
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Strategy.html
+  name: Strategy
+  nameWithType: Strategy
+  fullName: Kevlar.Strategy
+- uid: Kevlar.ShieldBuilder`1.FallbackTo*
+  commentId: Overload:Kevlar.ShieldBuilder`1.FallbackTo
+  isExternal: true
+  href: Kevlar.ShieldBuilder-1.html#Kevlar_ShieldBuilder_1_FallbackTo__0_
+  name: FallbackTo
+  nameWithType: ShieldBuilder<TResult>.FallbackTo
+  fullName: Kevlar.ShieldBuilder<TResult>.FallbackTo
+  nameWithType.vb: ShieldBuilder(Of TResult).FallbackTo
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).FallbackTo
+- uid: System.Action{Kevlar.FallbackOptions{{TResult}}}
+  commentId: T:System.Action{Kevlar.FallbackOptions{`0}}
+  parent: System
+  definition: System.Action`1
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<FallbackOptions<TResult>>
+  nameWithType: Action<FallbackOptions<TResult>>
+  fullName: System.Action<Kevlar.FallbackOptions<TResult>>
+  nameWithType.vb: Action(Of FallbackOptions(Of TResult))
+  fullName.vb: System.Action(Of Kevlar.FallbackOptions(Of TResult))
+  name.vb: Action(Of FallbackOptions(Of TResult))
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - uid: Kevlar.FallbackOptions`1
+    name: FallbackOptions
+    isExternal: true
+    href: Kevlar.FallbackOptions-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.FallbackOptions`1
+    name: FallbackOptions
+    isExternal: true
+    href: Kevlar.FallbackOptions-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+  - name: )
+- uid: Kevlar.ShieldBuilder`1.Fallback*
+  commentId: Overload:Kevlar.ShieldBuilder`1.Fallback
+  isExternal: true
+  href: Kevlar.ShieldBuilder-1.html#Kevlar_ShieldBuilder_1_Fallback_System_Func_System_Threading_CancellationToken_System_Threading_Tasks_ValueTask__0___
+  name: Fallback
+  nameWithType: ShieldBuilder<TResult>.Fallback
+  fullName: Kevlar.ShieldBuilder<TResult>.Fallback
+  nameWithType.vb: ShieldBuilder(Of TResult).Fallback
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).Fallback
+- uid: System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{{TResult}}}
+  commentId: T:System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{`0}}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<CancellationToken, ValueTask<TResult>>
+  nameWithType: Func<CancellationToken, ValueTask<TResult>>
+  fullName: System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>
+  nameWithType.vb: Func(Of CancellationToken, ValueTask(Of TResult))
+  fullName.vb: System.Func(Of System.Threading.CancellationToken, System.Threading.Tasks.ValueTask(Of TResult))
+  name.vb: Func(Of CancellationToken, ValueTask(Of TResult))
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: System.Threading.CancellationToken
+    name: CancellationToken
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
+  - name: TResult
+  - name: '>'
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.Threading.CancellationToken
+    name: CancellationToken
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+  - name: )
+- uid: System.Func{Kevlar.Outcome{{TResult}},System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{{TResult}}}
+  commentId: T:System.Func{Kevlar.Outcome{`0},System.Threading.CancellationToken,System.Threading.Tasks.ValueTask{`0}}
+  parent: System
+  definition: System.Func`3
+  href: https://learn.microsoft.com/dotnet/api/system.func-3
+  name: Func<Outcome<TResult>, CancellationToken, ValueTask<TResult>>
+  nameWithType: Func<Outcome<TResult>, CancellationToken, ValueTask<TResult>>
+  fullName: System.Func<Kevlar.Outcome<TResult>, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>
+  nameWithType.vb: Func(Of Outcome(Of TResult), CancellationToken, ValueTask(Of TResult))
+  fullName.vb: System.Func(Of Kevlar.Outcome(Of TResult), System.Threading.CancellationToken, System.Threading.Tasks.ValueTask(Of TResult))
+  name.vb: Func(Of Outcome(Of TResult), CancellationToken, ValueTask(Of TResult))
+  spec.csharp:
+  - uid: System.Func`3
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-3
+  - name: <
+  - uid: Kevlar.Outcome`1
+    name: Outcome
+    isExternal: true
+    href: Kevlar.Outcome-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  - name: ','
+  - name: " "
+  - uid: System.Threading.CancellationToken
+    name: CancellationToken
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
+  - name: TResult
+  - name: '>'
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`3
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-3
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.Outcome`1
+    name: Outcome
+    isExternal: true
+    href: Kevlar.Outcome-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+  - name: ','
+  - name: " "
+  - uid: System.Threading.CancellationToken
+    name: CancellationToken
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+  - name: )
+- uid: System.Func`3
+  commentId: T:System.Func`3
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.func-3
+  name: Func<T1, T2, TResult>
+  nameWithType: Func<T1, T2, TResult>
+  fullName: System.Func<T1, T2, TResult>
+  nameWithType.vb: Func(Of T1, T2, TResult)
+  fullName.vb: System.Func(Of T1, T2, TResult)
+  name.vb: Func(Of T1, T2, TResult)
+  spec.csharp:
+  - uid: System.Func`3
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-3
+  - name: <
+  - name: T1
+  - name: ','
+  - name: " "
+  - name: T2
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`3
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-3
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T1
+  - name: ','
+  - name: " "
+  - name: T2
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.ShieldBuilder`1.Timeout*
+  commentId: Overload:Kevlar.ShieldBuilder`1.Timeout
+  isExternal: true
+  href: Kevlar.ShieldBuilder-1.html#Kevlar_ShieldBuilder_1_Timeout_System_TimeSpan_
+  name: Timeout
+  nameWithType: ShieldBuilder<TResult>.Timeout
+  fullName: Kevlar.ShieldBuilder<TResult>.Timeout
+  nameWithType.vb: ShieldBuilder(Of TResult).Timeout
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).Timeout
+- uid: System.Action{Kevlar.TimeoutOptions}
+  commentId: T:System.Action{Kevlar.TimeoutOptions}
+  parent: System
+  definition: System.Action`1
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<TimeoutOptions>
+  nameWithType: Action<TimeoutOptions>
+  fullName: System.Action<Kevlar.TimeoutOptions>
+  nameWithType.vb: Action(Of TimeoutOptions)
+  fullName.vb: System.Action(Of Kevlar.TimeoutOptions)
+  name.vb: Action(Of TimeoutOptions)
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - uid: Kevlar.TimeoutOptions
+    name: TimeoutOptions
+    isExternal: true
+    href: Kevlar.TimeoutOptions.html
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.TimeoutOptions
+    name: TimeoutOptions
+    isExternal: true
+    href: Kevlar.TimeoutOptions.html
+  - name: )
+- uid: Kevlar.ShieldBuilder`1.RateLimit*
+  commentId: Overload:Kevlar.ShieldBuilder`1.RateLimit
+  isExternal: true
+  href: Kevlar.ShieldBuilder-1.html#Kevlar_ShieldBuilder_1_RateLimit_System_Int32_System_TimeSpan_
+  name: RateLimit
+  nameWithType: ShieldBuilder<TResult>.RateLimit
+  fullName: Kevlar.ShieldBuilder<TResult>.RateLimit
+  nameWithType.vb: ShieldBuilder(Of TResult).RateLimit
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).RateLimit
+- uid: System.Action{Kevlar.RateLimitOptions}
+  commentId: T:System.Action{Kevlar.RateLimitOptions}
+  parent: System
+  definition: System.Action`1
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<RateLimitOptions>
+  nameWithType: Action<RateLimitOptions>
+  fullName: System.Action<Kevlar.RateLimitOptions>
+  nameWithType.vb: Action(Of RateLimitOptions)
+  fullName.vb: System.Action(Of Kevlar.RateLimitOptions)
+  name.vb: Action(Of RateLimitOptions)
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - uid: Kevlar.RateLimitOptions
+    name: RateLimitOptions
+    isExternal: true
+    href: Kevlar.RateLimitOptions.html
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.RateLimitOptions
+    name: RateLimitOptions
+    isExternal: true
+    href: Kevlar.RateLimitOptions.html
+  - name: )
+- uid: Kevlar.ShieldBuilder`1.ConcurrencyLimit*
+  commentId: Overload:Kevlar.ShieldBuilder`1.ConcurrencyLimit
+  isExternal: true
+  href: Kevlar.ShieldBuilder-1.html#Kevlar_ShieldBuilder_1_ConcurrencyLimit_System_Int32_System_Int32_
+  name: ConcurrencyLimit
+  nameWithType: ShieldBuilder<TResult>.ConcurrencyLimit
+  fullName: Kevlar.ShieldBuilder<TResult>.ConcurrencyLimit
+  nameWithType.vb: ShieldBuilder(Of TResult).ConcurrencyLimit
+  fullName.vb: Kevlar.ShieldBuilder(Of TResult).ConcurrencyLimit
+- uid: System.Action{Kevlar.ConcurrencyLimitOptions}
+  commentId: T:System.Action{Kevlar.ConcurrencyLimitOptions}
+  parent: System
+  definition: System.Action`1
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<ConcurrencyLimitOptions>
+  nameWithType: Action<ConcurrencyLimitOptions>
+  fullName: System.Action<Kevlar.ConcurrencyLimitOptions>
+  nameWithType.vb: Action(Of ConcurrencyLimitOptions)
+  fullName.vb: System.Action(Of Kevlar.ConcurrencyLimitOptions)
+  name.vb: Action(Of ConcurrencyLimitOptions)
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - uid: Kevlar.ConcurrencyLimitOptions
+    name: ConcurrencyLimitOptions
+    isExternal: true
+    href: Kevlar.ConcurrencyLimitOptions.html
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.ConcurrencyLimitOptions
+    name: ConcurrencyLimitOptions
+    isExternal: true
+    href: Kevlar.ConcurrencyLimitOptions.html
+  - name: )

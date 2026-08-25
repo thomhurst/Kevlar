@@ -1,0 +1,154 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.Chaos
+  commentId: N:Kevlar.Chaos
+  id: Kevlar.Chaos
+  children:
+  - Kevlar.Chaos.ChaosBehaviorOptions
+  - Kevlar.Chaos.ChaosDiagnostics
+  - Kevlar.Chaos.ChaosEvent
+  - Kevlar.Chaos.ChaosFaultOptions
+  - Kevlar.Chaos.ChaosInjectedException
+  - Kevlar.Chaos.ChaosInjectionKind
+  - Kevlar.Chaos.ChaosLatencyOptions
+  - Kevlar.Chaos.ChaosOptions
+  - Kevlar.Chaos.ChaosOutcomeOptions`1
+  - Kevlar.Chaos.ChaosScope
+  - Kevlar.Chaos.ChaosShield
+  langs:
+  - csharp
+  - vb
+  name: Kevlar.Chaos
+  nameWithType: Kevlar.Chaos
+  fullName: Kevlar.Chaos
+  type: Namespace
+  assemblies:
+  - Kevlar.Chaos
+references:
+- uid: Kevlar.Chaos.ChaosBehaviorOptions
+  commentId: T:Kevlar.Chaos.ChaosBehaviorOptions
+  isExternal: true
+  href: Kevlar.Chaos.ChaosBehaviorOptions.html
+  name: ChaosBehaviorOptions
+  nameWithType: ChaosBehaviorOptions
+  fullName: Kevlar.Chaos.ChaosBehaviorOptions
+- uid: Kevlar.Chaos.ChaosDiagnostics
+  commentId: T:Kevlar.Chaos.ChaosDiagnostics
+  isExternal: true
+  href: Kevlar.Chaos.ChaosDiagnostics.html
+  name: ChaosDiagnostics
+  nameWithType: ChaosDiagnostics
+  fullName: Kevlar.Chaos.ChaosDiagnostics
+- uid: Kevlar.Chaos.ChaosEvent
+  commentId: T:Kevlar.Chaos.ChaosEvent
+  isExternal: true
+  href: Kevlar.Chaos.ChaosEvent.html
+  name: ChaosEvent
+  nameWithType: ChaosEvent
+  fullName: Kevlar.Chaos.ChaosEvent
+- uid: Kevlar.Chaos.ChaosFaultOptions
+  commentId: T:Kevlar.Chaos.ChaosFaultOptions
+  isExternal: true
+  href: Kevlar.Chaos.ChaosFaultOptions.html
+  name: ChaosFaultOptions
+  nameWithType: ChaosFaultOptions
+  fullName: Kevlar.Chaos.ChaosFaultOptions
+- uid: Kevlar.Chaos.ChaosInjectedException
+  commentId: T:Kevlar.Chaos.ChaosInjectedException
+  isExternal: true
+  href: Kevlar.Chaos.ChaosInjectedException.html
+  name: ChaosInjectedException
+  nameWithType: ChaosInjectedException
+  fullName: Kevlar.Chaos.ChaosInjectedException
+- uid: Kevlar.Chaos.ChaosInjectionKind
+  commentId: T:Kevlar.Chaos.ChaosInjectionKind
+  parent: Kevlar.Chaos
+  isExternal: true
+  href: Kevlar.Chaos.ChaosInjectionKind.html
+  name: ChaosInjectionKind
+  nameWithType: ChaosInjectionKind
+  fullName: Kevlar.Chaos.ChaosInjectionKind
+- uid: Kevlar.Chaos.ChaosLatencyOptions
+  commentId: T:Kevlar.Chaos.ChaosLatencyOptions
+  isExternal: true
+  href: Kevlar.Chaos.ChaosLatencyOptions.html
+  name: ChaosLatencyOptions
+  nameWithType: ChaosLatencyOptions
+  fullName: Kevlar.Chaos.ChaosLatencyOptions
+- uid: Kevlar.Chaos.ChaosOptions
+  commentId: T:Kevlar.Chaos.ChaosOptions
+  parent: Kevlar.Chaos
+  isExternal: true
+  href: Kevlar.Chaos.ChaosOptions.html
+  name: ChaosOptions
+  nameWithType: ChaosOptions
+  fullName: Kevlar.Chaos.ChaosOptions
+- uid: Kevlar.Chaos.ChaosOutcomeOptions`1
+  commentId: T:Kevlar.Chaos.ChaosOutcomeOptions`1
+  isExternal: true
+  href: Kevlar.Chaos.ChaosOutcomeOptions-1.html
+  name: ChaosOutcomeOptions<TResult>
+  nameWithType: ChaosOutcomeOptions<TResult>
+  fullName: Kevlar.Chaos.ChaosOutcomeOptions<TResult>
+  nameWithType.vb: ChaosOutcomeOptions(Of TResult)
+  fullName.vb: Kevlar.Chaos.ChaosOutcomeOptions(Of TResult)
+  name.vb: ChaosOutcomeOptions(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.Chaos.ChaosOutcomeOptions`1
+    name: ChaosOutcomeOptions
+    isExternal: true
+    href: Kevlar.Chaos.ChaosOutcomeOptions-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Chaos.ChaosOutcomeOptions`1
+    name: ChaosOutcomeOptions
+    isExternal: true
+    href: Kevlar.Chaos.ChaosOutcomeOptions-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.Chaos.ChaosScope
+  commentId: T:Kevlar.Chaos.ChaosScope
+  isExternal: true
+  href: Kevlar.Chaos.ChaosScope.html
+  name: ChaosScope
+  nameWithType: ChaosScope
+  fullName: Kevlar.Chaos.ChaosScope
+- uid: Kevlar.Chaos.ChaosShield
+  commentId: T:Kevlar.Chaos.ChaosShield
+  isExternal: true
+  href: Kevlar.Chaos.ChaosShield.html
+  name: ChaosShield
+  nameWithType: ChaosShield
+  fullName: Kevlar.Chaos.ChaosShield
+- uid: Kevlar.Chaos
+  commentId: N:Kevlar.Chaos
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar.Chaos
+  nameWithType: Kevlar.Chaos
+  fullName: Kevlar.Chaos
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Chaos
+    name: Chaos
+    isExternal: true
+    href: Kevlar.Chaos.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Chaos
+    name: Chaos
+    isExternal: true
+    href: Kevlar.Chaos.html

@@ -1,0 +1,911 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.FallbackOptions`1
+  commentId: T:Kevlar.FallbackOptions`1
+  id: FallbackOptions`1
+  parent: Kevlar
+  children:
+  - Kevlar.FallbackOptions`1.#ctor
+  - Kevlar.FallbackOptions`1.HandlesException
+  - Kevlar.FallbackOptions`1.HandlesExceptionWithContext
+  - Kevlar.FallbackOptions`1.HandlesResult
+  - Kevlar.FallbackOptions`1.HandlesResultWithContext
+  - Kevlar.FallbackOptions`1.OnFallback
+  - Kevlar.FallbackOptions`1.OnFallbackAsync
+  langs:
+  - csharp
+  - vb
+  name: FallbackOptions<TResult>
+  nameWithType: FallbackOptions<TResult>
+  fullName: Kevlar.FallbackOptions<TResult>
+  type: Class
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Configures result-typed notifications for a fallback strategy on a
+
+    <xref href="Kevlar.Shield%601" data-throw-if-not-resolved="false"></xref>.
+  remarks: >-
+    After an outcome is selected for recovery, Kevlar records the fallback metric, invokes
+
+    <xref href="Kevlar.FallbackOptions%601.OnFallback" data-throw-if-not-resolved="false"></xref>, awaits <xref href="Kevlar.FallbackOptions%601.OnFallbackAsync" data-throw-if-not-resolved="false"></xref>, and then runs the recovery
+
+    factory. A notification failure skips recovery and becomes the execution outcome.
+  example: []
+  syntax:
+    content: public sealed class FallbackOptions<TResult>
+    typeParameters:
+    - id: TResult
+    content.vb: Public NotInheritable Class FallbackOptions(Of TResult)
+  inheritance:
+  - System.Object
+  inheritedMembers:
+  - System.Object.GetType
+  - System.Object.ToString
+  - System.Object.Equals(System.Object)
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  - System.Object.GetHashCode
+  nameWithType.vb: FallbackOptions(Of TResult)
+  fullName.vb: Kevlar.FallbackOptions(Of TResult)
+  name.vb: FallbackOptions(Of TResult)
+- uid: Kevlar.FallbackOptions`1.#ctor
+  commentId: M:Kevlar.FallbackOptions`1.#ctor
+  id: '#ctor'
+  parent: Kevlar.FallbackOptions`1
+  langs:
+  - csharp
+  - vb
+  name: FallbackOptions()
+  nameWithType: FallbackOptions<TResult>.FallbackOptions()
+  fullName: Kevlar.FallbackOptions<TResult>.FallbackOptions()
+  type: Constructor
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  syntax:
+    content: public FallbackOptions()
+    content.vb: Public Sub New()
+  overload: Kevlar.FallbackOptions`1.#ctor*
+  nameWithType.vb: FallbackOptions(Of TResult).New()
+  fullName.vb: Kevlar.FallbackOptions(Of TResult).New()
+  name.vb: New()
+- uid: Kevlar.FallbackOptions`1.HandlesException
+  commentId: P:Kevlar.FallbackOptions`1.HandlesException
+  id: HandlesException
+  parent: Kevlar.FallbackOptions`1
+  langs:
+  - csharp
+  - vb
+  name: HandlesException
+  nameWithType: FallbackOptions<TResult>.HandlesException
+  fullName: Kevlar.FallbackOptions<TResult>.HandlesException
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Setting this — or <xref href="Kevlar.FallbackOptions%601.HandlesResult" data-throw-if-not-resolved="false"></xref> — makes this fallback ignore the ambient
+
+    <code>When…</code> handling clause; this predicate then selects the exceptions it handles.
+  remarks: >-
+    The ambient clause is started with <code>When…</code> on a shield and continued with <code>Or…</code> on
+
+    the builder it returns, and applies to every reactive strategy chained after it. These
+
+    properties replace that clause for this strategy alone; they do not narrow it.
+  example: []
+  syntax:
+    content: public Func<Exception, bool>? HandlesException { get; set; }
+    parameters: []
+    return:
+      type: System.Func{System.Exception,System.Boolean}
+    content.vb: Public Property HandlesException As Func(Of Exception, Boolean)
+  overload: Kevlar.FallbackOptions`1.HandlesException*
+  seealso:
+  - linkId: Kevlar.HandlingClause
+    commentId: T:Kevlar.HandlingClause
+  nameWithType.vb: FallbackOptions(Of TResult).HandlesException
+  fullName.vb: Kevlar.FallbackOptions(Of TResult).HandlesException
+- uid: Kevlar.FallbackOptions`1.HandlesExceptionWithContext
+  commentId: P:Kevlar.FallbackOptions`1.HandlesExceptionWithContext
+  id: HandlesExceptionWithContext
+  parent: Kevlar.FallbackOptions`1
+  langs:
+  - csharp
+  - vb
+  name: HandlesExceptionWithContext
+  nameWithType: FallbackOptions<TResult>.HandlesExceptionWithContext
+  fullName: Kevlar.FallbackOptions<TResult>.HandlesExceptionWithContext
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Locally handles exceptions using the typed outcome and execution context.
+  example: []
+  syntax:
+    content: public Func<HandlingEvent<TResult>, bool>? HandlesExceptionWithContext { get; set; }
+    parameters: []
+    return:
+      type: System.Func{Kevlar.HandlingEvent{{TResult}},System.Boolean}
+    content.vb: Public Property HandlesExceptionWithContext As Func(Of HandlingEvent(Of TResult), Boolean)
+  overload: Kevlar.FallbackOptions`1.HandlesExceptionWithContext*
+  nameWithType.vb: FallbackOptions(Of TResult).HandlesExceptionWithContext
+  fullName.vb: Kevlar.FallbackOptions(Of TResult).HandlesExceptionWithContext
+- uid: Kevlar.FallbackOptions`1.HandlesResult
+  commentId: P:Kevlar.FallbackOptions`1.HandlesResult
+  id: HandlesResult
+  parent: Kevlar.FallbackOptions`1
+  langs:
+  - csharp
+  - vb
+  name: HandlesResult
+  nameWithType: FallbackOptions<TResult>.HandlesResult
+  fullName: Kevlar.FallbackOptions<TResult>.HandlesResult
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Setting this — or <xref href="Kevlar.FallbackOptions%601.HandlesException" data-throw-if-not-resolved="false"></xref> — makes this fallback ignore the ambient
+
+    <code>When…</code> handling clause; this predicate then selects the results it handles.
+  remarks: >-
+    The ambient clause is started with <code>When…</code>/<code>WhenResult…</code> on a shield and continued
+
+    with <code>Or…</code> on the builder it returns, and applies to every reactive strategy chained
+
+    after it. These properties replace that clause for this strategy alone; they do not narrow it.
+  example: []
+  syntax:
+    content: public Func<TResult, bool>? HandlesResult { get; set; }
+    parameters: []
+    return:
+      type: System.Func{{TResult},System.Boolean}
+    content.vb: Public Property HandlesResult As Func(Of TResult, Boolean)
+  overload: Kevlar.FallbackOptions`1.HandlesResult*
+  seealso:
+  - linkId: Kevlar.HandlingClause
+    commentId: T:Kevlar.HandlingClause
+  nameWithType.vb: FallbackOptions(Of TResult).HandlesResult
+  fullName.vb: Kevlar.FallbackOptions(Of TResult).HandlesResult
+- uid: Kevlar.FallbackOptions`1.HandlesResultWithContext
+  commentId: P:Kevlar.FallbackOptions`1.HandlesResultWithContext
+  id: HandlesResultWithContext
+  parent: Kevlar.FallbackOptions`1
+  langs:
+  - csharp
+  - vb
+  name: HandlesResultWithContext
+  nameWithType: FallbackOptions<TResult>.HandlesResultWithContext
+  fullName: Kevlar.FallbackOptions<TResult>.HandlesResultWithContext
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Locally handles results using the typed outcome and execution context.
+  example: []
+  syntax:
+    content: public Func<HandlingEvent<TResult>, bool>? HandlesResultWithContext { get; set; }
+    parameters: []
+    return:
+      type: System.Func{Kevlar.HandlingEvent{{TResult}},System.Boolean}
+    content.vb: Public Property HandlesResultWithContext As Func(Of HandlingEvent(Of TResult), Boolean)
+  overload: Kevlar.FallbackOptions`1.HandlesResultWithContext*
+  nameWithType.vb: FallbackOptions(Of TResult).HandlesResultWithContext
+  fullName.vb: Kevlar.FallbackOptions(Of TResult).HandlesResultWithContext
+- uid: Kevlar.FallbackOptions`1.OnFallback
+  commentId: P:Kevlar.FallbackOptions`1.OnFallback
+  id: OnFallback
+  parent: Kevlar.FallbackOptions`1
+  langs:
+  - csharp
+  - vb
+  name: OnFallback
+  nameWithType: FallbackOptions<TResult>.OnFallback
+  fullName: Kevlar.FallbackOptions<TResult>.OnFallback
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Invoked synchronously before the recovery factory, with the typed handled outcome.
+  example: []
+  syntax:
+    content: public Action<FallbackEvent<TResult>>? OnFallback { get; set; }
+    parameters: []
+    return:
+      type: System.Action{Kevlar.FallbackEvent{{TResult}}}
+    content.vb: Public Property OnFallback As Action(Of FallbackEvent(Of TResult))
+  overload: Kevlar.FallbackOptions`1.OnFallback*
+  nameWithType.vb: FallbackOptions(Of TResult).OnFallback
+  fullName.vb: Kevlar.FallbackOptions(Of TResult).OnFallback
+- uid: Kevlar.FallbackOptions`1.OnFallbackAsync
+  commentId: P:Kevlar.FallbackOptions`1.OnFallbackAsync
+  id: OnFallbackAsync
+  parent: Kevlar.FallbackOptions`1
+  langs:
+  - csharp
+  - vb
+  name: OnFallbackAsync
+  nameWithType: FallbackOptions<TResult>.OnFallbackAsync
+  fullName: Kevlar.FallbackOptions<TResult>.OnFallbackAsync
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    Invoked and awaited after <xref href="Kevlar.FallbackOptions%601.OnFallback" data-throw-if-not-resolved="false"></xref> and before the recovery factory,
+
+    with the typed handled outcome.
+  example: []
+  syntax:
+    content: public Func<FallbackEvent<TResult>, ValueTask>? OnFallbackAsync { get; set; }
+    parameters: []
+    return:
+      type: System.Func{Kevlar.FallbackEvent{{TResult}},System.Threading.Tasks.ValueTask}
+    content.vb: Public Property OnFallbackAsync As Func(Of FallbackEvent(Of TResult), ValueTask)
+  overload: Kevlar.FallbackOptions`1.OnFallbackAsync*
+  nameWithType.vb: FallbackOptions(Of TResult).OnFallbackAsync
+  fullName.vb: Kevlar.FallbackOptions(Of TResult).OnFallbackAsync
+references:
+- uid: Kevlar.Shield`1
+  commentId: T:Kevlar.Shield`1
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Shield-1.html
+  name: Shield<TResult>
+  nameWithType: Shield<TResult>
+  fullName: Kevlar.Shield<TResult>
+  nameWithType.vb: Shield(Of TResult)
+  fullName.vb: Kevlar.Shield(Of TResult)
+  name.vb: Shield(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Shield`1
+    name: Shield
+    isExternal: true
+    href: Kevlar.Shield-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.FallbackOptions`1.OnFallback
+  commentId: P:Kevlar.FallbackOptions`1.OnFallback
+  isExternal: true
+  href: Kevlar.FallbackOptions-1.html#Kevlar_FallbackOptions_1_OnFallback
+  name: OnFallback
+  nameWithType: FallbackOptions<TResult>.OnFallback
+  fullName: Kevlar.FallbackOptions<TResult>.OnFallback
+  nameWithType.vb: FallbackOptions(Of TResult).OnFallback
+  fullName.vb: Kevlar.FallbackOptions(Of TResult).OnFallback
+- uid: Kevlar.FallbackOptions`1.OnFallbackAsync
+  commentId: P:Kevlar.FallbackOptions`1.OnFallbackAsync
+  isExternal: true
+  href: Kevlar.FallbackOptions-1.html#Kevlar_FallbackOptions_1_OnFallbackAsync
+  name: OnFallbackAsync
+  nameWithType: FallbackOptions<TResult>.OnFallbackAsync
+  fullName: Kevlar.FallbackOptions<TResult>.OnFallbackAsync
+  nameWithType.vb: FallbackOptions(Of TResult).OnFallbackAsync
+  fullName.vb: Kevlar.FallbackOptions(Of TResult).OnFallbackAsync
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.ToString
+  commentId: M:System.Object.ToString
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  name: ToString()
+  nameWithType: object.ToString()
+  fullName: object.ToString()
+  nameWithType.vb: Object.ToString()
+  fullName.vb: Object.ToString()
+  spec.csharp:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.tostring
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object)
+  commentId: M:System.Object.Equals(System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  name: Equals(object)
+  nameWithType: object.Equals(object)
+  fullName: object.Equals(object)
+  nameWithType.vb: Object.Equals(Object)
+  fullName.vb: Object.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.GetHashCode
+  commentId: M:System.Object.GetHashCode
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  name: GetHashCode()
+  nameWithType: object.GetHashCode()
+  fullName: object.GetHashCode()
+  nameWithType.vb: Object.GetHashCode()
+  fullName.vb: Object.GetHashCode()
+  spec.csharp:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - name: (
+  - name: )
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.FallbackOptions`1.#ctor*
+  commentId: Overload:Kevlar.FallbackOptions`1.#ctor
+  isExternal: true
+  href: Kevlar.FallbackOptions-1.html#Kevlar_FallbackOptions_1__ctor
+  name: FallbackOptions
+  nameWithType: FallbackOptions<TResult>.FallbackOptions
+  fullName: Kevlar.FallbackOptions<TResult>.FallbackOptions
+  nameWithType.vb: FallbackOptions(Of TResult).New
+  fullName.vb: Kevlar.FallbackOptions(Of TResult).New
+  name.vb: New
+- uid: Kevlar.HandlingClause
+  commentId: T:Kevlar.HandlingClause
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.HandlingClause.html
+  name: HandlingClause
+  nameWithType: HandlingClause
+  fullName: Kevlar.HandlingClause
+- uid: Kevlar.FallbackOptions`1.HandlesResult
+  commentId: P:Kevlar.FallbackOptions`1.HandlesResult
+  isExternal: true
+  href: Kevlar.FallbackOptions-1.html#Kevlar_FallbackOptions_1_HandlesResult
+  name: HandlesResult
+  nameWithType: FallbackOptions<TResult>.HandlesResult
+  fullName: Kevlar.FallbackOptions<TResult>.HandlesResult
+  nameWithType.vb: FallbackOptions(Of TResult).HandlesResult
+  fullName.vb: Kevlar.FallbackOptions(Of TResult).HandlesResult
+- uid: Kevlar.FallbackOptions`1.HandlesException*
+  commentId: Overload:Kevlar.FallbackOptions`1.HandlesException
+  isExternal: true
+  href: Kevlar.FallbackOptions-1.html#Kevlar_FallbackOptions_1_HandlesException
+  name: HandlesException
+  nameWithType: FallbackOptions<TResult>.HandlesException
+  fullName: Kevlar.FallbackOptions<TResult>.HandlesException
+  nameWithType.vb: FallbackOptions(Of TResult).HandlesException
+  fullName.vb: Kevlar.FallbackOptions(Of TResult).HandlesException
+- uid: System.Func{System.Exception,System.Boolean}
+  commentId: T:System.Func{System.Exception,System.Boolean}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<Exception, bool>
+  nameWithType: Func<Exception, bool>
+  fullName: System.Func<System.Exception, bool>
+  nameWithType.vb: Func(Of Exception, Boolean)
+  fullName.vb: System.Func(Of System.Exception, Boolean)
+  name.vb: Func(Of Exception, Boolean)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: System.Exception
+    name: Exception
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.exception
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: bool
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.Exception
+    name: Exception
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.exception
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: Boolean
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: )
+- uid: System.Func`2
+  commentId: T:System.Func`2
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<T, TResult>
+  nameWithType: Func<T, TResult>
+  fullName: System.Func<T, TResult>
+  nameWithType.vb: Func(Of T, TResult)
+  fullName.vb: System.Func(Of T, TResult)
+  name.vb: Func(Of T, TResult)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.FallbackOptions`1.HandlesExceptionWithContext*
+  commentId: Overload:Kevlar.FallbackOptions`1.HandlesExceptionWithContext
+  isExternal: true
+  href: Kevlar.FallbackOptions-1.html#Kevlar_FallbackOptions_1_HandlesExceptionWithContext
+  name: HandlesExceptionWithContext
+  nameWithType: FallbackOptions<TResult>.HandlesExceptionWithContext
+  fullName: Kevlar.FallbackOptions<TResult>.HandlesExceptionWithContext
+  nameWithType.vb: FallbackOptions(Of TResult).HandlesExceptionWithContext
+  fullName.vb: Kevlar.FallbackOptions(Of TResult).HandlesExceptionWithContext
+- uid: System.Func{Kevlar.HandlingEvent{{TResult}},System.Boolean}
+  commentId: T:System.Func{Kevlar.HandlingEvent{`0},System.Boolean}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<HandlingEvent<TResult>, bool>
+  nameWithType: Func<HandlingEvent<TResult>, bool>
+  fullName: System.Func<Kevlar.HandlingEvent<TResult>, bool>
+  nameWithType.vb: Func(Of HandlingEvent(Of TResult), Boolean)
+  fullName.vb: System.Func(Of Kevlar.HandlingEvent(Of TResult), Boolean)
+  name.vb: Func(Of HandlingEvent(Of TResult), Boolean)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.HandlingEvent`1
+    name: HandlingEvent
+    isExternal: true
+    href: Kevlar.HandlingEvent-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: bool
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.HandlingEvent`1
+    name: HandlingEvent
+    isExternal: true
+    href: Kevlar.HandlingEvent-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: Boolean
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: )
+- uid: Kevlar.FallbackOptions`1.HandlesException
+  commentId: P:Kevlar.FallbackOptions`1.HandlesException
+  isExternal: true
+  href: Kevlar.FallbackOptions-1.html#Kevlar_FallbackOptions_1_HandlesException
+  name: HandlesException
+  nameWithType: FallbackOptions<TResult>.HandlesException
+  fullName: Kevlar.FallbackOptions<TResult>.HandlesException
+  nameWithType.vb: FallbackOptions(Of TResult).HandlesException
+  fullName.vb: Kevlar.FallbackOptions(Of TResult).HandlesException
+- uid: Kevlar.FallbackOptions`1.HandlesResult*
+  commentId: Overload:Kevlar.FallbackOptions`1.HandlesResult
+  isExternal: true
+  href: Kevlar.FallbackOptions-1.html#Kevlar_FallbackOptions_1_HandlesResult
+  name: HandlesResult
+  nameWithType: FallbackOptions<TResult>.HandlesResult
+  fullName: Kevlar.FallbackOptions<TResult>.HandlesResult
+  nameWithType.vb: FallbackOptions(Of TResult).HandlesResult
+  fullName.vb: Kevlar.FallbackOptions(Of TResult).HandlesResult
+- uid: System.Func{{TResult},System.Boolean}
+  commentId: T:System.Func{`0,System.Boolean}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<TResult, bool>
+  nameWithType: Func<TResult, bool>
+  fullName: System.Func<TResult, bool>
+  nameWithType.vb: Func(Of TResult, Boolean)
+  fullName.vb: System.Func(Of TResult, Boolean)
+  name.vb: Func(Of TResult, Boolean)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - name: TResult
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: bool
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: ','
+  - name: " "
+  - uid: System.Boolean
+    name: Boolean
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.boolean
+  - name: )
+- uid: Kevlar.FallbackOptions`1.HandlesResultWithContext*
+  commentId: Overload:Kevlar.FallbackOptions`1.HandlesResultWithContext
+  isExternal: true
+  href: Kevlar.FallbackOptions-1.html#Kevlar_FallbackOptions_1_HandlesResultWithContext
+  name: HandlesResultWithContext
+  nameWithType: FallbackOptions<TResult>.HandlesResultWithContext
+  fullName: Kevlar.FallbackOptions<TResult>.HandlesResultWithContext
+  nameWithType.vb: FallbackOptions(Of TResult).HandlesResultWithContext
+  fullName.vb: Kevlar.FallbackOptions(Of TResult).HandlesResultWithContext
+- uid: Kevlar.FallbackOptions`1.OnFallback*
+  commentId: Overload:Kevlar.FallbackOptions`1.OnFallback
+  isExternal: true
+  href: Kevlar.FallbackOptions-1.html#Kevlar_FallbackOptions_1_OnFallback
+  name: OnFallback
+  nameWithType: FallbackOptions<TResult>.OnFallback
+  fullName: Kevlar.FallbackOptions<TResult>.OnFallback
+  nameWithType.vb: FallbackOptions(Of TResult).OnFallback
+  fullName.vb: Kevlar.FallbackOptions(Of TResult).OnFallback
+- uid: System.Action{Kevlar.FallbackEvent{{TResult}}}
+  commentId: T:System.Action{Kevlar.FallbackEvent{`0}}
+  parent: System
+  definition: System.Action`1
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<FallbackEvent<TResult>>
+  nameWithType: Action<FallbackEvent<TResult>>
+  fullName: System.Action<Kevlar.FallbackEvent<TResult>>
+  nameWithType.vb: Action(Of FallbackEvent(Of TResult))
+  fullName.vb: System.Action(Of Kevlar.FallbackEvent(Of TResult))
+  name.vb: Action(Of FallbackEvent(Of TResult))
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - uid: Kevlar.FallbackEvent`1
+    name: FallbackEvent
+    isExternal: true
+    href: Kevlar.FallbackEvent-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.FallbackEvent`1
+    name: FallbackEvent
+    isExternal: true
+    href: Kevlar.FallbackEvent-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+  - name: )
+- uid: System.Action`1
+  commentId: T:System.Action`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.action-1
+  name: Action<T>
+  nameWithType: Action<T>
+  fullName: System.Action<T>
+  nameWithType.vb: Action(Of T)
+  fullName.vb: System.Action(Of T)
+  name.vb: Action(Of T)
+  spec.csharp:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: System.Action`1
+    name: Action
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.action-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Kevlar.FallbackOptions`1.OnFallbackAsync*
+  commentId: Overload:Kevlar.FallbackOptions`1.OnFallbackAsync
+  isExternal: true
+  href: Kevlar.FallbackOptions-1.html#Kevlar_FallbackOptions_1_OnFallbackAsync
+  name: OnFallbackAsync
+  nameWithType: FallbackOptions<TResult>.OnFallbackAsync
+  fullName: Kevlar.FallbackOptions<TResult>.OnFallbackAsync
+  nameWithType.vb: FallbackOptions(Of TResult).OnFallbackAsync
+  fullName.vb: Kevlar.FallbackOptions(Of TResult).OnFallbackAsync
+- uid: System.Func{Kevlar.FallbackEvent{{TResult}},System.Threading.Tasks.ValueTask}
+  commentId: T:System.Func{Kevlar.FallbackEvent{`0},System.Threading.Tasks.ValueTask}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<FallbackEvent<TResult>, ValueTask>
+  nameWithType: Func<FallbackEvent<TResult>, ValueTask>
+  fullName: System.Func<Kevlar.FallbackEvent<TResult>, System.Threading.Tasks.ValueTask>
+  nameWithType.vb: Func(Of FallbackEvent(Of TResult), ValueTask)
+  fullName.vb: System.Func(Of Kevlar.FallbackEvent(Of TResult), System.Threading.Tasks.ValueTask)
+  name.vb: Func(Of FallbackEvent(Of TResult), ValueTask)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: Kevlar.FallbackEvent`1
+    name: FallbackEvent
+    isExternal: true
+    href: Kevlar.FallbackEvent-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: Kevlar.FallbackEvent`1
+    name: FallbackEvent
+    isExternal: true
+    href: Kevlar.FallbackEvent-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
+  - name: )

@@ -1,0 +1,450 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.HedgeActionGeneratorEvent
+  commentId: T:Kevlar.HedgeActionGeneratorEvent
+  id: HedgeActionGeneratorEvent
+  parent: Kevlar
+  children:
+  - Kevlar.HedgeActionGeneratorEvent.AttemptNumber
+  - Kevlar.HedgeActionGeneratorEvent.Context
+  - Kevlar.HedgeActionGeneratorEvent.OriginalAction
+  langs:
+  - csharp
+  - vb
+  name: HedgeActionGeneratorEvent
+  nameWithType: HedgeActionGeneratorEvent
+  fullName: Kevlar.HedgeActionGeneratorEvent
+  type: Struct
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Arguments used to select a void-returning operation for a hedged attempt.
+  example: []
+  syntax:
+    content: public readonly struct HedgeActionGeneratorEvent
+    content.vb: Public Structure HedgeActionGeneratorEvent
+  inheritedMembers:
+  - System.ValueType.Equals(System.Object)
+  - System.ValueType.GetHashCode
+  - System.ValueType.ToString
+  - System.Object.GetType
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+- uid: Kevlar.HedgeActionGeneratorEvent.AttemptNumber
+  commentId: P:Kevlar.HedgeActionGeneratorEvent.AttemptNumber
+  id: AttemptNumber
+  parent: Kevlar.HedgeActionGeneratorEvent
+  langs:
+  - csharp
+  - vb
+  name: AttemptNumber
+  nameWithType: HedgeActionGeneratorEvent.AttemptNumber
+  fullName: Kevlar.HedgeActionGeneratorEvent.AttemptNumber
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The 1-based execution number (2 = first hedge).
+  example: []
+  syntax:
+    content: public int AttemptNumber { get; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public ReadOnly Property AttemptNumber As Integer
+  overload: Kevlar.HedgeActionGeneratorEvent.AttemptNumber*
+- uid: Kevlar.HedgeActionGeneratorEvent.Context
+  commentId: P:Kevlar.HedgeActionGeneratorEvent.Context
+  id: Context
+  parent: Kevlar.HedgeActionGeneratorEvent
+  langs:
+  - csharp
+  - vb
+  name: Context
+  nameWithType: HedgeActionGeneratorEvent.Context
+  fullName: Kevlar.HedgeActionGeneratorEvent.Context
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The isolated context that belongs to this attempt.
+  example: []
+  syntax:
+    content: public KevlarContext Context { get; }
+    parameters: []
+    return:
+      type: Kevlar.KevlarContext
+    content.vb: Public ReadOnly Property Context As KevlarContext
+  overload: Kevlar.HedgeActionGeneratorEvent.Context*
+- uid: Kevlar.HedgeActionGeneratorEvent.OriginalAction
+  commentId: P:Kevlar.HedgeActionGeneratorEvent.OriginalAction
+  id: OriginalAction
+  parent: Kevlar.HedgeActionGeneratorEvent
+  langs:
+  - csharp
+  - vb
+  name: OriginalAction
+  nameWithType: HedgeActionGeneratorEvent.OriginalAction
+  fullName: Kevlar.HedgeActionGeneratorEvent.OriginalAction
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    The original operation, including strategies nested inside the hedge. The supplied token
+
+    becomes the cancellation token for that nested execution.
+  example: []
+  syntax:
+    content: public Func<CancellationToken, ValueTask> OriginalAction { get; }
+    parameters: []
+    return:
+      type: System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask}
+    content.vb: Public ReadOnly Property OriginalAction As Func(Of CancellationToken, ValueTask)
+  overload: Kevlar.HedgeActionGeneratorEvent.OriginalAction*
+references:
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: System.ValueType.Equals(System.Object)
+  commentId: M:System.ValueType.Equals(System.Object)
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  name: Equals(object)
+  nameWithType: ValueType.Equals(object)
+  fullName: System.ValueType.Equals(object)
+  nameWithType.vb: ValueType.Equals(Object)
+  fullName.vb: System.ValueType.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.ValueType.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.ValueType.GetHashCode
+  commentId: M:System.ValueType.GetHashCode
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  name: GetHashCode()
+  nameWithType: ValueType.GetHashCode()
+  fullName: System.ValueType.GetHashCode()
+  spec.csharp:
+  - uid: System.ValueType.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  - name: (
+  - name: )
+- uid: System.ValueType.ToString
+  commentId: M:System.ValueType.ToString
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  name: ToString()
+  nameWithType: ValueType.ToString()
+  fullName: System.ValueType.ToString()
+  spec.csharp:
+  - uid: System.ValueType.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  - name: (
+  - name: )
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.ValueType
+  commentId: T:System.ValueType
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype
+  name: ValueType
+  nameWithType: ValueType
+  fullName: System.ValueType
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.HedgeActionGeneratorEvent.AttemptNumber*
+  commentId: Overload:Kevlar.HedgeActionGeneratorEvent.AttemptNumber
+  isExternal: true
+  href: Kevlar.HedgeActionGeneratorEvent.html#Kevlar_HedgeActionGeneratorEvent_AttemptNumber
+  name: AttemptNumber
+  nameWithType: HedgeActionGeneratorEvent.AttemptNumber
+  fullName: Kevlar.HedgeActionGeneratorEvent.AttemptNumber
+- uid: System.Int32
+  commentId: T:System.Int32
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.int32
+  name: int
+  nameWithType: int
+  fullName: int
+  nameWithType.vb: Integer
+  fullName.vb: Integer
+  name.vb: Integer
+- uid: Kevlar.HedgeActionGeneratorEvent.Context*
+  commentId: Overload:Kevlar.HedgeActionGeneratorEvent.Context
+  isExternal: true
+  href: Kevlar.HedgeActionGeneratorEvent.html#Kevlar_HedgeActionGeneratorEvent_Context
+  name: Context
+  nameWithType: HedgeActionGeneratorEvent.Context
+  fullName: Kevlar.HedgeActionGeneratorEvent.Context
+- uid: Kevlar.KevlarContext
+  commentId: T:Kevlar.KevlarContext
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.KevlarContext.html
+  name: KevlarContext
+  nameWithType: KevlarContext
+  fullName: Kevlar.KevlarContext
+- uid: Kevlar.HedgeActionGeneratorEvent.OriginalAction*
+  commentId: Overload:Kevlar.HedgeActionGeneratorEvent.OriginalAction
+  isExternal: true
+  href: Kevlar.HedgeActionGeneratorEvent.html#Kevlar_HedgeActionGeneratorEvent_OriginalAction
+  name: OriginalAction
+  nameWithType: HedgeActionGeneratorEvent.OriginalAction
+  fullName: Kevlar.HedgeActionGeneratorEvent.OriginalAction
+- uid: System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask}
+  commentId: T:System.Func{System.Threading.CancellationToken,System.Threading.Tasks.ValueTask}
+  parent: System
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<CancellationToken, ValueTask>
+  nameWithType: Func<CancellationToken, ValueTask>
+  fullName: System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>
+  nameWithType.vb: Func(Of CancellationToken, ValueTask)
+  fullName.vb: System.Func(Of System.Threading.CancellationToken, System.Threading.Tasks.ValueTask)
+  name.vb: Func(Of CancellationToken, ValueTask)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - uid: System.Threading.CancellationToken
+    name: CancellationToken
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.Threading.CancellationToken
+    name: CancellationToken
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.cancellationtoken
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
+  - name: )
+- uid: System.Func`2
+  commentId: T:System.Func`2
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<T, TResult>
+  nameWithType: Func<T, TResult>
+  fullName: System.Func<T, TResult>
+  nameWithType.vb: Func(Of T, TResult)
+  fullName.vb: System.Func(Of T, TResult)
+  name.vb: Func(Of T, TResult)
+  spec.csharp:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: <
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: System.Func`2
+    name: Func
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: ','
+  - name: " "
+  - name: TResult
+  - name: )

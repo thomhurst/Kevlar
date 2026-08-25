@@ -1,0 +1,537 @@
+### YamlMime:ManagedReference
+items:
+- uid: Kevlar.CircuitBreakerBreakDurationEvent`1
+  commentId: T:Kevlar.CircuitBreakerBreakDurationEvent`1
+  id: CircuitBreakerBreakDurationEvent`1
+  parent: Kevlar
+  children:
+  - Kevlar.CircuitBreakerBreakDurationEvent`1.ConsecutiveFailures
+  - Kevlar.CircuitBreakerBreakDurationEvent`1.Context
+  - Kevlar.CircuitBreakerBreakDurationEvent`1.FailureCount
+  - Kevlar.CircuitBreakerBreakDurationEvent`1.FailureRate
+  - Kevlar.CircuitBreakerBreakDurationEvent`1.Outcome
+  langs:
+  - csharp
+  - vb
+  name: CircuitBreakerBreakDurationEvent<TResult>
+  nameWithType: CircuitBreakerBreakDurationEvent<TResult>
+  fullName: Kevlar.CircuitBreakerBreakDurationEvent<TResult>
+  type: Struct
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Describes the typed handled outcome that is about to open a circuit.
+  example: []
+  syntax:
+    content: public readonly struct CircuitBreakerBreakDurationEvent<TResult>
+    typeParameters:
+    - id: TResult
+      description: The shield result type.
+    content.vb: Public Structure CircuitBreakerBreakDurationEvent(Of TResult)
+  inheritedMembers:
+  - System.ValueType.Equals(System.Object)
+  - System.ValueType.GetHashCode
+  - System.ValueType.ToString
+  - System.Object.GetType
+  - System.Object.Equals(System.Object,System.Object)
+  - System.Object.ReferenceEquals(System.Object,System.Object)
+  nameWithType.vb: CircuitBreakerBreakDurationEvent(Of TResult)
+  fullName.vb: Kevlar.CircuitBreakerBreakDurationEvent(Of TResult)
+  name.vb: CircuitBreakerBreakDurationEvent(Of TResult)
+- uid: Kevlar.CircuitBreakerBreakDurationEvent`1.Outcome
+  commentId: P:Kevlar.CircuitBreakerBreakDurationEvent`1.Outcome
+  id: Outcome
+  parent: Kevlar.CircuitBreakerBreakDurationEvent`1
+  langs:
+  - csharp
+  - vb
+  name: Outcome
+  nameWithType: CircuitBreakerBreakDurationEvent<TResult>.Outcome
+  fullName: Kevlar.CircuitBreakerBreakDurationEvent<TResult>.Outcome
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The handled outcome that opened the circuit.
+  example: []
+  syntax:
+    content: public Outcome<TResult> Outcome { get; }
+    parameters: []
+    return:
+      type: Kevlar.Outcome{{TResult}}
+    content.vb: Public ReadOnly Property Outcome As Outcome(Of TResult)
+  overload: Kevlar.CircuitBreakerBreakDurationEvent`1.Outcome*
+  nameWithType.vb: CircuitBreakerBreakDurationEvent(Of TResult).Outcome
+  fullName.vb: Kevlar.CircuitBreakerBreakDurationEvent(Of TResult).Outcome
+- uid: Kevlar.CircuitBreakerBreakDurationEvent`1.FailureRate
+  commentId: P:Kevlar.CircuitBreakerBreakDurationEvent`1.FailureRate
+  id: FailureRate
+  parent: Kevlar.CircuitBreakerBreakDurationEvent`1
+  langs:
+  - csharp
+  - vb
+  name: FailureRate
+  nameWithType: CircuitBreakerBreakDurationEvent<TResult>.FailureRate
+  fullName: Kevlar.CircuitBreakerBreakDurationEvent<TResult>.FailureRate
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The handled-failure ratio when the circuit opened.
+  example: []
+  syntax:
+    content: public double FailureRate { get; }
+    parameters: []
+    return:
+      type: System.Double
+    content.vb: Public ReadOnly Property FailureRate As Double
+  overload: Kevlar.CircuitBreakerBreakDurationEvent`1.FailureRate*
+  nameWithType.vb: CircuitBreakerBreakDurationEvent(Of TResult).FailureRate
+  fullName.vb: Kevlar.CircuitBreakerBreakDurationEvent(Of TResult).FailureRate
+- uid: Kevlar.CircuitBreakerBreakDurationEvent`1.FailureCount
+  commentId: P:Kevlar.CircuitBreakerBreakDurationEvent`1.FailureCount
+  id: FailureCount
+  parent: Kevlar.CircuitBreakerBreakDurationEvent`1
+  langs:
+  - csharp
+  - vb
+  name: FailureCount
+  nameWithType: CircuitBreakerBreakDurationEvent<TResult>.FailureCount
+  fullName: Kevlar.CircuitBreakerBreakDurationEvent<TResult>.FailureCount
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The handled-failure count when the circuit opened.
+  example: []
+  syntax:
+    content: public long FailureCount { get; }
+    parameters: []
+    return:
+      type: System.Int64
+    content.vb: Public ReadOnly Property FailureCount As Long
+  overload: Kevlar.CircuitBreakerBreakDurationEvent`1.FailureCount*
+  nameWithType.vb: CircuitBreakerBreakDurationEvent(Of TResult).FailureCount
+  fullName.vb: Kevlar.CircuitBreakerBreakDurationEvent(Of TResult).FailureCount
+- uid: Kevlar.CircuitBreakerBreakDurationEvent`1.ConsecutiveFailures
+  commentId: P:Kevlar.CircuitBreakerBreakDurationEvent`1.ConsecutiveFailures
+  id: ConsecutiveFailures
+  parent: Kevlar.CircuitBreakerBreakDurationEvent`1
+  langs:
+  - csharp
+  - vb
+  name: ConsecutiveFailures
+  nameWithType: CircuitBreakerBreakDurationEvent<TResult>.ConsecutiveFailures
+  fullName: Kevlar.CircuitBreakerBreakDurationEvent<TResult>.ConsecutiveFailures
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: The consecutive handled-failure count when the circuit opened.
+  example: []
+  syntax:
+    content: public int ConsecutiveFailures { get; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public ReadOnly Property ConsecutiveFailures As Integer
+  overload: Kevlar.CircuitBreakerBreakDurationEvent`1.ConsecutiveFailures*
+  nameWithType.vb: CircuitBreakerBreakDurationEvent(Of TResult).ConsecutiveFailures
+  fullName.vb: Kevlar.CircuitBreakerBreakDurationEvent(Of TResult).ConsecutiveFailures
+- uid: Kevlar.CircuitBreakerBreakDurationEvent`1.Context
+  commentId: P:Kevlar.CircuitBreakerBreakDurationEvent`1.Context
+  id: Context
+  parent: Kevlar.CircuitBreakerBreakDurationEvent`1
+  langs:
+  - csharp
+  - vb
+  name: Context
+  nameWithType: CircuitBreakerBreakDurationEvent<TResult>.Context
+  fullName: Kevlar.CircuitBreakerBreakDurationEvent<TResult>.Context
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    The ambient execution context. It is pooled; do not retain it or its property bag after
+
+    the callback completes.
+  example: []
+  syntax:
+    content: public KevlarContext Context { get; }
+    parameters: []
+    return:
+      type: Kevlar.KevlarContext
+    content.vb: Public ReadOnly Property Context As KevlarContext
+  overload: Kevlar.CircuitBreakerBreakDurationEvent`1.Context*
+  nameWithType.vb: CircuitBreakerBreakDurationEvent(Of TResult).Context
+  fullName.vb: Kevlar.CircuitBreakerBreakDurationEvent(Of TResult).Context
+references:
+- uid: Kevlar
+  commentId: N:Kevlar
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar
+  nameWithType: Kevlar
+  fullName: Kevlar
+- uid: System.ValueType.Equals(System.Object)
+  commentId: M:System.ValueType.Equals(System.Object)
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  name: Equals(object)
+  nameWithType: ValueType.Equals(object)
+  fullName: System.ValueType.Equals(object)
+  nameWithType.vb: ValueType.Equals(Object)
+  fullName.vb: System.ValueType.Equals(Object)
+  name.vb: Equals(Object)
+  spec.csharp:
+  - uid: System.ValueType.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.Equals(System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.equals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.ValueType.GetHashCode
+  commentId: M:System.ValueType.GetHashCode
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  name: GetHashCode()
+  nameWithType: ValueType.GetHashCode()
+  fullName: System.ValueType.GetHashCode()
+  spec.csharp:
+  - uid: System.ValueType.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.GetHashCode
+    name: GetHashCode
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.gethashcode
+  - name: (
+  - name: )
+- uid: System.ValueType.ToString
+  commentId: M:System.ValueType.ToString
+  parent: System.ValueType
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  name: ToString()
+  nameWithType: ValueType.ToString()
+  fullName: System.ValueType.ToString()
+  spec.csharp:
+  - uid: System.ValueType.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.ValueType.ToString
+    name: ToString
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.valuetype.tostring
+  - name: (
+  - name: )
+- uid: System.Object.GetType
+  commentId: M:System.Object.GetType
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  name: GetType()
+  nameWithType: object.GetType()
+  fullName: object.GetType()
+  nameWithType.vb: Object.GetType()
+  fullName.vb: Object.GetType()
+  spec.csharp:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+  spec.vb:
+  - uid: System.Object.GetType
+    name: GetType
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - name: (
+  - name: )
+- uid: System.Object.Equals(System.Object,System.Object)
+  commentId: M:System.Object.Equals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  name: Equals(object, object)
+  nameWithType: object.Equals(object, object)
+  fullName: object.Equals(object, object)
+  nameWithType.vb: Object.Equals(Object, Object)
+  fullName.vb: Object.Equals(Object, Object)
+  name.vb: Equals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.Equals(System.Object,System.Object)
+    name: Equals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.Object.ReferenceEquals(System.Object,System.Object)
+  commentId: M:System.Object.ReferenceEquals(System.Object,System.Object)
+  parent: System.Object
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  name: ReferenceEquals(object, object)
+  nameWithType: object.ReferenceEquals(object, object)
+  fullName: object.ReferenceEquals(object, object)
+  nameWithType.vb: Object.ReferenceEquals(Object, Object)
+  fullName.vb: Object.ReferenceEquals(Object, Object)
+  name.vb: ReferenceEquals(Object, Object)
+  spec.csharp:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+  spec.vb:
+  - uid: System.Object.ReferenceEquals(System.Object,System.Object)
+    name: ReferenceEquals
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - name: (
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: ','
+  - name: " "
+  - uid: System.Object
+    name: Object
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.object
+  - name: )
+- uid: System.ValueType
+  commentId: T:System.ValueType
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.valuetype
+  name: ValueType
+  nameWithType: ValueType
+  fullName: System.ValueType
+- uid: System.Object
+  commentId: T:System.Object
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.object
+  name: object
+  nameWithType: object
+  fullName: object
+  nameWithType.vb: Object
+  fullName.vb: Object
+  name.vb: Object
+- uid: System
+  commentId: N:System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System
+  nameWithType: System
+  fullName: System
+- uid: Kevlar.CircuitBreakerBreakDurationEvent`1.Outcome*
+  commentId: Overload:Kevlar.CircuitBreakerBreakDurationEvent`1.Outcome
+  isExternal: true
+  href: Kevlar.CircuitBreakerBreakDurationEvent-1.html#Kevlar_CircuitBreakerBreakDurationEvent_1_Outcome
+  name: Outcome
+  nameWithType: CircuitBreakerBreakDurationEvent<TResult>.Outcome
+  fullName: Kevlar.CircuitBreakerBreakDurationEvent<TResult>.Outcome
+  nameWithType.vb: CircuitBreakerBreakDurationEvent(Of TResult).Outcome
+  fullName.vb: Kevlar.CircuitBreakerBreakDurationEvent(Of TResult).Outcome
+- uid: Kevlar.Outcome{{TResult}}
+  commentId: T:Kevlar.Outcome{`0}
+  parent: Kevlar
+  definition: Kevlar.Outcome`1
+  href: Kevlar.Outcome-1.html
+  name: Outcome<TResult>
+  nameWithType: Outcome<TResult>
+  fullName: Kevlar.Outcome<TResult>
+  nameWithType.vb: Outcome(Of TResult)
+  fullName.vb: Kevlar.Outcome(Of TResult)
+  name.vb: Outcome(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.Outcome`1
+    name: Outcome
+    isExternal: true
+    href: Kevlar.Outcome-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Outcome`1
+    name: Outcome
+    isExternal: true
+    href: Kevlar.Outcome-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.Outcome`1
+  commentId: T:Kevlar.Outcome`1
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.Outcome-1.html
+  name: Outcome<T>
+  nameWithType: Outcome<T>
+  fullName: Kevlar.Outcome<T>
+  nameWithType.vb: Outcome(Of T)
+  fullName.vb: Kevlar.Outcome(Of T)
+  name.vb: Outcome(Of T)
+  spec.csharp:
+  - uid: Kevlar.Outcome`1
+    name: Outcome
+    isExternal: true
+    href: Kevlar.Outcome-1.html
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Outcome`1
+    name: Outcome
+    isExternal: true
+    href: Kevlar.Outcome-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Kevlar.CircuitBreakerBreakDurationEvent`1.FailureRate*
+  commentId: Overload:Kevlar.CircuitBreakerBreakDurationEvent`1.FailureRate
+  isExternal: true
+  href: Kevlar.CircuitBreakerBreakDurationEvent-1.html#Kevlar_CircuitBreakerBreakDurationEvent_1_FailureRate
+  name: FailureRate
+  nameWithType: CircuitBreakerBreakDurationEvent<TResult>.FailureRate
+  fullName: Kevlar.CircuitBreakerBreakDurationEvent<TResult>.FailureRate
+  nameWithType.vb: CircuitBreakerBreakDurationEvent(Of TResult).FailureRate
+  fullName.vb: Kevlar.CircuitBreakerBreakDurationEvent(Of TResult).FailureRate
+- uid: System.Double
+  commentId: T:System.Double
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.double
+  name: double
+  nameWithType: double
+  fullName: double
+  nameWithType.vb: Double
+  fullName.vb: Double
+  name.vb: Double
+- uid: Kevlar.CircuitBreakerBreakDurationEvent`1.FailureCount*
+  commentId: Overload:Kevlar.CircuitBreakerBreakDurationEvent`1.FailureCount
+  isExternal: true
+  href: Kevlar.CircuitBreakerBreakDurationEvent-1.html#Kevlar_CircuitBreakerBreakDurationEvent_1_FailureCount
+  name: FailureCount
+  nameWithType: CircuitBreakerBreakDurationEvent<TResult>.FailureCount
+  fullName: Kevlar.CircuitBreakerBreakDurationEvent<TResult>.FailureCount
+  nameWithType.vb: CircuitBreakerBreakDurationEvent(Of TResult).FailureCount
+  fullName.vb: Kevlar.CircuitBreakerBreakDurationEvent(Of TResult).FailureCount
+- uid: System.Int64
+  commentId: T:System.Int64
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.int64
+  name: long
+  nameWithType: long
+  fullName: long
+  nameWithType.vb: Long
+  fullName.vb: Long
+  name.vb: Long
+- uid: Kevlar.CircuitBreakerBreakDurationEvent`1.ConsecutiveFailures*
+  commentId: Overload:Kevlar.CircuitBreakerBreakDurationEvent`1.ConsecutiveFailures
+  isExternal: true
+  href: Kevlar.CircuitBreakerBreakDurationEvent-1.html#Kevlar_CircuitBreakerBreakDurationEvent_1_ConsecutiveFailures
+  name: ConsecutiveFailures
+  nameWithType: CircuitBreakerBreakDurationEvent<TResult>.ConsecutiveFailures
+  fullName: Kevlar.CircuitBreakerBreakDurationEvent<TResult>.ConsecutiveFailures
+  nameWithType.vb: CircuitBreakerBreakDurationEvent(Of TResult).ConsecutiveFailures
+  fullName.vb: Kevlar.CircuitBreakerBreakDurationEvent(Of TResult).ConsecutiveFailures
+- uid: System.Int32
+  commentId: T:System.Int32
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.int32
+  name: int
+  nameWithType: int
+  fullName: int
+  nameWithType.vb: Integer
+  fullName.vb: Integer
+  name.vb: Integer
+- uid: Kevlar.CircuitBreakerBreakDurationEvent`1.Context*
+  commentId: Overload:Kevlar.CircuitBreakerBreakDurationEvent`1.Context
+  isExternal: true
+  href: Kevlar.CircuitBreakerBreakDurationEvent-1.html#Kevlar_CircuitBreakerBreakDurationEvent_1_Context
+  name: Context
+  nameWithType: CircuitBreakerBreakDurationEvent<TResult>.Context
+  fullName: Kevlar.CircuitBreakerBreakDurationEvent<TResult>.Context
+  nameWithType.vb: CircuitBreakerBreakDurationEvent(Of TResult).Context
+  fullName.vb: Kevlar.CircuitBreakerBreakDurationEvent(Of TResult).Context
+- uid: Kevlar.KevlarContext
+  commentId: T:Kevlar.KevlarContext
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.KevlarContext.html
+  name: KevlarContext
+  nameWithType: KevlarContext
+  fullName: Kevlar.KevlarContext
