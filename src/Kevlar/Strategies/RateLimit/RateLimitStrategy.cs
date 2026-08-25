@@ -35,9 +35,7 @@ internal sealed class RateLimitStrategy : Strategy
     private Reservation? _queueHead;
     private Reservation? _queueTail;
     private int _queuedReservations;
-#if NET9_0_OR_GREATER
     private readonly KevlarMetrics.StateMetricRegistration<RateLimitStrategy> _metricsRegistration;
-#endif
 
     protected internal override bool IsDuplicateReferenceUnsafe => true;
 
@@ -403,12 +401,10 @@ internal sealed class RateLimitStrategy : Strategy
 
     private void RegisterMetricsAlias(StrategyMetricAlias alias, TimeProvider timeProvider)
     {
-#if NET9_0_OR_GREATER
         if (KevlarMetrics.RateStateEnabled)
         {
             _metricsRegistration.Add(alias, timeProvider);
         }
-#endif
     }
 
     internal (long Available, int Queued) CaptureState(TimeProvider timeProvider)

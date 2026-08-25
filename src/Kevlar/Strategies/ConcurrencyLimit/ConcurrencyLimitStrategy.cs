@@ -15,9 +15,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
     private int _available;
     private int _waiters;
     private long _pending;
-#if NET9_0_OR_GREATER
     private readonly KevlarMetrics.StateMetricRegistration<ConcurrencyLimitStrategy> _metricsRegistration;
-#endif
 
     protected internal override bool InvokesContinuationAtMostOnce => true;
 
@@ -238,11 +236,9 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
 
     private void RegisterMetricsAlias(StrategyMetricAlias alias)
     {
-#if NET9_0_OR_GREATER
         if (KevlarMetrics.ConcurrencyStateEnabled)
         {
             _metricsRegistration.Add(alias);
         }
-#endif
     }
 }

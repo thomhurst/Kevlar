@@ -383,16 +383,29 @@ internal static class KevlarMetrics
 #if NET9_0_OR_GREATER
     public static StateMetricRegistration<CircuitBreakerStrategy> RegisterCircuitStateSource(
         CircuitBreakerStrategy strategy) =>
+#if NET9_0_OR_GREATER
         CircuitStates.Register(strategy);
+#else
+        StateMetricRegistration<CircuitBreakerStrategy>.Disabled;
+#endif
 
     public static StateMetricRegistration<ConcurrencyLimitStrategy> RegisterConcurrencyStateSource(
         ConcurrencyLimitStrategy strategy) =>
+#if NET9_0_OR_GREATER
         ConcurrencyStates.Register(strategy);
+#else
+        StateMetricRegistration<ConcurrencyLimitStrategy>.Disabled;
+#endif
 
     public static StateMetricRegistration<RateLimitStrategy> RegisterRateStateSource(
         RateLimitStrategy strategy) =>
+#if NET9_0_OR_GREATER
         RateStates.Register(strategy);
+#else
+        StateMetricRegistration<RateLimitStrategy>.Disabled;
+#endif
 
+#if NET9_0_OR_GREATER
     private static IEnumerable<Measurement<long>> ObserveCircuitStates() =>
         CircuitStates.Observe(static (strategy, _) => StateValue(strategy.Core.State));
 

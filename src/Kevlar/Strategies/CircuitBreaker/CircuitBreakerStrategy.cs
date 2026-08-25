@@ -7,9 +7,7 @@ internal sealed class CircuitBreakerStrategy : Strategy
     protected internal override bool InvokesContinuationAtMostOnce => true;
     private readonly CircuitBreakerCore _core;
     private readonly OutcomeJudge _judge;
-#if NET9_0_OR_GREATER
     private readonly KevlarMetrics.StateMetricRegistration<CircuitBreakerStrategy> _metricsRegistration;
-#endif
 
     public CircuitBreakerStrategy(CircuitBreakerOptions options, OutcomeJudge judge)
         : this(
@@ -30,9 +28,7 @@ internal sealed class CircuitBreakerStrategy : Strategy
         CircuitBreakerBreakDurationGenerator? breakDurationGenerator,
         Type optionsType)
     {
-#if NET9_0_OR_GREATER
         _metricsRegistration = KevlarMetrics.RegisterCircuitStateSource(this);
-#endif
         _core = new CircuitBreakerCore(
             options,
             breakDurationGenerator,
@@ -135,22 +131,18 @@ internal sealed class CircuitBreakerStrategy : Strategy
 
     private void RegisterMetricsAlias(StrategyMetricAlias alias)
     {
-#if NET9_0_OR_GREATER
         if (KevlarMetrics.CircuitStateEnabled)
         {
             _metricsRegistration.Add(alias);
         }
-#endif
     }
 
     private void RecordTransitionState(CircuitState _)
     {
-#if NET9_0_OR_GREATER
-        if (KevlarMetrics.CircuitStateEnabled && _metricsRegistration.Observations.Length == 0)
+        if (KevlarMetrics.CircuitStateEnabled && !_metricsRegistration.HasObservations)
         {
             _metricsRegistration.Add(new StrategyMetricAlias(null, -1));
         }
-#endif
     }
 
     private ValueTask<Outcome<T>> ExecuteConfiguredAsync<T, TState>(
