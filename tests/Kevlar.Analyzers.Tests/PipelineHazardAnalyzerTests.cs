@@ -327,6 +327,26 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV013_Follows_Invoked_Local_Functions()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                void Start() => _ = AuditAsync(item);
+                Start();
+            });
+
+            static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
     public async Task KEV013_Ignores_Synchronously_Observed_Task_Calls()
     {
         var statements = new[]
@@ -650,6 +670,26 @@ public class PipelineHazardAnalyzerTests
                     {
                         _context = item.Context;
                         _ = Task.Run(() => Console.WriteLine(_context.ShieldName));
+                    });
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Flags_Pooled_Event_Field_In_Deferred_Work()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = item;
+                        _ = Task.Run(() => Console.WriteLine(_event.Context.ShieldName));
                     });
             }
             """);

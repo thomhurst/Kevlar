@@ -288,12 +288,18 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 return IsTaskLike(context.SemanticModel.GetTypeInfo(
                     body,
                     context.CancellationToken).Type)
-                    || GetCallbackInvocations(body)
+                    || GetCallbackInvocations(
+                            body,
+                            context.SemanticModel,
+                            context.CancellationToken)
                         .Any(invocation => IsUnobservedAsyncInvocation(invocation, context));
             }
 
             return anonymous.Body is BlockSyntax block
-                && GetCallbackInvocations(block)
+                && GetCallbackInvocations(
+                        block,
+                        context.SemanticModel,
+                        context.CancellationToken)
                     .Any(invocation => IsUnobservedAsyncInvocation(invocation, context));
         }
 
@@ -357,7 +363,10 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                          .OfType<AnonymousFunctionExpressionSyntax>()
                          .Any(ancestor => expression.Span.Contains(ancestor.Span))))
         {
-            foreach (var invocation in GetCallbackInvocations(anonymous.Body))
+            foreach (var invocation in GetCallbackInvocations(
+                         anonymous.Body,
+                         context.SemanticModel,
+                         context.CancellationToken))
             {
                 if (!IsUnobservedAsyncInvocation(invocation, context))
                 {
@@ -426,14 +435,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             foreach (var syntaxReference in candidate.DeclaringSyntaxReferences)
             {
                 var declaration = syntaxReference.GetSyntax(context.CancellationToken);
-                SyntaxNode? body = declaration switch
-                {
-                    MethodDeclarationSyntax { Body: { } block } => block,
-                    MethodDeclarationSyntax { ExpressionBody.Expression: { } bodyExpression } => bodyExpression,
-                    LocalFunctionStatementSyntax { Body: { } block } => block,
-                    LocalFunctionStatementSyntax { ExpressionBody.Expression: { } bodyExpression } => bodyExpression,
-                    _ => null,
-                };
+                var body = GetFunctionBody(declaration);
                 if (body is null)
                 {
                     continue;
@@ -461,6 +463,15 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         capturedContext = null!;
         return false;
     }
+
+    private static SyntaxNode? GetFunctionBody(SyntaxNode declaration) => declaration switch
+    {
+        MethodDeclarationSyntax { Body: { } block } => block,
+        MethodDeclarationSyntax { ExpressionBody.Expression: { } expression } => expression,
+        LocalFunctionStatementSyntax { Body: { } block } => block,
+        LocalFunctionStatementSyntax { ExpressionBody.Expression: { } expression } => expression,
+        _ => null,
+    };
 
     private static bool TryFindEventContextExpression(
         ExpressionSyntax expression,
@@ -637,11 +648,46 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     }
 
     private static IEnumerable<InvocationExpressionSyntax> GetCallbackInvocations(
-        SyntaxNode body) =>
-        body.DescendantNodesAndSelf(descendIntoChildren: static node =>
-                node is not AnonymousFunctionExpressionSyntax
-                    and not LocalFunctionStatementSyntax)
-            .OfType<InvocationExpressionSyntax>();
+        SyntaxNode body,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        var pendingBodies = new Stack<SyntaxNode>();
+        var visitedLocalFunctions = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+        pendingBodies.Push(body);
+        while (pendingBodies.Count > 0)
+        {
+            foreach (var invocation in pendingBodies.Pop()
+                         .DescendantNodesAndSelf(descendIntoChildren: static node =>
+                             node is not AnonymousFunctionExpressionSyntax
+                                 and not LocalFunctionStatementSyntax)
+                         .OfType<InvocationExpressionSyntax>())
+            {
+                yield return invocation;
+                if (semanticModel.GetSymbolInfo(
+                        invocation,
+                        cancellationToken).Symbol is not IMethodSymbol
+                    {
+                        MethodKind: MethodKind.LocalFunction,
+                        ReturnsVoid: true,
+                    } localFunction
+                    || !visitedLocalFunctions.Add(localFunction))
+                {
+                    continue;
+                }
+
+                foreach (var syntaxReference in localFunction.DeclaringSyntaxReferences)
+                {
+                    var declaration = syntaxReference.GetSyntax(cancellationToken);
+                    var localBody = GetFunctionBody(declaration);
+                    if (localBody is not null)
+                    {
+                        pendingBodies.Push(localBody);
+                    }
+                }
+            }
+        }
+    }
 
     private static bool IsUnobservedAsyncInvocation(
         InvocationExpressionSyntax invocation,
@@ -1404,7 +1450,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             }
 
             if (operation is IFieldReferenceOperation fieldReference
-                && knownTypes.IsEventContextReference(fieldReference.Field.Type))
+                && ContainsEventContextReference(fieldReference.Field.Type, knownTypes))
             {
                 capturedContext = fieldReference.Syntax;
                 return true;
