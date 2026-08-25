@@ -162,6 +162,17 @@ internal static class ShieldEngine
         if (cancellationToken.IsCancellationRequested)
         {
             RecordExecution(startedAt, shieldName, success: false);
+            if (onCompleted is not null)
+            {
+                var cancelledContext = KevlarContext.Rent(
+                    cancellationToken,
+                    isSynchronous: false,
+                    timeProvider,
+                    shieldName);
+                NotifyCompleted(onCompleted, state, cancelledContext.PropertiesForCompletion);
+                KevlarContext.Return(cancelledContext);
+            }
+
             return Rethrow<T>(Outcome<T>.FromException(new OperationCanceledException(cancellationToken)));
         }
 
@@ -172,9 +183,9 @@ internal static class ShieldEngine
         }
         catch
         {
+            RecordExecution(startedAt, shieldName, success: false);
             NotifyCompleted(onCompleted, state, context.PropertiesForCompletion);
             KevlarContext.Return(context);
-            RecordExecution(startedAt, shieldName, success: false);
             throw;
         }
 

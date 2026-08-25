@@ -213,6 +213,26 @@ public class MetricsTests
     }
 
     [Test]
+    public async Task Initialization_Failure_Is_Recorded_Before_OnCompleted()
+    {
+        using var listener = new KevlarMeterListener();
+        const string name = "metrics-initialization-failure";
+        var failuresObserved = 0L;
+
+        await Assert.That(async () => await Shield.Empty.WithName(name).ExecuteWithContextAsync(
+                0,
+                static (_, _) => throw new InvalidOperationException("initialize"),
+                static (_, _) => new ValueTask<int>(42),
+                (_, _) => failuresObserved = listener.Total(
+                    "kevlar.executions",
+                    name,
+                    ("kevlar.execution.outcome", "failure"))))
+            .Throws<InvalidOperationException>();
+
+        await Assert.That(failuresObserved).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Meter_And_Instrument_Schema_Is_Stable()
     {
         using var listener = new KevlarMeterListener();

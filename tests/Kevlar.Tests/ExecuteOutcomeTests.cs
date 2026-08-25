@@ -215,6 +215,38 @@ public class ExecuteOutcomeTests
     }
 
     [Test]
+    public async Task OnCompleted_Runs_For_PreCancelled_Execution_With_Empty_Properties()
+    {
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        var initialized = false;
+        var invoked = false;
+        var completed = false;
+        var propertyCount = -1;
+
+        await Assert.That(async () => await Shield.Empty.ExecuteWithContextAsync(
+                0,
+                (_, _) => initialized = true,
+                (_, _) =>
+                {
+                    invoked = true;
+                    return new ValueTask<int>(42);
+                },
+                (_, properties) =>
+                {
+                    completed = true;
+                    propertyCount = properties.Count;
+                },
+                cancellation.Token))
+            .Throws<OperationCanceledException>();
+
+        await Assert.That(initialized).IsFalse();
+        await Assert.That(invoked).IsFalse();
+        await Assert.That(completed).IsTrue();
+        await Assert.That(propertyCount).IsEqualTo(0);
+    }
+
+    [Test]
     public async Task OnCompleted_Does_Not_Observe_A_Previous_Execution()
     {
         var first = -1;
@@ -352,6 +384,39 @@ public class ExecuteOutcomeTests
 
         await Assert.That(observedWinner).IsEqualTo(2);
         await Assert.That(retainedRemovedKey).IsFalse();
+    }
+
+    [Test]
+    public async Task OnCompleted_Uses_Later_Original_Action_When_Results_Are_Equal()
+    {
+        var attempts = 0;
+        var observedWinner = -1;
+        var shield = Shield.For<int>().Hedge(options =>
+        {
+            options.MaxAttempts = 2;
+            options.Delay = Timeout.InfiniteTimeSpan;
+            options.ActionGenerator = hedge => async token =>
+            {
+                _ = await hedge.OriginalAction(token);
+                return await hedge.OriginalAction(token);
+            };
+        });
+
+        _ = await shield.ExecuteWithContextAsync(
+            0,
+            static (_, _) => { },
+            (_, context) =>
+            {
+                var attempt = Interlocked.Increment(ref attempts);
+                context.Properties.Set(WinningAttempt, attempt);
+                return attempt == 1
+                    ? ValueTask.FromException<int>(new InvalidOperationException())
+                    : new ValueTask<int>(42);
+            },
+            (_, properties) =>
+                observedWinner = properties.GetOrDefault(WinningAttempt, -1));
+
+        await Assert.That(observedWinner).IsEqualTo(3);
     }
 
     [Test]

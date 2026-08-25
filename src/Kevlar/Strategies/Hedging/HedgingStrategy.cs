@@ -664,15 +664,7 @@ internal sealed class HedgingStrategy : Strategy
                         return _context!;
                     }
 
-                    var selectedIndex = completions.Count - 1;
-                    for (var i = 0; i < completions.Count; i++)
-                    {
-                        if (Matches(completions[i].Outcome, selectedOutcome))
-                        {
-                            selectedIndex = i;
-                            break;
-                        }
-                    }
+                    var selectedIndex = FindSelectedIndex(completions, in selectedOutcome);
 
                     var selected = completions[selectedIndex];
                     completions.RemoveAt(selectedIndex);
@@ -685,6 +677,34 @@ internal sealed class HedgingStrategy : Strategy
             {
                 ReturnContexts(completions);
             }
+        }
+
+        private static int FindSelectedIndex(
+            List<CapturedOriginalAction> completions,
+            in Outcome<T> selectedOutcome)
+        {
+            if (selectedOutcome.IsSuccess && !typeof(T).IsValueType)
+            {
+                for (var i = completions.Count - 1; i >= 0; i--)
+                {
+                    var candidate = completions[i].Outcome;
+                    if (candidate.IsSuccess
+                        && ReferenceEquals(candidate.Result, selectedOutcome.Result))
+                    {
+                        return i;
+                    }
+                }
+            }
+
+            for (var i = completions.Count - 1; i >= 0; i--)
+            {
+                if (Matches(completions[i].Outcome, selectedOutcome))
+                {
+                    return i;
+                }
+            }
+
+            return completions.Count - 1;
         }
 
         public void ReleaseAttempt() => ReleaseReference(stopAcceptingInvocations: true);
