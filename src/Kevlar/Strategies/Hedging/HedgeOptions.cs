@@ -27,7 +27,11 @@ public sealed class HedgeOptions
     /// <seealso cref="HandlingClause"/>
     public Func<Exception, bool>? HandlesException { get; set; }
 
-    internal bool HasHandlingOverride => HandlesException is not null;
+    /// <summary>Locally handles exceptions using execution context and attempt metadata.</summary>
+    public Func<HandlingEvent, bool>? HandlesExceptionWithContext { get; set; }
+
+    internal bool HasHandlingOverride =>
+        HandlesException is not null || HandlesExceptionWithContext is not null;
 
     /// <summary>Total attempts including the original. Default 2.</summary>
     public int MaxAttempts { get; set; } = 2;

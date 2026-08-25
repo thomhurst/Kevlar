@@ -35,10 +35,11 @@ public sealed class ShieldBuilder<TResult>
     private readonly Shield<TResult> _parent;
     private readonly Func<Exception, bool>[] _exceptionPredicates;
     private readonly Func<TResult, bool>[] _resultPredicates;
+    private readonly Func<HandlingEvent<TResult>, bool>[] _contextPredicates;
     private readonly string[] _clauseTerms;
 
     internal ShieldBuilder(Shield<TResult> parent)
-        : this(parent, [], [], [])
+        : this(parent, [], [], [], [])
     {
     }
 
@@ -46,11 +47,13 @@ public sealed class ShieldBuilder<TResult>
         Shield<TResult> parent,
         Func<Exception, bool>[] exceptionPredicates,
         Func<TResult, bool>[] resultPredicates,
+        Func<HandlingEvent<TResult>, bool>[] contextPredicates,
         string[] clauseTerms)
     {
         _parent = parent;
         _exceptionPredicates = exceptionPredicates;
         _resultPredicates = resultPredicates;
+        _contextPredicates = contextPredicates;
         _clauseTerms = clauseTerms;
     }
 
@@ -70,17 +73,35 @@ public sealed class ShieldBuilder<TResult>
     }
 
     /// <summary>Returns a new builder that also handles exceptions matching <paramref name="predicate"/>, whatever their type.</summary>
+    [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
     public ShieldBuilder<TResult> Or(Func<Exception, bool> predicate)
     {
         Throw.IfNull(predicate, nameof(predicate));
         return WithException(predicate, "exception predicate");
     }
 
+    /// <summary>Returns a new builder that also handles outcomes selected using execution context.</summary>
+    public ShieldBuilder<TResult> Or(Func<HandlingEvent<TResult>, bool> predicate)
+    {
+        Throw.IfNull(predicate, nameof(predicate));
+        return WithContext(predicate, "custom");
+    }
+
     /// <summary>Returns a new builder that also handles results matching <paramref name="predicate"/>.</summary>
+    [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
     public ShieldBuilder<TResult> OrResult(Func<TResult, bool> predicate)
     {
         Throw.IfNull(predicate, nameof(predicate));
         return WithResult(predicate, "result predicate");
+    }
+
+    /// <summary>Returns a new builder that also handles results selected using execution context.</summary>
+    public ShieldBuilder<TResult> OrResult(Func<HandlingEvent<TResult>, bool> predicate)
+    {
+        Throw.IfNull(predicate, nameof(predicate));
+        return WithContext(
+            handling => handling.Outcome.Exception is null && predicate(handling),
+            "custom");
     }
 
     /// <summary>Returns a new builder that also handles results equal to <paramref name="result"/>.</summary>
@@ -206,7 +227,8 @@ public sealed class ShieldBuilder<TResult>
         var judge = new TypedJudge<TResult>(
             exceptionPredicate,
             resultPredicate,
-            DescribeHelper.Clause(_clauseTerms));
+            DescribeHelper.Clause(_clauseTerms),
+            CombineContexts(_contextPredicates));
         return new Shield<TResult>(_parent.Strategies, judge, _parent.Name, _parent.Time);
     }
 
@@ -226,6 +248,7 @@ public sealed class ShieldBuilder<TResult>
             _parent,
             ShieldBuilder.Append(_exceptionPredicates, predicate),
             _resultPredicates,
+            _contextPredicates,
             ShieldBuilder.Append(_clauseTerms, clauseTerm));
 
     /// <summary>Builds the successor holding this builder's terms plus one more result term.</summary>
@@ -234,6 +257,17 @@ public sealed class ShieldBuilder<TResult>
             _parent,
             _exceptionPredicates,
             ShieldBuilder.Append(_resultPredicates, predicate),
+            _contextPredicates,
+            ShieldBuilder.Append(_clauseTerms, clauseTerm));
+
+    private ShieldBuilder<TResult> WithContext(
+        Func<HandlingEvent<TResult>, bool> predicate,
+        string clauseTerm) =>
+        new(
+            _parent,
+            _exceptionPredicates,
+            _resultPredicates,
+            ShieldBuilder.Append(_contextPredicates, predicate),
             ShieldBuilder.Append(_clauseTerms, clauseTerm));
 
     private static Func<TResult, bool>? CombineResults(Func<TResult, bool>[] predicates)
@@ -253,6 +287,33 @@ public sealed class ShieldBuilder<TResult>
             foreach (var predicate in predicates)
             {
                 if (predicate(result))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        };
+    }
+
+    private static Func<HandlingEvent<TResult>, bool>? CombineContexts(
+        Func<HandlingEvent<TResult>, bool>[] predicates)
+    {
+        if (predicates.Length == 0)
+        {
+            return null;
+        }
+
+        if (predicates.Length == 1)
+        {
+            return predicates[0];
+        }
+
+        return handling =>
+        {
+            foreach (var predicate in predicates)
+            {
+                if (predicate(handling))
                 {
                     return true;
                 }

@@ -21,7 +21,11 @@ public sealed class RetryOptions
     /// <seealso cref="HandlingClause"/>
     public Func<Exception, bool>? HandlesException { get; set; }
 
-    internal bool HasHandlingOverride => HandlesException is not null;
+    /// <summary>Locally handles exceptions using execution context and attempt metadata.</summary>
+    public Func<HandlingEvent, bool>? HandlesExceptionWithContext { get; set; }
+
+    internal bool HasHandlingOverride =>
+        HandlesException is not null || HandlesExceptionWithContext is not null;
 
     /// <summary>
     /// The number of <em>retries</em> made after the initial attempt — not the number of attempts.
@@ -105,6 +109,9 @@ public sealed class RetryOptions<TResult>
     /// <seealso cref="HandlingClause"/>
     public Func<Exception, bool>? HandlesException { get; set; }
 
+    /// <summary>Locally handles exceptions using the typed outcome and execution context.</summary>
+    public Func<HandlingEvent<TResult>, bool>? HandlesExceptionWithContext { get; set; }
+
     /// <summary>
     /// Setting this — or <see cref="HandlesException"/> — makes this retry ignore the ambient
     /// <c>When…</c> handling clause; this predicate then selects the results it handles.
@@ -117,8 +124,14 @@ public sealed class RetryOptions<TResult>
     /// <seealso cref="HandlingClause"/>
     public Func<TResult, bool>? HandlesResult { get; set; }
 
+    /// <summary>Locally handles results using the typed outcome and execution context.</summary>
+    public Func<HandlingEvent<TResult>, bool>? HandlesResultWithContext { get; set; }
+
     internal bool HasHandlingOverride =>
-        HandlesException is not null || HandlesResult is not null;
+        HandlesException is not null
+        || HandlesResult is not null
+        || HandlesExceptionWithContext is not null
+        || HandlesResultWithContext is not null;
 
     /// <summary>Invoked synchronously before each retry sleeps, with the typed handled outcome.</summary>
     public Action<RetryEvent<TResult>>? OnRetry { get; set; }

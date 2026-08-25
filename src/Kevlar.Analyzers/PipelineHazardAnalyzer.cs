@@ -2044,7 +2044,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 Target: IPropertyReferenceOperation propertyReference,
                 Value: { } value,
             }
-            && propertyReference.Property.Name is "HandlesException" or "HandlesResult"
+            && propertyReference.Property.Name is
+                "HandlesException"
+                or "HandlesResult"
+                or "HandlesExceptionWithContext"
+                or "HandlesResultWithContext"
             && propertyReference.Property.ContainingNamespace.ToDisplayString() == "Kevlar"
             && value.ConstantValue is not { HasValue: true, Value: null })
         {
@@ -2108,7 +2112,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         {
             if (current.ContainingNamespace.ToDisplayString() == "Kevlar"
                 && (current.GetMembers("HandlesException").Length > 0
-                    || current.GetMembers("HandlesResult").Length > 0))
+                    || current.GetMembers("HandlesResult").Length > 0
+                    || current.GetMembers("HandlesExceptionWithContext").Length > 0
+                    || current.GetMembers("HandlesResultWithContext").Length > 0))
             {
                 return true;
             }

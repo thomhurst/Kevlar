@@ -77,6 +77,10 @@ public class AllocationBudgetTests
     private readonly Shield<int> _typedJudge = Shield.For<int>()
         .WhenResult(-1)
         .Retry(3, Backoff.None);
+    private readonly Shield<int> _contextTypedJudge = Shield.For<int>()
+        .WhenResult(static handling =>
+            handling.Outcome.TryGetResult(out var result) && result < 0)
+        .Retry(3, Backoff.None);
     private readonly Shield _composed = Shield
         .RateLimit(1_000_000_000, TimeSpan.FromSeconds(1))
         .Timeout(TimeSpan.FromMinutes(1))
@@ -205,6 +209,8 @@ public class AllocationBudgetTests
             test._concurrencyLimitWithRejectionHooks.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("typed result judging", this, static test =>
             test._typedJudge.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
+        AssertZero("context-aware typed result judging", this, static test =>
+            test._contextTypedJudge.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("composed pipeline", this, static test =>
             test._composed.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("hedge primary wins", this, static test =>

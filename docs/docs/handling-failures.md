@@ -159,6 +159,70 @@ Shield.For<int>().WhenResult(-1).Retry(2);            // clean: the failing valu
 All four are named after the `WhenResult` / `OrResult` family precisely so they cannot be confused
 with `WhenAnyError()`, which resets *handling* to Kevlar's default.
 
+## Context-aware clauses
+
+Use a `HandlingEvent` predicate when handling depends on the current attempt, execution
+properties, or strategy position. `Attempt` is zero-based for retry and hedging, and zero for
+circuit breakers and fallbacks.
+
+```csharp
+var isRead = new KevlarKey<bool>("is-read");
+var contextual = Shield
+    .When((HandlingEvent handling) =>
+        handling.Exception is TimeoutExceededException
+        && handling.Attempt < 2
+        && handling.Context.Properties.GetOrDefault(isRead))
+    .Retry(3, Backoff.None);
+
+await contextual.ExecuteWithContextAsync(
+    isRead,
+    static (key, properties) => properties.Set(key, true),
+    static (_, _) => ValueTask.FromException(
+        new TimeoutExceededException(TimeSpan.FromSeconds(1))),
+    cancellationToken);
+```
+
+On `Shield<TResult>`, context-aware predicates receive `HandlingEvent<TResult>`. Its typed
+`Outcome` exposes either the exception or result without boxing. Use the
+`HandlesExceptionWithContext` and `HandlesResultWithContext` option properties for a local
+per-strategy override. A context-aware predicate that throws is reported through `Trace` and treated as not
+handled, so it cannot replace the execution's real outcome.
+
+## Clauses are ambient
+
+A clause applies to the strategy it is attached to *and* to every reactive strategy chained after
+it, until you write a new clause, call `WhenAnyError()`, or compose with `Wrap`/`Compose`:
+
+<!-- doc-test-ignore: Uses an ellipsis for the application-specific fallback implementation. -->
+```csharp
+Shield
+    .When<HttpRequestException>()      // clause #1
+    .Retry(3)                            //   ← uses clause #1
+    .CircuitBreaker(consecutiveFailures: 5, breakDuration: breakDuration)    //   ← also clause #1
+    .When<TimeoutExceededException>()  // clause #2 replaces #1 from here on
+    .Fallback(...);                      //   ← uses clause #2
+```
+
+This is why most chains only need one clause, written once at the top — and why you never repeat a `ShouldHandle` predicate per strategy like in Polly v8.
+
+A clause that never reaches a reactive strategy does nothing at all. The optional analyzer reports that as [`KEV007`](analyzers.md#kev007-dead-handling-clause). It also marks the strategies that *inherit* a clause, rather than declaring one, as the informational hint [`KEV009`](analyzers.md#kev009-inherited-handling-clause), so the span above is visible in the editor.
+
+### Reset to default handling
+
+Call `WhenAnyError()` to clear the ambient clause. Reactive strategies chained after it return to
+Kevlar's default handling: ordinary exceptions, excluding cancellation, Kevlar's fail-fast
+rejections, and fatal runtime failures.
+
+```csharp
+var shield = Shield
+    .When<HttpRequestException>()
+    .Retry(3)                                      // handles HttpRequestException only
+    .WhenAnyError()
+    .CircuitBreaker(consecutiveFailures: 5, breakDuration: TimeSpan.FromSeconds(30)); // handles ordinary exceptions
+```
+
+`WhenAnyError()` preserves existing strategies, the shield name, and its `TimeProvider`; it only changes handling for reactive strategies added afterwards. It is available on both `Shield` and `Shield<T>`.
+
 ## Per-strategy overrides
 
 Use an options predicate when one reactive strategy needs different handling without changing the
@@ -202,7 +266,9 @@ var shield = Shield.When<HttpRequestException>()
     .Use(clause => new RetryOnceStrategy(clause));
 ```
 
-The factory runs once and receives a `HandlingClause`. Call `clause.ShouldHandle(in outcome)` inside the strategy so exception and result rules stay aligned with the shield. See [Custom Strategies](custom-strategies.md#consume-handling-clauses) for a complete implementation.
+The factory runs once and receives a `HandlingClause`. Call its context-aware `ShouldHandle`
+overload inside the strategy so exception and result rules stay aligned with the shield. See
+[Custom Strategies](custom-strategies.md#consume-handling-clauses) for a complete implementation.
 
 :::info Lifting preserves clauses; composition seals them
 `shield.For<T>()`, `WithName(...)`, and `WithTimeProvider(...)` are same-chain copies, so they

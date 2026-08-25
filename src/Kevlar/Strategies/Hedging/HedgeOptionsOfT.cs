@@ -12,6 +12,9 @@ public sealed class HedgeOptions<TResult>
     /// <inheritdoc cref="HedgeOptions.HandlesException"/>
     public Func<Exception, bool>? HandlesException { get; set; }
 
+    /// <summary>Locally handles exceptions using the typed outcome and execution context.</summary>
+    public Func<HandlingEvent<TResult>, bool>? HandlesExceptionWithContext { get; set; }
+
     /// <summary>
     /// Setting this — or <see cref="HandlesException"/> — makes this hedging strategy
     /// ignore the ambient <c>When…</c> handling clause; this predicate then selects the results it
@@ -25,8 +28,14 @@ public sealed class HedgeOptions<TResult>
     /// <seealso cref="HandlingClause"/>
     public Func<TResult, bool>? HandlesResult { get; set; }
 
+    /// <summary>Locally handles results using the typed outcome and execution context.</summary>
+    public Func<HandlingEvent<TResult>, bool>? HandlesResultWithContext { get; set; }
+
     internal bool HasHandlingOverride =>
-        HandlesException is not null || HandlesResult is not null;
+        HandlesException is not null
+        || HandlesResult is not null
+        || HandlesExceptionWithContext is not null
+        || HandlesResultWithContext is not null;
 
     /// <inheritdoc cref="HedgeOptions.MaxAttempts"/>
     public int MaxAttempts { get; set; } = 2;

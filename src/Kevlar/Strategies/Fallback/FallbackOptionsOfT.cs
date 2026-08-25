@@ -23,6 +23,9 @@ public sealed class FallbackOptions<TResult>
     /// <seealso cref="HandlingClause"/>
     public Func<Exception, bool>? HandlesException { get; set; }
 
+    /// <summary>Locally handles exceptions using the typed outcome and execution context.</summary>
+    public Func<HandlingEvent<TResult>, bool>? HandlesExceptionWithContext { get; set; }
+
     /// <summary>
     /// Setting this — or <see cref="HandlesException"/> — makes this fallback ignore the ambient
     /// <c>When…</c> handling clause; this predicate then selects the results it handles.
@@ -34,6 +37,15 @@ public sealed class FallbackOptions<TResult>
     /// </remarks>
     /// <seealso cref="HandlingClause"/>
     public Func<TResult, bool>? HandlesResult { get; set; }
+
+    /// <summary>Locally handles results using the typed outcome and execution context.</summary>
+    public Func<HandlingEvent<TResult>, bool>? HandlesResultWithContext { get; set; }
+
+    internal bool HasHandlingOverride =>
+        HandlesException is not null
+        || HandlesResult is not null
+        || HandlesExceptionWithContext is not null
+        || HandlesResultWithContext is not null;
 
     /// <summary>Invoked synchronously before the recovery factory, with the typed handled outcome.</summary>
     public Action<FallbackEvent<TResult>>? OnFallback { get; set; }

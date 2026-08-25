@@ -71,10 +71,20 @@ public sealed class Shield<TResult>
         => new ShieldBuilder<TResult>(this).Or(predicate);
 
     /// <summary>Starts a handling clause for exceptions matching <paramref name="predicate"/>. Use <see cref="WhenAnyError"/> to return to default handling.</summary>
+    [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
     public ShieldBuilder<TResult> When(Func<Exception, bool> predicate) => new ShieldBuilder<TResult>(this).Or(predicate);
 
+    /// <summary>Starts a handling clause using the typed outcome and active execution context.</summary>
+    public ShieldBuilder<TResult> When(Func<HandlingEvent<TResult>, bool> predicate) =>
+        new ShieldBuilder<TResult>(this).Or(predicate);
+
     /// <summary>Starts a handling clause for results matching <paramref name="predicate"/>. Use <see cref="WhenAnyError"/> to return to default handling.</summary>
+    [System.Runtime.CompilerServices.OverloadResolutionPriority(1)]
     public ShieldBuilder<TResult> WhenResult(Func<TResult, bool> predicate) => new ShieldBuilder<TResult>(this).OrResult(predicate);
+
+    /// <summary>Starts a result handling clause using the typed outcome and active execution context.</summary>
+    public ShieldBuilder<TResult> WhenResult(Func<HandlingEvent<TResult>, bool> predicate) =>
+        new ShieldBuilder<TResult>(this).OrResult(predicate);
 
     /// <summary>Starts a handling clause for results equal to <paramref name="result"/>. Use <see cref="WhenAnyError"/> to return to default handling.</summary>
     public ShieldBuilder<TResult> WhenResult(TResult result) => new ShieldBuilder<TResult>(this).OrResult(result);
@@ -132,7 +142,12 @@ public sealed class Shield<TResult>
         Throw.IfNull(configure, nameof(configure));
         var options = new RetryOptions<TResult>();
         configure(options);
-        var judge = HandlingOverride.Resolve(options.HandlesException, options.HandlesResult, JudgeOrDefault);
+        var judge = HandlingOverride.Resolve(
+            options.HandlesException,
+            options.HandlesResult,
+            options.HandlesExceptionWithContext,
+            options.HandlesResultWithContext,
+            JudgeOrDefault);
         return Append(RetryStrategy.Create(options, judge));
     }
 
@@ -176,7 +191,12 @@ public sealed class Shield<TResult>
         Throw.IfNull(configure, nameof(configure));
         var options = new CircuitBreakerOptions<TResult>();
         configure(options);
-        var judge = HandlingOverride.Resolve(options.HandlesException, options.HandlesResult, JudgeOrDefault);
+        var judge = HandlingOverride.Resolve(
+            options.HandlesException,
+            options.HandlesResult,
+            options.HandlesExceptionWithContext,
+            options.HandlesResultWithContext,
+            JudgeOrDefault);
         return Append(CircuitBreakerStrategy.Create(options, judge));
     }
 
@@ -225,7 +245,12 @@ public sealed class Shield<TResult>
         Throw.IfNull(configure, nameof(configure));
         var options = new HedgeOptions<TResult>();
         configure(options);
-        var judge = HandlingOverride.Resolve(options.HandlesException, options.HandlesResult, JudgeOrDefault);
+        var judge = HandlingOverride.Resolve(
+            options.HandlesException,
+            options.HandlesResult,
+            options.HandlesExceptionWithContext,
+            options.HandlesResultWithContext,
+            JudgeOrDefault);
         return Append(HedgingStrategy.Create(options, judge));
     }
 
@@ -240,13 +265,18 @@ public sealed class Shield<TResult>
         Throw.IfNull(configure, nameof(configure));
         var options = new FallbackOptions<TResult>();
         configure(options);
-        var judge = HandlingOverride.Resolve(options.HandlesException, options.HandlesResult, JudgeOrDefault);
+        var judge = HandlingOverride.Resolve(
+            options.HandlesException,
+            options.HandlesResult,
+            options.HandlesExceptionWithContext,
+            options.HandlesResultWithContext,
+            JudgeOrDefault);
         return Append(new FallbackStrategy<TResult>(
             (_, _) => new ValueTask<TResult>(fallbackValue),
             judge,
             options.OnFallback,
             options.OnFallbackAsync,
-            options.HandlesException is not null || options.HandlesResult is not null));
+            options.HasHandlingOverride));
     }
 
     /// <summary>Replaces handled outcomes with the result of <paramref name="fallback"/>.</summary>
@@ -266,13 +296,18 @@ public sealed class Shield<TResult>
         Throw.IfNull(configure, nameof(configure));
         var options = new FallbackOptions<TResult>();
         configure(options);
-        var judge = HandlingOverride.Resolve(options.HandlesException, options.HandlesResult, JudgeOrDefault);
+        var judge = HandlingOverride.Resolve(
+            options.HandlesException,
+            options.HandlesResult,
+            options.HandlesExceptionWithContext,
+            options.HandlesResultWithContext,
+            JudgeOrDefault);
         return Append(new FallbackStrategy<TResult>(
             (_, context) => fallback(context.CancellationToken),
             judge,
             options.OnFallback,
             options.OnFallbackAsync,
-            options.HandlesException is not null || options.HandlesResult is not null));
+            options.HasHandlingOverride));
     }
 
     /// <summary>Replaces handled outcomes with the result of <paramref name="fallback"/>, which receives the handled outcome.</summary>
@@ -295,13 +330,18 @@ public sealed class Shield<TResult>
         Throw.IfNull(configure, nameof(configure));
         var options = new FallbackOptions<TResult>();
         configure(options);
-        var judge = HandlingOverride.Resolve(options.HandlesException, options.HandlesResult, JudgeOrDefault);
+        var judge = HandlingOverride.Resolve(
+            options.HandlesException,
+            options.HandlesResult,
+            options.HandlesExceptionWithContext,
+            options.HandlesResultWithContext,
+            JudgeOrDefault);
         return Append(new FallbackStrategy<TResult>(
             (outcome, context) => fallback(outcome, context.CancellationToken),
             judge,
             options.OnFallback,
             options.OnFallbackAsync,
-            options.HandlesException is not null || options.HandlesResult is not null));
+            options.HasHandlingOverride));
     }
 
     /// <summary>Appends a custom <see cref="Strategy"/> implementation to the pipeline.</summary>

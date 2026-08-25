@@ -522,7 +522,7 @@ public class NewApiTests
     }
 
     [Test]
-    public async Task Or_Is_The_Only_Predicate_Continuation_On_The_Builders()
+    public async Task Or_Exposes_Simple_And_Context_Aware_Predicate_Continuations()
     {
         foreach (var builderType in new[] { typeof(ShieldBuilder), typeof(ShieldBuilder<int>) })
         {
@@ -532,10 +532,16 @@ public class NewApiTests
 
             await Assert.That(declared.Any(static method => method.Name == "OrWhen")).IsFalse();
 
-            var predicateContinuation = declared
-                .Single(static method => method.Name == "Or" && !method.IsGenericMethodDefinition);
-            await Assert.That(predicateContinuation.GetParameters().Single().ParameterType)
-                .IsEqualTo(typeof(Func<Exception, bool>));
+            var predicateContinuations = declared
+                .Where(static method => method.Name == "Or" && !method.IsGenericMethodDefinition)
+                .Select(static method => method.GetParameters().Single().ParameterType)
+                .ToArray();
+            var contextType = builderType == typeof(ShieldBuilder)
+                ? typeof(Func<HandlingEvent, bool>)
+                : typeof(Func<HandlingEvent<int>, bool>);
+
+            await Assert.That(predicateContinuations)
+                .IsEquivalentTo([typeof(Func<Exception, bool>), contextType]);
         }
     }
 

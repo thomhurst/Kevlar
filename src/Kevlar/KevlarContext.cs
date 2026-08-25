@@ -26,6 +26,7 @@ public sealed class KevlarContext
 
     private CancellationToken _cancellationToken;
     private bool _isSynchronous;
+    private int _strategyIndex;
     private string? _shieldName;
     private TimeProvider _timeProvider = TimeProvider.System;
 
@@ -77,7 +78,20 @@ public sealed class KevlarContext
         internal set => _shieldName = value;
     }
 
-    internal int StrategyIndex { get; set; }
+    /// <summary>
+    /// The zero-based index of the most recently entered strategy, or -1 before the first strategy.
+    /// A strategy should capture this before invoking a continuation because inner strategies update it.
+    /// </summary>
+    public int StrategyIndex
+    {
+        get
+        {
+            ThrowIfReturnedToPool();
+            return _strategyIndex;
+        }
+
+        internal set => _strategyIndex = value;
+    }
 
     /// <summary>The time provider used for delays, timeouts and time-window calculations.</summary>
     public TimeProvider TimeProvider
