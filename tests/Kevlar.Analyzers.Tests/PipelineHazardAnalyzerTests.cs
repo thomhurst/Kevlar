@@ -1442,6 +1442,36 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Inspects_Member_Aliases_In_Async_Instance_Methods()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = item;
+                        _ = AuditStoredAsync();
+                    });
+
+                private async Task AuditStoredAsync()
+                {
+                    var retained = this._event;
+                    await Task.Yield();
+                    Console.WriteLine(retained.Context.ShieldName);
+                }
+            }
+            """);
+
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
     public async Task KEV014_Flags_Pooled_Event_Property_In_Deferred_Work()
     {
         var diagnostics = await AnalyzeSourceAsync("""

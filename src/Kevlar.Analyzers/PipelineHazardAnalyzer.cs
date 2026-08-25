@@ -521,25 +521,50 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     body,
                     semanticModel,
                     context.CancellationToken);
+                var firstAwait = awaits.Min(static awaitExpression => awaitExpression.SpanStart);
+                var retainedNames = new HashSet<string>(StringComparer.Ordinal);
+                var retainedSymbols = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
                 foreach (var identifier in nodes.OfType<IdentifierNameSyntax>()
                              .Where(identifier => IsRuntimeValueReference(identifier)))
                 {
-                    var type = semanticModel.GetSymbolInfo(identifier, context.CancellationToken).Symbol
-                        switch
-                        {
-                            IFieldSymbol field => field.Type,
-                            IPropertySymbol property => property.Type,
-                            _ => null,
-                        };
-                    if (ContainsEventContextReference(type, knownTypes)
-                        && awaits.Any(awaitExpression => CanReachAfterSuspension(
-                            awaitExpression,
-                            identifier,
-                            controlFlowGraph)))
+                    var symbol = semanticModel.GetSymbolInfo(
+                        identifier,
+                        context.CancellationToken).Symbol;
+                    var type = symbol switch
                     {
-                        capturedContext = identifier;
-                        return true;
+                        IFieldSymbol field => field.Type,
+                        IPropertySymbol property => property.Type,
+                        _ => null,
+                    };
+                    if (symbol is not null && ContainsEventContextReference(type, knownTypes))
+                    {
+                        retainedSymbols.Add(symbol);
                     }
+                }
+
+                CollectRetainedAliases(
+                    nodes,
+                    firstAwait,
+                    body,
+                    retainedNames,
+                    retainedSymbols,
+                    semanticModel,
+                    context.CancellationToken);
+                foreach (var identifier in nodes.OfType<IdentifierNameSyntax>()
+                             .Where(identifier => IsRuntimeValueReference(identifier)
+                                 && IsRetainedReference(
+                                     identifier,
+                                     retainedNames,
+                                     retainedSymbols,
+                                     semanticModel,
+                                     context.CancellationToken)
+                                 && awaits.Any(awaitExpression => CanReachAfterSuspension(
+                                     awaitExpression,
+                                     identifier,
+                                     controlFlowGraph))))
+                {
+                    capturedContext = identifier;
+                    return true;
                 }
             }
         }
@@ -673,55 +698,14 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        foreach (var alias in nodes
-                     .Where(node => node.SpanStart < firstAwait
-                         && node is VariableDeclaratorSyntax or AssignmentExpressionSyntax)
-                     .OrderBy(static node => node.SpanStart))
-        {
-            var (target, name, value) = alias switch
-            {
-                VariableDeclaratorSyntax declarator =>
-                    (semanticModel?.GetDeclaredSymbol(declarator, cancellationToken),
-                        declarator.Identifier.ValueText,
-                        declarator.Initializer?.Value),
-                AssignmentExpressionSyntax assignment
-                    when assignment.IsKind(SyntaxKind.SimpleAssignmentExpression) =>
-                    (semanticModel?.GetSymbolInfo(assignment.Left, cancellationToken).Symbol,
-                        GetAssignedName(assignment.Left),
-                        assignment.Right),
-                _ => (null, null, null),
-            };
-            if (name is null)
-            {
-                continue;
-            }
-
-            if (value is not null
-                && IsRetainedAliasExpression(
-                    value,
-                    retainedNames,
-                    retainedSymbols,
-                    semanticModel,
-                    cancellationToken))
-            {
-                retainedNames.Add(name);
-                if (target is not null)
-                {
-                    retainedSymbols.Add(target);
-                }
-            }
-            else if (IsUnconditionalAliasWrite(alias, body))
-            {
-                if (target is not null)
-                {
-                    retainedSymbols.Remove(target);
-                }
-                else
-                {
-                    retainedNames.Remove(name);
-                }
-            }
-        }
+        CollectRetainedAliases(
+            nodes,
+            firstAwait,
+            body,
+            retainedNames,
+            retainedSymbols,
+            semanticModel,
+            cancellationToken);
 
         foreach (var identifier in nodes.OfType<IdentifierNameSyntax>()
                      .Where(identifier => IsRetainedReference(
@@ -781,6 +765,66 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         capturedContext = null!;
         return false;
+    }
+
+    private static void CollectRetainedAliases(
+        SyntaxNode[] nodes,
+        int firstAwait,
+        SyntaxNode body,
+        HashSet<string> retainedNames,
+        HashSet<ISymbol> retainedSymbols,
+        SemanticModel? semanticModel,
+        CancellationToken cancellationToken)
+    {
+        foreach (var alias in nodes
+                     .Where(node => node.SpanStart < firstAwait
+                         && node is VariableDeclaratorSyntax or AssignmentExpressionSyntax)
+                     .OrderBy(static node => node.SpanStart))
+        {
+            var (target, name, value) = alias switch
+            {
+                VariableDeclaratorSyntax declarator =>
+                    (semanticModel?.GetDeclaredSymbol(declarator, cancellationToken),
+                        declarator.Identifier.ValueText,
+                        declarator.Initializer?.Value),
+                AssignmentExpressionSyntax assignment
+                    when assignment.IsKind(SyntaxKind.SimpleAssignmentExpression) =>
+                    (semanticModel?.GetSymbolInfo(assignment.Left, cancellationToken).Symbol,
+                        GetAssignedName(assignment.Left),
+                        assignment.Right),
+                _ => (null, null, null),
+            };
+            if (name is null)
+            {
+                continue;
+            }
+
+            if (value is not null
+                && IsRetainedAliasExpression(
+                    value,
+                    retainedNames,
+                    retainedSymbols,
+                    semanticModel,
+                    cancellationToken))
+            {
+                retainedNames.Add(name);
+                if (target is not null)
+                {
+                    retainedSymbols.Add(target);
+                }
+            }
+            else if (IsUnconditionalAliasWrite(alias, body))
+            {
+                if (target is not null)
+                {
+                    retainedSymbols.Remove(target);
+                }
+                else
+                {
+                    retainedNames.Remove(name);
+                }
+            }
+        }
     }
 
     private static bool TryFindRetainedContextInLocalFunction(
@@ -1130,6 +1174,13 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             retainedSymbols,
             semanticModel,
             cancellationToken),
+        MemberAccessExpressionSyntax { Name: IdentifierNameSyntax identifier }
+            when IsRetainedReference(
+                identifier,
+                retainedNames,
+                retainedSymbols,
+                semanticModel,
+                cancellationToken) => true,
         MemberAccessExpressionSyntax memberAccess
             when memberAccess.Name.Identifier.ValueText is "Context" or "Properties" =>
             IsRetainedAliasExpression(
