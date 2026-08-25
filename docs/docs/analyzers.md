@@ -4,11 +4,8 @@ sidebar_position: 13
 
 # Analyzers
 
-Install the optional analyzer package in each project that builds Kevlar pipelines:
-
-```bash
-dotnet add package Kevlar.Analyzers
-```
+The `Kevlar` package includes these analyzers automatically. No separate analyzer package is
+required.
 
 The analyzers report only hazards that are provable from the current expression or a stable local
 initializer. They do not guess what a factory method returns or follow a local that is reassigned.
@@ -28,6 +25,8 @@ Generated code is ignored.
 | `KEV010` | Info | default-result clause is written for a value type, whose default is usually valid |
 | `KEV011` | Info | reactive strategy relies on implicit default handling, which includes programming errors |
 | `KEV012` | Warning | asynchronous strategy configuration is passed to synchronous `Execute` |
+| `KEV013` | Warning | asynchronous work is assigned to a synchronous strategy callback |
+| `KEV014` | Warning | a pooled event context is captured by deferred work |
 
 ## KEV001: ignored execution cancellation
 
@@ -378,6 +377,55 @@ factories, so a custom extension that merely inspects genuine Kevlar options rem
 The analyzer does not guess through fields, parameters, local delegates, or opaque factories; the
 runtime check still protects those cases. `ExecuteAsync` and configurations containing only
 synchronous callbacks remain clean.
+
+## KEV013: asynchronous work in a synchronous callback
+
+Synchronous callback properties such as `OnRetry` accept `Action<TEvent>`. An `async` lambda
+assigned there becomes `async void`: the strategy cannot await it, callback failures escape the
+pipeline, and its pooled event context may expire while the lambda is suspended.
+
+```csharp
+static ValueTask WriteAuditAsync(int retryNumber) => ValueTask.CompletedTask;
+
+#pragma warning disable KEV013 // Deliberately demonstrates the unsafe form.
+var shield = Shield.Retry(options =>
+{
+    options.OnRetry = async item => await WriteAuditAsync(item.RetryNumber);
+    //                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ KEV013
+});
+#pragma warning restore KEV013
+```
+
+Use the matching asynchronous property so Kevlar awaits the work and keeps the event context valid:
+
+```csharp
+static ValueTask WriteAuditAsync(int retryNumber) => ValueTask.CompletedTask;
+
+var shield = Shield.Retry(options =>
+{
+    options.OnRetryAsync = async item => await WriteAuditAsync(item.RetryNumber);
+});
+```
+
+`KEV013` also reports expression lambdas that discard a `Task` or `ValueTask`. Synchronous lambdas
+and delegates assigned to `OnRetryAsync`, `OnTimeoutAsync`, and the other `…Async` hooks are valid.
+For async lambdas whose callback has an `…Async` twin, the code fix changes the assigned property.
+
+## KEV014: deferred event-context capture
+
+Scheduling work from a callback can outlive the pooled event context. Copy required values first:
+
+```csharp
+var shield = Shield.Retry(options => options.OnRetry = item =>
+{
+    var shieldName = item.Context.ShieldName;
+    _ = Task.Run(() => Console.WriteLine(shieldName));
+});
+```
+
+`KEV014` reports `Task.Run` and `ThreadPool.QueueUserWorkItem` calls that capture an event's
+`Context` or `Properties`. Deferred access can race with context pooling and observe state from a
+later execution, so this diagnostic is a warning.
 
 ## Suppression
 

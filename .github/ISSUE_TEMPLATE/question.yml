@@ -9,7 +9,6 @@ body:
       label: Package
       options:
         - Kevlar
-        - Kevlar.Analyzers
         - Kevlar.Chaos
         - Kevlar.Extensions.DependencyInjection
         - Kevlar.Extensions.Grpc

@@ -12,6 +12,7 @@
     <Project Path="src/Kevlar.Extensions.RateLimiting/Kevlar.Extensions.RateLimiting.csproj" />
     <Project Path="src/Kevlar/Kevlar.csproj" />
     <Project Path="src/Kevlar.Analyzers/Kevlar.Analyzers.csproj" />
+    <Project Path="src/Kevlar.Analyzers.CodeFixes/Kevlar.Analyzers.CodeFixes.csproj" />
     <Project Path="src/Kevlar.Testing/Kevlar.Testing.csproj" />
   </Folder>
   <Folder Name="/tests/">

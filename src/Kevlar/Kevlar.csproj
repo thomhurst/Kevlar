@@ -20,6 +20,34 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Kevlar.Analyzers\Kevlar.Analyzers.csproj"
+                      ReferenceOutputAssembly="false"
+                      PrivateAssets="all" />
+    <ProjectReference Include="..\Kevlar.Analyzers.CodeFixes\Kevlar.Analyzers.CodeFixes.csproj"
+                      ReferenceOutputAssembly="false"
+                      PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="$(ArtifactsPath)\bin\Kevlar.Analyzers\$(Configuration.ToLowerInvariant())\Kevlar.Analyzers.dll"
+          Pack="true"
+          PackagePath="analyzers/dotnet/cs"
+          Visible="false" />
+    <None Include="$(ArtifactsPath)\bin\Kevlar.Analyzers\$(Configuration.ToLowerInvariant())\Kevlar.Analyzers.pdb"
+          Pack="true"
+          PackagePath="analyzers/dotnet/cs"
+          Visible="false" />
+    <None Include="$(ArtifactsPath)\bin\Kevlar.Analyzers.CodeFixes\$(Configuration.ToLowerInvariant())\Kevlar.Analyzers.CodeFixes.dll"
+          Pack="true"
+          PackagePath="analyzers/dotnet/cs"
+          Visible="false" />
+    <None Include="$(ArtifactsPath)\bin\Kevlar.Analyzers.CodeFixes\$(Configuration.ToLowerInvariant())\Kevlar.Analyzers.CodeFixes.pdb"
+          Pack="true"
+          PackagePath="analyzers/dotnet/cs"
+          Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="Kevlar.Tests" />
     <InternalsVisibleTo Include="Kevlar.Testing" />
     <InternalsVisibleTo Include="Kevlar.Extensions.Http" />

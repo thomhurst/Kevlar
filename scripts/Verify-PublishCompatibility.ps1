@@ -172,10 +172,12 @@ var retryAttempts = 0;
 var retried = await Shield.Retry(1, Backoff.None).ExecuteAsync(_ =>
     ++retryAttempts == 1 ? throw new InvalidOperationException() : new ValueTask<int>(42));
 var timed = await Shield.Timeout(TimeSpan.FromSeconds(1)).ExecuteAsync(static _ => new ValueTask<int>(42));
-var broken = await Shield.CircuitBreaker(2, TimeSpan.FromSeconds(1)).ExecuteAsync(static _ => new ValueTask<int>(42));
-var limited = await Shield.RateLimit(1, TimeSpan.FromSeconds(1)).ExecuteAsync(static _ => new ValueTask<int>(42));
-var isolated = await Shield.ConcurrencyLimit(1).ExecuteAsync(static _ => new ValueTask<int>(42));
-var hedged = await Shield.Hedge(2, TimeSpan.FromSeconds(1)).ExecuteAsync(static _ => new ValueTask<int>(42));
+var broken = await CreateCircuitBreaker().ExecuteAsync(static _ => new ValueTask<int>(42));
+var limited = await CreateRateLimit().ExecuteAsync(static _ => new ValueTask<int>(42));
+var isolated = await CreateConcurrencyLimit().ExecuteAsync(static _ => new ValueTask<int>(42));
+var hedged = await Shield.For<int>()
+    .Hedge(maxHedgedAttempts: 2, delay: TimeSpan.FromSeconds(1))
+    .ExecuteAsync(static _ => new ValueTask<int>(42));
 var fallback = await Shield.For<int>().When<InvalidOperationException>().FallbackTo(42)
     .ExecuteAsync<int>(static _ => throw new InvalidOperationException());
 using var frameworkLimiter = new ConcurrencyLimiter(new ConcurrencyLimiterOptions
@@ -184,7 +186,7 @@ using var frameworkLimiter = new ConcurrencyLimiter(new ConcurrencyLimiterOption
     QueueLimit = 0,
     QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
 });
-var adapted = await Shield.Empty.UseRateLimiter(frameworkLimiter)
+var adapted = await CreateRateLimitedShield(frameworkLimiter)
     .ExecuteAsync(static _ => new ValueTask<int>(42));
 if (retried + timed + broken + limited + isolated + hedged + fallback + adapted != 336)
 {
@@ -228,6 +230,18 @@ if (response.StatusCode != HttpStatusCode.OK)
 }
 
 Console.WriteLine("Kevlar publish compatibility passed.");
+
+static Shield CreateCircuitBreaker() =>
+    Shield.CircuitBreaker(consecutiveFailures: 2, breakDuration: TimeSpan.FromSeconds(1));
+
+static Shield CreateRateLimit() =>
+    Shield.RateLimit(1, perWindow: TimeSpan.FromSeconds(1));
+
+static Shield CreateConcurrencyLimit() =>
+    Shield.ConcurrencyLimit(1);
+
+static Shield CreateRateLimitedShield(RateLimiter limiter) =>
+    Shield.Empty.UseRateLimiter(limiter);
 
 file sealed class StubHandler : HttpMessageHandler
 {

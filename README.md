@@ -68,7 +68,7 @@ stateful strategies: calls made through the same shield share its circuit breake
   [BenchmarkDotNet results](https://thomhurst.github.io/Kevlar/docs/benchmarks).
 - **Production concerns are built in.** Shields support `TimeProvider`, describe their own pipeline,
   publish metrics through the `Kevlar` meter, and can emit structured `ILogger` events through
-  `Kevlar.Extensions.Logging`. An optional analyzer catches cancellation and pipeline mistakes at
+  `Kevlar.Extensions.Logging`. Built-in analyzers catch cancellation and pipeline mistakes at
   compile time.
 
 The core package targets `netstandard2.0`, `net8.0`, and `net10.0`.
@@ -154,14 +154,13 @@ configuration-bound shields and `IKevlarRegistry`.
 
 | Package | What it adds |
 |---|---|
-| [`Kevlar`](https://www.nuget.org/packages/Kevlar) | Core strategies and the Shield API |
+| [`Kevlar`](https://www.nuget.org/packages/Kevlar) | Core strategies, Shield API, analyzers, and code fixes |
 | [`Kevlar.Chaos`](https://www.nuget.org/packages/Kevlar.Chaos) | Controlled latency, faults, outcomes and custom behaviour |
 | [`Kevlar.Extensions.DependencyInjection`](https://www.nuget.org/packages/Kevlar.Extensions.DependencyInjection) | Named and configuration-bound shields for Microsoft DI |
 | [`Kevlar.Extensions.Http`](https://www.nuget.org/packages/Kevlar.Extensions.Http) | `HttpClientFactory` integration, request replay and transient-fault handling |
 | [`Kevlar.Extensions.Logging`](https://www.nuget.org/packages/Kevlar.Extensions.Logging) | Structured `ILogger` events for every built-in strategy |
 | [`Kevlar.Extensions.Grpc`](https://www.nuget.org/packages/Kevlar.Extensions.Grpc) | gRPC client resilience for unary and streaming calls |
 | [`Kevlar.Extensions.RateLimiting`](https://www.nuget.org/packages/Kevlar.Extensions.RateLimiting) | Adapters for `System.Threading.RateLimiting` and custom leases |
-| [`Kevlar.Analyzers`](https://www.nuget.org/packages/Kevlar.Analyzers) | Compile-time checks for common resilience mistakes |
 | [`Kevlar.Testing`](https://www.nuget.org/packages/Kevlar.Testing) | Pipeline assertions, state snapshots and deterministic time helpers |
 
 ## Where next?

@@ -130,6 +130,26 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         isEnabledByDefault: true,
         description: "Asynchronous callbacks and generators can capture a SynchronizationContext. Kevlar rejects synchronous Execute for statically known asynchronous strategy configuration instead of blocking the calling thread.");
 
+    /// <summary>The KEV013 rule.</summary>
+    public static readonly DiagnosticDescriptor AsyncWorkInSynchronousCallbackRule = new(
+        id: "KEV013",
+        title: "Asynchronous work is assigned to a synchronous callback",
+        messageFormat: "'{0}' is synchronous, so this asynchronous delegate becomes async void or discards its task. Use {1} instead.",
+        category: "Reliability",
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "Kevlar's synchronous callback properties cannot await asynchronous work. Async lambdas become async void, and task-returning expression lambdas discard the task, allowing pooled event context to outlive its execution.");
+
+    /// <summary>The KEV014 rule.</summary>
+    public static readonly DiagnosticDescriptor DeferredContextCaptureRule = new(
+        id: "KEV014",
+        title: "Pooled event context is captured by deferred work",
+        messageFormat: "This deferred work captures a pooled event context. Copy the values it needs before scheduling the work.",
+        category: "Reliability",
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "Task.Run and ThreadPool work can execute after a strategy callback completes. Capturing an event context there can observe state from a later execution when the pooled context is reused.");
+
     /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
         ImmutableArray.Create(
@@ -143,7 +163,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             InheritedHandlingClauseRule,
             DefaultResultClauseOnValueTypeRule,
             ImplicitDefaultHandlingRule,
-            AsyncConfigurationWithSynchronousExecuteRule);
+            AsyncConfigurationWithSynchronousExecuteRule,
+            AsyncWorkInSynchronousCallbackRule,
+            DeferredContextCaptureRule);
 
     /// <inheritdoc />
     public override void Initialize(AnalysisContext context)
@@ -156,12 +178,520 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             compilationContext.RegisterOperationAction(
                 context => AnalyzeInvocation(context, knownTypes),
                 OperationKind.Invocation);
+            compilationContext.RegisterSyntaxNodeAction(
+                context => AnalyzeCallbackAssignment(context, knownTypes),
+                SyntaxKind.SimpleAssignmentExpression,
+                SyntaxKind.AddAssignmentExpression,
+                SyntaxKind.CoalesceAssignmentExpression);
         });
+    }
+
+    private static void AnalyzeCallbackAssignment(
+        SyntaxNodeAnalysisContext context,
+        KnownTypes knownTypes)
+    {
+        var assignment = (AssignmentExpressionSyntax)context.Node;
+        var propertyInfo = context.SemanticModel.GetSymbolInfo(
+            assignment.Left,
+            context.CancellationToken);
+        var property = propertyInfo.Symbol as IPropertySymbol
+            ?? propertyInfo.CandidateSymbols.OfType<IPropertySymbol>().FirstOrDefault();
+        if (property is null || !knownTypes.IsSynchronousCallback(property)
+            || !StartsAsynchronousWork(assignment.Right, context))
+        {
+            return;
+        }
+
+        context.ReportDiagnostic(Diagnostic.Create(
+            AsyncWorkInSynchronousCallbackRule,
+            assignment.Right.GetLocation(),
+            property.Name,
+            HasAsyncCallback(property)
+                ? $"'{property.Name}Async'"
+                : "a synchronous delegate that completes before returning"));
+
+        if (TryFindDiscardedEventContext(
+                assignment.Right,
+                context,
+                knownTypes,
+                out var capturedContext))
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                DeferredContextCaptureRule,
+                capturedContext.GetLocation()));
+        }
+    }
+
+    private static bool HasAsyncCallback(IPropertySymbol property) =>
+        property.ContainingType.GetMembers(property.Name + "Async")
+            .OfType<IPropertySymbol>()
+            .Any();
+
+    private static bool StartsAsynchronousWork(
+        ExpressionSyntax expression,
+        SyntaxNodeAnalysisContext context)
+    {
+        if (expression is ParenthesizedExpressionSyntax parenthesized)
+        {
+            return StartsAsynchronousWork(parenthesized.Expression, context);
+        }
+
+        if (expression is ConditionalExpressionSyntax conditional)
+        {
+            return StartsAsynchronousWork(conditional.WhenTrue, context)
+                || StartsAsynchronousWork(conditional.WhenFalse, context);
+        }
+
+        if (expression is BinaryExpressionSyntax coalesce
+            && coalesce.IsKind(SyntaxKind.CoalesceExpression))
+        {
+            return StartsAsynchronousWork(coalesce.Left, context)
+                || StartsAsynchronousWork(coalesce.Right, context);
+        }
+
+        if (expression is SwitchExpressionSyntax switchExpression)
+        {
+            return switchExpression.Arms.Any(arm =>
+                StartsAsynchronousWork(arm.Expression, context));
+        }
+
+        if (expression is CastExpressionSyntax cast)
+        {
+            return StartsAsynchronousWork(cast.Expression, context);
+        }
+
+        if (expression is PostfixUnaryExpressionSyntax postfix
+            && postfix.IsKind(SyntaxKind.SuppressNullableWarningExpression))
+        {
+            return StartsAsynchronousWork(postfix.Operand, context);
+        }
+
+        if (expression is BaseObjectCreationExpressionSyntax creation
+            && context.SemanticModel.GetTypeInfo(
+                creation,
+                context.CancellationToken).Type?.TypeKind == TypeKind.Delegate
+            && creation.ArgumentList is { } arguments)
+        {
+            return arguments.Arguments.Any(argument =>
+                StartsAsynchronousWork(argument.Expression, context));
+        }
+
+        if (expression is AnonymousFunctionExpressionSyntax anonymous)
+        {
+            if (!anonymous.AsyncKeyword.IsKind(SyntaxKind.None))
+            {
+                return true;
+            }
+
+            if (anonymous is LambdaExpressionSyntax { ExpressionBody: { } body })
+            {
+                return IsTaskLike(context.SemanticModel.GetTypeInfo(
+                    body,
+                    context.CancellationToken).Type)
+                    || GetCallbackInvocations(body)
+                        .Any(invocation => IsUnobservedAsyncInvocation(invocation, context));
+            }
+
+            return anonymous.Body is BlockSyntax block
+                && GetCallbackInvocations(block)
+                    .Any(invocation => IsUnobservedAsyncInvocation(invocation, context));
+        }
+
+        var symbol = context.SemanticModel.GetSymbolInfo(expression, context.CancellationToken);
+        if (symbol.Symbol is ILocalSymbol local
+            && TryGetStableLocalInitializer(
+                local,
+                context.SemanticModel,
+                context.CancellationToken,
+                expression,
+                out var initializer))
+        {
+            return StartsAsynchronousWork(initializer, context);
+        }
+
+        return symbol.Symbol is IMethodSymbol method && StartsAsynchronousWork(method)
+            || symbol.CandidateSymbols
+                .OfType<IMethodSymbol>()
+                .Any(static candidate => StartsAsynchronousWork(candidate));
+    }
+
+    private static bool StartsAsynchronousWork(IMethodSymbol method) =>
+        (method.IsAsync && method.ReturnsVoid) || IsTaskLike(method.ReturnType);
+
+    private static bool TryFindDiscardedEventContext(
+        ExpressionSyntax expression,
+        SyntaxNodeAnalysisContext context,
+        KnownTypes knownTypes,
+        out SyntaxNode capturedContext)
+    {
+        if (context.SemanticModel.GetSymbolInfo(
+                expression,
+                context.CancellationToken).Symbol is ILocalSymbol local
+            && local.Type.TypeKind == TypeKind.Delegate
+            && TryGetStableLocalInitializer(
+                local,
+                context.SemanticModel,
+                context.CancellationToken,
+                expression,
+                out var initializer))
+        {
+            return TryFindDiscardedEventContext(
+                initializer,
+                context,
+                knownTypes,
+                out capturedContext);
+        }
+
+        foreach (var anonymous in expression.DescendantNodesAndSelf()
+                     .OfType<AnonymousFunctionExpressionSyntax>()
+                     .Where(candidate => !candidate.Ancestors()
+                         .OfType<AnonymousFunctionExpressionSyntax>()
+                         .Any(ancestor => expression.Span.Contains(ancestor.Span))))
+        {
+            foreach (var invocation in GetCallbackInvocations(anonymous.Body))
+            {
+                if (!IsUnobservedAsyncInvocation(invocation, context))
+                {
+                    continue;
+                }
+
+                if (invocation.Expression is MemberAccessExpressionSyntax memberAccess
+                    && context.SemanticModel.GetSymbolInfo(
+                        invocation,
+                        context.CancellationToken).Symbol is IMethodSymbol
+                        {
+                            ReducedFrom: not null,
+                        }
+                    && TryFindEventContextExpression(
+                        memberAccess.Expression,
+                        context,
+                        knownTypes,
+                        out capturedContext))
+                {
+                    return true;
+                }
+
+                foreach (var argument in invocation.ArgumentList.Arguments)
+                {
+                    if (TryFindEventContextExpression(
+                        argument.Expression,
+                        context,
+                        knownTypes,
+                        out capturedContext))
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        capturedContext = null!;
+        return false;
+    }
+
+    private static bool TryFindEventContextExpression(
+        ExpressionSyntax expression,
+        SyntaxNodeAnalysisContext context,
+        KnownTypes knownTypes,
+        out SyntaxNode capturedContext)
+    {
+        var operation = Unwrap(context.SemanticModel.GetOperation(
+            expression,
+            context.CancellationToken));
+        if (operation is not null)
+        {
+            foreach (var candidate in RetainedValueOperations(
+                operation,
+                context.SemanticModel,
+                context.CancellationToken))
+            {
+                var unwrapped = Unwrap(candidate)!;
+                if (ContainsEventContextReference(unwrapped.Type, knownTypes))
+                {
+                    capturedContext = unwrapped.Syntax;
+                    return true;
+                }
+            }
+        }
+        else if (ContainsEventContextReference(
+            context.SemanticModel.GetTypeInfo(expression, context.CancellationToken).Type,
+            knownTypes))
+        {
+            capturedContext = expression;
+            return true;
+        }
+
+        capturedContext = null!;
+        return false;
+    }
+
+    private static IEnumerable<IOperation> RetainedValueOperations(
+        IOperation root,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        var stack = new Stack<IOperation>();
+        var visitedLocals = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+        stack.Push(root);
+        while (stack.Count > 0)
+        {
+            var current = Unwrap(stack.Pop())!;
+            yield return current;
+
+            if (current is ILocalReferenceOperation localReference
+                && visitedLocals.Add(localReference.Local)
+                && TryGetStableLocalInitializer(
+                    localReference.Local,
+                    semanticModel,
+                    cancellationToken,
+                    localReference.Syntax,
+                    out var initializer)
+                && semanticModel.GetOperation(initializer, cancellationToken) is { } initializerOperation)
+            {
+                stack.Push(initializerOperation);
+            }
+
+            if (current is IDelegateCreationOperation or IAnonymousFunctionOperation)
+            {
+                foreach (var descendant in DescendantOperations(current).Skip(1))
+                {
+                    stack.Push(descendant);
+                }
+
+                continue;
+            }
+
+            foreach (var child in GetRetainedValueParts(current))
+            {
+                stack.Push(child);
+            }
+        }
+    }
+
+    private static IEnumerable<IOperation> GetRetainedValueParts(IOperation operation)
+    {
+        switch (operation)
+        {
+            case IConditionalOperation conditional:
+                yield return conditional.WhenTrue;
+                if (conditional.WhenFalse is { } whenFalse)
+                {
+                    yield return whenFalse;
+                }
+
+                break;
+            case ICoalesceOperation coalesce:
+                yield return coalesce.Value;
+                yield return coalesce.WhenNull;
+                break;
+            case ISwitchExpressionOperation switchExpression:
+                foreach (var arm in switchExpression.Arms)
+                {
+                    yield return arm.Value;
+                }
+
+                break;
+            case IArrayCreationOperation { Initializer: { } arrayInitializer }:
+                foreach (var element in arrayInitializer.ElementValues)
+                {
+                    yield return element;
+                }
+
+                break;
+            case ITupleOperation tuple:
+                foreach (var element in tuple.Elements)
+                {
+                    yield return element;
+                }
+
+                break;
+            case IObjectCreationOperation objectCreation:
+                foreach (var argument in objectCreation.Arguments)
+                {
+                    yield return argument.Value;
+                }
+
+                if (objectCreation.Initializer is { } objectInitializer)
+                {
+                    foreach (var initializer in objectInitializer.Initializers)
+                    {
+                        if (initializer is ISimpleAssignmentOperation assignment)
+                        {
+                            yield return assignment.Value;
+                        }
+                        else if (initializer is IInvocationOperation invocation)
+                        {
+                            foreach (var argument in invocation.Arguments)
+                            {
+                                yield return argument.Value;
+                            }
+                        }
+                    }
+                }
+
+                break;
+            case IWithOperation withOperation:
+                yield return withOperation.Operand;
+                foreach (var initializer in withOperation.Initializer.Initializers)
+                {
+                    if (initializer is ISimpleAssignmentOperation assignment)
+                    {
+                        yield return assignment.Value;
+                    }
+                }
+
+                break;
+            case IAnonymousObjectCreationOperation anonymousObjectCreation:
+                foreach (var initializer in anonymousObjectCreation.Initializers)
+                {
+                    yield return initializer is ISimpleAssignmentOperation assignment
+                        ? assignment.Value
+                        : initializer;
+                }
+
+                break;
+            default:
+                if (operation.Syntax is CollectionExpressionSyntax or SpreadElementSyntax)
+                {
+                    foreach (var child in operation.ChildOperations)
+                    {
+                        yield return child;
+                    }
+                }
+
+                break;
+        }
+    }
+
+    private static IEnumerable<InvocationExpressionSyntax> GetCallbackInvocations(
+        SyntaxNode body) =>
+        body.DescendantNodesAndSelf(descendIntoChildren: static node =>
+                node is not AnonymousFunctionExpressionSyntax
+                    and not LocalFunctionStatementSyntax)
+            .OfType<InvocationExpressionSyntax>();
+
+    private static bool IsUnobservedAsyncInvocation(
+        InvocationExpressionSyntax invocation,
+        SyntaxNodeAnalysisContext context) =>
+        context.SemanticModel.GetSymbolInfo(
+            invocation,
+            context.CancellationToken).Symbol is IMethodSymbol method
+        && !IsDeferredScheduler(method)
+        && StartsAsynchronousWork(method)
+        && !IsSynchronouslyObserved(
+            invocation,
+            context.SemanticModel,
+            context.CancellationToken);
+
+    private static bool IsSynchronouslyObserved(
+        InvocationExpressionSyntax invocation,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
+    {
+        SyntaxNode current = invocation;
+        while (current.Parent is MemberAccessExpressionSyntax memberAccess
+               && memberAccess.Expression == current)
+        {
+            if (memberAccess.Parent is not InvocationExpressionSyntax consumer
+                || semanticModel.GetSymbolInfo(
+                    consumer,
+                    cancellationToken).Symbol is not IMethodSymbol method)
+            {
+                return semanticModel.GetSymbolInfo(
+                        memberAccess,
+                        cancellationToken).Symbol is IPropertySymbol
+                    {
+                        Name: "Result",
+                        ContainingType: { } resultContainingType,
+                    }
+                    && IsTaskLike(resultContainingType);
+            }
+
+            if ((method.Name == "GetResult"
+                    && consumer.ArgumentList.Arguments.Count == 0)
+                || (method.Name == "Wait"
+                    && consumer.ArgumentList.Arguments.Count == 0
+                    && method.ContainingType is { } waitContainingType
+                    && IsTaskLike(waitContainingType)))
+            {
+                return true;
+            }
+
+            if (method.Name is not ("ConfigureAwait" or "GetAwaiter"))
+            {
+                break;
+            }
+
+            current = consumer;
+        }
+
+        if (current.Ancestors()
+                .TakeWhile(static node => node is not AnonymousFunctionExpressionSyntax
+                    and not StatementSyntax)
+                .OfType<ArgumentSyntax>()
+                .FirstOrDefault() is not { } argument
+            || argument.Parent?.Parent is not InvocationExpressionSyntax consumerInvocation
+            || semanticModel.GetSymbolInfo(
+                consumerInvocation,
+                cancellationToken).Symbol is not IMethodSymbol consumerMethod
+            || !IsTaskLike(consumerMethod.ContainingType))
+        {
+            return false;
+        }
+
+        if (consumerMethod.Name == "WaitAll"
+            && consumerMethod.Parameters.Length == 1
+            && consumerMethod.Parameters[0].Type is IArrayTypeSymbol
+            {
+                ElementType: { } elementType,
+            }
+            && IsTaskLike(elementType))
+        {
+            return true;
+        }
+
+        return consumerMethod.Name == "WhenAll"
+            && IsSynchronouslyObserved(
+                consumerInvocation,
+                semanticModel,
+                cancellationToken);
+    }
+
+    private static bool IsTaskLike(ITypeSymbol? type)
+    {
+        if (type is not INamedTypeSymbol named)
+        {
+            return false;
+        }
+
+        var definition = named.OriginalDefinition.ToDisplayString();
+        return definition is "System.Threading.Tasks.Task"
+            or "System.Threading.Tasks.Task<TResult>"
+            or "System.Threading.Tasks.ValueTask"
+            or "System.Threading.Tasks.ValueTask<TResult>";
     }
 
     private static void AnalyzeInvocation(OperationAnalysisContext context, KnownTypes knownTypes)
     {
         var invocation = (IInvocationOperation)context.Operation;
+
+        if (IsDeferredScheduler(invocation.TargetMethod)
+            && (invocation.Syntax is not InvocationExpressionSyntax invocationSyntax
+                || context.Operation.SemanticModel is not { } semanticModel
+                || !IsSynchronouslyObserved(
+                    invocationSyntax,
+                    semanticModel,
+                    context.CancellationToken))
+            && TryFindCapturedEventContext(
+                invocation,
+                context,
+                knownTypes,
+                out var capturedContext))
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                DeferredContextCaptureRule,
+                capturedContext.GetLocation()));
+        }
 
         if (IsSynchronousExecute(invocation.TargetMethod, knownTypes))
         {
@@ -301,6 +831,559 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 ImplicitDefaultHandlingRule,
                 GetMethodNameLocation(invocation),
                 Normalize(invocation.TargetMethod).Name));
+        }
+    }
+
+    private static bool IsDeferredScheduler(IMethodSymbol method) =>
+        method.Name == "Run"
+            && method.ContainingType.ToDisplayString() == "System.Threading.Tasks.Task"
+        || method.Name is "QueueUserWorkItem" or "UnsafeQueueUserWorkItem"
+            && method.ContainingType.ToDisplayString() == "System.Threading.ThreadPool";
+
+    private static bool TryFindCapturedEventContext(
+        IInvocationOperation invocation,
+        OperationAnalysisContext context,
+        KnownTypes knownTypes,
+        out SyntaxNode capturedContext)
+    {
+        foreach (var argument in invocation.Arguments)
+        {
+            if (argument.Parameter?.Type.TypeKind == TypeKind.Delegate)
+            {
+                if (TryFindCapturedEventContext(
+                        argument.Value,
+                        context,
+                        knownTypes,
+                        visitedLocals: null,
+                        out capturedContext))
+                {
+                    return true;
+                }
+            }
+            else if (TryFindDeferredStateContext(
+                argument.Value,
+                context,
+                knownTypes,
+                visitedLocals: null,
+                out capturedContext))
+            {
+                return true;
+            }
+        }
+
+        capturedContext = null!;
+        return false;
+    }
+
+    private static bool TryFindDeferredStateContext(
+        IOperation operation,
+        OperationAnalysisContext context,
+        KnownTypes knownTypes,
+        HashSet<ISymbol>? visitedLocals,
+        out SyntaxNode capturedContext)
+    {
+        operation = Unwrap(operation)!;
+        if (ContainsEventContextReference(operation.Type, knownTypes))
+        {
+            capturedContext = operation.Syntax;
+            return true;
+        }
+
+        if (operation is IConditionalOperation conditional
+            && (TryFindDeferredStateContext(
+                    conditional.WhenTrue,
+                    context,
+                    knownTypes,
+                    visitedLocals,
+                    out capturedContext)
+                || conditional.WhenFalse is { } whenFalse
+                    && TryFindDeferredStateContext(
+                        whenFalse,
+                        context,
+                        knownTypes,
+                        visitedLocals,
+                        out capturedContext)))
+        {
+            return true;
+        }
+
+        if (operation is ICoalesceOperation coalesce
+            && (TryFindDeferredStateContext(
+                    coalesce.Value,
+                    context,
+                    knownTypes,
+                    visitedLocals,
+                    out capturedContext)
+                || TryFindDeferredStateContext(
+                    coalesce.WhenNull,
+                    context,
+                    knownTypes,
+                    visitedLocals,
+                    out capturedContext)))
+        {
+            return true;
+        }
+
+        if (operation is ISwitchExpressionOperation switchExpression)
+        {
+            foreach (var arm in switchExpression.Arms)
+            {
+                if (TryFindDeferredStateContext(
+                    arm.Value,
+                    context,
+                    knownTypes,
+                    visitedLocals,
+                    out capturedContext))
+                {
+                    return true;
+                }
+            }
+        }
+
+        if (operation is ILocalReferenceOperation localReference)
+        {
+            visitedLocals ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+            if (visitedLocals.Add(localReference.Local)
+                && TryGetStableInitializer(localReference, context, out var initializer)
+                && initializer is not null
+                && TryFindDeferredStateContext(
+                    initializer,
+                    context,
+                    knownTypes,
+                    visitedLocals,
+                    out capturedContext))
+            {
+                return true;
+            }
+
+            visitedLocals.Remove(localReference.Local);
+        }
+
+        if (operation is IArrayCreationOperation { Initializer: { } arrayInitializer })
+        {
+            foreach (var element in arrayInitializer.ElementValues)
+            {
+                if (TryFindDeferredStateContext(
+                    element,
+                    context,
+                    knownTypes,
+                    visitedLocals,
+                    out capturedContext))
+                {
+                    return true;
+                }
+            }
+        }
+
+        if (operation is ITupleOperation tuple)
+        {
+            foreach (var element in tuple.Elements)
+            {
+                if (TryFindDeferredStateContext(
+                    element,
+                    context,
+                    knownTypes,
+                    visitedLocals,
+                    out capturedContext))
+                {
+                    return true;
+                }
+            }
+        }
+
+        if (operation.Syntax is CollectionExpressionSyntax or SpreadElementSyntax)
+        {
+            foreach (var child in operation.ChildOperations)
+            {
+                if (TryFindDeferredStateContext(
+                    child,
+                    context,
+                    knownTypes,
+                    visitedLocals,
+                    out capturedContext))
+                {
+                    return true;
+                }
+            }
+        }
+
+        if (operation is IObjectCreationOperation objectCreation)
+        {
+            foreach (var argument in objectCreation.Arguments)
+            {
+                if (TryFindDeferredStateContext(
+                    argument.Value,
+                    context,
+                    knownTypes,
+                    visitedLocals,
+                    out capturedContext))
+                {
+                    return true;
+                }
+            }
+
+            if (objectCreation.Initializer is { } objectInitializer)
+            {
+                foreach (var initializer in objectInitializer.Initializers)
+                {
+                    if (initializer is ISimpleAssignmentOperation assignment
+                        && TryFindDeferredStateContext(
+                            assignment.Value,
+                            context,
+                            knownTypes,
+                            visitedLocals,
+                            out capturedContext))
+                    {
+                        return true;
+                    }
+
+                    if (initializer is IInvocationOperation invocation)
+                    {
+                        foreach (var argument in invocation.Arguments)
+                        {
+                            if (TryFindDeferredStateContext(
+                                argument.Value,
+                                context,
+                                knownTypes,
+                                visitedLocals,
+                                out capturedContext))
+                            {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (operation is IWithOperation withOperation)
+        {
+            if (TryFindDeferredStateContext(
+                withOperation.Operand,
+                context,
+                knownTypes,
+                visitedLocals,
+                out capturedContext))
+            {
+                return true;
+            }
+
+            foreach (var initializer in withOperation.Initializer.Initializers)
+            {
+                if (initializer is ISimpleAssignmentOperation assignment
+                    && TryFindDeferredStateContext(
+                        assignment.Value,
+                        context,
+                        knownTypes,
+                        visitedLocals,
+                        out capturedContext))
+                {
+                    return true;
+                }
+            }
+        }
+
+        if (operation is IAnonymousObjectCreationOperation anonymousObjectCreation)
+        {
+            foreach (var initializer in anonymousObjectCreation.Initializers)
+            {
+                var value = initializer is ISimpleAssignmentOperation assignment
+                    ? assignment.Value
+                    : initializer;
+                if (TryFindDeferredStateContext(
+                    value,
+                    context,
+                    knownTypes,
+                    visitedLocals,
+                    out capturedContext))
+                {
+                    return true;
+                }
+            }
+        }
+
+        capturedContext = null!;
+        return false;
+    }
+
+    private static bool ContainsEventContextReference(ITypeSymbol? type, KnownTypes knownTypes) =>
+        knownTypes.IsEventContextReference(type)
+        || knownTypes.IsEventContextContainer(type)
+        || type is IArrayTypeSymbol array
+            && ContainsEventContextReference(array.ElementType, knownTypes)
+        || type is INamedTypeSymbol named
+            && named.TypeArguments.Any(argument =>
+                ContainsEventContextReference(argument, knownTypes));
+
+    private static bool TryFindCapturedEventContext(
+        IOperation root,
+        OperationAnalysisContext context,
+        KnownTypes knownTypes,
+        HashSet<ISymbol>? visitedLocals,
+        out SyntaxNode capturedContext)
+    {
+        root = Unwrap(root)!;
+        switch (root)
+        {
+            case IDelegateCreationOperation delegateCreation:
+                return TryFindCapturedEventContext(
+                    delegateCreation.Target,
+                    context,
+                    knownTypes,
+                    visitedLocals,
+                    out capturedContext);
+            case IAnonymousFunctionOperation:
+                return TryFindCapturedEventContextInDelegate(
+                    root,
+                    context,
+                    knownTypes,
+                    visitedLocals,
+                    out capturedContext);
+            case IMethodReferenceOperation methodReference:
+                if (methodReference.Method.MethodKind == MethodKind.LocalFunction)
+                {
+                    visitedLocals ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+                    if (TryFindCapturedEventContextInLocalFunction(
+                        methodReference.Method,
+                        context,
+                        knownTypes,
+                        visitedLocals,
+                        out capturedContext))
+                    {
+                        return true;
+                    }
+                }
+
+                if (methodReference.Instance is { } receiver)
+                {
+                    return TryFindDeferredStateContext(
+                        receiver,
+                        context,
+                        knownTypes,
+                        visitedLocals,
+                        out capturedContext);
+                }
+
+                break;
+            case ILocalReferenceOperation localReference
+                when localReference.Local.Type.TypeKind == TypeKind.Delegate:
+                visitedLocals ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+                if (visitedLocals.Add(localReference.Local)
+                    && TryGetStableInitializer(localReference, context, out var initializer)
+                    && initializer is not null
+                    && TryFindCapturedEventContext(
+                        initializer,
+                        context,
+                        knownTypes,
+                        visitedLocals,
+                        out _))
+                {
+                    capturedContext = localReference.Syntax;
+                    return true;
+                }
+
+                visitedLocals.Remove(localReference.Local);
+                break;
+            case IConditionalOperation conditional:
+                if (TryFindCapturedEventContext(
+                        conditional.WhenTrue,
+                        context,
+                        knownTypes,
+                        visitedLocals,
+                        out capturedContext)
+                    || conditional.WhenFalse is { } whenFalse
+                        && TryFindCapturedEventContext(
+                            whenFalse,
+                            context,
+                            knownTypes,
+                            visitedLocals,
+                            out capturedContext))
+                {
+                    return true;
+                }
+
+                break;
+            case ICoalesceOperation coalesce:
+                if (TryFindCapturedEventContext(
+                        coalesce.Value,
+                        context,
+                        knownTypes,
+                        visitedLocals,
+                        out capturedContext)
+                    || coalesce.WhenNull is { } whenNull
+                        && TryFindCapturedEventContext(
+                            whenNull,
+                            context,
+                            knownTypes,
+                            visitedLocals,
+                            out capturedContext))
+                {
+                    return true;
+                }
+
+                break;
+            case ISwitchExpressionOperation switchExpression:
+                foreach (var arm in switchExpression.Arms)
+                {
+                    if (TryFindCapturedEventContext(
+                        arm.Value,
+                        context,
+                        knownTypes,
+                        visitedLocals,
+                        out capturedContext))
+                    {
+                        return true;
+                    }
+                }
+
+                break;
+        }
+
+        capturedContext = null!;
+        return false;
+    }
+
+    private static bool TryFindCapturedEventContextInLocalFunction(
+        IMethodSymbol method,
+        OperationAnalysisContext context,
+        KnownTypes knownTypes,
+        HashSet<ISymbol> visitedSymbols,
+        out SyntaxNode capturedContext)
+    {
+        if (!visitedSymbols.Add(method))
+        {
+            capturedContext = null!;
+            return false;
+        }
+
+        try
+        {
+            var semanticModel = context.Operation.SemanticModel;
+            if (semanticModel is not null)
+            {
+                foreach (var syntaxReference in method.DeclaringSyntaxReferences)
+                {
+                    var syntax = syntaxReference.GetSyntax(context.CancellationToken);
+                    if (semanticModel.GetOperation(syntax, context.CancellationToken)
+                            is ILocalFunctionOperation { Body: { } body }
+                        && TryFindCapturedEventContextInDelegate(
+                            body,
+                            context,
+                            knownTypes,
+                            visitedSymbols,
+                            out capturedContext))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            capturedContext = null!;
+            return false;
+        }
+        finally
+        {
+            visitedSymbols.Remove(method);
+        }
+    }
+
+    private static bool TryFindCapturedEventContextInDelegate(
+        IOperation root,
+        OperationAnalysisContext context,
+        KnownTypes knownTypes,
+        HashSet<ISymbol>? visitedLocals,
+        out SyntaxNode capturedContext)
+    {
+        foreach (var operation in DescendantOperations(root))
+        {
+            if (operation is IPropertyReferenceOperation property
+                && property.Property.Name == "Context"
+                && knownTypes.IsEventContextReference(property.Property.Type))
+            {
+                capturedContext = property.Syntax;
+                return true;
+            }
+
+            if (operation is IParameterReferenceOperation parameterReference
+                && knownTypes.IsEventContextContainer(parameterReference.Parameter.Type))
+            {
+                capturedContext = parameterReference.Syntax;
+                return true;
+            }
+
+            if (operation is IFieldReferenceOperation fieldReference
+                && knownTypes.IsEventContextReference(fieldReference.Field.Type))
+            {
+                capturedContext = fieldReference.Syntax;
+                return true;
+            }
+
+            if (operation is IInvocationOperation invocation
+                && invocation.TargetMethod.MethodKind == MethodKind.LocalFunction)
+            {
+                visitedLocals ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+                if (TryFindCapturedEventContextInLocalFunction(
+                    invocation.TargetMethod,
+                    context,
+                    knownTypes,
+                    visitedLocals,
+                    out _))
+                {
+                    capturedContext = invocation.Syntax;
+                    return true;
+                }
+            }
+
+            if (operation is not ILocalReferenceOperation localReference)
+            {
+                continue;
+            }
+
+            visitedLocals ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+            if (!visitedLocals.Add(localReference.Local))
+            {
+                continue;
+            }
+
+            if (TryGetStableInitializer(localReference, context, out var initializer)
+                && initializer is not null
+                && (localReference.Local.Type.TypeKind == TypeKind.Delegate
+                    ? TryFindCapturedEventContext(
+                        initializer,
+                        context,
+                        knownTypes,
+                        visitedLocals,
+                        out _)
+                    : TryFindDeferredStateContext(
+                        initializer,
+                        context,
+                        knownTypes,
+                        visitedLocals,
+                        out _)))
+            {
+                capturedContext = localReference.Syntax;
+                return true;
+            }
+
+            visitedLocals.Remove(localReference.Local);
+        }
+
+        capturedContext = null!;
+        return false;
+    }
+
+    private static IEnumerable<IOperation> DescendantOperations(IOperation root)
+    {
+        var stack = new Stack<IOperation>();
+        stack.Push(root);
+        while (stack.Count > 0)
+        {
+            var current = stack.Pop();
+            yield return current;
+            foreach (var child in current.ChildOperations)
+            {
+                stack.Push(child);
+            }
         }
     }
 
@@ -1729,6 +2812,44 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             allowMemberMutation: true,
             out initializer);
 
+    private static bool TryGetStableLocalInitializer(
+        ILocalSymbol local,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken,
+        SyntaxNode? reference,
+        out ExpressionSyntax initializer)
+    {
+        var declarations = local.DeclaringSyntaxReferences;
+        if (declarations.Length != 1
+            || declarations[0].GetSyntax(cancellationToken) is not VariableDeclaratorSyntax
+            {
+                Initializer.Value: { } initializerSyntax,
+            } declarator
+            || semanticModel.SyntaxTree != declarator.SyntaxTree)
+        {
+            initializer = null!;
+            return false;
+        }
+
+        var declarationScope = GetExecutableScope(declarator, cancellationToken);
+        foreach (var identifier in declarationScope.DescendantNodes().OfType<IdentifierNameSyntax>())
+        {
+            if (identifier.Identifier.ValueText == local.Name
+                && SymbolEqualityComparer.Default.Equals(
+                    semanticModel.GetSymbolInfo(identifier, cancellationToken).Symbol,
+                    local)
+                && (reference is null || identifier.SpanStart < reference.SpanStart)
+                && IsWritten(identifier))
+            {
+                initializer = null!;
+                return false;
+            }
+        }
+
+        initializer = initializerSyntax;
+        return true;
+    }
+
     private static bool TryGetSingleUseInitializer(
         ILocalReferenceOperation localReference,
         OperationAnalysisContext context,
@@ -3020,6 +4141,10 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         private readonly INamedTypeSymbol? _chaosShield;
         private readonly INamedTypeSymbol? _chaosBehaviorOptions;
         private readonly INamedTypeSymbol? _rateLimiterAdapterOptions;
+        private readonly INamedTypeSymbol? _kevlarContext;
+        private readonly INamedTypeSymbol? _kevlarProperties;
+        private readonly HashSet<INamedTypeSymbol> _synchronousCallbackTypes;
+        private readonly HashSet<INamedTypeSymbol> _eventContextContainerTypes;
 
         internal KnownTypes(Compilation compilation)
         {
@@ -3056,6 +4181,23 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 "Kevlar.Chaos.ChaosBehaviorOptions");
             _rateLimiterAdapterOptions = _shieldRateLimiterExtensions?.ContainingAssembly.GetTypeByMetadataName(
                 "Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions");
+            _kevlarContext = kevlarAssembly?.GetTypeByMetadataName("Kevlar.KevlarContext");
+            _kevlarProperties = kevlarAssembly?.GetTypeByMetadataName("Kevlar.KevlarProperties");
+            _synchronousCallbackTypes = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+            _eventContextContainerTypes = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+            AddSynchronousCallbackType(compilation, "Kevlar.RetryOptions");
+            AddSynchronousCallbackType(compilation, "Kevlar.RetryOptions`1");
+            AddSynchronousCallbackType(compilation, "Kevlar.TimeoutOptions");
+            AddSynchronousCallbackType(compilation, "Kevlar.CircuitBreakerOptions");
+            AddSynchronousCallbackType(compilation, "Kevlar.CircuitBreakerOptions`1");
+            AddSynchronousCallbackType(compilation, "Kevlar.HedgeOptions");
+            AddSynchronousCallbackType(compilation, "Kevlar.HedgeOptions`1");
+            AddSynchronousCallbackType(compilation, "Kevlar.FallbackOptions");
+            AddSynchronousCallbackType(compilation, "Kevlar.FallbackOptions`1");
+            AddSynchronousCallbackType(compilation, "Kevlar.RateLimitOptions");
+            AddSynchronousCallbackType(compilation, "Kevlar.ConcurrencyLimitOptions");
+            AddSynchronousCallbackType(compilation, "Kevlar.Chaos.ChaosOptions");
+            AddSynchronousCallbackType(compilation, "Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions");
             var assemblyName = compilation.AssemblyName;
             IsTestAssembly = assemblyName is not null
                 && (assemblyName.EndsWith(".Test", StringComparison.OrdinalIgnoreCase)
@@ -3063,6 +4205,22 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         }
 
         internal bool IsTestAssembly { get; }
+
+        internal bool IsSynchronousCallback(IPropertySymbol property) =>
+            property.Type is INamedTypeSymbol
+            {
+                Name: "Action",
+                Arity: 1,
+                ContainingNamespace.Name: "System",
+            }
+            && _synchronousCallbackTypes.Contains(property.ContainingType.OriginalDefinition)
+            && property.Name is "OnRetry"
+                or "OnTimeout"
+                or "OnStateChanged"
+                or "OnHedge"
+                or "OnFallback"
+                or "OnInjected"
+                or "OnRejected";
 
         internal bool IsShield(INamedTypeSymbol type) =>
             Is(type, _shield) || Is(type, _shieldOfT);
@@ -3109,6 +4267,15 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             };
         }
 
+        internal bool IsEventContextReference(ITypeSymbol? type) =>
+            type is INamedTypeSymbol namedType
+            && (Is(namedType, _kevlarContext)
+                || Is(namedType, _kevlarProperties));
+
+        internal bool IsEventContextContainer(ITypeSymbol? type) =>
+            type is INamedTypeSymbol namedType
+            && _eventContextContainerTypes.Contains(namedType.OriginalDefinition);
+
         internal bool IsNonGenericExecutionResult(ITypeSymbol type) =>
             type is INamedTypeSymbol namedType
             && (Is(namedType, _outcome)
@@ -3116,6 +4283,34 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 || Is(namedType, _valueTask)
                 || ((Is(namedType, _taskOfT) || Is(namedType, _valueTaskOfT))
                     && IsNonGenericExecutionResult(namedType.TypeArguments[0])));
+
+        private void AddSynchronousCallbackType(Compilation compilation, string metadataName)
+        {
+            if (compilation.GetTypeByMetadataName(metadataName) is { } type)
+            {
+                _synchronousCallbackTypes.Add(type);
+                foreach (var property in type.GetMembers().OfType<IPropertySymbol>())
+                {
+                    if (property.Type is INamedTypeSymbol
+                        {
+                            Name: "Action",
+                            Arity: 1,
+                            ContainingNamespace.Name: "System",
+                        } callbackType
+                        && callbackType.TypeArguments[0] is INamedTypeSymbol eventType
+                        && property.Name is "OnRetry"
+                            or "OnTimeout"
+                            or "OnStateChanged"
+                            or "OnHedge"
+                            or "OnFallback"
+                            or "OnInjected"
+                            or "OnRejected")
+                    {
+                        _eventContextContainerTypes.Add(eventType.OriginalDefinition);
+                    }
+                }
+            }
+        }
 
         private static bool Is(INamedTypeSymbol type, INamedTypeSymbol? expected) =>
             expected is not null

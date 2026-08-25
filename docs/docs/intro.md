@@ -28,7 +28,7 @@ Build a shield once, reuse it everywhere. Shields are **immutable and thread-saf
 - **Intuitive first.** `Shield.When<TimeoutExceededException>().Retry(3)` reads like what it does. No context pooling ceremony, no predicate-builder classes, no options objects for the simple cases — and full options objects when you want them.
 - **Fast.** Outcomes flow between pipeline layers as structs instead of thrown exceptions; contexts are pooled internally; state-passing overloads eliminate closures; `ValueTask` end to end.
 - **Production defaults.** `Shield.Retry(3)` gives you exponential backoff *with equal jitter* capped at 30s — the thing you'd have configured anyway.
-- **Hard to hold wrong.** `Task` and `ValueTask` delegates both flow straight in; impossible chain orders throw at build time with a fix in the message; the `Kevlar.Analyzers` package flags cancellation and pipeline hazards at compile time.
+- **Hard to hold wrong.** `Task` and `ValueTask` delegates both flow straight in; impossible chain orders throw at build time with a fix in the message; built-in analyzers flag cancellation and pipeline hazards at compile time.
 - **Observable out of the box.** Every shield describes itself (`shield.ToString()` prints the whole pipeline) and publishes metrics through a built-in `Meter` — no telemetry package, no setup.
 - **Composable.** Shields merge with `Wrap` and `Compose`, chain fluently, and stateful strategies (breakers, limiters) intentionally share their state wherever the same shield instance is reused.
 - **Broad reach.** `netstandard2.0` (covers .NET Framework 4.6.2+) and `net10.0` targets.
@@ -36,7 +36,7 @@ Build a shield once, reuse it everywhere. Shields are **immutable and thread-saf
 ## Packages
 
 The README maintains the canonical [package table](https://github.com/thomhurst/Kevlar#packages),
-including optional gRPC, testing, analyzer, and integration packages.
+including optional gRPC, testing, and integration packages.
 
 ## Where to next?
 

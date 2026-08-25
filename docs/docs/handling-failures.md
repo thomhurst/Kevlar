@@ -21,7 +21,7 @@ these outcomes propagate without retrying, opening a circuit, hedging, or fallin
 
 Other exceptions—including programming errors such as `NullReferenceException`, and
 `TimeoutExceededException`—remain handled by default for compatibility. Narrow expected failures
-with a clause in production pipelines. The optional analyzer reports implicit default handling as
+with a clause in production pipelines. The built-in analyzer reports implicit default handling as
 [`KEV011`](analyzers.md#kev011-implicit-default-handling).
 
 An explicit clause can opt into an excluded exception when recovery is intentional:
@@ -78,7 +78,7 @@ Shield
 This is why most chains only need one clause, written once at the top—and why you never repeat a
 `ShouldHandle` predicate per strategy like in Polly v8.
 
-A clause that never reaches a reactive strategy does nothing at all. The optional analyzer reports
+A clause that never reaches a reactive strategy does nothing at all. The built-in analyzer reports
 that as [`KEV007`](analyzers.md#kev007-dead-handling-clause). It also marks strategies that
 *inherit* a clause as the informational hint
 [`KEV009`](analyzers.md#kev009-inherited-handling-clause), so the span above is visible in the
@@ -148,7 +148,7 @@ say what they match and cannot be written where they would surprise you.
 
 For a value type or for generic code, `WhenResultIsDefault` / `OrResultIsDefault` match
 `default(T)` instead — and there the check needs a second thought, because `0`, `false`, and an
-empty struct are usually legitimate results rather than failures. The optional analyzer raises that
+empty struct are usually legitimate results rather than failures. The built-in analyzer raises that
 question as the informational hint [`KEV010`](analyzers.md#kev010-default-result-clause-on-a-value-type):
 
 ```csharp
