@@ -14,24 +14,6 @@ internal static class KevlarTelemetry
     public static bool IsEventEnabled(KevlarContext context) =>
         EventEnabled || context.TelemetryListener is not null;
 
-    public static bool ShouldCaptureResult(
-        KevlarContext context,
-        in KevlarTelemetryEvent telemetryEvent)
-    {
-        foreach (var listener in Volatile.Read(ref _listeners))
-        {
-            if (listener is not IKevlarResultTelemetryListener resultListener
-                || resultListener.ShouldCaptureResult(in telemetryEvent))
-            {
-                return true;
-            }
-        }
-
-        return context.TelemetryListener is { } contextListener
-            && (contextListener is not IKevlarResultTelemetryListener contextResultListener
-                || contextResultListener.ShouldCaptureResult(in telemetryEvent));
-    }
-
     public static void RecordResult<T>(
         KevlarContext context,
         string strategyName,
@@ -42,45 +24,103 @@ internal static class KevlarTelemetry
         in Outcome<T> outcome,
         TimeSpan delay = default)
     {
-        object? result = null;
-        if (outcome.IsSuccess)
+        if (!outcome.IsSuccess)
         {
-            var preview = new KevlarTelemetryEvent(
+            Record(
+                context,
+                strategyName,
                 eventName,
                 severity,
-                context.ShieldName,
-                strategyName,
                 strategyIndex,
                 attemptNumber,
-                isSuccess: true,
-                exception: null,
-                duration: default,
-                operationKey: null,
-                result: null,
-                delay,
-                fromState: null,
-                toState: null,
-                retryAfter: null,
-                rejectionKind: null,
-                callbackKind: null,
-                context);
-            if (ShouldCaptureResult(context, in preview))
-            {
-                result = outcome.Result;
-            }
+                isSuccess: false,
+                outcome.Exception,
+                delay: delay);
+            return;
         }
 
-        Record(
-            context,
-            strategyName,
+        var listeners = Volatile.Read(ref _listeners);
+        var contextListener = context.TelemetryListener;
+        if (listeners.Length == 0
+            && contextListener is null
+            && !KevlarMetrics.StrategyEventsEnabled)
+        {
+            return;
+        }
+
+        _ = context.Properties.TryGet(KevlarKeys.OperationKey, out string? operationKey);
+        var telemetryEvent = new KevlarTelemetryEvent(
             eventName,
             severity,
+            context.ShieldName,
+            strategyName,
             strategyIndex,
             attemptNumber,
-            outcome.IsSuccess,
-            outcome.Exception,
-            result: result,
-            delay: delay);
+            isSuccess: true,
+            exception: null,
+            duration: default,
+            operationKey,
+            result: null,
+            delay,
+            fromState: null,
+            toState: null,
+            retryAfter: null,
+            rejectionKind: null,
+            callbackKind: null,
+            context);
+
+        KevlarMetrics.StrategyEvent(in telemetryEvent, recordAttemptDuration: false);
+        var result = outcome.Result;
+        var boxedEvent = default(KevlarTelemetryEvent);
+        var hasBoxedEvent = false;
+        foreach (var listener in listeners)
+        {
+            NotifyResultListener(
+                listener,
+                in telemetryEvent,
+                in result,
+                ref boxedEvent,
+                ref hasBoxedEvent);
+        }
+
+        if (contextListener is not null)
+        {
+            NotifyResultListener(
+                contextListener,
+                in telemetryEvent,
+                in result,
+                ref boxedEvent,
+                ref hasBoxedEvent);
+        }
+    }
+
+    private static void NotifyResultListener<T>(
+        IKevlarTelemetryListener listener,
+        in KevlarTelemetryEvent telemetryEvent,
+        in T result,
+        ref KevlarTelemetryEvent boxedEvent,
+        ref bool hasBoxedEvent)
+    {
+        try
+        {
+            if (listener is IKevlarResultTelemetryListener resultListener)
+            {
+                resultListener.OnResultEvent(in telemetryEvent, in result);
+                return;
+            }
+
+            if (!hasBoxedEvent)
+            {
+                boxedEvent = telemetryEvent.WithResult(result);
+                hasBoxedEvent = true;
+            }
+
+            listener.OnEvent(in boxedEvent);
+        }
+        catch
+        {
+            // Telemetry listeners must not change execution behavior.
+        }
     }
 
     public static IDisposable Subscribe(IKevlarTelemetryListener listener)

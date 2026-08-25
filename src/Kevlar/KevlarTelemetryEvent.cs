@@ -98,4 +98,24 @@ public readonly struct KevlarTelemetryEvent
     /// <summary>The active execution context. It is valid only during the listener callback.</summary>
     public KevlarContext Context => _context
         ?? throw new InvalidOperationException("The telemetry event is uninitialized.");
+
+    internal KevlarTelemetryEvent WithResult(object? result) => new(
+        EventName,
+        Severity,
+        ShieldName,
+        StrategyName,
+        StrategyIndex,
+        AttemptNumber,
+        IsSuccess,
+        Exception,
+        Duration,
+        OperationKey,
+        result,
+        Delay,
+        FromState,
+        ToState,
+        RetryAfter,
+        RejectionKind,
+        CallbackKind,
+        Context);
 }

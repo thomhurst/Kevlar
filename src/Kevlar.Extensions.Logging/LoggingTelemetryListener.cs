@@ -5,52 +5,26 @@ namespace Kevlar.Extensions.Logging;
 internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
     : IKevlarTelemetryListener, IKevlarResultTelemetryListener
 {
-    bool IKevlarResultTelemetryListener.ShouldCaptureResult(
-        in KevlarTelemetryEvent telemetryEvent)
+    void IKevlarResultTelemetryListener.OnResultEvent<T>(
+        in KevlarTelemetryEvent telemetryEvent,
+        in T result)
     {
-        if (!TryMap(in telemetryEvent, out var kind, out _, out var defaultLevel))
+        if (!TryMap(in telemetryEvent, out var kind, out var eventId, out var defaultLevel))
         {
-            return false;
+            return;
         }
 
-        var logEvent = new KevlarLogEvent(kind, in telemetryEvent);
         for (var current = registration; current is not null; current = current.Next)
         {
-            if (!current.Options.CanAcquire())
-            {
-                continue;
-            }
-
             try
             {
-                if (!current.Options.CanEvaluateSeverityWithoutResult)
-                {
-                    for (var enabledLevel = LogLevel.Trace;
-                         enabledLevel < LogLevel.None;
-                         enabledLevel++)
-                    {
-                        if (current.Logger.IsEnabled(enabledLevel))
-                        {
-                            return true;
-                        }
-                    }
-
-                    continue;
-                }
-
-                var level = current.Options.SeverityProvider?.Invoke(logEvent) ?? defaultLevel;
-                if (level != LogLevel.None && current.Logger.IsEnabled(level))
-                {
-                    return true;
-                }
+                LogResult(current, kind, eventId, defaultLevel, in telemetryEvent, in result);
             }
-            catch
+            catch (Exception exception)
             {
-                return true;
+                ReportLoggingFailure(in telemetryEvent, exception);
             }
         }
-
-        return false;
     }
 
     public void OnEvent(in KevlarTelemetryEvent telemetryEvent)
@@ -100,6 +74,95 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
             return;
         }
 
+        Write(registration, kind, eventId, defaultLevel, level, in telemetryEvent);
+    }
+
+    private static void LogResult<T>(
+        LoggingRegistration registration,
+        KevlarLogEventKind kind,
+        EventId eventId,
+        LogLevel defaultLevel,
+        in KevlarTelemetryEvent telemetryEvent,
+        in T result)
+    {
+        var logger = registration.Logger;
+        var options = registration.Options;
+        var level = defaultLevel;
+        if (options.CanEvaluateSeverityWithoutResult)
+        {
+            var preview = new KevlarLogEvent(kind, in telemetryEvent);
+            try
+            {
+                level = options.SeverityProvider?.Invoke(preview) ?? defaultLevel;
+            }
+            catch (Exception severityException)
+            {
+                ReportLoggingFailure(in telemetryEvent, severityException);
+                return;
+            }
+
+            if (level == LogLevel.None || !logger.IsEnabled(level))
+            {
+                return;
+            }
+        }
+        else if (!AnyLevelEnabled(logger))
+        {
+            return;
+        }
+
+        if (!options.TryReserve(out var reservation))
+        {
+            return;
+        }
+
+        var resultEvent = telemetryEvent.WithResult(result);
+        if (!options.CanEvaluateSeverityWithoutResult)
+        {
+            try
+            {
+                level = options.SeverityProvider?.Invoke(new KevlarLogEvent(kind, in resultEvent))
+                    ?? defaultLevel;
+            }
+            catch (Exception severityException)
+            {
+                options.ReleaseReservation(reservation);
+                ReportLoggingFailure(in telemetryEvent, severityException);
+                return;
+            }
+
+            if (level == LogLevel.None || !logger.IsEnabled(level))
+            {
+                options.ReleaseReservation(reservation);
+                return;
+            }
+        }
+
+        Write(registration, kind, eventId, defaultLevel, level, in resultEvent);
+    }
+
+    private static bool AnyLevelEnabled(ILogger logger)
+    {
+        for (var level = LogLevel.Trace; level < LogLevel.None; level++)
+        {
+            if (logger.IsEnabled(level))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static void Write(
+        LoggingRegistration registration,
+        KevlarLogEventKind kind,
+        EventId eventId,
+        LogLevel defaultLevel,
+        LogLevel level,
+        in KevlarTelemetryEvent telemetryEvent)
+    {
+        var logger = registration.Logger;
         var outcome = FormatOutcome(registration, kind, in telemetryEvent);
         if (level == defaultLevel)
         {

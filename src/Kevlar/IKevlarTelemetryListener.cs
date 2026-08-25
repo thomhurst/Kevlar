@@ -10,5 +10,5 @@ public interface IKevlarTelemetryListener
 
 internal interface IKevlarResultTelemetryListener
 {
-    bool ShouldCaptureResult(in KevlarTelemetryEvent telemetryEvent);
+    void OnResultEvent<T>(in KevlarTelemetryEvent telemetryEvent, in T result);
 }

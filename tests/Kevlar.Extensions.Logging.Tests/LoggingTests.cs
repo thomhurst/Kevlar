@@ -548,6 +548,27 @@ public class LoggingTests
 
     [Test]
     [NotInParallel]
+    public async Task Result_Independent_SeverityProvider_Runs_Once_Per_Event()
+    {
+        var logger = new FakeLogger();
+        var providerCalls = 0;
+        var shield = Shield.For<int>()
+            .WhenResult(-1)
+            .Retry(1, Backoff.None)
+            .WithLogging(logger, options => options.SeverityProvider = _ =>
+                Interlocked.Increment(ref providerCalls) % 2 == 1
+                    ? LogLevel.Warning
+                    : LogLevel.None);
+
+        _ = await shield.ExecuteOutcomeAsync(static _ => new ValueTask<int>(-1));
+        _ = await shield.ExecuteOutcomeAsync(static _ => new ValueTask<int>(-1));
+
+        await Assert.That(providerCalls).IsEqualTo(2);
+        await Assert.That(logger.Collector.Count).IsEqualTo(1);
+    }
+
+    [Test]
+    [NotInParallel]
     public async Task Concurrent_Executions_Log_Every_Retry()
     {
         var logger = new FakeLogger();

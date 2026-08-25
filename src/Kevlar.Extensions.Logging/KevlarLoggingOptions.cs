@@ -57,27 +57,11 @@ internal sealed class LoggingOptionsSnapshot(
 
     public int? MaxLogsPerSecond { get; } = maxLogsPerSecond;
 
-    public bool CanAcquire()
+    public bool TryReserve(out long windowStarted)
     {
         if (MaxLogsPerSecond is not { } limit)
         {
-            return true;
-        }
-
-        var now = Stopwatch.GetTimestamp();
-        lock (_rateLock)
-        {
-            return limit > 0
-                && (_windowStarted == 0
-                    || now - _windowStarted >= Stopwatch.Frequency
-                    || _windowCount < limit);
-        }
-    }
-
-    public bool TryAcquire()
-    {
-        if (MaxLogsPerSecond is not { } limit)
-        {
+            windowStarted = 0;
             return true;
         }
 
@@ -92,11 +76,31 @@ internal sealed class LoggingOptionsSnapshot(
 
             if (_windowCount >= limit)
             {
+                windowStarted = 0;
                 return false;
             }
 
             _windowCount++;
+            windowStarted = _windowStarted;
             return true;
+        }
+    }
+
+    public bool TryAcquire() => TryReserve(out _);
+
+    public void ReleaseReservation(long windowStarted)
+    {
+        if (MaxLogsPerSecond is null)
+        {
+            return;
+        }
+
+        lock (_rateLock)
+        {
+            if (_windowStarted == windowStarted && _windowCount > 0)
+            {
+                _windowCount--;
+            }
         }
     }
 
