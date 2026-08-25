@@ -1,12 +1,9 @@
-using System.Runtime.ExceptionServices;
 using Kevlar.Internal;
 
 namespace Kevlar.Strategies;
 
 internal sealed class ConcurrencyLimitStrategy : Strategy
 {
-    private readonly Lock _metricsPublicationGate = new();
-    private readonly HashSet<StrategyMetricAlias> _metricsAliases = [];
     // Atomic permits serve the uncontended path; the semaphore carries permits only to registered waiters.
     private readonly SemaphoreSlim _semaphore;
     private readonly int _maxConcurrency;
@@ -17,9 +14,10 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
     private readonly string _telemetryName;
     private int _available;
     private int _waiters;
-    private StrategyMetricAlias[] _metricsAliasSnapshot = [];
     private long _pending;
-    private long _metricsState;
+#if NET9_0_OR_GREATER
+    private readonly KevlarMetrics.StateMetricRegistration<ConcurrencyLimitStrategy> _metricsRegistration;
+#endif
 
     protected internal override bool InvokesContinuationAtMostOnce => true;
 
@@ -33,9 +31,10 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
 
     internal (int Available, int Running, int Queued) CaptureState()
     {
-        var state = Volatile.Read(ref _metricsState);
-        var running = (int)(state >> 32);
-        var queued = (int)(state & uint.MaxValue);
+        var pending = Math.Max(0, Volatile.Read(ref _pending));
+        var available = Volatile.Read(ref _available);
+        var running = (int)Math.Min(pending, _maxConcurrency - available);
+        var queued = (int)Math.Min(int.MaxValue, pending - running);
         return (_maxConcurrency - running, running, queued);
     }
 
@@ -69,6 +68,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
     public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
         var alias = new StrategyMetricAlias(context.ShieldName, context.StrategyIndex);
+        RegisterMetricsAlias(alias);
         if (Interlocked.Increment(ref _pending) > _capacity)
         {
             Interlocked.Decrement(ref _pending);
@@ -81,17 +81,16 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
             context.CancellationToken.ThrowIfCancellationRequested();
             if (TryAcquirePermit())
             {
-                return ExecuteAcquired(next, context, alias, queued: false);
+                return ExecuteAcquired(next, context);
             }
         }
         catch (OperationCanceledException cancelled)
         {
             Interlocked.Decrement(ref _pending);
-            RecordState(alias);
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(NormalizeCancellation(cancelled, context)));
         }
 
-        return ExecuteQueuedAsync(next, context, alias);
+        return ExecuteQueuedAsync(next, context);
     }
 
     private ValueTask<Outcome<T>> RejectAsync<T>(KevlarContext context)
@@ -135,10 +134,8 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
 
     private async ValueTask<Outcome<T>> ExecuteQueuedAsync<T, TState>(
         Continuation<T, TState> next,
-        KevlarContext context,
-        StrategyMetricAlias alias)
+        KevlarContext context)
     {
-        UpdateMetricsState(inflightDelta: 0, queuedDelta: 1);
         Interlocked.Increment(ref _waiters);
         try
         {
@@ -146,103 +143,43 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
             {
                 if (context.IsSynchronous)
                 {
-                    RecordState(alias);
                     _semaphore.Wait(context.CancellationToken);
                 }
                 else
                 {
-                    using var waitCancellation = context.CancellationToken.CanBeCanceled
-                        ? CancellationTokenSource.CreateLinkedTokenSource(context.CancellationToken)
-                        : new CancellationTokenSource();
-                    var wait = _semaphore.WaitAsync(waitCancellation.Token);
-                    try
-                    {
-                        RecordState(alias);
-                    }
-                    catch (Exception publicationFailure)
-                    {
-                        waitCancellation.Cancel();
-                        try
-                        {
-                            await wait.ConfigureAwait(false);
-                            ReleasePermit();
-                        }
-                        catch (OperationCanceledException)
-                        {
-                            // Cancellation withdrew the wait before it took a permit.
-                        }
-
-                        ExceptionDispatchInfo.Capture(publicationFailure).Throw();
-                    }
-
-                    await wait.ConfigureAwait(false);
+                    await _semaphore.WaitAsync(context.CancellationToken).ConfigureAwait(false);
                 }
             }
         }
         catch (OperationCanceledException cancelled)
         {
-            ReleaseQueued(alias);
+            Interlocked.Decrement(ref _pending);
             return Outcome<T>.FromException(NormalizeCancellation(cancelled, context));
-        }
-        catch (Exception publicationFailure)
-        {
-            ReleaseQueued(alias, publicationFailure);
-            ExceptionDispatchInfo.Capture(publicationFailure).Throw();
-            throw;
         }
         finally
         {
             Interlocked.Decrement(ref _waiters);
         }
 
-        return await ExecuteAcquired(next, context, alias, queued: true).ConfigureAwait(false);
+        return await ExecuteAcquired(next, context).ConfigureAwait(false);
     }
 
     private ValueTask<Outcome<T>> ExecuteAcquired<T, TState>(
         Continuation<T, TState> next,
-        KevlarContext context,
-        StrategyMetricAlias alias,
-        bool queued)
+        KevlarContext context)
     {
-        UpdateMetricsState(inflightDelta: 1, queuedDelta: queued ? -1 : 0);
-        try
-        {
-            RecordState(alias);
-        }
-        catch (Exception publicationFailure)
-        {
-            UpdateMetricsState(inflightDelta: -1, queuedDelta: 0);
-            ReleasePermit();
-            Interlocked.Decrement(ref _pending);
-            try
-            {
-                RecordState(alias);
-            }
-            catch (Exception correctionFailure)
-            {
-                publicationFailure = new AggregateException(
-                    publicationFailure,
-                    correctionFailure).Flatten();
-            }
-
-            ExceptionDispatchInfo.Capture(publicationFailure).Throw();
-            throw;
-        }
-
         var execution = next.InvokeAsync(context);
         if (!execution.IsCompletedSuccessfully)
         {
-            return AwaitExecutionAsync(execution, alias);
+            return AwaitExecutionAsync(execution);
         }
 
         var outcome = execution.Result;
-        CompleteExecution(alias);
+        CompleteExecution();
         return new ValueTask<Outcome<T>>(outcome);
     }
 
-    private async ValueTask<Outcome<T>> AwaitExecutionAsync<T>(
-        ValueTask<Outcome<T>> execution,
-        StrategyMetricAlias alias)
+    private async ValueTask<Outcome<T>> AwaitExecutionAsync<T>(ValueTask<Outcome<T>> execution)
     {
         try
         {
@@ -250,33 +187,14 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
         }
         finally
         {
-            CompleteExecution(alias);
+            CompleteExecution();
         }
     }
 
-    private void CompleteExecution(StrategyMetricAlias alias)
+    private void CompleteExecution()
     {
-        UpdateMetricsState(inflightDelta: -1, queuedDelta: 0);
+        Interlocked.Decrement(ref _pending);
         ReleasePermit();
-        Interlocked.Decrement(ref _pending);
-        RecordState(alias);
-    }
-
-    private void ReleaseQueued(
-        StrategyMetricAlias alias,
-        Exception? publicationFailure = null)
-    {
-        Interlocked.Decrement(ref _pending);
-        UpdateMetricsState(inflightDelta: 0, queuedDelta: -1);
-
-        try
-        {
-            RecordState(alias);
-        }
-        catch (Exception correctionFailure) when (publicationFailure is not null)
-        {
-            throw new AggregateException(publicationFailure, correctionFailure).Flatten();
-        }
     }
 
     private static OperationCanceledException NormalizeCancellation(
@@ -318,82 +236,13 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
         }
     }
 
-    private void UpdateMetricsState(int inflightDelta, int queuedDelta)
+    private void RegisterMetricsAlias(StrategyMetricAlias alias)
     {
-        while (true)
+#if NET9_0_OR_GREATER
+        if (KevlarMetrics.ConcurrencyStateEnabled)
         {
-            var state = Volatile.Read(ref _metricsState);
-            var inflight = (int)(state >> 32);
-            var queued = (int)(state & uint.MaxValue);
-            var updated = ((long)(inflight + inflightDelta) << 32)
-                | (uint)(queued + queuedDelta);
-            if (Interlocked.CompareExchange(ref _metricsState, updated, state) == state)
-            {
-                return;
-            }
+            _metricsRegistration.Add(alias);
         }
-    }
-
-    private void RecordState(StrategyMetricAlias alias)
-    {
-        if (!KevlarMetrics.ConcurrencyStateEnabled)
-        {
-            return;
-        }
-
-        lock (_metricsPublicationGate)
-        {
-            if (_metricsAliases.Count < KevlarMetrics.MaxTrackedStrategyAliases
-                && _metricsAliases.Add(alias))
-            {
-                _metricsAliasSnapshot = [.. _metricsAliases];
-            }
-
-            while (true)
-            {
-                var state = Volatile.Read(ref _metricsState);
-                var inflight = (int)(state >> 32);
-                var queued = (int)(state & uint.MaxValue);
-                var aliases = _metricsAliasSnapshot;
-                RecordStateForAliases(aliases, inflight, queued);
-
-                if (state == Volatile.Read(ref _metricsState)
-                    && ReferenceEquals(aliases, _metricsAliasSnapshot))
-                {
-                    return;
-                }
-            }
-        }
-    }
-
-    private void RecordStateForAliases(StrategyMetricAlias[] aliases, int inflight, int queued)
-    {
-        List<Exception>? failures = null;
-        foreach (var alias in aliases)
-        {
-            try
-            {
-                KevlarMetrics.RecordConcurrencyState(
-                    alias.ShieldName,
-                    alias.StrategyIndex,
-                    inflight,
-                    queued,
-                    _maxConcurrency);
-            }
-            catch (Exception exception)
-            {
-                (failures ??= []).Add(exception);
-            }
-        }
-
-        if (failures is [var failure])
-        {
-            ExceptionDispatchInfo.Capture(failure).Throw();
-        }
-
-        if (failures is { Count: > 1 })
-        {
-            throw new AggregateException(failures).Flatten();
-        }
+#endif
     }
 }

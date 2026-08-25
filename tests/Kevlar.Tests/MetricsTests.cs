@@ -53,6 +53,8 @@ public class MetricsTests
 
         public IReadOnlyCollection<Instrument> Instruments => _instruments.Values.ToArray();
 
+        public void RecordObservableInstruments() => _listener.RecordObservableInstruments();
+
         public IReadOnlyCollection<long> Values(string instrument, string? shieldName, bool requireName = true) =>
             _measurements
                 .Where(measurement => measurement.Instrument == instrument)
@@ -1233,10 +1235,17 @@ public class MetricsTests
         }).WithTimeProvider(timeProvider).WithName("metrics-circuit-state");
 
         await shield.ExecuteAsync(_ => new ValueTask<int>(1));
+        listener.RecordObservableInstruments();
         _ = await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+        listener.RecordObservableInstruments();
         timeProvider.Advance(TimeSpan.FromSeconds(1));
-        await shield.ExecuteAsync(_ => new ValueTask<int>(2));
+        await shield.ExecuteAsync(_ =>
+        {
+            listener.RecordObservableInstruments();
+            return new ValueTask<int>(2);
+        });
         monitor.Isolate();
+        listener.RecordObservableInstruments();
         _ = await shield.ExecuteOutcomeAsync(_ => new ValueTask<int>(3));
 
         await Assert.That(listener.Values("kevlar.circuit_breaker.state", "metrics-circuit-state"))
@@ -1255,17 +1264,20 @@ public class MetricsTests
             .WithName("metrics-manual-circuit-state");
 
         await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
+        listener.RecordObservableInstruments();
         var closedMeasurements = listener.Values(
             "kevlar.circuit_breaker.state",
             "metrics-manual-circuit-state").Count(value => value == 0);
 
         monitor.Isolate();
+        listener.RecordObservableInstruments();
         await Assert.That(listener.Values(
                 "kevlar.circuit_breaker.state",
                 "metrics-manual-circuit-state"))
             .Contains(3);
 
         monitor.Reset();
+        listener.RecordObservableInstruments();
         await Assert.That(listener.Values(
                 "kevlar.circuit_breaker.state",
                 "metrics-manual-circuit-state").Count(value => value == 0))
@@ -1283,6 +1295,7 @@ public class MetricsTests
         monitor.Isolate();
         _ = await shield.ExecuteOutcomeAsync(_ => new ValueTask<int>(1));
         monitor.Reset();
+        listener.RecordObservableInstruments();
 
         await Assert.That(listener.Values(
                 "kevlar.circuit_breaker.state",
@@ -1304,14 +1317,20 @@ public class MetricsTests
         monitor.Isolate();
 
         using var listener = new KevlarMeterListener();
+        listener.RecordObservableInstruments();
+        var unnamedMeasurements = listener.Values(
+            "kevlar.circuit_breaker.state",
+            shieldName: null,
+            requireName: false).Count;
         _ = await shield.ExecuteOutcomeAsync(_ => new ValueTask<int>(1));
         monitor.Reset();
+        listener.RecordObservableInstruments();
 
         await Assert.That(listener.Values(
                 "kevlar.circuit_breaker.state",
                 shieldName: null,
                 requireName: false).Count)
-            .IsEqualTo(0);
+            .IsEqualTo(unnamedMeasurements * 2);
         await Assert.That(listener.Values(
                 "kevlar.circuit_breaker.state",
                 "metrics-disabled-circuit-alias").Last())
@@ -1330,6 +1349,7 @@ public class MetricsTests
         await first.ExecuteAsync(_ => ValueTask.CompletedTask);
         await second.ExecuteAsync(_ => ValueTask.CompletedTask);
         monitor.Isolate();
+        listener.RecordObservableInstruments();
 
         await Assert.That(listener.Values(
                 "kevlar.circuit_breaker.state",
@@ -1341,6 +1361,7 @@ public class MetricsTests
             .IsEqualTo(3);
 
         monitor.Reset();
+        listener.RecordObservableInstruments();
         await Assert.That(listener.Values(
                 "kevlar.circuit_breaker.state",
                 "metrics-circuit-alias-first").Last())
@@ -1352,61 +1373,53 @@ public class MetricsTests
     }
 
     [Test]
-    public async Task Circuit_Execution_Sample_Cannot_Overwrite_A_Newer_Transition()
+    public async Task State_Gauge_Callbacks_Run_Only_During_Collection()
     {
-        CircuitBreakerMonitor? monitor = null;
-        var openMeasurements = 0;
-        using var listener = new KevlarMeterListener((instrument, value) =>
+        var callbacks = 0;
+        using var listener = new KevlarMeterListener((instrument, _) =>
         {
-            if (instrument == "kevlar.circuit_breaker.state"
-                && value == 1
-                && Interlocked.Increment(ref openMeasurements) == 2)
+            if (instrument == "kevlar.concurrency_limit.inflight")
             {
-                monitor!.Reset();
+                callbacks++;
             }
         });
-        monitor = new CircuitBreakerMonitor();
-        var shield = Shield.CircuitBreaker(options =>
-        {
-            options.ConsecutiveFailures = 1;
-            options.Monitor = monitor;
-        }).WithName("metrics-circuit-transition-race");
+        var shield = Shield.ConcurrencyLimit(1).WithName("metrics-collection-only");
 
-        _ = await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
+        await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
+        await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
 
-        await Assert.That(listener.Values(
-                "kevlar.circuit_breaker.state",
-                "metrics-circuit-transition-race").Last())
-            .IsEqualTo(0);
+        await Assert.That(callbacks).IsEqualTo(0);
+        listener.RecordObservableInstruments();
+        await Assert.That(callbacks).IsGreaterThan(0);
     }
 
     [Test]
-    public async Task Circuit_Metric_Failure_Releases_An_Admitted_Probe()
+    public async Task State_Gauge_Listener_Failure_Does_Not_Fail_Execution()
     {
-        var halfOpenMeasurements = 0;
-        var metricsFailure = new InvalidOperationException("metrics callback");
-        using var listener = new KevlarMeterListener((instrument, value) =>
+        var callbackInvoked = false;
+        using var listener = new KevlarMeterListener((instrument, _) =>
         {
-            if (instrument == "kevlar.circuit_breaker.state"
-                && value == 2
-                && Interlocked.Increment(ref halfOpenMeasurements) == 2)
+            if (instrument == "kevlar.rate_limit.available")
             {
-                throw metricsFailure;
+                callbackInvoked = true;
+                throw new InvalidOperationException("metrics callback");
             }
         });
-        var timeProvider = new FakeTimeProvider();
-        var shield = Shield.CircuitBreaker(1, TimeSpan.FromSeconds(1))
-            .WithTimeProvider(timeProvider)
-            .WithName("metrics-circuit-probe-failure");
+        var shield = Shield.RateLimit(10, TimeSpan.FromSeconds(1))
+            .WithName("metrics-listener-failure");
 
-        _ = await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
-        timeProvider.Advance(TimeSpan.FromSeconds(1));
-        var thrown = await Assert.That(async () =>
-                await shield.ExecuteAsync(_ => new ValueTask<int>(1)))
-            .Throws<InvalidOperationException>();
-        await Assert.That(ReferenceEquals(thrown, metricsFailure)).IsTrue();
+        await Assert.That(await shield.ExecuteAsync(_ => new ValueTask<int>(42))).IsEqualTo(42);
 
-        await Assert.That(await shield.ExecuteAsync(_ => new ValueTask<int>(2))).IsEqualTo(2);
+        try
+        {
+            listener.RecordObservableInstruments();
+        }
+        catch (AggregateException)
+        {
+            // Listener exceptions belong to collection, never shield execution.
+        }
+
+        await Assert.That(callbackInvoked).IsTrue();
     }
 
     [Test]
@@ -1419,6 +1432,7 @@ public class MetricsTests
             .WithName(name);
 
         await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
+        listener.RecordObservableInstruments();
 
         var measurements = listener.LongMeasurements(
             "kevlar.concurrency_limit.capacity",
@@ -1444,6 +1458,7 @@ public class MetricsTests
         }
 
         monitor.Isolate();
+        listener.RecordObservableInstruments();
 
         var isolatedAliases = listener.AllLongMeasurements("kevlar.circuit_breaker.state")
             .Where(measurement => measurement.Value == 3)
@@ -1468,6 +1483,7 @@ public class MetricsTests
         var shield = Shield.ConcurrencyLimit(1).WithName("metrics-immediate-concurrency");
 
         await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
+        listener.RecordObservableInstruments();
 
         var queued = listener.Values(
             "kevlar.concurrency_limit.queued",
@@ -1499,6 +1515,7 @@ public class MetricsTests
         await bothEntered.Task.WaitAsync(TimeSpan.FromSeconds(5));
         release.TrySetResult();
         await Task.WhenAll(first, second).WaitAsync(TimeSpan.FromSeconds(5));
+        listener.RecordObservableInstruments();
 
         await Assert.That(listener.Values(
                 "kevlar.concurrency_limit.inflight",
@@ -1539,6 +1556,7 @@ public class MetricsTests
         await firstExecution;
         releaseSecond.TrySetResult();
         await secondExecution;
+        listener.RecordObservableInstruments();
 
         await Assert.That(listener.Values(
                 "kevlar.concurrency_limit.inflight",
@@ -1577,59 +1595,12 @@ public class MetricsTests
             .ToArray();
         release.TrySetResult();
         await Task.WhenAll(queued.Prepend(holder));
+        listener.RecordObservableInstruments();
 
         await Assert.That(listener.Values(
                 "kevlar.concurrency_limit.inflight",
                 "metrics-concurrency-handoffs").All(value => value <= 1))
             .IsTrue();
-    }
-
-    [Test]
-    public async Task Concurrency_Metric_Failure_Releases_The_Pending_Wait()
-    {
-        var throwOnQueued = true;
-        var metricsFailure = new InvalidOperationException("metrics callback");
-        using var observer = new KevlarMeterListener();
-        using var listener = new KevlarMeterListener((instrument, value) =>
-        {
-            if (throwOnQueued && instrument == "kevlar.concurrency_limit.queued" && value == 1)
-            {
-                throwOnQueued = false;
-                throw metricsFailure;
-            }
-        });
-        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var shield = Shield.ConcurrencyLimit(1, 1)
-            .WithName("metrics-concurrency-pending-failure");
-        var holder = shield.ExecuteAsync(async _ =>
-        {
-            entered.TrySetResult();
-            await release.Task;
-        }).AsTask();
-        await entered.Task;
-
-        var failed = shield.ExecuteAsync(_ => ValueTask.CompletedTask).AsTask();
-        InvalidOperationException? thrown;
-        try
-        {
-            thrown = await Assert.That(async () =>
-                    await failed.WaitAsync(TimeSpan.FromSeconds(5)))
-                .Throws<InvalidOperationException>();
-            await Assert.That(observer.Values(
-                    "kevlar.concurrency_limit.queued",
-                    "metrics-concurrency-pending-failure").Last())
-                .IsEqualTo(0);
-        }
-        finally
-        {
-            release.TrySetResult();
-            await holder;
-        }
-
-        await Assert.That(ReferenceEquals(thrown, metricsFailure)).IsTrue();
-
-        await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
     }
 
     [Test]
@@ -1647,11 +1618,15 @@ public class MetricsTests
             return 1;
         }).AsTask();
         await entered.Task;
+        listener.RecordObservableInstruments();
         var queued = shield.ExecuteAsync(_ => new ValueTask<int>(2), cancellation.Token).AsTask();
+        listener.RecordObservableInstruments();
         cancellation.Cancel();
         await Assert.That(async () => await queued).Throws<OperationCanceledException>();
+        listener.RecordObservableInstruments();
         release.SetResult();
         _ = await occupying;
+        listener.RecordObservableInstruments();
 
         await Assert.That(listener.Values("kevlar.concurrency_limit.inflight", "metrics-concurrency-state"))
             .Contains(1)
@@ -1663,6 +1638,7 @@ public class MetricsTests
             .All(value => value == 1)).IsTrue();
 
         await Shield.ConcurrencyLimit(1).ExecuteAsync(_ => new ValueTask<int>(3));
+        listener.RecordObservableInstruments();
         await Assert.That(listener.Values("kevlar.concurrency_limit.inflight", null, requireName: false).Count > 0)
             .IsTrue();
     }
@@ -1682,10 +1658,14 @@ public class MetricsTests
         }).WithTimeProvider(timeProvider).WithName("metrics-rate-state");
 
         await shield.ExecuteAsync(_ => new ValueTask<int>(1));
+        listener.RecordObservableInstruments();
         await shield.ExecuteAsync(_ => new ValueTask<int>(2));
+        listener.RecordObservableInstruments();
         var queued = shield.ExecuteAsync(_ => new ValueTask<int>(3), cancellation.Token).AsTask();
+        listener.RecordObservableInstruments();
         cancellation.Cancel();
         await Assert.That(async () => await queued).Throws<OperationCanceledException>();
+        listener.RecordObservableInstruments();
 
         await Assert.That(listener.Values("kevlar.rate_limit.available", "metrics-rate-state"))
             .Contains(1)
@@ -1716,6 +1696,7 @@ public class MetricsTests
         var second = shield.ExecuteAsync(
             _ => ValueTask.CompletedTask,
             secondCancellation.Token).AsTask();
+        listener.RecordObservableInstruments();
         await Assert.That(listener.Values(
                 "kevlar.rate_limit.queued",
                 "metrics-concurrent-rate-cancellation"))
@@ -1726,6 +1707,7 @@ public class MetricsTests
             Task.Run(secondCancellation.Cancel));
         await Assert.That(async () => await first).Throws<OperationCanceledException>();
         await Assert.That(async () => await second).Throws<OperationCanceledException>();
+        listener.RecordObservableInstruments();
 
         await Assert.That(listener.Values(
                 "kevlar.rate_limit.queued",
@@ -1761,6 +1743,7 @@ public class MetricsTests
         await Assert.That(async () => await firstQueued).Throws<OperationCanceledException>();
         secondCancellation.Cancel();
         await Assert.That(async () => await secondQueued).Throws<OperationCanceledException>();
+        listener.RecordObservableInstruments();
 
         await Assert.That(listener.Values(
                 "kevlar.rate_limit.queued",
@@ -1773,281 +1756,32 @@ public class MetricsTests
     }
 
     [Test]
-    public async Task Rate_Metric_Failure_Removes_The_Queued_Reservation()
+    public async Task State_Gauges_Do_Not_Retain_Collected_Strategies()
     {
-        var throwOnQueued = true;
-        var metricsFailure = new InvalidOperationException("metrics callback");
-        using var observer = new KevlarMeterListener();
-        using var listener = new KevlarMeterListener((instrument, value) =>
+        using var listener = new KevlarMeterListener();
+        var strategy = CreateCollectibleStateStrategy();
+
+        for (var attempt = 0; strategy.IsAlive && attempt < 10; attempt++)
         {
-            if (throwOnQueued && instrument == "kevlar.rate_limit.queued" && value == 1)
-            {
-                throwOnQueued = false;
-                throw metricsFailure;
-            }
-        });
-        using var cancellation = new CancellationTokenSource();
-        var timeProvider = new FakeTimeProvider();
-        var shield = Shield.RateLimit(options =>
-        {
-            options.Permits = 1;
-            options.Window = TimeSpan.FromHours(1);
-            options.QueueLimit = 1;
-        }).WithTimeProvider(timeProvider).WithName("metrics-rate-reservation-failure");
-
-        await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
-        var thrown = await Assert.That(async () =>
-                await shield.ExecuteAsync(_ => ValueTask.CompletedTask))
-            .Throws<InvalidOperationException>();
-        await Assert.That(ReferenceEquals(thrown, metricsFailure)).IsTrue();
-        await Assert.That(observer.Values(
-                "kevlar.rate_limit.queued",
-                "metrics-rate-reservation-failure").Last())
-            .IsEqualTo(0);
-
-        var queued = shield.ExecuteAsync(_ => ValueTask.CompletedTask, cancellation.Token).AsTask();
-        cancellation.Cancel();
-        await Assert.That(async () => await queued).Throws<OperationCanceledException>();
-    }
-
-    [Test]
-    public async Task Rate_Metric_Failure_Restores_An_Immediate_Permit()
-    {
-        var throwOnAvailable = true;
-        var metricsFailure = new InvalidOperationException("metrics callback");
-        using var observer = new KevlarMeterListener();
-        using var listener = new KevlarMeterListener((instrument, value) =>
-        {
-            if (throwOnAvailable && instrument == "kevlar.rate_limit.available" && value == 0)
-            {
-                throwOnAvailable = false;
-                throw metricsFailure;
-            }
-        });
-        var invoked = false;
-        var shield = Shield.RateLimit(1, TimeSpan.FromHours(1))
-            .WithName("metrics-rate-immediate-failure");
-
-        var thrown = await Assert.That(async () =>
-                await shield.ExecuteAsync(_ =>
-                {
-                    invoked = true;
-                    return ValueTask.CompletedTask;
-                }))
-            .Throws<InvalidOperationException>();
-        await Assert.That(ReferenceEquals(thrown, metricsFailure)).IsTrue();
-        await Assert.That(invoked).IsFalse();
-        await Assert.That(observer.Values(
-                "kevlar.rate_limit.available",
-                "metrics-rate-immediate-failure").Last())
-            .IsEqualTo(1);
-
-        await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
-    }
-
-    [Test]
-    public async Task Rate_Metric_Failure_Preserves_A_Nested_Admission()
-    {
-        var timeProvider = new FakeTimeProvider();
-        var nested = false;
-        var nestedInvocations = 0;
-        var metricsFailure = new InvalidOperationException("metrics callback");
-        Shield? shield = null;
-        using var listener = new KevlarMeterListener((instrument, value) =>
-        {
-            if (nested || instrument != "kevlar.rate_limit.available" || value != 1)
-            {
-                return;
-            }
-
-            nested = true;
-            timeProvider.Advance(TimeSpan.FromHours(2));
-            shield!.ExecuteAsync(_ =>
-            {
-                nestedInvocations++;
-                return ValueTask.CompletedTask;
-            }).GetAwaiter().GetResult();
-            throw metricsFailure;
-        });
-        shield = Shield.RateLimit(options =>
-        {
-            options.Permits = 1;
-            options.Window = TimeSpan.FromHours(1);
-            options.Burst = 2;
-        }).WithTimeProvider(timeProvider).WithName("metrics-rate-nested-failure");
-
-        var thrown = await Assert.That(async () =>
-                await shield.ExecuteAsync(_ => ValueTask.CompletedTask))
-            .Throws<InvalidOperationException>();
-        await Assert.That(ReferenceEquals(thrown, metricsFailure)).IsTrue();
-        await Assert.That(nestedInvocations).IsEqualTo(1);
-
-        await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
-        _ = await Assert.That(async () =>
-                await shield.ExecuteAsync(_ => ValueTask.CompletedTask))
-            .Throws<RateLimitExceededException>();
-    }
-
-    [Test]
-    public async Task Rate_Metric_Failure_Preserves_Admission_After_Listener_Disables()
-    {
-        var nested = false;
-        var nestedInvocations = 0;
-        var metricsFailure = new InvalidOperationException("metrics callback");
-        Shield? shield = null;
-        KevlarMeterListener? listener = null;
-        listener = new KevlarMeterListener((instrument, value) =>
-        {
-            if (nested || instrument != "kevlar.rate_limit.available" || value != 1)
-            {
-                return;
-            }
-
-            nested = true;
-            listener!.Dispose();
-            shield!.ExecuteAsync(_ =>
-            {
-                nestedInvocations++;
-                return ValueTask.CompletedTask;
-            }).GetAwaiter().GetResult();
-            throw metricsFailure;
-        });
-        using (listener)
-        {
-            shield = Shield.RateLimit(options =>
-            {
-                options.Permits = 1;
-                options.Window = TimeSpan.FromHours(1);
-                options.Burst = 2;
-            }).WithName("metrics-rate-disabled-nested-failure");
-
-            var thrown = await Assert.That(async () =>
-                    await shield.ExecuteAsync(_ => ValueTask.CompletedTask))
-                .Throws<InvalidOperationException>();
-            await Assert.That(ReferenceEquals(thrown, metricsFailure)).IsTrue();
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
         }
 
-        await Assert.That(nestedInvocations).IsEqualTo(1);
-        await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
-        _ = await Assert.That(async () =>
-                await shield.ExecuteAsync(_ => ValueTask.CompletedTask))
-            .Throws<RateLimitExceededException>();
+        listener.RecordObservableInstruments();
+
+        await Assert.That(strategy.IsAlive).IsFalse();
     }
 
-    [Test]
-    public async Task Rate_Metric_Rollback_Preserves_An_Admission_That_Observed_Metrics_Disabled()
+    [System.Runtime.CompilerServices.MethodImpl(
+        System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    private static WeakReference CreateCollectibleStateStrategy()
     {
-        using var timeProvider = new BlockingFirstTimestampTimeProvider();
-        var shield = Shield.RateLimit(options =>
-        {
-            options.Permits = 1;
-            options.Window = TimeSpan.FromHours(1);
-            options.Burst = 2;
-        }).WithTimeProvider(timeProvider).WithName("metrics-rate-concurrent-enable");
-        var untracked = Task.Run(async () => await shield.ExecuteAsync(_ => ValueTask.CompletedTask));
-
-        await Assert.That(timeProvider.WaitForBlockedSample(TimeSpan.FromSeconds(5))).IsTrue();
-        var metricsFailure = new InvalidOperationException("metrics callback");
-        var throwOnce = true;
-        using var listener = new KevlarMeterListener((instrument, _) =>
-        {
-            if (throwOnce && instrument == "kevlar.rate_limit.available")
-            {
-                throwOnce = false;
-                throw metricsFailure;
-            }
-        });
-        var failedAdmission = Task.Run(async () => await shield.ExecuteAsync(_ => ValueTask.CompletedTask));
-
-        timeProvider.ReleaseBlockedSample();
-        await untracked.WaitAsync(TimeSpan.FromSeconds(5));
-        var thrown = await Assert.That(async () =>
-                await failedAdmission.WaitAsync(TimeSpan.FromSeconds(5)))
-            .Throws<InvalidOperationException>();
-        await Assert.That(ReferenceEquals(thrown, metricsFailure)).IsTrue();
-
-        await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
-        _ = await Assert.That(async () =>
-                await shield.ExecuteAsync(_ => ValueTask.CompletedTask))
-            .Throws<RateLimitExceededException>();
+        var shield = Shield.ConcurrencyLimit(1).WithName("metrics-collectible-strategy");
+        shield.Execute(static _ => { });
+        return new WeakReference(shield.Strategies[0]);
     }
 
-    [Test]
-    public async Task Rate_Queue_Reports_Zero_Availability_After_Its_Due_Time()
-    {
-        var timeProvider = new FakeTimeProvider();
-        var advancedWithQueuedReservation = false;
-        var observedInvalidAvailability = false;
-        using var listener = new KevlarMeterListener((instrument, value) =>
-        {
-            if (instrument == "kevlar.rate_limit.queued"
-                && value == 1
-                && !advancedWithQueuedReservation)
-            {
-                advancedWithQueuedReservation = true;
-                timeProvider.Advance(TimeSpan.FromSeconds(1));
-            }
-            else if (instrument == "kevlar.rate_limit.available"
-                && value > 0
-                && advancedWithQueuedReservation)
-            {
-                observedInvalidAvailability = true;
-            }
-        });
-        var shield = Shield.RateLimit(options =>
-        {
-            options.Permits = 1;
-            options.Window = TimeSpan.FromSeconds(1);
-            options.QueueLimit = 1;
-        }).WithTimeProvider(timeProvider).WithName("metrics-rate-due-reservation");
-
-        await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
-        await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
-
-        await Assert.That(advancedWithQueuedReservation).IsTrue();
-        await Assert.That(observedInvalidAvailability).IsFalse();
-    }
-
-    [Test]
-    public async Task Rate_Metric_Failure_Restores_A_Consumed_Queued_Permit()
-    {
-        var timeProvider = new FakeTimeProvider();
-        var reservationQueued = false;
-        var throwOnConsumption = true;
-        var metricsFailure = new InvalidOperationException("metrics callback");
-        using var listener = new KevlarMeterListener((instrument, value) =>
-        {
-            if (instrument != "kevlar.rate_limit.queued")
-            {
-                return;
-            }
-
-            if (value == 1 && !reservationQueued)
-            {
-                reservationQueued = true;
-                timeProvider.Advance(TimeSpan.FromSeconds(1));
-            }
-            else if (value == 0 && reservationQueued && throwOnConsumption)
-            {
-                throwOnConsumption = false;
-                throw metricsFailure;
-            }
-        });
-        var shield = Shield.RateLimit(options =>
-        {
-            options.Permits = 1;
-            options.Window = TimeSpan.FromSeconds(1);
-            options.QueueLimit = 1;
-        }).WithTimeProvider(timeProvider).WithName("metrics-rate-consumption-failure");
-
-        await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
-        var thrown = await Assert.That(async () =>
-                await shield.ExecuteAsync(_ => ValueTask.CompletedTask))
-            .Throws<InvalidOperationException>();
-        await Assert.That(ReferenceEquals(thrown, metricsFailure)).IsTrue();
-
-        await shield.ExecuteAsync(_ => ValueTask.CompletedTask);
-    }
 #endif
 
     private static Dictionary<(CircuitState From, CircuitState To), long> CircuitTransitionTotals(

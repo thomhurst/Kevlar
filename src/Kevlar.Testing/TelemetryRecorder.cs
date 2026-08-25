@@ -81,6 +81,9 @@ public sealed class TelemetryRecorder : IDisposable, IKevlarTelemetryListener
     {
         get
         {
+#if NET8_0_OR_GREATER
+            _listener?.RecordObservableInstruments();
+#endif
             lock (_gate)
             {
                 return _metrics.ToArray();

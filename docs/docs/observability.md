@@ -179,7 +179,7 @@ Exporter naming rules vary; inspect the exported names if your backend applies a
 
 ### Telemetry overhead
 
-Telemetry cost depends on the runtime, pipeline, listener, exporter, and deployment hardware. See [Benchmarks](benchmarks.md) for the current methodology and generated results. Run `TelemetryBenchmarks` on deployment-class hardware to measure the cost in your environment.
+Telemetry cost depends on the runtime, pipeline, listener, exporter, and deployment hardware. State-gauge collection may take strategy-internal synchronization while it reads a snapshot, but shield execution never takes a telemetry publication lock. See [Benchmarks](benchmarks.md) for the current methodology and generated results. Run `TelemetryBenchmarks` and `StateMetricsContentionBenchmarks` on deployment-class hardware to measure the cost in your environment.
 
 ## Compile-time checks
 

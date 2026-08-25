@@ -194,7 +194,8 @@ if (retry.Kind != CallbackKind.Retry || retry.RetryNumber != 1 || retry.ShieldNa
 Callback recording works from the `netstandard2.0` asset. Metric capture needs the .NET 8 or
 .NET 10 `Kevlar.Testing` asset because `MeterListener` is unavailable in the compatibility asset.
 Use `captureMetrics: false` for callback-only tests, and always dispose the recorder to detach its
-listener. `WaitForMetricCountAsync` and `WaitForCallbackCountAsync` avoid polling concurrent tests.
+listener. Reading `Metrics` collects observable state gauges before returning the immutable
+snapshot. `WaitForMetricCountAsync` and `WaitForCallbackCountAsync` avoid polling concurrent tests.
 
 ## Testing HTTP shields
 

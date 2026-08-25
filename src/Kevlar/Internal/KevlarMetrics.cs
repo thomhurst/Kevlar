@@ -20,6 +20,9 @@ internal static class KevlarMetrics
     private const int _minimumCachedStrategyIndex = -1;
     private const int _maximumCachedStrategyIndex = 63;
     private static readonly object[] _boxedStrategyIndexes = CreateBoxedStrategyIndexes();
+    private static readonly StateMetricRegistry<CircuitBreakerStrategy> CircuitStates = new();
+    private static readonly StateMetricRegistry<ConcurrencyLimitStrategy> ConcurrencyStates = new();
+    private static readonly StateMetricRegistry<RateLimitStrategy> RateStates = new();
 #endif
 
 #if NET8_0_OR_GREATER
@@ -75,28 +78,34 @@ internal static class KevlarMetrics
 #endif
 
 #if NET9_0_OR_GREATER
-    private static readonly Gauge<long> CircuitStateGauge = Meter.CreateGauge<long>(
+    private static readonly ObservableGauge<long> CircuitStateGauge = Meter.CreateObservableGauge(
         "kevlar.circuit_breaker.state",
+        ObserveCircuitStates,
         "{state}",
         "Current circuit-breaker state: closed=0, open=1, half-open=2, isolated=3.");
-    private static readonly Gauge<long> ConcurrencyInflight = Meter.CreateGauge<long>(
+    private static readonly ObservableGauge<long> ConcurrencyInflight = Meter.CreateObservableGauge(
         "kevlar.concurrency_limit.inflight",
+        ObserveConcurrencyInflight,
         "{execution}",
         "Executions currently holding a concurrency permit.");
-    private static readonly Gauge<long> ConcurrencyQueued = Meter.CreateGauge<long>(
+    private static readonly ObservableGauge<long> ConcurrencyQueued = Meter.CreateObservableGauge(
         "kevlar.concurrency_limit.queued",
+        ObserveConcurrencyQueued,
         "{execution}",
         "Executions currently waiting for a concurrency permit.");
-    private static readonly Gauge<long> ConcurrencyCapacity = Meter.CreateGauge<long>(
+    private static readonly ObservableGauge<long> ConcurrencyCapacity = Meter.CreateObservableGauge(
         "kevlar.concurrency_limit.capacity",
+        ObserveConcurrencyCapacity,
         "{execution}",
         "Configured concurrency permit capacity.");
-    private static readonly Gauge<long> RateAvailable = Meter.CreateGauge<long>(
+    private static readonly ObservableGauge<long> RateAvailable = Meter.CreateObservableGauge(
         "kevlar.rate_limit.available",
+        ObserveRateAvailable,
         "{permit}",
         "Immediately available rate-limit permits.");
-    private static readonly Gauge<long> RateQueued = Meter.CreateGauge<long>(
+    private static readonly ObservableGauge<long> RateQueued = Meter.CreateObservableGauge(
         "kevlar.rate_limit.queued",
+        ObserveRateQueued,
         "{execution}",
         "Executions currently waiting for a rate-limit permit.");
 #endif
@@ -372,60 +381,36 @@ internal static class KevlarMetrics
         CircuitState state)
     {
 #if NET9_0_OR_GREATER
-        if (CircuitStateGauge.Enabled)
-        {
-            CircuitStateGauge.Record(
-                StateValue(state),
-                StateTags(shieldName, strategyIndex));
-        }
+    public static StateMetricRegistration<CircuitBreakerStrategy> RegisterCircuitStateSource(
+        CircuitBreakerStrategy strategy) =>
+        CircuitStates.Register(strategy);
+
+    public static StateMetricRegistration<ConcurrencyLimitStrategy> RegisterConcurrencyStateSource(
+        ConcurrencyLimitStrategy strategy) =>
+        ConcurrencyStates.Register(strategy);
+
+    public static StateMetricRegistration<RateLimitStrategy> RegisterRateStateSource(
+        RateLimitStrategy strategy) =>
+        RateStates.Register(strategy);
+
+    private static IEnumerable<Measurement<long>> ObserveCircuitStates() =>
+        CircuitStates.Observe(static (strategy, _) => StateValue(strategy.Core.State));
+
+    private static IEnumerable<Measurement<long>> ObserveConcurrencyInflight() =>
+        ConcurrencyStates.Observe(static (strategy, _) => strategy.CaptureState().Running);
+
+    private static IEnumerable<Measurement<long>> ObserveConcurrencyQueued() =>
+        ConcurrencyStates.Observe(static (strategy, _) => strategy.CaptureState().Queued);
+
+    private static IEnumerable<Measurement<long>> ObserveConcurrencyCapacity() =>
+        ConcurrencyStates.Observe(static (strategy, _) => strategy.MaxConcurrency);
+
+    private static IEnumerable<Measurement<long>> ObserveRateAvailable() =>
+        RateStates.Observe(static (strategy, timeProvider) => strategy.CaptureState(timeProvider!).Available);
+
+    private static IEnumerable<Measurement<long>> ObserveRateQueued() =>
+        RateStates.Observe(static (strategy, timeProvider) => strategy.CaptureState(timeProvider!).Queued);
 #endif
-    }
-
-    public static void RecordConcurrencyState(
-        string? shieldName,
-        int strategyIndex,
-        long inflight,
-        long queued,
-        long capacity)
-    {
-#if NET9_0_OR_GREATER
-        var tags = StateTags(shieldName, strategyIndex);
-        if (ConcurrencyInflight.Enabled)
-        {
-            ConcurrencyInflight.Record(inflight, tags);
-        }
-
-        if (ConcurrencyQueued.Enabled)
-        {
-            ConcurrencyQueued.Record(queued, tags);
-        }
-
-        if (ConcurrencyCapacity.Enabled)
-        {
-            ConcurrencyCapacity.Record(capacity, tags);
-        }
-#endif
-    }
-
-    public static void RecordRateState(
-        string? shieldName,
-        int strategyIndex,
-        long available,
-        long queued)
-    {
-#if NET9_0_OR_GREATER
-        var tags = StateTags(shieldName, strategyIndex);
-        if (RateAvailable.Enabled)
-        {
-            RateAvailable.Record(available, tags);
-        }
-
-        if (RateQueued.Enabled)
-        {
-            RateQueued.Record(queued, tags);
-        }
-#endif
-    }
 
 #if NET8_0_OR_GREATER
     private static TagList NameTags(string? shieldName)
@@ -523,3 +508,23 @@ internal static class KevlarMetrics
 }
 
 internal readonly record struct StrategyMetricAlias(string? ShieldName, int StrategyIndex);
+
+#if NET9_0_OR_GREATER
+internal sealed class StateMetricObservation
+{
+    private TimeProvider? _timeProvider;
+
+    public StateMetricObservation(StrategyMetricAlias alias, TimeProvider? timeProvider)
+    {
+        Alias = alias;
+        _timeProvider = timeProvider;
+    }
+
+    public StrategyMetricAlias Alias { get; }
+
+    public TimeProvider? TimeProvider => Volatile.Read(ref _timeProvider);
+
+    public void SetTimeProvider(TimeProvider? timeProvider) =>
+        Volatile.Write(ref _timeProvider, timeProvider);
+}
+#endif

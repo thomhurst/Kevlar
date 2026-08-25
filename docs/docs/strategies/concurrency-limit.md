@@ -37,9 +37,10 @@ and identify the options type, property, and offending value.
 
 Total capacity is `MaxConcurrency + QueueLimit`. Anything beyond that fails **immediately** with `ConcurrencyLimitExceededException` — the overflow check happens before any waiting, so rejection is instant and allocation-light.
 
-For an actual rejection, Kevlar publishes current limiter state and rejection metrics, invokes
-`OnRejected`, awaits `OnRejectedAsync`, then surfaces `ConcurrencyLimitExceededException`. The
-event includes the configured concurrency/queue limits, strategy index, and `KevlarContext`.
+For an actual rejection, Kevlar records the rejection counter, invokes `OnRejected`, awaits
+`OnRejectedAsync`, then surfaces `ConcurrencyLimitExceededException`. Observable limiter gauges
+report the current state at the next metrics collection. The event includes the configured
+concurrency/queue limits, strategy index, and `KevlarContext`.
 Callback failures are reported through `KevlarDiagnostics.OnCallbackError`; both callbacks still
 run and `ConcurrencyLimitExceededException` remains the rejection outcome.
 

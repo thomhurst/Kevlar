@@ -1,15 +1,15 @@
-using System.Runtime.ExceptionServices;
 using Kevlar.Internal;
 
 namespace Kevlar.Strategies;
 
 internal sealed class CircuitBreakerStrategy : Strategy
 {
-    private readonly Lock _metricsNamesGate = new();
-    private readonly HashSet<StrategyMetricAlias> _metricsAliases = [];
     protected internal override bool InvokesContinuationAtMostOnce => true;
     private readonly CircuitBreakerCore _core;
     private readonly OutcomeJudge _judge;
+#if NET9_0_OR_GREATER
+    private readonly KevlarMetrics.StateMetricRegistration<CircuitBreakerStrategy> _metricsRegistration;
+#endif
 
     public CircuitBreakerStrategy(CircuitBreakerOptions options, OutcomeJudge judge)
         : this(
@@ -35,6 +35,9 @@ internal sealed class CircuitBreakerStrategy : Strategy
             breakDurationGenerator,
             RecordTransitionState,
             optionsType);
+#if NET9_0_OR_GREATER
+        _metricsRegistration = KevlarMetrics.RegisterCircuitStateSource(this);
+#endif
         _judge = judge;
         HasHandlingOverride = hasHandlingOverride;
     }
@@ -65,10 +68,10 @@ internal sealed class CircuitBreakerStrategy : Strategy
     public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
         var alias = new StrategyMetricAlias(context.ShieldName, context.StrategyIndex);
-        var recordState = RegisterMetricsAlias(alias);
+        RegisterMetricsAlias(alias);
         if (_core.RequiresAsyncExecution)
         {
-            return ExecuteConfiguredAsync(next, context, alias, recordState);
+            return ExecuteConfiguredAsync(next, context);
         }
 
         if (!_core.TryEnter(
@@ -86,46 +89,29 @@ internal sealed class CircuitBreakerStrategy : Strategy
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(rejection!));
         }
 
-        if (recordState)
-        {
-            try
-            {
-                RecordState(alias);
-            }
-            catch
-            {
-                _core.AbandonProbe(admissionGeneration);
-                throw;
-            }
-        }
-
         var execution = next.InvokeAsync(context);
         // Stryker disable once all: Route selection is performance-only; both branches call Complete.
         return execution.IsCompletedSuccessfully
-            ? new ValueTask<Outcome<T>>(Complete(execution.Result, context, admissionGeneration, alias, recordState))
-            : AwaitOutcomeAsync(execution, context, admissionGeneration, alias, recordState);
+            ? new ValueTask<Outcome<T>>(Complete(execution.Result, context, admissionGeneration))
+            : AwaitOutcomeAsync(execution, context, admissionGeneration);
     }
 
     private async ValueTask<Outcome<T>> AwaitOutcomeAsync<T>(
         ValueTask<Outcome<T>> execution,
         KevlarContext context,
-        long admissionGeneration,
-        StrategyMetricAlias alias,
-        bool recordState)
+        long admissionGeneration)
     {
         // Stryker disable once all: ConfigureAwait is execution-context policy, not outcome behavior.
         var outcome = await execution.ConfigureAwait(false);
-        return Complete(outcome, context, admissionGeneration, alias, recordState);
+        return Complete(outcome, context, admissionGeneration);
     }
 
     private Outcome<T> Complete<T>(
         Outcome<T> outcome,
         KevlarContext context,
-        long admissionGeneration,
-        StrategyMetricAlias alias,
-        bool recordState)
+        long admissionGeneration)
     {
-        if (_judge.ShouldHandle(in outcome, context, attempt: 0, alias.StrategyIndex))
+        if (_judge.ShouldHandle(in outcome, context, attempt: 0, context.StrategyIndex))
         {
             _core.RecordFailure(
                 context.TimeProvider,
@@ -143,111 +129,42 @@ internal sealed class CircuitBreakerStrategy : Strategy
             _core.AbandonProbe(admissionGeneration);
         }
 
-        if (recordState)
-        {
-            RecordState(alias);
-        }
-
         return outcome;
     }
 
-    private void RecordState(StrategyMetricAlias alias)
+    private void RegisterMetricsAlias(StrategyMetricAlias alias)
     {
+#if NET9_0_OR_GREATER
         if (KevlarMetrics.CircuitStateEnabled)
         {
-            while (true)
-            {
-                var state = _core.State;
-                KevlarMetrics.RecordCircuitState(alias.ShieldName, alias.StrategyIndex, state);
-                if (state == _core.State)
-                {
-                    return;
-                }
-            }
+            _metricsRegistration.Add(alias);
         }
+#endif
     }
 
-    private bool RegisterMetricsAlias(StrategyMetricAlias alias)
+    private void RecordTransitionState(CircuitState _)
     {
-        if (!KevlarMetrics.CircuitStateEnabled)
+#if NET9_0_OR_GREATER
+        if (KevlarMetrics.CircuitStateEnabled && _metricsRegistration.Observations.Length == 0)
         {
-            return false;
+            _metricsRegistration.Add(new StrategyMetricAlias(null, -1));
         }
-
-        lock (_metricsNamesGate)
-        {
-            if (_metricsAliases.Contains(alias))
-            {
-                return true;
-            }
-
-            if (_metricsAliases.Count >= KevlarMetrics.MaxTrackedStrategyAliases)
-            {
-                return false;
-            }
-
-            _metricsAliases.Add(alias);
-            return true;
-        }
-    }
-
-    private void RecordTransitionState(CircuitState state)
-    {
-        if (!KevlarMetrics.CircuitStateEnabled)
-        {
-            return;
-        }
-
-        StrategyMetricAlias[] aliases;
-        lock (_metricsNamesGate)
-        {
-            if (_metricsAliases.Count == 0)
-            {
-                _metricsAliases.Add(new StrategyMetricAlias(null, -1));
-            }
-
-            aliases = [.. _metricsAliases];
-        }
-
-        List<Exception>? failures = null;
-        foreach (var alias in aliases)
-        {
-            try
-            {
-                KevlarMetrics.RecordCircuitState(alias.ShieldName, alias.StrategyIndex, state);
-            }
-            catch (Exception exception)
-            {
-                (failures ??= []).Add(exception);
-            }
-        }
-
-        if (failures is [var failure])
-        {
-            ExceptionDispatchInfo.Capture(failure).Throw();
-        }
-
-        if (failures is { Count: > 1 })
-        {
-            throw new AggregateException(failures).Flatten();
-        }
+#endif
     }
 
     private ValueTask<Outcome<T>> ExecuteConfiguredAsync<T, TState>(
         Continuation<T, TState> next,
-        KevlarContext context,
-        StrategyMetricAlias alias,
-        bool recordState)
+        KevlarContext context)
     {
         var entry = _core.TryEnterAsync(context.TimeProvider, context);
         if (!entry.IsCompletedSuccessfully)
         {
-            return AwaitConfiguredEntryAsync(entry, next, context, alias, recordState);
+            return AwaitConfiguredEntryAsync(entry, next, context);
         }
 
         try
         {
-            return ExecuteConfiguredEntry(entry.Result, next, context, alias, recordState);
+            return ExecuteConfiguredEntry(entry.Result, next, context);
         }
         catch (Exception exception)
         {
@@ -258,20 +175,16 @@ internal sealed class CircuitBreakerStrategy : Strategy
     private async ValueTask<Outcome<T>> AwaitConfiguredEntryAsync<T, TState>(
         ValueTask<CircuitBreakerCore.EntryResult> entry,
         Continuation<T, TState> next,
-        KevlarContext context,
-        StrategyMetricAlias alias,
-        bool recordState)
+        KevlarContext context)
     {
         var result = await entry.ConfigureAwait(false);
-        return await ExecuteConfiguredEntry(result, next, context, alias, recordState).ConfigureAwait(false);
+        return await ExecuteConfiguredEntry(result, next, context).ConfigureAwait(false);
     }
 
     private ValueTask<Outcome<T>> ExecuteConfiguredEntry<T, TState>(
         CircuitBreakerCore.EntryResult entry,
         Continuation<T, TState> next,
-        KevlarContext context,
-        StrategyMetricAlias alias,
-        bool recordState)
+        KevlarContext context)
     {
         if (!entry.Allowed)
         {
@@ -288,55 +201,34 @@ internal sealed class CircuitBreakerStrategy : Strategy
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(entry.Rejection!));
         }
 
-        if (recordState)
-        {
-            try
-            {
-                RecordState(alias);
-            }
-            catch
-            {
-                _core.AbandonProbe(entry.AdmissionGeneration);
-                throw;
-            }
-        }
-
         var execution = next.InvokeAsync(context);
         return execution.IsCompletedSuccessfully
-            ? CompleteConfigured(execution.Result, context, entry.AdmissionGeneration, alias, recordState)
+            ? CompleteConfigured(execution.Result, context, entry.AdmissionGeneration)
             : AwaitConfiguredOutcomeAsync(
                 execution,
                 context,
-                entry.AdmissionGeneration,
-                alias,
-                recordState);
+                entry.AdmissionGeneration);
     }
 
     private async ValueTask<Outcome<T>> AwaitConfiguredOutcomeAsync<T>(
         ValueTask<Outcome<T>> execution,
         KevlarContext context,
-        long admissionGeneration,
-        StrategyMetricAlias alias,
-        bool recordState)
+        long admissionGeneration)
     {
         var outcome = await execution.ConfigureAwait(false);
         return await CompleteConfigured(
             outcome,
             context,
-            admissionGeneration,
-            alias,
-            recordState).ConfigureAwait(false);
+            admissionGeneration).ConfigureAwait(false);
     }
 
     private ValueTask<Outcome<T>> CompleteConfigured<T>(
         Outcome<T> outcome,
         KevlarContext context,
-        long admissionGeneration,
-        StrategyMetricAlias alias,
-        bool recordState)
+        long admissionGeneration)
     {
         ValueTask recording;
-        if (_judge.ShouldHandle(in outcome, context, attempt: 0, alias.StrategyIndex))
+        if (_judge.ShouldHandle(in outcome, context, attempt: 0, context.StrategyIndex))
         {
             recording = _core.RecordFailureAsync(
                 context.TimeProvider,
@@ -359,30 +251,18 @@ internal sealed class CircuitBreakerStrategy : Strategy
 
         if (!recording.IsCompletedSuccessfully)
         {
-            return AwaitConfiguredRecordingAsync(recording, outcome, alias, recordState);
+            return AwaitConfiguredRecordingAsync(recording, outcome);
         }
 
         recording.GetAwaiter().GetResult();
-        if (recordState)
-        {
-            RecordState(alias);
-        }
-
         return new ValueTask<Outcome<T>>(outcome);
     }
 
     private async ValueTask<Outcome<T>> AwaitConfiguredRecordingAsync<T>(
         ValueTask recording,
-        Outcome<T> outcome,
-        StrategyMetricAlias alias,
-        bool recordState)
+        Outcome<T> outcome)
     {
         await recording.ConfigureAwait(false);
-        if (recordState)
-        {
-            RecordState(alias);
-        }
-
         return outcome;
     }
 }
