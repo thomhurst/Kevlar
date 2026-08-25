@@ -720,6 +720,39 @@ public class MetricsTests
     }
 
     [Test]
+    public async Task Custom_Event_Uses_The_Active_Hedge_Attempt()
+    {
+        var attempts = new ConcurrentQueue<int>();
+        var startedAttempts = 0;
+        var bothAttemptsStarted = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        using var subscription = KevlarDiagnostics.Listen(new CallbackTelemetryListener(telemetryEvent =>
+        {
+            if (telemetryEvent.EventName != "custom_strategy_event")
+            {
+                return;
+            }
+
+            attempts.Enqueue(telemetryEvent.AttemptNumber);
+            if (Interlocked.Increment(ref startedAttempts) == 2)
+            {
+                bothAttemptsStarted.TrySetResult();
+            }
+        }));
+        var shield = Shield.Hedge(1, TimeSpan.Zero)
+            .Use(new TelemetryStrategy());
+
+        var result = await shield.ExecuteAsync(async _ =>
+        {
+            await bothAttemptsStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            return 42;
+        });
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(attempts).IsEquivalentTo([0, 1]);
+    }
+
+    [Test]
     public async Task Wrapped_Cancellations_Are_Counted_As_Timeouts()
     {
         using var listener = new KevlarMeterListener();

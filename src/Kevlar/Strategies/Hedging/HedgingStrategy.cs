@@ -401,6 +401,7 @@ internal sealed class HedgingStrategy : Strategy
     {
         var cancellation = CancellationTokenSourcePool.Shared.RentLinked(context.CancellationToken);
         var fork = context.Fork(cancellation.Token);
+        fork.AttemptNumber = attemptNumber - 1;
         OriginalActionContextCapture<T>? contextCapture = null;
         try
         {
