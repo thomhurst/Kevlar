@@ -10,8 +10,8 @@ execution-scoped objects that must remain owned by one operation.
 
 | Types | Guarantee |
 |---|---|
-| `Shield`, `Shield<TResult>`, `VoidShield`, `ShieldBuilder`, `ShieldBuilder<TResult>`, `VoidShieldBuilder` | Immutable and thread-safe. Fluent calls return new values; copies intentionally share existing stateful strategies. |
-| [`PartitionedShield<TKey>`, `PartitionedShield<TKey, TResult>`, and `PartitionedVoidShield<TKey>`](partitioning.md) | Thread-safe. Partition creation is coordinated and retained state is bounded by `PartitionedShieldOptions`. Eviction can occur immediately after a lookup, so a snapshot is never a reservation. |
+| `Shield`, `Shield<TResult>`, `ShieldBuilder`, `ShieldBuilder<TResult>` | Immutable and thread-safe. Fluent calls return new values; copies intentionally share existing stateful strategies. |
+| [`PartitionedShield<TKey>` and `PartitionedShield<TKey, TResult>`](partitioning.md) | Thread-safe. Partition creation is coordinated and retained state is bounded by `PartitionedShieldOptions`. Eviction can occur immediately after a lookup, so a snapshot is never a reservation. |
 | `CircuitBreakerMonitor` | Thread-safe after construction and bindable to exactly one circuit breaker. `StateChanged` notifications are serialized. |
 | `KevlarContext`, `KevlarProperties` | Execution-scoped and not safe for caller-created concurrent access. Do not retain them after the delegate or callback returns. Hedge attempts receive detached property containers, but mutable values stored inside them remain the caller's responsibility. |
 | `IKevlarRegistry`, `IShieldProvider` | Thread-safe singleton services. Registry lookups return immutable snapshots; a keyed shield resolved from DI does not change after resolution. Query the provider or registry again to observe reloads. |
@@ -23,6 +23,11 @@ execution-scoped objects that must remain owned by one operation.
 Options and configuration definitions are mutable setup objects. Do not mutate or configure one
 instance concurrently. Fluent factories read and validate them while building a strategy; later
 changes do not reconfigure an already-built shield.
+
+The direct `ShieldDelegatingHandler(shield, options)` constructor is the exception: the handler
+retains that `ShieldHttpHandlerOptions` instance and reads it during requests. Treat the options as
+immutable after construction; mutating it can change live replay or routing behavior and racing
+mutations are unsafe. `IHttpClientBuilder.AddShield(...)` snapshots its supplied handler options.
 
 The following public mutable types follow that rule:
 
