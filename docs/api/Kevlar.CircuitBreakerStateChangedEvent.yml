@@ -1,19 +1,20 @@
 ### YamlMime:ManagedReference
 items:
-- uid: Kevlar.CircuitStateChangedEvent
-  commentId: T:Kevlar.CircuitStateChangedEvent
-  id: CircuitStateChangedEvent
+- uid: Kevlar.CircuitBreakerStateChangedEvent
+  commentId: T:Kevlar.CircuitBreakerStateChangedEvent
+  id: CircuitBreakerStateChangedEvent
   parent: Kevlar
   children:
-  - Kevlar.CircuitStateChangedEvent.From
-  - Kevlar.CircuitStateChangedEvent.LastException
-  - Kevlar.CircuitStateChangedEvent.To
+  - Kevlar.CircuitBreakerStateChangedEvent.Context
+  - Kevlar.CircuitBreakerStateChangedEvent.From
+  - Kevlar.CircuitBreakerStateChangedEvent.LastException
+  - Kevlar.CircuitBreakerStateChangedEvent.To
   langs:
   - csharp
   - vb
-  name: CircuitStateChangedEvent
-  nameWithType: CircuitStateChangedEvent
-  fullName: Kevlar.CircuitStateChangedEvent
+  name: CircuitBreakerStateChangedEvent
+  nameWithType: CircuitBreakerStateChangedEvent
+  fullName: Kevlar.CircuitBreakerStateChangedEvent
   type: Struct
   assemblies:
   - Kevlar
@@ -21,8 +22,8 @@ items:
   summary: Describes a circuit breaker state transition.
   example: []
   syntax:
-    content: public readonly struct CircuitStateChangedEvent
-    content.vb: Public Structure CircuitStateChangedEvent
+    content: public readonly struct CircuitBreakerStateChangedEvent
+    content.vb: Public Structure CircuitBreakerStateChangedEvent
   inheritedMembers:
   - System.ValueType.Equals(System.Object)
   - System.ValueType.GetHashCode
@@ -30,16 +31,16 @@ items:
   - System.Object.GetType
   - System.Object.Equals(System.Object,System.Object)
   - System.Object.ReferenceEquals(System.Object,System.Object)
-- uid: Kevlar.CircuitStateChangedEvent.From
-  commentId: P:Kevlar.CircuitStateChangedEvent.From
+- uid: Kevlar.CircuitBreakerStateChangedEvent.From
+  commentId: P:Kevlar.CircuitBreakerStateChangedEvent.From
   id: From
-  parent: Kevlar.CircuitStateChangedEvent
+  parent: Kevlar.CircuitBreakerStateChangedEvent
   langs:
   - csharp
   - vb
   name: From
-  nameWithType: CircuitStateChangedEvent.From
-  fullName: Kevlar.CircuitStateChangedEvent.From
+  nameWithType: CircuitBreakerStateChangedEvent.From
+  fullName: Kevlar.CircuitBreakerStateChangedEvent.From
   type: Property
   assemblies:
   - Kevlar
@@ -52,17 +53,17 @@ items:
     return:
       type: Kevlar.CircuitState
     content.vb: Public ReadOnly Property From As CircuitState
-  overload: Kevlar.CircuitStateChangedEvent.From*
-- uid: Kevlar.CircuitStateChangedEvent.To
-  commentId: P:Kevlar.CircuitStateChangedEvent.To
+  overload: Kevlar.CircuitBreakerStateChangedEvent.From*
+- uid: Kevlar.CircuitBreakerStateChangedEvent.To
+  commentId: P:Kevlar.CircuitBreakerStateChangedEvent.To
   id: To
-  parent: Kevlar.CircuitStateChangedEvent
+  parent: Kevlar.CircuitBreakerStateChangedEvent
   langs:
   - csharp
   - vb
   name: To
-  nameWithType: CircuitStateChangedEvent.To
-  fullName: Kevlar.CircuitStateChangedEvent.To
+  nameWithType: CircuitBreakerStateChangedEvent.To
+  fullName: Kevlar.CircuitBreakerStateChangedEvent.To
   type: Property
   assemblies:
   - Kevlar
@@ -75,17 +76,17 @@ items:
     return:
       type: Kevlar.CircuitState
     content.vb: Public ReadOnly Property [To] As CircuitState
-  overload: Kevlar.CircuitStateChangedEvent.To*
-- uid: Kevlar.CircuitStateChangedEvent.LastException
-  commentId: P:Kevlar.CircuitStateChangedEvent.LastException
+  overload: Kevlar.CircuitBreakerStateChangedEvent.To*
+- uid: Kevlar.CircuitBreakerStateChangedEvent.LastException
+  commentId: P:Kevlar.CircuitBreakerStateChangedEvent.LastException
   id: LastException
-  parent: Kevlar.CircuitStateChangedEvent
+  parent: Kevlar.CircuitBreakerStateChangedEvent
   langs:
   - csharp
   - vb
   name: LastException
-  nameWithType: CircuitStateChangedEvent.LastException
-  fullName: Kevlar.CircuitStateChangedEvent.LastException
+  nameWithType: CircuitBreakerStateChangedEvent.LastException
+  fullName: Kevlar.CircuitBreakerStateChangedEvent.LastException
   type: Property
   assemblies:
   - Kevlar
@@ -98,7 +99,33 @@ items:
     return:
       type: System.Exception
     content.vb: Public ReadOnly Property LastException As Exception
-  overload: Kevlar.CircuitStateChangedEvent.LastException*
+  overload: Kevlar.CircuitBreakerStateChangedEvent.LastException*
+- uid: Kevlar.CircuitBreakerStateChangedEvent.Context
+  commentId: P:Kevlar.CircuitBreakerStateChangedEvent.Context
+  id: Context
+  parent: Kevlar.CircuitBreakerStateChangedEvent
+  langs:
+  - csharp
+  - vb
+  name: Context
+  nameWithType: CircuitBreakerStateChangedEvent.Context
+  fullName: Kevlar.CircuitBreakerStateChangedEvent.Context
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    The triggering execution context. Manual monitor transitions receive a detached context
+
+    with <xref href="Kevlar.KevlarContext.StrategyIndex" data-throw-if-not-resolved="false"></xref> equal to <code>-1</code>.
+  example: []
+  syntax:
+    content: public KevlarContext Context { get; }
+    parameters: []
+    return:
+      type: Kevlar.KevlarContext
+    content.vb: Public ReadOnly Property Context As KevlarContext
+  overload: Kevlar.CircuitBreakerStateChangedEvent.Context*
 references:
 - uid: Kevlar
   commentId: N:Kevlar
@@ -324,13 +351,13 @@ references:
   name: System
   nameWithType: System
   fullName: System
-- uid: Kevlar.CircuitStateChangedEvent.From*
-  commentId: Overload:Kevlar.CircuitStateChangedEvent.From
+- uid: Kevlar.CircuitBreakerStateChangedEvent.From*
+  commentId: Overload:Kevlar.CircuitBreakerStateChangedEvent.From
   isExternal: true
-  href: Kevlar.CircuitStateChangedEvent.html#Kevlar_CircuitStateChangedEvent_From
+  href: Kevlar.CircuitBreakerStateChangedEvent.html#Kevlar_CircuitBreakerStateChangedEvent_From
   name: From
-  nameWithType: CircuitStateChangedEvent.From
-  fullName: Kevlar.CircuitStateChangedEvent.From
+  nameWithType: CircuitBreakerStateChangedEvent.From
+  fullName: Kevlar.CircuitBreakerStateChangedEvent.From
 - uid: Kevlar.CircuitState
   commentId: T:Kevlar.CircuitState
   parent: Kevlar
@@ -339,20 +366,20 @@ references:
   name: CircuitState
   nameWithType: CircuitState
   fullName: Kevlar.CircuitState
-- uid: Kevlar.CircuitStateChangedEvent.To*
-  commentId: Overload:Kevlar.CircuitStateChangedEvent.To
+- uid: Kevlar.CircuitBreakerStateChangedEvent.To*
+  commentId: Overload:Kevlar.CircuitBreakerStateChangedEvent.To
   isExternal: true
-  href: Kevlar.CircuitStateChangedEvent.html#Kevlar_CircuitStateChangedEvent_To
+  href: Kevlar.CircuitBreakerStateChangedEvent.html#Kevlar_CircuitBreakerStateChangedEvent_To
   name: To
-  nameWithType: CircuitStateChangedEvent.To
-  fullName: Kevlar.CircuitStateChangedEvent.To
-- uid: Kevlar.CircuitStateChangedEvent.LastException*
-  commentId: Overload:Kevlar.CircuitStateChangedEvent.LastException
+  nameWithType: CircuitBreakerStateChangedEvent.To
+  fullName: Kevlar.CircuitBreakerStateChangedEvent.To
+- uid: Kevlar.CircuitBreakerStateChangedEvent.LastException*
+  commentId: Overload:Kevlar.CircuitBreakerStateChangedEvent.LastException
   isExternal: true
-  href: Kevlar.CircuitStateChangedEvent.html#Kevlar_CircuitStateChangedEvent_LastException
+  href: Kevlar.CircuitBreakerStateChangedEvent.html#Kevlar_CircuitBreakerStateChangedEvent_LastException
   name: LastException
-  nameWithType: CircuitStateChangedEvent.LastException
-  fullName: Kevlar.CircuitStateChangedEvent.LastException
+  nameWithType: CircuitBreakerStateChangedEvent.LastException
+  fullName: Kevlar.CircuitBreakerStateChangedEvent.LastException
 - uid: System.Exception
   commentId: T:System.Exception
   parent: System
@@ -361,3 +388,25 @@ references:
   name: Exception
   nameWithType: Exception
   fullName: System.Exception
+- uid: Kevlar.KevlarContext.StrategyIndex
+  commentId: P:Kevlar.KevlarContext.StrategyIndex
+  isExternal: true
+  href: Kevlar.KevlarContext.html#Kevlar_KevlarContext_StrategyIndex
+  name: StrategyIndex
+  nameWithType: KevlarContext.StrategyIndex
+  fullName: Kevlar.KevlarContext.StrategyIndex
+- uid: Kevlar.CircuitBreakerStateChangedEvent.Context*
+  commentId: Overload:Kevlar.CircuitBreakerStateChangedEvent.Context
+  isExternal: true
+  href: Kevlar.CircuitBreakerStateChangedEvent.html#Kevlar_CircuitBreakerStateChangedEvent_Context
+  name: Context
+  nameWithType: CircuitBreakerStateChangedEvent.Context
+  fullName: Kevlar.CircuitBreakerStateChangedEvent.Context
+- uid: Kevlar.KevlarContext
+  commentId: T:Kevlar.KevlarContext
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.KevlarContext.html
+  name: KevlarContext
+  nameWithType: KevlarContext
+  fullName: Kevlar.KevlarContext

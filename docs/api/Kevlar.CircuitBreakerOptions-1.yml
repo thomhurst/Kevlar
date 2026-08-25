@@ -304,11 +304,11 @@ items:
     callback completes. When configured, this value overrides <xref href="Kevlar.CircuitBreakerOptions.BreakDuration" data-throw-if-not-resolved="false"></xref>.
   example: []
   syntax:
-    content: public Func<CircuitBreakerBreakDurationEvent, ValueTask<TimeSpan>>? BreakDurationGenerator { get; set; }
+    content: public Func<CircuitBreakerBreakDurationEvent<TResult>, ValueTask<TimeSpan>>? BreakDurationGenerator { get; set; }
     parameters: []
     return:
-      type: System.Func{Kevlar.CircuitBreakerBreakDurationEvent,System.Threading.Tasks.ValueTask{System.TimeSpan}}
-    content.vb: Public Property BreakDurationGenerator As Func(Of CircuitBreakerBreakDurationEvent, ValueTask(Of TimeSpan))
+      type: System.Func{Kevlar.CircuitBreakerBreakDurationEvent{{TResult}},System.Threading.Tasks.ValueTask{System.TimeSpan}}
+    content.vb: Public Property BreakDurationGenerator As Func(Of CircuitBreakerBreakDurationEvent(Of TResult), ValueTask(Of TimeSpan))
   overload: Kevlar.CircuitBreakerOptions`1.BreakDurationGenerator*
   nameWithType.vb: CircuitBreakerOptions(Of TResult).BreakDurationGenerator
   fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).BreakDurationGenerator
@@ -368,11 +368,11 @@ items:
     it should not perform I/O, wait on external work, or otherwise run for a long time.
   example: []
   syntax:
-    content: public Action<CircuitStateChangedEvent>? OnStateChanged { get; set; }
+    content: public Action<CircuitBreakerStateChangedEvent>? OnStateChanged { get; set; }
     parameters: []
     return:
-      type: System.Action{Kevlar.CircuitStateChangedEvent}
-    content.vb: Public Property OnStateChanged As Action(Of CircuitStateChangedEvent)
+      type: System.Action{Kevlar.CircuitBreakerStateChangedEvent}
+    content.vb: Public Property OnStateChanged As Action(Of CircuitBreakerStateChangedEvent)
   overload: Kevlar.CircuitBreakerOptions`1.OnStateChanged*
   nameWithType.vb: CircuitBreakerOptions(Of TResult).OnStateChanged
   fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).OnStateChanged
@@ -398,11 +398,11 @@ items:
     serially outside the circuit lock.
   example: []
   syntax:
-    content: public Func<CircuitStateChangedEvent, ValueTask>? OnStateChangedAsync { get; set; }
+    content: public Func<CircuitBreakerStateChangedEvent, ValueTask>? OnStateChangedAsync { get; set; }
     parameters: []
     return:
-      type: System.Func{Kevlar.CircuitStateChangedEvent,System.Threading.Tasks.ValueTask}
-    content.vb: Public Property OnStateChangedAsync As Func(Of CircuitStateChangedEvent, ValueTask)
+      type: System.Func{Kevlar.CircuitBreakerStateChangedEvent,System.Threading.Tasks.ValueTask}
+    content.vb: Public Property OnStateChangedAsync As Func(Of CircuitBreakerStateChangedEvent, ValueTask)
   overload: Kevlar.CircuitBreakerOptions`1.OnStateChangedAsync*
   nameWithType.vb: CircuitBreakerOptions(Of TResult).OnStateChangedAsync
   fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).OnStateChangedAsync
@@ -1033,27 +1033,30 @@ references:
   fullName: Kevlar.CircuitBreakerOptions<TResult>.BreakDurationGenerator
   nameWithType.vb: CircuitBreakerOptions(Of TResult).BreakDurationGenerator
   fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).BreakDurationGenerator
-- uid: System.Func{Kevlar.CircuitBreakerBreakDurationEvent,System.Threading.Tasks.ValueTask{System.TimeSpan}}
-  commentId: T:System.Func{Kevlar.CircuitBreakerBreakDurationEvent,System.Threading.Tasks.ValueTask{System.TimeSpan}}
+- uid: System.Func{Kevlar.CircuitBreakerBreakDurationEvent{{TResult}},System.Threading.Tasks.ValueTask{System.TimeSpan}}
+  commentId: T:System.Func{Kevlar.CircuitBreakerBreakDurationEvent{`0},System.Threading.Tasks.ValueTask{System.TimeSpan}}
   parent: System
   definition: System.Func`2
   href: https://learn.microsoft.com/dotnet/api/system.func-2
-  name: Func<CircuitBreakerBreakDurationEvent, ValueTask<TimeSpan>>
-  nameWithType: Func<CircuitBreakerBreakDurationEvent, ValueTask<TimeSpan>>
-  fullName: System.Func<Kevlar.CircuitBreakerBreakDurationEvent, System.Threading.Tasks.ValueTask<System.TimeSpan>>
-  nameWithType.vb: Func(Of CircuitBreakerBreakDurationEvent, ValueTask(Of TimeSpan))
-  fullName.vb: System.Func(Of Kevlar.CircuitBreakerBreakDurationEvent, System.Threading.Tasks.ValueTask(Of System.TimeSpan))
-  name.vb: Func(Of CircuitBreakerBreakDurationEvent, ValueTask(Of TimeSpan))
+  name: Func<CircuitBreakerBreakDurationEvent<TResult>, ValueTask<TimeSpan>>
+  nameWithType: Func<CircuitBreakerBreakDurationEvent<TResult>, ValueTask<TimeSpan>>
+  fullName: System.Func<Kevlar.CircuitBreakerBreakDurationEvent<TResult>, System.Threading.Tasks.ValueTask<System.TimeSpan>>
+  nameWithType.vb: Func(Of CircuitBreakerBreakDurationEvent(Of TResult), ValueTask(Of TimeSpan))
+  fullName.vb: System.Func(Of Kevlar.CircuitBreakerBreakDurationEvent(Of TResult), System.Threading.Tasks.ValueTask(Of System.TimeSpan))
+  name.vb: Func(Of CircuitBreakerBreakDurationEvent(Of TResult), ValueTask(Of TimeSpan))
   spec.csharp:
   - uid: System.Func`2
     name: Func
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.func-2
   - name: <
-  - uid: Kevlar.CircuitBreakerBreakDurationEvent
+  - uid: Kevlar.CircuitBreakerBreakDurationEvent`1
     name: CircuitBreakerBreakDurationEvent
     isExternal: true
-    href: Kevlar.CircuitBreakerBreakDurationEvent.html
+    href: Kevlar.CircuitBreakerBreakDurationEvent-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
   - name: ','
   - name: " "
   - uid: System.Threading.Tasks.ValueTask`1
@@ -1075,10 +1078,15 @@ references:
   - name: (
   - name: Of
   - name: " "
-  - uid: Kevlar.CircuitBreakerBreakDurationEvent
+  - uid: Kevlar.CircuitBreakerBreakDurationEvent`1
     name: CircuitBreakerBreakDurationEvent
     isExternal: true
-    href: Kevlar.CircuitBreakerBreakDurationEvent.html
+    href: Kevlar.CircuitBreakerBreakDurationEvent-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
   - name: ','
   - name: " "
   - uid: System.Threading.Tasks.ValueTask`1
@@ -1176,27 +1184,27 @@ references:
   fullName: Kevlar.CircuitBreakerOptions<TResult>.OnStateChanged
   nameWithType.vb: CircuitBreakerOptions(Of TResult).OnStateChanged
   fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).OnStateChanged
-- uid: System.Action{Kevlar.CircuitStateChangedEvent}
-  commentId: T:System.Action{Kevlar.CircuitStateChangedEvent}
+- uid: System.Action{Kevlar.CircuitBreakerStateChangedEvent}
+  commentId: T:System.Action{Kevlar.CircuitBreakerStateChangedEvent}
   parent: System
   definition: System.Action`1
   href: https://learn.microsoft.com/dotnet/api/system.action-1
-  name: Action<CircuitStateChangedEvent>
-  nameWithType: Action<CircuitStateChangedEvent>
-  fullName: System.Action<Kevlar.CircuitStateChangedEvent>
-  nameWithType.vb: Action(Of CircuitStateChangedEvent)
-  fullName.vb: System.Action(Of Kevlar.CircuitStateChangedEvent)
-  name.vb: Action(Of CircuitStateChangedEvent)
+  name: Action<CircuitBreakerStateChangedEvent>
+  nameWithType: Action<CircuitBreakerStateChangedEvent>
+  fullName: System.Action<Kevlar.CircuitBreakerStateChangedEvent>
+  nameWithType.vb: Action(Of CircuitBreakerStateChangedEvent)
+  fullName.vb: System.Action(Of Kevlar.CircuitBreakerStateChangedEvent)
+  name.vb: Action(Of CircuitBreakerStateChangedEvent)
   spec.csharp:
   - uid: System.Action`1
     name: Action
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.action-1
   - name: <
-  - uid: Kevlar.CircuitStateChangedEvent
-    name: CircuitStateChangedEvent
+  - uid: Kevlar.CircuitBreakerStateChangedEvent
+    name: CircuitBreakerStateChangedEvent
     isExternal: true
-    href: Kevlar.CircuitStateChangedEvent.html
+    href: Kevlar.CircuitBreakerStateChangedEvent.html
   - name: '>'
   spec.vb:
   - uid: System.Action`1
@@ -1206,10 +1214,10 @@ references:
   - name: (
   - name: Of
   - name: " "
-  - uid: Kevlar.CircuitStateChangedEvent
-    name: CircuitStateChangedEvent
+  - uid: Kevlar.CircuitBreakerStateChangedEvent
+    name: CircuitBreakerStateChangedEvent
     isExternal: true
-    href: Kevlar.CircuitStateChangedEvent.html
+    href: Kevlar.CircuitBreakerStateChangedEvent.html
   - name: )
 - uid: System.Action`1
   commentId: T:System.Action`1
@@ -1255,27 +1263,27 @@ references:
   fullName: Kevlar.CircuitBreakerOptions<TResult>.OnStateChangedAsync
   nameWithType.vb: CircuitBreakerOptions(Of TResult).OnStateChangedAsync
   fullName.vb: Kevlar.CircuitBreakerOptions(Of TResult).OnStateChangedAsync
-- uid: System.Func{Kevlar.CircuitStateChangedEvent,System.Threading.Tasks.ValueTask}
-  commentId: T:System.Func{Kevlar.CircuitStateChangedEvent,System.Threading.Tasks.ValueTask}
+- uid: System.Func{Kevlar.CircuitBreakerStateChangedEvent,System.Threading.Tasks.ValueTask}
+  commentId: T:System.Func{Kevlar.CircuitBreakerStateChangedEvent,System.Threading.Tasks.ValueTask}
   parent: System
   definition: System.Func`2
   href: https://learn.microsoft.com/dotnet/api/system.func-2
-  name: Func<CircuitStateChangedEvent, ValueTask>
-  nameWithType: Func<CircuitStateChangedEvent, ValueTask>
-  fullName: System.Func<Kevlar.CircuitStateChangedEvent, System.Threading.Tasks.ValueTask>
-  nameWithType.vb: Func(Of CircuitStateChangedEvent, ValueTask)
-  fullName.vb: System.Func(Of Kevlar.CircuitStateChangedEvent, System.Threading.Tasks.ValueTask)
-  name.vb: Func(Of CircuitStateChangedEvent, ValueTask)
+  name: Func<CircuitBreakerStateChangedEvent, ValueTask>
+  nameWithType: Func<CircuitBreakerStateChangedEvent, ValueTask>
+  fullName: System.Func<Kevlar.CircuitBreakerStateChangedEvent, System.Threading.Tasks.ValueTask>
+  nameWithType.vb: Func(Of CircuitBreakerStateChangedEvent, ValueTask)
+  fullName.vb: System.Func(Of Kevlar.CircuitBreakerStateChangedEvent, System.Threading.Tasks.ValueTask)
+  name.vb: Func(Of CircuitBreakerStateChangedEvent, ValueTask)
   spec.csharp:
   - uid: System.Func`2
     name: Func
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.func-2
   - name: <
-  - uid: Kevlar.CircuitStateChangedEvent
-    name: CircuitStateChangedEvent
+  - uid: Kevlar.CircuitBreakerStateChangedEvent
+    name: CircuitBreakerStateChangedEvent
     isExternal: true
-    href: Kevlar.CircuitStateChangedEvent.html
+    href: Kevlar.CircuitBreakerStateChangedEvent.html
   - name: ','
   - name: " "
   - uid: System.Threading.Tasks.ValueTask
@@ -1291,10 +1299,10 @@ references:
   - name: (
   - name: Of
   - name: " "
-  - uid: Kevlar.CircuitStateChangedEvent
-    name: CircuitStateChangedEvent
+  - uid: Kevlar.CircuitBreakerStateChangedEvent
+    name: CircuitBreakerStateChangedEvent
     isExternal: true
-    href: Kevlar.CircuitStateChangedEvent.html
+    href: Kevlar.CircuitBreakerStateChangedEvent.html
   - name: ','
   - name: " "
   - uid: System.Threading.Tasks.ValueTask

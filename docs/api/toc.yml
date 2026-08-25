@@ -13,6 +13,9 @@ items:
   - uid: Kevlar.CircuitBreakerBreakDurationEvent
     name: CircuitBreakerBreakDurationEvent
     type: Struct
+  - uid: Kevlar.CircuitBreakerBreakDurationEvent`1
+    name: CircuitBreakerBreakDurationEvent<TResult>
+    type: Struct
   - uid: Kevlar.CircuitBreakerMonitor
     name: CircuitBreakerMonitor
     type: Class
@@ -22,15 +25,15 @@ items:
   - uid: Kevlar.CircuitBreakerOptions`1
     name: CircuitBreakerOptions<TResult>
     type: Class
+  - uid: Kevlar.CircuitBreakerStateChangedEvent
+    name: CircuitBreakerStateChangedEvent
+    type: Struct
   - uid: Kevlar.CircuitOpenException
     name: CircuitOpenException
     type: Class
   - uid: Kevlar.CircuitState
     name: CircuitState
     type: Enum
-  - uid: Kevlar.CircuitStateChangedEvent
-    name: CircuitStateChangedEvent
-    type: Struct
   - uid: Kevlar.ConcurrencyLimitExceededException
     name: ConcurrencyLimitExceededException
     type: Class
@@ -85,6 +88,9 @@ items:
   - uid: Kevlar.Jitter
     name: Jitter
     type: Enum
+  - uid: Kevlar.KevlarConfigurationException
+    name: KevlarConfigurationException
+    type: Class
   - uid: Kevlar.KevlarContext
     name: KevlarContext
     type: Class

@@ -1,31 +1,33 @@
 ### YamlMime:ManagedReference
 items:
-- uid: Kevlar.CircuitBreakerBreakDurationEvent
-  commentId: T:Kevlar.CircuitBreakerBreakDurationEvent
-  id: CircuitBreakerBreakDurationEvent
+- uid: Kevlar.CircuitBreakerBreakDurationEvent`1
+  commentId: T:Kevlar.CircuitBreakerBreakDurationEvent`1
+  id: CircuitBreakerBreakDurationEvent`1
   parent: Kevlar
   children:
-  - Kevlar.CircuitBreakerBreakDurationEvent.ConsecutiveFailures
-  - Kevlar.CircuitBreakerBreakDurationEvent.Context
-  - Kevlar.CircuitBreakerBreakDurationEvent.Exception
-  - Kevlar.CircuitBreakerBreakDurationEvent.FailureCount
-  - Kevlar.CircuitBreakerBreakDurationEvent.FailureRate
-  - Kevlar.CircuitBreakerBreakDurationEvent.Result
+  - Kevlar.CircuitBreakerBreakDurationEvent`1.ConsecutiveFailures
+  - Kevlar.CircuitBreakerBreakDurationEvent`1.Context
+  - Kevlar.CircuitBreakerBreakDurationEvent`1.FailureCount
+  - Kevlar.CircuitBreakerBreakDurationEvent`1.FailureRate
+  - Kevlar.CircuitBreakerBreakDurationEvent`1.Outcome
   langs:
   - csharp
   - vb
-  name: CircuitBreakerBreakDurationEvent
-  nameWithType: CircuitBreakerBreakDurationEvent
-  fullName: Kevlar.CircuitBreakerBreakDurationEvent
+  name: CircuitBreakerBreakDurationEvent<TResult>
+  nameWithType: CircuitBreakerBreakDurationEvent<TResult>
+  fullName: Kevlar.CircuitBreakerBreakDurationEvent<TResult>
   type: Struct
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Describes the handled outcome that is about to open a circuit.
+  summary: Describes the typed handled outcome that is about to open a circuit.
   example: []
   syntax:
-    content: public readonly struct CircuitBreakerBreakDurationEvent
-    content.vb: Public Structure CircuitBreakerBreakDurationEvent
+    content: public readonly struct CircuitBreakerBreakDurationEvent<TResult>
+    typeParameters:
+    - id: TResult
+      description: The shield result type.
+    content.vb: Public Structure CircuitBreakerBreakDurationEvent(Of TResult)
   inheritedMembers:
   - System.ValueType.Equals(System.Object)
   - System.ValueType.GetHashCode
@@ -33,62 +35,44 @@ items:
   - System.Object.GetType
   - System.Object.Equals(System.Object,System.Object)
   - System.Object.ReferenceEquals(System.Object,System.Object)
-- uid: Kevlar.CircuitBreakerBreakDurationEvent.Exception
-  commentId: P:Kevlar.CircuitBreakerBreakDurationEvent.Exception
-  id: Exception
-  parent: Kevlar.CircuitBreakerBreakDurationEvent
+  nameWithType.vb: CircuitBreakerBreakDurationEvent(Of TResult)
+  fullName.vb: Kevlar.CircuitBreakerBreakDurationEvent(Of TResult)
+  name.vb: CircuitBreakerBreakDurationEvent(Of TResult)
+- uid: Kevlar.CircuitBreakerBreakDurationEvent`1.Outcome
+  commentId: P:Kevlar.CircuitBreakerBreakDurationEvent`1.Outcome
+  id: Outcome
+  parent: Kevlar.CircuitBreakerBreakDurationEvent`1
   langs:
   - csharp
   - vb
-  name: Exception
-  nameWithType: CircuitBreakerBreakDurationEvent.Exception
-  fullName: Kevlar.CircuitBreakerBreakDurationEvent.Exception
+  name: Outcome
+  nameWithType: CircuitBreakerBreakDurationEvent<TResult>.Outcome
+  fullName: Kevlar.CircuitBreakerBreakDurationEvent<TResult>.Outcome
   type: Property
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: The handled exception, or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> when a result was handled.
+  summary: The handled outcome that opened the circuit.
   example: []
   syntax:
-    content: public Exception? Exception { get; }
+    content: public Outcome<TResult> Outcome { get; }
     parameters: []
     return:
-      type: System.Exception
-    content.vb: Public ReadOnly Property Exception As Exception
-  overload: Kevlar.CircuitBreakerBreakDurationEvent.Exception*
-- uid: Kevlar.CircuitBreakerBreakDurationEvent.Result
-  commentId: P:Kevlar.CircuitBreakerBreakDurationEvent.Result
-  id: Result
-  parent: Kevlar.CircuitBreakerBreakDurationEvent
-  langs:
-  - csharp
-  - vb
-  name: Result
-  nameWithType: CircuitBreakerBreakDurationEvent.Result
-  fullName: Kevlar.CircuitBreakerBreakDurationEvent.Result
-  type: Property
-  assemblies:
-  - Kevlar
-  namespace: Kevlar
-  summary: The handled result (boxed), or <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/null">null</a> when an exception occurred.
-  example: []
-  syntax:
-    content: public object? Result { get; }
-    parameters: []
-    return:
-      type: System.Object
-    content.vb: Public ReadOnly Property Result As Object
-  overload: Kevlar.CircuitBreakerBreakDurationEvent.Result*
-- uid: Kevlar.CircuitBreakerBreakDurationEvent.FailureRate
-  commentId: P:Kevlar.CircuitBreakerBreakDurationEvent.FailureRate
+      type: Kevlar.Outcome{{TResult}}
+    content.vb: Public ReadOnly Property Outcome As Outcome(Of TResult)
+  overload: Kevlar.CircuitBreakerBreakDurationEvent`1.Outcome*
+  nameWithType.vb: CircuitBreakerBreakDurationEvent(Of TResult).Outcome
+  fullName.vb: Kevlar.CircuitBreakerBreakDurationEvent(Of TResult).Outcome
+- uid: Kevlar.CircuitBreakerBreakDurationEvent`1.FailureRate
+  commentId: P:Kevlar.CircuitBreakerBreakDurationEvent`1.FailureRate
   id: FailureRate
-  parent: Kevlar.CircuitBreakerBreakDurationEvent
+  parent: Kevlar.CircuitBreakerBreakDurationEvent`1
   langs:
   - csharp
   - vb
   name: FailureRate
-  nameWithType: CircuitBreakerBreakDurationEvent.FailureRate
-  fullName: Kevlar.CircuitBreakerBreakDurationEvent.FailureRate
+  nameWithType: CircuitBreakerBreakDurationEvent<TResult>.FailureRate
+  fullName: Kevlar.CircuitBreakerBreakDurationEvent<TResult>.FailureRate
   type: Property
   assemblies:
   - Kevlar
@@ -101,17 +85,19 @@ items:
     return:
       type: System.Double
     content.vb: Public ReadOnly Property FailureRate As Double
-  overload: Kevlar.CircuitBreakerBreakDurationEvent.FailureRate*
-- uid: Kevlar.CircuitBreakerBreakDurationEvent.FailureCount
-  commentId: P:Kevlar.CircuitBreakerBreakDurationEvent.FailureCount
+  overload: Kevlar.CircuitBreakerBreakDurationEvent`1.FailureRate*
+  nameWithType.vb: CircuitBreakerBreakDurationEvent(Of TResult).FailureRate
+  fullName.vb: Kevlar.CircuitBreakerBreakDurationEvent(Of TResult).FailureRate
+- uid: Kevlar.CircuitBreakerBreakDurationEvent`1.FailureCount
+  commentId: P:Kevlar.CircuitBreakerBreakDurationEvent`1.FailureCount
   id: FailureCount
-  parent: Kevlar.CircuitBreakerBreakDurationEvent
+  parent: Kevlar.CircuitBreakerBreakDurationEvent`1
   langs:
   - csharp
   - vb
   name: FailureCount
-  nameWithType: CircuitBreakerBreakDurationEvent.FailureCount
-  fullName: Kevlar.CircuitBreakerBreakDurationEvent.FailureCount
+  nameWithType: CircuitBreakerBreakDurationEvent<TResult>.FailureCount
+  fullName: Kevlar.CircuitBreakerBreakDurationEvent<TResult>.FailureCount
   type: Property
   assemblies:
   - Kevlar
@@ -124,17 +110,19 @@ items:
     return:
       type: System.Int64
     content.vb: Public ReadOnly Property FailureCount As Long
-  overload: Kevlar.CircuitBreakerBreakDurationEvent.FailureCount*
-- uid: Kevlar.CircuitBreakerBreakDurationEvent.ConsecutiveFailures
-  commentId: P:Kevlar.CircuitBreakerBreakDurationEvent.ConsecutiveFailures
+  overload: Kevlar.CircuitBreakerBreakDurationEvent`1.FailureCount*
+  nameWithType.vb: CircuitBreakerBreakDurationEvent(Of TResult).FailureCount
+  fullName.vb: Kevlar.CircuitBreakerBreakDurationEvent(Of TResult).FailureCount
+- uid: Kevlar.CircuitBreakerBreakDurationEvent`1.ConsecutiveFailures
+  commentId: P:Kevlar.CircuitBreakerBreakDurationEvent`1.ConsecutiveFailures
   id: ConsecutiveFailures
-  parent: Kevlar.CircuitBreakerBreakDurationEvent
+  parent: Kevlar.CircuitBreakerBreakDurationEvent`1
   langs:
   - csharp
   - vb
   name: ConsecutiveFailures
-  nameWithType: CircuitBreakerBreakDurationEvent.ConsecutiveFailures
-  fullName: Kevlar.CircuitBreakerBreakDurationEvent.ConsecutiveFailures
+  nameWithType: CircuitBreakerBreakDurationEvent<TResult>.ConsecutiveFailures
+  fullName: Kevlar.CircuitBreakerBreakDurationEvent<TResult>.ConsecutiveFailures
   type: Property
   assemblies:
   - Kevlar
@@ -147,17 +135,19 @@ items:
     return:
       type: System.Int32
     content.vb: Public ReadOnly Property ConsecutiveFailures As Integer
-  overload: Kevlar.CircuitBreakerBreakDurationEvent.ConsecutiveFailures*
-- uid: Kevlar.CircuitBreakerBreakDurationEvent.Context
-  commentId: P:Kevlar.CircuitBreakerBreakDurationEvent.Context
+  overload: Kevlar.CircuitBreakerBreakDurationEvent`1.ConsecutiveFailures*
+  nameWithType.vb: CircuitBreakerBreakDurationEvent(Of TResult).ConsecutiveFailures
+  fullName.vb: Kevlar.CircuitBreakerBreakDurationEvent(Of TResult).ConsecutiveFailures
+- uid: Kevlar.CircuitBreakerBreakDurationEvent`1.Context
+  commentId: P:Kevlar.CircuitBreakerBreakDurationEvent`1.Context
   id: Context
-  parent: Kevlar.CircuitBreakerBreakDurationEvent
+  parent: Kevlar.CircuitBreakerBreakDurationEvent`1
   langs:
   - csharp
   - vb
   name: Context
-  nameWithType: CircuitBreakerBreakDurationEvent.Context
-  fullName: Kevlar.CircuitBreakerBreakDurationEvent.Context
+  nameWithType: CircuitBreakerBreakDurationEvent<TResult>.Context
+  fullName: Kevlar.CircuitBreakerBreakDurationEvent<TResult>.Context
   type: Property
   assemblies:
   - Kevlar
@@ -173,7 +163,9 @@ items:
     return:
       type: Kevlar.KevlarContext
     content.vb: Public ReadOnly Property Context As KevlarContext
-  overload: Kevlar.CircuitBreakerBreakDurationEvent.Context*
+  overload: Kevlar.CircuitBreakerBreakDurationEvent`1.Context*
+  nameWithType.vb: CircuitBreakerBreakDurationEvent(Of TResult).Context
+  fullName.vb: Kevlar.CircuitBreakerBreakDurationEvent(Of TResult).Context
 references:
 - uid: Kevlar
   commentId: N:Kevlar
@@ -399,35 +391,82 @@ references:
   name: System
   nameWithType: System
   fullName: System
-- uid: Kevlar.CircuitBreakerBreakDurationEvent.Exception*
-  commentId: Overload:Kevlar.CircuitBreakerBreakDurationEvent.Exception
+- uid: Kevlar.CircuitBreakerBreakDurationEvent`1.Outcome*
+  commentId: Overload:Kevlar.CircuitBreakerBreakDurationEvent`1.Outcome
   isExternal: true
-  href: Kevlar.CircuitBreakerBreakDurationEvent.html#Kevlar_CircuitBreakerBreakDurationEvent_Exception
-  name: Exception
-  nameWithType: CircuitBreakerBreakDurationEvent.Exception
-  fullName: Kevlar.CircuitBreakerBreakDurationEvent.Exception
-- uid: System.Exception
-  commentId: T:System.Exception
-  parent: System
+  href: Kevlar.CircuitBreakerBreakDurationEvent-1.html#Kevlar_CircuitBreakerBreakDurationEvent_1_Outcome
+  name: Outcome
+  nameWithType: CircuitBreakerBreakDurationEvent<TResult>.Outcome
+  fullName: Kevlar.CircuitBreakerBreakDurationEvent<TResult>.Outcome
+  nameWithType.vb: CircuitBreakerBreakDurationEvent(Of TResult).Outcome
+  fullName.vb: Kevlar.CircuitBreakerBreakDurationEvent(Of TResult).Outcome
+- uid: Kevlar.Outcome{{TResult}}
+  commentId: T:Kevlar.Outcome{`0}
+  parent: Kevlar
+  definition: Kevlar.Outcome`1
+  href: Kevlar.Outcome-1.html
+  name: Outcome<TResult>
+  nameWithType: Outcome<TResult>
+  fullName: Kevlar.Outcome<TResult>
+  nameWithType.vb: Outcome(Of TResult)
+  fullName.vb: Kevlar.Outcome(Of TResult)
+  name.vb: Outcome(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.Outcome`1
+    name: Outcome
+    isExternal: true
+    href: Kevlar.Outcome-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Outcome`1
+    name: Outcome
+    isExternal: true
+    href: Kevlar.Outcome-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.Outcome`1
+  commentId: T:Kevlar.Outcome`1
+  parent: Kevlar
   isExternal: true
-  href: https://learn.microsoft.com/dotnet/api/system.exception
-  name: Exception
-  nameWithType: Exception
-  fullName: System.Exception
-- uid: Kevlar.CircuitBreakerBreakDurationEvent.Result*
-  commentId: Overload:Kevlar.CircuitBreakerBreakDurationEvent.Result
+  href: Kevlar.Outcome-1.html
+  name: Outcome<T>
+  nameWithType: Outcome<T>
+  fullName: Kevlar.Outcome<T>
+  nameWithType.vb: Outcome(Of T)
+  fullName.vb: Kevlar.Outcome(Of T)
+  name.vb: Outcome(Of T)
+  spec.csharp:
+  - uid: Kevlar.Outcome`1
+    name: Outcome
+    isExternal: true
+    href: Kevlar.Outcome-1.html
+  - name: <
+  - name: T
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.Outcome`1
+    name: Outcome
+    isExternal: true
+    href: Kevlar.Outcome-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: T
+  - name: )
+- uid: Kevlar.CircuitBreakerBreakDurationEvent`1.FailureRate*
+  commentId: Overload:Kevlar.CircuitBreakerBreakDurationEvent`1.FailureRate
   isExternal: true
-  href: Kevlar.CircuitBreakerBreakDurationEvent.html#Kevlar_CircuitBreakerBreakDurationEvent_Result
-  name: Result
-  nameWithType: CircuitBreakerBreakDurationEvent.Result
-  fullName: Kevlar.CircuitBreakerBreakDurationEvent.Result
-- uid: Kevlar.CircuitBreakerBreakDurationEvent.FailureRate*
-  commentId: Overload:Kevlar.CircuitBreakerBreakDurationEvent.FailureRate
-  isExternal: true
-  href: Kevlar.CircuitBreakerBreakDurationEvent.html#Kevlar_CircuitBreakerBreakDurationEvent_FailureRate
+  href: Kevlar.CircuitBreakerBreakDurationEvent-1.html#Kevlar_CircuitBreakerBreakDurationEvent_1_FailureRate
   name: FailureRate
-  nameWithType: CircuitBreakerBreakDurationEvent.FailureRate
-  fullName: Kevlar.CircuitBreakerBreakDurationEvent.FailureRate
+  nameWithType: CircuitBreakerBreakDurationEvent<TResult>.FailureRate
+  fullName: Kevlar.CircuitBreakerBreakDurationEvent<TResult>.FailureRate
+  nameWithType.vb: CircuitBreakerBreakDurationEvent(Of TResult).FailureRate
+  fullName.vb: Kevlar.CircuitBreakerBreakDurationEvent(Of TResult).FailureRate
 - uid: System.Double
   commentId: T:System.Double
   parent: System
@@ -439,13 +478,15 @@ references:
   nameWithType.vb: Double
   fullName.vb: Double
   name.vb: Double
-- uid: Kevlar.CircuitBreakerBreakDurationEvent.FailureCount*
-  commentId: Overload:Kevlar.CircuitBreakerBreakDurationEvent.FailureCount
+- uid: Kevlar.CircuitBreakerBreakDurationEvent`1.FailureCount*
+  commentId: Overload:Kevlar.CircuitBreakerBreakDurationEvent`1.FailureCount
   isExternal: true
-  href: Kevlar.CircuitBreakerBreakDurationEvent.html#Kevlar_CircuitBreakerBreakDurationEvent_FailureCount
+  href: Kevlar.CircuitBreakerBreakDurationEvent-1.html#Kevlar_CircuitBreakerBreakDurationEvent_1_FailureCount
   name: FailureCount
-  nameWithType: CircuitBreakerBreakDurationEvent.FailureCount
-  fullName: Kevlar.CircuitBreakerBreakDurationEvent.FailureCount
+  nameWithType: CircuitBreakerBreakDurationEvent<TResult>.FailureCount
+  fullName: Kevlar.CircuitBreakerBreakDurationEvent<TResult>.FailureCount
+  nameWithType.vb: CircuitBreakerBreakDurationEvent(Of TResult).FailureCount
+  fullName.vb: Kevlar.CircuitBreakerBreakDurationEvent(Of TResult).FailureCount
 - uid: System.Int64
   commentId: T:System.Int64
   parent: System
@@ -457,13 +498,15 @@ references:
   nameWithType.vb: Long
   fullName.vb: Long
   name.vb: Long
-- uid: Kevlar.CircuitBreakerBreakDurationEvent.ConsecutiveFailures*
-  commentId: Overload:Kevlar.CircuitBreakerBreakDurationEvent.ConsecutiveFailures
+- uid: Kevlar.CircuitBreakerBreakDurationEvent`1.ConsecutiveFailures*
+  commentId: Overload:Kevlar.CircuitBreakerBreakDurationEvent`1.ConsecutiveFailures
   isExternal: true
-  href: Kevlar.CircuitBreakerBreakDurationEvent.html#Kevlar_CircuitBreakerBreakDurationEvent_ConsecutiveFailures
+  href: Kevlar.CircuitBreakerBreakDurationEvent-1.html#Kevlar_CircuitBreakerBreakDurationEvent_1_ConsecutiveFailures
   name: ConsecutiveFailures
-  nameWithType: CircuitBreakerBreakDurationEvent.ConsecutiveFailures
-  fullName: Kevlar.CircuitBreakerBreakDurationEvent.ConsecutiveFailures
+  nameWithType: CircuitBreakerBreakDurationEvent<TResult>.ConsecutiveFailures
+  fullName: Kevlar.CircuitBreakerBreakDurationEvent<TResult>.ConsecutiveFailures
+  nameWithType.vb: CircuitBreakerBreakDurationEvent(Of TResult).ConsecutiveFailures
+  fullName.vb: Kevlar.CircuitBreakerBreakDurationEvent(Of TResult).ConsecutiveFailures
 - uid: System.Int32
   commentId: T:System.Int32
   parent: System
@@ -475,13 +518,15 @@ references:
   nameWithType.vb: Integer
   fullName.vb: Integer
   name.vb: Integer
-- uid: Kevlar.CircuitBreakerBreakDurationEvent.Context*
-  commentId: Overload:Kevlar.CircuitBreakerBreakDurationEvent.Context
+- uid: Kevlar.CircuitBreakerBreakDurationEvent`1.Context*
+  commentId: Overload:Kevlar.CircuitBreakerBreakDurationEvent`1.Context
   isExternal: true
-  href: Kevlar.CircuitBreakerBreakDurationEvent.html#Kevlar_CircuitBreakerBreakDurationEvent_Context
+  href: Kevlar.CircuitBreakerBreakDurationEvent-1.html#Kevlar_CircuitBreakerBreakDurationEvent_1_Context
   name: Context
-  nameWithType: CircuitBreakerBreakDurationEvent.Context
-  fullName: Kevlar.CircuitBreakerBreakDurationEvent.Context
+  nameWithType: CircuitBreakerBreakDurationEvent<TResult>.Context
+  fullName: Kevlar.CircuitBreakerBreakDurationEvent<TResult>.Context
+  nameWithType.vb: CircuitBreakerBreakDurationEvent(Of TResult).Context
+  fullName.vb: Kevlar.CircuitBreakerBreakDurationEvent(Of TResult).Context
 - uid: Kevlar.KevlarContext
   commentId: T:Kevlar.KevlarContext
   parent: Kevlar

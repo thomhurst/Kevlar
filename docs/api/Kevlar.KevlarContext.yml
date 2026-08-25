@@ -9,6 +9,7 @@ items:
   - Kevlar.KevlarContext.IsSynchronous
   - Kevlar.KevlarContext.Properties
   - Kevlar.KevlarContext.ShieldName
+  - Kevlar.KevlarContext.StrategyIndex
   - Kevlar.KevlarContext.TimeProvider
   langs:
   - csharp
@@ -125,6 +126,32 @@ items:
       type: System.String
     content.vb: Public ReadOnly Property ShieldName As String
   overload: Kevlar.KevlarContext.ShieldName*
+- uid: Kevlar.KevlarContext.StrategyIndex
+  commentId: P:Kevlar.KevlarContext.StrategyIndex
+  id: StrategyIndex
+  parent: Kevlar.KevlarContext
+  langs:
+  - csharp
+  - vb
+  name: StrategyIndex
+  nameWithType: KevlarContext.StrategyIndex
+  fullName: Kevlar.KevlarContext.StrategyIndex
+  type: Property
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: >-
+    The zero-based position of the strategy currently executing, or <code>-1</code> outside a
+
+    strategy. Nested strategies temporarily replace this value and restore it on return.
+  example: []
+  syntax:
+    content: public int StrategyIndex { get; }
+    parameters: []
+    return:
+      type: System.Int32
+    content.vb: Public ReadOnly Property StrategyIndex As Integer
+  overload: Kevlar.KevlarContext.StrategyIndex*
 - uid: Kevlar.KevlarContext.TimeProvider
   commentId: P:Kevlar.KevlarContext.TimeProvider
   id: TimeProvider
@@ -481,6 +508,24 @@ references:
   nameWithType.vb: String
   fullName.vb: String
   name.vb: String
+- uid: Kevlar.KevlarContext.StrategyIndex*
+  commentId: Overload:Kevlar.KevlarContext.StrategyIndex
+  isExternal: true
+  href: Kevlar.KevlarContext.html#Kevlar_KevlarContext_StrategyIndex
+  name: StrategyIndex
+  nameWithType: KevlarContext.StrategyIndex
+  fullName: Kevlar.KevlarContext.StrategyIndex
+- uid: System.Int32
+  commentId: T:System.Int32
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.int32
+  name: int
+  nameWithType: int
+  fullName: int
+  nameWithType.vb: Integer
+  fullName.vb: Integer
+  name.vb: Integer
 - uid: Kevlar.KevlarContext.TimeProvider*
   commentId: Overload:Kevlar.KevlarContext.TimeProvider
   isExternal: true

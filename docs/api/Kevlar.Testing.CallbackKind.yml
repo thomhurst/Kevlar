@@ -5,6 +5,7 @@ items:
   id: CallbackKind
   parent: Kevlar.Testing
   children:
+  - Kevlar.Testing.CallbackKind.CircuitBreakDuration
   - Kevlar.Testing.CallbackKind.CircuitTransition
   - Kevlar.Testing.CallbackKind.Fallback
   - Kevlar.Testing.CallbackKind.Hedge
@@ -123,6 +124,26 @@ items:
   example: []
   syntax:
     content: CircuitTransition = 4
+    return:
+      type: Kevlar.Testing.CallbackKind
+- uid: Kevlar.Testing.CallbackKind.CircuitBreakDuration
+  commentId: F:Kevlar.Testing.CallbackKind.CircuitBreakDuration
+  id: CircuitBreakDuration
+  parent: Kevlar.Testing.CallbackKind
+  langs:
+  - csharp
+  - vb
+  name: CircuitBreakDuration
+  nameWithType: CallbackKind.CircuitBreakDuration
+  fullName: Kevlar.Testing.CallbackKind.CircuitBreakDuration
+  type: Field
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: A circuit-breaker break-duration callback.
+  example: []
+  syntax:
+    content: CircuitBreakDuration = 5
     return:
       type: Kevlar.Testing.CallbackKind
 references:

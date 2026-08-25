@@ -10,7 +10,6 @@ items:
   - Kevlar.RateLimitRejectedEvent.Permits
   - Kevlar.RateLimitRejectedEvent.QueueLimit
   - Kevlar.RateLimitRejectedEvent.RetryAfter
-  - Kevlar.RateLimitRejectedEvent.StrategyIndex
   - Kevlar.RateLimitRejectedEvent.Window
   langs:
   - csharp
@@ -149,29 +148,6 @@ items:
       type: System.Int32
     content.vb: Public ReadOnly Property QueueLimit As Integer
   overload: Kevlar.RateLimitRejectedEvent.QueueLimit*
-- uid: Kevlar.RateLimitRejectedEvent.StrategyIndex
-  commentId: P:Kevlar.RateLimitRejectedEvent.StrategyIndex
-  id: StrategyIndex
-  parent: Kevlar.RateLimitRejectedEvent
-  langs:
-  - csharp
-  - vb
-  name: StrategyIndex
-  nameWithType: RateLimitRejectedEvent.StrategyIndex
-  fullName: Kevlar.RateLimitRejectedEvent.StrategyIndex
-  type: Property
-  assemblies:
-  - Kevlar
-  namespace: Kevlar
-  summary: The zero-based position of this strategy in the executing shield.
-  example: []
-  syntax:
-    content: public int StrategyIndex { get; }
-    parameters: []
-    return:
-      type: System.Int32
-    content.vb: Public ReadOnly Property StrategyIndex As Integer
-  overload: Kevlar.RateLimitRejectedEvent.StrategyIndex*
 - uid: Kevlar.RateLimitRejectedEvent.Context
   commentId: P:Kevlar.RateLimitRejectedEvent.Context
   id: Context
@@ -532,13 +508,6 @@ references:
   name: QueueLimit
   nameWithType: RateLimitRejectedEvent.QueueLimit
   fullName: Kevlar.RateLimitRejectedEvent.QueueLimit
-- uid: Kevlar.RateLimitRejectedEvent.StrategyIndex*
-  commentId: Overload:Kevlar.RateLimitRejectedEvent.StrategyIndex
-  isExternal: true
-  href: Kevlar.RateLimitRejectedEvent.html#Kevlar_RateLimitRejectedEvent_StrategyIndex
-  name: StrategyIndex
-  nameWithType: RateLimitRejectedEvent.StrategyIndex
-  fullName: Kevlar.RateLimitRejectedEvent.StrategyIndex
 - uid: Kevlar.RateLimitRejectedEvent.Context*
   commentId: Overload:Kevlar.RateLimitRejectedEvent.Context
   isExternal: true

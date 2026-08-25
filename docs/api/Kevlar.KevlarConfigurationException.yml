@@ -1,34 +1,32 @@
 ### YamlMime:ManagedReference
 items:
-- uid: Kevlar.KevlarException
-  commentId: T:Kevlar.KevlarException
-  id: KevlarException
+- uid: Kevlar.KevlarConfigurationException
+  commentId: T:Kevlar.KevlarConfigurationException
+  id: KevlarConfigurationException
   parent: Kevlar
   children:
-  - Kevlar.KevlarException.#ctor
-  - Kevlar.KevlarException.#ctor(System.String)
-  - Kevlar.KevlarException.#ctor(System.String,System.Exception)
+  - Kevlar.KevlarConfigurationException.#ctor
+  - Kevlar.KevlarConfigurationException.#ctor(System.String)
+  - Kevlar.KevlarConfigurationException.#ctor(System.String,System.Exception)
   langs:
   - csharp
   - vb
-  name: KevlarException
-  nameWithType: KevlarException
-  fullName: Kevlar.KevlarException
+  name: KevlarConfigurationException
+  nameWithType: KevlarConfigurationException
+  fullName: Kevlar.KevlarConfigurationException
   type: Class
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Base class for exceptions raised by Kevlar strategies themselves.
+  summary: Represents invalid strategy configuration supplied through an options callback.
   example: []
   syntax:
-    content: 'public abstract class KevlarException : Exception, ISerializable'
-    content.vb: Public MustInherit Class KevlarException Inherits Exception Implements ISerializable
+    content: 'public sealed class KevlarConfigurationException : KevlarException, ISerializable'
+    content.vb: Public NotInheritable Class KevlarConfigurationException Inherits KevlarException Implements ISerializable
   inheritance:
   - System.Object
   - System.Exception
-  derivedClasses:
-  - Kevlar.ExecutionRejectedException
-  - Kevlar.KevlarConfigurationException
+  - Kevlar.KevlarException
   implements:
   - System.Runtime.Serialization.ISerializable
   inheritedMembers:
@@ -43,45 +41,43 @@ items:
   - System.Exception.Source
   - System.Exception.HResult
   - System.Exception.StackTrace
-  - System.Exception.SerializeObjectState
-  - System.Object.MemberwiseClone
   - System.Object.Equals(System.Object)
   - System.Object.Equals(System.Object,System.Object)
   - System.Object.ReferenceEquals(System.Object,System.Object)
   - System.Object.GetHashCode
-- uid: Kevlar.KevlarException.#ctor
-  commentId: M:Kevlar.KevlarException.#ctor
+- uid: Kevlar.KevlarConfigurationException.#ctor
+  commentId: M:Kevlar.KevlarConfigurationException.#ctor
   id: '#ctor'
-  parent: Kevlar.KevlarException
+  parent: Kevlar.KevlarConfigurationException
   langs:
   - csharp
   - vb
-  name: KevlarException()
-  nameWithType: KevlarException.KevlarException()
-  fullName: Kevlar.KevlarException.KevlarException()
+  name: KevlarConfigurationException()
+  nameWithType: KevlarConfigurationException.KevlarConfigurationException()
+  fullName: Kevlar.KevlarConfigurationException.KevlarConfigurationException()
   type: Constructor
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Initializes the exception.
+  summary: Initializes the exception with the default message.
   example: []
   syntax:
-    content: protected KevlarException()
-    content.vb: Protected Sub New()
-  overload: Kevlar.KevlarException.#ctor*
-  nameWithType.vb: KevlarException.New()
-  fullName.vb: Kevlar.KevlarException.New()
+    content: public KevlarConfigurationException()
+    content.vb: Public Sub New()
+  overload: Kevlar.KevlarConfigurationException.#ctor*
+  nameWithType.vb: KevlarConfigurationException.New()
+  fullName.vb: Kevlar.KevlarConfigurationException.New()
   name.vb: New()
-- uid: Kevlar.KevlarException.#ctor(System.String)
-  commentId: M:Kevlar.KevlarException.#ctor(System.String)
+- uid: Kevlar.KevlarConfigurationException.#ctor(System.String)
+  commentId: M:Kevlar.KevlarConfigurationException.#ctor(System.String)
   id: '#ctor(System.String)'
-  parent: Kevlar.KevlarException
+  parent: Kevlar.KevlarConfigurationException
   langs:
   - csharp
   - vb
-  name: KevlarException(string)
-  nameWithType: KevlarException.KevlarException(string)
-  fullName: Kevlar.KevlarException.KevlarException(string)
+  name: KevlarConfigurationException(string)
+  nameWithType: KevlarConfigurationException.KevlarConfigurationException(string)
+  fullName: Kevlar.KevlarConfigurationException.KevlarConfigurationException(string)
   type: Constructor
   assemblies:
   - Kevlar
@@ -89,25 +85,25 @@ items:
   summary: Initializes the exception with a message.
   example: []
   syntax:
-    content: protected KevlarException(string message)
+    content: public KevlarConfigurationException(string message)
     parameters:
     - id: message
       type: System.String
-    content.vb: Protected Sub New(message As String)
-  overload: Kevlar.KevlarException.#ctor*
-  nameWithType.vb: KevlarException.New(String)
-  fullName.vb: Kevlar.KevlarException.New(String)
+    content.vb: Public Sub New(message As String)
+  overload: Kevlar.KevlarConfigurationException.#ctor*
+  nameWithType.vb: KevlarConfigurationException.New(String)
+  fullName.vb: Kevlar.KevlarConfigurationException.New(String)
   name.vb: New(String)
-- uid: Kevlar.KevlarException.#ctor(System.String,System.Exception)
-  commentId: M:Kevlar.KevlarException.#ctor(System.String,System.Exception)
+- uid: Kevlar.KevlarConfigurationException.#ctor(System.String,System.Exception)
+  commentId: M:Kevlar.KevlarConfigurationException.#ctor(System.String,System.Exception)
   id: '#ctor(System.String,System.Exception)'
-  parent: Kevlar.KevlarException
+  parent: Kevlar.KevlarConfigurationException
   langs:
   - csharp
   - vb
-  name: KevlarException(string, Exception?)
-  nameWithType: KevlarException.KevlarException(string, Exception?)
-  fullName: Kevlar.KevlarException.KevlarException(string, System.Exception?)
+  name: KevlarConfigurationException(string, Exception?)
+  nameWithType: KevlarConfigurationException.KevlarConfigurationException(string, Exception?)
+  fullName: Kevlar.KevlarConfigurationException.KevlarConfigurationException(string, System.Exception?)
   type: Constructor
   assemblies:
   - Kevlar
@@ -115,16 +111,16 @@ items:
   summary: Initializes the exception with a message and inner exception.
   example: []
   syntax:
-    content: protected KevlarException(string message, Exception? innerException)
+    content: public KevlarConfigurationException(string message, Exception? innerException)
     parameters:
     - id: message
       type: System.String
     - id: innerException
       type: System.Exception
-    content.vb: Protected Sub New(message As String, innerException As Exception)
-  overload: Kevlar.KevlarException.#ctor*
-  nameWithType.vb: KevlarException.New(String, Exception)
-  fullName.vb: Kevlar.KevlarException.New(String, System.Exception)
+    content.vb: Public Sub New(message As String, innerException As Exception)
+  overload: Kevlar.KevlarConfigurationException.#ctor*
+  nameWithType.vb: KevlarConfigurationException.New(String, Exception)
+  fullName.vb: Kevlar.KevlarConfigurationException.New(String, System.Exception)
   name.vb: New(String, Exception)
 references:
 - uid: Kevlar
@@ -153,6 +149,14 @@ references:
   name: Exception
   nameWithType: Exception
   fullName: System.Exception
+- uid: Kevlar.KevlarException
+  commentId: T:Kevlar.KevlarException
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.KevlarException.html
+  name: KevlarException
+  nameWithType: KevlarException
+  fullName: Kevlar.KevlarException
 - uid: System.Runtime.Serialization.ISerializable
   commentId: T:System.Runtime.Serialization.ISerializable
   parent: System.Runtime.Serialization
@@ -291,38 +295,6 @@ references:
   name: StackTrace
   nameWithType: Exception.StackTrace
   fullName: System.Exception.StackTrace
-- uid: System.Exception.SerializeObjectState
-  commentId: E:System.Exception.SerializeObjectState
-  parent: System.Exception
-  isExternal: true
-  href: https://learn.microsoft.com/dotnet/api/system.exception.serializeobjectstate
-  name: SerializeObjectState
-  nameWithType: Exception.SerializeObjectState
-  fullName: System.Exception.SerializeObjectState
-- uid: System.Object.MemberwiseClone
-  commentId: M:System.Object.MemberwiseClone
-  parent: System.Object
-  isExternal: true
-  href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
-  name: MemberwiseClone()
-  nameWithType: object.MemberwiseClone()
-  fullName: object.MemberwiseClone()
-  nameWithType.vb: Object.MemberwiseClone()
-  fullName.vb: Object.MemberwiseClone()
-  spec.csharp:
-  - uid: System.Object.MemberwiseClone
-    name: MemberwiseClone
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
-  - name: (
-  - name: )
-  spec.vb:
-  - uid: System.Object.MemberwiseClone
-    name: MemberwiseClone
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
-  - name: (
-  - name: )
 - uid: System.Object.Equals(System.Object)
   commentId: M:System.Object.Equals(System.Object)
   parent: System.Object
@@ -514,15 +486,15 @@ references:
     name: Serialization
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.runtime.serialization
-- uid: Kevlar.KevlarException.#ctor*
-  commentId: Overload:Kevlar.KevlarException.#ctor
+- uid: Kevlar.KevlarConfigurationException.#ctor*
+  commentId: Overload:Kevlar.KevlarConfigurationException.#ctor
   isExternal: true
-  href: Kevlar.KevlarException.html#Kevlar_KevlarException__ctor
-  name: KevlarException
-  nameWithType: KevlarException.KevlarException
-  fullName: Kevlar.KevlarException.KevlarException
-  nameWithType.vb: KevlarException.New
-  fullName.vb: Kevlar.KevlarException.New
+  href: Kevlar.KevlarConfigurationException.html#Kevlar_KevlarConfigurationException__ctor
+  name: KevlarConfigurationException
+  nameWithType: KevlarConfigurationException.KevlarConfigurationException
+  fullName: Kevlar.KevlarConfigurationException.KevlarConfigurationException
+  nameWithType.vb: KevlarConfigurationException.New
+  fullName.vb: Kevlar.KevlarConfigurationException.New
   name.vb: New
 - uid: System.String
   commentId: T:System.String

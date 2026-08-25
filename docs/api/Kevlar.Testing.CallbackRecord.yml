@@ -6,14 +6,18 @@ items:
   parent: Kevlar.Testing
   children:
   - Kevlar.Testing.CallbackRecord.AttemptNumber
+  - Kevlar.Testing.CallbackRecord.ConsecutiveFailures
   - Kevlar.Testing.CallbackRecord.Delay
   - Kevlar.Testing.CallbackRecord.Exception
+  - Kevlar.Testing.CallbackRecord.FailureCount
+  - Kevlar.Testing.CallbackRecord.FailureRate
   - Kevlar.Testing.CallbackRecord.From
   - Kevlar.Testing.CallbackRecord.Kind
   - Kevlar.Testing.CallbackRecord.Result
   - Kevlar.Testing.CallbackRecord.RetryNumber
   - Kevlar.Testing.CallbackRecord.Sequence
   - Kevlar.Testing.CallbackRecord.ShieldName
+  - Kevlar.Testing.CallbackRecord.StrategyIndex
   - Kevlar.Testing.CallbackRecord.Timeout
   - Kevlar.Testing.CallbackRecord.To
   langs:
@@ -109,6 +113,29 @@ items:
       type: System.String
     content.vb: Public ReadOnly Property ShieldName As String
   overload: Kevlar.Testing.CallbackRecord.ShieldName*
+- uid: Kevlar.Testing.CallbackRecord.StrategyIndex
+  commentId: P:Kevlar.Testing.CallbackRecord.StrategyIndex
+  id: StrategyIndex
+  parent: Kevlar.Testing.CallbackRecord
+  langs:
+  - csharp
+  - vb
+  name: StrategyIndex
+  nameWithType: CallbackRecord.StrategyIndex
+  fullName: Kevlar.Testing.CallbackRecord.StrategyIndex
+  type: Property
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: The zero-based strategy position copied from the callback context.
+  example: []
+  syntax:
+    content: public int? StrategyIndex { get; }
+    parameters: []
+    return:
+      type: System.Nullable{System.Int32}
+    content.vb: Public ReadOnly Property StrategyIndex As Integer?
+  overload: Kevlar.Testing.CallbackRecord.StrategyIndex*
 - uid: Kevlar.Testing.CallbackRecord.RetryNumber
   commentId: P:Kevlar.Testing.CallbackRecord.RetryNumber
   id: RetryNumber
@@ -293,6 +320,75 @@ items:
       type: System.Nullable{Kevlar.CircuitState}
     content.vb: Public ReadOnly Property [To] As CircuitState?
   overload: Kevlar.Testing.CallbackRecord.To*
+- uid: Kevlar.Testing.CallbackRecord.FailureRate
+  commentId: P:Kevlar.Testing.CallbackRecord.FailureRate
+  id: FailureRate
+  parent: Kevlar.Testing.CallbackRecord
+  langs:
+  - csharp
+  - vb
+  name: FailureRate
+  nameWithType: CallbackRecord.FailureRate
+  fullName: Kevlar.Testing.CallbackRecord.FailureRate
+  type: Property
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: The circuit failure ratio, when this is a break-duration callback.
+  example: []
+  syntax:
+    content: public double? FailureRate { get; }
+    parameters: []
+    return:
+      type: System.Nullable{System.Double}
+    content.vb: Public ReadOnly Property FailureRate As Double?
+  overload: Kevlar.Testing.CallbackRecord.FailureRate*
+- uid: Kevlar.Testing.CallbackRecord.FailureCount
+  commentId: P:Kevlar.Testing.CallbackRecord.FailureCount
+  id: FailureCount
+  parent: Kevlar.Testing.CallbackRecord
+  langs:
+  - csharp
+  - vb
+  name: FailureCount
+  nameWithType: CallbackRecord.FailureCount
+  fullName: Kevlar.Testing.CallbackRecord.FailureCount
+  type: Property
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: The circuit failure count, when this is a break-duration callback.
+  example: []
+  syntax:
+    content: public long? FailureCount { get; }
+    parameters: []
+    return:
+      type: System.Nullable{System.Int64}
+    content.vb: Public ReadOnly Property FailureCount As Long?
+  overload: Kevlar.Testing.CallbackRecord.FailureCount*
+- uid: Kevlar.Testing.CallbackRecord.ConsecutiveFailures
+  commentId: P:Kevlar.Testing.CallbackRecord.ConsecutiveFailures
+  id: ConsecutiveFailures
+  parent: Kevlar.Testing.CallbackRecord
+  langs:
+  - csharp
+  - vb
+  name: ConsecutiveFailures
+  nameWithType: CallbackRecord.ConsecutiveFailures
+  fullName: Kevlar.Testing.CallbackRecord.ConsecutiveFailures
+  type: Property
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: The consecutive circuit failure count, when this is a break-duration callback.
+  example: []
+  syntax:
+    content: public int? ConsecutiveFailures { get; }
+    parameters: []
+    return:
+      type: System.Nullable{System.Int32}
+    content.vb: Public ReadOnly Property ConsecutiveFailures As Integer?
+  overload: Kevlar.Testing.CallbackRecord.ConsecutiveFailures*
 references:
 - uid: Kevlar.Testing
   commentId: N:Kevlar.Testing
@@ -585,13 +681,13 @@ references:
   nameWithType.vb: String
   fullName.vb: String
   name.vb: String
-- uid: Kevlar.Testing.CallbackRecord.RetryNumber*
-  commentId: Overload:Kevlar.Testing.CallbackRecord.RetryNumber
+- uid: Kevlar.Testing.CallbackRecord.StrategyIndex*
+  commentId: Overload:Kevlar.Testing.CallbackRecord.StrategyIndex
   isExternal: true
-  href: Kevlar.Testing.CallbackRecord.html#Kevlar_Testing_CallbackRecord_RetryNumber
-  name: RetryNumber
-  nameWithType: CallbackRecord.RetryNumber
-  fullName: Kevlar.Testing.CallbackRecord.RetryNumber
+  href: Kevlar.Testing.CallbackRecord.html#Kevlar_Testing_CallbackRecord_StrategyIndex
+  name: StrategyIndex
+  nameWithType: CallbackRecord.StrategyIndex
+  fullName: Kevlar.Testing.CallbackRecord.StrategyIndex
 - uid: System.Nullable{System.Int32}
   commentId: T:System.Nullable{System.Int32}
   parent: System
@@ -643,6 +739,13 @@ references:
   - name: " "
   - name: T
   - name: )
+- uid: Kevlar.Testing.CallbackRecord.RetryNumber*
+  commentId: Overload:Kevlar.Testing.CallbackRecord.RetryNumber
+  isExternal: true
+  href: Kevlar.Testing.CallbackRecord.html#Kevlar_Testing_CallbackRecord_RetryNumber
+  name: RetryNumber
+  nameWithType: CallbackRecord.RetryNumber
+  fullName: Kevlar.Testing.CallbackRecord.RetryNumber
 - uid: Kevlar.Testing.CallbackRecord.AttemptNumber*
   commentId: Overload:Kevlar.Testing.CallbackRecord.AttemptNumber
   isExternal: true
@@ -737,3 +840,70 @@ references:
   name: To
   nameWithType: CallbackRecord.To
   fullName: Kevlar.Testing.CallbackRecord.To
+- uid: Kevlar.Testing.CallbackRecord.FailureRate*
+  commentId: Overload:Kevlar.Testing.CallbackRecord.FailureRate
+  isExternal: true
+  href: Kevlar.Testing.CallbackRecord.html#Kevlar_Testing_CallbackRecord_FailureRate
+  name: FailureRate
+  nameWithType: CallbackRecord.FailureRate
+  fullName: Kevlar.Testing.CallbackRecord.FailureRate
+- uid: System.Nullable{System.Double}
+  commentId: T:System.Nullable{System.Double}
+  parent: System
+  definition: System.Nullable`1
+  href: https://learn.microsoft.com/dotnet/api/system.double
+  name: double?
+  nameWithType: double?
+  fullName: double?
+  nameWithType.vb: Double?
+  fullName.vb: Double?
+  name.vb: Double?
+  spec.csharp:
+  - uid: System.Double
+    name: double
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.double
+  - name: '?'
+  spec.vb:
+  - uid: System.Double
+    name: Double
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.double
+  - name: '?'
+- uid: Kevlar.Testing.CallbackRecord.FailureCount*
+  commentId: Overload:Kevlar.Testing.CallbackRecord.FailureCount
+  isExternal: true
+  href: Kevlar.Testing.CallbackRecord.html#Kevlar_Testing_CallbackRecord_FailureCount
+  name: FailureCount
+  nameWithType: CallbackRecord.FailureCount
+  fullName: Kevlar.Testing.CallbackRecord.FailureCount
+- uid: System.Nullable{System.Int64}
+  commentId: T:System.Nullable{System.Int64}
+  parent: System
+  definition: System.Nullable`1
+  href: https://learn.microsoft.com/dotnet/api/system.int64
+  name: long?
+  nameWithType: long?
+  fullName: long?
+  nameWithType.vb: Long?
+  fullName.vb: Long?
+  name.vb: Long?
+  spec.csharp:
+  - uid: System.Int64
+    name: long
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.int64
+  - name: '?'
+  spec.vb:
+  - uid: System.Int64
+    name: Long
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.int64
+  - name: '?'
+- uid: Kevlar.Testing.CallbackRecord.ConsecutiveFailures*
+  commentId: Overload:Kevlar.Testing.CallbackRecord.ConsecutiveFailures
+  isExternal: true
+  href: Kevlar.Testing.CallbackRecord.html#Kevlar_Testing_CallbackRecord_ConsecutiveFailures
+  name: ConsecutiveFailures
+  nameWithType: CallbackRecord.ConsecutiveFailures
+  fullName: Kevlar.Testing.CallbackRecord.ConsecutiveFailures

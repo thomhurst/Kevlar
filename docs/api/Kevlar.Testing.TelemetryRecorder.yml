@@ -9,11 +9,13 @@ items:
   - Kevlar.Testing.TelemetryRecorder.Callbacks
   - Kevlar.Testing.TelemetryRecorder.Dispose
   - Kevlar.Testing.TelemetryRecorder.Metrics
-  - Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CircuitStateChangedEvent)
+  - Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CircuitBreakerBreakDurationEvent,System.TimeSpan)
+  - Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CircuitBreakerStateChangedEvent)
   - Kevlar.Testing.TelemetryRecorder.Record(Kevlar.FallbackEvent)
   - Kevlar.Testing.TelemetryRecorder.Record(Kevlar.HedgeEvent)
   - Kevlar.Testing.TelemetryRecorder.Record(Kevlar.RetryEvent)
   - Kevlar.Testing.TelemetryRecorder.Record(Kevlar.TimeoutEvent)
+  - Kevlar.Testing.TelemetryRecorder.Record``1(Kevlar.CircuitBreakerBreakDurationEvent{``0},System.TimeSpan)
   - Kevlar.Testing.TelemetryRecorder.Record``1(Kevlar.FallbackEvent{``0})
   - Kevlar.Testing.TelemetryRecorder.Record``1(Kevlar.RetryEvent{``0})
   - Kevlar.Testing.TelemetryRecorder.WaitForCallbackCountAsync(System.Int32,System.Threading.CancellationToken)
@@ -221,16 +223,16 @@ items:
   nameWithType.vb: TelemetryRecorder.Record(Of TResult)(FallbackEvent(Of TResult))
   fullName.vb: Kevlar.Testing.TelemetryRecorder.Record(Of TResult)(Kevlar.FallbackEvent(Of TResult))
   name.vb: Record(Of TResult)(FallbackEvent(Of TResult))
-- uid: Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CircuitStateChangedEvent)
-  commentId: M:Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CircuitStateChangedEvent)
-  id: Record(Kevlar.CircuitStateChangedEvent)
+- uid: Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CircuitBreakerStateChangedEvent)
+  commentId: M:Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CircuitBreakerStateChangedEvent)
+  id: Record(Kevlar.CircuitBreakerStateChangedEvent)
   parent: Kevlar.Testing.TelemetryRecorder
   langs:
   - csharp
   - vb
-  name: Record(CircuitStateChangedEvent)
-  nameWithType: TelemetryRecorder.Record(CircuitStateChangedEvent)
-  fullName: Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CircuitStateChangedEvent)
+  name: Record(CircuitBreakerStateChangedEvent)
+  nameWithType: TelemetryRecorder.Record(CircuitBreakerStateChangedEvent)
+  fullName: Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CircuitBreakerStateChangedEvent)
   type: Method
   assemblies:
   - Kevlar.Testing
@@ -238,12 +240,71 @@ items:
   summary: Records a circuit-breaker transition callback.
   example: []
   syntax:
-    content: public void Record(CircuitStateChangedEvent item)
+    content: public void Record(CircuitBreakerStateChangedEvent item)
     parameters:
     - id: item
-      type: Kevlar.CircuitStateChangedEvent
-    content.vb: Public Sub Record(item As CircuitStateChangedEvent)
+      type: Kevlar.CircuitBreakerStateChangedEvent
+    content.vb: Public Sub Record(item As CircuitBreakerStateChangedEvent)
   overload: Kevlar.Testing.TelemetryRecorder.Record*
+- uid: Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CircuitBreakerBreakDurationEvent,System.TimeSpan)
+  commentId: M:Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CircuitBreakerBreakDurationEvent,System.TimeSpan)
+  id: Record(Kevlar.CircuitBreakerBreakDurationEvent,System.TimeSpan)
+  parent: Kevlar.Testing.TelemetryRecorder
+  langs:
+  - csharp
+  - vb
+  name: Record(CircuitBreakerBreakDurationEvent, TimeSpan)
+  nameWithType: TelemetryRecorder.Record(CircuitBreakerBreakDurationEvent, TimeSpan)
+  fullName: Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CircuitBreakerBreakDurationEvent, System.TimeSpan)
+  type: Method
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Records an untyped circuit-breaker break-duration callback.
+  example: []
+  syntax:
+    content: public ValueTask<TimeSpan> Record(CircuitBreakerBreakDurationEvent item, TimeSpan breakDuration)
+    parameters:
+    - id: item
+      type: Kevlar.CircuitBreakerBreakDurationEvent
+    - id: breakDuration
+      type: System.TimeSpan
+    return:
+      type: System.Threading.Tasks.ValueTask{System.TimeSpan}
+    content.vb: Public Function Record(item As CircuitBreakerBreakDurationEvent, breakDuration As TimeSpan) As ValueTask(Of TimeSpan)
+  overload: Kevlar.Testing.TelemetryRecorder.Record*
+- uid: Kevlar.Testing.TelemetryRecorder.Record``1(Kevlar.CircuitBreakerBreakDurationEvent{``0},System.TimeSpan)
+  commentId: M:Kevlar.Testing.TelemetryRecorder.Record``1(Kevlar.CircuitBreakerBreakDurationEvent{`0},System.TimeSpan)
+  id: Record``1(Kevlar.CircuitBreakerBreakDurationEvent{``0},System.TimeSpan)
+  parent: Kevlar.Testing.TelemetryRecorder
+  langs:
+  - csharp
+  - vb
+  name: Record<TResult>(CircuitBreakerBreakDurationEvent<TResult>, TimeSpan)
+  nameWithType: TelemetryRecorder.Record<TResult>(CircuitBreakerBreakDurationEvent<TResult>, TimeSpan)
+  fullName: Kevlar.Testing.TelemetryRecorder.Record<TResult>(Kevlar.CircuitBreakerBreakDurationEvent<TResult>, System.TimeSpan)
+  type: Method
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Records a typed circuit-breaker break-duration callback.
+  example: []
+  syntax:
+    content: public ValueTask<TimeSpan> Record<TResult>(CircuitBreakerBreakDurationEvent<TResult> item, TimeSpan breakDuration)
+    parameters:
+    - id: item
+      type: Kevlar.CircuitBreakerBreakDurationEvent{{TResult}}
+    - id: breakDuration
+      type: System.TimeSpan
+    typeParameters:
+    - id: TResult
+    return:
+      type: System.Threading.Tasks.ValueTask{System.TimeSpan}
+    content.vb: Public Function Record(Of TResult)(item As CircuitBreakerBreakDurationEvent(Of TResult), breakDuration As TimeSpan) As ValueTask(Of TimeSpan)
+  overload: Kevlar.Testing.TelemetryRecorder.Record*
+  nameWithType.vb: TelemetryRecorder.Record(Of TResult)(CircuitBreakerBreakDurationEvent(Of TResult), TimeSpan)
+  fullName.vb: Kevlar.Testing.TelemetryRecorder.Record(Of TResult)(Kevlar.CircuitBreakerBreakDurationEvent(Of TResult), System.TimeSpan)
+  name.vb: Record(Of TResult)(CircuitBreakerBreakDurationEvent(Of TResult), TimeSpan)
 - uid: Kevlar.Testing.TelemetryRecorder.WaitForMetricCountAsync(System.Int32,System.Threading.CancellationToken)
   commentId: M:Kevlar.Testing.TelemetryRecorder.WaitForMetricCountAsync(System.Int32,System.Threading.CancellationToken)
   id: WaitForMetricCountAsync(System.Int32,System.Threading.CancellationToken)
@@ -822,14 +883,184 @@ references:
   - name: " "
   - name: TResult
   - name: )
-- uid: Kevlar.CircuitStateChangedEvent
-  commentId: T:Kevlar.CircuitStateChangedEvent
+- uid: Kevlar.CircuitBreakerStateChangedEvent
+  commentId: T:Kevlar.CircuitBreakerStateChangedEvent
   parent: Kevlar
   isExternal: true
-  href: Kevlar.CircuitStateChangedEvent.html
-  name: CircuitStateChangedEvent
-  nameWithType: CircuitStateChangedEvent
-  fullName: Kevlar.CircuitStateChangedEvent
+  href: Kevlar.CircuitBreakerStateChangedEvent.html
+  name: CircuitBreakerStateChangedEvent
+  nameWithType: CircuitBreakerStateChangedEvent
+  fullName: Kevlar.CircuitBreakerStateChangedEvent
+- uid: Kevlar.CircuitBreakerBreakDurationEvent
+  commentId: T:Kevlar.CircuitBreakerBreakDurationEvent
+  parent: Kevlar
+  isExternal: true
+  href: Kevlar.CircuitBreakerBreakDurationEvent.html
+  name: CircuitBreakerBreakDurationEvent
+  nameWithType: CircuitBreakerBreakDurationEvent
+  fullName: Kevlar.CircuitBreakerBreakDurationEvent
+- uid: System.TimeSpan
+  commentId: T:System.TimeSpan
+  parent: System
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.timespan
+  name: TimeSpan
+  nameWithType: TimeSpan
+  fullName: System.TimeSpan
+- uid: System.Threading.Tasks.ValueTask{System.TimeSpan}
+  commentId: T:System.Threading.Tasks.ValueTask{System.TimeSpan}
+  parent: System.Threading.Tasks
+  definition: System.Threading.Tasks.ValueTask`1
+  href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  name: ValueTask<TimeSpan>
+  nameWithType: ValueTask<TimeSpan>
+  fullName: System.Threading.Tasks.ValueTask<System.TimeSpan>
+  nameWithType.vb: ValueTask(Of TimeSpan)
+  fullName.vb: System.Threading.Tasks.ValueTask(Of System.TimeSpan)
+  name.vb: ValueTask(Of TimeSpan)
+  spec.csharp:
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: '>'
+  spec.vb:
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
+  - uid: System.TimeSpan
+    name: TimeSpan
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.timespan
+  - name: )
+- uid: System.Threading.Tasks.ValueTask`1
+  commentId: T:System.Threading.Tasks.ValueTask`1
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  name: ValueTask<TResult>
+  nameWithType: ValueTask<TResult>
+  fullName: System.Threading.Tasks.ValueTask<TResult>
+  nameWithType.vb: ValueTask(Of TResult)
+  fullName.vb: System.Threading.Tasks.ValueTask(Of TResult)
+  name.vb: ValueTask(Of TResult)
+  spec.csharp:
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: System.Threading.Tasks
+  commentId: N:System.Threading.Tasks
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System.Threading.Tasks
+  nameWithType: System.Threading.Tasks
+  fullName: System.Threading.Tasks
+  spec.csharp:
+  - uid: System
+    name: System
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system
+  - name: .
+  - uid: System.Threading
+    name: Threading
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading
+  - name: .
+  - uid: System.Threading.Tasks
+    name: Tasks
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks
+  spec.vb:
+  - uid: System
+    name: System
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system
+  - name: .
+  - uid: System.Threading
+    name: Threading
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading
+  - name: .
+  - uid: System.Threading.Tasks
+    name: Tasks
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks
+- uid: Kevlar.CircuitBreakerBreakDurationEvent{{TResult}}
+  commentId: T:Kevlar.CircuitBreakerBreakDurationEvent{`0}
+  parent: Kevlar
+  definition: Kevlar.CircuitBreakerBreakDurationEvent`1
+  name: CircuitBreakerBreakDurationEvent<TResult>
+  nameWithType: CircuitBreakerBreakDurationEvent<TResult>
+  fullName: Kevlar.CircuitBreakerBreakDurationEvent<TResult>
+  nameWithType.vb: CircuitBreakerBreakDurationEvent(Of TResult)
+  fullName.vb: Kevlar.CircuitBreakerBreakDurationEvent(Of TResult)
+  name.vb: CircuitBreakerBreakDurationEvent(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.CircuitBreakerBreakDurationEvent`1
+    name: CircuitBreakerBreakDurationEvent
+    isExternal: true
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.CircuitBreakerBreakDurationEvent`1
+    name: CircuitBreakerBreakDurationEvent
+    isExternal: true
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.CircuitBreakerBreakDurationEvent`1
+  commentId: T:Kevlar.CircuitBreakerBreakDurationEvent`1
+  isExternal: true
+  href: Kevlar.CircuitBreakerBreakDurationEvent-1.html
+  name: CircuitBreakerBreakDurationEvent<TResult>
+  nameWithType: CircuitBreakerBreakDurationEvent<TResult>
+  fullName: Kevlar.CircuitBreakerBreakDurationEvent<TResult>
+  nameWithType.vb: CircuitBreakerBreakDurationEvent(Of TResult)
+  fullName.vb: Kevlar.CircuitBreakerBreakDurationEvent(Of TResult)
+  name.vb: CircuitBreakerBreakDurationEvent(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.CircuitBreakerBreakDurationEvent`1
+    name: CircuitBreakerBreakDurationEvent
+    isExternal: true
+    href: Kevlar.CircuitBreakerBreakDurationEvent-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.CircuitBreakerBreakDurationEvent`1
+    name: CircuitBreakerBreakDurationEvent
+    isExternal: true
+    href: Kevlar.CircuitBreakerBreakDurationEvent-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
 - uid: Kevlar.Testing.TelemetryRecorder.WaitForMetricCountAsync*
   commentId: Overload:Kevlar.Testing.TelemetryRecorder.WaitForMetricCountAsync
   isExternal: true
@@ -891,43 +1122,6 @@ references:
     name: Threading
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.threading
-- uid: System.Threading.Tasks
-  commentId: N:System.Threading.Tasks
-  isExternal: true
-  href: https://learn.microsoft.com/dotnet/api/system
-  name: System.Threading.Tasks
-  nameWithType: System.Threading.Tasks
-  fullName: System.Threading.Tasks
-  spec.csharp:
-  - uid: System
-    name: System
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system
-  - name: .
-  - uid: System.Threading
-    name: Threading
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.threading
-  - name: .
-  - uid: System.Threading.Tasks
-    name: Tasks
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks
-  spec.vb:
-  - uid: System
-    name: System
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system
-  - name: .
-  - uid: System.Threading
-    name: Threading
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.threading
-  - name: .
-  - uid: System.Threading.Tasks
-    name: Tasks
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks
 - uid: Kevlar.Testing.TelemetryRecorder.WaitForCallbackCountAsync*
   commentId: Overload:Kevlar.Testing.TelemetryRecorder.WaitForCallbackCountAsync
   isExternal: true

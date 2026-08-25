@@ -9,7 +9,6 @@ items:
   - Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.Metadata
   - Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.PermitCount
   - Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.RetryAfter
-  - Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.StrategyIndex
   langs:
   - csharp
   - vb
@@ -101,29 +100,6 @@ items:
       type: System.Int32
     content.vb: Public ReadOnly Property PermitCount As Integer
   overload: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.PermitCount*
-- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.StrategyIndex
-  commentId: P:Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.StrategyIndex
-  id: StrategyIndex
-  parent: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent
-  langs:
-  - csharp
-  - vb
-  name: StrategyIndex
-  nameWithType: RateLimiterAdapterRejectedEvent.StrategyIndex
-  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.StrategyIndex
-  type: Property
-  assemblies:
-  - Kevlar.Extensions.RateLimiting
-  namespace: Kevlar.Extensions.RateLimiting
-  summary: The zero-based position of this strategy in the executing shield.
-  example: []
-  syntax:
-    content: public int StrategyIndex { get; }
-    parameters: []
-    return:
-      type: System.Int32
-    content.vb: Public ReadOnly Property StrategyIndex As Integer
-  overload: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.StrategyIndex*
 - uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.Context
   commentId: P:Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.Context
   id: Context
@@ -603,13 +579,6 @@ references:
   nameWithType.vb: Integer
   fullName.vb: Integer
   name.vb: Integer
-- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.StrategyIndex*
-  commentId: Overload:Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.StrategyIndex
-  isExternal: true
-  href: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.html#Kevlar_Extensions_RateLimiting_RateLimiterAdapterRejectedEvent_StrategyIndex
-  name: StrategyIndex
-  nameWithType: RateLimiterAdapterRejectedEvent.StrategyIndex
-  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.StrategyIndex
 - uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.Context*
   commentId: Overload:Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.Context
   isExternal: true

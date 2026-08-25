@@ -8,7 +8,6 @@ items:
   - Kevlar.ConcurrencyLimitRejectedEvent.Context
   - Kevlar.ConcurrencyLimitRejectedEvent.MaxConcurrency
   - Kevlar.ConcurrencyLimitRejectedEvent.QueueLimit
-  - Kevlar.ConcurrencyLimitRejectedEvent.StrategyIndex
   langs:
   - csharp
   - vb
@@ -77,29 +76,6 @@ items:
       type: System.Int32
     content.vb: Public ReadOnly Property QueueLimit As Integer
   overload: Kevlar.ConcurrencyLimitRejectedEvent.QueueLimit*
-- uid: Kevlar.ConcurrencyLimitRejectedEvent.StrategyIndex
-  commentId: P:Kevlar.ConcurrencyLimitRejectedEvent.StrategyIndex
-  id: StrategyIndex
-  parent: Kevlar.ConcurrencyLimitRejectedEvent
-  langs:
-  - csharp
-  - vb
-  name: StrategyIndex
-  nameWithType: ConcurrencyLimitRejectedEvent.StrategyIndex
-  fullName: Kevlar.ConcurrencyLimitRejectedEvent.StrategyIndex
-  type: Property
-  assemblies:
-  - Kevlar
-  namespace: Kevlar
-  summary: The zero-based position of this strategy in the executing shield.
-  example: []
-  syntax:
-    content: public int StrategyIndex { get; }
-    parameters: []
-    return:
-      type: System.Int32
-    content.vb: Public ReadOnly Property StrategyIndex As Integer
-  overload: Kevlar.ConcurrencyLimitRejectedEvent.StrategyIndex*
 - uid: Kevlar.ConcurrencyLimitRejectedEvent.Context
   commentId: P:Kevlar.ConcurrencyLimitRejectedEvent.Context
   id: Context
@@ -376,13 +352,6 @@ references:
   name: QueueLimit
   nameWithType: ConcurrencyLimitRejectedEvent.QueueLimit
   fullName: Kevlar.ConcurrencyLimitRejectedEvent.QueueLimit
-- uid: Kevlar.ConcurrencyLimitRejectedEvent.StrategyIndex*
-  commentId: Overload:Kevlar.ConcurrencyLimitRejectedEvent.StrategyIndex
-  isExternal: true
-  href: Kevlar.ConcurrencyLimitRejectedEvent.html#Kevlar_ConcurrencyLimitRejectedEvent_StrategyIndex
-  name: StrategyIndex
-  nameWithType: ConcurrencyLimitRejectedEvent.StrategyIndex
-  fullName: Kevlar.ConcurrencyLimitRejectedEvent.StrategyIndex
 - uid: Kevlar.ConcurrencyLimitRejectedEvent.Context*
   commentId: Overload:Kevlar.ConcurrencyLimitRejectedEvent.Context
   isExternal: true

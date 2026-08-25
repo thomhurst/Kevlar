@@ -213,10 +213,10 @@ items:
     run for a long time.
   example: []
   syntax:
-    content: public event Action<CircuitStateChangedEvent>? StateChanged
+    content: public event Action<CircuitBreakerStateChangedEvent>? StateChanged
     return:
-      type: System.Action{Kevlar.CircuitStateChangedEvent}
-    content.vb: Public Event StateChanged As Action(Of CircuitStateChangedEvent)
+      type: System.Action{Kevlar.CircuitBreakerStateChangedEvent}
+    content.vb: Public Event StateChanged As Action(Of CircuitBreakerStateChangedEvent)
 references:
 - uid: Kevlar.CircuitBreakerOptions.Monitor
   commentId: P:Kevlar.CircuitBreakerOptions.Monitor
@@ -620,27 +620,27 @@ references:
     href: Kevlar.CircuitBreakerMonitor.html#Kevlar_CircuitBreakerMonitor_Isolate
   - name: (
   - name: )
-- uid: System.Action{Kevlar.CircuitStateChangedEvent}
-  commentId: T:System.Action{Kevlar.CircuitStateChangedEvent}
+- uid: System.Action{Kevlar.CircuitBreakerStateChangedEvent}
+  commentId: T:System.Action{Kevlar.CircuitBreakerStateChangedEvent}
   parent: System
   definition: System.Action`1
   href: https://learn.microsoft.com/dotnet/api/system.action-1
-  name: Action<CircuitStateChangedEvent>
-  nameWithType: Action<CircuitStateChangedEvent>
-  fullName: System.Action<Kevlar.CircuitStateChangedEvent>
-  nameWithType.vb: Action(Of CircuitStateChangedEvent)
-  fullName.vb: System.Action(Of Kevlar.CircuitStateChangedEvent)
-  name.vb: Action(Of CircuitStateChangedEvent)
+  name: Action<CircuitBreakerStateChangedEvent>
+  nameWithType: Action<CircuitBreakerStateChangedEvent>
+  fullName: System.Action<Kevlar.CircuitBreakerStateChangedEvent>
+  nameWithType.vb: Action(Of CircuitBreakerStateChangedEvent)
+  fullName.vb: System.Action(Of Kevlar.CircuitBreakerStateChangedEvent)
+  name.vb: Action(Of CircuitBreakerStateChangedEvent)
   spec.csharp:
   - uid: System.Action`1
     name: Action
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.action-1
   - name: <
-  - uid: Kevlar.CircuitStateChangedEvent
-    name: CircuitStateChangedEvent
+  - uid: Kevlar.CircuitBreakerStateChangedEvent
+    name: CircuitBreakerStateChangedEvent
     isExternal: true
-    href: Kevlar.CircuitStateChangedEvent.html
+    href: Kevlar.CircuitBreakerStateChangedEvent.html
   - name: '>'
   spec.vb:
   - uid: System.Action`1
@@ -650,10 +650,10 @@ references:
   - name: (
   - name: Of
   - name: " "
-  - uid: Kevlar.CircuitStateChangedEvent
-    name: CircuitStateChangedEvent
+  - uid: Kevlar.CircuitBreakerStateChangedEvent
+    name: CircuitBreakerStateChangedEvent
     isExternal: true
-    href: Kevlar.CircuitStateChangedEvent.html
+    href: Kevlar.CircuitBreakerStateChangedEvent.html
   - name: )
 - uid: System.Action`1
   commentId: T:System.Action`1

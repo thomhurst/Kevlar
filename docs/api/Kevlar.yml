@@ -7,12 +7,13 @@ items:
   - Kevlar.Backoff
   - Kevlar.BackoffKind
   - Kevlar.CircuitBreakerBreakDurationEvent
+  - Kevlar.CircuitBreakerBreakDurationEvent`1
   - Kevlar.CircuitBreakerMonitor
   - Kevlar.CircuitBreakerOptions
   - Kevlar.CircuitBreakerOptions`1
+  - Kevlar.CircuitBreakerStateChangedEvent
   - Kevlar.CircuitOpenException
   - Kevlar.CircuitState
-  - Kevlar.CircuitStateChangedEvent
   - Kevlar.ConcurrencyLimitExceededException
   - Kevlar.ConcurrencyLimitOptions
   - Kevlar.ConcurrencyLimitRejectedEvent
@@ -31,6 +32,7 @@ items:
   - Kevlar.HedgeOptions
   - Kevlar.HedgeOptions`1
   - Kevlar.Jitter
+  - Kevlar.KevlarConfigurationException
   - Kevlar.KevlarContext
   - Kevlar.KevlarDiagnostics
   - Kevlar.KevlarException
@@ -107,6 +109,13 @@ references:
   name: ExecutionRejectedException
   nameWithType: ExecutionRejectedException
   fullName: Kevlar.ExecutionRejectedException
+- uid: Kevlar.KevlarConfigurationException
+  commentId: T:Kevlar.KevlarConfigurationException
+  isExternal: true
+  href: Kevlar.KevlarConfigurationException.html
+  name: KevlarConfigurationException
+  nameWithType: KevlarConfigurationException
+  fullName: Kevlar.KevlarConfigurationException
 - uid: Kevlar.KevlarException
   commentId: T:Kevlar.KevlarException
   parent: Kevlar
@@ -402,11 +411,40 @@ references:
   fullName: Kevlar.ShieldTaskExtensions
 - uid: Kevlar.CircuitBreakerBreakDurationEvent
   commentId: T:Kevlar.CircuitBreakerBreakDurationEvent
+  parent: Kevlar
   isExternal: true
   href: Kevlar.CircuitBreakerBreakDurationEvent.html
   name: CircuitBreakerBreakDurationEvent
   nameWithType: CircuitBreakerBreakDurationEvent
   fullName: Kevlar.CircuitBreakerBreakDurationEvent
+- uid: Kevlar.CircuitBreakerBreakDurationEvent`1
+  commentId: T:Kevlar.CircuitBreakerBreakDurationEvent`1
+  isExternal: true
+  href: Kevlar.CircuitBreakerBreakDurationEvent-1.html
+  name: CircuitBreakerBreakDurationEvent<TResult>
+  nameWithType: CircuitBreakerBreakDurationEvent<TResult>
+  fullName: Kevlar.CircuitBreakerBreakDurationEvent<TResult>
+  nameWithType.vb: CircuitBreakerBreakDurationEvent(Of TResult)
+  fullName.vb: Kevlar.CircuitBreakerBreakDurationEvent(Of TResult)
+  name.vb: CircuitBreakerBreakDurationEvent(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.CircuitBreakerBreakDurationEvent`1
+    name: CircuitBreakerBreakDurationEvent
+    isExternal: true
+    href: Kevlar.CircuitBreakerBreakDurationEvent-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.CircuitBreakerBreakDurationEvent`1
+    name: CircuitBreakerBreakDurationEvent
+    isExternal: true
+    href: Kevlar.CircuitBreakerBreakDurationEvent-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
 - uid: Kevlar.CircuitBreakerMonitor
   commentId: T:Kevlar.CircuitBreakerMonitor
   parent: Kevlar
@@ -458,14 +496,14 @@ references:
   name: CircuitState
   nameWithType: CircuitState
   fullName: Kevlar.CircuitState
-- uid: Kevlar.CircuitStateChangedEvent
-  commentId: T:Kevlar.CircuitStateChangedEvent
+- uid: Kevlar.CircuitBreakerStateChangedEvent
+  commentId: T:Kevlar.CircuitBreakerStateChangedEvent
   parent: Kevlar
   isExternal: true
-  href: Kevlar.CircuitStateChangedEvent.html
-  name: CircuitStateChangedEvent
-  nameWithType: CircuitStateChangedEvent
-  fullName: Kevlar.CircuitStateChangedEvent
+  href: Kevlar.CircuitBreakerStateChangedEvent.html
+  name: CircuitBreakerStateChangedEvent
+  nameWithType: CircuitBreakerStateChangedEvent
+  fullName: Kevlar.CircuitBreakerStateChangedEvent
 - uid: Kevlar.ConcurrencyLimitOptions
   commentId: T:Kevlar.ConcurrencyLimitOptions
   parent: Kevlar
