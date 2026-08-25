@@ -10,6 +10,9 @@ items:
   - Kevlar.Extensions.Http.HttpEndpointSelectionMode
   - Kevlar.Extensions.Http.HttpRequestReplayException
   - Kevlar.Extensions.Http.HttpShield
+  - Kevlar.Extensions.Http.KevlarHttp
+  - Kevlar.Extensions.Http.KevlarHttpRequestExtensions
+  - Kevlar.Extensions.Http.KevlarRequestOptions
   - Kevlar.Extensions.Http.ShieldDelegatingHandler
   - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
   - Kevlar.Extensions.Http.ShieldHttpHandlerOptions
@@ -70,6 +73,28 @@ references:
   name: HttpShield
   nameWithType: HttpShield
   fullName: Kevlar.Extensions.Http.HttpShield
+- uid: Kevlar.Extensions.Http.KevlarHttp
+  commentId: T:Kevlar.Extensions.Http.KevlarHttp
+  isExternal: true
+  href: Kevlar.Extensions.Http.KevlarHttp.html
+  name: KevlarHttp
+  nameWithType: KevlarHttp
+  fullName: Kevlar.Extensions.Http.KevlarHttp
+- uid: Kevlar.Extensions.Http.KevlarHttpRequestExtensions
+  commentId: T:Kevlar.Extensions.Http.KevlarHttpRequestExtensions
+  isExternal: true
+  href: Kevlar.Extensions.Http.KevlarHttpRequestExtensions.html
+  name: KevlarHttpRequestExtensions
+  nameWithType: KevlarHttpRequestExtensions
+  fullName: Kevlar.Extensions.Http.KevlarHttpRequestExtensions
+- uid: Kevlar.Extensions.Http.KevlarRequestOptions
+  commentId: T:Kevlar.Extensions.Http.KevlarRequestOptions
+  parent: Kevlar.Extensions.Http
+  isExternal: true
+  href: Kevlar.Extensions.Http.KevlarRequestOptions.html
+  name: KevlarRequestOptions
+  nameWithType: KevlarRequestOptions
+  fullName: Kevlar.Extensions.Http.KevlarRequestOptions
 - uid: Kevlar.Extensions.Http.ShieldDelegatingHandler
   commentId: T:Kevlar.Extensions.Http.ShieldDelegatingHandler
   isExternal: true
