@@ -581,6 +581,7 @@ references:
   - uid: Kevlar.Shield`1
     name: Shield
     isExternal: true
+    href: Kevlar.Shield-1.html
   - name: <
   - uid: System.Net.Http.HttpResponseMessage
     name: HttpResponseMessage
@@ -604,6 +605,7 @@ references:
   - uid: Kevlar.Shield`1
     name: Shield
     isExternal: true
+    href: Kevlar.Shield-1.html
   - name: (
   - name: Of
   - name: " "

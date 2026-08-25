@@ -663,6 +663,7 @@ references:
   - uid: Kevlar.KevlarContext
     name: KevlarContext
     isExternal: true
+    href: Kevlar.KevlarContext.html
   - name: '>'
   spec.vb:
   - uid: System.Threading.RateLimiting.PartitionedRateLimiter`1
@@ -675,6 +676,7 @@ references:
   - uid: Kevlar.KevlarContext
     name: KevlarContext
     isExternal: true
+    href: Kevlar.KevlarContext.html
   - name: )
 - uid: System.Threading.RateLimiting.PartitionedRateLimiter`1
   commentId: T:System.Threading.RateLimiting.PartitionedRateLimiter`1

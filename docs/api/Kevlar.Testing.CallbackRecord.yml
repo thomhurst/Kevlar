@@ -827,11 +827,13 @@ references:
   - uid: Kevlar.CircuitState
     name: CircuitState
     isExternal: true
+    href: Kevlar.CircuitState.html
   - name: '?'
   spec.vb:
   - uid: Kevlar.CircuitState
     name: CircuitState
     isExternal: true
+    href: Kevlar.CircuitState.html
   - name: '?'
 - uid: Kevlar.Testing.CallbackRecord.To*
   commentId: Overload:Kevlar.Testing.CallbackRecord.To

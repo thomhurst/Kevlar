@@ -620,6 +620,7 @@ references:
   - uid: Kevlar.KevlarContext
     name: KevlarContext
     isExternal: true
+    href: Kevlar.KevlarContext.html
   - name: ','
   - name: " "
   - uid: System.Double
@@ -638,6 +639,7 @@ references:
   - uid: Kevlar.KevlarContext
     name: KevlarContext
     isExternal: true
+    href: Kevlar.KevlarContext.html
   - name: ','
   - name: " "
   - uid: System.Double
@@ -722,6 +724,7 @@ references:
   - uid: Kevlar.KevlarContext
     name: KevlarContext
     isExternal: true
+    href: Kevlar.KevlarContext.html
   - name: ','
   - name: " "
   - uid: System.Boolean
@@ -740,6 +743,7 @@ references:
   - uid: Kevlar.KevlarContext
     name: KevlarContext
     isExternal: true
+    href: Kevlar.KevlarContext.html
   - name: ','
   - name: " "
   - uid: System.Boolean

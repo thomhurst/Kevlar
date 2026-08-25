@@ -588,6 +588,7 @@ references:
   - uid: Kevlar.Shield
     name: Shield
     isExternal: true
+    href: Kevlar.Shield.html
   - name: '>'
   spec.vb:
   - uid: System.Func`2
@@ -606,6 +607,7 @@ references:
   - uid: Kevlar.Shield
     name: Shield
     isExternal: true
+    href: Kevlar.Shield.html
   - name: )
 - uid: System.Func`2
   commentId: T:System.Func`2
@@ -644,6 +646,7 @@ references:
 - uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Kevlar.Shield)
   commentId: M:Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Kevlar.Shield)
   isExternal: true
+  href: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.html#Kevlar_Extensions_DependencyInjection_KevlarServiceCollectionExtensions_AddShield_Microsoft_Extensions_DependencyInjection_IServiceCollection_System_String_Kevlar_Shield_
   name: AddShield(IServiceCollection, string, Shield)
   nameWithType: KevlarServiceCollectionExtensions.AddShield(IServiceCollection, string, Shield)
   fullName: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IServiceCollection, string, Kevlar.Shield)
@@ -654,6 +657,7 @@ references:
   - uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Kevlar.Shield)
     name: AddShield
     isExternal: true
+    href: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.html#Kevlar_Extensions_DependencyInjection_KevlarServiceCollectionExtensions_AddShield_Microsoft_Extensions_DependencyInjection_IServiceCollection_System_String_Kevlar_Shield_
   - name: (
   - uid: Microsoft.Extensions.DependencyInjection.IServiceCollection
     name: IServiceCollection
@@ -670,11 +674,13 @@ references:
   - uid: Kevlar.Shield
     name: Shield
     isExternal: true
+    href: Kevlar.Shield.html
   - name: )
   spec.vb:
   - uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Kevlar.Shield)
     name: AddShield
     isExternal: true
+    href: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.html#Kevlar_Extensions_DependencyInjection_KevlarServiceCollectionExtensions_AddShield_Microsoft_Extensions_DependencyInjection_IServiceCollection_System_String_Kevlar_Shield_
   - name: (
   - uid: Microsoft.Extensions.DependencyInjection.IServiceCollection
     name: IServiceCollection
@@ -691,6 +697,7 @@ references:
   - uid: Kevlar.Shield
     name: Shield
     isExternal: true
+    href: Kevlar.Shield.html
   - name: )
 - uid: System.String
   commentId: T:System.String

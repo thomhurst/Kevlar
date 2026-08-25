@@ -496,6 +496,7 @@ references:
   commentId: T:Kevlar.RetryOptions{System.Net.Http.HttpResponseMessage}
   parent: Kevlar
   definition: Kevlar.RetryOptions`1
+  href: Kevlar.RetryOptions-1.html
   name: RetryOptions<HttpResponseMessage>
   nameWithType: RetryOptions<HttpResponseMessage>
   fullName: Kevlar.RetryOptions<System.Net.Http.HttpResponseMessage>
@@ -506,6 +507,7 @@ references:
   - uid: Kevlar.RetryOptions`1
     name: RetryOptions
     isExternal: true
+    href: Kevlar.RetryOptions-1.html
   - name: <
   - uid: System.Net.Http.HttpResponseMessage
     name: HttpResponseMessage
@@ -516,6 +518,7 @@ references:
   - uid: Kevlar.RetryOptions`1
     name: RetryOptions
     isExternal: true
+    href: Kevlar.RetryOptions-1.html
   - name: (
   - name: Of
   - name: " "
@@ -563,6 +566,7 @@ references:
   commentId: T:Kevlar.CircuitBreakerOptions{System.Net.Http.HttpResponseMessage}
   parent: Kevlar
   definition: Kevlar.CircuitBreakerOptions`1
+  href: Kevlar.CircuitBreakerOptions-1.html
   name: CircuitBreakerOptions<HttpResponseMessage>
   nameWithType: CircuitBreakerOptions<HttpResponseMessage>
   fullName: Kevlar.CircuitBreakerOptions<System.Net.Http.HttpResponseMessage>
@@ -573,6 +577,7 @@ references:
   - uid: Kevlar.CircuitBreakerOptions`1
     name: CircuitBreakerOptions
     isExternal: true
+    href: Kevlar.CircuitBreakerOptions-1.html
   - name: <
   - uid: System.Net.Http.HttpResponseMessage
     name: HttpResponseMessage
@@ -583,6 +588,7 @@ references:
   - uid: Kevlar.CircuitBreakerOptions`1
     name: CircuitBreakerOptions
     isExternal: true
+    href: Kevlar.CircuitBreakerOptions-1.html
   - name: (
   - name: Of
   - name: " "

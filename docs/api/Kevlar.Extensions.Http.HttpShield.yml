@@ -659,6 +659,7 @@ references:
   commentId: T:Kevlar.ShieldBuilder{System.Net.Http.HttpResponseMessage}
   parent: Kevlar
   definition: Kevlar.ShieldBuilder`1
+  href: Kevlar.ShieldBuilder-1.html
   name: ShieldBuilder<HttpResponseMessage>
   nameWithType: ShieldBuilder<HttpResponseMessage>
   fullName: Kevlar.ShieldBuilder<System.Net.Http.HttpResponseMessage>
@@ -669,6 +670,7 @@ references:
   - uid: Kevlar.ShieldBuilder`1
     name: ShieldBuilder
     isExternal: true
+    href: Kevlar.ShieldBuilder-1.html
   - name: <
   - uid: System.Net.Http.HttpResponseMessage
     name: HttpResponseMessage
@@ -679,6 +681,7 @@ references:
   - uid: Kevlar.ShieldBuilder`1
     name: ShieldBuilder
     isExternal: true
+    href: Kevlar.ShieldBuilder-1.html
   - name: (
   - name: Of
   - name: " "
@@ -734,6 +737,7 @@ references:
   commentId: T:Kevlar.Shield{System.Net.Http.HttpResponseMessage}
   parent: Kevlar
   definition: Kevlar.Shield`1
+  href: Kevlar.Shield-1.html
   name: Shield<HttpResponseMessage>
   nameWithType: Shield<HttpResponseMessage>
   fullName: Kevlar.Shield<System.Net.Http.HttpResponseMessage>
@@ -744,6 +748,7 @@ references:
   - uid: Kevlar.Shield`1
     name: Shield
     isExternal: true
+    href: Kevlar.Shield-1.html
   - name: <
   - uid: System.Net.Http.HttpResponseMessage
     name: HttpResponseMessage
@@ -754,6 +759,7 @@ references:
   - uid: Kevlar.Shield`1
     name: Shield
     isExternal: true
+    href: Kevlar.Shield-1.html
   - name: (
   - name: Of
   - name: " "
@@ -819,6 +825,7 @@ references:
   commentId: T:Kevlar.RetryEvent{System.Net.Http.HttpResponseMessage}
   parent: Kevlar
   definition: Kevlar.RetryEvent`1
+  href: Kevlar.RetryEvent-1.html
   name: RetryEvent<HttpResponseMessage>
   nameWithType: RetryEvent<HttpResponseMessage>
   fullName: Kevlar.RetryEvent<System.Net.Http.HttpResponseMessage>
@@ -829,6 +836,7 @@ references:
   - uid: Kevlar.RetryEvent`1
     name: RetryEvent
     isExternal: true
+    href: Kevlar.RetryEvent-1.html
   - name: <
   - uid: System.Net.Http.HttpResponseMessage
     name: HttpResponseMessage
@@ -839,6 +847,7 @@ references:
   - uid: Kevlar.RetryEvent`1
     name: RetryEvent
     isExternal: true
+    href: Kevlar.RetryEvent-1.html
   - name: (
   - name: Of
   - name: " "
@@ -958,6 +967,7 @@ references:
   - uid: Kevlar.RetryEvent`1
     name: RetryEvent
     isExternal: true
+    href: Kevlar.RetryEvent-1.html
   - name: <
   - uid: System.Net.Http.HttpResponseMessage
     name: HttpResponseMessage
@@ -983,6 +993,7 @@ references:
   - uid: Kevlar.RetryEvent`1
     name: RetryEvent
     isExternal: true
+    href: Kevlar.RetryEvent-1.html
   - name: (
   - name: Of
   - name: " "

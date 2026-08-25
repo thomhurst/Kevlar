@@ -488,6 +488,7 @@ references:
 - uid: Kevlar.BackoffKind.Exponential
   commentId: F:Kevlar.BackoffKind.Exponential
   isExternal: true
+  href: Kevlar.BackoffKind.html#Kevlar_BackoffKind_Exponential
   name: Exponential
   nameWithType: BackoffKind.Exponential
   fullName: Kevlar.BackoffKind.Exponential

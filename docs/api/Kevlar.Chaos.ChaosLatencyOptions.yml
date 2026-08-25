@@ -482,6 +482,7 @@ references:
   - uid: Kevlar.KevlarContext
     name: KevlarContext
     isExternal: true
+    href: Kevlar.KevlarContext.html
   - name: ','
   - name: " "
   - uid: System.TimeSpan
@@ -500,6 +501,7 @@ references:
   - uid: Kevlar.KevlarContext
     name: KevlarContext
     isExternal: true
+    href: Kevlar.KevlarContext.html
   - name: ','
   - name: " "
   - uid: System.TimeSpan

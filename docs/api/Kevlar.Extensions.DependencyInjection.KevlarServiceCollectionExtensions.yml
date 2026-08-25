@@ -889,6 +889,7 @@ references:
   - uid: Kevlar.Shield
     name: Shield
     isExternal: true
+    href: Kevlar.Shield.html
   - name: '>'
   spec.vb:
   - uid: System.Func`2
@@ -907,6 +908,7 @@ references:
   - uid: Kevlar.Shield
     name: Shield
     isExternal: true
+    href: Kevlar.Shield.html
   - name: )
 - uid: System.Func`2
   commentId: T:System.Func`2
@@ -1202,6 +1204,7 @@ references:
   - uid: Kevlar.Shield`1
     name: Shield
     isExternal: true
+    href: Kevlar.Shield-1.html
   - name: <
   - name: TResult
   - name: '>'
@@ -1223,6 +1226,7 @@ references:
   - uid: Kevlar.Shield`1
     name: Shield
     isExternal: true
+    href: Kevlar.Shield-1.html
   - name: (
   - name: Of
   - name: " "
@@ -1293,6 +1297,7 @@ references:
   - uid: Kevlar.Shield
     name: Shield
     isExternal: true
+    href: Kevlar.Shield.html
   - name: '>'
   spec.vb:
   - uid: System.Func`3
@@ -1314,6 +1319,7 @@ references:
   - uid: Kevlar.Shield
     name: Shield
     isExternal: true
+    href: Kevlar.Shield.html
   - name: )
 - uid: System.Action{Kevlar.PartitionedShieldOptions}
   commentId: T:System.Action{Kevlar.PartitionedShieldOptions}
@@ -1335,6 +1341,7 @@ references:
   - uid: Kevlar.PartitionedShieldOptions
     name: PartitionedShieldOptions
     isExternal: true
+    href: Kevlar.PartitionedShieldOptions.html
   - name: '>'
   spec.vb:
   - uid: System.Action`1
@@ -1347,6 +1354,7 @@ references:
   - uid: Kevlar.PartitionedShieldOptions
     name: PartitionedShieldOptions
     isExternal: true
+    href: Kevlar.PartitionedShieldOptions.html
   - name: )
 - uid: System.Collections.Generic.IEqualityComparer{{TKey}}
   commentId: T:System.Collections.Generic.IEqualityComparer{`0}
@@ -1511,6 +1519,7 @@ references:
   - uid: Kevlar.Shield`1
     name: Shield
     isExternal: true
+    href: Kevlar.Shield-1.html
   - name: <
   - name: TResult
   - name: '>'
@@ -1535,6 +1544,7 @@ references:
   - uid: Kevlar.Shield`1
     name: Shield
     isExternal: true
+    href: Kevlar.Shield-1.html
   - name: (
   - name: Of
   - name: " "
