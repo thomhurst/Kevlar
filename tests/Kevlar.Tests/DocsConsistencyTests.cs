@@ -89,9 +89,7 @@ public class DocsConsistencyTests
             .ToArray();
         var packableProjects = Directory
             .EnumerateFiles(Path.Combine(repositoryRoot, "src"), "*.csproj", SearchOption.AllDirectories)
-            .Where(static path => System.Xml.Linq.XDocument.Load(path)
-                .Descendants("IsPackable")
-                .Any(static element => string.Equals(element.Value, "true", StringComparison.OrdinalIgnoreCase)))
+            .Where(static path => IsPackableProject(XDocument.Load(path)))
             .Select(static path => Path.GetFileNameWithoutExtension(path))
             .OrderBy(static package => package, StringComparer.Ordinal)
             .ToArray();
