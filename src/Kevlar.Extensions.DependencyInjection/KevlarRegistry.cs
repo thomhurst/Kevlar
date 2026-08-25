@@ -290,14 +290,14 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         }
 
         var failures = new List<Exception>();
-        var previousScope = EnterLifecycleScope();
+        var lifecycleScope = EnterLifecycleScope();
         try
         {
             DisposeSynchronously(values, failures);
         }
         finally
         {
-            ExitLifecycleScope(previousScope);
+            ExitLifecycleScope(lifecycleScope);
             EndDispose(CreateDisposalFailure(failures));
         }
 
@@ -318,7 +318,7 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         }
 
         var failures = new List<Exception>();
-        var previousScope = EnterLifecycleScope();
+        var lifecycleScope = EnterLifecycleScope();
         try
         {
             DrainRetirementFailures(failures);
@@ -353,7 +353,7 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         }
         finally
         {
-            ExitLifecycleScope(previousScope);
+            ExitLifecycleScope(lifecycleScope);
             EndDispose(CreateDisposalFailure(failures));
         }
 
@@ -559,7 +559,7 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         }
 
         var failures = new List<Exception>();
-        var previousScope = EnterLifecycleScope();
+        var lifecycleScope = EnterLifecycleScope();
         try
         {
             DisposeSynchronously(values, failures);
@@ -570,7 +570,7 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         }
         finally
         {
-            ExitLifecycleScope(previousScope);
+            ExitLifecycleScope(lifecycleScope);
             EndDispose(CreateDisposalFailure(failures));
         }
     }
@@ -592,15 +592,18 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         }
     }
 
-    private LifecycleScope? EnterLifecycleScope()
+    private LifecycleScope EnterLifecycleScope()
     {
-        var previous = _lifecycleScope.Value;
-        _lifecycleScope.Value = new LifecycleScope(this, previous);
-        return previous;
+        var scope = new LifecycleScope(this, _lifecycleScope.Value);
+        _lifecycleScope.Value = scope;
+        return scope;
     }
 
-    private static void ExitLifecycleScope(LifecycleScope? previous) =>
-        _lifecycleScope.Value = previous;
+    private static void ExitLifecycleScope(LifecycleScope scope)
+    {
+        scope.Deactivate();
+        _lifecycleScope.Value = scope.Parent;
+    }
 
     private bool IsLifecycleCaller()
     {
@@ -616,7 +619,7 @@ internal sealed class KevlarRegistry : IKevlarRegistry
 
         for (var scope = _lifecycleScope.Value; scope is not null; scope = scope.Parent)
         {
-            if (ReferenceEquals(scope.Registry, this))
+            if (scope.IsActive && ReferenceEquals(scope.Registry, this))
             {
                 return true;
             }
@@ -817,7 +820,7 @@ internal sealed class KevlarRegistry : IKevlarRegistry
 
     private void CompleteDeferredDisposals(List<IAsyncDisposable> deferredAsyncDisposals)
     {
-        var previousScope = EnterLifecycleScope();
+        var lifecycleScope = EnterLifecycleScope();
         try
         {
             foreach (var disposable in deferredAsyncDisposals)
@@ -834,7 +837,7 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         }
         finally
         {
-            ExitLifecycleScope(previousScope);
+            ExitLifecycleScope(lifecycleScope);
             EndDeferredDisposals();
         }
     }
@@ -1067,8 +1070,14 @@ internal sealed class KevlarRegistry : IKevlarRegistry
 
     private sealed class LifecycleScope(KevlarRegistry registry, LifecycleScope? parent)
     {
+        private int _active = 1;
+
         public KevlarRegistry Registry { get; } = registry;
 
         public LifecycleScope? Parent { get; } = parent;
+
+        public bool IsActive => Volatile.Read(ref _active) != 0;
+
+        public void Deactivate() => Interlocked.Exchange(ref _active, 0);
     }
 }

@@ -599,6 +599,30 @@ public class DynamicRegistryTests
     }
 
     [Test]
+    public async Task Escaped_Lifecycle_Context_Expires_After_Async_Retirement()
+    {
+        using var services = new ServiceCollection().AddKevlar().BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        var survivor = new DisposableStrategy();
+        _ = registry.GetOrAdd("escaped-lifecycle-survivor", _ => Shield.Use(survivor));
+        var strategy = new EscapedLifecycleAsyncDisposableStrategy(registry.Dispose);
+        var retired = ResolveAndRemove(registry, "escaped-lifecycle-retired", strategy);
+        Collect(retired);
+
+        var scavenging = Task.Run(() =>
+            registry.GetOrAdd("escaped-lifecycle-scavenge", _ => Shield.Empty));
+        await strategy.ChildStarted.WaitAsync(TimeSpan.FromSeconds(5));
+        _ = await scavenging.WaitAsync(TimeSpan.FromSeconds(5));
+
+        strategy.ReleaseChild();
+        await strategy.ChildCompleted.WaitAsync(TimeSpan.FromSeconds(5));
+
+        await Assert.That(survivor.DisposeCount).IsEqualTo(1);
+        await Assert.That(() => registry.GetShield("escaped-lifecycle-survivor"))
+            .Throws<ObjectDisposedException>();
+    }
+
+    [Test]
     public async Task Registry_Dispose_Can_Reenter_From_Synchronous_Reclamation()
     {
         using var services = new ServiceCollection().AddKevlar().BuildServiceProvider();
@@ -1338,6 +1362,39 @@ public class DynamicRegistryTests
             Interlocked.Increment(ref _disposeCount);
             _disposed.TrySetResult();
         }
+
+        public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+            Continuation<T, TState> next,
+            KevlarContext context) => next.InvokeAsync(context);
+    }
+
+    private sealed class EscapedLifecycleAsyncDisposableStrategy(Action callback)
+        : Strategy, IAsyncDisposable
+    {
+        private readonly TaskCompletionSource _childStarted =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _releaseChild =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _childCompleted =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task ChildStarted => _childStarted.Task;
+
+        public Task ChildCompleted => _childCompleted.Task;
+
+        public ValueTask DisposeAsync()
+        {
+            _ = Task.Run(async () =>
+            {
+                _childStarted.TrySetResult();
+                await _releaseChild.Task;
+                callback();
+                _childCompleted.TrySetResult();
+            });
+            return default;
+        }
+
+        public void ReleaseChild() => _releaseChild.TrySetResult();
 
         public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
             Continuation<T, TState> next,
