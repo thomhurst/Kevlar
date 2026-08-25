@@ -224,6 +224,26 @@ public class HttpReplayTests
     }
 
     [Test]
+    public async Task Endpoint_Custom_Strategy_Cannot_Replay_Unsafe_Method()
+    {
+        var originalResponse = new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
+        var transport = new RecordingHandler((attempt, _, _) => Task.FromResult(
+            attempt == 1 ? originalResponse : new HttpResponseMessage(HttpStatusCode.OK)));
+        var options = RoutingOptions(
+            HttpEndpointSelectionMode.Ordered,
+            new HttpEndpoint(new Uri("https://endpoint.example")));
+        options.Routing!.ShieldFactory = _ =>
+            Shield.For<HttpResponseMessage>().Use(new ReturnSecondStrategy());
+        using var invoker = CreateInvoker(Shield<HttpResponseMessage>.Empty, options, transport);
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://origin.example/api");
+
+        using var response = await invoker.SendAsync(request, CancellationToken.None);
+
+        await Assert.That(ReferenceEquals(response, originalResponse)).IsTrue();
+        await Assert.That(transport.Attempts).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task Put_With_ByteArrayContent_NoBuffer_Is_Retried()
     {
         var bodies = new List<byte[]>();

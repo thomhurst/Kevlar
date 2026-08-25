@@ -125,6 +125,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
 
         private Task<HttpRequestTemplate>? _template;
         private Task<HttpResponseMessage>? _singleAttempt;
+        private Task<HttpResponseMessage>? _singleTransportAttempt;
         private CancellationTokenSource? _templateCancellation;
         private HttpResponseMessage? _terminalResponse;
         private CancellationToken _lastAttemptToken;
@@ -234,12 +235,13 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
 
                 var endpointShield = endpoint is null ? null : _pipeline.GetEndpointShield(endpoint);
                 var response = endpointShield is null
-                    ? await _handler.BaseSendAsync(request, cancellationToken).ConfigureAwait(false)
+                    ? await SendTransportAsync(request, cancellationToken).ConfigureAwait(false)
                     : await endpointShield.ExecuteWithContextAsync(
-                        (Execution: this, Handler: _handler, Request: request),
+                        (Execution: this, Request: request),
                         static (state, properties) => state.Execution.InitializeProperties(properties),
-                        static (state, context) => new ValueTask<HttpResponseMessage>(
-                            state.Handler.BaseSendAsync(state.Request, context.CancellationToken)),
+                        static (state, context) => state.Execution.SendTransportAsync(
+                            state.Request,
+                            context.CancellationToken),
                         cancellationToken).ConfigureAwait(false);
                 RegisterResponse(response);
                 return response;
@@ -256,6 +258,26 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
                     request.Dispose();
                 }
             }
+        }
+
+        private ValueTask<HttpResponseMessage> SendTransportAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            if (_canReplay)
+            {
+                return new ValueTask<HttpResponseMessage>(
+                    _handler.BaseSendAsync(request, cancellationToken));
+            }
+
+            Task<HttpResponseMessage> singleTransportAttempt;
+            lock (_gate)
+            {
+                singleTransportAttempt = _singleTransportAttempt ??=
+                    _handler.BaseSendAsync(request, cancellationToken);
+            }
+
+            return new ValueTask<HttpResponseMessage>(singleTransportAttempt);
         }
 
         public void Complete(HttpResponseMessage? terminalResponse)
