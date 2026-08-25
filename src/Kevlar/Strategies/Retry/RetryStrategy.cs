@@ -139,12 +139,13 @@ internal sealed class RetryStrategy : Strategy
             var attempt = retriesUsed + 1;
             KevlarMetrics.Retry(context.ShieldName);
             var delay = _backoff.GetDelay(attempt, previousBackoffDelay);
-            previousBackoffDelay = delay;
 
             if (_maxDelay is { } cap && delay > cap)
             {
                 delay = cap;
             }
+
+            previousBackoffDelay = delay;
 
             if (_delayGenerator is not null
                 || _delayGeneratorAsync is not null
