@@ -3,6 +3,8 @@ namespace Kevlar.Extensions.Http;
 /// <summary>Configures the standard HTTP resilience pipeline and its request handler.</summary>
 public sealed class StandardHttpShieldOptions
 {
+    internal static readonly TimeSpan DefaultRetryMaxDelay = TimeSpan.FromSeconds(10);
+
     /// <summary>
     /// Configures the outer total timeout. Defaults to 30 seconds. Set
     /// <see cref="System.Threading.Timeout.InfiniteTimeSpan"/> to omit this stage.
@@ -15,7 +17,7 @@ public sealed class StandardHttpShieldOptions
     /// </summary>
     public RetryOptions<HttpResponseMessage> Retry { get; set; } = new()
     {
-        MaxDelay = TimeSpan.FromSeconds(10),
+        MaxDelay = DefaultRetryMaxDelay,
     };
 
     /// <summary>

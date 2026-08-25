@@ -219,7 +219,7 @@ public static class HttpShield
         var onRetry = source.OnRetry;
         target.MaxRetries = source.MaxRetries;
         target.Backoff = source.Backoff;
-        target.MaxDelay = source.MaxDelay;
+        target.MaxDelay = source.MaxDelay ?? StandardHttpShieldOptions.DefaultRetryMaxDelay;
         target.DelayGenerator = ComposeRetryDelayGenerator(
             source.DelayGenerator,
             useRetryAfterHeader);

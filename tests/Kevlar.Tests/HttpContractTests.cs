@@ -385,6 +385,25 @@ public class HttpContractTests
     }
 
     [Test]
+    public async Task Replacing_Retry_Options_Keeps_Standard_MaxDelay()
+    {
+        var options = new StandardHttpShieldOptions
+        {
+            Retry = new RetryOptions<HttpResponseMessage>
+            {
+                MaxRetries = 1,
+                Backoff = Backoff.None,
+            },
+        };
+
+        var delay = await ObserveStandardRetryDelay(
+            options,
+            retryAfter: TimeSpan.FromMinutes(1));
+
+        await Assert.That(delay).IsEqualTo(TimeSpan.FromSeconds(10));
+    }
+
+    [Test]
     public async Task UseRetryAfterHeader_False_Ignores_Header()
     {
         var options = new StandardHttpShieldOptions
@@ -523,7 +542,7 @@ public class HttpContractTests
 
         await Assert.That(HttpShield.Standard(options).ToString()).IsEqualTo(
             "Timeout(20s) → [when HttpRequestException | TaskCanceledException matching predicate | TimeoutExceededException | result predicate] "
-            + "Retry(1, no delay) → CircuitBreaker(8 consecutive, break 5s) → ConcurrencyLimit(12, queue 4) → Timeout(3s)");
+            + "Retry(1, no delay, ≤10s) → CircuitBreaker(8 consecutive, break 5s) → ConcurrencyLimit(12, queue 4) → Timeout(3s)");
     }
 
     [Test]
