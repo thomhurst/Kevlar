@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using Kevlar.Analyzers;
+using Kevlar.Chaos;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
@@ -114,7 +115,7 @@ public class PipelineHazardAnalyzerTests
             "await Shield.For<int>().ConcurrencyLimit(2).ExecuteOutcomeAsync(1, (state, _) => new ValueTask<int>(state));",
         };
 
-        await AssertEachAsync(cases, "KEV004");
+        await AssertEachAsync(cases, "KEV004", "KEV012");
     }
 
     [Test]
@@ -406,7 +407,7 @@ public class PipelineHazardAnalyzerTests
             "_ = await Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteOutcomeAsync(static _ => Task.FromResult(1));",
         };
 
-        await AssertEachAsync(cases, "KEV005");
+        await AssertEachAsync(cases, "KEV005", "KEV012");
     }
 
     [Test]
@@ -422,7 +423,7 @@ public class PipelineHazardAnalyzerTests
             "var fallback = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask); _ = Shield.Compose(Shield.Empty, fallback).Execute(static _ => 1);",
         };
 
-        await AssertEachAsync(cases, "KEV005");
+        await AssertEachAsync(cases, "KEV005", "KEV012");
     }
 
     [Test]
@@ -432,7 +433,7 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask)" +
             ".UseRateLimiter((System.Threading.RateLimiting.RateLimiter)null!).Execute(static _ => 1);");
 
-        await AssertRuleAsync(Without(diagnostics, "KEV004"), "KEV005");
+        await AssertRuleAsync(Without(diagnostics, "KEV004", "KEV012"), "KEV005");
     }
 
     [Test]
@@ -456,7 +457,7 @@ public class PipelineHazardAnalyzerTests
         foreach (var body in cases)
         {
             var diagnostics = await AnalyzeBodyAsync(body);
-            await Assert.That(diagnostics).IsEmpty();
+            await Assert.That(Without(diagnostics, "KEV012")).IsEmpty();
         }
     }
 
@@ -471,15 +472,16 @@ public class PipelineHazardAnalyzerTests
             #pragma warning restore KEV005
             """);
 
-        await Assert.That(diagnostics.Length).IsEqualTo(1);
-        var diagnostic = diagnostics[0];
+        var kev005Diagnostics = diagnostics.Where(static diagnostic => diagnostic.Id == "KEV005").ToArray();
+        await Assert.That(kev005Diagnostics.Length).IsEqualTo(1);
+        var diagnostic = kev005Diagnostics[0];
         await Assert.That(diagnostic.Id).IsEqualTo("KEV005");
         await Assert.That(diagnostic.Severity).IsEqualTo(DiagnosticSeverity.Warning);
         await Assert.That(diagnostic.GetMessage()).IsEqualTo(
             "Fallback on a non-generic Shield applies only to void executions. " +
             "For executions that return a value, build a result-aware shield with " +
             "Shield.For<T>() and use its Fallback overloads.");
-        await Assert.That(suppressed).IsEmpty();
+        await Assert.That(Without(suppressed, "KEV012")).IsEmpty();
     }
 
     [Test]
@@ -1308,6 +1310,98 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV012_Flags_Known_Async_Configuration_Used_Synchronously()
+    {
+        var cases = new[]
+        {
+            "_ = Shield.Retry(options => options.OnRetryAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
+            "_ = Shield.Retry(options => options.DelayGeneratorAsync = static _ => new ValueTask<TimeSpan?>(TimeSpan.Zero)).Execute(_ => 1);",
+            "_ = Shield.Timeout(options => options.TimeoutGenerator = static _ => new ValueTask<TimeSpan>(TimeSpan.FromSeconds(1))).Execute(_ => 1);",
+            "_ = Shield.CircuitBreaker(options => { options.ConsecutiveFailures = 1; options.BreakDurationGenerator = static _ => new ValueTask<TimeSpan>(TimeSpan.FromSeconds(1)); }).Execute(_ => 1);",
+            "_ = Shield.RateLimit(options => options.OnRejectedAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
+            "_ = Shield.ConcurrencyLimit(options => options.OnRejectedAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
+            "_ = Shield.For<int>().FallbackTo(0, options => options.OnFallbackAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
+            "_ = Shield.Retry(options => options.OnRetryAsync = static _ => ValueTask.CompletedTask).ExecuteWithContext(static _ => 1);",
+            "_ = Shield.Retry(options => options.OnRetryAsync = static _ => ValueTask.CompletedTask).ExecuteOutcome(static _ => 1);",
+            "_ = Shield.Empty.UseRateLimiter((System.Threading.RateLimiting.RateLimiter)null!, options => options.OnRejectedAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
+            "_ = Shield.For<int>().Fallback(static _ => ValueTask.FromResult(0)).Execute(_ => 1);",
+            "_ = Shield.Empty.UseRateLimiter((System.Threading.RateLimiting.RateLimiter)null!).Execute(_ => 1);",
+            "_ = ChaosShield.Behavior(options => { options.Enabled = true; options.Behavior = static _ => ValueTask.CompletedTask; }).Execute(_ => 1);",
+            "_ = ChaosShield.Behavior(options => { options.Enabled = false; if (DateTime.UtcNow.Ticks > 0) { options.Enabled = true; } options.Behavior = static _ => ValueTask.CompletedTask; }).Execute(_ => 1);",
+            "_ = Shield.Retry(options => { var alias = options; alias.OnRetryAsync = static _ => ValueTask.CompletedTask; }).Execute(_ => 1);",
+            "_ = Shield.Retry(options => { options.MaxRetries = 0; options.OnRetryAsync = static _ => ValueTask.CompletedTask; options.MaxRetries = 1; }).Execute(_ => 1);",
+            "_ = Shield.Retry(options => { options.MaxRetries = 0; if (DateTime.UtcNow.Ticks > 0) { options.MaxRetries = 1; } options.OnRetryAsync = static _ => ValueTask.CompletedTask; }).Execute(_ => 1);",
+            "_ = Shield.Retry(options => { options.MaxRetries = 1; options.OnRetryAsync = static _ => ValueTask.CompletedTask; if (DateTime.UtcNow.Ticks > 0) return; options.MaxRetries = 0; }).Execute(_ => 1);",
+            "_ = ChaosShield.Behavior(options => { options.Enabled = true; options.Behavior = static _ => ValueTask.CompletedTask; if (DateTime.UtcNow.Ticks > 0) return; options.Enabled = false; }).Execute(_ => 1);",
+            "_ = Shield.Retry(options => { options.OnRetryAsync = static _ => ValueTask.CompletedTask; if (DateTime.UtcNow.Ticks > 0) return; options.OnRetryAsync = null; }).Execute(_ => 1);",
+            "_ = Shield.Retry(options => { options.OnRetryAsync = static _ => ValueTask.CompletedTask; options.OnRetryAsync = null; if (DateTime.UtcNow.Ticks > 0) options.OnRetryAsync = static _ => ValueTask.CompletedTask; }).Execute(_ => 1);",
+        };
+
+        await AssertEachAsync(cases, "KEV012", "KEV004", "KEV011");
+    }
+
+    [Test]
+    public async Task KEV012_Skips_Async_Execution_Sync_Configuration_And_Unknown_Configuration()
+    {
+        var cases = new[]
+        {
+            "_ = await Shield.Retry(options => options.OnRetryAsync = static _ => ValueTask.CompletedTask).ExecuteAsync(_ => new ValueTask<int>(1));",
+            "_ = Shield.Timeout(options => options.TimeoutGeneratorSync = static _ => TimeSpan.FromSeconds(1)).Execute(_ => 1);",
+            "_ = Shield.CircuitBreaker(options => { options.ConsecutiveFailures = 1; options.BreakDurationGeneratorSync = static _ => TimeSpan.FromSeconds(1); }).Execute(_ => 1);",
+            "_ = Shield.Retry(options => { options.MaxRetries = 0; options.OnRetryAsync = static _ => ValueTask.CompletedTask; }).Execute(_ => 1);",
+            "_ = Shield.Retry(options => { options.DelayGeneratorAsync = static _ => new ValueTask<TimeSpan?>(TimeSpan.Zero); options.MaxRetries = 0; }).Execute(_ => 1);",
+            "_ = Shield.Retry(options => { if (DateTime.UtcNow.Ticks > 0) { options.MaxRetries = 1; } options.MaxRetries = 0; options.OnRetryAsync = static _ => ValueTask.CompletedTask; }).Execute(_ => 1);",
+            "_ = Shield.Hedge(options => { options.MaxHedgedAttempts = 0; options.DelayGeneratorAsync = static _ => new ValueTask<TimeSpan>(TimeSpan.Zero); }).Execute(_ => 1);",
+            "_ = ChaosShield.Behavior(options => options.Behavior = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
+            "_ = ChaosShield.Behavior(options => { options.Enabled = true; options.InjectionRate = 0; options.Behavior = static _ => ValueTask.CompletedTask; }).Execute(_ => 1);",
+            "_ = ChaosShield.Behavior(options => { options.Enabled = true; options.Enabled = false; options.Behavior = static _ => ValueTask.CompletedTask; }).Execute(_ => 1);",
+            "_ = Shield.Retry(options => options.OnRetryAsync = null).Execute(_ => 1);",
+            "_ = Shield.Retry(options => { options.OnRetryAsync = static _ => ValueTask.CompletedTask; options.OnRetryAsync = null; }).Execute(_ => 1);",
+            "_ = Shield.Retry(options => { if (DateTime.UtcNow.Ticks > 0) options.OnRetryAsync = static _ => ValueTask.CompletedTask; options.OnRetryAsync = null; }).Execute(_ => 1);",
+            "_ = Shield.Retry(options => options.OnRetry = _ => options.OnRetryAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
+            "var unrelated = new TimeoutOptions(); _ = Shield.Retry(_ => unrelated.TimeoutGenerator = static _ => new ValueTask<TimeSpan>(TimeSpan.FromSeconds(1))).Execute(_ => 1);",
+            "_ = Shield.Retry(options => { var alias = options; alias = new RetryOptions(); alias.OnRetryAsync = static _ => ValueTask.CompletedTask; }).Execute(_ => 1);",
+            "Action<RetryOptions> configure = static options => options.OnRetryAsync = static _ => ValueTask.CompletedTask; _ = Shield.Retry(configure).Execute(_ => 1);",
+        };
+
+        foreach (var body in cases)
+        {
+            var diagnostics = await AnalyzeBodyAsync(body);
+            await Assert.That(Without(diagnostics, "KEV004")).IsEmpty();
+        }
+    }
+
+    [Test]
+    public async Task KEV012_Diagnostic_Contract_And_Suppression_Are_Exact()
+    {
+        const string execution = "Shield.Retry(options => options.OnRetryAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1)";
+        var source = $$"""
+            public class TestSubject
+            {
+                public int Run() => {{execution}};
+            }
+            """;
+        var diagnostics = await AnalyzeSourceAsync(source);
+        var suppressed = await AnalyzeBodyAsync($$"""
+            #pragma warning disable KEV012 // This call is migrated separately.
+            _ = {{execution}};
+            #pragma warning restore KEV012
+            """);
+
+        await Assert.That(diagnostics.Length).IsEqualTo(1);
+        var diagnostic = diagnostics[0];
+        await Assert.That(diagnostic.Id).IsEqualTo("KEV012");
+        await Assert.That(diagnostic.Severity).IsEqualTo(DiagnosticSeverity.Warning);
+        await Assert.That(diagnostic.GetMessage()).IsEqualTo(
+            "This shield configures 'RetryOptions.OnRetryAsync', which cannot run through synchronous "
+            + "'Execute'. Use 'ExecuteAsync' or configure its synchronous counterpart.");
+        await Assert.That(diagnostic.Location.SourceSpan.Start)
+            .IsEqualTo(CreateSource(source).IndexOf(execution, StringComparison.Ordinal));
+        await Assert.That(diagnostic.Location.SourceSpan.Length).IsEqualTo(execution.Length);
+        await Assert.That(suppressed).IsEmpty();
+    }
+
+    [Test]
     public async Task Non_Kevlar_Methods_And_Generated_Code_Are_Ignored()
     {
         var unrelated = await AnalyzeSourceAsync("""
@@ -1330,6 +1424,96 @@ public class PipelineHazardAnalyzerTests
 
         await Assert.That(unrelated).IsEmpty();
         await Assert.That(generated).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV012_Ignores_Custom_Options_In_A_Kevlar_Prefixed_Namespace()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            namespace Kevlar.Extensions.Custom
+            {
+                public sealed class CustomOptions
+                {
+                    public Func<int, ValueTask>? OnRetryAsync { get; set; }
+                }
+
+                public static class CustomShieldExtensions
+                {
+                    public static Shield Custom(this Shield shield, Action<CustomOptions> configure)
+                    {
+                        configure(new CustomOptions());
+                        return shield;
+                    }
+                }
+
+                public sealed class TestSubject
+                {
+                    public int Run() => Shield.Empty
+                        .Custom(options => options.OnRetryAsync = static _ => ValueTask.CompletedTask)
+                        .Execute(_ => 1);
+                }
+            }
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV012_Ignores_Lookalike_Options_In_The_Kevlar_Namespace()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            namespace Kevlar
+            {
+                public sealed class RetryOptions
+                {
+                    public Func<int, ValueTask>? OnRetryAsync { get; set; }
+                }
+
+                public static class LookalikeShieldExtensions
+                {
+                    public static Shield Custom(this Shield shield, Action<RetryOptions> configure)
+                    {
+                        configure(new RetryOptions());
+                        return shield;
+                    }
+                }
+
+                public sealed class TestSubject
+                {
+                    public int Run() => Shield.Empty
+                        .Custom(options => options.OnRetryAsync = static _ => ValueTask.CompletedTask)
+                        .Execute(_ => 1);
+                }
+            }
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV012_Ignores_Known_Options_On_Custom_Fluent_Extensions()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            namespace Custom;
+
+            public static class InspectionExtensions
+            {
+                public static Shield Inspect(this Shield shield, Action<Kevlar.RetryOptions> configure)
+                {
+                    configure(new Kevlar.RetryOptions());
+                    return shield;
+                }
+            }
+
+            public sealed class TestSubject
+            {
+                public int Run() => Shield.Empty
+                    .Inspect(options => options.OnRetryAsync = static _ => ValueTask.CompletedTask)
+                    .Execute(_ => 1);
+            }
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
     }
 
     private static async Task AssertEachAsync(
@@ -1427,6 +1611,7 @@ public class PipelineHazardAnalyzerTests
             using System.Threading;
             using System.Threading.Tasks;
             using Kevlar;
+            using Kevlar.Chaos;
             using Kevlar.Extensions.RateLimiting;
 
             {{declarations}}
@@ -1440,6 +1625,7 @@ public class PipelineHazardAnalyzerTests
             .Split(Path.PathSeparator)
             .Select(path => (MetadataReference)MetadataReference.CreateFromFile(path))
             .Append(MetadataReference.CreateFromFile(typeof(Shield).Assembly.Location))
+            .Append(MetadataReference.CreateFromFile(typeof(ChaosShield).Assembly.Location))
             .Append(MetadataReference.CreateFromFile(
                 typeof(Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions).Assembly.Location));
         return CSharpCompilation.Create(

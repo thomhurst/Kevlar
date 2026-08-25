@@ -14,6 +14,7 @@ internal static class NetFrameworkCompatibilityTests
         await RateLimitReportsRetryAfter();
         await PartitionCapacityEvicts();
         await OutcomeAndSyncExecutionWork();
+        SynchronousExecutionAvoidsSynchronizationContextPosts();
         await HttpRetryPreservesProperties();
         Console.WriteLine("Kevlar net48 compatibility tests passed.");
     }
@@ -104,6 +105,50 @@ internal static class NetFrameworkCompatibilityTests
         Equal(42, Shield.Empty.Execute(static _ => 42), "sync execution");
     }
 
+    private static void SynchronousExecutionAvoidsSynchronizationContextPosts()
+    {
+        var previous = SynchronizationContext.Current;
+        try
+        {
+            SynchronizationContext.SetSynchronizationContext(new ThrowingSynchronizationContext());
+
+            var attempts = 0;
+            var retry = Shield.Retry(options =>
+            {
+                options.MaxRetries = 1;
+                options.Backoff = Backoff.None;
+                options.OnRetry = static _ => { };
+            });
+            Equal(42, retry.Execute(_ => ++attempts == 1
+                ? throw new InvalidOperationException("retry")
+                : 42), "sync retry under synchronization context");
+
+            var queued = Shield.RateLimit(options =>
+            {
+                options.Permits = 1;
+                options.Window = TimeSpan.FromMilliseconds(10);
+                options.QueueLimit = 1;
+            });
+            _ = queued.Execute(static _ => 1);
+            Equal(2, queued.Execute(static _ => 2), "sync queued rate limit");
+
+            var timeout = Shield.Timeout(options =>
+                options.TimeoutGeneratorSync = static _ => TimeSpan.FromSeconds(1));
+            Equal(3, timeout.Execute(static _ => 3), "sync timeout generator");
+
+            var breaker = Shield.CircuitBreaker(options =>
+            {
+                options.ConsecutiveFailures = 1;
+                options.BreakDurationGeneratorSync = static _ => TimeSpan.FromSeconds(1);
+            });
+            Equal(4, breaker.Execute(static _ => 4), "sync break-duration generator");
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(previous);
+        }
+    }
+
     private static async Task HttpRetryPreservesProperties()
     {
         var marker = new object();
@@ -155,6 +200,15 @@ internal static class NetFrameworkCompatibilityTests
             return Task.FromResult(new HttpResponseMessage(
                 Attempts == 1 ? HttpStatusCode.ServiceUnavailable : HttpStatusCode.OK));
         }
+    }
+
+    private sealed class ThrowingSynchronizationContext : SynchronizationContext
+    {
+        public override void Post(SendOrPostCallback callback, object state) =>
+            throw new InvalidOperationException("Synchronous execution posted a continuation.");
+
+        public override void Send(SendOrPostCallback callback, object state) =>
+            throw new InvalidOperationException("Synchronous execution sent a continuation.");
     }
 
     private sealed class ManualTimeProvider : TimeProvider

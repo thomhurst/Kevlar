@@ -329,7 +329,12 @@ public static class ShieldExtensions
     {
         Throw.IfNull(shield, nameof(shield));
         Throw.IfNull(fallback, nameof(fallback));
-        return shield.Append(new VoidFallbackStrategy(fallback, shield.JudgeOrDefault, null, null));
+        return shield.Append(new VoidFallbackStrategy(
+            fallback,
+            shield.JudgeOrDefault,
+            null,
+            null,
+            fallbackIsAsync: true));
     }
 
     /// <summary>
@@ -356,8 +361,9 @@ public static class ShieldExtensions
             judge,
             options.OnFallback,
             options.OnFallbackAsync,
-            options.HasHandlingOverride,
-            options.Name));
+            fallbackIsAsync: true,
+            hasHandlingOverride: options.HasHandlingOverride,
+            telemetryName: options.Name));
     }
 
     /// <summary>
@@ -369,7 +375,13 @@ public static class ShieldExtensions
     public static Shield Fallback(this Shield shield, Func<CancellationToken, ValueTask> fallback)
     {
         Throw.IfNull(fallback, nameof(fallback));
-        return shield.Fallback((_, token) => fallback(token));
+        Throw.IfNull(shield, nameof(shield));
+        return shield.Append(new VoidFallbackStrategy(
+            (_, token) => fallback(token),
+            shield.JudgeOrDefault,
+            null,
+            null,
+            fallbackIsAsync: true));
     }
 
     /// <summary>
@@ -384,7 +396,21 @@ public static class ShieldExtensions
     {
         Throw.IfNull(fallback, nameof(fallback));
         Throw.IfNull(configure, nameof(configure));
-        return shield.Fallback((_, token) => fallback(token), configure);
+        Throw.IfNull(shield, nameof(shield));
+        var options = new FallbackOptions();
+        configure(options);
+        var judge = HandlingOverride.Resolve(
+            options.HandlesException,
+            options.HandlesExceptionWithContext,
+            shield.JudgeOrDefault);
+        return shield.Append(new VoidFallbackStrategy(
+            (_, token) => fallback(token),
+            judge,
+            options.OnFallback,
+            options.OnFallbackAsync,
+            fallbackIsAsync: true,
+            hasHandlingOverride: options.HasHandlingOverride,
+            telemetryName: options.Name));
     }
 
     /// <summary>Returns a copy of this shield with a diagnostic name (surfaced as <see cref="KevlarContext.ShieldName"/>).</summary>

@@ -59,6 +59,9 @@ public sealed class CircuitBreakerOptions<TResult>
     /// <inheritdoc cref="CircuitBreakerOptions.BreakDurationGenerator"/>
     public Func<CircuitBreakerBreakDurationEvent<TResult>, ValueTask<TimeSpan>>? BreakDurationGenerator { get; set; }
 
+    /// <inheritdoc cref="CircuitBreakerOptions.BreakDurationGeneratorSync"/>
+    public Func<CircuitBreakerBreakDurationEvent<TResult>, TimeSpan>? BreakDurationGeneratorSync { get; set; }
+
     /// <inheritdoc cref="CircuitBreakerOptions.Monitor"/>
     public CircuitBreakerMonitor? Monitor { get; set; }
 

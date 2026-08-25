@@ -12,6 +12,81 @@ namespace Kevlar.Extensions.RateLimiting.Tests;
 
 public class RateLimiterAdapterTests
 {
+    [Test]
+    public async Task Synchronous_Execution_Rejects_An_Async_Rejection_Callback()
+    {
+        using var limiter = new FixedWindowRateLimiter(new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 1,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0,
+        });
+        var actionInvoked = false;
+        var shield = Shield.Empty.UseRateLimiter(limiter, options =>
+            options.OnRejectedAsync = static _ => ValueTask.CompletedTask);
+
+        var exception = await Assert.That(() => shield.Execute(_ =>
+            {
+                actionInvoked = true;
+                return 1;
+            }))
+            .Throws<NotSupportedException>();
+
+        await Assert.That(exception!.Message).Contains("RateLimiter.AcquireAsync");
+        await Assert.That(actionInvoked).IsFalse();
+    }
+
+    [Test]
+    public async Task Synchronous_Execution_Rejects_Delegate_Lease_Acquisition()
+    {
+        var acquisitionInvoked = false;
+        var actionInvoked = false;
+        var shield = Shield.Empty.UseRateLimiter((_, _) =>
+        {
+            acquisitionInvoked = true;
+            throw new InvalidOperationException("acquisition must not run");
+        });
+
+        var exception = await Assert.That(() => shield.Execute(_ =>
+            {
+                actionInvoked = true;
+                return 1;
+            }))
+            .Throws<NotSupportedException>();
+
+        await Assert.That(exception!.Message).Contains(nameof(RateLimitLeaseAcquirer));
+        await Assert.That(acquisitionInvoked).IsFalse();
+        await Assert.That(actionInvoked).IsFalse();
+    }
+
+    [Test]
+    public async Task Synchronous_Execution_Rejects_Abstract_Limiter_Acquisition()
+    {
+        var acquisitionInvoked = false;
+        using var limiter = new StubLimiter(_ =>
+        {
+            acquisitionInvoked = true;
+            throw new InvalidOperationException("acquisition must not run");
+        });
+        using var partitioned = new StubPartitionedLimiter((_, _) =>
+        {
+            acquisitionInvoked = true;
+            throw new InvalidOperationException("acquisition must not run");
+        });
+        var direct = Shield.Empty.UseRateLimiter(limiter);
+        var byPartition = Shield.Empty.UseRateLimiter(partitioned);
+
+        var directException = await Assert.That(() => direct.Execute(_ => 1))
+            .Throws<NotSupportedException>();
+        var partitionException = await Assert.That(() => byPartition.Execute(_ => 1))
+            .Throws<NotSupportedException>();
+
+        await Assert.That(directException!.Message).Contains("RateLimiter.AcquireAsync");
+        await Assert.That(partitionException!.Message)
+            .Contains("PartitionedRateLimiter<KevlarContext>.AcquireAsync");
+        await Assert.That(acquisitionInvoked).IsFalse();
+    }
+
     private static readonly KevlarKey<string> TenantKey = new("tenant");
 
     [Test]

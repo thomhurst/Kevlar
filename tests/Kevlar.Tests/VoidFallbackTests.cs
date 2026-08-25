@@ -177,7 +177,7 @@ public class VoidFallbackTests
     }
 
     [Test]
-    public async Task Void_Fallback_Works_Synchronously()
+    public async Task Async_Shaped_Void_Fallback_Is_Rejected_Synchronously()
     {
         var fallbackRan = false;
         var shield = Shield.When<InvalidOperationException>().Fallback((_, _) =>
@@ -186,9 +186,10 @@ public class VoidFallbackTests
             return default;
         });
 
-        shield.Execute(_ => throw new InvalidOperationException());
+        await Assert.That(() => shield.Execute(_ => throw new InvalidOperationException()))
+            .Throws<NotSupportedException>();
 
-        await Assert.That(fallbackRan).IsTrue();
+        await Assert.That(fallbackRan).IsFalse();
     }
 
     [Test]

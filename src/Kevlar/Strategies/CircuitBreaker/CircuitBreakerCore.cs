@@ -129,6 +129,13 @@ internal sealed class CircuitBreakerCore
 
     internal string TelemetryName => _telemetryName;
 
+    public string? SynchronousExecutionUnsupportedReason =>
+        _breakDurationGenerator?.IsAsynchronous == true
+            ? "CircuitBreakerOptions.BreakDurationGenerator"
+            : _onStateChangedAsync is not null
+                ? "CircuitBreakerOptions.OnStateChangedAsync"
+                : null;
+
     private string DescribeBreakDuration() => _breakDurationGenerator is null
         ? DescribeHelper.Time(_breakDuration)
         : "dynamic";
@@ -852,10 +859,22 @@ internal sealed class CircuitBreakerCore
             return;
         }
 
-        PublishAsync(publication).AsTask().GetAwaiter().GetResult();
+        PublishOnThreadPool(publication);
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private void PublishOnThreadPool(TransitionPublication? publication)
+    {
+        var parent = _ambientPublication!.Value;
+        Task.Run(() => PublishAsync(publication, parent).AsTask()).GetAwaiter().GetResult();
     }
 
     private ValueTask PublishAsync(TransitionPublication? publication)
+        => PublishAsync(publication, _ambientPublication?.Value);
+
+    private ValueTask PublishAsync(
+        TransitionPublication? publication,
+        TransitionPublication? parent)
     {
         if (publication is null)
         {
@@ -873,7 +892,6 @@ internal sealed class CircuitBreakerCore
             return DrainPublicationsAsync(publication);
         }
 
-        var parent = _ambientPublication!.Value;
         if (parent is not null)
         {
             lock (_gate)

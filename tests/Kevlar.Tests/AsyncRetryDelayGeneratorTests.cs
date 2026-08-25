@@ -265,28 +265,25 @@ public class AsyncRetryDelayGeneratorTests
     }
 
     [Test]
-    public async Task Truly_Async_Generator_Works_For_Synchronous_Execution()
+    public async Task Truly_Async_Generator_Is_Rejected_For_Synchronous_Execution()
     {
         var attempts = 0;
-        var sawSynchronousContext = false;
         var shield = Shield.Retry(options =>
         {
             options.MaxRetries = 1;
             options.Backoff = Backoff.None;
             options.DelayGeneratorAsync = async retry =>
             {
-                sawSynchronousContext = retry.Context.IsSynchronous;
                 await Task.Delay(TimeSpan.FromMilliseconds(1)).ConfigureAwait(false);
                 return TimeSpan.Zero;
             };
         });
 
-        var result = shield.Execute(_ => ++attempts == 1
-            ? throw new InvalidOperationException()
-            : 42);
+        var exception = await Assert.That(() => shield.Execute(_ => ++attempts))
+            .Throws<NotSupportedException>();
 
-        await Assert.That(result).IsEqualTo(42);
-        await Assert.That(sawSynchronousContext).IsTrue();
+        await Assert.That(exception!.Message).Contains("RetryOptions.DelayGeneratorAsync");
+        await Assert.That(attempts).IsEqualTo(0);
     }
 
     private static readonly KevlarKey<string> ContextKey = new("async-delay-lifetime");

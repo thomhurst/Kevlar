@@ -12,12 +12,14 @@ internal sealed class FallbackStrategy<TResult> : Strategy, IFallbackStrategyIns
     private readonly Action<FallbackEvent<TResult>>? _onFallback;
     private readonly Func<FallbackEvent<TResult>, ValueTask>? _onFallbackAsync;
     private readonly string _telemetryName;
+    private readonly bool _fallbackIsAsync;
 
     public FallbackStrategy(
         Func<Outcome<TResult>, KevlarContext, ValueTask<TResult>> fallback,
         OutcomeJudge judge,
         Action<FallbackEvent<TResult>>? onFallback,
         Func<FallbackEvent<TResult>, ValueTask>? onFallbackAsync,
+        bool fallbackIsAsync,
         bool hasHandlingOverride = false,
         string? telemetryName = null)
     {
@@ -26,6 +28,7 @@ internal sealed class FallbackStrategy<TResult> : Strategy, IFallbackStrategyIns
         _onFallback = onFallback;
         _onFallbackAsync = onFallbackAsync;
         _telemetryName = telemetryName ?? "Fallback";
+        _fallbackIsAsync = fallbackIsAsync;
         HasHandlingOverride = hasHandlingOverride;
     }
 
@@ -34,6 +37,13 @@ internal sealed class FallbackStrategy<TResult> : Strategy, IFallbackStrategyIns
     internal override bool HasHandlingOverride { get; }
 
     internal override bool IsFallback => true;
+
+    protected internal override string? SynchronousExecutionUnsupportedReason =>
+        _fallbackIsAsync
+            ? "Fallback recovery delegate"
+            : _onFallbackAsync is null
+                ? null
+                : "FallbackOptions.OnFallbackAsync";
 
     Type? IFallbackStrategyInspection.ResultType => typeof(TResult);
 
@@ -149,12 +159,14 @@ internal sealed class VoidFallbackStrategy : Strategy, IFallbackStrategyInspecti
     private readonly Action<FallbackEvent>? _onFallback;
     private readonly Func<FallbackEvent, ValueTask>? _onFallbackAsync;
     private readonly string _telemetryName;
+    private readonly bool _fallbackIsAsync;
 
     public VoidFallbackStrategy(
         Func<Exception, CancellationToken, ValueTask> fallback,
         OutcomeJudge judge,
         Action<FallbackEvent>? onFallback,
         Func<FallbackEvent, ValueTask>? onFallbackAsync,
+        bool fallbackIsAsync,
         bool hasHandlingOverride = false,
         string? telemetryName = null)
     {
@@ -163,6 +175,7 @@ internal sealed class VoidFallbackStrategy : Strategy, IFallbackStrategyInspecti
         _onFallback = onFallback;
         _onFallbackAsync = onFallbackAsync;
         _telemetryName = telemetryName ?? "Fallback";
+        _fallbackIsAsync = fallbackIsAsync;
         HasHandlingOverride = hasHandlingOverride;
     }
 
@@ -171,6 +184,13 @@ internal sealed class VoidFallbackStrategy : Strategy, IFallbackStrategyInspecti
     internal override bool HasHandlingOverride { get; }
 
     internal override bool IsFallback => true;
+
+    protected internal override string? SynchronousExecutionUnsupportedReason =>
+        _fallbackIsAsync
+            ? "Fallback recovery delegate"
+            : _onFallbackAsync is null
+                ? null
+                : "FallbackOptions.OnFallbackAsync";
 
     Type? IFallbackStrategyInspection.ResultType => null;
 

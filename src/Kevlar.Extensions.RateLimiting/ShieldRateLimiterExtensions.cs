@@ -114,7 +114,8 @@ public static class ShieldRateLimiterExtensions
             (permitCount, context) => limiter.AcquireAsync(permitCount, context.CancellationToken),
             options,
             $"RateLimiter({GetLimiterName(limiter.GetType())})",
-            ownsLimiter ? limiter : null);
+            acquisitionUnsupportedReason: "RateLimiter.AcquireAsync",
+            ownedLimiter: ownsLimiter ? limiter : null);
     }
 
     private static Strategy CreateStrategy(
@@ -135,7 +136,8 @@ public static class ShieldRateLimiterExtensions
                 context.CancellationToken),
             options,
             "RateLimiter(Partitioned)",
-            ownsLimiter ? limiter : null);
+            acquisitionUnsupportedReason: "PartitionedRateLimiter<KevlarContext>.AcquireAsync",
+            ownedLimiter: ownsLimiter ? limiter : null);
     }
 
     private static Strategy CreateStrategy(
@@ -150,7 +152,8 @@ public static class ShieldRateLimiterExtensions
         return new RateLimiterStrategy(
             acquireLease,
             CreateOptions(configure),
-            "RateLimiter(Delegate)");
+            "RateLimiter(Delegate)",
+            acquisitionUnsupportedReason: nameof(RateLimitLeaseAcquirer));
     }
 
     private static RateLimiterAdapterOptions CreateOptions(

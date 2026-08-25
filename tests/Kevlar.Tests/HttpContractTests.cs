@@ -468,6 +468,51 @@ public class HttpContractTests
     }
 
     [Test]
+    public async Task Standard_Copies_Synchronous_Duration_Generators()
+    {
+        var options = new StandardHttpShieldOptions();
+        var totalTimeoutCalls = 0;
+        var attemptTimeoutCalls = 0;
+        var breakDurationCalls = 0;
+        options.Retry.MaxRetries = 0;
+        options.TotalTimeout.TimeoutGeneratorSync = _ =>
+        {
+            totalTimeoutCalls++;
+            return TimeSpan.FromMinutes(1);
+        };
+        options.AttemptTimeout.TimeoutGeneratorSync = _ =>
+        {
+            attemptTimeoutCalls++;
+            return TimeSpan.FromMinutes(1);
+        };
+        options.CircuitBreaker.ConsecutiveFailures = 1;
+        options.CircuitBreaker.FailureRatio = null;
+        options.CircuitBreaker.BreakDurationGeneratorSync = _ =>
+        {
+            breakDurationCalls++;
+            return TimeSpan.FromMinutes(1);
+        };
+
+        using var response = HttpShield.Standard(options).Execute(
+            _ => new HttpResponseMessage(HttpStatusCode.ServiceUnavailable));
+
+        await Assert.That(totalTimeoutCalls).IsEqualTo(1);
+        await Assert.That(attemptTimeoutCalls).IsEqualTo(1);
+        await Assert.That(breakDurationCalls).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Synchronous_Timeout_Generator_Skips_Fixed_Timeout_Comparison()
+    {
+        var options = new StandardHttpShieldOptions();
+        options.TotalTimeout.Timeout = TimeSpan.FromSeconds(5);
+        options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(6);
+        options.TotalTimeout.TimeoutGeneratorSync = static _ => TimeSpan.FromSeconds(10);
+
+        await Assert.That(() => HttpShield.Standard(options)).ThrowsNothing();
+    }
+
+    [Test]
     public async Task Infinite_TotalTimeout_Disables_Total_Timeout()
     {
         var options = new StandardHttpShieldOptions();

@@ -64,6 +64,281 @@ public class SyncExecutionTests
     }
 
     [Test]
+    public async Task Sync_RateLimit_With_Queue_Blocks_Until_Permit_Is_Due()
+    {
+        var shield = Shield.RateLimit(options =>
+        {
+            options.Permits = 1;
+            options.Window = TimeSpan.FromMilliseconds(20);
+            options.QueueLimit = 1;
+        });
+        _ = shield.Execute(_ => 1);
+
+        var result = shield.Execute(_ => 2);
+
+        await Assert.That(result).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task Sync_RateLimit_With_Queue_Does_Not_Post_To_A_SynchronizationContext()
+    {
+        var time = new ControlledTimeProvider();
+        var shield = Shield.RateLimit(options =>
+        {
+            options.Permits = 1;
+            options.Window = TimeSpan.FromSeconds(1);
+            options.QueueLimit = 2;
+        }).WithTimeProvider(time);
+        _ = shield.Execute(_ => 1);
+
+        var execution = Task.Run(() =>
+        {
+            SynchronizationContext.SetSynchronizationContext(new ThrowingSynchronizationContext());
+            try
+            {
+                return shield.Execute(_ => 2);
+            }
+            finally
+            {
+                SynchronizationContext.SetSynchronizationContext(null);
+            }
+        });
+
+        await time.WaitForTimersAsync(1);
+        await Assert.That(execution.IsCompleted).IsFalse();
+        time.Advance(TimeSpan.FromSeconds(1));
+        time.FireTimer(0);
+
+        await Assert.That(await execution).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task Sync_Execute_Rejects_Async_Callbacks_Before_Invoking_The_Action()
+    {
+        var actionInvoked = false;
+        var shield = Shield.Retry(options =>
+            options.OnRetryAsync = static _ => ValueTask.CompletedTask);
+
+        var exception = await Assert.That(() => shield.Execute<int>(_ =>
+            {
+                actionInvoked = true;
+                throw new InvalidOperationException();
+            }))
+            .Throws<NotSupportedException>();
+
+        await Assert.That(exception!.Message).Contains("RetryOptions.OnRetryAsync");
+        await Assert.That(actionInvoked).IsFalse();
+    }
+
+    [Test]
+    public async Task Sync_ExecuteOutcome_Captures_Unsupported_Async_Configuration()
+    {
+        var actionInvoked = false;
+        var shield = Shield.Retry(options =>
+            options.OnRetryAsync = static _ => ValueTask.CompletedTask);
+
+        var outcome = shield.ExecuteOutcome<int>(_ =>
+        {
+            actionInvoked = true;
+            return 42;
+        });
+
+        await Assert.That(outcome.Exception).IsTypeOf<NotSupportedException>();
+        await Assert.That(outcome.Exception!.Message).Contains("RetryOptions.OnRetryAsync");
+        await Assert.That(actionInvoked).IsFalse();
+    }
+
+    [Test]
+    public async Task Sync_Zero_Retries_Ignores_Unreachable_Async_Callbacks()
+    {
+        var callbackInvoked = false;
+        var shield = Shield.Retry(options =>
+        {
+            options.MaxRetries = 0;
+            options.DelayGeneratorAsync = _ =>
+            {
+                callbackInvoked = true;
+                return new ValueTask<TimeSpan?>(TimeSpan.Zero);
+            };
+            options.OnRetryAsync = _ =>
+            {
+                callbackInvoked = true;
+                return ValueTask.CompletedTask;
+            };
+        });
+
+        var result = shield.Execute(_ => 42);
+        var outcome = shield.ExecuteOutcome(_ => 43);
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(outcome.Result).IsEqualTo(43);
+        await Assert.That(callbackInvoked).IsFalse();
+    }
+
+    [Test]
+    public async Task Sync_Execute_Rejects_Forwarded_Async_Fallback_Recovery_Before_Invoking_The_Action()
+    {
+        var actionInvoked = false;
+        var typed = Shield.For<int>().Fallback(static token => RecoverAsync(token));
+        var untyped = Shield.Empty.Fallback(static token => RecoverVoidAsync(token));
+        Exception? typedException = null;
+        Exception? untypedException = null;
+
+        var previous = SynchronizationContext.Current;
+        try
+        {
+            SynchronizationContext.SetSynchronizationContext(new NonPumpingSynchronizationContext());
+            try
+            {
+                _ = typed.Execute(_ =>
+                {
+                    actionInvoked = true;
+                    throw new InvalidOperationException();
+                });
+            }
+            catch (Exception exception)
+            {
+                typedException = exception;
+            }
+
+            try
+            {
+                untyped.Execute(_ =>
+                {
+                    actionInvoked = true;
+                    throw new InvalidOperationException();
+                });
+            }
+            catch (Exception exception)
+            {
+                untypedException = exception;
+            }
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(previous);
+        }
+
+        await Assert.That(typedException).IsTypeOf<NotSupportedException>();
+        await Assert.That(untypedException).IsTypeOf<NotSupportedException>();
+        await Assert.That(typedException!.Message).Contains("Fallback recovery delegate");
+        await Assert.That(untypedException!.Message).Contains("Fallback recovery delegate");
+        await Assert.That(actionInvoked).IsFalse();
+    }
+
+    [Test]
+    public async Task Sync_Execute_Rejects_Async_Shaped_Fallback_Even_When_It_Completes_Synchronously()
+    {
+        var typed = Shield.For<int>().Fallback(static _ => new ValueTask<int>(42));
+        var untyped = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask);
+
+        await Assert.That(() => typed.Execute(_ => throw new InvalidOperationException()))
+            .Throws<NotSupportedException>();
+        await Assert.That(() => untyped.Execute(_ => throw new InvalidOperationException()))
+            .Throws<NotSupportedException>();
+    }
+
+    private static async ValueTask<int> RecoverAsync(CancellationToken cancellationToken)
+    {
+        await Task.Yield();
+        cancellationToken.ThrowIfCancellationRequested();
+        return 42;
+    }
+
+    private static async ValueTask RecoverVoidAsync(CancellationToken cancellationToken)
+    {
+        await Task.Yield();
+        cancellationToken.ThrowIfCancellationRequested();
+    }
+
+    [Test]
+    public async Task Extension_Strategy_Can_Reject_Synchronous_Execution()
+    {
+        var actionInvoked = false;
+        var shield = Shield.Use(new ExternalAsyncOnlyStrategy());
+
+        var exception = await Assert.That(() => shield.Execute(_ =>
+            {
+                actionInvoked = true;
+                return 42;
+            }))
+            .Throws<NotSupportedException>();
+
+        await Assert.That(exception!.Message).Contains("ExternalAsyncOnlyStrategy.Callback");
+        await Assert.That(actionInvoked).IsFalse();
+    }
+
+    [Test]
+    public async Task Sync_Timeout_Generator_Remains_Synchronous()
+    {
+        var generatorInvoked = false;
+        var shield = Shield.Timeout(options =>
+            options.TimeoutGeneratorSync = _ =>
+            {
+                generatorInvoked = true;
+                return TimeSpan.FromSeconds(1);
+            });
+
+        var result = shield.Execute(_ => 42);
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(generatorInvoked).IsTrue();
+    }
+
+    [Test]
+    public async Task Sync_Break_Duration_Generator_Remains_Synchronous()
+    {
+        var generatorInvoked = false;
+        var shield = Shield.CircuitBreaker(options =>
+        {
+            options.ConsecutiveFailures = 1;
+            options.BreakDurationGeneratorSync = _ =>
+            {
+                generatorInvoked = true;
+                return TimeSpan.FromSeconds(1);
+            };
+        });
+
+        await Assert.That(() => shield.Execute<int>(_ => throw new InvalidOperationException()))
+            .Throws<InvalidOperationException>();
+        await Assert.That(generatorInvoked).IsTrue();
+    }
+
+    [Test]
+    public async Task Synchronous_Monitor_Transitions_Run_Async_Observers_On_The_Thread_Pool()
+    {
+        var observedContexts = new List<SynchronizationContext?>();
+        var monitor = new CircuitBreakerMonitor();
+        var shield = Shield.CircuitBreaker(options =>
+        {
+            options.ConsecutiveFailures = 1;
+            options.BreakDuration = TimeSpan.FromSeconds(1);
+            options.Monitor = monitor;
+            options.OnStateChangedAsync = async _ =>
+            {
+                observedContexts.Add(SynchronizationContext.Current);
+                await Task.Yield();
+            };
+        });
+        _ = shield;
+
+        var previous = SynchronizationContext.Current;
+        try
+        {
+            SynchronizationContext.SetSynchronizationContext(new NonPumpingSynchronizationContext());
+            monitor.Isolate();
+            monitor.Reset();
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(previous);
+        }
+
+        await Assert.That(observedContexts.Count).IsEqualTo(2);
+        await Assert.That(observedContexts.All(static context => context is null)).IsTrue();
+    }
+
+    [Test]
     public async Task Sync_Bulkhead_Rejects_When_Full()
     {
         var shield = Shield.ConcurrencyLimit(maxConcurrency: 1);
@@ -159,4 +434,30 @@ public class SyncExecutionTests
     }
 
     private static int ThrowDeep() => throw new InvalidOperationException("deep");
+
+    private sealed class ExternalAsyncOnlyStrategy : Strategy
+    {
+        protected internal override string? SynchronousExecutionUnsupportedReason =>
+            "ExternalAsyncOnlyStrategy.Callback";
+
+        public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+            Continuation<T, TState> next,
+            KevlarContext context) => next.InvokeAsync(context);
+    }
+
+    private sealed class NonPumpingSynchronizationContext : SynchronizationContext
+    {
+        public override void Post(SendOrPostCallback callback, object? state)
+        {
+        }
+    }
+
+    private sealed class ThrowingSynchronizationContext : SynchronizationContext
+    {
+        public override void Post(SendOrPostCallback callback, object? state) =>
+            throw new InvalidOperationException("Synchronous execution posted a continuation.");
+
+        public override void Send(SendOrPostCallback callback, object? state) =>
+            throw new InvalidOperationException("Synchronous execution sent a continuation.");
+    }
 }

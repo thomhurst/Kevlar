@@ -20,6 +20,9 @@ internal abstract class ChaosStrategy : Strategy
 
     protected override bool InvokesContinuationAtMostOnce => true;
 
+    protected bool CanInject =>
+        _enabled && (_injectionRateGenerator is not null || _injectionRate > 0);
+
     protected ChaosStrategy(ChaosOptions options)
     {
         if (options is null)

@@ -232,6 +232,8 @@ internal static class ShieldEngine
             }
         }
 
+        ValidateSynchronousExecution(head, startedAt, shieldName);
+
         var context = KevlarContext.Rent(cancellationToken, isSynchronous: true, timeProvider, shieldName);
 
         try
@@ -281,6 +283,15 @@ internal static class ShieldEngine
             return directOutcome;
         }
 
+        try
+        {
+            ValidateSynchronousExecution(head, startedAt, shieldName);
+        }
+        catch (Exception exception)
+        {
+            return Outcome<T>.FromException(exception);
+        }
+
         var context = KevlarContext.Rent(cancellationToken, isSynchronous: true, timeProvider, shieldName);
         try
         {
@@ -319,6 +330,8 @@ internal static class ShieldEngine
             cancellationToken.ThrowIfCancellationRequested();
         }
 
+        ValidateSynchronousExecution(head, startedAt, shieldName);
+
         var context = KevlarContext.Rent(cancellationToken, isSynchronous: true, timeProvider, shieldName);
         try
         {
@@ -343,6 +356,20 @@ internal static class ShieldEngine
         finally
         {
             KevlarContext.Return(context);
+        }
+    }
+
+    private static void ValidateSynchronousExecution(
+        StrategyNode? head,
+        long startedAt,
+        string? shieldName)
+    {
+        if (head?.SynchronousExecutionUnsupportedReason is { } reason)
+        {
+            RecordExecution(startedAt, shieldName, success: false);
+            throw new NotSupportedException(
+                $"Synchronous execution does not support {reason}. " +
+                "Use ExecuteAsync instead of Execute.");
         }
     }
 

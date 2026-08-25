@@ -376,7 +376,7 @@ public class ChaosStrategyTests
     }
 
     [Test]
-    public async Task Sync_Execution_Supports_Every_Semantically_Valid_Injection()
+    public async Task Sync_Execution_Supports_Fixed_Latency_And_Outcome_Injection()
     {
         var latency = ChaosShield.Latency(options => options.Enabled = true);
         var outcome = ChaosShield.Outcome<int>(options =>
@@ -384,7 +384,15 @@ public class ChaosStrategyTests
             options.Enabled = true;
             options.Result = 7;
         });
+        await Assert.That(latency.Execute(_ => 1)).IsEqualTo(1);
+        await Assert.That(outcome.Execute(_ => 2)).IsEqualTo(7);
+    }
+
+    [Test]
+    public async Task Sync_Execution_Rejects_Configured_Behavior_Before_Invocation()
+    {
         var behaviorCalls = 0;
+        var actionCalls = 0;
         var behavior = ChaosShield.Behavior(options =>
         {
             options.Enabled = true;
@@ -395,10 +403,37 @@ public class ChaosStrategyTests
             };
         });
 
-        await Assert.That(latency.Execute(_ => 1)).IsEqualTo(1);
-        await Assert.That(outcome.Execute(_ => 2)).IsEqualTo(7);
-        await Assert.That(behavior.Execute(_ => 3)).IsEqualTo(3);
-        await Assert.That(behaviorCalls).IsEqualTo(1);
+        var exception = await Assert.That(() => behavior.Execute(_ => ++actionCalls))
+            .Throws<NotSupportedException>();
+
+        await Assert.That(exception!.Message).Contains("ChaosBehaviorOptions.Behavior");
+        await Assert.That(behaviorCalls).IsEqualTo(0);
+        await Assert.That(actionCalls).IsEqualTo(0);
+    }
+
+    [Test]
+    [Arguments(false, 1.0)]
+    [Arguments(true, 0.0)]
+    public async Task Sync_Execution_Allows_Statically_Disabled_Behavior(
+        bool enabled,
+        double injectionRate)
+    {
+        var behaviorCalls = 0;
+        var shield = ChaosShield.Behavior(options =>
+        {
+            options.Enabled = enabled;
+            options.InjectionRate = injectionRate;
+            options.Behavior = _ =>
+            {
+                behaviorCalls++;
+                return ValueTask.CompletedTask;
+            };
+        });
+
+        var result = shield.Execute(_ => 42);
+
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(behaviorCalls).IsEqualTo(0);
     }
 
     [Test]

@@ -299,7 +299,12 @@ public sealed class Shield<TResult> : IShieldLifecycle
 
     /// <summary>Replaces handled outcomes with <paramref name="fallbackValue"/>.</summary>
     public Shield<TResult> FallbackTo(TResult fallbackValue) =>
-        Append(new FallbackStrategy<TResult>((_, _) => new ValueTask<TResult>(fallbackValue), JudgeOrDefault, null, null));
+        Append(new FallbackStrategy<TResult>(
+            (_, _) => new ValueTask<TResult>(fallbackValue),
+            JudgeOrDefault,
+            null,
+            null,
+            fallbackIsAsync: false));
 
     /// <summary>Replaces handled outcomes with <paramref name="fallbackValue"/> and configures notifications.</summary>
     /// <remarks>Runs <see cref="FallbackOptions{TResult}.OnFallback"/>, then <see cref="FallbackOptions{TResult}.OnFallbackAsync"/>, before recovery. Notification failures are reported and recovery continues.</remarks>
@@ -319,15 +324,21 @@ public sealed class Shield<TResult> : IShieldLifecycle
             judge,
             options.OnFallback,
             options.OnFallbackAsync,
-            options.HasHandlingOverride,
-            options.Name));
+            fallbackIsAsync: false,
+            hasHandlingOverride: options.HasHandlingOverride,
+            telemetryName: options.Name));
     }
 
     /// <summary>Replaces handled outcomes with the result of <paramref name="fallback"/>.</summary>
     public Shield<TResult> Fallback(Func<CancellationToken, ValueTask<TResult>> fallback)
     {
         Throw.IfNull(fallback, nameof(fallback));
-        return Append(new FallbackStrategy<TResult>((_, context) => fallback(context.CancellationToken), JudgeOrDefault, null, null));
+        return Append(new FallbackStrategy<TResult>(
+            (_, context) => fallback(context.CancellationToken),
+            JudgeOrDefault,
+            null,
+            null,
+            fallbackIsAsync: true));
     }
 
     /// <summary>Replaces handled outcomes with the result of <paramref name="fallback"/> and configures notifications.</summary>
@@ -351,15 +362,21 @@ public sealed class Shield<TResult> : IShieldLifecycle
             judge,
             options.OnFallback,
             options.OnFallbackAsync,
-            options.HasHandlingOverride,
-            options.Name));
+            fallbackIsAsync: true,
+            hasHandlingOverride: options.HasHandlingOverride,
+            telemetryName: options.Name));
     }
 
     /// <summary>Replaces handled outcomes with the result of <paramref name="fallback"/>, which receives the handled outcome.</summary>
     public Shield<TResult> Fallback(Func<Outcome<TResult>, CancellationToken, ValueTask<TResult>> fallback)
     {
         Throw.IfNull(fallback, nameof(fallback));
-        return Append(new FallbackStrategy<TResult>((outcome, context) => fallback(outcome, context.CancellationToken), JudgeOrDefault, null, null));
+        return Append(new FallbackStrategy<TResult>(
+            (outcome, context) => fallback(outcome, context.CancellationToken),
+            JudgeOrDefault,
+            null,
+            null,
+            fallbackIsAsync: true));
     }
 
     /// <summary>
@@ -386,8 +403,9 @@ public sealed class Shield<TResult> : IShieldLifecycle
             judge,
             options.OnFallback,
             options.OnFallbackAsync,
-            options.HasHandlingOverride,
-            options.Name));
+            fallbackIsAsync: true,
+            hasHandlingOverride: options.HasHandlingOverride,
+            telemetryName: options.Name));
     }
 
     /// <summary>Appends a custom <see cref="Strategy"/> implementation to the pipeline.</summary>

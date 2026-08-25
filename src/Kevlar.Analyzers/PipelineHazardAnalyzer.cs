@@ -120,6 +120,16 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         isEnabledByDefault: true,
         description: "Without an explicit handling clause, reactive strategies handle ordinary exceptions, including programming errors such as ArgumentException and InvalidOperationException. This hint makes that implicit policy visible so transient-failure pipelines can narrow it deliberately.");
 
+    /// <summary>The KEV012 rule.</summary>
+    public static readonly DiagnosticDescriptor AsyncConfigurationWithSynchronousExecuteRule = new(
+        id: "KEV012",
+        title: "Asynchronous strategy configuration requires ExecuteAsync",
+        messageFormat: "This shield configures '{0}', which cannot run through synchronous 'Execute'. Use 'ExecuteAsync' or configure its synchronous counterpart.",
+        category: "Reliability",
+        defaultSeverity: DiagnosticSeverity.Warning,
+        isEnabledByDefault: true,
+        description: "Asynchronous callbacks and generators can capture a SynchronizationContext. Kevlar rejects synchronous Execute for statically known asynchronous strategy configuration instead of blocking the calling thread.");
+
     /// <inheritdoc />
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
         ImmutableArray.Create(
@@ -132,7 +142,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             DiscardedChainResultRule,
             InheritedHandlingClauseRule,
             DefaultResultClauseOnValueTypeRule,
-            ImplicitDefaultHandlingRule);
+            ImplicitDefaultHandlingRule,
+            AsyncConfigurationWithSynchronousExecuteRule);
 
     /// <inheritdoc />
     public override void Initialize(AnalysisContext context)
@@ -151,6 +162,25 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeInvocation(OperationAnalysisContext context, KnownTypes knownTypes)
     {
         var invocation = (IInvocationOperation)context.Operation;
+
+        if (IsSynchronousExecute(invocation.TargetMethod, knownTypes))
+        {
+            string? asyncMember = null;
+            if (FindInPipeline(
+                    GetReceiver(invocation),
+                    context,
+                    candidate => TryFindAsyncConfiguration(candidate, context, knownTypes, out asyncMember),
+                    knownTypes,
+                    stopAtHandlingClause: false,
+                    stopAtCompositionBoundary: false,
+                    out _))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    AsyncConfigurationWithSynchronousExecuteRule,
+                    invocation.Syntax.GetLocation(),
+                    asyncMember!));
+            }
+        }
 
         if (IsSynchronousExecute(invocation.TargetMethod, knownTypes)
             && FindInPipeline(
@@ -1681,18 +1711,40 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         ILocalReferenceOperation localReference,
         OperationAnalysisContext context,
         out IOperation? initializer)
-        => TryGetInitializer(localReference, context, requireSingleUse: false, out initializer);
+        => TryGetInitializer(
+            localReference,
+            context,
+            requireSingleUse: false,
+            allowMemberMutation: false,
+            out initializer);
+
+    private static bool TryGetStableAliasInitializer(
+        ILocalReferenceOperation localReference,
+        OperationAnalysisContext context,
+        out IOperation? initializer)
+        => TryGetInitializer(
+            localReference,
+            context,
+            requireSingleUse: false,
+            allowMemberMutation: true,
+            out initializer);
 
     private static bool TryGetSingleUseInitializer(
         ILocalReferenceOperation localReference,
         OperationAnalysisContext context,
         out IOperation? initializer)
-        => TryGetInitializer(localReference, context, requireSingleUse: true, out initializer);
+        => TryGetInitializer(
+            localReference,
+            context,
+            requireSingleUse: true,
+            allowMemberMutation: false,
+            out initializer);
 
     private static bool TryGetInitializer(
         ILocalReferenceOperation localReference,
         OperationAnalysisContext context,
         bool requireSingleUse,
+        bool allowMemberMutation,
         out IOperation? initializer)
     {
         var local = localReference.Local;
@@ -1733,7 +1785,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     local))
             {
                 referenceCount++;
-                if (IsWritten(identifier)
+                if ((allowMemberMutation ? IsReassigned(identifier) : IsWritten(identifier))
                     || local.Type is IArrayTypeSymbol
                         && IsEscapingArrayReference(identifier, localReference.Syntax)
                     || requireSingleUse && referenceCount > 1)
@@ -1956,8 +2008,517 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     private static bool IsSynchronousExecute(IMethodSymbol method, KnownTypes knownTypes)
     {
         method = Normalize(method);
-        return method.Name is "Execute" or "ExecuteOutcome"
+        return method.Name is "Execute" or "ExecuteOutcome" or "ExecuteWithContext"
             && knownTypes.IsShield(method.ContainingType);
+    }
+
+    private static bool TryFindAsyncConfiguration(
+        IInvocationOperation invocation,
+        OperationAnalysisContext context,
+        KnownTypes knownTypes,
+        out string? memberName)
+    {
+        var method = Normalize(invocation.TargetMethod);
+        if (!IsKnownAsyncStrategyFactory(method, knownTypes))
+        {
+            memberName = null;
+            return false;
+        }
+
+        if (method.Name == "Fallback")
+        {
+            memberName = "Fallback recovery delegate";
+            return true;
+        }
+
+        if (method.Name == "UseRateLimiter")
+        {
+            memberName = "UseRateLimiter acquisition";
+            return true;
+        }
+
+        foreach (var argument in invocation.Arguments)
+        {
+            if (argument.Parameter?.Name == "configure"
+                && TryFindAsyncConfiguration(argument.Value, context, knownTypes, out memberName))
+            {
+                return true;
+            }
+        }
+
+        memberName = null;
+        return false;
+    }
+
+    private static bool IsKnownAsyncStrategyFactory(IMethodSymbol method, KnownTypes knownTypes) =>
+        IsKevlarFluentMethod(method, knownTypes)
+        || (method.Name == "Behavior" && knownTypes.IsChaosShield(method.ContainingType));
+
+    private static bool TryFindAsyncConfiguration(
+        IOperation operation,
+        OperationAnalysisContext context,
+        KnownTypes knownTypes,
+        out string? memberName)
+    {
+        operation = Unwrap(operation)!;
+        if (operation is IDelegateCreationOperation delegateCreation)
+        {
+            operation = Unwrap(delegateCreation.Target)!;
+        }
+
+        if (operation is not IAnonymousFunctionOperation anonymousFunction
+            || anonymousFunction.Symbol.Parameters.Length != 1)
+        {
+            memberName = null;
+            return false;
+        }
+
+        if (HasStaticallyDisabledRetries(
+                anonymousFunction,
+                anonymousFunction.Symbol.Parameters[0],
+                context)
+            || (TryGetConfiguredMaxHedgedAttempts(operation, out var maxHedgedAttempts)
+                && maxHedgedAttempts == 0)
+            || HasStaticallyDisabledChaosBehavior(
+                anonymousFunction,
+                anonymousFunction.Symbol.Parameters[0],
+                context))
+        {
+            memberName = null;
+            return false;
+        }
+
+        return TryFindAsyncConfiguration(
+            anonymousFunction.Body,
+            anonymousFunction.Body,
+            anonymousFunction.Symbol.Parameters[0],
+            context,
+            knownTypes,
+            out memberName);
+    }
+
+    private static bool HasStaticallyDisabledChaosBehavior(
+        IAnonymousFunctionOperation anonymousFunction,
+        IParameterSymbol configuratorParameter,
+        OperationAnalysisContext context)
+    {
+        if (configuratorParameter.Type is not INamedTypeSymbol
+            {
+                Name: "ChaosBehaviorOptions",
+            } options
+            || options.ContainingNamespace.ToDisplayString() != "Kevlar.Chaos")
+        {
+            return false;
+        }
+
+        if (TryGetFinalChaosPropertyValue(
+                anonymousFunction,
+                configuratorParameter,
+                "Enabled",
+                context,
+                out var enabled)
+            && (enabled is null
+                || enabled.ConstantValue is { HasValue: true, Value: false }))
+        {
+            return true;
+        }
+
+        return TryGetFinalChaosPropertyValue(
+                anonymousFunction,
+                configuratorParameter,
+                "InjectionRate",
+                context,
+                out var injectionRate)
+            && injectionRate?.ConstantValue is { HasValue: true, Value: double rate }
+            && rate <= 0
+            && TryGetFinalChaosPropertyValue(
+                anonymousFunction,
+                configuratorParameter,
+                "InjectionRateGenerator",
+                context,
+                out var injectionRateGenerator)
+            && (injectionRateGenerator is null
+                || injectionRateGenerator.ConstantValue is { HasValue: true, Value: null });
+    }
+
+    private static bool TryGetFinalChaosPropertyValue(
+        IAnonymousFunctionOperation anonymousFunction,
+        IParameterSymbol configuratorParameter,
+        string propertyName,
+        OperationAnalysisContext context,
+        out IOperation? configuredValue)
+    {
+        configuredValue = null;
+        var lastDirectAssignmentStart = -1;
+        if (anonymousFunction.Body is IBlockOperation block)
+        {
+            foreach (var statement in block.Operations)
+            {
+                var operation = statement is IExpressionStatementOperation expressionStatement
+                    ? expressionStatement.Operation
+                    : statement;
+                operation = Unwrap(operation)!;
+                if (operation is IAssignmentOperation
+                    {
+                        Target: IPropertyReferenceOperation property,
+                        Value: { } value,
+                    }
+                    && property.Property.Name == propertyName
+                    && property.Instance is { } instance
+                    && ReferencesConfiguratorParameter(instance, configuratorParameter, context))
+                {
+                    configuredValue = value;
+                    lastDirectAssignmentStart = operation.Syntax.SpanStart;
+                }
+            }
+        }
+
+        return !HasBypassingControlFlowBefore(anonymousFunction.Body, lastDirectAssignmentStart)
+            && !HasChaosPropertyAssignmentAfter(
+            anonymousFunction.Body,
+            configuratorParameter,
+            propertyName,
+            lastDirectAssignmentStart,
+            context);
+    }
+
+    private static bool HasChaosPropertyAssignmentAfter(
+        IOperation operation,
+        IParameterSymbol configuratorParameter,
+        string propertyName,
+        int position,
+        OperationAnalysisContext context)
+    {
+        if (operation.Syntax.SpanStart > position
+            && operation is IAssignmentOperation
+            {
+                Target: IPropertyReferenceOperation property,
+            }
+            && property.Property.Name == propertyName
+            && property.Instance is { } instance
+            && ReferencesConfiguratorParameter(instance, configuratorParameter, context))
+        {
+            return true;
+        }
+
+        foreach (var child in operation.ChildOperations)
+        {
+            if (child is not IAnonymousFunctionOperation
+                && HasChaosPropertyAssignmentAfter(
+                child,
+                configuratorParameter,
+                propertyName,
+                position,
+                context))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool HasBypassingControlFlowBefore(IOperation operation, int position)
+    {
+        if (operation.Syntax.SpanStart >= position)
+        {
+            return false;
+        }
+
+        if (!operation.IsImplicit && operation is IReturnOperation or IBranchOperation)
+        {
+            return true;
+        }
+
+        foreach (var child in operation.ChildOperations)
+        {
+            if (child is not IAnonymousFunctionOperation
+                && HasBypassingControlFlowBefore(child, position))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool HasStaticallyDisabledRetries(
+        IAnonymousFunctionOperation anonymousFunction,
+        IParameterSymbol configuratorParameter,
+        OperationAnalysisContext context)
+    {
+        if (configuratorParameter.Type is not INamedTypeSymbol retryOptions
+            || retryOptions.Name != "RetryOptions"
+            || retryOptions.ContainingNamespace.ToDisplayString() != "Kevlar"
+            || anonymousFunction.Body is not IBlockOperation block)
+        {
+            return false;
+        }
+
+        int? maxRetries = null;
+        var lastDirectAssignmentStart = -1;
+        foreach (var statement in block.Operations)
+        {
+            var operation = statement is IExpressionStatementOperation expressionStatement
+                ? expressionStatement.Operation
+                : statement;
+            operation = Unwrap(operation)!;
+            if (operation is IAssignmentOperation
+                {
+                    Target: IPropertyReferenceOperation { Property.Name: "MaxRetries" } property,
+                    Value: { } value,
+                }
+                && property.Instance is { } instance
+                && ReferencesConfiguratorParameter(instance, configuratorParameter, context))
+            {
+                maxRetries = value.ConstantValue is { HasValue: true, Value: int configured }
+                    ? configured
+                    : null;
+                lastDirectAssignmentStart = operation.Syntax.SpanStart;
+            }
+        }
+
+        return maxRetries == 0
+            && !HasBypassingControlFlowBefore(block, lastDirectAssignmentStart)
+            && !HasMaxRetriesAssignmentAfter(
+                block,
+                configuratorParameter,
+                lastDirectAssignmentStart,
+                context);
+    }
+
+    private static bool HasMaxRetriesAssignmentAfter(
+        IOperation operation,
+        IParameterSymbol configuratorParameter,
+        int position,
+        OperationAnalysisContext context)
+    {
+        if (operation.Syntax.SpanStart > position
+            && operation is IAssignmentOperation
+            {
+                Target: IPropertyReferenceOperation { Property.Name: "MaxRetries" } property,
+            }
+            && property.Instance is { } instance
+            && ReferencesConfiguratorParameter(instance, configuratorParameter, context))
+        {
+            return true;
+        }
+
+        foreach (var child in operation.ChildOperations)
+        {
+            if (child is not IAnonymousFunctionOperation
+                && HasMaxRetriesAssignmentAfter(
+                    child,
+                    configuratorParameter,
+                    position,
+                    context))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool TryFindAsyncConfiguration(
+        IOperation operation,
+        IOperation configurationBody,
+        IParameterSymbol configuratorParameter,
+        OperationAnalysisContext context,
+        KnownTypes knownTypes,
+        out string? memberName)
+    {
+        operation = Unwrap(operation)!;
+        if (operation is IAnonymousFunctionOperation)
+        {
+            memberName = null;
+            return false;
+        }
+
+        if (operation is IAssignmentOperation
+            {
+                Target: IPropertyReferenceOperation propertyReference,
+                Value: { } value,
+            }
+            && propertyReference.Instance is { } instance
+            && ReferencesConfiguratorParameter(instance, configuratorParameter, context)
+            && knownTypes.IsAsyncConfigurationProperty(propertyReference.Property)
+            && value.ConstantValue is not { HasValue: true, Value: null }
+            && !IsGuaranteedClearedAfter(
+                configurationBody,
+                operation,
+                propertyReference.Property,
+                configuratorParameter,
+                context))
+        {
+            memberName = $"{propertyReference.Property.ContainingType.Name}.{propertyReference.Property.Name}";
+            return true;
+        }
+
+        foreach (var child in operation.ChildOperations)
+        {
+            if (TryFindAsyncConfiguration(
+                child,
+                configurationBody,
+                configuratorParameter,
+                context,
+                knownTypes,
+                out memberName))
+            {
+                return true;
+            }
+        }
+
+        memberName = null;
+        return false;
+    }
+
+    private static bool IsGuaranteedClearedAfter(
+        IOperation configurationBody,
+        IOperation configuredAssignment,
+        IPropertySymbol property,
+        IParameterSymbol configuratorParameter,
+        OperationAnalysisContext context)
+    {
+        if (configurationBody is not IBlockOperation block)
+        {
+            return false;
+        }
+
+        IOperation? finalValue = null;
+        var finalAssignmentStart = -1;
+        foreach (var statement in block.Operations)
+        {
+            var operation = statement is IExpressionStatementOperation expressionStatement
+                ? expressionStatement.Operation
+                : statement;
+            operation = Unwrap(operation)!;
+            if (operation.Syntax.SpanStart > configuredAssignment.Syntax.SpanStart
+                && operation is IAssignmentOperation
+                {
+                    Target: IPropertyReferenceOperation propertyReference,
+                    Value: { } value,
+                }
+                && SymbolEqualityComparer.Default.Equals(propertyReference.Property, property)
+                && propertyReference.Instance is { } instance
+                && ReferencesConfiguratorParameter(instance, configuratorParameter, context))
+            {
+                finalValue = value;
+                finalAssignmentStart = operation.Syntax.SpanStart;
+            }
+        }
+
+        return finalValue?.ConstantValue is { HasValue: true, Value: null }
+            && !HasBypassingControlFlowBefore(block, finalAssignmentStart)
+            && !HasPropertyAssignmentAfter(
+                block,
+                property,
+                configuratorParameter,
+                finalAssignmentStart,
+                context);
+    }
+
+    private static bool HasPropertyAssignmentAfter(
+        IOperation operation,
+        IPropertySymbol property,
+        IParameterSymbol configuratorParameter,
+        int position,
+        OperationAnalysisContext context)
+    {
+        if (operation.Syntax.SpanStart > position
+            && operation is IAssignmentOperation
+            {
+                Target: IPropertyReferenceOperation propertyReference,
+            }
+            && SymbolEqualityComparer.Default.Equals(propertyReference.Property, property)
+            && propertyReference.Instance is { } instance
+            && ReferencesConfiguratorParameter(instance, configuratorParameter, context))
+        {
+            return true;
+        }
+
+        foreach (var child in operation.ChildOperations)
+        {
+            if (child is not IAnonymousFunctionOperation
+                && HasPropertyAssignmentAfter(
+                    child,
+                    property,
+                    configuratorParameter,
+                    position,
+                    context))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsReassigned(IdentifierNameSyntax identifier)
+    {
+        foreach (var ancestor in identifier.Ancestors())
+        {
+            switch (ancestor)
+            {
+                case MemberAccessExpressionSyntax memberAccess
+                    when memberAccess.Expression.Span.Contains(identifier.Span):
+                case ElementAccessExpressionSyntax elementAccess
+                    when elementAccess.Expression.Span.Contains(identifier.Span):
+                    return false;
+                case AssignmentExpressionSyntax assignment when assignment.Left.Span.Contains(identifier.Span):
+                    return true;
+                case PrefixUnaryExpressionSyntax prefix
+                    when prefix.IsKind(SyntaxKind.PreIncrementExpression)
+                        || prefix.IsKind(SyntaxKind.PreDecrementExpression):
+                    return true;
+                case PostfixUnaryExpressionSyntax postfix
+                    when postfix.IsKind(SyntaxKind.PostIncrementExpression)
+                        || postfix.IsKind(SyntaxKind.PostDecrementExpression):
+                    return true;
+                case ArgumentSyntax argument when !argument.RefKindKeyword.IsKind(SyntaxKind.None):
+                    return true;
+                case StatementSyntax:
+                    return false;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool ReferencesConfiguratorParameter(
+        IOperation operation,
+        IParameterSymbol configuratorParameter,
+        OperationAnalysisContext context,
+        HashSet<ISymbol>? visitedLocals = null)
+    {
+        operation = Unwrap(operation)!;
+        if (operation is IParameterReferenceOperation parameterReference)
+        {
+            return SymbolEqualityComparer.Default.Equals(
+                parameterReference.Parameter,
+                configuratorParameter);
+        }
+
+        if (operation is not ILocalReferenceOperation localReference)
+        {
+            return false;
+        }
+
+        visitedLocals ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+        if (!visitedLocals.Add(localReference.Local)
+            || !TryGetStableAliasInitializer(localReference, context, out var initializer)
+            || initializer is null)
+        {
+            return false;
+        }
+
+        var referencesParameter = ReferencesConfiguratorParameter(
+            initializer,
+            configuratorParameter,
+            context,
+            visitedLocals);
+        visitedLocals.Remove(localReference.Local);
+        return referencesParameter;
     }
 
     private static bool IsReactiveStrategy(IMethodSymbol method, KnownTypes knownTypes) =>
@@ -2445,6 +3006,20 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         private readonly INamedTypeSymbol? _taskOfT;
         private readonly INamedTypeSymbol? _valueTask;
         private readonly INamedTypeSymbol? _valueTaskOfT;
+        private readonly INamedTypeSymbol? _retryOptions;
+        private readonly INamedTypeSymbol? _retryOptionsOfT;
+        private readonly INamedTypeSymbol? _hedgeOptions;
+        private readonly INamedTypeSymbol? _hedgeOptionsOfT;
+        private readonly INamedTypeSymbol? _timeoutOptions;
+        private readonly INamedTypeSymbol? _fallbackOptions;
+        private readonly INamedTypeSymbol? _fallbackOptionsOfT;
+        private readonly INamedTypeSymbol? _circuitBreakerOptions;
+        private readonly INamedTypeSymbol? _circuitBreakerOptionsOfT;
+        private readonly INamedTypeSymbol? _rateLimitOptions;
+        private readonly INamedTypeSymbol? _concurrencyLimitOptions;
+        private readonly INamedTypeSymbol? _chaosShield;
+        private readonly INamedTypeSymbol? _chaosBehaviorOptions;
+        private readonly INamedTypeSymbol? _rateLimiterAdapterOptions;
 
         internal KnownTypes(Compilation compilation)
         {
@@ -2464,6 +3039,23 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             _taskOfT = compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1");
             _valueTask = compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask");
             _valueTaskOfT = compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
+            var kevlarAssembly = _shield?.ContainingAssembly;
+            _retryOptions = kevlarAssembly?.GetTypeByMetadataName("Kevlar.RetryOptions");
+            _retryOptionsOfT = kevlarAssembly?.GetTypeByMetadataName("Kevlar.RetryOptions`1");
+            _hedgeOptions = kevlarAssembly?.GetTypeByMetadataName("Kevlar.HedgeOptions");
+            _hedgeOptionsOfT = kevlarAssembly?.GetTypeByMetadataName("Kevlar.HedgeOptions`1");
+            _timeoutOptions = kevlarAssembly?.GetTypeByMetadataName("Kevlar.TimeoutOptions");
+            _fallbackOptions = kevlarAssembly?.GetTypeByMetadataName("Kevlar.FallbackOptions");
+            _fallbackOptionsOfT = kevlarAssembly?.GetTypeByMetadataName("Kevlar.FallbackOptions`1");
+            _circuitBreakerOptions = kevlarAssembly?.GetTypeByMetadataName("Kevlar.CircuitBreakerOptions");
+            _circuitBreakerOptionsOfT = kevlarAssembly?.GetTypeByMetadataName("Kevlar.CircuitBreakerOptions`1");
+            _rateLimitOptions = kevlarAssembly?.GetTypeByMetadataName("Kevlar.RateLimitOptions");
+            _concurrencyLimitOptions = kevlarAssembly?.GetTypeByMetadataName("Kevlar.ConcurrencyLimitOptions");
+            _chaosShield = compilation.GetTypeByMetadataName("Kevlar.Chaos.ChaosShield");
+            _chaosBehaviorOptions = _chaosShield?.ContainingAssembly.GetTypeByMetadataName(
+                "Kevlar.Chaos.ChaosBehaviorOptions");
+            _rateLimiterAdapterOptions = _shieldRateLimiterExtensions?.ContainingAssembly.GetTypeByMetadataName(
+                "Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions");
             var assemblyName = compilation.AssemblyName;
             IsTestAssembly = assemblyName is not null
                 && (assemblyName.EndsWith(".Test", StringComparison.OrdinalIgnoreCase)
@@ -2488,8 +3080,34 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         internal bool IsShieldRateLimiterExtensions(INamedTypeSymbol type) =>
             Is(type, _shieldRateLimiterExtensions);
 
+        internal bool IsChaosShield(INamedTypeSymbol type) => Is(type, _chaosShield);
+
         internal bool IsPartitionedShield(INamedTypeSymbol type) =>
             Is(type, _partitionedShield) || Is(type, _partitionedShieldOfT);
+
+        internal bool IsAsyncConfigurationProperty(IPropertySymbol property)
+        {
+            var type = property.ContainingType;
+            return property.Name switch
+            {
+                "OnRetryAsync" => Is(type, _retryOptions) || Is(type, _retryOptionsOfT),
+                "DelayGeneratorAsync" =>
+                    Is(type, _retryOptions)
+                    || Is(type, _retryOptionsOfT)
+                    || Is(type, _hedgeOptions)
+                    || Is(type, _hedgeOptionsOfT),
+                "OnTimeoutAsync" or "TimeoutGenerator" => Is(type, _timeoutOptions),
+                "OnFallbackAsync" => Is(type, _fallbackOptions) || Is(type, _fallbackOptionsOfT),
+                "OnStateChangedAsync" or "BreakDurationGenerator" =>
+                    Is(type, _circuitBreakerOptions) || Is(type, _circuitBreakerOptionsOfT),
+                "OnRejectedAsync" =>
+                    Is(type, _rateLimitOptions)
+                    || Is(type, _concurrencyLimitOptions)
+                    || Is(type, _rateLimiterAdapterOptions),
+                "Behavior" => Is(type, _chaosBehaviorOptions),
+                _ => false,
+            };
+        }
 
         internal bool IsNonGenericExecutionResult(ITypeSymbol type) =>
             type is INamedTypeSymbol namedType

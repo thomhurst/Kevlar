@@ -56,6 +56,13 @@ public sealed class CircuitBreakerOptions
     public Func<CircuitBreakerBreakDurationEvent, ValueTask<TimeSpan>>? BreakDurationGenerator { get; set; }
 
     /// <summary>
+    /// Produces the break duration synchronously when a handled outcome trips or re-opens the
+    /// circuit. The returned value must be positive. Cannot be combined with
+    /// <see cref="BreakDurationGenerator"/>.
+    /// </summary>
+    public Func<CircuitBreakerBreakDurationEvent, TimeSpan>? BreakDurationGeneratorSync { get; set; }
+
+    /// <summary>
     /// An optional monitor giving external code visibility of the circuit state plus manual
     /// <see cref="CircuitBreakerMonitor.Isolate"/> / <see cref="CircuitBreakerMonitor.Reset"/> control.
     /// A monitor can be bound to only one circuit breaker.

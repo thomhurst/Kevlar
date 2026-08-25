@@ -12,6 +12,11 @@ internal sealed class BehaviorChaosStrategy : ChaosStrategy
 
     public override string Describe() => "ChaosBehavior";
 
+    protected override string? SynchronousExecutionUnsupportedReason =>
+        _behavior is not null && CanInject
+            ? "ChaosBehaviorOptions.Behavior"
+            : null;
+
     public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
         Continuation<T, TState> next,
         KevlarContext context)

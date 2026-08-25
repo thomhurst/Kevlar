@@ -40,10 +40,10 @@ public class TimeoutDynamicOptionsTests
         var sawSynchronousContext = false;
         var shield = Shield<int>.Empty.Timeout(options =>
         {
-            options.TimeoutGenerator = context =>
+            options.TimeoutGeneratorSync = context =>
             {
                 sawSynchronousContext = context.IsSynchronous;
-                return new ValueTask<TimeSpan>(TimeSpan.FromMinutes(1));
+                return TimeSpan.FromMinutes(1);
             };
         });
 
@@ -228,9 +228,10 @@ public class TimeoutDynamicOptionsTests
     }
 
     [Test]
-    public async Task Synchronous_Execution_Waits_For_The_Async_Timeout_Hook()
+    public async Task Synchronous_Execution_Rejects_The_Async_Timeout_Hook()
     {
         var hookCompleted = false;
+        var actionStarted = false;
         var shield = Shield.Timeout(options =>
         {
             options.Timeout = TimeSpan.FromMilliseconds(10);
@@ -241,13 +242,16 @@ public class TimeoutDynamicOptionsTests
             };
         });
 
-        await Assert.That(() => shield.Execute(token =>
+        var exception = await Assert.That(() => shield.Execute(token =>
         {
+            actionStarted = true;
             token.WaitHandle.WaitOne();
             token.ThrowIfCancellationRequested();
             return 1;
-        })).Throws<TimeoutExceededException>();
-        await Assert.That(hookCompleted).IsTrue();
+        })).Throws<NotSupportedException>();
+        await Assert.That(exception!.Message).Contains("TimeoutOptions.OnTimeoutAsync");
+        await Assert.That(hookCompleted).IsFalse();
+        await Assert.That(actionStarted).IsFalse();
     }
 
     [Test]

@@ -38,6 +38,7 @@ API reference: [`CircuitBreakerOptions`](pathname:///api/Kevlar.CircuitBreakerOp
 | `SamplingWindow` | `30s` | Rolling window over which the ratio is measured (tracked in 10 buckets) |
 | `BreakDuration` | `15s` | How long the circuit stays open before allowing a probe |
 | `BreakDurationGenerator` | — | Awaited outcome, failure-statistics, and context-aware duration; overrides `BreakDuration` for each trip |
+| `BreakDurationGeneratorSync` | — | Synchronous outcome, failure-statistics, and context-aware duration; overrides `BreakDuration` for each trip |
 | `Monitor` | — | A `CircuitBreakerMonitor` for observing + manual control |
 | `OnStateChanged` | — | Callback on every transition: `e.From`, `e.To`, `e.LastException`, `e.Context` |
 | `OnStateChangedAsync` | — | Awaited callback on every transition, after `OnStateChanged` |
@@ -76,6 +77,10 @@ propagates unchanged and leaves the circuit available for a later trip. Untyped 
 `CircuitBreakerBreakDurationEvent<T>` with a directly stored `Outcome<T>`. `Context` is pooled and
 must not be retained after the callback completes. A dynamic breaker describes itself as
 `break dynamic` without running the generator.
+
+When duration computation is synchronous, configure `BreakDurationGeneratorSync` instead. It has the
+same event and validation contract and allows synchronous `Execute`; configure only one generator.
+`BreakDurationGenerator` and `OnStateChangedAsync` require `ExecuteAsync` for pipeline execution.
 
 ## The state machine
 

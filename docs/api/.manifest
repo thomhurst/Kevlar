@@ -116,6 +116,7 @@
   "Kevlar.CircuitBreakerOptions.#ctor": "Kevlar.CircuitBreakerOptions.yml",
   "Kevlar.CircuitBreakerOptions.BreakDuration": "Kevlar.CircuitBreakerOptions.yml",
   "Kevlar.CircuitBreakerOptions.BreakDurationGenerator": "Kevlar.CircuitBreakerOptions.yml",
+  "Kevlar.CircuitBreakerOptions.BreakDurationGeneratorSync": "Kevlar.CircuitBreakerOptions.yml",
   "Kevlar.CircuitBreakerOptions.ConsecutiveFailures": "Kevlar.CircuitBreakerOptions.yml",
   "Kevlar.CircuitBreakerOptions.FailureRatio": "Kevlar.CircuitBreakerOptions.yml",
   "Kevlar.CircuitBreakerOptions.HandlesException": "Kevlar.CircuitBreakerOptions.yml",
@@ -130,6 +131,7 @@
   "Kevlar.CircuitBreakerOptions`1.#ctor": "Kevlar.CircuitBreakerOptions-1.yml",
   "Kevlar.CircuitBreakerOptions`1.BreakDuration": "Kevlar.CircuitBreakerOptions-1.yml",
   "Kevlar.CircuitBreakerOptions`1.BreakDurationGenerator": "Kevlar.CircuitBreakerOptions-1.yml",
+  "Kevlar.CircuitBreakerOptions`1.BreakDurationGeneratorSync": "Kevlar.CircuitBreakerOptions-1.yml",
   "Kevlar.CircuitBreakerOptions`1.ConsecutiveFailures": "Kevlar.CircuitBreakerOptions-1.yml",
   "Kevlar.CircuitBreakerOptions`1.FailureRatio": "Kevlar.CircuitBreakerOptions-1.yml",
   "Kevlar.CircuitBreakerOptions`1.HandlesException": "Kevlar.CircuitBreakerOptions-1.yml",
@@ -929,6 +931,7 @@
   "Kevlar.Strategy.Handling": "Kevlar.Strategy.yml",
   "Kevlar.Strategy.InvokesContinuationAtMostOnce": "Kevlar.Strategy.yml",
   "Kevlar.Strategy.IsDuplicateReferenceUnsafe": "Kevlar.Strategy.yml",
+  "Kevlar.Strategy.SynchronousExecutionUnsupportedReason": "Kevlar.Strategy.yml",
   "Kevlar.Testing": "Kevlar.Testing.yml",
   "Kevlar.Testing.BackoffDescriptor": "Kevlar.Testing.BackoffDescriptor.yml",
   "Kevlar.Testing.BackoffDescriptor.BaseDelay": "Kevlar.Testing.BackoffDescriptor.yml",
@@ -1137,5 +1140,6 @@
   "Kevlar.TimeoutOptions.OnTimeout": "Kevlar.TimeoutOptions.yml",
   "Kevlar.TimeoutOptions.OnTimeoutAsync": "Kevlar.TimeoutOptions.yml",
   "Kevlar.TimeoutOptions.Timeout": "Kevlar.TimeoutOptions.yml",
-  "Kevlar.TimeoutOptions.TimeoutGenerator": "Kevlar.TimeoutOptions.yml"
+  "Kevlar.TimeoutOptions.TimeoutGenerator": "Kevlar.TimeoutOptions.yml",
+  "Kevlar.TimeoutOptions.TimeoutGeneratorSync": "Kevlar.TimeoutOptions.yml"
 }

@@ -80,6 +80,7 @@ Kevlar.ShieldBuilder.Timeout(System.Action<Kevlar.TimeoutOptions!>! configure) -
 Kevlar.ShieldBuilder<TResult>.Timeout(System.Action<Kevlar.TimeoutOptions!>! configure) -> Kevlar.Shield<TResult>!
 virtual Kevlar.Strategy.Handling.get -> Kevlar.HandlingClause?
 virtual Kevlar.Strategy.InvokesContinuationAtMostOnce.get -> bool
+virtual Kevlar.Strategy.SynchronousExecutionUnsupportedReason.get -> string?
 Kevlar.Shield<TResult>.InvokesContinuationAtMostOnce.get -> bool
 Kevlar.CircuitBreakerBreakDurationEvent
 Kevlar.CircuitBreakerBreakDurationEvent.CircuitBreakerBreakDurationEvent() -> void
@@ -101,6 +102,8 @@ Kevlar.CircuitBreakerMonitor.IsolateAsync() -> System.Threading.Tasks.ValueTask
 Kevlar.CircuitBreakerMonitor.ResetAsync() -> System.Threading.Tasks.ValueTask
 Kevlar.CircuitBreakerOptions.BreakDurationGenerator.get -> System.Func<Kevlar.CircuitBreakerBreakDurationEvent, System.Threading.Tasks.ValueTask<System.TimeSpan>>?
 Kevlar.CircuitBreakerOptions.BreakDurationGenerator.set -> void
+Kevlar.CircuitBreakerOptions.BreakDurationGeneratorSync.get -> System.Func<Kevlar.CircuitBreakerBreakDurationEvent, System.TimeSpan>?
+Kevlar.CircuitBreakerOptions.BreakDurationGeneratorSync.set -> void
 Kevlar.CircuitBreakerOptions.OnStateChanged.get -> System.Action<Kevlar.CircuitBreakerStateChangedEvent>?
 Kevlar.CircuitBreakerOptions.OnStateChangedAsync.get -> System.Func<Kevlar.CircuitBreakerStateChangedEvent, System.Threading.Tasks.ValueTask>?
 Kevlar.CircuitBreakerOptions.OnStateChangedAsync.set -> void
@@ -126,6 +129,8 @@ Kevlar.TimeoutOptions.OnTimeoutAsync.get -> System.Func<Kevlar.TimeoutEvent, Sys
 Kevlar.TimeoutOptions.OnTimeoutAsync.set -> void
 Kevlar.TimeoutOptions.TimeoutGenerator.get -> System.Func<Kevlar.KevlarContext!, System.Threading.Tasks.ValueTask<System.TimeSpan>>?
 Kevlar.TimeoutOptions.TimeoutGenerator.set -> void
+Kevlar.TimeoutOptions.TimeoutGeneratorSync.get -> System.Func<Kevlar.KevlarContext!, System.TimeSpan>?
+Kevlar.TimeoutOptions.TimeoutGeneratorSync.set -> void
 static Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync<T, TState>(this Kevlar.Shield! shield, TState state, System.Func<TState, System.Threading.CancellationToken, System.Threading.Tasks.Task<T>!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Kevlar.Outcome<T>>
 static Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync<TResult, TState>(this Kevlar.Shield<TResult>! shield, TState state, System.Func<TState, System.Threading.CancellationToken, System.Threading.Tasks.Task<TResult>!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Kevlar.Outcome<TResult>>
 static Kevlar.ShieldExtensions.WhenAnyError(this Kevlar.Shield! shield) -> Kevlar.Shield!
@@ -426,6 +431,8 @@ Kevlar.CircuitBreakerOptions<TResult>.BreakDuration.get -> System.TimeSpan
 Kevlar.CircuitBreakerOptions<TResult>.BreakDuration.set -> void
 Kevlar.CircuitBreakerOptions<TResult>.BreakDurationGenerator.get -> System.Func<Kevlar.CircuitBreakerBreakDurationEvent<TResult>, System.Threading.Tasks.ValueTask<System.TimeSpan>>?
 Kevlar.CircuitBreakerOptions<TResult>.BreakDurationGenerator.set -> void
+Kevlar.CircuitBreakerOptions<TResult>.BreakDurationGeneratorSync.get -> System.Func<Kevlar.CircuitBreakerBreakDurationEvent<TResult>, System.TimeSpan>?
+Kevlar.CircuitBreakerOptions<TResult>.BreakDurationGeneratorSync.set -> void
 Kevlar.CircuitBreakerOptions<TResult>.ConsecutiveFailures.get -> int?
 Kevlar.CircuitBreakerOptions<TResult>.ConsecutiveFailures.set -> void
 Kevlar.CircuitBreakerOptions<TResult>.FailureRatio.get -> double?
