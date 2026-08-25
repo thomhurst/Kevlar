@@ -12,6 +12,10 @@ internal sealed class StrategyDisposalTracker
         return Interlocked.Exchange(ref claim.IsClaimed, 1) == 0;
     }
 
+    public bool IsClaimed(Strategy strategy) =>
+        _claims.TryGetValue(strategy, out var claim)
+        && Volatile.Read(ref claim.IsClaimed) != 0;
+
     private sealed class DisposalClaim
     {
         public int IsClaimed;

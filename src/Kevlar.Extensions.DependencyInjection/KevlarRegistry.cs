@@ -26,15 +26,20 @@ internal sealed class RegistryEntry
     private readonly object _retirementLock = new();
     private readonly IServiceProvider _serviceProvider;
     private readonly ShieldRegistration _registration;
+    private readonly Action<object> _validatePublication;
     private Lazy<object> _value;
     private object? _resolved;
     private Action<object>? _retirementHandler;
     private bool _retirementPublished;
 
-    public RegistryEntry(IServiceProvider serviceProvider, ShieldRegistration registration)
+    public RegistryEntry(
+        IServiceProvider serviceProvider,
+        ShieldRegistration registration,
+        Action<object> validatePublication)
     {
         _serviceProvider = serviceProvider;
         _registration = registration;
+        _validatePublication = validatePublication;
         _value = CreateValue();
     }
 
@@ -88,6 +93,8 @@ internal sealed class RegistryEntry
                 ShieldRetirement.Track(shield);
             }
 
+            _validatePublication(value);
+
             Action<object>? retirementHandler = null;
             lock (_retirementLock)
             {
@@ -129,7 +136,7 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         {
             // Last registration for a given name wins, matching standard DI override behaviour.
             _entries[(registration.Name, registration.ResultType)] =
-                new RegistryEntry(_serviceProvider, registration);
+                new RegistryEntry(_serviceProvider, registration, ValidatePublication);
         }
     }
 
@@ -168,7 +175,8 @@ internal sealed class KevlarRegistry : IKevlarRegistry
             key,
             _ => new RegistryEntry(
                 _serviceProvider,
-                new ShieldRegistration(name, null, services => factory(services))));
+                new ShieldRegistration(name, null, services => factory(services)),
+                ValidatePublication));
         return TryResolve(entry, out Shield? shield)
             ? shield
             : throw new InvalidOperationException($"The factory for shield '{name}' returned an incompatible value.");
@@ -186,7 +194,8 @@ internal sealed class KevlarRegistry : IKevlarRegistry
             key,
             _ => new RegistryEntry(
                 _serviceProvider,
-                new ShieldRegistration(name, resultType, services => factory(services))));
+                new ShieldRegistration(name, resultType, services => factory(services)),
+                ValidatePublication));
         return TryResolve(entry, out Shield<TResult>? shield)
             ? shield
             : throw new InvalidOperationException(
@@ -201,7 +210,8 @@ internal sealed class KevlarRegistry : IKevlarRegistry
             (name, null),
             new RegistryEntry(
                 _serviceProvider,
-                new ShieldRegistration(name, null, services => factory(services))));
+                new ShieldRegistration(name, null, services => factory(services)),
+                ValidatePublication));
     });
 
     public bool TryAdd<TResult>(string name, Func<IServiceProvider, Shield<TResult>> factory) => Read(() =>
@@ -213,7 +223,8 @@ internal sealed class KevlarRegistry : IKevlarRegistry
             (name, resultType),
             new RegistryEntry(
                 _serviceProvider,
-                new ShieldRegistration(name, resultType, services => factory(services))));
+                new ShieldRegistration(name, resultType, services => factory(services)),
+                ValidatePublication));
     });
 
     public bool Remove(string name) => Remove(name, resultType: null);
@@ -638,6 +649,25 @@ internal sealed class KevlarRegistry : IKevlarRegistry
         foreach (var retirement in _retirements.Keys)
         {
             retainedOrClaimed.UnionWith(retirement.Strategies);
+        }
+    }
+
+    private void ValidatePublication(object value)
+    {
+        var strategies = value switch
+        {
+            IReloadingProvider provider => provider.Strategies,
+            IShieldLifecycle shield => shield.Strategies,
+            _ => [],
+        };
+
+        foreach (var strategy in strategies)
+        {
+            if (_strategyDisposals.IsClaimed(strategy))
+            {
+                throw new InvalidOperationException(
+                    "A shield cannot publish a strategy whose registry-owned disposal has started.");
+            }
         }
     }
 

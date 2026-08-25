@@ -183,6 +183,7 @@ public readonly struct Continuation<T, TState>
 
         ValueTask<Outcome<T>> execution;
         var previousStrategyIndex = node.Index - 1;
+        var shieldOwner = node.Strategy.GetShieldOwner();
         var executionTracker = node.Strategy.ExecutionTracker;
         executionTracker?.Enter();
 
@@ -198,6 +199,7 @@ public readonly struct Continuation<T, TState>
             context.StrategyIndex = previousStrategyIndex;
             ExitStrategyIfRequired(node, context);
             executionTracker?.Exit();
+            GC.KeepAlive(shieldOwner);
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(exception));
         }
 
@@ -206,10 +208,17 @@ public readonly struct Continuation<T, TState>
             context.StrategyIndex = previousStrategyIndex;
             ExitStrategyIfRequired(node, context);
             executionTracker?.Exit();
+            GC.KeepAlive(shieldOwner);
             return execution;
         }
 
-        return AwaitStrategyAsync(execution, context, previousStrategyIndex, node, executionTracker);
+        return AwaitStrategyAsync(
+            execution,
+            context,
+            previousStrategyIndex,
+            node,
+            executionTracker,
+            shieldOwner);
     }
 
     private async ValueTask<Outcome<T>> InvokeStrategyWithForkAsync(
@@ -232,7 +241,8 @@ public readonly struct Continuation<T, TState>
         KevlarContext context,
         int previousStrategyIndex,
         StrategyNode node,
-        StrategyExecutionTracker? executionTracker)
+        StrategyExecutionTracker? executionTracker,
+        object shieldOwner)
     {
         try
         {
@@ -247,7 +257,15 @@ public readonly struct Continuation<T, TState>
             context.StrategyIndex = previousStrategyIndex;
             ExitStrategyIfRequired(node, context);
             executionTracker?.Exit();
+            ReleaseShieldOwner(ref shieldOwner);
         }
+    }
+
+    private static void ReleaseShieldOwner(ref object shieldOwner)
+    {
+        var completedOwner = shieldOwner;
+        shieldOwner = null!;
+        GC.KeepAlive(completedOwner);
     }
 
     private static void ExitStrategyIfRequired(StrategyNode node, KevlarContext context)

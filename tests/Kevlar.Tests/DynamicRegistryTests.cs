@@ -527,6 +527,57 @@ public class DynamicRegistryTests
     }
 
     [Test]
+    public async Task Pending_Async_Retirement_Cannot_Republish_Its_Strategy()
+    {
+        using var services = new ServiceCollection().AddKevlar().BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        var strategy = new BlockingAsyncDisposableStrategy();
+        var retired = ResolveAndRemove(registry, "pending-async", strategy);
+        Collect(retired);
+        var scavenging = Task.Run(() =>
+            registry.GetOrAdd("pending-async-scavenge", _ => Shield.Empty));
+        await strategy.DisposalStarted.WaitAsync(TimeSpan.FromSeconds(5));
+
+        try
+        {
+            _ = await Assert.That(() =>
+                    registry.GetOrAdd("pending-async-republished", _ => Shield.Use(strategy)))
+                .Throws<InvalidOperationException>();
+        }
+        finally
+        {
+            strategy.ReleaseDisposal();
+            _ = await scavenging.WaitAsync(TimeSpan.FromSeconds(5));
+        }
+
+        await Assert.That(strategy.DisposeCount).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Execution_Started_Before_Resolution_Delays_Retirement()
+    {
+        using var services = new ServiceCollection().AddKevlar().BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        var strategy = new DisposableStrategy();
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var (execution, retired) = StartBeforeRegistryResolution(
+            registry,
+            strategy,
+            started,
+            release);
+        await started.Task;
+
+        Collect(retired);
+        _ = registry.GetOrAdd("pre-resolution-scavenge", _ => Shield.Empty);
+
+        await Assert.That(strategy.DisposeCount).IsEqualTo(0);
+
+        release.SetResult();
+        await execution;
+    }
+
+    [Test]
     public async Task Derived_Shields_Keep_Retired_Strategies_Alive()
     {
         Func<Shield, Shield>[] derivations =
@@ -802,6 +853,27 @@ public class DynamicRegistryTests
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
+    private static (Task Execution, WeakReference Retired) StartBeforeRegistryResolution(
+        IKevlarRegistry registry,
+        Strategy strategy,
+        TaskCompletionSource started,
+        TaskCompletionSource release)
+    {
+        var shield = Shield.Use(strategy);
+        var execution = shield.ExecuteAsync(
+            (started, release),
+            static async (state, _) =>
+            {
+                state.started.SetResult();
+                await state.release.Task;
+            }).AsTask();
+        _ = registry.GetOrAdd("pre-resolution", _ => shield);
+        var retired = new WeakReference(shield);
+        _ = registry.Remove("pre-resolution");
+        return (execution, retired);
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
     private static WeakReference ResolveAndRemove(
         IKevlarRegistry registry,
         DisposableStrategy shared,
@@ -908,6 +980,32 @@ public class DynamicRegistryTests
             Interlocked.Increment(ref _disposeCount);
             _disposed.TrySetResult();
         }
+
+        public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
+            Continuation<T, TState> next,
+            KevlarContext context) => next.InvokeAsync(context);
+    }
+
+    private sealed class BlockingAsyncDisposableStrategy : Strategy, IAsyncDisposable
+    {
+        private readonly TaskCompletionSource _disposalStarted =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _releaseDisposal =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private int _disposeCount;
+
+        public Task DisposalStarted => _disposalStarted.Task;
+
+        public int DisposeCount => Volatile.Read(ref _disposeCount);
+
+        public async ValueTask DisposeAsync()
+        {
+            _disposalStarted.TrySetResult();
+            await _releaseDisposal.Task;
+            Interlocked.Increment(ref _disposeCount);
+        }
+
+        public void ReleaseDisposal() => _releaseDisposal.TrySetResult();
 
         public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
             Continuation<T, TState> next,
