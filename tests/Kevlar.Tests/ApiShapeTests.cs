@@ -10,6 +10,41 @@ namespace Kevlar.Tests;
 public class ApiShapeTests
 {
     [Test]
+    public async Task AddShield_Overloads_Are_Symmetric_After_VoidShield_Fold()
+    {
+        static string Shape(MethodInfo method) =>
+            string.Join(",", method.GetParameters().Skip(2).Select(static parameter => parameter.Name));
+
+        var methods = typeof(KevlarServiceCollectionExtensions)
+            .GetMethods(BindingFlags.Public | BindingFlags.Static);
+        var addShieldMethods = methods.Where(static method => method.Name == "AddShield").ToArray();
+        var untypedShapes = addShieldMethods
+            .Where(static method => !method.IsGenericMethodDefinition)
+            .Select(Shape)
+            .ToArray();
+        var typedShapes = addShieldMethods
+            .Where(static method => method.IsGenericMethodDefinition)
+            .Select(Shape)
+            .ToArray();
+        var reloadingMethods = methods
+            .Where(static method => method.Name == "AddReloadingShield")
+            .ToArray();
+
+        await Assert.That(typedShapes).IsEquivalentTo(untypedShapes);
+        var untypedReloadShapes = reloadingMethods
+            .Where(static method => !method.IsGenericMethodDefinition)
+            .Select(Shape)
+            .ToArray();
+        var typedReloadShapes = reloadingMethods
+            .Where(static method => method.IsGenericMethodDefinition)
+            .Select(Shape)
+            .ToArray();
+
+        await Assert.That(typedReloadShapes).IsEquivalentTo(untypedReloadShapes);
+        await Assert.That(methods.Where(static method => method.Name == "AddVoidShield")).IsEmpty();
+    }
+
+    [Test]
     public async Task Public_Surface_Uses_One_Hedge_Stem()
     {
         var assemblies = new[]

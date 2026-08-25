@@ -19,6 +19,9 @@
 - The System.Threading.RateLimiting adapter now uses `UseRateLimiter(...)`,
   `RateLimiterAdapterRejectedEvent`, and `RateLimiterAdapterRejectedException`. The distinct names
   separate adapter-backed strategies from Kevlar's built-in `RateLimit(...)` strategy.
+- `StandardHttpShieldOptions.CircuitBreaker` now uses
+  `CircuitBreakerOptions<HttpResponseMessage>`, exposing typed result predicates for the standard
+  HTTP breaker.
 
 Handling clauses now use one spelling per position. `When…` starts a clause on `Shield` or
 `Shield<TResult>`; only `Or…` continues it on a builder. `Shield.For<TResult>()` now returns
@@ -42,6 +45,7 @@ Handling clauses now use one spelling per position. `When…` starts a clause on
 | adapter `.RateLimit(limiter)` | `.UseRateLimiter(limiter)` |
 | `RateLimiterRejectedEvent` | `RateLimiterAdapterRejectedEvent` |
 | adapter `RateLimitExceededException` | `RateLimiterAdapterRejectedException` |
+| `StandardHttpShieldOptions.CircuitBreaker` as `CircuitBreakerOptions` | `CircuitBreakerOptions<HttpResponseMessage>` |
 
 `OrWhen` is gone: `Or(Func<Exception, bool>)` now mirrors `When(Func<Exception, bool>)`, so the
 untyped predicate has the same spelling in both clause positions. `WhenDefault`/`OrDefault` were
@@ -62,6 +66,8 @@ build spelled these `WhenResultDefault`/`OrResultDefault`; the `Is` makes the re
 
 ### Changed
 
+- Named DI registrations now expose symmetric configuration overloads, typed
+  `IShieldProvider<TResult>` snapshots, and `AddReloadingShield<TResult>`.
 - Handling-clause builders now match their shield counterparts for configured timeouts, direct
   custom strategies, and void fallbacks that do not need the handled exception.
 - Every NuGet package now embeds the canonical Kevlar icon, links release notes, and carries a

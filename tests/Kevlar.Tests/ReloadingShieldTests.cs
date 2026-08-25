@@ -18,10 +18,22 @@ public class ReloadingShieldTests
             .Throws<ArgumentNullException>();
         var configurationError = await Assert.That(() => new ServiceCollection().AddReloadingShield("dynamic", null!))
             .Throws<ArgumentNullException>();
+        var typedServicesError = await Assert.That(
+                () => missingServices!.AddReloadingShield<int>("dynamic", configuration))
+            .Throws<ArgumentNullException>();
+        var typedNameError = await Assert.That(
+                () => new ServiceCollection().AddReloadingShield<int>(null!, configuration))
+            .Throws<ArgumentNullException>();
+        var typedConfigurationError = await Assert.That(
+                () => new ServiceCollection().AddReloadingShield<int>("dynamic", null!))
+            .Throws<ArgumentNullException>();
 
         await Assert.That(servicesError!.ParamName).IsEqualTo("services");
         await Assert.That(nameError!.ParamName).IsEqualTo("name");
         await Assert.That(configurationError!.ParamName).IsEqualTo("configuration");
+        await Assert.That(typedServicesError!.ParamName).IsEqualTo("services");
+        await Assert.That(typedNameError!.ParamName).IsEqualTo("name");
+        await Assert.That(typedConfigurationError!.ParamName).IsEqualTo("configuration");
     }
 
     [Test]
@@ -43,6 +55,75 @@ public class ReloadingShieldTests
         await Assert.That(first.ToString()).IsEqualTo("dynamic: Retry(1, no delay)");
         await Assert.That(second.ToString()).IsEqualTo("dynamic: Retry(4, no delay)");
         await Assert.That(ReferenceEquals(registry.GetShield("dynamic"), second)).IsTrue();
+    }
+
+    [Test]
+    public async Task Typed_Reload_Rebuilds_And_Resets_Strategy_State()
+    {
+        var configuration = BuildConfiguration(
+            ("Retry:MaxRetries", "0"),
+            ("Retry:Backoff", "None"),
+            ("CircuitBreaker:ConsecutiveFailures", "1"),
+            ("CircuitBreaker:FailureRatio", ""),
+            ("CircuitBreaker:BreakDuration", "01:00:00"));
+        using var services = new ServiceCollection()
+            .AddReloadingShield<HttpResponseMessage>("dynamic", configuration)
+            .AddTransient<TypedShieldConsumer>()
+            .BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        var live = services.GetRequiredKeyedService<IShieldProvider<HttpResponseMessage>>("dynamic");
+        var injected = services.GetRequiredService<TypedShieldConsumer>().Shield;
+        var first = live.Current;
+        var attempts = 0;
+
+        await Assert.That(async () => await first.ExecuteAsync(_ =>
+        {
+            attempts++;
+            throw new InvalidOperationException("failure");
+        })).Throws<InvalidOperationException>();
+        await Assert.That(async () => await first.ExecuteAsync(_ =>
+        {
+            attempts++;
+            return new ValueTask<HttpResponseMessage>(new HttpResponseMessage());
+        })).Throws<CircuitOpenException>();
+
+        configuration["Retry:MaxRetries"] = "4";
+        configuration.Reload();
+
+        var second = live.Current;
+        using var response = await second.ExecuteAsync(_ =>
+        {
+            attempts++;
+            return new ValueTask<HttpResponseMessage>(new HttpResponseMessage());
+        });
+
+        await Assert.That(ReferenceEquals(first, second)).IsFalse();
+        await Assert.That(ReferenceEquals(injected, first)).IsTrue();
+        await Assert.That(ReferenceEquals(registry.GetShield<HttpResponseMessage>("dynamic"), second))
+            .IsTrue();
+        await Assert.That(first.ToString()).Contains("Retry(0, no delay)");
+        await Assert.That(second.ToString()).Contains("Retry(4, no delay)");
+        await Assert.That(attempts).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task Typed_Invalid_Reload_Keeps_Last_Good_And_Reports_Path()
+    {
+        var configuration = BuildConfiguration(("Retry:MaxRetries", "1"));
+        Exception? reported = null;
+        using var services = new ServiceCollection()
+            .AddReloadingShield<int>("dynamic", configuration, error => reported = error)
+            .BuildServiceProvider();
+        var live = services.GetRequiredKeyedService<IShieldProvider<int>>("dynamic");
+        var lastGood = live.Current;
+
+        configuration["Retry:MaxRetries"] = "invalid";
+        configuration.Reload();
+
+        await Assert.That(ReferenceEquals(live.Current, lastGood)).IsTrue();
+        await Assert.That(reported).IsTypeOf<InvalidOperationException>();
+        await Assert.That(reported!.Message)
+            .IsEqualTo("Configuration value 'invalid' for 'Retry:MaxRetries' is not an integer.");
     }
 
     [Test]
@@ -301,4 +382,10 @@ public class ReloadingShieldTests
         new ConfigurationBuilder()
             .AddInMemoryCollection(values.Select(pair => new KeyValuePair<string, string?>(pair.Key, pair.Value)))
             .Build();
+
+    private sealed class TypedShieldConsumer(
+        [FromKeyedServices("dynamic")] Shield<HttpResponseMessage> shield)
+    {
+        public Shield<HttpResponseMessage> Shield { get; } = shield;
+    }
 }

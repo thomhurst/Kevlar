@@ -102,6 +102,9 @@ public sealed class ShieldDefinition
 
         return shield;
     }
+
+    /// <summary>Builds a result-aware view over the configured strategy pipeline.</summary>
+    internal Shield<TResult> Build<TResult>() => Build().For<TResult>();
 }
 
 /// <summary>The retry section of a <see cref="ShieldDefinition"/>.</summary>

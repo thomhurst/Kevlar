@@ -1,0 +1,53 @@
+name: Feature request
+description: Propose a new behavior or public contract.
+title: "feat: "
+labels: [enhancement]
+body:
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package
+      options:
+        - Kevlar
+        - Kevlar.Analyzers
+        - Kevlar.Chaos
+        - Kevlar.Extensions.DependencyInjection
+        - Kevlar.Extensions.Grpc
+        - Kevlar.Extensions.Http
+        - Kevlar.Extensions.RateLimiting
+        - Kevlar.Testing
+        - New package or cross-package feature
+    validations:
+      required: true
+  - type: dropdown
+    id: target-framework
+    attributes:
+      label: Target framework
+      options: [All supported targets, netstandard2.0, netstandard2.1, net8.0, net10.0, Other]
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Current Kevlar version
+      placeholder: 1.0.0
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Describe the user need and why current APIs do not solve it.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed API or behavior
+      description: Include migration and compatibility effects where relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered

@@ -188,6 +188,9 @@ public class DependencyInjectionContractTests
             () => services.AddShield<int>("name", (Shield<int>)null!),
             "shield");
         await AssertNullParameterAsync(
+            () => services.AddShield<int>("name", (IConfiguration)null!),
+            "configuration");
+        await AssertNullParameterAsync(
             () => KevlarServiceCollectionExtensions.AddShield<int>(null!, "name", typedFactory),
             "services");
         await AssertNullParameterAsync(() => services.AddShield<int>(null!, typedFactory), "name");
@@ -227,6 +230,19 @@ public class DependencyInjectionContractTests
         var shieldProvider = services.GetRequiredKeyedService<IShieldProvider>("static");
 
         await Assert.That(ReferenceEquals(shieldProvider.Current, registry.GetShield("static"))).IsTrue();
+    }
+
+    [Test]
+    public async Task Typed_Ordinary_Shield_Exposes_A_Fixed_Keyed_Provider()
+    {
+        using var services = new ServiceCollection()
+            .AddShield("static", Shield<int>.Empty)
+            .BuildServiceProvider();
+        var registry = services.GetRequiredService<IKevlarRegistry>();
+        var shieldProvider = services.GetRequiredKeyedService<IShieldProvider<int>>("static");
+
+        await Assert.That(ReferenceEquals(shieldProvider.Current, registry.GetShield<int>("static")))
+            .IsTrue();
     }
 
     [Test]
