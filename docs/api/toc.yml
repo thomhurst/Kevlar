@@ -131,8 +131,8 @@ items:
     name: KevlarTelemetryEvent
     type: Struct
   - uid: Kevlar.KevlarTelemetrySeverity
-     name: KevlarTelemetrySeverity
-     type: Enum
+    name: KevlarTelemetrySeverity
+    type: Enum
   - uid: Kevlar.Outcome
     name: Outcome
     type: Struct

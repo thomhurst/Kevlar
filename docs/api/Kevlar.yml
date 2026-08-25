@@ -291,7 +291,7 @@ references:
   name: KevlarProperties
   nameWithType: KevlarProperties
   fullName: Kevlar.KevlarProperties
- - uid: Kevlar.KevlarTelemetryEvent
+- uid: Kevlar.KevlarTelemetryEvent
   commentId: T:Kevlar.KevlarTelemetryEvent
   parent: Kevlar
   isExternal: true
@@ -305,8 +305,8 @@ references:
   isExternal: true
   href: Kevlar.KevlarTelemetrySeverity.html
   name: KevlarTelemetrySeverity
-   nameWithType: KevlarTelemetrySeverity
-   fullName: Kevlar.KevlarTelemetrySeverity
+  nameWithType: KevlarTelemetrySeverity
+  fullName: Kevlar.KevlarTelemetrySeverity
 - uid: Kevlar.Outcome
   commentId: T:Kevlar.Outcome
   parent: Kevlar
