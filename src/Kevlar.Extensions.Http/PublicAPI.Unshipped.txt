@@ -77,7 +77,7 @@ static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(this M
 Kevlar.Extensions.Http.StandardHttpShieldOptions
 Kevlar.Extensions.Http.StandardHttpShieldOptions.AttemptTimeout.get -> Kevlar.TimeoutOptions!
 Kevlar.Extensions.Http.StandardHttpShieldOptions.AttemptTimeout.set -> void
-Kevlar.Extensions.Http.StandardHttpShieldOptions.CircuitBreaker.get -> Kevlar.CircuitBreakerOptions!
+Kevlar.Extensions.Http.StandardHttpShieldOptions.CircuitBreaker.get -> Kevlar.CircuitBreakerOptions<System.Net.Http.HttpResponseMessage!>!
 Kevlar.Extensions.Http.StandardHttpShieldOptions.CircuitBreaker.set -> void
 Kevlar.Extensions.Http.StandardHttpShieldOptions.ConcurrencyLimit.get -> Kevlar.ConcurrencyLimitOptions?
 Kevlar.Extensions.Http.StandardHttpShieldOptions.ConcurrencyLimit.set -> void

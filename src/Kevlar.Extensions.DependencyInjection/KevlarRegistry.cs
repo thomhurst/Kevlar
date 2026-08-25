@@ -69,9 +69,16 @@ internal sealed class KevlarRegistry : IKevlarRegistry
 
     public bool TryGetShield<TResult>(string name, [NotNullWhen(true)] out Shield<TResult>? shield)
     {
-        if (Resolve(name, typeof(TResult)) is Shield<TResult> resolved)
+        var value = Resolve(name, typeof(TResult));
+        if (value is Shield<TResult> resolved)
         {
             shield = resolved;
+            return true;
+        }
+
+        if (value is IShieldProvider<TResult> provider)
+        {
+            shield = provider.Current;
             return true;
         }
 
