@@ -223,10 +223,12 @@ $deadApiPatterns = @(
     '\bRetryForever\s*\(\s*backoff\s*:\s*null\s*\)'
     '\bjitter\s*:\s*(?:true|false)\b'
     '\bJitter\s*=\s*(?:true|false)\b'
+    '(?i:\.RateLimit\s*\(\s*(?:limiter|[A-Za-z_][A-Za-z0-9_]*limiter)\s*\))'
+    '\bRateLimiterRejectedEvent\b'
 )
 $deadApiPattern = [regex]($deadApiPatterns -join '|')
 $documents = @($changelogPath, (Join-Path $repositoryRoot 'README.md')) + @(
-    Get-ChildItem -LiteralPath (Join-Path $repositoryRoot 'docs') -Recurse -File -Include '*.md', '*.mdx' |
+    Get-ChildItem -LiteralPath (Join-Path $repositoryRoot 'docs/docs') -Recurse -File -Include '*.md', '*.mdx' |
         ForEach-Object FullName)
 foreach ($document in $documents)
 {
