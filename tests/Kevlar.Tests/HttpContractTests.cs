@@ -1129,7 +1129,12 @@ public class HttpContractTests
         var builder = services.AddHttpClient("guards");
 
         await Assert.That(() => HttpShield.Standard(null!)).Throws<ArgumentNullException>();
-        await Assert.That(() => new ShieldDelegatingHandler(null!)).Throws<ArgumentNullException>();
+        await Assert.That(() => new ShieldDelegatingHandler(
+                (Shield<HttpResponseMessage>)null!))
+            .Throws<ArgumentNullException>();
+        await Assert.That(() => new ShieldDelegatingHandler(
+                (Func<HttpRequestMessage, Shield<HttpResponseMessage>>)null!))
+            .Throws<ArgumentNullException>();
         await Assert.That(() => ShieldHttpClientBuilderExtensions.AddShield(nullBuilder!, Shield<HttpResponseMessage>.Empty))
             .Throws<ArgumentNullException>();
         await Assert.That(() => builder.AddShield((Shield<HttpResponseMessage>)null!))
@@ -1139,6 +1144,26 @@ public class HttpContractTests
                 null!))
             .Throws<ArgumentNullException>();
         await Assert.That(() => builder.AddShield((Func<IServiceProvider, Shield<HttpResponseMessage>>)null!))
+            .Throws<ArgumentNullException>();
+        await Assert.That(() => builder.AddShield(
+                (Func<HttpRequestMessage, IServiceProvider, Shield<HttpResponseMessage>>)null!))
+            .Throws<ArgumentNullException>();
+        await Assert.That(() => ShieldHttpClientBuilderExtensions.AddShield(
+                nullBuilder!,
+                static (_, _) => Shield<HttpResponseMessage>.Empty))
+            .Throws<ArgumentNullException>();
+        var partitions = new PartitionedShield<string, HttpResponseMessage>(
+            static _ => Shield<HttpResponseMessage>.Empty);
+        await Assert.That(() => builder.AddShield<string>(null!, static _ => "tenant"))
+            .Throws<ArgumentNullException>();
+        await Assert.That(() => builder.AddShield(partitions, null!))
+            .Throws<ArgumentNullException>();
+        await Assert.That(() => ShieldHttpClientBuilderExtensions.AddShield(
+                nullBuilder!,
+                partitions,
+                static _ => "tenant"))
+            .Throws<ArgumentNullException>();
+        await Assert.That(() => KevlarHttp.GetRequestOptions(null!))
             .Throws<ArgumentNullException>();
         await Assert.That(() => builder.AddShield(
                 static _ => Shield<HttpResponseMessage>.Empty,

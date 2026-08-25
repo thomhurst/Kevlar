@@ -18,4 +18,8 @@
     <PackageReference Include="Microsoft.Extensions.Primitives" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)' != 'netstandard2.0'">
+    <AdditionalFiles Include="PublicAPI.Unshipped.$(TargetFramework).txt" />
+  </ItemGroup>
+
 </Project>

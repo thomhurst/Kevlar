@@ -9,6 +9,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
 {
     private readonly HttpShieldPipeline _pipeline;
     private readonly ReloadingHttpShieldPipeline? _reloadingPipeline;
+    private readonly Func<HttpRequestMessage, Shield<HttpResponseMessage>>? _shieldSelector;
 
     /// <summary>Creates the handler with safe no-buffer replay defaults.</summary>
     public ShieldDelegatingHandler(Shield<HttpResponseMessage> shield)
@@ -22,6 +23,23 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         ShieldHttpHandlerOptions options)
     {
         _pipeline = new HttpShieldPipeline(shield, options);
+    }
+
+    /// <summary>Creates the handler with a shield selected once for each request.</summary>
+    public ShieldDelegatingHandler(
+        Func<HttpRequestMessage, Shield<HttpResponseMessage>> shieldSelector)
+        : this(shieldSelector, new ShieldHttpHandlerOptions())
+    {
+    }
+
+    /// <summary>Creates the handler with per-request shield selection and explicit replay options.</summary>
+    public ShieldDelegatingHandler(
+        Func<HttpRequestMessage, Shield<HttpResponseMessage>> shieldSelector,
+        ShieldHttpHandlerOptions options)
+    {
+        _shieldSelector = shieldSelector
+            ?? throw new ArgumentNullException(nameof(shieldSelector));
+        _pipeline = new HttpShieldPipeline(Shield<HttpResponseMessage>.Empty, options);
     }
 
     private ShieldDelegatingHandler(
@@ -46,20 +64,41 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
 
         cancellationToken.ThrowIfCancellationRequested();
         var pipeline = _reloadingPipeline?.Current ?? _pipeline;
-        var canReplay = await CanReplayAsync(request, pipeline.Options).ConfigureAwait(false);
+        _ = KevlarHttp.TryGetRequestOptions(request, out var requestOptions);
+        var selectedShield = requestOptions?.Shield;
+        if (selectedShield is null && _shieldSelector is not null)
+        {
+            selectedShield = _shieldSelector(request)
+                ?? throw new InvalidOperationException("The HTTP shield selector returned null.");
+            if (requestOptions is null)
+            {
+                _ = KevlarHttp.TryGetRequestOptions(request, out requestOptions);
+            }
+        }
+
+        selectedShield ??= pipeline.Policy;
+        using var linkedCancellation = CreateLinkedCancellation(
+            cancellationToken,
+            requestOptions?.CancellationToken ?? default);
+        var executionCancellationToken = linkedCancellation?.Token ?? cancellationToken;
+        var canReplay = await CanReplayAsync(
+            request,
+            pipeline.Options,
+            requestOptions).ConfigureAwait(false);
         var execution = new RequestExecution(
             this,
             request,
             pipeline,
+            requestOptions,
             canReplay,
-            cancellationToken);
+            executionCancellationToken);
         try
         {
-            var response = await pipeline.Policy.ExecuteWithContextAsync(
+            var response = await selectedShield.ExecuteWithContextAsync(
                 execution,
                 static (state, properties) => state.InitializeProperties(properties),
                 static (state, context) => state.SendAttemptAsync(context.CancellationToken),
-                cancellationToken).ConfigureAwait(false);
+                executionCancellationToken).ConfigureAwait(false);
             execution.Complete(response);
             return response;
         }
@@ -72,14 +111,21 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
 
     private static async ValueTask<bool> CanReplayAsync(
         HttpRequestMessage request,
-        ShieldHttpHandlerOptions options)
+        ShieldHttpHandlerOptions options,
+        KevlarRequestOptions? requestOptions)
     {
+        if (requestOptions?.AllowReplay == false)
+        {
+            return false;
+        }
+
         if (options.RequestFactory is not null)
         {
             return true;
         }
 
         if (!RequestExecution.IsReplaySafeMethod(request.Method)
+            && requestOptions?.AllowReplay != true
             && !options.AllowUnsafeMethodReplay)
         {
             return false;
@@ -93,6 +139,18 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         }
 
         return await HttpRequestTemplate.IsAlreadyBufferedAsync(content).ConfigureAwait(false);
+    }
+
+    private static CancellationTokenSource? CreateLinkedCancellation(
+        CancellationToken handlerToken,
+        CancellationToken requestToken)
+    {
+        if (!requestToken.CanBeCanceled)
+        {
+            return null;
+        }
+
+        return CancellationTokenSource.CreateLinkedTokenSource(handlerToken, requestToken);
     }
 
     private Task<HttpResponseMessage> BaseSendAsync(
@@ -117,6 +175,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         private readonly ShieldDelegatingHandler _handler;
         private readonly HttpShieldPipeline _pipeline;
         private readonly HttpRequestMessage _original;
+        private readonly KevlarRequestOptions? _requestOptions;
         private readonly bool _canReplay;
         private readonly bool _hadInitialContent;
         private readonly CancellationToken _executionCancellationToken;
@@ -137,12 +196,14 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             ShieldDelegatingHandler handler,
             HttpRequestMessage original,
             HttpShieldPipeline pipeline,
+            KevlarRequestOptions? requestOptions,
             bool canReplay,
             CancellationToken executionCancellationToken)
         {
             _handler = handler;
             _pipeline = pipeline;
             _original = original;
+            _requestOptions = requestOptions;
             _canReplay = canReplay;
             _hadInitialContent = original.Content is not null;
             _executionCancellationToken = executionCancellationToken;
@@ -153,6 +214,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
 
         public void InitializeProperties(KevlarProperties properties)
         {
+            _requestOptions?.ConfigureProperties?.Invoke(properties);
             if (!_canReplay)
             {
                 properties.SuppressAdditionalAttempts = true;
