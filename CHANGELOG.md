@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- Circuit-breaker monitors and testing snapshots now report `HalfOpen` as soon as the break
+  duration elapses. Stale execution outcomes cannot alter a newer open/half-open generation, and
+  exceptions that opened a circuit are released when it closes or resets.
+
 ### Changed
 
 - Strategy callback events now expose their position through public

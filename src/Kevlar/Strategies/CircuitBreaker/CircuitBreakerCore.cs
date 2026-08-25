@@ -42,9 +42,9 @@ internal sealed class CircuitBreakerCore
     private double _openUntilTimestamp;
     private int _consecutiveFailures;
     private bool _probeInFlight;
-    private long _probeGeneration;
-    private long _activeProbeGeneration;
+    private long _admissionGeneration;
     private Exception? _lastException;
+    private TimeProvider? _openTimeProvider;
     private long _openingGeneration;
     private bool _openingPending;
     private bool _isPublishing;
@@ -148,8 +148,16 @@ internal sealed class CircuitBreakerCore
         {
             lock (_gate)
             {
-                return _state;
+                return GetReportedState(_openTimeProvider);
             }
+        }
+    }
+
+    internal CircuitState GetState(TimeProvider timeProvider)
+    {
+        lock (_gate)
+        {
+            return GetReportedState(timeProvider);
         }
     }
 
@@ -162,14 +170,14 @@ internal sealed class CircuitBreakerCore
         TimeProvider timeProvider,
         KevlarContext context,
         out CircuitOpenException? rejection,
-        out long admittedProbeGeneration)
+        out long admissionGeneration)
     {
         var allowed = TryEnterCore(
             timeProvider,
             context,
             out rejection,
             out var transition,
-            out admittedProbeGeneration);
+            out admissionGeneration);
 
         try
         {
@@ -179,7 +187,7 @@ internal sealed class CircuitBreakerCore
         {
             if (transition?.StateChange.To == CircuitState.HalfOpen)
             {
-                AbandonProbe(admittedProbeGeneration);
+                AbandonProbe(admissionGeneration);
             }
 
             throw;
@@ -195,7 +203,7 @@ internal sealed class CircuitBreakerCore
             context,
             out var rejection,
             out var transition,
-            out var admittedProbeGeneration);
+            out var admissionGeneration);
         ValueTask publication;
         try
         {
@@ -205,7 +213,7 @@ internal sealed class CircuitBreakerCore
         {
             if (transition?.StateChange.To == CircuitState.HalfOpen)
             {
-                AbandonProbe(admittedProbeGeneration);
+                AbandonProbe(admissionGeneration);
             }
 
             throw;
@@ -214,7 +222,7 @@ internal sealed class CircuitBreakerCore
         if (publication.IsCompletedSuccessfully)
         {
             publication.GetAwaiter().GetResult();
-            return new ValueTask<EntryResult>(new EntryResult(allowed, rejection, admittedProbeGeneration));
+            return new ValueTask<EntryResult>(new EntryResult(allowed, rejection, admissionGeneration));
         }
 
         return AwaitEntryPublicationAsync(
@@ -222,7 +230,7 @@ internal sealed class CircuitBreakerCore
             allowed,
             rejection,
             transition,
-            admittedProbeGeneration);
+            admissionGeneration);
     }
 
     private bool TryEnterCore(
@@ -230,10 +238,10 @@ internal sealed class CircuitBreakerCore
         KevlarContext context,
         out CircuitOpenException? rejection,
         out TransitionPublication? transition,
-        out long admittedProbeGeneration)
+        out long admissionGeneration)
     {
         transition = null;
-        admittedProbeGeneration = 0;
+        admissionGeneration = 0;
         rejection = null;
 
         lock (_gate)
@@ -241,6 +249,7 @@ internal sealed class CircuitBreakerCore
             switch (_state)
             {
                 case CircuitState.Closed:
+                    admissionGeneration = _admissionGeneration;
                     return true;
 
                 case CircuitState.Isolated:
@@ -260,7 +269,7 @@ internal sealed class CircuitBreakerCore
 
                     transition = ChangeState(CircuitState.HalfOpen, context);
                     _probeInFlight = true;
-                    admittedProbeGeneration = _activeProbeGeneration = ++_probeGeneration;
+                    admissionGeneration = _admissionGeneration;
                     return true;
 
                 default: // HalfOpen
@@ -271,7 +280,7 @@ internal sealed class CircuitBreakerCore
                     }
 
                     _probeInFlight = true;
-                    admittedProbeGeneration = _activeProbeGeneration = ++_probeGeneration;
+                    admissionGeneration = _admissionGeneration;
                     return true;
             }
         }
@@ -282,18 +291,18 @@ internal sealed class CircuitBreakerCore
         bool allowed,
         CircuitOpenException? rejection,
         TransitionPublication? transition,
-        long admittedProbeGeneration)
+        long admissionGeneration)
     {
         try
         {
             await publication.ConfigureAwait(false);
-            return new EntryResult(allowed, rejection, admittedProbeGeneration);
+            return new EntryResult(allowed, rejection, admissionGeneration);
         }
         catch
         {
             if (transition?.StateChange.To == CircuitState.HalfOpen)
             {
-                AbandonProbe(admittedProbeGeneration);
+                AbandonProbe(admissionGeneration);
             }
 
             throw;
@@ -303,22 +312,34 @@ internal sealed class CircuitBreakerCore
     public readonly record struct EntryResult(
         bool Allowed,
         CircuitOpenException? Rejection,
-        long AdmittedProbeGeneration);
+        long AdmissionGeneration);
 
-    public void RecordSuccess(TimeProvider timeProvider, KevlarContext context)
+    public void RecordSuccess(
+        TimeProvider timeProvider,
+        KevlarContext context,
+        long admissionGeneration)
     {
-        Publish(RecordSuccessCore(timeProvider, context));
+        Publish(RecordSuccessCore(timeProvider, context, admissionGeneration));
     }
 
-    public ValueTask RecordSuccessAsync(TimeProvider timeProvider, KevlarContext context) =>
-        PublishAsync(RecordSuccessCore(timeProvider, context));
+    public ValueTask RecordSuccessAsync(
+        TimeProvider timeProvider,
+        KevlarContext context,
+        long admissionGeneration) =>
+        PublishAsync(RecordSuccessCore(timeProvider, context, admissionGeneration));
 
     private TransitionPublication? RecordSuccessCore(
         TimeProvider timeProvider,
-        KevlarContext context)
+        KevlarContext context,
+        long admissionGeneration)
     {
         lock (_gate)
         {
+            if (admissionGeneration != _admissionGeneration)
+            {
+                return null;
+            }
+
             if (_state == CircuitState.HalfOpen)
             {
                 _probeInFlight = false;
@@ -343,25 +364,32 @@ internal sealed class CircuitBreakerCore
     public void RecordFailure(
         TimeProvider timeProvider,
         Exception? exception,
-        KevlarContext context)
+        KevlarContext context,
+        long admissionGeneration)
     {
-        Publish(RecordFailureCore(timeProvider, exception, context));
+        Publish(RecordFailureCore(timeProvider, exception, context, admissionGeneration));
     }
 
     public ValueTask RecordFailureAsync<T>(
         TimeProvider timeProvider,
         in Outcome<T> outcome,
-        KevlarContext context)
+        KevlarContext context,
+        long admissionGeneration)
     {
         if (_breakDurationGenerator is null)
         {
-            return PublishAsync(RecordFailureCore(timeProvider, outcome.Exception, context));
+            return PublishAsync(RecordFailureCore(
+                timeProvider,
+                outcome.Exception,
+                context,
+                admissionGeneration));
         }
 
         if (!TryReserveDynamicOpening(
                 timeProvider,
                 outcome.Exception,
                 context,
+                admissionGeneration,
                 out var reservation))
         {
             return default;
@@ -405,15 +433,21 @@ internal sealed class CircuitBreakerCore
     private TransitionPublication? RecordFailureCore(
         TimeProvider timeProvider,
         Exception? exception,
-        KevlarContext context)
+        KevlarContext context,
+        long admissionGeneration)
     {
         lock (_gate)
         {
-            _lastException = exception;
+            if (admissionGeneration != _admissionGeneration)
+            {
+                return null;
+            }
 
             if (_state == CircuitState.HalfOpen)
             {
                 _probeInFlight = false;
+                _lastException = exception;
+                _openTimeProvider = timeProvider;
                 _openUntilTimestamp = GetCurrentTimestamp(timeProvider) + _breakDurationTimestampUnits;
                 return ChangeState(CircuitState.Open, context);
             }
@@ -431,6 +465,8 @@ internal sealed class CircuitBreakerCore
                         timestamp = GetCurrentTimestamp(timeProvider);
                     }
 
+                    _lastException = exception;
+                    _openTimeProvider = timeProvider;
                     _openUntilTimestamp = timestamp + _breakDurationTimestampUnits;
                     return ChangeState(CircuitState.Open, context);
                 }
@@ -444,12 +480,17 @@ internal sealed class CircuitBreakerCore
         TimeProvider timeProvider,
         Exception? exception,
         KevlarContext context,
+        long admissionGeneration,
         out OpeningReservation reservation)
     {
         lock (_gate)
         {
             reservation = default;
-            _lastException = exception;
+            if (admissionGeneration != _admissionGeneration)
+            {
+                return false;
+            }
+
             if (_openingPending)
             {
                 if (_state == CircuitState.Closed)
@@ -492,6 +533,7 @@ internal sealed class CircuitBreakerCore
             _openingPending = true;
             reservation = new OpeningReservation(
                 ++_openingGeneration,
+                admissionGeneration,
                 _state,
                 exception,
                 context,
@@ -529,6 +571,7 @@ internal sealed class CircuitBreakerCore
         {
             if (!_openingPending
                 || _openingGeneration != reservation.Generation
+                || _admissionGeneration != reservation.AdmissionGeneration
                 || _state != reservation.ExpectedState)
             {
                 return null;
@@ -537,6 +580,7 @@ internal sealed class CircuitBreakerCore
             _openingPending = false;
             _probeInFlight = false;
             _lastException = reservation.Exception;
+            _openTimeProvider = timeProvider;
             _openUntilTimestamp = GetCurrentTimestamp(timeProvider)
                 + (duration.TotalSeconds * Stopwatch.Frequency);
             return ChangeState(CircuitState.Open, reservation.Context);
@@ -574,6 +618,7 @@ internal sealed class CircuitBreakerCore
 
     private readonly record struct OpeningReservation(
         long Generation,
+        long AdmissionGeneration,
         CircuitState ExpectedState,
         Exception? Exception,
         KevlarContext Context,
@@ -584,7 +629,7 @@ internal sealed class CircuitBreakerCore
     {
         lock (_gate)
         {
-            if (_state == CircuitState.HalfOpen && _activeProbeGeneration == probeGeneration)
+            if (_state == CircuitState.HalfOpen && _admissionGeneration == probeGeneration)
             {
                 _probeInFlight = false;
             }
@@ -622,8 +667,11 @@ internal sealed class CircuitBreakerCore
         lock (_gate)
         {
             CancelPendingOpening();
+            _admissionGeneration++;
             ResetMetrics();
             _probeInFlight = false;
+            _lastException = null;
+            _openTimeProvider = null;
             return _state == CircuitState.Closed
                 ? null
                 : ChangeState(CircuitState.Closed, KevlarContext.CreateManual());
@@ -729,6 +777,13 @@ internal sealed class CircuitBreakerCore
         return _latestTimestamp;
     }
 
+    private CircuitState GetReportedState(TimeProvider? timeProvider) =>
+        _state == CircuitState.Open
+        && timeProvider is not null
+        && GetCurrentTimestamp(timeProvider) >= _openUntilTimestamp
+            ? CircuitState.HalfOpen
+            : _state;
+
     private static TimeSpan GetElapsedTime(double timestampUnits)
     {
         var ticks = Math.Max(0, timestampUnits) * SecondsPerSystemTimestamp * TimeSpan.TicksPerSecond;
@@ -764,6 +819,15 @@ internal sealed class CircuitBreakerCore
             _lastException,
             context);
         _state = next;
+        if (next is CircuitState.Open or CircuitState.Isolated)
+        {
+            _admissionGeneration++;
+        }
+        else if (next == CircuitState.Closed)
+        {
+            _lastException = null;
+            _openTimeProvider = null;
+        }
         var publication = new TransitionPublication(transition);
         _pendingTransitions.Enqueue(publication);
         if (!_isPublishing)
