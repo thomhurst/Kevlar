@@ -313,7 +313,7 @@ public class ApiShapeTests
     }
 
     [Test]
-    public async Task Reloading_Shield_Null_Callback_Remains_Unambiguous()
+    public async Task Reloading_Shield_Legacy_Callback_Literals_Remain_Unambiguous()
     {
         var compilation = CreateCompilation(
             """
@@ -327,6 +327,8 @@ public class ApiShapeTests
                 {
                     services.AddReloadingShield("untyped", configuration, null);
                     services.AddReloadingShield<int>("typed", configuration, null);
+                    services.AddReloadingShield("untyped-default", configuration, default);
+                    services.AddReloadingShield<int>("typed-default", configuration, default);
 
                     var options = new ReloadingShieldOptions();
                     services.AddReloadingShield("untyped-options", options, configuration);

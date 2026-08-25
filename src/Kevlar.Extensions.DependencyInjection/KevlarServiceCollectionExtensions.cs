@@ -111,20 +111,6 @@ public static class KevlarServiceCollectionExtensions
             onReloadFailure,
             replace: false);
 
-    /// <summary>Registers a named reload-aware shield, optionally replacing any shield with the same name.</summary>
-    public static IServiceCollection AddReloadingShield(
-        this IServiceCollection services,
-        string name,
-        IConfiguration configuration,
-        bool replace) =>
-        AddReloadingShieldCore(
-            services,
-            name,
-            configuration,
-            new ReloadingShieldOptions(),
-            onReloadFailure: null,
-            replace);
-
     /// <summary>Registers a named reload-aware shield with failure reporting and explicit replacement.</summary>
     public static IServiceCollection AddReloadingShield(
         this IServiceCollection services,
@@ -271,20 +257,6 @@ public static class KevlarServiceCollectionExtensions
             new ReloadingShieldOptions(),
             onReloadFailure,
             replace: false);
-
-    /// <summary>Registers a named reload-aware result-aware shield, optionally replacing any shield with the same name.</summary>
-    public static IServiceCollection AddReloadingShield<TResult>(
-        this IServiceCollection services,
-        string name,
-        IConfiguration configuration,
-        bool replace) =>
-        AddReloadingShieldCore<TResult>(
-            services,
-            name,
-            configuration,
-            new ReloadingShieldOptions(),
-            onReloadFailure: null,
-            replace);
 
     /// <summary>Registers a named reload-aware result-aware shield with failure reporting and explicit replacement.</summary>
     public static IServiceCollection AddReloadingShield<TResult>(

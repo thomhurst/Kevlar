@@ -11,11 +11,9 @@ items:
   - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception},System.Boolean)
   - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
   - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception},System.Boolean)
-  - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration,System.Boolean)
   - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Kevlar.Extensions.DependencyInjection.ReloadingShieldOptions,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception},System.Boolean)
   - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
   - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception},System.Boolean)
-  - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration,System.Boolean)
   - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Kevlar.Shield)
   - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Kevlar.Shield,System.Boolean)
   - Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration)
@@ -346,41 +344,6 @@ items:
   nameWithType.vb: KevlarServiceCollectionExtensions.AddReloadingShield(IServiceCollection, String, IConfiguration, Action(Of Exception))
   fullName.vb: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield(Microsoft.Extensions.DependencyInjection.IServiceCollection, String, Microsoft.Extensions.Configuration.IConfiguration, System.Action(Of System.Exception))
   name.vb: AddReloadingShield(IServiceCollection, String, IConfiguration, Action(Of Exception))
-- uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration,System.Boolean)
-  commentId: M:Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration,System.Boolean)
-  id: AddReloadingShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration,System.Boolean)
-  isExtensionMethod: true
-  parent: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions
-  langs:
-  - csharp
-  - vb
-  name: AddReloadingShield(IServiceCollection, string, IConfiguration, bool)
-  nameWithType: KevlarServiceCollectionExtensions.AddReloadingShield(IServiceCollection, string, IConfiguration, bool)
-  fullName: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield(Microsoft.Extensions.DependencyInjection.IServiceCollection, string, Microsoft.Extensions.Configuration.IConfiguration, bool)
-  type: Method
-  assemblies:
-  - Kevlar.Extensions.DependencyInjection
-  namespace: Kevlar.Extensions.DependencyInjection
-  summary: Registers a named reload-aware shield, optionally replacing any shield with the same name.
-  example: []
-  syntax:
-    content: public static IServiceCollection AddReloadingShield(this IServiceCollection services, string name, IConfiguration configuration, bool replace)
-    parameters:
-    - id: services
-      type: Microsoft.Extensions.DependencyInjection.IServiceCollection
-    - id: name
-      type: System.String
-    - id: configuration
-      type: Microsoft.Extensions.Configuration.IConfiguration
-    - id: replace
-      type: System.Boolean
-    return:
-      type: Microsoft.Extensions.DependencyInjection.IServiceCollection
-    content.vb: Public Shared Function AddReloadingShield(services As IServiceCollection, name As String, configuration As IConfiguration, replace As Boolean) As IServiceCollection
-  overload: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield*
-  nameWithType.vb: KevlarServiceCollectionExtensions.AddReloadingShield(IServiceCollection, String, IConfiguration, Boolean)
-  fullName.vb: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield(Microsoft.Extensions.DependencyInjection.IServiceCollection, String, Microsoft.Extensions.Configuration.IConfiguration, Boolean)
-  name.vb: AddReloadingShield(IServiceCollection, String, IConfiguration, Boolean)
 - uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception},System.Boolean)
   commentId: M:Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception},System.Boolean)
   id: AddReloadingShield(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception},System.Boolean)
@@ -730,43 +693,6 @@ items:
   nameWithType.vb: KevlarServiceCollectionExtensions.AddReloadingShield(Of TResult)(IServiceCollection, String, IConfiguration, Action(Of Exception))
   fullName.vb: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield(Of TResult)(Microsoft.Extensions.DependencyInjection.IServiceCollection, String, Microsoft.Extensions.Configuration.IConfiguration, System.Action(Of System.Exception))
   name.vb: AddReloadingShield(Of TResult)(IServiceCollection, String, IConfiguration, Action(Of Exception))
-- uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration,System.Boolean)
-  commentId: M:Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration,System.Boolean)
-  id: AddReloadingShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration,System.Boolean)
-  isExtensionMethod: true
-  parent: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions
-  langs:
-  - csharp
-  - vb
-  name: AddReloadingShield<TResult>(IServiceCollection, string, IConfiguration, bool)
-  nameWithType: KevlarServiceCollectionExtensions.AddReloadingShield<TResult>(IServiceCollection, string, IConfiguration, bool)
-  fullName: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield<TResult>(Microsoft.Extensions.DependencyInjection.IServiceCollection, string, Microsoft.Extensions.Configuration.IConfiguration, bool)
-  type: Method
-  assemblies:
-  - Kevlar.Extensions.DependencyInjection
-  namespace: Kevlar.Extensions.DependencyInjection
-  summary: Registers a named reload-aware result-aware shield, optionally replacing any shield with the same name.
-  example: []
-  syntax:
-    content: public static IServiceCollection AddReloadingShield<TResult>(this IServiceCollection services, string name, IConfiguration configuration, bool replace)
-    parameters:
-    - id: services
-      type: Microsoft.Extensions.DependencyInjection.IServiceCollection
-    - id: name
-      type: System.String
-    - id: configuration
-      type: Microsoft.Extensions.Configuration.IConfiguration
-    - id: replace
-      type: System.Boolean
-    typeParameters:
-    - id: TResult
-    return:
-      type: Microsoft.Extensions.DependencyInjection.IServiceCollection
-    content.vb: Public Shared Function AddReloadingShield(Of TResult)(services As IServiceCollection, name As String, configuration As IConfiguration, replace As Boolean) As IServiceCollection
-  overload: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield*
-  nameWithType.vb: KevlarServiceCollectionExtensions.AddReloadingShield(Of TResult)(IServiceCollection, String, IConfiguration, Boolean)
-  fullName.vb: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield(Of TResult)(Microsoft.Extensions.DependencyInjection.IServiceCollection, String, Microsoft.Extensions.Configuration.IConfiguration, Boolean)
-  name.vb: AddReloadingShield(Of TResult)(IServiceCollection, String, IConfiguration, Boolean)
 - uid: Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception},System.Boolean)
   commentId: M:Kevlar.Extensions.DependencyInjection.KevlarServiceCollectionExtensions.AddReloadingShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception},System.Boolean)
   id: AddReloadingShield``1(Microsoft.Extensions.DependencyInjection.IServiceCollection,System.String,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception},System.Boolean)
