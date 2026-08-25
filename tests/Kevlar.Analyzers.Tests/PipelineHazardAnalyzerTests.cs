@@ -1647,16 +1647,26 @@ public class PipelineHazardAnalyzerTests
     [Test]
     public async Task KEV014_Ignores_Provably_Empty_Deferred_State()
     {
-        var diagnostics = await AnalyzeBodyAsync("""
-            _ = Shield.Retry(options => options.OnRetry = item =>
-            {
-                ThreadPool.QueueUserWorkItem(
-                    static _ => { },
-                    new RetryEvent[0]);
-            });
-            """);
+        var states = new[]
+        {
+            "new RetryEvent[0]",
+            "Array.Empty<RetryEvent>()",
+            "new System.Collections.Generic.List<RetryEvent>()",
+            "default(RetryEvent)",
+        };
+        foreach (var state in states)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                {
+                    ThreadPool.QueueUserWorkItem(
+                        static _ => { },
+                        {{state}});
+                });
+                """);
 
-        await Assert.That(diagnostics).IsEmpty();
+            await Assert.That(diagnostics).IsEmpty();
+        }
     }
 
     [Test]

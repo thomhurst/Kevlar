@@ -1811,6 +1811,13 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         out SyntaxNode capturedContext)
     {
         operation = Unwrap(operation)!;
+        if (operation is IDefaultValueOperation
+            || operation.ConstantValue is { HasValue: true, Value: null })
+        {
+            capturedContext = null!;
+            return false;
+        }
+
         if (operation is IConditionalOperation conditional
             && (TryFindDeferredStateContext(
                     conditional.WhenTrue,
@@ -2055,7 +2062,17 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             or IObjectCreationOperation
             or IWithOperation
             or IAnonymousObjectCreationOperation
-        || operation.Syntax is CollectionExpressionSyntax or SpreadElementSyntax;
+        || operation.Syntax is CollectionExpressionSyntax or SpreadElementSyntax
+        || operation is IInvocationOperation
+        {
+            TargetMethod:
+            {
+                Name: "Empty",
+                Parameters.Length: 0,
+                ContainingType: { } containingType,
+            },
+        }
+            && containingType.ToDisplayString() is "System.Array" or "System.Linq.Enumerable";
 
     private static bool ContainsEventContextReference(ITypeSymbol? type, KnownTypes knownTypes) =>
         knownTypes.IsEventContextReference(type)
