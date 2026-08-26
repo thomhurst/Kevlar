@@ -1487,9 +1487,18 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         List<SyntaxNode>? kills,
         ControlFlowGraph? controlFlowGraph)
     {
-        if (kills is null || kills.Count == 0 || controlFlowGraph is null)
+        if (kills is null || kills.Count == 0)
         {
-            return CanReach(source, target, controlFlowGraph);
+            return CanReach(
+                source,
+                target,
+                controlFlowGraph,
+                requireTraversal: source.SpanStart >= target.SpanStart);
+        }
+
+        if (controlFlowGraph is null)
+        {
+            return source.SpanStart < target.SpanStart;
         }
 
         var sourceSyntax = source is VariableDeclaratorSyntax
@@ -1507,7 +1516,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         foreach (var sourceBlock in sourceBlocks)
         {
-            if (targetBlocks.Contains(sourceBlock)
+            if (source.SpanStart < target.SpanStart
+                && targetBlocks.Contains(sourceBlock)
                 && !ContainsKill(sourceBlock, kills, source.SpanStart, target.SpanStart))
             {
                 return true;
@@ -3489,25 +3499,32 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 node is not AnonymousFunctionExpressionSyntax
                     and not LocalFunctionStatementSyntax)
             .Where(candidate => (candidate is InvocationExpressionSyntax
-                    or AssignmentExpressionSyntax)
-                && candidate.SpanStart < localReference.Syntax.SpanStart
-                && CanReach(
-                    candidate,
-                    localReference.Syntax,
-                    controlFlowGraph))
+                    or AssignmentExpressionSyntax))
             .ToArray();
+        var origins = new List<(SyntaxNode Node, SyntaxNode Context, string? Slot)>();
+        var kills = new List<(SyntaxNode Node, string? Slot, bool ClearsAll)>();
 
         foreach (var invocationSyntax in mutations.OfType<InvocationExpressionSyntax>())
         {
             if (semanticModel.GetOperation(
                     invocationSyntax,
                     context.CancellationToken) is not IInvocationOperation invocation
-                || !IsKnownRetainingMutation(invocation.TargetMethod)
                 || !IsRootedInLocal(
                     GetReceiver(invocation),
                     localReference.Local,
                     context,
                     visitedLocals: null))
+            {
+                continue;
+            }
+
+            if (IsKnownClearingMutation(invocation.TargetMethod))
+            {
+                kills.Add((invocation.Syntax, null, ClearsAll: true));
+                continue;
+            }
+
+            if (!IsKnownRetainingMutation(invocation.TargetMethod))
             {
                 continue;
             }
@@ -3521,7 +3538,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     visitedLocals,
                     out capturedContext))
                 {
-                    return true;
+                    origins.Add((invocation.Syntax, capturedContext, Slot: null));
                 }
             }
         }
@@ -3535,14 +3552,40 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     assignment.Target,
                     localReference.Local,
                     context,
-                    visitedLocals: null)
-                && TryFindDeferredStateContext(
+                    visitedLocals: null))
+            {
+                var slot = GetDeferredMutationSlot(assignment.Target);
+                if (TryFindDeferredStateContext(
                     assignment.Value,
                     context,
                     knownTypes,
                     visitedLocals,
                     out capturedContext))
+                {
+                    origins.Add((assignment.Syntax, capturedContext, slot));
+                }
+                else
+                {
+                    kills.Add((assignment.Syntax, slot, ClearsAll: false));
+                }
+            }
+        }
+
+        foreach (var origin in origins)
+        {
+            var relevantKills = kills
+                .Where(kill => kill.ClearsAll
+                    || origin.Slot is not null
+                        && (kill.Slot is null || kill.Slot == origin.Slot))
+                .Select(static kill => kill.Node)
+                .ToList();
+            if (CanReachWithoutKills(
+                origin.Node,
+                localReference.Syntax,
+                relevantKills,
+                controlFlowGraph))
             {
+                capturedContext = origin.Context;
                 return true;
             }
         }
@@ -3550,6 +3593,34 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         capturedContext = null!;
         return false;
     }
+
+    private static bool IsKnownClearingMutation(IMethodSymbol method) =>
+        method.Name == "Clear"
+        && method.Parameters.Length == 0
+        && RetainingCollectionNamespaces.Contains(
+            method.ContainingNamespace.ToDisplayString());
+
+    private static string? GetDeferredMutationSlot(IOperation target)
+    {
+        target = Unwrap(target)!;
+        return target switch
+        {
+            IFieldReferenceOperation field => $"field:{field.Field.ToDisplayString()}",
+            IPropertyReferenceOperation property =>
+                $"property:{property.Property.ToDisplayString()}:" +
+                GetArgumentKey(property.Arguments.Select(static argument => argument.Value)),
+            IArrayElementReferenceOperation array => $"array:{GetArgumentKey(array.Indices)}",
+            _ => null,
+        };
+    }
+
+    private static string GetArgumentKey(IEnumerable<IOperation> arguments) =>
+        string.Join(",", arguments.Select(GetConstantKey));
+
+    private static string GetConstantKey(IOperation operation) =>
+        operation.ConstantValue is { HasValue: true } constant
+            ? constant.Value?.ToString() ?? "null"
+            : "?";
 
     private static bool IsRootedInLocal(
         IOperation? operation,

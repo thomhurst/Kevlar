@@ -4073,6 +4073,50 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Tracks_Deferred_Mutations_Through_Loop_BackEdges()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.List<RetryEvent>();
+                while (Environment.TickCount >= 0)
+                {
+                    ThreadPool.QueueUserWorkItem(
+                        static (System.Collections.Generic.List<RetryEvent> state) =>
+                            Console.WriteLine(state.Count),
+                        events,
+                        preferLocal: false);
+                    events.Add(item);
+                }
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Deferred_State_Cleared_Before_Scheduling()
+    {
+        var statements = new[]
+        {
+            "var events = new System.Collections.Generic.List<RetryEvent>(); events.Add(item); events.Clear();",
+            "var events = new RetryEvent[1]; events[0] = item; events[0] = default;",
+        };
+        foreach (var statement in statements)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                {
+                    {{statement}}
+                    ThreadPool.QueueUserWorkItem(static state => { }, events);
+                });
+                """);
+
+            await Assert.That(diagnostics).IsEmpty();
+        }
+    }
+
+    [Test]
     public async Task KEV014_Ignores_Deferred_State_Mutations_On_Exiting_Paths()
     {
         var diagnostics = await AnalyzeBodyAsync("""
