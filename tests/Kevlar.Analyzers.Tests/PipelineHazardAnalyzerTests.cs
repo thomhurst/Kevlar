@@ -94,6 +94,23 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Ignores_Unrelated_Member_Names_In_Local_Functions()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            var holder = (item: 42, other: 0);
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                await Task.Yield();
+                Read();
+
+                void Read() => Console.WriteLine(holder.item);
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV013");
+    }
+
+    [Test]
     public async Task KEV014_Inspects_Async_Anonymous_Function_Syntaxes()
     {
         var callbacks = new[]
@@ -227,6 +244,30 @@ public class PipelineHazardAnalyzerTests
                 }
 
                 _ = item.Context.ShieldName;
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV013");
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Aliases_On_Paths_That_Exit_Before_Await()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                KevlarContext? retained = null;
+                if (Environment.TickCount == 0)
+                {
+                    retained = item.Context;
+                    return;
+                }
+
+                await Task.Yield();
+                if (retained is not null)
+                {
+                    Console.WriteLine(retained.ShieldName);
+                }
             });
             """);
 
@@ -1469,6 +1510,31 @@ public class PipelineHazardAnalyzerTests
             Without(diagnostics, "KEV013"),
             "KEV014",
             DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Unrelated_Event_Members_In_Async_Instance_Methods()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _unrelated;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _ = AuditAsync();
+                    });
+
+                private async Task AuditAsync()
+                {
+                    await Task.Yield();
+                    Console.WriteLine(_unrelated.RetryNumber);
+                }
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV013");
     }
 
     [Test]
