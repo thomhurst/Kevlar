@@ -134,17 +134,20 @@ internal sealed class AsyncCallbackCodeFixProvider : CodeFixProvider
 
                 foreach (var argument in invocation.ArgumentList.Arguments)
                 {
-                    if (!TryGetStableDelegateExpressionBody(
-                            argument.Expression,
-                            pending.SemanticModel,
-                            cancellationToken,
-                            visitedDelegateLocals,
-                            out var argumentBody))
+                    foreach (var expression in GetDelegateValueParts(argument.Expression))
                     {
-                        continue;
-                    }
+                        if (!TryGetStableDelegateExpressionBody(
+                                expression,
+                                pending.SemanticModel,
+                                cancellationToken,
+                                visitedDelegateLocals,
+                                out var argumentBody))
+                        {
+                            continue;
+                        }
 
-                    pendingBodies.Push((argumentBody, pending.SemanticModel));
+                        pendingBodies.Push((argumentBody, pending.SemanticModel));
+                    }
                 }
 
                 if (pending.SemanticModel.GetSymbolInfo(invocation, cancellationToken).Symbol
@@ -247,6 +250,52 @@ internal sealed class AsyncCallbackCodeFixProvider : CodeFixProvider
 
         body = anonymous.Body;
         return true;
+    }
+
+    private static IEnumerable<ExpressionSyntax> GetDelegateValueParts(
+        ExpressionSyntax expression)
+    {
+        expression = UnwrapReceiver(expression);
+        switch (expression)
+        {
+            case ConditionalExpressionSyntax conditional:
+                foreach (var part in GetDelegateValueParts(conditional.WhenTrue))
+                {
+                    yield return part;
+                }
+
+                foreach (var part in GetDelegateValueParts(conditional.WhenFalse))
+                {
+                    yield return part;
+                }
+
+                break;
+            case BinaryExpressionSyntax binary when binary.IsKind(SyntaxKind.CoalesceExpression):
+                foreach (var part in GetDelegateValueParts(binary.Left))
+                {
+                    yield return part;
+                }
+
+                foreach (var part in GetDelegateValueParts(binary.Right))
+                {
+                    yield return part;
+                }
+
+                break;
+            case SwitchExpressionSyntax switchExpression:
+                foreach (var arm in switchExpression.Arms)
+                {
+                    foreach (var part in GetDelegateValueParts(arm.Expression))
+                    {
+                        yield return part;
+                    }
+                }
+
+                break;
+            default:
+                yield return expression;
+                break;
+        }
     }
 
     private static SyntaxNode? GetSourceMethodBody(SyntaxNode declaration) => declaration switch

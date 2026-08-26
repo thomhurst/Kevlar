@@ -3309,7 +3309,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     ? null
                     : semanticModel.GetOperation(body, cancellationToken);
                 if (bodyOperation is not null
-                    && DescendantOperations(bodyOperation)
+                    && ExecutableDescendantOperations(bodyOperation)
                         .OfType<ISimpleAssignmentOperation>()
                         .Any(assignment =>
                             IsConstructorInstanceMember(assignment.Target)
@@ -3328,7 +3328,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 }
 
                 if (bodyOperation is not null
-                    && DescendantOperations(bodyOperation)
+                    && ExecutableDescendantOperations(bodyOperation)
                         .OfType<IInvocationOperation>()
                         .Any(invocation => IsRetainingInstanceInvocation(
                             invocation,
@@ -3351,8 +3351,16 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                                 Parameter: { } delegatedParameter,
                                 Value: { } value,
                             }
-                            && Unwrap(value) is IParameterReferenceOperation reference
-                            && SymbolEqualityComparer.Default.Equals(reference.Parameter, parameter)
+                            && RetainedValueOperations(
+                                    value,
+                                    semanticModel,
+                                    cancellationToken,
+                                    visitedMethods)
+                                .Any(candidate =>
+                                    Unwrap(candidate) is IParameterReferenceOperation reference
+                                    && SymbolEqualityComparer.Default.Equals(
+                                        reference.Parameter,
+                                        parameter))
                             && IsInstanceParameterStored(
                                 delegatedConstructor,
                                 delegatedParameter,
@@ -3381,7 +3389,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         CancellationToken cancellationToken,
         HashSet<ISymbol> visitedMethods)
     {
-        if (!IsRootedInCurrentInstance(invocation.Instance))
+        var isRootedInstance = IsRootedInCurrentInstance(invocation.Instance);
+        if (!isRootedInstance
+            && invocation.TargetMethod.MethodKind is not MethodKind.LocalFunction)
         {
             return false;
         }
@@ -3400,15 +3410,15 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            if (IsKnownRetainingMutation(invocation.TargetMethod)
-                || argument.Parameter is { } invokedParameter
-                && invocation.TargetMethod.DeclaringSyntaxReferences.Length > 0
-                && IsInstanceParameterStored(
-                    invocation.TargetMethod,
-                    invokedParameter,
-                    semanticModel,
-                    cancellationToken,
-                    visitedMethods))
+            if ((isRootedInstance && IsKnownRetainingMutation(invocation.TargetMethod))
+                || (argument.Parameter is { } invokedParameter
+                    && invocation.TargetMethod.DeclaringSyntaxReferences.Length > 0
+                    && IsInstanceParameterStored(
+                        invocation.TargetMethod,
+                        invokedParameter,
+                        semanticModel,
+                        cancellationToken,
+                        visitedMethods)))
             {
                 return true;
             }
@@ -3421,6 +3431,24 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         method.Name is "Add" or "Enqueue" or "Push" or "Insert" or "TryAdd"
         && method.ContainingNamespace.ToDisplayString() is
             "System.Collections.Generic" or "System.Collections.Concurrent";
+
+    private static IEnumerable<IOperation> ExecutableDescendantOperations(IOperation root)
+    {
+        var stack = new Stack<IOperation>();
+        stack.Push(root);
+        while (stack.Count > 0)
+        {
+            var current = stack.Pop();
+            yield return current;
+            foreach (var child in current.ChildOperations)
+            {
+                if (child is not IAnonymousFunctionOperation and not ILocalFunctionOperation)
+                {
+                    stack.Push(child);
+                }
+            }
+        }
+    }
 
     private static bool IsConstructorInstanceMember(IOperation operation)
     {
