@@ -5,7 +5,6 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Operations;
 
 namespace Kevlar.Analyzers;
 
@@ -133,6 +132,21 @@ internal sealed class AsyncCallbackCodeFixProvider : CodeFixProvider
                     pendingBodies.Push((delegateBody, pending.SemanticModel));
                 }
 
+                foreach (var argument in invocation.ArgumentList.Arguments)
+                {
+                    if (!TryGetStableDelegateExpressionBody(
+                            argument.Expression,
+                            pending.SemanticModel,
+                            cancellationToken,
+                            visitedDelegateLocals,
+                            out var argumentBody))
+                    {
+                        continue;
+                    }
+
+                    pendingBodies.Push((argumentBody, pending.SemanticModel));
+                }
+
                 if (pending.SemanticModel.GetSymbolInfo(invocation, cancellationToken).Symbol
                         is not IMethodSymbol
                         {
@@ -156,26 +170,6 @@ internal sealed class AsyncCallbackCodeFixProvider : CodeFixProvider
                         ? pending.SemanticModel
                         : pending.SemanticModel.Compilation.GetSemanticModel(declaration.SyntaxTree);
 #pragma warning restore RS1030
-                    foreach (var argument in invocation.ArgumentList.Arguments)
-                    {
-                        if (pending.SemanticModel.GetOperation(argument, cancellationToken)
-                                is not IArgumentOperation
-                                {
-                                    Parameter.Type.TypeKind: TypeKind.Delegate,
-                                }
-                            || !TryGetStableDelegateExpressionBody(
-                                argument.Expression,
-                                pending.SemanticModel,
-                                cancellationToken,
-                                visitedDelegateLocals,
-                                out var argumentBody))
-                        {
-                            continue;
-                        }
-
-                        pendingBodies.Push((argumentBody, pending.SemanticModel));
-                    }
-
                     if (inspectMethodBody)
                     {
                         pendingBodies.Push((methodBody, methodSemanticModel));

@@ -1327,7 +1327,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         foreach (var argument in objectCreation.Arguments)
         {
             if (argument.Parameter is { } parameter
-                && IsConstructorParameterStored(
+                && IsInstanceParameterStored(
                     objectCreation.Constructor,
                     parameter,
                     semanticModel,
@@ -2123,7 +2123,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         IOperation root,
         SemanticModel semanticModel,
         CancellationToken cancellationToken,
-        HashSet<ISymbol>? visitedConstructors = null)
+        HashSet<ISymbol>? visitedMethods = null)
     {
         var stack = new Stack<IOperation>();
         var visitedLocals = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
@@ -2171,7 +2171,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                          current,
                          semanticModel,
                          cancellationToken,
-                         visitedConstructors))
+                         visitedMethods))
             {
                 stack.Push(child);
             }
@@ -2194,7 +2194,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         IOperation operation,
         SemanticModel? semanticModel = null,
         CancellationToken cancellationToken = default,
-        HashSet<ISymbol>? visitedConstructors = null)
+        HashSet<ISymbol>? visitedMethods = null)
     {
         switch (operation)
         {
@@ -2238,12 +2238,12 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                         || argument.Parameter is not { } parameter
                         || semanticModel is null
                         || constructor.DeclaringSyntaxReferences.Length == 0
-                        || IsConstructorParameterStored(
+                        || IsInstanceParameterStored(
                             constructor,
                             parameter,
                             semanticModel,
                             cancellationToken,
-                            visitedConstructors))
+                            visitedMethods))
                     {
                         yield return argument.Value;
                     }
@@ -3156,7 +3156,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             foreach (var argument in objectCreation.Arguments)
             {
                 if (argument.Parameter is { } parameter
-                    && IsConstructorParameterStored(
+                    && IsInstanceParameterStored(
                         objectCreation.Constructor,
                         parameter,
                         context.Operation.SemanticModel,
@@ -3268,31 +3268,31 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static bool IsConstructorParameterStored(
-        IMethodSymbol? constructor,
+    private static bool IsInstanceParameterStored(
+        IMethodSymbol? method,
         IParameterSymbol parameter,
         SemanticModel? currentSemanticModel,
         CancellationToken cancellationToken,
-        HashSet<ISymbol>? visitedConstructors = null)
+        HashSet<ISymbol>? visitedMethods = null)
     {
-        if (constructor is null || currentSemanticModel is null)
+        if (method is null || currentSemanticModel is null)
         {
             return false;
         }
 
-        visitedConstructors ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
-        if (!visitedConstructors.Add(constructor))
+        visitedMethods ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+        if (!visitedMethods.Add(method))
         {
             return false;
         }
 
         try
         {
-            foreach (var syntaxReference in constructor.DeclaringSyntaxReferences)
+            foreach (var syntaxReference in method.DeclaringSyntaxReferences)
             {
                 var syntax = syntaxReference.GetSyntax(cancellationToken);
                 if (syntax is RecordDeclarationSyntax
-                    && constructor.ContainingType.GetMembers(parameter.Name)
+                    && method.ContainingType.GetMembers(parameter.Name)
                         .OfType<IPropertySymbol>()
                         .Any())
                 {
@@ -3317,12 +3317,25 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                                     assignment.Value,
                                     semanticModel,
                                     cancellationToken,
-                                    visitedConstructors)
+                                    visitedMethods)
                                 .Any(candidate =>
                                     Unwrap(candidate) is IParameterReferenceOperation reference
                                     && SymbolEqualityComparer.Default.Equals(
                                         reference.Parameter,
                                         parameter))))
+                {
+                    return true;
+                }
+
+                if (bodyOperation is not null
+                    && DescendantOperations(bodyOperation)
+                        .OfType<IInvocationOperation>()
+                        .Any(invocation => IsRetainingInstanceInvocation(
+                            invocation,
+                            parameter,
+                            semanticModel,
+                            cancellationToken,
+                            visitedMethods)))
                 {
                     return true;
                 }
@@ -3340,12 +3353,12 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                             }
                             && Unwrap(value) is IParameterReferenceOperation reference
                             && SymbolEqualityComparer.Default.Equals(reference.Parameter, parameter)
-                            && IsConstructorParameterStored(
+                            && IsInstanceParameterStored(
                                 delegatedConstructor,
                                 delegatedParameter,
                                 semanticModel,
                                 cancellationToken,
-                                visitedConstructors))
+                                visitedMethods))
                         {
                             return true;
                         }
@@ -3357,9 +3370,57 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         }
         finally
         {
-            visitedConstructors.Remove(constructor);
+            visitedMethods.Remove(method);
         }
     }
+
+    private static bool IsRetainingInstanceInvocation(
+        IInvocationOperation invocation,
+        IParameterSymbol parameter,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken,
+        HashSet<ISymbol> visitedMethods)
+    {
+        if (!IsRootedInCurrentInstance(invocation.Instance))
+        {
+            return false;
+        }
+
+        foreach (var argument in invocation.Arguments)
+        {
+            if (!RetainedValueOperations(
+                    argument.Value,
+                    semanticModel,
+                    cancellationToken,
+                    visitedMethods)
+                .Any(candidate =>
+                    Unwrap(candidate) is IParameterReferenceOperation reference
+                    && SymbolEqualityComparer.Default.Equals(reference.Parameter, parameter)))
+            {
+                continue;
+            }
+
+            if (IsKnownRetainingMutation(invocation.TargetMethod)
+                || argument.Parameter is { } invokedParameter
+                && invocation.TargetMethod.DeclaringSyntaxReferences.Length > 0
+                && IsInstanceParameterStored(
+                    invocation.TargetMethod,
+                    invokedParameter,
+                    semanticModel,
+                    cancellationToken,
+                    visitedMethods))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool IsKnownRetainingMutation(IMethodSymbol method) =>
+        method.Name is "Add" or "Enqueue" or "Push" or "Insert" or "TryAdd"
+        && method.ContainingNamespace.ToDisplayString() is
+            "System.Collections.Generic" or "System.Collections.Concurrent";
 
     private static bool IsConstructorInstanceMember(IOperation operation)
     {
