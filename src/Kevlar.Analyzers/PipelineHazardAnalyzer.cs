@@ -3273,7 +3273,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         IParameterSymbol parameter,
         SemanticModel? currentSemanticModel,
         CancellationToken cancellationToken,
-        HashSet<ISymbol>? visitedMethods = null)
+        HashSet<ISymbol>? visitedMethods = null,
+        HashSet<ISymbol>? rootedParameters = null)
     {
         if (method is null || currentSemanticModel is null)
         {
@@ -3312,7 +3313,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     && ExecutableDescendantOperations(bodyOperation)
                         .OfType<ISimpleAssignmentOperation>()
                         .Any(assignment =>
-                            IsConstructorInstanceMember(assignment.Target)
+                            IsConstructorInstanceMember(assignment.Target, rootedParameters)
                             && RetainedValueOperations(
                                     assignment.Value,
                                     semanticModel,
@@ -3335,7 +3336,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                             parameter,
                             semanticModel,
                             cancellationToken,
-                            visitedMethods)))
+                            visitedMethods,
+                            rootedParameters)))
                 {
                     return true;
                 }
@@ -3366,7 +3368,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                                 delegatedParameter,
                                 semanticModel,
                                 cancellationToken,
-                                visitedMethods))
+                                visitedMethods,
+                                rootedParameters))
                         {
                             return true;
                         }
@@ -3387,11 +3390,26 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         IParameterSymbol parameter,
         SemanticModel semanticModel,
         CancellationToken cancellationToken,
-        HashSet<ISymbol> visitedMethods)
+        HashSet<ISymbol> visitedMethods,
+        HashSet<ISymbol>? rootedParameters)
     {
-        var isRootedInstance = IsRootedInCurrentInstance(invocation.Instance);
+        var isRootedInstance = IsRootedInCurrentInstance(
+            invocation.Instance,
+            rootedParameters);
+        var invokedRootedParameters = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+        foreach (var argument in invocation.Arguments)
+        {
+            if (argument.Parameter is { } invokedParameter
+                && IsRootedInCurrentInstance(argument.Value, rootedParameters))
+            {
+                invokedRootedParameters.Add(invokedParameter);
+            }
+        }
+
+        var sourceBacked = invocation.TargetMethod.DeclaringSyntaxReferences.Length > 0;
         if (!isRootedInstance
-            && invocation.TargetMethod.MethodKind is not MethodKind.LocalFunction)
+            && invocation.TargetMethod.MethodKind is not MethodKind.LocalFunction
+            && (!sourceBacked || invokedRootedParameters.Count == 0))
         {
             return false;
         }
@@ -3412,13 +3430,14 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
             if ((isRootedInstance && IsKnownRetainingMutation(invocation.TargetMethod))
                 || (argument.Parameter is { } invokedParameter
-                    && invocation.TargetMethod.DeclaringSyntaxReferences.Length > 0
+                    && sourceBacked
                     && IsInstanceParameterStored(
                         invocation.TargetMethod,
                         invokedParameter,
                         semanticModel,
                         cancellationToken,
-                        visitedMethods)))
+                        visitedMethods,
+                        invokedRootedParameters)))
             {
                 return true;
             }
@@ -3450,7 +3469,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static bool IsConstructorInstanceMember(IOperation operation)
+    private static bool IsConstructorInstanceMember(
+        IOperation operation,
+        HashSet<ISymbol>? rootedParameters = null)
     {
         var instance = operation switch
         {
@@ -3459,17 +3480,21 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             _ => null,
         };
 
-        return IsRootedInCurrentInstance(instance);
+        return IsRootedInCurrentInstance(instance, rootedParameters);
     }
 
-    private static bool IsRootedInCurrentInstance(IOperation? operation) =>
+    private static bool IsRootedInCurrentInstance(
+        IOperation? operation,
+        HashSet<ISymbol>? rootedParameters = null) =>
         Unwrap(operation) switch
         {
             IInstanceReferenceOperation => true,
+            IParameterReferenceOperation parameter =>
+                rootedParameters?.Contains(parameter.Parameter) is true,
             IFieldReferenceOperation { Field.IsStatic: false } field =>
-                IsRootedInCurrentInstance(field.Instance),
+                IsRootedInCurrentInstance(field.Instance, rootedParameters),
             IPropertyReferenceOperation { Property.IsStatic: false } property =>
-                IsRootedInCurrentInstance(property.Instance),
+                IsRootedInCurrentInstance(property.Instance, rootedParameters),
             _ => false,
         };
 

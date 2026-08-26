@@ -292,6 +292,16 @@ internal sealed class AsyncCallbackCodeFixProvider : CodeFixProvider
                 }
 
                 break;
+            case BaseObjectCreationExpressionSyntax { ArgumentList: { } argumentList }:
+                foreach (var argument in argumentList.Arguments)
+                {
+                    foreach (var part in GetDelegateValueParts(argument.Expression))
+                    {
+                        yield return part;
+                    }
+                }
+
+                break;
             default:
                 yield return expression;
                 break;
