@@ -8,6 +8,9 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- The `Kevlar` package now includes its Roslyn analyzers and code fixes automatically. `KEV013`
+  detects asynchronous work assigned to synchronous strategy callbacks, and `KEV014` detects
+  pooled event contexts captured by deferred work.
 - `Kevlar.Extensions.Logging` emits stable, structured `ILogger` events for retry, timeout,
   circuit-state, hedge, fallback, rejection, and callback-error activity. `WithLogging` decorates
   individual shields, while `AddKevlarLogging` applies to named, reloading, partitioned, and HTTP

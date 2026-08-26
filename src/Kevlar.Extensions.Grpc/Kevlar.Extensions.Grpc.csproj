@@ -11,7 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Kevlar\Kevlar.csproj" />
+    <ProjectReference Include="..\Kevlar\Kevlar.csproj" PrivateAssets="Build" />
     <ProjectReference Include="..\Kevlar.Extensions.DependencyInjection\Kevlar.Extensions.DependencyInjection.csproj" />
     <PackageReference Include="Grpc.Core.Api" />
     <PackageReference Include="Grpc.Net.ClientFactory" />

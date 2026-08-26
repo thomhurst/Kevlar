@@ -126,18 +126,28 @@ else {
     $owner, $name = $nwo.Trim() -split '/', 2
 }
 
-$query = 'query($owner:String!,$repo:String!,$pr:Int!){repository(owner:$owner,name:$repo){pullRequest(number:$pr){reviewThreads(first:100){pageInfo{hasNextPage} nodes{isResolved}}}}}'
-$threadsRaw = gh api graphql -f query=$query -F owner=$owner -F repo=$name -F pr=$Pr 2>$null
-if ($LASTEXITCODE -ne 0) { Deny "could not fetch review threads (exit $LASTEXITCODE)" }
-try {
-    $reviewThreads = ($threadsRaw | ConvertFrom-Json).data.repository.pullRequest.reviewThreads
-}
-catch {
-    Deny "could not parse review threads: $($_.Exception.Message)"
-}
-# More than one page means we cannot see every thread; deny rather than pass blind.
-if ($reviewThreads.pageInfo.hasNextPage) { Deny "more than 100 review threads -- too many to inspect safely" }
-$unresolved = @($reviewThreads.nodes | Where-Object { -not $_.isResolved }).Count
+$query = 'query($owner:String!,$repo:String!,$pr:Int!,$after:String){repository(owner:$owner,name:$repo){pullRequest(number:$pr){reviewThreads(first:100,after:$after){pageInfo{hasNextPage endCursor} nodes{isResolved}}}}}'
+$after = $null
+$unresolved = 0
+do {
+    $cursorArgs = if ($after) { @('-f', "after=$after") } else { @() }
+    $threadsRaw = gh api graphql -f query=$query -F owner=$owner -F repo=$name -F pr=$Pr @cursorArgs 2>$null
+    if ($LASTEXITCODE -ne 0) { Deny "could not fetch review threads (exit $LASTEXITCODE)" }
+    try {
+        $reviewThreads = ($threadsRaw | ConvertFrom-Json).data.repository.pullRequest.reviewThreads
+    }
+    catch {
+        Deny "could not parse review threads: $($_.Exception.Message)"
+    }
+    if ($null -eq $reviewThreads) { Deny "review-thread response was empty" }
+
+    $unresolved += @($reviewThreads.nodes | Where-Object { -not $_.isResolved }).Count
+    $after = $reviewThreads.pageInfo.endCursor
+    if ($reviewThreads.pageInfo.hasNextPage -and -not $after) {
+        Deny "review-thread response omitted the next-page cursor"
+    }
+} while ($reviewThreads.pageInfo.hasNextPage)
+
 if ($unresolved -gt 0) { Deny "$unresolved unresolved review thread(s)" }
 
 Write-Host "OK #${Pr} -- MERGEABLE, CLEAN, $($checks.Count) check(s) green, no unresolved threads. Safe to merge."

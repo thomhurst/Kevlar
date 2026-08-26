@@ -6,8 +6,8 @@ sidebar_position: 15
 
 Shields describe their configured pipeline, publish metrics through built-in `Meter` instances,
 and expose strategy events for request-level telemetry. Use
-[`Kevlar.Extensions.Logging`](logging.md) for structured `ILogger` events. The optional analyzer
-package catches resilience mistakes at compile time.
+[`Kevlar.Extensions.Logging`](logging.md) for structured `ILogger` events. Built-in analyzers catch
+resilience mistakes at compile time.
 
 ## Pipeline descriptions
 
@@ -186,11 +186,7 @@ Telemetry cost depends on the runtime, pipeline, listener, exporter, and deploym
 
 ## Compile-time checks
 
-Install `Kevlar.Analyzers` to catch resilience mistakes during compilation:
-
-```bash
-dotnet add package Kevlar.Analyzers
-```
+The `Kevlar` package includes compile-time checks for resilience mistakes automatically.
 
 See [Analyzer rules](analyzers.md) for the complete current rule set, rationale, safe alternatives, conservative analysis limits, and suppression guidance.
 

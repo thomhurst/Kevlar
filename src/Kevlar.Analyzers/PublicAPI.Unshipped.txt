@@ -7,6 +7,8 @@ static readonly Kevlar.Analyzers.PipelineHazardAnalyzer.EphemeralStatefulShieldR
 static readonly Kevlar.Analyzers.PipelineHazardAnalyzer.InheritedHandlingClauseRule -> Microsoft.CodeAnalysis.DiagnosticDescriptor!
 static readonly Kevlar.Analyzers.PipelineHazardAnalyzer.ImplicitDefaultHandlingRule -> Microsoft.CodeAnalysis.DiagnosticDescriptor!
 static readonly Kevlar.Analyzers.PipelineHazardAnalyzer.AsyncConfigurationWithSynchronousExecuteRule -> Microsoft.CodeAnalysis.DiagnosticDescriptor!
+static readonly Kevlar.Analyzers.PipelineHazardAnalyzer.AsyncWorkInSynchronousCallbackRule -> Microsoft.CodeAnalysis.DiagnosticDescriptor!
+static readonly Kevlar.Analyzers.PipelineHazardAnalyzer.DeferredContextCaptureRule -> Microsoft.CodeAnalysis.DiagnosticDescriptor!
 override Kevlar.Analyzers.PipelineHazardAnalyzer.Initialize(Microsoft.CodeAnalysis.Diagnostics.AnalysisContext! context) -> void
 override Kevlar.Analyzers.PipelineHazardAnalyzer.SupportedDiagnostics.get -> System.Collections.Immutable.ImmutableArray<Microsoft.CodeAnalysis.DiagnosticDescriptor!>
 static readonly Kevlar.Analyzers.PipelineHazardAnalyzer.SynchronousHedgeRule -> Microsoft.CodeAnalysis.DiagnosticDescriptor!

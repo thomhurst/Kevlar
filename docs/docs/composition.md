@@ -109,7 +109,7 @@ var shield = Shield
     // ↑ the breaker counts HttpRequestException failures only
 ```
 
-Proactive strategies — timeout, rate limit, concurrency limit — never consult a clause, but they do not end it either: the clause stays ambient for the next reactive strategy. A clause that reaches no reactive strategy at all is dead, and the optional analyzer reports it as [`KEV007`](analyzers.md#kev007-dead-handling-clause).
+Proactive strategies — timeout, rate limit, concurrency limit — never consult a clause, but they do not end it either: the clause stays ambient for the next reactive strategy. A clause that reaches no reactive strategy at all is dead, and the built-in analyzer reports it as [`KEV007`](analyzers.md#kev007-dead-handling-clause).
 
 Writing a new clause mid-chain replaces the previous one from that point on:
 

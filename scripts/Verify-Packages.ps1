@@ -93,22 +93,22 @@ function Invoke-DotNet([string[]]$Arguments)
 
 function Get-ExpectedSymbolAssets([string]$PackageId)
 {
-    if ($PackageId -eq 'Kevlar.Analyzers')
-    {
-        return @('analyzers/dotnet/cs/Kevlar.Analyzers.pdb')
-    }
-
     $frameworks = @('net10.0', 'net8.0', 'netstandard2.0')
     if ($PackageId -eq 'Kevlar.Extensions.Grpc')
     {
         $frameworks += 'netstandard2.1'
     }
-    elseif ($PackageId -eq 'Kevlar.Extensions.Grpc')
+
+    $assets = @($frameworks | ForEach-Object { "lib/$_/$PackageId.pdb" })
+    if ($PackageId -eq 'Kevlar')
     {
-        $frameworks += 'netstandard2.1'
+        $assets += @(
+            'analyzers/dotnet/cs/Kevlar.Analyzers.CodeFixes.pdb',
+            'analyzers/dotnet/cs/Kevlar.Analyzers.pdb'
+        )
     }
 
-    return @($frameworks | ForEach-Object { "lib/$_/$PackageId.pdb" })
+    return $assets
 }
 
 function Assert-DeterministicAssembly(
@@ -323,9 +323,6 @@ $expectedDependencies = @{
         '.NETStandard2.1' = @('Grpc.Core.Api', 'Grpc.Net.ClientFactory', 'Kevlar', 'Kevlar.Extensions.DependencyInjection')
         '.NETStandard2.0' = @('Grpc.Core.Api', 'Grpc.Net.ClientFactory', 'Kevlar', 'Kevlar.Extensions.DependencyInjection')
     }
-    'Kevlar.Analyzers' = @{
-        '.NETStandard2.0' = @()
-    }
 }
 
 $expectedDependencyVersions = @{}
@@ -436,8 +433,23 @@ foreach ($packageId in $expectedDependencies.Keys)
 
             foreach ($dependency in $dependencies)
             {
-                Assert-Set "$packageId $framework $($dependency.GetAttribute('id')) excluded assets" ($dependency.GetAttribute('exclude') -split ',') @('Build', 'Analyzers')
                 $dependencyId = $dependency.GetAttribute('id')
+                $expectedExcludedAssets = if ($dependencyId -eq 'Kevlar' -and $packageId -ne 'Kevlar')
+                {
+                    @()
+                }
+                else
+                {
+                    @('Build', 'Analyzers')
+                }
+                Assert-Set "$packageId $framework $dependencyId excluded assets" ($dependency.GetAttribute('exclude') -split ',') $expectedExcludedAssets
+                if ($dependencyId -eq 'Kevlar' -and $packageId -ne 'Kevlar')
+                {
+                    Assert-Set `
+                        "$packageId $framework Kevlar included assets" `
+                        ($dependency.GetAttribute('include') -split ',') `
+                        @('Runtime', 'Compile', 'Native', 'ContentFiles', 'Analyzers', 'BuildTransitive')
+                }
                 if ($dependencyId -eq 'Kevlar' -and
                     $packageId -in @('Kevlar.Testing', 'Kevlar.Extensions.RateLimiting'))
                 {
@@ -456,7 +468,11 @@ foreach ($packageId in $expectedDependencies.Keys)
             }
         }
 
-        $privateDependencies = @('Polyfill', 'Microsoft.CodeAnalysis.CSharp', 'Microsoft.CodeAnalysis.PublicApiAnalyzers')
+        $privateDependencies = @(
+            'Polyfill',
+            'Microsoft.CodeAnalysis.CSharp',
+            'Microsoft.CodeAnalysis.CSharp.Workspaces',
+            'Microsoft.CodeAnalysis.PublicApiAnalyzers')
         $allDependencyIds = @($groups | ForEach-Object { $_.SelectNodes("*[local-name()='dependency']") } | ForEach-Object { $_.GetAttribute('id') })
         foreach ($privateDependency in $privateDependencies)
         {
@@ -466,44 +482,42 @@ foreach ($packageId in $expectedDependencies.Keys)
             }
         }
 
-        if ($packageId -eq 'Kevlar.Analyzers')
+        $expectedAssets = @(
+            "lib/net10.0/$packageId.dll",
+            "lib/net10.0/$packageId.xml",
+            "lib/net8.0/$packageId.dll",
+            "lib/net8.0/$packageId.xml",
+            "lib/netstandard2.0/$packageId.dll",
+            "lib/netstandard2.0/$packageId.xml"
+        )
+        if ($packageId -eq 'Kevlar.Extensions.Grpc')
         {
-            Assert-Equal `
-                "$packageId development dependency" `
-                (Get-NodeText $metadata "*[local-name()='developmentDependency']") `
-                'true'
-            $assemblyEntries = @($entries | Where-Object { $_ -like '*.dll' })
-            Assert-Set "$packageId assemblies" $assemblyEntries @('analyzers/dotnet/cs/Kevlar.Analyzers.dll')
+            $expectedAssets += @(
+                "lib/netstandard2.1/$packageId.dll",
+                "lib/netstandard2.1/$packageId.xml"
+            )
+        }
+        Assert-Set "$packageId library assets" ($entries | Where-Object { $_ -like 'lib/*' }) $expectedAssets
+
+        if ($packageId -eq 'Kevlar')
+        {
             Assert-Set "$packageId analyzer assets" `
                 ($entries | Where-Object { $_ -like 'analyzers/dotnet/cs/*' }) `
-                @('analyzers/dotnet/cs/Kevlar.Analyzers.dll', 'analyzers/dotnet/cs/Kevlar.Analyzers.pdb')
-            if ($entries | Where-Object { $_ -match '^(lib|build|buildTransitive|tools)/' })
-            {
-                throw "$packageId contains an unexpected runtime or build asset."
-            }
-        }
-        else
-        {
-            $expectedAssets = @(
-                "lib/net10.0/$packageId.dll",
-                "lib/net10.0/$packageId.xml",
-                "lib/net8.0/$packageId.dll",
-                "lib/net8.0/$packageId.xml",
-                "lib/netstandard2.0/$packageId.dll",
-                "lib/netstandard2.0/$packageId.xml"
-            )
-            if ($packageId -eq 'Kevlar.Extensions.Grpc')
-            {
-                $expectedAssets += @(
-                    "lib/netstandard2.1/$packageId.dll",
-                    "lib/netstandard2.1/$packageId.xml"
+                @(
+                    'analyzers/dotnet/cs/Kevlar.Analyzers.CodeFixes.dll',
+                    'analyzers/dotnet/cs/Kevlar.Analyzers.CodeFixes.pdb',
+                    'analyzers/dotnet/cs/Kevlar.Analyzers.dll',
+                    'analyzers/dotnet/cs/Kevlar.Analyzers.pdb'
                 )
-            }
-            Assert-Set "$packageId library assets" ($entries | Where-Object { $_ -like 'lib/*' }) $expectedAssets
-            if ($entries | Where-Object { $_ -match '^(analyzers|build|buildTransitive|tools)/' })
-            {
-                throw "$packageId contains an unexpected analyzer or build asset."
-            }
+        }
+        elseif ($entries | Where-Object { $_ -match '^analyzers/' })
+        {
+            throw "$packageId contains an unexpected analyzer asset."
+        }
+
+        if ($entries | Where-Object { $_ -match '^(build|buildTransitive|tools)/' })
+        {
+            throw "$packageId contains an unexpected build asset."
         }
 
         foreach ($assemblyEntry in $archive.Entries | Where-Object { $_.FullName -like '*.dll' })
@@ -844,7 +858,8 @@ using var limiter = new ConcurrencyLimiter(new ConcurrencyLimiterOptions
     QueueLimit = 0,
     QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
 });
-if (await Shield.Empty.UseRateLimiter(limiter).ExecuteAsync(static _ => new ValueTask<int>(42)) != 42)
+var rateLimitedShield = CreateRateLimitedShield(limiter);
+if (await rateLimitedShield.ExecuteAsync(static _ => new ValueTask<int>(42)) != 42)
 {
     throw new InvalidOperationException("Rate limiting adapter execution failed.");
 }
@@ -853,6 +868,9 @@ Console.WriteLine("Kevlar package consumer passed.");
 [MethodImpl(MethodImplOptions.NoInlining)]
 static void ThrowFromKevlar() =>
     Shield.Retry(0).Execute(static _ => throw new ExpectedConsumerException());
+
+static Shield CreateRateLimitedShield(RateLimiter limiter) =>
+    Shield.Empty.UseRateLimiter(limiter);
 
 sealed class ExpectedConsumerException : Exception;
 '@
@@ -915,8 +933,7 @@ sealed class ExpectedConsumerException : Exception;
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Kevlar" Version="$Version" />
-    <PackageReference Include="Kevlar.Analyzers" Version="$Version" PrivateAssets="all" />
+    <PackageReference Include="Kevlar.Extensions.Http" Version="$Version" />
   </ItemGroup>
 </Project>
 "@
@@ -940,7 +957,7 @@ await Shield.Empty.ExecuteAsync(cancellationToken => ValueTask.CompletedTask);
     )
     if ($analyzerExitCode -eq 0)
     {
-        throw "Kevlar.Analyzers package did not fail the consumer build with KEV001.`n$analyzerOutput"
+        throw "Kevlar.Extensions.Http did not transitively run KEV001.`n$analyzerOutput"
     }
 
     Assert-Set 'analyzer consumer error codes' $analyzerErrorCodes @('KEV001')
@@ -951,64 +968,6 @@ await Shield.Empty.ExecuteAsync(cancellationToken => ValueTask.CompletedTask);
     if ($unexpectedAnalyzerErrors.Count -gt 0)
     {
         throw "Analyzer consumer produced errors other than KEV001:`n$($unexpectedAnalyzerErrors -join [Environment]::NewLine)"
-    }
-
-    $analyzerFlowDirectory = Join-Path $temporaryRoot 'analyzer-flow'
-    $analyzerFlowProject = @"
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <IsPackable>true</IsPackable>
-    <PackageId>AnalyzerFlowConsumer</PackageId>
-  </PropertyGroup>
-</Project>
-"@
-    $analyzerFlowProjectPath = Join-Path $analyzerFlowDirectory 'AnalyzerFlowConsumer.csproj'
-    Write-TextFile $analyzerFlowProjectPath $analyzerFlowProject
-    Write-TextFile (Join-Path $analyzerFlowDirectory 'Library.cs') 'public sealed class Library;'
-    Invoke-DotNet @(
-        'add', $analyzerFlowProjectPath,
-        'package', 'Kevlar.Analyzers',
-        '--version', $Version,
-        '--source', $packageDirectory,
-        '--package-directory', $env:NUGET_PACKAGES)
-    $analyzerFlowPackages = Join-Path $analyzerFlowDirectory 'packages'
-    Invoke-DotNet @(
-        'pack', $analyzerFlowProjectPath,
-        '-c', 'Release',
-        '--no-restore',
-        '-p:PackageVersion=0.0.0-verification',
-        "-p:PackageOutputPath=$analyzerFlowPackages")
-
-    $analyzerFlowPackage = Join-Path $analyzerFlowPackages 'AnalyzerFlowConsumer.0.0.0-verification.nupkg'
-    $analyzerFlowArchive = [System.IO.Compression.ZipFile]::OpenRead($analyzerFlowPackage)
-    try
-    {
-        $analyzerFlowNuspecEntry = @(
-            $analyzerFlowArchive.Entries |
-                Where-Object { $_.FullName -like '*.nuspec' })
-        Assert-Equal 'analyzer-flow nuspec count' $analyzerFlowNuspecEntry.Count 1
-        $analyzerFlowReader = [System.IO.StreamReader]::new($analyzerFlowNuspecEntry[0].Open())
-        try
-        {
-            [xml]$analyzerFlowNuspec = $analyzerFlowReader.ReadToEnd()
-        }
-        finally
-        {
-            $analyzerFlowReader.Dispose()
-        }
-
-        $analyzerFlowDependencyIds = @(
-            $analyzerFlowNuspec.SelectNodes("//*[local-name()='dependency']") |
-                ForEach-Object { $_.GetAttribute('id') })
-        if ($analyzerFlowDependencyIds -contains 'Kevlar.Analyzers')
-        {
-            throw 'Kevlar.Analyzers flowed transitively from a consumer library package.'
-        }
-    }
-    finally
-    {
-        $analyzerFlowArchive.Dispose()
     }
 
     Write-Host 'All package layout, symbols, determinism, SourceLink, consumer, and analyzer checks passed.'

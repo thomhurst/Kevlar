@@ -16,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Kevlar\Kevlar.csproj" />
+    <ProjectReference Include="..\Kevlar\Kevlar.csproj" PrivateAssets="Build" />
     <PackageReference Include="Polyfill" PrivateAssets="all" />
   </ItemGroup>
 

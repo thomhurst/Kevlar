@@ -12,7 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Kevlar\Kevlar.csproj" />
+    <ProjectReference Include="..\Kevlar\Kevlar.csproj" PrivateAssets="Build" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' != 'netstandard2.0'">

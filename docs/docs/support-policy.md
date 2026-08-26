@@ -19,7 +19,6 @@ target frameworks are also compatibility concerns even when a signature does not
 | Package | Target frameworks |
 |---|---|
 | `Kevlar` | `netstandard2.0`, `net8.0`, `net10.0` |
-| `Kevlar.Analyzers` | `netstandard2.0` |
 | `Kevlar.Chaos` | `netstandard2.0`, `net8.0`, `net10.0` |
 | `Kevlar.Extensions.DependencyInjection` | `netstandard2.0`, `net8.0`, `net10.0` |
 | `Kevlar.Extensions.Grpc` | `netstandard2.0`, `netstandard2.1`, `net8.0`, `net10.0` |

@@ -28,7 +28,6 @@ $documentPaths = @(
 
 $requiredPackages = @(
     'Kevlar'
-    'Kevlar.Analyzers'
     'Kevlar.Chaos'
     'Kevlar.Extensions.DependencyInjection'
     'Kevlar.Extensions.Grpc'

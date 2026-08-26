@@ -2,14 +2,4278 @@ using System.Collections.Immutable;
 using Kevlar.Analyzers;
 using Kevlar.Chaos;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CodeActions;
+using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Text;
 using System.Reflection;
 
 namespace Kevlar.Analyzers.Tests;
 
 public class PipelineHazardAnalyzerTests
 {
+    [Test]
+    public async Task KEV013_Flags_Async_Work_Assigned_To_Synchronous_Callbacks()
+    {
+        var cases = new[]
+        {
+            "_ = Shield.Retry(o => o.OnRetry = async _ => await Task.Yield());",
+            "_ = Shield.Retry(o => o.OnRetry ??= async _ => await Task.Yield());",
+            "_ = Shield.Timeout(o => o.OnTimeout = async _ => await Task.Yield());",
+            "_ = Shield.CircuitBreaker(o => o.OnStateChanged = async _ => await Task.Yield());",
+            "_ = Shield.Hedge(o => o.OnHedge = _ => Task.Delay(1));",
+            "_ = Shield.Fallback(_ => ValueTask.CompletedTask, o => o.OnFallback = async _ => await Task.Yield());",
+            "_ = Shield.RateLimit(o => o.OnRejected = async _ => await Task.Yield());",
+            "_ = Shield.ConcurrencyLimit(o => o.OnRejected = async _ => await Task.Yield());",
+            "_ = ChaosShield.Latency(o => o.OnInjected = async _ => await Task.Yield());",
+            "_ = Shield.Empty.UseRateLimiter((System.Threading.RateLimiting.RateLimiter)null!, o => o.OnRejected = async _ => await Task.Yield());",
+            "_ = Shield.Retry(o => o.OnRetry = new Action<RetryEvent>(async _ => await Task.Yield()));",
+        };
+
+        await AssertEachAsync(cases, "KEV013", "KEV006");
+    }
+
+    [Test]
+    public async Task KEV014_Flags_Async_Lambda_Event_Use_After_Await()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                await Task.Yield();
+                _ = item.Context.ShieldName;
+            });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Known_Completed_Awaitables()
+    {
+        var awaitExpressions = new[]
+        {
+            "Task.CompletedTask",
+            "Task.CompletedTask.ConfigureAwait(false)",
+            "Task.FromResult(0)",
+            "Task.FromResult(0).ConfigureAwait(false)",
+            "Task.FromException(new InvalidOperationException())",
+            "Task.FromException(new InvalidOperationException()).ConfigureAwait(false)",
+            "Task.FromException<int>(new InvalidOperationException())",
+            "Task.FromCanceled(new CancellationToken(canceled: true))",
+            "Task.FromCanceled(new CancellationToken(canceled: true)).ConfigureAwait(false)",
+            "Task.FromCanceled<int>(new CancellationToken(canceled: true))",
+            "Task.Delay(0)",
+            "Task.Delay(0).ConfigureAwait(false)",
+            "Task.Delay(TimeSpan.Zero)",
+            "Task.Delay(0, CancellationToken.None)",
+            "Task.Delay(TimeSpan.Zero, CancellationToken.None)",
+            "ValueTask.CompletedTask",
+            "ValueTask.CompletedTask.ConfigureAwait(false)",
+            "ValueTask.FromResult(0)",
+            "ValueTask.FromResult(0).ConfigureAwait(false)",
+            "new ValueTask()",
+            "new ValueTask().ConfigureAwait(false)",
+            "new ValueTask<int>(0)",
+            "default(ValueTask)",
+            "default(ValueTask<int>)",
+        };
+        foreach (var awaitExpression in awaitExpressions)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = async item =>
+                {
+                    await {{awaitExpression}};
+                    Console.WriteLine(item.Context.ShieldName);
+                });
+                """);
+
+            await AssertRuleAsync(diagnostics, "KEV013");
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Flags_ValueTask_Constructed_From_Pending_Task()
+    {
+        var awaitExpressions = new[]
+        {
+            "Task.Delay(1)",
+            "new ValueTask(Task.Delay(1))",
+            "new ValueTask<int>(Task.Run(() => 1))",
+        };
+        foreach (var awaitExpression in awaitExpressions)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = async item =>
+                {
+                    await {{awaitExpression}};
+                    Console.WriteLine(item.Context.ShieldName);
+                });
+                """);
+
+            await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+            await AssertRuleAsync(
+                Without(diagnostics, "KEV013"),
+                "KEV014",
+                DiagnosticSeverity.Warning);
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Flags_Unknown_Object_Creation_Awaitables()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        await new PendingAwaitable();
+                        Console.WriteLine(item.Context.ShieldName);
+                    });
+
+                private readonly struct PendingAwaitable
+                {
+                    public System.Runtime.CompilerServices.TaskAwaiter GetAwaiter() =>
+                        Task.Delay(1).GetAwaiter();
+                }
+            }
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Follows_PostAwait_Local_Function_Calls()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                await Task.Yield();
+                ReadContext();
+
+                void ReadContext() => Console.WriteLine(item.Context.ShieldName);
+            });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Maps_PostAwait_Local_Function_Parameters()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                await Task.Yield();
+                Read(item);
+
+                static void Read(RetryEvent value) =>
+                    Console.WriteLine(value.Context.ShieldName);
+            });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Follows_PostAwait_Source_Method_Calls()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        _event = item;
+                        await Task.Yield();
+                        Read();
+                    });
+
+                private void Read() => Consume(_event);
+                private static void Consume(RetryEvent item) { }
+            }
+            """);
+        var parameterFlow = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        await Task.Yield();
+                        Read(item);
+                    });
+
+                private static void Read(RetryEvent item)
+                {
+                    ReadNested(item);
+                }
+
+                private static void ReadNested(RetryEvent item) => Consume(item);
+                private static void Consume(RetryEvent item) { }
+            }
+            """);
+        var scalarParameter = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        await Task.Yield();
+                        Read(42);
+                    });
+
+                private static void Read(int retryNumber) => Console.WriteLine(retryNumber);
+            }
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(Without(parameterFlow, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(parameterFlow, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(scalarParameter, "KEV013");
+    }
+
+    [Test]
+    public async Task KEV014_Maps_Retained_Wrappers_To_Source_Parameters()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        var holder = new Holder(item);
+                        await Task.Yield();
+                        Read(holder);
+                    });
+
+                private static void Read(Holder value) =>
+                    Console.WriteLine(value.Event.Context.ShieldName);
+
+                private sealed class Holder
+                {
+                    public Holder(RetryEvent item)
+                    {
+                        Event = item;
+                    }
+
+                    public RetryEvent Event { get; }
+                }
+            }
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Follows_PostAwait_Explicit_Delegate_Invoke()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                await Task.Yield();
+                Action use = () => Console.WriteLine(item.Context.ShieldName);
+                use.Invoke();
+            });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Completed_Awaits_In_Source_Methods()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = item;
+                        _ = AuditAsync();
+                    });
+
+                private async Task AuditAsync()
+                {
+                    await Task.CompletedTask;
+                    Console.WriteLine(_event.Context.ShieldName);
+                }
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV013");
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_PostAwait_Event_Values_In_Wrapper_Locals()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        var holder = new Holder { Event = item };
+                        await Task.Yield();
+                        Consume(holder.Event.Context);
+                    });
+
+                private static void Consume(KevlarContext context) { }
+
+                private sealed class Holder
+                {
+                    public RetryEvent Event { get; set; }
+                }
+            }
+            """);
+        var snapshot = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        var snapshot = new RetrySnapshot(item);
+                        await Task.Yield();
+                        Console.WriteLine(snapshot.RetryNumber);
+                    });
+
+                private sealed class RetrySnapshot
+                {
+                    public RetrySnapshot(RetryEvent item)
+                    {
+                        RetryNumber = item.RetryNumber;
+                    }
+
+                    public int RetryNumber { get; }
+                }
+            }
+            """);
+        var constructorWrapper = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        var holder = new Holder(item);
+                        await Task.Yield();
+                        Consume(holder.Event.Context);
+                    });
+
+                private static void Consume(KevlarContext context) { }
+
+                private sealed class Holder
+                {
+                    public Holder(RetryEvent item)
+                    {
+                        Event = item;
+                    }
+
+                    public RetryEvent Event { get; }
+                }
+            }
+            """);
+        var emptyInitializer = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        var holder = new Holder { };
+                        await Task.Yield();
+                        Console.WriteLine(holder.Value);
+                    });
+
+                private sealed class Holder
+                {
+                    public int Value { get; set; }
+                }
+            }
+            """);
+        var delegatedConstructor = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        var holder = new Holder(item);
+                        await Task.Yield();
+                        Consume(holder.Event.Context);
+                    });
+
+                private static void Consume(KevlarContext context) { }
+
+                private sealed class Holder
+                {
+                    public Holder(RetryEvent item)
+                        : this(item, 0)
+                    {
+                    }
+
+                    private Holder(RetryEvent item, int _)
+                    {
+                        Event = item;
+                    }
+
+                    public RetryEvent Event { get; }
+                }
+            }
+            """);
+        var unrelatedConstructorStore = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        var holder = new Holder(item);
+                        await Task.Yield();
+                        Console.WriteLine(holder.Value);
+                    });
+
+                private sealed class Holder
+                {
+                    public Holder(RetryEvent item)
+                    {
+                        new Sink().Event = item;
+                    }
+
+                    public int Value { get; }
+                }
+
+                private sealed class Sink
+                {
+                    public RetryEvent Event { get; set; }
+                }
+            }
+            """);
+        var fieldConstructorWrapper = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        var holder = new Holder(item);
+                        await Task.Yield();
+                        Consume(holder.Event.Context);
+                    });
+
+                private static void Consume(KevlarContext context) { }
+
+                private sealed class Holder
+                {
+                    private readonly RetryEvent _event;
+
+                    public Holder(RetryEvent item)
+                    {
+                        _event = item;
+                    }
+
+                    public RetryEvent Event => _event;
+                }
+            }
+            """);
+        var nestedConstructorStore = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        var holder = new Holder(item);
+                        await Task.Yield();
+                        Consume(holder.State.Event.Context);
+                    });
+
+                private static void Consume(KevlarContext context) { }
+
+                private sealed class Holder
+                {
+                    public Holder(RetryEvent item)
+                    {
+                        State.Event = item;
+                    }
+
+                    public State State { get; } = new();
+                }
+
+                private sealed class State
+                {
+                    public RetryEvent Event { get; set; }
+                }
+            }
+            """);
+        var compositeConstructorStore = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        var holder = new Holder(item);
+                        await Task.Yield();
+                        Consume(holder.Events[0].Context);
+                    });
+
+                private static void Consume(KevlarContext context) { }
+
+                private sealed class Holder
+                {
+                    public Holder(RetryEvent item)
+                    {
+                        Events = new[] { item };
+                    }
+
+                    public RetryEvent[] Events { get; }
+                }
+            }
+            """);
+        var mutatingConstructorStore = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        var holder = new Holder(item);
+                        await Task.Yield();
+                        Consume(holder.Events[0].Context);
+                    });
+
+                private static void Consume(KevlarContext context) { }
+
+                private sealed class Holder
+                {
+                    public Holder(RetryEvent item)
+                    {
+                        Events.Add(item);
+                    }
+
+                    public System.Collections.Generic.List<RetryEvent> Events { get; } = new();
+                }
+            }
+            """);
+        var helperConstructorStore = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        var holder = new Holder(item);
+                        await Task.Yield();
+                        Consume(holder.Event.Context);
+                    });
+
+                private static void Consume(KevlarContext context) { }
+
+                private sealed class Holder
+                {
+                    public Holder(RetryEvent item)
+                    {
+                        Store(item);
+                    }
+
+                    public RetryEvent Event { get; private set; }
+
+                    private void Store(RetryEvent item)
+                    {
+                        Event = item;
+                    }
+                }
+            }
+            """);
+        var staticHelperConstructorStore = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        var holder = new Holder(item);
+                        await Task.Yield();
+                        Consume(holder.Events[0].Context);
+                    });
+
+                private static void Consume(KevlarContext context) { }
+
+                private sealed class Holder
+                {
+                    public Holder(RetryEvent item)
+                    {
+                        Store(Events, item);
+                    }
+
+                    public System.Collections.Generic.List<RetryEvent> Events { get; } = new();
+
+                    private static void Store(
+                        System.Collections.Generic.List<RetryEvent> events,
+                        RetryEvent item) => events.Add(item);
+                }
+            }
+            """);
+        var compositeDelegatedConstructor = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        var holder = new Holder(item);
+                        await Task.Yield();
+                        Consume(holder.Events[0].Context);
+                    });
+
+                private static void Consume(KevlarContext context) { }
+
+                private sealed class Holder
+                {
+                    public Holder(RetryEvent item)
+                        : this(new[] { item })
+                    {
+                    }
+
+                    private Holder(RetryEvent[] events)
+                    {
+                        Events = events;
+                    }
+
+                    public RetryEvent[] Events { get; }
+                }
+            }
+            """);
+        var uninvokedNestedStores = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        var holder = new Holder(item);
+                        await Task.Yield();
+                        Console.WriteLine(holder.Value);
+                    });
+
+                private sealed class Holder
+                {
+                    public Holder(RetryEvent item)
+                    {
+                        void Store() => Events.Add(item);
+                        Action store = () => Events.Add(item);
+                    }
+
+                    public System.Collections.Generic.List<RetryEvent> Events { get; } = new();
+                    public int Value { get; }
+                }
+            }
+            """);
+        var collectionWrapper = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        var events = new System.Collections.Generic.List<RetryEvent> { default, item };
+                        await Task.Yield();
+                        Console.WriteLine(events[1].RetryNumber);
+                    });
+            }
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(snapshot, "KEV013");
+        await AssertRuleAsync(Without(constructorWrapper, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(constructorWrapper, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(emptyInitializer, "KEV013");
+        await AssertRuleAsync(Without(delegatedConstructor, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(delegatedConstructor, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(unrelatedConstructorStore, "KEV013");
+        await AssertRuleAsync(Without(fieldConstructorWrapper, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(fieldConstructorWrapper, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(Without(nestedConstructorStore, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(nestedConstructorStore, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(Without(compositeConstructorStore, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(compositeConstructorStore, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(Without(mutatingConstructorStore, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(mutatingConstructorStore, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(Without(helperConstructorStore, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(helperConstructorStore, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(Without(staticHelperConstructorStore, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(staticHelperConstructorStore, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(Without(compositeDelegatedConstructor, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(compositeDelegatedConstructor, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(uninvokedNestedStores, "KEV013");
+        await AssertRuleAsync(Without(collectionWrapper, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(collectionWrapper, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_Framework_Collections_In_PostAwait_Aliases()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                var events = new System.Collections.Generic.List<RetryEvent>(new[] { item });
+                await Task.Yield();
+                Console.WriteLine(events[0].Context.ShieldName);
+            });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_Instance_Array_Stores_In_Constructors()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        var holder = new Holder(item);
+                        await Task.Yield();
+                        Console.WriteLine(holder.Events[0].Context.ShieldName);
+                    });
+
+                private sealed class Holder
+                {
+                    public Holder(RetryEvent item)
+                    {
+                        Events = new RetryEvent[1];
+                        Events[0] = item;
+                    }
+
+                    public RetryEvent[] Events { get; }
+                }
+            }
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_PostAwait_Array_Element_Writes()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                var events = new RetryEvent[1];
+                events[0] = item;
+                await Task.Yield();
+                Console.WriteLine(events[0].Context.ShieldName);
+            });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_Constructor_Stores_From_Helper_Results()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        var holder = new Holder(item);
+                        await Task.Yield();
+                        Console.WriteLine(holder.Event.Context.ShieldName);
+                    });
+
+                private sealed class Holder
+                {
+                    public Holder(RetryEvent item)
+                    {
+                        Event = Identity(item);
+                    }
+
+                    public RetryEvent Event { get; }
+
+                    private static RetryEvent Identity(RetryEvent item) => item;
+                }
+            }
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Follows_Nested_PostAwait_Local_Function_Calls()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                await Task.Yield();
+                ReadContext();
+
+                void ReadContext() => ReadInner();
+                void ReadInner() => Console.WriteLine(item.Context.ShieldName);
+            });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Unrelated_Member_Names_In_Local_Functions()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            var holder = (item: 42, other: 0);
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                await Task.Yield();
+                Read();
+
+                void Read() => Console.WriteLine(holder.item);
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV013");
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Async_Anonymous_Function_Syntaxes()
+    {
+        var callbacks = new[]
+        {
+            "async (RetryEvent item) => { await Task.Yield(); _ = item.Context.ShieldName; }",
+            "async delegate(RetryEvent item) { await Task.Yield(); _ = item.Context.ShieldName; }",
+        };
+        foreach (var callback in callbacks)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = {{callback}});
+                """);
+
+            await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+            await AssertRuleAsync(
+                Without(diagnostics, "KEV013"),
+                "KEV014",
+                DiagnosticSeverity.Warning);
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Invoked_Async_Local_Functions()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                async void Start()
+                {
+                    await Task.Yield();
+                    _ = item.Context.ShieldName;
+                }
+
+                Start();
+            });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Invoked_Async_Delegate_Locals()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                Action start = async () =>
+                {
+                    await Task.Yield();
+                    _ = item.Context.ShieldName;
+                };
+                start();
+            });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Explicit_Delegate_Invoke_Calls()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                Action work = async () =>
+                {
+                    await Task.Yield();
+                    Console.WriteLine(item.Context.ShieldName);
+                };
+                work.Invoke();
+            });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Immediately_Invoked_Async_Delegates()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                ((Action)(async () =>
+                {
+                    await Task.Yield();
+                    _ = item.Context.ShieldName;
+                }))();
+            });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Invoked_Delegates_After_Await()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                await Task.Yield();
+                Action use = () => Console.WriteLine(item.Context.ShieldName);
+                use();
+            });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Nameof_After_Await()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                await Task.Yield();
+                _ = nameof(item);
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV013");
+    }
+
+    [Test]
+    public async Task KEV014_Requires_Reachable_Suspension_Before_Event_Use()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                if (Environment.TickCount == 0)
+                {
+                    await Task.Yield();
+                    return;
+                }
+
+                _ = item.Context.ShieldName;
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV013");
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Aliases_On_Paths_That_Exit_Before_Await()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                KevlarContext? retained = null;
+                if (Environment.TickCount == 0)
+                {
+                    retained = item.Context;
+                    return;
+                }
+
+                await Task.Yield();
+                if (retained is not null)
+                {
+                    Console.WriteLine(retained.ShieldName);
+                }
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV013");
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_Aliases_At_Later_Reachable_Awaits()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                if (Environment.TickCount == 0)
+                {
+                    await Task.Yield();
+                    return;
+                }
+
+                var retained = item;
+                await Task.Yield();
+                Console.WriteLine(retained.Context.ShieldName);
+            });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_Uses_Reached_Through_Loop_BackEdges()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                while (Environment.TickCount >= 0)
+                {
+                    Console.WriteLine(item.Context.ShieldName);
+                    await Task.Yield();
+                }
+            });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Keeps_Aliases_On_Their_Suspension_Path()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                RetryEvent retained = default;
+                if (Environment.TickCount == 0)
+                {
+                    retained = item;
+                    await Task.Yield();
+                    return;
+                }
+
+                await Task.Yield();
+                Console.WriteLine(retained.RetryNumber);
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV013");
+    }
+
+    [Test]
+    public async Task KEV014_Keeps_Alias_Propagation_On_One_Control_Flow_Path()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                RetryEvent first = default;
+                RetryEvent retained = default;
+                if (Environment.TickCount == 0)
+                {
+                    first = item;
+                }
+                else
+                {
+                    retained = first;
+                }
+
+                await Task.Yield();
+                Console.WriteLine(retained.RetryNumber);
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV013");
+    }
+
+    [Test]
+    public async Task KEV014_Removes_Aliases_Cleared_On_Every_Incoming_Path()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                var retained = item;
+                if (Environment.TickCount == 0)
+                {
+                    retained = default;
+                }
+                else
+                {
+                    retained = default;
+                }
+
+                await Task.Yield();
+                Console.WriteLine(retained.RetryNumber);
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV013");
+    }
+
+    [Test]
+    public async Task KEV014_Keeps_Aliases_Reintroduced_After_Exhaustive_Clears()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                var retained = item;
+                if (Environment.TickCount == 0)
+                {
+                    retained = default;
+                }
+                else
+                {
+                    retained = default;
+                }
+
+                retained = item;
+                await Task.Yield();
+                Console.WriteLine(retained.RetryNumber);
+            });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Combined_Async_Delegates()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            Action<RetryEvent> existing = _ => { };
+            _ = Shield.Retry(options => options.OnRetry = existing
+                + (Action<RetryEvent>)(async item =>
+                {
+                    await Task.Yield();
+                    _ = item.Context.ShieldName;
+                }));
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV013_Allows_Awaited_And_Synchronous_Callbacks()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(o =>
+            {
+                o.OnRetry = _ => { };
+                o.OnRetryAsync = async _ => await Task.Yield();
+            });
+            _ = Shield.Timeout(o => o.OnTimeoutAsync = _ => ValueTask.CompletedTask);
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV013_Ignores_Similarly_Named_Application_Callbacks()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            namespace KevlarApplication;
+
+            public sealed class RetryOptions
+            {
+                public Action<Kevlar.RetryEvent>? OnRetry { get; set; }
+            }
+
+            public sealed class TestSubject
+            {
+                public void Configure()
+                {
+                    var options = new RetryOptions();
+                    options.OnRetry = async _ => await Task.Yield();
+                }
+            }
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV013_Flags_Task_Returning_Method_Group_On_Synchronous_Callback()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = RetryAsync);
+
+                private static Task RetryAsync(RetryEvent item) => Task.CompletedTask;
+            }
+            """, allowCompilationErrors: true);
+
+        await AssertRuleAsync(diagnostics, "KEV013");
+    }
+
+    [Test]
+    public async Task KEV013_Flags_Async_Void_Method_Group_On_Synchronous_Callback()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = RetryAsyncVoid);
+
+                private static async void RetryAsyncVoid(RetryEvent item) => await Task.Yield();
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV013");
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Async_Void_Method_Group_After_Await()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = RetryAsyncVoid);
+
+                private static async void RetryAsyncVoid(RetryEvent item)
+                {
+                    await Task.Yield();
+                    _ = item.Context.ShieldName;
+                }
+            }
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Async_Void_Event_Use_Before_Await()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = RetryAsyncVoid);
+
+                private static async void RetryAsyncVoid(RetryEvent item)
+                {
+                    _ = item.Context.ShieldName;
+                    await Task.Yield();
+                }
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV013");
+    }
+
+    [Test]
+    public async Task KEV014_Uses_Declaration_Tree_Control_Flow_For_Method_Groups()
+    {
+        var diagnostics = await AnalyzeSourcesAsync(
+            """
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = CallbackHost.OnRetry);
+            }
+            """,
+            """
+            public static class CallbackHost
+            {
+                public static async void OnRetry(RetryEvent item)
+                {
+                    if (Environment.TickCount == 0)
+                    {
+                        await Task.Yield();
+                        return;
+                    }
+
+                    _ = item.Context.ShieldName;
+                }
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV013");
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Constructed_Async_Void_Method_Groups()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry =
+                        new Action<RetryEvent>(RetryAsyncVoid));
+
+                private static async void RetryAsyncVoid(RetryEvent item)
+                {
+                    await Task.Yield();
+                    _ = item.Context.ShieldName;
+                }
+            }
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Follows_Async_Void_Event_Aliases_After_Await()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = RetryAsyncVoid);
+
+                private static async void RetryAsyncVoid(RetryEvent item)
+                {
+                    var retained = item;
+                    await Task.Yield();
+                    _ = retained.Context.ShieldName;
+                }
+            }
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Follows_Async_Event_Context_Aliases_After_Await()
+    {
+        var expressions = new[]
+        {
+            (Initializer: "item", Use: "retained.Context.ShieldName"),
+            (Initializer: "(RetryEvent)item", Use: "retained.Context.ShieldName"),
+            (Initializer: "(item)", Use: "retained.Context.ShieldName"),
+            (Initializer: "item!", Use: "retained.Context.ShieldName"),
+            (Initializer: "item.Context", Use: "retained.ShieldName"),
+            (Initializer: "item.Context.Properties", Use: "retained.Count"),
+        };
+        foreach (var (initializer, use) in expressions)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = async item =>
+                {
+                    var retained = {{initializer}};
+                    await Task.Yield();
+                    _ = {{use}};
+                });
+                """);
+
+            await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+            await AssertRuleAsync(
+                Without(diagnostics, "KEV013"),
+                "KEV014",
+                DiagnosticSeverity.Warning);
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Reassigned_Async_Event_Aliases()
+    {
+        var assignments = new[] { "retained = default;", "{ retained = default; }" };
+        foreach (var assignment in assignments)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = async item =>
+                {
+                    var retained = item;
+                    {{assignment}}
+                    await Task.Yield();
+                    _ = retained.Context.ShieldName;
+                });
+                """);
+
+            await AssertRuleAsync(diagnostics, "KEV013");
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Distinguishes_Member_And_Parameter_Names()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            var holder = (item: default(RetryEvent), other: 0);
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                holder.item = default;
+                await Task.Yield();
+                _ = item.Context.ShieldName;
+            });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Follows_Assigned_Event_Fields_After_Await()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        _event = item;
+                        await Task.Yield();
+                        _ = _event.Context.ShieldName;
+                    });
+            }
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Follows_Event_Fields_On_Paths_Reaching_Await()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        _event = item;
+                        if (Environment.TickCount == 0)
+                        {
+                            _event = default;
+                            return;
+                        }
+
+                        await Task.Yield();
+                        _ = _event.Context.ShieldName;
+                    });
+            }
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV013_Follows_Stable_Callback_Local_Initializers()
+    {
+        var trailingStatements = new[] { "", "callback = _ => { };" };
+        foreach (var trailingStatement in trailingStatements)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                Action<RetryEvent> callback = item => AuditAsync(item);
+                _ = Shield.Retry(options => options.OnRetry = callback);
+                {{trailingStatement}}
+
+                static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+                """);
+
+            await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+            await AssertRuleAsync(
+                Without(diagnostics, "KEV013"),
+                "KEV014",
+                DiagnosticSeverity.Warning);
+        }
+    }
+
+    [Test]
+    public async Task KEV013_Inspects_Unobserved_Task_Calls_In_Block_Lambdas()
+    {
+        var cases = new[]
+        {
+            (Setup: "", Statement: "_ = AuditAsync(item);"),
+            (Setup: "", Statement: "AuditAsync(item);"),
+            (Setup: "", Statement: "var pending = AuditAsync(item);"),
+            (Setup: "", Statement: "AuditAsync(item).Wait(0);"),
+            (Setup: "", Statement: "Task.WaitAll(new[] { AuditAsync(item) }, 0);"),
+            (
+                Setup: "",
+                Statement: "Task.WaitAll(new[] { AuditAsync(item) }, CancellationToken.None);"),
+            (Setup: "Task? pending = null;", Statement: "pending = AuditAsync(item);"),
+            (Setup: "var enabled = true;", Statement: "if (enabled) _ = AuditAsync(item);"),
+            (
+                Setup: "var pendingTasks = new System.Collections.Generic.List<Task>();",
+                Statement: "pendingTasks.Add(AuditAsync(item));"),
+        };
+        foreach (var (setup, statement) in cases)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                {{setup}}
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                {
+                    {{statement}}
+                });
+
+                static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+                """);
+
+            await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+            await AssertRuleAsync(
+                Without(diagnostics, "KEV013"),
+                "KEV014",
+                DiagnosticSeverity.Warning);
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Scalar_Constructor_Snapshots_In_Discarded_Tasks()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                        _ = AuditAsync(new RetrySnapshot(item)));
+
+                private static Task AuditAsync(RetrySnapshot snapshot) => Task.CompletedTask;
+
+                private sealed class RetrySnapshot
+                {
+                    public RetrySnapshot(RetryEvent item)
+                    {
+                        RetryNumber = item.RetryNumber;
+                    }
+
+                    public int RetryNumber { get; }
+                }
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV013");
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Metadata_Scalar_Constructor_Snapshots()
+    {
+        var snapshotReference = CreateMetadataReference("""
+            public sealed class RetrySnapshot
+            {
+                public RetrySnapshot(RetryEvent item)
+                {
+                    RetryNumber = item.RetryNumber;
+                }
+
+                public int RetryNumber { get; }
+            }
+            """);
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                        _ = AuditAsync(new RetrySnapshot(item)));
+
+                private static Task AuditAsync(RetrySnapshot snapshot) => Task.CompletedTask;
+            }
+            """, additionalReference: snapshotReference);
+
+        await AssertRuleAsync(diagnostics, "KEV013");
+    }
+
+    [Test]
+    public async Task KEV013_Inspects_Unobserved_Task_Calls_In_Handling_Predicates()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.HandlesExceptionWithContext = item =>
+            {
+                _ = AuditAsync(item);
+                return true;
+            });
+
+            static Task AuditAsync(HandlingEvent item) => Task.CompletedTask;
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV013_Inspects_Context_Bearing_Synchronous_Funcs()
+    {
+        var cases = new[]
+        {
+            """
+            _ = Shield.For<int>().Retry(options => options.HandlesResultWithContext = item =>
+            {
+                _ = AuditAsync(item.Context);
+                return true;
+            });
+            """,
+            """
+            _ = Shield.Retry(options => options.DelayGenerator = item =>
+            {
+                _ = AuditAsync(item.Context);
+                return TimeSpan.Zero;
+            });
+            """,
+            """
+            _ = ChaosShield.Latency(options => options.Predicate = context =>
+            {
+                _ = AuditAsync(context);
+                return true;
+            });
+            """,
+        };
+
+        foreach (var body in cases)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                {{body}}
+
+                static Task AuditAsync(KevlarContext context) => Task.CompletedTask;
+                """);
+
+            await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+            await AssertRuleAsync(
+                Without(diagnostics, "KEV013"),
+                "KEV014",
+                DiagnosticSeverity.Warning);
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Flags_Direct_Context_Captured_By_Scheduled_Work()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = ChaosShield.Latency(options => options.Predicate = context =>
+            {
+                _ = Task.Run(() => Consume(context));
+                return true;
+            });
+
+            static void Consume(KevlarContext context) =>
+                Console.WriteLine(context.ShieldName);
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV013_Inspects_Unobserved_Task_Calls_In_Expression_Lambdas()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item => AuditAsync(item).Wait(0));
+
+            static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Reduced_Extension_Receivers()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public static class AuditExtensions
+            {
+                public static Task AuditAsync(this RetryEvent item) => Task.CompletedTask;
+            }
+
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item => item.AuditAsync());
+            }
+            """);
+
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Converted_Arguments()
+    {
+        var arguments = new[] { "(object)item", "new object[] { item }" };
+        foreach (var argument in arguments)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = item => ProcessAsync({{argument}}));
+
+                static Task ProcessAsync(object item) => Task.CompletedTask;
+                """);
+
+            await AssertRuleAsync(
+                Without(diagnostics, "KEV013"),
+                "KEV014",
+                DiagnosticSeverity.Warning);
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Follows_Retained_Locals_And_Delegates()
+    {
+        var statements = new[]
+        {
+            "object state = item; ProcessObjectAsync(state);",
+            "object state = item; ProcessObjectAsync(state); state = null!;",
+            "ProcessDelegateAsync(() => item.Context.ShieldName);",
+        };
+        foreach (var statement in statements)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                {
+                    {{statement}}
+                });
+
+                static Task ProcessObjectAsync(object state) => Task.CompletedTask;
+                static Task ProcessDelegateAsync(Func<string?> state) => Task.CompletedTask;
+                """);
+
+            await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+            await AssertRuleAsync(
+                Without(diagnostics, "KEV013"),
+                "KEV014",
+                DiagnosticSeverity.Warning);
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Detached_Argument_Projections()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+                ProcessAsync(item.Context.ShieldName));
+
+            static Task ProcessAsync(string shieldName) => Task.CompletedTask;
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV013");
+        await Assert.That(Without(diagnostics, "KEV013")).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV013_Ignores_Uninvoked_Nested_Functions()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                void Local() => _ = AuditAsync(item);
+                Action nested = () => _ = AuditAsync(item);
+            });
+
+            static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV013_Follows_Invoked_Local_Functions()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                void Start() => _ = AuditAsync(item);
+                Start();
+            });
+
+            static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Follows_Task_Returning_Local_Functions()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                Task Start() => AuditAsync(item);
+                _ = Start();
+            });
+
+            static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV013_Ignores_Synchronously_Observed_Task_Calls()
+    {
+        var statements = new[]
+        {
+            "AuditAsync(item).GetAwaiter().GetResult();",
+            "AuditAsync(item).ConfigureAwait(false).GetAwaiter().GetResult();",
+            "AuditAsync(item).Wait();",
+            "_ = AuditAsync(item).Result;",
+            "Task.WaitAll(AuditAsync(item));",
+            "Task.WhenAll(AuditAsync(item), FlushAsync()).GetAwaiter().GetResult();",
+            "Task.WhenAll(new[] { AuditAsync(item), FlushAsync() }).GetAwaiter().GetResult();",
+            "AuditValueAsync(item).AsTask().GetAwaiter().GetResult();",
+            "AuditValueAsync(item).ConfigureAwait(false).GetAwaiter().GetResult();",
+            "AuditValueAsync(item).AsTask().Wait();",
+            "FlushAsync().GetAwaiter().GetResult();",
+            "FlushAsync().ConfigureAwait(false).GetAwaiter().GetResult();",
+            "FlushValueAsync().GetAwaiter().GetResult();",
+            "FlushValueAsync().ConfigureAwait(false).GetAwaiter().GetResult();",
+            "var pending = AuditAsync(item); pending.GetAwaiter().GetResult();",
+            "var pending = AuditAsync(item); pending.Wait();",
+            "var pending = AuditAsync(item); _ = pending.Result;",
+        };
+        foreach (var statement in statements)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                {
+                    {{statement}}
+                });
+
+                static Task<RetryEvent> AuditAsync(RetryEvent item) => Task.FromResult(item);
+                static ValueTask<RetryEvent> AuditValueAsync(RetryEvent item) =>
+                    ValueTask.FromResult(item);
+                static Task FlushAsync() => Task.CompletedTask;
+                static ValueTask FlushValueAsync() => ValueTask.CompletedTask;
+                """);
+
+            await Assert.That(diagnostics).IsEmpty();
+        }
+    }
+
+    [Test]
+    public async Task KEV013_Rejects_Unrelated_GetResult_Extensions()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public static class TaskExtensions
+            {
+                public static void GetResult(this Task task) { }
+            }
+
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                        AuditAsync(item).GetResult());
+
+                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            }
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV013_Rejects_Task_Local_Joins_After_Early_Returns()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var pending = AuditAsync(item);
+                if (Environment.TickCount == 0)
+                {
+                    return;
+                }
+
+                pending.GetAwaiter().GetResult();
+            });
+
+            static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV013_Rejects_Conditional_Task_Local_Joins()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            var skip = Environment.TickCount == 0;
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var pending = AuditAsync(item);
+                _ = skip ? 0 : pending.GetAwaiter().GetResult();
+            });
+
+            static Task<int> AuditAsync(RetryEvent item) => Task.FromResult(0);
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV013_Rejects_Task_Local_Joins_After_Throwing_Work()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var pending = AuditAsync(item);
+                MightThrow();
+                pending.GetAwaiter().GetResult();
+            });
+
+            static void MightThrow() => throw new InvalidOperationException();
+            static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV013_Rejects_Task_Local_Joins_Of_Unrelated_Composite_Values()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var pending = (AuditAsync(item), Task.CompletedTask).Item2;
+                pending.GetAwaiter().GetResult();
+            });
+
+            static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV013_Rejects_Filtered_WhenAll_Collections()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            using System.Linq;
+
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                        Task.WhenAll(new[] { AuditAsync(item) }.Where(_ => false))
+                            .GetAwaiter()
+                            .GetResult());
+
+                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            }
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Every_Task_In_A_Combinator()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            var pendingTasks = new System.Collections.Generic.List<Task>();
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                pendingTasks.Add(Task.WhenAll(FlushAsync(), AuditAsync(item)));
+            });
+
+            static Task FlushAsync() => Task.CompletedTask;
+            static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            """);
+
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV013_Inspects_Conditional_Callback_Branches()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            var enabled = true;
+            _ = Shield.Retry(options => options.OnRetry = enabled
+                ? async item => await Task.Yield()
+                : _ => { });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV006"), "KEV013");
+    }
+
+    [Test]
+    public async Task KEV013_Inspects_Coalesced_Callback_Operands()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            Action<RetryEvent>? existing = null;
+            _ = Shield.Retry(options => options.OnRetry = existing
+                ?? (async item => await Task.Yield()));
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV006"), "KEV013");
+    }
+
+    [Test]
+    public async Task KEV013_Inspects_Switch_Expression_Callback_Arms()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            var mode = 0;
+            _ = Shield.Retry(options => options.OnRetry = mode switch
+            {
+                0 => async item => await Task.Yield(),
+                _ => _ => { },
+            });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV006"), "KEV013");
+    }
+
+    [Test]
+    public async Task KEV013_Code_Fix_Only_Renames_Compatible_Lambdas()
+    {
+        var compatible = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async _ => await Task.Yield());
+            }
+            """);
+        var compatibleValueTask = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = _ => AuditAsync());
+
+                private static ValueTask AuditAsync() => ValueTask.CompletedTask;
+            }
+            """);
+        var incompatible = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Hedge(options => options.OnHedge = _ => Task.Delay(1));
+            }
+            """);
+        var incompatibleGenericValueTask = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = _ => GetValueAsync());
+
+                private static ValueTask<int> GetValueAsync() => ValueTask.FromResult(1);
+            }
+            """);
+        var incompatibleAdditiveAssignment = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry += async _ => await Task.Yield());
+            }
+            """);
+        var incompatibleCoalescingAssignment = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry ??= async _ => await Task.Yield());
+            }
+            """);
+        var incompatibleDiscardingBlock = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _ = AuditAsync(item);
+                    });
+
+                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            }
+            """);
+        var compatibleLocalFunction = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async _ =>
+                    {
+                        Log();
+                        await Task.Yield();
+
+                        static void Log() => Console.WriteLine("retrying");
+                    });
+            }
+            """);
+        var incompatibleAsyncDiscardingBlock = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        _ = AuditAsync(item);
+                        await Task.Yield();
+                    });
+
+                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            }
+            """);
+        var incompatibleLocalFunctionDiscard = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        Start();
+                        await Task.Yield();
+
+                        void Start() => _ = AuditAsync(item);
+                    });
+
+                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            }
+            """);
+        var incompatibleDelegateLocalDiscard = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        Action start = () => _ = AuditAsync(item);
+                        start();
+                        await Task.Yield();
+                    });
+
+                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            }
+            """);
+        var incompatibleImmediatelyInvokedDelegate = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        ((Action)(() => _ = AuditAsync(item)))();
+                        await Task.Yield();
+                    });
+
+                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            }
+            """);
+        var incompatibleImmediatelyInvokedDelegateInvoke = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        ((Action)(() => _ = AuditAsync(item))).Invoke();
+                        await Task.Yield();
+                    });
+
+                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            }
+            """);
+        var incompatibleSourceMethodDiscard = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        Start(item);
+                        await Task.Yield();
+                    });
+
+                private static void Start(RetryEvent item)
+                {
+                    StartCore(item);
+                }
+
+                private static void StartCore(RetryEvent item) => _ = AuditAsync(item);
+                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            }
+            """);
+        var incompatibleForwardedDelegateDiscard = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        Action start = () => _ = AuditAsync(item);
+                        Run(() => Console.WriteLine(item.RetryNumber));
+                        Run(start);
+                        await Task.Yield();
+                    });
+
+                private static void Run(Action action) => action();
+                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            }
+            """);
+        var incompatibleOpaqueDelegateDiscard = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        Array.ForEach(new[] { 0 }, _ => _ = AuditAsync(item));
+                        await Task.Yield();
+                    });
+
+                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            }
+            """);
+        var incompatibleLocalFunctionMethodGroup = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        Array.ForEach(new[] { 0 }, Work);
+                        await Task.Yield();
+
+                        void Work(int _) => _ = AuditAsync(item);
+                    });
+
+                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            }
+            """);
+        var incompatibleConstructedDelegateDiscard = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        Array.ForEach(
+                            new[] { 0 },
+                            new Action<int>(_ => _ = AuditAsync(item)));
+                        await Task.Yield();
+                    });
+
+                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            }
+            """);
+        var incompatibleConditionalDelegateDiscard = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure(bool enabled) =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        Array.ForEach(
+                            new[] { 0 },
+                            enabled ? _ => _ = AuditAsync(item) : _ => { });
+                        await Task.Yield();
+                    });
+
+                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            }
+            """);
+        var incompatibleConditionalDelegateLocalDiscard = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure(bool enabled) =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        Action<int> work = enabled
+                            ? _ => _ = AuditAsync(item)
+                            : _ => { };
+                        Array.ForEach(new[] { 0 }, work);
+                        await Task.Yield();
+                    });
+
+                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            }
+            """);
+        var incompatibleSwitchDelegateDiscard = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure(int mode) =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        Array.ForEach(
+                            new[] { 0 },
+                            mode switch
+                            {
+                                0 => _ => _ = AuditAsync(item),
+                                _ => _ => { },
+                            });
+                        await Task.Yield();
+                    });
+
+                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            }
+            """);
+        var incompatibleCoalescedDelegateDiscard = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        Action<int>? audit = _ => _ = AuditAsync(item);
+                        Array.ForEach(new[] { 0 }, audit ?? (_ => { }));
+                        await Task.Yield();
+                    });
+
+                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            }
+            """);
+        var incompatibleAwaitWrapper = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                        await Forward(AuditAsync(item)));
+
+                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+                private static ValueTask Forward(Task ignored) => ValueTask.CompletedTask;
+            }
+            """);
+        var incompatibleTimedWait = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item => AuditAsync(item).Wait(0));
+
+                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            }
+            """);
+        var incompatibleCollectionAdd = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                private readonly System.Collections.Generic.List<Task> _pending = new();
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item => _pending.Add(AuditAsync(item)));
+
+                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            }
+            """);
+        var alreadyAssignedAsyncTwin = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options =>
+                    {
+                        options.OnRetryAsync = _ => ValueTask.CompletedTask;
+                        options.OnRetry = async _ => await Task.Yield();
+                    });
+            }
+            """);
+
+        var alreadyAssignedInHelperBlock = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure(RetryOptions options)
+                {
+                    options.OnRetryAsync = _ => ValueTask.CompletedTask;
+                    options.OnRetry = async _ => await Task.Yield();
+                }
+            }
+            """);
+        var alreadyAssignedInOuterBlock = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure(RetryOptions options, bool enabled)
+                {
+                    options.OnRetryAsync = _ => ValueTask.CompletedTask;
+                    if (enabled)
+                    {
+                        options.OnRetry = async _ => await Task.Yield();
+                    }
+                }
+            }
+            """);
+        var assignedOnDifferentReceiver = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure(RetryOptions first, RetryOptions second)
+                {
+                    first.OnRetryAsync = _ => ValueTask.CompletedTask;
+                    second.OnRetry = async _ => await Task.Yield();
+                }
+            }
+            """);
+        var alreadyAssignedThroughAlias = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure(RetryOptions options)
+                {
+                    var alias = options;
+                    options.OnRetryAsync = _ => ValueTask.CompletedTask;
+                    alias.OnRetry = async _ => await Task.Yield();
+                }
+            }
+            """);
+
+        await Assert.That(compatible.ActionCount).IsEqualTo(1);
+        await Assert.That(compatible.ChangedText).Contains("options.OnRetryAsync = async");
+        await Assert.That(compatibleValueTask.ActionCount).IsEqualTo(1);
+        await Assert.That(compatibleValueTask.ChangedText)
+            .Contains("options.OnRetryAsync = _ => AuditAsync()");
+        await Assert.That(compatibleLocalFunction.ActionCount).IsEqualTo(1);
+        await Assert.That(compatibleLocalFunction.ChangedText)
+            .Contains("options.OnRetryAsync = async");
+        await Assert.That(incompatible.ActionCount).IsEqualTo(0);
+        await Assert.That(incompatible.ChangedText).IsNull();
+        await Assert.That(incompatibleGenericValueTask.ActionCount).IsEqualTo(0);
+        await Assert.That(incompatibleGenericValueTask.ChangedText).IsNull();
+        await Assert.That(incompatibleAdditiveAssignment.ActionCount).IsEqualTo(0);
+        await Assert.That(incompatibleAdditiveAssignment.ChangedText).IsNull();
+        await Assert.That(incompatibleCoalescingAssignment.ActionCount).IsEqualTo(0);
+        await Assert.That(incompatibleCoalescingAssignment.ChangedText).IsNull();
+        await Assert.That(incompatibleDiscardingBlock.ActionCount).IsEqualTo(0);
+        await Assert.That(incompatibleDiscardingBlock.ChangedText).IsNull();
+        await Assert.That(incompatibleAsyncDiscardingBlock.ActionCount).IsEqualTo(0);
+        await Assert.That(incompatibleAsyncDiscardingBlock.ChangedText).IsNull();
+        await Assert.That(incompatibleLocalFunctionDiscard.ActionCount).IsEqualTo(0);
+        await Assert.That(incompatibleLocalFunctionDiscard.ChangedText).IsNull();
+        await Assert.That(incompatibleDelegateLocalDiscard.ActionCount).IsEqualTo(0);
+        await Assert.That(incompatibleDelegateLocalDiscard.ChangedText).IsNull();
+        await Assert.That(incompatibleImmediatelyInvokedDelegate.ActionCount).IsEqualTo(0);
+        await Assert.That(incompatibleImmediatelyInvokedDelegate.ChangedText).IsNull();
+        await Assert.That(incompatibleImmediatelyInvokedDelegateInvoke.ActionCount).IsEqualTo(0);
+        await Assert.That(incompatibleImmediatelyInvokedDelegateInvoke.ChangedText).IsNull();
+        await Assert.That(incompatibleSourceMethodDiscard.ActionCount).IsEqualTo(0);
+        await Assert.That(incompatibleSourceMethodDiscard.ChangedText).IsNull();
+        await Assert.That(incompatibleForwardedDelegateDiscard.ActionCount).IsEqualTo(0);
+        await Assert.That(incompatibleForwardedDelegateDiscard.ChangedText).IsNull();
+        await Assert.That(incompatibleOpaqueDelegateDiscard.ActionCount).IsEqualTo(0);
+        await Assert.That(incompatibleOpaqueDelegateDiscard.ChangedText).IsNull();
+        await Assert.That(incompatibleLocalFunctionMethodGroup.ActionCount).IsEqualTo(0);
+        await Assert.That(incompatibleLocalFunctionMethodGroup.ChangedText).IsNull();
+        await Assert.That(incompatibleConstructedDelegateDiscard.ActionCount).IsEqualTo(0);
+        await Assert.That(incompatibleConstructedDelegateDiscard.ChangedText).IsNull();
+        await Assert.That(incompatibleConditionalDelegateDiscard.ActionCount).IsEqualTo(0);
+        await Assert.That(incompatibleConditionalDelegateDiscard.ChangedText).IsNull();
+        await Assert.That(incompatibleConditionalDelegateLocalDiscard.ActionCount).IsEqualTo(0);
+        await Assert.That(incompatibleConditionalDelegateLocalDiscard.ChangedText).IsNull();
+        await Assert.That(incompatibleSwitchDelegateDiscard.ActionCount).IsEqualTo(0);
+        await Assert.That(incompatibleSwitchDelegateDiscard.ChangedText).IsNull();
+        await Assert.That(incompatibleCoalescedDelegateDiscard.ActionCount).IsEqualTo(0);
+        await Assert.That(incompatibleCoalescedDelegateDiscard.ChangedText).IsNull();
+        await Assert.That(incompatibleAwaitWrapper.ActionCount).IsEqualTo(0);
+        await Assert.That(incompatibleAwaitWrapper.ChangedText).IsNull();
+        await Assert.That(incompatibleTimedWait.ActionCount).IsEqualTo(0);
+        await Assert.That(incompatibleTimedWait.ChangedText).IsNull();
+        await Assert.That(incompatibleCollectionAdd.ActionCount).IsEqualTo(0);
+        await Assert.That(incompatibleCollectionAdd.ChangedText).IsNull();
+        await Assert.That(alreadyAssignedAsyncTwin.ActionCount).IsEqualTo(0);
+        await Assert.That(alreadyAssignedAsyncTwin.ChangedText).IsNull();
+        await Assert.That(alreadyAssignedInHelperBlock.ActionCount).IsEqualTo(0);
+        await Assert.That(alreadyAssignedInHelperBlock.ChangedText).IsNull();
+        await Assert.That(alreadyAssignedInOuterBlock.ActionCount).IsEqualTo(0);
+        await Assert.That(alreadyAssignedInOuterBlock.ChangedText).IsNull();
+        await Assert.That(assignedOnDifferentReceiver.ActionCount).IsEqualTo(1);
+        await Assert.That(assignedOnDifferentReceiver.ChangedText)
+            .Contains("second.OnRetryAsync = async");
+        await Assert.That(alreadyAssignedThroughAlias.ActionCount).IsEqualTo(0);
+        await Assert.That(alreadyAssignedThroughAlias.ChangedText).IsNull();
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Synchronously_Joined_TaskRun()
+    {
+        var statements = new[]
+        {
+            "Task.Run(() => item.Context.ShieldName).GetAwaiter().GetResult();",
+            "Task.Run(() => item.Context.ShieldName).Wait();",
+            "_ = Task.Run(() => item.Context.ShieldName).Result;",
+        };
+        foreach (var statement in statements)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                {
+                    {{statement}}
+                });
+                """);
+
+            await Assert.That(diagnostics).IsEmpty();
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Synchronously_Joined_Delegate_Locals()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                Func<Task> work = async () =>
+                {
+                    await Task.Yield();
+                    Console.WriteLine(item.Context.ShieldName);
+                };
+                work().GetAwaiter().GetResult();
+            });
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Awaited_TaskRun()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetryAsync = async item =>
+                await Task.Run(() => Consume(item.Context)));
+
+            static void Consume(KevlarContext context) =>
+                Console.WriteLine(context.ShieldName);
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Task_Locals_Joined_After_Constant_Declarations()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetryAsync = async item =>
+            {
+                var pending = Task.Run(() => Consume(item.Context));
+                var marker = 0;
+                await pending;
+                _ = marker;
+            });
+
+            static void Consume(KevlarContext context) =>
+                Console.WriteLine(context.ShieldName);
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Returned_ValueTask_Wrappers()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetryAsync = item =>
+                new ValueTask(Task.Run(() => Consume(item.Context))));
+
+            static void Consume(KevlarContext context) =>
+                Console.WriteLine(context.ShieldName);
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Flags_Awaited_TaskRun_In_Async_Void_Callbacks()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+                await Task.Run(() => Consume(item.Context)));
+
+            static void Consume(KevlarContext context) =>
+                Console.WriteLine(context.ShieldName);
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Flags_Event_Context_Captured_By_Deferred_Work()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+                Task.Run(() => Console.WriteLine(item.Context.ShieldName)));
+            """);
+
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Flags_Pooled_Context_Field_In_Deferred_Work()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private KevlarContext _context;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _context = item.Context;
+                        _ = Task.Run(() => Console.WriteLine(_context.ShieldName));
+                    });
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Flags_Pooled_Event_Field_In_Deferred_Work()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = item;
+                        _ = Task.Run(() => Console.WriteLine(_event.Context.ShieldName));
+                    });
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Unproven_Event_Fields_In_Scheduled_Work()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Schedule()
+                {
+                    _event = default;
+                    _ = Task.Run(() => Console.WriteLine(_event.RetryNumber));
+                }
+            }
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Unproven_Event_Properties_In_Scheduled_Work()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent Unrelated => default;
+
+                public void Schedule() =>
+                    _ = Task.Run(() => Console.WriteLine(Unrelated.RetryNumber));
+            }
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Flags_Proven_Event_Fields_In_Scheduled_Work()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = item;
+                        _ = Task.Run(() => Consume(_event));
+                    });
+
+                private static void Consume(RetryEvent item) { }
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_Event_Members_From_Explicit_Callback_Forms()
+    {
+        var parenthesized = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent Stored { get; set; }
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = (RetryEvent item) =>
+                    {
+                        Stored = item;
+                        _ = Task.Run(() => Consume(Stored));
+                    });
+
+                private static void Consume(RetryEvent item) { }
+            }
+            """);
+        var anonymousMethod = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = delegate(RetryEvent item)
+                    {
+                        _event = item;
+                        _ = Task.Run(() => Consume(_event));
+                    });
+
+                private static void Consume(RetryEvent item) { }
+            }
+            """);
+
+        await AssertRuleAsync(parenthesized, "KEV014", DiagnosticSeverity.Warning);
+        await AssertRuleAsync(anonymousMethod, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_Event_Member_Provenance_Across_Branches()
+    {
+        var retainedOnOneBranch = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        if (Environment.TickCount == 0)
+                        {
+                            _event = item;
+                        }
+                        else
+                        {
+                            _event = default;
+                        }
+
+                        _ = Task.Run(() => Consume(_event));
+                    });
+
+                private static void Consume(RetryEvent item) { }
+            }
+            """);
+        var clearedOnEveryBranch = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = item;
+                        if (Environment.TickCount == 0)
+                        {
+                            _event = default;
+                        }
+                        else
+                        {
+                            _event = default;
+                        }
+
+                        _ = Task.Run(() => Consume(_event));
+                    });
+
+                private static void Consume(RetryEvent item) { }
+            }
+            """);
+        var partiallyClearedNestedBranch = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = item;
+                        if (Environment.TickCount == 0)
+                        {
+                            if (Environment.TickCount == 1)
+                            {
+                                _event = default;
+                            }
+                        }
+                        else
+                        {
+                            _event = default;
+                        }
+
+                        _ = Task.Run(() => Consume(_event));
+                    });
+
+                private static void Consume(RetryEvent item) { }
+            }
+            """);
+
+        await AssertRuleAsync(retainedOnOneBranch, "KEV014", DiagnosticSeverity.Warning);
+        await Assert.That(clearedOnEveryBranch).IsEmpty();
+        await AssertRuleAsync(
+            partiallyClearedNestedBranch,
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_Event_Member_Provenance_Across_Sequential_Writes()
+    {
+        var cleared = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = item;
+                        _event = (RetryEvent)default;
+                        _event = (default(RetryEvent));
+                        _ = Task.Run(() => Consume(_event));
+                    });
+
+                private static void Consume(RetryEvent item) { }
+            }
+            """);
+        var reintroduced = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = item;
+                        _event = default;
+                        _event = item;
+                        _ = Task.Run(() => Consume(_event));
+                    });
+
+                private static void Consume(RetryEvent item) { }
+            }
+            """);
+
+        await Assert.That(cleared).IsEmpty();
+        await AssertRuleAsync(reintroduced, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_Conditionally_Assigned_Captured_Locals()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        RetryEvent retained = default;
+                        if (Environment.TickCount == 0)
+                        {
+                            retained = item;
+                        }
+
+                        _ = Task.Run(() => Consume(retained));
+                    });
+
+                private static void Consume(RetryEvent item) { }
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Unproven_Member_Assignments_In_Scheduled_Work()
+    {
+        var unrelatedCallback = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+                public Action<RetryEvent>? Callback { get; set; }
+
+                public void Configure() => Callback = item =>
+                {
+                    _event = item;
+                    _ = Task.Run(() => Console.WriteLine(_event.RetryNumber));
+                };
+            }
+            """);
+        var parameterlessCallback = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure(RetryEvent initial) =>
+                    _ = Shield.Retry(options => options.OnRetry = delegate
+                    {
+                        _event = initial;
+                        _ = Task.Run(() => Console.WriteLine(_event.RetryNumber));
+                    });
+            }
+            """);
+        var shadowedField = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        RetryEvent _event = item;
+                        _ = Task.Run(() => Consume(this._event));
+                    });
+
+                private static void Consume(RetryEvent item) { }
+            }
+            """);
+        var memberNameCollision = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private readonly Holder _holder = new();
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = _holder.item;
+                        _ = Task.Run(() => Consume(_event));
+                    });
+
+                private static void Consume(RetryEvent item) { }
+
+                private sealed class Holder
+                {
+                    public RetryEvent item;
+                }
+            }
+            """);
+        var conditionOnlyReference = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = item.RetryNumber > 0
+                            ? default(RetryEvent)
+                            : default(RetryEvent);
+                        _ = Task.Run(() => Consume(_event));
+                    });
+
+                private static void Consume(RetryEvent item) { }
+            }
+            """);
+
+        await Assert.That(unrelatedCallback).IsEmpty();
+        await Assert.That(parameterlessCallback).IsEmpty();
+        await Assert.That(shadowedField).IsEmpty();
+        await Assert.That(memberNameCollision).IsEmpty();
+        await Assert.That(conditionOnlyReference).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Scheduled_Instance_Method_Bodies()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = item;
+                        _ = Task.Run(ProcessStored);
+                    });
+
+                private void ProcessStored() =>
+                    Console.WriteLine(_event.Context.ShieldName);
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_Proven_Event_Fields_Into_Scheduled_Methods()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = item;
+                        _ = Task.Run(ProcessStored);
+                    });
+
+                private void ProcessStored() => Consume(_event);
+                private static void Consume(RetryEvent item) { }
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Fresh_Defaults_Passed_To_Scheduled_Helpers()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Schedule()
+                {
+                    _ = Task.Run(() => Consume(default(RetryEvent)));
+                    ThreadPool.QueueUserWorkItem<RetryEvent>(
+                        Consume,
+                        default,
+                        preferLocal: false);
+                }
+
+                private static void Consume(RetryEvent item) { }
+            }
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Factory_Produced_Event_Defaults()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Schedule()
+                {
+                    var unrelated = CreateDefault();
+                    _ = Task.Run(() => Console.WriteLine(unrelated.RetryNumber));
+                }
+
+                private static RetryEvent CreateDefault() => default;
+            }
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Member_Defaults_From_Source_Helpers()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = CreateDefault(item);
+                        _ = Task.Run(() => Consume(_event));
+                    });
+
+                private static RetryEvent CreateDefault(RetryEvent ignored) => default;
+                private static void Consume(RetryEvent item) { }
+            }
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_Factory_Results_From_Event_Arguments()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        var retained = Identity(item);
+                        _ = Task.Run(() => Console.WriteLine(retained.RetryNumber));
+                    });
+
+                private static RetryEvent Identity(RetryEvent item) => item;
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Scalar_Factory_Results_From_Event_Arguments()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        var retryNumber = GetRetryNumber(item);
+                        _ = Task.Run(() => Console.WriteLine(retryNumber));
+                    });
+
+                private static int GetRetryNumber(RetryEvent item) => item.RetryNumber;
+            }
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Unobserved_Async_Instance_Method_Bodies()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = item;
+                        _ = AuditStoredAsync();
+                    });
+
+                private async Task AuditStoredAsync()
+                {
+                    await Task.Yield();
+                    Console.WriteLine(_event.Context.ShieldName);
+                }
+            }
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Retained_Wrappers_In_Async_Instance_Methods()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private Holder _holder = null!;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _holder = new Holder(item);
+                        _ = AuditStoredAsync();
+                    });
+
+                private async Task AuditStoredAsync()
+                {
+                    await Task.Yield();
+                    Console.WriteLine(_holder.Event.Context.ShieldName);
+                }
+
+                private sealed class Holder
+                {
+                    public Holder(RetryEvent item)
+                    {
+                        Event = item;
+                    }
+
+                    public RetryEvent Event { get; }
+                }
+            }
+            """);
+
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Member_Aliases_In_Async_Instance_Methods()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = item;
+                        _ = AuditStoredAsync();
+                    });
+
+                private async Task AuditStoredAsync()
+                {
+                    var retained = this._event;
+                    await Task.Yield();
+                    Console.WriteLine(retained.Context.ShieldName);
+                }
+            }
+            """);
+
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Unrelated_Event_Members_In_Async_Instance_Methods()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _unrelated;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _ = AuditAsync();
+                    });
+
+                private async Task AuditAsync()
+                {
+                    await Task.Yield();
+                    Console.WriteLine(_unrelated.RetryNumber);
+                }
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV013");
+    }
+
+    [Test]
+    public async Task KEV014_Honors_Cleared_Event_Members_In_Async_Instance_Methods()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = item;
+                        _event = default;
+                        _ = AuditStoredAsync();
+                    });
+
+                private async Task AuditStoredAsync()
+                {
+                    await Task.Yield();
+                    Console.WriteLine(_event.RetryNumber);
+                }
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV013");
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Async_Method_Aliases_On_Exiting_Paths()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = item;
+                        _ = AuditAsync(Environment.TickCount == 0);
+                    });
+
+                private async Task AuditAsync(bool stop)
+                {
+                    RetryEvent retained = default;
+                    if (stop)
+                    {
+                        retained = _event;
+                        return;
+                    }
+
+                    await Task.Yield();
+                    Console.WriteLine(retained.RetryNumber);
+                }
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV013");
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_Async_Method_Aliases_At_Later_Awaits()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = item;
+                        _ = AuditAsync(Environment.TickCount == 0);
+                    });
+
+                private async Task AuditAsync(bool skip)
+                {
+                    if (skip)
+                    {
+                        await Task.Yield();
+                        return;
+                    }
+
+                    var retained = _event;
+                    await Task.Yield();
+                    Console.WriteLine(retained.Context.ShieldName);
+                }
+            }
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Flags_Pooled_Event_Property_In_Deferred_Work()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent StoredEvent { get; set; }
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        StoredEvent = item;
+                        _ = Task.Run(() => Console.WriteLine(StoredEvent.Context.ShieldName));
+                    });
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Flags_Event_Forwarded_To_Deferred_Helper()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+                Task.Run(() => Process(item)));
+
+            static void Process(RetryEvent item) =>
+                Console.WriteLine(item.Context.ShieldName);
+            """);
+
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Flags_Handling_Event_Captured_By_Deferred_Work()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.HandlesExceptionWithContext = item =>
+            {
+                _ = Task.Run(() => Consume(item));
+                return true;
+            });
+
+            static void Consume(HandlingEvent item) =>
+                Console.WriteLine(item.Context.ShieldName);
+            """);
+
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Flags_Sibling_Assembly_Events_Forwarded_To_Deferred_Work()
+    {
+        var chaosDiagnostics = await AnalyzeBodyAsync("""
+            _ = ChaosShield.Latency(options => options.OnInjected = item =>
+                Task.Run(() => Process(item)));
+
+            static void Process(ChaosEvent item) =>
+                Console.WriteLine(item.Context.ShieldName);
+            """);
+        var rateLimiterDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Empty.UseRateLimiter(
+                (System.Threading.RateLimiting.RateLimiter)null!,
+                options => options.OnRejected = item =>
+                    Task.Run(() => Process(item)));
+
+            static void Process(RateLimiterAdapterRejectedEvent item) =>
+                Console.WriteLine(item.Context.ShieldName);
+            """);
+
+        await AssertRuleAsync(
+            Without(chaosDiagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(
+            Without(rateLimiterDiagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Follows_Erased_Event_Local_Captured_By_Deferred_Work()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                object boxed = item;
+                _ = Task.Run(() => Process((RetryEvent)boxed));
+            });
+
+            static void Process(RetryEvent item) =>
+                Console.WriteLine(item.Context.ShieldName);
+            """);
+
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Captured_Local_Function_Method_Groups()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                void Work() => Console.WriteLine(item.Context.ShieldName);
+                _ = Task.Run(Work);
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Follows_Local_Function_Calls_From_Scheduled_Work()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                void Inner() => Console.WriteLine(item.Context.ShieldName);
+                void Work() => Inner();
+                _ = Task.Run(Work);
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Allows_Copied_Context_Values_In_Deferred_Work()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var shieldName = item.Context.ShieldName;
+                _ = Task.Run(() => Console.WriteLine(shieldName));
+            });
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Allows_Context_Value_Passed_To_Eager_Delegate_Factory()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            Action CreateWork(string value) => () => Console.WriteLine(value);
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                _ = Task.Run(CreateWork(item.Context.ShieldName));
+            });
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Allows_Context_Value_Used_To_Construct_Method_Group_Receiver()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class Worker(string value)
+            {
+                public void Run() => Console.WriteLine(value);
+            }
+
+            public sealed class TestSubject
+            {
+                public void Observe(RetryEvent item)
+                {
+                    _ = Task.Run(new Worker(item.Context.ShieldName).Run);
+                }
+            }
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Allows_Context_Value_Passed_As_Eager_State()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+                ThreadPool.QueueUserWorkItem(
+                    static value => Console.WriteLine(value),
+                    item.Context.ShieldName));
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Follows_Event_Context_Local_Aliases()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var context = item.Context;
+                _ = Task.Run(() => Console.WriteLine(context.ShieldName));
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Similarly_Named_Application_Context_Types()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            namespace Foo.Kevlar
+            {
+                public sealed class KevlarContext
+                {
+                    public string ShieldName => "application";
+                }
+            }
+
+            public sealed class ApplicationEvent
+            {
+                public Foo.Kevlar.KevlarContext Context { get; } = new();
+            }
+
+            public sealed class TestSubject
+            {
+                public void Observe(ApplicationEvent item) =>
+                    _ = Task.Run(() => Console.WriteLine(item.Context.ShieldName));
+            }
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Static_Event_Context_Properties()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class ApplicationEvent
+            {
+                public static KevlarContext Context => default;
+            }
+
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = retryEvent =>
+                    {
+                        var item = new ApplicationEvent();
+                        _ = Task.Run(() => Use(item));
+                    });
+
+                private static void Use(ApplicationEvent item) { }
+            }
+            """);
+
+        await Assert.That(Without(diagnostics, "KEV006")).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Computed_Event_Context_Properties()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class ApplicationEvent
+            {
+                public KevlarContext Context => default;
+            }
+
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = retryEvent =>
+                    {
+                        var item = new ApplicationEvent();
+                        _ = Task.Run(() => Use(item));
+                    });
+
+                private static void Use(ApplicationEvent item) { }
+            }
+            """);
+
+        await Assert.That(Without(diagnostics, "KEV006")).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Flags_Event_Context_Passed_As_Deferred_State()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+                ThreadPool.QueueUserWorkItem(
+                    static (KevlarContext context) => Console.WriteLine(context.ShieldName),
+                    item.Context,
+                    preferLocal: false));
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Flags_Event_Context_Nested_In_Deferred_State()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+                ThreadPool.QueueUserWorkItem(
+                    static ((KevlarContext Context, int Value) state) =>
+                        Console.WriteLine(state.Context.ShieldName),
+                    (Context: item.Context, Value: 1),
+                    preferLocal: false));
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Flags_Event_Context_In_NonGeneric_Deferred_State()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class WorkState
+            {
+                public KevlarContext Context { get; set; } = null!;
+            }
+
+            public sealed class TestSubject
+            {
+                public void Observe(RetryEvent item)
+                {
+                    var state = new WorkState { Context = item.Context };
+                    ThreadPool.QueueUserWorkItem(
+                        static value => Console.WriteLine(value.Context.ShieldName),
+                        state,
+                        preferLocal: false);
+                }
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Constructor_Arguments_In_Deferred_State()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class WorkState
+            {
+                public WorkState(KevlarContext context) => Context = context;
+
+                public KevlarContext Context { get; }
+            }
+
+            public sealed class TestSubject
+            {
+                public void Observe(RetryEvent item) =>
+                    ThreadPool.QueueUserWorkItem(
+                        static state => Console.WriteLine(state.Context.ShieldName),
+                        new WorkState(item.Context),
+                        preferLocal: false);
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Erased_Array_State_Values()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+                ThreadPool.QueueUserWorkItem(
+                    static (object[] state) =>
+                        Console.WriteLine(((KevlarContext)state[0]).ShieldName),
+                    new object[] { item.Context },
+                    preferLocal: false));
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Object_Erased_Tuple_State_Values()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+                ThreadPool.QueueUserWorkItem(
+                    static state =>
+                        Console.WriteLine(((KevlarContext)state.Context).ShieldName),
+                    (Context: (object)item.Context, Other: 0),
+                    preferLocal: false));
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Conditionally_Selected_Erased_State()
+    {
+        var cases = new[]
+        {
+            "enabled ? (object)item.Context : new object()",
+            "enabled ? new object() : (object)item.Context",
+            "(object?)item.Context ?? new object()",
+            "(object?)null ?? item.Context",
+            "enabled switch { true => (object)item.Context, false => new object() }",
+        };
+
+        foreach (var state in cases)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                var enabled = true;
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                    ThreadPool.QueueUserWorkItem(
+                        static (object value) => Console.WriteLine(value),
+                        {{state}},
+                        preferLocal: false));
+                """);
+
+            await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Retained_Composite_Task_Arguments()
+    {
+        var statements = new[]
+        {
+            "_ = AuditAsync(enabled ? (object)item : new object());",
+            "_ = AuditAsync((object?)item ?? new object());",
+            "_ = AuditAsync(enabled switch { true => (object)item, false => new object() });",
+            "_ = AuditAsync(new object[] { item });",
+            "_ = AuditAsync(((object)item, 0));",
+            "_ = AuditAsync(new WorkState((object)item));",
+            "_ = AuditAsync(new WorkState(new object()) { Value = (object)item });",
+            "_ = AuditAsync(new System.Collections.Generic.List<object> { item });",
+            "var template = new WorkState(new object()); _ = AuditAsync(template with { Value = (object)item });",
+            "_ = AuditAsync(new { Value = (object)item });",
+            "_ = AuditArrayAsync([item]);",
+        };
+        foreach (var statement in statements)
+        {
+            var diagnostics = await AnalyzeSourceAsync($$"""
+                public sealed record WorkState(object Value);
+
+                public sealed class TestSubject
+                {
+                    public void Configure()
+                    {
+                        var enabled = true;
+                        _ = Shield.Retry(options => options.OnRetry = item =>
+                        {
+                            {{statement}}
+                        });
+                    }
+
+                    private static Task AuditAsync(object state) => Task.CompletedTask;
+                    private static Task AuditArrayAsync(object[] state) => Task.CompletedTask;
+                }
+                """);
+
+            await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+            await AssertRuleAsync(
+                Without(diagnostics, "KEV013"),
+                "KEV014",
+                DiagnosticSeverity.Warning);
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Nested_Delegate_Event_Parameters()
+    {
+        var selectors = new[]
+        {
+            "(RetryEvent other) => other.RetryNumber",
+            "(RetryEvent other) => other.Context.ShieldName.Length",
+            "(RetryEvent other) => { var copy = other; return copy.RetryNumber; }",
+        };
+        foreach (var selector in selectors)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                    ProcessAsync({{selector}}));
+
+                static Task ProcessAsync(Func<RetryEvent, int> selector) => Task.CompletedTask;
+                """);
+
+            await AssertRuleAsync(diagnostics, "KEV013");
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Nested_Scheduler_Delegate_Parameters()
+    {
+        var selectors = new[]
+        {
+            "(RetryEvent other) => other.RetryNumber",
+            "(RetryEvent other) => { var copy = other; return copy.RetryNumber; }",
+        };
+        foreach (var selector in selectors)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                {
+                    _ = Task.Run(() => Consume({{selector}}));
+                });
+
+                static void Consume(Func<RetryEvent, int> selector) { }
+                """);
+
+            await Assert.That(diagnostics).IsEmpty();
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Provably_Empty_Deferred_State()
+    {
+        var states = new[]
+        {
+            "new RetryEvent[0]",
+            "Array.Empty<RetryEvent>()",
+            "new System.Collections.Generic.List<RetryEvent>()",
+            "default(RetryEvent)",
+        };
+        foreach (var state in states)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                {
+                    ThreadPool.QueueUserWorkItem(
+                        static _ => { },
+                        {{state}});
+                });
+                """);
+
+            await Assert.That(diagnostics).IsEmpty();
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Framework_Collection_Capacity_State()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+                ThreadPool.QueueUserWorkItem(
+                    static (System.Collections.Generic.List<RetryEvent> state) =>
+                        Console.WriteLine(state.Count),
+                    new System.Collections.Generic.List<RetryEvent>(capacity: 1),
+                    preferLocal: false));
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Erased_Collection_Expression_Values()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+                ThreadPool.QueueUserWorkItem(
+                    static (object[] state) =>
+                        Console.WriteLine(((KevlarContext)state[0]).ShieldName),
+                    [item.Context],
+                    preferLocal: false));
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Erased_Object_Initializer_Values()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class WorkState
+            {
+                public object? Context { get; set; }
+            }
+
+            public sealed class TestSubject
+            {
+                public void Observe(RetryEvent item)
+                {
+                    var state = new WorkState { Context = (object)item.Context };
+                    ThreadPool.QueueUserWorkItem(
+                        static value => Console.WriteLine(((KevlarContext)value.Context!).ShieldName),
+                        state,
+                        preferLocal: false);
+                }
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Erased_Anonymous_Object_State_Values()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+                ThreadPool.QueueUserWorkItem(
+                    static state =>
+                        Console.WriteLine(((KevlarContext)state.State).ShieldName),
+                    new { State = (object)item.Context },
+                    preferLocal: false));
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Erased_Record_With_State_Values()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed record WorkState(object? State);
+
+            public sealed class TestSubject
+            {
+                public void Observe(RetryEvent item)
+                {
+                    var template = new WorkState(null);
+                    ThreadPool.QueueUserWorkItem(
+                        static state =>
+                            Console.WriteLine(((KevlarContext)state.State!).ShieldName),
+                        template with { State = (object)item.Context },
+                        preferLocal: false);
+                }
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Copied_Record_State_Values()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed record WorkState(object? State, int Flag);
+
+            public sealed class TestSubject
+            {
+                public void Observe(RetryEvent item)
+                {
+                    var template = new WorkState((object)item.Context, 0);
+                    ThreadPool.QueueUserWorkItem(
+                        static state =>
+                            Console.WriteLine(((KevlarContext)state.State!).ShieldName),
+                        template with { Flag = 1 },
+                        preferLocal: false);
+                }
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Erased_Collection_Initializer_Values()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+                ThreadPool.QueueUserWorkItem(
+                    static (System.Collections.Generic.List<object> state) =>
+                        Console.WriteLine(((KevlarContext)state[0]).ShieldName),
+                    new System.Collections.Generic.List<object> { item.Context },
+                    preferLocal: false));
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Follows_Stable_Deferred_Delegate_Initializers()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                Action work = () => Console.WriteLine(item.Context.ShieldName);
+                _ = Task.Run(work);
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Framework_Constructor_State_Values()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+                ThreadPool.QueueUserWorkItem(
+                    static (System.Collections.Generic.List<RetryEvent> state) =>
+                        Console.WriteLine(state[0].Context.ShieldName),
+                    new System.Collections.Generic.List<RetryEvent>(new[] { item }),
+                    preferLocal: false));
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Metadata_Container_State_Values()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+                ThreadPool.QueueUserWorkItem(
+                    static (System.Collections.Generic.KeyValuePair<int, RetryEvent> state) =>
+                        Console.WriteLine(state.Value.Context.ShieldName),
+                    new System.Collections.Generic.KeyValuePair<int, RetryEvent>(0, item),
+                    preferLocal: false));
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Constructor_Snapshots_In_Deferred_State()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class RetrySnapshot
+            {
+                public RetrySnapshot(RetryEvent item)
+                {
+                    RetryNumber = item.RetryNumber;
+                }
+
+                public int RetryNumber { get; }
+            }
+
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                        ThreadPool.QueueUserWorkItem(
+                            static (RetrySnapshot snapshot) =>
+                                Console.WriteLine(snapshot.RetryNumber),
+                            new RetrySnapshot(item),
+                            preferLocal: false));
+            }
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Conditional_Deferred_Delegate_Initializers()
+    {
+        var initializers = new[]
+        {
+            "enabled ? (Action)(() => Console.WriteLine(item.Context.ShieldName)) : () => { }",
+            "enabled ? (Action)(() => { }) : () => Console.WriteLine(item.Context.ShieldName)",
+            "existing ?? (() => Console.WriteLine(item.Context.ShieldName))",
+        };
+        foreach (var initializer in initializers)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                var enabled = true;
+                Action? existing = null;
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                {
+                    Action work = {{initializer}};
+                    _ = Task.Run(work);
+                });
+                """);
+
+            await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Switch_Selected_Deferred_Delegates()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            var mode = 0;
+            _ = Shield.Retry(options => options.OnRetry = item =>
+                Task.Run(mode switch
+                {
+                    0 => (Action)(() => Console.WriteLine(item.Context.ShieldName)),
+                    _ => () => { },
+                }));
+            """);
+
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
     [Test]
     public async Task Public_Surface_Uses_One_Hedge_Stem()
     {
@@ -115,7 +4379,7 @@ public class PipelineHazardAnalyzerTests
             "await Shield.For<int>().ConcurrencyLimit(2).ExecuteOutcomeAsync(1, (state, _) => new ValueTask<int>(state));",
         };
 
-        await AssertEachAsync(cases, "KEV004", "KEV012");
+        await AssertEachAsync(cases, "KEV004", "KEV012", "KEV013");
     }
 
     [Test]
@@ -407,7 +4671,7 @@ public class PipelineHazardAnalyzerTests
             "_ = await Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteOutcomeAsync(static _ => Task.FromResult(1));",
         };
 
-        await AssertEachAsync(cases, "KEV005", "KEV012");
+        await AssertEachAsync(cases, "KEV005", "KEV012", "KEV013");
     }
 
     [Test]
@@ -423,7 +4687,7 @@ public class PipelineHazardAnalyzerTests
             "var fallback = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask); _ = Shield.Compose(Shield.Empty, fallback).Execute(static _ => 1);",
         };
 
-        await AssertEachAsync(cases, "KEV005", "KEV012");
+        await AssertEachAsync(cases, "KEV005", "KEV012", "KEV013");
     }
 
     [Test]
@@ -433,7 +4697,7 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask)" +
             ".UseRateLimiter((System.Threading.RateLimiting.RateLimiter)null!).Execute(static _ => 1);");
 
-        await AssertRuleAsync(Without(diagnostics, "KEV004", "KEV012"), "KEV005");
+        await AssertRuleAsync(Without(diagnostics, "KEV004", "KEV012", "KEV013"), "KEV005");
     }
 
     [Test]
@@ -457,7 +4721,7 @@ public class PipelineHazardAnalyzerTests
         foreach (var body in cases)
         {
             var diagnostics = await AnalyzeBodyAsync(body);
-            await Assert.That(Without(diagnostics, "KEV012")).IsEmpty();
+            await Assert.That(Without(diagnostics, "KEV012", "KEV013")).IsEmpty();
         }
     }
 
@@ -481,7 +4745,7 @@ public class PipelineHazardAnalyzerTests
             "Fallback on a non-generic Shield applies only to void executions. " +
             "For executions that return a value, build a result-aware shield with " +
             "Shield.For<T>() and use its Fallback overloads.");
-        await Assert.That(Without(suppressed, "KEV012")).IsEmpty();
+        await Assert.That(Without(suppressed, "KEV012", "KEV013")).IsEmpty();
     }
 
     [Test]
@@ -1338,6 +5602,25 @@ public class PipelineHazardAnalyzerTests
         };
 
         await AssertEachAsync(cases, "KEV012", "KEV004", "KEV011");
+
+        var additionalOptionShapes = new[]
+        {
+            "_ = Shield.For<int>().Retry(options => options.OnRetryAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
+            "_ = Shield.For<int>().Retry(options => options.DelayGeneratorAsync = static _ => new ValueTask<TimeSpan?>(TimeSpan.Zero)).Execute(_ => 1);",
+            "_ = Shield.Hedge(options => options.DelayGeneratorAsync = static _ => new ValueTask<TimeSpan>(TimeSpan.Zero)).Execute(_ => 1);",
+            "_ = Shield.For<int>().Hedge(options => options.DelayGeneratorAsync = static _ => new ValueTask<TimeSpan>(TimeSpan.Zero)).Execute(_ => 1);",
+            "_ = Shield.Timeout(options => options.OnTimeoutAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
+            "_ = Shield.CircuitBreaker(options => options.OnStateChangedAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
+            "_ = Shield.For<int>().CircuitBreaker(options => { options.ConsecutiveFailures = 1; options.BreakDurationGenerator = static _ => new ValueTask<TimeSpan>(TimeSpan.FromSeconds(1)); }).Execute(_ => 1);",
+            "_ = Shield.For<int>().CircuitBreaker(options => options.OnStateChangedAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
+            "Shield.Fallback(static _ => ValueTask.CompletedTask, options => options.OnFallbackAsync = static _ => ValueTask.CompletedTask).Execute(static _ => { });",
+        };
+        foreach (var body in additionalOptionShapes)
+        {
+            var diagnostics = await AnalyzeBodyAsync(body);
+            await Assert.That(diagnostics.Any(static diagnostic => diagnostic.Id == "KEV012"))
+                .IsTrue();
+        }
     }
 
     [Test]
@@ -1435,6 +5718,14 @@ public class PipelineHazardAnalyzerTests
                 public sealed class CustomOptions
                 {
                     public Func<int, ValueTask>? OnRetryAsync { get; set; }
+                    public Func<int, ValueTask<TimeSpan?>>? DelayGeneratorAsync { get; set; }
+                    public Func<int, ValueTask>? OnTimeoutAsync { get; set; }
+                    public Func<int, ValueTask<TimeSpan>>? TimeoutGenerator { get; set; }
+                    public Func<int, ValueTask>? OnFallbackAsync { get; set; }
+                    public Func<int, ValueTask>? OnStateChangedAsync { get; set; }
+                    public Func<int, ValueTask<TimeSpan>>? BreakDurationGenerator { get; set; }
+                    public Func<int, ValueTask>? OnRejectedAsync { get; set; }
+                    public Func<int, ValueTask>? Behavior { get; set; }
                 }
 
                 public static class CustomShieldExtensions
@@ -1449,7 +5740,18 @@ public class PipelineHazardAnalyzerTests
                 public sealed class TestSubject
                 {
                     public int Run() => Shield.Empty
-                        .Custom(options => options.OnRetryAsync = static _ => ValueTask.CompletedTask)
+                        .Custom(options =>
+                        {
+                            options.OnRetryAsync = static _ => ValueTask.CompletedTask;
+                            options.DelayGeneratorAsync = static _ => ValueTask.FromResult<TimeSpan?>(TimeSpan.Zero);
+                            options.OnTimeoutAsync = static _ => ValueTask.CompletedTask;
+                            options.TimeoutGenerator = static _ => ValueTask.FromResult(TimeSpan.Zero);
+                            options.OnFallbackAsync = static _ => ValueTask.CompletedTask;
+                            options.OnStateChangedAsync = static _ => ValueTask.CompletedTask;
+                            options.BreakDurationGenerator = static _ => ValueTask.FromResult(TimeSpan.Zero);
+                            options.OnRejectedAsync = static _ => ValueTask.CompletedTask;
+                            options.Behavior = static _ => ValueTask.CompletedTask;
+                        })
                         .Execute(_ => 1);
                 }
             }
@@ -1564,6 +5866,45 @@ public class PipelineHazardAnalyzerTests
         await Assert.That(diagnostics[0].Severity).IsEqualTo(expectedSeverity);
     }
 
+    private static async Task<(int ActionCount, string? ChangedText)> GetCodeFixAsync(
+        string declarations)
+    {
+        using var workspace = new AdhocWorkspace();
+        var project = workspace.AddProject(ProjectInfo.Create(
+            ProjectId.CreateNewId(),
+            VersionStamp.Create(),
+            "CodeFixTest",
+            "CodeFixTest",
+            LanguageNames.CSharp,
+            compilationOptions: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary),
+            parseOptions: new CSharpParseOptions(),
+            metadataReferences: GetMetadataReferences()));
+        var document = workspace.AddDocument(
+            project.Id,
+            "Test.cs",
+            SourceText.From(CreateSource(declarations)));
+        var compilation = (CSharpCompilation)(await document.Project.GetCompilationAsync())!;
+        var diagnostic = (await GetAnalyzerDiagnosticsAsync(compilation))
+            .Single(static item => item.Id == "KEV013");
+        var actions = new List<CodeAction>();
+        var provider = new AsyncCallbackCodeFixProvider();
+
+        await provider.RegisterCodeFixesAsync(new CodeFixContext(
+            document,
+            diagnostic,
+            (action, _) => actions.Add(action),
+            CancellationToken.None));
+        if (actions.Count != 1)
+        {
+            return (actions.Count, null);
+        }
+
+        var operations = await actions[0].GetOperationsAsync(CancellationToken.None);
+        var changedSolution = operations.OfType<ApplyChangesOperation>().Single().ChangedSolution;
+        var changedText = await changedSolution.GetDocument(document.Id)!.GetTextAsync();
+        return (actions.Count, changedText.ToString());
+    }
+
     private static Task<ImmutableArray<Diagnostic>> AnalyzeBodyAsync(
         string body,
         string members = "",
@@ -1587,14 +5928,37 @@ public class PipelineHazardAnalyzerTests
         bool isGenerated = false,
         bool allowCompilationErrors = false,
         string assemblyName = "PipelineHazardAnalyzerTestSubject",
-        bool enableImplicitDefaultHandlingRule = false)
+        bool enableImplicitDefaultHandlingRule = false,
+        MetadataReference? additionalReference = null)
     {
         var source = CreateSource(declarations, isGenerated, enableImplicitDefaultHandlingRule);
-        var compilation = CreateCompilation(source, assemblyName);
+        var compilation = CreateCompilation(source, assemblyName, additionalReference);
         var errors = compilation.GetDiagnostics().Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error).ToArray();
         if (!allowCompilationErrors && errors.Length > 0)
         {
             throw new InvalidOperationException("Test source does not compile: " + string.Join("; ", errors.Select(static error => error.ToString())));
+        }
+
+        return await GetAnalyzerDiagnosticsAsync(compilation);
+    }
+
+    private static async Task<ImmutableArray<Diagnostic>> AnalyzeSourcesAsync(
+        params string[] declarations)
+    {
+        var compilation = CSharpCompilation.Create(
+            "PipelineHazardAnalyzerTestSubject",
+            declarations.Select(declaration =>
+                CSharpSyntaxTree.ParseText(CreateSource(declaration))),
+            GetMetadataReferences(),
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+        var errors = compilation.GetDiagnostics()
+            .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
+            .ToArray();
+        if (errors.Length > 0)
+        {
+            throw new InvalidOperationException(
+                "Test source does not compile: "
+                + string.Join("; ", errors.Select(static error => error.ToString())));
         }
 
         return await GetAnalyzerDiagnosticsAsync(compilation);
@@ -1619,21 +5983,47 @@ public class PipelineHazardAnalyzerTests
 
     private static CSharpCompilation CreateCompilation(
         string source,
-        string assemblyName = "PipelineHazardAnalyzerTestSubject")
+        string assemblyName = "PipelineHazardAnalyzerTestSubject",
+        MetadataReference? additionalReference = null)
     {
-        var references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)
-            .Split(Path.PathSeparator)
-            .Select(path => (MetadataReference)MetadataReference.CreateFromFile(path))
-            .Append(MetadataReference.CreateFromFile(typeof(Shield).Assembly.Location))
-            .Append(MetadataReference.CreateFromFile(typeof(ChaosShield).Assembly.Location))
-            .Append(MetadataReference.CreateFromFile(
-                typeof(Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions).Assembly.Location));
+        var references = GetMetadataReferences();
+        if (additionalReference is not null)
+        {
+            references = references.Append(additionalReference);
+        }
+
         return CSharpCompilation.Create(
             assemblyName,
             [CSharpSyntaxTree.ParseText(source)],
             references,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
     }
+
+    private static MetadataReference CreateMetadataReference(string declarations)
+    {
+        var compilation = CreateCompilation(
+            CreateSource(declarations),
+            "PipelineHazardAnalyzerExternalTestSubject");
+        using var stream = new MemoryStream();
+        var result = compilation.Emit(stream);
+        if (!result.Success)
+        {
+            throw new InvalidOperationException(
+                "Metadata test source does not compile: "
+                + string.Join("; ", result.Diagnostics.Select(static error => error.ToString())));
+        }
+
+        return MetadataReference.CreateFromImage(stream.ToArray());
+    }
+
+    private static IEnumerable<MetadataReference> GetMetadataReferences() =>
+        ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)
+            .Split(Path.PathSeparator)
+            .Select(path => (MetadataReference)MetadataReference.CreateFromFile(path))
+            .Append(MetadataReference.CreateFromFile(typeof(Shield).Assembly.Location))
+            .Append(MetadataReference.CreateFromFile(typeof(Kevlar.Chaos.ChaosShield).Assembly.Location))
+            .Append(MetadataReference.CreateFromFile(
+                typeof(Kevlar.Extensions.RateLimiting.ShieldRateLimiterExtensions).Assembly.Location));
 
     private static Task<ImmutableArray<Diagnostic>> GetAnalyzerDiagnosticsAsync(CSharpCompilation compilation) =>
         compilation

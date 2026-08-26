@@ -9,11 +9,13 @@
   <ItemGroup>
     <PackageReference Include="TUnit" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Kevlar\Kevlar.csproj" />
     <ProjectReference Include="..\..\src\Kevlar.Analyzers\Kevlar.Analyzers.csproj" />
+    <ProjectReference Include="..\..\src\Kevlar.Analyzers.CodeFixes\Kevlar.Analyzers.CodeFixes.csproj" />
     <ProjectReference Include="..\..\src\Kevlar.Chaos\Kevlar.Chaos.csproj" />
     <ProjectReference Include="..\..\src\Kevlar.Extensions.RateLimiting\Kevlar.Extensions.RateLimiting.csproj" />
   </ItemGroup>

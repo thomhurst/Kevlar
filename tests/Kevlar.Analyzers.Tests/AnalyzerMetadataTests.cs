@@ -6,6 +6,17 @@ namespace Kevlar.Analyzers.Tests;
 public class AnalyzerMetadataTests
 {
     [Test]
+    public async Task Compiler_Analyzer_Assembly_Does_Not_Reference_Workspaces()
+    {
+        var references = typeof(PipelineHazardAnalyzer).Assembly.GetReferencedAssemblies();
+
+        await Assert.That(references.Any(static reference =>
+            reference.Name?.Contains("Workspaces", StringComparison.Ordinal) == true)).IsFalse();
+        await Assert.That(typeof(AsyncCallbackCodeFixProvider).Assembly)
+            .IsNotEqualTo(typeof(PipelineHazardAnalyzer).Assembly);
+    }
+
+    [Test]
     public async Task Supported_Diagnostics_Expose_Every_Public_Rule_Exactly_Once()
     {
         var cancellationRules = new IgnoredCancellationTokenAnalyzer().SupportedDiagnostics;
@@ -14,7 +25,7 @@ public class AnalyzerMetadataTests
         await Assert.That(cancellationRules.Select(static rule => rule.Id).SequenceEqual(["KEV001"]))
             .IsTrue();
         await Assert.That(pipelineRules.Select(static rule => rule.Id).SequenceEqual(
-            ["KEV002", "KEV003", "KEV004", "KEV005", "KEV006", "KEV007", "KEV008", "KEV009", "KEV010", "KEV011", "KEV012"]))
+            ["KEV002", "KEV003", "KEV004", "KEV005", "KEV006", "KEV007", "KEV008", "KEV009", "KEV010", "KEV011", "KEV012", "KEV013", "KEV014"]))
             .IsTrue();
 
         var allRules = cancellationRules.Concat(pipelineRules).ToArray();
@@ -29,7 +40,7 @@ public class AnalyzerMetadataTests
             .Concat(new PipelineHazardAnalyzer().SupportedDiagnostics)
             .ToDictionary(static rule => rule.Id, StringComparer.Ordinal);
 
-        foreach (var reliabilityRule in new[] { "KEV001", "KEV002", "KEV004", "KEV006", "KEV012" })
+        foreach (var reliabilityRule in new[] { "KEV001", "KEV002", "KEV004", "KEV006", "KEV012", "KEV013", "KEV014" })
         {
             await Assert.That(rules[reliabilityRule].Category).IsEqualTo("Reliability");
             await Assert.That(rules[reliabilityRule].DefaultSeverity).IsEqualTo(DiagnosticSeverity.Warning);
