@@ -67,6 +67,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             "Insert",
             "InsertRange",
             "GetOrAdd",
+            "TryUpdate",
             "UnionWith",
             "TryAdd");
 
@@ -3799,6 +3800,20 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                         localOrigin.AllowsDuplicateValues));
                 }
 
+                foreach (var localKill in EnumerateLocalFunctionMutationKills(
+                    invocation,
+                    localReference.Local,
+                    context))
+                {
+                    kills.Add((
+                        invocation.Syntax,
+                        localKill.Slot,
+                        localKill.ClearsAll,
+                        localKill.Value,
+                        localKill.RemovesOne,
+                        localKill.Receiver));
+                }
+
                 continue;
             }
 
@@ -3971,16 +3986,26 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     or SwitchExpressionSyntax
                     or ConditionalExpressionSyntax
                     or CatchClauseSyntax);
-            var appendSlot = startsEmpty
+            var retainedSlot = startsEmpty
                 && !hasIndeterminateRetainingMutation
                 && !isBulkMutation
                 && !isPotentiallyRepeated
-                && invocation.TargetMethod.Name == "Add"
-                && invocation.Arguments.Length == 1
-                    ? GetIndexedCollectionSlot(
-                        receiver?.Type,
-                        receiverKey,
-                        retainingMutationCount)
+                    ? invocation.TargetMethod switch
+                    {
+                        { Name: "Add" } when invocation.Arguments.Length == 1 =>
+                            GetIndexedCollectionSlot(
+                                receiver?.Type,
+                                receiverKey,
+                                retainingMutationCount),
+                        { Name: "Insert" } when invocation.Arguments.Length == 2
+                            && invocation.Arguments[0].Value.ConstantValue is
+                                { HasValue: true, Value: int insertIndex } =>
+                            GetIndexedCollectionSlot(
+                                receiver?.Type,
+                                receiverKey,
+                                insertIndex),
+                        _ => null,
+                    }
                     : null;
             retainingMutationCount += isBulkMutation
                 ? 2
@@ -4038,7 +4063,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     origins.Add((
                         invocation.Syntax,
                         capturedContext,
-                        appendSlot,
+                        retainedSlot,
                         GetDeferredValueKey(
                             isBulkMutation
                                 ? semanticModel.GetOperation(
@@ -4439,6 +4464,165 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         }
     }
 
+    private static IEnumerable<(
+        string? Slot,
+        bool ClearsAll,
+        string? Value,
+        bool RemovesOne,
+        string Receiver)> EnumerateLocalFunctionMutationKills(
+        IInvocationOperation localFunctionInvocation,
+        ILocalSymbol local,
+        OperationAnalysisContext context)
+    {
+        var semanticModel = context.Operation.SemanticModel;
+        if (semanticModel is null)
+        {
+            yield break;
+        }
+
+        foreach (var syntaxReference in
+            localFunctionInvocation.TargetMethod.DeclaringSyntaxReferences)
+        {
+            var declaration = syntaxReference.GetSyntax(context.CancellationToken);
+            if (GetFunctionBody(declaration) is not { } body)
+            {
+                continue;
+            }
+
+            var mutations = body.DescendantNodesAndSelf(
+                    descendIntoChildren: static node =>
+                        node is not AnonymousFunctionExpressionSyntax
+                            and not LocalFunctionStatementSyntax)
+                .Where(static node => node is InvocationExpressionSyntax
+                    or AssignmentExpressionSyntax)
+                .ToArray();
+            foreach (var invocationSyntax in mutations.OfType<InvocationExpressionSyntax>())
+            {
+                if (semanticModel.GetOperation(
+                        invocationSyntax,
+                        context.CancellationToken) is not IInvocationOperation invocation)
+                {
+                    continue;
+                }
+
+                if (IsKnownStaticArrayMutation(invocation.TargetMethod)
+                    && invocation.TargetMethod.Name == "Clear"
+                    && invocation.Arguments.Length == 1
+                    && IsRootedInLocal(
+                        invocation.Arguments[0].Value,
+                        local,
+                        context,
+                        visitedLocals: null))
+                {
+                    yield return (
+                        Slot: null,
+                        ClearsAll: true,
+                        Value: null,
+                        RemovesOne: false,
+                        Receiver: "root");
+                    continue;
+                }
+
+                var receiver = GetReceiver(invocation);
+                if (!IsRootedInLocal(
+                    receiver,
+                    local,
+                    context,
+                    visitedLocals: null))
+                {
+                    continue;
+                }
+
+                var receiverKey = GetDeferredReceiverKey(
+                    receiver,
+                    local,
+                    context,
+                    visitedLocals: null);
+                if (invocation.TargetMethod.Name == "RemoveAt"
+                    && invocation.Arguments.Length == 1
+                    && invocation.Arguments[0].Value.ConstantValue is
+                        { HasValue: true, Value: int index }
+                    && GetIndexedCollectionSlot(receiver?.Type, receiverKey, index)
+                        is { } removedSlot)
+                {
+                    yield return (
+                        removedSlot,
+                        ClearsAll: false,
+                        Value: null,
+                        RemovesOne: false,
+                        receiverKey);
+                    continue;
+                }
+
+                if (IsKnownClearingMutation(invocation.TargetMethod))
+                {
+                    yield return (
+                        Slot: null,
+                        ClearsAll: true,
+                        Value: null,
+                        RemovesOne: false,
+                        receiverKey);
+                    continue;
+                }
+
+                if (IsKnownValueRemovingMutation(invocation.TargetMethod))
+                {
+                    yield return (
+                        Slot: null,
+                        ClearsAll: false,
+                        GetDeferredValueKey(
+                            invocation.Arguments[0].Value,
+                            context,
+                            visitedLocals: null),
+                        RemovesOne: false,
+                        receiverKey);
+                    continue;
+                }
+
+                if (IsKnownSingleRemovingMutation(invocation.TargetMethod))
+                {
+                    yield return (
+                        Slot: null,
+                        ClearsAll: false,
+                        Value: null,
+                        RemovesOne: true,
+                        receiverKey);
+                }
+            }
+
+            foreach (var assignmentSyntax in mutations.OfType<AssignmentExpressionSyntax>())
+            {
+                var operation = semanticModel.GetOperation(
+                    assignmentSyntax,
+                    context.CancellationToken);
+                if (operation is not ISimpleAssignmentOperation assignment
+                    || !IsRootedInLocal(
+                        assignment.Target,
+                        local,
+                        context,
+                        visitedLocals: null))
+                {
+                    continue;
+                }
+
+                yield return (
+                    GetDeferredMutationSlot(
+                        assignment.Target,
+                        local,
+                        context,
+                        visitedLocals: null),
+                    ClearsAll: false,
+                    Value: null,
+                    RemovesOne: false,
+                    GetDeferredMutationReceiver(
+                        assignment.Target,
+                        local,
+                        context,
+                        visitedLocals: null) ?? "root");
+            }
+        }
+    }
+
     private static bool IsKnownClearingMutation(IMethodSymbol method) =>
         method.Name == "Clear"
         && method.Parameters.Length == 0
@@ -4522,6 +4706,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             {
                 "GetOrAdd" => parameter.Name == "value",
                 "AddOrUpdate" => parameter.Name == "addValue",
+                "TryUpdate" => parameter.Name == "newValue",
                 _ => true,
             });
 

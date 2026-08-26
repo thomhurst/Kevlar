@@ -4367,6 +4367,23 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Follows_Invoked_Local_Function_Cleanup()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.List<RetryEvent> { item };
+                void Clear() => events.Clear();
+
+                Clear();
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
     public async Task KEV014_Ignores_Deferred_State_Cleared_Before_Scheduling()
     {
         var statements = new[]
@@ -4378,6 +4395,7 @@ public class PipelineHazardAnalyzerTests
             "var events = new System.Collections.Generic.Stack<RetryEvent>(); events.Push(item); events.Pop();",
             "var events = new System.Collections.Generic.Queue<RetryEvent>(); events.Enqueue(item); events.Dequeue();",
             "var events = new System.Collections.Generic.Queue<RetryEvent>(new[] { item }); events.Dequeue();",
+            "System.Collections.Generic.List<RetryEvent> events = []; events.Insert(0, item); events.RemoveAt(0);",
             "var events = new RetryEvent[1]; events[0] = item; events[0] = default;",
             "var events = new[] { item }; events[0] = default;",
         };
@@ -4710,6 +4728,36 @@ public class PipelineHazardAnalyzerTests
 
             await Assert.That(diagnostics).IsEmpty();
         }
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_Concurrent_Dictionary_TryUpdate_Values()
+    {
+        var retainedDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Concurrent.ConcurrentDictionary<int, object>();
+                var previous = new object();
+                events.TryAdd(0, previous);
+                events.TryUpdate(0, item, previous);
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+        var comparisonDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Concurrent.ConcurrentDictionary<int, object>();
+                events.TryAdd(0, new object());
+                events.TryUpdate(0, new object(), item);
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await AssertRuleAsync(
+            retainedDiagnostics,
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        await Assert.That(comparisonDiagnostics).IsEmpty();
     }
 
     [Test]
