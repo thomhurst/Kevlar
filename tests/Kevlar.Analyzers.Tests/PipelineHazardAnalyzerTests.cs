@@ -466,6 +466,30 @@ public class PipelineHazardAnalyzerTests
                 }
             }
             """);
+        var compositeConstructorStore = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        var holder = new Holder(item);
+                        await Task.Yield();
+                        Consume(holder.Events[0].Context);
+                    });
+
+                private static void Consume(KevlarContext context) { }
+
+                private sealed class Holder
+                {
+                    public Holder(RetryEvent item)
+                    {
+                        Events = new[] { item };
+                    }
+
+                    public RetryEvent[] Events { get; }
+                }
+            }
+            """);
         var collectionWrapper = await AnalyzeSourceAsync("""
             public sealed class TestSubject
             {
@@ -505,6 +529,11 @@ public class PipelineHazardAnalyzerTests
         await AssertRuleAsync(Without(nestedConstructorStore, "KEV014"), "KEV013");
         await AssertRuleAsync(
             Without(nestedConstructorStore, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(Without(compositeConstructorStore, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(compositeConstructorStore, "KEV013"),
             "KEV014",
             DiagnosticSeverity.Warning);
         await AssertRuleAsync(Without(collectionWrapper, "KEV014"), "KEV013");
@@ -1267,6 +1296,33 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Ignores_Scalar_Constructor_Snapshots_In_Discarded_Tasks()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                        _ = AuditAsync(new RetrySnapshot(item)));
+
+                private static Task AuditAsync(RetrySnapshot snapshot) => Task.CompletedTask;
+
+                private sealed class RetrySnapshot
+                {
+                    public RetrySnapshot(RetryEvent item)
+                    {
+                        RetryNumber = item.RetryNumber;
+                    }
+
+                    public int RetryNumber { get; }
+                }
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV013");
+    }
+
+    [Test]
     public async Task KEV013_Inspects_Unobserved_Task_Calls_In_Handling_Predicates()
     {
         var diagnostics = await AnalyzeBodyAsync("""
@@ -1905,6 +1961,22 @@ public class PipelineHazardAnalyzerTests
                 private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
             }
             """);
+        var incompatibleForwardedDelegateDiscard = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        Action start = () => _ = AuditAsync(item);
+                        Run(() => Console.WriteLine(item.RetryNumber));
+                        Run(start);
+                        await Task.Yield();
+                    });
+
+                private static void Run(Action action) => action();
+                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            }
+            """);
         var incompatibleAwaitWrapper = await GetCodeFixAsync("""
             public class TestSubject
             {
@@ -2023,6 +2095,8 @@ public class PipelineHazardAnalyzerTests
         await Assert.That(incompatibleImmediatelyInvokedDelegateInvoke.ChangedText).IsNull();
         await Assert.That(incompatibleSourceMethodDiscard.ActionCount).IsEqualTo(0);
         await Assert.That(incompatibleSourceMethodDiscard.ChangedText).IsNull();
+        await Assert.That(incompatibleForwardedDelegateDiscard.ActionCount).IsEqualTo(0);
+        await Assert.That(incompatibleForwardedDelegateDiscard.ChangedText).IsNull();
         await Assert.That(incompatibleAwaitWrapper.ActionCount).IsEqualTo(0);
         await Assert.That(incompatibleAwaitWrapper.ChangedText).IsNull();
         await Assert.That(incompatibleTimedWait.ActionCount).IsEqualTo(0);

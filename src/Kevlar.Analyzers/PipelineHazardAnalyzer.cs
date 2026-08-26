@@ -2122,7 +2122,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     private static IEnumerable<IOperation> RetainedValueOperations(
         IOperation root,
         SemanticModel semanticModel,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        HashSet<ISymbol>? visitedConstructors = null)
     {
         var stack = new Stack<IOperation>();
         var visitedLocals = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
@@ -2166,7 +2167,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            foreach (var child in GetRetainedValueParts(current))
+            foreach (var child in GetRetainedValueParts(
+                         current,
+                         semanticModel,
+                         cancellationToken,
+                         visitedConstructors))
             {
                 stack.Push(child);
             }
@@ -2185,7 +2190,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     localReference.Local.ContainingSymbol,
                     anonymousSymbol)));
 
-    private static IEnumerable<IOperation> GetRetainedValueParts(IOperation operation)
+    private static IEnumerable<IOperation> GetRetainedValueParts(
+        IOperation operation,
+        SemanticModel? semanticModel = null,
+        CancellationToken cancellationToken = default,
+        HashSet<ISymbol>? visitedConstructors = null)
     {
         switch (operation)
         {
@@ -2225,7 +2234,19 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             case IObjectCreationOperation objectCreation:
                 foreach (var argument in objectCreation.Arguments)
                 {
-                    yield return argument.Value;
+                    if (objectCreation.Constructor is not { } constructor
+                        || argument.Parameter is not { } parameter
+                        || semanticModel is null
+                        || constructor.DeclaringSyntaxReferences.Length == 0
+                        || IsConstructorParameterStored(
+                            constructor,
+                            parameter,
+                            semanticModel,
+                            cancellationToken,
+                            visitedConstructors))
+                    {
+                        yield return argument.Value;
+                    }
                 }
 
                 if (objectCreation.Initializer is { } objectInitializer)
@@ -3292,8 +3313,16 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                         .OfType<ISimpleAssignmentOperation>()
                         .Any(assignment =>
                             IsConstructorInstanceMember(assignment.Target)
-                            && Unwrap(assignment.Value) is IParameterReferenceOperation reference
-                            && SymbolEqualityComparer.Default.Equals(reference.Parameter, parameter)))
+                            && RetainedValueOperations(
+                                    assignment.Value,
+                                    semanticModel,
+                                    cancellationToken,
+                                    visitedConstructors)
+                                .Any(candidate =>
+                                    Unwrap(candidate) is IParameterReferenceOperation reference
+                                    && SymbolEqualityComparer.Default.Equals(
+                                        reference.Parameter,
+                                        parameter))))
                 {
                     return true;
                 }

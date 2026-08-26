@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace Kevlar.Analyzers;
 
@@ -136,12 +137,12 @@ internal sealed class AsyncCallbackCodeFixProvider : CodeFixProvider
                         is not IMethodSymbol
                         {
                             MethodKind: MethodKind.LocalFunction or MethodKind.Ordinary,
-                        } method
-                    || !visitedMethods.Add(method))
+                        } method)
                 {
                     continue;
                 }
 
+                var inspectMethodBody = visitedMethods.Add(method);
                 foreach (var syntaxReference in method.DeclaringSyntaxReferences)
                 {
                     var declaration = syntaxReference.GetSyntax(cancellationToken);
@@ -155,7 +156,30 @@ internal sealed class AsyncCallbackCodeFixProvider : CodeFixProvider
                         ? pending.SemanticModel
                         : pending.SemanticModel.Compilation.GetSemanticModel(declaration.SyntaxTree);
 #pragma warning restore RS1030
-                    pendingBodies.Push((methodBody, methodSemanticModel));
+                    foreach (var argument in invocation.ArgumentList.Arguments)
+                    {
+                        if (pending.SemanticModel.GetOperation(argument, cancellationToken)
+                                is not IArgumentOperation
+                                {
+                                    Parameter.Type.TypeKind: TypeKind.Delegate,
+                                }
+                            || !TryGetStableDelegateExpressionBody(
+                                argument.Expression,
+                                pending.SemanticModel,
+                                cancellationToken,
+                                visitedDelegateLocals,
+                                out var argumentBody))
+                        {
+                            continue;
+                        }
+
+                        pendingBodies.Push((argumentBody, pending.SemanticModel));
+                    }
+
+                    if (inspectMethodBody)
+                    {
+                        pendingBodies.Push((methodBody, methodSemanticModel));
+                    }
                 }
             }
         }
@@ -188,24 +212,28 @@ internal sealed class AsyncCallbackCodeFixProvider : CodeFixProvider
         } memberAccess
             ? memberAccess.Expression
             : invocation.Expression;
-        if (UnwrapReceiver(invokedExpression)
-                is AnonymousFunctionExpressionSyntax immediatelyInvoked)
+        return TryGetStableDelegateExpressionBody(
+            invokedExpression,
+            semanticModel,
+            cancellationToken,
+            visited,
+            out body);
+    }
+
+    private static bool TryGetStableDelegateExpressionBody(
+        ExpressionSyntax expression,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken,
+        HashSet<ILocalSymbol> visited,
+        out SyntaxNode body)
+    {
+        if (UnwrapReceiver(expression) is AnonymousFunctionExpressionSyntax anonymousExpression)
         {
-            body = immediatelyInvoked.Body;
+            body = anonymousExpression.Body;
             return true;
         }
 
-        var identifier = invocation.Expression switch
-        {
-            IdentifierNameSyntax direct => direct,
-            MemberAccessExpressionSyntax
-            {
-                Expression: IdentifierNameSyntax receiver,
-                Name.Identifier.ValueText: "Invoke",
-            } => receiver,
-            _ => null,
-        };
-        if (identifier is null
+        if (UnwrapReceiver(expression) is not IdentifierNameSyntax identifier
             || semanticModel.GetSymbolInfo(identifier, cancellationToken).Symbol
                 is not ILocalSymbol { Type.TypeKind: TypeKind.Delegate } local
             || !visited.Add(local)
