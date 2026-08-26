@@ -1125,6 +1125,27 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Tracks_Uses_Reached_Through_Loop_BackEdges()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                while (Environment.TickCount >= 0)
+                {
+                    Console.WriteLine(item.Context.ShieldName);
+                    await Task.Yield();
+                }
+            });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
     public async Task KEV014_Keeps_Aliases_On_Their_Suspension_Path()
     {
         var diagnostics = await AnalyzeBodyAsync("""
@@ -3157,6 +3178,29 @@ public class PipelineHazardAnalyzerTests
                 }
 
                 private static RetryEvent CreateDefault() => default;
+            }
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Member_Defaults_From_Source_Helpers()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = CreateDefault(item);
+                        _ = Task.Run(() => Consume(_event));
+                    });
+
+                private static RetryEvent CreateDefault(RetryEvent ignored) => default;
+                private static void Consume(RetryEvent item) { }
             }
             """);
 

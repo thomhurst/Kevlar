@@ -2044,23 +2044,23 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         SyntaxNode candidate,
         ControlFlowGraph? controlFlowGraph)
     {
-        if (awaitExpression.SpanStart >= candidate.SpanStart)
-        {
-            return false;
-        }
-
         if (controlFlowGraph is null)
         {
-            return true;
+            return awaitExpression.SpanStart < candidate.SpanStart;
         }
 
-        return CanReach(awaitExpression, candidate, controlFlowGraph);
+        return CanReach(
+            awaitExpression,
+            candidate,
+            controlFlowGraph,
+            requireTraversal: awaitExpression.SpanStart >= candidate.SpanStart);
     }
 
     private static bool CanReach(
         SyntaxNode source,
         SyntaxNode target,
-        ControlFlowGraph? controlFlowGraph)
+        ControlFlowGraph? controlFlowGraph,
+        bool requireTraversal = false)
     {
         if (controlFlowGraph is null)
         {
@@ -2083,7 +2083,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         foreach (var sourceBlock in sourceBlocks)
         {
-            if (targetBlocks.Contains(sourceBlock))
+            if (!requireTraversal && targetBlocks.Contains(sourceBlock))
             {
                 return true;
             }
@@ -4144,7 +4144,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 && ContainsCallbackParameterInRetainedValue(
                     value,
                     callbackParameters,
-                    knownTypes))
+                    knownTypes,
+                    semanticModel,
+                    context.CancellationToken))
             {
                 origins.Add(write.Syntax);
             }
@@ -4166,7 +4168,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     private static bool ContainsCallbackParameterInRetainedValue(
         IOperation operation,
         HashSet<ISymbol> callbackParameters,
-        KnownTypes knownTypes)
+        KnownTypes knownTypes,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
     {
         operation = Unwrap(operation)!;
         if (operation is IParameterReferenceOperation parameterReference)
@@ -4174,22 +4178,31 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             return callbackParameters.Contains(parameterReference.Parameter);
         }
 
-        var retainedParts = GetRetainedValueParts(operation).ToArray();
+        var retainedParts = GetRetainedValueParts(
+                operation,
+                semanticModel,
+                cancellationToken)
+            .ToArray();
         if (retainedParts.Length > 0)
         {
             return retainedParts.Any(part => ContainsCallbackParameterInRetainedValue(
                 part,
                 callbackParameters,
-                knownTypes));
+                knownTypes,
+                semanticModel,
+                cancellationToken));
         }
 
         if (operation is IInvocationOperation invocation)
         {
-            return invocation.Arguments.Any(argument =>
+            return invocation.TargetMethod.DeclaringSyntaxReferences.Length == 0
+                && invocation.Arguments.Any(argument =>
                 ContainsCallbackParameterInRetainedValue(
                     argument.Value,
                     callbackParameters,
-                    knownTypes));
+                    knownTypes,
+                    semanticModel,
+                    cancellationToken));
         }
 
         if (!ContainsEventContextReference(operation.Type, knownTypes))
@@ -4201,7 +4214,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             ContainsCallbackParameterInRetainedValue(
                 child,
                 callbackParameters,
-                knownTypes));
+                knownTypes,
+                semanticModel,
+                cancellationToken));
     }
 
     private static bool ContainsReferenceOwnedByNestedAnonymousFunction(
