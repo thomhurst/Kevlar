@@ -322,6 +322,28 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Keeps_Aliases_On_Their_Suspension_Path()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                RetryEvent retained = default;
+                if (Environment.TickCount == 0)
+                {
+                    retained = item;
+                    await Task.Yield();
+                    return;
+                }
+
+                await Task.Yield();
+                Console.WriteLine(retained.RetryNumber);
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV013");
+    }
+
+    [Test]
     public async Task KEV014_Inspects_Combined_Async_Delegates()
     {
         var diagnostics = await AnalyzeBodyAsync("""
@@ -1650,6 +1672,43 @@ public class PipelineHazardAnalyzerTests
             """);
 
         await AssertRuleAsync(diagnostics, "KEV013");
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_Async_Method_Aliases_At_Later_Awaits()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = item;
+                        _ = AuditAsync(Environment.TickCount == 0);
+                    });
+
+                private async Task AuditAsync(bool skip)
+                {
+                    if (skip)
+                    {
+                        await Task.Yield();
+                        return;
+                    }
+
+                    var retained = _event;
+                    await Task.Yield();
+                    Console.WriteLine(retained.Context.ShieldName);
+                }
+            }
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
     }
 
     [Test]

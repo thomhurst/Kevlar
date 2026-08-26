@@ -629,10 +629,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     body,
                     semanticModel,
                     context.CancellationToken);
-                var firstAwait = awaits.OrderBy(static awaitExpression => awaitExpression.SpanStart)
-                    .First();
-                var retainedNames = new HashSet<string>(StringComparer.Ordinal);
-                var retainedSymbols = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+                var retainedSymbolSeeds = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
                 foreach (var identifier in nodes.OfType<IdentifierNameSyntax>()
                              .Where(identifier => IsRuntimeValueReference(identifier)))
                 {
@@ -649,34 +646,41 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                         && callbackRetainedSymbols.Contains(symbol)
                         && ContainsEventContextReference(type, knownTypes))
                     {
-                        retainedSymbols.Add(symbol);
+                        retainedSymbolSeeds.Add(symbol);
                     }
                 }
 
-                CollectRetainedAliases(
-                    nodes,
-                    firstAwait,
-                    body,
-                    retainedNames,
-                    retainedSymbols,
-                    semanticModel,
-                    controlFlowGraph,
-                    cancellationToken: context.CancellationToken);
-                foreach (var identifier in nodes.OfType<IdentifierNameSyntax>()
-                             .Where(identifier => IsRuntimeValueReference(identifier)
-                                 && IsRetainedReference(
-                                     identifier,
-                                     retainedNames,
-                                     retainedSymbols,
-                                     semanticModel,
-                                     context.CancellationToken)
-                                 && awaits.Any(awaitExpression => CanReachAfterSuspension(
-                                     awaitExpression,
-                                     identifier,
-                                     controlFlowGraph))))
+                foreach (var awaitExpression in awaits)
                 {
-                    capturedContext = identifier;
-                    return true;
+                    var retainedNames = new HashSet<string>(StringComparer.Ordinal);
+                    var retainedSymbols = new HashSet<ISymbol>(
+                        retainedSymbolSeeds,
+                        SymbolEqualityComparer.Default);
+                    CollectRetainedAliases(
+                        nodes,
+                        awaitExpression,
+                        body,
+                        retainedNames,
+                        retainedSymbols,
+                        semanticModel,
+                        controlFlowGraph,
+                        cancellationToken: context.CancellationToken);
+                    foreach (var identifier in nodes.OfType<IdentifierNameSyntax>()
+                                 .Where(identifier => IsRuntimeValueReference(identifier)
+                                     && IsRetainedReference(
+                                         identifier,
+                                         retainedNames,
+                                         retainedSymbols,
+                                         semanticModel,
+                                         context.CancellationToken)
+                                     && CanReachAfterSuspension(
+                                         awaitExpression,
+                                         identifier,
+                                         controlFlowGraph)))
+                    {
+                        capturedContext = identifier;
+                        return true;
+                    }
                 }
             }
         }
@@ -821,6 +825,10 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         var retainedSymbolSeedsForAwait = new HashSet<ISymbol>(
             retainedSymbols,
             SymbolEqualityComparer.Default);
+        var retainedStates = new List<(
+            AwaitExpressionSyntax AwaitExpression,
+            HashSet<string> Names,
+            HashSet<ISymbol> Symbols)>();
         foreach (var awaitExpression in awaits.OrderBy(static candidate => candidate.SpanStart))
         {
             var namesAtAwait = new HashSet<string>(retainedNameSeeds, StringComparer.Ordinal);
@@ -836,22 +844,22 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 semanticModel,
                 controlFlowGraph,
                 cancellationToken);
-            retainedNames.UnionWith(namesAtAwait);
-            retainedSymbols.UnionWith(symbolsAtAwait);
+            retainedStates.Add((awaitExpression, namesAtAwait, symbolsAtAwait));
         }
 
         foreach (var identifier in nodes.OfType<IdentifierNameSyntax>()
-                     .Where(identifier => IsRetainedReference(
-                             identifier,
-                             retainedNames,
-                             retainedSymbols,
-                             semanticModel,
-                             cancellationToken)
-                         && IsRuntimeValueReference(identifier)
-                         && awaits.Any(awaitExpression => CanReachAfterSuspension(
-                             awaitExpression,
-                             identifier,
-                             controlFlowGraph))))
+                     .Where(identifier => IsRuntimeValueReference(identifier)
+                         && retainedStates.Any(state =>
+                             IsRetainedReference(
+                                 identifier,
+                                 state.Names,
+                                 state.Symbols,
+                                 semanticModel,
+                                 cancellationToken)
+                             && CanReachAfterSuspension(
+                                 state.AwaitExpression,
+                                 identifier,
+                                 controlFlowGraph))))
         {
             capturedContext = identifier;
             return true;
@@ -866,35 +874,49 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         callPath ??= [];
         foreach (var invocation in nodes.OfType<InvocationExpressionSyntax>())
         {
-            var invokedAfterSuspension = awaits.Any(awaitExpression =>
-                CanReachAfterSuspension(
-                    awaitExpression,
+            var reachingStates = retainedStates
+                .Where(state => CanReachAfterSuspension(
+                    state.AwaitExpression,
                     invocation,
-                    controlFlowGraph));
-            if (TryFindRetainedContextInLocalFunction(
-                invocation,
-                localFunctions,
-                retainedNames,
-                retainedSymbols,
-                invokedAfterSuspension,
-                semanticModel,
-                cancellationToken,
-                callPath,
-                out capturedContext))
+                    controlFlowGraph))
+                .ToArray();
+            if (reachingStates.Length == 0
+                && TryFindRetainedContextInLocalFunction(
+                    invocation,
+                    localFunctions,
+                    retainedNameSeeds,
+                    retainedSymbolSeedsForAwait,
+                    invokedAfterSuspension: false,
+                    semanticModel,
+                    cancellationToken,
+                    callPath,
+                    out capturedContext))
             {
                 return true;
             }
 
-            if (invokedAfterSuspension
-                && TryFindRetainedContextInInvokedDelegate(
-                    invocation,
-                    retainedNames,
-                    retainedSymbols,
-                    semanticModel,
-                    cancellationToken,
-                    out capturedContext))
+            foreach (var state in reachingStates)
             {
-                return true;
+                if (TryFindRetainedContextInLocalFunction(
+                        invocation,
+                        localFunctions,
+                        state.Names,
+                        state.Symbols,
+                        invokedAfterSuspension: true,
+                        semanticModel,
+                        cancellationToken,
+                        callPath,
+                        out capturedContext)
+                    || TryFindRetainedContextInInvokedDelegate(
+                        invocation,
+                        state.Names,
+                        state.Symbols,
+                        semanticModel,
+                        cancellationToken,
+                        out capturedContext))
+                {
+                    return true;
+                }
             }
         }
 
