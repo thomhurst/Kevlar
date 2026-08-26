@@ -5,7 +5,29 @@ sidebar_position: 13
 # Analyzers
 
 The `Kevlar` package includes these analyzers automatically. No separate analyzer package is
-required.
+required. They report diagnostics only; Kevlar does not install code fixes or IDE code actions.
+
+## Toolchain compatibility
+
+Kevlar's analyzers reference Microsoft.CodeAnalysis 4.8.0. Use Visual Studio 2022 17.8 or later,
+or the .NET 8.0.100 SDK or later. An older compiler can report `CS9057` because the analyzer was
+built against a newer compiler; projects that treat warnings as errors will then fail their build.
+Updating the compiler host is the preferred fix.
+
+## Disabling analyzers
+
+To use the runtime library without its bundled analyzers, exclude the analyzer asset on the
+`Kevlar` package reference:
+
+<!-- doc-test-project-fragment -->
+```xml
+<ItemGroup>
+  <PackageReference Include="Kevlar" ExcludeAssets="analyzers" />
+</ItemGroup>
+```
+
+If the reference already has `ExcludeAssets`, add `analyzers` to its semicolon-separated value.
+Prefer per-rule suppression when most analyzer coverage remains useful.
 
 The analyzers report only hazards that are provable from the current expression or a stable local
 initializer. They do not guess what a factory method returns or follow a local that is reassigned.

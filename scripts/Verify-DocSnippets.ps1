@@ -51,6 +51,7 @@ foreach ($packageId in $requiredPackages)
 }
 
 $snippets = [System.Collections.Generic.List[object]]::new()
+$projectFragments = [System.Collections.Generic.List[object]]::new()
 $installPackageIds = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
 $projectCommands = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
 
@@ -203,6 +204,46 @@ foreach ($documentPath in $documentPaths)
             continue
         }
 
+        if ($lines[$lineIndex] -match '^```xml\s*$')
+        {
+            $startLine = $lineOffset + $lineIndex + 2
+            $directive = if ($lineIndex -gt 0) { $lines[$lineIndex - 1].Trim() } else { '' }
+            $body = [System.Collections.Generic.List[string]]::new()
+            for ($lineIndex++; $lineIndex -lt $lines.Count -and $lines[$lineIndex] -notmatch '^```\s*$'; $lineIndex++)
+            {
+                $body.Add($lines[$lineIndex])
+            }
+
+            if ($lineIndex -ge $lines.Count)
+            {
+                throw "Unclosed XML fence at ${relativePath}:$startLine."
+            }
+
+            if ($directive -eq '<!-- doc-test-project-fragment -->')
+            {
+                $source = $body -join "`n"
+                try
+                {
+                    [xml]$fragment = "<Project>`n$source`n</Project>"
+                }
+                catch
+                {
+                    throw "Invalid MSBuild project fragment at ${relativePath}:$startLine. $($_.Exception.Message)"
+                }
+
+                $projectFragments.Add([pscustomobject]@{
+                    Id = "${relativePath}:$startLine"
+                    Xml = $fragment
+                })
+            }
+            elseif ($directive -match '^<!--\s*doc-test-project-fragment')
+            {
+                throw "Malformed doc-test-project-fragment directive before ${relativePath}:$startLine."
+            }
+
+            continue
+        }
+
         if ($lines[$lineIndex] -match '^```(?:bash|sh|shell|powershell|pwsh)\s*$')
         {
             for ($lineIndex++; $lineIndex -lt $lines.Count -and $lines[$lineIndex] -notmatch '^```\s*$'; $lineIndex++)
@@ -220,6 +261,33 @@ foreach ($documentPath in $documentPaths)
             }
         }
     }
+}
+
+$analyzerOptOutCount = 0
+foreach ($projectFragment in $projectFragments)
+{
+    foreach ($packageReference in $projectFragment.Xml.SelectNodes('/Project/ItemGroup/PackageReference'))
+    {
+        $include = $packageReference.GetAttribute('Include')
+        if ([string]::IsNullOrWhiteSpace($include))
+        {
+            throw "$($projectFragment.Id) contains a PackageReference without Include."
+        }
+
+        $excludeAssets = @(
+            $packageReference.GetAttribute('ExcludeAssets') -split ';' |
+                ForEach-Object { $_.Trim() })
+        if ($include -eq 'Kevlar' -and
+            $excludeAssets -contains 'analyzers')
+        {
+            $analyzerOptOutCount++
+        }
+    }
+}
+
+if ($analyzerOptOutCount -ne 1)
+{
+    throw "Documentation must contain exactly one verified Kevlar PackageReference that excludes analyzer assets."
 }
 
 foreach ($packageId in $installPackageIds)
