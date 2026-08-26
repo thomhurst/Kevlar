@@ -3264,11 +3264,21 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         {
             visitedLocals ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
             if (visitedLocals.Add(localReference.Local)
-                && TryGetStableInitializer(localReference, context, out var initializer)
+                && TryGetStableAliasInitializer(localReference, context, out var initializer)
                 && initializer is not null)
             {
                 if (TryFindDeferredStateContext(
                     initializer,
+                    context,
+                    knownTypes,
+                    visitedLocals,
+                    out capturedContext))
+                {
+                    return true;
+                }
+
+                if (TryFindDeferredStateMutation(
+                    localReference,
                     context,
                     knownTypes,
                     visitedLocals,
@@ -3451,6 +3461,135 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         capturedContext = null!;
         return false;
+    }
+
+    private static bool TryFindDeferredStateMutation(
+        ILocalReferenceOperation localReference,
+        OperationAnalysisContext context,
+        KnownTypes knownTypes,
+        HashSet<ISymbol> visitedLocals,
+        out SyntaxNode capturedContext)
+    {
+        var semanticModel = context.Operation.SemanticModel;
+        if (semanticModel is null)
+        {
+            capturedContext = null!;
+            return false;
+        }
+
+        var scope = GetExecutableScope(localReference.Syntax, context.CancellationToken);
+        var body = scope is AnonymousFunctionExpressionSyntax anonymous
+            ? anonymous.Body
+            : GetFunctionBody(scope) ?? scope;
+        var controlFlowGraph = TryCreateControlFlowGraph(
+            localReference.Syntax,
+            semanticModel,
+            context.CancellationToken);
+        var mutations = body.DescendantNodesAndSelf(descendIntoChildren: static node =>
+                node is not AnonymousFunctionExpressionSyntax
+                    and not LocalFunctionStatementSyntax)
+            .Where(candidate => (candidate is InvocationExpressionSyntax
+                    or AssignmentExpressionSyntax)
+                && candidate.SpanStart < localReference.Syntax.SpanStart
+                && CanReach(
+                    candidate,
+                    localReference.Syntax,
+                    controlFlowGraph))
+            .ToArray();
+
+        foreach (var invocationSyntax in mutations.OfType<InvocationExpressionSyntax>())
+        {
+            if (semanticModel.GetOperation(
+                    invocationSyntax,
+                    context.CancellationToken) is not IInvocationOperation invocation
+                || !IsKnownRetainingMutation(invocation.TargetMethod)
+                || !IsRootedInLocal(
+                    GetReceiver(invocation),
+                    localReference.Local,
+                    context,
+                    visitedLocals: null))
+            {
+                continue;
+            }
+
+            foreach (var argument in invocation.Arguments)
+            {
+                if (TryFindDeferredStateContext(
+                    argument.Value,
+                    context,
+                    knownTypes,
+                    visitedLocals,
+                    out capturedContext))
+                {
+                    return true;
+                }
+            }
+        }
+
+        foreach (var assignmentSyntax in mutations.OfType<AssignmentExpressionSyntax>())
+        {
+            if (semanticModel.GetOperation(
+                assignmentSyntax,
+                    context.CancellationToken) is ISimpleAssignmentOperation assignment
+                && IsRootedInLocal(
+                    assignment.Target,
+                    localReference.Local,
+                    context,
+                    visitedLocals: null)
+                && TryFindDeferredStateContext(
+                    assignment.Value,
+                    context,
+                    knownTypes,
+                    visitedLocals,
+                    out capturedContext))
+            {
+                return true;
+            }
+        }
+
+        capturedContext = null!;
+        return false;
+    }
+
+    private static bool IsRootedInLocal(
+        IOperation? operation,
+        ILocalSymbol local,
+        OperationAnalysisContext context,
+        HashSet<ISymbol>? visitedLocals)
+    {
+        operation = Unwrap(operation);
+        if (operation is ILocalReferenceOperation localReference)
+        {
+            if (SymbolEqualityComparer.Default.Equals(localReference.Local, local))
+            {
+                return true;
+            }
+
+            visitedLocals ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+            return visitedLocals.Add(localReference.Local)
+                && TryGetStableAliasInitializer(localReference, context, out var initializer)
+                && IsRootedInLocal(initializer, local, context, visitedLocals);
+        }
+
+        return operation switch
+        {
+            IFieldReferenceOperation field => IsRootedInLocal(
+                field.Instance,
+                local,
+                context,
+                visitedLocals),
+            IPropertyReferenceOperation property => IsRootedInLocal(
+                property.Instance,
+                local,
+                context,
+                visitedLocals),
+            IArrayElementReferenceOperation arrayElement => IsRootedInLocal(
+                arrayElement.ArrayReference,
+                local,
+                context,
+                visitedLocals),
+            _ => false,
+        };
     }
 
     private static bool IsInstanceParameterStored(
