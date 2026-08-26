@@ -101,7 +101,6 @@ const config: Config = {
           items: [
             { label: 'GitHub', href: 'https://github.com/thomhurst/Kevlar' },
             { label: 'NuGet', href: 'https://www.nuget.org/packages/Kevlar' },
-            { label: 'Support policy', to: '/docs/support-policy' },
           ],
         },
       ],

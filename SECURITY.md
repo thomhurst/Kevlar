@@ -11,8 +11,6 @@ Pre-release builds and older major lines may receive a fix at the maintainers' d
 | Older `1.x` | Upgrade to the latest `1.x` |
 | `0.x` and previews | Not supported |
 
-Target-framework support follows the [versioning and support policy](docs/docs/support-policy.md).
-
 ## Reporting a vulnerability
 
 Do not open a public issue. Use GitHub's private

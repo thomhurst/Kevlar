@@ -99,21 +99,7 @@ public partial class DocsConsistencyTests
     }
 
     [Test]
-    public async Task Support_Policy_TFM_Table_Matches_Packable_Projects()
-    {
-        var repositoryRoot = FindRepositoryRoot();
-        var projects = ReadPackableProjectTargets(repositoryRoot);
-        var documented = ReadSupportTargets(repositoryRoot);
-
-        await Assert.That(documented.Keys).IsEquivalentTo(projects.Keys);
-        foreach (var (package, targets) in projects)
-        {
-            await Assert.That(documented[package]).IsEquivalentTo(targets);
-        }
-    }
-
-    [Test]
-    public async Task Support_Policy_Packability_Defaults_To_True()
+    public async Task Package_Table_Packability_Defaults_To_True()
     {
         var defaultProject = XDocument.Parse("<Project Sdk=\"Microsoft.NET.Sdk\" />");
         var disabledProject = XDocument.Parse(
@@ -245,54 +231,6 @@ public partial class DocsConsistencyTests
                     cells[4].Trim('`'),
                     cells[6]));
     }
-
-    private static Dictionary<string, HashSet<string>> ReadSupportTargets(string repositoryRoot)
-    {
-        var path = Path.Combine(repositoryRoot, "docs", "docs", "support-policy.md");
-        var rows = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
-        var insideTable = false;
-        foreach (var line in File.ReadLines(path))
-        {
-            if (line == "<!-- supported-tfms:start -->")
-            {
-                insideTable = true;
-                continue;
-            }
-
-            if (line == "<!-- supported-tfms:end -->")
-            {
-                break;
-            }
-
-            if (!insideTable || !line.StartsWith("| `", StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            var cells = line.Split('|', StringSplitOptions.TrimEntries);
-            var package = cells[1].Trim('`');
-            var targets = Regex.Matches(cells[2], "`([^`]+)`")
-                .Select(static match => match.Groups[1].Value)
-                .ToHashSet(StringComparer.Ordinal);
-            rows.Add(package, targets);
-        }
-
-        return rows;
-    }
-
-    private static Dictionary<string, HashSet<string>> ReadPackableProjectTargets(string repositoryRoot) =>
-        Directory
-            .EnumerateFiles(Path.Combine(repositoryRoot, "src"), "*.csproj", SearchOption.AllDirectories)
-            .Select(static path => (Path: path, Project: XDocument.Load(path)))
-            .Where(static item => IsPackableProject(item.Project))
-            .ToDictionary(
-                static item => Path.GetFileNameWithoutExtension(item.Path),
-                static item => item.Project
-                    .Descendants()
-                    .Where(static element => element.Name.LocalName is "TargetFramework" or "TargetFrameworks")
-                    .SelectMany(static element => element.Value.Split(';', StringSplitOptions.RemoveEmptyEntries))
-                    .ToHashSet(StringComparer.Ordinal),
-                StringComparer.Ordinal);
 
     private static bool IsPackableProject(XDocument project) =>
         !string.Equals(
