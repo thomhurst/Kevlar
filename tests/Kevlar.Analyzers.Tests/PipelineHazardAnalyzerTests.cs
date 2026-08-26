@@ -764,6 +764,61 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Tracks_PostAwait_Array_Element_Writes()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                var events = new RetryEvent[1];
+                events[0] = item;
+                await Task.Yield();
+                Console.WriteLine(events[0].Context.ShieldName);
+            });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_Constructor_Stores_From_Helper_Results()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        var holder = new Holder(item);
+                        await Task.Yield();
+                        Console.WriteLine(holder.Event.Context.ShieldName);
+                    });
+
+                private sealed class Holder
+                {
+                    public Holder(RetryEvent item)
+                    {
+                        Event = Identity(item);
+                    }
+
+                    public RetryEvent Event { get; }
+
+                    private static RetryEvent Identity(RetryEvent item) => item;
+                }
+            }
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
     public async Task KEV014_Follows_Nested_PostAwait_Local_Function_Calls()
     {
         var diagnostics = await AnalyzeBodyAsync("""

@@ -553,9 +553,10 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                         declarator.Initializer?.Value),
                 AssignmentExpressionSyntax assignment
                     when assignment.IsKind(SyntaxKind.SimpleAssignmentExpression) =>
-                    (context.SemanticModel.GetSymbolInfo(
+                    (GetAssignedTargetSymbol(
                             assignment.Left,
-                            context.CancellationToken).Symbol,
+                            context.SemanticModel,
+                            context.CancellationToken),
                         GetAssignedName(assignment.Left),
                         assignment.Right),
                 _ => (null, null, null),
@@ -573,7 +574,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     retainedSymbols.Add(target);
                 }
             }
-            else if (IsUnconditionalAliasWrite(alias, anonymous.Body))
+            else if (alias is not AssignmentExpressionSyntax
+                     {
+                         Left: ElementAccessExpressionSyntax,
+                     }
+                     && IsUnconditionalAliasWrite(alias, anonymous.Body))
             {
                 retainedNames.Remove(name);
                 if (target is IFieldSymbol or IPropertySymbol)
@@ -1161,7 +1166,10 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                         declarator.Initializer?.Value),
                 AssignmentExpressionSyntax assignment
                     when assignment.IsKind(SyntaxKind.SimpleAssignmentExpression) =>
-                    (semanticModel?.GetSymbolInfo(assignment.Left, cancellationToken).Symbol,
+                    (GetAssignedTargetSymbol(
+                            assignment.Left,
+                            semanticModel,
+                            cancellationToken),
                         GetAssignedName(assignment.Left),
                         assignment.Right),
                 _ => (null, null, null),
@@ -1191,7 +1199,10 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     AddRetainedSymbolOrigin(retainedSymbolOrigins, target, alias);
                 }
             }
-            else
+            else if (alias is not AssignmentExpressionSyntax
+                     {
+                         Left: ElementAccessExpressionSyntax,
+                     })
             {
                 if (target is not null)
                 {
@@ -2111,8 +2122,25 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     {
         IdentifierNameSyntax identifier => identifier.Identifier.ValueText,
         MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.ValueText,
+        ElementAccessExpressionSyntax elementAccess => GetAssignedName(elementAccess.Expression),
         _ => null,
     };
+
+    private static ISymbol? GetAssignedTargetSymbol(
+        ExpressionSyntax expression,
+        SemanticModel? semanticModel,
+        CancellationToken cancellationToken)
+    {
+        if (semanticModel is null)
+        {
+            return null;
+        }
+
+        var target = expression is ElementAccessExpressionSyntax elementAccess
+            ? elementAccess.Expression
+            : expression;
+        return semanticModel.GetSymbolInfo(target, cancellationToken).Symbol;
+    }
 
     private static bool IsRetainedReference(
         IdentifierNameSyntax identifier,
@@ -2323,6 +2351,22 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 }
 
                 break;
+            case IInvocationOperation invocation when semanticModel is not null:
+                foreach (var argument in invocation.Arguments)
+                {
+                    if (argument.Parameter is { } parameter
+                        && SourceMethodReturnsParameter(
+                            invocation.TargetMethod,
+                            parameter,
+                            semanticModel,
+                            cancellationToken,
+                            visitedMethods))
+                    {
+                        yield return argument.Value;
+                    }
+                }
+
+                break;
             case IWithOperation withOperation:
                 yield return withOperation.Operand;
                 foreach (var initializer in withOperation.Initializer.Initializers)
@@ -2353,6 +2397,68 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 }
 
                 break;
+        }
+    }
+
+    private static bool SourceMethodReturnsParameter(
+        IMethodSymbol method,
+        IParameterSymbol parameter,
+        SemanticModel currentSemanticModel,
+        CancellationToken cancellationToken,
+        HashSet<ISymbol>? visitedMethods)
+    {
+        visitedMethods ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+        if (!visitedMethods.Add(method))
+        {
+            return false;
+        }
+
+        try
+        {
+            foreach (var syntaxReference in method.DeclaringSyntaxReferences)
+            {
+                var syntax = syntaxReference.GetSyntax(cancellationToken);
+                if (GetFunctionBody(syntax) is not { } body)
+                {
+                    continue;
+                }
+
+#pragma warning disable RS1030 // Source-backed helpers may be declared in another tree.
+                var semanticModel = syntax.SyntaxTree == currentSemanticModel.SyntaxTree
+                    ? currentSemanticModel
+                    : currentSemanticModel.Compilation.GetSemanticModel(syntax.SyntaxTree);
+#pragma warning restore RS1030
+                if (semanticModel.GetOperation(body, cancellationToken) is not { } bodyOperation)
+                {
+                    continue;
+                }
+
+                var returnedValues = body is ExpressionSyntax
+                    ? [bodyOperation]
+                    : ExecutableDescendantOperations(bodyOperation)
+                        .OfType<IReturnOperation>()
+                        .Select(static operation => operation.ReturnedValue)
+                        .OfType<IOperation>();
+                if (returnedValues.Any(value => RetainedValueOperations(
+                        value,
+                        semanticModel,
+                        cancellationToken,
+                        visitedMethods)
+                    .Any(candidate =>
+                        Unwrap(candidate) is IParameterReferenceOperation reference
+                        && SymbolEqualityComparer.Default.Equals(
+                            reference.Parameter,
+                            parameter))))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+        finally
+        {
+            visitedMethods.Remove(method);
         }
     }
 
