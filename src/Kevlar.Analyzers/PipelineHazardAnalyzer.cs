@@ -1054,8 +1054,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                              && origin.SpanStart > candidate.SpanStart
                              && origin.SpanStart < destination.SpanStart)))
         {
-            if (kills.Any(kill => conditional.Statement.Span.Contains(kill.Span))
-                && kills.Any(kill => conditional.Else!.Statement.Span.Contains(kill.Span)))
+            if (IsClearedOnEveryPath(conditional.Statement, kills)
+                && IsClearedOnEveryPath(conditional.Else!.Statement, kills))
             {
                 return true;
             }
@@ -1063,6 +1063,20 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         return false;
     }
+
+    private static bool IsClearedOnEveryPath(
+        StatementSyntax statement,
+        List<SyntaxNode> kills) => statement switch
+    {
+        ExpressionStatementSyntax expressionStatement =>
+            kills.Any(kill => expressionStatement.Span.Contains(kill.Span)),
+        BlockSyntax block => block.Statements.Any(child =>
+            IsClearedOnEveryPath(child, kills)),
+        IfStatementSyntax { Else: { } elseClause } conditional =>
+            IsClearedOnEveryPath(conditional.Statement, kills)
+            && IsClearedOnEveryPath(elseClause.Statement, kills),
+        _ => false,
+    };
 
     private static bool HasReachableRetainedAlias(
         ExpressionSyntax expression,
@@ -3266,12 +3280,14 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         var kills = new List<SyntaxNode>();
         foreach (var assignment in assignments)
         {
-            if (assignment.Right.DescendantNodesAndSelf()
-                .OfType<IdentifierNameSyntax>()
-                .Any(identifier => callbackParameters.Contains(
-                    semanticModel.GetSymbolInfo(
-                        identifier,
-                        context.CancellationToken).Symbol!)))
+            var value = semanticModel.GetOperation(
+                assignment.Right,
+                context.CancellationToken);
+            if (value is not null
+                && ContainsCallbackParameterInRetainedValue(
+                    value,
+                    callbackParameters,
+                    knownTypes))
             {
                 origins.Add(assignment);
             }
@@ -3288,6 +3304,47 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         return origins.Count > 0
             && HasReachableOrigin(origins, flowTarget, controlFlowGraph, kills)
             && !IsClearedOnEveryBranch(origins, kills, flowTarget, callback.Body);
+    }
+
+    private static bool ContainsCallbackParameterInRetainedValue(
+        IOperation operation,
+        HashSet<ISymbol> callbackParameters,
+        KnownTypes knownTypes)
+    {
+        operation = Unwrap(operation)!;
+        if (operation is IParameterReferenceOperation parameterReference)
+        {
+            return callbackParameters.Contains(parameterReference.Parameter);
+        }
+
+        var retainedParts = GetRetainedValueParts(operation).ToArray();
+        if (retainedParts.Length > 0)
+        {
+            return retainedParts.Any(part => ContainsCallbackParameterInRetainedValue(
+                part,
+                callbackParameters,
+                knownTypes));
+        }
+
+        if (operation is IInvocationOperation invocation)
+        {
+            return invocation.Arguments.Any(argument =>
+                ContainsCallbackParameterInRetainedValue(
+                    argument.Value,
+                    callbackParameters,
+                    knownTypes));
+        }
+
+        if (!ContainsEventContextReference(operation.Type, knownTypes))
+        {
+            return false;
+        }
+
+        return operation.ChildOperations.Any(child =>
+            ContainsCallbackParameterInRetainedValue(
+                child,
+                callbackParameters,
+                knownTypes));
     }
 
     private static bool ContainsReferenceOwnedByNestedAnonymousFunction(

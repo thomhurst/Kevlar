@@ -1868,9 +1868,40 @@ public class PipelineHazardAnalyzerTests
                 private static void Consume(RetryEvent item) { }
             }
             """);
+        var partiallyClearedNestedBranch = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = item;
+                        if (Environment.TickCount == 0)
+                        {
+                            if (Environment.TickCount == 1)
+                            {
+                                _event = default;
+                            }
+                        }
+                        else
+                        {
+                            _event = default;
+                        }
+
+                        _ = Task.Run(() => Consume(_event));
+                    });
+
+                private static void Consume(RetryEvent item) { }
+            }
+            """);
 
         await AssertRuleAsync(retainedOnOneBranch, "KEV014", DiagnosticSeverity.Warning);
         await Assert.That(clearedOnEveryBranch).IsEmpty();
+        await AssertRuleAsync(
+            partiallyClearedNestedBranch,
+            "KEV014",
+            DiagnosticSeverity.Warning);
     }
 
     [Test]
@@ -1979,11 +2010,29 @@ public class PipelineHazardAnalyzerTests
                 }
             }
             """);
+        var conditionOnlyReference = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = item.RetryNumber > 0
+                            ? default(RetryEvent)
+                            : default(RetryEvent);
+                        _ = Task.Run(() => Consume(_event));
+                    });
+
+                private static void Consume(RetryEvent item) { }
+            }
+            """);
 
         await Assert.That(unrelatedCallback).IsEmpty();
         await Assert.That(parameterlessCallback).IsEmpty();
         await Assert.That(shadowedField).IsEmpty();
         await Assert.That(memberNameCollision).IsEmpty();
+        await Assert.That(conditionOnlyReference).IsEmpty();
     }
 
     [Test]
