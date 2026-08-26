@@ -334,6 +334,8 @@ $expectedDependencies = @{
         '.NETStandard2.0' = @('Grpc.Core.Api', 'Grpc.Net.ClientFactory', 'Kevlar', 'Kevlar.Extensions.DependencyInjection')
     }
 }
+$expectedPackageIds = @(& (Join-Path $PSScriptRoot 'Get-PackablePackageIds.ps1') -RepositoryRoot $repositoryRoot)
+Assert-Set 'package dependency table IDs' @($expectedDependencies.Keys) $expectedPackageIds
 
 $expectedDependencyVersions = @{}
 foreach ($dependencyId in @(
@@ -354,9 +356,9 @@ foreach ($dependencyId in @(
 }
 
 $packageFiles = @(Get-ChildItem -LiteralPath $packageDirectory -Filter '*.nupkg' -File)
-Assert-Set 'package IDs' ($packageFiles.BaseName | ForEach-Object { $_ -replace "\.$([regex]::Escape($Version))$", '' }) @($expectedDependencies.Keys | ForEach-Object { $_ })
+Assert-Set 'package IDs' ($packageFiles.BaseName | ForEach-Object { $_ -replace "\.$([regex]::Escape($Version))$", '' }) $expectedPackageIds
 $symbolPackageFiles = @(Get-ChildItem -LiteralPath $packageDirectory -Filter '*.snupkg' -File)
-Assert-Set 'symbol package IDs' ($symbolPackageFiles.BaseName | ForEach-Object { $_ -replace "\.$([regex]::Escape($Version))$", '' }) @($expectedDependencies.Keys | ForEach-Object { $_ })
+Assert-Set 'symbol package IDs' ($symbolPackageFiles.BaseName | ForEach-Object { $_ -replace "\.$([regex]::Escape($Version))$", '' }) $expectedPackageIds
 
 foreach ($packageId in $expectedDependencies.Keys)
 {
