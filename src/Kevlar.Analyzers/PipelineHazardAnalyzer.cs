@@ -48,7 +48,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             StringComparer.Ordinal,
             "System.Tuple",
             "System.ValueTuple",
-            "System.Collections.Generic.KeyValuePair");
+            "System.Collections.Generic.KeyValuePair",
+            "System.Collections.Generic.LinkedListNode");
 
     private static readonly ImmutableHashSet<string> RetainingMutationNames =
         ImmutableHashSet.Create(
@@ -3803,6 +3804,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 foreach (var localKill in EnumerateLocalFunctionMutationKills(
                     invocation,
                     localReference.Local,
+                    initializer,
                     context))
                 {
                     kills.Add((
@@ -3847,25 +3849,39 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                         RemovesOne: false,
                         Receiver: "root"));
                 }
-                else if (GetStaticArrayRetainedValue(invocation) is { } retainedValue
-                    && TryFindDeferredStateContext(
-                        retainedValue,
-                        context,
-                        knownTypes,
-                        visitedLocals,
-                        out capturedContext))
+                else
                 {
-                    origins.Add((
-                        invocation.Syntax,
-                        capturedContext,
-                        Slot: null,
-                        GetDeferredValueKey(
+                    if (IsFullStaticArrayOverwrite(invocation, initializer))
+                    {
+                        kills.Add((
+                            invocation.Syntax,
+                            Slot: null,
+                            ClearsAll: true,
+                            Value: null,
+                            RemovesOne: false,
+                            Receiver: "root"));
+                    }
+
+                    if (GetStaticArrayRetainedValue(invocation) is { } retainedValue
+                        && TryFindDeferredStateContext(
                             retainedValue,
                             context,
-                            visitedLocals: null),
-                        Receiver: "root",
-                        MayRetainMultiple: true,
-                        AllowsDuplicateValues: true));
+                            knownTypes,
+                            visitedLocals,
+                            out capturedContext))
+                    {
+                        origins.Add((
+                            invocation.Syntax,
+                            capturedContext,
+                            Slot: null,
+                            GetDeferredValueKey(
+                                retainedValue,
+                                context,
+                                visitedLocals: null),
+                            Receiver: "root",
+                            MayRetainMultiple: true,
+                            AllowsDuplicateValues: true));
+                    }
                 }
 
                 continue;
@@ -4471,6 +4487,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         string Receiver)> EnumerateLocalFunctionMutationKills(
         IInvocationOperation localFunctionInvocation,
         ILocalSymbol local,
+        IOperation initializer,
         OperationAnalysisContext context)
     {
         var semanticModel = context.Operation.SemanticModel;
@@ -4504,15 +4521,15 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     continue;
                 }
 
-                if (IsKnownStaticArrayMutation(invocation.TargetMethod)
-                    && invocation.TargetMethod.Name == "Clear"
-                    && invocation.Arguments.Length == 1
-                    && GetStaticArrayMutationTarget(invocation) is { } arrayTarget
+                if (GetStaticArrayMutationTarget(invocation) is { } arrayTarget
                     && IsRootedInLocalFunctionArgument(
                         arrayTarget,
                         localFunctionInvocation,
                         local,
-                        context))
+                        context)
+                    && (invocation.TargetMethod.Name == "Clear"
+                            && invocation.Arguments.Length == 1
+                        || IsFullStaticArrayOverwrite(invocation, initializer)))
                 {
                     yield return (
                         Slot: null,
@@ -4872,6 +4889,52 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         }
 
         return null;
+    }
+
+    private static bool IsFullStaticArrayOverwrite(
+        IInvocationOperation invocation,
+        IOperation initializer)
+    {
+        if (invocation.TargetMethod.Name is not ("Copy" or "ConstrainedCopy")
+            || !TryGetKnownArrayLength(initializer, out var destinationLength)
+            || invocation.Arguments.FirstOrDefault(static argument =>
+                    argument.Parameter?.Name == "length")?.Value.ConstantValue
+                is not { HasValue: true, Value: int copiedLength }
+            || copiedLength != destinationLength)
+        {
+            return false;
+        }
+
+        var destinationIndex = invocation.Arguments.FirstOrDefault(static argument =>
+            argument.Parameter?.Name == "destinationIndex");
+        return destinationIndex is null
+            || destinationIndex.Value.ConstantValue is
+                { HasValue: true, Value: 0 };
+    }
+
+    private static bool TryGetKnownArrayLength(
+        IOperation initializer,
+        out int length)
+    {
+        if (Unwrap(initializer) is IArrayCreationOperation arrayCreation)
+        {
+            if (arrayCreation.Initializer is { } arrayInitializer)
+            {
+                length = arrayInitializer.ElementValues.Length;
+                return true;
+            }
+
+            if (arrayCreation.DimensionSizes.Length == 1
+                && arrayCreation.DimensionSizes[0].ConstantValue is
+                    { HasValue: true, Value: int dimension })
+            {
+                length = dimension;
+                return true;
+            }
+        }
+
+        length = 0;
+        return false;
     }
 
     private static bool IsArrayLike(IOperation operation)

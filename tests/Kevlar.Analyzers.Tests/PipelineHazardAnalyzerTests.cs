@@ -4134,6 +4134,17 @@ public class PipelineHazardAnalyzerTests
 
             await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
         }
+
+        var overwriteDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new[] { item };
+                Array.Copy(new[] { default(RetryEvent) }, events, 1);
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await Assert.That(overwriteDiagnostics).IsEmpty();
     }
 
     [Test]
@@ -5152,6 +5163,31 @@ public class PipelineHazardAnalyzerTests
             """);
 
         await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_LinkedList_Node_Values()
+    {
+        var mutations = new[]
+        {
+            "events.AddFirst(new System.Collections.Generic.LinkedListNode<RetryEvent>(item));",
+            "events.AddLast(new System.Collections.Generic.LinkedListNode<RetryEvent>(item));",
+            "var anchor = events.AddFirst(default(RetryEvent)); events.AddBefore(anchor, new System.Collections.Generic.LinkedListNode<RetryEvent>(item));",
+            "var anchor = events.AddFirst(default(RetryEvent)); events.AddAfter(anchor, new System.Collections.Generic.LinkedListNode<RetryEvent>(item));",
+        };
+        foreach (var mutation in mutations)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                {
+                    var events = new System.Collections.Generic.LinkedList<RetryEvent>();
+                    {{mutation}}
+                    ThreadPool.QueueUserWorkItem(static state => { }, events);
+                });
+                """);
+
+            await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+        }
     }
 
     [Test]
