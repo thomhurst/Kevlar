@@ -124,6 +124,8 @@ internal sealed class AsyncCallbackCodeFixProvider : CodeFixProvider
         SyntaxNode scope = assignment.FirstAncestorOrSelf<InitializerExpressionSyntax>(
                 static initializer => initializer.IsKind(SyntaxKind.ObjectInitializerExpression))
             ?? assignment.FirstAncestorOrSelf<AnonymousFunctionExpressionSyntax>()
+            ?? assignment.FirstAncestorOrSelf<LocalFunctionStatementSyntax>()
+            ?? assignment.FirstAncestorOrSelf<BaseMethodDeclarationSyntax>()
             ?? assignment.FirstAncestorOrSelf<BlockSyntax>()
             ?? assignment.Parent!;
         foreach (var candidate in scope.DescendantNodes().OfType<AssignmentExpressionSyntax>())

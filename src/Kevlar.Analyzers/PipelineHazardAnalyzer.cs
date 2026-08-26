@@ -2797,7 +2797,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             }
 
             if (operation is IFieldReferenceOperation fieldReference
-                && ContainsEventContextReference(fieldReference.Field.Type, knownTypes))
+                && knownTypes.IsEventContextReference(fieldReference.Field.Type))
             {
                 capturedContext = fieldReference.Syntax;
                 return true;

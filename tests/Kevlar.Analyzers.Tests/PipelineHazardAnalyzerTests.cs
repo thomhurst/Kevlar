@@ -1320,6 +1320,19 @@ public class PipelineHazardAnalyzerTests
                 }
             }
             """);
+        var alreadyAssignedInOuterBlock = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure(RetryOptions options, bool enabled)
+                {
+                    options.OnRetryAsync = _ => ValueTask.CompletedTask;
+                    if (enabled)
+                    {
+                        options.OnRetry = async _ => await Task.Yield();
+                    }
+                }
+            }
+            """);
         var assignedOnDifferentReceiver = await GetCodeFixAsync("""
             public class TestSubject
             {
@@ -1367,6 +1380,8 @@ public class PipelineHazardAnalyzerTests
         await Assert.That(alreadyAssignedAsyncTwin.ChangedText).IsNull();
         await Assert.That(alreadyAssignedInHelperBlock.ActionCount).IsEqualTo(0);
         await Assert.That(alreadyAssignedInHelperBlock.ChangedText).IsNull();
+        await Assert.That(alreadyAssignedInOuterBlock.ActionCount).IsEqualTo(0);
+        await Assert.That(alreadyAssignedInOuterBlock.ChangedText).IsNull();
         await Assert.That(assignedOnDifferentReceiver.ActionCount).IsEqualTo(1);
         await Assert.That(assignedOnDifferentReceiver.ChangedText)
             .Contains("second.OnRetryAsync = async");
@@ -1531,6 +1546,25 @@ public class PipelineHazardAnalyzerTests
             """);
 
         await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Unproven_Event_Fields_In_Scheduled_Work()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Schedule()
+                {
+                    _event = default;
+                    _ = Task.Run(() => Console.WriteLine(_event.RetryNumber));
+                }
+            }
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
     }
 
     [Test]
