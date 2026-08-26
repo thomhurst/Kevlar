@@ -23,6 +23,9 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- `TimeoutExceededException` now derives directly from `KevlarException`. It no longer counts as
+  an `ExecutionRejectedException`: fail-fast rejections mean the delegate did not run, while a
+  timeout means it ran and exceeded its budget.
 - Strategy callback events now expose their position through public
   `KevlarContext.StrategyIndex`; the duplicate properties on limiter rejection events were removed.
   Circuit transitions use `CircuitBreakerStateChangedEvent` and carry execution context, while
