@@ -1024,18 +1024,19 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             retainedNameKills.TryGetValue(name, out var kills);
             return retainedNameOrigins.TryGetValue(name, out var origins)
                 && (!HasReachableOrigin(origins, destination, controlFlowGraph, kills)
-                    || IsClearedOnEveryBranch(kills, destination, body));
+                    || IsClearedOnEveryBranch(origins, kills, destination, body));
         });
         retainedSymbols.RemoveWhere(symbol =>
         {
             retainedSymbolKills.TryGetValue(symbol, out var kills);
             return retainedSymbolOrigins.TryGetValue(symbol, out var origins)
                 && (!HasReachableOrigin(origins, destination, controlFlowGraph, kills)
-                    || IsClearedOnEveryBranch(kills, destination, body));
+                    || IsClearedOnEveryBranch(origins, kills, destination, body));
         });
     }
 
     private static bool IsClearedOnEveryBranch(
+        List<SyntaxNode?> origins,
         List<SyntaxNode>? kills,
         SyntaxNode destination,
         SyntaxNode body)
@@ -1048,7 +1049,10 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         foreach (var conditional in body.DescendantNodes()
                      .OfType<IfStatementSyntax>()
                      .Where(candidate => candidate.SpanStart < destination.SpanStart
-                         && candidate.Else is not null))
+                         && candidate.Else is not null
+                         && !origins.Any(origin => origin is not null
+                             && origin.SpanStart > candidate.SpanStart
+                             && origin.SpanStart < destination.SpanStart)))
         {
             if (kills.Any(kill => conditional.Statement.Span.Contains(kill.Span))
                 && kills.Any(kill => conditional.Else!.Statement.Span.Contains(kill.Span)))
@@ -2935,6 +2939,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     context,
                     knownTypes,
                     visitedLocals,
+                    provenanceAnchor: null,
                     out capturedContext);
             case IMethodReferenceOperation methodReference:
                 if (methodReference.Method.MethodKind is MethodKind.LocalFunction or MethodKind.Ordinary
@@ -2946,6 +2951,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                         context,
                         knownTypes,
                         visitedLocals,
+                        methodReference.Syntax,
                         out capturedContext))
                     {
                         return true;
@@ -3046,6 +3052,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         OperationAnalysisContext context,
         KnownTypes knownTypes,
         HashSet<ISymbol> visitedSymbols,
+        SyntaxNode provenanceAnchor,
         out SyntaxNode capturedContext)
     {
         if (!visitedSymbols.Add(method))
@@ -3077,6 +3084,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                             context,
                             knownTypes,
                             visitedSymbols,
+                            provenanceAnchor,
                             out capturedContext))
                     {
                         return true;
@@ -3098,6 +3106,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         OperationAnalysisContext context,
         KnownTypes knownTypes,
         HashSet<ISymbol>? visitedLocals,
+        SyntaxNode? provenanceAnchor,
         out SyntaxNode capturedContext)
     {
         foreach (var operation in DescendantOperations(root))
@@ -3114,7 +3123,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                             property.Property,
                             property.Syntax,
                             context,
-                            knownTypes)))
+                            knownTypes,
+                            provenanceAnchor)))
             {
                 capturedContext = property.Syntax;
                 return true;
@@ -3135,7 +3145,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                             fieldReference.Field,
                             fieldReference.Syntax,
                             context,
-                            knownTypes)))
+                            knownTypes,
+                            provenanceAnchor)))
             {
                 capturedContext = fieldReference.Syntax;
                 return true;
@@ -3151,6 +3162,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     context,
                     knownTypes,
                     visitedLocals,
+                    provenanceAnchor ?? invocation.Syntax,
                     out _))
                 {
                     capturedContext = invocation.Syntax;
@@ -3200,45 +3212,36 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         ISymbol member,
         SyntaxNode reference,
         OperationAnalysisContext context,
-        KnownTypes knownTypes)
+        KnownTypes knownTypes,
+        SyntaxNode? provenanceAnchor)
     {
-        var scheduledDelegate = reference.FirstAncestorOrSelf<AnonymousFunctionExpressionSyntax>();
-        var callback = scheduledDelegate?.Ancestors()
-            .OfType<AnonymousFunctionExpressionSyntax>()
-            .FirstOrDefault();
+        var anchor = provenanceAnchor ?? reference;
         var semanticModel = context.Operation.SemanticModel;
-        if (callback is null || semanticModel is null)
+        if (semanticModel is null || semanticModel.SyntaxTree != anchor.SyntaxTree)
         {
             return false;
         }
 
-        var callbackAssignment = callback.FirstAncestorOrSelf<AssignmentExpressionSyntax>();
-        if (callbackAssignment is null
-            || semanticModel.GetSymbolInfo(
-                    callbackAssignment.Left,
-                    context.CancellationToken).Symbol
-                is not IPropertySymbol callbackProperty
-            || !knownTypes.IsSynchronousCallback(callbackProperty))
+        var callback = anchor.AncestorsAndSelf()
+            .OfType<AnonymousFunctionExpressionSyntax>()
+            .FirstOrDefault(candidate => candidate.FirstAncestorOrSelf<AssignmentExpressionSyntax>()
+                    is { } assignment
+                && semanticModel.GetSymbolInfo(
+                        assignment.Left,
+                        context.CancellationToken).Symbol
+                    is IPropertySymbol callbackProperty
+                && knownTypes.IsSynchronousCallback(callbackProperty));
+        if (callback is null
+            || semanticModel.GetOperation(callback, context.CancellationToken)
+                is not IAnonymousFunctionOperation callbackOperation
+            || callbackOperation.Symbol.Parameters.Length == 0)
         {
             return false;
         }
 
-        var callbackParameterNames = callback switch
-        {
-            SimpleLambdaExpressionSyntax simple => [simple.Parameter.Identifier.ValueText],
-            ParenthesizedLambdaExpressionSyntax parenthesized => parenthesized.ParameterList.Parameters
-                .Select(static parameter => parameter.Identifier.ValueText)
-                .ToArray(),
-            AnonymousMethodExpressionSyntax { ParameterList: { } parameterList } =>
-                parameterList.Parameters
-                    .Select(static parameter => parameter.Identifier.ValueText)
-                    .ToArray(),
-            _ => [],
-        };
-        if (callbackParameterNames.Length == 0)
-        {
-            return false;
-        }
+        var callbackParameters = new HashSet<ISymbol>(
+            callbackOperation.Symbol.Parameters,
+            SymbolEqualityComparer.Default);
 
         var assignment = callback.Body
             .DescendantNodes(descendIntoChildren: static node =>
@@ -3246,21 +3249,21 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     and not LocalFunctionStatementSyntax)
             .OfType<AssignmentExpressionSyntax>()
             .Where(candidate => candidate.IsKind(SyntaxKind.SimpleAssignmentExpression)
-                && candidate.SpanStart < scheduledDelegate!.SpanStart
-                && (SymbolEqualityComparer.Default.Equals(
-                        semanticModel.GetSymbolInfo(
-                            candidate.Left,
-                            context.CancellationToken).Symbol,
-                        member)
-                    || GetAssignedName(candidate.Left) == member.Name))
+                && candidate.SpanStart < anchor.SpanStart
+                && SymbolEqualityComparer.Default.Equals(
+                    semanticModel.GetSymbolInfo(
+                        candidate.Left,
+                        context.CancellationToken).Symbol,
+                    member))
             .OrderBy(static candidate => candidate.SpanStart)
             .LastOrDefault();
         return assignment is not null
             && assignment.Right.DescendantNodesAndSelf()
                 .OfType<IdentifierNameSyntax>()
-                .Any(identifier => callbackParameterNames.Contains(
-                    identifier.Identifier.ValueText,
-                    StringComparer.Ordinal));
+                .Any(identifier => callbackParameters.Contains(
+                    semanticModel.GetSymbolInfo(
+                        identifier,
+                        context.CancellationToken).Symbol!));
     }
 
     private static bool ContainsReferenceOwnedByNestedAnonymousFunction(

@@ -393,6 +393,35 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Keeps_Aliases_Reintroduced_After_Exhaustive_Clears()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                var retained = item;
+                if (Environment.TickCount == 0)
+                {
+                    retained = default;
+                }
+                else
+                {
+                    retained = default;
+                }
+
+                retained = item;
+                await Task.Yield();
+                Console.WriteLine(retained.RetryNumber);
+            });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
     public async Task KEV014_Inspects_Combined_Async_Delegates()
     {
         var diagnostics = await AnalyzeBodyAsync("""
@@ -1389,6 +1418,19 @@ public class PipelineHazardAnalyzerTests
                 private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
             }
             """);
+        var incompatibleImmediatelyInvokedDelegate = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        ((Action)(() => _ = AuditAsync(item)))();
+                        await Task.Yield();
+                    });
+
+                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            }
+            """);
         var incompatibleAwaitWrapper = await GetCodeFixAsync("""
             public class TestSubject
             {
@@ -1501,6 +1543,8 @@ public class PipelineHazardAnalyzerTests
         await Assert.That(incompatibleLocalFunctionDiscard.ChangedText).IsNull();
         await Assert.That(incompatibleDelegateLocalDiscard.ActionCount).IsEqualTo(0);
         await Assert.That(incompatibleDelegateLocalDiscard.ChangedText).IsNull();
+        await Assert.That(incompatibleImmediatelyInvokedDelegate.ActionCount).IsEqualTo(0);
+        await Assert.That(incompatibleImmediatelyInvokedDelegate.ChangedText).IsNull();
         await Assert.That(incompatibleAwaitWrapper.ActionCount).IsEqualTo(0);
         await Assert.That(incompatibleAwaitWrapper.ChangedText).IsNull();
         await Assert.That(incompatibleTimedWait.ActionCount).IsEqualTo(0);
@@ -1803,9 +1847,47 @@ public class PipelineHazardAnalyzerTests
                     });
             }
             """);
+        var shadowedField = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        RetryEvent _event = item;
+                        _ = Task.Run(() => Consume(this._event));
+                    });
+
+                private static void Consume(RetryEvent item) { }
+            }
+            """);
+        var memberNameCollision = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private readonly Holder _holder = new();
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = _holder.item;
+                        _ = Task.Run(() => Consume(_event));
+                    });
+
+                private static void Consume(RetryEvent item) { }
+
+                private sealed class Holder
+                {
+                    public RetryEvent item;
+                }
+            }
+            """);
 
         await Assert.That(unrelatedCallback).IsEmpty();
         await Assert.That(parameterlessCallback).IsEmpty();
+        await Assert.That(shadowedField).IsEmpty();
+        await Assert.That(memberNameCollision).IsEmpty();
     }
 
     [Test]
@@ -1825,6 +1907,29 @@ public class PipelineHazardAnalyzerTests
 
                 private void ProcessStored() =>
                     Console.WriteLine(_event.Context.ShieldName);
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_Proven_Event_Fields_Into_Scheduled_Methods()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = item;
+                        _ = Task.Run(ProcessStored);
+                    });
+
+                private void ProcessStored() => Consume(_event);
+                private static void Consume(RetryEvent item) { }
             }
             """);
 

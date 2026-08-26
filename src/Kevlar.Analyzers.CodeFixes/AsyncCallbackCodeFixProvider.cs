@@ -169,6 +169,13 @@ internal sealed class AsyncCallbackCodeFixProvider : CodeFixProvider
         HashSet<ILocalSymbol> visited,
         out SyntaxNode body)
     {
+        if (UnwrapReceiver(invocation.Expression)
+                is AnonymousFunctionExpressionSyntax immediatelyInvoked)
+        {
+            body = immediatelyInvoked.Body;
+            return true;
+        }
+
         var identifier = invocation.Expression switch
         {
             IdentifierNameSyntax direct => direct,
