@@ -4032,6 +4032,7 @@ public class PipelineHazardAnalyzerTests
         var mutations = new[]
         {
             "events.Add(item);",
+            "events.AddRange(new[] { item });",
             "var alias = events; alias.Add(item);",
         };
         foreach (var mutation in mutations)
@@ -4073,6 +4074,71 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Distinguishes_Nested_Deferred_State_Slots()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new RetryEvent[2][];
+                events[0] = new RetryEvent[1];
+                events[1] = new RetryEvent[1];
+                events[0][0] = item;
+                events[1][0] = default;
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+        var dynamicIndexDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var index = 0;
+                var events = new RetryEvent[2];
+                events[index] = item;
+                events[1] = default;
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+        await AssertRuleAsync(
+            dynamicIndexDiagnostics,
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Distinguishes_Deferred_Object_State_Slots()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        var state = new Holder();
+                        state.First.Event = item;
+                        state.Second.Event = default;
+                        state.Second.Field = default;
+                        ThreadPool.QueueUserWorkItem(static value => { }, state);
+                    });
+
+                private sealed class Holder
+                {
+                    public Bucket First { get; } = new();
+                    public Bucket Second { get; } = new();
+                }
+
+                private sealed class Bucket
+                {
+                    public RetryEvent Event { get; set; }
+                    public RetryEvent Field;
+                }
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
     public async Task KEV014_Tracks_Deferred_Mutations_Through_Loop_BackEdges()
     {
         var diagnostics = await AnalyzeBodyAsync("""
@@ -4100,6 +4166,11 @@ public class PipelineHazardAnalyzerTests
         var statements = new[]
         {
             "var events = new System.Collections.Generic.List<RetryEvent>(); events.Add(item); events.Clear();",
+            "var events = new System.Collections.Generic.List<RetryEvent> { item }; events.Clear();",
+            "System.Collections.Generic.List<RetryEvent> events = []; events.Add(item); events.Remove(item);",
+            "var events = new System.Collections.Generic.List<RetryEvent>(); events.Add(item); events.Remove(item);",
+            "var events = new System.Collections.Generic.Stack<RetryEvent>(); events.Push(item); events.Pop();",
+            "var events = new System.Collections.Generic.Queue<RetryEvent>(); events.Enqueue(item); events.Dequeue();",
             "var events = new RetryEvent[1]; events[0] = item; events[0] = default;",
         };
         foreach (var statement in statements)
@@ -4113,6 +4184,28 @@ public class PipelineHazardAnalyzerTests
                 """);
 
             await Assert.That(diagnostics).IsEmpty();
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Keeps_Deferred_State_When_Removals_Leave_Retained_Values()
+    {
+        var statements = new[]
+        {
+            "var events = new System.Collections.Generic.List<RetryEvent>(); events.Add(item); events.Add(item); events.Remove(item);",
+            "var events = new System.Collections.Generic.Queue<RetryEvent>(); events.Enqueue(default); events.Enqueue(item); events.Dequeue();",
+        };
+        foreach (var statement in statements)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                {
+                    {{statement}}
+                    ThreadPool.QueueUserWorkItem(static state => { }, events);
+                });
+                """);
+
+            await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
         }
     }
 

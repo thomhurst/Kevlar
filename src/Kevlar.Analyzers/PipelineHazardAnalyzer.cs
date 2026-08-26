@@ -54,9 +54,18 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         ImmutableHashSet.Create(
             StringComparer.Ordinal,
             "Add",
+            "AddAfter",
+            "AddBefore",
+            "AddFirst",
+            "AddLast",
+            "AddRange",
             "Enqueue",
+            "EnqueueRange",
             "Push",
+            "PushRange",
             "Insert",
+            "InsertRange",
+            "UnionWith",
             "TryAdd");
 
     /// <summary>The KEV002 rule.</summary>
@@ -3277,18 +3286,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 && TryGetStableAliasInitializer(localReference, context, out var initializer)
                 && initializer is not null)
             {
-                if (TryFindDeferredStateContext(
-                    initializer,
-                    context,
-                    knownTypes,
-                    visitedLocals,
-                    out capturedContext))
-                {
-                    return true;
-                }
-
                 if (TryFindDeferredStateMutation(
                     localReference,
+                    initializer,
                     context,
                     knownTypes,
                     visitedLocals,
@@ -3475,6 +3475,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
     private static bool TryFindDeferredStateMutation(
         ILocalReferenceOperation localReference,
+        IOperation initializer,
         OperationAnalysisContext context,
         KnownTypes knownTypes,
         HashSet<ISymbol> visitedLocals,
@@ -3501,8 +3502,34 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             .Where(candidate => (candidate is InvocationExpressionSyntax
                     or AssignmentExpressionSyntax))
             .ToArray();
-        var origins = new List<(SyntaxNode Node, SyntaxNode Context, string? Slot)>();
-        var kills = new List<(SyntaxNode Node, string? Slot, bool ClearsAll)>();
+        var origins = new List<(
+            SyntaxNode Node,
+            SyntaxNode Context,
+            string? Slot,
+            string? Value)>();
+        var kills = new List<(
+            SyntaxNode Node,
+            string? Slot,
+            bool ClearsAll,
+            string? Value,
+            bool RemovesOne)>();
+        var retainingMutationCount = 0;
+        if (TryFindDeferredStateContext(
+            initializer,
+            context,
+            knownTypes,
+            visitedLocals,
+            out capturedContext))
+        {
+            origins.Add((
+                initializer.Syntax,
+                capturedContext,
+                Slot: null,
+                GetDeferredValueKey(
+                    semanticModel.GetOperation(capturedContext, context.CancellationToken),
+                    context,
+                    visitedLocals: null)));
+        }
 
         foreach (var invocationSyntax in mutations.OfType<InvocationExpressionSyntax>())
         {
@@ -3520,7 +3547,37 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
             if (IsKnownClearingMutation(invocation.TargetMethod))
             {
-                kills.Add((invocation.Syntax, null, ClearsAll: true));
+                kills.Add((
+                    invocation.Syntax,
+                    Slot: null,
+                    ClearsAll: true,
+                    Value: null,
+                    RemovesOne: false));
+                continue;
+            }
+
+            if (IsKnownValueRemovingMutation(invocation.TargetMethod))
+            {
+                kills.Add((
+                    invocation.Syntax,
+                    Slot: null,
+                    ClearsAll: false,
+                    GetDeferredValueKey(
+                        invocation.Arguments[0].Value,
+                        context,
+                        visitedLocals: null),
+                    RemovesOne: false));
+                continue;
+            }
+
+            if (IsKnownSingleRemovingMutation(invocation.TargetMethod))
+            {
+                kills.Add((
+                    invocation.Syntax,
+                    Slot: null,
+                    ClearsAll: false,
+                    Value: null,
+                    RemovesOne: true));
                 continue;
             }
 
@@ -3529,6 +3586,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
+            retainingMutationCount += IsBulkRetainingMutation(invocation.TargetMethod)
+                ? 2
+                : 1;
             foreach (var argument in invocation.Arguments)
             {
                 if (TryFindDeferredStateContext(
@@ -3538,7 +3598,16 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     visitedLocals,
                     out capturedContext))
                 {
-                    origins.Add((invocation.Syntax, capturedContext, Slot: null));
+                    origins.Add((
+                        invocation.Syntax,
+                        capturedContext,
+                        Slot: null,
+                        GetDeferredValueKey(
+                            semanticModel.GetOperation(
+                                capturedContext,
+                                context.CancellationToken),
+                            context,
+                            visitedLocals: null)));
                 }
             }
         }
@@ -3554,7 +3623,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     context,
                     visitedLocals: null))
             {
-                var slot = GetDeferredMutationSlot(assignment.Target);
+                var slot = GetDeferredMutationSlot(
+                    assignment.Target,
+                    localReference.Local,
+                    context,
+                    visitedLocals: null);
                 if (TryFindDeferredStateContext(
                     assignment.Value,
                     context,
@@ -3562,21 +3635,46 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     visitedLocals,
                     out capturedContext))
                 {
-                    origins.Add((assignment.Syntax, capturedContext, slot));
+                    origins.Add((
+                        assignment.Syntax,
+                        capturedContext,
+                        slot,
+                        GetDeferredValueKey(
+                            semanticModel.GetOperation(
+                                capturedContext,
+                                context.CancellationToken),
+                            context,
+                            visitedLocals: null)));
                 }
                 else
                 {
-                    kills.Add((assignment.Syntax, slot, ClearsAll: false));
+                    kills.Add((
+                        assignment.Syntax,
+                        slot,
+                        ClearsAll: false,
+                        Value: null,
+                        RemovesOne: false));
                 }
             }
         }
 
+        var startsEmpty = IsKnownEmptyDeferredContainer(initializer);
         foreach (var origin in origins)
         {
+            var matchingValueOrigins = origin.Value is null
+                ? 0
+                : origins.Count(candidate => candidate.Value == origin.Value);
             var relevantKills = kills
                 .Where(kill => kill.ClearsAll
                     || origin.Slot is not null
-                        && (kill.Slot is null || kill.Slot == origin.Slot))
+                        && kill.Slot == origin.Slot
+                    || origin.Value is not null
+                        && matchingValueOrigins == 1
+                        && kill.Value == origin.Value
+                    || startsEmpty
+                        && retainingMutationCount == 1
+                        && origins.Count == 1
+                        && kill.RemovesOne)
                 .Select(static kill => kill.Node)
                 .ToList();
             if (CanReachWithoutKills(
@@ -3600,17 +3698,102 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         && RetainingCollectionNamespaces.Contains(
             method.ContainingNamespace.ToDisplayString());
 
-    private static string? GetDeferredMutationSlot(IOperation target)
+    private static bool IsKnownValueRemovingMutation(IMethodSymbol method) =>
+        method.Name == "Remove"
+        && method.Parameters.Length > 0
+        && RetainingCollectionNamespaces.Contains(
+            method.ContainingNamespace.ToDisplayString());
+
+    private static bool IsKnownSingleRemovingMutation(IMethodSymbol method) =>
+        method.Name is "Dequeue" or "Pop" or "TryDequeue" or "TryPop" or "TryTake"
+        && RetainingCollectionNamespaces.Contains(
+            method.ContainingNamespace.ToDisplayString());
+
+    private static bool IsBulkRetainingMutation(IMethodSymbol method) =>
+        method.Name.EndsWith("Range", StringComparison.Ordinal)
+        || method.Name == "UnionWith";
+
+    private static bool IsKnownEmptyDeferredContainer(IOperation initializer)
+    {
+        initializer = Unwrap(initializer)!;
+        return initializer switch
+        {
+            IObjectCreationOperation objectCreation =>
+                objectCreation.Initializer is null or { Initializers.Length: 0 }
+                && objectCreation.Arguments.All(argument => argument.Parameter is null
+                    || !IsKnownRetainingFrameworkConstructorParameter(
+                        objectCreation.Constructor,
+                        argument.Parameter)),
+            IArrayCreationOperation arrayCreation => arrayCreation.Initializer is null,
+            IInvocationOperation
+            {
+                TargetMethod:
+                {
+                    Name: "Empty",
+                    Parameters.Length: 0,
+                },
+            } => true,
+            _ => initializer.Syntax is CollectionExpressionSyntax
+                {
+                    Elements.Count: 0,
+                },
+        };
+    }
+
+    private static string? GetDeferredMutationSlot(
+        IOperation target,
+        ILocalSymbol local,
+        OperationAnalysisContext context,
+        HashSet<ISymbol>? visitedLocals)
     {
         target = Unwrap(target)!;
         return target switch
         {
-            IFieldReferenceOperation field => $"field:{field.Field.ToDisplayString()}",
+            IFieldReferenceOperation field =>
+                $"{GetDeferredReceiverKey(field.Instance, local, context, visitedLocals)}" +
+                $".field:{field.Field.ToDisplayString()}",
             IPropertyReferenceOperation property =>
-                $"property:{property.Property.ToDisplayString()}:" +
+                $"{GetDeferredReceiverKey(property.Instance, local, context, visitedLocals)}" +
+                $".property:{property.Property.ToDisplayString()}:" +
                 GetArgumentKey(property.Arguments.Select(static argument => argument.Value)),
-            IArrayElementReferenceOperation array => $"array:{GetArgumentKey(array.Indices)}",
+            IArrayElementReferenceOperation array =>
+                $"{GetDeferredReceiverKey(array.ArrayReference, local, context, visitedLocals)}" +
+                $".array:{GetArgumentKey(array.Indices)}",
             _ => null,
+        };
+    }
+
+    private static string GetDeferredReceiverKey(
+        IOperation? receiver,
+        ILocalSymbol local,
+        OperationAnalysisContext context,
+        HashSet<ISymbol>? visitedLocals)
+    {
+        receiver = Unwrap(receiver);
+        if (receiver is ILocalReferenceOperation localReference)
+        {
+            return IsRootedInLocal(
+                localReference,
+                local,
+                context,
+                visitedLocals)
+                ? "root"
+                : $"local:{localReference.Local.ToDisplayString()}";
+        }
+
+        return receiver switch
+        {
+            IFieldReferenceOperation field =>
+                $"{GetDeferredReceiverKey(field.Instance, local, context, visitedLocals)}" +
+                $".field:{field.Field.ToDisplayString()}",
+            IPropertyReferenceOperation property =>
+                $"{GetDeferredReceiverKey(property.Instance, local, context, visitedLocals)}" +
+                $".property:{property.Property.ToDisplayString()}:" +
+                GetArgumentKey(property.Arguments.Select(static argument => argument.Value)),
+            IArrayElementReferenceOperation array =>
+                $"{GetDeferredReceiverKey(array.ArrayReference, local, context, visitedLocals)}" +
+                $".array:{GetArgumentKey(array.Indices)}",
+            _ => "?",
         };
     }
 
@@ -3621,6 +3804,35 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         operation.ConstantValue is { HasValue: true } constant
             ? constant.Value?.ToString() ?? "null"
             : "?";
+
+    private static string? GetDeferredValueKey(
+        IOperation? operation,
+        OperationAnalysisContext context,
+        HashSet<ISymbol>? visitedLocals)
+    {
+        operation = Unwrap(operation);
+        if (operation is ILocalReferenceOperation localReference)
+        {
+            visitedLocals ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+            if (visitedLocals.Add(localReference.Local)
+                && TryGetStableAliasInitializer(localReference, context, out var initializer))
+            {
+                return GetDeferredValueKey(initializer, context, visitedLocals);
+            }
+        }
+
+        return operation switch
+        {
+            IParameterReferenceOperation parameter =>
+                $"parameter:{parameter.Parameter.ToDisplayString()}",
+            IFieldReferenceOperation field => $"field:{field.Field.ToDisplayString()}",
+            IPropertyReferenceOperation property =>
+                $"property:{property.Property.ToDisplayString()}",
+            { ConstantValue: { HasValue: true } constant } =>
+                $"constant:{constant.Value?.ToString() ?? "null"}",
+            _ => operation?.Syntax.ToString(),
+        };
+    }
 
     private static bool IsRootedInLocal(
         IOperation? operation,
