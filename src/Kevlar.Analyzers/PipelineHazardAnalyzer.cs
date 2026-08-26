@@ -3994,6 +3994,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             {
                 foreach (var argument in invocation.Arguments)
                 {
+                    if (!IsRetainedDictionaryArgument(invocation, argument))
+                    {
+                        continue;
+                    }
+
                     if (!TryFindDeferredStateContext(
                         argument.Value,
                         context,
@@ -4257,11 +4262,14 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            foreach (var invocationSyntax in body.DescendantNodesAndSelf(
-                         descendIntoChildren: static node =>
-                             node is not AnonymousFunctionExpressionSyntax
-                                 and not LocalFunctionStatementSyntax)
-                     .OfType<InvocationExpressionSyntax>())
+            var mutations = body.DescendantNodesAndSelf(
+                    descendIntoChildren: static node =>
+                        node is not AnonymousFunctionExpressionSyntax
+                            and not LocalFunctionStatementSyntax)
+                .Where(static node => node is InvocationExpressionSyntax
+                    or AssignmentExpressionSyntax)
+                .ToArray();
+            foreach (var invocationSyntax in mutations.OfType<InvocationExpressionSyntax>())
             {
                 if (semanticModel.GetOperation(
                         invocationSyntax,
@@ -4319,6 +4327,12 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     : null;
                 foreach (var argument in invocation.Arguments)
                 {
+                    if (keyArgument is not null
+                        && !IsRetainedDictionaryArgument(invocation, argument))
+                    {
+                        continue;
+                    }
+
                     if (!TryFindDeferredStateContext(
                         argument.Value,
                         context,
@@ -4347,6 +4361,80 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                         break;
                     }
                 }
+            }
+
+            foreach (var assignmentSyntax in mutations.OfType<AssignmentExpressionSyntax>())
+            {
+                var assignmentOperation = semanticModel.GetOperation(
+                    assignmentSyntax,
+                    context.CancellationToken);
+                var target = assignmentOperation switch
+                {
+                    ISimpleAssignmentOperation assignment => assignment.Target,
+                    ICoalesceAssignmentOperation assignment => assignment.Target,
+                    _ => null,
+                };
+                var value = assignmentOperation switch
+                {
+                    ISimpleAssignmentOperation assignment => assignment.Value,
+                    ICoalesceAssignmentOperation assignment => assignment.Value,
+                    _ => null,
+                };
+                if (target is null
+                    || value is null
+                    || !IsRootedInLocal(
+                        target,
+                        local,
+                        context,
+                        visitedLocals: null))
+                {
+                    continue;
+                }
+
+                var dictionaryKey = target is IPropertyReferenceOperation property
+                    && property.Property.IsIndexer
+                    && IsDictionaryType(property.Property.ContainingType)
+                        ? property.Arguments.FirstOrDefault()?.Value
+                        : null;
+                IOperation retainedOperation;
+                SyntaxNode retainedContext;
+                if (dictionaryKey is not null
+                    && TryFindDeferredStateContext(
+                        dictionaryKey,
+                        context,
+                        knownTypes,
+                        visitedLocals,
+                        out retainedContext))
+                {
+                    retainedOperation = dictionaryKey;
+                }
+                else if (TryFindDeferredStateContext(
+                    value,
+                    context,
+                    knownTypes,
+                    visitedLocals,
+                    out retainedContext))
+                {
+                    retainedOperation = value;
+                }
+                else
+                {
+                    continue;
+                }
+
+                yield return (
+                    retainedContext,
+                    GetDeferredValueKey(
+                        dictionaryKey ?? retainedOperation,
+                        context,
+                        visitedLocals: null),
+                    GetDeferredMutationReceiver(
+                        target,
+                        local,
+                        context,
+                        visitedLocals: null) ?? "root",
+                    MayRetainMultiple: false,
+                    AllowsDuplicateValues: dictionaryKey is null);
             }
         }
     }
@@ -4424,6 +4512,18 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     private static bool IsDictionaryType(INamedTypeSymbol type) =>
         IsDictionaryInterface(type)
         || type.AllInterfaces.Any(IsDictionaryInterface);
+
+    private static bool IsRetainedDictionaryArgument(
+        IInvocationOperation invocation,
+        IArgumentOperation argument) =>
+        argument.Parameter is { } parameter
+        && (parameter.Ordinal == 0
+            || invocation.TargetMethod.Name switch
+            {
+                "GetOrAdd" => parameter.Name == "value",
+                "AddOrUpdate" => parameter.Name == "addValue",
+                _ => true,
+            });
 
     private static bool IsDictionaryInterface(INamedTypeSymbol type) =>
         type.Name == "IDictionary"

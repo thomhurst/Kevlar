@@ -4335,7 +4335,7 @@ public class PipelineHazardAnalyzerTests
     [Test]
     public async Task KEV014_Follows_Invoked_Local_Function_Mutations()
     {
-        var diagnostics = await AnalyzeBodyAsync("""
+        var invocationDiagnostics = await AnalyzeBodyAsync("""
             _ = Shield.Retry(options => options.OnRetry = item =>
             {
                 var events = new System.Collections.Generic.List<RetryEvent>();
@@ -4345,8 +4345,25 @@ public class PipelineHazardAnalyzerTests
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
             });
             """);
+        var assignmentDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new RetryEvent[1];
+                void Set() => events[0] = item;
 
-        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+                Set();
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await AssertRuleAsync(
+            invocationDiagnostics,
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(
+            assignmentDiagnostics,
+            "KEV014",
+            DiagnosticSeverity.Warning);
     }
 
     [Test]
@@ -4669,6 +4686,29 @@ public class PipelineHazardAnalyzerTests
                 """);
 
             await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Concurrent_Dictionary_Factory_Arguments()
+    {
+        var mutations = new[]
+        {
+            "events.GetOrAdd(0, static (_, state) => state.RetryNumber, item);",
+            "events.AddOrUpdate(0, static (_, state) => state.RetryNumber, static (_, current, state) => current + state.RetryNumber, item);",
+        };
+        foreach (var mutation in mutations)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                {
+                    var events = new System.Collections.Concurrent.ConcurrentDictionary<int, int>();
+                    {{mutation}}
+                    ThreadPool.QueueUserWorkItem(static state => { }, events);
+                });
+                """);
+
+            await Assert.That(diagnostics).IsEmpty();
         }
     }
 
