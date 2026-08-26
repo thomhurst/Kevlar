@@ -3506,31 +3506,266 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             SyntaxNode Node,
             SyntaxNode Context,
             string? Slot,
-            string? Value)>();
+            string? Value,
+            string? Receiver,
+            bool MayRetainMultiple,
+            bool AllowsDuplicateValues)>();
         var kills = new List<(
             SyntaxNode Node,
             string? Slot,
             bool ClearsAll,
             string? Value,
-            bool RemovesOne)>();
+            bool RemovesOne,
+            string? Receiver)>();
+        var slotInvalidations = new List<(SyntaxNode Node, string Receiver)>();
         var retainingMutationCount = 0;
-        if (TryFindDeferredStateContext(
-            initializer,
-            context,
-            knownTypes,
-            visitedLocals,
-            out capturedContext))
+        var hasIndeterminateRetainingMutation = false;
+        var addedInitializerOrigins = false;
+        var unwrappedInitializer = Unwrap(initializer)!;
+        if (unwrappedInitializer is IArrayCreationOperation
+            {
+                Initializer: { } arrayInitializer,
+            })
+        {
+            for (var index = 0; index < arrayInitializer.ElementValues.Length; index++)
+            {
+                var element = arrayInitializer.ElementValues[index];
+                if (TryFindDeferredStateContext(
+                    element,
+                    context,
+                    knownTypes,
+                    visitedLocals,
+                    out capturedContext))
+                {
+                    origins.Add((
+                        element.Syntax,
+                        capturedContext,
+                        $"root.array:{GetConstantIdentityKey(
+                            SpecialType.System_Int32,
+                            index)}",
+                        GetDeferredValueKey(
+                            element,
+                            context,
+                            visitedLocals: null),
+                        Receiver: "root",
+                        MayRetainMultiple: false,
+                        AllowsDuplicateValues: true));
+                    addedInitializerOrigins = true;
+                }
+            }
+        }
+        else if (unwrappedInitializer.Syntax is CollectionExpressionSyntax collection)
+        {
+            var index = 0;
+            var hasSpread = false;
+            foreach (var element in collection.Elements)
+            {
+                var expression = element switch
+                {
+                    ExpressionElementSyntax expressionElement =>
+                        expressionElement.Expression,
+                    SpreadElementSyntax spreadElement => spreadElement.Expression,
+                    _ => null,
+                };
+                var elementOperation = expression is null
+                    ? null
+                    : semanticModel.GetOperation(expression, context.CancellationToken);
+                if (elementOperation is not null
+                    && TryFindDeferredStateContext(
+                        elementOperation,
+                        context,
+                        knownTypes,
+                        visitedLocals,
+                        out capturedContext))
+                {
+                    origins.Add((
+                        expression!,
+                        capturedContext,
+                        element is SpreadElementSyntax || hasSpread
+                            ? null
+                            : GetIndexedCollectionSlot(
+                                unwrappedInitializer.Type,
+                                "root",
+                                index),
+                        GetDeferredValueKey(
+                            element is SpreadElementSyntax
+                                ? semanticModel.GetOperation(
+                                    capturedContext,
+                                    context.CancellationToken)
+                                : elementOperation,
+                            context,
+                            visitedLocals: null),
+                        Receiver: "root",
+                        MayRetainMultiple: element is SpreadElementSyntax,
+                        AllowsDuplicateValues:
+                            !IsSetType(unwrappedInitializer.Type)));
+                    addedInitializerOrigins = true;
+                }
+
+                hasSpread |= element is SpreadElementSyntax;
+                index++;
+            }
+        }
+        else if (unwrappedInitializer is IObjectCreationOperation
+            {
+                Initializer: { } objectInitializer,
+            } objectCreation)
+        {
+            foreach (var argument in objectCreation.Arguments)
+            {
+                if (argument.Parameter is not { } parameter
+                    || (!IsInstanceParameterStored(
+                            objectCreation.Constructor,
+                            parameter,
+                            semanticModel,
+                            context.CancellationToken)
+                        && !IsKnownRetainingFrameworkConstructorParameter(
+                            objectCreation.Constructor,
+                            parameter))
+                    || !TryFindDeferredStateContext(
+                        argument.Value,
+                        context,
+                        knownTypes,
+                        visitedLocals,
+                        out capturedContext))
+                {
+                    continue;
+                }
+
+                origins.Add((
+                    argument.Value.Syntax,
+                    capturedContext,
+                    Slot: null,
+                    GetDeferredValueKey(
+                        semanticModel.GetOperation(
+                            capturedContext,
+                            context.CancellationToken),
+                        context,
+                        visitedLocals: null),
+                    Receiver: "root",
+                    MayRetainMultiple:
+                        MayRetainMultipleValues(argument.Value),
+                    AllowsDuplicateValues: !IsSetType(objectCreation.Type)));
+                addedInitializerOrigins = true;
+            }
+
+            foreach (var initializerAssignment in
+                EnumerateInitializerAssignments(objectCreation, "root"))
+            {
+                if (TryFindDeferredStateContext(
+                    initializerAssignment.Assignment.Value,
+                    context,
+                    knownTypes,
+                    visitedLocals,
+                    out capturedContext))
+                {
+                    origins.Add((
+                        initializerAssignment.Assignment.Syntax,
+                        capturedContext,
+                        initializerAssignment.Slot,
+                        GetDeferredValueKey(
+                            initializerAssignment.Assignment.Value,
+                            context,
+                            visitedLocals: null),
+                        initializerAssignment.Receiver,
+                        MayRetainMultiple: false,
+                        AllowsDuplicateValues: true));
+                    addedInitializerOrigins = true;
+                }
+            }
+
+            foreach (var initializerOperation in objectInitializer.Initializers)
+            {
+                if (initializerOperation is IInvocationOperation invocation)
+                {
+                    if (IsDictionaryType(invocation.TargetMethod.ContainingType)
+                        && invocation.Arguments.FirstOrDefault(static argument =>
+                            argument.Parameter?.Ordinal == 0) is { } keyArgument)
+                    {
+                        foreach (var argument in invocation.Arguments)
+                        {
+                            if (!TryFindDeferredStateContext(
+                                argument.Value,
+                                context,
+                                knownTypes,
+                                visitedLocals,
+                                out capturedContext))
+                            {
+                                continue;
+                            }
+
+                            origins.Add((
+                                invocation.Syntax,
+                                capturedContext,
+                                Slot: null,
+                                GetDeferredValueKey(
+                                    keyArgument.Value,
+                                    context,
+                                    visitedLocals: null),
+                                Receiver: "root",
+                                MayRetainMultiple: false,
+                                AllowsDuplicateValues: false));
+                            addedInitializerOrigins = true;
+                            break;
+                        }
+
+                        continue;
+                    }
+
+                    foreach (var argument in invocation.Arguments)
+                    {
+                        if (!TryFindDeferredStateContext(
+                            argument.Value,
+                            context,
+                            knownTypes,
+                            visitedLocals,
+                            out capturedContext))
+                        {
+                            continue;
+                        }
+
+                        origins.Add((
+                            argument.Value.Syntax,
+                            capturedContext,
+                            Slot: null,
+                            GetDeferredValueKey(
+                                argument.Value,
+                                context,
+                                visitedLocals: null),
+                            GetInitializerReceiverKey(GetReceiver(invocation)),
+                            MayRetainMultiple: false,
+                            AllowsDuplicateValues:
+                                !IsSetType(GetReceiver(invocation)?.Type)));
+                        addedInitializerOrigins = true;
+                    }
+                }
+            }
+        }
+
+        if (!addedInitializerOrigins
+            && TryFindDeferredStateContext(
+                initializer,
+                context,
+                knownTypes,
+                visitedLocals,
+                out capturedContext))
         {
             origins.Add((
                 initializer.Syntax,
                 capturedContext,
                 Slot: null,
                 GetDeferredValueKey(
-                    semanticModel.GetOperation(capturedContext, context.CancellationToken),
+                    semanticModel.GetOperation(
+                        capturedContext,
+                        context.CancellationToken),
                     context,
-                    visitedLocals: null)));
+                    visitedLocals: null),
+                Receiver: "root",
+                MayRetainMultiple: false,
+                AllowsDuplicateValues: !IsSetType(unwrappedInitializer.Type)));
         }
 
+        var startsEmpty = IsKnownEmptyDeferredContainer(initializer);
         foreach (var invocationSyntax in mutations.OfType<InvocationExpressionSyntax>())
         {
             if (semanticModel.GetOperation(
@@ -3545,6 +3780,45 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
+            if (IsKnownSlotInvalidatingMutation(invocation.TargetMethod))
+            {
+                slotInvalidations.Add((
+                    invocation.Syntax,
+                    GetDeferredReceiverKey(
+                        GetReceiver(invocation),
+                        localReference.Local,
+                        context,
+                    visitedLocals: null)));
+            }
+
+            if (invocation.TargetMethod.Name == "RemoveAt"
+                && invocation.Arguments.Length == 1
+                && invocation.Arguments[0].Value.ConstantValue is
+                    { HasValue: true, Value: int index }
+                && GetReceiver(invocation) is { } indexedReceiver)
+            {
+                var removedReceiverKey = GetDeferredReceiverKey(
+                    indexedReceiver,
+                    localReference.Local,
+                    context,
+                    visitedLocals: null);
+                var removedSlot = GetIndexedCollectionSlot(
+                    indexedReceiver.Type,
+                    removedReceiverKey,
+                    index);
+                if (removedSlot is not null)
+                {
+                    kills.Add((
+                        invocation.Syntax,
+                        removedSlot,
+                        ClearsAll: false,
+                        Value: null,
+                        RemovesOne: false,
+                        removedReceiverKey));
+                    continue;
+                }
+            }
+
             if (IsKnownClearingMutation(invocation.TargetMethod))
             {
                 kills.Add((
@@ -3552,7 +3826,12 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     Slot: null,
                     ClearsAll: true,
                     Value: null,
-                    RemovesOne: false));
+                    RemovesOne: false,
+                    GetDeferredReceiverKey(
+                        GetReceiver(invocation),
+                        localReference.Local,
+                        context,
+                        visitedLocals: null)));
                 continue;
             }
 
@@ -3566,7 +3845,12 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                         invocation.Arguments[0].Value,
                         context,
                         visitedLocals: null),
-                    RemovesOne: false));
+                    RemovesOne: false,
+                    GetDeferredReceiverKey(
+                        GetReceiver(invocation),
+                        localReference.Local,
+                        context,
+                        visitedLocals: null)));
                 continue;
             }
 
@@ -3577,7 +3861,12 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     Slot: null,
                     ClearsAll: false,
                     Value: null,
-                    RemovesOne: true));
+                    RemovesOne: true,
+                    GetDeferredReceiverKey(
+                        GetReceiver(invocation),
+                        localReference.Local,
+                        context,
+                        visitedLocals: null)));
                 continue;
             }
 
@@ -3586,9 +3875,75 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            retainingMutationCount += IsBulkRetainingMutation(invocation.TargetMethod)
+            var receiver = GetReceiver(invocation);
+            var receiverKey = GetDeferredReceiverKey(
+                receiver,
+                localReference.Local,
+                context,
+                visitedLocals: null);
+            var isBulkMutation = IsBulkRetainingMutation(invocation.TargetMethod);
+            var isPotentiallyRepeated = invocation.Syntax.Ancestors().Any(static node =>
+                node is WhileStatementSyntax
+                    or DoStatementSyntax
+                    or ForStatementSyntax
+                    or ForEachStatementSyntax
+                    or ForEachVariableStatementSyntax);
+            var isPathDependent = invocation.Syntax.Ancestors().Any(static node =>
+                node is IfStatementSyntax
+                    or SwitchStatementSyntax
+                    or SwitchExpressionSyntax
+                    or ConditionalExpressionSyntax
+                    or CatchClauseSyntax);
+            var appendSlot = startsEmpty
+                && !hasIndeterminateRetainingMutation
+                && !isBulkMutation
+                && !isPotentiallyRepeated
+                && invocation.TargetMethod.Name == "Add"
+                && invocation.Arguments.Length == 1
+                    ? GetIndexedCollectionSlot(
+                        receiver?.Type,
+                        receiverKey,
+                        retainingMutationCount)
+                    : null;
+            retainingMutationCount += isBulkMutation
                 ? 2
                 : 1;
+            hasIndeterminateRetainingMutation |= isBulkMutation
+                || isPotentiallyRepeated
+                || isPathDependent;
+            if (IsDictionaryType(invocation.TargetMethod.ContainingType)
+                && invocation.Arguments.FirstOrDefault(static argument =>
+                    argument.Parameter?.Ordinal == 0) is { } keyArgument)
+            {
+                foreach (var argument in invocation.Arguments)
+                {
+                    if (!TryFindDeferredStateContext(
+                        argument.Value,
+                        context,
+                        knownTypes,
+                        visitedLocals,
+                        out capturedContext))
+                    {
+                        continue;
+                    }
+
+                    origins.Add((
+                        invocation.Syntax,
+                        capturedContext,
+                        Slot: null,
+                        GetDeferredValueKey(
+                            keyArgument.Value,
+                            context,
+                            visitedLocals: null),
+                        receiverKey,
+                        MayRetainMultiple: false,
+                        AllowsDuplicateValues: false));
+                    break;
+                }
+
+                continue;
+            }
+
             foreach (var argument in invocation.Arguments)
             {
                 if (TryFindDeferredStateContext(
@@ -3601,79 +3956,183 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     origins.Add((
                         invocation.Syntax,
                         capturedContext,
-                        Slot: null,
+                        appendSlot,
                         GetDeferredValueKey(
-                            semanticModel.GetOperation(
-                                capturedContext,
-                                context.CancellationToken),
+                            isBulkMutation
+                                ? semanticModel.GetOperation(
+                                    capturedContext,
+                                    context.CancellationToken)
+                                : argument.Value,
                             context,
-                            visitedLocals: null)));
+                            visitedLocals: null),
+                        receiverKey,
+                        isBulkMutation
+                            && !IsSetType(receiver?.Type)
+                            && MayRetainMultipleValues(argument.Value),
+                        AllowsDuplicateValues:
+                            !IsSetType(receiver?.Type)));
                 }
             }
         }
 
         foreach (var assignmentSyntax in mutations.OfType<AssignmentExpressionSyntax>())
         {
-            if (semanticModel.GetOperation(
+            var assignmentOperation = semanticModel.GetOperation(
                 assignmentSyntax,
-                    context.CancellationToken) is ISimpleAssignmentOperation assignment
+                context.CancellationToken);
+            var target = assignmentOperation switch
+            {
+                ISimpleAssignmentOperation assignment => assignment.Target,
+                ICoalesceAssignmentOperation assignment => assignment.Target,
+                _ => null,
+            };
+            var value = assignmentOperation switch
+            {
+                ISimpleAssignmentOperation assignment => assignment.Value,
+                ICoalesceAssignmentOperation assignment => assignment.Value,
+                _ => null,
+            };
+            if (target is not null
+                && value is not null
                 && IsRootedInLocal(
-                    assignment.Target,
+                    target,
                     localReference.Local,
                     context,
                     visitedLocals: null))
             {
                 var slot = GetDeferredMutationSlot(
-                    assignment.Target,
+                    target,
                     localReference.Local,
                     context,
                     visitedLocals: null);
-                if (TryFindDeferredStateContext(
-                    assignment.Value,
+                var dictionaryKeyArgument = target is IPropertyReferenceOperation property
+                    && property.Property.IsIndexer
+                    && IsDictionaryType(property.Property.ContainingType)
+                        ? property.Arguments.FirstOrDefault()
+                        : null;
+                if (dictionaryKeyArgument is not null
+                    && (TryFindDeferredStateContext(
+                            dictionaryKeyArgument.Value,
+                            context,
+                            knownTypes,
+                            visitedLocals,
+                            out capturedContext)
+                        || TryFindDeferredStateContext(
+                            value,
+                            context,
+                            knownTypes,
+                            visitedLocals,
+                            out capturedContext)))
+                {
+                    origins.Add((
+                        assignmentSyntax,
+                        capturedContext,
+                        slot,
+                        GetDeferredValueKey(
+                            dictionaryKeyArgument.Value,
+                            context,
+                            visitedLocals: null),
+                        GetDeferredMutationReceiver(
+                            target,
+                            localReference.Local,
+                            context,
+                            visitedLocals: null),
+                        MayRetainMultiple: false,
+                        AllowsDuplicateValues: false));
+                }
+                else if (TryFindDeferredStateContext(
+                    value,
                     context,
                     knownTypes,
                     visitedLocals,
                     out capturedContext))
                 {
                     origins.Add((
-                        assignment.Syntax,
+                        assignmentSyntax,
                         capturedContext,
                         slot,
                         GetDeferredValueKey(
-                            semanticModel.GetOperation(
-                                capturedContext,
-                                context.CancellationToken),
+                            value,
                             context,
-                            visitedLocals: null)));
+                            visitedLocals: null),
+                        GetDeferredMutationReceiver(
+                            target,
+                            localReference.Local,
+                            context,
+                            visitedLocals: null),
+                        MayRetainMultiple: false,
+                        AllowsDuplicateValues: true));
                 }
-                else
+
+                if (assignmentOperation is ISimpleAssignmentOperation)
                 {
                     kills.Add((
-                        assignment.Syntax,
+                        assignmentSyntax,
                         slot,
                         ClearsAll: false,
                         Value: null,
-                        RemovesOne: false));
+                        RemovesOne: false,
+                        GetDeferredMutationReceiver(
+                            target,
+                            localReference.Local,
+                            context,
+                            visitedLocals: null)));
                 }
             }
         }
 
-        var startsEmpty = IsKnownEmptyDeferredContainer(initializer);
         foreach (var origin in origins)
         {
-            var matchingValueOrigins = origin.Value is null
-                ? 0
-                : origins.Count(candidate => candidate.Value == origin.Value);
             var relevantKills = kills
                 .Where(kill => kill.ClearsAll
+                    && IsWithinReceiver(origin.Receiver, kill.Receiver)
                     || origin.Slot is not null
-                        && kill.Slot == origin.Slot
+                        && IsWithinSlot(origin.Slot, kill.Slot)
+                        && !slotInvalidations.Any(invalidation =>
+                            invalidation.Node != kill.Node
+                            && invalidation.Receiver == origin.Receiver
+                            && CanCoOccurBefore(
+                                origin.Node,
+                                invalidation.Node,
+                                kill.Node,
+                                controlFlowGraph))
                     || origin.Value is not null
-                        && matchingValueOrigins == 1
                         && kill.Value == origin.Value
+                        && origin.Receiver == kill.Receiver
+                        && !origin.MayRetainMultiple
+                        && (!origin.AllowsDuplicateValues
+                            || origin.Node is AssignmentExpressionSyntax
+                            || !CanRepeatBefore(
+                                origin.Node,
+                                kill.Node,
+                                controlFlowGraph)
+                            && kills.Count(candidateKill =>
+                                    candidateKill.Value == origin.Value
+                                    && candidateKill.Receiver == origin.Receiver
+                                    && (candidateKill == kill
+                                        || CanCoOccurBefore(
+                                            origin.Node,
+                                            candidateKill.Node,
+                                            kill.Node,
+                                            controlFlowGraph)))
+                                >= origins.Count(candidateOrigin =>
+                                    candidateOrigin.Value == origin.Value
+                                    && candidateOrigin.Receiver == origin.Receiver
+                                    && (candidateOrigin == origin
+                                        || CanCoOccurBefore(
+                                            origin.Node,
+                                            candidateOrigin.Node,
+                                            kill.Node,
+                                            controlFlowGraph))))
                     || startsEmpty
                         && retainingMutationCount == 1
                         && origins.Count == 1
+                        && origin.Receiver == kill.Receiver
+                        && (origin.Node is AssignmentExpressionSyntax
+                            || !CanRepeatBefore(
+                                origin.Node,
+                                kill.Node,
+                                controlFlowGraph))
                         && kill.RemovesOne)
                 .Select(static kill => kill.Node)
                 .ToList();
@@ -3698,20 +4157,121 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         && RetainingCollectionNamespaces.Contains(
             method.ContainingNamespace.ToDisplayString());
 
+    private static bool CanCoOccurBefore(
+        SyntaxNode first,
+        SyntaxNode second,
+        SyntaxNode destination,
+        ControlFlowGraph? controlFlowGraph) =>
+        (CanReachWithoutKills(
+                first,
+                second,
+                [destination],
+                controlFlowGraph)
+            && CanReach(
+                second,
+                destination,
+                controlFlowGraph,
+                requireTraversal: second.SpanStart >= destination.SpanStart))
+        || (CanReachWithoutKills(
+                second,
+                first,
+                [destination],
+                controlFlowGraph)
+            && CanReach(
+                first,
+                destination,
+                controlFlowGraph,
+                requireTraversal: first.SpanStart >= destination.SpanStart));
+
+    private static bool CanRepeatBefore(
+        SyntaxNode origin,
+        SyntaxNode destination,
+        ControlFlowGraph? controlFlowGraph) =>
+        CanReachWithoutKills(
+            origin,
+            origin,
+            [destination],
+            controlFlowGraph);
+
+    private static bool IsWithinReceiver(
+        string? originReceiver,
+        string? mutationReceiver) =>
+        originReceiver is not null
+        && mutationReceiver is not null
+        && (originReceiver == mutationReceiver
+            || originReceiver.StartsWith(
+                mutationReceiver + ".",
+                StringComparison.Ordinal));
+
+    private static bool IsWithinSlot(string originSlot, string? mutationSlot) =>
+        mutationSlot is not null
+        && (originSlot == mutationSlot
+            || originSlot.StartsWith(
+                mutationSlot + ".",
+                StringComparison.Ordinal));
+
     private static bool IsKnownValueRemovingMutation(IMethodSymbol method) =>
         method.Name == "Remove"
         && method.Parameters.Length > 0
         && RetainingCollectionNamespaces.Contains(
             method.ContainingNamespace.ToDisplayString());
 
+    private static bool IsDictionaryType(INamedTypeSymbol type) =>
+        IsDictionaryInterface(type)
+        || type.AllInterfaces.Any(IsDictionaryInterface);
+
+    private static bool IsDictionaryInterface(INamedTypeSymbol type) =>
+        type.Name == "IDictionary"
+        && type.ContainingNamespace.ToDisplayString()
+            == "System.Collections.Generic";
+
+    private static bool IsSetType(ITypeSymbol? type) =>
+        type is INamedTypeSymbol namedType
+        && (IsSetInterface(namedType)
+            || namedType.AllInterfaces.Any(IsSetInterface));
+
+    private static bool IsSetInterface(INamedTypeSymbol type) =>
+        type.Name == "ISet"
+        && type.ContainingNamespace.ToDisplayString()
+            == "System.Collections.Generic";
+
     private static bool IsKnownSingleRemovingMutation(IMethodSymbol method) =>
         method.Name is "Dequeue" or "Pop" or "TryDequeue" or "TryPop" or "TryTake"
+        && RetainingCollectionNamespaces.Contains(
+            method.ContainingNamespace.ToDisplayString());
+
+    private static bool IsKnownSlotInvalidatingMutation(IMethodSymbol method) =>
+        method.Name is "Insert"
+            or "InsertRange"
+            or "Remove"
+            or "RemoveAt"
+            or "RemoveRange"
+            or "Reverse"
+            or "Sort"
         && RetainingCollectionNamespaces.Contains(
             method.ContainingNamespace.ToDisplayString());
 
     private static bool IsBulkRetainingMutation(IMethodSymbol method) =>
         method.Name.EndsWith("Range", StringComparison.Ordinal)
         || method.Name == "UnionWith";
+
+    private static bool MayRetainMultipleValues(IOperation operation)
+    {
+        operation = Unwrap(operation)!;
+        if (operation is IArrayCreationOperation { Initializer: { } arrayInitializer })
+        {
+            return arrayInitializer.ElementValues.Length > 1;
+        }
+
+        if (operation.Syntax is CollectionExpressionSyntax collection)
+        {
+            return collection.Elements.Count > 1
+                || collection.Elements.Any(static element =>
+                    element is SpreadElementSyntax);
+        }
+
+        return true;
+    }
 
     private static bool IsKnownEmptyDeferredContainer(IOperation initializer)
     {
@@ -3763,6 +4323,149 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         };
     }
 
+    private static string? GetInitializerMutationSlot(IOperation target)
+    {
+        target = Unwrap(target)!;
+        return target switch
+        {
+            IFieldReferenceOperation field =>
+                $"{GetInitializerReceiverKey(field.Instance)}" +
+                $".field:{field.Field.ToDisplayString()}",
+            IPropertyReferenceOperation property =>
+                $"{GetInitializerReceiverKey(property.Instance)}" +
+                $".property:{property.Property.ToDisplayString()}:" +
+                GetArgumentKey(property.Arguments.Select(static argument => argument.Value)),
+            IArrayElementReferenceOperation array =>
+                $"{GetInitializerReceiverKey(array.ArrayReference)}" +
+                $".array:{GetArgumentKey(array.Indices)}",
+            _ => null,
+        };
+    }
+
+    private static string? GetIndexedCollectionSlot(
+        ITypeSymbol? type,
+        string receiver,
+        int index)
+    {
+        if (type is not INamedTypeSymbol namedType)
+        {
+            return null;
+        }
+
+        var indexer = namedType.GetMembers()
+            .OfType<IPropertySymbol>()
+            .FirstOrDefault(static property => property.IsIndexer
+                && property.SetMethod is not null
+                && property.Parameters.Length == 1
+                && property.Parameters[0].Type.SpecialType
+                    == SpecialType.System_Int32);
+        return indexer is null
+            ? null
+            : $"{receiver}.property:{indexer.ToDisplayString()}:" +
+                GetConstantIdentityKey(SpecialType.System_Int32, index);
+    }
+
+    private static string? GetInitializerMutationReceiver(IOperation target)
+    {
+        target = Unwrap(target)!;
+        return target switch
+        {
+            IFieldReferenceOperation field => GetInitializerReceiverKey(field.Instance),
+            IPropertyReferenceOperation property =>
+                GetInitializerReceiverKey(property.Instance),
+            IArrayElementReferenceOperation array =>
+                GetInitializerReceiverKey(array.ArrayReference),
+            _ => null,
+        };
+    }
+
+    private static IEnumerable<(
+        ISimpleAssignmentOperation Assignment,
+        string Slot,
+        string Receiver)> EnumerateInitializerAssignments(
+        IObjectCreationOperation creation,
+        string prefix)
+    {
+        if (creation.Initializer is null)
+        {
+            yield break;
+        }
+
+        foreach (var assignment in creation.Initializer.Initializers
+            .OfType<ISimpleAssignmentOperation>())
+        {
+            var relativeSlot = GetInitializerMutationSlot(assignment.Target);
+            var relativeReceiver = GetInitializerMutationReceiver(assignment.Target);
+            if (relativeSlot is null || relativeReceiver is null)
+            {
+                continue;
+            }
+
+            var slot = CombineInitializerPath(prefix, relativeSlot);
+            if (Unwrap(assignment.Value) is IObjectCreationOperation nestedCreation
+                && nestedCreation.Initializer is not null)
+            {
+                foreach (var nested in EnumerateInitializerAssignments(
+                    nestedCreation,
+                    slot))
+                {
+                    yield return nested;
+                }
+
+                continue;
+            }
+
+            yield return (
+                assignment,
+                slot,
+                CombineInitializerPath(prefix, relativeReceiver));
+        }
+    }
+
+    private static string CombineInitializerPath(string prefix, string relativePath) =>
+        prefix == "root"
+            ? relativePath
+            : prefix + relativePath.Substring("root".Length);
+
+    private static string GetInitializerReceiverKey(IOperation? receiver)
+    {
+        receiver = Unwrap(receiver);
+        return receiver switch
+        {
+            null or IInstanceReferenceOperation => "root",
+            IFieldReferenceOperation field =>
+                $"{GetInitializerReceiverKey(field.Instance)}" +
+                $".field:{field.Field.ToDisplayString()}",
+            IPropertyReferenceOperation property =>
+                $"{GetInitializerReceiverKey(property.Instance)}" +
+                $".property:{property.Property.ToDisplayString()}:" +
+                GetArgumentKey(property.Arguments.Select(static argument => argument.Value)),
+            IArrayElementReferenceOperation array =>
+                $"{GetInitializerReceiverKey(array.ArrayReference)}" +
+                $".array:{GetArgumentKey(array.Indices)}",
+            _ => $"{receiver.Kind}@{receiver.Syntax.SpanStart}",
+        };
+    }
+
+    private static string? GetDeferredMutationReceiver(
+        IOperation target,
+        ILocalSymbol local,
+        OperationAnalysisContext context,
+        HashSet<ISymbol>? visitedLocals)
+    {
+        target = Unwrap(target)!;
+        var receiver = target switch
+        {
+            IFieldReferenceOperation field => field.Instance,
+            IPropertyReferenceOperation property => property.Instance,
+            IArrayElementReferenceOperation array => array.ArrayReference,
+            _ => null,
+        };
+        return receiver is null
+            ? null
+            : GetDeferredReceiverKey(receiver, local, context, visitedLocals);
+    }
+
     private static string GetDeferredReceiverKey(
         IOperation? receiver,
         ILocalSymbol local,
@@ -3772,13 +4475,23 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         receiver = Unwrap(receiver);
         if (receiver is ILocalReferenceOperation localReference)
         {
-            return IsRootedInLocal(
-                localReference,
-                local,
-                context,
-                visitedLocals)
-                ? "root"
-                : $"local:{localReference.Local.ToDisplayString()}";
+            if (SymbolEqualityComparer.Default.Equals(localReference.Local, local))
+            {
+                return "root";
+            }
+
+            visitedLocals ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+            if (visitedLocals.Add(localReference.Local)
+                && TryGetStableAliasInitializer(localReference, context, out var initializer))
+            {
+                return GetDeferredReceiverKey(
+                    initializer,
+                    local,
+                    context,
+                    visitedLocals);
+            }
+
+            return $"local:{localReference.Local.ToDisplayString()}";
         }
 
         return receiver switch
@@ -3798,12 +4511,38 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     }
 
     private static string GetArgumentKey(IEnumerable<IOperation> arguments) =>
-        string.Join(",", arguments.Select(GetConstantKey));
+        string.Join(",", arguments.Select(GetOperationIdentityKey));
 
-    private static string GetConstantKey(IOperation operation) =>
-        operation.ConstantValue is { HasValue: true } constant
-            ? constant.Value?.ToString() ?? "null"
-            : "?";
+    private static string GetOperationIdentityKey(IOperation operation)
+    {
+        operation = Unwrap(operation)!;
+        return operation switch
+        {
+            { ConstantValue: { HasValue: true } constant } =>
+                GetConstantIdentityKey(operation.Type?.SpecialType, constant.Value),
+            ILocalReferenceOperation local =>
+                GetLocalIdentityKey(local.Local),
+            IParameterReferenceOperation parameter =>
+                $"parameter:{parameter.Parameter.ToDisplayString()}",
+            IFieldReferenceOperation field =>
+                $"{GetOptionalOperationIdentityKey(field.Instance)}" +
+                $".field:{field.Field.ToDisplayString()}",
+            IPropertyReferenceOperation property =>
+                $"{GetOptionalOperationIdentityKey(property.Instance)}" +
+                $".property:{property.Property.ToDisplayString()}:" +
+                GetArgumentKey(property.Arguments.Select(static argument => argument.Value)),
+            IArrayElementReferenceOperation array =>
+                $"{GetOperationIdentityKey(array.ArrayReference)}" +
+                $".array:{GetArgumentKey(array.Indices)}",
+            _ => $"{operation.Kind}@{operation.Syntax.SpanStart}",
+        };
+    }
+
+    private static string GetOptionalOperationIdentityKey(IOperation? operation) =>
+        operation is null ? "static" : GetOperationIdentityKey(operation);
+
+    private static string GetLocalIdentityKey(ILocalSymbol local) =>
+        $"local:{local.Name}@{local.Locations.FirstOrDefault()?.SourceSpan.Start}";
 
     private static string? GetDeferredValueKey(
         IOperation? operation,
@@ -3825,14 +4564,28 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         {
             IParameterReferenceOperation parameter =>
                 $"parameter:{parameter.Parameter.ToDisplayString()}",
-            IFieldReferenceOperation field => $"field:{field.Field.ToDisplayString()}",
+            IFieldReferenceOperation field =>
+                $"{GetDeferredValueKey(field.Instance, context, visitedLocals)}" +
+                $".field:{field.Field.ToDisplayString()}",
             IPropertyReferenceOperation property =>
-                $"property:{property.Property.ToDisplayString()}",
+                $"{GetDeferredValueKey(property.Instance, context, visitedLocals)}" +
+                $".property:{property.Property.ToDisplayString()}:" +
+                GetArgumentKey(property.Arguments.Select(static argument => argument.Value)),
+            IArrayElementReferenceOperation array =>
+                $"{GetDeferredValueKey(array.ArrayReference, context, visitedLocals)}" +
+                $".array:{GetArgumentKey(array.Indices)}",
+            ILocalReferenceOperation local =>
+                GetLocalIdentityKey(local.Local),
             { ConstantValue: { HasValue: true } constant } =>
-                $"constant:{constant.Value?.ToString() ?? "null"}",
+                GetConstantIdentityKey(operation.Type?.SpecialType, constant.Value),
             _ => operation?.Syntax.ToString(),
         };
     }
+
+    private static string GetConstantIdentityKey(
+        SpecialType? type,
+        object? value) =>
+        $"constant:{type}:{value?.ToString() ?? "null"}";
 
     private static bool IsRootedInLocal(
         IOperation? operation,
