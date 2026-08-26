@@ -2213,6 +2213,28 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Ignores_Fresh_Defaults_Passed_To_Scheduled_Helpers()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Schedule()
+                {
+                    _ = Task.Run(() => Consume(default(RetryEvent)));
+                    ThreadPool.QueueUserWorkItem<RetryEvent>(
+                        Consume,
+                        default,
+                        preferLocal: false);
+                }
+
+                private static void Consume(RetryEvent item) { }
+            }
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
     public async Task KEV014_Inspects_Unobserved_Async_Instance_Method_Bodies()
     {
         var diagnostics = await AnalyzeSourceAsync("""

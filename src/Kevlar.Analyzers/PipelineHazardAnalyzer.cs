@@ -3290,7 +3290,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
             if (operation is IParameterReferenceOperation parameterReference
                 && (knownTypes.IsEventContextContainer(parameterReference.Parameter.Type)
-                    || knownTypes.IsEventContextReference(parameterReference.Parameter.Type)))
+                    || knownTypes.IsEventContextReference(parameterReference.Parameter.Type))
+                && root is IAnonymousFunctionOperation anonymous
+                && !SymbolEqualityComparer.Default.Equals(
+                    parameterReference.Parameter.ContainingSymbol,
+                    anonymous.Symbol))
             {
                 capturedContext = parameterReference.Syntax;
                 return true;
