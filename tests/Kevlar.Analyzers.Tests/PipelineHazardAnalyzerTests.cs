@@ -172,6 +172,27 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Maps_PostAwait_Local_Function_Parameters()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                await Task.Yield();
+                Read(item);
+
+                static void Read(RetryEvent value) =>
+                    Console.WriteLine(value.Context.ShieldName);
+            });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
     public async Task KEV014_Follows_PostAwait_Source_Method_Calls()
     {
         var diagnostics = await AnalyzeSourceAsync("""
@@ -235,6 +256,42 @@ public class PipelineHazardAnalyzerTests
             "KEV014",
             DiagnosticSeverity.Warning);
         await AssertRuleAsync(scalarParameter, "KEV013");
+    }
+
+    [Test]
+    public async Task KEV014_Maps_Retained_Wrappers_To_Source_Parameters()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        var holder = new Holder(item);
+                        await Task.Yield();
+                        Read(holder);
+                    });
+
+                private static void Read(Holder value) =>
+                    Console.WriteLine(value.Event.Context.ShieldName);
+
+                private sealed class Holder
+                {
+                    public Holder(RetryEvent item)
+                    {
+                        Event = item;
+                    }
+
+                    public RetryEvent Event { get; }
+                }
+            }
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
     }
 
     [Test]

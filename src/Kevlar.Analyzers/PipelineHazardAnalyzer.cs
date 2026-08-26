@@ -1660,6 +1660,22 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             var functionRetainedSymbols = new HashSet<ISymbol>(
                 retainedSymbols,
                 SymbolEqualityComparer.Default);
+            if (semanticModel?.GetOperation(invocation, cancellationToken)
+                    is IInvocationOperation invocationOperation)
+            {
+                foreach (var argument in invocationOperation.Arguments)
+                {
+                    if (argument.Parameter is { } parameter
+                        && IsRetainedArgumentValue(
+                            argument.Value,
+                            retainedNames,
+                            retainedSymbols))
+                    {
+                        functionRetainedSymbols.Add(parameter);
+                    }
+                }
+            }
+
             foreach (var parameter in function.ParameterList.Parameters)
             {
                 functionRetainedNames.Remove(parameter.Identifier.ValueText);
@@ -1762,15 +1778,10 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 foreach (var argument in invocationOperation.Arguments)
                 {
                     if (argument.Parameter is { } parameter
-                        && ContainsEventContextReference(argument.Value.Type, knownTypes)
-                        && argument.Value.Syntax.DescendantNodesAndSelf()
-                            .OfType<IdentifierNameSyntax>()
-                            .Any(identifier => IsRetainedReference(
-                                identifier,
-                                retainedNames,
-                                retainedSymbols,
-                                semanticModel,
-                                cancellationToken)))
+                        && IsRetainedArgumentValue(
+                            argument.Value,
+                            retainedNames,
+                            retainedSymbols))
                     {
                         methodRetainedSymbols.Add(parameter);
                     }
@@ -2151,6 +2162,23 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         semanticModel?.GetSymbolInfo(identifier, cancellationToken).Symbol is { } symbol
             ? retainedSymbols.Contains(symbol)
             : retainedNames.Contains(identifier.Identifier.ValueText);
+
+    private static bool IsRetainedArgumentValue(
+        IOperation operation,
+        HashSet<string> retainedNames,
+        HashSet<ISymbol> retainedSymbols)
+    {
+        operation = Unwrap(operation)!;
+        return operation switch
+        {
+            ILocalReferenceOperation local => retainedSymbols.Contains(local.Local)
+                || retainedNames.Contains(local.Local.Name),
+            IParameterReferenceOperation parameter =>
+                retainedSymbols.Contains(parameter.Parameter)
+                || retainedNames.Contains(parameter.Parameter.Name),
+            _ => false,
+        };
+    }
 
     private static SyntaxNode? GetFunctionBody(SyntaxNode declaration) => declaration switch
     {
