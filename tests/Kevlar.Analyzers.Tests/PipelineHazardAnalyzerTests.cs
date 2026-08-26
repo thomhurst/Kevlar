@@ -369,6 +369,30 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Removes_Aliases_Cleared_On_Every_Incoming_Path()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                var retained = item;
+                if (Environment.TickCount == 0)
+                {
+                    retained = default;
+                }
+                else
+                {
+                    retained = default;
+                }
+
+                await Task.Yield();
+                Console.WriteLine(retained.RetryNumber);
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV013");
+    }
+
+    [Test]
     public async Task KEV014_Inspects_Combined_Async_Delegates()
     {
         var diagnostics = await AnalyzeBodyAsync("""
@@ -1310,6 +1334,19 @@ public class PipelineHazardAnalyzerTests
                 private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
             }
             """);
+        var compatibleLocalFunction = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async _ =>
+                    {
+                        Log();
+                        await Task.Yield();
+
+                        static void Log() => Console.WriteLine("retrying");
+                    });
+            }
+            """);
         var incompatibleAsyncDiscardingBlock = await GetCodeFixAsync("""
             public class TestSubject
             {
@@ -1336,6 +1373,31 @@ public class PipelineHazardAnalyzerTests
                     });
 
                 private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            }
+            """);
+        var incompatibleDelegateLocalDiscard = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        Action start = () => _ = AuditAsync(item);
+                        start();
+                        await Task.Yield();
+                    });
+
+                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            }
+            """);
+        var incompatibleAwaitWrapper = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                        await Forward(AuditAsync(item)));
+
+                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+                private static ValueTask Forward(Task ignored) => ValueTask.CompletedTask;
             }
             """);
         var incompatibleTimedWait = await GetCodeFixAsync("""
@@ -1420,6 +1482,9 @@ public class PipelineHazardAnalyzerTests
         await Assert.That(compatibleValueTask.ActionCount).IsEqualTo(1);
         await Assert.That(compatibleValueTask.ChangedText)
             .Contains("options.OnRetryAsync = _ => AuditAsync()");
+        await Assert.That(compatibleLocalFunction.ActionCount).IsEqualTo(1);
+        await Assert.That(compatibleLocalFunction.ChangedText)
+            .Contains("options.OnRetryAsync = async");
         await Assert.That(incompatible.ActionCount).IsEqualTo(0);
         await Assert.That(incompatible.ChangedText).IsNull();
         await Assert.That(incompatibleGenericValueTask.ActionCount).IsEqualTo(0);
@@ -1434,6 +1499,10 @@ public class PipelineHazardAnalyzerTests
         await Assert.That(incompatibleAsyncDiscardingBlock.ChangedText).IsNull();
         await Assert.That(incompatibleLocalFunctionDiscard.ActionCount).IsEqualTo(0);
         await Assert.That(incompatibleLocalFunctionDiscard.ChangedText).IsNull();
+        await Assert.That(incompatibleDelegateLocalDiscard.ActionCount).IsEqualTo(0);
+        await Assert.That(incompatibleDelegateLocalDiscard.ChangedText).IsNull();
+        await Assert.That(incompatibleAwaitWrapper.ActionCount).IsEqualTo(0);
+        await Assert.That(incompatibleAwaitWrapper.ChangedText).IsNull();
         await Assert.That(incompatibleTimedWait.ActionCount).IsEqualTo(0);
         await Assert.That(incompatibleTimedWait.ChangedText).IsNull();
         await Assert.That(incompatibleCollectionAdd.ActionCount).IsEqualTo(0);
@@ -1627,6 +1696,116 @@ public class PipelineHazardAnalyzerTests
             """);
 
         await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Unproven_Event_Properties_In_Scheduled_Work()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent Unrelated => default;
+
+                public void Schedule() =>
+                    _ = Task.Run(() => Console.WriteLine(Unrelated.RetryNumber));
+            }
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Flags_Proven_Event_Fields_In_Scheduled_Work()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = item;
+                        _ = Task.Run(() => Consume(_event));
+                    });
+
+                private static void Consume(RetryEvent item) { }
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_Event_Members_From_Explicit_Callback_Forms()
+    {
+        var parenthesized = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent Stored { get; set; }
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = (RetryEvent item) =>
+                    {
+                        Stored = item;
+                        _ = Task.Run(() => Consume(Stored));
+                    });
+
+                private static void Consume(RetryEvent item) { }
+            }
+            """);
+        var anonymousMethod = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = delegate(RetryEvent item)
+                    {
+                        _event = item;
+                        _ = Task.Run(() => Consume(_event));
+                    });
+
+                private static void Consume(RetryEvent item) { }
+            }
+            """);
+
+        await AssertRuleAsync(parenthesized, "KEV014", DiagnosticSeverity.Warning);
+        await AssertRuleAsync(anonymousMethod, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Unproven_Member_Assignments_In_Scheduled_Work()
+    {
+        var unrelatedCallback = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+                public Action<RetryEvent>? Callback { get; set; }
+
+                public void Configure() => Callback = item =>
+                {
+                    _event = item;
+                    _ = Task.Run(() => Console.WriteLine(_event.RetryNumber));
+                };
+            }
+            """);
+        var parameterlessCallback = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure(RetryEvent initial) =>
+                    _ = Shield.Retry(options => options.OnRetry = delegate
+                    {
+                        _event = initial;
+                        _ = Task.Run(() => Console.WriteLine(_event.RetryNumber));
+                    });
+            }
+            """);
+
+        await Assert.That(unrelatedCallback).IsEmpty();
+        await Assert.That(parameterlessCallback).IsEmpty();
     }
 
     [Test]

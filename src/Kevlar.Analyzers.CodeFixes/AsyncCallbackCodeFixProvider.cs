@@ -54,8 +54,11 @@ internal sealed class AsyncCallbackCodeFixProvider : CodeFixProvider
             return;
         }
 
-        if (callback.Body is BlockSyntax block
-            && ContainsUnawaitedTaskInvocation(block, semanticModel!, context.CancellationToken))
+        if ((callback.Body is BlockSyntax || !callback.AsyncKeyword.IsKind(SyntaxKind.None))
+            && ContainsUnawaitedTaskInvocation(
+                callback.Body,
+                semanticModel!,
+                context.CancellationToken))
         {
             return;
         }
@@ -94,13 +97,14 @@ internal sealed class AsyncCallbackCodeFixProvider : CodeFixProvider
     }
 
     private static bool ContainsUnawaitedTaskInvocation(
-        BlockSyntax block,
+        SyntaxNode body,
         SemanticModel semanticModel,
         CancellationToken cancellationToken)
     {
         var pendingBodies = new Stack<SyntaxNode>();
         var visitedLocalFunctions = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
-        pendingBodies.Push(block);
+        var visitedDelegateLocals = new HashSet<ILocalSymbol>(SymbolEqualityComparer.Default);
+        pendingBodies.Push(body);
         while (pendingBodies.Count > 0)
         {
             foreach (var invocation in pendingBodies.Pop()
@@ -110,11 +114,19 @@ internal sealed class AsyncCallbackCodeFixProvider : CodeFixProvider
                          .OfType<InvocationExpressionSyntax>())
             {
                 if (IsTaskLike(semanticModel.GetTypeInfo(invocation, cancellationToken).Type)
-                    && !invocation.Ancestors()
-                        .TakeWhile(static ancestor => ancestor is not StatementSyntax)
-                        .Any(static ancestor => ancestor is AwaitExpressionSyntax))
+                    && !IsDirectlyAwaited(invocation))
                 {
                     return true;
+                }
+
+                if (TryGetStableDelegateBody(
+                        invocation,
+                        semanticModel,
+                        cancellationToken,
+                        visitedDelegateLocals,
+                        out var delegateBody))
+                {
+                    pendingBodies.Push(delegateBody);
                 }
 
                 if (semanticModel.GetSymbolInfo(invocation, cancellationToken).Symbol
@@ -136,6 +148,57 @@ internal sealed class AsyncCallbackCodeFixProvider : CodeFixProvider
         }
 
         return false;
+    }
+
+    private static bool IsDirectlyAwaited(InvocationExpressionSyntax invocation)
+    {
+        SyntaxNode current = invocation;
+        while (current.Parent is ParenthesizedExpressionSyntax or CastExpressionSyntax
+               or PostfixUnaryExpressionSyntax)
+        {
+            current = current.Parent;
+        }
+
+        return current.Parent is AwaitExpressionSyntax;
+    }
+
+    private static bool TryGetStableDelegateBody(
+        InvocationExpressionSyntax invocation,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken,
+        HashSet<ILocalSymbol> visited,
+        out SyntaxNode body)
+    {
+        var identifier = invocation.Expression switch
+        {
+            IdentifierNameSyntax direct => direct,
+            MemberAccessExpressionSyntax
+            {
+                Expression: IdentifierNameSyntax receiver,
+                Name.Identifier.ValueText: "Invoke",
+            } => receiver,
+            _ => null,
+        };
+        if (identifier is null
+            || semanticModel.GetSymbolInfo(identifier, cancellationToken).Symbol
+                is not ILocalSymbol { Type.TypeKind: TypeKind.Delegate } local
+            || !visited.Add(local)
+            || local.DeclaringSyntaxReferences.Length != 1
+            || local.DeclaringSyntaxReferences[0].GetSyntax(cancellationToken)
+                is not VariableDeclaratorSyntax
+            {
+                Initializer.Value: { } initializer,
+            } declarator
+            || semanticModel.SyntaxTree != declarator.SyntaxTree
+            || IsWrittenAfterDeclaration(local, declarator, semanticModel, cancellationToken)
+            || UnwrapReceiver(initializer) is not AnonymousFunctionExpressionSyntax anonymous)
+        {
+            body = null!;
+            return false;
+        }
+
+        body = anonymous.Body;
+        return true;
     }
 
     private static SyntaxNode? GetLocalFunctionBody(SyntaxNode declaration) => declaration switch

@@ -940,6 +940,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             StringComparer.Ordinal);
         var retainedSymbolOrigins = new Dictionary<ISymbol, List<SyntaxNode?>>(
             SymbolEqualityComparer.Default);
+        var retainedNameKills = new Dictionary<string, List<SyntaxNode>>(StringComparer.Ordinal);
+        var retainedSymbolKills = new Dictionary<ISymbol, List<SyntaxNode>>(
+            SymbolEqualityComparer.Default);
         foreach (var symbol in retainedSymbols)
         {
             retainedSymbolOrigins.Add(symbol, [null]);
@@ -975,32 +978,86 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     alias,
                     retainedNameOrigins,
                     retainedSymbolOrigins,
+                    retainedNameKills,
+                    retainedSymbolKills,
                     semanticModel,
                     controlFlowGraph,
                     cancellationToken))
             {
                 retainedNames.Add(name);
-                AddRetainedOrigin(retainedNameOrigins, name, alias);
+                AddRetainedNameOrigin(retainedNameOrigins, name, alias);
                 if (target is not null)
                 {
                     retainedSymbols.Add(target);
-                    AddRetainedOrigin(retainedSymbolOrigins, target, alias);
+                    AddRetainedSymbolOrigin(retainedSymbolOrigins, target, alias);
                 }
             }
-            else if (IsUnconditionalAliasWrite(alias, body))
+            else
             {
                 if (target is not null)
                 {
-                    retainedSymbols.Remove(target);
-                    retainedSymbolOrigins.Remove(target);
+                    AddRetainedSymbolKill(retainedSymbolKills, target, alias);
                 }
                 else
                 {
-                    retainedNames.Remove(name);
-                    retainedNameOrigins.Remove(name);
+                    AddRetainedNameKill(retainedNameKills, name, alias);
+                }
+
+                if (IsUnconditionalAliasWrite(alias, body))
+                {
+                    if (target is not null)
+                    {
+                        retainedSymbols.Remove(target);
+                        retainedSymbolOrigins.Remove(target);
+                    }
+                    else
+                    {
+                        retainedNames.Remove(name);
+                        retainedNameOrigins.Remove(name);
+                    }
                 }
             }
         }
+
+        retainedNames.RemoveWhere(name =>
+        {
+            retainedNameKills.TryGetValue(name, out var kills);
+            return retainedNameOrigins.TryGetValue(name, out var origins)
+                && (!HasReachableOrigin(origins, destination, controlFlowGraph, kills)
+                    || IsClearedOnEveryBranch(kills, destination, body));
+        });
+        retainedSymbols.RemoveWhere(symbol =>
+        {
+            retainedSymbolKills.TryGetValue(symbol, out var kills);
+            return retainedSymbolOrigins.TryGetValue(symbol, out var origins)
+                && (!HasReachableOrigin(origins, destination, controlFlowGraph, kills)
+                    || IsClearedOnEveryBranch(kills, destination, body));
+        });
+    }
+
+    private static bool IsClearedOnEveryBranch(
+        List<SyntaxNode>? kills,
+        SyntaxNode destination,
+        SyntaxNode body)
+    {
+        if (kills is null || kills.Count < 2)
+        {
+            return false;
+        }
+
+        foreach (var conditional in body.DescendantNodes()
+                     .OfType<IfStatementSyntax>()
+                     .Where(candidate => candidate.SpanStart < destination.SpanStart
+                         && candidate.Else is not null))
+        {
+            if (kills.Any(kill => conditional.Statement.Span.Contains(kill.Span))
+                && kills.Any(kill => conditional.Else!.Statement.Span.Contains(kill.Span)))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool HasReachableRetainedAlias(
@@ -1008,6 +1065,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         SyntaxNode destination,
         Dictionary<string, List<SyntaxNode?>> retainedNameOrigins,
         Dictionary<ISymbol, List<SyntaxNode?>> retainedSymbolOrigins,
+        Dictionary<string, List<SyntaxNode>> retainedNameKills,
+        Dictionary<ISymbol, List<SyntaxNode>> retainedSymbolKills,
         SemanticModel? semanticModel,
         ControlFlowGraph? controlFlowGraph,
         CancellationToken cancellationToken)
@@ -1015,17 +1074,25 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         if (expression is IdentifierNameSyntax identifier)
         {
             var symbol = semanticModel?.GetSymbolInfo(identifier, cancellationToken).Symbol;
-            return symbol is not null
-                ? HasReachableOrigin(
-                    retainedSymbolOrigins,
-                    symbol,
+            var hasOrigins = symbol is not null
+                ? retainedSymbolOrigins.TryGetValue(symbol, out var origins)
+                : retainedNameOrigins.TryGetValue(identifier.Identifier.ValueText, out origins);
+            List<SyntaxNode>? kills;
+            if (symbol is not null)
+            {
+                retainedSymbolKills.TryGetValue(symbol, out kills);
+            }
+            else
+            {
+                retainedNameKills.TryGetValue(identifier.Identifier.ValueText, out kills);
+            }
+
+            return hasOrigins
+                && HasReachableOrigin(
+                    origins!,
                     destination,
-                    controlFlowGraph)
-                : HasReachableOrigin(
-                    retainedNameOrigins,
-                    identifier.Identifier.ValueText,
-                    destination,
-                    controlFlowGraph);
+                    controlFlowGraph,
+                    kills);
         }
 
         if (expression is MemberAccessExpressionSyntax memberAccess)
@@ -1033,12 +1100,19 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             var symbol = semanticModel?.GetSymbolInfo(
                 memberAccess.Name,
                 cancellationToken).Symbol;
+            List<SyntaxNode>? kills = null;
+            if (symbol is not null)
+            {
+                retainedSymbolKills.TryGetValue(symbol, out kills);
+            }
+
             if (symbol is not null
+                && retainedSymbolOrigins.TryGetValue(symbol, out var origins)
                 && HasReachableOrigin(
-                    retainedSymbolOrigins,
-                    symbol,
+                    origins,
                     destination,
-                    controlFlowGraph))
+                    controlFlowGraph,
+                    kills))
             {
                 return true;
             }
@@ -1049,6 +1123,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     destination,
                     retainedNameOrigins,
                     retainedSymbolOrigins,
+                    retainedNameKills,
+                    retainedSymbolKills,
                     semanticModel,
                     controlFlowGraph,
                     cancellationToken);
@@ -1061,6 +1137,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 destination,
                 retainedNameOrigins,
                 retainedSymbolOrigins,
+                retainedNameKills,
+                retainedSymbolKills,
                 semanticModel,
                 controlFlowGraph,
                 cancellationToken),
@@ -1069,6 +1147,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 destination,
                 retainedNameOrigins,
                 retainedSymbolOrigins,
+                retainedNameKills,
+                retainedSymbolKills,
                 semanticModel,
                 controlFlowGraph,
                 cancellationToken),
@@ -1079,6 +1159,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     destination,
                     retainedNameOrigins,
                     retainedSymbolOrigins,
+                    retainedNameKills,
+                    retainedSymbolKills,
                     semanticModel,
                     controlFlowGraph,
                     cancellationToken),
@@ -1086,28 +1168,148 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         };
     }
 
-    private static bool HasReachableOrigin<TKey>(
-        Dictionary<TKey, List<SyntaxNode?>> retainedOrigins,
-        TKey key,
+    private static bool HasReachableOrigin(
+        List<SyntaxNode?> origins,
         SyntaxNode destination,
-        ControlFlowGraph? controlFlowGraph)
-        where TKey : notnull =>
-        retainedOrigins.TryGetValue(key, out var origins)
-        && origins.Any(origin => origin is null || CanReach(origin, destination, controlFlowGraph));
+        ControlFlowGraph? controlFlowGraph,
+        List<SyntaxNode>? kills = null) =>
+        origins.Any(origin => origin is null
+            || CanReachWithoutKills(origin, destination, kills, controlFlowGraph));
 
-    private static void AddRetainedOrigin<TKey>(
-        Dictionary<TKey, List<SyntaxNode?>> retainedOrigins,
-        TKey key,
-        SyntaxNode origin)
-        where TKey : notnull
+    private static bool CanReachWithoutKills(
+        SyntaxNode source,
+        SyntaxNode target,
+        List<SyntaxNode>? kills,
+        ControlFlowGraph? controlFlowGraph)
     {
-        if (!retainedOrigins.TryGetValue(key, out var origins))
+        if (kills is null || kills.Count == 0 || controlFlowGraph is null)
+        {
+            return CanReach(source, target, controlFlowGraph);
+        }
+
+        var sourceSyntax = source is VariableDeclaratorSyntax
+            ? source.FirstAncestorOrSelf<LocalDeclarationStatementSyntax>() ?? source
+            : source;
+        var sourceBlocks = controlFlowGraph.Blocks
+            .Where(block => block.IsReachable && ContainsOperationSyntax(block, sourceSyntax))
+            .ToArray();
+        var targetBlocks = new HashSet<BasicBlock>(controlFlowGraph.Blocks
+            .Where(block => block.IsReachable && ContainsOperationSyntax(block, target)));
+        if (sourceBlocks.Length == 0 || targetBlocks.Count == 0)
+        {
+            return CanReach(source, target, controlFlowGraph);
+        }
+
+        foreach (var sourceBlock in sourceBlocks)
+        {
+            if (targetBlocks.Contains(sourceBlock)
+                && !ContainsKill(sourceBlock, kills, source.SpanStart, target.SpanStart))
+            {
+                return true;
+            }
+
+            if (ContainsKill(sourceBlock, kills, source.SpanStart, int.MaxValue))
+            {
+                continue;
+            }
+
+            var pending = new Queue<BasicBlock>();
+            var visited = new HashSet<BasicBlock>();
+            EnqueueSuccessor(sourceBlock.FallThroughSuccessor, pending);
+            EnqueueSuccessor(sourceBlock.ConditionalSuccessor, pending);
+            while (pending.Count > 0)
+            {
+                var block = pending.Dequeue();
+                if (!visited.Add(block))
+                {
+                    continue;
+                }
+
+                if (targetBlocks.Contains(block))
+                {
+                    if (!ContainsKill(block, kills, int.MinValue, target.SpanStart))
+                    {
+                        return true;
+                    }
+
+                    continue;
+                }
+
+                if (ContainsKill(block, kills, int.MinValue, int.MaxValue))
+                {
+                    continue;
+                }
+
+                EnqueueSuccessor(block.FallThroughSuccessor, pending);
+                EnqueueSuccessor(block.ConditionalSuccessor, pending);
+            }
+        }
+
+        return false;
+    }
+
+    private static bool ContainsKill(
+        BasicBlock block,
+        List<SyntaxNode> kills,
+        int after,
+        int before) => kills.Any(kill => kill.SpanStart > after
+            && kill.SpanStart < before
+            && ContainsOperationSyntax(block, kill));
+
+    private static void AddRetainedNameOrigin(
+        Dictionary<string, List<SyntaxNode?>> retainedOrigins,
+        string name,
+        SyntaxNode origin)
+    {
+        if (!retainedOrigins.TryGetValue(name, out var origins))
         {
             origins = [];
-            retainedOrigins.Add(key, origins);
+            retainedOrigins.Add(name, origins);
         }
 
         origins.Add(origin);
+    }
+
+    private static void AddRetainedSymbolOrigin(
+        Dictionary<ISymbol, List<SyntaxNode?>> retainedOrigins,
+        ISymbol symbol,
+        SyntaxNode origin)
+    {
+        if (!retainedOrigins.TryGetValue(symbol, out var origins))
+        {
+            origins = [];
+            retainedOrigins.Add(symbol, origins);
+        }
+
+        origins.Add(origin);
+    }
+
+    private static void AddRetainedNameKill(
+        Dictionary<string, List<SyntaxNode>> retainedKills,
+        string name,
+        SyntaxNode kill)
+    {
+        if (!retainedKills.TryGetValue(name, out var kills))
+        {
+            kills = [];
+            retainedKills.Add(name, kills);
+        }
+
+        kills.Add(kill);
+    }
+
+    private static void AddRetainedSymbolKill(
+        Dictionary<ISymbol, List<SyntaxNode>> retainedKills,
+        ISymbol symbol,
+        SyntaxNode kill)
+    {
+        if (!retainedKills.TryGetValue(symbol, out var kills))
+        {
+            kills = [];
+            retainedKills.Add(symbol, kills);
+        }
+
+        kills.Add(kill);
     }
 
     private static bool TryFindRetainedContextInLocalFunction(
@@ -2906,7 +3108,13 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             }
 
             if (operation is IPropertyReferenceOperation property
-                && ContainsEventContextReference(property.Property.Type, knownTypes))
+                && (knownTypes.IsEventContextReference(property.Property.Type)
+                    || knownTypes.IsEventContextContainer(property.Property.Type)
+                        && IsProvenEventMemberCapture(
+                            property.Property,
+                            property.Syntax,
+                            context,
+                            knownTypes)))
             {
                 capturedContext = property.Syntax;
                 return true;
@@ -2921,7 +3129,13 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             }
 
             if (operation is IFieldReferenceOperation fieldReference
-                && knownTypes.IsEventContextReference(fieldReference.Field.Type))
+                && (knownTypes.IsEventContextReference(fieldReference.Field.Type)
+                    || knownTypes.IsEventContextContainer(fieldReference.Field.Type)
+                        && IsProvenEventMemberCapture(
+                            fieldReference.Field,
+                            fieldReference.Syntax,
+                            context,
+                            knownTypes)))
             {
                 capturedContext = fieldReference.Syntax;
                 return true;
@@ -2980,6 +3194,73 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         capturedContext = null!;
         return false;
+    }
+
+    private static bool IsProvenEventMemberCapture(
+        ISymbol member,
+        SyntaxNode reference,
+        OperationAnalysisContext context,
+        KnownTypes knownTypes)
+    {
+        var scheduledDelegate = reference.FirstAncestorOrSelf<AnonymousFunctionExpressionSyntax>();
+        var callback = scheduledDelegate?.Ancestors()
+            .OfType<AnonymousFunctionExpressionSyntax>()
+            .FirstOrDefault();
+        var semanticModel = context.Operation.SemanticModel;
+        if (callback is null || semanticModel is null)
+        {
+            return false;
+        }
+
+        var callbackAssignment = callback.FirstAncestorOrSelf<AssignmentExpressionSyntax>();
+        if (callbackAssignment is null
+            || semanticModel.GetSymbolInfo(
+                    callbackAssignment.Left,
+                    context.CancellationToken).Symbol
+                is not IPropertySymbol callbackProperty
+            || !knownTypes.IsSynchronousCallback(callbackProperty))
+        {
+            return false;
+        }
+
+        var callbackParameterNames = callback switch
+        {
+            SimpleLambdaExpressionSyntax simple => [simple.Parameter.Identifier.ValueText],
+            ParenthesizedLambdaExpressionSyntax parenthesized => parenthesized.ParameterList.Parameters
+                .Select(static parameter => parameter.Identifier.ValueText)
+                .ToArray(),
+            AnonymousMethodExpressionSyntax { ParameterList: { } parameterList } =>
+                parameterList.Parameters
+                    .Select(static parameter => parameter.Identifier.ValueText)
+                    .ToArray(),
+            _ => [],
+        };
+        if (callbackParameterNames.Length == 0)
+        {
+            return false;
+        }
+
+        var assignment = callback.Body
+            .DescendantNodes(descendIntoChildren: static node =>
+                node is not AnonymousFunctionExpressionSyntax
+                    and not LocalFunctionStatementSyntax)
+            .OfType<AssignmentExpressionSyntax>()
+            .Where(candidate => candidate.IsKind(SyntaxKind.SimpleAssignmentExpression)
+                && candidate.SpanStart < scheduledDelegate!.SpanStart
+                && (SymbolEqualityComparer.Default.Equals(
+                        semanticModel.GetSymbolInfo(
+                            candidate.Left,
+                            context.CancellationToken).Symbol,
+                        member)
+                    || GetAssignedName(candidate.Left) == member.Name))
+            .OrderBy(static candidate => candidate.SpanStart)
+            .LastOrDefault();
+        return assignment is not null
+            && assignment.Right.DescendantNodesAndSelf()
+                .OfType<IdentifierNameSyntax>()
+                .Any(identifier => callbackParameterNames.Contains(
+                    identifier.Identifier.ValueText,
+                    StringComparer.Ordinal));
     }
 
     private static bool ContainsReferenceOwnedByNestedAnonymousFunction(
