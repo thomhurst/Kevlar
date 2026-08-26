@@ -23,9 +23,9 @@ items:
   - Kevlar
   namespace: Kevlar
   summary: >-
-    Observes and manually controls a single circuit breaker. Create one, assign it to
+    Observes and manually controls one or more circuit breakers. Create one, assign it to
 
-    <xref href="Kevlar.CircuitBreakerOptions.Monitor" data-throw-if-not-resolved="false"></xref>, and keep a reference to it.
+    each <xref href="Kevlar.CircuitBreakerOptions.Monitor" data-throw-if-not-resolved="false"></xref> to control, and keep a reference to it.
   example: []
   syntax:
     content: public sealed class CircuitBreakerMonitor
@@ -53,7 +53,7 @@ items:
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Forces the circuit open. Executions are rejected until <xref href="Kevlar.CircuitBreakerMonitor.Reset" data-throw-if-not-resolved="false"></xref> is called.
+  summary: Forces every bound circuit open. Executions are rejected until <xref href="Kevlar.CircuitBreakerMonitor.Reset" data-throw-if-not-resolved="false"></xref> is called.
   example: []
   syntax:
     content: public void Isolate()
@@ -74,7 +74,7 @@ items:
   - Kevlar
   namespace: Kevlar
   summary: >-
-    Forces the circuit open and asynchronously waits for configured transition observers.
+    Forces every bound circuit open and asynchronously waits for configured transition observers.
 
     A reentrant call from a transition callback queues its transition behind the active
 
@@ -104,7 +104,7 @@ items:
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Closes the circuit and clears all failure metrics.
+  summary: Closes every bound circuit and clears all failure metrics.
   example: []
   syntax:
     content: public void Reset()
@@ -125,7 +125,7 @@ items:
   - Kevlar
   namespace: Kevlar
   summary: >-
-    Closes the circuit, clears all failure metrics, and asynchronously waits for configured
+    Closes every bound circuit, clears all failure metrics, and asynchronously waits for configured
 
     transition observers. A reentrant call from a transition callback queues its transition
 
@@ -174,7 +174,7 @@ items:
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: The current state of the bound circuit.
+  summary: The worst state among the bound circuits, ordered isolated, open, half-open, then closed.
   example: []
   syntax:
     content: public CircuitState State { get; }
@@ -198,17 +198,17 @@ items:
   - Kevlar
   namespace: Kevlar
   summary: >-
-    Raised on every state transition of the bound circuit, after
+    Raised on every state transition of each bound circuit, after
 
     <xref href="Kevlar.CircuitBreakerOptions.OnStateChanged" data-throw-if-not-resolved="false"></xref> completes. Transitions are delivered
 
-    serially outside the circuit lock, so handlers may read state or call <xref href="Kevlar.CircuitBreakerMonitor.Reset" data-throw-if-not-resolved="false"></xref>
+    serially per circuit outside its lock; different circuits may publish concurrently.
 
-    or <xref href="Kevlar.CircuitBreakerMonitor.Isolate" data-throw-if-not-resolved="false"></xref> without deadlocking. Handlers run synchronously and block later
+    Handlers may read state or call <xref href="Kevlar.CircuitBreakerMonitor.Reset" data-throw-if-not-resolved="false"></xref> or <xref href="Kevlar.CircuitBreakerMonitor.Isolate" data-throw-if-not-resolved="false"></xref> without
 
-    transition publishers, so they should not perform I/O, wait on external work, or otherwise
+    deadlocking. Handlers run synchronously and block later transitions from the same circuit,
 
-    run for a long time.
+    so they should not perform I/O, wait on external work, or otherwise run for a long time.
   example: []
   syntax:
     content: public event Action<CircuitBreakerStateChangedEvent>? StateChanged
