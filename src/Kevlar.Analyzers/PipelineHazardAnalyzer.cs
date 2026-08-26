@@ -1215,7 +1215,10 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         var operation = Unwrap(semanticModel?.GetOperation(expression, cancellationToken));
         if (operation is not null
-            && GetStoredAliasValueParts(operation).Any(part =>
+            && GetStoredAliasValueParts(
+                operation,
+                semanticModel,
+                cancellationToken).Any(part =>
                 part.Syntax is ExpressionSyntax partExpression
                 && HasReachableRetainedAlias(
                     partExpression,
@@ -1269,10 +1272,39 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         };
     }
 
-    private static IEnumerable<IOperation> GetStoredAliasValueParts(IOperation operation) =>
-        operation is IObjectCreationOperation objectCreation
-            ? GetObjectInitializerValues(objectCreation.Initializer)
-            : GetRetainedValueParts(operation);
+    private static IEnumerable<IOperation> GetStoredAliasValueParts(
+        IOperation operation,
+        SemanticModel? semanticModel,
+        CancellationToken cancellationToken)
+    {
+        if (operation is not IObjectCreationOperation objectCreation)
+        {
+            foreach (var part in GetRetainedValueParts(operation))
+            {
+                yield return part;
+            }
+
+            yield break;
+        }
+
+        foreach (var value in GetObjectInitializerValues(objectCreation.Initializer))
+        {
+            yield return value;
+        }
+
+        foreach (var argument in objectCreation.Arguments)
+        {
+            if (argument.Parameter is { } parameter
+                && IsConstructorParameterStored(
+                    objectCreation.Constructor,
+                    parameter,
+                    semanticModel,
+                    cancellationToken))
+            {
+                yield return argument.Value;
+            }
+        }
+    }
 
     private static IEnumerable<IOperation> GetObjectInitializerValues(
         IObjectOrCollectionInitializerOperation? initializer)
@@ -3074,8 +3106,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     && IsConstructorParameterStored(
                         objectCreation.Constructor,
                         parameter,
-                        context,
-                        knownTypes)
+                        context.Operation.SemanticModel,
+                        context.CancellationToken)
                     && TryFindDeferredStateContext(
                         argument.Value,
                         context,
@@ -3186,10 +3218,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     private static bool IsConstructorParameterStored(
         IMethodSymbol? constructor,
         IParameterSymbol parameter,
-        OperationAnalysisContext context,
-        KnownTypes knownTypes)
+        SemanticModel? currentSemanticModel,
+        CancellationToken cancellationToken)
     {
-        var currentSemanticModel = context.Operation.SemanticModel;
         if (constructor is null || currentSemanticModel is null)
         {
             return false;
@@ -3197,11 +3228,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         foreach (var syntaxReference in constructor.DeclaringSyntaxReferences)
         {
-            var syntax = syntaxReference.GetSyntax(context.CancellationToken);
+            var syntax = syntaxReference.GetSyntax(cancellationToken);
             if (syntax is RecordDeclarationSyntax
                 && constructor.ContainingType.GetMembers(parameter.Name)
                     .OfType<IPropertySymbol>()
-                    .Any(property => CanRetainDeferredState(property.Type, knownTypes)))
+                    .Any())
             {
                 return true;
             }
@@ -3214,12 +3245,13 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             var body = GetFunctionBody(syntax);
             var bodyOperation = body is null
                 ? null
-                : semanticModel.GetOperation(body, context.CancellationToken);
+                : semanticModel.GetOperation(body, cancellationToken);
             if (bodyOperation is not null
                 && DescendantOperations(bodyOperation)
                     .OfType<ISimpleAssignmentOperation>()
                     .Any(assignment =>
-                        CanRetainDeferredState(assignment.Target.Type, knownTypes)
+                        assignment.Target is IFieldReferenceOperation { Field.IsStatic: false }
+                            or IPropertyReferenceOperation { Property.IsStatic: false }
                         && Unwrap(assignment.Value) is IParameterReferenceOperation reference
                         && SymbolEqualityComparer.Default.Equals(reference.Parameter, parameter)))
             {
@@ -3229,9 +3261,6 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         return false;
     }
-
-    private static bool CanRetainDeferredState(ITypeSymbol? type, KnownTypes knownTypes) =>
-        type?.IsReferenceType is true || ContainsEventContextReference(type, knownTypes);
 
     private static bool IsKnownCompositeState(IOperation operation) =>
         operation is IConditionalOperation

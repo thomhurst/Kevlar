@@ -229,6 +229,47 @@ public class PipelineHazardAnalyzerTests
                 }
             }
             """);
+        var constructorWrapper = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        var holder = new Holder(item);
+                        await Task.Yield();
+                        Consume(holder.Event.Context);
+                    });
+
+                private static void Consume(KevlarContext context) { }
+
+                private sealed class Holder
+                {
+                    public Holder(RetryEvent item)
+                    {
+                        Event = item;
+                    }
+
+                    public RetryEvent Event { get; }
+                }
+            }
+            """);
+        var emptyInitializer = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        var holder = new Holder { };
+                        await Task.Yield();
+                        Console.WriteLine(holder.Value);
+                    });
+
+                private sealed class Holder
+                {
+                    public int Value { get; set; }
+                }
+            }
+            """);
         var collectionWrapper = await AnalyzeSourceAsync("""
             public sealed class TestSubject
             {
@@ -248,6 +289,12 @@ public class PipelineHazardAnalyzerTests
             "KEV014",
             DiagnosticSeverity.Warning);
         await AssertRuleAsync(snapshot, "KEV013");
+        await AssertRuleAsync(Without(constructorWrapper, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(constructorWrapper, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(emptyInitializer, "KEV013");
         await AssertRuleAsync(Without(collectionWrapper, "KEV014"), "KEV013");
         await AssertRuleAsync(
             Without(collectionWrapper, "KEV013"),
