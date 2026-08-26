@@ -3727,6 +3727,21 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Ignores_Framework_Collection_Capacity_State()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+                ThreadPool.QueueUserWorkItem(
+                    static (System.Collections.Generic.List<RetryEvent> state) =>
+                        Console.WriteLine(state.Count),
+                    new System.Collections.Generic.List<RetryEvent>(capacity: 1),
+                    preferLocal: false));
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
     public async Task KEV014_Inspects_Erased_Collection_Expression_Values()
     {
         var diagnostics = await AnalyzeBodyAsync("""
@@ -5287,6 +5302,25 @@ public class PipelineHazardAnalyzerTests
         };
 
         await AssertEachAsync(cases, "KEV012", "KEV004", "KEV011");
+
+        var additionalOptionShapes = new[]
+        {
+            "_ = Shield.For<int>().Retry(options => options.OnRetryAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
+            "_ = Shield.For<int>().Retry(options => options.DelayGeneratorAsync = static _ => new ValueTask<TimeSpan?>(TimeSpan.Zero)).Execute(_ => 1);",
+            "_ = Shield.Hedge(options => options.DelayGeneratorAsync = static _ => new ValueTask<TimeSpan>(TimeSpan.Zero)).Execute(_ => 1);",
+            "_ = Shield.For<int>().Hedge(options => options.DelayGeneratorAsync = static _ => new ValueTask<TimeSpan>(TimeSpan.Zero)).Execute(_ => 1);",
+            "_ = Shield.Timeout(options => options.OnTimeoutAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
+            "_ = Shield.CircuitBreaker(options => options.OnStateChangedAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
+            "_ = Shield.For<int>().CircuitBreaker(options => { options.ConsecutiveFailures = 1; options.BreakDurationGenerator = static _ => new ValueTask<TimeSpan>(TimeSpan.FromSeconds(1)); }).Execute(_ => 1);",
+            "_ = Shield.For<int>().CircuitBreaker(options => options.OnStateChangedAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
+            "Shield.Fallback(static _ => ValueTask.CompletedTask, options => options.OnFallbackAsync = static _ => ValueTask.CompletedTask).Execute(static _ => { });",
+        };
+        foreach (var body in additionalOptionShapes)
+        {
+            var diagnostics = await AnalyzeBodyAsync(body);
+            await Assert.That(diagnostics.Any(static diagnostic => diagnostic.Id == "KEV012"))
+                .IsTrue();
+        }
     }
 
     [Test]
@@ -5384,6 +5418,14 @@ public class PipelineHazardAnalyzerTests
                 public sealed class CustomOptions
                 {
                     public Func<int, ValueTask>? OnRetryAsync { get; set; }
+                    public Func<int, ValueTask<TimeSpan?>>? DelayGeneratorAsync { get; set; }
+                    public Func<int, ValueTask>? OnTimeoutAsync { get; set; }
+                    public Func<int, ValueTask<TimeSpan>>? TimeoutGenerator { get; set; }
+                    public Func<int, ValueTask>? OnFallbackAsync { get; set; }
+                    public Func<int, ValueTask>? OnStateChangedAsync { get; set; }
+                    public Func<int, ValueTask<TimeSpan>>? BreakDurationGenerator { get; set; }
+                    public Func<int, ValueTask>? OnRejectedAsync { get; set; }
+                    public Func<int, ValueTask>? Behavior { get; set; }
                 }
 
                 public static class CustomShieldExtensions
@@ -5398,7 +5440,18 @@ public class PipelineHazardAnalyzerTests
                 public sealed class TestSubject
                 {
                     public int Run() => Shield.Empty
-                        .Custom(options => options.OnRetryAsync = static _ => ValueTask.CompletedTask)
+                        .Custom(options =>
+                        {
+                            options.OnRetryAsync = static _ => ValueTask.CompletedTask;
+                            options.DelayGeneratorAsync = static _ => ValueTask.FromResult<TimeSpan?>(TimeSpan.Zero);
+                            options.OnTimeoutAsync = static _ => ValueTask.CompletedTask;
+                            options.TimeoutGenerator = static _ => ValueTask.FromResult(TimeSpan.Zero);
+                            options.OnFallbackAsync = static _ => ValueTask.CompletedTask;
+                            options.OnStateChangedAsync = static _ => ValueTask.CompletedTask;
+                            options.BreakDurationGenerator = static _ => ValueTask.FromResult(TimeSpan.Zero);
+                            options.OnRejectedAsync = static _ => ValueTask.CompletedTask;
+                            options.Behavior = static _ => ValueTask.CompletedTask;
+                        })
                         .Execute(_ => 1);
                 }
             }

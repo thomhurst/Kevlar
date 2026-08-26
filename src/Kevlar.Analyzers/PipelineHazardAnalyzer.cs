@@ -2109,59 +2109,6 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         _ => null,
     };
 
-    private static bool IsRetainedAliasExpression(
-        ExpressionSyntax expression,
-        HashSet<string> retainedNames,
-        HashSet<ISymbol> retainedSymbols,
-        SemanticModel? semanticModel,
-        CancellationToken cancellationToken) => expression switch
-    {
-        IdentifierNameSyntax identifier => IsRetainedReference(
-            identifier,
-            retainedNames,
-            retainedSymbols,
-            semanticModel,
-            cancellationToken),
-        MemberAccessExpressionSyntax { Name: IdentifierNameSyntax identifier }
-            when semanticModel is not null
-                && IsRetainedReference(
-                identifier,
-                retainedNames,
-                retainedSymbols,
-                semanticModel,
-                cancellationToken) => true,
-        MemberAccessExpressionSyntax memberAccess
-            when memberAccess.Name.Identifier.ValueText is "Context" or "Properties" =>
-            IsRetainedAliasExpression(
-                memberAccess.Expression,
-                retainedNames,
-                retainedSymbols,
-                semanticModel,
-                cancellationToken),
-        ParenthesizedExpressionSyntax parenthesized =>
-            IsRetainedAliasExpression(
-                parenthesized.Expression,
-                retainedNames,
-                retainedSymbols,
-                semanticModel,
-                cancellationToken),
-        CastExpressionSyntax cast => IsRetainedAliasExpression(
-            cast.Expression,
-            retainedNames,
-            retainedSymbols,
-            semanticModel,
-            cancellationToken),
-        PostfixUnaryExpressionSyntax postfix
-            when postfix.IsKind(SyntaxKind.SuppressNullableWarningExpression) =>
-            IsRetainedAliasExpression(
-                postfix.Operand,
-                retainedNames,
-                retainedSymbols,
-                semanticModel,
-                cancellationToken),
-        _ => false,
-    };
-
     private static bool IsRetainedReference(
         IdentifierNameSyntax identifier,
         HashSet<string> retainedNames,
