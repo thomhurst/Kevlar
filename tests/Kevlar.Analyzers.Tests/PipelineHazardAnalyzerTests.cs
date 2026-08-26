@@ -2709,7 +2709,8 @@ public class PipelineHazardAnalyzerTests
                     _ = Shield.Retry(options => options.OnRetry = item =>
                     {
                         _event = item;
-                        _event = default;
+                        _event = (RetryEvent)default;
+                        _event = (default(RetryEvent));
                         _ = Task.Run(() => Consume(_event));
                     });
 
@@ -3058,6 +3059,33 @@ public class PipelineHazardAnalyzerTests
                 {
                     await Task.Yield();
                     Console.WriteLine(_unrelated.RetryNumber);
+                }
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV013");
+    }
+
+    [Test]
+    public async Task KEV014_Honors_Cleared_Event_Members_In_Async_Instance_Methods()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = item;
+                        _event = default;
+                        _ = AuditStoredAsync();
+                    });
+
+                private async Task AuditStoredAsync()
+                {
+                    await Task.Yield();
+                    Console.WriteLine(_event.RetryNumber);
                 }
             }
             """);
@@ -3800,6 +3828,21 @@ public class PipelineHazardAnalyzerTests
                 Action work = () => Console.WriteLine(item.Context.ShieldName);
                 _ = Task.Run(work);
             });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Framework_Constructor_State_Values()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+                ThreadPool.QueueUserWorkItem(
+                    static (System.Collections.Generic.List<RetryEvent> state) =>
+                        Console.WriteLine(state[0].Context.ShieldName),
+                    new System.Collections.Generic.List<RetryEvent>(new[] { item }),
+                    preferLocal: false));
             """);
 
         await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);

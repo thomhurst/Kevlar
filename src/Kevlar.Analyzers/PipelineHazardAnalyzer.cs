@@ -21,6 +21,37 @@ namespace Kevlar.Analyzers;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 {
+    private static readonly ImmutableHashSet<string> RetainingCollectionNamespaces =
+        ImmutableHashSet.Create(
+            StringComparer.Ordinal,
+            "System.Collections.Generic",
+            "System.Collections.Concurrent");
+
+    private static readonly ImmutableHashSet<string> RetainingCollectionTypes =
+        ImmutableHashSet.Create(
+            StringComparer.Ordinal,
+            "List",
+            "Dictionary",
+            "HashSet",
+            "Queue",
+            "Stack",
+            "LinkedList",
+            "SortedSet",
+            "SortedDictionary",
+            "ConcurrentBag",
+            "ConcurrentDictionary",
+            "ConcurrentQueue",
+            "ConcurrentStack");
+
+    private static readonly ImmutableHashSet<string> RetainingMutationNames =
+        ImmutableHashSet.Create(
+            StringComparer.Ordinal,
+            "Add",
+            "Enqueue",
+            "Push",
+            "Insert",
+            "TryAdd");
+
     /// <summary>The KEV002 rule.</summary>
     public static readonly DiagnosticDescriptor SynchronousHedgeRule = new(
         id: "KEV002",
@@ -538,18 +569,31 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             else if (IsUnconditionalAliasWrite(alias, anonymous.Body))
             {
                 retainedNames.Remove(name);
+                if (target is IFieldSymbol or IPropertySymbol)
+                {
+                    retainedSymbols.Remove(target);
+                }
             }
         }
 
         foreach (var assignment in nodes.OfType<AssignmentExpressionSyntax>()
                      .Where(assignment => assignment.SpanStart < invocation.SpanStart
-                         && assignment.IsKind(SyntaxKind.SimpleAssignmentExpression)))
+                         && assignment.IsKind(SyntaxKind.SimpleAssignmentExpression))
+                     .OrderBy(static assignment => assignment.SpanStart))
         {
             var target = context.SemanticModel.GetSymbolInfo(
                 assignment.Left,
                 context.CancellationToken).Symbol;
-            if (target is IFieldSymbol or IPropertySymbol
-                && TryFindEventContextExpression(
+            if (target is not (IFieldSymbol or IPropertySymbol))
+            {
+                continue;
+            }
+
+            if (IsKnownFreshEventContextExpression(assignment.Right))
+            {
+                retainedSymbols.Remove(target);
+            }
+            else if (TryFindEventContextExpression(
                     assignment.Right,
                     context,
                     knownTypes,
@@ -557,10 +601,26 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             {
                 retainedSymbols.Add(target);
             }
+            else if (IsUnconditionalAliasWrite(assignment, anonymous.Body))
+            {
+                retainedSymbols.Remove(target);
+            }
         }
 
         return retainedSymbols;
     }
+
+    private static bool IsKnownFreshEventContextExpression(ExpressionSyntax expression) =>
+        expression switch
+        {
+            DefaultExpressionSyntax => true,
+            LiteralExpressionSyntax literal
+                when literal.IsKind(SyntaxKind.DefaultLiteralExpression) => true,
+            ParenthesizedExpressionSyntax parenthesized =>
+                IsKnownFreshEventContextExpression(parenthesized.Expression),
+            CastExpressionSyntax cast => IsKnownFreshEventContextExpression(cast.Expression),
+            _ => false,
+        };
 
     private static bool IsCallbackRetainedExpression(
         ExpressionSyntax expression,
@@ -3156,11 +3216,14 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             foreach (var argument in objectCreation.Arguments)
             {
                 if (argument.Parameter is { } parameter
-                    && IsInstanceParameterStored(
-                        objectCreation.Constructor,
-                        parameter,
-                        context.Operation.SemanticModel,
-                        context.CancellationToken)
+                    && (IsInstanceParameterStored(
+                            objectCreation.Constructor,
+                            parameter,
+                            context.Operation.SemanticModel,
+                            context.CancellationToken)
+                        || IsKnownRetainingFrameworkConstructorParameter(
+                            objectCreation.Constructor,
+                            parameter))
                     && TryFindDeferredStateContext(
                         argument.Value,
                         context,
@@ -3447,9 +3510,31 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     }
 
     private static bool IsKnownRetainingMutation(IMethodSymbol method) =>
-        method.Name is "Add" or "Enqueue" or "Push" or "Insert" or "TryAdd"
-        && method.ContainingNamespace.ToDisplayString() is
-            "System.Collections.Generic" or "System.Collections.Concurrent";
+        RetainingMutationNames.Contains(method.Name)
+        && RetainingCollectionNamespaces.Contains(
+            method.ContainingNamespace.ToDisplayString());
+
+    private static bool IsKnownRetainingFrameworkConstructorParameter(
+        IMethodSymbol? constructor,
+        IParameterSymbol parameter)
+    {
+        if (constructor is null
+            || constructor.MethodKind is not MethodKind.Constructor
+            || !RetainingCollectionNamespaces.Contains(
+                constructor.ContainingNamespace.ToDisplayString())
+            || !RetainingCollectionTypes.Contains(constructor.ContainingType.Name))
+        {
+            return false;
+        }
+
+        return parameter.Type is INamedTypeSymbol type
+            && (IsGenericEnumerable(type)
+                || type.AllInterfaces.Any(IsGenericEnumerable));
+    }
+
+    private static bool IsGenericEnumerable(INamedTypeSymbol type) =>
+        type.OriginalDefinition.ToDisplayString() ==
+        "System.Collections.Generic.IEnumerable<T>";
 
     private static IEnumerable<IOperation> ExecutableDescendantOperations(IOperation root)
     {
