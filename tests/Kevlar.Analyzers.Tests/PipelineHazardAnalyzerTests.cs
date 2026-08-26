@@ -73,6 +73,91 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Follows_PostAwait_Source_Method_Calls()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        _event = item;
+                        await Task.Yield();
+                        Read();
+                    });
+
+                private void Read() => Consume(_event);
+                private static void Consume(RetryEvent item) { }
+            }
+            """);
+        var parameterFlow = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        await Task.Yield();
+                        Read(item);
+                    });
+
+                private static void Read(RetryEvent item)
+                {
+                    ReadNested(item);
+                }
+
+                private static void ReadNested(RetryEvent item) => Consume(item);
+                private static void Consume(RetryEvent item) { }
+            }
+            """);
+        var scalarParameter = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        await Task.Yield();
+                        Read(42);
+                    });
+
+                private static void Read(int retryNumber) => Console.WriteLine(retryNumber);
+            }
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(Without(parameterFlow, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(parameterFlow, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(scalarParameter, "KEV013");
+    }
+
+    [Test]
+    public async Task KEV014_Follows_PostAwait_Explicit_Delegate_Invoke()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                await Task.Yield();
+                Action use = () => Console.WriteLine(item.Context.ShieldName);
+                use.Invoke();
+            });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
     public async Task KEV014_Follows_Nested_PostAwait_Local_Function_Calls()
     {
         var diagnostics = await AnalyzeBodyAsync("""
@@ -1431,6 +1516,25 @@ public class PipelineHazardAnalyzerTests
                 private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
             }
             """);
+        var incompatibleSourceMethodDiscard = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        Start(item);
+                        await Task.Yield();
+                    });
+
+                private static void Start(RetryEvent item)
+                {
+                    StartCore(item);
+                }
+
+                private static void StartCore(RetryEvent item) => _ = AuditAsync(item);
+                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            }
+            """);
         var incompatibleAwaitWrapper = await GetCodeFixAsync("""
             public class TestSubject
             {
@@ -1545,6 +1649,8 @@ public class PipelineHazardAnalyzerTests
         await Assert.That(incompatibleDelegateLocalDiscard.ChangedText).IsNull();
         await Assert.That(incompatibleImmediatelyInvokedDelegate.ActionCount).IsEqualTo(0);
         await Assert.That(incompatibleImmediatelyInvokedDelegate.ChangedText).IsNull();
+        await Assert.That(incompatibleSourceMethodDiscard.ActionCount).IsEqualTo(0);
+        await Assert.That(incompatibleSourceMethodDiscard.ChangedText).IsNull();
         await Assert.That(incompatibleAwaitWrapper.ActionCount).IsEqualTo(0);
         await Assert.That(incompatibleAwaitWrapper.ChangedText).IsNull();
         await Assert.That(incompatibleTimedWait.ActionCount).IsEqualTo(0);
@@ -1943,6 +2049,31 @@ public class PipelineHazardAnalyzerTests
 
         await Assert.That(cleared).IsEmpty();
         await AssertRuleAsync(reintroduced, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_Conditionally_Assigned_Captured_Locals()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        RetryEvent retained = default;
+                        if (Environment.TickCount == 0)
+                        {
+                            retained = item;
+                        }
+
+                        _ = Task.Run(() => Consume(retained));
+                    });
+
+                private static void Consume(RetryEvent item) { }
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]

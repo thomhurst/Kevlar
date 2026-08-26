@@ -101,19 +101,22 @@ internal sealed class AsyncCallbackCodeFixProvider : CodeFixProvider
         SemanticModel semanticModel,
         CancellationToken cancellationToken)
     {
-        var pendingBodies = new Stack<SyntaxNode>();
-        var visitedLocalFunctions = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
+        var pendingBodies = new Stack<(SyntaxNode Body, SemanticModel SemanticModel)>();
+        var visitedMethods = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
         var visitedDelegateLocals = new HashSet<ILocalSymbol>(SymbolEqualityComparer.Default);
-        pendingBodies.Push(body);
+        pendingBodies.Push((body, semanticModel));
         while (pendingBodies.Count > 0)
         {
-            foreach (var invocation in pendingBodies.Pop()
+            var pending = pendingBodies.Pop();
+            foreach (var invocation in pending.Body
                          .DescendantNodesAndSelf(descendIntoChildren: static node =>
                              node is not AnonymousFunctionExpressionSyntax
                                  and not LocalFunctionStatementSyntax)
                          .OfType<InvocationExpressionSyntax>())
             {
-                if (IsTaskLike(semanticModel.GetTypeInfo(invocation, cancellationToken).Type)
+                if (IsTaskLike(pending.SemanticModel.GetTypeInfo(
+                        invocation,
+                        cancellationToken).Type)
                     && !IsDirectlyAwaited(invocation))
                 {
                     return true;
@@ -121,28 +124,38 @@ internal sealed class AsyncCallbackCodeFixProvider : CodeFixProvider
 
                 if (TryGetStableDelegateBody(
                         invocation,
-                        semanticModel,
+                        pending.SemanticModel,
                         cancellationToken,
                         visitedDelegateLocals,
                         out var delegateBody))
                 {
-                    pendingBodies.Push(delegateBody);
+                    pendingBodies.Push((delegateBody, pending.SemanticModel));
                 }
 
-                if (semanticModel.GetSymbolInfo(invocation, cancellationToken).Symbol
-                        is not IMethodSymbol { MethodKind: MethodKind.LocalFunction } localFunction
-                    || !visitedLocalFunctions.Add(localFunction))
+                if (pending.SemanticModel.GetSymbolInfo(invocation, cancellationToken).Symbol
+                        is not IMethodSymbol
+                        {
+                            MethodKind: MethodKind.LocalFunction or MethodKind.Ordinary,
+                        } method
+                    || !visitedMethods.Add(method))
                 {
                     continue;
                 }
 
-                foreach (var syntaxReference in localFunction.DeclaringSyntaxReferences)
+                foreach (var syntaxReference in method.DeclaringSyntaxReferences)
                 {
-                    if (GetLocalFunctionBody(syntaxReference.GetSyntax(cancellationToken))
-                        is { } localBody)
+                    var declaration = syntaxReference.GetSyntax(cancellationToken);
+                    if (GetSourceMethodBody(declaration) is not { } methodBody)
                     {
-                        pendingBodies.Push(localBody);
+                        continue;
                     }
+
+#pragma warning disable RS1030 // Source-backed helpers may be declared in another tree.
+                    var methodSemanticModel = declaration.SyntaxTree == pending.SemanticModel.SyntaxTree
+                        ? pending.SemanticModel
+                        : pending.SemanticModel.Compilation.GetSemanticModel(declaration.SyntaxTree);
+#pragma warning restore RS1030
+                    pendingBodies.Push((methodBody, methodSemanticModel));
                 }
             }
         }
@@ -208,10 +221,12 @@ internal sealed class AsyncCallbackCodeFixProvider : CodeFixProvider
         return true;
     }
 
-    private static SyntaxNode? GetLocalFunctionBody(SyntaxNode declaration) => declaration switch
+    private static SyntaxNode? GetSourceMethodBody(SyntaxNode declaration) => declaration switch
     {
         LocalFunctionStatementSyntax { Body: { } body } => body,
         LocalFunctionStatementSyntax { ExpressionBody.Expression: { } expression } => expression,
+        MethodDeclarationSyntax { Body: { } body } => body,
+        MethodDeclarationSyntax { ExpressionBody.Expression: { } expression } => expression,
         _ => null,
     };
 

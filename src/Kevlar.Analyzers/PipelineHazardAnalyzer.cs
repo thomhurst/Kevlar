@@ -728,6 +728,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                         body,
                         eventParameterNames,
                         semanticModel,
+                        knownTypes,
                         context.CancellationToken,
                         out capturedContext))
                 {
@@ -780,6 +781,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             anonymous.Body,
             eventParameterNames,
             context.SemanticModel,
+            knownTypes,
             context.CancellationToken,
             out capturedContext,
             retainedSymbolSeeds: eventParameterSymbols);
@@ -789,6 +791,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         SyntaxNode body,
         HashSet<string> eventParameterNames,
         SemanticModel? semanticModel,
+        KnownTypes knownTypes,
         CancellationToken cancellationToken,
         out SyntaxNode capturedContext,
         HashSet<LocalFunctionStatementSyntax>? callPath = null,
@@ -888,6 +891,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     retainedSymbolSeedsForAwait,
                     invokedAfterSuspension: false,
                     semanticModel,
+                    knownTypes,
                     cancellationToken,
                     callPath,
                     out capturedContext))
@@ -904,6 +908,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                         state.Symbols,
                         invokedAfterSuspension: true,
                         semanticModel,
+                        knownTypes,
                         cancellationToken,
                         callPath,
                         out capturedContext)
@@ -913,6 +918,15 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                         state.Symbols,
                         semanticModel,
                         cancellationToken,
+                        out capturedContext)
+                    || TryFindRetainedContextInSourceMethod(
+                        invocation,
+                        state.Names,
+                        state.Symbols,
+                        semanticModel,
+                        knownTypes,
+                        cancellationToken,
+                        null,
                         out capturedContext))
                 {
                     return true;
@@ -1337,6 +1351,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         HashSet<ISymbol> retainedSymbols,
         bool invokedAfterSuspension,
         SemanticModel? semanticModel,
+        KnownTypes knownTypes,
         CancellationToken cancellationToken,
         HashSet<LocalFunctionStatementSyntax> callPath,
         out SyntaxNode capturedContext)
@@ -1377,6 +1392,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                         functionBody,
                         functionRetainedNames,
                         semanticModel,
+                        knownTypes,
                         cancellationToken,
                         out capturedContext,
                         nestedCallPath,
@@ -1415,6 +1431,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     functionRetainedSymbols,
                     invokedAfterSuspension: true,
                     semanticModel,
+                    knownTypes,
                     cancellationToken,
                     nestedCallPath,
                     out capturedContext))
@@ -1428,6 +1445,123 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
+    private static bool TryFindRetainedContextInSourceMethod(
+        InvocationExpressionSyntax invocation,
+        HashSet<string> retainedNames,
+        HashSet<ISymbol> retainedSymbols,
+        SemanticModel? semanticModel,
+        KnownTypes knownTypes,
+        CancellationToken cancellationToken,
+        HashSet<IMethodSymbol>? visitedMethods,
+        out SyntaxNode capturedContext)
+    {
+        if (semanticModel is null
+            || semanticModel.GetSymbolInfo(invocation, cancellationToken).Symbol
+                is not IMethodSymbol { MethodKind: MethodKind.Ordinary } method
+            || method.DeclaringSyntaxReferences.Length == 0)
+        {
+            capturedContext = null!;
+            return false;
+        }
+
+        visitedMethods ??= new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
+        if (!visitedMethods.Add(method))
+        {
+            capturedContext = null!;
+            return false;
+        }
+
+        try
+        {
+            var methodRetainedSymbols = new HashSet<ISymbol>(
+                retainedSymbols,
+                SymbolEqualityComparer.Default);
+            if (semanticModel.GetOperation(invocation, cancellationToken)
+                    is IInvocationOperation invocationOperation)
+            {
+                foreach (var argument in invocationOperation.Arguments)
+                {
+                    if (argument.Parameter is { } parameter
+                        && ContainsEventContextReference(argument.Value.Type, knownTypes)
+                        && argument.Value.Syntax.DescendantNodesAndSelf()
+                            .OfType<IdentifierNameSyntax>()
+                            .Any(identifier => IsRetainedReference(
+                                identifier,
+                                retainedNames,
+                                retainedSymbols,
+                                semanticModel,
+                                cancellationToken)))
+                    {
+                        methodRetainedSymbols.Add(parameter);
+                    }
+                }
+            }
+
+            foreach (var syntaxReference in method.DeclaringSyntaxReferences)
+            {
+                var declaration = syntaxReference.GetSyntax(cancellationToken);
+                if (GetFunctionBody(declaration) is not { } methodBody)
+                {
+                    continue;
+                }
+
+#pragma warning disable RS1030 // Source-backed helpers may be declared in another tree.
+                var methodSemanticModel = declaration.SyntaxTree == semanticModel.SyntaxTree
+                    ? semanticModel
+                    : semanticModel.Compilation.GetSemanticModel(declaration.SyntaxTree);
+#pragma warning restore RS1030
+                var methodRetainedNames = new HashSet<string>(
+                    retainedNames,
+                    StringComparer.Ordinal);
+                foreach (var parameter in method.Parameters)
+                {
+                    methodRetainedNames.Remove(parameter.Name);
+                }
+
+                var methodNodes = methodBody.DescendantNodesAndSelf(
+                        descendIntoChildren: static node =>
+                            node is not AnonymousFunctionExpressionSyntax
+                                and not LocalFunctionStatementSyntax)
+                    .ToArray();
+                foreach (var retainedIdentifier in methodNodes.OfType<IdentifierNameSyntax>()
+                             .Where(candidate => IsRetainedReference(
+                                     candidate,
+                                     methodRetainedNames,
+                                     methodRetainedSymbols,
+                                     methodSemanticModel,
+                                     cancellationToken)
+                                 && IsRuntimeValueReference(candidate)))
+                {
+                    capturedContext = retainedIdentifier;
+                    return true;
+                }
+
+                foreach (var nestedInvocation in methodNodes.OfType<InvocationExpressionSyntax>())
+                {
+                    if (TryFindRetainedContextInSourceMethod(
+                        nestedInvocation,
+                        methodRetainedNames,
+                        methodRetainedSymbols,
+                        methodSemanticModel,
+                        knownTypes,
+                        cancellationToken,
+                        visitedMethods,
+                        out capturedContext))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            capturedContext = null!;
+            return false;
+        }
+        finally
+        {
+            visitedMethods.Remove(method);
+        }
+    }
+
     private static bool TryFindRetainedContextInInvokedDelegate(
         InvocationExpressionSyntax invocation,
         HashSet<string> retainedNames,
@@ -1436,8 +1570,18 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         CancellationToken cancellationToken,
         out SyntaxNode capturedContext)
     {
+        var identifier = invocation.Expression switch
+        {
+            IdentifierNameSyntax direct => direct,
+            MemberAccessExpressionSyntax
+            {
+                Expression: IdentifierNameSyntax receiver,
+                Name.Identifier.ValueText: "Invoke",
+            } => receiver,
+            _ => null,
+        };
         if (semanticModel is null
-            || invocation.Expression is not IdentifierNameSyntax identifier
+            || identifier is null
             || semanticModel.GetSymbolInfo(identifier, cancellationToken).Symbol
                 is not ILocalSymbol local
             || !TryGetStableLocalInitializer(
@@ -3133,7 +3277,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             if (operation is IPropertyReferenceOperation property
                 && (knownTypes.IsEventContextReference(property.Property.Type)
                     || knownTypes.IsEventContextContainer(property.Property.Type)
-                        && IsProvenEventMemberCapture(
+                        && IsProvenEventSymbolCapture(
                             property.Property,
                             property.Syntax,
                             context,
@@ -3155,7 +3299,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             if (operation is IFieldReferenceOperation fieldReference
                 && (knownTypes.IsEventContextReference(fieldReference.Field.Type)
                     || knownTypes.IsEventContextContainer(fieldReference.Field.Type)
-                        && IsProvenEventMemberCapture(
+                        && IsProvenEventSymbolCapture(
                             fieldReference.Field,
                             fieldReference.Syntax,
                             context,
@@ -3215,6 +3359,18 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 return true;
             }
 
+            if (ContainsEventContextReference(localReference.Local.Type, knownTypes)
+                && IsProvenEventSymbolCapture(
+                    localReference.Local,
+                    localReference.Syntax,
+                    context,
+                    knownTypes,
+                    provenanceAnchor))
+            {
+                capturedContext = localReference.Syntax;
+                return true;
+            }
+
             visitedLocals.Remove(localReference.Local);
         }
 
@@ -3222,8 +3378,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         return false;
     }
 
-    private static bool IsProvenEventMemberCapture(
-        ISymbol member,
+    private static bool IsProvenEventSymbolCapture(
+        ISymbol retainedSymbol,
         SyntaxNode reference,
         OperationAnalysisContext context,
         KnownTypes knownTypes,
@@ -3262,26 +3418,43 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 && callback.Span.Contains(candidate.Span))
             ?? anchor;
 
-        var assignments = callback.Body
-            .DescendantNodes(descendIntoChildren: static node =>
+        var writes = new List<(SyntaxNode Syntax, ExpressionSyntax Value)>();
+        foreach (var candidate in callback.Body
+                     .DescendantNodes(descendIntoChildren: static node =>
                 node is not AnonymousFunctionExpressionSyntax
                     and not LocalFunctionStatementSyntax)
-            .OfType<AssignmentExpressionSyntax>()
-            .Where(candidate => candidate.IsKind(SyntaxKind.SimpleAssignmentExpression)
-                && candidate.SpanStart < anchor.SpanStart
+                     .Where(candidate => candidate.SpanStart < anchor.SpanStart))
+        {
+            if (candidate is AssignmentExpressionSyntax assignment
+                && assignment.IsKind(SyntaxKind.SimpleAssignmentExpression)
                 && SymbolEqualityComparer.Default.Equals(
                     semanticModel.GetSymbolInfo(
-                        candidate.Left,
+                        assignment.Left,
                         context.CancellationToken).Symbol,
-                    member))
-            .OrderBy(static candidate => candidate.SpanStart)
-            .ToArray();
+                    retainedSymbol))
+            {
+                writes.Add((assignment, assignment.Right));
+            }
+            else if (candidate is VariableDeclaratorSyntax
+                     {
+                         Initializer.Value: { } value,
+                     } declarator
+                && SymbolEqualityComparer.Default.Equals(
+                    semanticModel.GetDeclaredSymbol(
+                        declarator,
+                        context.CancellationToken),
+                    retainedSymbol))
+            {
+                writes.Add((declarator, value));
+            }
+        }
+
         var origins = new List<SyntaxNode?>();
         var kills = new List<SyntaxNode>();
-        foreach (var assignment in assignments)
+        foreach (var write in writes.OrderBy(static candidate => candidate.Syntax.SpanStart))
         {
             var value = semanticModel.GetOperation(
-                assignment.Right,
+                write.Value,
                 context.CancellationToken);
             if (value is not null
                 && ContainsCallbackParameterInRetainedValue(
@@ -3289,11 +3462,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     callbackParameters,
                     knownTypes))
             {
-                origins.Add(assignment);
+                origins.Add(write.Syntax);
             }
             else
             {
-                kills.Add(assignment);
+                kills.Add(write.Syntax);
             }
         }
 
