@@ -4027,6 +4027,1406 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Tracks_Deferred_State_Added_To_Local_Collections()
+    {
+        var mutations = new[]
+        {
+            "events.Add(item);",
+            "events.AddRange(new[] { item });",
+            "var alias = events; alias.Add(item);",
+        };
+        foreach (var mutation in mutations)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                {
+                    var events = new System.Collections.Generic.List<RetryEvent>();
+                    {{mutation}}
+                    ThreadPool.QueueUserWorkItem(
+                        static (System.Collections.Generic.List<RetryEvent> state) =>
+                            Console.WriteLine(state[0].Context.ShieldName),
+                        events,
+                        preferLocal: false);
+                });
+                """);
+
+            await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_Deferred_State_Added_To_Local_Arrays()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new RetryEvent[1];
+                events[0] = item;
+                ThreadPool.QueueUserWorkItem(
+                    static (RetryEvent[] state) =>
+                        Console.WriteLine(state[0].Context.ShieldName),
+                    events,
+                    preferLocal: false);
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_Static_Array_Mutations()
+    {
+        var fillDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new RetryEvent[1];
+                Array.Fill(events, item);
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+        var clearDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new[] { item };
+                Array.Clear(events);
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+        var conditionalClearDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new[] { item };
+                if (DateTime.UtcNow.Ticks == 0)
+                {
+                    Array.Clear(events);
+                }
+
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await AssertRuleAsync(fillDiagnostics, "KEV014", DiagnosticSeverity.Warning);
+        await Assert.That(clearDiagnostics).IsEmpty();
+        await AssertRuleAsync(
+            conditionalClearDiagnostics,
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_Static_Array_Copies()
+    {
+        var copies = new[]
+        {
+            "Array.Copy(new object[] { item }, events, 1);",
+            "Array.ConstrainedCopy(new object[] { item }, 0, events, 0, 1);",
+        };
+        foreach (var copy in copies)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                {
+                    object[] events = new object[1];
+                    {{copy}}
+                    ThreadPool.QueueUserWorkItem(static state => { }, events);
+                });
+                """);
+
+            await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+        }
+
+        var overwriteDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new[] { item };
+                Array.Copy(new[] { default(RetryEvent) }, events, 1);
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+        var copiedSlices = new[]
+        {
+            "Array.Copy(new[] { item, default(RetryEvent) }, 1, events, 0, 1);",
+            "Array.ConstrainedCopy(new[] { item, default(RetryEvent) }, 1, events, 0, 1);",
+        };
+
+        await Assert.That(overwriteDiagnostics).IsEmpty();
+        foreach (var copy in copiedSlices)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                {
+                    var events = new RetryEvent[1];
+                    {{copy}}
+                    ThreadPool.QueueUserWorkItem(static state => { }, events);
+                });
+                """);
+
+            await Assert.That(diagnostics).IsEmpty();
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Distinguishes_Nested_Deferred_State_Slots()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new RetryEvent[2][];
+                events[0] = new RetryEvent[1];
+                events[1] = new RetryEvent[1];
+                events[0][0] = item;
+                events[1][0] = default;
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+        var dynamicIndexDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var index = 0;
+                var events = new RetryEvent[2];
+                events[index] = item;
+                events[1] = default;
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+        var distinctDynamicIndicesDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var i = Environment.TickCount;
+                var j = Environment.ProcessId;
+                var events = new RetryEvent[2];
+                events[i] = item;
+                events[j] = default;
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+        var reassignedIndexDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var index = 0;
+                var events = new RetryEvent[2];
+                events[index] = item;
+                index = 1;
+                events[index] = default;
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+        await AssertRuleAsync(
+            dynamicIndexDiagnostics,
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(
+            distinctDynamicIndicesDiagnostics,
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(
+            reassignedIndexDiagnostics,
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Distinguishes_Deferred_Object_State_Slots()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        var state = new Holder();
+                        state.First.Event = item;
+                        state.Second.Event = default;
+                        state.Second.Field = default;
+                        ThreadPool.QueueUserWorkItem(static value => { }, state);
+                    });
+
+                private sealed class Holder
+                {
+                    public Bucket First { get; } = new();
+                    public Bucket Second { get; } = new();
+                }
+
+                private sealed class Bucket
+                {
+                    public RetryEvent Event { get; set; }
+                    public RetryEvent Field;
+                }
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Honors_Overwritten_Object_Initializer_Slots()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        var state = new Holder { Event = item };
+                        state.Event = default;
+                        ThreadPool.QueueUserWorkItem(static value => { }, state);
+                    });
+
+                private sealed class Holder
+                {
+                    public RetryEvent Event { get; set; }
+                }
+            }
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Honors_Overwritten_Nested_Initializer_Slots()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        var state = new Holder
+                        {
+                            Child = new Bucket { Event = item },
+                        };
+                        state.Child.Event = default;
+                        ThreadPool.QueueUserWorkItem(static value => { }, state);
+                    });
+
+                private sealed class Holder
+                {
+                    public Bucket Child { get; set; } = new();
+                }
+
+                private sealed class Bucket
+                {
+                    public RetryEvent Event { get; set; }
+                }
+            }
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Parent_Overwrites_Kill_Nested_Slots()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        var state = new Holder();
+                        state.Child.Event = item;
+                        state.Child = new Bucket();
+                        ThreadPool.QueueUserWorkItem(static value => { }, state);
+                    });
+
+                private sealed class Holder
+                {
+                    public Bucket Child { get; set; } = new();
+                }
+
+                private sealed class Bucket
+                {
+                    public RetryEvent Event { get; set; }
+                }
+            }
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_Coalescing_Assignment_Mutations()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new RetryEvent?[1];
+                events[0] ??= item;
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Does_Not_Treat_Coalescing_Assignment_As_Overwrite()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new RetryEvent?[1];
+                events[0] = item;
+                events[0] ??= default;
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_Deferred_Mutations_Through_Loop_BackEdges()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.List<RetryEvent>();
+                while (Environment.TickCount >= 0)
+                {
+                    ThreadPool.QueueUserWorkItem(
+                        static (System.Collections.Generic.List<RetryEvent> state) =>
+                            Console.WriteLine(state.Count),
+                        events,
+                        preferLocal: false);
+                    events.Add(item);
+                }
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Follows_Invoked_Local_Function_Mutations()
+    {
+        var invocationDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.List<RetryEvent>();
+                void Add() => events.Add(item);
+
+                Add();
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+        var assignmentDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new RetryEvent[1];
+                void Set() => events[0] = item;
+
+                Set();
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+        var parameterDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.List<RetryEvent>();
+                void Add(System.Collections.Generic.List<RetryEvent> target) =>
+                    target.Add(item);
+
+                Add(events);
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+        var erasedValueDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.List<object>();
+                void Add(System.Collections.Generic.List<object> target, object value) =>
+                    target.Add(value);
+
+                Add(events, item);
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+        var nestedInvocationDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.List<RetryEvent>();
+                void Inner() => events.Add(item);
+                void Outer() => Inner();
+
+                Outer();
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+        var additionalMutations = new[]
+        {
+            """
+            var events = new System.Collections.Generic.Dictionary<int, RetryEvent>();
+            void Add() => events.Add(0, item);
+            Add();
+            """,
+            """
+            var events = new RetryEvent?[1];
+            void Set() => events[0] ??= item;
+            Set();
+            """,
+            """
+            var events = new System.Collections.Generic.Dictionary<int, RetryEvent>();
+            void Set() => events[0] = item;
+            Set();
+            """,
+            """
+            var events = new RetryEvent[1];
+            void Fill() => Array.Fill(events, item);
+            Fill();
+            """,
+            """
+            object[] events = new object[1];
+            void Copy() => Array.Copy(new object[] { item }, events, 1);
+            Copy();
+            """,
+            """
+            var events = new System.Collections.Generic.List<RetryEvent>();
+            void Add()
+            {
+                events.Add(item);
+                Add();
+            }
+            Add();
+            """,
+        };
+
+        await AssertRuleAsync(
+            invocationDiagnostics,
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(
+            assignmentDiagnostics,
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(
+            parameterDiagnostics,
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(
+            erasedValueDiagnostics,
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(
+            nestedInvocationDiagnostics,
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        foreach (var mutation in additionalMutations)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                {
+                    {{mutation}}
+                    ThreadPool.QueueUserWorkItem(static state => { }, events);
+                });
+                """);
+
+            await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Follows_Invoked_Local_Function_Cleanup()
+    {
+        var clearDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.List<RetryEvent> { item };
+                void Clear() => events.Clear();
+
+                Clear();
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+        var overwriteDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new RetryEvent[1];
+                void Set() => events[0] = item;
+
+                Set();
+                events[0] = default;
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+        var conditionalDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.List<RetryEvent> { item };
+                void MaybeClear(bool clear)
+                {
+                    if (clear)
+                    {
+                        events.Clear();
+                    }
+                }
+
+                MaybeClear(false);
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+        var additionalCleanups = new[]
+        {
+            """
+            var events = new System.Collections.Generic.List<RetryEvent> { item };
+            void Cleanup() => events.Remove(item);
+            Cleanup();
+            """,
+            """
+            var events = new System.Collections.Generic.List<RetryEvent>();
+            events.Add(item);
+            void Cleanup() => events.RemoveAt(0);
+            Cleanup();
+            """,
+            """
+            var events = new System.Collections.Generic.Queue<RetryEvent>(new[] { item });
+            void Cleanup() => events.Dequeue();
+            Cleanup();
+            """,
+            """
+            var events = new[] { item };
+            void Cleanup() => Array.Clear(events);
+            Cleanup();
+            """,
+            """
+            var events = new[] { item };
+            void Cleanup() => Array.Copy(new[] { default(RetryEvent) }, events, 1);
+            Cleanup();
+            """,
+            """
+            var events = new System.Collections.Generic.List<RetryEvent> { item };
+            void Inner() => events.Clear();
+            void Outer() => Inner();
+            Outer();
+            """,
+            """
+            var events = new System.Collections.Generic.List<RetryEvent> { item };
+            void Cleanup()
+            {
+                events.Clear();
+                Cleanup();
+            }
+            Cleanup();
+            """,
+        };
+
+        await Assert.That(clearDiagnostics).IsEmpty();
+        await Assert.That(overwriteDiagnostics).IsEmpty();
+        await AssertRuleAsync(
+            conditionalDiagnostics,
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        foreach (var cleanup in additionalCleanups)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                {
+                    {{cleanup}}
+                    ThreadPool.QueueUserWorkItem(static state => { }, events);
+                });
+                """);
+
+            await Assert.That(diagnostics).IsEmpty();
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Deferred_State_Cleared_Before_Scheduling()
+    {
+        var statements = new[]
+        {
+            "var events = new System.Collections.Generic.List<RetryEvent>(); events.Add(item); events.Clear();",
+            "var events = new System.Collections.Generic.List<RetryEvent> { item }; events.Clear();",
+            "System.Collections.Generic.List<RetryEvent> events = []; events.Add(item); events.Remove(item);",
+            "var events = new System.Collections.Generic.List<RetryEvent>(); events.Add(item); events.Remove(item);",
+            "var events = new System.Collections.Generic.Stack<RetryEvent>(); events.Push(item); events.Pop();",
+            "var events = new System.Collections.Generic.Queue<RetryEvent>(); events.Enqueue(item); events.Dequeue();",
+            "var events = new System.Collections.Generic.Queue<RetryEvent>(new[] { item }); events.Dequeue();",
+            "System.Collections.Generic.List<RetryEvent> events = []; events.Insert(0, item); events.RemoveAt(0);",
+            "var events = new System.Collections.Concurrent.ConcurrentDictionary<int, RetryEvent>(); events.TryAdd(0, item); events.TryRemove(0, out _);",
+            "var events = new RetryEvent[1]; events[0] = item; events[0] = default;",
+            "var events = new[] { item }; events[0] = default;",
+        };
+        foreach (var statement in statements)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                {
+                    {{statement}}
+                    ThreadPool.QueueUserWorkItem(static state => { }, events);
+                });
+                """);
+
+            await Assert.That(diagnostics).IsEmpty();
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Honors_Overwritten_Collection_Expression_Slots()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                System.Collections.Generic.List<RetryEvent> events = [item];
+                events[0] = default;
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Honors_Overwritten_Append_Slots()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.List<RetryEvent>();
+                events.Add(item);
+                events[0] = default;
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Does_Not_Stabilize_Appends_Across_Branches()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.List<RetryEvent>();
+                if (Environment.TickCount == 0)
+                {
+                    events.Add(default);
+                }
+                else
+                {
+                    events.Add(default);
+                }
+
+                events.Add(item);
+                events.Add(default);
+                events[2] = default;
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Invalidates_Slots_After_Structural_Mutations()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                System.Collections.Generic.List<RetryEvent?> events = [item];
+                events.Insert(0, default);
+                events[0] = default;
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Handles_Exact_RemoveAt_Kills()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                System.Collections.Generic.List<RetryEvent> events = [item];
+                events.RemoveAt(0);
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Invalidates_Slots_For_All_Structural_Mutations()
+    {
+        var statements = new[]
+        {
+            "events.InsertRange(0, new RetryEvent?[] { default }); events[0] = default;",
+            "events.Remove(default); events[1] = default;",
+            "events.RemoveAt(0); events[1] = default;",
+            "events.RemoveRange(0, 1); events[1] = default;",
+            "events.Reverse(); events[0] = default;",
+            "events.Sort(); events[0] = default;",
+        };
+        foreach (var statement in statements)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                {
+                    System.Collections.Generic.List<RetryEvent?> events = [default, item];
+                    {{statement}}
+                    ThreadPool.QueueUserWorkItem(static state => { }, events);
+                });
+                """);
+
+            await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Context_Assignments_Kill_Prior_Slot_Contents()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var other = item with { };
+                System.Collections.Generic.List<RetryEvent> events = [item];
+                events[0] = other;
+                events.Remove(other);
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_Collection_Expression_Spreads_And_Sets()
+    {
+        var spreadDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var source = new[] { item };
+                System.Collections.Generic.List<RetryEvent> events = [.. source];
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+        var setDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                System.Collections.Generic.HashSet<RetryEvent> events = [item];
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await AssertRuleAsync(spreadDiagnostics, "KEV014", DiagnosticSeverity.Warning);
+        await AssertRuleAsync(setDiagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Handles_Set_Union_Removal()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.HashSet<RetryEvent>();
+                events.UnionWith(new[] { item });
+                events.Remove(item);
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Consumes_Duplicates_Across_Matching_Removals()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.List<RetryEvent>();
+                events.Add(item);
+                events.Add(item);
+                events.Remove(item);
+                events.Remove(item);
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Scopes_Removals_To_Nested_Collection_Receivers()
+    {
+        var mutations = new[]
+        {
+            "state[1].Clear();",
+            "state[1].Remove(item);",
+        };
+        foreach (var mutation in mutations)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                {
+                    var state = new[]
+                    {
+                        new System.Collections.Generic.List<RetryEvent>(),
+                        new System.Collections.Generic.List<RetryEvent>(),
+                    };
+                    state[0].Add(item);
+                    {{mutation}}
+                    ThreadPool.QueueUserWorkItem(static value => { }, state);
+                });
+                """);
+
+            await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Matches_Duplicate_Values_Per_Receiver()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var state = new[]
+                {
+                    new System.Collections.Generic.List<RetryEvent>(),
+                    new System.Collections.Generic.List<RetryEvent>(),
+                };
+                state[0].Add(item);
+                state[1].Add(item);
+                state[0].Remove(item);
+                state[1].Clear();
+                ThreadPool.QueueUserWorkItem(static value => { }, state);
+            });
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Does_Not_Treat_Dictionary_Keys_As_Removed_Values()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.Dictionary<RetryEvent, RetryEvent>();
+                events.Add(default, item);
+                events.Remove(item);
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Matches_Dictionary_Removals_To_Retained_Keys()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.Dictionary<RetryEvent, RetryEvent>();
+                events.Add(item, default);
+                events.Remove(item);
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_Concurrent_Dictionary_Upserts()
+    {
+        var mutations = new[]
+        {
+            "events.GetOrAdd(item, default(RetryEvent));",
+            "events.AddOrUpdate(item, default(RetryEvent), static (_, current) => current);",
+        };
+        foreach (var mutation in mutations)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                {
+                    var events = new System.Collections.Concurrent.ConcurrentDictionary<RetryEvent, RetryEvent>();
+                    {{mutation}}
+                    ThreadPool.QueueUserWorkItem(static state => { }, events);
+                });
+                """);
+
+            await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Concurrent_Dictionary_Factory_Arguments()
+    {
+        var mutations = new[]
+        {
+            "events.GetOrAdd(0, static (_, state) => state.RetryNumber, item);",
+            "events.AddOrUpdate(0, static (_, state) => state.RetryNumber, static (_, current, state) => current + state.RetryNumber, item);",
+        };
+        foreach (var mutation in mutations)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                {
+                    var events = new System.Collections.Concurrent.ConcurrentDictionary<int, int>();
+                    {{mutation}}
+                    ThreadPool.QueueUserWorkItem(static state => { }, events);
+                });
+                """);
+
+            await Assert.That(diagnostics).IsEmpty();
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_Concurrent_Dictionary_Factory_Returns()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Concurrent.ConcurrentDictionary<int, object>();
+                events.GetOrAdd(0, _ => item);
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_Concurrent_Dictionary_TryUpdate_Values()
+    {
+        var retainedDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Concurrent.ConcurrentDictionary<int, object>();
+                var previous = new object();
+                events.TryAdd(0, previous);
+                events.TryUpdate(0, item, previous);
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+        var comparisonDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Concurrent.ConcurrentDictionary<int, object>();
+                events.TryAdd(0, new object());
+                events.TryUpdate(0, new object(), item);
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await AssertRuleAsync(
+            retainedDiagnostics,
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        await Assert.That(comparisonDiagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_Dictionary_Indexer_Keys()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.Dictionary<RetryEvent, RetryEvent>();
+                events[item] = default;
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Distinguishes_Mixed_Type_Dictionary_Keys()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.Dictionary<object, RetryEvent>();
+                events[1] = item;
+                events["1"] = default;
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Distinguishes_Enum_Type_Dictionary_Keys()
+    {
+        var diagnostics = await AnalyzeBodyAsync(
+            """
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.Dictionary<object, RetryEvent>();
+                events[First.Key] = item;
+                events[Second.Key] = default;
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """,
+            """
+            private enum First
+            {
+                Key,
+            }
+
+            private enum Second
+            {
+                Key,
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Matches_Dictionary_Initializer_Removals()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.Dictionary<int, RetryEvent>
+                {
+                    { 0, item },
+                };
+                events.Remove(0);
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Preserves_Nested_Receiver_Alias_Paths()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var state = new[]
+                {
+                    new System.Collections.Generic.List<RetryEvent>(),
+                    new System.Collections.Generic.List<RetryEvent>(),
+                };
+                state[0].Add(item);
+                var second = state[1];
+                second.Clear();
+                ThreadPool.QueueUserWorkItem(static value => { }, state);
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Distinguishes_Removal_Value_Receivers()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var other = item with { };
+                var contexts = new System.Collections.Generic.List<KevlarContext>();
+                contexts.Add(item.Context);
+                contexts.Remove(other.Context);
+                ThreadPool.QueueUserWorkItem(static state => { }, contexts);
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Handles_Mutually_Exclusive_Matching_Adds()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.List<RetryEvent>();
+                if (Environment.TickCount == 0)
+                {
+                    events.Add(item);
+                }
+                else
+                {
+                    events.Add(item);
+                }
+
+                events.Remove(item);
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Handles_Exclusive_Matching_Adds_In_Loops()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.List<RetryEvent>();
+                while (Environment.TickCount >= 0)
+                {
+                    if (Environment.TickCount == 0)
+                    {
+                        events.Add(item);
+                    }
+                    else
+                    {
+                        events.Add(item);
+                    }
+
+                    events.Remove(item);
+                    ThreadPool.QueueUserWorkItem(static state => { }, events);
+                }
+            });
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Keeps_Deferred_State_When_Removals_Leave_Retained_Values()
+    {
+        var statements = new[]
+        {
+            "var events = new System.Collections.Generic.List<RetryEvent>(); events.Add(item); events.Add(item); events.Remove(item);",
+            "var events = new System.Collections.Generic.List<RetryEvent> { item, item }; events.Remove(item);",
+            "System.Collections.Generic.List<RetryEvent> events = [item, item]; events.Remove(item);",
+            "var events = new System.Collections.Generic.List<RetryEvent>(); events.AddRange(new[] { item, item }); events.Remove(item);",
+            "var events = new System.Collections.Generic.Queue<RetryEvent>(); events.Enqueue(default); events.Enqueue(item); events.Dequeue();",
+        };
+        foreach (var statement in statements)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                {
+                    {{statement}}
+                    ThreadPool.QueueUserWorkItem(static state => { }, events);
+                });
+                """);
+
+            await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Combines_Constructor_And_Initializer_Origins()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.List<RetryEvent>(
+                    new[] { item })
+                {
+                    item,
+                };
+                events.Remove(item);
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Honors_Singleton_Bulk_Mutation_Cardinality()
+    {
+        var arrayDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.List<RetryEvent>();
+                events.AddRange(new[] { item });
+                events.Remove(item);
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+        var collectionDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.List<RetryEvent>();
+                events.AddRange([item]);
+                events.Remove(item);
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+        var spreadDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.List<RetryEvent>();
+                events.AddRange([.. new[] { item }]);
+                events.Remove(item);
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await Assert.That(arrayDiagnostics).IsEmpty();
+        await Assert.That(collectionDiagnostics).IsEmpty();
+        await AssertRuleAsync(
+            spreadDiagnostics,
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Does_Not_Multiply_Repeated_Fixed_Slot_Assignments()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                System.Collections.Generic.List<RetryEvent?> events = [default];
+                for (var index = 0; index < 2; index++)
+                {
+                    events[0] = item;
+                }
+
+                events.Remove(item);
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Preserves_Repeated_Loop_Retentions()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.List<RetryEvent>();
+                for (var index = 0; index < 2; index++)
+                {
+                    events.Add(item);
+                }
+
+                events.Remove(item);
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Preserves_Repeated_Queue_Retentions()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.Queue<RetryEvent>();
+                for (var index = 0; index < 2; index++)
+                {
+                    events.Enqueue(item);
+                }
+
+                events.Dequeue();
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Handles_Per_Iteration_Matching_Removals()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.List<RetryEvent>();
+                for (var index = 0; index < 2; index++)
+                {
+                    events.Add(item);
+                    events.Remove(item);
+                }
+
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_LinkedList_Node_Values()
+    {
+        var mutations = new[]
+        {
+            "events.AddFirst(new System.Collections.Generic.LinkedListNode<RetryEvent>(item));",
+            "events.AddLast(new System.Collections.Generic.LinkedListNode<RetryEvent>(item));",
+            "var anchor = events.AddFirst(default(RetryEvent)); events.AddBefore(anchor, new System.Collections.Generic.LinkedListNode<RetryEvent>(item));",
+            "var anchor = events.AddFirst(default(RetryEvent)); events.AddAfter(anchor, new System.Collections.Generic.LinkedListNode<RetryEvent>(item));",
+        };
+        foreach (var mutation in mutations)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                {
+                    var events = new System.Collections.Generic.LinkedList<RetryEvent>();
+                    {{mutation}}
+                    ThreadPool.QueueUserWorkItem(static state => { }, events);
+                });
+                """);
+
+            await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Handles_LinkedList_Endpoint_Removals()
+    {
+        var statements = new[]
+        {
+            "events.AddFirst(item); events.RemoveFirst();",
+            "events.AddLast(item); events.RemoveLast();",
+        };
+        foreach (var statement in statements)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                {
+                    var events = new System.Collections.Generic.LinkedList<RetryEvent>();
+                    {{statement}}
+                    ThreadPool.QueueUserWorkItem(static state => { }, events);
+                });
+                """);
+
+            await Assert.That(diagnostics).IsEmpty();
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Deferred_State_Mutations_On_Exiting_Paths()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.List<RetryEvent>();
+                if (Environment.TickCount == 0)
+                {
+                    events.Add(item);
+                    return;
+                }
+
+                ThreadPool.QueueUserWorkItem(
+                    static (System.Collections.Generic.List<RetryEvent> state) =>
+                        Console.WriteLine(state.Count),
+                    events,
+                    preferLocal: false);
+            });
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
     public async Task KEV014_Ignores_Framework_Collection_Capacity_State()
     {
         var diagnostics = await AnalyzeBodyAsync("""
