@@ -43,6 +43,13 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             "ConcurrentQueue",
             "ConcurrentStack");
 
+    private static readonly ImmutableHashSet<string> RetainingContainerTypes =
+        ImmutableHashSet.Create(
+            StringComparer.Ordinal,
+            "System.Tuple",
+            "System.ValueTuple",
+            "System.Collections.Generic.KeyValuePair");
+
     private static readonly ImmutableHashSet<string> RetainingMutationNames =
         ImmutableHashSet.Create(
             StringComparer.Ordinal,
@@ -1046,10 +1053,43 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     ContainingType: { } containingType,
                 },
             } => IsKnownCompletedAwaitableType(containingType),
+            IInvocationOperation invocation => IsKnownZeroDurationTaskDelay(invocation),
             IObjectCreationOperation { Constructor: { } constructor } =>
                 IsKnownCompletedValueTaskConstructor(constructor),
             IDefaultValueOperation { Type: INamedTypeSymbol type } =>
                 IsKnownValueTaskType(type),
+            _ => false,
+        };
+    }
+
+    private static bool IsKnownZeroDurationTaskDelay(IInvocationOperation invocation)
+    {
+        if (invocation.TargetMethod is not
+            {
+                IsStatic: true,
+                Name: "Delay",
+                ContainingType: { } containingType,
+            }
+            || containingType.ToDisplayString() != "System.Threading.Tasks.Task")
+        {
+            return false;
+        }
+
+        var duration = Unwrap(invocation.Arguments
+            .FirstOrDefault(static argument => argument.Parameter?.Ordinal == 0)
+            ?.Value);
+        return duration switch
+        {
+            { ConstantValue: { HasValue: true, Value: 0 } } => true,
+            IFieldReferenceOperation
+            {
+                Field:
+                {
+                    IsStatic: true,
+                    Name: "Zero",
+                    ContainingType: { } timeSpanType,
+                },
+            } => timeSpanType.ToDisplayString() == "System.TimeSpan",
             _ => false,
         };
     }
@@ -3519,10 +3559,21 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         IParameterSymbol parameter)
     {
         if (constructor is null
-            || constructor.MethodKind is not MethodKind.Constructor
-            || !RetainingCollectionNamespaces.Contains(
-                constructor.ContainingNamespace.ToDisplayString())
-            || !RetainingCollectionTypes.Contains(constructor.ContainingType.Name))
+            || constructor.MethodKind is not MethodKind.Constructor)
+        {
+            return false;
+        }
+
+        var containingType = constructor.ContainingType;
+        if (RetainingContainerTypes.Contains(
+                $"{containingType.ContainingNamespace}.{containingType.Name}"))
+        {
+            return true;
+        }
+
+        if (!RetainingCollectionNamespaces.Contains(
+                containingType.ContainingNamespace.ToDisplayString())
+            || !RetainingCollectionTypes.Contains(containingType.Name))
         {
             return false;
         }

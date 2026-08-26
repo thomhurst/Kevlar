@@ -103,7 +103,7 @@ internal sealed class AsyncCallbackCodeFixProvider : CodeFixProvider
     {
         var pendingBodies = new Stack<(SyntaxNode Body, SemanticModel SemanticModel)>();
         var visitedMethods = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
-        var visitedDelegateLocals = new HashSet<ILocalSymbol>(SymbolEqualityComparer.Default);
+        var visitedDelegates = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
         pendingBodies.Push((body, semanticModel));
         while (pendingBodies.Count > 0)
         {
@@ -126,7 +126,7 @@ internal sealed class AsyncCallbackCodeFixProvider : CodeFixProvider
                         invocation,
                         pending.SemanticModel,
                         cancellationToken,
-                        visitedDelegateLocals,
+                        visitedDelegates,
                         out var delegateBody))
                 {
                     pendingBodies.Push((delegateBody, pending.SemanticModel));
@@ -140,7 +140,7 @@ internal sealed class AsyncCallbackCodeFixProvider : CodeFixProvider
                                 expression,
                                 pending.SemanticModel,
                                 cancellationToken,
-                                visitedDelegateLocals,
+                                visitedDelegates,
                                 out var argumentBody))
                         {
                             continue;
@@ -200,7 +200,7 @@ internal sealed class AsyncCallbackCodeFixProvider : CodeFixProvider
         InvocationExpressionSyntax invocation,
         SemanticModel semanticModel,
         CancellationToken cancellationToken,
-        HashSet<ILocalSymbol> visited,
+        HashSet<ISymbol> visited,
         out SyntaxNode body)
     {
         var invokedExpression = invocation.Expression is MemberAccessExpressionSyntax
@@ -221,7 +221,7 @@ internal sealed class AsyncCallbackCodeFixProvider : CodeFixProvider
         ExpressionSyntax expression,
         SemanticModel semanticModel,
         CancellationToken cancellationToken,
-        HashSet<ILocalSymbol> visited,
+        HashSet<ISymbol> visited,
         out SyntaxNode body)
     {
         if (UnwrapReceiver(expression) is AnonymousFunctionExpressionSyntax anonymousExpression)
@@ -230,9 +230,28 @@ internal sealed class AsyncCallbackCodeFixProvider : CodeFixProvider
             return true;
         }
 
-        if (UnwrapReceiver(expression) is not IdentifierNameSyntax identifier
-            || semanticModel.GetSymbolInfo(identifier, cancellationToken).Symbol
-                is not ILocalSymbol { Type.TypeKind: TypeKind.Delegate } local
+        if (UnwrapReceiver(expression) is not IdentifierNameSyntax identifier)
+        {
+            body = null!;
+            return false;
+        }
+
+        var symbol = semanticModel.GetSymbolInfo(identifier, cancellationToken).Symbol;
+        if (symbol is IMethodSymbol
+            {
+                MethodKind: MethodKind.LocalFunction,
+                DeclaringSyntaxReferences.Length: 1,
+            } localFunction
+            && visited.Add(localFunction)
+            && localFunction.DeclaringSyntaxReferences[0].GetSyntax(cancellationToken)
+                is LocalFunctionStatementSyntax localFunctionDeclaration
+            && GetSourceMethodBody(localFunctionDeclaration) is { } localFunctionBody)
+        {
+            body = localFunctionBody;
+            return true;
+        }
+
+        if (symbol is not ILocalSymbol { Type.TypeKind: TypeKind.Delegate } local
             || !visited.Add(local)
             || local.DeclaringSyntaxReferences.Length != 1
             || local.DeclaringSyntaxReferences[0].GetSyntax(cancellationToken)

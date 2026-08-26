@@ -61,6 +61,11 @@ public class PipelineHazardAnalyzerTests
             "Task.CompletedTask.ConfigureAwait(false)",
             "Task.FromResult(0)",
             "Task.FromResult(0).ConfigureAwait(false)",
+            "Task.Delay(0)",
+            "Task.Delay(0).ConfigureAwait(false)",
+            "Task.Delay(TimeSpan.Zero)",
+            "Task.Delay(0, CancellationToken.None)",
+            "Task.Delay(TimeSpan.Zero, CancellationToken.None)",
             "ValueTask.CompletedTask",
             "ValueTask.CompletedTask.ConfigureAwait(false)",
             "ValueTask.FromResult(0)",
@@ -90,6 +95,7 @@ public class PipelineHazardAnalyzerTests
     {
         var awaitExpressions = new[]
         {
+            "Task.Delay(1)",
             "new ValueTask(Task.Delay(1))",
             "new ValueTask<int>(Task.Run(() => 1))",
         };
@@ -2145,6 +2151,21 @@ public class PipelineHazardAnalyzerTests
                 private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
             }
             """);
+        var incompatibleLocalFunctionMethodGroup = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        Array.ForEach(new[] { 0 }, Work);
+                        await Task.Yield();
+
+                        void Work(int _) => _ = AuditAsync(item);
+                    });
+
+                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            }
+            """);
         var incompatibleConstructedDelegateDiscard = await GetCodeFixAsync("""
             public class TestSubject
             {
@@ -2330,6 +2351,8 @@ public class PipelineHazardAnalyzerTests
         await Assert.That(incompatibleForwardedDelegateDiscard.ChangedText).IsNull();
         await Assert.That(incompatibleOpaqueDelegateDiscard.ActionCount).IsEqualTo(0);
         await Assert.That(incompatibleOpaqueDelegateDiscard.ChangedText).IsNull();
+        await Assert.That(incompatibleLocalFunctionMethodGroup.ActionCount).IsEqualTo(0);
+        await Assert.That(incompatibleLocalFunctionMethodGroup.ChangedText).IsNull();
         await Assert.That(incompatibleConstructedDelegateDiscard.ActionCount).IsEqualTo(0);
         await Assert.That(incompatibleConstructedDelegateDiscard.ChangedText).IsNull();
         await Assert.That(incompatibleConditionalDelegateDiscard.ActionCount).IsEqualTo(0);
@@ -3842,6 +3865,21 @@ public class PipelineHazardAnalyzerTests
                     static (System.Collections.Generic.List<RetryEvent> state) =>
                         Console.WriteLine(state[0].Context.ShieldName),
                     new System.Collections.Generic.List<RetryEvent>(new[] { item }),
+                    preferLocal: false));
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Metadata_Container_State_Values()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+                ThreadPool.QueueUserWorkItem(
+                    static (System.Collections.Generic.KeyValuePair<int, RetryEvent> state) =>
+                        Console.WriteLine(state.Value.Context.ShieldName),
+                    new System.Collections.Generic.KeyValuePair<int, RetryEvent>(0, item),
                     preferLocal: false));
             """);
 
