@@ -64,4 +64,57 @@ public class AnalyzerMetadataTests
             && !string.IsNullOrWhiteSpace(rule.MessageFormat.ToString())
             && !string.IsNullOrWhiteSpace(rule.Description.ToString()))).IsTrue();
     }
+
+    [Test]
+    [Arguments("KEV001", "Reliability", DiagnosticSeverity.Warning)]
+    [Arguments("KEV002", "Reliability", DiagnosticSeverity.Warning)]
+    [Arguments("KEV003", "Configuration", DiagnosticSeverity.Warning)]
+    [Arguments("KEV004", "Reliability", DiagnosticSeverity.Warning)]
+    [Arguments("KEV005", "Configuration", DiagnosticSeverity.Warning)]
+    [Arguments("KEV006", "Reliability", DiagnosticSeverity.Warning)]
+    [Arguments("KEV007", "Configuration", DiagnosticSeverity.Warning)]
+    [Arguments("KEV008", "Configuration", DiagnosticSeverity.Warning)]
+    [Arguments("KEV009", "Configuration", DiagnosticSeverity.Info)]
+    [Arguments("KEV010", "Configuration", DiagnosticSeverity.Info)]
+    [Arguments("KEV011", "Configuration", DiagnosticSeverity.Info)]
+    [Arguments("KEV012", "Reliability", DiagnosticSeverity.Warning)]
+    [Arguments("KEV013", "Reliability", DiagnosticSeverity.Warning)]
+    [Arguments("KEV014", "Reliability", DiagnosticSeverity.Warning)]
+    public async Task Analyzer_Releases_Shipped_Lists_Every_Rule(
+        string ruleId,
+        string category,
+        DiagnosticSeverity severity)
+    {
+        var shippedPath = Path.Combine(
+            FindRepositoryRoot(),
+            "src",
+            "Kevlar.Analyzers",
+            "AnalyzerReleases.Shipped.md");
+        var shippedRule = File.ReadLines(shippedPath)
+            .Select(static line => line.Split('|', StringSplitOptions.TrimEntries))
+            .Single(columns => columns.Length >= 3 && columns[0] == ruleId);
+        var descriptor = new IgnoredCancellationTokenAnalyzer().SupportedDiagnostics
+            .Concat(new PipelineHazardAnalyzer().SupportedDiagnostics)
+            .Single(rule => rule.Id == ruleId);
+
+        await Assert.That(shippedRule[1]).IsEqualTo(category);
+        await Assert.That(shippedRule[2]).IsEqualTo(severity.ToString());
+        await Assert.That(descriptor.Category).IsEqualTo(shippedRule[1]);
+        await Assert.That(descriptor.DefaultSeverity.ToString()).IsEqualTo(shippedRule[2]);
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        for (var directory = new DirectoryInfo(AppContext.BaseDirectory);
+             directory is not null;
+             directory = directory.Parent)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, "Kevlar.slnx")))
+            {
+                return directory.FullName;
+            }
+        }
+
+        throw new InvalidOperationException("Could not locate the repository root.");
+    }
 }

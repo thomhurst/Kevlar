@@ -1,1 +1,1 @@
-static Kevlar.Extensions.Http.KevlarHttp.RequestOptions.get -> System.Net.Http.HttpRequestOptionsKey<Kevlar.Extensions.Http.KevlarRequestOptions!>
+#nullable enable

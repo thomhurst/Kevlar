@@ -10,3 +10,132 @@ static Kevlar.Extensions.Http.HttpShield.WhenTransient() -> Kevlar.ShieldBuilder
 static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, Kevlar.Shield<System.Net.Http.HttpResponseMessage!>! shield) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
 static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, System.Func<System.IServiceProvider!, Kevlar.Shield<System.Net.Http.HttpResponseMessage!>!>! shieldFactory) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
 static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
+Kevlar.Extensions.Http.HttpContentReplayPolicy
+Kevlar.Extensions.Http.HttpContentReplayPolicy.Buffer = 1 -> Kevlar.Extensions.Http.HttpContentReplayPolicy
+Kevlar.Extensions.Http.HttpContentReplayPolicy.NoBuffer = 0 -> Kevlar.Extensions.Http.HttpContentReplayPolicy
+Kevlar.Extensions.Http.HttpEndpoint
+Kevlar.Extensions.Http.HttpEndpoint.HttpEndpoint(System.Uri! uri, int weight = 1) -> void
+Kevlar.Extensions.Http.HttpEndpoint.Uri.get -> System.Uri!
+Kevlar.Extensions.Http.HttpEndpoint.Weight.get -> int
+Kevlar.Extensions.Http.HttpEndpointRoutingOptions
+Kevlar.Extensions.Http.HttpEndpointRoutingOptions.Endpoints.get -> System.Collections.Generic.IList<Kevlar.Extensions.Http.HttpEndpoint!>!
+Kevlar.Extensions.Http.HttpEndpointRoutingOptions.HttpEndpointRoutingOptions() -> void
+Kevlar.Extensions.Http.HttpEndpointRoutingOptions.Seed.get -> int
+Kevlar.Extensions.Http.HttpEndpointRoutingOptions.Seed.set -> void
+Kevlar.Extensions.Http.HttpEndpointRoutingOptions.SelectionMode.get -> Kevlar.Extensions.Http.HttpEndpointSelectionMode
+Kevlar.Extensions.Http.HttpEndpointRoutingOptions.SelectionMode.set -> void
+Kevlar.Extensions.Http.HttpEndpointRoutingOptions.ShieldFactory.get -> System.Func<System.Uri!, Kevlar.Shield<System.Net.Http.HttpResponseMessage!>!>?
+Kevlar.Extensions.Http.HttpEndpointRoutingOptions.ShieldFactory.set -> void
+Kevlar.Extensions.Http.HttpEndpointSelectionMode
+Kevlar.Extensions.Http.HttpEndpointSelectionMode.Ordered = 0 -> Kevlar.Extensions.Http.HttpEndpointSelectionMode
+Kevlar.Extensions.Http.HttpEndpointSelectionMode.Weighted = 1 -> Kevlar.Extensions.Http.HttpEndpointSelectionMode
+Kevlar.Extensions.Http.HttpRequestReplayException
+Kevlar.Extensions.Http.HttpRequestReplayException.HttpRequestReplayException() -> void
+Kevlar.Extensions.Http.HttpRequestReplayException.HttpRequestReplayException(string! message) -> void
+Kevlar.Extensions.Http.HttpRequestReplayException.HttpRequestReplayException(string! message, System.Exception! innerException) -> void
+Kevlar.Extensions.Http.ShieldDelegatingHandler.ShieldDelegatingHandler(Kevlar.Shield<System.Net.Http.HttpResponseMessage!>! shield, Kevlar.Extensions.Http.ShieldHttpHandlerOptions! options) -> void
+Kevlar.Extensions.Http.ShieldHttpHandlerOptions
+Kevlar.Extensions.Http.ShieldHttpHandlerOptions.AllowUnsafeMethodReplay.get -> bool
+Kevlar.Extensions.Http.ShieldHttpHandlerOptions.AllowUnsafeMethodReplay.set -> void
+Kevlar.Extensions.Http.ShieldHttpHandlerOptions.ContentReplayPolicy.get -> Kevlar.Extensions.Http.HttpContentReplayPolicy
+Kevlar.Extensions.Http.ShieldHttpHandlerOptions.ContentReplayPolicy.set -> void
+Kevlar.Extensions.Http.ShieldHttpHandlerOptions.MaximumBufferSize.get -> long
+Kevlar.Extensions.Http.ShieldHttpHandlerOptions.MaximumBufferSize.set -> void
+Kevlar.Extensions.Http.ShieldHttpHandlerOptions.RequestFactory.get -> System.Func<System.Net.Http.HttpRequestMessage!, int, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<System.Net.Http.HttpRequestMessage!>>?
+Kevlar.Extensions.Http.ShieldHttpHandlerOptions.RequestFactory.set -> void
+Kevlar.Extensions.Http.ShieldHttpHandlerOptions.Routing.get -> Kevlar.Extensions.Http.HttpEndpointRoutingOptions?
+Kevlar.Extensions.Http.ShieldHttpHandlerOptions.Routing.set -> void
+Kevlar.Extensions.Http.ShieldHttpHandlerOptions.ShieldHttpHandlerOptions() -> void
+Kevlar.Extensions.Http.StandardHedgeShieldOptions
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.AllowUnsafeMethodReplay.get -> bool
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.AllowUnsafeMethodReplay.set -> void
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.AttemptTimeout.get -> System.TimeSpan
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.AttemptTimeout.set -> void
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.BreakDuration.get -> System.TimeSpan
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.BreakDuration.set -> void
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.ConsecutiveFailures.get -> int?
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.ConsecutiveFailures.set -> void
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.ContentReplayPolicy.get -> Kevlar.Extensions.Http.HttpContentReplayPolicy
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.ContentReplayPolicy.set -> void
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.Endpoints.get -> System.Collections.Generic.IList<Kevlar.Extensions.Http.HttpEndpoint!>!
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.FailureRatio.get -> double?
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.FailureRatio.set -> void
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelay.get -> System.TimeSpan
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelay.set -> void
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelayGenerator.get -> System.Func<Kevlar.HedgeDelayEvent, System.TimeSpan>?
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelayGenerator.set -> void
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelayGeneratorAsync.get -> System.Func<Kevlar.HedgeDelayEvent, System.Threading.Tasks.ValueTask<System.TimeSpan>>?
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelayGeneratorAsync.set -> void
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxHedgedAttempts.get -> int
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxHedgedAttempts.set -> void
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxConcurrency.get -> int
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxConcurrency.set -> void
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaximumBufferSize.get -> long
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaximumBufferSize.set -> void
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.QueueLimit.get -> int
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.QueueLimit.set -> void
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.MinimumThroughput.get -> int
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.MinimumThroughput.set -> void
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.RequestFactory.get -> System.Func<System.Net.Http.HttpRequestMessage!, int, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<System.Net.Http.HttpRequestMessage!>>?
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.RequestFactory.set -> void
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.SamplingWindow.get -> System.TimeSpan
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.SamplingWindow.set -> void
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.Seed.get -> int
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.Seed.set -> void
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.SelectionMode.get -> Kevlar.Extensions.Http.HttpEndpointSelectionMode
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.SelectionMode.set -> void
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.StandardHedgeShieldOptions() -> void
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.TotalTimeout.get -> System.TimeSpan
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.TotalTimeout.set -> void
+static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, System.Action<Kevlar.Extensions.Http.StandardHedgeShieldOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
+static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, Kevlar.Shield<System.Net.Http.HttpResponseMessage!>! shield, Kevlar.Extensions.Http.ShieldHttpHandlerOptions! options) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
+static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, System.Func<System.IServiceProvider!, Kevlar.Shield<System.Net.Http.HttpResponseMessage!>!>! shieldFactory, System.Func<System.IServiceProvider!, Kevlar.Extensions.Http.ShieldHttpHandlerOptions!>! optionsFactory) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
+Kevlar.Extensions.Http.StandardHttpShieldOptions
+Kevlar.Extensions.Http.StandardHttpShieldOptions.AttemptTimeout.get -> Kevlar.TimeoutOptions!
+Kevlar.Extensions.Http.StandardHttpShieldOptions.AttemptTimeout.set -> void
+Kevlar.Extensions.Http.StandardHttpShieldOptions.CircuitBreaker.get -> Kevlar.CircuitBreakerOptions<System.Net.Http.HttpResponseMessage!>!
+Kevlar.Extensions.Http.StandardHttpShieldOptions.CircuitBreaker.set -> void
+Kevlar.Extensions.Http.StandardHttpShieldOptions.ConcurrencyLimit.get -> Kevlar.ConcurrencyLimitOptions?
+Kevlar.Extensions.Http.StandardHttpShieldOptions.ConcurrencyLimit.set -> void
+Kevlar.Extensions.Http.StandardHttpShieldOptions.Handler.get -> Kevlar.Extensions.Http.ShieldHttpHandlerOptions!
+Kevlar.Extensions.Http.StandardHttpShieldOptions.Handler.set -> void
+Kevlar.Extensions.Http.StandardHttpShieldOptions.Retry.get -> Kevlar.RetryOptions<System.Net.Http.HttpResponseMessage!>!
+Kevlar.Extensions.Http.StandardHttpShieldOptions.Retry.set -> void
+Kevlar.Extensions.Http.StandardHttpShieldOptions.StandardHttpShieldOptions() -> void
+Kevlar.Extensions.Http.StandardHttpShieldOptions.TotalTimeout.get -> Kevlar.TimeoutOptions!
+Kevlar.Extensions.Http.StandardHttpShieldOptions.TotalTimeout.set -> void
+Kevlar.Extensions.Http.StandardHttpShieldOptions.UseRetryAfterHeader.get -> bool
+Kevlar.Extensions.Http.StandardHttpShieldOptions.UseRetryAfterHeader.set -> void
+static Kevlar.Extensions.Http.HttpShield.IsTransientException(System.Exception? exception, System.Threading.CancellationToken callerCancellationToken) -> bool
+static Kevlar.Extensions.Http.HttpShield.Standard(Kevlar.Extensions.Http.StandardHttpShieldOptions! options) -> Kevlar.Shield<System.Net.Http.HttpResponseMessage!>!
+static Kevlar.Extensions.Http.HttpShield.RetryAfter(System.TimeSpan maxDelay) -> System.Func<Kevlar.RetryEvent<System.Net.Http.HttpResponseMessage!>, System.TimeSpan?>!
+static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, System.Action<Kevlar.Extensions.Http.StandardHttpShieldOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
+static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, System.Action<System.IServiceProvider!, Kevlar.Extensions.Http.StandardHttpShieldOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
+static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, Microsoft.Extensions.Configuration.IConfiguration! configuration, System.Action<System.Exception!>? onReloadFailure = null) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
+static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, Microsoft.Extensions.Configuration.IConfiguration! configuration, System.Action<System.IServiceProvider!, Kevlar.Extensions.Http.StandardHttpShieldOptions!>! configure, System.Action<System.Exception!>? onReloadFailure = null) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
+static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, Microsoft.Extensions.Configuration.IConfiguration! configuration, System.Action<System.Exception!>? onReloadFailure = null) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
+static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, Microsoft.Extensions.Configuration.IConfiguration! configuration, System.Action<System.IServiceProvider!, Kevlar.Extensions.Http.StandardHedgeShieldOptions!>! configure, System.Action<System.Exception!>? onReloadFailure = null) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
+Kevlar.Extensions.Http.KevlarHttp
+Kevlar.Extensions.Http.KevlarHttpRequestExtensions
+Kevlar.Extensions.Http.KevlarRequestOptions
+Kevlar.Extensions.Http.KevlarRequestOptions.AllowReplay.get -> bool?
+Kevlar.Extensions.Http.KevlarRequestOptions.AllowReplay.set -> void
+Kevlar.Extensions.Http.KevlarRequestOptions.CancellationToken.get -> System.Threading.CancellationToken
+Kevlar.Extensions.Http.KevlarRequestOptions.CancellationToken.set -> void
+Kevlar.Extensions.Http.KevlarRequestOptions.ConfigureProperties.get -> System.Action<Kevlar.KevlarProperties!>?
+Kevlar.Extensions.Http.KevlarRequestOptions.ConfigureProperties.set -> void
+Kevlar.Extensions.Http.KevlarRequestOptions.KevlarRequestOptions() -> void
+Kevlar.Extensions.Http.KevlarRequestOptions.Shield.get -> Kevlar.Shield<System.Net.Http.HttpResponseMessage!>?
+Kevlar.Extensions.Http.KevlarRequestOptions.Shield.set -> void
+Kevlar.Extensions.Http.KevlarRequestOptions.ShieldName.get -> string?
+Kevlar.Extensions.Http.KevlarRequestOptions.ShieldName.set -> void
+Kevlar.Extensions.Http.ShieldDelegatingHandler.ShieldDelegatingHandler(System.Func<System.Net.Http.HttpRequestMessage!, Kevlar.Shield<System.Net.Http.HttpResponseMessage!>!>! shieldSelector) -> void
+Kevlar.Extensions.Http.ShieldDelegatingHandler.ShieldDelegatingHandler(System.Func<System.Net.Http.HttpRequestMessage!, Kevlar.Shield<System.Net.Http.HttpResponseMessage!>!>! shieldSelector, Kevlar.Extensions.Http.ShieldHttpHandlerOptions! options) -> void
+static Kevlar.Extensions.Http.KevlarHttp.GetRequestOptions(System.Net.Http.HttpRequestMessage! request) -> Kevlar.Extensions.Http.KevlarRequestOptions!
+static Kevlar.Extensions.Http.KevlarHttpRequestExtensions.DisableReplay(this System.Net.Http.HttpRequestMessage! request) -> System.Net.Http.HttpRequestMessage!
+static Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithKevlarCancellationToken(this System.Net.Http.HttpRequestMessage! request, System.Threading.CancellationToken cancellationToken) -> System.Net.Http.HttpRequestMessage!
+static Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithKevlarProperties(this System.Net.Http.HttpRequestMessage! request, System.Action<Kevlar.KevlarProperties!>! configure) -> System.Net.Http.HttpRequestMessage!
+static Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithShield(this System.Net.Http.HttpRequestMessage! request, Kevlar.Shield<System.Net.Http.HttpResponseMessage!>! shield) -> System.Net.Http.HttpRequestMessage!
+static Kevlar.Extensions.Http.KevlarHttpRequestExtensions.WithShieldName(this System.Net.Http.HttpRequestMessage! request, string! shieldName) -> System.Net.Http.HttpRequestMessage!
+static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, System.Func<System.Net.Http.HttpRequestMessage!, System.IServiceProvider!, Kevlar.Shield<System.Net.Http.HttpResponseMessage!>!>! shieldSelector) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
+static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield<TKey>(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, Kevlar.PartitionedShield<TKey, System.Net.Http.HttpResponseMessage!>! partitions, System.Func<System.Net.Http.HttpRequestMessage!, TKey>! keySelector) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
