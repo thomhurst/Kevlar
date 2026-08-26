@@ -96,16 +96,54 @@ internal sealed class AsyncCallbackCodeFixProvider : CodeFixProvider
     private static bool ContainsUnawaitedTaskInvocation(
         BlockSyntax block,
         SemanticModel semanticModel,
-        CancellationToken cancellationToken) =>
-        block.DescendantNodes(descendIntoChildren: static node =>
-                node is not AnonymousFunctionExpressionSyntax
-                    and not LocalFunctionStatementSyntax)
-            .OfType<InvocationExpressionSyntax>()
-            .Any(invocation => IsTaskLike(
-                    semanticModel.GetTypeInfo(invocation, cancellationToken).Type)
-                && !invocation.Ancestors()
-                    .TakeWhile(static ancestor => ancestor is not StatementSyntax)
-                    .Any(static ancestor => ancestor is AwaitExpressionSyntax));
+        CancellationToken cancellationToken)
+    {
+        var pendingBodies = new Stack<SyntaxNode>();
+        var visitedLocalFunctions = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
+        pendingBodies.Push(block);
+        while (pendingBodies.Count > 0)
+        {
+            foreach (var invocation in pendingBodies.Pop()
+                         .DescendantNodesAndSelf(descendIntoChildren: static node =>
+                             node is not AnonymousFunctionExpressionSyntax
+                                 and not LocalFunctionStatementSyntax)
+                         .OfType<InvocationExpressionSyntax>())
+            {
+                if (IsTaskLike(semanticModel.GetTypeInfo(invocation, cancellationToken).Type)
+                    && !invocation.Ancestors()
+                        .TakeWhile(static ancestor => ancestor is not StatementSyntax)
+                        .Any(static ancestor => ancestor is AwaitExpressionSyntax))
+                {
+                    return true;
+                }
+
+                if (semanticModel.GetSymbolInfo(invocation, cancellationToken).Symbol
+                        is not IMethodSymbol { MethodKind: MethodKind.LocalFunction } localFunction
+                    || !visitedLocalFunctions.Add(localFunction))
+                {
+                    continue;
+                }
+
+                foreach (var syntaxReference in localFunction.DeclaringSyntaxReferences)
+                {
+                    if (GetLocalFunctionBody(syntaxReference.GetSyntax(cancellationToken))
+                        is { } localBody)
+                    {
+                        pendingBodies.Push(localBody);
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private static SyntaxNode? GetLocalFunctionBody(SyntaxNode declaration) => declaration switch
+    {
+        LocalFunctionStatementSyntax { Body: { } body } => body,
+        LocalFunctionStatementSyntax { ExpressionBody.Expression: { } expression } => expression,
+        _ => null,
+    };
 
     private static bool IsTaskLike(ITypeSymbol? type) =>
         type is INamedTypeSymbol named

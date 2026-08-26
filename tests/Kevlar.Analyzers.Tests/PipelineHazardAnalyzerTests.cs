@@ -344,6 +344,31 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Keeps_Alias_Propagation_On_One_Control_Flow_Path()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                RetryEvent first = default;
+                RetryEvent retained = default;
+                if (Environment.TickCount == 0)
+                {
+                    first = item;
+                }
+                else
+                {
+                    retained = first;
+                }
+
+                await Task.Yield();
+                Console.WriteLine(retained.RetryNumber);
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV013");
+    }
+
+    [Test]
     public async Task KEV014_Inspects_Combined_Async_Delegates()
     {
         var diagnostics = await AnalyzeBodyAsync("""
@@ -1120,6 +1145,26 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV013_Rejects_Task_Local_Joins_Of_Unrelated_Composite_Values()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var pending = (AuditAsync(item), Task.CompletedTask).Item2;
+                pending.GetAwaiter().GetResult();
+            });
+
+            static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
     public async Task KEV013_Rejects_Filtered_WhenAll_Collections()
     {
         var diagnostics = await AnalyzeSourceAsync("""
@@ -1278,6 +1323,21 @@ public class PipelineHazardAnalyzerTests
                 private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
             }
             """);
+        var incompatibleLocalFunctionDiscard = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        Start();
+                        await Task.Yield();
+
+                        void Start() => _ = AuditAsync(item);
+                    });
+
+                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            }
+            """);
         var incompatibleTimedWait = await GetCodeFixAsync("""
             public class TestSubject
             {
@@ -1372,6 +1432,8 @@ public class PipelineHazardAnalyzerTests
         await Assert.That(incompatibleDiscardingBlock.ChangedText).IsNull();
         await Assert.That(incompatibleAsyncDiscardingBlock.ActionCount).IsEqualTo(0);
         await Assert.That(incompatibleAsyncDiscardingBlock.ChangedText).IsNull();
+        await Assert.That(incompatibleLocalFunctionDiscard.ActionCount).IsEqualTo(0);
+        await Assert.That(incompatibleLocalFunctionDiscard.ChangedText).IsNull();
         await Assert.That(incompatibleTimedWait.ActionCount).IsEqualTo(0);
         await Assert.That(incompatibleTimedWait.ChangedText).IsNull();
         await Assert.That(incompatibleCollectionAdd.ActionCount).IsEqualTo(0);

@@ -934,6 +934,17 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         ControlFlowGraph? controlFlowGraph,
         CancellationToken cancellationToken)
     {
+        var retainedNameOrigins = retainedNames.ToDictionary(
+            static name => name,
+            static _ => new List<SyntaxNode?> { null },
+            StringComparer.Ordinal);
+        var retainedSymbolOrigins = new Dictionary<ISymbol, List<SyntaxNode?>>(
+            SymbolEqualityComparer.Default);
+        foreach (var symbol in retainedSymbols)
+        {
+            retainedSymbolOrigins.Add(symbol, [null]);
+        }
+
         foreach (var alias in nodes
                      .Where(node => node.SpanStart < destination.SpanStart
                          && node is (VariableDeclaratorSyntax or AssignmentExpressionSyntax)
@@ -959,17 +970,21 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             }
 
             if (value is not null
-                && IsRetainedAliasExpression(
+                && HasReachableRetainedAlias(
                     value,
-                    retainedNames,
-                    retainedSymbols,
+                    alias,
+                    retainedNameOrigins,
+                    retainedSymbolOrigins,
                     semanticModel,
+                    controlFlowGraph,
                     cancellationToken))
             {
                 retainedNames.Add(name);
+                AddRetainedOrigin(retainedNameOrigins, name, alias);
                 if (target is not null)
                 {
                     retainedSymbols.Add(target);
+                    AddRetainedOrigin(retainedSymbolOrigins, target, alias);
                 }
             }
             else if (IsUnconditionalAliasWrite(alias, body))
@@ -977,13 +992,122 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 if (target is not null)
                 {
                     retainedSymbols.Remove(target);
+                    retainedSymbolOrigins.Remove(target);
                 }
                 else
                 {
                     retainedNames.Remove(name);
+                    retainedNameOrigins.Remove(name);
                 }
             }
         }
+    }
+
+    private static bool HasReachableRetainedAlias(
+        ExpressionSyntax expression,
+        SyntaxNode destination,
+        Dictionary<string, List<SyntaxNode?>> retainedNameOrigins,
+        Dictionary<ISymbol, List<SyntaxNode?>> retainedSymbolOrigins,
+        SemanticModel? semanticModel,
+        ControlFlowGraph? controlFlowGraph,
+        CancellationToken cancellationToken)
+    {
+        if (expression is IdentifierNameSyntax identifier)
+        {
+            var symbol = semanticModel?.GetSymbolInfo(identifier, cancellationToken).Symbol;
+            return symbol is not null
+                ? HasReachableOrigin(
+                    retainedSymbolOrigins,
+                    symbol,
+                    destination,
+                    controlFlowGraph)
+                : HasReachableOrigin(
+                    retainedNameOrigins,
+                    identifier.Identifier.ValueText,
+                    destination,
+                    controlFlowGraph);
+        }
+
+        if (expression is MemberAccessExpressionSyntax memberAccess)
+        {
+            var symbol = semanticModel?.GetSymbolInfo(
+                memberAccess.Name,
+                cancellationToken).Symbol;
+            if (symbol is not null
+                && HasReachableOrigin(
+                    retainedSymbolOrigins,
+                    symbol,
+                    destination,
+                    controlFlowGraph))
+            {
+                return true;
+            }
+
+            return memberAccess.Name.Identifier.ValueText is "Context" or "Properties"
+                && HasReachableRetainedAlias(
+                    memberAccess.Expression,
+                    destination,
+                    retainedNameOrigins,
+                    retainedSymbolOrigins,
+                    semanticModel,
+                    controlFlowGraph,
+                    cancellationToken);
+        }
+
+        return expression switch
+        {
+            ParenthesizedExpressionSyntax parenthesized => HasReachableRetainedAlias(
+                parenthesized.Expression,
+                destination,
+                retainedNameOrigins,
+                retainedSymbolOrigins,
+                semanticModel,
+                controlFlowGraph,
+                cancellationToken),
+            CastExpressionSyntax cast => HasReachableRetainedAlias(
+                cast.Expression,
+                destination,
+                retainedNameOrigins,
+                retainedSymbolOrigins,
+                semanticModel,
+                controlFlowGraph,
+                cancellationToken),
+            PostfixUnaryExpressionSyntax postfix
+                when postfix.IsKind(SyntaxKind.SuppressNullableWarningExpression) =>
+                HasReachableRetainedAlias(
+                    postfix.Operand,
+                    destination,
+                    retainedNameOrigins,
+                    retainedSymbolOrigins,
+                    semanticModel,
+                    controlFlowGraph,
+                    cancellationToken),
+            _ => false,
+        };
+    }
+
+    private static bool HasReachableOrigin<TKey>(
+        Dictionary<TKey, List<SyntaxNode?>> retainedOrigins,
+        TKey key,
+        SyntaxNode destination,
+        ControlFlowGraph? controlFlowGraph)
+        where TKey : notnull =>
+        retainedOrigins.TryGetValue(key, out var origins)
+        && origins.Any(origin => origin is null || CanReach(origin, destination, controlFlowGraph));
+
+    private static void AddRetainedOrigin<TKey>(
+        Dictionary<TKey, List<SyntaxNode?>> retainedOrigins,
+        TKey key,
+        SyntaxNode origin)
+        where TKey : notnull
+    {
+        if (!retainedOrigins.TryGetValue(key, out var origins))
+        {
+            origins = [];
+            retainedOrigins.Add(key, origins);
+        }
+
+        origins.Add(origin);
     }
 
     private static bool TryFindRetainedContextInLocalFunction(
