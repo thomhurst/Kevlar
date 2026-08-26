@@ -427,14 +427,6 @@ jobs:
           ./scripts/Get-ReleaseNotes.ps1 -Version $env:RELEASE_VERSION -OutputPath $notesPath
           "RELEASE_NOTES_PATH=$notesPath" >> $env:GITHUB_ENV
 
-      - name: Create and push release tag
-        if: inputs.release_dry_run != true
-        shell: pwsh
-        env:
-          RELEASE_VERSION: ${{ steps.gitversion.outputs.semVer }}
-        run: |
-          ./scripts/Push-ReleaseTag.ps1 -Version $env:RELEASE_VERSION -Commit $env:GITHUB_SHA
-
       - name: NuGet login
         if: inputs.release_dry_run != true
         uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1
@@ -447,6 +439,14 @@ jobs:
         shell: pwsh
         run: |
           ./scripts/Push-NuGetRelease.ps1 -PackagesPath packages -ApiKey '${{ steps.login.outputs.NUGET_API_KEY }}'
+
+      - name: Create and push release tag
+        if: inputs.release_dry_run != true
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ steps.gitversion.outputs.semVer }}
+        run: |
+          ./scripts/Push-ReleaseTag.ps1 -Version $env:RELEASE_VERSION -Commit $env:GITHUB_SHA
 
       - name: Create GitHub release
         if: inputs.release_dry_run != true
