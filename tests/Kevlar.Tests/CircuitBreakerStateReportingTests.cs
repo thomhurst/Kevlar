@@ -6,6 +6,54 @@ namespace Kevlar.Tests;
 public class CircuitBreakerStateReportingTests
 {
     [Test]
+    public async Task Monitor_Aggregates_And_Controls_Multiple_Breakers()
+    {
+        var firstTimeProvider = new FakeTimeProvider();
+        var secondTimeProvider = new FakeTimeProvider();
+        var monitor = new CircuitBreakerMonitor();
+        var first = CreateBreaker(firstTimeProvider, monitor);
+        var second = CreateBreaker(secondTimeProvider, monitor);
+
+        await first.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException("first"));
+        await second.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException("second"));
+        firstTimeProvider.Advance(TimeSpan.FromSeconds(30));
+
+        await Assert.That(monitor.State).IsEqualTo(CircuitState.Open);
+
+        var transitions = new List<CircuitState>();
+        monitor.StateChanged += change => transitions.Add(change.To);
+
+        monitor.Isolate();
+
+        await Assert.That(monitor.State).IsEqualTo(CircuitState.Isolated);
+        await Assert.That(transitions).IsEquivalentTo(
+        [
+            CircuitState.Isolated,
+            CircuitState.Isolated,
+        ]);
+        var firstRejection = await Assert.That(
+            async () => await first.ExecuteAsync(_ => new ValueTask<int>(1)))
+            .Throws<CircuitOpenException>();
+        var secondRejection = await Assert.That(
+            async () => await second.ExecuteAsync(_ => new ValueTask<int>(2)))
+            .Throws<CircuitOpenException>();
+        await Assert.That(firstRejection!.IsIsolated).IsTrue();
+        await Assert.That(secondRejection!.IsIsolated).IsTrue();
+
+        transitions.Clear();
+        monitor.Reset();
+
+        await Assert.That(monitor.State).IsEqualTo(CircuitState.Closed);
+        await Assert.That(transitions).IsEquivalentTo(
+        [
+            CircuitState.Closed,
+            CircuitState.Closed,
+        ]);
+        await Assert.That(await first.ExecuteAsync(_ => new ValueTask<int>(1))).IsEqualTo(1);
+        await Assert.That(await second.ExecuteAsync(_ => new ValueTask<int>(2))).IsEqualTo(2);
+    }
+
+    [Test]
     public async Task State_Reports_HalfOpen_After_Break_Elapses_Without_A_Call()
     {
         var timeProvider = new FakeTimeProvider();

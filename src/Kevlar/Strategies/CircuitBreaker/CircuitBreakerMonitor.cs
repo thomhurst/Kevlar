@@ -3,54 +3,113 @@ using Kevlar.Strategies;
 namespace Kevlar;
 
 /// <summary>
-/// Observes and manually controls a single circuit breaker. Create one, assign it to
-/// <see cref="CircuitBreakerOptions.Monitor"/>, and keep a reference to it.
+/// Observes and manually controls one or more circuit breakers. Create one, assign it to
+/// each <see cref="CircuitBreakerOptions.Monitor"/> to control, and keep a reference to it.
 /// </summary>
 public sealed class CircuitBreakerMonitor
 {
-    private CircuitBreakerCore? _core;
-
-    /// <summary>The current state of the bound circuit.</summary>
-    public CircuitState State => BoundCore().State;
+    private CircuitBreakerCore[]? _cores;
 
     /// <summary>
-    /// Raised on every state transition of the bound circuit, after
+    /// The worst state among the bound circuits, ordered isolated, open, half-open, then closed.
+    /// </summary>
+    public CircuitState State
+    {
+        get
+        {
+            var cores = BoundCores();
+            var state = cores[0].State;
+            var severity = Severity(state);
+            for (var index = 1; index < cores.Length; index++)
+            {
+                var candidate = cores[index].State;
+                var candidateSeverity = Severity(candidate);
+                if (candidateSeverity > severity)
+                {
+                    state = candidate;
+                    severity = candidateSeverity;
+                }
+            }
+
+            return state;
+        }
+    }
+
+    /// <summary>
+    /// Raised on every state transition of each bound circuit, after
     /// <see cref="CircuitBreakerOptions.OnStateChanged"/> completes. Transitions are delivered
-    /// serially outside the circuit lock, so handlers may read state or call <see cref="Reset"/>
-    /// or <see cref="Isolate"/> without deadlocking. Handlers run synchronously and block later
-    /// transition publishers, so they should not perform I/O, wait on external work, or otherwise
-    /// run for a long time.
+    /// serially per circuit outside its lock; different circuits may publish concurrently.
+    /// Handlers may read state or call <see cref="Reset"/> or <see cref="Isolate"/> without
+    /// deadlocking. Handlers run synchronously and block later transitions from the same circuit,
+    /// so they should not perform I/O, wait on external work, or otherwise run for a long time.
     /// </summary>
     public event Action<CircuitBreakerStateChangedEvent>? StateChanged;
 
-    /// <summary>Forces the circuit open. Executions are rejected until <see cref="Reset"/> is called.</summary>
-    public void Isolate() => BoundCore().Isolate();
+    /// <summary>
+    /// Forces every bound circuit open. Executions are rejected until <see cref="Reset"/> is called.
+    /// </summary>
+    public void Isolate()
+    {
+        foreach (var core in BoundCores())
+        {
+            core.Isolate();
+        }
+    }
 
     /// <summary>
-    /// Forces the circuit open and asynchronously waits for configured transition observers.
+    /// Forces every bound circuit open and asynchronously waits for configured transition observers.
     /// A reentrant call from a transition callback queues its transition behind the active
     /// publication and returns before that queued transition reaches observers; do not use the
     /// returned task to order reentrant transition work.
     /// Executions are rejected until <see cref="ResetAsync"/> is called.
     /// </summary>
-    public ValueTask IsolateAsync() => BoundCore().IsolateAsync();
+    public ValueTask IsolateAsync()
+    {
+        var cores = BoundCores();
+        return cores.Length == 1
+            ? cores[0].IsolateAsync()
+            : IsolateAllAsync(cores);
+    }
 
-    /// <summary>Closes the circuit and clears all failure metrics.</summary>
-    public void Reset() => BoundCore().Reset();
+    /// <summary>Closes every bound circuit and clears all failure metrics.</summary>
+    public void Reset()
+    {
+        foreach (var core in BoundCores())
+        {
+            core.Reset();
+        }
+    }
 
     /// <summary>
-    /// Closes the circuit, clears all failure metrics, and asynchronously waits for configured
+    /// Closes every bound circuit, clears all failure metrics, and asynchronously waits for configured
     /// transition observers. A reentrant call from a transition callback queues its transition
     /// behind the active publication and returns before that queued transition reaches observers;
     /// do not use the returned task to order reentrant transition work.
     /// </summary>
-    public ValueTask ResetAsync() => BoundCore().ResetAsync();
+    public ValueTask ResetAsync()
+    {
+        var cores = BoundCores();
+        return cores.Length == 1
+            ? cores[0].ResetAsync()
+            : ResetAllAsync(cores);
+    }
 
     internal void Bind(CircuitBreakerCore core)
     {
-        if (Interlocked.CompareExchange(ref _core, core, null) is not null)
+        while (true)
         {
-            throw new InvalidOperationException("This CircuitBreakerMonitor is already bound to another circuit breaker.");
+            var cores = Volatile.Read(ref _cores);
+            var updated = new CircuitBreakerCore[(cores?.Length ?? 0) + 1];
+            if (cores is not null)
+            {
+                Array.Copy(cores, updated, cores.Length);
+            }
+
+            updated[^1] = core;
+            if (ReferenceEquals(Interlocked.CompareExchange(ref _cores, updated, cores), cores))
+            {
+                return;
+            }
         }
     }
 
@@ -78,7 +137,32 @@ public sealed class CircuitBreakerMonitor
         }
     }
 
-    private CircuitBreakerCore BoundCore() =>
-        _core ?? throw new InvalidOperationException(
+    private CircuitBreakerCore[] BoundCores() =>
+        Volatile.Read(ref _cores) ?? throw new InvalidOperationException(
             "This CircuitBreakerMonitor has not been bound. Assign it to CircuitBreakerOptions.Monitor when building the shield.");
+
+    private static int Severity(CircuitState state) => state switch
+    {
+        CircuitState.Closed => 0,
+        CircuitState.HalfOpen => 1,
+        CircuitState.Open => 2,
+        CircuitState.Isolated => 3,
+        _ => throw new ArgumentOutOfRangeException(nameof(state)),
+    };
+
+    private static async ValueTask IsolateAllAsync(CircuitBreakerCore[] cores)
+    {
+        foreach (var core in cores)
+        {
+            await core.IsolateAsync().ConfigureAwait(false);
+        }
+    }
+
+    private static async ValueTask ResetAllAsync(CircuitBreakerCore[] cores)
+    {
+        foreach (var core in cores)
+        {
+            await core.ResetAsync().ConfigureAwait(false);
+        }
+    }
 }

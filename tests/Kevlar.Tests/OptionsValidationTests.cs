@@ -259,28 +259,6 @@ public class OptionsValidationTests
     }
 
     [Test]
-    public async Task Monitor_Cannot_Be_Bound_Twice()
-    {
-        var monitor = new CircuitBreakerMonitor();
-        _ = Shield.CircuitBreaker(options =>
-        {
-            options.ConsecutiveFailures = 1;
-            options.BreakDuration = TimeSpan.FromSeconds(1);
-            options.Monitor = monitor;
-        });
-
-        var exception = await Assert.That(() => Shield.CircuitBreaker(options =>
-        {
-            options.ConsecutiveFailures = 1;
-            options.BreakDuration = TimeSpan.FromSeconds(1);
-            options.Monitor = monitor;
-        })).Throws<InvalidOperationException>();
-
-        await Assert.That(exception!.Message)
-            .IsEqualTo("This CircuitBreakerMonitor is already bound to another circuit breaker.");
-    }
-
-    [Test]
     public async Task Unbound_Monitor_Throws_A_Helpful_Error()
     {
         var monitor = new CircuitBreakerMonitor();
