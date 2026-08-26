@@ -4455,6 +4455,43 @@ public class PipelineHazardAnalyzerTests
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
             });
             """);
+        var additionalMutations = new[]
+        {
+            """
+            var events = new System.Collections.Generic.Dictionary<int, RetryEvent>();
+            void Add() => events.Add(0, item);
+            Add();
+            """,
+            """
+            var events = new RetryEvent?[1];
+            void Set() => events[0] ??= item;
+            Set();
+            """,
+            """
+            var events = new System.Collections.Generic.Dictionary<int, RetryEvent>();
+            void Set() => events[0] = item;
+            Set();
+            """,
+            """
+            var events = new RetryEvent[1];
+            void Fill() => Array.Fill(events, item);
+            Fill();
+            """,
+            """
+            object[] events = new object[1];
+            void Copy() => Array.Copy(new object[] { item }, events, 1);
+            Copy();
+            """,
+            """
+            var events = new System.Collections.Generic.List<RetryEvent>();
+            void Add()
+            {
+                events.Add(item);
+                Add();
+            }
+            Add();
+            """,
+        };
 
         await AssertRuleAsync(
             invocationDiagnostics,
@@ -4476,6 +4513,18 @@ public class PipelineHazardAnalyzerTests
             nestedInvocationDiagnostics,
             "KEV014",
             DiagnosticSeverity.Warning);
+        foreach (var mutation in additionalMutations)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                {
+                    {{mutation}}
+                    ThreadPool.QueueUserWorkItem(static state => { }, events);
+                });
+                """);
+
+            await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+        }
     }
 
     [Test]
@@ -4518,6 +4567,50 @@ public class PipelineHazardAnalyzerTests
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
             });
             """);
+        var additionalCleanups = new[]
+        {
+            """
+            var events = new System.Collections.Generic.List<RetryEvent> { item };
+            void Cleanup() => events.Remove(item);
+            Cleanup();
+            """,
+            """
+            var events = new System.Collections.Generic.List<RetryEvent>();
+            events.Add(item);
+            void Cleanup() => events.RemoveAt(0);
+            Cleanup();
+            """,
+            """
+            var events = new System.Collections.Generic.Queue<RetryEvent>(new[] { item });
+            void Cleanup() => events.Dequeue();
+            Cleanup();
+            """,
+            """
+            var events = new[] { item };
+            void Cleanup() => Array.Clear(events);
+            Cleanup();
+            """,
+            """
+            var events = new[] { item };
+            void Cleanup() => Array.Copy(new[] { default(RetryEvent) }, events, 1);
+            Cleanup();
+            """,
+            """
+            var events = new System.Collections.Generic.List<RetryEvent> { item };
+            void Inner() => events.Clear();
+            void Outer() => Inner();
+            Outer();
+            """,
+            """
+            var events = new System.Collections.Generic.List<RetryEvent> { item };
+            void Cleanup()
+            {
+                events.Clear();
+                Cleanup();
+            }
+            Cleanup();
+            """,
+        };
 
         await Assert.That(clearDiagnostics).IsEmpty();
         await Assert.That(overwriteDiagnostics).IsEmpty();
@@ -4525,6 +4618,18 @@ public class PipelineHazardAnalyzerTests
             conditionalDiagnostics,
             "KEV014",
             DiagnosticSeverity.Warning);
+        foreach (var cleanup in additionalCleanups)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                {
+                    {{cleanup}}
+                    ThreadPool.QueueUserWorkItem(static state => { }, events);
+                });
+                """);
+
+            await Assert.That(diagnostics).IsEmpty();
+        }
     }
 
     [Test]

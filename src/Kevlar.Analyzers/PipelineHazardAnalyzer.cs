@@ -5004,15 +5004,10 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         if (invocation.TargetMethod.Name is "Fill" or "Clear")
         {
-            return invocation.Arguments.FirstOrDefault()?.Value;
+            return GetArgumentValue(invocation, "array");
         }
 
-        return invocation.Arguments.FirstOrDefault(static argument =>
-                argument.Parameter?.Name == "destinationArray")?.Value
-            ?? invocation.Arguments
-                .Where(static argument => IsArrayLike(argument.Value))
-                .Skip(1)
-                .FirstOrDefault()?.Value;
+        return GetArgumentValue(invocation, "destinationArray");
     }
 
     private static IOperation? GetStaticArrayRetainedValue(
@@ -5025,16 +5020,12 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         if (invocation.TargetMethod.Name == "Fill")
         {
-            return invocation.Arguments.FirstOrDefault(static argument =>
-                argument.Parameter?.Name == "value")?.Value;
+            return GetArgumentValue(invocation, "value");
         }
 
         if (invocation.TargetMethod.Name is "Copy" or "ConstrainedCopy")
         {
-            return invocation.Arguments.FirstOrDefault(static argument =>
-                    argument.Parameter?.Name == "sourceArray")?.Value
-                ?? invocation.Arguments.FirstOrDefault(static argument =>
-                    IsArrayLike(argument.Value))?.Value;
+            return GetArgumentValue(invocation, "sourceArray");
         }
 
         return null;
@@ -5053,17 +5044,14 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             {
                 Initializer: { } sourceInitializer,
             }
-            || invocation.Arguments.FirstOrDefault(static argument =>
-                    argument.Parameter?.Name == "length")?.Value.ConstantValue
+            || GetArgumentValue(invocation, "length")?.ConstantValue
                 is not { HasValue: true, Value: int copiedLength })
         {
             yield return retainedValue;
             yield break;
         }
 
-        var sourceIndexArgument = invocation.Arguments.FirstOrDefault(static argument =>
-            argument.Parameter?.Name == "sourceIndex");
-        var sourceIndex = sourceIndexArgument?.Value.ConstantValue switch
+        var sourceIndex = GetArgumentValue(invocation, "sourceIndex")?.ConstantValue switch
         {
             null => 0,
             { HasValue: true, Value: int value } => value,
@@ -5089,19 +5077,32 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     {
         if (invocation.TargetMethod.Name is not ("Copy" or "ConstrainedCopy")
             || !TryGetKnownArrayLength(initializer, out var destinationLength)
-            || invocation.Arguments.FirstOrDefault(static argument =>
-                    argument.Parameter?.Name == "length")?.Value.ConstantValue
+            || GetArgumentValue(invocation, "length")?.ConstantValue
                 is not { HasValue: true, Value: int copiedLength }
             || copiedLength != destinationLength)
         {
             return false;
         }
 
-        var destinationIndex = invocation.Arguments.FirstOrDefault(static argument =>
-            argument.Parameter?.Name == "destinationIndex");
+        var destinationIndex = GetArgumentValue(invocation, "destinationIndex");
         return destinationIndex is null
-            || destinationIndex.Value.ConstantValue is
+            || destinationIndex.ConstantValue is
                 { HasValue: true, Value: 0 };
+    }
+
+    private static IOperation? GetArgumentValue(
+        IInvocationOperation invocation,
+        string parameterName)
+    {
+        foreach (var argument in invocation.Arguments)
+        {
+            if (argument.Parameter?.Name == parameterName)
+            {
+                return argument.Value;
+            }
+        }
+
+        return null;
     }
 
     private static bool TryGetKnownArrayLength(
@@ -5127,14 +5128,6 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         length = 0;
         return false;
-    }
-
-    private static bool IsArrayLike(IOperation operation)
-    {
-        var type = Unwrap(operation)?.Type;
-        return type is IArrayTypeSymbol
-            || type is INamedTypeSymbol { Name: "Array" } namedType
-                && namedType.ContainingNamespace.ToDisplayString() == "System";
     }
 
     private static bool IsDictionaryType(INamedTypeSymbol type) =>
