@@ -619,7 +619,12 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                         node is not AnonymousFunctionExpressionSyntax
                             and not LocalFunctionStatementSyntax)
                     .ToArray();
-                var awaits = nodes.OfType<AwaitExpressionSyntax>().ToArray();
+                var awaits = nodes.OfType<AwaitExpressionSyntax>()
+                    .Where(awaitExpression => !IsKnownCompletedAwait(
+                        awaitExpression,
+                        semanticModel,
+                        context.CancellationToken))
+                    .ToArray();
                 if (awaits.Length == 0)
                 {
                     continue;
@@ -3219,47 +3224,86 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         IMethodSymbol? constructor,
         IParameterSymbol parameter,
         SemanticModel? currentSemanticModel,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        HashSet<ISymbol>? visitedConstructors = null)
     {
         if (constructor is null || currentSemanticModel is null)
         {
             return false;
         }
 
-        foreach (var syntaxReference in constructor.DeclaringSyntaxReferences)
+        visitedConstructors ??= new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+        if (!visitedConstructors.Add(constructor))
         {
-            var syntax = syntaxReference.GetSyntax(cancellationToken);
-            if (syntax is RecordDeclarationSyntax
-                && constructor.ContainingType.GetMembers(parameter.Name)
-                    .OfType<IPropertySymbol>()
-                    .Any())
-            {
-                return true;
-            }
-
-#pragma warning disable RS1030 // Source-backed constructors may be declared in another tree.
-            var semanticModel = syntax.SyntaxTree == currentSemanticModel.SyntaxTree
-                ? currentSemanticModel
-                : currentSemanticModel.Compilation.GetSemanticModel(syntax.SyntaxTree);
-#pragma warning restore RS1030
-            var body = GetFunctionBody(syntax);
-            var bodyOperation = body is null
-                ? null
-                : semanticModel.GetOperation(body, cancellationToken);
-            if (bodyOperation is not null
-                && DescendantOperations(bodyOperation)
-                    .OfType<ISimpleAssignmentOperation>()
-                    .Any(assignment =>
-                        assignment.Target is IFieldReferenceOperation { Field.IsStatic: false }
-                            or IPropertyReferenceOperation { Property.IsStatic: false }
-                        && Unwrap(assignment.Value) is IParameterReferenceOperation reference
-                        && SymbolEqualityComparer.Default.Equals(reference.Parameter, parameter)))
-            {
-                return true;
-            }
+            return false;
         }
 
-        return false;
+        try
+        {
+            foreach (var syntaxReference in constructor.DeclaringSyntaxReferences)
+            {
+                var syntax = syntaxReference.GetSyntax(cancellationToken);
+                if (syntax is RecordDeclarationSyntax
+                    && constructor.ContainingType.GetMembers(parameter.Name)
+                        .OfType<IPropertySymbol>()
+                        .Any())
+                {
+                    return true;
+                }
+
+#pragma warning disable RS1030 // Source-backed constructors may be declared in another tree.
+                var semanticModel = syntax.SyntaxTree == currentSemanticModel.SyntaxTree
+                    ? currentSemanticModel
+                    : currentSemanticModel.Compilation.GetSemanticModel(syntax.SyntaxTree);
+#pragma warning restore RS1030
+                var body = GetFunctionBody(syntax);
+                var bodyOperation = body is null
+                    ? null
+                    : semanticModel.GetOperation(body, cancellationToken);
+                if (bodyOperation is not null
+                    && DescendantOperations(bodyOperation)
+                        .OfType<ISimpleAssignmentOperation>()
+                        .Any(assignment =>
+                            assignment.Target is IFieldReferenceOperation { Field.IsStatic: false }
+                                or IPropertyReferenceOperation { Property.IsStatic: false }
+                            && Unwrap(assignment.Value) is IParameterReferenceOperation reference
+                            && SymbolEqualityComparer.Default.Equals(reference.Parameter, parameter)))
+                {
+                    return true;
+                }
+
+                if (syntax is ConstructorDeclarationSyntax { Initializer: { } initializer }
+                    && semanticModel.GetSymbolInfo(initializer, cancellationToken).Symbol
+                        is IMethodSymbol delegatedConstructor)
+                {
+                    foreach (var argument in initializer.ArgumentList.Arguments)
+                    {
+                        if (semanticModel.GetOperation(argument, cancellationToken) is IArgumentOperation
+                            {
+                                Parameter: { } delegatedParameter,
+                                Value: { } value,
+                            }
+                            && Unwrap(value) is IParameterReferenceOperation reference
+                            && SymbolEqualityComparer.Default.Equals(reference.Parameter, parameter)
+                            && IsConstructorParameterStored(
+                                delegatedConstructor,
+                                delegatedParameter,
+                                semanticModel,
+                                cancellationToken,
+                                visitedConstructors))
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+        finally
+        {
+            visitedConstructors.Remove(constructor);
+        }
     }
 
     private static bool IsKnownCompositeState(IOperation operation) =>

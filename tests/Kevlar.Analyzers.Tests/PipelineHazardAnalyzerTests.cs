@@ -186,6 +186,32 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Ignores_Completed_Awaits_In_Source_Methods()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = item;
+                        _ = AuditAsync();
+                    });
+
+                private async Task AuditAsync()
+                {
+                    await Task.CompletedTask;
+                    Console.WriteLine(_event.Context.ShieldName);
+                }
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV013");
+    }
+
+    [Test]
     public async Task KEV014_Tracks_PostAwait_Event_Values_In_Wrapper_Locals()
     {
         var diagnostics = await AnalyzeSourceAsync("""
@@ -270,6 +296,35 @@ public class PipelineHazardAnalyzerTests
                 }
             }
             """);
+        var delegatedConstructor = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        var holder = new Holder(item);
+                        await Task.Yield();
+                        Consume(holder.Event.Context);
+                    });
+
+                private static void Consume(KevlarContext context) { }
+
+                private sealed class Holder
+                {
+                    public Holder(RetryEvent item)
+                        : this(item, 0)
+                    {
+                    }
+
+                    private Holder(RetryEvent item, int _)
+                    {
+                        Event = item;
+                    }
+
+                    public RetryEvent Event { get; }
+                }
+            }
+            """);
         var collectionWrapper = await AnalyzeSourceAsync("""
             public sealed class TestSubject
             {
@@ -295,6 +350,11 @@ public class PipelineHazardAnalyzerTests
             "KEV014",
             DiagnosticSeverity.Warning);
         await AssertRuleAsync(emptyInitializer, "KEV013");
+        await AssertRuleAsync(Without(delegatedConstructor, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(delegatedConstructor, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
         await AssertRuleAsync(Without(collectionWrapper, "KEV014"), "KEV013");
         await AssertRuleAsync(
             Without(collectionWrapper, "KEV013"),
