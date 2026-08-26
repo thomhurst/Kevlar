@@ -106,9 +106,9 @@ $tagIndex = $publish.IndexOf('- name: Create and push release tag', [StringCompa
 $packageIndex = $publish.IndexOf('- name: Push to NuGet', [StringComparison]::Ordinal)
 $releaseIndex = $publish.IndexOf('- name: Create GitHub release', [StringComparison]::Ordinal)
 if ($tagIndex -lt 0 -or $packageIndex -lt 0 -or $releaseIndex -lt 0 -or
-    $tagIndex -ge $packageIndex -or $packageIndex -ge $releaseIndex)
+    $packageIndex -ge $tagIndex -or $tagIndex -ge $releaseIndex)
 {
-    throw 'Release ordering must be tag, NuGet push, then GitHub release.'
+    throw 'Release ordering must be NuGet push, tag, then GitHub release.'
 }
 
 $githubReleaseScript = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'Publish-GitHubRelease.ps1') -Raw
