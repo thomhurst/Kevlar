@@ -4074,6 +4074,46 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Tracks_Static_Array_Mutations()
+    {
+        var fillDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new RetryEvent[1];
+                Array.Fill(events, item);
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+        var clearDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new[] { item };
+                Array.Clear(events);
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+        var conditionalClearDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new[] { item };
+                if (DateTime.UtcNow.Ticks == 0)
+                {
+                    Array.Clear(events);
+                }
+
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await AssertRuleAsync(fillDiagnostics, "KEV014", DiagnosticSeverity.Warning);
+        await Assert.That(clearDiagnostics).IsEmpty();
+        await AssertRuleAsync(
+            conditionalClearDiagnostics,
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
     public async Task KEV014_Distinguishes_Nested_Deferred_State_Slots()
     {
         var diagnostics = await AnalyzeBodyAsync("""
@@ -4592,6 +4632,29 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Tracks_Concurrent_Dictionary_Upserts()
+    {
+        var mutations = new[]
+        {
+            "events.GetOrAdd(item, default(RetryEvent));",
+            "events.AddOrUpdate(item, default(RetryEvent), static (_, current) => current);",
+        };
+        foreach (var mutation in mutations)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                {
+                    var events = new System.Collections.Concurrent.ConcurrentDictionary<RetryEvent, RetryEvent>();
+                    {{mutation}}
+                    ThreadPool.QueueUserWorkItem(static state => { }, events);
+                });
+                """);
+
+            await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+        }
+    }
+
+    [Test]
     public async Task KEV014_Tracks_Dictionary_Indexer_Keys()
     {
         var diagnostics = await AnalyzeBodyAsync("""
@@ -4890,6 +4953,29 @@ public class PipelineHazardAnalyzerTests
             """);
 
         await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Handles_LinkedList_Endpoint_Removals()
+    {
+        var statements = new[]
+        {
+            "events.AddFirst(item); events.RemoveFirst();",
+            "events.AddLast(item); events.RemoveLast();",
+        };
+        foreach (var statement in statements)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                {
+                    var events = new System.Collections.Generic.LinkedList<RetryEvent>();
+                    {{statement}}
+                    ThreadPool.QueueUserWorkItem(static state => { }, events);
+                });
+                """);
+
+            await Assert.That(diagnostics).IsEmpty();
+        }
     }
 
     [Test]

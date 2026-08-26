@@ -59,12 +59,14 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             "AddFirst",
             "AddLast",
             "AddRange",
+            "AddOrUpdate",
             "Enqueue",
             "EnqueueRange",
             "Push",
             "PushRange",
             "Insert",
             "InsertRange",
+            "GetOrAdd",
             "UnionWith",
             "TryAdd");
 
@@ -3770,13 +3772,63 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         {
             if (semanticModel.GetOperation(
                     invocationSyntax,
-                    context.CancellationToken) is not IInvocationOperation invocation
-                || !IsRootedInLocal(
+                    context.CancellationToken) is not IInvocationOperation invocation)
+            {
+                continue;
+            }
+
+            var isStaticArrayMutation = IsKnownStaticArrayMutation(invocation.TargetMethod)
+                && invocation.Arguments.Length > 0
+                && IsRootedInLocal(
+                    invocation.Arguments[0].Value,
+                    localReference.Local,
+                    context,
+                    visitedLocals: null);
+            if (!isStaticArrayMutation
+                && !IsRootedInLocal(
                     GetReceiver(invocation),
                     localReference.Local,
                     context,
                     visitedLocals: null))
             {
+                continue;
+            }
+
+            if (isStaticArrayMutation)
+            {
+                if (invocation.TargetMethod.Name == "Clear"
+                    && invocationSyntax.ArgumentList.Arguments.Count == 1)
+                {
+                    kills.Add((
+                        invocation.Syntax,
+                        Slot: null,
+                        ClearsAll: true,
+                        Value: null,
+                        RemovesOne: false,
+                        Receiver: "root"));
+                }
+                else if (invocation.TargetMethod.Name == "Fill"
+                    && invocation.Arguments.Length > 1
+                    && TryFindDeferredStateContext(
+                        invocation.Arguments[1].Value,
+                        context,
+                        knownTypes,
+                        visitedLocals,
+                        out capturedContext))
+                {
+                    origins.Add((
+                        invocation.Syntax,
+                        capturedContext,
+                        Slot: null,
+                        GetDeferredValueKey(
+                            invocation.Arguments[1].Value,
+                            context,
+                            visitedLocals: null),
+                        Receiver: "root",
+                        MayRetainMultiple: true,
+                        AllowsDuplicateValues: true));
+                }
+
                 continue;
             }
 
@@ -4216,6 +4268,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         && RetainingCollectionNamespaces.Contains(
             method.ContainingNamespace.ToDisplayString());
 
+    private static bool IsKnownStaticArrayMutation(IMethodSymbol method) =>
+        method.Name is "Fill" or "Clear"
+        && method.ContainingType.Name == "Array"
+        && method.ContainingNamespace.ToDisplayString() == "System";
+
     private static bool IsDictionaryType(INamedTypeSymbol type) =>
         IsDictionaryInterface(type)
         || type.AllInterfaces.Any(IsDictionaryInterface);
@@ -4236,7 +4293,13 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             == "System.Collections.Generic";
 
     private static bool IsKnownSingleRemovingMutation(IMethodSymbol method) =>
-        method.Name is "Dequeue" or "Pop" or "TryDequeue" or "TryPop" or "TryTake"
+        method.Name is "Dequeue"
+            or "Pop"
+            or "RemoveFirst"
+            or "RemoveLast"
+            or "TryDequeue"
+            or "TryPop"
+            or "TryTake"
         && RetainingCollectionNamespaces.Contains(
             method.ContainingNamespace.ToDisplayString());
 
@@ -6939,7 +7002,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 referenceCount++;
                 if ((allowMemberMutation ? IsReassigned(identifier) : IsWritten(identifier))
                     || local.Type is IArrayTypeSymbol
-                        && IsEscapingArrayReference(identifier, localReference.Syntax)
+                        && IsEscapingArrayReference(
+                            identifier,
+                            localReference.Syntax,
+                            semanticModel,
+                            context.CancellationToken)
                     || requireSingleUse && referenceCount > 1)
                 {
                     initializer = null;
@@ -6982,7 +7049,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
     private static bool IsEscapingArrayReference(
         IdentifierNameSyntax identifier,
-        SyntaxNode permittedReference)
+        SyntaxNode permittedReference,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken)
     {
         if (identifier.SyntaxTree == permittedReference.SyntaxTree
             && identifier.Span == permittedReference.Span)
@@ -6994,6 +7063,12 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         {
             switch (ancestor)
             {
+                case ArgumentSyntax argument
+                    when IsKnownStaticArrayMutationArgument(
+                        argument,
+                        semanticModel,
+                        cancellationToken):
+                    return false;
                 case ArgumentSyntax:
                 case EqualsValueClauseSyntax:
                 case ReturnStatementSyntax:
@@ -7008,6 +7083,20 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         return true;
     }
+
+    private static bool IsKnownStaticArrayMutationArgument(
+        ArgumentSyntax argument,
+        SemanticModel semanticModel,
+        CancellationToken cancellationToken) =>
+        argument.Parent is ArgumentListSyntax
+        {
+            Arguments: { Count: > 0 } arguments,
+            Parent: InvocationExpressionSyntax invocationSyntax,
+        }
+        && arguments[0] == argument
+        && semanticModel.GetOperation(invocationSyntax, cancellationToken)
+            is IInvocationOperation invocation
+        && IsKnownStaticArrayMutation(invocation.TargetMethod);
 
     private static bool IsWritten(IdentifierNameSyntax identifier)
     {
