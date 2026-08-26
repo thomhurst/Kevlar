@@ -179,10 +179,50 @@ public class PipelineHazardAnalyzerTests
                 }
             }
             """);
+        var snapshot = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        var snapshot = new RetrySnapshot(item);
+                        await Task.Yield();
+                        Console.WriteLine(snapshot.RetryNumber);
+                    });
+
+                private sealed class RetrySnapshot
+                {
+                    public RetrySnapshot(RetryEvent item)
+                    {
+                        RetryNumber = item.RetryNumber;
+                    }
+
+                    public int RetryNumber { get; }
+                }
+            }
+            """);
+        var collectionWrapper = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        var events = new System.Collections.Generic.List<RetryEvent> { default, item };
+                        await Task.Yield();
+                        Console.WriteLine(events[1].RetryNumber);
+                    });
+            }
+            """);
 
         await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
         await AssertRuleAsync(
             Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(snapshot, "KEV013");
+        await AssertRuleAsync(Without(collectionWrapper, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(collectionWrapper, "KEV013"),
             "KEV014",
             DiagnosticSeverity.Warning);
     }
@@ -2277,6 +2317,45 @@ public class PipelineHazardAnalyzerTests
             """);
 
         await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Factory_Produced_Event_Defaults()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Schedule()
+                {
+                    var unrelated = CreateDefault();
+                    _ = Task.Run(() => Console.WriteLine(unrelated.RetryNumber));
+                }
+
+                private static RetryEvent CreateDefault() => default;
+            }
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_Factory_Results_From_Event_Arguments()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        var retained = Identity(item);
+                        _ = Task.Run(() => Console.WriteLine(retained.RetryNumber));
+                    });
+
+                private static RetryEvent Identity(RetryEvent item) => item;
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]

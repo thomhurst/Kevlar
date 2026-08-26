@@ -1164,7 +1164,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         var operation = Unwrap(semanticModel?.GetOperation(expression, cancellationToken));
         if (operation is not null
-            && GetRetainedValueParts(operation).Any(part =>
+            && GetStoredAliasValueParts(operation).Any(part =>
                 part.Syntax is ExpressionSyntax partExpression
                 && HasReachableRetainedAlias(
                     partExpression,
@@ -1216,6 +1216,37 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     cancellationToken),
             _ => false,
         };
+    }
+
+    private static IEnumerable<IOperation> GetStoredAliasValueParts(IOperation operation) =>
+        operation is IObjectCreationOperation objectCreation
+            ? GetObjectInitializerValues(objectCreation.Initializer)
+            : GetRetainedValueParts(operation);
+
+    private static IEnumerable<IOperation> GetObjectInitializerValues(
+        IObjectOrCollectionInitializerOperation? initializer)
+    {
+        if (initializer is null)
+        {
+            yield break;
+        }
+
+        foreach (var item in initializer.Initializers)
+        {
+            if (item is ISimpleAssignmentOperation assignment)
+            {
+                yield return assignment.Value;
+                continue;
+            }
+
+            if (item is IInvocationOperation invocation)
+            {
+                foreach (var argument in invocation.Arguments)
+                {
+                    yield return argument.Value;
+                }
+            }
+        }
     }
 
     private static bool HasReachableOrigin(
@@ -2876,6 +2907,36 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     return true;
                 }
             }
+        }
+
+        if (operation is IInvocationOperation invocationOperation)
+        {
+            if (invocationOperation.Instance is { } instance
+                && TryFindDeferredStateContext(
+                    instance,
+                    context,
+                    knownTypes,
+                    visitedLocals,
+                    out capturedContext))
+            {
+                return true;
+            }
+
+            foreach (var argument in invocationOperation.Arguments)
+            {
+                if (TryFindDeferredStateContext(
+                    argument.Value,
+                    context,
+                    knownTypes,
+                    visitedLocals,
+                    out capturedContext))
+                {
+                    return true;
+                }
+            }
+
+            capturedContext = null!;
+            return false;
         }
 
         if (operation is ILocalReferenceOperation localReference)
