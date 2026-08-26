@@ -713,15 +713,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     var symbol = semanticModel.GetSymbolInfo(
                         identifier,
                         context.CancellationToken).Symbol;
-                    var type = symbol switch
-                    {
-                        IFieldSymbol field => field.Type,
-                        IPropertySymbol property => property.Type,
-                        _ => null,
-                    };
                     if (symbol is not null
-                        && callbackRetainedSymbols.Contains(symbol)
-                        && ContainsEventContextReference(type, knownTypes))
+                        && callbackRetainedSymbols.Contains(symbol))
                     {
                         retainedSymbolSeeds.Add(symbol);
                     }

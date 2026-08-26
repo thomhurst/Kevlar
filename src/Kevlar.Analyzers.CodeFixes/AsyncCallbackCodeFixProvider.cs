@@ -122,12 +122,11 @@ internal sealed class AsyncCallbackCodeFixProvider : CodeFixProvider
                     return true;
                 }
 
-                if (TryGetStableDelegateBody(
-                        invocation,
-                        pending.SemanticModel,
-                        cancellationToken,
-                        visitedDelegates,
-                        out var delegateBody))
+                foreach (var delegateBody in GetStableDelegateBodies(
+                             invocation,
+                             pending.SemanticModel,
+                             cancellationToken,
+                             visitedDelegates))
                 {
                     pendingBodies.Push((delegateBody, pending.SemanticModel));
                 }
@@ -136,17 +135,14 @@ internal sealed class AsyncCallbackCodeFixProvider : CodeFixProvider
                 {
                     foreach (var expression in GetDelegateValueParts(argument.Expression))
                     {
-                        if (!TryGetStableDelegateExpressionBody(
-                                expression,
-                                pending.SemanticModel,
-                                cancellationToken,
-                                visitedDelegates,
-                                out var argumentBody))
+                        foreach (var argumentBody in GetStableDelegateExpressionBodies(
+                                     expression,
+                                     pending.SemanticModel,
+                                     cancellationToken,
+                                     visitedDelegates))
                         {
-                            continue;
+                            pendingBodies.Push((argumentBody, pending.SemanticModel));
                         }
-
-                        pendingBodies.Push((argumentBody, pending.SemanticModel));
                     }
                 }
 
@@ -196,12 +192,11 @@ internal sealed class AsyncCallbackCodeFixProvider : CodeFixProvider
         return current.Parent is AwaitExpressionSyntax;
     }
 
-    private static bool TryGetStableDelegateBody(
+    private static IEnumerable<SyntaxNode> GetStableDelegateBodies(
         InvocationExpressionSyntax invocation,
         SemanticModel semanticModel,
         CancellationToken cancellationToken,
-        HashSet<ISymbol> visited,
-        out SyntaxNode body)
+        HashSet<ISymbol> visited)
     {
         var invokedExpression = invocation.Expression is MemberAccessExpressionSyntax
         {
@@ -209,31 +204,28 @@ internal sealed class AsyncCallbackCodeFixProvider : CodeFixProvider
         } memberAccess
             ? memberAccess.Expression
             : invocation.Expression;
-        return TryGetStableDelegateExpressionBody(
+        return GetStableDelegateExpressionBodies(
             invokedExpression,
             semanticModel,
             cancellationToken,
-            visited,
-            out body);
+            visited);
     }
 
-    private static bool TryGetStableDelegateExpressionBody(
+    private static IEnumerable<SyntaxNode> GetStableDelegateExpressionBodies(
         ExpressionSyntax expression,
         SemanticModel semanticModel,
         CancellationToken cancellationToken,
-        HashSet<ISymbol> visited,
-        out SyntaxNode body)
+        HashSet<ISymbol> visited)
     {
         if (UnwrapReceiver(expression) is AnonymousFunctionExpressionSyntax anonymousExpression)
         {
-            body = anonymousExpression.Body;
-            return true;
+            yield return anonymousExpression.Body;
+            yield break;
         }
 
         if (UnwrapReceiver(expression) is not IdentifierNameSyntax identifier)
         {
-            body = null!;
-            return false;
+            yield break;
         }
 
         var symbol = semanticModel.GetSymbolInfo(identifier, cancellationToken).Symbol;
@@ -247,8 +239,8 @@ internal sealed class AsyncCallbackCodeFixProvider : CodeFixProvider
                 is LocalFunctionStatementSyntax localFunctionDeclaration
             && GetSourceMethodBody(localFunctionDeclaration) is { } localFunctionBody)
         {
-            body = localFunctionBody;
-            return true;
+            yield return localFunctionBody;
+            yield break;
         }
 
         if (symbol is not ILocalSymbol { Type.TypeKind: TypeKind.Delegate } local
@@ -260,15 +252,22 @@ internal sealed class AsyncCallbackCodeFixProvider : CodeFixProvider
                 Initializer.Value: { } initializer,
             } declarator
             || semanticModel.SyntaxTree != declarator.SyntaxTree
-            || IsWrittenAfterDeclaration(local, declarator, semanticModel, cancellationToken)
-            || UnwrapReceiver(initializer) is not AnonymousFunctionExpressionSyntax anonymous)
+            || IsWrittenAfterDeclaration(local, declarator, semanticModel, cancellationToken))
         {
-            body = null!;
-            return false;
+            yield break;
         }
 
-        body = anonymous.Body;
-        return true;
+        foreach (var part in GetDelegateValueParts(initializer))
+        {
+            foreach (var body in GetStableDelegateExpressionBodies(
+                         part,
+                         semanticModel,
+                         cancellationToken,
+                         visited))
+            {
+                yield return body;
+            }
+        }
     }
 
     private static IEnumerable<ExpressionSyntax> GetDelegateValueParts(

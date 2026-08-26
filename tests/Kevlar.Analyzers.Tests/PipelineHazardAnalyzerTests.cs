@@ -2416,6 +2416,22 @@ public class PipelineHazardAnalyzerTests
                 private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
             }
             """);
+        var incompatibleConditionalDelegateLocalDiscard = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure(bool enabled) =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        Action<int> work = enabled
+                            ? _ => _ = AuditAsync(item)
+                            : _ => { };
+                        Array.ForEach(new[] { 0 }, work);
+                        await Task.Yield();
+                    });
+
+                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            }
+            """);
         var incompatibleSwitchDelegateDiscard = await GetCodeFixAsync("""
             public class TestSubject
             {
@@ -2577,6 +2593,8 @@ public class PipelineHazardAnalyzerTests
         await Assert.That(incompatibleConstructedDelegateDiscard.ChangedText).IsNull();
         await Assert.That(incompatibleConditionalDelegateDiscard.ActionCount).IsEqualTo(0);
         await Assert.That(incompatibleConditionalDelegateDiscard.ChangedText).IsNull();
+        await Assert.That(incompatibleConditionalDelegateLocalDiscard.ActionCount).IsEqualTo(0);
+        await Assert.That(incompatibleConditionalDelegateLocalDiscard.ChangedText).IsNull();
         await Assert.That(incompatibleSwitchDelegateDiscard.ActionCount).IsEqualTo(0);
         await Assert.That(incompatibleSwitchDelegateDiscard.ChangedText).IsNull();
         await Assert.That(incompatibleCoalescedDelegateDiscard.ActionCount).IsEqualTo(0);
@@ -3271,6 +3289,45 @@ public class PipelineHazardAnalyzerTests
             """);
 
         await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Retained_Wrappers_In_Async_Instance_Methods()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private Holder _holder = null!;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _holder = new Holder(item);
+                        _ = AuditStoredAsync();
+                    });
+
+                private async Task AuditStoredAsync()
+                {
+                    await Task.Yield();
+                    Console.WriteLine(_holder.Event.Context.ShieldName);
+                }
+
+                private sealed class Holder
+                {
+                    public Holder(RetryEvent item)
+                    {
+                        Event = item;
+                    }
+
+                    public RetryEvent Event { get; }
+                }
+            }
+            """);
+
         await AssertRuleAsync(
             Without(diagnostics, "KEV013"),
             "KEV014",
