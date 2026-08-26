@@ -20,7 +20,11 @@ public class DefaultHandlingTests
             {
                 options.MaxRetries = 3;
                 options.Backoff = Backoff.None;
-                options.OnRetry = _ => retries++;
+                options.OnRetry = _ =>
+                {
+                    retries++;
+                    return default;
+                };
             });
 
             var outcome = await shield.ExecuteOutcomeAsync<int>(_ =>

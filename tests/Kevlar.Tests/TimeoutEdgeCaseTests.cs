@@ -13,7 +13,7 @@ public class TimeoutEdgeCaseTests
         var shield = Shield.Timeout(options =>
         {
             options.Timeout = TimeSpan.FromMinutes(1);
-            options.OnTimeout = _ => timedOut = true;
+            options.OnTimeout = _ => { timedOut = true; return default; };
         }).WithTimeProvider(timeProvider);
 
         // The delegate ignores its token and completes anyway; the timeout is cooperative,
@@ -95,7 +95,7 @@ public class TimeoutEdgeCaseTests
         var shield = Shield.Timeout(options =>
         {
             options.Timeout = TimeSpan.FromMinutes(10);
-            options.OnTimeout = _ => timedOut = true;
+            options.OnTimeout = _ => { timedOut = true; return default; };
         });
 
         var task = shield.ExecuteAsync(async token =>
@@ -178,7 +178,7 @@ public class TimeoutEdgeCaseTests
             .Timeout(options =>
             {
                 options.Timeout = TimeSpan.FromSeconds(1);
-                options.OnTimeout = timeout => seenShieldName = timeout.Context.ShieldName;
+                options.OnTimeout = timeout => { seenShieldName = timeout.Context.ShieldName; return default; };
             })
             .WithName("timeout-shield")
             .WithTimeProvider(fakeTime);

@@ -13,7 +13,11 @@ public class RetryTests
         {
             options.MaxRetries = 3;
             options.Backoff = Backoff.None;
-            options.OnRetry = _ => notifications++;
+            options.OnRetry = _ =>
+            {
+                notifications++;
+                return default;
+            };
         });
 
         var exception = await Assert.That(async () => await shield.ExecuteWithContextAsync<int, int>(
@@ -179,7 +183,11 @@ public class RetryTests
         {
             options.MaxRetries = 3;
             options.Backoff = Backoff.None;
-            options.OnRetry = retry => events.Add((retry.RetryNumber, retry.Delay, retry.Exception));
+            options.OnRetry = retry =>
+            {
+                events.Add((retry.RetryNumber, retry.Delay, retry.Exception));
+                return default;
+            };
         });
 
         await Assert.That(async () => await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
@@ -202,9 +210,13 @@ public class RetryTests
             options.DelayGenerator = retry =>
             {
                 generated.Add(retry.RetryNumber);
-                return TimeSpan.Zero;
+                return new(TimeSpan.Zero);
             };
-            options.OnRetry = retry => notified.Add(retry.RetryNumber);
+            options.OnRetry = retry =>
+            {
+                notified.Add(retry.RetryNumber);
+                return default;
+            };
         });
 
         await Assert.That(() => shield.Execute<int>(static _ => throw new InvalidOperationException()))
@@ -223,8 +235,12 @@ public class RetryTests
         {
             options.MaxRetries = 2;
             options.Backoff = Backoff.Constant(TimeSpan.FromHours(1));
-            options.DelayGenerator = _ => TimeSpan.Zero;
-            options.OnRetry = retry => seenDelays.Add(retry.Delay);
+            options.DelayGenerator = _ => new(TimeSpan.Zero);
+            options.OnRetry = retry =>
+            {
+                seenDelays.Add(retry.Delay);
+                return default;
+            };
         });
 
         await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>

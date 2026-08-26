@@ -28,7 +28,7 @@ public class CircuitBreakerBenchmarks
     private static readonly Shield KevlarAsyncCallbackBreaker = Shield.CircuitBreaker(options =>
     {
         ConfigureKevlarRatioBreaker(options);
-        options.OnStateChangedAsync = static _ => default;
+        options.OnStateChanged = static _ => default;
     });
 
     private static readonly CircuitBreakerMonitor KevlarManualControl = new();

@@ -2,10 +2,11 @@ namespace Kevlar;
 
 /// <summary>Configuration for a retry strategy.</summary>
 /// <remarks>
-/// Before each retry, callbacks run in this order: <see cref="DelayGenerator"/>,
-/// <see cref="DelayGeneratorAsync"/>, <see cref="OnRetry"/>, then <see cref="OnRetryAsync"/>.
+/// Before each retry, <see cref="DelayGenerator"/> runs and is awaited, then <see cref="OnRetry"/>.
 /// If the caller's cancellation token is cancelled by the time the callbacks complete, the retry
-/// stops and surfaces caller cancellation.
+/// stops and surfaces caller cancellation. Hooks that complete synchronously (for example by
+/// returning <see langword="default"/>) add no overhead and remain compatible with synchronous
+/// <c>Execute</c>.
 /// </remarks>
 public sealed class RetryOptions
 {
@@ -46,27 +47,21 @@ public sealed class RetryOptions
     /// </summary>
     public TimeSpan? MaxDelay { get; set; }
 
-    /// <summary>Invoked synchronously before each retry sleeps.</summary>
-    public Action<RetryEvent>? OnRetry { get; set; }
-
-    /// <summary>Invoked and awaited before each retry sleeps.</summary>
-    public Func<RetryEvent, ValueTask>? OnRetryAsync { get; set; }
+    /// <summary>
+    /// Invoked and awaited before each retry sleeps. Return <see langword="default"/> from a
+    /// synchronous callback. Do not retain the pooled <see cref="RetryEvent.Context"/> after the
+    /// returned task completes.
+    /// </summary>
+    public Func<RetryEvent, ValueTask>? OnRetry { get; set; }
 
     /// <summary>
     /// Overrides the computed delay for a specific retry. Receives the event with the
     /// backoff-computed delay; return a non-null value to replace it (for example, from an
     /// HTTP <c>Retry-After</c> header). <see cref="MaxDelay"/> still caps the returned value.
-    /// </summary>
-    public Func<RetryEvent, TimeSpan?>? DelayGenerator { get; set; }
-
-    /// <summary>
-    /// Asynchronously overrides the delay for a specific retry. Receives the delay after
-    /// <see cref="DelayGenerator"/> and <see cref="MaxDelay"/> have been applied; return a
-    /// non-null value to replace it. <see cref="MaxDelay"/> still caps the returned value.
-    /// The callback is awaited before retry notifications run. Do not retain its pooled
+    /// The generator is awaited before <see cref="OnRetry"/> runs. Do not retain the pooled
     /// <see cref="RetryEvent.Context"/> after the returned task completes.
     /// </summary>
-    public Func<RetryEvent, ValueTask<TimeSpan?>>? DelayGeneratorAsync { get; set; }
+    public Func<RetryEvent, ValueTask<TimeSpan?>>? DelayGenerator { get; set; }
 }
 
 /// <summary>
@@ -77,8 +72,7 @@ public sealed class RetryOptions
 /// <see cref="RetryOptions{TResult}"/> and <see cref="RetryOptions"/> are standalone sibling types.
 /// Their callback properties expose distinct delegate types and preserve the delegates assigned
 /// to them.
-/// Before each retry, callbacks run in this order: <see cref="DelayGenerator"/>,
-/// <see cref="DelayGeneratorAsync"/>, <see cref="OnRetry"/>, then <see cref="OnRetryAsync"/>.
+/// Before each retry, <see cref="DelayGenerator"/> runs and is awaited, then <see cref="OnRetry"/>.
 /// If the caller's cancellation token is cancelled by the time the callbacks complete, the retry
 /// stops and surfaces caller cancellation.
 /// </remarks>
@@ -139,25 +133,19 @@ public sealed class RetryOptions<TResult>
         || HandlesExceptionWithContext is not null
         || HandlesResultWithContext is not null;
 
-    /// <summary>Invoked synchronously before each retry sleeps, with the typed handled outcome.</summary>
-    public Action<RetryEvent<TResult>>? OnRetry { get; set; }
-
-    /// <summary>Invoked and awaited before each retry sleeps, with the typed handled outcome.</summary>
-    public Func<RetryEvent<TResult>, ValueTask>? OnRetryAsync { get; set; }
+    /// <summary>
+    /// Invoked and awaited before each retry sleeps, with the typed handled outcome. Return
+    /// <see langword="default"/> from a synchronous callback.
+    /// </summary>
+    public Func<RetryEvent<TResult>, ValueTask>? OnRetry { get; set; }
 
     /// <summary>
     /// Overrides the computed delay for a specific retry, with the typed handled outcome.
     /// Return a non-null value to replace the backoff-computed delay;
-    /// <see cref="MaxDelay"/> still caps the returned value.
+    /// <see cref="MaxDelay"/> still caps the returned value. The generator is awaited before
+    /// <see cref="OnRetry"/> runs.
     /// </summary>
-    public Func<RetryEvent<TResult>, TimeSpan?>? DelayGenerator { get; set; }
-
-    /// <summary>
-    /// Asynchronously overrides the delay for a specific retry, with the typed handled outcome.
-    /// Receives the delay after the synchronous generator and <see cref="MaxDelay"/>
-    /// have been applied. Return a non-null value to replace it; the maximum still applies.
-    /// </summary>
-    public Func<RetryEvent<TResult>, ValueTask<TimeSpan?>>? DelayGeneratorAsync { get; set; }
+    public Func<RetryEvent<TResult>, ValueTask<TimeSpan?>>? DelayGenerator { get; set; }
 }
 
 /// <summary>Describes a retry that is about to happen.</summary>

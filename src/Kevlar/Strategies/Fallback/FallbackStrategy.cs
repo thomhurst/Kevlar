@@ -9,16 +9,14 @@ internal sealed class FallbackStrategy<TResult> : Strategy, IFallbackStrategyIns
 
     private readonly Func<Outcome<TResult>, KevlarContext, ValueTask<TResult>> _fallback;
     private readonly OutcomeJudge _judge;
-    private readonly Action<FallbackEvent<TResult>>? _onFallback;
-    private readonly Func<FallbackEvent<TResult>, ValueTask>? _onFallbackAsync;
+    private readonly Func<FallbackEvent<TResult>, ValueTask>? _onFallback;
     private readonly string _telemetryName;
     private readonly bool _fallbackIsAsync;
 
     public FallbackStrategy(
         Func<Outcome<TResult>, KevlarContext, ValueTask<TResult>> fallback,
         OutcomeJudge judge,
-        Action<FallbackEvent<TResult>>? onFallback,
-        Func<FallbackEvent<TResult>, ValueTask>? onFallbackAsync,
+        Func<FallbackEvent<TResult>, ValueTask>? onFallback,
         bool fallbackIsAsync,
         bool hasHandlingOverride = false,
         string? telemetryName = null)
@@ -26,7 +24,6 @@ internal sealed class FallbackStrategy<TResult> : Strategy, IFallbackStrategyIns
         _fallback = fallback;
         _judge = judge;
         _onFallback = onFallback;
-        _onFallbackAsync = onFallbackAsync;
         _telemetryName = telemetryName ?? "Fallback";
         _fallbackIsAsync = fallbackIsAsync;
         HasHandlingOverride = hasHandlingOverride;
@@ -39,16 +36,11 @@ internal sealed class FallbackStrategy<TResult> : Strategy, IFallbackStrategyIns
     internal override bool IsFallback => true;
 
     protected internal override string? SynchronousExecutionUnsupportedReason =>
-        _fallbackIsAsync
-            ? "Fallback recovery delegate"
-            : _onFallbackAsync is null
-                ? null
-                : "FallbackOptions.OnFallbackAsync";
+        _fallbackIsAsync ? "Fallback recovery delegate" : null;
 
     Type? IFallbackStrategyInspection.ResultType => typeof(TResult);
 
-    bool IFallbackStrategyInspection.HasNotification =>
-        _onFallback is not null || _onFallbackAsync is not null;
+    bool IFallbackStrategyInspection.HasNotification => _onFallback is not null;
 
     public override string Describe()
     {
@@ -88,15 +80,15 @@ internal sealed class FallbackStrategy<TResult> : Strategy, IFallbackStrategyIns
         var typedOutcome = (Outcome<TResult>)(object)outcome;
 
         KevlarMetrics.Fallback(context, _telemetryName, in outcome);
-        if (_onFallback is not null || _onFallbackAsync is not null)
+        if (_onFallback is not null)
         {
             var fallbackEvent = new FallbackEvent<TResult>(typedOutcome, context);
-            CallbackInvoker.Invoke(_onFallback, fallbackEvent, CallbackErrorKind.Fallback, context);
             var notification = CallbackInvoker.InvokeAsync(
-                _onFallbackAsync,
+                _onFallback,
                 fallbackEvent,
                 CallbackErrorKind.Fallback,
-                context);
+                context,
+                "FallbackOptions<TResult>.OnFallback");
             if (!notification.IsCompletedSuccessfully)
             {
                 return AwaitNotificationAsync(notification, outcome, context);
@@ -156,16 +148,14 @@ internal sealed class VoidFallbackStrategy : Strategy, IFallbackStrategyInspecti
 
     private readonly Func<Exception, CancellationToken, ValueTask> _fallback;
     private readonly OutcomeJudge _judge;
-    private readonly Action<FallbackEvent>? _onFallback;
-    private readonly Func<FallbackEvent, ValueTask>? _onFallbackAsync;
+    private readonly Func<FallbackEvent, ValueTask>? _onFallback;
     private readonly string _telemetryName;
     private readonly bool _fallbackIsAsync;
 
     public VoidFallbackStrategy(
         Func<Exception, CancellationToken, ValueTask> fallback,
         OutcomeJudge judge,
-        Action<FallbackEvent>? onFallback,
-        Func<FallbackEvent, ValueTask>? onFallbackAsync,
+        Func<FallbackEvent, ValueTask>? onFallback,
         bool fallbackIsAsync,
         bool hasHandlingOverride = false,
         string? telemetryName = null)
@@ -173,7 +163,6 @@ internal sealed class VoidFallbackStrategy : Strategy, IFallbackStrategyInspecti
         _fallback = fallback;
         _judge = judge;
         _onFallback = onFallback;
-        _onFallbackAsync = onFallbackAsync;
         _telemetryName = telemetryName ?? "Fallback";
         _fallbackIsAsync = fallbackIsAsync;
         HasHandlingOverride = hasHandlingOverride;
@@ -186,16 +175,11 @@ internal sealed class VoidFallbackStrategy : Strategy, IFallbackStrategyInspecti
     internal override bool IsFallback => true;
 
     protected internal override string? SynchronousExecutionUnsupportedReason =>
-        _fallbackIsAsync
-            ? "Fallback recovery delegate"
-            : _onFallbackAsync is null
-                ? null
-                : "FallbackOptions.OnFallbackAsync";
+        _fallbackIsAsync ? "Fallback recovery delegate" : null;
 
     Type? IFallbackStrategyInspection.ResultType => null;
 
-    bool IFallbackStrategyInspection.HasNotification =>
-        _onFallback is not null || _onFallbackAsync is not null;
+    bool IFallbackStrategyInspection.HasNotification => _onFallback is not null;
 
     public override string Describe() => "Fallback";
 
@@ -220,15 +204,15 @@ internal sealed class VoidFallbackStrategy : Strategy, IFallbackStrategyInspecti
 
         KevlarMetrics.Fallback(context, _telemetryName, in outcome);
 
-        if (_onFallback is not null || _onFallbackAsync is not null)
+        if (_onFallback is not null)
         {
             var fallbackEvent = new FallbackEvent(exception, context);
-            CallbackInvoker.Invoke(_onFallback, fallbackEvent, CallbackErrorKind.Fallback, context);
             await CallbackInvoker.InvokeAsync(
-                _onFallbackAsync,
+                _onFallback,
                 fallbackEvent,
                 CallbackErrorKind.Fallback,
-                context).ConfigureAwait(false);
+                context,
+                "FallbackOptions.OnFallback").ConfigureAwait(false);
         }
 
         try

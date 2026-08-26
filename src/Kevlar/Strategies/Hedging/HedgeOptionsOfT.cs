@@ -47,16 +47,10 @@ public sealed class HedgeOptions<TResult>
     public TimeSpan Delay { get; set; } = TimeSpan.FromSeconds(1);
 
     /// <inheritdoc cref="HedgeOptions.DelayGenerator"/>
-    public Func<HedgeDelayEvent, TimeSpan>? DelayGenerator { get; set; }
-
-    /// <inheritdoc cref="HedgeOptions.DelayGeneratorAsync"/>
-    public Func<HedgeDelayEvent, ValueTask<TimeSpan>>? DelayGeneratorAsync { get; set; }
+    public Func<HedgeDelayEvent, ValueTask<TimeSpan>>? DelayGenerator { get; set; }
 
     /// <inheritdoc cref="HedgeOptions.OnHedge"/>
-    public Action<HedgeEvent>? OnHedge { get; set; }
-
-    /// <inheritdoc cref="HedgeOptions.OnHedgeAsync"/>
-    public Func<HedgeEvent, ValueTask>? OnHedgeAsync { get; set; }
+    public Func<HedgeEvent, ValueTask>? OnHedge { get; set; }
 
     /// <summary>
     /// Selects a replacement operation for each additional attempt. A <see langword="null"/>
@@ -72,9 +66,7 @@ public sealed class HedgeOptions<TResult>
         MaxHedgedAttempts = MaxHedgedAttempts,
         Delay = Delay,
         DelayGenerator = DelayGenerator,
-        DelayGeneratorAsync = DelayGeneratorAsync,
         OnHedge = OnHedge,
-        OnHedgeAsync = OnHedgeAsync,
         ActionGenerator = actionGenerator,
     };
 }

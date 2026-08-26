@@ -12,7 +12,10 @@ public class CircuitBreakerStateReportingTests
         var monitor = new CircuitBreakerMonitor();
         var transitions = new List<(CircuitState From, CircuitState To)>();
         var shield = CreateBreaker(timeProvider, monitor, change =>
-            transitions.Add((change.From, change.To)));
+        {
+            transitions.Add((change.From, change.To));
+            return default;
+        });
 
         await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
         timeProvider.Advance(TimeSpan.FromSeconds(30));
@@ -109,7 +112,10 @@ public class CircuitBreakerStateReportingTests
         var monitor = new CircuitBreakerMonitor();
         var transitions = new List<(CircuitState From, CircuitState To)>();
         var shield = CreateBreaker(timeProvider, monitor, change =>
-            transitions.Add((change.From, change.To)));
+        {
+            transitions.Add((change.From, change.To));
+            return default;
+        });
         var staleStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var releaseStale = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var probeStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -227,7 +233,7 @@ public class CircuitBreakerStateReportingTests
     private static Shield CreateBreaker(
         TimeProvider timeProvider,
         CircuitBreakerMonitor monitor,
-        Action<CircuitBreakerStateChangedEvent>? onStateChanged = null) => Shield
+        Func<CircuitBreakerStateChangedEvent, ValueTask>? onStateChanged = null) => Shield
         .CircuitBreaker(options =>
         {
             options.ConsecutiveFailures = 1;

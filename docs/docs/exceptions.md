@@ -239,3 +239,15 @@ Direct shorthand arguments keep the framework exception family and the public pa
 `Shield.Retry(-1)` throws `ArgumentOutOfRangeException` with `ParamName == "maxRetries"`. Catch
 configuration failures while building shields at startup; a generator failure can surface during
 execution because its value is produced per call.
+
+## Synchronous execution guards
+
+Synchronous `Execute`, `ExecuteOutcome`, and `ExecuteWithContext` throw `NotSupportedException` for
+work that cannot run without leaving the calling thread. Multi-attempt hedging, a
+`ValueTask`-returning fallback recovery delegate, and `UseRateLimiter` adapters are rejected before
+the action runs. Strategy hooks are guarded at the call instead: every hook returns `ValueTask`, and
+one that returns an incomplete `ValueTask` fails that execution with `NotSupportedException` naming
+the options type and hook, for example `RetryOptions.OnRetry` or `TimeoutOptions.TimeoutGenerator`.
+Hooks that complete synchronously are never rejected. `ExecuteOutcome` returns the guard exception
+as a failed outcome. See
+[synchronous execution compatibility](executing.md#synchronous-execution-compatibility).

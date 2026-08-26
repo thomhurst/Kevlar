@@ -28,7 +28,11 @@ internal sealed class LatencyChaosStrategy : ChaosStrategy
 
         var delay = _delayGenerator?.Invoke(context) ?? _delay;
         ValidateDelay(delay, "generated delay");
-        Notify(ChaosInjectionKind.Latency, context, decision);
+        var notification = Notify(ChaosInjectionKind.Latency, context, decision);
+        if (!notification.IsCompletedSuccessfully)
+        {
+            return AwaitNotificationThenDelayAsync(notification, delay, next, context);
+        }
 
         var wait = ChaosDelay.DelayAsync(context, delay);
         if (wait.IsCompletedSuccessfully)
@@ -38,6 +42,17 @@ internal sealed class LatencyChaosStrategy : ChaosStrategy
         }
 
         return AwaitDelayAsync(wait, next, context);
+    }
+
+    private static async ValueTask<Outcome<T>> AwaitNotificationThenDelayAsync<T, TState>(
+        ValueTask notification,
+        TimeSpan delay,
+        Continuation<T, TState> next,
+        KevlarContext context)
+    {
+        await notification.ConfigureAwait(false);
+        await ChaosDelay.DelayAsync(context, delay).ConfigureAwait(false);
+        return await next.InvokeAsync(context).ConfigureAwait(false);
     }
 
     private static async ValueTask<Outcome<T>> AwaitDelayAsync<T, TState>(

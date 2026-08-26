@@ -33,6 +33,9 @@ public abstract class ChaosOptions
     /// <summary>Gets or sets an optional deterministic random seed.</summary>
     public int? Seed { get; set; }
 
-    /// <summary>Gets or sets a synchronous callback invoked immediately before injection.</summary>
-    public Action<ChaosEvent>? OnInjected { get; set; }
+    /// <summary>
+    /// Gets or sets a callback invoked and awaited immediately before injection. Return
+    /// <see langword="default"/> from a synchronous callback.
+    /// </summary>
+    public Func<ChaosEvent, ValueTask>? OnInjected { get; set; }
 }

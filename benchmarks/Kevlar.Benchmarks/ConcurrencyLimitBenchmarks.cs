@@ -17,8 +17,7 @@ public class ConcurrencyLimitBenchmarks
     private static readonly Shield KevlarConcurrencyWithHooks = Shield.ConcurrencyLimit(options =>
     {
         options.MaxConcurrency = 1024;
-        options.OnRejected = static _ => { };
-        options.OnRejectedAsync = static _ => ValueTask.CompletedTask;
+        options.OnRejected = static _ => ValueTask.CompletedTask;
     });
 
     private static readonly ResiliencePipeline PollyConcurrency = new ResiliencePipelineBuilder()

@@ -19,5 +19,4 @@ KEV009 | Configuration | Info | Strategy inherits a handling clause declared ear
 KEV010 | Configuration | Info | Default-result clause handles a value type's default
 KEV011 | Configuration | Info | Reactive strategy uses implicit default handling
 KEV012 | Reliability | Warning | Asynchronous strategy configuration requires ExecuteAsync
-KEV013 | Reliability | Warning | Asynchronous work is assigned to a synchronous callback
 KEV014 | Reliability | Warning | Pooled event context is captured by deferred work

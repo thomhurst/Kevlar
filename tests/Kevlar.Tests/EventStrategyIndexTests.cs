@@ -15,14 +15,22 @@ public class EventStrategyIndexTests
             {
                 options.MaxRetries = 1;
                 options.Backoff = Backoff.None;
-                options.OnRetry = item => observed["retry"] = item.Context.StrategyIndex;
+                options.OnRetry = item =>
+                {
+                    observed["retry"] = item.Context.StrategyIndex;
+                    return default;
+                };
             });
         _ = await retry.ExecuteAsync(static _ => new ValueTask<int>(-1));
 
         var timeout = Prefix().Timeout(options =>
         {
             options.Timeout = TimeSpan.FromMilliseconds(1);
-            options.OnTimeout = item => observed["timeout"] = item.Context.StrategyIndex;
+            options.OnTimeout = item =>
+            {
+                observed["timeout"] = item.Context.StrategyIndex;
+                return default;
+            };
         });
         _ = await timeout.ExecuteOutcomeAsync<int>(static async cancellationToken =>
         {
@@ -34,7 +42,11 @@ public class EventStrategyIndexTests
         {
             options.MaxHedgedAttempts = 1;
             options.Delay = TimeSpan.Zero;
-            options.OnHedge = item => observed["hedge"] = item.Context.StrategyIndex;
+            options.OnHedge = item =>
+            {
+                observed["hedge"] = item.Context.StrategyIndex;
+                return default;
+            };
             options.ActionGenerator = item =>
             {
                 observed["hedge-generator"] = item.Context.StrategyIndex;
@@ -46,7 +58,10 @@ public class EventStrategyIndexTests
         var fallback = TypedPrefix()
             .When<InvalidOperationException>()
             .FallbackTo(42, options => options.OnFallback = item =>
-                observed["fallback"] = item.Context.StrategyIndex);
+            {
+                observed["fallback"] = item.Context.StrategyIndex;
+                return default;
+            });
         _ = await fallback.ExecuteAsync(static _ => throw new InvalidOperationException());
 
         var breaker = TypedPrefix()
@@ -60,7 +75,10 @@ public class EventStrategyIndexTests
                     return new ValueTask<TimeSpan>(TimeSpan.FromMinutes(1));
                 };
                 options.OnStateChanged = item =>
+                {
                     observed["breaker-state"] = item.Context.StrategyIndex;
+                    return default;
+                };
             });
         _ = await breaker.ExecuteAsync(static _ => new ValueTask<int>(-1));
 
@@ -70,7 +88,10 @@ public class EventStrategyIndexTests
                 options.Permits = 1;
                 options.Window = TimeSpan.FromMinutes(1);
                 options.OnRejected = item =>
+                {
                     observed["rate-limit"] = item.Context.StrategyIndex;
+                    return default;
+                };
             })
             .WithTimeProvider(timeProvider);
         await rateLimit.ExecuteAsync(static _ => ValueTask.CompletedTask);
@@ -84,7 +105,10 @@ public class EventStrategyIndexTests
         {
             options.MaxConcurrency = 1;
             options.OnRejected = item =>
+            {
                 observed["concurrency-limit"] = item.Context.StrategyIndex;
+                return default;
+            };
         });
         var running = concurrencyLimit.ExecuteAsync(async _ =>
         {

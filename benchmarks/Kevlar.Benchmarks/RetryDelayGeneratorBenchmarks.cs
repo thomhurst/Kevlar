@@ -9,23 +9,17 @@ public class RetryDelayGeneratorBenchmarks
     private static readonly InvalidOperationException RecoverableError = new("transient");
 
     private static readonly Shield FixedDelay = CreateShield();
-    private static readonly Shield SynchronousGenerator = CreateShield(options =>
-        options.DelayGenerator = static _ => TimeSpan.Zero);
     private static readonly Shield CompletedAsyncGenerator = CreateShield(options =>
-        options.DelayGeneratorAsync = static _ => new ValueTask<TimeSpan?>(TimeSpan.Zero));
+        options.DelayGenerator = static _ => new ValueTask<TimeSpan?>(TimeSpan.Zero));
     private static readonly Shield YieldingAsyncGenerator = CreateShield(options =>
-        options.DelayGeneratorAsync = YieldAsync);
+        options.DelayGenerator = YieldAsync);
 
     private readonly Counter _fixedCounter = new();
-    private readonly Counter _synchronousCounter = new();
     private readonly Counter _completedAsyncCounter = new();
     private readonly Counter _yieldingAsyncCounter = new();
 
     [Benchmark(Baseline = true)]
     public ValueTask<int> Fixed() => ExecuteAsync(FixedDelay, _fixedCounter);
-
-    [Benchmark]
-    public ValueTask<int> Synchronous() => ExecuteAsync(SynchronousGenerator, _synchronousCounter);
 
     [Benchmark]
     public ValueTask<int> AsyncCompleted() => ExecuteAsync(CompletedAsyncGenerator, _completedAsyncCounter);

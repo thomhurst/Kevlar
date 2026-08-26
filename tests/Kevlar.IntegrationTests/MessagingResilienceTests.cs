@@ -200,7 +200,11 @@ public class MessagingResilienceTests
             {
                 options.MaxRetries = 99;
                 options.Backoff = Backoff.Constant(TimeSpan.FromSeconds(30));
-                options.OnRetry = _ => retryScheduled.TrySetResult();
+                options.OnRetry = _ =>
+                {
+                    retryScheduled.TrySetResult();
+                    return default;
+                };
             });
         using var cancellation = new CancellationTokenSource();
 

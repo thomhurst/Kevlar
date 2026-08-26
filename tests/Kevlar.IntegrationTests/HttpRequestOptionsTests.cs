@@ -31,8 +31,11 @@ public class HttpRequestOptionsTests
             {
                 options.MaxRetries = 1;
                 options.Backoff = Backoff.None;
-                options.OnRetry = retry => observedByRetry.Enqueue(
-                    retry.Context.Properties.GetOrDefault(TenantKey));
+                options.OnRetry = retry =>
+                {
+                    observedByRetry.Enqueue(retry.Context.Properties.GetOrDefault(TenantKey));
+                    return default;
+                };
             })
             .Use(new PropertyObserverStrategy(TenantKey, observedByStrategy));
         using var client = CreateClient(shield, (_, _) => Task.FromResult(

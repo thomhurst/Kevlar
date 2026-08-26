@@ -5,9 +5,9 @@ namespace Kevlar;
 /// <see cref="Window"/>, with bursts up to <see cref="Burst"/> and optional queueing.
 /// </summary>
 /// <remarks>
-/// When an execution is rejected, rejection metrics are recorded, <see cref="OnRejected"/> runs,
-/// and then <see cref="OnRejectedAsync"/> runs and is awaited. Callback failures are reported
-/// through <see cref="KevlarDiagnostics.OnCallbackError"/> and do not replace the rejection.
+/// When an execution is rejected, rejection metrics are recorded and <see cref="OnRejected"/>
+/// runs and is awaited. Callback failures are reported through
+/// <see cref="KevlarDiagnostics.OnCallbackError"/> and do not replace the rejection.
 /// </remarks>
 public sealed class RateLimitOptions
 {
@@ -29,9 +29,9 @@ public sealed class RateLimitOptions
     /// </summary>
     public int QueueLimit { get; set; }
 
-    /// <summary>Invoked synchronously when an execution is rejected.</summary>
-    public Action<RateLimitRejectedEvent>? OnRejected { get; set; }
-
-    /// <summary>Invoked and awaited after <see cref="OnRejected"/> when an execution is rejected.</summary>
-    public Func<RateLimitRejectedEvent, ValueTask>? OnRejectedAsync { get; set; }
+    /// <summary>
+    /// Invoked and awaited when an execution is rejected. Return <see langword="default"/> from a
+    /// synchronous callback.
+    /// </summary>
+    public Func<RateLimitRejectedEvent, ValueTask>? OnRejected { get; set; }
 }

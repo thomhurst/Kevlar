@@ -59,17 +59,11 @@ public sealed class CircuitBreakerOptions<TResult>
     /// <inheritdoc cref="CircuitBreakerOptions.BreakDurationGenerator"/>
     public Func<CircuitBreakerBreakDurationEvent<TResult>, ValueTask<TimeSpan>>? BreakDurationGenerator { get; set; }
 
-    /// <inheritdoc cref="CircuitBreakerOptions.BreakDurationGeneratorSync"/>
-    public Func<CircuitBreakerBreakDurationEvent<TResult>, TimeSpan>? BreakDurationGeneratorSync { get; set; }
-
     /// <inheritdoc cref="CircuitBreakerOptions.Monitor"/>
     public CircuitBreakerMonitor? Monitor { get; set; }
 
     /// <inheritdoc cref="CircuitBreakerOptions.OnStateChanged"/>
-    public Action<CircuitBreakerStateChangedEvent>? OnStateChanged { get; set; }
-
-    /// <inheritdoc cref="CircuitBreakerOptions.OnStateChangedAsync"/>
-    public Func<CircuitBreakerStateChangedEvent, ValueTask>? OnStateChangedAsync { get; set; }
+    public Func<CircuitBreakerStateChangedEvent, ValueTask>? OnStateChanged { get; set; }
 
     internal CircuitBreakerOptions ToUntyped() => new()
     {
@@ -82,6 +76,5 @@ public sealed class CircuitBreakerOptions<TResult>
         BreakDuration = BreakDuration,
         Monitor = Monitor,
         OnStateChanged = OnStateChanged,
-        OnStateChangedAsync = OnStateChangedAsync,
     };
 }

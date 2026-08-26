@@ -104,44 +104,72 @@ public sealed class TelemetryRecorder : IDisposable, IKevlarTelemetryListener
     }
 
     /// <summary>Records an untyped retry callback.</summary>
-    public void Record(RetryEvent item) => AddCallback(new CallbackRecord(
-        0, CallbackKind.Retry, item.Context.ShieldName,
-        strategyIndex: item.Context.StrategyIndex, retryNumber: item.RetryNumber,
-        delay: item.Delay, exception: item.Exception, result: item.Result));
+    public ValueTask Record(RetryEvent item)
+    {
+        AddCallback(new CallbackRecord(
+            0, CallbackKind.Retry, item.Context.ShieldName,
+            strategyIndex: item.Context.StrategyIndex, retryNumber: item.RetryNumber,
+            delay: item.Delay, exception: item.Exception, result: item.Result));
+        return default;
+    }
 
     /// <summary>Records a typed retry callback.</summary>
-    public void Record<TResult>(RetryEvent<TResult> item) => AddCallback(new CallbackRecord(
-        0, CallbackKind.Retry, item.Context.ShieldName,
-        strategyIndex: item.Context.StrategyIndex, retryNumber: item.RetryNumber,
-        delay: item.Delay, exception: item.Outcome.Exception, result: item.Outcome.Result));
+    public ValueTask Record<TResult>(RetryEvent<TResult> item)
+    {
+        AddCallback(new CallbackRecord(
+            0, CallbackKind.Retry, item.Context.ShieldName,
+            strategyIndex: item.Context.StrategyIndex, retryNumber: item.RetryNumber,
+            delay: item.Delay, exception: item.Outcome.Exception, result: item.Outcome.Result));
+        return default;
+    }
 
     /// <summary>Records a timeout callback.</summary>
-    public void Record(TimeoutEvent item) => AddCallback(new CallbackRecord(
-        0, CallbackKind.Timeout, item.Context.ShieldName,
-        strategyIndex: item.Context.StrategyIndex, timeout: item.Timeout));
+    public ValueTask Record(TimeoutEvent item)
+    {
+        AddCallback(new CallbackRecord(
+            0, CallbackKind.Timeout, item.Context.ShieldName,
+            strategyIndex: item.Context.StrategyIndex, timeout: item.Timeout));
+        return default;
+    }
 
     /// <summary>Records a hedge callback.</summary>
-    public void Record(HedgeEvent item) => AddCallback(new CallbackRecord(
-        0, CallbackKind.Hedge, item.Context.ShieldName,
-        strategyIndex: item.Context.StrategyIndex, attemptNumber: item.AttemptNumber));
+    public ValueTask Record(HedgeEvent item)
+    {
+        AddCallback(new CallbackRecord(
+            0, CallbackKind.Hedge, item.Context.ShieldName,
+            strategyIndex: item.Context.StrategyIndex, attemptNumber: item.AttemptNumber));
+        return default;
+    }
 
     /// <summary>Records an untyped fallback callback.</summary>
-    public void Record(FallbackEvent item) => AddCallback(new CallbackRecord(
-        0, CallbackKind.Fallback, item.Context.ShieldName,
-        strategyIndex: item.Context.StrategyIndex, exception: item.Exception));
+    public ValueTask Record(FallbackEvent item)
+    {
+        AddCallback(new CallbackRecord(
+            0, CallbackKind.Fallback, item.Context.ShieldName,
+            strategyIndex: item.Context.StrategyIndex, exception: item.Exception));
+        return default;
+    }
 
     /// <summary>Records a typed fallback callback.</summary>
-    public void Record<TResult>(FallbackEvent<TResult> item) => AddCallback(new CallbackRecord(
-        0, CallbackKind.Fallback, item.Context.ShieldName,
-        strategyIndex: item.Context.StrategyIndex,
-        exception: item.Outcome.Exception, result: item.Outcome.Result));
+    public ValueTask Record<TResult>(FallbackEvent<TResult> item)
+    {
+        AddCallback(new CallbackRecord(
+            0, CallbackKind.Fallback, item.Context.ShieldName,
+            strategyIndex: item.Context.StrategyIndex,
+            exception: item.Outcome.Exception, result: item.Outcome.Result));
+        return default;
+    }
 
     /// <summary>Records a circuit-breaker transition callback.</summary>
-    public void Record(CircuitBreakerStateChangedEvent item) => AddCallback(new CallbackRecord(
-        0, CallbackKind.CircuitTransition, shieldName: item.Context.ShieldName,
-        strategyIndex: item.Context.StrategyIndex,
-        exception: item.LastException,
-        from: item.From, to: item.To));
+    public ValueTask Record(CircuitBreakerStateChangedEvent item)
+    {
+        AddCallback(new CallbackRecord(
+            0, CallbackKind.CircuitTransition, shieldName: item.Context.ShieldName,
+            strategyIndex: item.Context.StrategyIndex,
+            exception: item.LastException,
+            from: item.From, to: item.To));
+        return default;
+    }
 
     /// <summary>Records a callback failure reported by Kevlar diagnostics.</summary>
     public void Record(CallbackErrorEvent item) => AddCallback(new CallbackRecord(
@@ -324,22 +352,22 @@ public sealed class TelemetryRecorder : IDisposable, IKevlarTelemetryListener
             failureRate: failureRate,
             failureCount: failureCount,
             consecutiveFailures: consecutiveFailures));
-        return new ValueTask<TimeSpan>(breakDuration);
+            return new ValueTask<TimeSpan>(breakDuration);
     }
 
     private async Task WaitForCountAsync(
-        Func<TelemetryRecorder, int> getCount,
-        int count,
-        bool collectObservableMetrics,
-        CancellationToken cancellationToken)
+            Func<TelemetryRecorder, int> getCount,
+            int count,
+            bool collectObservableMetrics,
+            CancellationToken cancellationToken)
     {
-        if (count < 0)
-        {
+            if (count < 0)
+            {
             throw new ArgumentOutOfRangeException(nameof(count));
-        }
+            }
 
-        while (true)
-        {
+            while (true)
+            {
             if (collectObservableMetrics)
             {
 #if NET8_0_OR_GREATER
@@ -373,29 +401,29 @@ public sealed class TelemetryRecorder : IDisposable, IKevlarTelemetryListener
             {
                 await WaitWithCancellationAsync(signal, cancellationToken).ConfigureAwait(false);
             }
-        }
+            }
     }
 
     private static async Task WaitWithCancellationAsync(Task task, CancellationToken cancellationToken)
     {
-        if (!cancellationToken.CanBeCanceled)
-        {
+            if (!cancellationToken.CanBeCanceled)
+            {
             await task.ConfigureAwait(false);
             return;
-        }
+            }
 
-        var cancellation = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-        using var registration = cancellationToken.Register(
+            var cancellation = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            using var registration = cancellationToken.Register(
             static state => ((TaskCompletionSource<bool>)state!).TrySetCanceled(), cancellation);
-        var completed = await Task.WhenAny(task, cancellation.Task).ConfigureAwait(false);
-        if (ReferenceEquals(completed, cancellation.Task))
-        {
+            var completed = await Task.WhenAny(task, cancellation.Task).ConfigureAwait(false);
+            if (ReferenceEquals(completed, cancellation.Task))
+            {
             cancellationToken.ThrowIfCancellationRequested();
-        }
+            }
 
-        await task.ConfigureAwait(false);
+            await task.ConfigureAwait(false);
     }
 
     private static TaskCompletionSource<bool> CreateSignal() =>
-        new(TaskCreationOptions.RunContinuationsAsynchronously);
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
 }

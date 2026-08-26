@@ -52,9 +52,9 @@ continues normally and is not cancelled. A later lookup of the evicted key creat
 with fresh breaker, limiter, and queue state. This makes capacity eviction deterministic without
 coupling cache lifetime to execution lifetime.
 
-Lifecycle callbacks report both the key and shield. Callback failures are swallowed so telemetry
-or cleanup cannot fail a lookup. The async eviction callback is awaited before a capacity slot is
-reused. If that callback performs a cold lookup while its caller owns all available capacity, the
+Lifecycle callbacks report both the key and shield and return `ValueTask`; return `default` for
+synchronous work. Callback failures are swallowed so telemetry or cleanup cannot fail a lookup. The
+eviction callback is awaited before a capacity slot is reused. If that callback performs a cold lookup while its caller owns all available capacity, the
 nested lookup receives an unretained shield instead of waiting on its own reservation; a later
 lookup creates and retains the partition normally. Explicit `TryRemove` and `Clear` removals use the
 `Cleared` reason.
@@ -65,8 +65,12 @@ var observed = new PartitionedShield<string>(
     new PartitionedShieldOptions
     {
         MaximumPartitions = 2,
-        OnCreated = item => Console.WriteLine($"Created {item.Key}"),
-        OnEvictedAsync = async item =>
+        OnCreated = item =>
+        {
+            Console.WriteLine($"Created {item.Key}");
+            return default;
+        },
+        OnEvicted = async item =>
         {
             await Task.Yield();
             Console.WriteLine($"Evicted {item.Key}: {item.Reason}");

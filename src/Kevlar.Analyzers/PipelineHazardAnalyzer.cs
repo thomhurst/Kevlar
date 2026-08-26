@@ -176,21 +176,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     public static readonly DiagnosticDescriptor AsyncConfigurationWithSynchronousExecuteRule = new(
         id: "KEV012",
         title: "Asynchronous strategy configuration requires ExecuteAsync",
-        messageFormat: "This shield configures '{0}', which cannot run through synchronous 'Execute'. Use 'ExecuteAsync' or configure its synchronous counterpart.",
+        messageFormat: "This shield configures '{0}' with a delegate that completes asynchronously, which cannot run through synchronous 'Execute'. Use 'ExecuteAsync' or make the delegate complete synchronously.",
         category: "Reliability",
         defaultSeverity: DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
-        description: "Asynchronous callbacks and generators can capture a SynchronizationContext. Kevlar rejects synchronous Execute for statically known asynchronous strategy configuration instead of blocking the calling thread.");
-
-    /// <summary>The KEV013 rule.</summary>
-    public static readonly DiagnosticDescriptor AsyncWorkInSynchronousCallbackRule = new(
-        id: "KEV013",
-        title: "Asynchronous work is assigned to a synchronous callback",
-        messageFormat: "'{0}' is synchronous, so this asynchronous delegate becomes async void or discards its task. Use {1} instead.",
-        category: "Reliability",
-        defaultSeverity: DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
-        description: "Kevlar's synchronous callback properties cannot await asynchronous work. Async lambdas become async void, and task-returning expression lambdas discard the task, allowing pooled event context to outlive its execution.");
+        description: "Kevlar never blocks the calling thread on a strategy callback: synchronous Execute throws when a hook does not complete synchronously. This rule reports async delegates assigned to strategy hooks on shields that are executed synchronously so the failure surfaces at build time.");
 
     /// <summary>The KEV014 rule.</summary>
     public static readonly DiagnosticDescriptor DeferredContextCaptureRule = new(
@@ -216,7 +206,6 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             DefaultResultClauseOnValueTypeRule,
             ImplicitDefaultHandlingRule,
             AsyncConfigurationWithSynchronousExecuteRule,
-            AsyncWorkInSynchronousCallbackRule,
             DeferredContextCaptureRule);
 
     /// <inheritdoc />
@@ -248,19 +237,10 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             context.CancellationToken);
         var property = propertyInfo.Symbol as IPropertySymbol
             ?? propertyInfo.CandidateSymbols.OfType<IPropertySymbol>().FirstOrDefault();
-        if (property is null || !knownTypes.IsSynchronousCallback(property)
-            || !StartsAsynchronousWork(assignment.Right, context))
+        if (property is null || !knownTypes.IsCallbackProperty(property))
         {
             return;
         }
-
-        context.ReportDiagnostic(Diagnostic.Create(
-            AsyncWorkInSynchronousCallbackRule,
-            assignment.Right.GetLocation(),
-            property.Name,
-            HasAsyncCallback(property)
-                ? $"'{property.Name}Async'"
-                : "a synchronous delegate that completes before returning"));
 
         if (TryFindDiscardedEventContext(
                 assignment.Right,
@@ -273,11 +253,6 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 capturedContext.GetLocation()));
         }
     }
-
-    private static bool HasAsyncCallback(IPropertySymbol property) =>
-        property.ContainingType.GetMembers(property.Name + "Async")
-            .OfType<IPropertySymbol>()
-            .Any();
 
     private static bool StartsAsynchronousWork(
         ExpressionSyntax expression,
@@ -309,7 +284,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                             body,
                             context.SemanticModel,
                             context.CancellationToken,
-                            followTaskReturningLocalFunctions: false)
+                            followTaskReturningLocalFunction: null)
                         .Any(invocation => IsUnobservedAsyncInvocation(invocation, context));
             }
 
@@ -318,7 +293,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                         block,
                         context.SemanticModel,
                         context.CancellationToken,
-                        followTaskReturningLocalFunctions: false)
+                        followTaskReturningLocalFunction: null)
                     .Any(invocation => IsUnobservedAsyncInvocation(invocation, context));
         }
 
@@ -466,7 +441,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                          anonymous.Body,
                          context.SemanticModel,
                          context.CancellationToken,
-                         followTaskReturningLocalFunctions: true))
+                         followTaskReturningLocalFunction: candidate =>
+                             IsUnobservedAsyncInvocation(candidate, context)))
             {
                 if (!IsUnobservedAsyncInvocation(invocation, context))
                 {
@@ -837,10 +813,15 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             AnonymousMethodExpressionSyntax { ParameterList: { } parameterList } => parameterList.Parameters,
             _ => [],
         }).ToArray();
-        var delegateParameters = (context.SemanticModel.GetTypeInfo(
+        var delegateInvoke = (context.SemanticModel.GetTypeInfo(
                 anonymous,
                 context.CancellationToken).ConvertedType as INamedTypeSymbol)
-            ?.DelegateInvokeMethod?.Parameters;
+            ?.DelegateInvokeMethod;
+        // The invoking strategy awaits a task-returning callback, so the event context stays
+        // rented across every await in the callback body itself. Only work the callback leaves
+        // running, such as an invoked async void local function, can outlive the execution.
+        var awaitedByStrategy = delegateInvoke is not null && IsTaskLike(delegateInvoke.ReturnType);
+        var delegateParameters = delegateInvoke?.Parameters;
         var eventParameterNames = new HashSet<string>(StringComparer.Ordinal);
         var eventParameterSymbols = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
         if (delegateParameters is { } symbols)
@@ -867,7 +848,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             knownTypes,
             context.CancellationToken,
             out capturedContext,
-            retainedSymbolSeeds: eventParameterSymbols);
+            retainedSymbolSeeds: eventParameterSymbols,
+            ignoreSuspensions: awaitedByStrategy);
     }
 
     private static bool TryFindPostAwaitEventContext(
@@ -878,18 +860,21 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         CancellationToken cancellationToken,
         out SyntaxNode capturedContext,
         HashSet<LocalFunctionStatementSyntax>? callPath = null,
-        HashSet<ISymbol>? retainedSymbolSeeds = null)
+        HashSet<ISymbol>? retainedSymbolSeeds = null,
+        bool ignoreSuspensions = false)
     {
         var nodes = body.DescendantNodesAndSelf(descendIntoChildren: static node =>
                 node is not AnonymousFunctionExpressionSyntax
                     and not LocalFunctionStatementSyntax)
             .ToArray();
-        var awaits = nodes.OfType<AwaitExpressionSyntax>()
-            .Where(awaitExpression => !IsKnownCompletedAwait(
-                awaitExpression,
-                semanticModel,
-                cancellationToken))
-            .ToArray();
+        var awaits = ignoreSuspensions
+            ? []
+            : nodes.OfType<AwaitExpressionSyntax>()
+                .Where(awaitExpression => !IsKnownCompletedAwait(
+                    awaitExpression,
+                    semanticModel,
+                    cancellationToken))
+                .ToArray();
         var controlFlowGraph = TryCreateControlFlowGraph(
             body,
             semanticModel,
@@ -2510,7 +2495,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         SyntaxNode body,
         SemanticModel semanticModel,
         CancellationToken cancellationToken,
-        bool followTaskReturningLocalFunctions)
+        Func<InvocationExpressionSyntax, bool>? followTaskReturningLocalFunction)
     {
         var pendingBodies = new Stack<SyntaxNode>();
         var visitedLocalFunctions = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
@@ -2531,8 +2516,9 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                         MethodKind: MethodKind.LocalFunction,
                     } localFunction
                     || !localFunction.ReturnsVoid
-                        && (!followTaskReturningLocalFunctions
-                            || !StartsAsynchronousWork(localFunction))
+                        && (followTaskReturningLocalFunction is null
+                            || !StartsAsynchronousWork(localFunction)
+                            || !followTaskReturningLocalFunction(invocation))
                     || !visitedLocalFunctions.Add(localFunction))
                 {
                     continue;
@@ -6282,7 +6268,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                         assignment.Left,
                         context.CancellationToken).Symbol
                     is IPropertySymbol callbackProperty
-                && knownTypes.IsSynchronousCallback(callbackProperty));
+                && knownTypes.IsCallbackProperty(callbackProperty));
         if (callback is null
             || semanticModel.GetOperation(callback, context.CancellationToken)
                 is not IAnonymousFunctionOperation callbackOperation
@@ -8140,6 +8126,30 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         return null;
     }
 
+    /// <summary>
+    /// Whether a delegate assigned to a strategy hook is statically known to complete
+    /// asynchronously: an <c>async</c> lambda or anonymous method, or a method group naming an
+    /// <c>async</c> method. Delegates that merely return a task-like type are not reported,
+    /// because Kevlar's hooks are awaited and complete synchronously when the task is finished.
+    /// </summary>
+    private static bool IsAsynchronousDelegateValue(IOperation? value)
+    {
+        value = Unwrap(value);
+        return value switch
+        {
+            IDelegateCreationOperation creation => IsAsynchronousDelegateValue(creation.Target),
+            IAnonymousFunctionOperation anonymous => anonymous.Symbol.IsAsync,
+            IMethodReferenceOperation reference => reference.Method.IsAsync,
+            IConditionalOperation conditional =>
+                IsAsynchronousDelegateValue(conditional.WhenTrue)
+                || IsAsynchronousDelegateValue(conditional.WhenFalse),
+            ICoalesceOperation coalesce =>
+                IsAsynchronousDelegateValue(coalesce.Value)
+                || IsAsynchronousDelegateValue(coalesce.WhenNull),
+            _ => false,
+        };
+    }
+
     private static IOperation? Unwrap(IOperation? operation)
     {
         while (true)
@@ -8564,8 +8574,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             }
             && propertyReference.Instance is { } instance
             && ReferencesConfiguratorParameter(instance, configuratorParameter, context)
-            && knownTypes.IsAsyncConfigurationProperty(propertyReference.Property)
-            && value.ConstantValue is not { HasValue: true, Value: null }
+            && knownTypes.IsCallbackProperty(propertyReference.Property)
+            && IsAsynchronousDelegateValue(value)
             && !IsGuaranteedClearedAfter(
                 configurationBody,
                 operation,
@@ -9244,7 +9254,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         private readonly INamedTypeSymbol? _rateLimiterAdapterOptions;
         private readonly INamedTypeSymbol? _kevlarContext;
         private readonly INamedTypeSymbol? _kevlarProperties;
-        private readonly HashSet<INamedTypeSymbol> _synchronousCallbackTypes;
+        private readonly HashSet<INamedTypeSymbol> _callbackOptionsTypes;
         private readonly HashSet<INamedTypeSymbol> _eventContextContainerTypes;
 
         internal KnownTypes(Compilation compilation)
@@ -9284,25 +9294,25 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 "Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions");
             _kevlarContext = kevlarAssembly?.GetTypeByMetadataName("Kevlar.KevlarContext");
             _kevlarProperties = kevlarAssembly?.GetTypeByMetadataName("Kevlar.KevlarProperties");
-            _synchronousCallbackTypes = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+            _callbackOptionsTypes = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
             _eventContextContainerTypes = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
-            AddSynchronousCallbackType(compilation, "Kevlar.RetryOptions");
-            AddSynchronousCallbackType(compilation, "Kevlar.RetryOptions`1");
-            AddSynchronousCallbackType(compilation, "Kevlar.TimeoutOptions");
-            AddSynchronousCallbackType(compilation, "Kevlar.CircuitBreakerOptions");
-            AddSynchronousCallbackType(compilation, "Kevlar.CircuitBreakerOptions`1");
-            AddSynchronousCallbackType(compilation, "Kevlar.HedgeOptions");
-            AddSynchronousCallbackType(compilation, "Kevlar.HedgeOptions`1");
-            AddSynchronousCallbackType(compilation, "Kevlar.FallbackOptions");
-            AddSynchronousCallbackType(compilation, "Kevlar.FallbackOptions`1");
-            AddSynchronousCallbackType(compilation, "Kevlar.RateLimitOptions");
-            AddSynchronousCallbackType(compilation, "Kevlar.ConcurrencyLimitOptions");
-            AddSynchronousCallbackType(compilation, "Kevlar.Chaos.ChaosOptions");
-            AddSynchronousCallbackType(compilation, "Kevlar.Chaos.ChaosBehaviorOptions");
-            AddSynchronousCallbackType(compilation, "Kevlar.Chaos.ChaosFaultOptions");
-            AddSynchronousCallbackType(compilation, "Kevlar.Chaos.ChaosLatencyOptions");
-            AddSynchronousCallbackType(compilation, "Kevlar.Chaos.ChaosOutcomeOptions`1");
-            AddSynchronousCallbackType(compilation, "Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions");
+            AddCallbackOptionsType(compilation, "Kevlar.RetryOptions");
+            AddCallbackOptionsType(compilation, "Kevlar.RetryOptions`1");
+            AddCallbackOptionsType(compilation, "Kevlar.TimeoutOptions");
+            AddCallbackOptionsType(compilation, "Kevlar.CircuitBreakerOptions");
+            AddCallbackOptionsType(compilation, "Kevlar.CircuitBreakerOptions`1");
+            AddCallbackOptionsType(compilation, "Kevlar.HedgeOptions");
+            AddCallbackOptionsType(compilation, "Kevlar.HedgeOptions`1");
+            AddCallbackOptionsType(compilation, "Kevlar.FallbackOptions");
+            AddCallbackOptionsType(compilation, "Kevlar.FallbackOptions`1");
+            AddCallbackOptionsType(compilation, "Kevlar.RateLimitOptions");
+            AddCallbackOptionsType(compilation, "Kevlar.ConcurrencyLimitOptions");
+            AddCallbackOptionsType(compilation, "Kevlar.Chaos.ChaosOptions");
+            AddCallbackOptionsType(compilation, "Kevlar.Chaos.ChaosBehaviorOptions");
+            AddCallbackOptionsType(compilation, "Kevlar.Chaos.ChaosFaultOptions");
+            AddCallbackOptionsType(compilation, "Kevlar.Chaos.ChaosLatencyOptions");
+            AddCallbackOptionsType(compilation, "Kevlar.Chaos.ChaosOutcomeOptions`1");
+            AddCallbackOptionsType(compilation, "Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions");
             var assemblyName = compilation.AssemblyName;
             IsTestAssembly = assemblyName is not null
                 && (assemblyName.EndsWith(".Test", StringComparison.OrdinalIgnoreCase)
@@ -9311,9 +9321,13 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         internal bool IsTestAssembly { get; }
 
-        internal bool IsSynchronousCallback(IPropertySymbol property) =>
-            _synchronousCallbackTypes.Contains(property.ContainingType.OriginalDefinition)
-            && TryGetSynchronousCallbackEventType(property, out _);
+        /// <summary>
+        /// Whether <paramref name="property"/> is a Kevlar strategy hook: a delegate-typed member
+        /// of a known options type whose first argument carries the pooled execution context.
+        /// </summary>
+        internal bool IsCallbackProperty(IPropertySymbol property) =>
+            _callbackOptionsTypes.Contains(property.ContainingType.OriginalDefinition)
+            && TryGetCallbackEventType(property, out _);
 
         internal bool IsShield(INamedTypeSymbol type) =>
             Is(type, _shield) || Is(type, _shieldOfT);
@@ -9336,30 +9350,6 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         internal bool IsPartitionedShield(INamedTypeSymbol type) =>
             Is(type, _partitionedShield) || Is(type, _partitionedShieldOfT);
 
-        internal bool IsAsyncConfigurationProperty(IPropertySymbol property)
-        {
-            var type = property.ContainingType;
-            return property.Name switch
-            {
-                "OnRetryAsync" => Is(type, _retryOptions) || Is(type, _retryOptionsOfT),
-                "DelayGeneratorAsync" =>
-                    Is(type, _retryOptions)
-                    || Is(type, _retryOptionsOfT)
-                    || Is(type, _hedgeOptions)
-                    || Is(type, _hedgeOptionsOfT),
-                "OnTimeoutAsync" or "TimeoutGenerator" => Is(type, _timeoutOptions),
-                "OnFallbackAsync" => Is(type, _fallbackOptions) || Is(type, _fallbackOptionsOfT),
-                "OnStateChangedAsync" or "BreakDurationGenerator" =>
-                    Is(type, _circuitBreakerOptions) || Is(type, _circuitBreakerOptionsOfT),
-                "OnRejectedAsync" =>
-                    Is(type, _rateLimitOptions)
-                    || Is(type, _concurrencyLimitOptions)
-                    || Is(type, _rateLimiterAdapterOptions),
-                "Behavior" => Is(type, _chaosBehaviorOptions),
-                _ => false,
-            };
-        }
-
         internal bool IsEventContextReference(ITypeSymbol? type) =>
             type is INamedTypeSymbol namedType
             && (Is(namedType, _kevlarContext)
@@ -9377,14 +9367,14 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 || ((Is(namedType, _taskOfT) || Is(namedType, _valueTaskOfT))
                     && IsNonGenericExecutionResult(namedType.TypeArguments[0])));
 
-        private void AddSynchronousCallbackType(Compilation compilation, string metadataName)
+        private void AddCallbackOptionsType(Compilation compilation, string metadataName)
         {
             if (compilation.GetTypeByMetadataName(metadataName) is { } type)
             {
-                _synchronousCallbackTypes.Add(type);
+                _callbackOptionsTypes.Add(type);
                 foreach (var property in type.GetMembers().OfType<IPropertySymbol>())
                 {
-                    if (TryGetSynchronousCallbackEventType(property, out var eventType))
+                    if (TryGetCallbackEventType(property, out var eventType))
                     {
                         _eventContextContainerTypes.Add(eventType.OriginalDefinition);
                     }
@@ -9392,7 +9382,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        private bool TryGetSynchronousCallbackEventType(
+        private bool TryGetCallbackEventType(
             IPropertySymbol property,
             out INamedTypeSymbol eventType)
         {
@@ -9410,19 +9400,18 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 return false;
             }
 
-            var isSynchronousAction = callbackType is
+            var isAction = callbackType is
                 {
                     Name: "Action",
                     Arity: 1,
                     ContainingNamespace.Name: "System",
                 };
-            var isSynchronousFunc = callbackType is
+            var isFunc = callbackType is
                 {
                     Name: "Func",
                     ContainingNamespace.Name: "System",
-                }
-                && !IsTaskLike(callbackType.TypeArguments[callbackType.TypeArguments.Length - 1]);
-            if (isSynchronousAction || isSynchronousFunc)
+                };
+            if (isAction || isFunc)
             {
                 eventType = callbackEventType;
                 return true;

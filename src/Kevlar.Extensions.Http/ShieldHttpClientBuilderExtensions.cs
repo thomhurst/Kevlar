@@ -459,7 +459,6 @@ public static class ShieldHttpClientBuilderExtensions
                 hedge.MaxHedgedAttempts = options.MaxHedgedAttempts;
                 hedge.Delay = options.HedgeDelay;
                 hedge.DelayGenerator = options.HedgeDelayGenerator;
-                hedge.DelayGeneratorAsync = options.HedgeDelayGeneratorAsync;
             });
 
     private static ShieldHttpHandlerOptions CreateHandlerOptions(StandardHedgeShieldOptions options)

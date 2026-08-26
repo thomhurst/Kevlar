@@ -4,7 +4,7 @@ Kevlar.Extensions.Http.ShieldDelegatingHandler
 Kevlar.Extensions.Http.ShieldDelegatingHandler.ShieldDelegatingHandler(Kevlar.Shield<System.Net.Http.HttpResponseMessage!>! shield) -> void
 Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
 static Kevlar.Extensions.Http.HttpShield.IsTransient(System.Net.Http.HttpResponseMessage! response) -> bool
-static Kevlar.Extensions.Http.HttpShield.RetryAfter(Kevlar.RetryEvent<System.Net.Http.HttpResponseMessage!> retry) -> System.TimeSpan?
+static Kevlar.Extensions.Http.HttpShield.RetryAfter(Kevlar.RetryEvent<System.Net.Http.HttpResponseMessage!> retry) -> System.Threading.Tasks.ValueTask<System.TimeSpan?>
 static Kevlar.Extensions.Http.HttpShield.Standard() -> Kevlar.Shield<System.Net.Http.HttpResponseMessage!>!
 static Kevlar.Extensions.Http.HttpShield.WhenTransient() -> Kevlar.ShieldBuilder<System.Net.Http.HttpResponseMessage!>!
 static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, Kevlar.Shield<System.Net.Http.HttpResponseMessage!>! shield) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
@@ -62,10 +62,8 @@ Kevlar.Extensions.Http.StandardHedgeShieldOptions.FailureRatio.get -> double?
 Kevlar.Extensions.Http.StandardHedgeShieldOptions.FailureRatio.set -> void
 Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelay.get -> System.TimeSpan
 Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelay.set -> void
-Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelayGenerator.get -> System.Func<Kevlar.HedgeDelayEvent, System.TimeSpan>?
+Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelayGenerator.get -> System.Func<Kevlar.HedgeDelayEvent, System.Threading.Tasks.ValueTask<System.TimeSpan>>?
 Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelayGenerator.set -> void
-Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelayGeneratorAsync.get -> System.Func<Kevlar.HedgeDelayEvent, System.Threading.Tasks.ValueTask<System.TimeSpan>>?
-Kevlar.Extensions.Http.StandardHedgeShieldOptions.HedgeDelayGeneratorAsync.set -> void
 Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxHedgedAttempts.get -> int
 Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxHedgedAttempts.set -> void
 Kevlar.Extensions.Http.StandardHedgeShieldOptions.MaxConcurrency.get -> int
@@ -108,7 +106,7 @@ Kevlar.Extensions.Http.StandardHttpShieldOptions.UseRetryAfterHeader.get -> bool
 Kevlar.Extensions.Http.StandardHttpShieldOptions.UseRetryAfterHeader.set -> void
 static Kevlar.Extensions.Http.HttpShield.IsTransientException(System.Exception? exception, System.Threading.CancellationToken callerCancellationToken) -> bool
 static Kevlar.Extensions.Http.HttpShield.Standard(Kevlar.Extensions.Http.StandardHttpShieldOptions! options) -> Kevlar.Shield<System.Net.Http.HttpResponseMessage!>!
-static Kevlar.Extensions.Http.HttpShield.RetryAfter(System.TimeSpan maxDelay) -> System.Func<Kevlar.RetryEvent<System.Net.Http.HttpResponseMessage!>, System.TimeSpan?>!
+static Kevlar.Extensions.Http.HttpShield.RetryAfter(System.TimeSpan maxDelay) -> System.Func<Kevlar.RetryEvent<System.Net.Http.HttpResponseMessage!>, System.Threading.Tasks.ValueTask<System.TimeSpan?>>!
 static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, System.Action<Kevlar.Extensions.Http.StandardHttpShieldOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
 static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, System.Action<System.IServiceProvider!, Kevlar.Extensions.Http.StandardHttpShieldOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!
 static Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(this Microsoft.Extensions.DependencyInjection.IHttpClientBuilder! builder, Microsoft.Extensions.Configuration.IConfiguration! configuration, System.Action<System.Exception!>? onReloadFailure = null) -> Microsoft.Extensions.DependencyInjection.IHttpClientBuilder!

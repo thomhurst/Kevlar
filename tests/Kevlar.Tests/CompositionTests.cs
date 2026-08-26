@@ -276,7 +276,11 @@ public class CompositionTests
             {
                 options.MaxRetries = 1;
                 options.Backoff = Backoff.None;
-                options.OnRetry = retry => seenName = retry.Context.ShieldName;
+                options.OnRetry = retry =>
+                {
+                    seenName = retry.Context.ShieldName;
+                    return default;
+                };
             })
             .WithName("my-shield");
 

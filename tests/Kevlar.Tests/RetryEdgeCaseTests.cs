@@ -130,7 +130,11 @@ public class RetryEdgeCaseTests
                 options.MaxRetries = 1;
                 options.Backoff = Backoff.Constant(TimeSpan.FromMinutes(10));
                 options.MaxDelay = TimeSpan.FromSeconds(1);
-                options.OnRetry = retry => seenDelays.Add(retry.Delay);
+                options.OnRetry = retry =>
+                {
+                    seenDelays.Add(retry.Delay);
+                    return default;
+                };
             })
             .WithTimeProvider(fakeTime);
 
@@ -166,7 +170,11 @@ public class RetryEdgeCaseTests
                 options.MaxRetries = 1;
                 options.Backoff = Backoff.Custom(static _ => TimeSpan.MaxValue);
                 options.MaxDelay = TimeSpan.FromSeconds(1);
-                options.OnRetry = retry => seenDelays.Add(retry.Delay);
+                options.OnRetry = retry =>
+                {
+                    seenDelays.Add(retry.Delay);
+                    return default;
+                };
             })
             .WithTimeProvider(fakeTime);
 
@@ -200,7 +208,7 @@ public class RetryEdgeCaseTests
             options.DelayGenerator = retry =>
             {
                 seenDelays.Add(retry.Delay);
-                return TimeSpan.Zero;
+                return new(TimeSpan.Zero);
             };
         });
 
@@ -228,8 +236,12 @@ public class RetryEdgeCaseTests
         {
             options.MaxRetries = 1;
             options.Backoff = Backoff.None;
-            options.DelayGenerator = _ => TimeSpan.FromSeconds(-1);
-            options.OnRetry = retry => seenDelays.Add(retry.Delay);
+            options.DelayGenerator = _ => new(TimeSpan.FromSeconds(-1));
+            options.OnRetry = retry =>
+            {
+                seenDelays.Add(retry.Delay);
+                return default;
+            };
         });
 
         await Assert.That(async () => await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
@@ -247,8 +259,12 @@ public class RetryEdgeCaseTests
         {
             options.MaxRetries = 1;
             options.Backoff = Backoff.None;
-            options.DelayGenerator = _ => null;
-            options.OnRetry = retry => seenDelays.Add(retry.Delay);
+            options.DelayGenerator = _ => default;
+            options.OnRetry = retry =>
+            {
+                seenDelays.Add(retry.Delay);
+                return default;
+            };
         });
 
         await Assert.That(async () => await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
@@ -258,20 +274,19 @@ public class RetryEdgeCaseTests
     }
 
     [Test]
-    public async Task OnRetryAsync_Is_Awaited_Before_The_Next_Attempt()
+    public async Task OnRetry_Is_Awaited_Before_The_Next_Attempt()
     {
         var order = new List<string>();
-        var callbackGate = new AsyncGate("OnRetryAsync callback");
+        var callbackGate = new AsyncGate("OnRetry callback");
         var shield = Shield.Retry(options =>
         {
             options.MaxRetries = 1;
             options.Backoff = Backoff.None;
-            options.OnRetry = _ => order.Add("sync");
-            options.OnRetryAsync = async _ =>
+            options.OnRetry = async _ =>
             {
-                order.Add("async-start");
+                order.Add("hook-start");
                 await callbackGate.EnterAsync();
-                order.Add("async-end");
+                order.Add("hook-end");
             };
         });
 
@@ -283,13 +298,13 @@ public class RetryEdgeCaseTests
 
         await callbackGate.WaitForEntryAsync();
         await Assert.That(order).IsEquivalentTo(
-            ["attempt", "sync", "async-start"],
+            ["attempt", "hook-start"],
             TUnit.Assertions.Enums.CollectionOrdering.Matching);
         callbackGate.Release();
 
         await Assert.That(async () => await execution).Throws<InvalidOperationException>();
         await Assert.That(order).IsEquivalentTo(
-            ["attempt", "sync", "async-start", "async-end", "attempt"],
+            ["attempt", "hook-start", "hook-end", "attempt"],
             TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
@@ -323,7 +338,11 @@ public class RetryEdgeCaseTests
             {
                 options.MaxRetries = 1;
                 options.Backoff = Backoff.None;
-                options.OnRetry = retry => events.Add((retry.Outcome.IsSuccess ? (object?)retry.Outcome.Result : null, retry.Outcome.Exception));
+                options.OnRetry = retry =>
+                {
+                    events.Add((retry.Outcome.IsSuccess ? (object?)retry.Outcome.Result : null, retry.Outcome.Exception));
+                    return default;
+                };
             });
 
         var attempts = 0;

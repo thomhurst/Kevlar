@@ -26,7 +26,7 @@ public class TimeoutBenchmarks
     private static readonly Shield KevlarAsyncHookConfigured = Shield.Timeout(options =>
     {
         options.Timeout = TimeSpan.FromSeconds(10);
-        options.OnTimeoutAsync = static _ => ValueTask.CompletedTask;
+        options.OnTimeout = static _ => ValueTask.CompletedTask;
     });
 
     private static readonly ResiliencePipeline PollyTimeout = new ResiliencePipelineBuilder()

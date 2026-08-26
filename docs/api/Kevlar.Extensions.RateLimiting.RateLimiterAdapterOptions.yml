@@ -8,7 +8,6 @@ items:
   - Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.#ctor
   - Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.Name
   - Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejected
-  - Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejectedAsync
   - Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.PermitCount
   langs:
   - csharp
@@ -22,9 +21,9 @@ items:
   namespace: Kevlar.Extensions.RateLimiting
   summary: Configuration for a framework or delegate-backed rate-limiter adapter.
   remarks: >-
-    Rejections record the standard Kevlar rejection metric, invoke <xref href="Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejected" data-throw-if-not-resolved="false"></xref>, then
+    Rejections record the standard Kevlar rejection metric, then invoke and await
 
-    invoke and await <xref href="Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejectedAsync" data-throw-if-not-resolved="false"></xref>. Callback failures are reported through
+    <xref href="Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejected" data-throw-if-not-resolved="false"></xref>. Callback failures are reported through
 
     <xref href="Kevlar.KevlarDiagnostics.OnCallbackError" data-throw-if-not-resolved="false"></xref> and do not replace the rejection.
   example: []
@@ -121,38 +120,18 @@ items:
   assemblies:
   - Kevlar.Extensions.RateLimiting
   namespace: Kevlar.Extensions.RateLimiting
-  summary: Invoked synchronously when a lease rejects an execution.
+  summary: >-
+    Invoked and awaited when a lease rejects an execution. Return <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/default">default</a>
+
+    from a synchronous callback.
   example: []
   syntax:
-    content: public Action<RateLimiterAdapterRejectedEvent>? OnRejected { get; set; }
-    parameters: []
-    return:
-      type: System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent}
-    content.vb: Public Property OnRejected As Action(Of RateLimiterAdapterRejectedEvent)
-  overload: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejected*
-- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejectedAsync
-  commentId: P:Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejectedAsync
-  id: OnRejectedAsync
-  parent: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions
-  langs:
-  - csharp
-  - vb
-  name: OnRejectedAsync
-  nameWithType: RateLimiterAdapterOptions.OnRejectedAsync
-  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejectedAsync
-  type: Property
-  assemblies:
-  - Kevlar.Extensions.RateLimiting
-  namespace: Kevlar.Extensions.RateLimiting
-  summary: Invoked and awaited after <xref href="Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejected" data-throw-if-not-resolved="false"></xref> for a rejected lease.
-  example: []
-  syntax:
-    content: public Func<RateLimiterAdapterRejectedEvent, ValueTask>? OnRejectedAsync { get; set; }
+    content: public Func<RateLimiterAdapterRejectedEvent, ValueTask>? OnRejected { get; set; }
     parameters: []
     return:
       type: System.Func{Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent,System.Threading.Tasks.ValueTask}
-    content.vb: Public Property OnRejectedAsync As Func(Of RateLimiterAdapterRejectedEvent, ValueTask)
-  overload: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejectedAsync*
+    content.vb: Public Property OnRejected As Func(Of RateLimiterAdapterRejectedEvent, ValueTask)
+  overload: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejected*
 references:
 - uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejected
   commentId: P:Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejected
@@ -161,13 +140,6 @@ references:
   name: OnRejected
   nameWithType: RateLimiterAdapterOptions.OnRejected
   fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejected
-- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejectedAsync
-  commentId: P:Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejectedAsync
-  isExternal: true
-  href: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.html#Kevlar_Extensions_RateLimiting_RateLimiterAdapterOptions_OnRejectedAsync
-  name: OnRejectedAsync
-  nameWithType: RateLimiterAdapterOptions.OnRejectedAsync
-  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejectedAsync
 - uid: Kevlar.KevlarDiagnostics.OnCallbackError
   commentId: E:Kevlar.KevlarDiagnostics.OnCallbackError
   isExternal: true
@@ -476,76 +448,6 @@ references:
   name: OnRejected
   nameWithType: RateLimiterAdapterOptions.OnRejected
   fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejected
-- uid: System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent}
-  commentId: T:System.Action{Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent}
-  parent: System
-  definition: System.Action`1
-  href: https://learn.microsoft.com/dotnet/api/system.action-1
-  name: Action<RateLimiterAdapterRejectedEvent>
-  nameWithType: Action<RateLimiterAdapterRejectedEvent>
-  fullName: System.Action<Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent>
-  nameWithType.vb: Action(Of RateLimiterAdapterRejectedEvent)
-  fullName.vb: System.Action(Of Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent)
-  name.vb: Action(Of RateLimiterAdapterRejectedEvent)
-  spec.csharp:
-  - uid: System.Action`1
-    name: Action
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.action-1
-  - name: <
-  - uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent
-    name: RateLimiterAdapterRejectedEvent
-    isExternal: true
-    href: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.html
-  - name: '>'
-  spec.vb:
-  - uid: System.Action`1
-    name: Action
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.action-1
-  - name: (
-  - name: Of
-  - name: " "
-  - uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent
-    name: RateLimiterAdapterRejectedEvent
-    isExternal: true
-    href: Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent.html
-  - name: )
-- uid: System.Action`1
-  commentId: T:System.Action`1
-  isExternal: true
-  href: https://learn.microsoft.com/dotnet/api/system.action-1
-  name: Action<T>
-  nameWithType: Action<T>
-  fullName: System.Action<T>
-  nameWithType.vb: Action(Of T)
-  fullName.vb: System.Action(Of T)
-  name.vb: Action(Of T)
-  spec.csharp:
-  - uid: System.Action`1
-    name: Action
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.action-1
-  - name: <
-  - name: T
-  - name: '>'
-  spec.vb:
-  - uid: System.Action`1
-    name: Action
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.action-1
-  - name: (
-  - name: Of
-  - name: " "
-  - name: T
-  - name: )
-- uid: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejectedAsync*
-  commentId: Overload:Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejectedAsync
-  isExternal: true
-  href: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.html#Kevlar_Extensions_RateLimiting_RateLimiterAdapterOptions_OnRejectedAsync
-  name: OnRejectedAsync
-  nameWithType: RateLimiterAdapterOptions.OnRejectedAsync
-  fullName: Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejectedAsync
 - uid: System.Func{Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent,System.Threading.Tasks.ValueTask}
   commentId: T:System.Func{Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent,System.Threading.Tasks.ValueTask}
   parent: System

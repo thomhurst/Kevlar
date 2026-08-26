@@ -76,7 +76,7 @@ public class DescribeTests
         await Assert.That(Shield.Hedge(options =>
         {
             options.MaxHedgedAttempts = 2;
-            options.DelayGenerator = static _ => TimeSpan.Zero;
+            options.DelayGenerator = static _ => new(TimeSpan.Zero);
         }).ToString()).IsEqualTo("Hedge(2 extra, delay generator)");
     }
 

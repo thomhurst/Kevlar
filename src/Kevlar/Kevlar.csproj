@@ -23,9 +23,6 @@
     <ProjectReference Include="..\Kevlar.Analyzers\Kevlar.Analyzers.csproj"
                       ReferenceOutputAssembly="false"
                       PrivateAssets="all" />
-    <ProjectReference Include="..\Kevlar.Analyzers.CodeFixes\Kevlar.Analyzers.CodeFixes.csproj"
-                      ReferenceOutputAssembly="false"
-                      PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
@@ -34,14 +31,6 @@
           PackagePath="analyzers/dotnet/cs"
           Visible="false" />
     <None Include="$(ArtifactsPath)\bin\Kevlar.Analyzers\$(Configuration.ToLowerInvariant())\Kevlar.Analyzers.pdb"
-          Pack="true"
-          PackagePath="analyzers/dotnet/cs"
-          Visible="false" />
-    <None Include="$(ArtifactsPath)\bin\Kevlar.Analyzers.CodeFixes\$(Configuration.ToLowerInvariant())\Kevlar.Analyzers.CodeFixes.dll"
-          Pack="true"
-          PackagePath="analyzers/dotnet/cs"
-          Visible="false" />
-    <None Include="$(ArtifactsPath)\bin\Kevlar.Analyzers.CodeFixes\$(Configuration.ToLowerInvariant())\Kevlar.Analyzers.CodeFixes.pdb"
           Pack="true"
           PackagePath="analyzers/dotnet/cs"
           Visible="false" />

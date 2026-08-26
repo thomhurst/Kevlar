@@ -6,7 +6,7 @@ namespace Kevlar;
 /// </summary>
 /// <remarks>
 /// After an outcome is selected for recovery, Kevlar records the fallback metric, invokes
-/// <see cref="OnFallback"/>, awaits <see cref="OnFallbackAsync"/>, and then runs the recovery
+/// and awaits <see cref="OnFallback"/>, and then runs the recovery
 /// factory. Notification failures are reported through <see cref="KevlarDiagnostics.OnCallbackError"/>
 /// and do not skip recovery.
 /// </remarks>
@@ -51,12 +51,9 @@ public sealed class FallbackOptions<TResult>
         || HandlesExceptionWithContext is not null
         || HandlesResultWithContext is not null;
 
-    /// <summary>Invoked synchronously before the recovery factory, with the typed handled outcome.</summary>
-    public Action<FallbackEvent<TResult>>? OnFallback { get; set; }
-
     /// <summary>
-    /// Invoked and awaited after <see cref="OnFallback"/> and before the recovery factory,
-    /// with the typed handled outcome.
+    /// Invoked and awaited before the recovery factory, with the typed handled outcome. Return
+    /// <see langword="default"/> from a synchronous callback.
     /// </summary>
-    public Func<FallbackEvent<TResult>, ValueTask>? OnFallbackAsync { get; set; }
+    public Func<FallbackEvent<TResult>, ValueTask>? OnFallback { get; set; }
 }

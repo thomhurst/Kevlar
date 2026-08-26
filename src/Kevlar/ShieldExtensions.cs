@@ -363,7 +363,6 @@ public static class ShieldExtensions
             fallback,
             shield.JudgeOrDefault,
             null,
-            null,
             fallbackIsAsync: true));
     }
 
@@ -371,7 +370,7 @@ public static class ShieldExtensions
     /// Runs <paramref name="fallback"/> in place of handled failures and configures notifications.
     /// Applies to void executions only.
     /// </summary>
-    /// <remarks>Runs <see cref="FallbackOptions.OnFallback"/>, then <see cref="FallbackOptions.OnFallbackAsync"/>, before recovery. Notification failures are reported and recovery continues.</remarks>
+    /// <remarks>Runs and awaits <see cref="FallbackOptions.OnFallback"/> before recovery. Notification failures are reported and recovery continues.</remarks>
     public static Shield Fallback(
         this Shield shield,
         Func<Exception, CancellationToken, ValueTask> fallback,
@@ -390,7 +389,6 @@ public static class ShieldExtensions
             fallback,
             judge,
             options.OnFallback,
-            options.OnFallbackAsync,
             fallbackIsAsync: true,
             hasHandlingOverride: options.HasHandlingOverride,
             telemetryName: options.Name));
@@ -410,7 +408,6 @@ public static class ShieldExtensions
             (_, token) => fallback(token),
             shield.JudgeOrDefault,
             null,
-            null,
             fallbackIsAsync: true));
     }
 
@@ -418,7 +415,7 @@ public static class ShieldExtensions
     /// Runs <paramref name="fallback"/> in place of handled failures and configures notifications.
     /// Applies to void executions only.
     /// </summary>
-    /// <remarks>Runs <see cref="FallbackOptions.OnFallback"/>, then <see cref="FallbackOptions.OnFallbackAsync"/>, before recovery. Notification failures are reported and recovery continues.</remarks>
+    /// <remarks>Runs and awaits <see cref="FallbackOptions.OnFallback"/> before recovery. Notification failures are reported and recovery continues.</remarks>
     public static Shield Fallback(
         this Shield shield,
         Func<CancellationToken, ValueTask> fallback,
@@ -437,7 +434,6 @@ public static class ShieldExtensions
             (_, token) => fallback(token),
             judge,
             options.OnFallback,
-            options.OnFallbackAsync,
             fallbackIsAsync: true,
             hasHandlingOverride: options.HasHandlingOverride,
             telemetryName: options.Name));

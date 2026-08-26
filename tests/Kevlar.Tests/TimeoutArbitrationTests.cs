@@ -14,7 +14,7 @@ public class TimeoutArbitrationTests
         var shield = Shield.Timeout(options =>
         {
             options.Timeout = TimeSpan.FromSeconds(1);
-            options.OnTimeout = _ => timeoutEvents++;
+            options.OnTimeout = _ => { timeoutEvents++; return default; };
         }).WithTimeProvider(timeProvider);
 
         var execution = shield.ExecuteOutcomeAsync<int>(async token =>
@@ -49,7 +49,7 @@ public class TimeoutArbitrationTests
         var shield = Shield.Timeout(options =>
         {
             options.Timeout = TimeSpan.FromSeconds(1);
-            options.OnTimeout = _ => timeoutEvents++;
+            options.OnTimeout = _ => { timeoutEvents++; return default; };
         }).WithTimeProvider(timeProvider);
 
         var execution = shield.ExecuteOutcomeAsync<int>(async token =>
@@ -83,12 +83,12 @@ public class TimeoutArbitrationTests
             .Timeout(options =>
             {
                 options.Timeout = TimeSpan.FromSeconds(1);
-                options.OnTimeout = _ => outerEvents++;
+                options.OnTimeout = _ => { outerEvents++; return default; };
             })
             .Timeout(options =>
             {
                 options.Timeout = TimeSpan.FromSeconds(1);
-                options.OnTimeout = _ => innerEvents++;
+                options.OnTimeout = _ => { innerEvents++; return default; };
             })
             .WithTimeProvider(timeProvider);
 
@@ -144,7 +144,7 @@ public class TimeoutArbitrationTests
         var shield = Shield.Timeout(options =>
         {
             options.Timeout = TimeSpan.FromSeconds(1);
-            options.OnTimeoutAsync = async _ =>
+            options.OnTimeout = async _ =>
             {
                 await Task.Yield();
                 timeoutEvents++;
@@ -178,7 +178,7 @@ public class TimeoutArbitrationTests
         var shield = Shield.Timeout(options =>
         {
             options.Timeout = TimeSpan.FromSeconds(1);
-            options.OnTimeout = _ => timeoutEvents++;
+            options.OnTimeout = _ => { timeoutEvents++; return default; };
         }).WithTimeProvider(timeProvider);
 
         var outcome = await shield.ExecuteOutcomeAsync<int>(_ => throw cancellation);
@@ -273,7 +273,7 @@ public class TimeoutArbitrationTests
         var shield = Shield.Timeout(options =>
         {
             options.Timeout = TimeSpan.FromSeconds(1);
-            options.OnTimeout = _ => timeoutEvents++;
+            options.OnTimeout = _ => { timeoutEvents++; return default; };
         }).WithTimeProvider(timeProvider);
 
         var execution = shield.ExecuteAsync(async token =>
@@ -441,7 +441,7 @@ public class TimeoutArbitrationTests
                     new ValueTask<TimeSpan>(TimeSpan.FromSeconds(1));
             }
 
-            options.OnTimeout = _ => timeoutEvents++;
+            options.OnTimeout = _ => { timeoutEvents++; return default; };
         }).WithTimeProvider(timeProvider);
 
         var execution = shield.ExecuteOutcomeAsync<int>(async _ =>

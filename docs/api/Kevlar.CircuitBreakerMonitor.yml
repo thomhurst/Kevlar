@@ -200,9 +200,7 @@ items:
   summary: >-
     Raised on every state transition of the bound circuit, after
 
-    <xref href="Kevlar.CircuitBreakerOptions.OnStateChanged" data-throw-if-not-resolved="false"></xref> and
-
-    <xref href="Kevlar.CircuitBreakerOptions.OnStateChangedAsync" data-throw-if-not-resolved="false"></xref>. Transitions are delivered
+    <xref href="Kevlar.CircuitBreakerOptions.OnStateChanged" data-throw-if-not-resolved="false"></xref> completes. Transitions are delivered
 
     serially outside the circuit lock, so handlers may read state or call <xref href="Kevlar.CircuitBreakerMonitor.Reset" data-throw-if-not-resolved="false"></xref>
 
@@ -592,13 +590,6 @@ references:
   name: OnStateChanged
   nameWithType: CircuitBreakerOptions.OnStateChanged
   fullName: Kevlar.CircuitBreakerOptions.OnStateChanged
-- uid: Kevlar.CircuitBreakerOptions.OnStateChangedAsync
-  commentId: P:Kevlar.CircuitBreakerOptions.OnStateChangedAsync
-  isExternal: true
-  href: Kevlar.CircuitBreakerOptions.html#Kevlar_CircuitBreakerOptions_OnStateChangedAsync
-  name: OnStateChangedAsync
-  nameWithType: CircuitBreakerOptions.OnStateChangedAsync
-  fullName: Kevlar.CircuitBreakerOptions.OnStateChangedAsync
 - uid: Kevlar.CircuitBreakerMonitor.Isolate
   commentId: M:Kevlar.CircuitBreakerMonitor.Isolate
   isExternal: true

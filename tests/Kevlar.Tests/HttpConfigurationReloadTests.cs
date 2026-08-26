@@ -388,6 +388,7 @@ public class HttpConfigurationReloadTests
                 {
                     observedDelay = retry.Delay;
                     requestCancellation!.Cancel();
+                    return default;
                 });
         using var provider = services.BuildServiceProvider();
         var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("client");

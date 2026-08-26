@@ -121,9 +121,11 @@ var behavior = ChaosShield.Behavior(options =>
 
 ## Observe injections
 
-`OnInjected` receives a `ChaosEvent` immediately before an injection. It identifies the injection
-kind, effective rate and sample, operation, environment, and `KevlarContext`. The context is pooled:
-copy values inside the callback rather than retaining the context or event.
+`OnInjected` receives a `ChaosEvent` immediately before an injection and returns `ValueTask`; it is
+awaited before the injection proceeds, and `return default;` suffices for synchronous work. The
+event identifies the injection kind, effective rate and sample, operation, environment, and
+`KevlarContext`. The context is pooled: copy values inside the callback rather than retaining the
+context or event.
 
 On .NET 8+, the `Kevlar.Chaos` meter publishes the `kevlar.chaos.injections` counter. Its tags are
 `kevlar.chaos.kind` plus the available `kevlar.shield.name`, `kevlar.chaos.operation`, and

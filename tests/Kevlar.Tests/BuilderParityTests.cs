@@ -101,7 +101,11 @@ public class BuilderParityTests
                     fallbackCalls++;
                     return ValueTask.CompletedTask;
                 },
-                options => options.OnFallback = _ => notificationCalls++);
+                options => options.OnFallback = _ =>
+                {
+                    notificationCalls++;
+                    return default;
+                });
 
         await bare.ExecuteAsync(static _ => ValueTask.FromException(new InvalidOperationException()));
         await configured.ExecuteAsync(static _ => ValueTask.FromException(new InvalidOperationException()));

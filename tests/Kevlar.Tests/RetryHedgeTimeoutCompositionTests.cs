@@ -13,13 +13,13 @@ public class RetryHedgeTimeoutCompositionTests
             {
                 options.MaxRetries = 1;
                 options.Backoff = Backoff.None;
-                options.OnRetry = _ => events.Add("retry-group");
+                options.OnRetry = _ => { events.Add("retry-group"); return default; };
             })
             .Hedge(options =>
             {
                 options.MaxHedgedAttempts = 2;
                 options.Delay = System.Threading.Timeout.InfiniteTimeSpan;
-                options.OnHedge = hedge => events.Add($"hedge-{hedge.AttemptNumber}");
+                options.OnHedge = hedge => { events.Add($"hedge-{hedge.AttemptNumber}"); return default; };
             });
 
         await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
@@ -48,13 +48,13 @@ public class RetryHedgeTimeoutCompositionTests
             {
                 options.MaxHedgedAttempts = 2;
                 options.Delay = System.Threading.Timeout.InfiniteTimeSpan;
-                options.OnHedge = hedge => events.Add($"hedge-{hedge.AttemptNumber}");
+                options.OnHedge = hedge => { events.Add($"hedge-{hedge.AttemptNumber}"); return default; };
             })
             .Retry(options =>
             {
                 options.MaxRetries = 1;
                 options.Backoff = Backoff.None;
-                options.OnRetry = _ => events.Add("attempt-retry");
+                options.OnRetry = _ => { events.Add("attempt-retry"); return default; };
             });
 
         await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
@@ -165,13 +165,13 @@ public class RetryHedgeTimeoutCompositionTests
             .Timeout(options =>
             {
                 options.Timeout = TimeSpan.FromSeconds(1);
-                options.OnTimeout = _ => timeoutEvents++;
+                options.OnTimeout = _ => { timeoutEvents++; return default; };
             })
             .Hedge(options =>
             {
                 options.MaxHedgedAttempts = 2;
                 options.Delay = TimeSpan.FromSeconds(10);
-                options.OnHedge = _ => hedgeEvents++;
+                options.OnHedge = _ => { hedgeEvents++; return default; };
             })
             .WithTimeProvider(timeProvider);
 
@@ -207,7 +207,7 @@ public class RetryHedgeTimeoutCompositionTests
             .Timeout(options =>
             {
                 options.Timeout = TimeSpan.FromSeconds(1);
-                options.OnTimeout = _ => timeoutEvents.Signal();
+                options.OnTimeout = _ => { timeoutEvents.Signal(); return default; };
             })
             .WithTimeProvider(timeProvider);
 
@@ -245,7 +245,7 @@ public class RetryHedgeTimeoutCompositionTests
                 {
                     options.MaxRetries = 2;
                     options.Backoff = Backoff.None;
-                    options.OnRetry = _ => onRetry();
+                    options.OnRetry = _ => { onRetry(); return default; };
                 })
                 .Hedge(1, TimeSpan.Zero)
             : shield
@@ -254,7 +254,7 @@ public class RetryHedgeTimeoutCompositionTests
                 {
                     options.MaxRetries = 2;
                     options.Backoff = Backoff.None;
-                    options.OnRetry = _ => onRetry();
+                    options.OnRetry = _ => { onRetry(); return default; };
                 });
     }
 }

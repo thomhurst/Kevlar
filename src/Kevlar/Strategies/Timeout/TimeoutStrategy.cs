@@ -14,9 +14,7 @@ internal sealed class TimeoutStrategy : Strategy
 
     private readonly TimeSpan _timeout;
     private readonly Func<KevlarContext, ValueTask<TimeSpan>>? _timeoutGenerator;
-    private readonly bool _hasAsyncTimeoutGenerator;
-    private readonly Action<TimeoutEvent>? _onTimeout;
-    private readonly Func<TimeoutEvent, ValueTask>? _onTimeoutAsync;
+    private readonly Func<TimeoutEvent, ValueTask>? _onTimeout;
     private readonly string _telemetryName;
 
     public TimeoutStrategy(TimeoutOptions options)
@@ -34,20 +32,8 @@ internal sealed class TimeoutStrategy : Strategy
             options.Timeout,
             "must not exceed the runtime timer limit");
         _timeout = options.Timeout;
-        ConfigurationValidation.ThrowIf(
-            options.TimeoutGenerator is not null && options.TimeoutGeneratorSync is not null,
-            typeof(TimeoutOptions),
-            nameof(options.TimeoutGenerator),
-            options.TimeoutGenerator,
-            $"cannot be combined with {nameof(options.TimeoutGeneratorSync)}");
-        _hasAsyncTimeoutGenerator = options.TimeoutGenerator is not null;
-        var timeoutGeneratorSync = options.TimeoutGeneratorSync;
-        _timeoutGenerator = options.TimeoutGenerator
-            ?? (timeoutGeneratorSync is null
-                ? null
-                : context => new ValueTask<TimeSpan>(timeoutGeneratorSync(context)));
+        _timeoutGenerator = options.TimeoutGenerator;
         _onTimeout = options.OnTimeout;
-        _onTimeoutAsync = options.OnTimeoutAsync;
         _telemetryName = options.Name ?? "Timeout";
     }
 
@@ -59,14 +45,7 @@ internal sealed class TimeoutStrategy : Strategy
 
     internal bool HasTimeoutGenerator => _timeoutGenerator is not null;
 
-    internal bool HasNotification => _onTimeout is not null || _onTimeoutAsync is not null;
-
-    protected internal override string? SynchronousExecutionUnsupportedReason =>
-        _hasAsyncTimeoutGenerator
-            ? "TimeoutOptions.TimeoutGenerator"
-            : _onTimeoutAsync is not null
-                ? "TimeoutOptions.OnTimeoutAsync"
-                : null;
+    internal bool HasNotification => _onTimeout is not null;
 
     public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(Continuation<T, TState> next, KevlarContext context)
     {
@@ -75,7 +54,11 @@ internal sealed class TimeoutStrategy : Strategy
             return ExecuteWithTimeout(next, context, _timeout);
         }
 
-        var generation = _timeoutGenerator(context);
+        var generation = CallbackInvoker.InvokeGenerator(
+            _timeoutGenerator,
+            context,
+            context,
+            "TimeoutOptions.TimeoutGenerator");
         if (!generation.IsCompletedSuccessfully)
         {
             return AwaitGenerationAsync(generation, next, context);
@@ -258,12 +241,12 @@ internal sealed class TimeoutStrategy : Strategy
             var timeoutException = new TimeoutExceededException(timeout, cancellationException);
             KevlarMetrics.Timeout(context, _telemetryName, timeout, timeoutException);
             var timeoutEvent = new TimeoutEvent(timeout, context);
-            CallbackInvoker.Invoke(_onTimeout, timeoutEvent, CallbackErrorKind.Timeout, context);
             var notification = CallbackInvoker.InvokeAsync(
-                _onTimeoutAsync,
+                _onTimeout,
                 timeoutEvent,
                 CallbackErrorKind.Timeout,
-                context);
+                context,
+                "TimeoutOptions.OnTimeout");
             if (!notification.IsCompletedSuccessfully)
             {
                 return AwaitTimeoutNotificationAsync<T>(notification, timeoutException);

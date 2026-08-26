@@ -2,8 +2,6 @@ using System.Collections.Immutable;
 using Kevlar.Analyzers;
 using Kevlar.Chaos;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
-using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
@@ -14,42 +12,48 @@ namespace Kevlar.Analyzers.Tests;
 public class PipelineHazardAnalyzerTests
 {
     [Test]
-    public async Task KEV013_Flags_Async_Work_Assigned_To_Synchronous_Callbacks()
+    public async Task KEV014_Allows_Event_Use_After_Await_In_Awaited_Hooks()
     {
-        var cases = new[]
+        var callbacks = new[]
         {
-            "_ = Shield.Retry(o => o.OnRetry = async _ => await Task.Yield());",
-            "_ = Shield.Retry(o => o.OnRetry ??= async _ => await Task.Yield());",
-            "_ = Shield.Timeout(o => o.OnTimeout = async _ => await Task.Yield());",
-            "_ = Shield.CircuitBreaker(o => o.OnStateChanged = async _ => await Task.Yield());",
-            "_ = Shield.Hedge(o => o.OnHedge = _ => Task.Delay(1));",
-            "_ = Shield.Fallback(_ => ValueTask.CompletedTask, o => o.OnFallback = async _ => await Task.Yield());",
-            "_ = Shield.RateLimit(o => o.OnRejected = async _ => await Task.Yield());",
-            "_ = Shield.ConcurrencyLimit(o => o.OnRejected = async _ => await Task.Yield());",
-            "_ = ChaosShield.Latency(o => o.OnInjected = async _ => await Task.Yield());",
-            "_ = Shield.Empty.UseRateLimiter((System.Threading.RateLimiting.RateLimiter)null!, o => o.OnRejected = async _ => await Task.Yield());",
-            "_ = Shield.Retry(o => o.OnRetry = new Action<RetryEvent>(async _ => await Task.Yield()));",
+            "async item => { await Task.Yield(); _ = item.Context.ShieldName; }",
+            "async (RetryEvent item) => { await Task.Yield(); _ = item.Context.ShieldName; }",
+            "async delegate(RetryEvent item) { await Task.Yield(); _ = item.Context.ShieldName; }",
+            "async item => { var retained = item; await Task.Delay(1); _ = retained.Context.ShieldName; }",
+            "async item => await Task.Run(() => Console.WriteLine(item.Context.ShieldName))",
         };
+        foreach (var callback in callbacks)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = {{callback}});
+                """);
 
-        await AssertEachAsync(cases, "KEV013", "KEV006");
+            await Assert.That(diagnostics).IsEmpty();
+        }
     }
 
     [Test]
-    public async Task KEV014_Flags_Async_Lambda_Event_Use_After_Await()
+    public async Task KEV014_Flags_Deferred_Work_Inside_Awaited_Hooks()
     {
-        var diagnostics = await AnalyzeBodyAsync("""
-            _ = Shield.Retry(options => options.OnRetry = async item =>
-            {
-                await Task.Yield();
-                _ = item.Context.ShieldName;
-            });
-            """);
+        var statements = new[]
+        {
+            "_ = Task.Run(() => Console.WriteLine(item.Context.ShieldName));",
+            "_ = AuditAsync(item);",
+        };
+        foreach (var statement in statements)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = async item =>
+                {
+                    {{statement}}
+                    await Task.Yield();
+                });
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+                static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+                """);
+
+            await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+        }
     }
 
     [Test]
@@ -85,14 +89,20 @@ public class PipelineHazardAnalyzerTests
         foreach (var awaitExpression in awaitExpressions)
         {
             var diagnostics = await AnalyzeBodyAsync($$"""
-                _ = Shield.Retry(options => options.OnRetry = async item =>
+                _ = Shield.Retry(options => options.OnRetry = item =>
                 {
-                    await {{awaitExpression}};
-                    Console.WriteLine(item.Context.ShieldName);
+                    Start();
+                    return default;
+
+                    async void Start()
+                    {
+                        await {{awaitExpression}};
+                        Console.WriteLine(item.Context.ShieldName);
+                    }
                 });
                 """);
 
-            await AssertRuleAsync(diagnostics, "KEV013");
+            await Assert.That(diagnostics).IsEmpty();
         }
     }
 
@@ -108,18 +118,20 @@ public class PipelineHazardAnalyzerTests
         foreach (var awaitExpression in awaitExpressions)
         {
             var diagnostics = await AnalyzeBodyAsync($$"""
-                _ = Shield.Retry(options => options.OnRetry = async item =>
+                _ = Shield.Retry(options => options.OnRetry = item =>
                 {
-                    await {{awaitExpression}};
-                    Console.WriteLine(item.Context.ShieldName);
+                    Start();
+                    return default;
+
+                    async void Start()
+                    {
+                        await {{awaitExpression}};
+                        Console.WriteLine(item.Context.ShieldName);
+                    }
                 });
                 """);
 
-            await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-            await AssertRuleAsync(
-                Without(diagnostics, "KEV013"),
-                "KEV014",
-                DiagnosticSeverity.Warning);
+            await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
         }
     }
 
@@ -130,10 +142,16 @@ public class PipelineHazardAnalyzerTests
             public sealed class TestSubject
             {
                 public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
                     {
-                        await new PendingAwaitable();
-                        Console.WriteLine(item.Context.ShieldName);
+                        Start();
+                        return default;
+
+                        async void Start()
+                        {
+                            await new PendingAwaitable();
+                            Console.WriteLine(item.Context.ShieldName);
+                        }
                     });
 
                 private readonly struct PendingAwaitable
@@ -144,52 +162,52 @@ public class PipelineHazardAnalyzerTests
             }
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
     public async Task KEV014_Follows_PostAwait_Local_Function_Calls()
     {
         var diagnostics = await AnalyzeBodyAsync("""
-            _ = Shield.Retry(options => options.OnRetry = async item =>
+            _ = Shield.Retry(options => options.OnRetry = item =>
             {
-                await Task.Yield();
-                ReadContext();
+                Start();
+                return default;
 
-                void ReadContext() => Console.WriteLine(item.Context.ShieldName);
+                async void Start()
+                {
+                    await Task.Yield();
+                    ReadContext();
+
+                    void ReadContext() => Console.WriteLine(item.Context.ShieldName);
+                }
             });
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
     public async Task KEV014_Maps_PostAwait_Local_Function_Parameters()
     {
         var diagnostics = await AnalyzeBodyAsync("""
-            _ = Shield.Retry(options => options.OnRetry = async item =>
+            _ = Shield.Retry(options => options.OnRetry = item =>
             {
-                await Task.Yield();
-                Read(item);
+                Start();
+                return default;
 
-                static void Read(RetryEvent value) =>
-                    Console.WriteLine(value.Context.ShieldName);
+                async void Start()
+                {
+                    await Task.Yield();
+                    Read(item);
+
+                    static void Read(RetryEvent value) =>
+                        Console.WriteLine(value.Context.ShieldName);
+                }
             });
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
@@ -201,11 +219,17 @@ public class PipelineHazardAnalyzerTests
                 private RetryEvent _event;
 
                 public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
                     {
-                        _event = item;
-                        await Task.Yield();
-                        Read();
+                        Start();
+                        return default;
+
+                        async void Start()
+                        {
+                            _event = item;
+                            await Task.Yield();
+                            Read();
+                        }
                     });
 
                 private void Read() => Consume(_event);
@@ -216,10 +240,16 @@ public class PipelineHazardAnalyzerTests
             public sealed class TestSubject
             {
                 public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
                     {
-                        await Task.Yield();
-                        Read(item);
+                        Start();
+                        return default;
+
+                        async void Start()
+                        {
+                            await Task.Yield();
+                            Read(item);
+                        }
                     });
 
                 private static void Read(RetryEvent item)
@@ -235,27 +265,25 @@ public class PipelineHazardAnalyzerTests
             public sealed class TestSubject
             {
                 public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
                     {
-                        await Task.Yield();
-                        Read(42);
+                        Start();
+                        return default;
+
+                        async void Start()
+                        {
+                            await Task.Yield();
+                            Read(42);
+                        }
                     });
 
                 private static void Read(int retryNumber) => Console.WriteLine(retryNumber);
             }
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
-        await AssertRuleAsync(Without(parameterFlow, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(parameterFlow, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
-        await AssertRuleAsync(scalarParameter, "KEV013");
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+        await AssertRuleAsync(parameterFlow, "KEV014", DiagnosticSeverity.Warning);
+        await Assert.That(scalarParameter).IsEmpty();
     }
 
     [Test]
@@ -265,11 +293,17 @@ public class PipelineHazardAnalyzerTests
             public sealed class TestSubject
             {
                 public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
                     {
-                        var holder = new Holder(item);
-                        await Task.Yield();
-                        Read(holder);
+                        Start();
+                        return default;
+
+                        async void Start()
+                        {
+                            var holder = new Holder(item);
+                            await Task.Yield();
+                            Read(holder);
+                        }
                     });
 
                 private static void Read(Holder value) =>
@@ -287,30 +321,28 @@ public class PipelineHazardAnalyzerTests
             }
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
     public async Task KEV014_Follows_PostAwait_Explicit_Delegate_Invoke()
     {
         var diagnostics = await AnalyzeBodyAsync("""
-            _ = Shield.Retry(options => options.OnRetry = async item =>
+            _ = Shield.Retry(options => options.OnRetry = item =>
             {
-                await Task.Yield();
-                Action use = () => Console.WriteLine(item.Context.ShieldName);
-                use.Invoke();
+                Start();
+                return default;
+
+                async void Start()
+                {
+                    await Task.Yield();
+                    Action use = () => Console.WriteLine(item.Context.ShieldName);
+                    use.Invoke();
+                }
             });
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
@@ -326,6 +358,7 @@ public class PipelineHazardAnalyzerTests
                     {
                         _event = item;
                         _ = AuditAsync();
+                        return default;
                     });
 
                 private async Task AuditAsync()
@@ -336,7 +369,7 @@ public class PipelineHazardAnalyzerTests
             }
             """);
 
-        await AssertRuleAsync(diagnostics, "KEV013");
+        await Assert.That(diagnostics).IsEmpty();
     }
 
     [Test]
@@ -346,11 +379,17 @@ public class PipelineHazardAnalyzerTests
             public sealed class TestSubject
             {
                 public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
                     {
-                        var holder = new Holder { Event = item };
-                        await Task.Yield();
-                        Consume(holder.Event.Context);
+                        Start();
+                        return default;
+
+                        async void Start()
+                        {
+                            var holder = new Holder { Event = item };
+                            await Task.Yield();
+                            Consume(holder.Event.Context);
+                        }
                     });
 
                 private static void Consume(KevlarContext context) { }
@@ -365,11 +404,17 @@ public class PipelineHazardAnalyzerTests
             public sealed class TestSubject
             {
                 public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
                     {
-                        var snapshot = new RetrySnapshot(item);
-                        await Task.Yield();
-                        Console.WriteLine(snapshot.RetryNumber);
+                        Start();
+                        return default;
+
+                        async void Start()
+                        {
+                            var snapshot = new RetrySnapshot(item);
+                            await Task.Yield();
+                            Console.WriteLine(snapshot.RetryNumber);
+                        }
                     });
 
                 private sealed class RetrySnapshot
@@ -387,11 +432,17 @@ public class PipelineHazardAnalyzerTests
             public sealed class TestSubject
             {
                 public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
                     {
-                        var holder = new Holder(item);
-                        await Task.Yield();
-                        Consume(holder.Event.Context);
+                        Start();
+                        return default;
+
+                        async void Start()
+                        {
+                            var holder = new Holder(item);
+                            await Task.Yield();
+                            Consume(holder.Event.Context);
+                        }
                     });
 
                 private static void Consume(KevlarContext context) { }
@@ -411,11 +462,17 @@ public class PipelineHazardAnalyzerTests
             public sealed class TestSubject
             {
                 public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
                     {
-                        var holder = new Holder { };
-                        await Task.Yield();
-                        Console.WriteLine(holder.Value);
+                        Start();
+                        return default;
+
+                        async void Start()
+                        {
+                            var holder = new Holder { };
+                            await Task.Yield();
+                            Console.WriteLine(holder.Value);
+                        }
                     });
 
                 private sealed class Holder
@@ -428,11 +485,17 @@ public class PipelineHazardAnalyzerTests
             public sealed class TestSubject
             {
                 public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
                     {
-                        var holder = new Holder(item);
-                        await Task.Yield();
-                        Consume(holder.Event.Context);
+                        Start();
+                        return default;
+
+                        async void Start()
+                        {
+                            var holder = new Holder(item);
+                            await Task.Yield();
+                            Consume(holder.Event.Context);
+                        }
                     });
 
                 private static void Consume(KevlarContext context) { }
@@ -457,11 +520,17 @@ public class PipelineHazardAnalyzerTests
             public sealed class TestSubject
             {
                 public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
                     {
-                        var holder = new Holder(item);
-                        await Task.Yield();
-                        Console.WriteLine(holder.Value);
+                        Start();
+                        return default;
+
+                        async void Start()
+                        {
+                            var holder = new Holder(item);
+                            await Task.Yield();
+                            Console.WriteLine(holder.Value);
+                        }
                     });
 
                 private sealed class Holder
@@ -484,11 +553,17 @@ public class PipelineHazardAnalyzerTests
             public sealed class TestSubject
             {
                 public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
                     {
-                        var holder = new Holder(item);
-                        await Task.Yield();
-                        Consume(holder.Event.Context);
+                        Start();
+                        return default;
+
+                        async void Start()
+                        {
+                            var holder = new Holder(item);
+                            await Task.Yield();
+                            Consume(holder.Event.Context);
+                        }
                     });
 
                 private static void Consume(KevlarContext context) { }
@@ -510,11 +585,17 @@ public class PipelineHazardAnalyzerTests
             public sealed class TestSubject
             {
                 public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
                     {
-                        var holder = new Holder(item);
-                        await Task.Yield();
-                        Consume(holder.State.Event.Context);
+                        Start();
+                        return default;
+
+                        async void Start()
+                        {
+                            var holder = new Holder(item);
+                            await Task.Yield();
+                            Consume(holder.State.Event.Context);
+                        }
                     });
 
                 private static void Consume(KevlarContext context) { }
@@ -539,11 +620,17 @@ public class PipelineHazardAnalyzerTests
             public sealed class TestSubject
             {
                 public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
                     {
-                        var holder = new Holder(item);
-                        await Task.Yield();
-                        Consume(holder.Events[0].Context);
+                        Start();
+                        return default;
+
+                        async void Start()
+                        {
+                            var holder = new Holder(item);
+                            await Task.Yield();
+                            Consume(holder.Events[0].Context);
+                        }
                     });
 
                 private static void Consume(KevlarContext context) { }
@@ -563,11 +650,17 @@ public class PipelineHazardAnalyzerTests
             public sealed class TestSubject
             {
                 public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
                     {
-                        var holder = new Holder(item);
-                        await Task.Yield();
-                        Consume(holder.Events[0].Context);
+                        Start();
+                        return default;
+
+                        async void Start()
+                        {
+                            var holder = new Holder(item);
+                            await Task.Yield();
+                            Consume(holder.Events[0].Context);
+                        }
                     });
 
                 private static void Consume(KevlarContext context) { }
@@ -587,11 +680,17 @@ public class PipelineHazardAnalyzerTests
             public sealed class TestSubject
             {
                 public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
                     {
-                        var holder = new Holder(item);
-                        await Task.Yield();
-                        Consume(holder.Event.Context);
+                        Start();
+                        return default;
+
+                        async void Start()
+                        {
+                            var holder = new Holder(item);
+                            await Task.Yield();
+                            Consume(holder.Event.Context);
+                        }
                     });
 
                 private static void Consume(KevlarContext context) { }
@@ -616,11 +715,17 @@ public class PipelineHazardAnalyzerTests
             public sealed class TestSubject
             {
                 public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
                     {
-                        var holder = new Holder(item);
-                        await Task.Yield();
-                        Consume(holder.Events[0].Context);
+                        Start();
+                        return default;
+
+                        async void Start()
+                        {
+                            var holder = new Holder(item);
+                            await Task.Yield();
+                            Consume(holder.Events[0].Context);
+                        }
                     });
 
                 private static void Consume(KevlarContext context) { }
@@ -644,11 +749,17 @@ public class PipelineHazardAnalyzerTests
             public sealed class TestSubject
             {
                 public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
                     {
-                        var holder = new Holder(item);
-                        await Task.Yield();
-                        Consume(holder.Events[0].Context);
+                        Start();
+                        return default;
+
+                        async void Start()
+                        {
+                            var holder = new Holder(item);
+                            await Task.Yield();
+                            Consume(holder.Events[0].Context);
+                        }
                     });
 
                 private static void Consume(KevlarContext context) { }
@@ -673,11 +784,17 @@ public class PipelineHazardAnalyzerTests
             public sealed class TestSubject
             {
                 public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
                     {
-                        var holder = new Holder(item);
-                        await Task.Yield();
-                        Console.WriteLine(holder.Value);
+                        Start();
+                        return default;
+
+                        async void Start()
+                        {
+                            var holder = new Holder(item);
+                            await Task.Yield();
+                            Console.WriteLine(holder.Value);
+                        }
                     });
 
                 private sealed class Holder
@@ -697,93 +814,57 @@ public class PipelineHazardAnalyzerTests
             public sealed class TestSubject
             {
                 public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
                     {
-                        var events = new System.Collections.Generic.List<RetryEvent> { default, item };
-                        await Task.Yield();
-                        Console.WriteLine(events[1].RetryNumber);
+                        Start();
+                        return default;
+
+                        async void Start()
+                        {
+                            var events = new System.Collections.Generic.List<RetryEvent> { default, item };
+                            await Task.Yield();
+                            Console.WriteLine(events[1].RetryNumber);
+                        }
                     });
             }
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
-        await AssertRuleAsync(snapshot, "KEV013");
-        await AssertRuleAsync(Without(constructorWrapper, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(constructorWrapper, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
-        await AssertRuleAsync(emptyInitializer, "KEV013");
-        await AssertRuleAsync(Without(delegatedConstructor, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(delegatedConstructor, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
-        await AssertRuleAsync(unrelatedConstructorStore, "KEV013");
-        await AssertRuleAsync(Without(fieldConstructorWrapper, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(fieldConstructorWrapper, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
-        await AssertRuleAsync(Without(nestedConstructorStore, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(nestedConstructorStore, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
-        await AssertRuleAsync(Without(compositeConstructorStore, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(compositeConstructorStore, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
-        await AssertRuleAsync(Without(mutatingConstructorStore, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(mutatingConstructorStore, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
-        await AssertRuleAsync(Without(helperConstructorStore, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(helperConstructorStore, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
-        await AssertRuleAsync(Without(staticHelperConstructorStore, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(staticHelperConstructorStore, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
-        await AssertRuleAsync(Without(compositeDelegatedConstructor, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(compositeDelegatedConstructor, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
-        await AssertRuleAsync(uninvokedNestedStores, "KEV013");
-        await AssertRuleAsync(Without(collectionWrapper, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(collectionWrapper, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+        await Assert.That(snapshot).IsEmpty();
+        await AssertRuleAsync(constructorWrapper, "KEV014", DiagnosticSeverity.Warning);
+        await Assert.That(emptyInitializer).IsEmpty();
+        await AssertRuleAsync(delegatedConstructor, "KEV014", DiagnosticSeverity.Warning);
+        await Assert.That(unrelatedConstructorStore).IsEmpty();
+        await AssertRuleAsync(fieldConstructorWrapper, "KEV014", DiagnosticSeverity.Warning);
+        await AssertRuleAsync(nestedConstructorStore, "KEV014", DiagnosticSeverity.Warning);
+        await AssertRuleAsync(compositeConstructorStore, "KEV014", DiagnosticSeverity.Warning);
+        await AssertRuleAsync(mutatingConstructorStore, "KEV014", DiagnosticSeverity.Warning);
+        await AssertRuleAsync(helperConstructorStore, "KEV014", DiagnosticSeverity.Warning);
+        await AssertRuleAsync(staticHelperConstructorStore, "KEV014", DiagnosticSeverity.Warning);
+        await AssertRuleAsync(compositeDelegatedConstructor, "KEV014", DiagnosticSeverity.Warning);
+        await Assert.That(uninvokedNestedStores).IsEmpty();
+        await AssertRuleAsync(collectionWrapper, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
     public async Task KEV014_Tracks_Framework_Collections_In_PostAwait_Aliases()
     {
         var diagnostics = await AnalyzeBodyAsync("""
-            _ = Shield.Retry(options => options.OnRetry = async item =>
+            _ = Shield.Retry(options => options.OnRetry = item =>
             {
-                var events = new System.Collections.Generic.List<RetryEvent>(new[] { item });
-                await Task.Yield();
-                Console.WriteLine(events[0].Context.ShieldName);
+                Start();
+                return default;
+
+                async void Start()
+                {
+                    var events = new System.Collections.Generic.List<RetryEvent>(new[] { item });
+                    await Task.Yield();
+                    Console.WriteLine(events[0].Context.ShieldName);
+                }
             });
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
@@ -793,11 +874,17 @@ public class PipelineHazardAnalyzerTests
             public sealed class TestSubject
             {
                 public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
                     {
-                        var holder = new Holder(item);
-                        await Task.Yield();
-                        Console.WriteLine(holder.Events[0].Context.ShieldName);
+                        Start();
+                        return default;
+
+                        async void Start()
+                        {
+                            var holder = new Holder(item);
+                            await Task.Yield();
+                            Console.WriteLine(holder.Events[0].Context.ShieldName);
+                        }
                     });
 
                 private sealed class Holder
@@ -813,31 +900,29 @@ public class PipelineHazardAnalyzerTests
             }
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
     public async Task KEV014_Tracks_PostAwait_Array_Element_Writes()
     {
         var diagnostics = await AnalyzeBodyAsync("""
-            _ = Shield.Retry(options => options.OnRetry = async item =>
+            _ = Shield.Retry(options => options.OnRetry = item =>
             {
-                var events = new RetryEvent[1];
-                events[0] = item;
-                await Task.Yield();
-                Console.WriteLine(events[0].Context.ShieldName);
+                Start();
+                return default;
+
+                async void Start()
+                {
+                    var events = new RetryEvent[1];
+                    events[0] = item;
+                    await Task.Yield();
+                    Console.WriteLine(events[0].Context.ShieldName);
+                }
             });
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
@@ -847,11 +932,17 @@ public class PipelineHazardAnalyzerTests
             public sealed class TestSubject
             {
                 public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
                     {
-                        var holder = new Holder(item);
-                        await Task.Yield();
-                        Console.WriteLine(holder.Event.Context.ShieldName);
+                        Start();
+                        return default;
+
+                        async void Start()
+                        {
+                            var holder = new Holder(item);
+                            await Task.Yield();
+                            Console.WriteLine(holder.Event.Context.ShieldName);
+                        }
                     });
 
                 private sealed class Holder
@@ -868,32 +959,30 @@ public class PipelineHazardAnalyzerTests
             }
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
     public async Task KEV014_Follows_Nested_PostAwait_Local_Function_Calls()
     {
         var diagnostics = await AnalyzeBodyAsync("""
-            _ = Shield.Retry(options => options.OnRetry = async item =>
+            _ = Shield.Retry(options => options.OnRetry = item =>
             {
-                await Task.Yield();
-                ReadContext();
+                Start();
+                return default;
 
-                void ReadContext() => ReadInner();
-                void ReadInner() => Console.WriteLine(item.Context.ShieldName);
+                async void Start()
+                {
+                    await Task.Yield();
+                    ReadContext();
+
+                    void ReadContext() => ReadInner();
+                    void ReadInner() => Console.WriteLine(item.Context.ShieldName);
+                }
             });
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
@@ -901,25 +990,31 @@ public class PipelineHazardAnalyzerTests
     {
         var diagnostics = await AnalyzeBodyAsync("""
             var holder = (item: 42, other: 0);
-            _ = Shield.Retry(options => options.OnRetry = async item =>
+            _ = Shield.Retry(options => options.OnRetry = item =>
             {
-                await Task.Yield();
-                Read();
+                Start();
+                return default;
 
-                void Read() => Console.WriteLine(holder.item);
+                async void Start()
+                {
+                    await Task.Yield();
+                    Read();
+
+                    void Read() => Console.WriteLine(holder.item);
+                }
             });
             """);
 
-        await AssertRuleAsync(diagnostics, "KEV013");
+        await Assert.That(diagnostics).IsEmpty();
     }
 
     [Test]
-    public async Task KEV014_Inspects_Async_Anonymous_Function_Syntaxes()
+    public async Task KEV014_Inspects_Anonymous_Function_Syntaxes()
     {
         var callbacks = new[]
         {
-            "async (RetryEvent item) => { await Task.Yield(); _ = item.Context.ShieldName; }",
-            "async delegate(RetryEvent item) { await Task.Yield(); _ = item.Context.ShieldName; }",
+            "(RetryEvent item) => { Start(); return default; async void Start() { await Task.Yield(); _ = item.Context.ShieldName; } }",
+            "delegate(RetryEvent item) { Start(); return default; async void Start() { await Task.Yield(); _ = item.Context.ShieldName; } }",
         };
         foreach (var callback in callbacks)
         {
@@ -927,11 +1022,7 @@ public class PipelineHazardAnalyzerTests
                 _ = Shield.Retry(options => options.OnRetry = {{callback}});
                 """);
 
-            await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-            await AssertRuleAsync(
-                Without(diagnostics, "KEV013"),
-                "KEV014",
-                DiagnosticSeverity.Warning);
+            await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
         }
     }
 
@@ -948,14 +1039,11 @@ public class PipelineHazardAnalyzerTests
                 }
 
                 Start();
+                return default;
             });
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
@@ -970,14 +1058,11 @@ public class PipelineHazardAnalyzerTests
                     _ = item.Context.ShieldName;
                 };
                 start();
+                return default;
             });
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
@@ -992,14 +1077,11 @@ public class PipelineHazardAnalyzerTests
                     Console.WriteLine(item.Context.ShieldName);
                 };
                 work.Invoke();
+                return default;
             });
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
@@ -1013,388 +1095,64 @@ public class PipelineHazardAnalyzerTests
                     await Task.Yield();
                     _ = item.Context.ShieldName;
                 }))();
+                return default;
             });
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
     public async Task KEV014_Inspects_Invoked_Delegates_After_Await()
     {
         var diagnostics = await AnalyzeBodyAsync("""
-            _ = Shield.Retry(options => options.OnRetry = async item =>
+            _ = Shield.Retry(options => options.OnRetry = item =>
             {
-                await Task.Yield();
-                Action use = () => Console.WriteLine(item.Context.ShieldName);
-                use();
+                Start();
+                return default;
+
+                async void Start()
+                {
+                    await Task.Yield();
+                    Action use = () => Console.WriteLine(item.Context.ShieldName);
+                    use();
+                }
             });
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
     public async Task KEV014_Ignores_Nameof_After_Await()
     {
         var diagnostics = await AnalyzeBodyAsync("""
-            _ = Shield.Retry(options => options.OnRetry = async item =>
+            _ = Shield.Retry(options => options.OnRetry = item =>
             {
-                await Task.Yield();
-                _ = nameof(item);
+                Start();
+                return default;
+
+                async void Start()
+                {
+                    await Task.Yield();
+                    _ = nameof(item);
+                }
             });
             """);
 
-        await AssertRuleAsync(diagnostics, "KEV013");
+        await Assert.That(diagnostics).IsEmpty();
     }
 
     [Test]
     public async Task KEV014_Requires_Reachable_Suspension_Before_Event_Use()
     {
         var diagnostics = await AnalyzeBodyAsync("""
-            _ = Shield.Retry(options => options.OnRetry = async item =>
+            _ = Shield.Retry(options => options.OnRetry = item =>
             {
-                if (Environment.TickCount == 0)
-                {
-                    await Task.Yield();
-                    return;
-                }
+                Start();
+                return default;
 
-                _ = item.Context.ShieldName;
-            });
-            """);
-
-        await AssertRuleAsync(diagnostics, "KEV013");
-    }
-
-    [Test]
-    public async Task KEV014_Ignores_Aliases_On_Paths_That_Exit_Before_Await()
-    {
-        var diagnostics = await AnalyzeBodyAsync("""
-            _ = Shield.Retry(options => options.OnRetry = async item =>
-            {
-                KevlarContext? retained = null;
-                if (Environment.TickCount == 0)
-                {
-                    retained = item.Context;
-                    return;
-                }
-
-                await Task.Yield();
-                if (retained is not null)
-                {
-                    Console.WriteLine(retained.ShieldName);
-                }
-            });
-            """);
-
-        await AssertRuleAsync(diagnostics, "KEV013");
-    }
-
-    [Test]
-    public async Task KEV014_Tracks_Aliases_At_Later_Reachable_Awaits()
-    {
-        var diagnostics = await AnalyzeBodyAsync("""
-            _ = Shield.Retry(options => options.OnRetry = async item =>
-            {
-                if (Environment.TickCount == 0)
-                {
-                    await Task.Yield();
-                    return;
-                }
-
-                var retained = item;
-                await Task.Yield();
-                Console.WriteLine(retained.Context.ShieldName);
-            });
-            """);
-
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
-    }
-
-    [Test]
-    public async Task KEV014_Tracks_Uses_Reached_Through_Loop_BackEdges()
-    {
-        var diagnostics = await AnalyzeBodyAsync("""
-            _ = Shield.Retry(options => options.OnRetry = async item =>
-            {
-                while (Environment.TickCount >= 0)
-                {
-                    Console.WriteLine(item.Context.ShieldName);
-                    await Task.Yield();
-                }
-            });
-            """);
-
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
-    }
-
-    [Test]
-    public async Task KEV014_Keeps_Aliases_On_Their_Suspension_Path()
-    {
-        var diagnostics = await AnalyzeBodyAsync("""
-            _ = Shield.Retry(options => options.OnRetry = async item =>
-            {
-                RetryEvent retained = default;
-                if (Environment.TickCount == 0)
-                {
-                    retained = item;
-                    await Task.Yield();
-                    return;
-                }
-
-                await Task.Yield();
-                Console.WriteLine(retained.RetryNumber);
-            });
-            """);
-
-        await AssertRuleAsync(diagnostics, "KEV013");
-    }
-
-    [Test]
-    public async Task KEV014_Keeps_Alias_Propagation_On_One_Control_Flow_Path()
-    {
-        var diagnostics = await AnalyzeBodyAsync("""
-            _ = Shield.Retry(options => options.OnRetry = async item =>
-            {
-                RetryEvent first = default;
-                RetryEvent retained = default;
-                if (Environment.TickCount == 0)
-                {
-                    first = item;
-                }
-                else
-                {
-                    retained = first;
-                }
-
-                await Task.Yield();
-                Console.WriteLine(retained.RetryNumber);
-            });
-            """);
-
-        await AssertRuleAsync(diagnostics, "KEV013");
-    }
-
-    [Test]
-    public async Task KEV014_Removes_Aliases_Cleared_On_Every_Incoming_Path()
-    {
-        var diagnostics = await AnalyzeBodyAsync("""
-            _ = Shield.Retry(options => options.OnRetry = async item =>
-            {
-                var retained = item;
-                if (Environment.TickCount == 0)
-                {
-                    retained = default;
-                }
-                else
-                {
-                    retained = default;
-                }
-
-                await Task.Yield();
-                Console.WriteLine(retained.RetryNumber);
-            });
-            """);
-
-        await AssertRuleAsync(diagnostics, "KEV013");
-    }
-
-    [Test]
-    public async Task KEV014_Keeps_Aliases_Reintroduced_After_Exhaustive_Clears()
-    {
-        var diagnostics = await AnalyzeBodyAsync("""
-            _ = Shield.Retry(options => options.OnRetry = async item =>
-            {
-                var retained = item;
-                if (Environment.TickCount == 0)
-                {
-                    retained = default;
-                }
-                else
-                {
-                    retained = default;
-                }
-
-                retained = item;
-                await Task.Yield();
-                Console.WriteLine(retained.RetryNumber);
-            });
-            """);
-
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
-    }
-
-    [Test]
-    public async Task KEV014_Inspects_Combined_Async_Delegates()
-    {
-        var diagnostics = await AnalyzeBodyAsync("""
-            Action<RetryEvent> existing = _ => { };
-            _ = Shield.Retry(options => options.OnRetry = existing
-                + (Action<RetryEvent>)(async item =>
-                {
-                    await Task.Yield();
-                    _ = item.Context.ShieldName;
-                }));
-            """);
-
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
-    }
-
-    [Test]
-    public async Task KEV013_Allows_Awaited_And_Synchronous_Callbacks()
-    {
-        var diagnostics = await AnalyzeBodyAsync("""
-            _ = Shield.Retry(o =>
-            {
-                o.OnRetry = _ => { };
-                o.OnRetryAsync = async _ => await Task.Yield();
-            });
-            _ = Shield.Timeout(o => o.OnTimeoutAsync = _ => ValueTask.CompletedTask);
-            """);
-
-        await Assert.That(diagnostics).IsEmpty();
-    }
-
-    [Test]
-    public async Task KEV013_Ignores_Similarly_Named_Application_Callbacks()
-    {
-        var diagnostics = await AnalyzeSourceAsync("""
-            namespace KevlarApplication;
-
-            public sealed class RetryOptions
-            {
-                public Action<Kevlar.RetryEvent>? OnRetry { get; set; }
-            }
-
-            public sealed class TestSubject
-            {
-                public void Configure()
-                {
-                    var options = new RetryOptions();
-                    options.OnRetry = async _ => await Task.Yield();
-                }
-            }
-            """);
-
-        await Assert.That(diagnostics).IsEmpty();
-    }
-
-    [Test]
-    public async Task KEV013_Flags_Task_Returning_Method_Group_On_Synchronous_Callback()
-    {
-        var diagnostics = await AnalyzeSourceAsync("""
-            public class TestSubject
-            {
-                public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = RetryAsync);
-
-                private static Task RetryAsync(RetryEvent item) => Task.CompletedTask;
-            }
-            """, allowCompilationErrors: true);
-
-        await AssertRuleAsync(diagnostics, "KEV013");
-    }
-
-    [Test]
-    public async Task KEV013_Flags_Async_Void_Method_Group_On_Synchronous_Callback()
-    {
-        var diagnostics = await AnalyzeSourceAsync("""
-            public class TestSubject
-            {
-                public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = RetryAsyncVoid);
-
-                private static async void RetryAsyncVoid(RetryEvent item) => await Task.Yield();
-            }
-            """);
-
-        await AssertRuleAsync(diagnostics, "KEV013");
-    }
-
-    [Test]
-    public async Task KEV014_Inspects_Async_Void_Method_Group_After_Await()
-    {
-        var diagnostics = await AnalyzeSourceAsync("""
-            public class TestSubject
-            {
-                public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = RetryAsyncVoid);
-
-                private static async void RetryAsyncVoid(RetryEvent item)
-                {
-                    await Task.Yield();
-                    _ = item.Context.ShieldName;
-                }
-            }
-            """);
-
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
-    }
-
-    [Test]
-    public async Task KEV014_Ignores_Async_Void_Event_Use_Before_Await()
-    {
-        var diagnostics = await AnalyzeSourceAsync("""
-            public class TestSubject
-            {
-                public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = RetryAsyncVoid);
-
-                private static async void RetryAsyncVoid(RetryEvent item)
-                {
-                    _ = item.Context.ShieldName;
-                    await Task.Yield();
-                }
-            }
-            """);
-
-        await AssertRuleAsync(diagnostics, "KEV013");
-    }
-
-    [Test]
-    public async Task KEV014_Uses_Declaration_Tree_Control_Flow_For_Method_Groups()
-    {
-        var diagnostics = await AnalyzeSourcesAsync(
-            """
-            public sealed class TestSubject
-            {
-                public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = CallbackHost.OnRetry);
-            }
-            """,
-            """
-            public static class CallbackHost
-            {
-                public static async void OnRetry(RetryEvent item)
+                async void Start()
                 {
                     if (Environment.TickCount == 0)
                     {
@@ -1404,60 +1162,335 @@ public class PipelineHazardAnalyzerTests
 
                     _ = item.Context.ShieldName;
                 }
-            }
+            });
             """);
 
-        await AssertRuleAsync(diagnostics, "KEV013");
+        await Assert.That(diagnostics).IsEmpty();
     }
 
     [Test]
-    public async Task KEV014_Inspects_Constructed_Async_Void_Method_Groups()
+    public async Task KEV014_Ignores_Aliases_On_Paths_That_Exit_Before_Await()
     {
-        var diagnostics = await AnalyzeSourceAsync("""
-            public class TestSubject
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
             {
-                public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry =
-                        new Action<RetryEvent>(RetryAsyncVoid));
+                Start();
+                return default;
 
-                private static async void RetryAsyncVoid(RetryEvent item)
+                async void Start()
                 {
+                    KevlarContext? retained = null;
+                    if (Environment.TickCount == 0)
+                    {
+                        retained = item.Context;
+                        return;
+                    }
+
                     await Task.Yield();
-                    _ = item.Context.ShieldName;
+                    if (retained is not null)
+                    {
+                        Console.WriteLine(retained.ShieldName);
+                    }
                 }
-            }
+            });
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await Assert.That(diagnostics).IsEmpty();
     }
 
     [Test]
-    public async Task KEV014_Follows_Async_Void_Event_Aliases_After_Await()
+    public async Task KEV014_Tracks_Aliases_At_Later_Reachable_Awaits()
     {
-        var diagnostics = await AnalyzeSourceAsync("""
-            public class TestSubject
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
             {
-                public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = RetryAsyncVoid);
+                Start();
+                return default;
 
-                private static async void RetryAsyncVoid(RetryEvent item)
+                async void Start()
                 {
+                    if (Environment.TickCount == 0)
+                    {
+                        await Task.Yield();
+                        return;
+                    }
+
                     var retained = item;
                     await Task.Yield();
-                    _ = retained.Context.ShieldName;
+                    Console.WriteLine(retained.Context.ShieldName);
+                }
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_Uses_Reached_Through_Loop_BackEdges()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                Start();
+                return default;
+
+                async void Start()
+                {
+                    while (Environment.TickCount >= 0)
+                    {
+                        Console.WriteLine(item.Context.ShieldName);
+                        await Task.Yield();
+                    }
+                }
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Keeps_Aliases_On_Their_Suspension_Path()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                Start();
+                return default;
+
+                async void Start()
+                {
+                    RetryEvent retained = default;
+                    if (Environment.TickCount == 0)
+                    {
+                        retained = item;
+                        await Task.Yield();
+                        return;
+                    }
+
+                    await Task.Yield();
+                    Console.WriteLine(retained.RetryNumber);
+                }
+            });
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Keeps_Alias_Propagation_On_One_Control_Flow_Path()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                Start();
+                return default;
+
+                async void Start()
+                {
+                    RetryEvent first = default;
+                    RetryEvent retained = default;
+                    if (Environment.TickCount == 0)
+                    {
+                        first = item;
+                    }
+                    else
+                    {
+                        retained = first;
+                    }
+
+                    await Task.Yield();
+                    Console.WriteLine(retained.RetryNumber);
+                }
+            });
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Removes_Aliases_Cleared_On_Every_Incoming_Path()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                Start();
+                return default;
+
+                async void Start()
+                {
+                    var retained = item;
+                    if (Environment.TickCount == 0)
+                    {
+                        retained = default;
+                    }
+                    else
+                    {
+                        retained = default;
+                    }
+
+                    await Task.Yield();
+                    Console.WriteLine(retained.RetryNumber);
+                }
+            });
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Keeps_Aliases_Reintroduced_After_Exhaustive_Clears()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                Start();
+                return default;
+
+                async void Start()
+                {
+                    var retained = item;
+                    if (Environment.TickCount == 0)
+                    {
+                        retained = default;
+                    }
+                    else
+                    {
+                        retained = default;
+                    }
+
+                    retained = item;
+                    await Task.Yield();
+                    Console.WriteLine(retained.RetryNumber);
+                }
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Inspects_Combined_Delegates()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            Func<RetryEvent, ValueTask> existing = _ => default;
+            _ = Shield.Retry(options => options.OnRetry = existing
+                + (Func<RetryEvent, ValueTask>)(item =>
+                {
+                    Start();
+                    return default;
+
+                    async void Start()
+                    {
+                        await Task.Yield();
+                        _ = item.Context.ShieldName;
+                    }
+                }));
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Similarly_Named_Application_Callbacks()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            namespace KevlarApplication;
+
+            public sealed class RetryOptions
+            {
+                public Func<Kevlar.RetryEvent, ValueTask>? OnRetry { get; set; }
+            }
+
+            public sealed class TestSubject
+            {
+                public void Configure()
+                {
+                    var options = new RetryOptions();
+                    options.OnRetry = item =>
+                    {
+                        _ = AuditAsync(item);
+                        return default;
+                    };
+                }
+
+                private static Task AuditAsync(Kevlar.RetryEvent item) => Task.CompletedTask;
+            }
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
+    public async Task KEV014_Flags_Event_Arguments_Passed_To_Async_Void_Local_Functions()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                RetryAsyncVoid(item);
+                return default;
+
+                static async void RetryAsyncVoid(RetryEvent value)
+                {
+                    await Task.Yield();
+                    _ = value.Context.ShieldName;
+                }
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Uses_Declaration_Tree_Control_Flow_For_Source_Methods()
+    {
+        const string configuration = """
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        CallbackHost.Event = item;
+                        _ = CallbackHost.AuditAsync();
+                        return default;
+                    });
+            }
+            """;
+        var safe = await AnalyzeSourcesAsync(
+            configuration,
+            """
+            public static class CallbackHost
+            {
+                public static RetryEvent Event;
+
+                public static async Task AuditAsync()
+                {
+                    if (Environment.TickCount == 0)
+                    {
+                        await Task.Yield();
+                        return;
+                    }
+
+                    _ = Event.Context.ShieldName;
+                }
+            }
+            """);
+        var hazardous = await AnalyzeSourcesAsync(
+            configuration,
+            """
+            public static class CallbackHost
+            {
+                public static RetryEvent Event;
+
+                public static async Task AuditAsync()
+                {
+                    await Task.Yield();
+                    _ = Event.Context.ShieldName;
                 }
             }
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await Assert.That(safe).IsEmpty();
+        await AssertRuleAsync(hazardous, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
@@ -1475,19 +1508,21 @@ public class PipelineHazardAnalyzerTests
         foreach (var (initializer, use) in expressions)
         {
             var diagnostics = await AnalyzeBodyAsync($$"""
-                _ = Shield.Retry(options => options.OnRetry = async item =>
+                _ = Shield.Retry(options => options.OnRetry = item =>
                 {
-                    var retained = {{initializer}};
-                    await Task.Yield();
-                    _ = {{use}};
+                    Start();
+                    return default;
+
+                    async void Start()
+                    {
+                        var retained = {{initializer}};
+                        await Task.Yield();
+                        _ = {{use}};
+                    }
                 });
                 """);
 
-            await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-            await AssertRuleAsync(
-                Without(diagnostics, "KEV013"),
-                "KEV014",
-                DiagnosticSeverity.Warning);
+            await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
         }
     }
 
@@ -1498,16 +1533,22 @@ public class PipelineHazardAnalyzerTests
         foreach (var assignment in assignments)
         {
             var diagnostics = await AnalyzeBodyAsync($$"""
-                _ = Shield.Retry(options => options.OnRetry = async item =>
+                _ = Shield.Retry(options => options.OnRetry = item =>
                 {
-                    var retained = item;
-                    {{assignment}}
-                    await Task.Yield();
-                    _ = retained.Context.ShieldName;
+                    Start();
+                    return default;
+
+                    async void Start()
+                    {
+                        var retained = item;
+                        {{assignment}}
+                        await Task.Yield();
+                        _ = retained.Context.ShieldName;
+                    }
                 });
                 """);
 
-            await AssertRuleAsync(diagnostics, "KEV013");
+            await Assert.That(diagnostics).IsEmpty();
         }
     }
 
@@ -1516,19 +1557,21 @@ public class PipelineHazardAnalyzerTests
     {
         var diagnostics = await AnalyzeBodyAsync("""
             var holder = (item: default(RetryEvent), other: 0);
-            _ = Shield.Retry(options => options.OnRetry = async item =>
+            _ = Shield.Retry(options => options.OnRetry = item =>
             {
-                holder.item = default;
-                await Task.Yield();
-                _ = item.Context.ShieldName;
+                Start();
+                return default;
+
+                async void Start()
+                {
+                    holder.item = default;
+                    await Task.Yield();
+                    _ = item.Context.ShieldName;
+                }
             });
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
@@ -1540,20 +1583,22 @@ public class PipelineHazardAnalyzerTests
                 private RetryEvent _event;
 
                 public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
                     {
-                        _event = item;
-                        await Task.Yield();
-                        _ = _event.Context.ShieldName;
+                        Start();
+                        return default;
+
+                        async void Start()
+                        {
+                            _event = item;
+                            await Task.Yield();
+                            _ = _event.Context.ShieldName;
+                        }
                     });
             }
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
@@ -1565,52 +1610,54 @@ public class PipelineHazardAnalyzerTests
                 private RetryEvent _event;
 
                 public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
                     {
-                        _event = item;
-                        if (Environment.TickCount == 0)
-                        {
-                            _event = default;
-                            return;
-                        }
+                        Start();
+                        return default;
 
-                        await Task.Yield();
-                        _ = _event.Context.ShieldName;
+                        async void Start()
+                        {
+                            _event = item;
+                            if (Environment.TickCount == 0)
+                            {
+                                _event = default;
+                                return;
+                            }
+
+                            await Task.Yield();
+                            _ = _event.Context.ShieldName;
+                        }
                     });
             }
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
-    public async Task KEV013_Follows_Stable_Callback_Local_Initializers()
+    public async Task KEV014_Follows_Stable_Callback_Local_Initializers()
     {
-        var trailingStatements = new[] { "", "callback = _ => { };" };
+        var trailingStatements = new[] { "", "callback = _ => default;" };
         foreach (var trailingStatement in trailingStatements)
         {
             var diagnostics = await AnalyzeBodyAsync($$"""
-                Action<RetryEvent> callback = item => AuditAsync(item);
+                Func<RetryEvent, ValueTask> callback = item =>
+                {
+                    _ = AuditAsync(item);
+                    return default;
+                };
                 _ = Shield.Retry(options => options.OnRetry = callback);
                 {{trailingStatement}}
 
                 static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
                 """);
 
-            await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-            await AssertRuleAsync(
-                Without(diagnostics, "KEV013"),
-                "KEV014",
-                DiagnosticSeverity.Warning);
+            await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
         }
     }
 
     [Test]
-    public async Task KEV013_Inspects_Unobserved_Task_Calls_In_Block_Lambdas()
+    public async Task KEV014_Inspects_Unobserved_Task_Calls_In_Block_Lambdas()
     {
         var cases = new[]
         {
@@ -1635,16 +1682,13 @@ public class PipelineHazardAnalyzerTests
                 _ = Shield.Retry(options => options.OnRetry = item =>
                 {
                     {{statement}}
+                    return default;
                 });
 
                 static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
                 """);
 
-            await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-            await AssertRuleAsync(
-                Without(diagnostics, "KEV013"),
-                "KEV014",
-                DiagnosticSeverity.Warning);
+            await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
         }
     }
 
@@ -1656,7 +1700,10 @@ public class PipelineHazardAnalyzerTests
             {
                 public void Configure() =>
                     _ = Shield.Retry(options => options.OnRetry = item =>
-                        _ = AuditAsync(new RetrySnapshot(item)));
+                    {
+                        _ = AuditAsync(new RetrySnapshot(item));
+                        return default;
+                    });
 
                 private static Task AuditAsync(RetrySnapshot snapshot) => Task.CompletedTask;
 
@@ -1672,7 +1719,7 @@ public class PipelineHazardAnalyzerTests
             }
             """);
 
-        await AssertRuleAsync(diagnostics, "KEV013");
+        await Assert.That(diagnostics).IsEmpty();
     }
 
     [Test]
@@ -1694,17 +1741,20 @@ public class PipelineHazardAnalyzerTests
             {
                 public void Configure() =>
                     _ = Shield.Retry(options => options.OnRetry = item =>
-                        _ = AuditAsync(new RetrySnapshot(item)));
+                    {
+                        _ = AuditAsync(new RetrySnapshot(item));
+                        return default;
+                    });
 
                 private static Task AuditAsync(RetrySnapshot snapshot) => Task.CompletedTask;
             }
             """, additionalReference: snapshotReference);
 
-        await AssertRuleAsync(diagnostics, "KEV013");
+        await Assert.That(diagnostics).IsEmpty();
     }
 
     [Test]
-    public async Task KEV013_Inspects_Unobserved_Task_Calls_In_Handling_Predicates()
+    public async Task KEV014_Inspects_Unobserved_Task_Calls_In_Handling_Predicates()
     {
         var diagnostics = await AnalyzeBodyAsync("""
             _ = Shield.Retry(options => options.HandlesExceptionWithContext = item =>
@@ -1716,15 +1766,11 @@ public class PipelineHazardAnalyzerTests
             static Task AuditAsync(HandlingEvent item) => Task.CompletedTask;
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
-    public async Task KEV013_Inspects_Context_Bearing_Synchronous_Funcs()
+    public async Task KEV014_Inspects_Context_Bearing_Funcs()
     {
         var cases = new[]
         {
@@ -1739,7 +1785,7 @@ public class PipelineHazardAnalyzerTests
             _ = Shield.Retry(options => options.DelayGenerator = item =>
             {
                 _ = AuditAsync(item.Context);
-                return TimeSpan.Zero;
+                return new(TimeSpan.Zero);
             });
             """,
             """
@@ -1759,11 +1805,7 @@ public class PipelineHazardAnalyzerTests
                 static Task AuditAsync(KevlarContext context) => Task.CompletedTask;
                 """);
 
-            await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-            await AssertRuleAsync(
-                Without(diagnostics, "KEV013"),
-                "KEV014",
-                DiagnosticSeverity.Warning);
+            await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
         }
     }
 
@@ -1785,19 +1827,16 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
-    public async Task KEV013_Inspects_Unobserved_Task_Calls_In_Expression_Lambdas()
+    public async Task KEV014_Inspects_Unobserved_Task_Calls_In_Expression_Lambdas()
     {
         var diagnostics = await AnalyzeBodyAsync("""
-            _ = Shield.Retry(options => options.OnRetry = item => AuditAsync(item).Wait(0));
+            _ = Shield.Retry(options => options.OnRetry = item => Forward(AuditAsync(item)));
 
             static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            static ValueTask Forward(Task pending) => ValueTask.CompletedTask;
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
@@ -1812,14 +1851,11 @@ public class PipelineHazardAnalyzerTests
             public class TestSubject
             {
                 public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = item => item.AuditAsync());
+                    _ = Shield.Retry(options => options.OnRetry = item => { item.AuditAsync(); return default; });
             }
             """);
 
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
@@ -1829,15 +1865,12 @@ public class PipelineHazardAnalyzerTests
         foreach (var argument in arguments)
         {
             var diagnostics = await AnalyzeBodyAsync($$"""
-                _ = Shield.Retry(options => options.OnRetry = item => ProcessAsync({{argument}}));
+                _ = Shield.Retry(options => options.OnRetry = item => { ProcessAsync({{argument}}); return default; });
 
                 static Task ProcessAsync(object item) => Task.CompletedTask;
                 """);
 
-            await AssertRuleAsync(
-                Without(diagnostics, "KEV013"),
-                "KEV014",
-                DiagnosticSeverity.Warning);
+            await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
         }
     }
 
@@ -1856,17 +1889,14 @@ public class PipelineHazardAnalyzerTests
                 _ = Shield.Retry(options => options.OnRetry = item =>
                 {
                     {{statement}}
+                    return default;
                 });
 
                 static Task ProcessObjectAsync(object state) => Task.CompletedTask;
                 static Task ProcessDelegateAsync(Func<string?> state) => Task.CompletedTask;
                 """);
 
-            await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-            await AssertRuleAsync(
-                Without(diagnostics, "KEV013"),
-                "KEV014",
-                DiagnosticSeverity.Warning);
+            await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
         }
     }
 
@@ -1875,23 +1905,26 @@ public class PipelineHazardAnalyzerTests
     {
         var diagnostics = await AnalyzeBodyAsync("""
             _ = Shield.Retry(options => options.OnRetry = item =>
-                ProcessAsync(item.Context.ShieldName));
+            {
+                ProcessAsync(item.Context.ShieldName);
+                return default;
+            });
 
             static Task ProcessAsync(string shieldName) => Task.CompletedTask;
             """);
 
-        await AssertRuleAsync(diagnostics, "KEV013");
-        await Assert.That(Without(diagnostics, "KEV013")).IsEmpty();
+        await Assert.That(diagnostics).IsEmpty();
     }
 
     [Test]
-    public async Task KEV013_Ignores_Uninvoked_Nested_Functions()
+    public async Task KEV014_Ignores_Uninvoked_Nested_Functions()
     {
         var diagnostics = await AnalyzeBodyAsync("""
             _ = Shield.Retry(options => options.OnRetry = item =>
             {
                 void Local() => _ = AuditAsync(item);
                 Action nested = () => _ = AuditAsync(item);
+                return default;
             });
 
             static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
@@ -1901,23 +1934,20 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
-    public async Task KEV013_Follows_Invoked_Local_Functions()
+    public async Task KEV014_Follows_Invoked_Local_Functions()
     {
         var diagnostics = await AnalyzeBodyAsync("""
             _ = Shield.Retry(options => options.OnRetry = item =>
             {
                 void Start() => _ = AuditAsync(item);
                 Start();
+                return default;
             });
 
             static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
@@ -1928,20 +1958,17 @@ public class PipelineHazardAnalyzerTests
             {
                 Task Start() => AuditAsync(item);
                 _ = Start();
+                return default;
             });
 
             static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
-    public async Task KEV013_Ignores_Synchronously_Observed_Task_Calls()
+    public async Task KEV014_Ignores_Synchronously_Observed_Task_Calls()
     {
         var statements = new[]
         {
@@ -1969,6 +1996,7 @@ public class PipelineHazardAnalyzerTests
                 _ = Shield.Retry(options => options.OnRetry = item =>
                 {
                     {{statement}}
+                    return default;
                 });
 
                 static Task<RetryEvent> AuditAsync(RetryEvent item) => Task.FromResult(item);
@@ -1983,7 +2011,7 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
-    public async Task KEV013_Rejects_Unrelated_GetResult_Extensions()
+    public async Task KEV014_Rejects_Unrelated_GetResult_Extensions()
     {
         var diagnostics = await AnalyzeSourceAsync("""
             public static class TaskExtensions
@@ -1995,21 +2023,20 @@ public class PipelineHazardAnalyzerTests
             {
                 public void Configure() =>
                     _ = Shield.Retry(options => options.OnRetry = item =>
-                        AuditAsync(item).GetResult());
+                    {
+                        AuditAsync(item).GetResult();
+                        return default;
+                    });
 
                 private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
             }
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
-    public async Task KEV013_Rejects_Task_Local_Joins_After_Early_Returns()
+    public async Task KEV014_Rejects_Task_Local_Joins_After_Early_Returns()
     {
         var diagnostics = await AnalyzeBodyAsync("""
             _ = Shield.Retry(options => options.OnRetry = item =>
@@ -2017,24 +2044,21 @@ public class PipelineHazardAnalyzerTests
                 var pending = AuditAsync(item);
                 if (Environment.TickCount == 0)
                 {
-                    return;
+                    return default;
                 }
 
                 pending.GetAwaiter().GetResult();
+                return default;
             });
 
             static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
-    public async Task KEV013_Rejects_Conditional_Task_Local_Joins()
+    public async Task KEV014_Rejects_Conditional_Task_Local_Joins()
     {
         var diagnostics = await AnalyzeBodyAsync("""
             var skip = Environment.TickCount == 0;
@@ -2042,20 +2066,17 @@ public class PipelineHazardAnalyzerTests
             {
                 var pending = AuditAsync(item);
                 _ = skip ? 0 : pending.GetAwaiter().GetResult();
+                return default;
             });
 
             static Task<int> AuditAsync(RetryEvent item) => Task.FromResult(0);
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
-    public async Task KEV013_Rejects_Task_Local_Joins_After_Throwing_Work()
+    public async Task KEV014_Rejects_Task_Local_Joins_After_Throwing_Work()
     {
         var diagnostics = await AnalyzeBodyAsync("""
             _ = Shield.Retry(options => options.OnRetry = item =>
@@ -2063,41 +2084,35 @@ public class PipelineHazardAnalyzerTests
                 var pending = AuditAsync(item);
                 MightThrow();
                 pending.GetAwaiter().GetResult();
+                return default;
             });
 
             static void MightThrow() => throw new InvalidOperationException();
             static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
-    public async Task KEV013_Rejects_Task_Local_Joins_Of_Unrelated_Composite_Values()
+    public async Task KEV014_Rejects_Task_Local_Joins_Of_Unrelated_Composite_Values()
     {
         var diagnostics = await AnalyzeBodyAsync("""
             _ = Shield.Retry(options => options.OnRetry = item =>
             {
                 var pending = (AuditAsync(item), Task.CompletedTask).Item2;
                 pending.GetAwaiter().GetResult();
+                return default;
             });
 
             static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
-    public async Task KEV013_Rejects_Filtered_WhenAll_Collections()
+    public async Task KEV014_Rejects_Filtered_WhenAll_Collections()
     {
         var diagnostics = await AnalyzeSourceAsync("""
             using System.Linq;
@@ -2106,19 +2121,18 @@ public class PipelineHazardAnalyzerTests
             {
                 public void Configure() =>
                     _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
                         Task.WhenAll(new[] { AuditAsync(item) }.Where(_ => false))
                             .GetAwaiter()
-                            .GetResult());
+                            .GetResult();
+                        return default;
+                    });
 
                 private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
             }
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
@@ -2129,493 +2143,60 @@ public class PipelineHazardAnalyzerTests
             _ = Shield.Retry(options => options.OnRetry = item =>
             {
                 pendingTasks.Add(Task.WhenAll(FlushAsync(), AuditAsync(item)));
+                return default;
             });
 
             static Task FlushAsync() => Task.CompletedTask;
             static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
             """);
 
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
-    public async Task KEV013_Inspects_Conditional_Callback_Branches()
+    public async Task KEV014_Inspects_Conditional_Callback_Branches()
     {
         var diagnostics = await AnalyzeBodyAsync("""
             var enabled = true;
             _ = Shield.Retry(options => options.OnRetry = enabled
-                ? async item => await Task.Yield()
-                : _ => { });
+                ? item => { _ = AuditAsync(item); return default; }
+                : _ => default);
+
+            static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV006"), "KEV013");
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
-    public async Task KEV013_Inspects_Coalesced_Callback_Operands()
+    public async Task KEV014_Inspects_Coalesced_Callback_Operands()
     {
         var diagnostics = await AnalyzeBodyAsync("""
-            Action<RetryEvent>? existing = null;
+            Func<RetryEvent, ValueTask>? existing = null;
             _ = Shield.Retry(options => options.OnRetry = existing
-                ?? (async item => await Task.Yield()));
+                ?? (item => { _ = AuditAsync(item); return default; }));
+
+            static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV006"), "KEV013");
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
-    public async Task KEV013_Inspects_Switch_Expression_Callback_Arms()
+    public async Task KEV014_Inspects_Switch_Expression_Callback_Arms()
     {
         var diagnostics = await AnalyzeBodyAsync("""
             var mode = 0;
             _ = Shield.Retry(options => options.OnRetry = mode switch
             {
-                0 => async item => await Task.Yield(),
-                _ => _ => { },
+                0 => item => { _ = AuditAsync(item); return default; },
+                _ => _ => default,
             });
+
+            static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV006"), "KEV013");
-    }
-
-    [Test]
-    public async Task KEV013_Code_Fix_Only_Renames_Compatible_Lambdas()
-    {
-        var compatible = await GetCodeFixAsync("""
-            public class TestSubject
-            {
-                public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async _ => await Task.Yield());
-            }
-            """);
-        var compatibleValueTask = await GetCodeFixAsync("""
-            public class TestSubject
-            {
-                public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = _ => AuditAsync());
-
-                private static ValueTask AuditAsync() => ValueTask.CompletedTask;
-            }
-            """);
-        var incompatible = await GetCodeFixAsync("""
-            public class TestSubject
-            {
-                public void Configure() =>
-                    _ = Shield.Hedge(options => options.OnHedge = _ => Task.Delay(1));
-            }
-            """);
-        var incompatibleGenericValueTask = await GetCodeFixAsync("""
-            public class TestSubject
-            {
-                public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = _ => GetValueAsync());
-
-                private static ValueTask<int> GetValueAsync() => ValueTask.FromResult(1);
-            }
-            """);
-        var incompatibleAdditiveAssignment = await GetCodeFixAsync("""
-            public class TestSubject
-            {
-                public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry += async _ => await Task.Yield());
-            }
-            """);
-        var incompatibleCoalescingAssignment = await GetCodeFixAsync("""
-            public class TestSubject
-            {
-                public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry ??= async _ => await Task.Yield());
-            }
-            """);
-        var incompatibleDiscardingBlock = await GetCodeFixAsync("""
-            public class TestSubject
-            {
-                public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = item =>
-                    {
-                        _ = AuditAsync(item);
-                    });
-
-                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
-            }
-            """);
-        var compatibleLocalFunction = await GetCodeFixAsync("""
-            public class TestSubject
-            {
-                public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async _ =>
-                    {
-                        Log();
-                        await Task.Yield();
-
-                        static void Log() => Console.WriteLine("retrying");
-                    });
-            }
-            """);
-        var incompatibleAsyncDiscardingBlock = await GetCodeFixAsync("""
-            public class TestSubject
-            {
-                public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
-                    {
-                        _ = AuditAsync(item);
-                        await Task.Yield();
-                    });
-
-                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
-            }
-            """);
-        var incompatibleLocalFunctionDiscard = await GetCodeFixAsync("""
-            public class TestSubject
-            {
-                public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
-                    {
-                        Start();
-                        await Task.Yield();
-
-                        void Start() => _ = AuditAsync(item);
-                    });
-
-                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
-            }
-            """);
-        var incompatibleDelegateLocalDiscard = await GetCodeFixAsync("""
-            public class TestSubject
-            {
-                public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
-                    {
-                        Action start = () => _ = AuditAsync(item);
-                        start();
-                        await Task.Yield();
-                    });
-
-                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
-            }
-            """);
-        var incompatibleImmediatelyInvokedDelegate = await GetCodeFixAsync("""
-            public class TestSubject
-            {
-                public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
-                    {
-                        ((Action)(() => _ = AuditAsync(item)))();
-                        await Task.Yield();
-                    });
-
-                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
-            }
-            """);
-        var incompatibleImmediatelyInvokedDelegateInvoke = await GetCodeFixAsync("""
-            public class TestSubject
-            {
-                public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
-                    {
-                        ((Action)(() => _ = AuditAsync(item))).Invoke();
-                        await Task.Yield();
-                    });
-
-                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
-            }
-            """);
-        var incompatibleSourceMethodDiscard = await GetCodeFixAsync("""
-            public class TestSubject
-            {
-                public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
-                    {
-                        Start(item);
-                        await Task.Yield();
-                    });
-
-                private static void Start(RetryEvent item)
-                {
-                    StartCore(item);
-                }
-
-                private static void StartCore(RetryEvent item) => _ = AuditAsync(item);
-                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
-            }
-            """);
-        var incompatibleForwardedDelegateDiscard = await GetCodeFixAsync("""
-            public class TestSubject
-            {
-                public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
-                    {
-                        Action start = () => _ = AuditAsync(item);
-                        Run(() => Console.WriteLine(item.RetryNumber));
-                        Run(start);
-                        await Task.Yield();
-                    });
-
-                private static void Run(Action action) => action();
-                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
-            }
-            """);
-        var incompatibleOpaqueDelegateDiscard = await GetCodeFixAsync("""
-            public class TestSubject
-            {
-                public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
-                    {
-                        Array.ForEach(new[] { 0 }, _ => _ = AuditAsync(item));
-                        await Task.Yield();
-                    });
-
-                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
-            }
-            """);
-        var incompatibleLocalFunctionMethodGroup = await GetCodeFixAsync("""
-            public class TestSubject
-            {
-                public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
-                    {
-                        Array.ForEach(new[] { 0 }, Work);
-                        await Task.Yield();
-
-                        void Work(int _) => _ = AuditAsync(item);
-                    });
-
-                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
-            }
-            """);
-        var incompatibleConstructedDelegateDiscard = await GetCodeFixAsync("""
-            public class TestSubject
-            {
-                public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
-                    {
-                        Array.ForEach(
-                            new[] { 0 },
-                            new Action<int>(_ => _ = AuditAsync(item)));
-                        await Task.Yield();
-                    });
-
-                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
-            }
-            """);
-        var incompatibleConditionalDelegateDiscard = await GetCodeFixAsync("""
-            public class TestSubject
-            {
-                public void Configure(bool enabled) =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
-                    {
-                        Array.ForEach(
-                            new[] { 0 },
-                            enabled ? _ => _ = AuditAsync(item) : _ => { });
-                        await Task.Yield();
-                    });
-
-                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
-            }
-            """);
-        var incompatibleConditionalDelegateLocalDiscard = await GetCodeFixAsync("""
-            public class TestSubject
-            {
-                public void Configure(bool enabled) =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
-                    {
-                        Action<int> work = enabled
-                            ? _ => _ = AuditAsync(item)
-                            : _ => { };
-                        Array.ForEach(new[] { 0 }, work);
-                        await Task.Yield();
-                    });
-
-                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
-            }
-            """);
-        var incompatibleSwitchDelegateDiscard = await GetCodeFixAsync("""
-            public class TestSubject
-            {
-                public void Configure(int mode) =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
-                    {
-                        Array.ForEach(
-                            new[] { 0 },
-                            mode switch
-                            {
-                                0 => _ => _ = AuditAsync(item),
-                                _ => _ => { },
-                            });
-                        await Task.Yield();
-                    });
-
-                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
-            }
-            """);
-        var incompatibleCoalescedDelegateDiscard = await GetCodeFixAsync("""
-            public class TestSubject
-            {
-                public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
-                    {
-                        Action<int>? audit = _ => _ = AuditAsync(item);
-                        Array.ForEach(new[] { 0 }, audit ?? (_ => { }));
-                        await Task.Yield();
-                    });
-
-                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
-            }
-            """);
-        var incompatibleAwaitWrapper = await GetCodeFixAsync("""
-            public class TestSubject
-            {
-                public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = async item =>
-                        await Forward(AuditAsync(item)));
-
-                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
-                private static ValueTask Forward(Task ignored) => ValueTask.CompletedTask;
-            }
-            """);
-        var incompatibleTimedWait = await GetCodeFixAsync("""
-            public class TestSubject
-            {
-                public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = item => AuditAsync(item).Wait(0));
-
-                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
-            }
-            """);
-        var incompatibleCollectionAdd = await GetCodeFixAsync("""
-            public class TestSubject
-            {
-                private readonly System.Collections.Generic.List<Task> _pending = new();
-
-                public void Configure() =>
-                    _ = Shield.Retry(options => options.OnRetry = item => _pending.Add(AuditAsync(item)));
-
-                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
-            }
-            """);
-        var alreadyAssignedAsyncTwin = await GetCodeFixAsync("""
-            public class TestSubject
-            {
-                public void Configure() =>
-                    _ = Shield.Retry(options =>
-                    {
-                        options.OnRetryAsync = _ => ValueTask.CompletedTask;
-                        options.OnRetry = async _ => await Task.Yield();
-                    });
-            }
-            """);
-
-        var alreadyAssignedInHelperBlock = await GetCodeFixAsync("""
-            public class TestSubject
-            {
-                public void Configure(RetryOptions options)
-                {
-                    options.OnRetryAsync = _ => ValueTask.CompletedTask;
-                    options.OnRetry = async _ => await Task.Yield();
-                }
-            }
-            """);
-        var alreadyAssignedInOuterBlock = await GetCodeFixAsync("""
-            public class TestSubject
-            {
-                public void Configure(RetryOptions options, bool enabled)
-                {
-                    options.OnRetryAsync = _ => ValueTask.CompletedTask;
-                    if (enabled)
-                    {
-                        options.OnRetry = async _ => await Task.Yield();
-                    }
-                }
-            }
-            """);
-        var assignedOnDifferentReceiver = await GetCodeFixAsync("""
-            public class TestSubject
-            {
-                public void Configure(RetryOptions first, RetryOptions second)
-                {
-                    first.OnRetryAsync = _ => ValueTask.CompletedTask;
-                    second.OnRetry = async _ => await Task.Yield();
-                }
-            }
-            """);
-        var alreadyAssignedThroughAlias = await GetCodeFixAsync("""
-            public class TestSubject
-            {
-                public void Configure(RetryOptions options)
-                {
-                    var alias = options;
-                    options.OnRetryAsync = _ => ValueTask.CompletedTask;
-                    alias.OnRetry = async _ => await Task.Yield();
-                }
-            }
-            """);
-
-        await Assert.That(compatible.ActionCount).IsEqualTo(1);
-        await Assert.That(compatible.ChangedText).Contains("options.OnRetryAsync = async");
-        await Assert.That(compatibleValueTask.ActionCount).IsEqualTo(1);
-        await Assert.That(compatibleValueTask.ChangedText)
-            .Contains("options.OnRetryAsync = _ => AuditAsync()");
-        await Assert.That(compatibleLocalFunction.ActionCount).IsEqualTo(1);
-        await Assert.That(compatibleLocalFunction.ChangedText)
-            .Contains("options.OnRetryAsync = async");
-        await Assert.That(incompatible.ActionCount).IsEqualTo(0);
-        await Assert.That(incompatible.ChangedText).IsNull();
-        await Assert.That(incompatibleGenericValueTask.ActionCount).IsEqualTo(0);
-        await Assert.That(incompatibleGenericValueTask.ChangedText).IsNull();
-        await Assert.That(incompatibleAdditiveAssignment.ActionCount).IsEqualTo(0);
-        await Assert.That(incompatibleAdditiveAssignment.ChangedText).IsNull();
-        await Assert.That(incompatibleCoalescingAssignment.ActionCount).IsEqualTo(0);
-        await Assert.That(incompatibleCoalescingAssignment.ChangedText).IsNull();
-        await Assert.That(incompatibleDiscardingBlock.ActionCount).IsEqualTo(0);
-        await Assert.That(incompatibleDiscardingBlock.ChangedText).IsNull();
-        await Assert.That(incompatibleAsyncDiscardingBlock.ActionCount).IsEqualTo(0);
-        await Assert.That(incompatibleAsyncDiscardingBlock.ChangedText).IsNull();
-        await Assert.That(incompatibleLocalFunctionDiscard.ActionCount).IsEqualTo(0);
-        await Assert.That(incompatibleLocalFunctionDiscard.ChangedText).IsNull();
-        await Assert.That(incompatibleDelegateLocalDiscard.ActionCount).IsEqualTo(0);
-        await Assert.That(incompatibleDelegateLocalDiscard.ChangedText).IsNull();
-        await Assert.That(incompatibleImmediatelyInvokedDelegate.ActionCount).IsEqualTo(0);
-        await Assert.That(incompatibleImmediatelyInvokedDelegate.ChangedText).IsNull();
-        await Assert.That(incompatibleImmediatelyInvokedDelegateInvoke.ActionCount).IsEqualTo(0);
-        await Assert.That(incompatibleImmediatelyInvokedDelegateInvoke.ChangedText).IsNull();
-        await Assert.That(incompatibleSourceMethodDiscard.ActionCount).IsEqualTo(0);
-        await Assert.That(incompatibleSourceMethodDiscard.ChangedText).IsNull();
-        await Assert.That(incompatibleForwardedDelegateDiscard.ActionCount).IsEqualTo(0);
-        await Assert.That(incompatibleForwardedDelegateDiscard.ChangedText).IsNull();
-        await Assert.That(incompatibleOpaqueDelegateDiscard.ActionCount).IsEqualTo(0);
-        await Assert.That(incompatibleOpaqueDelegateDiscard.ChangedText).IsNull();
-        await Assert.That(incompatibleLocalFunctionMethodGroup.ActionCount).IsEqualTo(0);
-        await Assert.That(incompatibleLocalFunctionMethodGroup.ChangedText).IsNull();
-        await Assert.That(incompatibleConstructedDelegateDiscard.ActionCount).IsEqualTo(0);
-        await Assert.That(incompatibleConstructedDelegateDiscard.ChangedText).IsNull();
-        await Assert.That(incompatibleConditionalDelegateDiscard.ActionCount).IsEqualTo(0);
-        await Assert.That(incompatibleConditionalDelegateDiscard.ChangedText).IsNull();
-        await Assert.That(incompatibleConditionalDelegateLocalDiscard.ActionCount).IsEqualTo(0);
-        await Assert.That(incompatibleConditionalDelegateLocalDiscard.ChangedText).IsNull();
-        await Assert.That(incompatibleSwitchDelegateDiscard.ActionCount).IsEqualTo(0);
-        await Assert.That(incompatibleSwitchDelegateDiscard.ChangedText).IsNull();
-        await Assert.That(incompatibleCoalescedDelegateDiscard.ActionCount).IsEqualTo(0);
-        await Assert.That(incompatibleCoalescedDelegateDiscard.ChangedText).IsNull();
-        await Assert.That(incompatibleAwaitWrapper.ActionCount).IsEqualTo(0);
-        await Assert.That(incompatibleAwaitWrapper.ChangedText).IsNull();
-        await Assert.That(incompatibleTimedWait.ActionCount).IsEqualTo(0);
-        await Assert.That(incompatibleTimedWait.ChangedText).IsNull();
-        await Assert.That(incompatibleCollectionAdd.ActionCount).IsEqualTo(0);
-        await Assert.That(incompatibleCollectionAdd.ChangedText).IsNull();
-        await Assert.That(alreadyAssignedAsyncTwin.ActionCount).IsEqualTo(0);
-        await Assert.That(alreadyAssignedAsyncTwin.ChangedText).IsNull();
-        await Assert.That(alreadyAssignedInHelperBlock.ActionCount).IsEqualTo(0);
-        await Assert.That(alreadyAssignedInHelperBlock.ChangedText).IsNull();
-        await Assert.That(alreadyAssignedInOuterBlock.ActionCount).IsEqualTo(0);
-        await Assert.That(alreadyAssignedInOuterBlock.ChangedText).IsNull();
-        await Assert.That(assignedOnDifferentReceiver.ActionCount).IsEqualTo(1);
-        await Assert.That(assignedOnDifferentReceiver.ChangedText)
-            .Contains("second.OnRetryAsync = async");
-        await Assert.That(alreadyAssignedThroughAlias.ActionCount).IsEqualTo(0);
-        await Assert.That(alreadyAssignedThroughAlias.ChangedText).IsNull();
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
@@ -2633,6 +2214,7 @@ public class PipelineHazardAnalyzerTests
                 _ = Shield.Retry(options => options.OnRetry = item =>
                 {
                     {{statement}}
+                    return default;
                 });
                 """);
 
@@ -2652,6 +2234,7 @@ public class PipelineHazardAnalyzerTests
                     Console.WriteLine(item.Context.ShieldName);
                 };
                 work().GetAwaiter().GetResult();
+                return default;
             });
             """);
 
@@ -2662,7 +2245,7 @@ public class PipelineHazardAnalyzerTests
     public async Task KEV014_Ignores_Awaited_TaskRun()
     {
         var diagnostics = await AnalyzeBodyAsync("""
-            _ = Shield.Retry(options => options.OnRetryAsync = async item =>
+            _ = Shield.Retry(options => options.OnRetry = async item =>
                 await Task.Run(() => Consume(item.Context)));
 
             static void Consume(KevlarContext context) =>
@@ -2676,7 +2259,7 @@ public class PipelineHazardAnalyzerTests
     public async Task KEV014_Ignores_Task_Locals_Joined_After_Constant_Declarations()
     {
         var diagnostics = await AnalyzeBodyAsync("""
-            _ = Shield.Retry(options => options.OnRetryAsync = async item =>
+            _ = Shield.Retry(options => options.OnRetry = async item =>
             {
                 var pending = Task.Run(() => Consume(item.Context));
                 var marker = 0;
@@ -2695,7 +2278,7 @@ public class PipelineHazardAnalyzerTests
     public async Task KEV014_Ignores_Returned_ValueTask_Wrappers()
     {
         var diagnostics = await AnalyzeBodyAsync("""
-            _ = Shield.Retry(options => options.OnRetryAsync = item =>
+            _ = Shield.Retry(options => options.OnRetry = item =>
                 new ValueTask(Task.Run(() => Consume(item.Context))));
 
             static void Consume(KevlarContext context) =>
@@ -2706,21 +2289,22 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
-    public async Task KEV014_Flags_Awaited_TaskRun_In_Async_Void_Callbacks()
+    public async Task KEV014_Flags_Awaited_TaskRun_In_Async_Void_Local_Functions()
     {
         var diagnostics = await AnalyzeBodyAsync("""
-            _ = Shield.Retry(options => options.OnRetry = async item =>
-                await Task.Run(() => Consume(item.Context)));
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                Start();
+                return default;
+
+                async void Start() => await Task.Run(() => Consume(item.Context));
+            });
 
             static void Consume(KevlarContext context) =>
                 Console.WriteLine(context.ShieldName);
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
@@ -2728,13 +2312,13 @@ public class PipelineHazardAnalyzerTests
     {
         var diagnostics = await AnalyzeBodyAsync("""
             _ = Shield.Retry(options => options.OnRetry = item =>
-                Task.Run(() => Console.WriteLine(item.Context.ShieldName)));
+            {
+                Task.Run(() => Console.WriteLine(item.Context.ShieldName));
+                return default;
+            });
             """);
 
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
@@ -2750,6 +2334,7 @@ public class PipelineHazardAnalyzerTests
                     {
                         _context = item.Context;
                         _ = Task.Run(() => Console.WriteLine(_context.ShieldName));
+                        return default;
                     });
             }
             """);
@@ -2770,6 +2355,7 @@ public class PipelineHazardAnalyzerTests
                     {
                         _event = item;
                         _ = Task.Run(() => Console.WriteLine(_event.Context.ShieldName));
+                        return default;
                     });
             }
             """);
@@ -2825,6 +2411,7 @@ public class PipelineHazardAnalyzerTests
                     {
                         _event = item;
                         _ = Task.Run(() => Consume(_event));
+                        return default;
                     });
 
                 private static void Consume(RetryEvent item) { }
@@ -2847,6 +2434,7 @@ public class PipelineHazardAnalyzerTests
                     {
                         Stored = item;
                         _ = Task.Run(() => Consume(Stored));
+                        return default;
                     });
 
                 private static void Consume(RetryEvent item) { }
@@ -2862,6 +2450,7 @@ public class PipelineHazardAnalyzerTests
                     {
                         _event = item;
                         _ = Task.Run(() => Consume(_event));
+                        return default;
                     });
 
                 private static void Consume(RetryEvent item) { }
@@ -2893,6 +2482,7 @@ public class PipelineHazardAnalyzerTests
                         }
 
                         _ = Task.Run(() => Consume(_event));
+                        return default;
                     });
 
                 private static void Consume(RetryEvent item) { }
@@ -2917,6 +2507,7 @@ public class PipelineHazardAnalyzerTests
                         }
 
                         _ = Task.Run(() => Consume(_event));
+                        return default;
                     });
 
                 private static void Consume(RetryEvent item) { }
@@ -2944,6 +2535,7 @@ public class PipelineHazardAnalyzerTests
                         }
 
                         _ = Task.Run(() => Consume(_event));
+                        return default;
                     });
 
                 private static void Consume(RetryEvent item) { }
@@ -2973,6 +2565,7 @@ public class PipelineHazardAnalyzerTests
                         _event = (RetryEvent)default;
                         _event = (default(RetryEvent));
                         _ = Task.Run(() => Consume(_event));
+                        return default;
                     });
 
                 private static void Consume(RetryEvent item) { }
@@ -2990,6 +2583,7 @@ public class PipelineHazardAnalyzerTests
                         _event = default;
                         _event = item;
                         _ = Task.Run(() => Consume(_event));
+                        return default;
                     });
 
                 private static void Consume(RetryEvent item) { }
@@ -3016,6 +2610,7 @@ public class PipelineHazardAnalyzerTests
                         }
 
                         _ = Task.Run(() => Consume(retained));
+                        return default;
                     });
 
                 private static void Consume(RetryEvent item) { }
@@ -3051,6 +2646,7 @@ public class PipelineHazardAnalyzerTests
                     {
                         _event = initial;
                         _ = Task.Run(() => Console.WriteLine(_event.RetryNumber));
+                        return default;
                     });
             }
             """);
@@ -3064,6 +2660,7 @@ public class PipelineHazardAnalyzerTests
                     {
                         RetryEvent _event = item;
                         _ = Task.Run(() => Consume(this._event));
+                        return default;
                     });
 
                 private static void Consume(RetryEvent item) { }
@@ -3080,6 +2677,7 @@ public class PipelineHazardAnalyzerTests
                     {
                         _event = _holder.item;
                         _ = Task.Run(() => Consume(_event));
+                        return default;
                     });
 
                 private static void Consume(RetryEvent item) { }
@@ -3102,6 +2700,7 @@ public class PipelineHazardAnalyzerTests
                             ? default(RetryEvent)
                             : default(RetryEvent);
                         _ = Task.Run(() => Consume(_event));
+                        return default;
                     });
 
                 private static void Consume(RetryEvent item) { }
@@ -3128,6 +2727,7 @@ public class PipelineHazardAnalyzerTests
                     {
                         _event = item;
                         _ = Task.Run(ProcessStored);
+                        return default;
                     });
 
                 private void ProcessStored() =>
@@ -3151,6 +2751,7 @@ public class PipelineHazardAnalyzerTests
                     {
                         _event = item;
                         _ = Task.Run(ProcessStored);
+                        return default;
                     });
 
                 private void ProcessStored() => Consume(_event);
@@ -3215,6 +2816,7 @@ public class PipelineHazardAnalyzerTests
                     {
                         _event = CreateDefault(item);
                         _ = Task.Run(() => Consume(_event));
+                        return default;
                     });
 
                 private static RetryEvent CreateDefault(RetryEvent ignored) => default;
@@ -3236,6 +2838,7 @@ public class PipelineHazardAnalyzerTests
                     {
                         var retained = Identity(item);
                         _ = Task.Run(() => Console.WriteLine(retained.RetryNumber));
+                        return default;
                     });
 
                 private static RetryEvent Identity(RetryEvent item) => item;
@@ -3256,6 +2859,7 @@ public class PipelineHazardAnalyzerTests
                     {
                         var retryNumber = GetRetryNumber(item);
                         _ = Task.Run(() => Console.WriteLine(retryNumber));
+                        return default;
                     });
 
                 private static int GetRetryNumber(RetryEvent item) => item.RetryNumber;
@@ -3278,6 +2882,7 @@ public class PipelineHazardAnalyzerTests
                     {
                         _event = item;
                         _ = AuditStoredAsync();
+                        return default;
                     });
 
                 private async Task AuditStoredAsync()
@@ -3288,11 +2893,7 @@ public class PipelineHazardAnalyzerTests
             }
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
@@ -3308,6 +2909,7 @@ public class PipelineHazardAnalyzerTests
                     {
                         _holder = new Holder(item);
                         _ = AuditStoredAsync();
+                        return default;
                     });
 
                 private async Task AuditStoredAsync()
@@ -3328,10 +2930,7 @@ public class PipelineHazardAnalyzerTests
             }
             """);
 
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
@@ -3347,6 +2946,7 @@ public class PipelineHazardAnalyzerTests
                     {
                         _event = item;
                         _ = AuditStoredAsync();
+                        return default;
                     });
 
                 private async Task AuditStoredAsync()
@@ -3358,10 +2958,7 @@ public class PipelineHazardAnalyzerTests
             }
             """);
 
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
@@ -3376,6 +2973,7 @@ public class PipelineHazardAnalyzerTests
                     _ = Shield.Retry(options => options.OnRetry = item =>
                     {
                         _ = AuditAsync();
+                        return default;
                     });
 
                 private async Task AuditAsync()
@@ -3386,7 +2984,7 @@ public class PipelineHazardAnalyzerTests
             }
             """);
 
-        await AssertRuleAsync(diagnostics, "KEV013");
+        await Assert.That(diagnostics).IsEmpty();
     }
 
     [Test]
@@ -3403,6 +3001,7 @@ public class PipelineHazardAnalyzerTests
                         _event = item;
                         _event = default;
                         _ = AuditStoredAsync();
+                        return default;
                     });
 
                 private async Task AuditStoredAsync()
@@ -3413,7 +3012,7 @@ public class PipelineHazardAnalyzerTests
             }
             """);
 
-        await AssertRuleAsync(diagnostics, "KEV013");
+        await Assert.That(diagnostics).IsEmpty();
     }
 
     [Test]
@@ -3429,6 +3028,7 @@ public class PipelineHazardAnalyzerTests
                     {
                         _event = item;
                         _ = AuditAsync(Environment.TickCount == 0);
+                        return default;
                     });
 
                 private async Task AuditAsync(bool stop)
@@ -3446,7 +3046,7 @@ public class PipelineHazardAnalyzerTests
             }
             """);
 
-        await AssertRuleAsync(diagnostics, "KEV013");
+        await Assert.That(diagnostics).IsEmpty();
     }
 
     [Test]
@@ -3462,6 +3062,7 @@ public class PipelineHazardAnalyzerTests
                     {
                         _event = item;
                         _ = AuditAsync(Environment.TickCount == 0);
+                        return default;
                     });
 
                 private async Task AuditAsync(bool skip)
@@ -3479,11 +3080,7 @@ public class PipelineHazardAnalyzerTests
             }
             """);
 
-        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
@@ -3499,6 +3096,7 @@ public class PipelineHazardAnalyzerTests
                     {
                         StoredEvent = item;
                         _ = Task.Run(() => Console.WriteLine(StoredEvent.Context.ShieldName));
+                        return default;
                     });
             }
             """);
@@ -3511,16 +3109,16 @@ public class PipelineHazardAnalyzerTests
     {
         var diagnostics = await AnalyzeBodyAsync("""
             _ = Shield.Retry(options => options.OnRetry = item =>
-                Task.Run(() => Process(item)));
+            {
+                Task.Run(() => Process(item));
+                return default;
+            });
 
             static void Process(RetryEvent item) =>
                 Console.WriteLine(item.Context.ShieldName);
             """);
 
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
@@ -3537,10 +3135,7 @@ public class PipelineHazardAnalyzerTests
                 Console.WriteLine(item.Context.ShieldName);
             """);
 
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
@@ -3548,7 +3143,10 @@ public class PipelineHazardAnalyzerTests
     {
         var chaosDiagnostics = await AnalyzeBodyAsync("""
             _ = ChaosShield.Latency(options => options.OnInjected = item =>
-                Task.Run(() => Process(item)));
+            {
+                Task.Run(() => Process(item));
+                return default;
+            });
 
             static void Process(ChaosEvent item) =>
                 Console.WriteLine(item.Context.ShieldName);
@@ -3557,20 +3155,17 @@ public class PipelineHazardAnalyzerTests
             _ = Shield.Empty.UseRateLimiter(
                 (System.Threading.RateLimiting.RateLimiter)null!,
                 options => options.OnRejected = item =>
-                    Task.Run(() => Process(item)));
+                {
+                    Task.Run(() => Process(item));
+                    return default;
+                });
 
             static void Process(RateLimiterAdapterRejectedEvent item) =>
                 Console.WriteLine(item.Context.ShieldName);
             """);
 
-        await AssertRuleAsync(
-            Without(chaosDiagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
-        await AssertRuleAsync(
-            Without(rateLimiterDiagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(chaosDiagnostics, "KEV014", DiagnosticSeverity.Warning);
+        await AssertRuleAsync(rateLimiterDiagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
@@ -3581,16 +3176,14 @@ public class PipelineHazardAnalyzerTests
             {
                 object boxed = item;
                 _ = Task.Run(() => Process((RetryEvent)boxed));
+                return default;
             });
 
             static void Process(RetryEvent item) =>
                 Console.WriteLine(item.Context.ShieldName);
             """);
 
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
@@ -3601,6 +3194,7 @@ public class PipelineHazardAnalyzerTests
             {
                 void Work() => Console.WriteLine(item.Context.ShieldName);
                 _ = Task.Run(Work);
+                return default;
             });
             """);
 
@@ -3616,6 +3210,7 @@ public class PipelineHazardAnalyzerTests
                 void Inner() => Console.WriteLine(item.Context.ShieldName);
                 void Work() => Inner();
                 _ = Task.Run(Work);
+                return default;
             });
             """);
 
@@ -3630,6 +3225,7 @@ public class PipelineHazardAnalyzerTests
             {
                 var shieldName = item.Context.ShieldName;
                 _ = Task.Run(() => Console.WriteLine(shieldName));
+                return default;
             });
             """);
 
@@ -3644,6 +3240,7 @@ public class PipelineHazardAnalyzerTests
             _ = Shield.Retry(options => options.OnRetry = item =>
             {
                 _ = Task.Run(CreateWork(item.Context.ShieldName));
+                return default;
             });
             """);
 
@@ -3676,9 +3273,12 @@ public class PipelineHazardAnalyzerTests
     {
         var diagnostics = await AnalyzeBodyAsync("""
             _ = Shield.Retry(options => options.OnRetry = item =>
+            {
                 ThreadPool.QueueUserWorkItem(
                     static value => Console.WriteLine(value),
-                    item.Context.ShieldName));
+                    item.Context.ShieldName);
+                return default;
+            });
             """);
 
         await Assert.That(diagnostics).IsEmpty();
@@ -3692,6 +3292,7 @@ public class PipelineHazardAnalyzerTests
             {
                 var context = item.Context;
                 _ = Task.Run(() => Console.WriteLine(context.ShieldName));
+                return default;
             });
             """);
 
@@ -3741,6 +3342,7 @@ public class PipelineHazardAnalyzerTests
                     {
                         var item = new ApplicationEvent();
                         _ = Task.Run(() => Use(item));
+                        return default;
                     });
 
                 private static void Use(ApplicationEvent item) { }
@@ -3766,6 +3368,7 @@ public class PipelineHazardAnalyzerTests
                     {
                         var item = new ApplicationEvent();
                         _ = Task.Run(() => Use(item));
+                        return default;
                     });
 
                 private static void Use(ApplicationEvent item) { }
@@ -3780,10 +3383,13 @@ public class PipelineHazardAnalyzerTests
     {
         var diagnostics = await AnalyzeBodyAsync("""
             _ = Shield.Retry(options => options.OnRetry = item =>
+            {
                 ThreadPool.QueueUserWorkItem(
                     static (KevlarContext context) => Console.WriteLine(context.ShieldName),
                     item.Context,
-                    preferLocal: false));
+                    preferLocal: false);
+                return default;
+            });
             """);
 
         await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
@@ -3794,11 +3400,14 @@ public class PipelineHazardAnalyzerTests
     {
         var diagnostics = await AnalyzeBodyAsync("""
             _ = Shield.Retry(options => options.OnRetry = item =>
+            {
                 ThreadPool.QueueUserWorkItem(
                     static ((KevlarContext Context, int Value) state) =>
                         Console.WriteLine(state.Context.ShieldName),
                     (Context: item.Context, Value: 1),
-                    preferLocal: false));
+                    preferLocal: false);
+                return default;
+            });
             """);
 
         await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
@@ -3858,11 +3467,14 @@ public class PipelineHazardAnalyzerTests
     {
         var diagnostics = await AnalyzeBodyAsync("""
             _ = Shield.Retry(options => options.OnRetry = item =>
+            {
                 ThreadPool.QueueUserWorkItem(
                     static (object[] state) =>
                         Console.WriteLine(((KevlarContext)state[0]).ShieldName),
                     new object[] { item.Context },
-                    preferLocal: false));
+                    preferLocal: false);
+                return default;
+            });
             """);
 
         await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
@@ -3873,11 +3485,14 @@ public class PipelineHazardAnalyzerTests
     {
         var diagnostics = await AnalyzeBodyAsync("""
             _ = Shield.Retry(options => options.OnRetry = item =>
+            {
                 ThreadPool.QueueUserWorkItem(
                     static state =>
                         Console.WriteLine(((KevlarContext)state.Context).ShieldName),
                     (Context: (object)item.Context, Other: 0),
-                    preferLocal: false));
+                    preferLocal: false);
+                return default;
+            });
             """);
 
         await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
@@ -3900,10 +3515,13 @@ public class PipelineHazardAnalyzerTests
             var diagnostics = await AnalyzeBodyAsync($$"""
                 var enabled = true;
                 _ = Shield.Retry(options => options.OnRetry = item =>
+                {
                     ThreadPool.QueueUserWorkItem(
                         static (object value) => Console.WriteLine(value),
                         {{state}},
-                        preferLocal: false));
+                        preferLocal: false);
+                    return default;
+                });
                 """);
 
             await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
@@ -3940,6 +3558,7 @@ public class PipelineHazardAnalyzerTests
                         _ = Shield.Retry(options => options.OnRetry = item =>
                         {
                             {{statement}}
+                            return default;
                         });
                     }
 
@@ -3948,11 +3567,7 @@ public class PipelineHazardAnalyzerTests
                 }
                 """);
 
-            await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
-            await AssertRuleAsync(
-                Without(diagnostics, "KEV013"),
-                "KEV014",
-                DiagnosticSeverity.Warning);
+            await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
         }
     }
 
@@ -3969,12 +3584,15 @@ public class PipelineHazardAnalyzerTests
         {
             var diagnostics = await AnalyzeBodyAsync($$"""
                 _ = Shield.Retry(options => options.OnRetry = item =>
-                    ProcessAsync({{selector}}));
+                {
+                    ProcessAsync({{selector}});
+                    return default;
+                });
 
                 static Task ProcessAsync(Func<RetryEvent, int> selector) => Task.CompletedTask;
                 """);
 
-            await AssertRuleAsync(diagnostics, "KEV013");
+            await Assert.That(diagnostics).IsEmpty();
         }
     }
 
@@ -3992,6 +3610,7 @@ public class PipelineHazardAnalyzerTests
                 _ = Shield.Retry(options => options.OnRetry = item =>
                 {
                     _ = Task.Run(() => Consume({{selector}}));
+                    return default;
                 });
 
                 static void Consume(Func<RetryEvent, int> selector) { }
@@ -4019,6 +3638,7 @@ public class PipelineHazardAnalyzerTests
                     ThreadPool.QueueUserWorkItem(
                         static _ => { },
                         {{state}});
+                    return default;
                 });
                 """);
 
@@ -4047,6 +3667,7 @@ public class PipelineHazardAnalyzerTests
                             Console.WriteLine(state[0].Context.ShieldName),
                         events,
                         preferLocal: false);
+                    return default;
                 });
                 """);
 
@@ -4067,6 +3688,7 @@ public class PipelineHazardAnalyzerTests
                         Console.WriteLine(state[0].Context.ShieldName),
                     events,
                     preferLocal: false);
+                return default;
             });
             """);
 
@@ -4082,6 +3704,7 @@ public class PipelineHazardAnalyzerTests
                 var events = new RetryEvent[1];
                 Array.Fill(events, item);
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
         var clearDiagnostics = await AnalyzeBodyAsync("""
@@ -4090,6 +3713,7 @@ public class PipelineHazardAnalyzerTests
                 var events = new[] { item };
                 Array.Clear(events);
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
         var conditionalClearDiagnostics = await AnalyzeBodyAsync("""
@@ -4102,6 +3726,7 @@ public class PipelineHazardAnalyzerTests
                 }
 
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
 
@@ -4129,6 +3754,7 @@ public class PipelineHazardAnalyzerTests
                     object[] events = new object[1];
                     {{copy}}
                     ThreadPool.QueueUserWorkItem(static state => { }, events);
+                    return default;
                 });
                 """);
 
@@ -4141,6 +3767,7 @@ public class PipelineHazardAnalyzerTests
                 var events = new[] { item };
                 Array.Copy(new[] { default(RetryEvent) }, events, 1);
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
         var copiedSlices = new[]
@@ -4158,6 +3785,7 @@ public class PipelineHazardAnalyzerTests
                     var events = new RetryEvent[1];
                     {{copy}}
                     ThreadPool.QueueUserWorkItem(static state => { }, events);
+                    return default;
                 });
                 """);
 
@@ -4177,6 +3805,7 @@ public class PipelineHazardAnalyzerTests
                 events[0][0] = item;
                 events[1][0] = default;
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
         var dynamicIndexDiagnostics = await AnalyzeBodyAsync("""
@@ -4187,6 +3816,7 @@ public class PipelineHazardAnalyzerTests
                 events[index] = item;
                 events[1] = default;
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
         var distinctDynamicIndicesDiagnostics = await AnalyzeBodyAsync("""
@@ -4198,6 +3828,7 @@ public class PipelineHazardAnalyzerTests
                 events[i] = item;
                 events[j] = default;
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
         var reassignedIndexDiagnostics = await AnalyzeBodyAsync("""
@@ -4209,6 +3840,7 @@ public class PipelineHazardAnalyzerTests
                 index = 1;
                 events[index] = default;
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
 
@@ -4241,6 +3873,7 @@ public class PipelineHazardAnalyzerTests
                         state.Second.Event = default;
                         state.Second.Field = default;
                         ThreadPool.QueueUserWorkItem(static value => { }, state);
+                        return default;
                     });
 
                 private sealed class Holder
@@ -4272,6 +3905,7 @@ public class PipelineHazardAnalyzerTests
                         var state = new Holder { Event = item };
                         state.Event = default;
                         ThreadPool.QueueUserWorkItem(static value => { }, state);
+                        return default;
                     });
 
                 private sealed class Holder
@@ -4299,6 +3933,7 @@ public class PipelineHazardAnalyzerTests
                         };
                         state.Child.Event = default;
                         ThreadPool.QueueUserWorkItem(static value => { }, state);
+                        return default;
                     });
 
                 private sealed class Holder
@@ -4329,6 +3964,7 @@ public class PipelineHazardAnalyzerTests
                         state.Child.Event = item;
                         state.Child = new Bucket();
                         ThreadPool.QueueUserWorkItem(static value => { }, state);
+                        return default;
                     });
 
                 private sealed class Holder
@@ -4355,6 +3991,7 @@ public class PipelineHazardAnalyzerTests
                 var events = new RetryEvent?[1];
                 events[0] ??= item;
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
 
@@ -4371,6 +4008,7 @@ public class PipelineHazardAnalyzerTests
                 events[0] = item;
                 events[0] ??= default;
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
 
@@ -4393,6 +4031,7 @@ public class PipelineHazardAnalyzerTests
                         preferLocal: false);
                     events.Add(item);
                 }
+                return default;
             });
             """);
 
@@ -4410,6 +4049,7 @@ public class PipelineHazardAnalyzerTests
 
                 Add();
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
         var assignmentDiagnostics = await AnalyzeBodyAsync("""
@@ -4420,6 +4060,7 @@ public class PipelineHazardAnalyzerTests
 
                 Set();
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
         var parameterDiagnostics = await AnalyzeBodyAsync("""
@@ -4431,6 +4072,7 @@ public class PipelineHazardAnalyzerTests
 
                 Add(events);
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
         var erasedValueDiagnostics = await AnalyzeBodyAsync("""
@@ -4442,6 +4084,7 @@ public class PipelineHazardAnalyzerTests
 
                 Add(events, item);
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
         var nestedInvocationDiagnostics = await AnalyzeBodyAsync("""
@@ -4453,6 +4096,7 @@ public class PipelineHazardAnalyzerTests
 
                 Outer();
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
         var additionalMutations = new[]
@@ -4520,6 +4164,7 @@ public class PipelineHazardAnalyzerTests
                 {
                     {{mutation}}
                     ThreadPool.QueueUserWorkItem(static state => { }, events);
+                    return default;
                 });
                 """);
 
@@ -4538,6 +4183,7 @@ public class PipelineHazardAnalyzerTests
 
                 Clear();
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
         var overwriteDiagnostics = await AnalyzeBodyAsync("""
@@ -4549,6 +4195,7 @@ public class PipelineHazardAnalyzerTests
                 Set();
                 events[0] = default;
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
         var conditionalDiagnostics = await AnalyzeBodyAsync("""
@@ -4565,6 +4212,7 @@ public class PipelineHazardAnalyzerTests
 
                 MaybeClear(false);
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
         var additionalCleanups = new[]
@@ -4625,6 +4273,7 @@ public class PipelineHazardAnalyzerTests
                 {
                     {{cleanup}}
                     ThreadPool.QueueUserWorkItem(static state => { }, events);
+                    return default;
                 });
                 """);
 
@@ -4656,6 +4305,7 @@ public class PipelineHazardAnalyzerTests
                 {
                     {{statement}}
                     ThreadPool.QueueUserWorkItem(static state => { }, events);
+                    return default;
                 });
                 """);
 
@@ -4672,6 +4322,7 @@ public class PipelineHazardAnalyzerTests
                 System.Collections.Generic.List<RetryEvent> events = [item];
                 events[0] = default;
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
 
@@ -4688,6 +4339,7 @@ public class PipelineHazardAnalyzerTests
                 events.Add(item);
                 events[0] = default;
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
 
@@ -4714,6 +4366,7 @@ public class PipelineHazardAnalyzerTests
                 events.Add(default);
                 events[2] = default;
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
 
@@ -4730,6 +4383,7 @@ public class PipelineHazardAnalyzerTests
                 events.Insert(0, default);
                 events[0] = default;
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
 
@@ -4745,6 +4399,7 @@ public class PipelineHazardAnalyzerTests
                 System.Collections.Generic.List<RetryEvent> events = [item];
                 events.RemoveAt(0);
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
 
@@ -4771,6 +4426,7 @@ public class PipelineHazardAnalyzerTests
                     System.Collections.Generic.List<RetryEvent?> events = [default, item];
                     {{statement}}
                     ThreadPool.QueueUserWorkItem(static state => { }, events);
+                    return default;
                 });
                 """);
 
@@ -4789,6 +4445,7 @@ public class PipelineHazardAnalyzerTests
                 events[0] = other;
                 events.Remove(other);
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
 
@@ -4804,6 +4461,7 @@ public class PipelineHazardAnalyzerTests
                 var source = new[] { item };
                 System.Collections.Generic.List<RetryEvent> events = [.. source];
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
         var setDiagnostics = await AnalyzeBodyAsync("""
@@ -4811,6 +4469,7 @@ public class PipelineHazardAnalyzerTests
             {
                 System.Collections.Generic.HashSet<RetryEvent> events = [item];
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
 
@@ -4828,6 +4487,7 @@ public class PipelineHazardAnalyzerTests
                 events.UnionWith(new[] { item });
                 events.Remove(item);
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
 
@@ -4846,6 +4506,7 @@ public class PipelineHazardAnalyzerTests
                 events.Remove(item);
                 events.Remove(item);
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
 
@@ -4873,6 +4534,7 @@ public class PipelineHazardAnalyzerTests
                     state[0].Add(item);
                     {{mutation}}
                     ThreadPool.QueueUserWorkItem(static value => { }, state);
+                    return default;
                 });
                 """);
 
@@ -4896,6 +4558,7 @@ public class PipelineHazardAnalyzerTests
                 state[0].Remove(item);
                 state[1].Clear();
                 ThreadPool.QueueUserWorkItem(static value => { }, state);
+                return default;
             });
             """);
 
@@ -4912,6 +4575,7 @@ public class PipelineHazardAnalyzerTests
                 events.Add(default, item);
                 events.Remove(item);
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
 
@@ -4928,6 +4592,7 @@ public class PipelineHazardAnalyzerTests
                 events.Add(item, default);
                 events.Remove(item);
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
 
@@ -4950,6 +4615,7 @@ public class PipelineHazardAnalyzerTests
                     var events = new System.Collections.Concurrent.ConcurrentDictionary<RetryEvent, RetryEvent>();
                     {{mutation}}
                     ThreadPool.QueueUserWorkItem(static state => { }, events);
+                    return default;
                 });
                 """);
 
@@ -4973,6 +4639,7 @@ public class PipelineHazardAnalyzerTests
                     var events = new System.Collections.Concurrent.ConcurrentDictionary<int, int>();
                     {{mutation}}
                     ThreadPool.QueueUserWorkItem(static state => { }, events);
+                    return default;
                 });
                 """);
 
@@ -4989,6 +4656,7 @@ public class PipelineHazardAnalyzerTests
                 var events = new System.Collections.Concurrent.ConcurrentDictionary<int, object>();
                 events.GetOrAdd(0, _ => item);
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
 
@@ -5006,6 +4674,7 @@ public class PipelineHazardAnalyzerTests
                 events.TryAdd(0, previous);
                 events.TryUpdate(0, item, previous);
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
         var comparisonDiagnostics = await AnalyzeBodyAsync("""
@@ -5015,6 +4684,7 @@ public class PipelineHazardAnalyzerTests
                 events.TryAdd(0, new object());
                 events.TryUpdate(0, new object(), item);
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
 
@@ -5034,6 +4704,7 @@ public class PipelineHazardAnalyzerTests
                 var events = new System.Collections.Generic.Dictionary<RetryEvent, RetryEvent>();
                 events[item] = default;
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
 
@@ -5050,6 +4721,7 @@ public class PipelineHazardAnalyzerTests
                 events[1] = item;
                 events["1"] = default;
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
 
@@ -5067,6 +4739,7 @@ public class PipelineHazardAnalyzerTests
                 events[First.Key] = item;
                 events[Second.Key] = default;
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """,
             """
@@ -5096,6 +4769,7 @@ public class PipelineHazardAnalyzerTests
                 };
                 events.Remove(0);
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
 
@@ -5117,6 +4791,7 @@ public class PipelineHazardAnalyzerTests
                 var second = state[1];
                 second.Clear();
                 ThreadPool.QueueUserWorkItem(static value => { }, state);
+                return default;
             });
             """);
 
@@ -5134,6 +4809,7 @@ public class PipelineHazardAnalyzerTests
                 contexts.Add(item.Context);
                 contexts.Remove(other.Context);
                 ThreadPool.QueueUserWorkItem(static state => { }, contexts);
+                return default;
             });
             """);
 
@@ -5158,6 +4834,7 @@ public class PipelineHazardAnalyzerTests
 
                 events.Remove(item);
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
 
@@ -5185,6 +4862,7 @@ public class PipelineHazardAnalyzerTests
                     events.Remove(item);
                     ThreadPool.QueueUserWorkItem(static state => { }, events);
                 }
+                return default;
             });
             """);
 
@@ -5209,6 +4887,7 @@ public class PipelineHazardAnalyzerTests
                 {
                     {{statement}}
                     ThreadPool.QueueUserWorkItem(static state => { }, events);
+                    return default;
                 });
                 """);
 
@@ -5229,6 +4908,7 @@ public class PipelineHazardAnalyzerTests
                 };
                 events.Remove(item);
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
 
@@ -5245,6 +4925,7 @@ public class PipelineHazardAnalyzerTests
                 events.AddRange(new[] { item });
                 events.Remove(item);
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
         var collectionDiagnostics = await AnalyzeBodyAsync("""
@@ -5254,6 +4935,7 @@ public class PipelineHazardAnalyzerTests
                 events.AddRange([item]);
                 events.Remove(item);
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
         var spreadDiagnostics = await AnalyzeBodyAsync("""
@@ -5263,6 +4945,7 @@ public class PipelineHazardAnalyzerTests
                 events.AddRange([.. new[] { item }]);
                 events.Remove(item);
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
 
@@ -5288,6 +4971,7 @@ public class PipelineHazardAnalyzerTests
 
                 events.Remove(item);
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
 
@@ -5308,6 +4992,7 @@ public class PipelineHazardAnalyzerTests
 
                 events.Remove(item);
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
 
@@ -5328,6 +5013,7 @@ public class PipelineHazardAnalyzerTests
 
                 events.Dequeue();
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
 
@@ -5348,6 +5034,7 @@ public class PipelineHazardAnalyzerTests
                 }
 
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
+                return default;
             });
             """);
 
@@ -5372,6 +5059,7 @@ public class PipelineHazardAnalyzerTests
                     var events = new System.Collections.Generic.LinkedList<RetryEvent>();
                     {{mutation}}
                     ThreadPool.QueueUserWorkItem(static state => { }, events);
+                    return default;
                 });
                 """);
 
@@ -5395,6 +5083,7 @@ public class PipelineHazardAnalyzerTests
                     var events = new System.Collections.Generic.LinkedList<RetryEvent>();
                     {{statement}}
                     ThreadPool.QueueUserWorkItem(static state => { }, events);
+                    return default;
                 });
                 """);
 
@@ -5412,7 +5101,7 @@ public class PipelineHazardAnalyzerTests
                 if (Environment.TickCount == 0)
                 {
                     events.Add(item);
-                    return;
+                    return default;
                 }
 
                 ThreadPool.QueueUserWorkItem(
@@ -5420,6 +5109,7 @@ public class PipelineHazardAnalyzerTests
                         Console.WriteLine(state.Count),
                     events,
                     preferLocal: false);
+                return default;
             });
             """);
 
@@ -5431,11 +5121,14 @@ public class PipelineHazardAnalyzerTests
     {
         var diagnostics = await AnalyzeBodyAsync("""
             _ = Shield.Retry(options => options.OnRetry = item =>
+            {
                 ThreadPool.QueueUserWorkItem(
                     static (System.Collections.Generic.List<RetryEvent> state) =>
                         Console.WriteLine(state.Count),
                     new System.Collections.Generic.List<RetryEvent>(capacity: 1),
-                    preferLocal: false));
+                    preferLocal: false);
+                return default;
+            });
             """);
 
         await Assert.That(diagnostics).IsEmpty();
@@ -5446,11 +5139,14 @@ public class PipelineHazardAnalyzerTests
     {
         var diagnostics = await AnalyzeBodyAsync("""
             _ = Shield.Retry(options => options.OnRetry = item =>
+            {
                 ThreadPool.QueueUserWorkItem(
                     static (object[] state) =>
                         Console.WriteLine(((KevlarContext)state[0]).ShieldName),
                     [item.Context],
-                    preferLocal: false));
+                    preferLocal: false);
+                return default;
+            });
             """);
 
         await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
@@ -5486,11 +5182,14 @@ public class PipelineHazardAnalyzerTests
     {
         var diagnostics = await AnalyzeBodyAsync("""
             _ = Shield.Retry(options => options.OnRetry = item =>
+            {
                 ThreadPool.QueueUserWorkItem(
                     static state =>
                         Console.WriteLine(((KevlarContext)state.State).ShieldName),
                     new { State = (object)item.Context },
-                    preferLocal: false));
+                    preferLocal: false);
+                return default;
+            });
             """);
 
         await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
@@ -5547,11 +5246,14 @@ public class PipelineHazardAnalyzerTests
     {
         var diagnostics = await AnalyzeBodyAsync("""
             _ = Shield.Retry(options => options.OnRetry = item =>
+            {
                 ThreadPool.QueueUserWorkItem(
                     static (System.Collections.Generic.List<object> state) =>
                         Console.WriteLine(((KevlarContext)state[0]).ShieldName),
                     new System.Collections.Generic.List<object> { item.Context },
-                    preferLocal: false));
+                    preferLocal: false);
+                return default;
+            });
             """);
 
         await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
@@ -5565,6 +5267,7 @@ public class PipelineHazardAnalyzerTests
             {
                 Action work = () => Console.WriteLine(item.Context.ShieldName);
                 _ = Task.Run(work);
+                return default;
             });
             """);
 
@@ -5576,11 +5279,14 @@ public class PipelineHazardAnalyzerTests
     {
         var diagnostics = await AnalyzeBodyAsync("""
             _ = Shield.Retry(options => options.OnRetry = item =>
+            {
                 ThreadPool.QueueUserWorkItem(
                     static (System.Collections.Generic.List<RetryEvent> state) =>
                         Console.WriteLine(state[0].Context.ShieldName),
                     new System.Collections.Generic.List<RetryEvent>(new[] { item }),
-                    preferLocal: false));
+                    preferLocal: false);
+                return default;
+            });
             """);
 
         await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
@@ -5591,11 +5297,14 @@ public class PipelineHazardAnalyzerTests
     {
         var diagnostics = await AnalyzeBodyAsync("""
             _ = Shield.Retry(options => options.OnRetry = item =>
+            {
                 ThreadPool.QueueUserWorkItem(
                     static (System.Collections.Generic.KeyValuePair<int, RetryEvent> state) =>
                         Console.WriteLine(state.Value.Context.ShieldName),
                     new System.Collections.Generic.KeyValuePair<int, RetryEvent>(0, item),
-                    preferLocal: false));
+                    preferLocal: false);
+                return default;
+            });
             """);
 
         await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
@@ -5619,11 +5328,14 @@ public class PipelineHazardAnalyzerTests
             {
                 public void Configure() =>
                     _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
                         ThreadPool.QueueUserWorkItem(
                             static (RetrySnapshot snapshot) =>
                                 Console.WriteLine(snapshot.RetryNumber),
                             new RetrySnapshot(item),
-                            preferLocal: false));
+                            preferLocal: false);
+                        return default;
+                    });
             }
             """);
 
@@ -5648,6 +5360,7 @@ public class PipelineHazardAnalyzerTests
                 {
                     Action work = {{initializer}};
                     _ = Task.Run(work);
+                    return default;
                 });
                 """);
 
@@ -5661,17 +5374,17 @@ public class PipelineHazardAnalyzerTests
         var diagnostics = await AnalyzeBodyAsync("""
             var mode = 0;
             _ = Shield.Retry(options => options.OnRetry = item =>
+            {
                 Task.Run(mode switch
                 {
                     0 => (Action)(() => Console.WriteLine(item.Context.ShieldName)),
                     _ => () => { },
-                }));
+                });
+                return default;
+            });
             """);
 
-        await AssertRuleAsync(
-            Without(diagnostics, "KEV013"),
-            "KEV014",
-            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
@@ -5718,15 +5431,15 @@ public class PipelineHazardAnalyzerTests
                     _ = Shield.For<int>().FallbackTo(42);
                     _ = Shield.For<int>().Fallback(_ => new ValueTask<int>(42));
                     _ = Shield.For<int>().Fallback((_, _) => new ValueTask<int>(42));
-                    _ = Shield.For<int>().FallbackTo(42, options => options.OnFallback = _ => { });
-                    _ = Shield.For<int>().Fallback(_ => new ValueTask<int>(42), options => options.OnFallback = _ => { });
-                    _ = Shield.For<int>().Fallback((_, _) => new ValueTask<int>(42), options => options.OnFallback = _ => { });
+                    _ = Shield.For<int>().FallbackTo(42, options => options.OnFallback = _ => default);
+                    _ = Shield.For<int>().Fallback(_ => new ValueTask<int>(42), options => options.OnFallback = _ => default);
+                    _ = Shield.For<int>().Fallback((_, _) => new ValueTask<int>(42), options => options.OnFallback = _ => default);
                     _ = Shield.For<int>().When<Exception>().FallbackTo(42);
                     _ = Shield.For<int>().When<Exception>().Fallback(_ => new ValueTask<int>(42));
                     _ = Shield.For<int>().When<Exception>().Fallback((_, _) => new ValueTask<int>(42));
-                    _ = Shield.For<int>().When<Exception>().FallbackTo(42, options => options.OnFallback = _ => { });
-                    _ = Shield.For<int>().When<Exception>().Fallback(_ => new ValueTask<int>(42), options => options.OnFallback = _ => { });
-                    _ = Shield.For<int>().When<Exception>().Fallback((_, _) => new ValueTask<int>(42), options => options.OnFallback = _ => { });
+                    _ = Shield.For<int>().When<Exception>().FallbackTo(42, options => options.OnFallback = _ => default);
+                    _ = Shield.For<int>().When<Exception>().Fallback(_ => new ValueTask<int>(42), options => options.OnFallback = _ => default);
+                    _ = Shield.For<int>().When<Exception>().Fallback((_, _) => new ValueTask<int>(42), options => options.OnFallback = _ => default);
                 }
             }
             """));
@@ -5779,7 +5492,7 @@ public class PipelineHazardAnalyzerTests
             "await Shield.For<int>().ConcurrencyLimit(2).ExecuteOutcomeAsync(1, (state, _) => new ValueTask<int>(state));",
         };
 
-        await AssertEachAsync(cases, "KEV004", "KEV012", "KEV013");
+        await AssertEachAsync(cases, "KEV004", "KEV012");
     }
 
     [Test]
@@ -6071,7 +5784,7 @@ public class PipelineHazardAnalyzerTests
             "_ = await Shield.Empty.Fallback(static _ => ValueTask.CompletedTask).ExecuteOutcomeAsync(static _ => Task.FromResult(1));",
         };
 
-        await AssertEachAsync(cases, "KEV005", "KEV012", "KEV013");
+        await AssertEachAsync(cases, "KEV005", "KEV012");
     }
 
     [Test]
@@ -6087,7 +5800,7 @@ public class PipelineHazardAnalyzerTests
             "var fallback = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask); _ = Shield.Compose(Shield.Empty, fallback).Execute(static _ => 1);",
         };
 
-        await AssertEachAsync(cases, "KEV005", "KEV012", "KEV013");
+        await AssertEachAsync(cases, "KEV005", "KEV012");
     }
 
     [Test]
@@ -6097,7 +5810,7 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.Empty.Fallback(static _ => ValueTask.CompletedTask)" +
             ".UseRateLimiter((System.Threading.RateLimiting.RateLimiter)null!).Execute(static _ => 1);");
 
-        await AssertRuleAsync(Without(diagnostics, "KEV004", "KEV012", "KEV013"), "KEV005");
+        await AssertRuleAsync(Without(diagnostics, "KEV004", "KEV012"), "KEV005");
     }
 
     [Test]
@@ -6121,7 +5834,7 @@ public class PipelineHazardAnalyzerTests
         foreach (var body in cases)
         {
             var diagnostics = await AnalyzeBodyAsync(body);
-            await Assert.That(Without(diagnostics, "KEV012", "KEV013")).IsEmpty();
+            await Assert.That(Without(diagnostics, "KEV012")).IsEmpty();
         }
     }
 
@@ -6145,7 +5858,7 @@ public class PipelineHazardAnalyzerTests
             "Fallback on a non-generic Shield applies only to void executions. " +
             "For executions that return a value, build a result-aware shield with " +
             "Shield.For<T>() and use its Fallback overloads.");
-        await Assert.That(Without(suppressed, "KEV012", "KEV013")).IsEmpty();
+        await Assert.That(Without(suppressed, "KEV012")).IsEmpty();
     }
 
     [Test]
@@ -6559,10 +6272,10 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.For<int>().CircuitBreaker(options => options.ConsecutiveFailures = 2).FallbackTo(0);",
             "_ = Shield.For<int>().CircuitBreaker(options => options.BreakDuration = TimeSpan.FromSeconds(1)).FallbackTo(0);",
             "_ = Shield.For<int>().CircuitBreaker(options => options.HandlesException = null).FallbackTo(0);",
-            "_ = Shield.For<int>().CircuitBreaker(options => options.OnStateChanged = _ => options.HandlesException = exception => exception is TimeoutException).FallbackTo(0);",
+            "_ = Shield.For<int>().CircuitBreaker(options => options.OnStateChanged = _ => { options.HandlesException = exception => exception is TimeoutException; return default; }).FallbackTo(0);",
             "_ = Shield.For<int>().WhenResult(0).Retry(1).FallbackTo(0);",
-            "_ = Shield.For<int>().Retry(1).FallbackTo(0, static options => options.OnFallback = static _ => { });",
-            "_ = Shield.Retry(1).Fallback(static _ => ValueTask.CompletedTask, static options => options.OnFallback = static _ => { });",
+            "_ = Shield.For<int>().Retry(1).FallbackTo(0, static options => options.OnFallback = static _ => default);",
+            "_ = Shield.Retry(1).Fallback(static _ => ValueTask.CompletedTask, static options => options.OnFallback = static _ => default);",
             "_ = Shield.For<int>().Retry(1).WhenAnyError().FallbackTo(0);",
             "_ = Shield.For<int>().Retry(1).When<InvalidOperationException>().Timeout(TimeSpan.Zero).WhenAnyError().FallbackTo(0);",
             "_ = Shield.For<int>().Retry(1).When<ArgumentException>().Timeout(TimeSpan.Zero).When<InvalidOperationException>().Timeout(TimeSpan.Zero).WhenAnyError().FallbackTo(0);",
@@ -6974,46 +6687,57 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
-    public async Task KEV012_Flags_Known_Async_Configuration_Used_Synchronously()
+    public async Task KEV012_Flags_Async_Hooks_Used_Synchronously()
     {
         var cases = new[]
         {
-            "_ = Shield.Retry(options => options.OnRetryAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
-            "_ = Shield.Retry(options => options.DelayGeneratorAsync = static _ => new ValueTask<TimeSpan?>(TimeSpan.Zero)).Execute(_ => 1);",
-            "_ = Shield.Timeout(options => options.TimeoutGenerator = static _ => new ValueTask<TimeSpan>(TimeSpan.FromSeconds(1))).Execute(_ => 1);",
-            "_ = Shield.CircuitBreaker(options => { options.ConsecutiveFailures = 1; options.BreakDurationGenerator = static _ => new ValueTask<TimeSpan>(TimeSpan.FromSeconds(1)); }).Execute(_ => 1);",
-            "_ = Shield.RateLimit(options => options.OnRejectedAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
-            "_ = Shield.ConcurrencyLimit(options => options.OnRejectedAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
-            "_ = Shield.For<int>().FallbackTo(0, options => options.OnFallbackAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
-            "_ = Shield.Retry(options => options.OnRetryAsync = static _ => ValueTask.CompletedTask).ExecuteWithContext(static _ => 1);",
-            "_ = Shield.Retry(options => options.OnRetryAsync = static _ => ValueTask.CompletedTask).ExecuteOutcome(static _ => 1);",
-            "_ = Shield.Empty.UseRateLimiter((System.Threading.RateLimiting.RateLimiter)null!, options => options.OnRejectedAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
+            "_ = Shield.Retry(options => options.OnRetry = async _ => await Task.Yield()).Execute(_ => 1);",
+            "_ = Shield.Retry(options => options.OnRetry = async delegate { await Task.Yield(); }).Execute(_ => 1);",
+            "_ = Shield.Retry(options => options.OnRetry = new Func<RetryEvent, ValueTask>(async _ => await Task.Yield())).Execute(_ => 1);",
+            "_ = Shield.Retry(options => options.DelayGenerator = async _ => { await Task.Yield(); return null; }).Execute(_ => 1);",
+            "_ = Shield.Timeout(options => options.TimeoutGenerator = async _ => { await Task.Yield(); return TimeSpan.FromSeconds(1); }).Execute(_ => 1);",
+            "_ = Shield.Timeout(options => options.OnTimeout = async _ => await Task.Yield()).Execute(_ => 1);",
+            "_ = Shield.CircuitBreaker(options => { options.ConsecutiveFailures = 1; options.BreakDurationGenerator = async _ => { await Task.Yield(); return TimeSpan.FromSeconds(1); }; }).Execute(_ => 1);",
+            "_ = Shield.CircuitBreaker(options => options.OnStateChanged = async _ => await Task.Yield()).Execute(_ => 1);",
+            "_ = Shield.RateLimit(options => options.OnRejected = async _ => await Task.Yield()).Execute(_ => 1);",
+            "_ = Shield.ConcurrencyLimit(options => options.OnRejected = async _ => await Task.Yield()).Execute(_ => 1);",
+            "_ = Shield.For<int>().FallbackTo(0, options => options.OnFallback = async _ => await Task.Yield()).Execute(_ => 1);",
+            "_ = Shield.Retry(options => options.OnRetry = async _ => await Task.Yield()).ExecuteWithContext(static _ => 1);",
+            "_ = Shield.Retry(options => options.OnRetry = async _ => await Task.Yield()).ExecuteOutcome(static _ => 1);",
+            "_ = Shield.Empty.UseRateLimiter((System.Threading.RateLimiting.RateLimiter)null!, options => options.OnRejected = async _ => await Task.Yield()).Execute(_ => 1);",
             "_ = Shield.For<int>().Fallback(static _ => ValueTask.FromResult(0)).Execute(_ => 1);",
             "_ = Shield.Empty.UseRateLimiter((System.Threading.RateLimiting.RateLimiter)null!).Execute(_ => 1);",
-            "_ = ChaosShield.Behavior(options => { options.Enabled = true; options.Behavior = static _ => ValueTask.CompletedTask; }).Execute(_ => 1);",
-            "_ = ChaosShield.Behavior(options => { options.Enabled = false; if (DateTime.UtcNow.Ticks > 0) { options.Enabled = true; } options.Behavior = static _ => ValueTask.CompletedTask; }).Execute(_ => 1);",
-            "_ = Shield.Retry(options => { var alias = options; alias.OnRetryAsync = static _ => ValueTask.CompletedTask; }).Execute(_ => 1);",
-            "_ = Shield.Retry(options => { options.MaxRetries = 0; options.OnRetryAsync = static _ => ValueTask.CompletedTask; options.MaxRetries = 1; }).Execute(_ => 1);",
-            "_ = Shield.Retry(options => { options.MaxRetries = 0; if (DateTime.UtcNow.Ticks > 0) { options.MaxRetries = 1; } options.OnRetryAsync = static _ => ValueTask.CompletedTask; }).Execute(_ => 1);",
-            "_ = Shield.Retry(options => { options.MaxRetries = 1; options.OnRetryAsync = static _ => ValueTask.CompletedTask; if (DateTime.UtcNow.Ticks > 0) return; options.MaxRetries = 0; }).Execute(_ => 1);",
-            "_ = ChaosShield.Behavior(options => { options.Enabled = true; options.Behavior = static _ => ValueTask.CompletedTask; if (DateTime.UtcNow.Ticks > 0) return; options.Enabled = false; }).Execute(_ => 1);",
-            "_ = Shield.Retry(options => { options.OnRetryAsync = static _ => ValueTask.CompletedTask; if (DateTime.UtcNow.Ticks > 0) return; options.OnRetryAsync = null; }).Execute(_ => 1);",
-            "_ = Shield.Retry(options => { options.OnRetryAsync = static _ => ValueTask.CompletedTask; options.OnRetryAsync = null; if (DateTime.UtcNow.Ticks > 0) options.OnRetryAsync = static _ => ValueTask.CompletedTask; }).Execute(_ => 1);",
+            "_ = ChaosShield.Behavior(options => { options.Enabled = true; options.Behavior = async _ => await Task.Yield(); }).Execute(_ => 1);",
+            "_ = ChaosShield.Behavior(options => { options.Enabled = false; if (DateTime.UtcNow.Ticks > 0) { options.Enabled = true; } options.Behavior = async _ => await Task.Yield(); }).Execute(_ => 1);",
+            "_ = Shield.Retry(options => { var alias = options; alias.OnRetry = async _ => await Task.Yield(); }).Execute(_ => 1);",
+            "_ = Shield.Retry(options => { options.MaxRetries = 0; options.OnRetry = async _ => await Task.Yield(); options.MaxRetries = 1; }).Execute(_ => 1);",
+            "_ = Shield.Retry(options => { options.MaxRetries = 0; if (DateTime.UtcNow.Ticks > 0) { options.MaxRetries = 1; } options.OnRetry = async _ => await Task.Yield(); }).Execute(_ => 1);",
+            "_ = Shield.Retry(options => { options.MaxRetries = 1; options.OnRetry = async _ => await Task.Yield(); if (DateTime.UtcNow.Ticks > 0) return; options.MaxRetries = 0; }).Execute(_ => 1);",
+            "_ = ChaosShield.Behavior(options => { options.Enabled = true; options.Behavior = async _ => await Task.Yield(); if (DateTime.UtcNow.Ticks > 0) return; options.Enabled = false; }).Execute(_ => 1);",
+            "_ = Shield.Retry(options => { options.OnRetry = async _ => await Task.Yield(); if (DateTime.UtcNow.Ticks > 0) return; options.OnRetry = null; }).Execute(_ => 1);",
+            "_ = Shield.Retry(options => { options.OnRetry = async _ => await Task.Yield(); options.OnRetry = null; if (DateTime.UtcNow.Ticks > 0) options.OnRetry = async _ => await Task.Yield(); }).Execute(_ => 1);",
+            "var enabled = true; _ = Shield.Retry(options => options.OnRetry = enabled ? async _ => await Task.Yield() : _ => default).Execute(_ => 1);",
+            "Func<RetryEvent, ValueTask>? existing = null; _ = Shield.Retry(options => options.OnRetry = existing ?? (async _ => await Task.Yield())).Execute(_ => 1);",
         };
 
         await AssertEachAsync(cases, "KEV012", "KEV004", "KEV011");
 
+        var asyncMethodGroup = await AnalyzeBodyAsync(
+            "_ = Shield.Retry(options => options.OnRetry = RetryAsync).Execute(_ => 1);",
+            members: "private static async ValueTask RetryAsync(RetryEvent item) => await Task.Yield();");
+        await AssertRuleAsync(asyncMethodGroup, "KEV012");
+
         var additionalOptionShapes = new[]
         {
-            "_ = Shield.For<int>().Retry(options => options.OnRetryAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
-            "_ = Shield.For<int>().Retry(options => options.DelayGeneratorAsync = static _ => new ValueTask<TimeSpan?>(TimeSpan.Zero)).Execute(_ => 1);",
-            "_ = Shield.Hedge(options => options.DelayGeneratorAsync = static _ => new ValueTask<TimeSpan>(TimeSpan.Zero)).Execute(_ => 1);",
-            "_ = Shield.For<int>().Hedge(options => options.DelayGeneratorAsync = static _ => new ValueTask<TimeSpan>(TimeSpan.Zero)).Execute(_ => 1);",
-            "_ = Shield.Timeout(options => options.OnTimeoutAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
-            "_ = Shield.CircuitBreaker(options => options.OnStateChangedAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
-            "_ = Shield.For<int>().CircuitBreaker(options => { options.ConsecutiveFailures = 1; options.BreakDurationGenerator = static _ => new ValueTask<TimeSpan>(TimeSpan.FromSeconds(1)); }).Execute(_ => 1);",
-            "_ = Shield.For<int>().CircuitBreaker(options => options.OnStateChangedAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
-            "Shield.Fallback(static _ => ValueTask.CompletedTask, options => options.OnFallbackAsync = static _ => ValueTask.CompletedTask).Execute(static _ => { });",
+            "_ = Shield.For<int>().Retry(options => options.OnRetry = async _ => await Task.Yield()).Execute(_ => 1);",
+            "_ = Shield.For<int>().Retry(options => options.DelayGenerator = async _ => { await Task.Yield(); return null; }).Execute(_ => 1);",
+            "_ = Shield.Hedge(options => options.DelayGenerator = async _ => { await Task.Yield(); return TimeSpan.Zero; }).Execute(_ => 1);",
+            "_ = Shield.Hedge(options => options.OnHedge = async _ => await Task.Yield()).Execute(_ => 1);",
+            "_ = Shield.For<int>().Hedge(options => options.DelayGenerator = async _ => { await Task.Yield(); return TimeSpan.Zero; }).Execute(_ => 1);",
+            "_ = Shield.For<int>().Hedge(options => options.OnHedge = async _ => await Task.Yield()).Execute(_ => 1);",
+            "_ = Shield.For<int>().CircuitBreaker(options => { options.ConsecutiveFailures = 1; options.BreakDurationGenerator = async _ => { await Task.Yield(); return TimeSpan.FromSeconds(1); }; }).Execute(_ => 1);",
+            "_ = Shield.For<int>().CircuitBreaker(options => options.OnStateChanged = async _ => await Task.Yield()).Execute(_ => 1);",
+            "Shield.Fallback(static _ => ValueTask.CompletedTask, options => options.OnFallback = async _ => await Task.Yield()).Execute(static _ => { });",
         };
         foreach (var body in additionalOptionShapes)
         {
@@ -7024,27 +6748,40 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
-    public async Task KEV012_Skips_Async_Execution_Sync_Configuration_And_Unknown_Configuration()
+    public async Task KEV012_Skips_Async_Execution_Synchronous_Hooks_And_Unknown_Configuration()
     {
         var cases = new[]
         {
-            "_ = await Shield.Retry(options => options.OnRetryAsync = static _ => ValueTask.CompletedTask).ExecuteAsync(_ => new ValueTask<int>(1));",
-            "_ = Shield.Timeout(options => options.TimeoutGeneratorSync = static _ => TimeSpan.FromSeconds(1)).Execute(_ => 1);",
-            "_ = Shield.CircuitBreaker(options => { options.ConsecutiveFailures = 1; options.BreakDurationGeneratorSync = static _ => TimeSpan.FromSeconds(1); }).Execute(_ => 1);",
-            "_ = Shield.Retry(options => { options.MaxRetries = 0; options.OnRetryAsync = static _ => ValueTask.CompletedTask; }).Execute(_ => 1);",
-            "_ = Shield.Retry(options => { options.DelayGeneratorAsync = static _ => new ValueTask<TimeSpan?>(TimeSpan.Zero); options.MaxRetries = 0; }).Execute(_ => 1);",
-            "_ = Shield.Retry(options => { if (DateTime.UtcNow.Ticks > 0) { options.MaxRetries = 1; } options.MaxRetries = 0; options.OnRetryAsync = static _ => ValueTask.CompletedTask; }).Execute(_ => 1);",
-            "_ = Shield.Hedge(options => { options.MaxHedgedAttempts = 0; options.DelayGeneratorAsync = static _ => new ValueTask<TimeSpan>(TimeSpan.Zero); }).Execute(_ => 1);",
-            "_ = ChaosShield.Behavior(options => options.Behavior = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
-            "_ = ChaosShield.Behavior(options => { options.Enabled = true; options.InjectionRate = 0; options.Behavior = static _ => ValueTask.CompletedTask; }).Execute(_ => 1);",
-            "_ = ChaosShield.Behavior(options => { options.Enabled = true; options.Enabled = false; options.Behavior = static _ => ValueTask.CompletedTask; }).Execute(_ => 1);",
-            "_ = Shield.Retry(options => options.OnRetryAsync = null).Execute(_ => 1);",
-            "_ = Shield.Retry(options => { options.OnRetryAsync = static _ => ValueTask.CompletedTask; options.OnRetryAsync = null; }).Execute(_ => 1);",
-            "_ = Shield.Retry(options => { if (DateTime.UtcNow.Ticks > 0) options.OnRetryAsync = static _ => ValueTask.CompletedTask; options.OnRetryAsync = null; }).Execute(_ => 1);",
-            "_ = Shield.Retry(options => options.OnRetry = _ => options.OnRetryAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
-            "var unrelated = new TimeoutOptions(); _ = Shield.Retry(_ => unrelated.TimeoutGenerator = static _ => new ValueTask<TimeSpan>(TimeSpan.FromSeconds(1))).Execute(_ => 1);",
-            "_ = Shield.Retry(options => { var alias = options; alias = new RetryOptions(); alias.OnRetryAsync = static _ => ValueTask.CompletedTask; }).Execute(_ => 1);",
-            "Action<RetryOptions> configure = static options => options.OnRetryAsync = static _ => ValueTask.CompletedTask; _ = Shield.Retry(configure).Execute(_ => 1);",
+            "_ = await Shield.Retry(options => options.OnRetry = async _ => await Task.Yield()).ExecuteAsync(_ => new ValueTask<int>(1));",
+            "_ = Shield.Retry(options => options.OnRetry = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
+            "_ = Shield.Retry(options => options.OnRetry = static _ => default).Execute(_ => 1);",
+            "_ = Shield.Retry(options => options.OnRetry = static _ => new ValueTask()).Execute(_ => 1);",
+            "_ = Shield.Retry(options => options.OnRetry = _ => { Console.WriteLine(); return default; }).Execute(_ => 1);",
+            "_ = Shield.Retry(options => options.DelayGenerator = static _ => default).Execute(_ => 1);",
+            "_ = Shield.Retry(options => options.DelayGenerator = static _ => new(TimeSpan.Zero)).Execute(_ => 1);",
+            "_ = Shield.Retry(options => options.DelayGenerator = static _ => ValueTask.FromResult<TimeSpan?>(TimeSpan.Zero)).Execute(_ => 1);",
+            "_ = Shield.Timeout(options => options.TimeoutGenerator = static _ => new(TimeSpan.FromSeconds(1))).Execute(_ => 1);",
+            "_ = Shield.Timeout(options => options.OnTimeout = static _ => ValueTask.CompletedTask).Execute(_ => 1);",
+            "_ = Shield.CircuitBreaker(options => { options.ConsecutiveFailures = 1; options.BreakDurationGenerator = static _ => new(TimeSpan.FromSeconds(1)); }).Execute(_ => 1);",
+            "_ = Shield.CircuitBreaker(options => options.OnStateChanged = static _ => default).Execute(_ => 1);",
+            "_ = Shield.RateLimit(options => options.OnRejected = static _ => default).Execute(_ => 1);",
+            "_ = Shield.ConcurrencyLimit(options => options.OnRejected = static _ => default).Execute(_ => 1);",
+            "_ = Shield.For<int>().FallbackTo(0, options => options.OnFallback = static _ => default).Execute(_ => 1);",
+            "_ = ChaosShield.Behavior(options => { options.Enabled = true; options.Behavior = static _ => ValueTask.CompletedTask; }).Execute(_ => 1);",
+            "_ = Shield.Retry(options => { options.MaxRetries = 0; options.OnRetry = async _ => await Task.Yield(); }).Execute(_ => 1);",
+            "_ = Shield.Retry(options => { options.DelayGenerator = async _ => { await Task.Yield(); return null; }; options.MaxRetries = 0; }).Execute(_ => 1);",
+            "_ = Shield.Retry(options => { if (DateTime.UtcNow.Ticks > 0) { options.MaxRetries = 1; } options.MaxRetries = 0; options.OnRetry = async _ => await Task.Yield(); }).Execute(_ => 1);",
+            "_ = Shield.Hedge(options => { options.MaxHedgedAttempts = 0; options.DelayGenerator = async _ => { await Task.Yield(); return TimeSpan.Zero; }; }).Execute(_ => 1);",
+            "_ = ChaosShield.Behavior(options => options.Behavior = async _ => await Task.Yield()).Execute(_ => 1);",
+            "_ = ChaosShield.Behavior(options => { options.Enabled = true; options.InjectionRate = 0; options.Behavior = async _ => await Task.Yield(); }).Execute(_ => 1);",
+            "_ = ChaosShield.Behavior(options => { options.Enabled = true; options.Enabled = false; options.Behavior = async _ => await Task.Yield(); }).Execute(_ => 1);",
+            "_ = Shield.Retry(options => options.OnRetry = null).Execute(_ => 1);",
+            "_ = Shield.Retry(options => { options.OnRetry = async _ => await Task.Yield(); options.OnRetry = null; }).Execute(_ => 1);",
+            "_ = Shield.Retry(options => { if (DateTime.UtcNow.Ticks > 0) options.OnRetry = async _ => await Task.Yield(); options.OnRetry = null; }).Execute(_ => 1);",
+            "_ = Shield.Retry(options => options.OnRetry = _ => { options.OnRetry = async _ => await Task.Yield(); return default; }).Execute(_ => 1);",
+            "var unrelated = new TimeoutOptions(); _ = Shield.Retry(_ => unrelated.TimeoutGenerator = async _ => { await Task.Yield(); return TimeSpan.FromSeconds(1); }).Execute(_ => 1);",
+            "_ = Shield.Retry(options => { var alias = options; alias = new RetryOptions(); alias.OnRetry = async _ => await Task.Yield(); }).Execute(_ => 1);",
+            "Action<RetryOptions> configure = static options => options.OnRetry = async _ => await Task.Yield(); _ = Shield.Retry(configure).Execute(_ => 1);",
         };
 
         foreach (var body in cases)
@@ -7052,12 +6789,17 @@ public class PipelineHazardAnalyzerTests
             var diagnostics = await AnalyzeBodyAsync(body);
             await Assert.That(Without(diagnostics, "KEV004")).IsEmpty();
         }
+
+        var methodGroup = await AnalyzeBodyAsync(
+            "_ = Shield.Retry(options => options.OnRetry = Retry).Execute(_ => 1);",
+            members: "private static ValueTask Retry(RetryEvent item) => ValueTask.CompletedTask;");
+        await Assert.That(methodGroup).IsEmpty();
     }
 
     [Test]
     public async Task KEV012_Diagnostic_Contract_And_Suppression_Are_Exact()
     {
-        const string execution = "Shield.Retry(options => options.OnRetryAsync = static _ => ValueTask.CompletedTask).Execute(_ => 1)";
+        const string execution = "Shield.Retry(options => options.OnRetry = async _ => await Task.Yield()).Execute(_ => 1)";
         var source = $$"""
             public class TestSubject
             {
@@ -7076,8 +6818,9 @@ public class PipelineHazardAnalyzerTests
         await Assert.That(diagnostic.Id).IsEqualTo("KEV012");
         await Assert.That(diagnostic.Severity).IsEqualTo(DiagnosticSeverity.Warning);
         await Assert.That(diagnostic.GetMessage()).IsEqualTo(
-            "This shield configures 'RetryOptions.OnRetryAsync', which cannot run through synchronous "
-            + "'Execute'. Use 'ExecuteAsync' or configure its synchronous counterpart.");
+            "This shield configures 'RetryOptions.OnRetry' with a delegate that completes asynchronously, "
+            + "which cannot run through synchronous 'Execute'. Use 'ExecuteAsync' or make the delegate "
+            + "complete synchronously.");
         await Assert.That(diagnostic.Location.SourceSpan.Start)
             .IsEqualTo(CreateSource(source).IndexOf(execution, StringComparison.Ordinal));
         await Assert.That(diagnostic.Location.SourceSpan.Length).IsEqualTo(execution.Length);
@@ -7117,15 +6860,15 @@ public class PipelineHazardAnalyzerTests
             {
                 public sealed class CustomOptions
                 {
-                    public Func<int, ValueTask>? OnRetryAsync { get; set; }
-                    public Func<int, ValueTask<TimeSpan?>>? DelayGeneratorAsync { get; set; }
-                    public Func<int, ValueTask>? OnTimeoutAsync { get; set; }
-                    public Func<int, ValueTask<TimeSpan>>? TimeoutGenerator { get; set; }
-                    public Func<int, ValueTask>? OnFallbackAsync { get; set; }
-                    public Func<int, ValueTask>? OnStateChangedAsync { get; set; }
-                    public Func<int, ValueTask<TimeSpan>>? BreakDurationGenerator { get; set; }
-                    public Func<int, ValueTask>? OnRejectedAsync { get; set; }
-                    public Func<int, ValueTask>? Behavior { get; set; }
+                    public Func<RetryEvent, ValueTask>? OnRetry { get; set; }
+                    public Func<RetryEvent, ValueTask<TimeSpan?>>? DelayGenerator { get; set; }
+                    public Func<TimeoutEvent, ValueTask>? OnTimeout { get; set; }
+                    public Func<KevlarContext, ValueTask<TimeSpan>>? TimeoutGenerator { get; set; }
+                    public Func<FallbackEvent, ValueTask>? OnFallback { get; set; }
+                    public Func<CircuitBreakerStateChangedEvent, ValueTask>? OnStateChanged { get; set; }
+                    public Func<CircuitBreakerBreakDurationEvent, ValueTask<TimeSpan>>? BreakDurationGenerator { get; set; }
+                    public Func<RateLimitRejectedEvent, ValueTask>? OnRejected { get; set; }
+                    public Func<KevlarContext, ValueTask>? Behavior { get; set; }
                 }
 
                 public static class CustomShieldExtensions
@@ -7142,15 +6885,15 @@ public class PipelineHazardAnalyzerTests
                     public int Run() => Shield.Empty
                         .Custom(options =>
                         {
-                            options.OnRetryAsync = static _ => ValueTask.CompletedTask;
-                            options.DelayGeneratorAsync = static _ => ValueTask.FromResult<TimeSpan?>(TimeSpan.Zero);
-                            options.OnTimeoutAsync = static _ => ValueTask.CompletedTask;
-                            options.TimeoutGenerator = static _ => ValueTask.FromResult(TimeSpan.Zero);
-                            options.OnFallbackAsync = static _ => ValueTask.CompletedTask;
-                            options.OnStateChangedAsync = static _ => ValueTask.CompletedTask;
-                            options.BreakDurationGenerator = static _ => ValueTask.FromResult(TimeSpan.Zero);
-                            options.OnRejectedAsync = static _ => ValueTask.CompletedTask;
-                            options.Behavior = static _ => ValueTask.CompletedTask;
+                            options.OnRetry = async _ => await Task.Yield();
+                            options.DelayGenerator = async _ => { await Task.Yield(); return null; };
+                            options.OnTimeout = async _ => await Task.Yield();
+                            options.TimeoutGenerator = async _ => { await Task.Yield(); return TimeSpan.Zero; };
+                            options.OnFallback = async _ => await Task.Yield();
+                            options.OnStateChanged = async _ => await Task.Yield();
+                            options.BreakDurationGenerator = async _ => { await Task.Yield(); return TimeSpan.Zero; };
+                            options.OnRejected = async _ => await Task.Yield();
+                            options.Behavior = async _ => await Task.Yield();
                         })
                         .Execute(_ => 1);
                 }
@@ -7168,7 +6911,7 @@ public class PipelineHazardAnalyzerTests
             {
                 public sealed class RetryOptions
                 {
-                    public Func<int, ValueTask>? OnRetryAsync { get; set; }
+                    public Func<RetryEvent, ValueTask>? OnRetry { get; set; }
                 }
 
                 public static class LookalikeShieldExtensions
@@ -7183,7 +6926,7 @@ public class PipelineHazardAnalyzerTests
                 public sealed class TestSubject
                 {
                     public int Run() => Shield.Empty
-                        .Custom(options => options.OnRetryAsync = static _ => ValueTask.CompletedTask)
+                        .Custom(options => options.OnRetry = async _ => await Task.Yield())
                         .Execute(_ => 1);
                 }
             }
@@ -7210,7 +6953,7 @@ public class PipelineHazardAnalyzerTests
             public sealed class TestSubject
             {
                 public int Run() => Shield.Empty
-                    .Inspect(options => options.OnRetryAsync = static _ => ValueTask.CompletedTask)
+                    .Inspect(options => options.OnRetry = async _ => await Task.Yield())
                     .Execute(_ => 1);
             }
             """);
@@ -7264,45 +7007,6 @@ public class PipelineHazardAnalyzerTests
         await Assert.That(diagnostics.Length).IsEqualTo(1);
         await Assert.That(diagnostics[0].Id).IsEqualTo(expectedRule);
         await Assert.That(diagnostics[0].Severity).IsEqualTo(expectedSeverity);
-    }
-
-    private static async Task<(int ActionCount, string? ChangedText)> GetCodeFixAsync(
-        string declarations)
-    {
-        using var workspace = new AdhocWorkspace();
-        var project = workspace.AddProject(ProjectInfo.Create(
-            ProjectId.CreateNewId(),
-            VersionStamp.Create(),
-            "CodeFixTest",
-            "CodeFixTest",
-            LanguageNames.CSharp,
-            compilationOptions: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary),
-            parseOptions: new CSharpParseOptions(),
-            metadataReferences: GetMetadataReferences()));
-        var document = workspace.AddDocument(
-            project.Id,
-            "Test.cs",
-            SourceText.From(CreateSource(declarations)));
-        var compilation = (CSharpCompilation)(await document.Project.GetCompilationAsync())!;
-        var diagnostic = (await GetAnalyzerDiagnosticsAsync(compilation))
-            .Single(static item => item.Id == "KEV013");
-        var actions = new List<CodeAction>();
-        var provider = new AsyncCallbackCodeFixProvider();
-
-        await provider.RegisterCodeFixesAsync(new CodeFixContext(
-            document,
-            diagnostic,
-            (action, _) => actions.Add(action),
-            CancellationToken.None));
-        if (actions.Count != 1)
-        {
-            return (actions.Count, null);
-        }
-
-        var operations = await actions[0].GetOperationsAsync(CancellationToken.None);
-        var changedSolution = operations.OfType<ApplyChangesOperation>().Single().ChangedSolution;
-        var changedText = await changedSolution.GetDocument(document.Id)!.GetTextAsync();
-        return (actions.Count, changedText.ToString());
     }
 
     private static Task<ImmutableArray<Diagnostic>> AnalyzeBodyAsync(

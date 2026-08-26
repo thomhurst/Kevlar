@@ -9,11 +9,11 @@ internal sealed class RetryStrategy : Strategy
     private readonly Backoff _backoff;
     private readonly TimeSpan? _maxDelay;
     private readonly Delegate? _onRetry;
-    private readonly Delegate? _onRetryAsync;
     private readonly Delegate? _delayGenerator;
-    private readonly Delegate? _delayGeneratorAsync;
     private readonly Type? _callbackResultType;
     private readonly string _telemetryName;
+    private readonly string _onRetryHookName;
+    private readonly string _delayGeneratorHookName;
 
     public RetryStrategy(RetryOptions options, OutcomeJudge judge)
         : this(
@@ -22,9 +22,7 @@ internal sealed class RetryStrategy : Strategy
             options.MaxDelay,
             judge,
             options.OnRetry,
-            options.OnRetryAsync,
             options.DelayGenerator,
-            options.DelayGeneratorAsync,
             options.Name,
             options.HasHandlingOverride,
             callbackResultType: null,
@@ -38,9 +36,7 @@ internal sealed class RetryStrategy : Strategy
         TimeSpan? maxDelay,
         OutcomeJudge judge,
         Delegate? onRetry,
-        Delegate? onRetryAsync,
         Delegate? delayGenerator,
-        Delegate? delayGeneratorAsync,
         string? telemetryName,
         bool hasHandlingOverride,
         Type? callbackResultType,
@@ -76,12 +72,13 @@ internal sealed class RetryStrategy : Strategy
         _backoff = backoff!;
         _maxDelay = maxDelay;
         _onRetry = onRetry;
-        _onRetryAsync = onRetryAsync;
         _delayGenerator = delayGenerator;
-        _delayGeneratorAsync = delayGeneratorAsync;
         _callbackResultType = callbackResultType;
         _telemetryName = telemetryName ?? "Retry";
         HasHandlingOverride = hasHandlingOverride;
+        var optionsName = callbackResultType is null ? "RetryOptions" : "RetryOptions<TResult>";
+        _onRetryHookName = optionsName + "." + nameof(RetryOptions.OnRetry);
+        _delayGeneratorHookName = optionsName + "." + nameof(RetryOptions.DelayGenerator);
     }
 
     internal static RetryStrategy Create<TResult>(RetryOptions<TResult> options, OutcomeJudge judge)
@@ -92,9 +89,7 @@ internal sealed class RetryStrategy : Strategy
             options.MaxDelay,
             judge,
             options.OnRetry,
-            options.OnRetryAsync,
             options.DelayGenerator,
-            options.DelayGeneratorAsync,
             options.Name,
             options.HasHandlingOverride,
             typeof(TResult),
@@ -111,18 +106,9 @@ internal sealed class RetryStrategy : Strategy
 
     internal TimeSpan? MaxDelay => _maxDelay;
 
-    internal bool HasDelayGenerator => _delayGenerator is not null || _delayGeneratorAsync is not null;
+    internal bool HasDelayGenerator => _delayGenerator is not null;
 
-    internal bool HasNotification => _onRetry is not null || _onRetryAsync is not null;
-
-    protected internal override string? SynchronousExecutionUnsupportedReason =>
-        _maxRetries == 0
-            ? null
-            : _delayGeneratorAsync is not null
-            ? "RetryOptions.DelayGeneratorAsync"
-            : _onRetryAsync is not null
-                ? "RetryOptions.OnRetryAsync"
-                : null;
+    internal bool HasNotification => _onRetry is not null;
 
     protected internal override bool InvokesContinuationAtMostOnce => _maxRetries == 0;
 
@@ -225,19 +211,8 @@ internal sealed class RetryStrategy : Strategy
 
                 if (_delayGenerator is not null)
                 {
-                    var generated = InvokeDelayGenerator(
-                        _delayGenerator,
-                        attempt,
-                        delay,
-                        in outcome,
-                        context);
-                    delay = ApplyGeneratedDelay(delay, generated);
-                }
-
-                if (_delayGeneratorAsync is not null)
-                {
                     var generated = await InvokeDelayGeneratorAsync(
-                        _delayGeneratorAsync,
+                        _delayGenerator,
                         attempt,
                         delay,
                         outcome,
@@ -259,36 +234,14 @@ internal sealed class RetryStrategy : Strategy
                         delay: delay);
                 }
 
-                if (_onRetry is not null || _onRetryAsync is not null)
+                if (_onRetry is not null)
                 {
-                    if (_onRetry is not null)
-                    {
-                        try
-                        {
-                            InvokeOnRetry(_onRetry, attempt, delay, in outcome, context);
-                        }
-                        catch (Exception exception)
-                        {
-                            KevlarDiagnostics.ReportCallbackError(CallbackErrorKind.Retry, context, exception);
-                        }
-                    }
-
-                    if (_onRetryAsync is not null)
-                    {
-                        try
-                        {
-                            await InvokeOnRetryAsync(
-                                _onRetryAsync,
-                                attempt,
-                                delay,
-                                outcome,
-                                context).ConfigureAwait(false);
-                        }
-                        catch (Exception exception)
-                        {
-                            KevlarDiagnostics.ReportCallbackError(CallbackErrorKind.Retry, context, exception);
-                        }
-                    }
+                    await InvokeOnRetryAsync(
+                        _onRetry,
+                        attempt,
+                        delay,
+                        outcome,
+                        context).ConfigureAwait(false);
                 }
 
                 if (delay > TimeSpan.Zero || context.CancellationToken.IsCancellationRequested)
@@ -352,24 +305,6 @@ internal sealed class RetryStrategy : Strategy
         && _judge.ShouldHandle(in outcome, context, retriesUsed, strategyIndex)
         && !context.CancellationToken.IsCancellationRequested;
 
-    private TimeSpan? InvokeDelayGenerator<T>(
-        Delegate generator,
-        int retryNumber,
-        TimeSpan delay,
-        in Outcome<T> outcome,
-        KevlarContext context)
-    {
-        if (_callbackResultType is null)
-        {
-            return ((Func<RetryEvent, TimeSpan?>)generator)(
-                CreateUntypedEvent(retryNumber, delay, in outcome, context));
-        }
-
-        ValidateCallbackResultType<T>();
-        return ((Func<RetryEvent<T>, TimeSpan?>)generator)(
-            new RetryEvent<T>(retryNumber, delay, outcome, context));
-    }
-
     private ValueTask<TimeSpan?> InvokeDelayGeneratorAsync<T>(
         Delegate generator,
         int retryNumber,
@@ -379,32 +314,19 @@ internal sealed class RetryStrategy : Strategy
     {
         if (_callbackResultType is null)
         {
-            return ((Func<RetryEvent, ValueTask<TimeSpan?>>)generator)(
-                CreateUntypedEvent(retryNumber, delay, in outcome, context));
+            return CallbackInvoker.InvokeGenerator(
+                (Func<RetryEvent, ValueTask<TimeSpan?>>)generator,
+                CreateUntypedEvent(retryNumber, delay, in outcome, context),
+                context,
+                _delayGeneratorHookName);
         }
 
         ValidateCallbackResultType<T>();
-        return ((Func<RetryEvent<T>, ValueTask<TimeSpan?>>)generator)(
-            new RetryEvent<T>(retryNumber, delay, outcome, context));
-    }
-
-    private void InvokeOnRetry<T>(
-        Delegate callback,
-        int retryNumber,
-        TimeSpan delay,
-        in Outcome<T> outcome,
-        KevlarContext context)
-    {
-        if (_callbackResultType is null)
-        {
-            ((Action<RetryEvent>)callback)(
-                CreateUntypedEvent(retryNumber, delay, in outcome, context));
-            return;
-        }
-
-        ValidateCallbackResultType<T>();
-        ((Action<RetryEvent<T>>)callback)(
-            new RetryEvent<T>(retryNumber, delay, outcome, context));
+        return CallbackInvoker.InvokeGenerator(
+            (Func<RetryEvent<T>, ValueTask<TimeSpan?>>)generator,
+            new RetryEvent<T>(retryNumber, delay, outcome, context),
+            context,
+            _delayGeneratorHookName);
     }
 
     private ValueTask InvokeOnRetryAsync<T>(
@@ -416,13 +338,21 @@ internal sealed class RetryStrategy : Strategy
     {
         if (_callbackResultType is null)
         {
-            return ((Func<RetryEvent, ValueTask>)callback)(
-                CreateUntypedEvent(retryNumber, delay, in outcome, context));
+            return CallbackInvoker.InvokeAsync(
+                (Func<RetryEvent, ValueTask>)callback,
+                CreateUntypedEvent(retryNumber, delay, in outcome, context),
+                CallbackErrorKind.Retry,
+                context,
+                _onRetryHookName);
         }
 
         ValidateCallbackResultType<T>();
-        return ((Func<RetryEvent<T>, ValueTask>)callback)(
-            new RetryEvent<T>(retryNumber, delay, outcome, context));
+        return CallbackInvoker.InvokeAsync(
+            (Func<RetryEvent<T>, ValueTask>)callback,
+            new RetryEvent<T>(retryNumber, delay, outcome, context),
+            CallbackErrorKind.Retry,
+            context,
+            _onRetryHookName);
     }
 
     private static RetryEvent CreateUntypedEvent<T>(

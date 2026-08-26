@@ -10,7 +10,11 @@ var chaos = ChaosShield.Fault(options =>
     options.Operation = "sample-smoke";
     options.EnabledGenerator = _ => Interlocked.Increment(ref decisions) == 1;
     options.Exception = new ChaosInjectedException();
-    options.OnInjected = _ => Interlocked.Increment(ref injections);
+    options.OnInjected = _ =>
+    {
+        Interlocked.Increment(ref injections);
+        return default;
+    };
 });
 var shield = Shield.When<ChaosInjectedException>()
     .Retry(1, Backoff.None)

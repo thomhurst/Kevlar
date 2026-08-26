@@ -49,18 +49,13 @@ public sealed class CircuitBreakerOptions
     public TimeSpan BreakDuration { get; set; } = TimeSpan.FromSeconds(15);
 
     /// <summary>
-    /// Produces and awaits the break duration when a handled outcome trips or re-opens the
-    /// circuit. The returned value must be positive. The event context is valid only until the
-    /// callback completes. When configured, this value overrides <see cref="BreakDuration"/>.
+    /// Produces the break duration when a handled outcome trips or re-opens the circuit, and is
+    /// awaited before the circuit opens. The returned value must be positive. Return
+    /// <c>new(duration)</c> from a synchronous generator. The event context is valid only until
+    /// the returned task completes. When configured, this value overrides
+    /// <see cref="BreakDuration"/>.
     /// </summary>
     public Func<CircuitBreakerBreakDurationEvent, ValueTask<TimeSpan>>? BreakDurationGenerator { get; set; }
-
-    /// <summary>
-    /// Produces the break duration synchronously when a handled outcome trips or re-opens the
-    /// circuit. The returned value must be positive. Cannot be combined with
-    /// <see cref="BreakDurationGenerator"/>.
-    /// </summary>
-    public Func<CircuitBreakerBreakDurationEvent, TimeSpan>? BreakDurationGeneratorSync { get; set; }
 
     /// <summary>
     /// An optional monitor giving external code visibility of the circuit state plus manual
@@ -70,18 +65,11 @@ public sealed class CircuitBreakerOptions
     public CircuitBreakerMonitor? Monitor { get; set; }
 
     /// <summary>
-    /// Invoked on every state transition, before <see cref="OnStateChangedAsync"/> and
+    /// Invoked and awaited on every state transition, before
     /// <see cref="CircuitBreakerMonitor.StateChanged"/>. Transitions are delivered serially
-    /// outside the circuit lock. Exceptions propagate after all observers run; multiple failures
-    /// are aggregated. The handler runs synchronously and blocks later transition publishers, so
-    /// it should not perform I/O, wait on external work, or otherwise run for a long time.
+    /// outside the circuit lock, so a slow handler delays later transition publishers. Return
+    /// <see langword="default"/> from a synchronous callback. The event context is valid only
+    /// until the returned task completes.
     /// </summary>
-    public Action<CircuitBreakerStateChangedEvent>? OnStateChanged { get; set; }
-
-    /// <summary>
-    /// Invoked and awaited on every state transition, after <see cref="OnStateChanged"/> and
-    /// before <see cref="CircuitBreakerMonitor.StateChanged"/>. Transitions are delivered
-    /// serially outside the circuit lock.
-    /// </summary>
-    public Func<CircuitBreakerStateChangedEvent, ValueTask>? OnStateChangedAsync { get; set; }
+    public Func<CircuitBreakerStateChangedEvent, ValueTask>? OnStateChanged { get; set; }
 }

@@ -138,7 +138,11 @@ public class HttpContractTests
         {
             options.MaxRetries = 1;
             options.Backoff = Backoff.None;
-            options.OnRetry = _ => retries++;
+            options.OnRetry = _ =>
+            {
+                retries++;
+                return default;
+            };
         });
         using var client = CreateClient(inner, shield);
 
@@ -340,7 +344,11 @@ public class HttpContractTests
         TimeSpan? observed = null;
         var options = new StandardHttpShieldOptions();
         options.Retry.Backoff = Backoff.None;
-        options.Retry.OnRetry = retry => observed = retry.Delay;
+        options.Retry.OnRetry = retry =>
+        {
+            observed = retry.Delay;
+            return default;
+        };
         var shield = HttpShield.Standard(options).WithTimeProvider(timeProvider);
 
         var execution = shield.ExecuteAsync(_ =>
@@ -433,7 +441,7 @@ public class HttpContractTests
         var options = new StandardHttpShieldOptions();
         options.Retry.MaxRetries = 1;
         options.Retry.Backoff = Backoff.None;
-        options.Retry.DelayGenerator = static _ => TimeSpan.FromSeconds(5);
+        options.Retry.DelayGenerator = static _ => new(TimeSpan.FromSeconds(5));
 
         var delay = await ObserveStandardRetryDelay(
             options,
@@ -475,22 +483,22 @@ public class HttpContractTests
         var attemptTimeoutCalls = 0;
         var breakDurationCalls = 0;
         options.Retry.MaxRetries = 0;
-        options.TotalTimeout.TimeoutGeneratorSync = _ =>
+        options.TotalTimeout.TimeoutGenerator = _ =>
         {
             totalTimeoutCalls++;
-            return TimeSpan.FromMinutes(1);
+            return new(TimeSpan.FromMinutes(1));
         };
-        options.AttemptTimeout.TimeoutGeneratorSync = _ =>
+        options.AttemptTimeout.TimeoutGenerator = _ =>
         {
             attemptTimeoutCalls++;
-            return TimeSpan.FromMinutes(1);
+            return new(TimeSpan.FromMinutes(1));
         };
         options.CircuitBreaker.ConsecutiveFailures = 1;
         options.CircuitBreaker.FailureRatio = null;
-        options.CircuitBreaker.BreakDurationGeneratorSync = _ =>
+        options.CircuitBreaker.BreakDurationGenerator = _ =>
         {
             breakDurationCalls++;
-            return TimeSpan.FromMinutes(1);
+            return new(TimeSpan.FromMinutes(1));
         };
 
         using var response = HttpShield.Standard(options).Execute(
@@ -507,7 +515,7 @@ public class HttpContractTests
         var options = new StandardHttpShieldOptions();
         options.TotalTimeout.Timeout = TimeSpan.FromSeconds(5);
         options.AttemptTimeout.Timeout = TimeSpan.FromSeconds(6);
-        options.TotalTimeout.TimeoutGeneratorSync = static _ => TimeSpan.FromSeconds(10);
+        options.TotalTimeout.TimeoutGenerator = static _ => new(TimeSpan.FromSeconds(10));
 
         await Assert.That(() => HttpShield.Standard(options)).ThrowsNothing();
     }
@@ -716,7 +724,11 @@ public class HttpContractTests
             {
                 options.MaxRetries = 1;
                 options.Backoff = Backoff.Constant(TimeSpan.FromMinutes(1));
-                options.OnRetry = _ => retryCallbacks++;
+                options.OnRetry = _ =>
+                {
+                    retryCallbacks++;
+                    return default;
+                };
             })
             .WithTimeProvider(timeProvider);
         using var inner = new DelegateHandler((_, _) => Task.FromResult(
@@ -1258,7 +1270,7 @@ public class HttpContractTests
     private static async Task<TimeSpan> ObserveRetryDelay(
         FakeTimeProvider timeProvider,
         Func<HttpResponseMessage> firstAttempt,
-        Func<RetryEvent<HttpResponseMessage>, TimeSpan?>? delayGenerator = null,
+        Func<RetryEvent<HttpResponseMessage>, ValueTask<TimeSpan?>>? delayGenerator = null,
         TimeSpan? backoff = null)
     {
         TimeSpan? observed = null;
@@ -1269,7 +1281,11 @@ public class HttpContractTests
                 options.MaxRetries = 1;
                 options.Backoff = Backoff.Constant(backoff ?? TimeSpan.FromSeconds(3));
                 options.DelayGenerator = delayGenerator ?? HttpShield.RetryAfter;
-                options.OnRetry = retry => observed = retry.Delay;
+                options.OnRetry = retry =>
+                {
+                    observed = retry.Delay;
+                    return default;
+                };
             })
             .WithTimeProvider(timeProvider);
 
@@ -1288,7 +1304,11 @@ public class HttpContractTests
         var timeProvider = new FakeTimeProvider();
         var calls = 0;
         TimeSpan? observed = null;
-        options.Retry.OnRetry = retry => observed = retry.Delay;
+        options.Retry.OnRetry = retry =>
+        {
+            observed = retry.Delay;
+            return default;
+        };
         var shield = HttpShield.Standard(options).WithTimeProvider(timeProvider);
         var task = shield.ExecuteAsync(_ =>
         {

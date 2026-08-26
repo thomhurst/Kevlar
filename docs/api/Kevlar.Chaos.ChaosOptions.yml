@@ -289,14 +289,17 @@ items:
   assemblies:
   - Kevlar.Chaos
   namespace: Kevlar.Chaos
-  summary: Gets or sets a synchronous callback invoked immediately before injection.
+  summary: >-
+    Gets or sets a callback invoked and awaited immediately before injection. Return
+
+    <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/default">default</a> from a synchronous callback.
   example: []
   syntax:
-    content: public Action<ChaosEvent>? OnInjected { get; set; }
+    content: public Func<ChaosEvent, ValueTask>? OnInjected { get; set; }
     parameters: []
     return:
-      type: System.Action{Kevlar.Chaos.ChaosEvent}
-    content.vb: Public Property OnInjected As Action(Of ChaosEvent)
+      type: System.Func{Kevlar.Chaos.ChaosEvent,System.Threading.Tasks.ValueTask}
+    content.vb: Public Property OnInjected As Func(Of ChaosEvent, ValueTask)
   overload: Kevlar.Chaos.ChaosOptions.OnInjected*
 references:
 - uid: Kevlar.Chaos
@@ -893,33 +896,39 @@ references:
   name: OnInjected
   nameWithType: ChaosOptions.OnInjected
   fullName: Kevlar.Chaos.ChaosOptions.OnInjected
-- uid: System.Action{Kevlar.Chaos.ChaosEvent}
-  commentId: T:System.Action{Kevlar.Chaos.ChaosEvent}
+- uid: System.Func{Kevlar.Chaos.ChaosEvent,System.Threading.Tasks.ValueTask}
+  commentId: T:System.Func{Kevlar.Chaos.ChaosEvent,System.Threading.Tasks.ValueTask}
   parent: System
-  definition: System.Action`1
-  href: https://learn.microsoft.com/dotnet/api/system.action-1
-  name: Action<ChaosEvent>
-  nameWithType: Action<ChaosEvent>
-  fullName: System.Action<Kevlar.Chaos.ChaosEvent>
-  nameWithType.vb: Action(Of ChaosEvent)
-  fullName.vb: System.Action(Of Kevlar.Chaos.ChaosEvent)
-  name.vb: Action(Of ChaosEvent)
+  definition: System.Func`2
+  href: https://learn.microsoft.com/dotnet/api/system.func-2
+  name: Func<ChaosEvent, ValueTask>
+  nameWithType: Func<ChaosEvent, ValueTask>
+  fullName: System.Func<Kevlar.Chaos.ChaosEvent, System.Threading.Tasks.ValueTask>
+  nameWithType.vb: Func(Of ChaosEvent, ValueTask)
+  fullName.vb: System.Func(Of Kevlar.Chaos.ChaosEvent, System.Threading.Tasks.ValueTask)
+  name.vb: Func(Of ChaosEvent, ValueTask)
   spec.csharp:
-  - uid: System.Action`1
-    name: Action
+  - uid: System.Func`2
+    name: Func
     isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.action-1
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
   - name: <
   - uid: Kevlar.Chaos.ChaosEvent
     name: ChaosEvent
     isExternal: true
     href: Kevlar.Chaos.ChaosEvent.html
+  - name: ','
+  - name: " "
+  - uid: System.Threading.Tasks.ValueTask
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
   - name: '>'
   spec.vb:
-  - uid: System.Action`1
-    name: Action
+  - uid: System.Func`2
+    name: Func
     isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.action-1
+    href: https://learn.microsoft.com/dotnet/api/system.func-2
   - name: (
   - name: Of
   - name: " "
@@ -927,32 +936,10 @@ references:
     name: ChaosEvent
     isExternal: true
     href: Kevlar.Chaos.ChaosEvent.html
-  - name: )
-- uid: System.Action`1
-  commentId: T:System.Action`1
-  isExternal: true
-  href: https://learn.microsoft.com/dotnet/api/system.action-1
-  name: Action<T>
-  nameWithType: Action<T>
-  fullName: System.Action<T>
-  nameWithType.vb: Action(Of T)
-  fullName.vb: System.Action(Of T)
-  name.vb: Action(Of T)
-  spec.csharp:
-  - uid: System.Action`1
-    name: Action
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.action-1
-  - name: <
-  - name: T
-  - name: '>'
-  spec.vb:
-  - uid: System.Action`1
-    name: Action
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.action-1
-  - name: (
-  - name: Of
+  - name: ','
   - name: " "
-  - name: T
+  - uid: System.Threading.Tasks.ValueTask
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
   - name: )

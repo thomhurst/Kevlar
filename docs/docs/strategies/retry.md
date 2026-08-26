@@ -56,10 +56,13 @@ Shield.Retry(o =>
     o.MaxRetries = 5;
     o.Backoff = Backoff.Custom(attempt => TimeSpan.FromMilliseconds(100 * attempt));
     o.MaxDelay = TimeSpan.FromSeconds(10);
-    o.OnRetry = e => logger.LogWarning(e.Exception,
-        "Retry {RetryNumber} after {Delay}", e.RetryNumber, e.Delay);
-    o.DelayGenerator = e => /* return a TimeSpan to override the computed delay, or null */ null;
-    o.DelayGeneratorAsync = e => new ValueTask<TimeSpan?>(TimeSpan.Zero);
+    o.OnRetry = e =>
+    {
+        logger.LogWarning(e.Exception, "Retry {RetryNumber} after {Delay}", e.RetryNumber, e.Delay);
+        return default;
+    };
+    o.DelayGenerator = e => new(e.RetryNumber == 1 ? TimeSpan.Zero : null);
+    //                       ^ return a TimeSpan to override the computed delay, or null to keep it
 });
 ```
 
@@ -68,24 +71,27 @@ Shield.Retry(o =>
 | `MaxRetries` | `3` | Retries after the initial attempt — `3` means up to 4 total attempts; `int.MaxValue` = forever |
 | `Backoff` | `Backoff.Default` | The delay sequence (see above) |
 | `MaxDelay` | — | Absolute cap applied to every delay — including `DelayGenerator` output, so a hostile `Retry-After` can't stall the pipeline |
-| `OnRetry` | — | Called synchronously before each retry sleeps — attempt number, final delay, failure |
-| `OnRetryAsync` | — | Awaited before each retry sleeps |
-| `DelayGenerator` | — | Per-retry override: return a `TimeSpan` to replace the computed delay, or `null` to keep it. This is how [`Retry-After` support](../http.md) works |
-| `DelayGeneratorAsync` | — | Awaited per-retry override for asynchronous delay sources; return a `TimeSpan` to replace the current delay, or `null` to keep it |
+| `OnRetry` | — | Awaited before each retry sleeps — attempt number, final delay, failure. Return `default` when the work is synchronous |
+| `DelayGenerator` | — | Per-retry override returning `ValueTask<TimeSpan?>`: a `TimeSpan` replaces the computed delay, `null` keeps it. This is how [`Retry-After` support](../http.md) works |
 | `HandlesException` | — | Local exception predicate; replaces the ambient clause for this retry |
 | `HandlesResult` (`RetryOptions<T>`) | — | Local result predicate; replaces the ambient clause together with `HandlesException` |
 
 Invalid option values throw [`KevlarConfigurationException`](../exceptions.md#configuration-failures)
 and identify the options type, property, and offending value.
 
-Order per retry: retry metrics are recorded → backoff computes the delay → `MaxDelay` clamps it → `DelayGenerator` may override it → the awaited `DelayGeneratorAsync` may override that result → `OnRetry`/`OnRetryAsync` see the final delay → sleep. Both generators ignore `null` and negative results, and `MaxDelay` clamps each override.
+Order per retry: retry metrics are recorded → backoff computes the delay → `MaxDelay` clamps it → the awaited `DelayGenerator` may override it → the awaited `OnRetry` sees the final delay → sleep. The generator's `null` and negative results are ignored, and `MaxDelay` clamps its override.
+
+Both hooks return `ValueTask`. A hook that completes synchronously (`return default;`, `new(value)`)
+costs nothing extra and works with synchronous `Execute`. A hook that yields is awaited by
+`ExecuteAsync`; reached through synchronous `Execute`, it throws `NotSupportedException` at that
+call. See [synchronous execution compatibility](../executing.md#synchronous-execution-compatibility).
 
 `RetryOptions` and `RetryOptions<T>` are standalone sibling types. Both expose the same
 `MaxRetries`, `Backoff`, and `MaxDelay` settings, while their callback properties use distinct
 `RetryEvent` and `RetryEvent<T>` delegates. Configure shared scalar defaults in each options
 lambda; a `RetryOptions<T>` instance is not assignable to `RetryOptions`.
 
-Async generators receive the caller token through `e.Context.CancellationToken`. If cancellation
+Generators receive the caller token through `e.Context.CancellationToken`. If cancellation
 arrives while a generator is awaiting, notification hooks still run after it completes, then the
 next attempt is suppressed and caller cancellation surfaces. A generator exception surfaces with
 its original identity and skips later hooks. `RetryEvent.Context` is pooled execution state: use it
@@ -100,7 +106,11 @@ var numberedRetry = Shield.Retry(options =>
 {
     options.MaxRetries = 3;
     options.Backoff = Backoff.None;
-    options.OnRetry = retry => retryNumbers.Add(retry.RetryNumber);
+    options.OnRetry = retry =>
+    {
+        retryNumbers.Add(retry.RetryNumber);
+        return default; // completes synchronously, so synchronous Execute below is fine
+    };
 });
 
 try

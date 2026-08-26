@@ -14,8 +14,8 @@ public class StrategyInspectionTests
             options.MaxRetries = 7;
             options.Backoff = retryBackoff;
             options.MaxDelay = retryMaxDelay;
-            options.DelayGeneratorAsync = static _ => default;
-            options.OnRetryAsync = static _ => default;
+            options.DelayGenerator = static _ => default;
+            options.OnRetry = static _ => default;
         }));
         var fixedRetry = GetStrategy<RetryStrategy>(Shield.Retry(2, Backoff.None));
         await Assert.That(retry.MaxRetries).IsEqualTo(7);
@@ -34,7 +34,7 @@ public class StrategyInspectionTests
         {
             options.Timeout = timeoutDuration;
             options.TimeoutGenerator = static _ => new ValueTask<TimeSpan>(TimeSpan.FromSeconds(1));
-            options.OnTimeoutAsync = static _ => default;
+            options.OnTimeout = static _ => default;
         }));
         var fixedTimeout = GetStrategy<TimeoutStrategy>(Shield.Timeout(TimeSpan.FromSeconds(1)));
         await Assert.That(timeout.Timeout).IsEqualTo(timeoutDuration);
@@ -48,8 +48,8 @@ public class StrategyInspectionTests
         {
             options.MaxHedgedAttempts = 3;
             options.Delay = TimeSpan.FromMilliseconds(17);
-            options.DelayGenerator = static _ => TimeSpan.Zero;
-            options.OnHedge = static _ => { };
+            options.DelayGenerator = static _ => new(TimeSpan.Zero);
+            options.OnHedge = static _ => default;
         }));
         var fixedHedge = GetStrategy<HedgingStrategy>(Shield.Hedge(1, TimeSpan.Zero));
         await Assert.That(notifiedHedge.MaxHedgedAttempts).IsEqualTo(3);
@@ -68,7 +68,7 @@ public class StrategyInspectionTests
             options.SamplingWindow = TimeSpan.FromSeconds(13);
             options.BreakDuration = TimeSpan.FromSeconds(19);
             options.Monitor = new CircuitBreakerMonitor();
-            options.OnStateChanged = static _ => { };
+            options.OnStateChanged = static _ => default;
         }));
         var fixedCircuit = GetStrategy<CircuitBreakerStrategy>(
             Shield.CircuitBreaker(2, TimeSpan.FromSeconds(1)));
@@ -85,27 +85,18 @@ public class StrategyInspectionTests
         await Assert.That(fixedCircuit.Core.HasMonitor).IsFalse();
         await Assert.That(fixedCircuit.Core.HasNotification).IsFalse();
 
-        var notifiedFallback = GetInspection(Shield.For<int>().FallbackTo(42, static options => options.OnFallback = static _ => { }));
-        var asyncNotifiedFallback = GetInspection(Shield.For<int>().FallbackTo(
-            42,
-            static options => options.OnFallbackAsync = static _ => default));
+        var notifiedFallback = GetInspection(Shield.For<int>().FallbackTo(42, static options => options.OnFallback = static _ => default));
         var fixedFallback = GetInspection(Shield.For<int>().FallbackTo(42));
         var voidFallback = GetInspection(
             Shield.When<InvalidOperationException>().Fallback(static (_, _) => default));
         var notifiedVoidFallback = GetInspection(
             Shield.When<InvalidOperationException>().Fallback(
                 static (_, _) => default,
-                static options => options.OnFallback = static _ => { }));
-        var asyncNotifiedVoidFallback = GetInspection(
-            Shield.When<InvalidOperationException>().Fallback(
-                static (_, _) => default,
-                static options => options.OnFallbackAsync = static _ => default));
+                static options => options.OnFallback = static _ => default));
         await Assert.That(notifiedFallback.HasNotification).IsTrue();
-        await Assert.That(asyncNotifiedFallback.HasNotification).IsTrue();
         await Assert.That(fixedFallback.HasNotification).IsFalse();
         await Assert.That(voidFallback.HasNotification).IsFalse();
         await Assert.That(notifiedVoidFallback.HasNotification).IsTrue();
-        await Assert.That(asyncNotifiedVoidFallback.HasNotification).IsTrue();
         await Assert.That(notifiedFallback.ResultType).IsEqualTo(typeof(int));
         await Assert.That(voidFallback.ResultType).IsNull();
     }

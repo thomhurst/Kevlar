@@ -192,13 +192,12 @@ public class HedgingActionGeneratorTests
         {
             options.MaxHedgedAttempts = 1;
             options.Delay = Timeout.InfiniteTimeSpan;
-            options.OnHedge = _ => order.Add("sync-hook");
-            options.OnHedgeAsync = async _ =>
+            options.OnHedge = async _ =>
             {
-                order.Add("async-hook-start");
+                order.Add("hook-start");
                 hookStarted.TrySetResult();
                 await releaseHook.Task;
-                order.Add("async-hook-end");
+                order.Add("hook-end");
             };
             options.ActionGenerator = HedgeActionGenerator.Create<int>(_ =>
             {
@@ -215,12 +214,12 @@ public class HedgingActionGeneratorTests
             ValueTask.FromException<int>(new InvalidOperationException("primary"))).AsTask();
 
         await hookStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
-        await Assert.That(order.SequenceEqual(["sync-hook", "async-hook-start"])).IsTrue();
+        await Assert.That(order.SequenceEqual(["hook-start"])).IsTrue();
         releaseHook.SetResult();
 
         await Assert.That(await execution).IsEqualTo(42);
         await Assert.That(order.SequenceEqual(
-            ["sync-hook", "async-hook-start", "async-hook-end", "generator", "action"])).IsTrue();
+            ["hook-start", "hook-end", "generator", "action"])).IsTrue();
     }
 
     [Test]
@@ -232,7 +231,7 @@ public class HedgingActionGeneratorTests
         {
             options.MaxHedgedAttempts = 1;
             options.Delay = TimeSpan.Zero;
-            options.OnHedgeAsync = async _ =>
+            options.OnHedge = async _ =>
             {
                 await Task.Yield();
                 throw expected;
@@ -264,7 +263,7 @@ public class HedgingActionGeneratorTests
         {
             options.MaxHedgedAttempts = 1;
             options.Delay = Timeout.InfiniteTimeSpan;
-            options.OnHedgeAsync = _ => ValueTask.FromException(expected);
+            options.OnHedge = _ => ValueTask.FromException(expected);
         });
 
         var outcome = await shield.ExecuteOutcomeAsync<int>(static _ =>
@@ -283,7 +282,7 @@ public class HedgingActionGeneratorTests
         {
             options.MaxHedgedAttempts = 1;
             options.Delay = TimeSpan.Zero;
-            options.OnHedgeAsync = _ =>
+            options.OnHedge = _ =>
             {
                 cancellation.Cancel();
                 return ValueTask.CompletedTask;
@@ -471,7 +470,7 @@ public class HedgingActionGeneratorTests
             {
                 options.MaxHedgedAttempts = 1;
                 options.Delay = Timeout.InfiniteTimeSpan;
-                options.OnHedgeAsync = async hedge =>
+                options.OnHedge = async hedge =>
                 {
                     hookStarted.TrySetResult();
                     await release.Task;

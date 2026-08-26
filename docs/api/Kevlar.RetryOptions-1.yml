@@ -8,7 +8,6 @@ items:
   - Kevlar.RetryOptions`1.#ctor
   - Kevlar.RetryOptions`1.Backoff
   - Kevlar.RetryOptions`1.DelayGenerator
-  - Kevlar.RetryOptions`1.DelayGeneratorAsync
   - Kevlar.RetryOptions`1.HandlesException
   - Kevlar.RetryOptions`1.HandlesExceptionWithContext
   - Kevlar.RetryOptions`1.HandlesResult
@@ -17,7 +16,6 @@ items:
   - Kevlar.RetryOptions`1.MaxRetries
   - Kevlar.RetryOptions`1.Name
   - Kevlar.RetryOptions`1.OnRetry
-  - Kevlar.RetryOptions`1.OnRetryAsync
   langs:
   - csharp
   - vb
@@ -39,9 +37,7 @@ items:
 
     to them.
 
-    Before each retry, callbacks run in this order: <xref href="Kevlar.RetryOptions%601.DelayGenerator" data-throw-if-not-resolved="false"></xref>,
-
-    <xref href="Kevlar.RetryOptions%601.DelayGeneratorAsync" data-throw-if-not-resolved="false"></xref>, <xref href="Kevlar.RetryOptions%601.OnRetry" data-throw-if-not-resolved="false"></xref>, then <xref href="Kevlar.RetryOptions%601.OnRetryAsync" data-throw-if-not-resolved="false"></xref>.
+    Before each retry, <xref href="Kevlar.RetryOptions%601.DelayGenerator" data-throw-if-not-resolved="false"></xref> runs and is awaited, then <xref href="Kevlar.RetryOptions%601.OnRetry" data-throw-if-not-resolved="false"></xref>.
 
     If the caller's cancellation token is cancelled by the time the callbacks complete, the retry
 
@@ -331,42 +327,20 @@ items:
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Invoked synchronously before each retry sleeps, with the typed handled outcome.
+  summary: >-
+    Invoked and awaited before each retry sleeps, with the typed handled outcome. Return
+
+    <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/default">default</a> from a synchronous callback.
   example: []
   syntax:
-    content: public Action<RetryEvent<TResult>>? OnRetry { get; set; }
-    parameters: []
-    return:
-      type: System.Action{Kevlar.RetryEvent{{TResult}}}
-    content.vb: Public Property OnRetry As Action(Of RetryEvent(Of TResult))
-  overload: Kevlar.RetryOptions`1.OnRetry*
-  nameWithType.vb: RetryOptions(Of TResult).OnRetry
-  fullName.vb: Kevlar.RetryOptions(Of TResult).OnRetry
-- uid: Kevlar.RetryOptions`1.OnRetryAsync
-  commentId: P:Kevlar.RetryOptions`1.OnRetryAsync
-  id: OnRetryAsync
-  parent: Kevlar.RetryOptions`1
-  langs:
-  - csharp
-  - vb
-  name: OnRetryAsync
-  nameWithType: RetryOptions<TResult>.OnRetryAsync
-  fullName: Kevlar.RetryOptions<TResult>.OnRetryAsync
-  type: Property
-  assemblies:
-  - Kevlar
-  namespace: Kevlar
-  summary: Invoked and awaited before each retry sleeps, with the typed handled outcome.
-  example: []
-  syntax:
-    content: public Func<RetryEvent<TResult>, ValueTask>? OnRetryAsync { get; set; }
+    content: public Func<RetryEvent<TResult>, ValueTask>? OnRetry { get; set; }
     parameters: []
     return:
       type: System.Func{Kevlar.RetryEvent{{TResult}},System.Threading.Tasks.ValueTask}
-    content.vb: Public Property OnRetryAsync As Func(Of RetryEvent(Of TResult), ValueTask)
-  overload: Kevlar.RetryOptions`1.OnRetryAsync*
-  nameWithType.vb: RetryOptions(Of TResult).OnRetryAsync
-  fullName.vb: Kevlar.RetryOptions(Of TResult).OnRetryAsync
+    content.vb: Public Property OnRetry As Func(Of RetryEvent(Of TResult), ValueTask)
+  overload: Kevlar.RetryOptions`1.OnRetry*
+  nameWithType.vb: RetryOptions(Of TResult).OnRetry
+  fullName.vb: Kevlar.RetryOptions(Of TResult).OnRetry
 - uid: Kevlar.RetryOptions`1.DelayGenerator
   commentId: P:Kevlar.RetryOptions`1.DelayGenerator
   id: DelayGenerator
@@ -386,47 +360,19 @@ items:
 
     Return a non-null value to replace the backoff-computed delay;
 
-    <xref href="Kevlar.RetryOptions%601.MaxDelay" data-throw-if-not-resolved="false"></xref> still caps the returned value.
+    <xref href="Kevlar.RetryOptions%601.MaxDelay" data-throw-if-not-resolved="false"></xref> still caps the returned value. The generator is awaited before
+
+    <xref href="Kevlar.RetryOptions%601.OnRetry" data-throw-if-not-resolved="false"></xref> runs.
   example: []
   syntax:
-    content: public Func<RetryEvent<TResult>, TimeSpan?>? DelayGenerator { get; set; }
-    parameters: []
-    return:
-      type: System.Func{Kevlar.RetryEvent{{TResult}},System.Nullable{System.TimeSpan}}
-    content.vb: Public Property DelayGenerator As Func(Of RetryEvent(Of TResult), TimeSpan?)
-  overload: Kevlar.RetryOptions`1.DelayGenerator*
-  nameWithType.vb: RetryOptions(Of TResult).DelayGenerator
-  fullName.vb: Kevlar.RetryOptions(Of TResult).DelayGenerator
-- uid: Kevlar.RetryOptions`1.DelayGeneratorAsync
-  commentId: P:Kevlar.RetryOptions`1.DelayGeneratorAsync
-  id: DelayGeneratorAsync
-  parent: Kevlar.RetryOptions`1
-  langs:
-  - csharp
-  - vb
-  name: DelayGeneratorAsync
-  nameWithType: RetryOptions<TResult>.DelayGeneratorAsync
-  fullName: Kevlar.RetryOptions<TResult>.DelayGeneratorAsync
-  type: Property
-  assemblies:
-  - Kevlar
-  namespace: Kevlar
-  summary: >-
-    Asynchronously overrides the delay for a specific retry, with the typed handled outcome.
-
-    Receives the delay after the synchronous generator and <xref href="Kevlar.RetryOptions%601.MaxDelay" data-throw-if-not-resolved="false"></xref>
-
-    have been applied. Return a non-null value to replace it; the maximum still applies.
-  example: []
-  syntax:
-    content: public Func<RetryEvent<TResult>, ValueTask<TimeSpan?>>? DelayGeneratorAsync { get; set; }
+    content: public Func<RetryEvent<TResult>, ValueTask<TimeSpan?>>? DelayGenerator { get; set; }
     parameters: []
     return:
       type: System.Func{Kevlar.RetryEvent{{TResult}},System.Threading.Tasks.ValueTask{System.Nullable{System.TimeSpan}}}
-    content.vb: Public Property DelayGeneratorAsync As Func(Of RetryEvent(Of TResult), ValueTask(Of TimeSpan?))
-  overload: Kevlar.RetryOptions`1.DelayGeneratorAsync*
-  nameWithType.vb: RetryOptions(Of TResult).DelayGeneratorAsync
-  fullName.vb: Kevlar.RetryOptions(Of TResult).DelayGeneratorAsync
+    content.vb: Public Property DelayGenerator As Func(Of RetryEvent(Of TResult), ValueTask(Of TimeSpan?))
+  overload: Kevlar.RetryOptions`1.DelayGenerator*
+  nameWithType.vb: RetryOptions(Of TResult).DelayGenerator
+  fullName.vb: Kevlar.RetryOptions(Of TResult).DelayGenerator
 references:
 - uid: Kevlar.Shield`1
   commentId: T:Kevlar.Shield`1
@@ -541,15 +487,6 @@ references:
   fullName: Kevlar.RetryOptions<TResult>.DelayGenerator
   nameWithType.vb: RetryOptions(Of TResult).DelayGenerator
   fullName.vb: Kevlar.RetryOptions(Of TResult).DelayGenerator
-- uid: Kevlar.RetryOptions`1.DelayGeneratorAsync
-  commentId: P:Kevlar.RetryOptions`1.DelayGeneratorAsync
-  isExternal: true
-  href: Kevlar.RetryOptions-1.html#Kevlar_RetryOptions_1_DelayGeneratorAsync
-  name: DelayGeneratorAsync
-  nameWithType: RetryOptions<TResult>.DelayGeneratorAsync
-  fullName: Kevlar.RetryOptions<TResult>.DelayGeneratorAsync
-  nameWithType.vb: RetryOptions(Of TResult).DelayGeneratorAsync
-  fullName.vb: Kevlar.RetryOptions(Of TResult).DelayGeneratorAsync
 - uid: Kevlar.RetryOptions`1.OnRetry
   commentId: P:Kevlar.RetryOptions`1.OnRetry
   isExternal: true
@@ -559,15 +496,6 @@ references:
   fullName: Kevlar.RetryOptions<TResult>.OnRetry
   nameWithType.vb: RetryOptions(Of TResult).OnRetry
   fullName.vb: Kevlar.RetryOptions(Of TResult).OnRetry
-- uid: Kevlar.RetryOptions`1.OnRetryAsync
-  commentId: P:Kevlar.RetryOptions`1.OnRetryAsync
-  isExternal: true
-  href: Kevlar.RetryOptions-1.html#Kevlar_RetryOptions_1_OnRetryAsync
-  name: OnRetryAsync
-  nameWithType: RetryOptions<TResult>.OnRetryAsync
-  fullName: Kevlar.RetryOptions<TResult>.OnRetryAsync
-  nameWithType.vb: RetryOptions(Of TResult).OnRetryAsync
-  fullName.vb: Kevlar.RetryOptions(Of TResult).OnRetryAsync
 - uid: Kevlar
   commentId: N:Kevlar
   isExternal: true
@@ -1165,86 +1093,6 @@ references:
   fullName: Kevlar.RetryOptions<TResult>.OnRetry
   nameWithType.vb: RetryOptions(Of TResult).OnRetry
   fullName.vb: Kevlar.RetryOptions(Of TResult).OnRetry
-- uid: System.Action{Kevlar.RetryEvent{{TResult}}}
-  commentId: T:System.Action{Kevlar.RetryEvent{`0}}
-  parent: System
-  definition: System.Action`1
-  href: https://learn.microsoft.com/dotnet/api/system.action-1
-  name: Action<RetryEvent<TResult>>
-  nameWithType: Action<RetryEvent<TResult>>
-  fullName: System.Action<Kevlar.RetryEvent<TResult>>
-  nameWithType.vb: Action(Of RetryEvent(Of TResult))
-  fullName.vb: System.Action(Of Kevlar.RetryEvent(Of TResult))
-  name.vb: Action(Of RetryEvent(Of TResult))
-  spec.csharp:
-  - uid: System.Action`1
-    name: Action
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.action-1
-  - name: <
-  - uid: Kevlar.RetryEvent`1
-    name: RetryEvent
-    isExternal: true
-    href: Kevlar.RetryEvent-1.html
-  - name: <
-  - name: TResult
-  - name: '>'
-  - name: '>'
-  spec.vb:
-  - uid: System.Action`1
-    name: Action
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.action-1
-  - name: (
-  - name: Of
-  - name: " "
-  - uid: Kevlar.RetryEvent`1
-    name: RetryEvent
-    isExternal: true
-    href: Kevlar.RetryEvent-1.html
-  - name: (
-  - name: Of
-  - name: " "
-  - name: TResult
-  - name: )
-  - name: )
-- uid: System.Action`1
-  commentId: T:System.Action`1
-  isExternal: true
-  href: https://learn.microsoft.com/dotnet/api/system.action-1
-  name: Action<T>
-  nameWithType: Action<T>
-  fullName: System.Action<T>
-  nameWithType.vb: Action(Of T)
-  fullName.vb: System.Action(Of T)
-  name.vb: Action(Of T)
-  spec.csharp:
-  - uid: System.Action`1
-    name: Action
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.action-1
-  - name: <
-  - name: T
-  - name: '>'
-  spec.vb:
-  - uid: System.Action`1
-    name: Action
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.action-1
-  - name: (
-  - name: Of
-  - name: " "
-  - name: T
-  - name: )
-- uid: Kevlar.RetryOptions`1.OnRetryAsync*
-  commentId: Overload:Kevlar.RetryOptions`1.OnRetryAsync
-  isExternal: true
-  href: Kevlar.RetryOptions-1.html#Kevlar_RetryOptions_1_OnRetryAsync
-  name: OnRetryAsync
-  nameWithType: RetryOptions<TResult>.OnRetryAsync
-  fullName: Kevlar.RetryOptions<TResult>.OnRetryAsync
-  nameWithType.vb: RetryOptions(Of TResult).OnRetryAsync
-  fullName.vb: Kevlar.RetryOptions(Of TResult).OnRetryAsync
 - uid: System.Func{Kevlar.RetryEvent{{TResult}},System.Threading.Tasks.ValueTask}
   commentId: T:System.Func{Kevlar.RetryEvent{`0},System.Threading.Tasks.ValueTask}
   parent: System
@@ -1318,72 +1166,6 @@ references:
   fullName: Kevlar.RetryOptions<TResult>.DelayGenerator
   nameWithType.vb: RetryOptions(Of TResult).DelayGenerator
   fullName.vb: Kevlar.RetryOptions(Of TResult).DelayGenerator
-- uid: System.Func{Kevlar.RetryEvent{{TResult}},System.Nullable{System.TimeSpan}}
-  commentId: T:System.Func{Kevlar.RetryEvent{`0},System.Nullable{System.TimeSpan}}
-  parent: System
-  definition: System.Func`2
-  href: https://learn.microsoft.com/dotnet/api/system.func-2
-  name: Func<RetryEvent<TResult>, TimeSpan?>
-  nameWithType: Func<RetryEvent<TResult>, TimeSpan?>
-  fullName: System.Func<Kevlar.RetryEvent<TResult>, System.TimeSpan?>
-  nameWithType.vb: Func(Of RetryEvent(Of TResult), TimeSpan?)
-  fullName.vb: System.Func(Of Kevlar.RetryEvent(Of TResult), System.TimeSpan?)
-  name.vb: Func(Of RetryEvent(Of TResult), TimeSpan?)
-  spec.csharp:
-  - uid: System.Func`2
-    name: Func
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.func-2
-  - name: <
-  - uid: Kevlar.RetryEvent`1
-    name: RetryEvent
-    isExternal: true
-    href: Kevlar.RetryEvent-1.html
-  - name: <
-  - name: TResult
-  - name: '>'
-  - name: ','
-  - name: " "
-  - uid: System.TimeSpan
-    name: TimeSpan
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.timespan
-  - name: '?'
-  - name: '>'
-  spec.vb:
-  - uid: System.Func`2
-    name: Func
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.func-2
-  - name: (
-  - name: Of
-  - name: " "
-  - uid: Kevlar.RetryEvent`1
-    name: RetryEvent
-    isExternal: true
-    href: Kevlar.RetryEvent-1.html
-  - name: (
-  - name: Of
-  - name: " "
-  - name: TResult
-  - name: )
-  - name: ','
-  - name: " "
-  - uid: System.TimeSpan
-    name: TimeSpan
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.timespan
-  - name: '?'
-  - name: )
-- uid: Kevlar.RetryOptions`1.DelayGeneratorAsync*
-  commentId: Overload:Kevlar.RetryOptions`1.DelayGeneratorAsync
-  isExternal: true
-  href: Kevlar.RetryOptions-1.html#Kevlar_RetryOptions_1_DelayGeneratorAsync
-  name: DelayGeneratorAsync
-  nameWithType: RetryOptions<TResult>.DelayGeneratorAsync
-  fullName: Kevlar.RetryOptions<TResult>.DelayGeneratorAsync
-  nameWithType.vb: RetryOptions(Of TResult).DelayGeneratorAsync
-  fullName.vb: Kevlar.RetryOptions(Of TResult).DelayGeneratorAsync
 - uid: System.Func{Kevlar.RetryEvent{{TResult}},System.Threading.Tasks.ValueTask{System.Nullable{System.TimeSpan}}}
   commentId: T:System.Func{Kevlar.RetryEvent{`0},System.Threading.Tasks.ValueTask{System.Nullable{System.TimeSpan}}}
   parent: System

@@ -15,8 +15,7 @@ public sealed class CircuitBreakerMonitor
 
     /// <summary>
     /// Raised on every state transition of the bound circuit, after
-    /// <see cref="CircuitBreakerOptions.OnStateChanged"/> and
-    /// <see cref="CircuitBreakerOptions.OnStateChangedAsync"/>. Transitions are delivered
+    /// <see cref="CircuitBreakerOptions.OnStateChanged"/> completes. Transitions are delivered
     /// serially outside the circuit lock, so handlers may read state or call <see cref="Reset"/>
     /// or <see cref="Isolate"/> without deadlocking. Handlers run synchronously and block later
     /// transition publishers, so they should not perform I/O, wait on external work, or otherwise

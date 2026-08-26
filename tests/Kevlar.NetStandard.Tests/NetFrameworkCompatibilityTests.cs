@@ -117,7 +117,7 @@ internal static class NetFrameworkCompatibilityTests
             {
                 options.MaxRetries = 1;
                 options.Backoff = Backoff.None;
-                options.OnRetry = static _ => { };
+                options.OnRetry = static _ => default;
             });
             Equal(42, retry.Execute(_ => ++attempts == 1
                 ? throw new InvalidOperationException("retry")
@@ -133,13 +133,13 @@ internal static class NetFrameworkCompatibilityTests
             Equal(2, queued.Execute(static _ => 2), "sync queued rate limit");
 
             var timeout = Shield.Timeout(options =>
-                options.TimeoutGeneratorSync = static _ => TimeSpan.FromSeconds(1));
+                options.TimeoutGenerator = static _ => new(TimeSpan.FromSeconds(1)));
             Equal(3, timeout.Execute(static _ => 3), "sync timeout generator");
 
             var breaker = Shield.CircuitBreaker(options =>
             {
                 options.ConsecutiveFailures = 1;
-                options.BreakDurationGeneratorSync = static _ => TimeSpan.FromSeconds(1);
+                options.BreakDurationGenerator = static _ => new(TimeSpan.FromSeconds(1));
             });
             Equal(4, breaker.Execute(static _ => 4), "sync break-duration generator");
         }

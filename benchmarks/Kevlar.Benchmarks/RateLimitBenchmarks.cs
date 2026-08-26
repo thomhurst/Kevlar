@@ -21,8 +21,7 @@ public class RateLimitBenchmarks
     {
         options.Permits = 1_000_000_000;
         options.Window = TimeSpan.FromSeconds(1);
-        options.OnRejected = static _ => { };
-        options.OnRejectedAsync = static _ => ValueTask.CompletedTask;
+        options.OnRejected = static _ => ValueTask.CompletedTask;
     });
     private static readonly FixedWindowRateLimiter FrameworkLimiter = new(new FixedWindowRateLimiterOptions
     {

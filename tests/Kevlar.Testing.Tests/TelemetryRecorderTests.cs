@@ -94,12 +94,20 @@ public class TelemetryRecorderTests
         using var recorder = new TelemetryRecorder(captureMetrics: false);
         var typed = Shield.For<int>()
             .WhenResult(static result => result < 0)
-            .FallbackTo(42, options => options.OnFallback = recorder.Record)
+            .FallbackTo(42, options => options.OnFallback = fallback =>
+            {
+                recorder.Record(fallback);
+                return default;
+            })
             .Retry(options =>
             {
                 options.MaxRetries = 1;
                 options.Backoff = Backoff.None;
-                options.OnRetry = recorder.Record;
+                options.OnRetry = retry =>
+                {
+                    recorder.Record(retry);
+                    return default;
+                };
             })
             .WithName("typed");
         var attempts = 0;
@@ -121,7 +129,11 @@ public class TelemetryRecorderTests
         {
             options.MaxRetries = 1;
             options.Backoff = Backoff.None;
-            options.OnRetry = recorder.Record;
+            options.OnRetry = retry =>
+            {
+                recorder.Record(retry);
+                return default;
+            };
         });
         await untyped.ExecuteOutcomeAsync<int>(static _ => throw new ApplicationException("failure"));
 
@@ -138,7 +150,11 @@ public class TelemetryRecorderTests
             {
                 options.MaxRetries = 1;
                 options.Backoff = Backoff.None;
-                options.OnRetry = recorder.Record;
+                options.OnRetry = retry =>
+                {
+                    recorder.Record(retry);
+                    return default;
+                };
             }).WithName($"shield-{index}"))
             .ToArray();
 
@@ -164,7 +180,11 @@ public class TelemetryRecorderTests
         var timeout = Shield.Timeout(options =>
         {
             options.Timeout = TimeSpan.FromMilliseconds(1);
-            options.OnTimeout = recorder.Record;
+            options.OnTimeout = timeout =>
+            {
+                recorder.Record(timeout);
+                return default;
+            };
         }).WithName("timeout");
         await timeout.ExecuteOutcomeAsync<int>(static async token =>
         {
@@ -176,7 +196,11 @@ public class TelemetryRecorderTests
         {
             options.MaxHedgedAttempts = 1;
             options.Delay = TimeSpan.Zero;
-            options.OnHedge = recorder.Record;
+            options.OnHedge = hedge =>
+            {
+                recorder.Record(hedge);
+                return default;
+            };
         }).WithName("hedge");
         await hedge.ExecuteOutcomeAsync<int>(static _ =>
             ValueTask.FromException<int>(new InvalidOperationException()));
@@ -184,7 +208,11 @@ public class TelemetryRecorderTests
         var breaker = Shield.CircuitBreaker(options =>
         {
             options.ConsecutiveFailures = 1;
-            options.OnStateChanged = recorder.Record;
+            options.OnStateChanged = transition =>
+            {
+                recorder.Record(transition);
+                return default;
+            };
         });
         await breaker.ExecuteOutcomeAsync<int>(static _ =>
             ValueTask.FromException<int>(new ApplicationException("break")));
@@ -312,7 +340,11 @@ public class TelemetryRecorderTests
         {
             options.MaxRetries = 1;
             options.Backoff = Backoff.None;
-            options.OnRetry = recorder.Record;
+            options.OnRetry = retry =>
+            {
+                recorder.Record(retry);
+                return default;
+            };
         });
 
         var outcome = await shield.ExecuteOutcomeAsync<int>(

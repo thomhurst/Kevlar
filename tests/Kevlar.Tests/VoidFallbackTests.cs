@@ -211,10 +211,18 @@ public class VoidFallbackTests
         });
         var withExceptionAndOptions = Shield.Fallback(
             static (_, _) => default,
-            options => options.OnFallback = _ => notified++);
+            options => options.OnFallback = _ =>
+            {
+                notified++;
+                return default;
+            });
         var withoutExceptionAndOptions = Shield.Fallback(
             static _ => default,
-            options => options.OnFallback = _ => notified++);
+            options => options.OnFallback = _ =>
+            {
+                notified++;
+                return default;
+            });
 
         var original = new InvalidOperationException("boom");
         await withException.ExecuteAsync(_ => throw original);

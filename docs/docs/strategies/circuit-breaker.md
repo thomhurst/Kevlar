@@ -37,11 +37,9 @@ API reference: [`CircuitBreakerOptions`](pathname:///api/Kevlar.CircuitBreakerOp
 | `MinimumThroughput` | `10` | Sampling mode: don't judge until at least this many calls landed in the window |
 | `SamplingWindow` | `30s` | Rolling window over which the ratio is measured (tracked in 10 buckets) |
 | `BreakDuration` | `15s` | How long the circuit stays open before allowing a probe |
-| `BreakDurationGenerator` | — | Awaited outcome, failure-statistics, and context-aware duration; overrides `BreakDuration` for each trip |
-| `BreakDurationGeneratorSync` | — | Synchronous outcome, failure-statistics, and context-aware duration; overrides `BreakDuration` for each trip |
+| `BreakDurationGenerator` | — | Awaited outcome, failure-statistics, and context-aware duration returning `ValueTask<TimeSpan>`; overrides `BreakDuration` for each trip |
 | `Monitor` | — | A `CircuitBreakerMonitor` for observing + manual control |
-| `OnStateChanged` | — | Callback on every transition: `e.From`, `e.To`, `e.LastException`, `e.Context` |
-| `OnStateChangedAsync` | — | Awaited callback on every transition, after `OnStateChanged` |
+| `OnStateChanged` | — | Awaited callback on every transition: `e.From`, `e.To`, `e.LastException`, `e.Context` |
 | `HandlesException` | — | Local exception predicate; replaces the ambient clause for this breaker |
 | `HandlesResult` (`CircuitBreakerOptions<T>`) | — | Local result predicate on `Shield<T>`; replaces the ambient clause together with `HandlesException` |
 
@@ -78,9 +76,11 @@ propagates unchanged and leaves the circuit available for a later trip. Untyped 
 must not be retained after the callback completes. A dynamic breaker describes itself as
 `break dynamic` without running the generator.
 
-When duration computation is synchronous, configure `BreakDurationGeneratorSync` instead. It has the
-same event and validation contract and allows synchronous `Execute`; configure only one generator.
-`BreakDurationGenerator` and `OnStateChangedAsync` require `ExecuteAsync` for pipeline execution.
+When duration computation is synchronous, return a completed value (`trip => new(duration)`); that
+form costs nothing extra and works with synchronous `Execute`. A generator or `OnStateChanged` hook
+that yields is awaited by `ExecuteAsync`, but reached through synchronous `Execute` it throws
+`NotSupportedException` at that call. See
+[synchronous execution compatibility](../executing.md#synchronous-execution-compatibility).
 
 ## The state machine
 
@@ -117,10 +117,10 @@ var shield = Shield.CircuitBreaker(o =>
 {
     o.FailureRatio = 0.5;
     o.Monitor = monitor;
-    o.OnStateChanged = c => logger.LogWarning("Circuit {From} -> {To}", c.From, c.To);
-    o.OnStateChangedAsync = async c =>
+    o.OnStateChanged = async c =>
     {
-        await Task.Yield();
+        logger.LogWarning("Circuit {From} -> {To}", c.From, c.To);
+        await Task.Yield(); // for example, publish the transition to an audit sink
         logger.LogInformation("Recorded circuit transition to {State}", c.To);
     };
 });
@@ -135,15 +135,15 @@ await monitor.ResetAsync();
 
 A monitor binds to exactly **one** breaker: assign it to `CircuitBreakerOptions.Monitor` when building the shield, and keep your reference. Binding it twice throws, as does using it before binding.
 
-Transitions are delivered serially in state-change order: `OnStateChanged`, awaited
-`OnStateChangedAsync`, then `monitor.StateChanged`. The monitor intentionally retains an
-`Action<CircuitBreakerStateChangedEvent>` event so the three observers share one event shape and
+Transitions are delivered serially in state-change order: awaited `OnStateChanged`, then
+`monitor.StateChanged`. The monitor intentionally retains an
+`Action<CircuitBreakerStateChangedEvent>` event so both observers share one event shape and
 delivery model. Execution-driven transitions carry the triggering pooled context. Manual
 `Isolate`/`Reset` transitions carry a detached context with `StrategyIndex == -1`, no shield name,
 and an empty property bag. Callbacks run outside the circuit lock, so they can read `State` or call
 the synchronous or asynchronous monitor controls; a reentrant transition is queued behind the
-transition currently being delivered. Use `ResetAsync()` and `IsolateAsync()` when asynchronous
-transition callbacks are configured so the calling thread is not blocked. If an observer throws,
+transition currently being delivered. Use `ResetAsync()` and `IsolateAsync()` when `OnStateChanged`
+may yield so the calling thread is not blocked. If an observer throws,
 later observers still run and the circuit keeps its new, usable state. Observer failures are
 reported through `KevlarDiagnostics.OnCallbackError` and never replace an execution outcome or
 block a transition.

@@ -17,9 +17,9 @@ public class HedgingDelayGeneratorTests
         var shield = Shield.Hedge(options =>
         {
             options.MaxHedgedAttempts = 2;
-            options.DelayGenerator = hedge => hedge.AttemptNumber == 2
+            options.DelayGenerator = hedge => new(hedge.AttemptNumber == 2
                 ? TimeSpan.FromMilliseconds(100)
-                : TimeSpan.FromMilliseconds(300);
+                : TimeSpan.FromMilliseconds(300));
         }).WithTimeProvider(time);
 
         var execution = shield.ExecuteAsync(async token =>
@@ -63,7 +63,7 @@ public class HedgingDelayGeneratorTests
             options.DelayGenerator = _ =>
             {
                 generatorCalls++;
-                return Timeout.InfiniteTimeSpan;
+                return new(Timeout.InfiniteTimeSpan);
             };
         });
 
@@ -94,7 +94,7 @@ public class HedgingDelayGeneratorTests
         {
             options.MaxHedgedAttempts = 1;
             options.Delay = TimeSpan.FromDays(1);
-            options.DelayGenerator = _ => TimeSpan.Zero;
+            options.DelayGenerator = _ => new(TimeSpan.Zero);
         });
 
         var result = await shield.ExecuteAsync(async token =>
@@ -124,7 +124,7 @@ public class HedgingDelayGeneratorTests
             {
                 var delay = hedge.Context.Properties.GetOrDefault(DelayKey);
                 observed.Add((hedge.AttemptNumber, delay, hedge.Elapsed));
-                return delay;
+                return new(delay);
             };
         }).WithTimeProvider(time);
 
@@ -163,7 +163,7 @@ public class HedgingDelayGeneratorTests
             options.DelayGenerator = hedge =>
             {
                 observed = hedge.Context.Properties.GetOrDefault(DelayKey);
-                return TimeSpan.Zero;
+                return new(TimeSpan.Zero);
             };
         });
 
@@ -186,7 +186,7 @@ public class HedgingDelayGeneratorTests
     }
 
     [Test]
-    public async Task DelayGeneratorAsync_Is_Awaited_And_Cancellable()
+    public async Task DelayGenerator_Is_Awaited_And_Cancellable()
     {
         using var cancellation = new CancellationTokenSource();
         var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -194,7 +194,7 @@ public class HedgingDelayGeneratorTests
         var shield = Shield.Hedge(options =>
         {
             options.MaxHedgedAttempts = 1;
-            options.DelayGeneratorAsync = async hedge =>
+            options.DelayGenerator = async hedge =>
             {
                 entered.SetResult();
                 await Task.Delay(Timeout.InfiniteTimeSpan, hedge.Context.CancellationToken);
@@ -242,7 +242,7 @@ public class HedgingDelayGeneratorTests
         var shield = Shield.Hedge(options =>
         {
             options.MaxHedgedAttempts = 1;
-            options.DelayGenerator = _ => TimeSpan.FromTicks(-2);
+            options.DelayGenerator = _ => new(TimeSpan.FromTicks(-2));
         });
 
         var result = await shield.ExecuteAsync(async token =>
@@ -267,7 +267,7 @@ public class HedgingDelayGeneratorTests
         var shield = Shield.Hedge(options =>
         {
             options.MaxHedgedAttempts = 1;
-            options.DelayGenerator = _ => TimeSpan.MaxValue;
+            options.DelayGenerator = _ => new(TimeSpan.MaxValue);
         }).WithTimeProvider(time);
 
         var execution = shield.ExecuteAsync(async token =>
@@ -299,7 +299,7 @@ public class HedgingDelayGeneratorTests
             options.DelayGenerator = _ =>
             {
                 calls++;
-                return TimeSpan.Zero;
+                return new(TimeSpan.Zero);
             };
         });
 
@@ -314,7 +314,7 @@ public class HedgingDelayGeneratorTests
         var shield = Shield.For<int>().Hedge(options =>
         {
             options.MaxHedgedAttempts = 1;
-            options.DelayGenerator = _ => TimeSpan.Zero;
+            options.DelayGenerator = _ => new(TimeSpan.Zero);
         });
 
         var result = await shield.ExecuteAsync(async token =>

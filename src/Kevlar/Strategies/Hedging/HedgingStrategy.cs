@@ -10,10 +10,8 @@ internal sealed class HedgingStrategy : Strategy
     private readonly OutcomeJudge _judge;
     private readonly int _maxHedgedAttempts;
     private readonly TimeSpan _delay;
-    private readonly Func<HedgeDelayEvent, TimeSpan>? _delayGenerator;
-    private readonly Func<HedgeDelayEvent, ValueTask<TimeSpan>>? _delayGeneratorAsync;
-    private readonly Action<HedgeEvent>? _onHedge;
-    private readonly Func<HedgeEvent, ValueTask>? _onHedgeAsync;
+    private readonly Func<HedgeDelayEvent, ValueTask<TimeSpan>>? _delayGenerator;
+    private readonly Func<HedgeEvent, ValueTask>? _onHedge;
     private readonly HedgeActionGenerator? _actionGenerator;
     private readonly string _telemetryName;
 
@@ -51,9 +49,7 @@ internal sealed class HedgingStrategy : Strategy
         _maxHedgedAttempts = options.MaxHedgedAttempts;
         _delay = options.Delay;
         _delayGenerator = options.DelayGenerator;
-        _delayGeneratorAsync = options.DelayGeneratorAsync;
         _onHedge = options.OnHedge;
-        _onHedgeAsync = options.OnHedgeAsync;
         _actionGenerator = options.ActionGenerator;
         _telemetryName = options.Name ?? "Hedge";
         HasHandlingOverride = hasHandlingOverride;
@@ -79,7 +75,7 @@ internal sealed class HedgingStrategy : Strategy
 
     internal TimeSpan Delay => _delay;
 
-    internal bool HasDelayGenerator => _delayGenerator is not null || _delayGeneratorAsync is not null;
+    internal bool HasDelayGenerator => _delayGenerator is not null;
 
     internal bool HasNotification => _onHedge is not null;
 
@@ -308,7 +304,7 @@ internal sealed class HedgingStrategy : Strategy
         KevlarContext context,
         long startedAt)
     {
-        if (!HasDelayGenerator)
+        if (_delayGenerator is not { } delayGenerator)
         {
             return new ValueTask<TimeSpan>(_delay);
         }
@@ -318,23 +314,17 @@ internal sealed class HedgingStrategy : Strategy
             attemptNumber,
             context,
             context.TimeProvider.GetElapsedTime(startedAt));
-        var delay = _delayGenerator is null
-            ? _delay
-            : NormalizeGeneratedDelay(_delayGenerator(delayEvent));
-
-        context.CancellationToken.ThrowIfCancellationRequested();
-        if (_delayGeneratorAsync is not { } delayGeneratorAsync)
-        {
-            return new ValueTask<TimeSpan>(delay);
-        }
-
-        var generated = delayGeneratorAsync(delayEvent);
+        var generated = CallbackInvoker.InvokeGenerator(
+            delayGenerator,
+            delayEvent,
+            context,
+            "HedgeOptions.DelayGenerator");
         if (!generated.IsCompletedSuccessfully)
         {
             return AwaitGeneratedDelayAsync(generated, context);
         }
 
-        delay = NormalizeGeneratedDelay(generated.Result);
+        var delay = NormalizeGeneratedDelay(generated.Result);
         context.CancellationToken.ThrowIfCancellationRequested();
         return new ValueTask<TimeSpan>(delay);
     }
@@ -367,14 +357,12 @@ internal sealed class HedgingStrategy : Strategy
     {
         context.CancellationToken.ThrowIfCancellationRequested();
         var hedgeEvent = new HedgeEvent(attemptNumber, context);
-        CallbackInvoker.Invoke(_onHedge, hedgeEvent, CallbackErrorKind.Hedge, context);
-        context.CancellationToken.ThrowIfCancellationRequested();
-
         var notification = CallbackInvoker.InvokeAsync(
-            _onHedgeAsync,
+            _onHedge,
             hedgeEvent,
             CallbackErrorKind.Hedge,
-            context);
+            context,
+            "HedgeOptions.OnHedge");
         if (!notification.IsCompletedSuccessfully)
         {
             return AwaitHedgeNotificationAsync(

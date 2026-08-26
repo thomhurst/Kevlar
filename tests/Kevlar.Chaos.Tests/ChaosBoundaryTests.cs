@@ -32,7 +32,11 @@ public class ChaosBoundaryTests
                 calls.Add("exception");
                 return new ChaosInjectedException();
             };
-            options.OnInjected = _ => calls.Add("injected");
+            options.OnInjected = _ =>
+            {
+                calls.Add("injected");
+                return default;
+            };
         });
 
         var disabled = await shield.ExecuteAsync(static _ => new ValueTask<int>(1));
@@ -59,7 +63,11 @@ public class ChaosBoundaryTests
                 resultGeneratorCalls++;
                 return -1;
             };
-            options.OnInjected = _ => injectionCallbacks++;
+            options.OnInjected = _ =>
+            {
+                injectionCallbacks++;
+                return default;
+            };
         });
 
         var result = await shield.ExecuteAsync(_ =>
@@ -104,7 +112,11 @@ public class ChaosBoundaryTests
         {
             options.Enabled = true;
             options.DelayGenerator = static _ => TimeSpan.FromDays(100);
-            options.OnInjected = _ => injections++;
+            options.OnInjected = _ =>
+            {
+                injections++;
+                return default;
+            };
         });
 
         var outcome = await shield.ExecuteOutcomeAsync<int>(_ =>
@@ -130,7 +142,11 @@ public class ChaosBoundaryTests
                 order.Add("delay");
                 return TimeSpan.Zero;
             };
-            options.OnInjected = _ => order.Add("injected");
+            options.OnInjected = _ =>
+            {
+                order.Add("injected");
+                return default;
+            };
         }).WithTimeProvider(new FakeTimeProvider());
 
         var result = await shield.ExecuteAsync(_ =>

@@ -162,7 +162,7 @@ public sealed class Shield : IShieldLifecycle
     /// Starts a pipeline with a fallback that runs <paramref name="fallback"/> in place of handled
     /// failures and configures notifications. Applies to void executions only.
     /// </summary>
-    /// <remarks>Runs <see cref="FallbackOptions.OnFallback"/>, then <see cref="FallbackOptions.OnFallbackAsync"/>, before recovery. Notification failures are reported and recovery continues.</remarks>
+    /// <remarks>Runs and awaits <see cref="FallbackOptions.OnFallback"/> before recovery. Notification failures are reported and recovery continues.</remarks>
     public static Shield Fallback(
         Func<Exception, CancellationToken, ValueTask> fallback,
         Action<FallbackOptions> configure) =>
@@ -182,7 +182,7 @@ public sealed class Shield : IShieldLifecycle
     /// Starts a pipeline with a fallback that runs <paramref name="fallback"/> in place of handled
     /// failures and configures notifications. Applies to void executions only.
     /// </summary>
-    /// <remarks>Runs <see cref="FallbackOptions.OnFallback"/>, then <see cref="FallbackOptions.OnFallbackAsync"/>, before recovery. Notification failures are reported and recovery continues.</remarks>
+    /// <remarks>Runs and awaits <see cref="FallbackOptions.OnFallback"/> before recovery. Notification failures are reported and recovery continues.</remarks>
     public static Shield Fallback(
         Func<CancellationToken, ValueTask> fallback,
         Action<FallbackOptions> configure) =>

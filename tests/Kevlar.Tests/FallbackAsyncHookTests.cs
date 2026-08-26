@@ -3,13 +3,12 @@ namespace Kevlar.Tests;
 public class FallbackAsyncHookTests
 {
     [Test]
-    public async Task Typed_Hooks_Run_In_Order_Before_Recovery_With_The_Exact_Result()
+    public async Task Typed_Hook_Is_Awaited_Before_Recovery_With_The_Exact_Result()
     {
         var handled = new object();
         var recovered = new object();
         var order = new List<string>();
-        Outcome<object> syncOutcome = default;
-        Outcome<object> asyncOutcome = default;
+        Outcome<object> hookOutcome = default;
         Outcome<object> factoryOutcome = default;
         var shield = Shield.For<object>()
             .WhenResult(handled)
@@ -22,25 +21,20 @@ public class FallbackAsyncHookTests
                 },
                 options =>
                 {
-                    options.OnFallback = fallback =>
+                    options.OnFallback = async fallback =>
                     {
-                        order.Add("sync");
-                        syncOutcome = fallback.Outcome;
-                    };
-                    options.OnFallbackAsync = fallback =>
-                    {
-                        order.Add("async");
-                        asyncOutcome = fallback.Outcome;
-                        return ValueTask.CompletedTask;
+                        order.Add("hook:start");
+                        hookOutcome = fallback.Outcome;
+                        await Task.Yield();
+                        order.Add("hook:end");
                     };
                 });
 
         var result = await shield.ExecuteAsync(_ => new ValueTask<object>(handled));
 
         await Assert.That(ReferenceEquals(result, recovered)).IsTrue();
-        await Assert.That(string.Join(",", order)).IsEqualTo("sync,async,factory");
-        await Assert.That(ReferenceEquals(syncOutcome.Result, handled)).IsTrue();
-        await Assert.That(ReferenceEquals(asyncOutcome.Result, handled)).IsTrue();
+        await Assert.That(string.Join(",", order)).IsEqualTo("hook:start,hook:end,factory");
+        await Assert.That(ReferenceEquals(hookOutcome.Result, handled)).IsTrue();
         await Assert.That(ReferenceEquals(factoryOutcome.Result, handled)).IsTrue();
     }
 
@@ -58,7 +52,7 @@ public class FallbackAsyncHookTests
             },
             options =>
             {
-                options.OnFallbackAsync = async _ =>
+                options.OnFallback = async _ =>
                 {
                     started.SetResult();
                     await release.Task;
@@ -92,7 +86,7 @@ public class FallbackAsyncHookTests
             },
             options =>
             {
-                options.OnFallbackAsync = fallback =>
+                options.OnFallback = fallback =>
                 {
                     observed = fallback.Outcome.Exception;
                     return ValueTask.FromException(hookFailure);
@@ -113,7 +107,7 @@ public class FallbackAsyncHookTests
         var hookCancellation = new OperationCanceledException("hook cancelled", cancellation.Token);
         var shield = Shield.For<int>().FallbackTo(
             42,
-            options => options.OnFallbackAsync = _ => ValueTask.FromException(hookCancellation));
+            options => options.OnFallback = _ => ValueTask.FromException(hookCancellation));
 
         var outcome = await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
 
@@ -136,7 +130,7 @@ public class FallbackAsyncHookTests
             },
             options =>
             {
-                options.OnFallbackAsync = async fallback =>
+                options.OnFallback = async fallback =>
                 {
                     started.SetResult();
                     await release.Task;
@@ -170,7 +164,7 @@ public class FallbackAsyncHookTests
                 42,
                 options =>
                 {
-                    options.OnFallbackAsync = async fallback =>
+                    options.OnFallback = async fallback =>
                     {
                         await Task.Yield();
                         nestedResult = await shield!.ExecuteAsync(_ => new ValueTask<int>(7));
@@ -196,12 +190,11 @@ public class FallbackAsyncHookTests
     }
 
     [Test]
-    public async Task Untyped_Hooks_Run_In_Order_And_Preserve_Exception_Identity()
+    public async Task Untyped_Hook_Is_Awaited_Before_Recovery_And_Preserves_Exception_Identity()
     {
         var original = new InvalidOperationException("original");
         var order = new List<string>();
-        Exception? syncException = null;
-        Exception? asyncException = null;
+        Exception? hookException = null;
         var shield = Shield.Empty.Fallback(
             (exception, _) =>
             {
@@ -210,24 +203,19 @@ public class FallbackAsyncHookTests
             },
             options =>
             {
-                options.OnFallback = fallback =>
+                options.OnFallback = async fallback =>
                 {
-                    order.Add("sync");
-                    syncException = fallback.Exception;
-                };
-                options.OnFallbackAsync = fallback =>
-                {
-                    order.Add("async");
-                    asyncException = fallback.Exception;
-                    return ValueTask.CompletedTask;
+                    order.Add("hook:start");
+                    hookException = fallback.Exception;
+                    await Task.Yield();
+                    order.Add("hook:end");
                 };
             });
 
         await shield.ExecuteAsync(_ => throw original);
 
-        await Assert.That(string.Join(",", order)).IsEqualTo("sync,async,fallback");
-        await Assert.That(ReferenceEquals(syncException, original)).IsTrue();
-        await Assert.That(ReferenceEquals(asyncException, original)).IsTrue();
+        await Assert.That(string.Join(",", order)).IsEqualTo("hook:start,hook:end,fallback");
+        await Assert.That(ReferenceEquals(hookException, original)).IsTrue();
     }
 
     [Test]
@@ -243,7 +231,7 @@ public class FallbackAsyncHookTests
                     fallbackCalls++;
                     return ValueTask.CompletedTask;
                 },
-                options => options.OnFallbackAsync = _ => ValueTask.FromException(hookFailure));
+                options => options.OnFallback = _ => ValueTask.FromException(hookFailure));
 
         await shield.ExecuteAsync(_ => throw new InvalidOperationException());
 
@@ -261,7 +249,11 @@ public class FallbackAsyncHookTests
                 fallbackCalls++;
                 return ValueTask.CompletedTask;
             },
-            options => options.OnFallback = _ => notificationCalls++);
+            options => options.OnFallback = _ =>
+            {
+                notificationCalls++;
+                return default;
+            });
 
         await shield.ExecuteAsync(_ => throw new InvalidOperationException());
 
@@ -279,7 +271,7 @@ public class FallbackAsyncHookTests
             options =>
             {
                 configureCalls++;
-                options.OnFallbackAsync = _ =>
+                options.OnFallback = _ =>
                 {
                     firstCalls++;
                     return ValueTask.CompletedTask;

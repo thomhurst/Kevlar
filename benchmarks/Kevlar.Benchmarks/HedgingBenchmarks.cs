@@ -17,23 +17,17 @@ public class HedgingBenchmarks
 {
     private static readonly Shield<int> KevlarHedge = Shield.For<int>().Hedge(1, TimeSpan.FromSeconds(10));
     private static readonly Shield<int> FixedLaunch = Shield.For<int>().Hedge(1, TimeSpan.Zero);
-    private static readonly Shield<int> SyncHookLaunch = Shield.For<int>().Hedge(options =>
-    {
-        options.MaxHedgedAttempts = 1;
-        options.Delay = TimeSpan.Zero;
-        options.OnHedge = static _ => { };
-    });
     private static readonly Shield<int> CompletedAsyncHookLaunch = Shield.For<int>().Hedge(options =>
     {
         options.MaxHedgedAttempts = 1;
         options.Delay = TimeSpan.Zero;
-        options.OnHedgeAsync = static _ => ValueTask.CompletedTask;
+        options.OnHedge = static _ => ValueTask.CompletedTask;
     });
     private static readonly Shield<int> YieldingAsyncHookLaunch = Shield.For<int>().Hedge(options =>
     {
         options.MaxHedgedAttempts = 1;
         options.Delay = TimeSpan.Zero;
-        options.OnHedgeAsync = static async _ => await Task.Yield();
+        options.OnHedge = static async _ => await Task.Yield();
     });
     private static readonly Shield<int> GeneratedLaunch = Shield.For<int>().Hedge(options =>
     {
@@ -56,9 +50,6 @@ public class HedgingBenchmarks
 
     [BenchmarkCategory("HedgeCallbacks"), Benchmark(Baseline = true)]
     public ValueTask<int> FixedHedge() => ExecuteFailureThenSuccess(FixedLaunch);
-
-    [BenchmarkCategory("HedgeCallbacks"), Benchmark]
-    public ValueTask<int> SyncHook() => ExecuteFailureThenSuccess(SyncHookLaunch);
 
     [BenchmarkCategory("HedgeCallbacks"), Benchmark]
     public ValueTask<int> CompletedAsyncHook() => ExecuteFailureThenSuccess(CompletedAsyncHookLaunch);

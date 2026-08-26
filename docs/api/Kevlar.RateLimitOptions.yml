@@ -9,7 +9,6 @@ items:
   - Kevlar.RateLimitOptions.Burst
   - Kevlar.RateLimitOptions.Name
   - Kevlar.RateLimitOptions.OnRejected
-  - Kevlar.RateLimitOptions.OnRejectedAsync
   - Kevlar.RateLimitOptions.Permits
   - Kevlar.RateLimitOptions.QueueLimit
   - Kevlar.RateLimitOptions.Window
@@ -28,11 +27,11 @@ items:
 
     <xref href="Kevlar.RateLimitOptions.Window" data-throw-if-not-resolved="false"></xref>, with bursts up to <xref href="Kevlar.RateLimitOptions.Burst" data-throw-if-not-resolved="false"></xref> and optional queueing.
   remarks: >-
-    When an execution is rejected, rejection metrics are recorded, <xref href="Kevlar.RateLimitOptions.OnRejected" data-throw-if-not-resolved="false"></xref> runs,
+    When an execution is rejected, rejection metrics are recorded and <xref href="Kevlar.RateLimitOptions.OnRejected" data-throw-if-not-resolved="false"></xref>
 
-    and then <xref href="Kevlar.RateLimitOptions.OnRejectedAsync" data-throw-if-not-resolved="false"></xref> runs and is awaited. Callback failures are reported
+    runs and is awaited. Callback failures are reported through
 
-    through <xref href="Kevlar.KevlarDiagnostics.OnCallbackError" data-throw-if-not-resolved="false"></xref> and do not replace the rejection.
+    <xref href="Kevlar.KevlarDiagnostics.OnCallbackError" data-throw-if-not-resolved="false"></xref> and do not replace the rejection.
   example: []
   syntax:
     content: public sealed class RateLimitOptions
@@ -199,38 +198,18 @@ items:
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Invoked synchronously when an execution is rejected.
+  summary: >-
+    Invoked and awaited when an execution is rejected. Return <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/default">default</a> from a
+
+    synchronous callback.
   example: []
   syntax:
-    content: public Action<RateLimitRejectedEvent>? OnRejected { get; set; }
-    parameters: []
-    return:
-      type: System.Action{Kevlar.RateLimitRejectedEvent}
-    content.vb: Public Property OnRejected As Action(Of RateLimitRejectedEvent)
-  overload: Kevlar.RateLimitOptions.OnRejected*
-- uid: Kevlar.RateLimitOptions.OnRejectedAsync
-  commentId: P:Kevlar.RateLimitOptions.OnRejectedAsync
-  id: OnRejectedAsync
-  parent: Kevlar.RateLimitOptions
-  langs:
-  - csharp
-  - vb
-  name: OnRejectedAsync
-  nameWithType: RateLimitOptions.OnRejectedAsync
-  fullName: Kevlar.RateLimitOptions.OnRejectedAsync
-  type: Property
-  assemblies:
-  - Kevlar
-  namespace: Kevlar
-  summary: Invoked and awaited after <xref href="Kevlar.RateLimitOptions.OnRejected" data-throw-if-not-resolved="false"></xref> when an execution is rejected.
-  example: []
-  syntax:
-    content: public Func<RateLimitRejectedEvent, ValueTask>? OnRejectedAsync { get; set; }
+    content: public Func<RateLimitRejectedEvent, ValueTask>? OnRejected { get; set; }
     parameters: []
     return:
       type: System.Func{Kevlar.RateLimitRejectedEvent,System.Threading.Tasks.ValueTask}
-    content.vb: Public Property OnRejectedAsync As Func(Of RateLimitRejectedEvent, ValueTask)
-  overload: Kevlar.RateLimitOptions.OnRejectedAsync*
+    content.vb: Public Property OnRejected As Func(Of RateLimitRejectedEvent, ValueTask)
+  overload: Kevlar.RateLimitOptions.OnRejected*
 references:
 - uid: Kevlar.RateLimitOptions.Permits
   commentId: P:Kevlar.RateLimitOptions.Permits
@@ -260,13 +239,6 @@ references:
   name: OnRejected
   nameWithType: RateLimitOptions.OnRejected
   fullName: Kevlar.RateLimitOptions.OnRejected
-- uid: Kevlar.RateLimitOptions.OnRejectedAsync
-  commentId: P:Kevlar.RateLimitOptions.OnRejectedAsync
-  isExternal: true
-  href: Kevlar.RateLimitOptions.html#Kevlar_RateLimitOptions_OnRejectedAsync
-  name: OnRejectedAsync
-  nameWithType: RateLimitOptions.OnRejectedAsync
-  fullName: Kevlar.RateLimitOptions.OnRejectedAsync
 - uid: Kevlar.KevlarDiagnostics.OnCallbackError
   commentId: E:Kevlar.KevlarDiagnostics.OnCallbackError
   isExternal: true
@@ -627,76 +599,6 @@ references:
   name: OnRejected
   nameWithType: RateLimitOptions.OnRejected
   fullName: Kevlar.RateLimitOptions.OnRejected
-- uid: System.Action{Kevlar.RateLimitRejectedEvent}
-  commentId: T:System.Action{Kevlar.RateLimitRejectedEvent}
-  parent: System
-  definition: System.Action`1
-  href: https://learn.microsoft.com/dotnet/api/system.action-1
-  name: Action<RateLimitRejectedEvent>
-  nameWithType: Action<RateLimitRejectedEvent>
-  fullName: System.Action<Kevlar.RateLimitRejectedEvent>
-  nameWithType.vb: Action(Of RateLimitRejectedEvent)
-  fullName.vb: System.Action(Of Kevlar.RateLimitRejectedEvent)
-  name.vb: Action(Of RateLimitRejectedEvent)
-  spec.csharp:
-  - uid: System.Action`1
-    name: Action
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.action-1
-  - name: <
-  - uid: Kevlar.RateLimitRejectedEvent
-    name: RateLimitRejectedEvent
-    isExternal: true
-    href: Kevlar.RateLimitRejectedEvent.html
-  - name: '>'
-  spec.vb:
-  - uid: System.Action`1
-    name: Action
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.action-1
-  - name: (
-  - name: Of
-  - name: " "
-  - uid: Kevlar.RateLimitRejectedEvent
-    name: RateLimitRejectedEvent
-    isExternal: true
-    href: Kevlar.RateLimitRejectedEvent.html
-  - name: )
-- uid: System.Action`1
-  commentId: T:System.Action`1
-  isExternal: true
-  href: https://learn.microsoft.com/dotnet/api/system.action-1
-  name: Action<T>
-  nameWithType: Action<T>
-  fullName: System.Action<T>
-  nameWithType.vb: Action(Of T)
-  fullName.vb: System.Action(Of T)
-  name.vb: Action(Of T)
-  spec.csharp:
-  - uid: System.Action`1
-    name: Action
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.action-1
-  - name: <
-  - name: T
-  - name: '>'
-  spec.vb:
-  - uid: System.Action`1
-    name: Action
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.action-1
-  - name: (
-  - name: Of
-  - name: " "
-  - name: T
-  - name: )
-- uid: Kevlar.RateLimitOptions.OnRejectedAsync*
-  commentId: Overload:Kevlar.RateLimitOptions.OnRejectedAsync
-  isExternal: true
-  href: Kevlar.RateLimitOptions.html#Kevlar_RateLimitOptions_OnRejectedAsync
-  name: OnRejectedAsync
-  nameWithType: RateLimitOptions.OnRejectedAsync
-  fullName: Kevlar.RateLimitOptions.OnRejectedAsync
 - uid: System.Func{Kevlar.RateLimitRejectedEvent,System.Threading.Tasks.ValueTask}
   commentId: T:System.Func{Kevlar.RateLimitRejectedEvent,System.Threading.Tasks.ValueTask}
   parent: System

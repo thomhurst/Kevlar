@@ -12,8 +12,7 @@ internal sealed class RateLimiterStrategy : Strategy, IDisposable, IAsyncDisposa
 
     private readonly RateLimitLeaseAcquirer _acquireLease;
     private readonly int _permitCount;
-    private readonly Action<RateLimiterAdapterRejectedEvent>? _onRejected;
-    private readonly Func<RateLimiterAdapterRejectedEvent, ValueTask>? _onRejectedAsync;
+    private readonly Func<RateLimiterAdapterRejectedEvent, ValueTask>? _onRejected;
     private readonly string _description;
     private readonly string _telemetryName;
     private readonly string? _acquisitionUnsupportedReason;
@@ -23,20 +22,8 @@ internal sealed class RateLimiterStrategy : Strategy, IDisposable, IAsyncDisposa
 
     protected internal override bool IsDuplicateReferenceUnsafe => true;
 
-    protected internal override string? SynchronousExecutionUnsupportedReason
-    {
-        get
-        {
-            if (_acquisitionUnsupportedReason is not null)
-            {
-                return _acquisitionUnsupportedReason;
-            }
-
-            return _onRejectedAsync is null
-                ? null
-                : "RateLimiterAdapterOptions.OnRejectedAsync";
-        }
-    }
+    protected internal override string? SynchronousExecutionUnsupportedReason =>
+        _acquisitionUnsupportedReason;
 
     internal RateLimiterStrategy(
         RateLimitLeaseAcquirer acquireLease,
@@ -53,7 +40,6 @@ internal sealed class RateLimiterStrategy : Strategy, IDisposable, IAsyncDisposa
         _acquireLease = acquireLease;
         _permitCount = options.PermitCount;
         _onRejected = options.OnRejected;
-        _onRejectedAsync = options.OnRejectedAsync;
         _description = description;
         _telemetryName = options.Name ?? "RateLimiterAdapter";
         _acquisitionUnsupportedReason = acquisitionUnsupportedReason;
@@ -198,7 +184,7 @@ internal sealed class RateLimiterStrategy : Strategy, IDisposable, IAsyncDisposa
             "rate_limiter_adapter",
             rejection,
             _telemetryName);
-        if (_onRejected is null && _onRejectedAsync is null)
+        if (_onRejected is null)
         {
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(rejection));
         }
@@ -208,16 +194,12 @@ internal sealed class RateLimiterStrategy : Strategy, IDisposable, IAsyncDisposa
             metadata,
             _permitCount,
             context);
-        CallbackInvoker.Invoke(
+        var notification = CallbackInvoker.InvokeAsync(
             _onRejected,
             rejectedEvent,
             CallbackErrorKind.RateLimiterAdapterRejected,
-            context);
-        var notification = CallbackInvoker.InvokeAsync(
-            _onRejectedAsync,
-            rejectedEvent,
-            CallbackErrorKind.RateLimiterAdapterRejected,
-            context);
+            context,
+            "RateLimiterAdapterOptions.OnRejected");
         if (notification.IsCompletedSuccessfully)
         {
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(rejection));

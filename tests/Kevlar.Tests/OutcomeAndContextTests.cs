@@ -324,7 +324,11 @@ public class OutcomeAndContextTests
         {
             options.MaxRetries = 1;
             options.Backoff = Backoff.None;
-            options.OnRetry = retry => retry.Context.Properties.Set(key, "left-behind");
+            options.OnRetry = retry =>
+            {
+                retry.Context.Properties.Set(key, "left-behind");
+                return default;
+            };
         });
 
         await Assert.That(async () => await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
@@ -335,7 +339,11 @@ public class OutcomeAndContextTests
         {
             options.MaxRetries = 1;
             options.Backoff = Backoff.None;
-            options.OnRetry = retry => leaked = retry.Context.Properties.TryGet(key, out _);
+            options.OnRetry = retry =>
+            {
+                leaked = retry.Context.Properties.TryGet(key, out _);
+                return default;
+            };
         });
 
         await Assert.That(async () => await probePolicy.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
@@ -398,7 +406,11 @@ public class OutcomeAndContextTests
         {
             options.MaxRetries = 1;
             options.Backoff = Backoff.None;
-            options.OnRetry = retry => sawSynchronous = retry.Context.IsSynchronous;
+            options.OnRetry = retry =>
+            {
+                sawSynchronous = retry.Context.IsSynchronous;
+                return default;
+            };
         });
 
         await Assert.That(() => shield.Execute<int>(_ => throw new InvalidOperationException()))

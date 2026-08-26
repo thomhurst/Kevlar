@@ -129,7 +129,11 @@ public class CircuitBreakerTests
             {
                 options.ConsecutiveFailures = 1;
                 options.BreakDuration = TimeSpan.FromSeconds(10);
-                options.OnStateChanged = change => transitions.Add((change.From, change.To));
+                options.OnStateChanged = change =>
+                {
+                    transitions.Add((change.From, change.To));
+                    return default;
+                };
             })
             .WithTimeProvider(fakeTime);
 

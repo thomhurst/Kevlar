@@ -9,8 +9,7 @@ public class RetryHookCancellationTests
     {
         using var cancellation = new CancellationTokenSource();
         var attempts = 0;
-        var synchronousHooks = 0;
-        var asynchronousHooks = 0;
+        var hooks = 0;
         var failure = new InvalidOperationException("original failure");
         var shield = Shield.Retry(options =>
         {
@@ -19,12 +18,11 @@ public class RetryHookCancellationTests
             options.DelayGenerator = _ =>
             {
                 cancellation.Cancel();
-                return TimeSpan.Zero;
+                return new(TimeSpan.Zero);
             };
-            options.OnRetry = _ => synchronousHooks++;
-            options.OnRetryAsync = _ =>
+            options.OnRetry = _ =>
             {
-                asynchronousHooks++;
+                hooks++;
                 return default;
             };
         });
@@ -37,16 +35,15 @@ public class RetryHookCancellationTests
 
         await AssertCancellationAsync(outcome, cancellation.Token);
         await Assert.That(attempts).IsEqualTo(1);
-        await Assert.That(synchronousHooks).IsEqualTo(1);
-        await Assert.That(asynchronousHooks).IsEqualTo(1);
+        await Assert.That(hooks).IsEqualTo(1);
     }
 
     [Test]
-    public async Task Typed_OnRetry_Cancellation_Stops_Next_Task_Action_After_Async_Hook()
+    public async Task Typed_OnRetry_Cancellation_Stops_Next_Task_Action_After_Hook_Completes()
     {
         using var cancellation = new CancellationTokenSource();
         var attempts = 0;
-        var asynchronousHooks = 0;
+        var completedHooks = 0;
         var seenResult = 0;
         var shield = Shield.For<int>()
             .WhenResult(-1)
@@ -54,15 +51,12 @@ public class RetryHookCancellationTests
             {
                 options.MaxRetries = 3;
                 options.Backoff = Backoff.None;
-                options.OnRetry = retry =>
+                options.OnRetry = async retry =>
                 {
                     seenResult = retry.Outcome.Result;
                     cancellation.Cancel();
-                };
-                options.OnRetryAsync = _ =>
-                {
-                    asynchronousHooks++;
-                    return default;
+                    await Task.Yield();
+                    completedHooks++;
                 };
             });
 
@@ -75,11 +69,11 @@ public class RetryHookCancellationTests
         await AssertCancellationAsync(outcome, cancellation.Token);
         await Assert.That(attempts).IsEqualTo(1);
         await Assert.That(seenResult).IsEqualTo(-1);
-        await Assert.That(asynchronousHooks).IsEqualTo(1);
+        await Assert.That(completedHooks).IsEqualTo(1);
     }
 
     [Test]
-    public async Task Cancellation_While_OnRetryAsync_Runs_Stops_The_Next_Attempt()
+    public async Task Cancellation_While_OnRetry_Runs_Stops_The_Next_Attempt()
     {
         using var cancellation = new CancellationTokenSource();
         var hookStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -90,7 +84,7 @@ public class RetryHookCancellationTests
         {
             options.MaxRetries = 3;
             options.Backoff = Backoff.None;
-            options.OnRetryAsync = async _ =>
+            options.OnRetry = async _ =>
             {
                 hookStarted.SetResult();
                 await releaseHook.Task;
@@ -122,7 +116,11 @@ public class RetryHookCancellationTests
         {
             options.MaxRetries = 3;
             options.Backoff = Backoff.None;
-            options.OnRetry = _ => cancellation.Cancel();
+            options.OnRetry = _ =>
+            {
+                cancellation.Cancel();
+                return default;
+            };
         });
 
         await Assert.That(() => shield.Execute<int>(_ =>
@@ -145,8 +143,7 @@ public class RetryHookCancellationTests
             options.MaxRetries = 3;
             options.Backoff = Backoff.None;
             options.DelayGenerator = _ => throw callbackFailure;
-            options.OnRetry = _ => laterHooks++;
-            options.OnRetryAsync = _ =>
+            options.OnRetry = _ =>
             {
                 laterHooks++;
                 return default;
@@ -165,20 +162,19 @@ public class RetryHookCancellationTests
     }
 
     [Test]
-    public async Task OnRetry_Failure_Does_Not_Skip_Async_Hook_Or_Attempts()
+    public async Task OnRetry_Failure_Does_Not_Skip_Later_Hooks_Or_Attempts()
     {
-        var callbackFailure = new FormatException("sync hook failed");
+        var callbackFailure = new FormatException("hook failed");
         var attempts = 0;
-        var asynchronousHooks = 0;
+        var hooks = 0;
         var shield = Shield.Retry(options =>
         {
             options.MaxRetries = 3;
             options.Backoff = Backoff.None;
-            options.OnRetry = _ => throw callbackFailure;
-            options.OnRetryAsync = _ =>
+            options.OnRetry = _ =>
             {
-                asynchronousHooks++;
-                return default;
+                hooks++;
+                throw callbackFailure;
             };
         });
 
@@ -190,11 +186,11 @@ public class RetryHookCancellationTests
 
         await Assert.That(outcome.Exception).IsTypeOf<InvalidOperationException>();
         await Assert.That(attempts).IsEqualTo(4);
-        await Assert.That(asynchronousHooks).IsEqualTo(3);
+        await Assert.That(hooks).IsEqualTo(3);
     }
 
     [Test]
-    public async Task OnRetryAsync_Failure_Does_Not_Replace_The_Action_Failure()
+    public async Task OnRetry_Faulted_ValueTask_Does_Not_Replace_The_Action_Failure()
     {
         var callbackFailure = new FormatException("async hook failed");
         var attempts = 0;
@@ -202,7 +198,7 @@ public class RetryHookCancellationTests
         {
             options.MaxRetries = 3;
             options.Backoff = Backoff.None;
-            options.OnRetryAsync = _ => ValueTask.FromException(callbackFailure);
+            options.OnRetry = _ => ValueTask.FromException(callbackFailure);
         });
 
         var outcome = await shield.ExecuteOutcomeAsync<int>(_ =>
@@ -216,7 +212,7 @@ public class RetryHookCancellationTests
     }
 
     [Test]
-    public async Task OnRetryAsync_Cancellation_Does_Not_Replace_The_Action_Failure()
+    public async Task OnRetry_Cancellation_Failure_Does_Not_Replace_The_Action_Failure()
     {
         using var callbackCancellation = new CancellationTokenSource();
         callbackCancellation.Cancel();
@@ -226,7 +222,7 @@ public class RetryHookCancellationTests
         {
             options.MaxRetries = 3;
             options.Backoff = Backoff.None;
-            options.OnRetryAsync = _ => ValueTask.FromException(cancellationFailure);
+            options.OnRetry = _ => ValueTask.FromException(cancellationFailure);
         });
 
         var outcome = await shield.ExecuteOutcomeAsync<int>(_ =>
@@ -255,16 +251,11 @@ public class RetryHookCancellationTests
             {
                 order.Add("delay");
                 events.Add((retry.RetryNumber, retry.Delay, retry.Exception, retry.Result, retry.Context.CancellationToken));
-                return TimeSpan.Zero;
+                return new(TimeSpan.Zero);
             };
             options.OnRetry = retry =>
             {
-                order.Add("sync");
-                events.Add((retry.RetryNumber, retry.Delay, retry.Exception, retry.Result, retry.Context.CancellationToken));
-            };
-            options.OnRetryAsync = retry =>
-            {
-                order.Add("async");
+                order.Add("hook");
                 events.Add((retry.RetryNumber, retry.Delay, retry.Exception, retry.Result, retry.Context.CancellationToken));
                 return default;
             };
@@ -280,8 +271,8 @@ public class RetryHookCancellationTests
         }, cancellation.Token);
 
         await Assert.That(result).IsEqualTo(42);
-        await Assert.That(string.Join(",", order)).IsEqualTo("attempt-1,delay,sync,async,attempt-2");
-        await Assert.That(events.Count).IsEqualTo(3);
+        await Assert.That(string.Join(",", order)).IsEqualTo("attempt-1,delay,hook,attempt-2");
+        await Assert.That(events.Count).IsEqualTo(2);
         foreach (var retryEvent in events)
         {
             await Assert.That(retryEvent.RetryNumber).IsEqualTo(1);
@@ -308,16 +299,11 @@ public class RetryHookCancellationTests
                 {
                     order.Add("delay");
                     results.Add(retry.Outcome.Result);
-                    return TimeSpan.Zero;
+                    return new(TimeSpan.Zero);
                 };
                 options.OnRetry = retry =>
                 {
-                    order.Add("sync");
-                    results.Add(retry.Outcome.Result);
-                };
-                options.OnRetryAsync = retry =>
-                {
-                    order.Add("async");
+                    order.Add("hook");
                     results.Add(retry.Outcome.Result);
                     return default;
                 };
@@ -331,8 +317,8 @@ public class RetryHookCancellationTests
         });
 
         await Assert.That(result).IsEqualTo(42);
-        await Assert.That(string.Join(",", order)).IsEqualTo("attempt-1,delay,sync,async,attempt-2");
-        await Assert.That(results).IsEquivalentTo([-1, -1, -1]);
+        await Assert.That(string.Join(",", order)).IsEqualTo("attempt-1,delay,hook,attempt-2");
+        await Assert.That(results).IsEquivalentTo([-1, -1]);
     }
 
     [Test]
@@ -345,7 +331,11 @@ public class RetryHookCancellationTests
         {
             options.MaxRetries = 3;
             options.Backoff = Backoff.Constant(TimeSpan.FromHours(1));
-            options.OnRetry = _ => cancellation.Cancel();
+            options.OnRetry = _ =>
+            {
+                cancellation.Cancel();
+                return default;
+            };
         });
 
         var outcome = await shield.ExecuteOutcomeAsync(_ =>

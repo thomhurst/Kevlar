@@ -8,9 +8,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
-- The `Kevlar` package now includes its Roslyn analyzers and code fixes automatically. `KEV013`
-  detects asynchronous work assigned to synchronous strategy callbacks, and `KEV014` detects
-  pooled event contexts captured by deferred work.
+- The `Kevlar` package now includes its Roslyn analyzers automatically. `KEV014` detects pooled
+  event contexts captured by deferred work.
 - `Kevlar.Extensions.Logging` emits stable, structured `ILogger` events for retry, timeout,
   circuit-state, hedge, fallback, rejection, and callback-error activity. `WithLogging` decorates
   individual shields, while `AddKevlarLogging` applies to named, reloading, partitioned, and HTTP
@@ -30,9 +29,9 @@ All notable changes to this project are documented here. The format follows
   manual monitor transitions carry a detached context at index `-1`. Typed circuit-breaker
   duration generators receive `CircuitBreakerBreakDurationEvent<TResult>` with a directly stored
   outcome and failure statistics. Typed retry events likewise store their outcome without boxing.
-- Hedging supports synchronous and asynchronous per-attempt delay generators with access to the
-  attempt number, execution context, and elapsed time. Standard endpoint-aware HTTP hedging
-  exposes the same adaptive delay hooks, and `Kevlar.Testing` reports whether one is configured.
+- Hedging supports a per-attempt `DelayGenerator` with access to the attempt number, execution
+  context, and elapsed time. Standard endpoint-aware HTTP hedging exposes the same adaptive delay
+  hook, and `Kevlar.Testing` reports whether one is configured.
 - `HedgeOptions<TResult>.ActionGenerator` is now a strongly typed delegate. Assign the generator
   directly instead of wrapping it with `HedgeActionGenerator.Create<TResult>(...)`; the erased
   wrapper remains available on untyped `HedgeOptions`. Typed generator events now expose the latest
@@ -67,6 +66,39 @@ All notable changes to this project are documented here. The format follows
   `MaxRetries` convention. Its default is 1, so the default hedge still makes up to 2 total attempts.
   Rename `MaxAttempts` configuration keys and named arguments; reduce previous values by one to
   preserve the same total attempt count.
+- **Breaking:** every strategy hook is now a single `ValueTask`-returning property. The
+  synchronous/asynchronous twins were merged: `OnRetryAsync`, `DelayGeneratorAsync`,
+  `OnTimeoutAsync`, `TimeoutGeneratorSync`, `OnStateChangedAsync`, `BreakDurationGeneratorSync`,
+  `OnHedgeAsync`, `HedgeOptions.DelayGeneratorAsync`, `OnFallbackAsync`, every `OnRejectedAsync`,
+  `PartitionedShieldOptions.OnCreatedAsync` / `OnEvictedAsync`, and
+  `StandardHedgeShieldOptions.HedgeDelayGeneratorAsync` were removed. The surviving property
+  returns `ValueTask` (`OnRetry`, `OnTimeout`, `OnStateChanged`, `OnHedge`, `OnFallback`,
+  `OnRejected`, `OnCreated`, `OnEvicted`, `ChaosOptions.OnInjected`) or `ValueTask<T>`
+  (`RetryOptions.DelayGenerator`, `TimeoutOptions.TimeoutGenerator`,
+  `CircuitBreakerOptions.BreakDurationGenerator`, `HedgeOptions.DelayGenerator`,
+  `StandardHedgeShieldOptions.HedgeDelayGenerator`). `HttpShield.RetryAfter(retry)` returns
+  `ValueTask<TimeSpan?>` and `HttpShield.RetryAfter(maxDelay)` returns the matching delegate, so
+  `DelayGenerator = HttpShield.RetryAfter` still binds as a method group; the
+  `Kevlar.Testing.TelemetryRecorder.Record` event overloads likewise return `ValueTask`. Rewrite
+  `OnRetry = e => Log(e)` as `OnRetry = e => { Log(e); return default; }` and
+  `DelayGenerator = e => delay` as `DelayGenerator = e => new(delay)`; `async` lambdas move across
+  unchanged.
+- Synchronous `Execute`, `ExecuteOutcome`, and `ExecuteWithContext` now succeed whenever every
+  hook completes synchronously. A hook that actually yields throws `NotSupportedException` at that
+  call, naming the options type and hook (`ExecuteOutcome` returns it as a failed outcome). The
+  former up-front rejection of `…Async` hooks and the "cannot be combined with `…Sync`" and
+  "both generators configured" configuration errors are gone. Multi-attempt hedging,
+  `ValueTask`-returning fallback recovery delegates, and `UseRateLimiter` adapters are still
+  rejected before the action runs.
+- `KEV012` now reports `async` lambdas, `async` anonymous methods, and method groups naming
+  `async` methods assigned to strategy hooks on shields that are executed synchronously. Non-`async`
+  delegates that return a completed `ValueTask` are not reported.
+
+### Removed
+
+- `KEV013` and the `Kevlar.Analyzers.CodeFixes` assembly. Synchronous callback properties no longer
+  exist, so an `async` lambda assigned to a hook is valid and awaited; `KEV012` covers the
+  synchronous-`Execute` hazard.
 
 ## [1.0.0] - 2026-08-24
 

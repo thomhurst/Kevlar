@@ -9,7 +9,6 @@ items:
   - Kevlar.ConcurrencyLimitOptions.MaxConcurrency
   - Kevlar.ConcurrencyLimitOptions.Name
   - Kevlar.ConcurrencyLimitOptions.OnRejected
-  - Kevlar.ConcurrencyLimitOptions.OnRejectedAsync
   - Kevlar.ConcurrencyLimitOptions.QueueLimit
   langs:
   - csharp
@@ -28,11 +27,11 @@ items:
 
     more waiting; anything beyond that is rejected immediately.
   remarks: >-
-    When an execution is rejected, rejection metrics are recorded, <xref href="Kevlar.ConcurrencyLimitOptions.OnRejected" data-throw-if-not-resolved="false"></xref> runs,
+    When an execution is rejected, rejection metrics are recorded and <xref href="Kevlar.ConcurrencyLimitOptions.OnRejected" data-throw-if-not-resolved="false"></xref>
 
-    and then <xref href="Kevlar.ConcurrencyLimitOptions.OnRejectedAsync" data-throw-if-not-resolved="false"></xref> runs and is awaited. Callback failures are reported
+    runs and is awaited. Callback failures are reported through
 
-    through <xref href="Kevlar.KevlarDiagnostics.OnCallbackError" data-throw-if-not-resolved="false"></xref> and do not replace the rejection.
+    <xref href="Kevlar.KevlarDiagnostics.OnCallbackError" data-throw-if-not-resolved="false"></xref> and do not replace the rejection.
   example: []
   syntax:
     content: public sealed class ConcurrencyLimitOptions
@@ -150,38 +149,18 @@ items:
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Invoked synchronously when an execution is rejected.
+  summary: >-
+    Invoked and awaited when an execution is rejected. Return <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/default">default</a> from a
+
+    synchronous callback.
   example: []
   syntax:
-    content: public Action<ConcurrencyLimitRejectedEvent>? OnRejected { get; set; }
-    parameters: []
-    return:
-      type: System.Action{Kevlar.ConcurrencyLimitRejectedEvent}
-    content.vb: Public Property OnRejected As Action(Of ConcurrencyLimitRejectedEvent)
-  overload: Kevlar.ConcurrencyLimitOptions.OnRejected*
-- uid: Kevlar.ConcurrencyLimitOptions.OnRejectedAsync
-  commentId: P:Kevlar.ConcurrencyLimitOptions.OnRejectedAsync
-  id: OnRejectedAsync
-  parent: Kevlar.ConcurrencyLimitOptions
-  langs:
-  - csharp
-  - vb
-  name: OnRejectedAsync
-  nameWithType: ConcurrencyLimitOptions.OnRejectedAsync
-  fullName: Kevlar.ConcurrencyLimitOptions.OnRejectedAsync
-  type: Property
-  assemblies:
-  - Kevlar
-  namespace: Kevlar
-  summary: Invoked and awaited after <xref href="Kevlar.ConcurrencyLimitOptions.OnRejected" data-throw-if-not-resolved="false"></xref> when an execution is rejected.
-  example: []
-  syntax:
-    content: public Func<ConcurrencyLimitRejectedEvent, ValueTask>? OnRejectedAsync { get; set; }
+    content: public Func<ConcurrencyLimitRejectedEvent, ValueTask>? OnRejected { get; set; }
     parameters: []
     return:
       type: System.Func{Kevlar.ConcurrencyLimitRejectedEvent,System.Threading.Tasks.ValueTask}
-    content.vb: Public Property OnRejectedAsync As Func(Of ConcurrencyLimitRejectedEvent, ValueTask)
-  overload: Kevlar.ConcurrencyLimitOptions.OnRejectedAsync*
+    content.vb: Public Property OnRejected As Func(Of ConcurrencyLimitRejectedEvent, ValueTask)
+  overload: Kevlar.ConcurrencyLimitOptions.OnRejected*
 references:
 - uid: Kevlar.ConcurrencyLimitOptions.MaxConcurrency
   commentId: P:Kevlar.ConcurrencyLimitOptions.MaxConcurrency
@@ -204,13 +183,6 @@ references:
   name: OnRejected
   nameWithType: ConcurrencyLimitOptions.OnRejected
   fullName: Kevlar.ConcurrencyLimitOptions.OnRejected
-- uid: Kevlar.ConcurrencyLimitOptions.OnRejectedAsync
-  commentId: P:Kevlar.ConcurrencyLimitOptions.OnRejectedAsync
-  isExternal: true
-  href: Kevlar.ConcurrencyLimitOptions.html#Kevlar_ConcurrencyLimitOptions_OnRejectedAsync
-  name: OnRejectedAsync
-  nameWithType: ConcurrencyLimitOptions.OnRejectedAsync
-  fullName: Kevlar.ConcurrencyLimitOptions.OnRejectedAsync
 - uid: Kevlar.KevlarDiagnostics.OnCallbackError
   commentId: E:Kevlar.KevlarDiagnostics.OnCallbackError
   isExternal: true
@@ -498,76 +470,6 @@ references:
   name: OnRejected
   nameWithType: ConcurrencyLimitOptions.OnRejected
   fullName: Kevlar.ConcurrencyLimitOptions.OnRejected
-- uid: System.Action{Kevlar.ConcurrencyLimitRejectedEvent}
-  commentId: T:System.Action{Kevlar.ConcurrencyLimitRejectedEvent}
-  parent: System
-  definition: System.Action`1
-  href: https://learn.microsoft.com/dotnet/api/system.action-1
-  name: Action<ConcurrencyLimitRejectedEvent>
-  nameWithType: Action<ConcurrencyLimitRejectedEvent>
-  fullName: System.Action<Kevlar.ConcurrencyLimitRejectedEvent>
-  nameWithType.vb: Action(Of ConcurrencyLimitRejectedEvent)
-  fullName.vb: System.Action(Of Kevlar.ConcurrencyLimitRejectedEvent)
-  name.vb: Action(Of ConcurrencyLimitRejectedEvent)
-  spec.csharp:
-  - uid: System.Action`1
-    name: Action
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.action-1
-  - name: <
-  - uid: Kevlar.ConcurrencyLimitRejectedEvent
-    name: ConcurrencyLimitRejectedEvent
-    isExternal: true
-    href: Kevlar.ConcurrencyLimitRejectedEvent.html
-  - name: '>'
-  spec.vb:
-  - uid: System.Action`1
-    name: Action
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.action-1
-  - name: (
-  - name: Of
-  - name: " "
-  - uid: Kevlar.ConcurrencyLimitRejectedEvent
-    name: ConcurrencyLimitRejectedEvent
-    isExternal: true
-    href: Kevlar.ConcurrencyLimitRejectedEvent.html
-  - name: )
-- uid: System.Action`1
-  commentId: T:System.Action`1
-  isExternal: true
-  href: https://learn.microsoft.com/dotnet/api/system.action-1
-  name: Action<T>
-  nameWithType: Action<T>
-  fullName: System.Action<T>
-  nameWithType.vb: Action(Of T)
-  fullName.vb: System.Action(Of T)
-  name.vb: Action(Of T)
-  spec.csharp:
-  - uid: System.Action`1
-    name: Action
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.action-1
-  - name: <
-  - name: T
-  - name: '>'
-  spec.vb:
-  - uid: System.Action`1
-    name: Action
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.action-1
-  - name: (
-  - name: Of
-  - name: " "
-  - name: T
-  - name: )
-- uid: Kevlar.ConcurrencyLimitOptions.OnRejectedAsync*
-  commentId: Overload:Kevlar.ConcurrencyLimitOptions.OnRejectedAsync
-  isExternal: true
-  href: Kevlar.ConcurrencyLimitOptions.html#Kevlar_ConcurrencyLimitOptions_OnRejectedAsync
-  name: OnRejectedAsync
-  nameWithType: ConcurrencyLimitOptions.OnRejectedAsync
-  fullName: Kevlar.ConcurrencyLimitOptions.OnRejectedAsync
 - uid: System.Func{Kevlar.ConcurrencyLimitRejectedEvent,System.Threading.Tasks.ValueTask}
   commentId: T:System.Func{Kevlar.ConcurrencyLimitRejectedEvent,System.Threading.Tasks.ValueTask}
   parent: System

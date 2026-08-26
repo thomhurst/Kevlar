@@ -13,7 +13,7 @@ namespace Kevlar.Extensions.RateLimiting.Tests;
 public class RateLimiterAdapterTests
 {
     [Test]
-    public async Task Synchronous_Execution_Rejects_An_Async_Rejection_Callback()
+    public async Task Synchronous_Execution_Rejects_Framework_Limiter_Acquisition()
     {
         using var limiter = new FixedWindowRateLimiter(new FixedWindowRateLimiterOptions
         {
@@ -23,7 +23,7 @@ public class RateLimiterAdapterTests
         });
         var actionInvoked = false;
         var shield = Shield.Empty.UseRateLimiter(limiter, options =>
-            options.OnRejectedAsync = static _ => ValueTask.CompletedTask);
+            options.OnRejected = static _ => ValueTask.CompletedTask);
 
         var exception = await Assert.That(() => shield.Execute(_ =>
             {
@@ -280,14 +280,11 @@ public class RateLimiterAdapterTests
         var shield = Shield.Empty
             .UseRateLimiter(limiter, options =>
             {
-                options.OnRejected = rejection =>
+                options.OnRejected = async rejection =>
                 {
                     observed = rejection;
                     observedStrategyIndex = rejection.Context.StrategyIndex;
                     order.Add(listener.Count == 1 ? "metric-sync" : "sync-before-metric");
-                };
-                options.OnRejectedAsync = async rejection =>
-                {
                     await Task.Yield();
                     await Assert.That(ReferenceEquals(rejection.Context, observed.Context)).IsTrue();
                     order.Add("async");
@@ -356,7 +353,11 @@ public class RateLimiterAdapterTests
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var rejected = 0;
         var shield = Shield.Empty.UseRateLimiter(limiter, options =>
-            options.OnRejected = _ => rejected++);
+            options.OnRejected = _ =>
+            {
+                rejected++;
+                return default;
+            });
         var occupying = shield.ExecuteAsync(async _ =>
         {
             entered.SetResult();
@@ -467,7 +468,11 @@ public class RateLimiterAdapterTests
             options =>
             {
                 options.PermitCount = 2;
-                options.OnRejected = rejection => observedRejection = rejection;
+                options.OnRejected = rejection =>
+                {
+                    observedRejection = rejection;
+                    return default;
+                };
             });
         using var cancellation = new CancellationTokenSource();
 
@@ -595,7 +600,11 @@ public class RateLimiterAdapterTests
         RateLimiterAdapterRejectedEvent observed = default;
         using var limiter = new StubLimiter(_ => new ValueTask<RateLimitLease>(lease));
         var shield = Shield.Empty.UseRateLimiter(limiter, options =>
-            options.OnRejected = rejection => observed = rejection);
+            options.OnRejected = rejection =>
+            {
+                observed = rejection;
+                return default;
+            });
 
         var outcome = await shield.ExecuteOutcomeAsync(static _ => new ValueTask<int>(42));
 
@@ -614,7 +623,11 @@ public class RateLimiterAdapterTests
         RateLimiterAdapterRejectedEvent observed = default;
         var shield = Shield.Empty.UseRateLimiter(
             (_, _) => new ValueTask<RateLimitLease>(lease),
-            options => options.OnRejected = rejection => observed = rejection);
+            options => options.OnRejected = rejection =>
+            {
+                observed = rejection;
+                return default;
+            });
 
         _ = await shield.ExecuteOutcomeAsync(static _ => new ValueTask<int>(42));
         source["tenant"] = "beta";
@@ -628,26 +641,16 @@ public class RateLimiterAdapterTests
     }
 
     [Test]
-    public async Task Callback_Failure_Preserves_Rejection_And_Runs_Later_Hook()
+    public async Task Synchronous_Callback_Failure_Preserves_Rejection()
     {
         var callbackFailure = new InvalidOperationException("callback failed");
-        var asyncCalls = 0;
         var shield = Shield.Empty.UseRateLimiter(
             static (_, _) => new ValueTask<RateLimitLease>(new TrackingLease(false)),
-            options =>
-            {
-                options.OnRejected = _ => throw callbackFailure;
-                options.OnRejectedAsync = _ =>
-                {
-                    asyncCalls++;
-                    return ValueTask.CompletedTask;
-                };
-            });
+            options => options.OnRejected = _ => throw callbackFailure);
 
         var outcome = await shield.ExecuteOutcomeAsync(static _ => new ValueTask<int>(42));
 
         await Assert.That(outcome.Exception).IsTypeOf<RateLimiterAdapterRejectedException>();
-        await Assert.That(asyncCalls).IsEqualTo(1);
     }
 
     [Test]
@@ -656,7 +659,7 @@ public class RateLimiterAdapterTests
         var callbackFailure = new InvalidOperationException("async callback failed");
         var shield = Shield.Empty.UseRateLimiter(
             static (_, _) => new ValueTask<RateLimitLease>(new TrackingLease(false)),
-            options => options.OnRejectedAsync = async _ =>
+            options => options.OnRejected = async _ =>
             {
                 await Task.Yield();
                 throw callbackFailure;
@@ -672,7 +675,7 @@ public class RateLimiterAdapterTests
     {
         var shield = Shield.Empty.UseRateLimiter(
             static (_, _) => new ValueTask<RateLimitLease>(new TrackingLease(false)),
-            options => options.OnRejectedAsync = static _ => ValueTask.CompletedTask);
+            options => options.OnRejected = static _ => ValueTask.CompletedTask);
 
         var outcome = await shield.ExecuteOutcomeAsync(static _ => new ValueTask<int>(42));
 
@@ -689,7 +692,11 @@ public class RateLimiterAdapterTests
         var rejections = 0;
         var shield = Shield.Empty.UseRateLimiter(
             (_, _) => new ValueTask<RateLimitLease>(acquisition.Task),
-            options => options.OnRejected = _ => rejections++);
+            options => options.OnRejected = _ =>
+            {
+                rejections++;
+                return default;
+            });
         using var cancellation = new CancellationTokenSource();
 
         var execution = shield.ExecuteAsync(_ =>

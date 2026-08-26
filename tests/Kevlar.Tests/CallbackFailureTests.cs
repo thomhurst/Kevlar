@@ -63,7 +63,7 @@ public class CallbackFailureTests
             {
                 options.MaxRetries = 1;
                 options.Backoff = Backoff.None;
-                options.OnRetryAsync = _ => new ValueTask(callbackSource.Task);
+                options.OnRetry = _ => new ValueTask(callbackSource.Task);
             });
             var execution = shield.ExecuteOutcomeAsync<int>(_ => throw operationFailure).AsTask();
 
@@ -99,6 +99,39 @@ public class CallbackFailureTests
             : 42);
 
         await Assert.That(result).IsEqualTo(42);
+    }
+
+    [Test]
+    [NotInParallel]
+    public async Task Sync_Execute_Reports_Synchronously_Faulted_Hook_Without_Changing_Result()
+    {
+        var callbackFailure = new IOException("callback");
+        CallbackErrorEvent? reported = null;
+        Action<CallbackErrorEvent> handler = item => reported = item;
+        KevlarDiagnostics.OnCallbackError += handler;
+
+        try
+        {
+            var attempts = 0;
+            var shield = Shield.Retry(options =>
+            {
+                options.MaxRetries = 1;
+                options.Backoff = Backoff.None;
+                options.OnRetry = _ => ValueTask.FromException(callbackFailure);
+            });
+
+            var result = shield.Execute(_ => ++attempts == 1
+                ? throw new HttpRequestException("transient")
+                : 42);
+
+            await Assert.That(result).IsEqualTo(42);
+            await Assert.That(reported?.Kind).IsEqualTo(CallbackErrorKind.Retry);
+            await Assert.That(ReferenceEquals(reported?.Exception, callbackFailure)).IsTrue();
+        }
+        finally
+        {
+            KevlarDiagnostics.OnCallbackError -= handler;
+        }
     }
 
     [Test]
