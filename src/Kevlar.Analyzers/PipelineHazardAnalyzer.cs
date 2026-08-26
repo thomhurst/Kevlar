@@ -986,6 +986,10 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     ContainingType: { } containingType,
                 },
             } => IsKnownCompletedAwaitableType(containingType),
+            IObjectCreationOperation { Constructor: { } constructor } =>
+                IsKnownCompletedValueTaskConstructor(constructor),
+            IDefaultValueOperation { Type: INamedTypeSymbol type } =>
+                IsKnownValueTaskType(type),
             _ => false,
         };
     }
@@ -993,6 +997,29 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
     private static bool IsKnownCompletedAwaitableType(INamedTypeSymbol type) =>
         type.ToDisplayString() is "System.Threading.Tasks.Task"
             or "System.Threading.Tasks.ValueTask";
+
+    private static bool IsKnownCompletedValueTaskConstructor(IMethodSymbol constructor)
+    {
+        if (!IsKnownValueTaskType(constructor.ContainingType))
+        {
+            return false;
+        }
+
+        if (constructor.Parameters.Length == 0)
+        {
+            return true;
+        }
+
+        return constructor.ContainingType is { IsGenericType: true, TypeArguments.Length: 1 } type
+            && constructor.Parameters.Length == 1
+            && SymbolEqualityComparer.Default.Equals(
+                constructor.Parameters[0].Type,
+                type.TypeArguments[0]);
+    }
+
+    private static bool IsKnownValueTaskType(INamedTypeSymbol type) =>
+        type.OriginalDefinition.ToDisplayString() is "System.Threading.Tasks.ValueTask"
+            or "System.Threading.Tasks.ValueTask<TResult>";
 
     private static void CollectRetainedAliases(
         SyntaxNode[] nodes,
@@ -3264,8 +3291,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     && DescendantOperations(bodyOperation)
                         .OfType<ISimpleAssignmentOperation>()
                         .Any(assignment =>
-                            assignment.Target is IFieldReferenceOperation { Field.IsStatic: false }
-                                or IPropertyReferenceOperation { Property.IsStatic: false }
+                            IsConstructorInstanceMember(assignment.Target)
                             && Unwrap(assignment.Value) is IParameterReferenceOperation reference
                             && SymbolEqualityComparer.Default.Equals(reference.Parameter, parameter)))
                 {
@@ -3305,6 +3331,29 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             visitedConstructors.Remove(constructor);
         }
     }
+
+    private static bool IsConstructorInstanceMember(IOperation operation)
+    {
+        var instance = operation switch
+        {
+            IFieldReferenceOperation { Field.IsStatic: false } field => field.Instance,
+            IPropertyReferenceOperation { Property.IsStatic: false } property => property.Instance,
+            _ => null,
+        };
+
+        return IsRootedInCurrentInstance(instance);
+    }
+
+    private static bool IsRootedInCurrentInstance(IOperation? operation) =>
+        Unwrap(operation) switch
+        {
+            IInstanceReferenceOperation => true,
+            IFieldReferenceOperation { Field.IsStatic: false } field =>
+                IsRootedInCurrentInstance(field.Instance),
+            IPropertyReferenceOperation { Property.IsStatic: false } property =>
+                IsRootedInCurrentInstance(property.Instance),
+            _ => false,
+        };
 
     private static bool IsKnownCompositeState(IOperation operation) =>
         operation is IConditionalOperation

@@ -65,6 +65,11 @@ public class PipelineHazardAnalyzerTests
             "ValueTask.CompletedTask.ConfigureAwait(false)",
             "ValueTask.FromResult(0)",
             "ValueTask.FromResult(0).ConfigureAwait(false)",
+            "new ValueTask()",
+            "new ValueTask().ConfigureAwait(false)",
+            "new ValueTask<int>(0)",
+            "default(ValueTask)",
+            "default(ValueTask<int>)",
         };
         foreach (var awaitExpression in awaitExpressions)
         {
@@ -78,6 +83,60 @@ public class PipelineHazardAnalyzerTests
 
             await AssertRuleAsync(diagnostics, "KEV013");
         }
+    }
+
+    [Test]
+    public async Task KEV014_Flags_ValueTask_Constructed_From_Pending_Task()
+    {
+        var awaitExpressions = new[]
+        {
+            "new ValueTask(Task.Delay(1))",
+            "new ValueTask<int>(Task.Run(() => 1))",
+        };
+        foreach (var awaitExpression in awaitExpressions)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = async item =>
+                {
+                    await {{awaitExpression}};
+                    Console.WriteLine(item.Context.ShieldName);
+                });
+                """);
+
+            await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+            await AssertRuleAsync(
+                Without(diagnostics, "KEV013"),
+                "KEV014",
+                DiagnosticSeverity.Warning);
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Flags_Unknown_Object_Creation_Awaitables()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        await new PendingAwaitable();
+                        Console.WriteLine(item.Context.ShieldName);
+                    });
+
+                private readonly struct PendingAwaitable
+                {
+                    public System.Runtime.CompilerServices.TaskAwaiter GetAwaiter() =>
+                        Task.Delay(1).GetAwaiter();
+                }
+            }
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
     }
 
     [Test]
@@ -325,6 +384,88 @@ public class PipelineHazardAnalyzerTests
                 }
             }
             """);
+        var unrelatedConstructorStore = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        var holder = new Holder(item);
+                        await Task.Yield();
+                        Console.WriteLine(holder.Value);
+                    });
+
+                private sealed class Holder
+                {
+                    public Holder(RetryEvent item)
+                    {
+                        new Sink().Event = item;
+                    }
+
+                    public int Value { get; }
+                }
+
+                private sealed class Sink
+                {
+                    public RetryEvent Event { get; set; }
+                }
+            }
+            """);
+        var fieldConstructorWrapper = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        var holder = new Holder(item);
+                        await Task.Yield();
+                        Consume(holder.Event.Context);
+                    });
+
+                private static void Consume(KevlarContext context) { }
+
+                private sealed class Holder
+                {
+                    private readonly RetryEvent _event;
+
+                    public Holder(RetryEvent item)
+                    {
+                        _event = item;
+                    }
+
+                    public RetryEvent Event => _event;
+                }
+            }
+            """);
+        var nestedConstructorStore = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        var holder = new Holder(item);
+                        await Task.Yield();
+                        Consume(holder.State.Event.Context);
+                    });
+
+                private static void Consume(KevlarContext context) { }
+
+                private sealed class Holder
+                {
+                    public Holder(RetryEvent item)
+                    {
+                        State.Event = item;
+                    }
+
+                    public State State { get; } = new();
+                }
+
+                private sealed class State
+                {
+                    public RetryEvent Event { get; set; }
+                }
+            }
+            """);
         var collectionWrapper = await AnalyzeSourceAsync("""
             public sealed class TestSubject
             {
@@ -353,6 +494,17 @@ public class PipelineHazardAnalyzerTests
         await AssertRuleAsync(Without(delegatedConstructor, "KEV014"), "KEV013");
         await AssertRuleAsync(
             Without(delegatedConstructor, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(unrelatedConstructorStore, "KEV013");
+        await AssertRuleAsync(Without(fieldConstructorWrapper, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(fieldConstructorWrapper, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(Without(nestedConstructorStore, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(nestedConstructorStore, "KEV013"),
             "KEV014",
             DiagnosticSeverity.Warning);
         await AssertRuleAsync(Without(collectionWrapper, "KEV014"), "KEV013");
