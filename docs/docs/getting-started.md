@@ -15,7 +15,7 @@ dotnet add package Kevlar
 See the canonical [package table](https://github.com/thomhurst/Kevlar#packages) for every optional
 integration and testing package.
 
-The core targets `netstandard2.0` (so .NET Framework 4.6.2+ works) and `net10.0`.
+The core targets `netstandard2.0` (so .NET Framework 4.6.2+ works), `net8.0`, and `net10.0`.
 
 ## Your first shield
 
