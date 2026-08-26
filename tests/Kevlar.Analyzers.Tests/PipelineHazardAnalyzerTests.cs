@@ -53,6 +53,30 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Ignores_Known_Completed_Awaitables()
+    {
+        var awaitExpressions = new[]
+        {
+            "Task.CompletedTask",
+            "Task.CompletedTask.ConfigureAwait(false)",
+            "ValueTask.CompletedTask",
+            "ValueTask.CompletedTask.ConfigureAwait(false)",
+        };
+        foreach (var awaitExpression in awaitExpressions)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = async item =>
+                {
+                    await {{awaitExpression}};
+                    Console.WriteLine(item.Context.ShieldName);
+                });
+                """);
+
+            await AssertRuleAsync(diagnostics, "KEV013");
+        }
+    }
+
+    [Test]
     public async Task KEV014_Follows_PostAwait_Local_Function_Calls()
     {
         var diagnostics = await AnalyzeBodyAsync("""
@@ -2356,6 +2380,26 @@ public class PipelineHazardAnalyzerTests
             """);
 
         await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Scalar_Factory_Results_From_Event_Arguments()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        var retryNumber = GetRetryNumber(item);
+                        _ = Task.Run(() => Console.WriteLine(retryNumber));
+                    });
+
+                private static int GetRetryNumber(RetryEvent item) => item.RetryNumber;
+            }
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
     }
 
     [Test]

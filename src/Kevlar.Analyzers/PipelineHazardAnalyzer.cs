@@ -801,7 +801,12 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 node is not AnonymousFunctionExpressionSyntax
                     and not LocalFunctionStatementSyntax)
             .ToArray();
-        var awaits = nodes.OfType<AwaitExpressionSyntax>().ToArray();
+        var awaits = nodes.OfType<AwaitExpressionSyntax>()
+            .Where(awaitExpression => !IsKnownCompletedAwait(
+                awaitExpression,
+                semanticModel,
+                cancellationToken))
+            .ToArray();
         var controlFlowGraph = TryCreateControlFlowGraph(
             body,
             semanticModel,
@@ -936,6 +941,36 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         capturedContext = null!;
         return false;
+    }
+
+    private static bool IsKnownCompletedAwait(
+        AwaitExpressionSyntax awaitExpression,
+        SemanticModel? semanticModel,
+        CancellationToken cancellationToken)
+    {
+        var operation = Unwrap(semanticModel?.GetOperation(
+            awaitExpression.Expression,
+            cancellationToken));
+        if (operation is IInvocationOperation
+            {
+                TargetMethod.Name: "ConfigureAwait",
+                Instance: { } instance,
+            })
+        {
+            operation = Unwrap(instance);
+        }
+
+        return operation is IPropertyReferenceOperation
+        {
+            Property:
+            {
+                IsStatic: true,
+                Name: "CompletedTask",
+                ContainingType: { } containingType,
+            },
+        }
+            && containingType.ToDisplayString() is "System.Threading.Tasks.Task"
+                or "System.Threading.Tasks.ValueTask";
     }
 
     private static void CollectRetainedAliases(
@@ -2909,7 +2944,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        if (operation is IInvocationOperation invocationOperation)
+        if (operation is IInvocationOperation invocationOperation
+            && ContainsEventContextReference(operation.Type, knownTypes))
         {
             if (invocationOperation.Instance is { } instance
                 && TryFindDeferredStateContext(
