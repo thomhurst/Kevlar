@@ -158,6 +158,36 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Tracks_PostAwait_Event_Values_In_Wrapper_Locals()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        var holder = new Holder { Event = item };
+                        await Task.Yield();
+                        Consume(holder.Event.Context);
+                    });
+
+                private static void Consume(KevlarContext context) { }
+
+                private sealed class Holder
+                {
+                    public RetryEvent Event { get; set; }
+                }
+            }
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
     public async Task KEV014_Follows_Nested_PostAwait_Local_Function_Calls()
     {
         var diagnostics = await AnalyzeBodyAsync("""
@@ -1516,6 +1546,19 @@ public class PipelineHazardAnalyzerTests
                 private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
             }
             """);
+        var incompatibleImmediatelyInvokedDelegateInvoke = await GetCodeFixAsync("""
+            public class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        ((Action)(() => _ = AuditAsync(item))).Invoke();
+                        await Task.Yield();
+                    });
+
+                private static Task AuditAsync(RetryEvent item) => Task.CompletedTask;
+            }
+            """);
         var incompatibleSourceMethodDiscard = await GetCodeFixAsync("""
             public class TestSubject
             {
@@ -1649,6 +1692,8 @@ public class PipelineHazardAnalyzerTests
         await Assert.That(incompatibleDelegateLocalDiscard.ChangedText).IsNull();
         await Assert.That(incompatibleImmediatelyInvokedDelegate.ActionCount).IsEqualTo(0);
         await Assert.That(incompatibleImmediatelyInvokedDelegate.ChangedText).IsNull();
+        await Assert.That(incompatibleImmediatelyInvokedDelegateInvoke.ActionCount).IsEqualTo(0);
+        await Assert.That(incompatibleImmediatelyInvokedDelegateInvoke.ChangedText).IsNull();
         await Assert.That(incompatibleSourceMethodDiscard.ActionCount).IsEqualTo(0);
         await Assert.That(incompatibleSourceMethodDiscard.ChangedText).IsNull();
         await Assert.That(incompatibleAwaitWrapper.ActionCount).IsEqualTo(0);

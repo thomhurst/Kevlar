@@ -1162,6 +1162,24 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     cancellationToken);
         }
 
+        var operation = Unwrap(semanticModel?.GetOperation(expression, cancellationToken));
+        if (operation is not null
+            && GetRetainedValueParts(operation).Any(part =>
+                part.Syntax is ExpressionSyntax partExpression
+                && HasReachableRetainedAlias(
+                    partExpression,
+                    destination,
+                    retainedNameOrigins,
+                    retainedSymbolOrigins,
+                    retainedNameKills,
+                    retainedSymbolKills,
+                    semanticModel,
+                    controlFlowGraph,
+                    cancellationToken)))
+        {
+            return true;
+        }
+
         return expression switch
         {
             ParenthesizedExpressionSyntax parenthesized => HasReachableRetainedAlias(
