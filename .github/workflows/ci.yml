@@ -412,10 +412,11 @@ jobs:
       - name: Verify publish artifacts
         shell: pwsh
         run: |
+          $expectedPackageIds = @(./scripts/Get-PackablePackageIds.ps1)
           $packageIds = @(Get-ChildItem packages -Filter *.nupkg | ForEach-Object { $_.BaseName -replace '\.[0-9].*$', '' } | Sort-Object)
           $symbolPackageIds = @(Get-ChildItem packages -Filter *.snupkg | ForEach-Object { $_.BaseName -replace '\.[0-9].*$', '' } | Sort-Object)
-          if ($packageIds.Count -ne 7 -or ($packageIds -join ',') -ne ($symbolPackageIds -join ',')) {
-            throw "Expected 7 matching nupkg/snupkg artifacts; got nupkg=[$($packageIds -join ', ')], snupkg=[$($symbolPackageIds -join ', ')]."
+          if (($packageIds -join ',') -ne ($expectedPackageIds -join ',') -or ($symbolPackageIds -join ',') -ne ($expectedPackageIds -join ',')) {
+            throw "Expected nupkg/snupkg artifacts for [$($expectedPackageIds -join ', ')]; got nupkg=[$($packageIds -join ', ')], snupkg=[$($symbolPackageIds -join ', ')]."
           }
 
       - name: Extract release notes

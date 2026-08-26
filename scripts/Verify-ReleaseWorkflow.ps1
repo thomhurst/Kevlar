@@ -63,6 +63,7 @@ Assert-Contains 'Changelog release notes' './scripts/Get-ReleaseNotes.ps1'
 Assert-Contains 'Retry-safe release tag' './scripts/Push-ReleaseTag.ps1'
 Assert-Contains 'Retry-safe NuGet publication' './scripts/Push-NuGetRelease.ps1'
 Assert-Contains 'Retry-safe GitHub release' './scripts/Publish-GitHubRelease.ps1'
+Assert-Contains 'Derived publish package set' '$expectedPackageIds = @(./scripts/Get-PackablePackageIds.ps1)'
 
 $packageVerificationScript = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'Verify-Packages.ps1') -Raw
 foreach ($requiredVerification in @('Verify-ReleaseApiBaselines.ps1', 'Verify-PublicApi.ps1'))
@@ -71,6 +72,27 @@ foreach ($requiredVerification in @('Verify-ReleaseApiBaselines.ps1', 'Verify-Pu
     {
         throw "Package verification must invoke '$requiredVerification' for stable releases."
     }
+}
+
+$dependencyTablePattern = [regex]'(?ms)^\$expectedDependencies = @\{(?<body>.*?)^\}\r?$'
+$dependencyTableMatch = $dependencyTablePattern.Match($packageVerificationScript)
+if (-not $dependencyTableMatch.Success)
+{
+    throw 'Verify-Packages.ps1 expected dependency table was not found.'
+}
+
+$dependencyPackageIds = @(
+    [regex]::Matches(
+        $dependencyTableMatch.Groups['body'].Value,
+        "(?m)^    '(?<id>Kevlar(?:\.[^']+)?)' = @\{") |
+        ForEach-Object { $_.Groups['id'].Value } |
+        Sort-Object)
+$packablePackageIds = @(& (Join-Path $PSScriptRoot 'Get-PackablePackageIds.ps1'))
+if (($dependencyPackageIds -join ',') -ne ($packablePackageIds -join ','))
+{
+    throw (
+        "Packable project IDs must match Verify-Packages.ps1: " +
+        "projects=[$($packablePackageIds -join ', ')], table=[$($dependencyPackageIds -join ', ')].")
 }
 
 Assert-StepGuarded 'Create and push release tag'
