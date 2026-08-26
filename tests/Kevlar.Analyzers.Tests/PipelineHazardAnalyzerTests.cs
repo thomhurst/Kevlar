@@ -4400,6 +4400,17 @@ public class PipelineHazardAnalyzerTests
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
             });
             """);
+        var erasedValueDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.List<object>();
+                void Add(System.Collections.Generic.List<object> target, object value) =>
+                    target.Add(value);
+
+                Add(events, item);
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
 
         await AssertRuleAsync(
             invocationDiagnostics,
@@ -4411,6 +4422,10 @@ public class PipelineHazardAnalyzerTests
             DiagnosticSeverity.Warning);
         await AssertRuleAsync(
             parameterDiagnostics,
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(
+            erasedValueDiagnostics,
             "KEV014",
             DiagnosticSeverity.Warning);
     }
@@ -4439,9 +4454,29 @@ public class PipelineHazardAnalyzerTests
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
             });
             """);
+        var conditionalDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.List<RetryEvent> { item };
+                void MaybeClear(bool clear)
+                {
+                    if (clear)
+                    {
+                        events.Clear();
+                    }
+                }
+
+                MaybeClear(false);
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
 
         await Assert.That(clearDiagnostics).IsEmpty();
         await Assert.That(overwriteDiagnostics).IsEmpty();
+        await AssertRuleAsync(
+            conditionalDiagnostics,
+            "KEV014",
+            DiagnosticSeverity.Warning);
     }
 
     [Test]
@@ -4457,6 +4492,7 @@ public class PipelineHazardAnalyzerTests
             "var events = new System.Collections.Generic.Queue<RetryEvent>(); events.Enqueue(item); events.Dequeue();",
             "var events = new System.Collections.Generic.Queue<RetryEvent>(new[] { item }); events.Dequeue();",
             "System.Collections.Generic.List<RetryEvent> events = []; events.Insert(0, item); events.RemoveAt(0);",
+            "var events = new System.Collections.Concurrent.ConcurrentDictionary<int, RetryEvent>(); events.TryAdd(0, item); events.TryRemove(0, out _);",
             "var events = new RetryEvent[1]; events[0] = item; events[0] = default;",
             "var events = new[] { item }; events[0] = default;",
         };

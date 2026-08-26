@@ -4317,13 +4317,16 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
                 if (GetStaticArrayMutationTarget(invocation) is { } arrayTarget
                     && GetStaticArrayRetainedValue(invocation) is { } arrayRetainedValue
+                    && MapLocalFunctionValue(
+                        arrayRetainedValue,
+                        localFunctionInvocation) is { } mappedArrayRetainedValue
                     && IsRootedInLocalFunctionArgument(
                         arrayTarget,
                         localFunctionInvocation,
                         local,
                         context)
                     && TryFindDeferredStateContext(
-                        arrayRetainedValue,
+                        mappedArrayRetainedValue,
                         context,
                         knownTypes,
                         visitedLocals,
@@ -4333,7 +4336,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                         arrayContext,
                         Slot: null,
                         GetDeferredValueKey(
-                            arrayRetainedValue,
+                            mappedArrayRetainedValue,
                             context,
                             visitedLocals: null),
                         Receiver: "root",
@@ -4367,8 +4370,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     : EnumerateRetainedDictionaryValues(invocation);
                 foreach (var retainedValue in retainedValues)
                 {
-                    if (!TryFindDeferredStateContext(
+                    var mappedRetainedValue = MapLocalFunctionValue(
                         retainedValue,
+                        localFunctionInvocation);
+                    if (!TryFindDeferredStateContext(
+                        mappedRetainedValue,
                         context,
                         knownTypes,
                         visitedLocals,
@@ -4381,14 +4387,18 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                         capturedContext,
                         Slot: null,
                         GetDeferredValueKey(
-                            keyArgument?.Value ?? retainedValue,
+                            keyArgument is null
+                                ? mappedRetainedValue
+                                : MapLocalFunctionValue(
+                                    keyArgument.Value,
+                                    localFunctionInvocation),
                             context,
                             visitedLocals: null),
                         receiverKey,
                         MayRetainMultiple: IsBulkRetainingMutation(
                             invocation.TargetMethod)
                             && !IsSetType(receiver?.Type)
-                            && MayRetainMultipleValues(retainedValue),
+                            && MayRetainMultipleValues(mappedRetainedValue),
                         AllowsDuplicateValues: keyArgument is null
                             && !IsSetType(receiver?.Type));
                     if (keyArgument is not null)
@@ -4431,26 +4441,34 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     && IsDictionaryType(property.Property.ContainingType)
                         ? property.Arguments.FirstOrDefault()?.Value
                         : null;
+                var mappedDictionaryKey = dictionaryKey is null
+                    ? null
+                    : MapLocalFunctionValue(
+                        dictionaryKey,
+                        localFunctionInvocation);
+                var mappedValue = MapLocalFunctionValue(
+                    value,
+                    localFunctionInvocation);
                 IOperation retainedOperation;
                 SyntaxNode retainedContext;
-                if (dictionaryKey is not null
+                if (mappedDictionaryKey is not null
                     && TryFindDeferredStateContext(
-                        dictionaryKey,
+                        mappedDictionaryKey,
                         context,
                         knownTypes,
                         visitedLocals,
                         out retainedContext))
                 {
-                    retainedOperation = dictionaryKey;
+                    retainedOperation = mappedDictionaryKey;
                 }
                 else if (TryFindDeferredStateContext(
-                    value,
+                    mappedValue,
                     context,
                     knownTypes,
                     visitedLocals,
                     out retainedContext))
                 {
-                    retainedOperation = value;
+                    retainedOperation = mappedValue;
                 }
                 else
                 {
@@ -4465,7 +4483,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                         local,
                         context),
                     GetDeferredValueKey(
-                        dictionaryKey ?? retainedOperation,
+                        mappedDictionaryKey ?? retainedOperation,
                         context,
                         visitedLocals: null),
                     GetLocalFunctionMutationReceiver(
@@ -4474,7 +4492,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                         local,
                         context) ?? "root",
                     MayRetainMultiple: false,
-                    AllowsDuplicateValues: dictionaryKey is null);
+                    AllowsDuplicateValues: mappedDictionaryKey is null);
             }
         }
     }
@@ -4517,6 +4535,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 if (semanticModel.GetOperation(
                         invocationSyntax,
                         context.CancellationToken) is not IInvocationOperation invocation)
+                {
+                    continue;
+                }
+
+                if (IsPotentiallyConditionalLocalMutation(invocationSyntax, body))
                 {
                     continue;
                 }
@@ -4609,6 +4632,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
             foreach (var assignmentSyntax in mutations.OfType<AssignmentExpressionSyntax>())
             {
+                if (IsPotentiallyConditionalLocalMutation(assignmentSyntax, body))
+                {
+                    continue;
+                }
+
                 var operation = semanticModel.GetOperation(
                     assignmentSyntax,
                     context.CancellationToken);
@@ -4684,6 +4712,37 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         };
     }
 
+    private static bool IsPotentiallyConditionalLocalMutation(
+        SyntaxNode mutation,
+        SyntaxNode body) =>
+        mutation.Ancestors().TakeWhile(ancestor => ancestor != body)
+            .Any(static ancestor => ancestor is IfStatementSyntax
+                or SwitchStatementSyntax
+                or SwitchExpressionSyntax
+                or ConditionalExpressionSyntax
+                or WhileStatementSyntax
+                or DoStatementSyntax
+                or ForStatementSyntax
+                or ForEachStatementSyntax
+                or ForEachVariableStatementSyntax
+                or CatchClauseSyntax)
+        || body.DescendantNodes(descendIntoChildren: static node =>
+                node is not AnonymousFunctionExpressionSyntax
+                    and not LocalFunctionStatementSyntax)
+            .Any(candidate => candidate.SpanStart < mutation.SpanStart
+                && candidate is (IfStatementSyntax
+                    or SwitchStatementSyntax
+                    or WhileStatementSyntax
+                    or DoStatementSyntax
+                    or ForStatementSyntax
+                    or ForEachStatementSyntax
+                    or ForEachVariableStatementSyntax
+                    or ReturnStatementSyntax
+                    or ThrowStatementSyntax
+                    or GotoStatementSyntax
+                    or BreakStatementSyntax
+                    or ContinueStatementSyntax));
+
     private static string GetLocalFunctionReceiverKey(
         IOperation? receiver,
         IInvocationOperation localFunctionInvocation,
@@ -4711,10 +4770,10 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             IPropertyReferenceOperation property =>
                 $"{GetLocalFunctionReceiverKey(property.Instance, localFunctionInvocation, local, context)}" +
                 $".property:{property.Property.ToDisplayString()}:" +
-                GetArgumentKey(property.Arguments.Select(static argument => argument.Value)),
+                GetLocalFunctionArgumentKey(property.Arguments, localFunctionInvocation),
             IArrayElementReferenceOperation array =>
                 $"{GetLocalFunctionReceiverKey(array.ArrayReference, localFunctionInvocation, local, context)}" +
-                $".array:{GetArgumentKey(array.Indices)}",
+                $".array:{GetLocalFunctionArgumentKey(array.Indices, localFunctionInvocation)}",
             _ => GetDeferredReceiverKey(
                 receiver,
                 local,
@@ -4738,10 +4797,10 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             IPropertyReferenceOperation property =>
                 $"{GetLocalFunctionReceiverKey(property.Instance, localFunctionInvocation, local, context)}" +
                 $".property:{property.Property.ToDisplayString()}:" +
-                GetArgumentKey(property.Arguments.Select(static argument => argument.Value)),
+                GetLocalFunctionArgumentKey(property.Arguments, localFunctionInvocation),
             IArrayElementReferenceOperation array =>
                 $"{GetLocalFunctionReceiverKey(array.ArrayReference, localFunctionInvocation, local, context)}" +
-                $".array:{GetArgumentKey(array.Indices)}",
+                $".array:{GetLocalFunctionArgumentKey(array.Indices, localFunctionInvocation)}",
             _ => null,
         };
     }
@@ -4774,6 +4833,32 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         IInvocationOperation localFunctionInvocation) =>
         localFunctionInvocation.Arguments.FirstOrDefault(argument =>
             SymbolEqualityComparer.Default.Equals(argument.Parameter, parameter))?.Value;
+
+    private static IOperation MapLocalFunctionValue(
+        IOperation operation,
+        IInvocationOperation localFunctionInvocation)
+    {
+        operation = Unwrap(operation)!;
+        return operation is IParameterReferenceOperation parameterReference
+            && TryGetLocalFunctionArgument(
+                parameterReference.Parameter,
+                localFunctionInvocation) is { } argument
+                    ? argument
+                    : operation;
+    }
+
+    private static string GetLocalFunctionArgumentKey(
+        IEnumerable<IOperation> arguments,
+        IInvocationOperation localFunctionInvocation) =>
+        GetArgumentKey(arguments.Select(argument =>
+            MapLocalFunctionValue(argument, localFunctionInvocation)));
+
+    private static string GetLocalFunctionArgumentKey(
+        ImmutableArray<IArgumentOperation> arguments,
+        IInvocationOperation localFunctionInvocation) =>
+        GetLocalFunctionArgumentKey(
+            arguments.Select(static argument => argument.Value),
+            localFunctionInvocation);
 
     private static bool IsKnownClearingMutation(IMethodSymbol method) =>
         method.Name == "Clear"
@@ -4835,7 +4920,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 StringComparison.Ordinal));
 
     private static bool IsKnownValueRemovingMutation(IMethodSymbol method) =>
-        method.Name == "Remove"
+        method.Name is "Remove" or "TryRemove"
         && method.Parameters.Length > 0
         && RetainingCollectionNamespaces.Contains(
             method.ContainingNamespace.ToDisplayString());
