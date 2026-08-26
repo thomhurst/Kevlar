@@ -4027,6 +4027,76 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Tracks_Deferred_State_Added_To_Local_Collections()
+    {
+        var mutations = new[]
+        {
+            "events.Add(item);",
+            "var alias = events; alias.Add(item);",
+        };
+        foreach (var mutation in mutations)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                {
+                    var events = new System.Collections.Generic.List<RetryEvent>();
+                    {{mutation}}
+                    ThreadPool.QueueUserWorkItem(
+                        static (System.Collections.Generic.List<RetryEvent> state) =>
+                            Console.WriteLine(state[0].Context.ShieldName),
+                        events,
+                        preferLocal: false);
+                });
+                """);
+
+            await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+        }
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_Deferred_State_Added_To_Local_Arrays()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new RetryEvent[1];
+                events[0] = item;
+                ThreadPool.QueueUserWorkItem(
+                    static (RetryEvent[] state) =>
+                        Console.WriteLine(state[0].Context.ShieldName),
+                    events,
+                    preferLocal: false);
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Deferred_State_Mutations_On_Exiting_Paths()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.List<RetryEvent>();
+                if (Environment.TickCount == 0)
+                {
+                    events.Add(item);
+                    return;
+                }
+
+                ThreadPool.QueueUserWorkItem(
+                    static (System.Collections.Generic.List<RetryEvent> state) =>
+                        Console.WriteLine(state.Count),
+                    events,
+                    preferLocal: false);
+            });
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
     public async Task KEV014_Ignores_Framework_Collection_Capacity_State()
     {
         var diagnostics = await AnalyzeBodyAsync("""
