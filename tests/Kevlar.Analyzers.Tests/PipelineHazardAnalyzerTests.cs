@@ -1819,6 +1819,61 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Tracks_Event_Member_Provenance_Across_Branches()
+    {
+        var retainedOnOneBranch = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        if (Environment.TickCount == 0)
+                        {
+                            _event = item;
+                        }
+                        else
+                        {
+                            _event = default;
+                        }
+
+                        _ = Task.Run(() => Consume(_event));
+                    });
+
+                private static void Consume(RetryEvent item) { }
+            }
+            """);
+        var clearedOnEveryBranch = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = item;
+                        if (Environment.TickCount == 0)
+                        {
+                            _event = default;
+                        }
+                        else
+                        {
+                            _event = default;
+                        }
+
+                        _ = Task.Run(() => Consume(_event));
+                    });
+
+                private static void Consume(RetryEvent item) { }
+            }
+            """);
+
+        await AssertRuleAsync(retainedOnOneBranch, "KEV014", DiagnosticSeverity.Warning);
+        await Assert.That(clearedOnEveryBranch).IsEmpty();
+    }
+
+    [Test]
     public async Task KEV014_Ignores_Unproven_Member_Assignments_In_Scheduled_Work()
     {
         var unrelatedCallback = await AnalyzeSourceAsync("""

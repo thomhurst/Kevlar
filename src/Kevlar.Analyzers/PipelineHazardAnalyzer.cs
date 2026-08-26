@@ -3243,7 +3243,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             callbackOperation.Symbol.Parameters,
             SymbolEqualityComparer.Default);
 
-        var assignment = callback.Body
+        var assignments = callback.Body
             .DescendantNodes(descendIntoChildren: static node =>
                 node is not AnonymousFunctionExpressionSyntax
                     and not LocalFunctionStatementSyntax)
@@ -3256,14 +3256,33 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                         context.CancellationToken).Symbol,
                     member))
             .OrderBy(static candidate => candidate.SpanStart)
-            .LastOrDefault();
-        return assignment is not null
-            && assignment.Right.DescendantNodesAndSelf()
+            .ToArray();
+        var origins = new List<SyntaxNode?>();
+        var kills = new List<SyntaxNode>();
+        foreach (var assignment in assignments)
+        {
+            if (assignment.Right.DescendantNodesAndSelf()
                 .OfType<IdentifierNameSyntax>()
                 .Any(identifier => callbackParameters.Contains(
                     semanticModel.GetSymbolInfo(
                         identifier,
-                        context.CancellationToken).Symbol!));
+                        context.CancellationToken).Symbol!)))
+            {
+                origins.Add(assignment);
+            }
+            else
+            {
+                kills.Add(assignment);
+            }
+        }
+
+        var controlFlowGraph = TryCreateControlFlowGraph(
+            callback.Body,
+            semanticModel,
+            context.CancellationToken);
+        return origins.Count > 0
+            && HasReachableOrigin(origins, anchor, controlFlowGraph, kills)
+            && !IsClearedOnEveryBranch(origins, kills, anchor, callback.Body);
     }
 
     private static bool ContainsReferenceOwnedByNestedAnonymousFunction(
