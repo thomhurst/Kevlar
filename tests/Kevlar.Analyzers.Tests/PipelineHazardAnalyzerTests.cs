@@ -1874,6 +1874,47 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Tracks_Event_Member_Provenance_Across_Sequential_Writes()
+    {
+        var cleared = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = item;
+                        _event = default;
+                        _ = Task.Run(() => Consume(_event));
+                    });
+
+                private static void Consume(RetryEvent item) { }
+            }
+            """);
+        var reintroduced = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = item;
+                        _event = default;
+                        _event = item;
+                        _ = Task.Run(() => Consume(_event));
+                    });
+
+                private static void Consume(RetryEvent item) { }
+            }
+            """);
+
+        await Assert.That(cleared).IsEmpty();
+        await AssertRuleAsync(reintroduced, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
     public async Task KEV014_Ignores_Unproven_Member_Assignments_In_Scheduled_Work()
     {
         var unrelatedCallback = await AnalyzeSourceAsync("""

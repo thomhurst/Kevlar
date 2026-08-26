@@ -3242,6 +3242,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         var callbackParameters = new HashSet<ISymbol>(
             callbackOperation.Symbol.Parameters,
             SymbolEqualityComparer.Default);
+        var flowTarget = anchor.AncestorsAndSelf()
+            .OfType<AnonymousFunctionExpressionSyntax>()
+            .FirstOrDefault(candidate => candidate != callback
+                && callback.Span.Contains(candidate.Span))
+            ?? anchor;
 
         var assignments = callback.Body
             .DescendantNodes(descendIntoChildren: static node =>
@@ -3281,8 +3286,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             semanticModel,
             context.CancellationToken);
         return origins.Count > 0
-            && HasReachableOrigin(origins, anchor, controlFlowGraph, kills)
-            && !IsClearedOnEveryBranch(origins, kills, anchor, callback.Body);
+            && HasReachableOrigin(origins, flowTarget, controlFlowGraph, kills)
+            && !IsClearedOnEveryBranch(origins, kills, flowTarget, callback.Body);
     }
 
     private static bool ContainsReferenceOwnedByNestedAnonymousFunction(
