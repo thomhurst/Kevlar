@@ -178,6 +178,28 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Inspects_Explicit_Delegate_Invoke_Calls()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                Action work = async () =>
+                {
+                    await Task.Yield();
+                    Console.WriteLine(item.Context.ShieldName);
+                };
+                work.Invoke();
+            });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
     public async Task KEV014_Inspects_Immediately_Invoked_Async_Delegates()
     {
         var diagnostics = await AnalyzeBodyAsync("""
@@ -272,6 +294,31 @@ public class PipelineHazardAnalyzerTests
             """);
 
         await AssertRuleAsync(diagnostics, "KEV013");
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_Aliases_At_Later_Reachable_Awaits()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                if (Environment.TickCount == 0)
+                {
+                    await Task.Yield();
+                    return;
+                }
+
+                var retained = item;
+                await Task.Yield();
+                Console.WriteLine(retained.Context.ShieldName);
+            });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
     }
 
     [Test]
@@ -739,6 +786,23 @@ public class PipelineHazardAnalyzerTests
                 "KEV014",
                 DiagnosticSeverity.Warning);
         }
+    }
+
+    [Test]
+    public async Task KEV014_Flags_Direct_Context_Captured_By_Scheduled_Work()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = ChaosShield.Latency(options => options.Predicate = context =>
+            {
+                _ = Task.Run(() => Consume(context));
+                return true;
+            });
+
+            static void Consume(KevlarContext context) =>
+                Console.WriteLine(context.ShieldName);
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
     }
 
     [Test]
@@ -1311,6 +1375,24 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Ignores_Synchronously_Joined_Delegate_Locals()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                Func<Task> work = async () =>
+                {
+                    await Task.Yield();
+                    Console.WriteLine(item.Context.ShieldName);
+                };
+                work().GetAwaiter().GetResult();
+            });
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
+    }
+
+    [Test]
     public async Task KEV014_Ignores_Awaited_TaskRun()
     {
         var diagnostics = await AnalyzeBodyAsync("""
@@ -1530,6 +1612,39 @@ public class PipelineHazardAnalyzerTests
                 {
                     await Task.Yield();
                     Console.WriteLine(_unrelated.RetryNumber);
+                }
+            }
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV013");
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Async_Method_Aliases_On_Exiting_Paths()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                private RetryEvent _event;
+
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                    {
+                        _event = item;
+                        _ = AuditAsync(Environment.TickCount == 0);
+                    });
+
+                private async Task AuditAsync(bool stop)
+                {
+                    RetryEvent retained = default;
+                    if (stop)
+                    {
+                        retained = _event;
+                        return;
+                    }
+
+                    await Task.Yield();
+                    Console.WriteLine(retained.RetryNumber);
                 }
             }
             """);

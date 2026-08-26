@@ -660,7 +660,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     retainedNames,
                     retainedSymbols,
                     semanticModel,
-                    controlFlowGraph: null,
+                    controlFlowGraph,
                     cancellationToken: context.CancellationToken);
                 foreach (var identifier in nodes.OfType<IdentifierNameSyntax>()
                              .Where(identifier => IsRuntimeValueReference(identifier)
@@ -795,8 +795,6 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     and not LocalFunctionStatementSyntax)
             .ToArray();
         var awaits = nodes.OfType<AwaitExpressionSyntax>().ToArray();
-        var firstAwait = awaits.OrderBy(static awaitExpression => awaitExpression.SpanStart)
-            .FirstOrDefault();
         var controlFlowGraph = TryCreateControlFlowGraph(
             body,
             semanticModel,
@@ -819,17 +817,27 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        if (firstAwait is not null)
+        var retainedNameSeeds = new HashSet<string>(retainedNames, StringComparer.Ordinal);
+        var retainedSymbolSeedsForAwait = new HashSet<ISymbol>(
+            retainedSymbols,
+            SymbolEqualityComparer.Default);
+        foreach (var awaitExpression in awaits.OrderBy(static candidate => candidate.SpanStart))
         {
+            var namesAtAwait = new HashSet<string>(retainedNameSeeds, StringComparer.Ordinal);
+            var symbolsAtAwait = new HashSet<ISymbol>(
+                retainedSymbolSeedsForAwait,
+                SymbolEqualityComparer.Default);
             CollectRetainedAliases(
                 nodes,
-                firstAwait,
+                awaitExpression,
                 body,
-                retainedNames,
-                retainedSymbols,
+                namesAtAwait,
+                symbolsAtAwait,
                 semanticModel,
                 controlFlowGraph,
                 cancellationToken);
+            retainedNames.UnionWith(namesAtAwait);
+            retainedSymbols.UnionWith(symbolsAtAwait);
         }
 
         foreach (var identifier in nodes.OfType<IdentifierNameSyntax>()
@@ -1258,9 +1266,12 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             return true;
         }
 
+        var sourceSyntax = source is VariableDeclaratorSyntax
+            ? source.FirstAncestorOrSelf<LocalDeclarationStatementSyntax>() ?? source
+            : source;
         var sourceBlocks = controlFlowGraph.Blocks
             .Where(block => block.IsReachable
-                && ContainsOperationSyntax(block, source))
+                && ContainsOperationSyntax(block, sourceSyntax))
             .ToArray();
         var targetBlocks = new HashSet<BasicBlock>(controlFlowGraph.Blocks
             .Where(block => block.IsReachable && ContainsOperationSyntax(block, target)));
@@ -1647,7 +1658,11 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                 context.SemanticModel,
                 context.CancellationToken,
                 out var initializer)
-            && StartsAsynchronousWork(initializer, context))
+            && StartsAsynchronousWork(initializer, context)
+            && !IsSynchronouslyObserved(
+                invocation,
+                context.SemanticModel,
+                context.CancellationToken))
         {
             return true;
         }
@@ -1669,7 +1684,17 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         CancellationToken cancellationToken,
         out ExpressionSyntax initializer)
     {
-        if (invocation.Expression is IdentifierNameSyntax identifier
+        var identifier = invocation.Expression switch
+        {
+            IdentifierNameSyntax direct => direct,
+            MemberAccessExpressionSyntax
+            {
+                Expression: IdentifierNameSyntax receiver,
+                Name.Identifier.ValueText: "Invoke",
+            } => receiver,
+            _ => null,
+        };
+        if (identifier is not null
             && semanticModel.GetSymbolInfo(identifier, cancellationToken).Symbol
                 is ILocalSymbol { Type.TypeKind: TypeKind.Delegate } local
             && TryGetStableLocalInitializer(
@@ -2742,7 +2767,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             }
 
             if (operation is IParameterReferenceOperation parameterReference
-                && knownTypes.IsEventContextContainer(parameterReference.Parameter.Type))
+                && (knownTypes.IsEventContextContainer(parameterReference.Parameter.Type)
+                    || knownTypes.IsEventContextReference(parameterReference.Parameter.Type)))
             {
                 capturedContext = parameterReference.Syntax;
                 return true;
