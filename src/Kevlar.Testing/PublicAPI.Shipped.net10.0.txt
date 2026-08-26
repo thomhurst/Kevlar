@@ -1,0 +1,3 @@
+#nullable enable
+Kevlar.Testing.FakeTimeProviderExtensions
+static Kevlar.Testing.FakeTimeProviderExtensions.AdvanceUntilAsync(this Microsoft.Extensions.Time.Testing.FakeTimeProvider! timeProvider, System.TimeSpan step, System.Func<bool>! condition, string! conditionDescription, int maxAdvances = 100, int maxYieldsPerAdvance = 100, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask

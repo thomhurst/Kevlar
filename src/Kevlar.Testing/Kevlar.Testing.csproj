@@ -17,6 +17,7 @@
 
   <ItemGroup Condition="'$(TargetFramework)' != 'netstandard2.0'">
     <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
+    <AdditionalFiles Include="PublicAPI.Shipped.$(TargetFramework).txt" />
     <AdditionalFiles Include="PublicAPI.Unshipped.$(TargetFramework).txt" />
   </ItemGroup>
 

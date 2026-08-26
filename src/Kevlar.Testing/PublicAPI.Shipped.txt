@@ -1,1 +1,190 @@
 #nullable enable
+Kevlar.Testing.CallbackKind.CallbackError = 6 -> Kevlar.Testing.CallbackKind
+Kevlar.Testing.CallbackRecord.ErrorKind.get -> Kevlar.CallbackErrorKind?
+Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CallbackErrorEvent item) -> void
+Kevlar.Testing.BackoffDescriptor
+Kevlar.Testing.BackoffDescriptor.BaseDelay.get -> System.TimeSpan?
+Kevlar.Testing.BackoffDescriptor.Factor.get -> double?
+Kevlar.Testing.BackoffDescriptor.Jitter.get -> Kevlar.Jitter?
+Kevlar.Testing.BackoffDescriptor.Kind.get -> Kevlar.BackoffKind
+Kevlar.Testing.BackoffDescriptor.MaxDelay.get -> System.TimeSpan?
+Kevlar.Testing.CircuitBreakerStrategyDescriptor
+Kevlar.Testing.CircuitBreakerStrategyDescriptor.BreakDuration.get -> System.TimeSpan
+Kevlar.Testing.CircuitBreakerStrategyDescriptor.ConsecutiveFailures.get -> int?
+Kevlar.Testing.CircuitBreakerStrategyDescriptor.FailureRatio.get -> double?
+Kevlar.Testing.CircuitBreakerStrategyDescriptor.HasMonitor.get -> bool
+Kevlar.Testing.CircuitBreakerStrategyDescriptor.HasNotification.get -> bool
+Kevlar.Testing.CircuitBreakerStrategyDescriptor.MinimumThroughput.get -> int
+Kevlar.Testing.CircuitBreakerStrategyDescriptor.SamplingWindow.get -> System.TimeSpan
+Kevlar.Testing.ConcurrencyLimitStrategyDescriptor
+Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.MaxConcurrency.get -> int
+Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.QueueLimit.get -> int
+Kevlar.Testing.CustomStrategyDescriptor
+Kevlar.Testing.CustomStrategyDescriptor.Handling.get -> Kevlar.HandlingClause?
+Kevlar.Testing.CustomStrategyDescriptor.StrategyType.get -> System.Type!
+Kevlar.Testing.FallbackStrategyDescriptor
+Kevlar.Testing.FallbackStrategyDescriptor.HasNotification.get -> bool
+Kevlar.Testing.FallbackStrategyDescriptor.IsVoid.get -> bool
+Kevlar.Testing.FallbackStrategyDescriptor.ResultType.get -> System.Type?
+Kevlar.Testing.HedgeStrategyDescriptor
+Kevlar.Testing.HedgeStrategyDescriptor.Delay.get -> System.TimeSpan
+Kevlar.Testing.HedgeStrategyDescriptor.HasActionGenerator.get -> bool
+Kevlar.Testing.HedgeStrategyDescriptor.HasNotification.get -> bool
+Kevlar.Testing.HedgeStrategyDescriptor.MaxHedgedAttempts.get -> int
+Kevlar.Testing.RateLimitStrategyDescriptor
+Kevlar.Testing.RateLimitStrategyDescriptor.Burst.get -> int
+Kevlar.Testing.RateLimitStrategyDescriptor.Permits.get -> int
+Kevlar.Testing.RateLimitStrategyDescriptor.QueueLimit.get -> int
+Kevlar.Testing.RateLimitStrategyDescriptor.Window.get -> System.TimeSpan
+Kevlar.Testing.RetryStrategyDescriptor
+Kevlar.Testing.RetryStrategyDescriptor.Backoff.get -> Kevlar.Testing.BackoffDescriptor!
+Kevlar.Testing.RetryStrategyDescriptor.HasDelayGenerator.get -> bool
+Kevlar.Testing.RetryStrategyDescriptor.HasNotification.get -> bool
+Kevlar.Testing.RetryStrategyDescriptor.MaxDelay.get -> System.TimeSpan?
+Kevlar.Testing.RetryStrategyDescriptor.MaxRetries.get -> int
+Kevlar.Testing.ShieldAssertionException
+Kevlar.Testing.ShieldAssertionException.ShieldAssertionException() -> void
+Kevlar.Testing.ShieldAssertionException.ShieldAssertionException(string! message, System.Exception! innerException) -> void
+Kevlar.Testing.ShieldAssertionException.ShieldAssertionException(string! message) -> void
+Kevlar.Testing.ShieldDescriptor
+Kevlar.Testing.ShieldExecutionExtensions
+Kevlar.Testing.ShieldDescriptor.Name.get -> string?
+Kevlar.Testing.ShieldDescriptor.ResultType.get -> System.Type?
+Kevlar.Testing.ShieldDescriptor.Strategies.get -> System.Collections.Generic.IReadOnlyList<Kevlar.Testing.StrategyDescriptor!>!
+Kevlar.Testing.ShieldDescriptor.UsesCustomTimeProvider.get -> bool
+Kevlar.Testing.ShieldDescriptorAssertionExtensions
+Kevlar.Testing.ShieldDescriptorExtensions
+Kevlar.Testing.StrategyDescriptor
+Kevlar.Testing.StrategyDescriptor.Description.get -> string!
+Kevlar.Testing.StrategyDescriptor.Kind.get -> Kevlar.Testing.StrategyKind
+Kevlar.Testing.StrategyKind
+Kevlar.Testing.StrategyKind.CircuitBreaker = 3 -> Kevlar.Testing.StrategyKind
+Kevlar.Testing.StrategyKind.ConcurrencyLimit = 5 -> Kevlar.Testing.StrategyKind
+Kevlar.Testing.StrategyKind.Custom = 0 -> Kevlar.Testing.StrategyKind
+Kevlar.Testing.StrategyKind.Fallback = 7 -> Kevlar.Testing.StrategyKind
+Kevlar.Testing.StrategyKind.RateLimiterAdapter = 8 -> Kevlar.Testing.StrategyKind
+Kevlar.Testing.StrategyKind.Hedge = 6 -> Kevlar.Testing.StrategyKind
+Kevlar.Testing.StrategyKind.RateLimit = 4 -> Kevlar.Testing.StrategyKind
+Kevlar.Testing.StrategyKind.Retry = 1 -> Kevlar.Testing.StrategyKind
+Kevlar.Testing.StrategyKind.Timeout = 2 -> Kevlar.Testing.StrategyKind
+Kevlar.Testing.TimeoutStrategyDescriptor
+Kevlar.Testing.TimeoutStrategyDescriptor.HasNotification.get -> bool
+Kevlar.Testing.TimeoutStrategyDescriptor.HasTimeoutGenerator.get -> bool
+Kevlar.Testing.TimeoutStrategyDescriptor.Timeout.get -> System.TimeSpan
+static Kevlar.Testing.ShieldDescriptorAssertionExtensions.AssertContains<TDescriptor>(this Kevlar.Testing.ShieldDescriptor! descriptor) -> TDescriptor!
+static Kevlar.Testing.ShieldDescriptorAssertionExtensions.AssertContainsSingle<TDescriptor>(this Kevlar.Testing.ShieldDescriptor! descriptor) -> TDescriptor!
+static Kevlar.Testing.ShieldDescriptorAssertionExtensions.AssertStrategyCount(this Kevlar.Testing.ShieldDescriptor! descriptor, int expected) -> Kevlar.Testing.ShieldDescriptor!
+static Kevlar.Testing.ShieldDescriptorAssertionExtensions.AssertStrategyOrder(this Kevlar.Testing.ShieldDescriptor! descriptor, params Kevlar.Testing.StrategyKind[]! expected) -> Kevlar.Testing.ShieldDescriptor!
+static Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor(this Kevlar.Shield! shield) -> Kevlar.Testing.ShieldDescriptor!
+static Kevlar.Testing.ShieldDescriptorExtensions.GetDescriptor<TResult>(this Kevlar.Shield<TResult>! shield) -> Kevlar.Testing.ShieldDescriptor!
+Kevlar.Testing.CircuitBreakerStrategyDescriptor.HasHandlingOverride.get -> bool
+Kevlar.Testing.FallbackStrategyDescriptor.HasHandlingOverride.get -> bool
+Kevlar.Testing.HedgeStrategyDescriptor.HasHandlingOverride.get -> bool
+Kevlar.Testing.HedgeStrategyDescriptor.HasDelayGenerator.get -> bool
+Kevlar.Testing.RetryStrategyDescriptor.HasHandlingOverride.get -> bool
+Kevlar.Testing.CircuitBreakerStateSnapshot
+Kevlar.Testing.CircuitBreakerStateSnapshot.State.get -> Kevlar.CircuitState
+Kevlar.Testing.ConcurrencyLimitStateSnapshot
+Kevlar.Testing.ConcurrencyLimitStateSnapshot.AvailablePermits.get -> int
+Kevlar.Testing.ConcurrencyLimitStateSnapshot.QueuedExecutions.get -> int
+Kevlar.Testing.ConcurrencyLimitStateSnapshot.RunningExecutions.get -> int
+Kevlar.Testing.ExecutionProbe
+Kevlar.Testing.ExecutionProbe.AttemptCount.get -> int
+Kevlar.Testing.ExecutionProbe.CancellationCount.get -> int
+Kevlar.Testing.ExecutionProbe.ExecutionProbe() -> void
+Kevlar.Testing.ExecutionProbe.GetSnapshot() -> Kevlar.Testing.ExecutionProbeSnapshot!
+Kevlar.Testing.ExecutionProbe.WaitForAttemptCountAsync(int count, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kevlar.Testing.ExecutionProbe.WaitForCancellationCountAsync(int count, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kevlar.Testing.ExecutionProbe.Wrap(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! action) -> System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>!
+Kevlar.Testing.ExecutionProbe.Wrap<TResult>(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! action) -> System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>!
+Kevlar.Testing.ExecutionProbeSnapshot
+Kevlar.Testing.ExecutionProbeSnapshot.AttemptCount.get -> int
+Kevlar.Testing.ExecutionProbeSnapshot.CancellationCount.get -> int
+Kevlar.Testing.ExecutionProbeSnapshot.ContractVersion.get -> int
+Kevlar.Testing.RateLimitStateSnapshot
+Kevlar.Testing.RateLimitStateSnapshot.AvailablePermits.get -> long
+Kevlar.Testing.RateLimitStateSnapshot.QueuedExecutions.get -> int
+Kevlar.Testing.PartitionedShieldStateSnapshot
+Kevlar.Testing.PartitionedShieldStateSnapshot.CapacityEvictionCount.get -> long
+Kevlar.Testing.PartitionedShieldStateSnapshot.ClearedEvictionCount.get -> long
+Kevlar.Testing.PartitionedShieldStateSnapshot.ContractVersion.get -> int
+Kevlar.Testing.PartitionedShieldStateSnapshot.Count.get -> int
+Kevlar.Testing.PartitionedShieldStateSnapshot.CreatedCount.get -> long
+Kevlar.Testing.PartitionedShieldStateSnapshot.EvictionCount.get -> long
+Kevlar.Testing.PartitionedShieldStateSnapshot.ExpirationEvictionCount.get -> long
+Kevlar.Testing.ShieldStateSnapshot
+Kevlar.Testing.ShieldStateSnapshot.ContractVersion.get -> int
+Kevlar.Testing.ShieldStateSnapshot.Strategies.get -> System.Collections.Generic.IReadOnlyList<Kevlar.Testing.StrategyStateSnapshot!>!
+Kevlar.Testing.ShieldStateSnapshotExtensions
+Kevlar.Testing.StrategyStateSnapshot
+Kevlar.Testing.StrategyStateSnapshot.Kind.get -> Kevlar.Testing.StrategyKind
+Kevlar.Testing.StrategyStateSnapshot.StrategyIndex.get -> int
+static Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot(this Kevlar.Shield! shield) -> Kevlar.Testing.ShieldStateSnapshot!
+static Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot<TResult>(this Kevlar.Shield<TResult>! shield) -> Kevlar.Testing.ShieldStateSnapshot!
+static Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot<TKey, TResult>(this Kevlar.PartitionedShield<TKey, TResult>! shield) -> Kevlar.Testing.PartitionedShieldStateSnapshot!
+static Kevlar.Testing.ShieldStateSnapshotExtensions.GetStateSnapshot<TKey>(this Kevlar.PartitionedShield<TKey>! shield) -> Kevlar.Testing.PartitionedShieldStateSnapshot!
+Kevlar.Testing.CallbackKind
+Kevlar.Testing.CallbackKind.CircuitTransition = 4 -> Kevlar.Testing.CallbackKind
+Kevlar.Testing.CallbackKind.CircuitBreakDuration = 5 -> Kevlar.Testing.CallbackKind
+Kevlar.Testing.CallbackKind.Fallback = 3 -> Kevlar.Testing.CallbackKind
+Kevlar.Testing.CallbackKind.Hedge = 2 -> Kevlar.Testing.CallbackKind
+Kevlar.Testing.CallbackKind.Retry = 0 -> Kevlar.Testing.CallbackKind
+Kevlar.Testing.CallbackKind.Timeout = 1 -> Kevlar.Testing.CallbackKind
+Kevlar.Testing.CallbackRecord
+Kevlar.Testing.CallbackRecord.AttemptNumber.get -> int?
+Kevlar.Testing.CallbackRecord.Delay.get -> System.TimeSpan?
+Kevlar.Testing.CallbackRecord.Exception.get -> System.Exception?
+Kevlar.Testing.CallbackRecord.From.get -> Kevlar.CircuitState?
+Kevlar.Testing.CallbackRecord.Kind.get -> Kevlar.Testing.CallbackKind
+Kevlar.Testing.CallbackRecord.ConsecutiveFailures.get -> int?
+Kevlar.Testing.CallbackRecord.FailureCount.get -> long?
+Kevlar.Testing.CallbackRecord.FailureRate.get -> double?
+Kevlar.Testing.CallbackRecord.StrategyIndex.get -> int?
+Kevlar.Testing.CallbackRecord.RetryNumber.get -> int?
+Kevlar.Testing.CallbackRecord.Result.get -> object?
+Kevlar.Testing.CallbackRecord.Sequence.get -> long
+Kevlar.Testing.CallbackRecord.ShieldName.get -> string?
+Kevlar.Testing.CallbackRecord.Timeout.get -> System.TimeSpan?
+Kevlar.Testing.CallbackRecord.To.get -> Kevlar.CircuitState?
+Kevlar.Testing.MetricRecord
+Kevlar.Testing.MetricRecord.InstrumentName.get -> string!
+Kevlar.Testing.MetricRecord.Sequence.get -> long
+Kevlar.Testing.MetricRecord.Tags.get -> System.Collections.Generic.IReadOnlyDictionary<string!, object?>!
+Kevlar.Testing.MetricRecord.Value.get -> double
+Kevlar.Testing.TelemetryRecorder
+Kevlar.Testing.TelemetryRecorder.Callbacks.get -> System.Collections.Generic.IReadOnlyList<Kevlar.Testing.CallbackRecord!>!
+Kevlar.Testing.TelemetryRecorder.Events.get -> System.Collections.Generic.IReadOnlyList<Kevlar.Testing.TelemetryEventRecord!>!
+Kevlar.Testing.TelemetryRecorder.Dispose() -> void
+Kevlar.Testing.TelemetryRecorder.Metrics.get -> System.Collections.Generic.IReadOnlyList<Kevlar.Testing.MetricRecord!>!
+Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CircuitBreakerStateChangedEvent item) -> void
+Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CircuitBreakerBreakDurationEvent item, System.TimeSpan breakDuration) -> System.Threading.Tasks.ValueTask<System.TimeSpan>
+Kevlar.Testing.TelemetryRecorder.Record(Kevlar.FallbackEvent item) -> void
+Kevlar.Testing.TelemetryRecorder.Record(Kevlar.HedgeEvent item) -> void
+Kevlar.Testing.TelemetryRecorder.Record(Kevlar.RetryEvent item) -> void
+Kevlar.Testing.TelemetryRecorder.Record(Kevlar.TimeoutEvent item) -> void
+Kevlar.Testing.TelemetryRecorder.Record<TResult>(Kevlar.FallbackEvent<TResult> item) -> void
+Kevlar.Testing.TelemetryRecorder.Record<TResult>(Kevlar.CircuitBreakerBreakDurationEvent<TResult> item, System.TimeSpan breakDuration) -> System.Threading.Tasks.ValueTask<System.TimeSpan>
+Kevlar.Testing.TelemetryRecorder.Record<TResult>(Kevlar.RetryEvent<TResult> item) -> void
+Kevlar.Testing.TelemetryRecorder.TelemetryRecorder(bool captureMetrics = true, bool captureCallbackErrors = false) -> void
+Kevlar.Testing.TelemetryRecorder.WaitForCallbackCountAsync(int count, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kevlar.Testing.TelemetryRecorder.WaitForEventCountAsync(int count, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kevlar.Testing.TelemetryRecorder.WaitForMetricCountAsync(int count, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
+Kevlar.Testing.TelemetryEventRecord
+Kevlar.Testing.TelemetryEventRecord.AttemptNumber.get -> int
+Kevlar.Testing.TelemetryEventRecord.Duration.get -> System.TimeSpan
+Kevlar.Testing.TelemetryEventRecord.EventName.get -> string!
+Kevlar.Testing.TelemetryEventRecord.Exception.get -> System.Exception?
+Kevlar.Testing.TelemetryEventRecord.IsSuccess.get -> bool
+Kevlar.Testing.TelemetryEventRecord.OperationKey.get -> string?
+Kevlar.Testing.TelemetryEventRecord.Sequence.get -> long
+Kevlar.Testing.TelemetryEventRecord.Severity.get -> Kevlar.KevlarTelemetrySeverity
+Kevlar.Testing.TelemetryEventRecord.ShieldName.get -> string?
+Kevlar.Testing.TelemetryEventRecord.StrategyIndex.get -> int
+Kevlar.Testing.TelemetryEventRecord.StrategyName.get -> string!
+static Kevlar.Testing.ShieldExecutionExtensions.WaitForPendingAsync(this System.Threading.Tasks.Task! execution, System.Func<bool>! workStarted, string! workDescription, int maxYields = 100, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
+Kevlar.Testing.ConcurrencyLimitStrategyDescriptor.HasNotification.get -> bool
+Kevlar.Testing.RateLimitStrategyDescriptor.HasNotification.get -> bool
+Kevlar.Testing.HandlingClauseDescriptor
+Kevlar.Testing.HandlingClauseDescriptor.Description.get -> string?
+Kevlar.Testing.HandlingClauseDescriptor.IsContextAware.get -> bool
+Kevlar.Testing.StrategyDescriptor.HandlingClause.get -> Kevlar.Testing.HandlingClauseDescriptor?
