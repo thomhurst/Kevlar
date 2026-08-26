@@ -59,8 +59,12 @@ public class PipelineHazardAnalyzerTests
         {
             "Task.CompletedTask",
             "Task.CompletedTask.ConfigureAwait(false)",
+            "Task.FromResult(0)",
+            "Task.FromResult(0).ConfigureAwait(false)",
             "ValueTask.CompletedTask",
             "ValueTask.CompletedTask.ConfigureAwait(false)",
+            "ValueTask.FromResult(0)",
+            "ValueTask.FromResult(0).ConfigureAwait(false)",
         };
         foreach (var awaitExpression in awaitExpressions)
         {
@@ -3225,6 +3229,35 @@ public class PipelineHazardAnalyzerTests
             """);
 
         await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Constructor_Snapshots_In_Deferred_State()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class RetrySnapshot
+            {
+                public RetrySnapshot(RetryEvent item)
+                {
+                    RetryNumber = item.RetryNumber;
+                }
+
+                public int RetryNumber { get; }
+            }
+
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                        ThreadPool.QueueUserWorkItem(
+                            static (RetrySnapshot snapshot) =>
+                                Console.WriteLine(snapshot.RetryNumber),
+                            new RetrySnapshot(item),
+                            preferLocal: false));
+            }
+            """);
+
+        await Assert.That(diagnostics).IsEmpty();
     }
 
     [Test]

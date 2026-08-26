@@ -960,18 +960,34 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             operation = Unwrap(instance);
         }
 
-        return operation is IPropertyReferenceOperation
+        return operation switch
         {
-            Property:
+            IPropertyReferenceOperation
             {
-                IsStatic: true,
-                Name: "CompletedTask",
-                ContainingType: { } containingType,
-            },
-        }
-            && containingType.ToDisplayString() is "System.Threading.Tasks.Task"
-                or "System.Threading.Tasks.ValueTask";
+                Property:
+                {
+                    IsStatic: true,
+                    Name: "CompletedTask",
+                    ContainingType: { } containingType,
+                },
+            } => IsKnownCompletedAwaitableType(containingType),
+            IInvocationOperation
+            {
+                TargetMethod:
+                {
+                    IsStatic: true,
+                    Name: "FromResult",
+                    Parameters.Length: 1,
+                    ContainingType: { } containingType,
+                },
+            } => IsKnownCompletedAwaitableType(containingType),
+            _ => false,
+        };
     }
+
+    private static bool IsKnownCompletedAwaitableType(INamedTypeSymbol type) =>
+        type.ToDisplayString() is "System.Threading.Tasks.Task"
+            or "System.Threading.Tasks.ValueTask";
 
     private static void CollectRetainedAliases(
         SyntaxNode[] nodes,
@@ -1998,6 +2014,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         MethodDeclarationSyntax { ExpressionBody.Expression: { } expression } => expression,
         LocalFunctionStatementSyntax { Body: { } block } => block,
         LocalFunctionStatementSyntax { ExpressionBody.Expression: { } expression } => expression,
+        ConstructorDeclarationSyntax { Body: { } block } => block,
+        ConstructorDeclarationSyntax { ExpressionBody.Expression: { } expression } => expression,
         _ => null,
     };
 
@@ -3052,12 +3070,18 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         {
             foreach (var argument in objectCreation.Arguments)
             {
-                if (TryFindDeferredStateContext(
-                    argument.Value,
-                    context,
-                    knownTypes,
-                    visitedLocals,
-                    out capturedContext))
+                if (argument.Parameter is { } parameter
+                    && IsConstructorParameterStored(
+                        objectCreation.Constructor,
+                        parameter,
+                        context,
+                        knownTypes)
+                    && TryFindDeferredStateContext(
+                        argument.Value,
+                        context,
+                        knownTypes,
+                        visitedLocals,
+                        out capturedContext))
                 {
                     return true;
                 }
@@ -3158,6 +3182,56 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         capturedContext = null!;
         return false;
     }
+
+    private static bool IsConstructorParameterStored(
+        IMethodSymbol? constructor,
+        IParameterSymbol parameter,
+        OperationAnalysisContext context,
+        KnownTypes knownTypes)
+    {
+        var currentSemanticModel = context.Operation.SemanticModel;
+        if (constructor is null || currentSemanticModel is null)
+        {
+            return false;
+        }
+
+        foreach (var syntaxReference in constructor.DeclaringSyntaxReferences)
+        {
+            var syntax = syntaxReference.GetSyntax(context.CancellationToken);
+            if (syntax is RecordDeclarationSyntax
+                && constructor.ContainingType.GetMembers(parameter.Name)
+                    .OfType<IPropertySymbol>()
+                    .Any(property => CanRetainDeferredState(property.Type, knownTypes)))
+            {
+                return true;
+            }
+
+#pragma warning disable RS1030 // Source-backed constructors may be declared in another tree.
+            var semanticModel = syntax.SyntaxTree == currentSemanticModel.SyntaxTree
+                ? currentSemanticModel
+                : currentSemanticModel.Compilation.GetSemanticModel(syntax.SyntaxTree);
+#pragma warning restore RS1030
+            var body = GetFunctionBody(syntax);
+            var bodyOperation = body is null
+                ? null
+                : semanticModel.GetOperation(body, context.CancellationToken);
+            if (bodyOperation is not null
+                && DescendantOperations(bodyOperation)
+                    .OfType<ISimpleAssignmentOperation>()
+                    .Any(assignment =>
+                        CanRetainDeferredState(assignment.Target.Type, knownTypes)
+                        && Unwrap(assignment.Value) is IParameterReferenceOperation reference
+                        && SymbolEqualityComparer.Default.Equals(reference.Parameter, parameter)))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool CanRetainDeferredState(ITypeSymbol? type, KnownTypes knownTypes) =>
+        type?.IsReferenceType is true || ContainsEventContextReference(type, knownTypes);
 
     private static bool IsKnownCompositeState(IOperation operation) =>
         operation is IConditionalOperation
