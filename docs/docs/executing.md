@@ -56,19 +56,30 @@ the calling thread until they complete, so prefer `ExecuteAsync` for delayed or 
 
 ## Synchronous execution compatibility
 
+Every strategy hook returns `ValueTask`, and Kevlar never blocks the calling thread on one. Under
+synchronous `Execute`, `ExecuteOutcome`, and `ExecuteWithContext`, a hook that completes
+synchronously (`return default;`, `new(value)`, `ValueTask.CompletedTask`) runs inline at no extra
+cost. A hook that returns an incomplete `ValueTask` fails that execution with
+`NotSupportedException` — for example
+`Synchronous execution does not support RetryOptions.OnRetry completing asynchronously on shield 'catalog'. Use ExecuteAsync instead of Execute, or make the callback complete synchronously.`
+`ExecuteOutcome` returns that exception as a failed outcome. A few configurations are still
+rejected statically, before the action runs:
+
 | Pipeline configuration | Synchronous `Execute` behavior |
 |---|---|
-| Empty shield, fixed timeout, constant fallback, or synchronous callbacks | Runs on the calling thread |
+| Empty shield, fixed timeout, constant fallback, or hooks that complete synchronously | Runs on the calling thread |
 | Retry delay, queued rate limit, or queued concurrency limit | Blocks the calling thread until the delay or queue admission completes |
-| `TimeoutGeneratorSync` or `BreakDurationGeneratorSync` | Invokes the generator synchronously; no async transition is introduced |
-| `CircuitBreakerMonitor.Isolate()` / `Reset()` with `OnStateChangedAsync` | Blocks until the observer completes; the observer runs on the thread pool |
+| `TimeoutGenerator`, `BreakDurationGenerator`, or `DelayGenerator` returning a completed `ValueTask` | Invokes the generator inline; no async transition is introduced |
+| Any hook or generator that returns an incomplete `ValueTask`, including `ChaosBehaviorOptions.Behavior` | Throws `NotSupportedException` at that call; use `ExecuteAsync` or make the hook complete synchronously |
+| `CircuitBreakerMonitor.Isolate()` / `Reset()` with an `OnStateChanged` hook that yields | Blocks until the observer completes; the observer runs on the thread pool |
 | Multi-attempt hedging | Throws `NotSupportedException` before the action runs |
-| A `ValueTask`-returning fallback recovery delegate, any `UseRateLimiter` adapter, `OnRetryAsync`, `DelayGeneratorAsync`, `OnTimeoutAsync`, `OnFallbackAsync`, `OnStateChangedAsync`, any `OnRejectedAsync`, `TimeoutGenerator`, `BreakDurationGenerator`, or an injectable `ChaosBehaviorOptions.Behavior` | Throws `NotSupportedException` before the action runs; use `ExecuteAsync` or the synchronous counterpart |
+| A `ValueTask`-returning fallback recovery delegate or any `UseRateLimiter` adapter | Throws `NotSupportedException` before the action runs; use `ExecuteAsync` |
 | Custom strategy returning an incomplete `ValueTask` | Blocks at the execution boundary; custom code must avoid capturing a single-threaded `SynchronizationContext` |
 
-[`KEV012`](analyzers.md#kev012-async-configuration-with-synchronous-execute) catches inline async
-configuration passed to `Execute`. A shield obtained from a field, parameter, or opaque factory may
-still contain async configuration, so the runtime check remains authoritative.
+[`KEV012`](analyzers.md#kev012-async-configuration-with-synchronous-execute) reports `async`
+delegates assigned to hooks of a shield that is passed to `Execute`. A shield obtained from a field,
+parameter, or opaque factory may still contain such a hook, so the runtime guard remains
+authoritative.
 
 ## Zero-closure hot paths
 

@@ -12,10 +12,8 @@ internal sealed class PartitionCache<TKey, TShield>
     private readonly int _maximumPartitions;
     private readonly TimeSpan? _idleExpiration;
     private readonly TimeProvider _timeProvider;
-    private readonly Action<PartitionCreatedNotification>? _onCreated;
-    private readonly Func<PartitionCreatedNotification, ValueTask>? _onCreatedAsync;
-    private readonly Action<PartitionEvictionNotification>? _onEvicted;
-    private readonly Func<PartitionEvictionNotification, ValueTask>? _onEvictedAsync;
+    private readonly Func<PartitionCreatedNotification, ValueTask>? _onCreated;
+    private readonly Func<PartitionEvictionNotification, ValueTask>? _onEvicted;
     private readonly AsyncLocal<EvictionCallbackScope?> _evictionCallback = new();
 
     private Entry? _leastRecentlyUsed;
@@ -49,9 +47,7 @@ internal sealed class PartitionCache<TKey, TShield>
         _idleExpiration = options.IdleExpiration;
         _timeProvider = options.TimeProvider;
         _onCreated = options.OnCreated;
-        _onCreatedAsync = options.OnCreatedAsync;
         _onEvicted = options.OnEvicted;
-        _onEvictedAsync = options.OnEvictedAsync;
         _entries = new Dictionary<TKey, Entry>(comparer);
         _creations = new Dictionary<TKey, Creation>(comparer);
     }
@@ -502,31 +498,18 @@ internal sealed class PartitionCache<TKey, TShield>
 
     private async ValueTask NotifyCreatedAsync(TKey key, TShield shield)
     {
-        if (_onCreated is null && _onCreatedAsync is null)
+        if (_onCreated is null)
         {
             return;
         }
 
-        var notification = new PartitionCreatedNotification(key, shield);
         try
         {
-            _onCreated?.Invoke(notification);
+            await _onCreated(new PartitionCreatedNotification(key, shield)).ConfigureAwait(false);
         }
         catch
         {
             // Lifecycle observers must not change partition behavior.
-        }
-
-        if (_onCreatedAsync is not null)
-        {
-            try
-            {
-                await _onCreatedAsync(notification).ConfigureAwait(false);
-            }
-            catch
-            {
-                // Lifecycle observers must not change partition behavior.
-            }
         }
     }
 
@@ -571,31 +554,19 @@ internal sealed class PartitionCache<TKey, TShield>
                 // Metric listeners must not change partition behavior.
             }
 
-            if (_onEvicted is null && _onEvictedAsync is null)
+            if (_onEvicted is null)
             {
                 return;
             }
 
-            var notification = new PartitionEvictionNotification(entry.Key, entry.Shield, reason);
             try
             {
-                _onEvicted?.Invoke(notification);
+                await _onEvicted(new PartitionEvictionNotification(entry.Key, entry.Shield, reason))
+                    .ConfigureAwait(false);
             }
             catch
             {
                 // Lifecycle observers must not change partition behavior.
-            }
-
-            if (_onEvictedAsync is not null)
-            {
-                try
-                {
-                    await _onEvictedAsync(notification).ConfigureAwait(false);
-                }
-                catch
-                {
-                    // Lifecycle observers must not change partition behavior.
-                }
             }
         }
         finally

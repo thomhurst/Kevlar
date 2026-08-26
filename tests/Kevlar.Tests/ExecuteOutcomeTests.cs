@@ -313,6 +313,7 @@ public class ExecuteOutcomeTests
             {
                 hedge.Context.Properties.Set(HedgeCallbackWrite, 42);
                 releasePrimary.TrySetResult();
+                return default;
             };
         });
 

@@ -13,8 +13,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
     private readonly int _maxConcurrency;
     private readonly int _queueLimit;
     private readonly long _capacity;
-    private readonly Action<ConcurrencyLimitRejectedEvent>? _onRejected;
-    private readonly Func<ConcurrencyLimitRejectedEvent, ValueTask>? _onRejectedAsync;
+    private readonly Func<ConcurrencyLimitRejectedEvent, ValueTask>? _onRejected;
     private readonly string _telemetryName;
     private int _waiters;
     private long _pending;
@@ -29,10 +28,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
 
     internal int QueueLimit => _queueLimit;
 
-    internal bool HasNotification => _onRejected is not null || _onRejectedAsync is not null;
-
-    protected internal override string? SynchronousExecutionUnsupportedReason =>
-        _onRejectedAsync is null ? null : "ConcurrencyLimitOptions.OnRejectedAsync";
+    internal bool HasNotification => _onRejected is not null;
 
     internal (int Available, int Running, int Queued) CaptureState()
     {
@@ -64,7 +60,6 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
         _queueLimit = options.QueueLimit;
         _capacity = options.MaxConcurrency + (long)options.QueueLimit;
         _onRejected = options.OnRejected;
-        _onRejectedAsync = options.OnRejectedAsync;
         _telemetryName = options.Name ?? "ConcurrencyLimit";
         _metricsRegistration = KevlarMetrics.RegisterConcurrencyStateSource(this);
     }
@@ -102,7 +97,7 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
     {
         var rejection = new ConcurrencyLimitExceededException();
         KevlarMetrics.Rejection(context, "concurrency_limit", rejection, _telemetryName);
-        if (_onRejected is null && _onRejectedAsync is null)
+        if (_onRejected is null)
         {
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(rejection));
         }
@@ -111,16 +106,12 @@ internal sealed class ConcurrencyLimitStrategy : Strategy
             _maxConcurrency,
             _queueLimit,
             context);
-        CallbackInvoker.Invoke(
+        var notification = CallbackInvoker.InvokeAsync(
             _onRejected,
             rejectedEvent,
             CallbackErrorKind.ConcurrencyLimitRejected,
-            context);
-        var notification = CallbackInvoker.InvokeAsync(
-            _onRejectedAsync,
-            rejectedEvent,
-            CallbackErrorKind.ConcurrencyLimitRejected,
-            context);
+            context,
+            "ConcurrencyLimitOptions.OnRejected");
         if (notification.IsCompletedSuccessfully)
         {
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(rejection));

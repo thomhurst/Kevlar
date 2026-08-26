@@ -35,7 +35,11 @@ public class HttpResilienceTests
             {
                 options.MaxRetries = 3;
                 options.Backoff = Backoff.None;
-                options.OnRetry = retry => retry.Outcome.Result?.Dispose();
+                options.OnRetry = retry =>
+                {
+                    retry.Outcome.Result?.Dispose();
+                    return default;
+                };
             })
             .Timeout(TimeSpan.FromSeconds(5));
 
@@ -132,7 +136,11 @@ public class HttpResilienceTests
             options.MaxRetries = 2;
             options.Backoff = Backoff.None;
             options.DelayGenerator = HttpShield.RetryAfter;
-            options.OnRetry = retry => retry.Outcome.Result?.Dispose();
+            options.OnRetry = retry =>
+            {
+                retry.Outcome.Result?.Dispose();
+                return default;
+            };
         });
 
         var stopwatch = Stopwatch.StartNew();
@@ -189,7 +197,11 @@ public class HttpResilienceTests
             {
                 options.MaxRetries = 2;
                 options.Backoff = Backoff.None;
-                options.OnRetry = retry => retry.Outcome.Result?.Dispose();
+                options.OnRetry = retry =>
+                {
+                    retry.Outcome.Result?.Dispose();
+                    return default;
+                };
             }));
 
         var factory = services.BuildServiceProvider().GetRequiredService<IHttpClientFactory>();
@@ -269,7 +281,7 @@ public class HttpResilienceTests
                 options.HedgeDelayGenerator = hedge =>
                 {
                     observedAttempt = hedge.AttemptNumber;
-                    return TimeSpan.Zero;
+                    return new(TimeSpan.Zero);
                 };
             })
             .Services

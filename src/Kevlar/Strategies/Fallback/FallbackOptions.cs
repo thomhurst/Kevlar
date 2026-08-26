@@ -2,10 +2,9 @@ namespace Kevlar;
 
 /// <summary>Configures notifications for an untyped fallback strategy.</summary>
 /// <remarks>
-/// After a failure is selected for recovery, Kevlar records the fallback metric, invokes
-/// <see cref="OnFallback"/>, awaits <see cref="OnFallbackAsync"/>, and then runs the recovery
-/// action. Notification failures are reported through <see cref="KevlarDiagnostics.OnCallbackError"/>
-/// and do not skip recovery.
+/// After a failure is selected for recovery, Kevlar records the fallback metric, invokes and
+/// awaits <see cref="OnFallback"/>, and then runs the recovery action. Notification failures
+/// are reported through <see cref="KevlarDiagnostics.OnCallbackError"/> and do not skip recovery.
 /// </remarks>
 public sealed class FallbackOptions
 {
@@ -30,9 +29,9 @@ public sealed class FallbackOptions
     internal bool HasHandlingOverride =>
         HandlesException is not null || HandlesExceptionWithContext is not null;
 
-    /// <summary>Invoked synchronously before the recovery action.</summary>
-    public Action<FallbackEvent>? OnFallback { get; set; }
-
-    /// <summary>Invoked and awaited after <see cref="OnFallback"/> and before the recovery action.</summary>
-    public Func<FallbackEvent, ValueTask>? OnFallbackAsync { get; set; }
+    /// <summary>
+    /// Invoked and awaited before the recovery action. Return <see langword="default"/> from a
+    /// synchronous callback.
+    /// </summary>
+    public Func<FallbackEvent, ValueTask>? OnFallback { get; set; }
 }

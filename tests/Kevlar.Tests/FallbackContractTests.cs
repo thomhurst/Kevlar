@@ -23,6 +23,8 @@ public class FallbackContractTests
                 {
                     throw callbackFailure;
                 }
+
+                return default;
             });
 
         var failed = await shield.ExecuteOutcomeAsync<int>(_ =>
@@ -119,7 +121,11 @@ public class FallbackContractTests
                     explicitFactoryCalls++;
                     return new ValueTask<int>(42);
                 },
-                options => options.OnFallback = fallback => observed = fallback.Outcome.Exception);
+                options => options.OnFallback = fallback =>
+                {
+                    observed = fallback.Outcome.Exception;
+                    return default;
+                });
 
         var bypassed = await defaultShield.ExecuteOutcomeAsync<int>(_ => throw original);
         var recovered = await explicitShield.ExecuteAsync<int>(_ => throw original);
@@ -147,7 +153,11 @@ public class FallbackContractTests
                 handledOutcome = outcome;
                 fallbackToken = token;
                 return new ValueTask<int>(42);
-            }, options => options.OnFallback = fallback => eventOutcome = fallback.Outcome)
+            }, options => options.OnFallback = fallback =>
+            {
+                eventOutcome = fallback.Outcome;
+                return default;
+            })
             .Timeout(TimeSpan.FromSeconds(1))
             .WithTimeProvider(timeProvider);
 
@@ -218,7 +228,11 @@ public class FallbackContractTests
                     observed = outcome.Exception;
                     return new ValueTask<int>(42);
                 },
-                options => options.OnFallback = _ => eventCalls++)
+                options => options.OnFallback = _ =>
+                {
+                    eventCalls++;
+                    return default;
+                })
             .Hedge(2, Timeout.InfiniteTimeSpan);
 
         var result = await shield.ExecuteAsync<int>(_ =>
@@ -267,6 +281,7 @@ public class FallbackContractTests
                 {
                     order.Add("event");
                     eventOutcome = fallback.Outcome;
+                    return default;
                 });
 
         var result = await shield.ExecuteAsync<int>(_ => throw original);
@@ -296,6 +311,7 @@ public class FallbackContractTests
                 {
                     order.Add("event");
                     eventOutcome = fallback.Outcome;
+                    return default;
                 });
 
         var result = await shield.ExecuteAsync(_ => new ValueTask<int>(-1));

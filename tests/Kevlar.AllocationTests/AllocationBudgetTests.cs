@@ -26,11 +26,11 @@ public class AllocationBudgetTests
         factor: 1,
         jitter: Jitter.Equal);
     private readonly Shield _retry = Shield.Retry(3, Backoff.None);
-    private readonly Shield _asyncDelayRetry = Shield.Retry(options =>
+    private readonly Shield _generatedDelayRetry = Shield.Retry(options =>
     {
         options.MaxRetries = 3;
         options.Backoff = Backoff.None;
-        options.DelayGeneratorAsync = static _ => new ValueTask<TimeSpan?>(TimeSpan.Zero);
+        options.DelayGenerator = static _ => new ValueTask<TimeSpan?>(TimeSpan.Zero);
     });
     private readonly Shield _breaker = Shield.CircuitBreaker(5, TimeSpan.FromMinutes(1));
     private readonly Shield _dynamicBreaker = Shield.CircuitBreaker(options =>
@@ -38,24 +38,15 @@ public class AllocationBudgetTests
         options.ConsecutiveFailures = 5;
         options.BreakDurationGenerator = static _ => new ValueTask<TimeSpan>(TimeSpan.FromMinutes(1));
     });
-    private readonly Shield _dynamicSyncBreaker = Shield.CircuitBreaker(options =>
+    private readonly Shield _notifyingBreaker = Shield.CircuitBreaker(options =>
     {
         options.ConsecutiveFailures = 5;
-        options.BreakDurationGeneratorSync = static _ => TimeSpan.FromMinutes(1);
-    });
-    private readonly Shield _asyncTransitionBreaker = Shield.CircuitBreaker(options =>
-    {
-        options.ConsecutiveFailures = 5;
-        options.OnStateChangedAsync = static _ => default;
+        options.OnStateChanged = static _ => default;
     });
     private readonly Shield _timeout = Shield.Timeout(TimeSpan.FromMinutes(1));
     private readonly Shield _dynamicTimeout = Shield.Timeout(static options =>
     {
         options.TimeoutGenerator = static _ => new ValueTask<TimeSpan>(TimeSpan.FromMinutes(1));
-    });
-    private readonly Shield _dynamicSyncTimeout = Shield.Timeout(static options =>
-    {
-        options.TimeoutGeneratorSync = static _ => TimeSpan.FromMinutes(1);
     });
     private readonly Shield _disabledChaos = ChaosShield.Fault(static _ => { });
     private readonly Shield _excludedChaos = ChaosShield.Fault(static options =>
@@ -76,15 +67,13 @@ public class AllocationBudgetTests
     {
         options.Permits = 1_000_000_000;
         options.Window = TimeSpan.FromSeconds(1);
-        options.OnRejected = static _ => { };
-        options.OnRejectedAsync = static _ => ValueTask.CompletedTask;
+        options.OnRejected = static _ => ValueTask.CompletedTask;
     });
     private readonly Shield _concurrencyLimit = Shield.ConcurrencyLimit(1024);
     private readonly Shield _concurrencyLimitWithRejectionHooks = Shield.ConcurrencyLimit(options =>
     {
         options.MaxConcurrency = 1024;
-        options.OnRejected = static _ => { };
-        options.OnRejectedAsync = static _ => ValueTask.CompletedTask;
+        options.OnRejected = static _ => ValueTask.CompletedTask;
     });
     private readonly Shield<int> _typedJudge = Shield.For<int>()
         .WhenResult(-1)
@@ -105,6 +94,8 @@ public class AllocationBudgetTests
                 {
                     throw new InvalidOperationException();
                 }
+
+                return default;
             };
         });
     private readonly Shield _composed = Shield
@@ -123,32 +114,27 @@ public class AllocationBudgetTests
     };
 
     private readonly Shield _recoveryRetry = Shield.Retry(3, Backoff.None);
-    private readonly Shield _recoveryAsyncDelayRetry = Shield.Retry(options =>
+    private readonly Shield _recoveryGeneratedDelayRetry = Shield.Retry(options =>
     {
         options.MaxRetries = 3;
         options.Backoff = Backoff.None;
-        options.DelayGeneratorAsync = static _ => new ValueTask<TimeSpan?>(TimeSpan.Zero);
+        options.DelayGenerator = static _ => new ValueTask<TimeSpan?>(TimeSpan.Zero);
     });
     private readonly Shield _openBreaker = Shield.CircuitBreaker(1, TimeSpan.FromDays(1));
     private readonly Shield<int> _triggeredFallback = Shield.For<int>()
         .When<InvalidOperationException>()
         .FallbackTo(7);
-    private readonly Shield<int> _fallbackWithSyncNotification = Shield.For<int>()
+    private readonly Shield<int> _fallbackWithNotification = Shield.For<int>()
         .When<InvalidOperationException>()
-        .FallbackTo(7, static options => options.OnFallback = static _ => { });
-    private readonly Shield<int> _fallbackWithAsyncNotification = Shield.For<int>()
-        .When<InvalidOperationException>()
-        .FallbackTo(
-            7,
-            static options => options.OnFallbackAsync = static _ => ValueTask.CompletedTask);
+        .FallbackTo(7, static options => options.OnFallback = static _ => default);
     private readonly Shield _voidExecutionFallback = Shield
         .When<InvalidOperationException>()
         .Fallback(static (_, _) => ValueTask.CompletedTask);
     private readonly Shield _parallelHedge = Shield.Hedge(1, TimeSpan.Zero);
-    private readonly Shield _syncDelayGeneratedHedge = Shield.Hedge(options =>
+    private readonly Shield _delayGeneratedHedge = Shield.Hedge(options =>
     {
         options.MaxHedgedAttempts = 1;
-        options.DelayGenerator = static _ => TimeSpan.Zero;
+        options.DelayGenerator = static _ => new(TimeSpan.Zero);
     });
     private readonly Shield<int> _typedGeneratedHedge = Shield.For<int>().Hedge(options =>
     {
@@ -178,9 +164,9 @@ public class AllocationBudgetTests
                 "Quota-disabled logging must not format results.");
         });
     private readonly Counter _retryCounter = new();
-    private readonly Counter _asyncDelayRetryCounter = new();
+    private readonly Counter _generatedDelayRetryCounter = new();
     private readonly ParallelHedgeState _parallelHedgeState = new();
-    private readonly ParallelHedgeState _syncDelayGeneratedHedgeState = new();
+    private readonly ParallelHedgeState _delayGeneratedHedgeState = new();
     private readonly int _metadataValue = 42;
 
     public AllocationBudgetTests() => _ = _partitioned.GetShield(42);
@@ -235,11 +221,11 @@ public class AllocationBudgetTests
         AssertZero("retry sync happy path", this, static test =>
             test._retry.Execute(static _ => 42));
         AssertZero("dynamic circuit sync happy path", this, static test =>
-            test._dynamicSyncBreaker.Execute(static _ => 42));
+            test._dynamicBreaker.Execute(static _ => 42));
         AssertZero("fixed circuit sync happy path", this, static test =>
             test._breaker.Execute(static _ => 42));
         AssertZero("dynamic timeout sync happy path", this, static test =>
-            test._dynamicSyncTimeout.Execute(static _ => 42));
+            test._dynamicTimeout.Execute(static _ => 42));
         AssertZero("fixed timeout sync happy path", this, static test =>
             test._timeout.Execute(static _ => 42));
         AssertZero("fallback sync pass-through", this, static test =>
@@ -254,14 +240,14 @@ public class AllocationBudgetTests
             test._composed.Execute(static _ => 42));
         AssertZero("retry async happy path", this, static test =>
             test._retry.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
-        AssertZero("retry async delay generator happy path", this, static test =>
-            test._asyncDelayRetry.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
+        AssertZero("retry delay generator happy path", this, static test =>
+            test._generatedDelayRetry.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("circuit closed", this, static test =>
             test._breaker.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("dynamic circuit closed", this, static test =>
             test._dynamicBreaker.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
-        AssertZero("async transition circuit closed", this, static test =>
-            test._asyncTransitionBreaker.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
+        AssertZero("notifying circuit closed", this, static test =>
+            test._notifyingBreaker.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("timeout happy path", this, static test =>
             test._timeout.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("dynamic timeout happy path", this, static test =>
@@ -274,8 +260,8 @@ public class AllocationBudgetTests
             test._enabledOutcomeChaos.ExecuteAsync(static _ => new ValueTask<int>(0)).GetAwaiter().GetResult());
         AssertZero("fallback pass-through", this, static test =>
             test._fallback.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
-        AssertZero("fallback async notification pass-through", this, static test =>
-            test._fallbackWithAsyncNotification.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
+        AssertZero("fallback notification pass-through", this, static test =>
+            test._fallbackWithNotification.ExecuteAsync(static _ => new ValueTask<int>(42)).GetAwaiter().GetResult());
         AssertZero("void fallback pass-through", this, static test =>
             test._voidExecutionFallback.ExecuteAsync(static _ => ValueTask.CompletedTask).GetAwaiter().GetResult());
         AssertZero("rate limit uncontended", this, static test =>
@@ -356,8 +342,8 @@ public class AllocationBudgetTests
 
                 return new ValueTask<int>(42);
             }).GetAwaiter().GetResult());
-        AssertBudget("retry async delay generator recovers", 512, this, static test =>
-            test._recoveryAsyncDelayRetry.ExecuteAsync(test._asyncDelayRetryCounter, static (counter, _) =>
+        AssertBudget("retry delay generator recovers", 512, this, static test =>
+            test._recoveryGeneratedDelayRetry.ExecuteAsync(test._generatedDelayRetryCounter, static (counter, _) =>
             {
                 if (++counter.Value % 3 != 0)
                 {
@@ -368,10 +354,8 @@ public class AllocationBudgetTests
             }).GetAwaiter().GetResult());
         AssertBudget("fallback triggered", 512, this, static test =>
             test._triggeredFallback.ExecuteAsync(static _ => throw RecoverableFailure).GetAwaiter().GetResult());
-        AssertBudget("fallback sync notification", 512, this, static test =>
-            test._fallbackWithSyncNotification.ExecuteAsync(static _ => throw RecoverableFailure).GetAwaiter().GetResult());
-        AssertBudget("fallback completed async notification", 512, this, static test =>
-            test._fallbackWithAsyncNotification.ExecuteAsync(static _ => throw RecoverableFailure).GetAwaiter().GetResult());
+        AssertBudget("fallback notification", 512, this, static test =>
+            test._fallbackWithNotification.ExecuteAsync(static _ => throw RecoverableFailure).GetAwaiter().GetResult());
         AssertBudget("void fallback triggered", 1_536, this, static test =>
             test._voidExecutionFallback.ExecuteAsync(static _ => throw RecoverableFailure).GetAwaiter().GetResult());
         AssertBudget("open circuit rejection", 2_048, this, static test =>
@@ -392,13 +376,13 @@ public class AllocationBudgetTests
                 .GetAwaiter().GetResult();
             test._parallelHedgeState.WaitForLoserCompletion();
         }, AllocationScope.AllThreads);
-        AssertBudget("sync delay generator launches second attempt", 3_072, this, static test =>
+        AssertBudget("delay generator launches second attempt", 3_072, this, static test =>
         {
-            test._syncDelayGeneratedHedge.ExecuteAsync(
-                test._syncDelayGeneratedHedgeState,
+            test._delayGeneratedHedge.ExecuteAsync(
+                test._delayGeneratedHedgeState,
                 static (state, cancellationToken) => state.ExecuteAsync(cancellationToken))
                 .GetAwaiter().GetResult();
-            test._syncDelayGeneratedHedgeState.WaitForLoserCompletion();
+            test._delayGeneratedHedgeState.WaitForLoserCompletion();
         }, AllocationScope.AllThreads);
 #if NET8_0
         // The eight-byte margin above the .NET 8 Linux pool-miss path still catches

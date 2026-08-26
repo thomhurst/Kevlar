@@ -5,7 +5,7 @@ namespace Kevlar.Tests;
 public class LimiterRejectionHookTests
 {
     [Test]
-    public async Task Rate_Limit_Hooks_Are_Ordered_And_Receive_Metadata()
+    public async Task Rate_Limit_Hook_Is_Awaited_And_Receives_Metadata()
     {
         var fakeTime = new FakeTimeProvider();
         var order = new List<string>();
@@ -19,18 +19,15 @@ public class LimiterRejectionHookTests
                 options.Window = TimeSpan.FromSeconds(2);
                 options.Burst = 1;
                 options.QueueLimit = 0;
-                options.OnRejected = rejection =>
+                options.OnRejected = async rejection =>
                 {
                     observed = rejection;
                     observedShieldName = rejection.Context.ShieldName;
                     observedStrategyIndex = rejection.Context.StrategyIndex;
-                    order.Add("sync");
-                };
-                options.OnRejectedAsync = async rejection =>
-                {
+                    order.Add("hook:start");
                     await Task.Yield();
                     await Assert.That(ReferenceEquals(rejection.Context, observed.Context)).IsTrue();
-                    order.Add("async");
+                    order.Add("hook:end");
                 };
             })
             .WithName("orders")
@@ -40,7 +37,7 @@ public class LimiterRejectionHookTests
         var outcome = await shield.ExecuteOutcomeAsync(static _ => new ValueTask<int>(2));
 
         await Assert.That(outcome.Exception).IsTypeOf<RateLimitExceededException>();
-        await Assert.That(order.SequenceEqual(["sync", "async"])).IsTrue();
+        await Assert.That(order.SequenceEqual(["hook:start", "hook:end"])).IsTrue();
         await Assert.That(observed.RetryAfter).IsEqualTo(TimeSpan.FromSeconds(2));
         await Assert.That(observed.Permits).IsEqualTo(1);
         await Assert.That(observed.Window).IsEqualTo(TimeSpan.FromSeconds(2));
@@ -51,7 +48,7 @@ public class LimiterRejectionHookTests
     }
 
     [Test]
-    public async Task Concurrency_Limit_Hooks_Are_Ordered_And_Receive_Metadata()
+    public async Task Concurrency_Limit_Hook_Is_Awaited_And_Receives_Metadata()
     {
         var order = new List<string>();
         ConcurrencyLimitRejectedEvent observed = default;
@@ -65,18 +62,15 @@ public class LimiterRejectionHookTests
             {
                 options.MaxConcurrency = 1;
                 options.QueueLimit = 0;
-                options.OnRejected = rejection =>
+                options.OnRejected = async rejection =>
                 {
                     observed = rejection;
                     observedShieldName = rejection.Context.ShieldName;
                     observedStrategyIndex = rejection.Context.StrategyIndex;
-                    order.Add("sync");
-                };
-                options.OnRejectedAsync = async rejection =>
-                {
+                    order.Add("hook:start");
                     await Task.Yield();
                     await Assert.That(ReferenceEquals(rejection.Context, observed.Context)).IsTrue();
-                    order.Add("async");
+                    order.Add("hook:end");
                 };
             })
             .WithName("bulkhead");
@@ -92,7 +86,7 @@ public class LimiterRejectionHookTests
         await Assert.That(async () => await shield.ExecuteAsync(static _ => new ValueTask<int>(2)))
             .Throws<ConcurrencyLimitExceededException>();
 
-        await Assert.That(order.SequenceEqual(["sync", "async"])).IsTrue();
+        await Assert.That(order.SequenceEqual(["hook:start", "hook:end"])).IsTrue();
         await Assert.That(observed.MaxConcurrency).IsEqualTo(1);
         await Assert.That(observed.QueueLimit).IsEqualTo(0);
         await Assert.That(observedStrategyIndex).IsEqualTo(0);
@@ -103,41 +97,67 @@ public class LimiterRejectionHookTests
     }
 
     [Test]
-    public async Task Synchronous_Execution_Rejects_An_Async_Rejection_Hook()
+    public async Task Synchronous_Execution_Rejects_A_Rejection_Hook_That_Completes_Asynchronously()
     {
-        var asyncHooks = 0;
+        var hooksEntered = 0;
+        // Released only after the assertions so the hook is guaranteed to still be pending when
+        // the synchronous guard inspects it.
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var shield = Shield.RateLimit(options =>
         {
             options.Permits = 1;
             options.Window = TimeSpan.FromMinutes(1);
-            options.OnRejectedAsync = _ =>
+            options.OnRejected = async _ =>
             {
-                asyncHooks++;
+                hooksEntered++;
+                await gate.Task;
+            };
+        });
+
+        await Assert.That(shield.Execute(static _ => 1)).IsEqualTo(1);
+        var exception = await Assert.That(() => shield.Execute(static _ => 2))
+            .Throws<NotSupportedException>();
+
+        await Assert.That(exception!.Message).Contains("RateLimitOptions.OnRejected");
+        await Assert.That(exception.Message).Contains("Use ExecuteAsync");
+        await Assert.That(hooksEntered).IsEqualTo(1);
+        gate.SetResult();
+    }
+
+    [Test]
+    public async Task Synchronous_Execution_Runs_A_Synchronously_Completing_Rejection_Hook()
+    {
+        var hooks = 0;
+        var shield = Shield.RateLimit(options =>
+        {
+            options.Permits = 1;
+            options.Window = TimeSpan.FromMinutes(1);
+            options.OnRejected = _ =>
+            {
+                hooks++;
                 return ValueTask.CompletedTask;
             };
         });
 
-        var exception = await Assert.That(() => shield.Execute(static _ => 1))
-            .Throws<NotSupportedException>();
+        await Assert.That(shield.Execute(static _ => 1)).IsEqualTo(1);
+        await Assert.That(() => shield.Execute(static _ => 2)).Throws<RateLimitExceededException>();
 
-        await Assert.That(exception!.Message).Contains("RateLimitOptions.OnRejectedAsync");
-        await Assert.That(asyncHooks).IsEqualTo(0);
+        await Assert.That(hooks).IsEqualTo(1);
     }
 
     [Test]
-    public async Task Synchronous_Rejection_Hook_Failure_Does_Not_Skip_Async_Hook()
+    public async Task Synchronous_Rejection_Hook_Failure_Preserves_Rejection()
     {
-        var callbackFailure = new InvalidOperationException("sync rejection callback failed");
-        var asyncHooks = 0;
+        var callbackFailure = new InvalidOperationException("rejection callback failed");
+        var hooks = 0;
         var shield = Shield.RateLimit(options =>
         {
             options.Permits = 1;
             options.Window = TimeSpan.FromMinutes(1);
-            options.OnRejected = _ => throw callbackFailure;
-            options.OnRejectedAsync = _ =>
+            options.OnRejected = _ =>
             {
-                asyncHooks++;
-                return ValueTask.CompletedTask;
+                hooks++;
+                throw callbackFailure;
             };
         });
 
@@ -145,7 +165,7 @@ public class LimiterRejectionHookTests
         await Assert.That(async () => await shield.ExecuteAsync(static _ => new ValueTask<int>(2)))
             .Throws<RateLimitExceededException>();
 
-        await Assert.That(asyncHooks).IsEqualTo(1);
+        await Assert.That(hooks).IsEqualTo(1);
     }
 
     [Test]
@@ -155,7 +175,7 @@ public class LimiterRejectionHookTests
         var shield = Shield.ConcurrencyLimit(options =>
         {
             options.MaxConcurrency = 1;
-            options.OnRejectedAsync = _ => ValueTask.FromException(callbackFailure);
+            options.OnRejected = _ => ValueTask.FromException(callbackFailure);
         });
         var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -184,7 +204,11 @@ public class LimiterRejectionHookTests
             options.Permits = 1;
             options.Window = TimeSpan.FromSeconds(1);
             options.QueueLimit = 1;
-            options.OnRejected = _ => rejections++;
+            options.OnRejected = _ =>
+            {
+                rejections++;
+                return default;
+            };
         }).WithTimeProvider(fakeTime);
         using var cancellation = new CancellationTokenSource();
 
@@ -211,7 +235,11 @@ public class LimiterRejectionHookTests
         {
             options.MaxConcurrency = 1;
             options.QueueLimit = 1;
-            options.OnRejected = _ => rejections++;
+            options.OnRejected = _ =>
+            {
+                rejections++;
+                return default;
+            };
         });
         using var cancellation = new CancellationTokenSource();
         var running = shield.ExecuteAsync(async _ =>

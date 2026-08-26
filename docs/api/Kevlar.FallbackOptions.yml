@@ -10,7 +10,6 @@ items:
   - Kevlar.FallbackOptions.HandlesExceptionWithContext
   - Kevlar.FallbackOptions.Name
   - Kevlar.FallbackOptions.OnFallback
-  - Kevlar.FallbackOptions.OnFallbackAsync
   langs:
   - csharp
   - vb
@@ -23,13 +22,11 @@ items:
   namespace: Kevlar
   summary: Configures notifications for an untyped fallback strategy.
   remarks: >-
-    After a failure is selected for recovery, Kevlar records the fallback metric, invokes
+    After a failure is selected for recovery, Kevlar records the fallback metric, invokes and
 
-    <xref href="Kevlar.FallbackOptions.OnFallback" data-throw-if-not-resolved="false"></xref>, awaits <xref href="Kevlar.FallbackOptions.OnFallbackAsync" data-throw-if-not-resolved="false"></xref>, and then runs the recovery
+    awaits <xref href="Kevlar.FallbackOptions.OnFallback" data-throw-if-not-resolved="false"></xref>, and then runs the recovery action. Notification failures
 
-    action. Notification failures are reported through <xref href="Kevlar.KevlarDiagnostics.OnCallbackError" data-throw-if-not-resolved="false"></xref>
-
-    and do not skip recovery.
+    are reported through <xref href="Kevlar.KevlarDiagnostics.OnCallbackError" data-throw-if-not-resolved="false"></xref> and do not skip recovery.
   example: []
   syntax:
     content: public sealed class FallbackOptions
@@ -159,38 +156,18 @@ items:
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Invoked synchronously before the recovery action.
+  summary: >-
+    Invoked and awaited before the recovery action. Return <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/keywords/default">default</a> from a
+
+    synchronous callback.
   example: []
   syntax:
-    content: public Action<FallbackEvent>? OnFallback { get; set; }
-    parameters: []
-    return:
-      type: System.Action{Kevlar.FallbackEvent}
-    content.vb: Public Property OnFallback As Action(Of FallbackEvent)
-  overload: Kevlar.FallbackOptions.OnFallback*
-- uid: Kevlar.FallbackOptions.OnFallbackAsync
-  commentId: P:Kevlar.FallbackOptions.OnFallbackAsync
-  id: OnFallbackAsync
-  parent: Kevlar.FallbackOptions
-  langs:
-  - csharp
-  - vb
-  name: OnFallbackAsync
-  nameWithType: FallbackOptions.OnFallbackAsync
-  fullName: Kevlar.FallbackOptions.OnFallbackAsync
-  type: Property
-  assemblies:
-  - Kevlar
-  namespace: Kevlar
-  summary: Invoked and awaited after <xref href="Kevlar.FallbackOptions.OnFallback" data-throw-if-not-resolved="false"></xref> and before the recovery action.
-  example: []
-  syntax:
-    content: public Func<FallbackEvent, ValueTask>? OnFallbackAsync { get; set; }
+    content: public Func<FallbackEvent, ValueTask>? OnFallback { get; set; }
     parameters: []
     return:
       type: System.Func{Kevlar.FallbackEvent,System.Threading.Tasks.ValueTask}
-    content.vb: Public Property OnFallbackAsync As Func(Of FallbackEvent, ValueTask)
-  overload: Kevlar.FallbackOptions.OnFallbackAsync*
+    content.vb: Public Property OnFallback As Func(Of FallbackEvent, ValueTask)
+  overload: Kevlar.FallbackOptions.OnFallback*
 references:
 - uid: Kevlar.FallbackOptions.OnFallback
   commentId: P:Kevlar.FallbackOptions.OnFallback
@@ -199,13 +176,6 @@ references:
   name: OnFallback
   nameWithType: FallbackOptions.OnFallback
   fullName: Kevlar.FallbackOptions.OnFallback
-- uid: Kevlar.FallbackOptions.OnFallbackAsync
-  commentId: P:Kevlar.FallbackOptions.OnFallbackAsync
-  isExternal: true
-  href: Kevlar.FallbackOptions.html#Kevlar_FallbackOptions_OnFallbackAsync
-  name: OnFallbackAsync
-  nameWithType: FallbackOptions.OnFallbackAsync
-  fullName: Kevlar.FallbackOptions.OnFallbackAsync
 - uid: Kevlar.KevlarDiagnostics.OnCallbackError
   commentId: E:Kevlar.KevlarDiagnostics.OnCallbackError
   isExternal: true
@@ -618,76 +588,6 @@ references:
   name: OnFallback
   nameWithType: FallbackOptions.OnFallback
   fullName: Kevlar.FallbackOptions.OnFallback
-- uid: System.Action{Kevlar.FallbackEvent}
-  commentId: T:System.Action{Kevlar.FallbackEvent}
-  parent: System
-  definition: System.Action`1
-  href: https://learn.microsoft.com/dotnet/api/system.action-1
-  name: Action<FallbackEvent>
-  nameWithType: Action<FallbackEvent>
-  fullName: System.Action<Kevlar.FallbackEvent>
-  nameWithType.vb: Action(Of FallbackEvent)
-  fullName.vb: System.Action(Of Kevlar.FallbackEvent)
-  name.vb: Action(Of FallbackEvent)
-  spec.csharp:
-  - uid: System.Action`1
-    name: Action
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.action-1
-  - name: <
-  - uid: Kevlar.FallbackEvent
-    name: FallbackEvent
-    isExternal: true
-    href: Kevlar.FallbackEvent.html
-  - name: '>'
-  spec.vb:
-  - uid: System.Action`1
-    name: Action
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.action-1
-  - name: (
-  - name: Of
-  - name: " "
-  - uid: Kevlar.FallbackEvent
-    name: FallbackEvent
-    isExternal: true
-    href: Kevlar.FallbackEvent.html
-  - name: )
-- uid: System.Action`1
-  commentId: T:System.Action`1
-  isExternal: true
-  href: https://learn.microsoft.com/dotnet/api/system.action-1
-  name: Action<T>
-  nameWithType: Action<T>
-  fullName: System.Action<T>
-  nameWithType.vb: Action(Of T)
-  fullName.vb: System.Action(Of T)
-  name.vb: Action(Of T)
-  spec.csharp:
-  - uid: System.Action`1
-    name: Action
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.action-1
-  - name: <
-  - name: T
-  - name: '>'
-  spec.vb:
-  - uid: System.Action`1
-    name: Action
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.action-1
-  - name: (
-  - name: Of
-  - name: " "
-  - name: T
-  - name: )
-- uid: Kevlar.FallbackOptions.OnFallbackAsync*
-  commentId: Overload:Kevlar.FallbackOptions.OnFallbackAsync
-  isExternal: true
-  href: Kevlar.FallbackOptions.html#Kevlar_FallbackOptions_OnFallbackAsync
-  name: OnFallbackAsync
-  nameWithType: FallbackOptions.OnFallbackAsync
-  fullName: Kevlar.FallbackOptions.OnFallbackAsync
 - uid: System.Func{Kevlar.FallbackEvent,System.Threading.Tasks.ValueTask}
   commentId: T:System.Func{Kevlar.FallbackEvent,System.Threading.Tasks.ValueTask}
   parent: System

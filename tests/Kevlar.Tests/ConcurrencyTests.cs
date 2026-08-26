@@ -19,6 +19,8 @@ public class ConcurrencyTests
                 {
                     transitions.Add(change);
                 }
+
+                return default;
             };
         });
 
@@ -82,6 +84,8 @@ public class ConcurrencyTests
                     {
                         Interlocked.Increment(ref mismatches);
                     }
+
+                    return default;
                 };
             });
 

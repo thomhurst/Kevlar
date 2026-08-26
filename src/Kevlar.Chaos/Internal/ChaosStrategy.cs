@@ -14,14 +14,11 @@ internal abstract class ChaosStrategy : Strategy
     private readonly Func<KevlarContext, bool>? _predicate;
     private readonly string? _requiredOperation;
     private readonly string? _requiredEnvironment;
-    private readonly Action<ChaosEvent>? _onInjected;
+    private readonly Func<ChaosEvent, ValueTask>? _onInjected;
     private readonly string _telemetryName;
     private long _randomState;
 
     protected override bool InvokesContinuationAtMostOnce => true;
-
-    protected bool CanInject =>
-        _enabled && (_injectionRateGenerator is not null || _injectionRate > 0);
 
     protected ChaosStrategy(ChaosOptions options)
     {
@@ -100,32 +97,16 @@ internal abstract class ChaosStrategy : Strategy
         return true;
     }
 
-    protected void Notify(
+    /// <summary>
+    /// Records the injection and invokes <see cref="ChaosOptions.OnInjected"/>. The returned task
+    /// completes when the callback does; callers must await it before injecting.
+    /// </summary>
+    protected ValueTask Notify(
         ChaosInjectionKind kind,
         KevlarContext context,
         ChaosDecision decision,
         Exception? exception = null)
     {
-        if (_onInjected is not null)
-        {
-            try
-            {
-                _onInjected(new ChaosEvent(
-                    kind,
-                    context,
-                    decision.Operation,
-                    decision.Environment,
-                    decision.Rate,
-                    decision.Sample));
-            }
-            catch (Exception callbackException)
-            {
-                KevlarDiagnostics.ReportCallbackError(
-                    CallbackErrorKind.ChaosInjected,
-                    context,
-                    callbackException);
-            }
-        }
         ChaosMetrics.Injection(kind, context.ShieldName, decision.Operation, decision.Environment);
         context.RecordEvent(
             kind switch
@@ -139,6 +120,80 @@ internal abstract class ChaosStrategy : Strategy
             KevlarTelemetrySeverity.Warning,
             exception,
             strategyName: _telemetryName);
+
+        if (_onInjected is null)
+        {
+            return default;
+        }
+
+        ValueTask notification;
+        try
+        {
+            notification = _onInjected(new ChaosEvent(
+                kind,
+                context,
+                decision.Operation,
+                decision.Environment,
+                decision.Rate,
+                decision.Sample));
+        }
+        catch (Exception callbackException)
+        {
+            KevlarDiagnostics.ReportCallbackError(
+                CallbackErrorKind.ChaosInjected,
+                context,
+                callbackException);
+            return default;
+        }
+
+        if (notification.IsCompletedSuccessfully)
+        {
+            notification.GetAwaiter().GetResult();
+            return default;
+        }
+
+        ThrowIfSynchronousExecutionCannotAwait(notification, context, "ChaosOptions.OnInjected");
+        return AwaitNotificationAsync(notification, context);
+    }
+
+    /// <summary>
+    /// Rejects a delegate that has not completed while the shield executes synchronously.
+    /// Kevlar never blocks the calling thread on a callback.
+    /// </summary>
+    protected static void ThrowIfSynchronousExecutionCannotAwait(
+        in ValueTask pending,
+        KevlarContext context,
+        string hookName)
+    {
+        if (pending.IsCompleted || !context.IsSynchronous)
+        {
+            return;
+        }
+
+        _ = pending.AsTask().ContinueWith(
+            static completed => _ = completed.Exception,
+            CancellationToken.None,
+            TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default);
+        var shield = context.ShieldName is { Length: > 0 } name ? $" on shield '{name}'" : string.Empty;
+        throw new NotSupportedException(
+            $"Synchronous execution does not support {hookName} completing asynchronously{shield}. " +
+            "Use ExecuteAsync instead of Execute, or make the callback complete synchronously.");
+    }
+
+    private static async ValueTask AwaitNotificationAsync(ValueTask notification, KevlarContext context)
+    {
+        try
+        {
+            await notification.ConfigureAwait(false);
+        }
+        catch (Exception callbackException)
+        {
+            KevlarDiagnostics.ReportCallbackError(
+                CallbackErrorKind.ChaosInjected,
+                context,
+                callbackException);
+        }
     }
 
     private double NextSample()

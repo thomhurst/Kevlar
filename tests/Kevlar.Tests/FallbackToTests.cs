@@ -28,7 +28,11 @@ public class FallbackToTests
         Exception? observed = null;
         var shield = Shield.For<int>().FallbackTo(
             42,
-            options => options.OnFallback = @event => observed = @event.Outcome.Exception);
+            options => options.OnFallback = @event =>
+            {
+                observed = @event.Outcome.Exception;
+                return default;
+            });
 
         var result = await shield.ExecuteAsync(_ => throw new InvalidOperationException("original"));
 
@@ -42,7 +46,11 @@ public class FallbackToTests
         var fired = false;
         var shield = Shield.For<int>().FallbackTo(
             42,
-            options => options.OnFallback = _ => fired = true);
+            options => options.OnFallback = _ =>
+            {
+                fired = true;
+                return default;
+            });
 
         var result = await shield.ExecuteAsync(_ => new ValueTask<int>(7));
 

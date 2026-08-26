@@ -287,7 +287,11 @@ public class NewApiTests
             {
                 options.MaxRetries = 2;
                 options.Backoff = Backoff.None;
-                options.OnRetry = retry => seen.Add(retry.Outcome);
+                options.OnRetry = retry =>
+                {
+                    seen.Add(retry.Outcome);
+                    return default;
+                };
             });
 
         var attempts = 0;
@@ -324,9 +328,9 @@ public class NewApiTests
                 options.DelayGenerator = retry =>
                 {
                     generatorSaw.Add(retry.Outcome.Result);
-                    return null;
+                    return default;
                 };
-                options.OnRetryAsync = async _ =>
+                options.OnRetry = async _ =>
                 {
                     await Task.Yield();
                     asyncEvents++;
@@ -344,43 +348,31 @@ public class NewApiTests
     [Test]
     public async Task Retry_Option_Types_Are_Siblings_And_Preserve_Delegate_Identity()
     {
-        Action<RetryEvent> untypedOnRetry = static _ => { };
-        Func<RetryEvent, ValueTask> untypedOnRetryAsync = static _ => ValueTask.CompletedTask;
-        Func<RetryEvent, TimeSpan?> untypedDelayGenerator = static _ => TimeSpan.Zero;
-        Func<RetryEvent, ValueTask<TimeSpan?>> untypedDelayGeneratorAsync =
+        Func<RetryEvent, ValueTask> untypedOnRetry = static _ => ValueTask.CompletedTask;
+        Func<RetryEvent, ValueTask<TimeSpan?>> untypedDelayGenerator =
             static _ => new ValueTask<TimeSpan?>(TimeSpan.Zero);
-        Action<RetryEvent<int>> typedOnRetry = static _ => { };
-        Func<RetryEvent<int>, ValueTask> typedOnRetryAsync = static _ => ValueTask.CompletedTask;
-        Func<RetryEvent<int>, TimeSpan?> typedDelayGenerator = static _ => TimeSpan.Zero;
-        Func<RetryEvent<int>, ValueTask<TimeSpan?>> typedDelayGeneratorAsync =
+        Func<RetryEvent<int>, ValueTask> typedOnRetry = static _ => ValueTask.CompletedTask;
+        Func<RetryEvent<int>, ValueTask<TimeSpan?>> typedDelayGenerator =
             static _ => new ValueTask<TimeSpan?>(TimeSpan.Zero);
 
         var untyped = new RetryOptions
         {
             OnRetry = untypedOnRetry,
-            OnRetryAsync = untypedOnRetryAsync,
             DelayGenerator = untypedDelayGenerator,
-            DelayGeneratorAsync = untypedDelayGeneratorAsync,
         };
         var typed = new RetryOptions<int>
         {
             OnRetry = typedOnRetry,
-            OnRetryAsync = typedOnRetryAsync,
             DelayGenerator = typedDelayGenerator,
-            DelayGeneratorAsync = typedDelayGeneratorAsync,
         };
 
         await Assert.That(typeof(RetryOptions).BaseType).IsEqualTo(typeof(object));
         await Assert.That(typeof(RetryOptions<int>).BaseType).IsEqualTo(typeof(object));
         await Assert.That(typeof(RetryOptions).IsAssignableFrom(typeof(RetryOptions<int>))).IsFalse();
         await Assert.That(ReferenceEquals(untyped.OnRetry, untypedOnRetry)).IsTrue();
-        await Assert.That(ReferenceEquals(untyped.OnRetryAsync, untypedOnRetryAsync)).IsTrue();
         await Assert.That(ReferenceEquals(untyped.DelayGenerator, untypedDelayGenerator)).IsTrue();
-        await Assert.That(ReferenceEquals(untyped.DelayGeneratorAsync, untypedDelayGeneratorAsync)).IsTrue();
         await Assert.That(ReferenceEquals(typed.OnRetry, typedOnRetry)).IsTrue();
-        await Assert.That(ReferenceEquals(typed.OnRetryAsync, typedOnRetryAsync)).IsTrue();
         await Assert.That(ReferenceEquals(typed.DelayGenerator, typedDelayGenerator)).IsTrue();
-        await Assert.That(ReferenceEquals(typed.DelayGeneratorAsync, typedDelayGeneratorAsync)).IsTrue();
     }
 
     [Test]
@@ -393,21 +385,18 @@ public class NewApiTests
             {
                 options.MaxRetries = 1;
                 options.Backoff = Backoff.None;
-                options.DelayGenerator = _ =>
+                options.DelayGenerator = async _ =>
                 {
                     order.Add("DelayGenerator");
+                    await Task.Yield();
+                    order.Add("DelayGenerator:awaited");
                     return TimeSpan.Zero;
                 };
-                options.DelayGeneratorAsync = _ =>
+                options.OnRetry = async _ =>
                 {
-                    order.Add("DelayGeneratorAsync");
-                    return new ValueTask<TimeSpan?>(TimeSpan.Zero);
-                };
-                options.OnRetry = _ => order.Add("OnRetry");
-                options.OnRetryAsync = _ =>
-                {
-                    order.Add("OnRetryAsync");
-                    return ValueTask.CompletedTask;
+                    order.Add("OnRetry");
+                    await Task.Yield();
+                    order.Add("OnRetry:awaited");
                 };
             });
 
@@ -416,7 +405,7 @@ public class NewApiTests
 
         await Assert.That(result).IsEqualTo(42);
         await Assert.That(order).IsEquivalentTo(
-            ["DelayGenerator", "DelayGeneratorAsync", "OnRetry", "OnRetryAsync"],
+            ["DelayGenerator", "DelayGenerator:awaited", "OnRetry", "OnRetry:awaited"],
             TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
@@ -431,8 +420,12 @@ public class NewApiTests
                 options.MaxRetries = 1;
                 options.Backoff = Backoff.None;
                 options.MaxDelay = TimeSpan.FromMilliseconds(1);
-                options.DelayGenerator = _ => TimeSpan.FromHours(6);
-                options.OnRetry = retry => reportedDelays.Add(retry.Delay);
+                options.DelayGenerator = _ => new(TimeSpan.FromHours(6));
+                options.OnRetry = retry =>
+                {
+                    reportedDelays.Add(retry.Delay);
+                    return default;
+                };
             });
 
         var attempts = 0;

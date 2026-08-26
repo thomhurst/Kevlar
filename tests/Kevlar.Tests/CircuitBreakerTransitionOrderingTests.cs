@@ -26,7 +26,7 @@ public class CircuitBreakerTransitionOrderingTests
             {
                 if (change.To != CircuitState.Open)
                 {
-                    return;
+                    return default;
                 }
 
                 if (Interlocked.Increment(ref opened) == 1)
@@ -44,10 +44,11 @@ public class CircuitBreakerTransitionOrderingTests
                     {
                     }
 
-                    return;
+                    return default;
                 }
 
                 observed = change.Context.Properties.GetOrDefault<string>(key);
+                return default;
             };
         });
 
@@ -69,7 +70,7 @@ public class CircuitBreakerTransitionOrderingTests
             options.ConsecutiveFailures = 1;
             options.BreakDuration = TimeSpan.FromMinutes(1);
             options.Monitor = monitor;
-            options.OnStateChangedAsync = async change =>
+            options.OnStateChanged = async change =>
             {
                 if (change.To != CircuitState.Open)
                 {
@@ -113,7 +114,7 @@ public class CircuitBreakerTransitionOrderingTests
             options.ConsecutiveFailures = 1;
             options.BreakDuration = TimeSpan.FromMinutes(1);
             options.Monitor = monitor;
-            options.OnStateChangedAsync = change =>
+            options.OnStateChanged = change =>
             {
                 transitions.Add((change.From, change.To));
                 if (change.To == CircuitState.Open)
@@ -177,6 +178,8 @@ public class CircuitBreakerTransitionOrderingTests
                 {
                     Interlocked.Decrement(ref activeCallbacks);
                 }
+
+                return default;
             };
         });
         monitor.StateChanged += change => monitorTransitions.Enqueue((change.From, change.To));
@@ -240,7 +243,11 @@ public class CircuitBreakerTransitionOrderingTests
             options.ConsecutiveFailures = 1;
             options.BreakDuration = TimeSpan.FromMinutes(1);
             options.Monitor = monitor;
-            options.OnStateChanged = change => optionObserved |= change.To == CircuitState.Open;
+            options.OnStateChanged = change =>
+            {
+                optionObserved |= change.To == CircuitState.Open;
+                return default;
+            };
         });
         monitor.StateChanged += change =>
         {
@@ -297,7 +304,11 @@ public class CircuitBreakerTransitionOrderingTests
         _ = Shield.CircuitBreaker(options =>
         {
             options.Monitor = monitor;
-            options.OnStateChanged = change => observed.Add(change.To);
+            options.OnStateChanged = change =>
+            {
+                observed.Add(change.To);
+                return default;
+            };
         });
 
         using (var listener = new MeterListener())
@@ -350,6 +361,8 @@ public class CircuitBreakerTransitionOrderingTests
                     failHalfOpenCallback = false;
                     throw callbackFailure;
                 }
+
+                return default;
             };
         }).WithTimeProvider(timeProvider);
 
@@ -384,7 +397,7 @@ public class CircuitBreakerTransitionOrderingTests
             {
                 if (change.To != CircuitState.HalfOpen || !arrangeReentrantProbe)
                 {
-                    return;
+                    return default;
                 }
 
                 arrangeReentrantProbe = false;
@@ -436,6 +449,8 @@ public class CircuitBreakerTransitionOrderingTests
                 {
                     monitor.Reset();
                 }
+
+                return default;
             };
         });
         monitor.StateChanged += change => monitorTransitions.Add((change.From, change.To));
@@ -474,7 +489,7 @@ public class CircuitBreakerTransitionOrderingTests
                         blockFirstIsolation = false;
                         firstObserverEntered.TrySetResult();
                         releaseFirstObserver.Task.GetAwaiter().GetResult();
-                        return;
+                        return default;
                     }
 
                     throw nestedFailure;
@@ -484,6 +499,8 @@ public class CircuitBreakerTransitionOrderingTests
                 {
                     monitor.Isolate();
                 }
+
+                return default;
             };
         });
 
@@ -514,6 +531,8 @@ public class CircuitBreakerTransitionOrderingTests
                     {
                         Interlocked.Increment(ref openingTransitions);
                     }
+
+                    return default;
                 };
             });
 

@@ -156,15 +156,15 @@ Kevlar.Testing.TelemetryRecorder.Callbacks.get -> System.Collections.Generic.IRe
 Kevlar.Testing.TelemetryRecorder.Events.get -> System.Collections.Generic.IReadOnlyList<Kevlar.Testing.TelemetryEventRecord!>!
 Kevlar.Testing.TelemetryRecorder.Dispose() -> void
 Kevlar.Testing.TelemetryRecorder.Metrics.get -> System.Collections.Generic.IReadOnlyList<Kevlar.Testing.MetricRecord!>!
-Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CircuitBreakerStateChangedEvent item) -> void
+Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CircuitBreakerStateChangedEvent item) -> System.Threading.Tasks.ValueTask
 Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CircuitBreakerBreakDurationEvent item, System.TimeSpan breakDuration) -> System.Threading.Tasks.ValueTask<System.TimeSpan>
-Kevlar.Testing.TelemetryRecorder.Record(Kevlar.FallbackEvent item) -> void
-Kevlar.Testing.TelemetryRecorder.Record(Kevlar.HedgeEvent item) -> void
-Kevlar.Testing.TelemetryRecorder.Record(Kevlar.RetryEvent item) -> void
-Kevlar.Testing.TelemetryRecorder.Record(Kevlar.TimeoutEvent item) -> void
-Kevlar.Testing.TelemetryRecorder.Record<TResult>(Kevlar.FallbackEvent<TResult> item) -> void
+Kevlar.Testing.TelemetryRecorder.Record(Kevlar.FallbackEvent item) -> System.Threading.Tasks.ValueTask
+Kevlar.Testing.TelemetryRecorder.Record(Kevlar.HedgeEvent item) -> System.Threading.Tasks.ValueTask
+Kevlar.Testing.TelemetryRecorder.Record(Kevlar.RetryEvent item) -> System.Threading.Tasks.ValueTask
+Kevlar.Testing.TelemetryRecorder.Record(Kevlar.TimeoutEvent item) -> System.Threading.Tasks.ValueTask
+Kevlar.Testing.TelemetryRecorder.Record<TResult>(Kevlar.FallbackEvent<TResult> item) -> System.Threading.Tasks.ValueTask
 Kevlar.Testing.TelemetryRecorder.Record<TResult>(Kevlar.CircuitBreakerBreakDurationEvent<TResult> item, System.TimeSpan breakDuration) -> System.Threading.Tasks.ValueTask<System.TimeSpan>
-Kevlar.Testing.TelemetryRecorder.Record<TResult>(Kevlar.RetryEvent<TResult> item) -> void
+Kevlar.Testing.TelemetryRecorder.Record<TResult>(Kevlar.RetryEvent<TResult> item) -> System.Threading.Tasks.ValueTask
 Kevlar.Testing.TelemetryRecorder.TelemetryRecorder(bool captureMetrics = true, bool captureCallbackErrors = false) -> void
 Kevlar.Testing.TelemetryRecorder.WaitForCallbackCountAsync(int count, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!
 Kevlar.Testing.TelemetryRecorder.WaitForEventCountAsync(int count, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task!

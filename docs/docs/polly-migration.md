@@ -385,6 +385,7 @@ var delayCount = 0;
 var defaultKevlarRetry = Shield.Retry(options => options.OnRetry = retry =>
 {
     retryDelays[delayCount++] = retry.Delay;
+    return default;
 }).WithTimeProvider(kevlarClock);
 var kevlarExecution = defaultKevlarRetry.ExecuteAsync<int>(_ =>
 {
@@ -545,12 +546,18 @@ if (pollyLimiterOptions.DefaultRateLimiterOptions.PermitLimit != 1000 ||
 
 | Polly v8 | Kevlar |
 |---|---|
-| retry `DelayGenerator` returning `ValueTask<TimeSpan?>` | `DelayGenerator` plus `DelayGeneratorAsync` |
-| `TimeoutGenerator` | `TimeoutGenerator` |
+| retry `DelayGenerator` returning `ValueTask<TimeSpan?>` | `DelayGenerator` returning `ValueTask<TimeSpan?>` |
+| `TimeoutGenerator` returning `ValueTask<TimeSpan>` | `TimeoutGenerator` returning `ValueTask<TimeSpan>` |
 | hedging `ActionGenerator` | `HedgeActionGenerator.Create<T>` |
-| circuit `BreakDurationGenerator` | `BreakDurationGenerator` |
-| hedging `DelayGenerator` | `HedgeOptions.DelayGenerator` or `DelayGeneratorAsync`; `HedgeDelayEvent` exposes `AttemptNumber`, `Context`, and `Elapsed` |
-| `OnOpened` / `OnClosed` / `OnHalfOpened` | one `OnStateChanged` callback |
+| circuit `BreakDurationGenerator` returning `ValueTask<TimeSpan>` | `BreakDurationGenerator` returning `ValueTask<TimeSpan>` |
+| hedging `DelayGenerator` returning `ValueTask<TimeSpan>` | `HedgeOptions.DelayGenerator` returning `ValueTask<TimeSpan>`; `HedgeDelayEvent` exposes `AttemptNumber`, `Context`, and `Elapsed` |
+| `OnRetry` / `OnTimeout` / `OnHedging` / `OnFallback` / `OnRejected` returning `ValueTask` | `OnRetry` / `OnTimeout` / `OnHedge` / `OnFallback` / `OnRejected` returning `ValueTask` |
+| `OnOpened` / `OnClosed` / `OnHalfOpened` | one `OnStateChanged` callback returning `ValueTask` |
+
+Every Kevlar hook and generator is a single `ValueTask`-returning property, so the delegate shapes
+match Polly's one to one and a callback body moves across unchanged. Unlike Polly, Kevlar's
+synchronous `Execute` still runs a hook that completes synchronously; only a hook that actually
+yields requires `ExecuteAsync`.
 
 Polly's `CircuitBreakerManualControl` and `CircuitBreakerStateProvider` are separately shareable.
 Kevlar uses one `CircuitBreakerMonitor`, attached one-to-one to a breaker strategy.

@@ -8,8 +8,8 @@ namespace Kevlar;
 /// <remarks>
 /// The executed delegate may be invoked multiple times concurrently — it must be safe to do so.
 /// Hedging requires asynchronous execution.
-/// Before an additional attempt starts, callbacks run in this order: <see cref="OnHedge"/>,
-/// <see cref="OnHedgeAsync"/>, then <see cref="ActionGenerator"/>. Caller cancellation is checked
+/// Before an additional attempt starts, callbacks run in this order: <see cref="DelayGenerator"/>,
+/// <see cref="OnHedge"/>, then <see cref="ActionGenerator"/>. Caller cancellation is checked
 /// before callbacks and again before the generated operation starts.
 /// </remarks>
 public sealed class HedgeOptions
@@ -48,24 +48,19 @@ public sealed class HedgeOptions
     public TimeSpan Delay { get; set; } = TimeSpan.FromSeconds(1);
 
     /// <summary>
-    /// Selects the delay before each additional attempt while earlier attempts remain pending.
-    /// The generated value replaces <see cref="Delay"/> for that attempt. Negative values are
-    /// treated as <see cref="TimeSpan.Zero"/> and values above the runtime timer limit are clamped.
+    /// Selects the delay before each additional attempt while earlier attempts remain pending,
+    /// and is awaited before the attempt is scheduled. The generated value replaces
+    /// <see cref="Delay"/> for that attempt. Negative values are treated as
+    /// <see cref="TimeSpan.Zero"/> and values above the runtime timer limit are clamped. Return
+    /// <c>new(delay)</c> from a synchronous generator.
     /// </summary>
-    public Func<HedgeDelayEvent, TimeSpan>? DelayGenerator { get; set; }
+    public Func<HedgeDelayEvent, ValueTask<TimeSpan>>? DelayGenerator { get; set; }
 
     /// <summary>
-    /// Asynchronously selects the delay before each additional attempt while earlier attempts
-    /// remain pending. When both generators are configured, this generator runs second and its
-    /// value determines the delay.
+    /// Invoked and awaited before an additional hedged attempt starts. Return
+    /// <see langword="default"/> from a synchronous callback.
     /// </summary>
-    public Func<HedgeDelayEvent, ValueTask<TimeSpan>>? DelayGeneratorAsync { get; set; }
-
-    /// <summary>Invoked when an additional hedged attempt is launched.</summary>
-    public Action<HedgeEvent>? OnHedge { get; set; }
-
-    /// <summary>Invoked and awaited after <see cref="OnHedge"/> and before an additional attempt starts.</summary>
-    public Func<HedgeEvent, ValueTask>? OnHedgeAsync { get; set; }
+    public Func<HedgeEvent, ValueTask>? OnHedge { get; set; }
 
     /// <summary>
     /// Selects a replacement operation for each additional attempt. A <see langword="null"/>
@@ -90,8 +85,8 @@ public readonly struct HedgeEvent
     public int AttemptNumber { get; }
 
     /// <summary>
-    /// The ambient execution context. It is pooled; do not retain it after synchronous and
-    /// asynchronous hedge callbacks complete.
+    /// The ambient execution context. It is pooled; do not retain it after the hedge callback's
+    /// returned task completes.
     /// </summary>
     public KevlarContext Context => Internal.EventContext.Required(_context);
 }

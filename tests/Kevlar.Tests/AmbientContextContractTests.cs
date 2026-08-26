@@ -17,7 +17,11 @@ public class AmbientContextContractTests
         {
             options.MaxRetries = 1;
             options.Backoff = Backoff.None;
-            options.OnRetry = _ => Record(observations, "retry");
+            options.OnRetry = _ =>
+            {
+                Record(observations, "retry");
+                return default;
+            };
         });
 
         Ambient.Value = "retry-flow";
@@ -50,7 +54,11 @@ public class AmbientContextContractTests
         var shield = Shield.Timeout(options =>
         {
             options.Timeout = TimeSpan.FromSeconds(1);
-            options.OnTimeout = _ => Record(observations, "timeout");
+            options.OnTimeout = _ =>
+            {
+                Record(observations, "timeout");
+                return default;
+            };
         }).WithTimeProvider(timeProvider);
 
         Ambient.Value = "timeout-flow";
@@ -90,7 +98,11 @@ public class AmbientContextContractTests
                     Record(observations, "fallback");
                     return new ValueTask<int>(42);
                 },
-                options => options.OnFallback = _ => Record(observations, "on-fallback"));
+                options => options.OnFallback = _ =>
+                {
+                    Record(observations, "on-fallback");
+                    return default;
+                });
 
         Ambient.Value = "fallback-flow";
         var execution = StartUnderContext(synchronizationContext, () => shield.ExecuteAsync(_ =>
@@ -158,7 +170,11 @@ public class AmbientContextContractTests
         {
             options.MaxRetries = 1;
             options.Backoff = Backoff.None;
-            options.OnRetry = _ => Record(observations, "retry");
+            options.OnRetry = _ =>
+            {
+                Record(observations, "retry");
+                return default;
+            };
         });
         var retryCalls = 0;
         await retry.ExecuteOutcomeAsync<int>(_ =>
@@ -177,14 +193,22 @@ public class AmbientContextContractTests
                     Record(observations, "fallback-action");
                     return new ValueTask<int>(2);
                 },
-                options => options.OnFallback = _ => Record(observations, "fallback-callback"));
+                options => options.OnFallback = _ =>
+                {
+                    Record(observations, "fallback-callback");
+                    return default;
+                });
         await fallback.ExecuteAsync<int>(_ => throw new InvalidOperationException());
 
         var timeProvider = new ControlledTimeProvider();
         var timeout = Shield.Timeout(options =>
         {
             options.Timeout = TimeSpan.FromSeconds(1);
-            options.OnTimeout = _ => Record(observations, "timeout");
+            options.OnTimeout = _ =>
+            {
+                Record(observations, "timeout");
+                return default;
+            };
         }).WithTimeProvider(timeProvider);
         var timed = timeout.ExecuteOutcomeAsync<int>(WaitForCancellationAsync).AsTask();
         await timeProvider.WaitForTimersAsync(1);
@@ -195,7 +219,11 @@ public class AmbientContextContractTests
         {
             options.MaxHedgedAttempts = 1;
             options.Delay = TimeSpan.Zero;
-            options.OnHedge = _ => Record(observations, "hedge");
+            options.OnHedge = _ =>
+            {
+                Record(observations, "hedge");
+                return default;
+            };
         });
         var hedgeCalls = 0;
         await hedge.ExecuteAsync(token => Interlocked.Increment(ref hedgeCalls) == 1
@@ -274,7 +302,11 @@ public class AmbientContextContractTests
                 {
                     options.MaxRetries = 1;
                     options.Backoff = Backoff.None;
-                    options.OnRetry = _ => callbackValue = Ambient.Value;
+                    options.OnRetry = _ =>
+                    {
+                        callbackValue = Ambient.Value;
+                        return default;
+                    };
                 });
 
                 await shield.ExecuteAsync<int>(_ =>

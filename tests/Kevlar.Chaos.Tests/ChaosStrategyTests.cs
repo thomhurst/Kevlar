@@ -342,6 +342,7 @@ public class ChaosStrategyTests
             {
                 observed = injection;
                 observedShieldName = injection.Context.ShieldName;
+                return default;
             };
         }).WithName("chaos-event");
 
@@ -389,10 +390,35 @@ public class ChaosStrategyTests
     }
 
     [Test]
-    public async Task Sync_Execution_Rejects_Configured_Behavior_Before_Invocation()
+    public async Task Sync_Execution_Rejects_Behavior_That_Completes_Asynchronously()
     {
+        var gate = new TaskCompletionSource();
         var behaviorCalls = 0;
         var actionCalls = 0;
+        var behavior = ChaosShield.Behavior(options =>
+        {
+            options.Enabled = true;
+            options.Behavior = async _ =>
+            {
+                behaviorCalls++;
+                await gate.Task;
+            };
+        }).WithName("chaos-behavior");
+
+        var exception = await Assert.That(() => behavior.Execute(_ => ++actionCalls))
+            .Throws<NotSupportedException>();
+        gate.SetResult();
+
+        await Assert.That(exception!.Message).Contains("ChaosBehaviorOptions.Behavior");
+        await Assert.That(exception.Message).Contains("on shield 'chaos-behavior'");
+        await Assert.That(behaviorCalls).IsEqualTo(1);
+        await Assert.That(actionCalls).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Sync_Execution_Runs_Behavior_That_Completes_Synchronously()
+    {
+        var behaviorCalls = 0;
         var behavior = ChaosShield.Behavior(options =>
         {
             options.Enabled = true;
@@ -403,12 +429,51 @@ public class ChaosStrategyTests
             };
         });
 
-        var exception = await Assert.That(() => behavior.Execute(_ => ++actionCalls))
-            .Throws<NotSupportedException>();
+        var result = behavior.Execute(_ => 42);
 
-        await Assert.That(exception!.Message).Contains("ChaosBehaviorOptions.Behavior");
-        await Assert.That(behaviorCalls).IsEqualTo(0);
+        await Assert.That(result).IsEqualTo(42);
+        await Assert.That(behaviorCalls).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task Sync_Execution_Rejects_Injection_Callback_That_Completes_Asynchronously()
+    {
+        var gate = new TaskCompletionSource();
+        var actionCalls = 0;
+        var shield = ChaosShield.Outcome<int>(options =>
+        {
+            options.Enabled = true;
+            options.Result = 7;
+            options.OnInjected = async _ => await gate.Task;
+        });
+
+        var exception = await Assert.That(() => shield.Execute(_ => ++actionCalls))
+            .Throws<NotSupportedException>();
+        gate.SetResult();
+
+        await Assert.That(exception!.Message).Contains("ChaosOptions.OnInjected");
         await Assert.That(actionCalls).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Sync_Execution_Runs_Injection_Callback_That_Completes_Synchronously()
+    {
+        var injections = 0;
+        var shield = ChaosShield.Outcome<int>(options =>
+        {
+            options.Enabled = true;
+            options.Result = 7;
+            options.OnInjected = _ =>
+            {
+                injections++;
+                return default;
+            };
+        });
+
+        var result = shield.Execute(_ => 42);
+
+        await Assert.That(result).IsEqualTo(7);
+        await Assert.That(injections).IsEqualTo(1);
     }
 
     [Test]
@@ -707,7 +772,11 @@ public class ChaosStrategyTests
                 decisionCallbacks++;
                 return 1;
             };
-            options.OnInjected = _ => injections++;
+            options.OnInjected = _ =>
+            {
+                injections++;
+                return default;
+            };
         });
 
         var result = await shield.ExecuteAsync(static _ => new ValueTask<int>(42));

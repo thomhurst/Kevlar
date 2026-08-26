@@ -83,7 +83,10 @@ public static class HttpShield
     /// A <see cref="RetryOptions{TResult}.DelayGenerator"/> honouring the response's
     /// <c>Retry-After</c> header when present and longer than the computed backoff.
     /// </summary>
-    public static TimeSpan? RetryAfter(RetryEvent<HttpResponseMessage> retry)
+    public static ValueTask<TimeSpan?> RetryAfter(RetryEvent<HttpResponseMessage> retry) =>
+        new(RetryAfterCore(retry));
+
+    private static TimeSpan? RetryAfterCore(RetryEvent<HttpResponseMessage> retry)
     {
         if (retry.Outcome.Result is not { } response)
         {
@@ -119,7 +122,7 @@ public static class HttpShield
     /// <exception cref="ArgumentOutOfRangeException">
     /// <paramref name="maxDelay"/> is negative.
     /// </exception>
-    public static Func<RetryEvent<HttpResponseMessage>, TimeSpan?> RetryAfter(TimeSpan maxDelay)
+    public static Func<RetryEvent<HttpResponseMessage>, ValueTask<TimeSpan?>> RetryAfter(TimeSpan maxDelay)
     {
         if (maxDelay < TimeSpan.Zero)
         {
@@ -128,13 +131,13 @@ public static class HttpShield
 
         return retry =>
         {
-            var suggested = RetryAfter(retry);
+            var suggested = RetryAfterCore(retry);
             if (suggested is not { } value || value <= maxDelay)
             {
-                return suggested;
+                return new ValueTask<TimeSpan?>(suggested);
             }
 
-            return maxDelay > retry.Delay ? maxDelay : null;
+            return new ValueTask<TimeSpan?>(maxDelay > retry.Delay ? maxDelay : null);
         };
     }
 
@@ -160,9 +163,7 @@ public static class HttpShield
         if (!IsDisabled(options.TotalTimeout)
             && !IsDisabled(options.AttemptTimeout)
             && options.TotalTimeout.TimeoutGenerator is null
-            && options.TotalTimeout.TimeoutGeneratorSync is null
             && options.AttemptTimeout.TimeoutGenerator is null
-            && options.AttemptTimeout.TimeoutGeneratorSync is null
             && options.AttemptTimeout.Timeout > options.TotalTimeout.Timeout)
         {
             throw new KevlarConfigurationException(
@@ -209,9 +210,7 @@ public static class HttpShield
     {
         target.Timeout = source.Timeout;
         target.TimeoutGenerator = source.TimeoutGenerator;
-        target.TimeoutGeneratorSync = source.TimeoutGeneratorSync;
         target.OnTimeout = source.OnTimeout;
-        target.OnTimeoutAsync = source.OnTimeoutAsync;
     }
 
     private static void Copy(
@@ -226,19 +225,17 @@ public static class HttpShield
         target.DelayGenerator = ComposeRetryDelayGenerator(
             source.DelayGenerator,
             useRetryAfterHeader);
-        target.DelayGeneratorAsync = source.DelayGeneratorAsync;
         target.HandlesException = source.HandlesException;
         target.HandlesResult = source.HandlesResult;
         target.OnRetry = retry =>
         {
             retry.Outcome.Result?.Dispose();
-            onRetry?.Invoke(retry);
+            return onRetry?.Invoke(retry) ?? default;
         };
-        target.OnRetryAsync = source.OnRetryAsync;
     }
 
-    private static Func<RetryEvent<HttpResponseMessage>, TimeSpan?>? ComposeRetryDelayGenerator(
-        Func<RetryEvent<HttpResponseMessage>, TimeSpan?>? custom,
+    private static Func<RetryEvent<HttpResponseMessage>, ValueTask<TimeSpan?>>? ComposeRetryDelayGenerator(
+        Func<RetryEvent<HttpResponseMessage>, ValueTask<TimeSpan?>>? custom,
         bool useRetryAfterHeader)
     {
         if (!useRetryAfterHeader)
@@ -251,8 +248,19 @@ public static class HttpShield
             return RetryAfter;
         }
 
-        return retry => Longer(custom(retry), RetryAfter(retry));
+        return retry =>
+        {
+            var suggested = custom(retry);
+            return suggested.IsCompletedSuccessfully
+                ? new ValueTask<TimeSpan?>(Longer(suggested.Result, RetryAfterCore(retry)))
+                : LongerAsync(suggested, retry);
+        };
     }
+
+    private static async ValueTask<TimeSpan?> LongerAsync(
+        ValueTask<TimeSpan?> custom,
+        RetryEvent<HttpResponseMessage> retry) =>
+        Longer(await custom.ConfigureAwait(false), RetryAfterCore(retry));
 
     private static TimeSpan? Longer(TimeSpan? first, TimeSpan? second)
     {
@@ -274,12 +282,10 @@ public static class HttpShield
         target.SamplingWindow = source.SamplingWindow;
         target.BreakDuration = source.BreakDuration;
         target.BreakDurationGenerator = source.BreakDurationGenerator;
-        target.BreakDurationGeneratorSync = source.BreakDurationGeneratorSync;
         target.HandlesException = source.HandlesException;
         target.HandlesResult = source.HandlesResult;
         target.Monitor = source.Monitor;
         target.OnStateChanged = source.OnStateChanged;
-        target.OnStateChangedAsync = source.OnStateChangedAsync;
     }
 
     private static void Copy(ConcurrencyLimitOptions source, ConcurrencyLimitOptions target)

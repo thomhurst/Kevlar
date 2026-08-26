@@ -224,39 +224,6 @@ public class OptionsValidationTests
     }
 
     [Test]
-    public async Task Async_And_Sync_Generators_Cannot_Both_Be_Configured()
-    {
-        Action[] configurations =
-        [
-            () => Shield.Timeout(options =>
-            {
-                options.TimeoutGenerator = static _ => new ValueTask<TimeSpan>(TimeSpan.FromSeconds(1));
-                options.TimeoutGeneratorSync = static _ => TimeSpan.FromSeconds(1);
-            }),
-            () => Shield.CircuitBreaker(options =>
-            {
-                options.ConsecutiveFailures = 1;
-                options.BreakDurationGenerator = static _ => new ValueTask<TimeSpan>(TimeSpan.FromSeconds(1));
-                options.BreakDurationGeneratorSync = static _ => TimeSpan.FromSeconds(1);
-            }),
-            () => Shield.For<int>().CircuitBreaker(options =>
-            {
-                options.ConsecutiveFailures = 1;
-                options.BreakDurationGenerator = static _ => new ValueTask<TimeSpan>(TimeSpan.FromSeconds(1));
-                options.BreakDurationGeneratorSync = static _ => TimeSpan.FromSeconds(1);
-            }),
-        ];
-
-        foreach (var configure in configurations)
-        {
-            var exception = await Assert.That(configure).Throws<KevlarConfigurationException>();
-            await Assert.That(exception!.Message).Contains("Generator");
-            await Assert.That(exception.Message).Contains("GeneratorSync");
-            await Assert.That(exception.Message).Contains("cannot be combined");
-        }
-    }
-
-    [Test]
     public async Task Execution_Methods_Reject_Null_Actions()
     {
         var shield = Shield.Retry(1, Backoff.None);

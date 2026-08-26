@@ -11,15 +11,14 @@ public class AsyncRetryDelayGeneratorTests
         {
             options.MaxRetries = 1;
             options.Backoff = Backoff.Constant(TimeSpan.FromHours(1));
-            options.DelayGeneratorAsync = retry =>
+            options.DelayGenerator = retry =>
             {
                 order.Add($"generator:{retry.RetryNumber}:{retry.Delay.TotalHours}");
                 return new ValueTask<TimeSpan?>(TimeSpan.Zero);
             };
-            options.OnRetry = retry => order.Add($"sync:{retry.RetryNumber}:{retry.Delay.TotalSeconds}");
-            options.OnRetryAsync = retry =>
+            options.OnRetry = retry =>
             {
-                order.Add($"async:{retry.RetryNumber}:{retry.Delay.TotalSeconds}");
+                order.Add($"hook:{retry.RetryNumber}:{retry.Delay.TotalSeconds}");
                 return default;
             };
         });
@@ -34,7 +33,7 @@ public class AsyncRetryDelayGeneratorTests
 
         await Assert.That(result).IsEqualTo(42);
         await Assert.That(order).IsEquivalentTo(
-            ["attempt:1", "generator:1:1", "sync:1:0", "async:1:0", "attempt:2"],
+            ["attempt:1", "generator:1:1", "hook:1:0", "attempt:2"],
             TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
@@ -51,7 +50,7 @@ public class AsyncRetryDelayGeneratorTests
             {
                 options.MaxRetries = 1;
                 options.Backoff = Backoff.None;
-                options.DelayGeneratorAsync = async retry =>
+                options.DelayGenerator = async retry =>
                 {
                     order.Add("generator-start");
                     seenResult = retry.Outcome.Result;
@@ -60,7 +59,11 @@ public class AsyncRetryDelayGeneratorTests
                     order.Add(retry.Context.Properties.TryGet(ContextKey, out var value) ? value : "missing");
                     return TimeSpan.Zero;
                 };
-                options.OnRetry = _ => order.Add("hook");
+                options.OnRetry = _ =>
+                {
+                    order.Add("hook");
+                    return default;
+                };
             });
 
         var execution = shield.ExecuteAsync(_ =>
@@ -83,23 +86,26 @@ public class AsyncRetryDelayGeneratorTests
     }
 
     [Test]
-    public async Task Async_Generator_Runs_After_Sync_Generator_And_Absolute_Clamps_Apply()
+    public async Task Generator_Result_Is_Clamped_To_MaxDelay_Before_Hooks()
     {
-        var seenByAsync = TimeSpan.Zero;
+        var seenByGenerator = TimeSpan.MinValue;
         var seenByHook = TimeSpan.Zero;
         var attempts = 0;
         var shield = Shield.Retry(options =>
         {
             options.MaxRetries = 1;
-            options.Backoff = Backoff.None;
+            options.Backoff = Backoff.Constant(TimeSpan.FromSeconds(9));
             options.MaxDelay = TimeSpan.FromSeconds(5);
-            options.DelayGenerator = _ => TimeSpan.FromSeconds(9);
-            options.DelayGeneratorAsync = retry =>
+            options.DelayGenerator = retry =>
             {
-                seenByAsync = retry.Delay;
+                seenByGenerator = retry.Delay;
                 return new ValueTask<TimeSpan?>(TimeSpan.FromSeconds(8));
             };
-            options.OnRetry = retry => seenByHook = retry.Delay;
+            options.OnRetry = retry =>
+            {
+                seenByHook = retry.Delay;
+                return default;
+            };
         });
 
         await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
@@ -109,12 +115,12 @@ public class AsyncRetryDelayGeneratorTests
         })).Throws<InvalidOperationException>();
 
         await Assert.That(attempts).IsEqualTo(2);
-        await Assert.That(seenByAsync).IsEqualTo(TimeSpan.FromSeconds(5));
+        await Assert.That(seenByGenerator).IsEqualTo(TimeSpan.FromSeconds(5));
         await Assert.That(seenByHook).IsEqualTo(TimeSpan.FromSeconds(5));
     }
 
     [Test]
-    public async Task Invalid_Async_Generator_Result_Keeps_The_Previous_Delay()
+    public async Task Invalid_Generator_Result_Keeps_The_Previous_Delay()
     {
         var generated = new Queue<TimeSpan?>([null, TimeSpan.FromSeconds(-1)]);
         var seen = new List<TimeSpan>();
@@ -122,8 +128,12 @@ public class AsyncRetryDelayGeneratorTests
         {
             options.MaxRetries = 2;
             options.Backoff = Backoff.None;
-            options.DelayGeneratorAsync = _ => new ValueTask<TimeSpan?>(generated.Dequeue());
-            options.OnRetry = retry => seen.Add(retry.Delay);
+            options.DelayGenerator = _ => new ValueTask<TimeSpan?>(generated.Dequeue());
+            options.OnRetry = retry =>
+            {
+                seen.Add(retry.Delay);
+                return default;
+            };
         });
 
         await Assert.That(async () => await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
@@ -133,7 +143,7 @@ public class AsyncRetryDelayGeneratorTests
     }
 
     [Test]
-    public async Task Async_Generator_Failure_Surfaces_Exact_Exception_And_Skips_Hooks()
+    public async Task Generator_Failure_Surfaces_Exact_Exception_And_Skips_Hooks()
     {
         var generatorFailure = new FormatException("generator failed");
         var hooks = 0;
@@ -142,9 +152,8 @@ public class AsyncRetryDelayGeneratorTests
         {
             options.MaxRetries = 2;
             options.Backoff = Backoff.None;
-            options.DelayGeneratorAsync = _ => ValueTask.FromException<TimeSpan?>(generatorFailure);
-            options.OnRetry = _ => hooks++;
-            options.OnRetryAsync = _ =>
+            options.DelayGenerator = _ => ValueTask.FromException<TimeSpan?>(generatorFailure);
+            options.OnRetry = _ =>
             {
                 hooks++;
                 return default;
@@ -173,13 +182,17 @@ public class AsyncRetryDelayGeneratorTests
         {
             options.MaxRetries = 2;
             options.Backoff = Backoff.None;
-            options.DelayGeneratorAsync = async retry =>
+            options.DelayGenerator = async retry =>
             {
                 await Assert.That(retry.Context.CancellationToken).IsEqualTo(cancellation.Token);
                 await gate.EnterAsync();
                 return TimeSpan.Zero;
             };
-            options.OnRetry = _ => hooks++;
+            options.OnRetry = _ =>
+            {
+                hooks++;
+                return default;
+            };
         });
 
         var execution = shield.ExecuteOutcomeAsync<int>(_ =>
@@ -211,7 +224,7 @@ public class AsyncRetryDelayGeneratorTests
             {
                 options.MaxRetries = 1;
                 options.Backoff = Backoff.None;
-                options.DelayGeneratorAsync = retry =>
+                options.DelayGenerator = retry =>
                 {
                     lock (events)
                     {
@@ -245,7 +258,7 @@ public class AsyncRetryDelayGeneratorTests
         {
             options.MaxRetries = 1;
             options.Backoff = Backoff.None;
-            options.DelayGeneratorAsync = async _ =>
+            options.DelayGenerator = async _ =>
             {
                 nestedResult = await shield!.ExecuteAsync(static _ => new ValueTask<int>(42));
                 return TimeSpan.Zero;
@@ -268,22 +281,53 @@ public class AsyncRetryDelayGeneratorTests
     public async Task Truly_Async_Generator_Is_Rejected_For_Synchronous_Execution()
     {
         var attempts = 0;
+        // Released only after the assertions so the generator is guaranteed to still be pending
+        // when the synchronous guard inspects it.
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var shield = Shield.Retry(options =>
         {
             options.MaxRetries = 1;
             options.Backoff = Backoff.None;
-            options.DelayGeneratorAsync = async retry =>
+            options.DelayGenerator = async retry =>
             {
-                await Task.Delay(TimeSpan.FromMilliseconds(1)).ConfigureAwait(false);
+                await gate.Task;
                 return TimeSpan.Zero;
             };
         });
 
-        var exception = await Assert.That(() => shield.Execute(_ => ++attempts))
-            .Throws<NotSupportedException>();
+        var exception = await Assert.That(() => shield.Execute<int>(_ =>
+        {
+            attempts++;
+            throw new InvalidOperationException();
+        })).Throws<NotSupportedException>();
 
-        await Assert.That(exception!.Message).Contains("RetryOptions.DelayGeneratorAsync");
-        await Assert.That(attempts).IsEqualTo(0);
+        await Assert.That(exception!.Message).Contains("RetryOptions.DelayGenerator");
+        await Assert.That(exception!.Message).Contains("Use ExecuteAsync");
+        // The guard fires when the generator yields, so the first attempt ran and no retry followed.
+        await Assert.That(attempts).IsEqualTo(1);
+        gate.SetResult();
+    }
+
+    [Test]
+    public async Task Synchronously_Completed_Generator_Is_Accepted_For_Synchronous_Execution()
+    {
+        var attempts = 0;
+        var generated = 0;
+        var shield = Shield.Retry(options =>
+        {
+            options.MaxRetries = 1;
+            options.Backoff = Backoff.Constant(TimeSpan.FromHours(1));
+            options.DelayGenerator = _ =>
+            {
+                generated++;
+                return new(TimeSpan.Zero);
+            };
+        });
+
+        var result = shield.Execute(_ => ++attempts == 1 ? throw new InvalidOperationException() : attempts);
+
+        await Assert.That(result).IsEqualTo(2);
+        await Assert.That(generated).IsEqualTo(1);
     }
 
     private static readonly KevlarKey<string> ContextKey = new("async-delay-lifetime");

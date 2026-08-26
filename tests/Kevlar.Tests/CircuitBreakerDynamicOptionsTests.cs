@@ -137,6 +137,8 @@ public class CircuitBreakerDynamicOptionsTests
                             item.Context.Properties.Count,
                             item.Context.StrategyIndex);
                     }
+
+                    return default;
                 };
             })
             .WithName("orders");
@@ -443,19 +445,18 @@ public class CircuitBreakerDynamicOptionsTests
             options.ConsecutiveFailures = 1;
             options.BreakDuration = TimeSpan.FromMinutes(1);
             options.Monitor = monitor;
-            options.OnStateChanged = change => events.Enqueue($"sync:{change.To}");
-            options.OnStateChangedAsync = async change =>
+            options.OnStateChanged = async change =>
             {
                 var active = Interlocked.Increment(ref activeCallbacks);
                 InterlockedExtensions.Max(ref maximumConcurrentCallbacks, active);
-                events.Enqueue($"async:{change.To}:start");
+                events.Enqueue($"callback:{change.To}:start");
                 if (change.To == CircuitState.Open)
                 {
                     callbackEntered.SetResult();
                     await releaseCallback.Task;
                 }
 
-                events.Enqueue($"async:{change.To}:end");
+                events.Enqueue($"callback:{change.To}:end");
                 Interlocked.Decrement(ref activeCallbacks);
             };
         });
@@ -472,13 +473,11 @@ public class CircuitBreakerDynamicOptionsTests
 
         await Assert.That(events.SequenceEqual(
         [
-            "sync:Open",
-            "async:Open:start",
-            "async:Open:end",
+            "callback:Open:start",
+            "callback:Open:end",
             "monitor:Open",
-            "sync:Closed",
-            "async:Closed:start",
-            "async:Closed:end",
+            "callback:Closed:start",
+            "callback:Closed:end",
             "monitor:Closed",
         ])).IsTrue();
         await Assert.That(maximumConcurrentCallbacks).IsEqualTo(1);
@@ -492,7 +491,7 @@ public class CircuitBreakerDynamicOptionsTests
         _ = Shield.CircuitBreaker(options =>
         {
             options.Monitor = monitor;
-            options.OnStateChangedAsync = async change =>
+            options.OnStateChanged = async change =>
             {
                 observed.Enqueue(change.To);
                 if (change.To == CircuitState.Isolated)
@@ -518,7 +517,7 @@ public class CircuitBreakerDynamicOptionsTests
         {
             options.ConsecutiveFailures = 1;
             options.Monitor = monitor;
-            options.OnStateChangedAsync = _ => ValueTask.FromException(callbackFailure);
+            options.OnStateChanged = _ => ValueTask.FromException(callbackFailure);
         });
         monitor.StateChanged += change => observed = change.To;
 
@@ -538,7 +537,7 @@ public class CircuitBreakerDynamicOptionsTests
         var predicateFailure = new InvalidOperationException("predicate");
         var shield = Shield.When(_ => throw predicateFailure).CircuitBreaker(options =>
         {
-            options.OnStateChangedAsync = static _ => ValueTask.CompletedTask;
+            options.OnStateChanged = static _ => ValueTask.CompletedTask;
         });
         var strategy = (CircuitBreakerStrategy)shield.Strategies.Single();
         var context = KevlarContext.Rent(default, isSynchronous: false, TimeProvider.System, shieldName: null);
@@ -582,6 +581,8 @@ public class CircuitBreakerDynamicOptionsTests
                     failCallback = false;
                     throw callbackFailure;
                 }
+
+                return default;
             };
         }).WithTimeProvider(timeProvider);
 
@@ -604,7 +605,7 @@ public class CircuitBreakerDynamicOptionsTests
             options.ConsecutiveFailures = 1;
             options.BreakDurationGenerator = static _ =>
                 new ValueTask<TimeSpan>(TimeSpan.FromSeconds(1));
-            options.OnStateChangedAsync = change =>
+            options.OnStateChanged = change =>
             {
                 if (change.To == CircuitState.HalfOpen && failCallback)
                 {

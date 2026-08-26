@@ -26,8 +26,7 @@ internal sealed class CircuitBreakerCore
     private readonly double _breakDurationTimestampUnits;
     private readonly Action<CircuitState> _recordState;
     private readonly CircuitBreakerBreakDurationGenerator? _breakDurationGenerator;
-    private readonly Action<CircuitBreakerStateChangedEvent>? _onStateChanged;
-    private readonly Func<CircuitBreakerStateChangedEvent, ValueTask>? _onStateChangedAsync;
+    private readonly Func<CircuitBreakerStateChangedEvent, ValueTask>? _onStateChanged;
     private readonly CircuitBreakerMonitor? _monitor;
     private readonly Type _optionsType;
     private readonly string _telemetryName;
@@ -168,10 +167,9 @@ internal sealed class CircuitBreakerCore
         _recordState = recordState;
         _breakDurationGenerator = breakDurationGenerator;
         _onStateChanged = options.OnStateChanged;
-        _onStateChangedAsync = options.OnStateChangedAsync;
         _optionsType = optionsType;
         _telemetryName = options.Name ?? "CircuitBreaker";
-        _ambientPublication = options.OnStateChangedAsync is null
+        _ambientPublication = options.OnStateChanged is null
             ? null
             : new AsyncLocal<TransitionPublication?>();
         _monitor = options.Monitor;
@@ -185,16 +183,13 @@ internal sealed class CircuitBreakerCore
             : FormattableString.Invariant(
                 $"CircuitBreaker({_failureRatio!.Value * 100:0.#}% over {DescribeHelper.Time(_samplingWindow)}, min {_minimumThroughput}, break {DescribeBreakDuration()})");
 
-    public bool RequiresAsyncExecution => _breakDurationGenerator is not null || _onStateChangedAsync is not null;
+    /// <summary>
+    /// Whether the strategy must take the awaitable entry/record paths so configured hooks are
+    /// awaited. Hooks that complete synchronously keep those paths synchronous.
+    /// </summary>
+    public bool RequiresAsyncExecution => _breakDurationGenerator is not null || _onStateChanged is not null;
 
     internal string TelemetryName => _telemetryName;
-
-    public string? SynchronousExecutionUnsupportedReason =>
-        _breakDurationGenerator?.IsAsynchronous == true
-            ? "CircuitBreakerOptions.BreakDurationGenerator"
-            : _onStateChangedAsync is not null
-                ? "CircuitBreakerOptions.OnStateChangedAsync"
-                : null;
 
     private string DescribeBreakDuration() => _breakDurationGenerator is null
         ? DescribeHelper.Time(_breakDuration)
@@ -475,6 +470,10 @@ internal sealed class CircuitBreakerCore
                 in outcome,
                 in statistics,
                 context);
+            SynchronousExecutionGuard.ThrowIfIncomplete(
+                in generation,
+                context,
+                "CircuitBreakerOptions.BreakDurationGenerator");
         }
         catch
         {
@@ -917,7 +916,7 @@ internal sealed class CircuitBreakerCore
 
     private void Publish(TransitionPublication? publication)
     {
-        if (_onStateChangedAsync is null)
+        if (_onStateChanged is null)
         {
             PublishSynchronously(publication);
             return;
@@ -945,7 +944,7 @@ internal sealed class CircuitBreakerCore
             return default;
         }
 
-        if (_onStateChangedAsync is null)
+        if (_onStateChanged is null)
         {
             PublishSynchronously(publication);
             return default;
@@ -1193,11 +1192,6 @@ internal sealed class CircuitBreakerCore
             AddFailure(ref failure, exception);
         }
 
-        CallbackInvoker.Invoke(
-            _onStateChanged,
-            stateChange,
-            CallbackErrorKind.CircuitStateChanged,
-            stateChange.Context);
         _monitor?.Raise(in stateChange);
 
         return failure;
@@ -1226,16 +1220,22 @@ internal sealed class CircuitBreakerCore
             AddFailure(ref failure, exception);
         }
 
-        CallbackInvoker.Invoke(
-            _onStateChanged,
-            stateChange,
-            CallbackErrorKind.CircuitStateChanged,
-            stateChange.Context);
-        await CallbackInvoker.InvokeAsync(
-            _onStateChangedAsync,
-            stateChange,
-            CallbackErrorKind.CircuitStateChanged,
-            stateChange.Context).ConfigureAwait(false);
+        try
+        {
+            await CallbackInvoker.InvokeAsync(
+                _onStateChanged,
+                stateChange,
+                CallbackErrorKind.CircuitStateChanged,
+                stateChange.Context,
+                "CircuitBreakerOptions.OnStateChanged").ConfigureAwait(false);
+        }
+        catch (Exception exception)
+        {
+            // Only the synchronous-execution guard escapes CallbackInvoker; surface it to the
+            // caller through the publication failure so the drain state stays consistent.
+            AddFailure(ref failure, exception);
+        }
+
         _monitor?.Raise(in stateChange);
 
         return failure;

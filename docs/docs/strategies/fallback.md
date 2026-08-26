@@ -77,7 +77,11 @@ Every value and factory shape also has an options configurator for fallback noti
 <!-- doc-test-ignore: Fluent fragment requires the typed builder introduced by the surrounding prose. -->
 ```csharp
 .FallbackTo(Config.Default,
-    options => options.OnFallback = e => metrics.Increment("config.fallback"))
+    options => options.OnFallback = e =>
+    {
+        metrics.Increment("config.fallback");
+        return default;
+    })
 ```
 
 `FallbackTo` handles constant values; `Fallback` handles computed and outcome-aware factories. Each
@@ -87,13 +91,13 @@ callback to `options.OnFallback` as shown above.
 
 The `FallbackEvent<T>` carries the failure that triggered it as a typed `Outcome<T>` — `Outcome.Exception` when an exception was handled, `Outcome.Result` when a result value was. No casting, no boxing.
 
-`OnFallback` runs before the fallback value or factory. Callback failures are reported through
-`KevlarDiagnostics.OnCallbackError`; they do not replace the protected outcome or skip recovery.
-Fallback factory failures are preserved as the pipeline outcome.
+`OnFallback` is awaited before the fallback value or factory runs. Callback failures are reported
+through `KevlarDiagnostics.OnCallbackError`; they do not replace the protected outcome or skip
+recovery. Fallback factory failures are preserved as the pipeline outcome.
 
 ## Notifications
 
-Configure both synchronous and awaited notification work in the same lambda:
+`OnFallback` returns `ValueTask`, so synchronous and awaited notification work share one lambda:
 
 <!-- doc-test-ignore: Illustrative logger and audit dependencies are application services. -->
 ```csharp
@@ -101,19 +105,24 @@ var shield = Shield.For<Config>()
     .When<HttpRequestException>()
     .FallbackTo(
         Config.Default,
-        options =>
+        options => options.OnFallback = async e =>
         {
-            options.OnFallback = e => logger.LogWarning(e.Outcome.Exception, "Using defaults");
-            options.OnFallbackAsync = async e =>
-                await audit.RecordFallbackAsync(e.Outcome, e.Context.CancellationToken);
+            logger.LogWarning(e.Outcome.Exception, "Using defaults");
+            await audit.RecordFallbackAsync(e.Outcome, e.Context.CancellationToken);
         });
 ```
 
-Kevlar records its fallback metric, invokes `OnFallback`, awaits `OnFallbackAsync`, then runs
-the fallback value or factory. Notification failures are reported through
-`KevlarDiagnostics.OnCallbackError` and do not skip recovery. Caller cancellation is exposed through `e.Context` and the
-token passed to the recovery factory; Kevlar does not forcibly stop either callback when user code
-chooses not to observe that token.
+Kevlar records its fallback metric, awaits `OnFallback`, then runs the fallback value or factory.
+Notification failures are reported through `KevlarDiagnostics.OnCallbackError` and do not skip
+recovery. Caller cancellation is exposed through `e.Context` and the token passed to the recovery
+factory; Kevlar does not forcibly stop either callback when user code chooses not to observe that
+token.
+
+A notification that completes synchronously (`return default;`) works with synchronous `Execute`;
+one that yields is awaited by `ExecuteAsync` but throws `NotSupportedException` when reached through
+`Execute`. A `ValueTask`-returning recovery *factory* is different: it always requires
+`ExecuteAsync`. See
+[synchronous execution compatibility](../executing.md#synchronous-execution-compatibility).
 
 `FallbackOptions<T>` preserves typed outcomes. Plain `Shield` uses `FallbackOptions` and a
 non-generic `FallbackEvent` carrying the exact handled exception. Callback properties are
@@ -128,8 +137,8 @@ exceptions, and an exception-only override does not recover results.
 
 Hooks may run concurrently when the same shield executes concurrently, and may re-enter the shield;
 they must therefore be thread-safe and must not depend on strategy locks. `FallbackEvent.Context`
-remains valid until that hook returns or its `ValueTask` completes. Do not retain the pooled context
-or use it from background work after completion.
+remains valid until the hook's `ValueTask` completes. Do not retain the pooled context or use it
+from background work after completion.
 
 ## What triggers it
 

@@ -103,11 +103,13 @@ items:
   summary: Records an untyped retry callback.
   example: []
   syntax:
-    content: public void Record(RetryEvent item)
+    content: public ValueTask Record(RetryEvent item)
     parameters:
     - id: item
       type: Kevlar.RetryEvent
-    content.vb: Public Sub Record(item As RetryEvent)
+    return:
+      type: System.Threading.Tasks.ValueTask
+    content.vb: Public Function Record(item As RetryEvent) As ValueTask
   overload: Kevlar.Testing.TelemetryRecorder.Record*
 - uid: Kevlar.Testing.TelemetryRecorder.Record``1(Kevlar.RetryEvent{``0})
   commentId: M:Kevlar.Testing.TelemetryRecorder.Record``1(Kevlar.RetryEvent{`0})
@@ -126,13 +128,15 @@ items:
   summary: Records a typed retry callback.
   example: []
   syntax:
-    content: public void Record<TResult>(RetryEvent<TResult> item)
+    content: public ValueTask Record<TResult>(RetryEvent<TResult> item)
     parameters:
     - id: item
       type: Kevlar.RetryEvent{{TResult}}
     typeParameters:
     - id: TResult
-    content.vb: Public Sub Record(Of TResult)(item As RetryEvent(Of TResult))
+    return:
+      type: System.Threading.Tasks.ValueTask
+    content.vb: Public Function Record(Of TResult)(item As RetryEvent(Of TResult)) As ValueTask
   overload: Kevlar.Testing.TelemetryRecorder.Record*
   nameWithType.vb: TelemetryRecorder.Record(Of TResult)(RetryEvent(Of TResult))
   fullName.vb: Kevlar.Testing.TelemetryRecorder.Record(Of TResult)(Kevlar.RetryEvent(Of TResult))
@@ -154,11 +158,13 @@ items:
   summary: Records a timeout callback.
   example: []
   syntax:
-    content: public void Record(TimeoutEvent item)
+    content: public ValueTask Record(TimeoutEvent item)
     parameters:
     - id: item
       type: Kevlar.TimeoutEvent
-    content.vb: Public Sub Record(item As TimeoutEvent)
+    return:
+      type: System.Threading.Tasks.ValueTask
+    content.vb: Public Function Record(item As TimeoutEvent) As ValueTask
   overload: Kevlar.Testing.TelemetryRecorder.Record*
 - uid: Kevlar.Testing.TelemetryRecorder.Record(Kevlar.HedgeEvent)
   commentId: M:Kevlar.Testing.TelemetryRecorder.Record(Kevlar.HedgeEvent)
@@ -177,11 +183,13 @@ items:
   summary: Records a hedge callback.
   example: []
   syntax:
-    content: public void Record(HedgeEvent item)
+    content: public ValueTask Record(HedgeEvent item)
     parameters:
     - id: item
       type: Kevlar.HedgeEvent
-    content.vb: Public Sub Record(item As HedgeEvent)
+    return:
+      type: System.Threading.Tasks.ValueTask
+    content.vb: Public Function Record(item As HedgeEvent) As ValueTask
   overload: Kevlar.Testing.TelemetryRecorder.Record*
 - uid: Kevlar.Testing.TelemetryRecorder.Record(Kevlar.FallbackEvent)
   commentId: M:Kevlar.Testing.TelemetryRecorder.Record(Kevlar.FallbackEvent)
@@ -200,11 +208,13 @@ items:
   summary: Records an untyped fallback callback.
   example: []
   syntax:
-    content: public void Record(FallbackEvent item)
+    content: public ValueTask Record(FallbackEvent item)
     parameters:
     - id: item
       type: Kevlar.FallbackEvent
-    content.vb: Public Sub Record(item As FallbackEvent)
+    return:
+      type: System.Threading.Tasks.ValueTask
+    content.vb: Public Function Record(item As FallbackEvent) As ValueTask
   overload: Kevlar.Testing.TelemetryRecorder.Record*
 - uid: Kevlar.Testing.TelemetryRecorder.Record``1(Kevlar.FallbackEvent{``0})
   commentId: M:Kevlar.Testing.TelemetryRecorder.Record``1(Kevlar.FallbackEvent{`0})
@@ -223,13 +233,15 @@ items:
   summary: Records a typed fallback callback.
   example: []
   syntax:
-    content: public void Record<TResult>(FallbackEvent<TResult> item)
+    content: public ValueTask Record<TResult>(FallbackEvent<TResult> item)
     parameters:
     - id: item
       type: Kevlar.FallbackEvent{{TResult}}
     typeParameters:
     - id: TResult
-    content.vb: Public Sub Record(Of TResult)(item As FallbackEvent(Of TResult))
+    return:
+      type: System.Threading.Tasks.ValueTask
+    content.vb: Public Function Record(Of TResult)(item As FallbackEvent(Of TResult)) As ValueTask
   overload: Kevlar.Testing.TelemetryRecorder.Record*
   nameWithType.vb: TelemetryRecorder.Record(Of TResult)(FallbackEvent(Of TResult))
   fullName.vb: Kevlar.Testing.TelemetryRecorder.Record(Of TResult)(Kevlar.FallbackEvent(Of TResult))
@@ -251,11 +263,13 @@ items:
   summary: Records a circuit-breaker transition callback.
   example: []
   syntax:
-    content: public void Record(CircuitBreakerStateChangedEvent item)
+    content: public ValueTask Record(CircuitBreakerStateChangedEvent item)
     parameters:
     - id: item
       type: Kevlar.CircuitBreakerStateChangedEvent
-    content.vb: Public Sub Record(item As CircuitBreakerStateChangedEvent)
+    return:
+      type: System.Threading.Tasks.ValueTask
+    content.vb: Public Function Record(item As CircuitBreakerStateChangedEvent) As ValueTask
   overload: Kevlar.Testing.TelemetryRecorder.Record*
 - uid: Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CallbackErrorEvent)
   commentId: M:Kevlar.Testing.TelemetryRecorder.Record(Kevlar.CallbackErrorEvent)
@@ -851,6 +865,51 @@ references:
   name: RetryEvent
   nameWithType: RetryEvent
   fullName: Kevlar.RetryEvent
+- uid: System.Threading.Tasks.ValueTask
+  commentId: T:System.Threading.Tasks.ValueTask
+  parent: System.Threading.Tasks
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask
+  name: ValueTask
+  nameWithType: ValueTask
+  fullName: System.Threading.Tasks.ValueTask
+- uid: System.Threading.Tasks
+  commentId: N:System.Threading.Tasks
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System.Threading.Tasks
+  nameWithType: System.Threading.Tasks
+  fullName: System.Threading.Tasks
+  spec.csharp:
+  - uid: System
+    name: System
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system
+  - name: .
+  - uid: System.Threading
+    name: Threading
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading
+  - name: .
+  - uid: System.Threading.Tasks
+    name: Tasks
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks
+  spec.vb:
+  - uid: System
+    name: System
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system
+  - name: .
+  - uid: System.Threading
+    name: Threading
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading
+  - name: .
+  - uid: System.Threading.Tasks
+    name: Tasks
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks
 - uid: Kevlar.RetryEvent{{TResult}}
   commentId: T:Kevlar.RetryEvent{`0}
   parent: Kevlar
@@ -1084,43 +1143,6 @@ references:
   - name: " "
   - name: TResult
   - name: )
-- uid: System.Threading.Tasks
-  commentId: N:System.Threading.Tasks
-  isExternal: true
-  href: https://learn.microsoft.com/dotnet/api/system
-  name: System.Threading.Tasks
-  nameWithType: System.Threading.Tasks
-  fullName: System.Threading.Tasks
-  spec.csharp:
-  - uid: System
-    name: System
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system
-  - name: .
-  - uid: System.Threading
-    name: Threading
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.threading
-  - name: .
-  - uid: System.Threading.Tasks
-    name: Tasks
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks
-  spec.vb:
-  - uid: System
-    name: System
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system
-  - name: .
-  - uid: System.Threading
-    name: Threading
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.threading
-  - name: .
-  - uid: System.Threading.Tasks
-    name: Tasks
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks
 - uid: Kevlar.CircuitBreakerBreakDurationEvent{{TResult}}
   commentId: T:Kevlar.CircuitBreakerBreakDurationEvent{`0}
   parent: Kevlar

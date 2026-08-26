@@ -40,10 +40,10 @@ public class TimeoutDynamicOptionsTests
         var sawSynchronousContext = false;
         var shield = Shield<int>.Empty.Timeout(options =>
         {
-            options.TimeoutGeneratorSync = context =>
+            options.TimeoutGenerator = context =>
             {
                 sawSynchronousContext = context.IsSynchronous;
-                return TimeSpan.FromMinutes(1);
+                return new(TimeSpan.FromMinutes(1));
             };
         });
 
@@ -139,7 +139,7 @@ public class TimeoutDynamicOptionsTests
     }
 
     [Test]
-    public async Task Async_Timeout_Hook_Is_Ordered_After_Synchronous_Hook_And_Awaited()
+    public async Task Timeout_Hook_Is_Awaited_Before_The_Timeout_Surfaces()
     {
         var fakeTime = new FakeTimeProvider();
         using var callerCancellation = new CancellationTokenSource();
@@ -149,13 +149,12 @@ public class TimeoutDynamicOptionsTests
         var shield = Shield.Timeout(options =>
             {
                 options.Timeout = TimeSpan.FromSeconds(1);
-                options.OnTimeout = _ => observations.Add("sync");
-                options.OnTimeoutAsync = async timeout =>
+                options.OnTimeout = async timeout =>
                 {
                     callbackToken = timeout.Context.CancellationToken;
-                    observations.Add("async-start");
+                    observations.Add("hook-start");
                     await hookGate.EnterAsync();
-                    observations.Add("async-end");
+                    observations.Add("hook-end");
                 };
             })
             .WithTimeProvider(fakeTime);
@@ -170,13 +169,13 @@ public class TimeoutDynamicOptionsTests
         await hookGate.WaitForEntryAsync();
 
         await Assert.That(execution.IsCompleted).IsFalse();
-        await Assert.That(observations).IsEquivalentTo(["sync", "async-start"]);
+        await Assert.That(observations).IsEquivalentTo(["hook-start"]);
         await Assert.That(callbackToken).IsEqualTo(callerCancellation.Token);
 
         hookGate.Release();
 
         await Assert.That(async () => await execution).Throws<TimeoutExceededException>();
-        await Assert.That(observations).IsEquivalentTo(["sync", "async-start", "async-end"]);
+        await Assert.That(observations).IsEquivalentTo(["hook-start", "hook-end"]);
     }
 
     [Test]
@@ -187,7 +186,7 @@ public class TimeoutDynamicOptionsTests
         var shield = Shield.Timeout(options =>
             {
                 options.Timeout = TimeSpan.FromSeconds(1);
-                options.OnTimeoutAsync = _ => ValueTask.FromException(callbackFailure);
+                options.OnTimeout = _ => ValueTask.FromException(callbackFailure);
             })
             .WithTimeProvider(fakeTime);
 
@@ -204,7 +203,7 @@ public class TimeoutDynamicOptionsTests
     }
 
     [Test]
-    public async Task Synchronously_Completed_Async_Hook_Receives_Generated_Timeout()
+    public async Task Synchronously_Completed_Hook_Receives_Generated_Timeout()
     {
         var fakeTime = new FakeTimeProvider();
         var observed = TimeSpan.Zero;
@@ -212,7 +211,7 @@ public class TimeoutDynamicOptionsTests
             {
                 options.TimeoutGenerator = _ =>
                     new ValueTask<TimeSpan>(TimeSpan.FromSeconds(1));
-                options.OnTimeoutAsync = timeout =>
+                options.OnTimeout = timeout =>
                 {
                     observed = timeout.Timeout;
                     return ValueTask.CompletedTask;
@@ -228,17 +227,20 @@ public class TimeoutDynamicOptionsTests
     }
 
     [Test]
-    public async Task Synchronous_Execution_Rejects_The_Async_Timeout_Hook()
+    public async Task Synchronous_Execution_Rejects_A_Timeout_Hook_That_Completes_Asynchronously()
     {
-        var hookCompleted = false;
+        var hookInvoked = false;
         var actionStarted = false;
+        // Released only after the assertions so the hook is guaranteed to still be pending when
+        // the synchronous guard inspects it.
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var shield = Shield.Timeout(options =>
         {
             options.Timeout = TimeSpan.FromMilliseconds(10);
-            options.OnTimeoutAsync = async _ =>
+            options.OnTimeout = async _ =>
             {
-                await Task.Yield();
-                hookCompleted = true;
+                hookInvoked = true;
+                await gate.Task;
             };
         });
 
@@ -249,9 +251,34 @@ public class TimeoutDynamicOptionsTests
             token.ThrowIfCancellationRequested();
             return 1;
         })).Throws<NotSupportedException>();
-        await Assert.That(exception!.Message).Contains("TimeoutOptions.OnTimeoutAsync");
-        await Assert.That(hookCompleted).IsFalse();
-        await Assert.That(actionStarted).IsFalse();
+        await Assert.That(exception!.Message).Contains("TimeoutOptions.OnTimeout");
+        await Assert.That(exception.Message).Contains("Use ExecuteAsync");
+        await Assert.That(hookInvoked).IsTrue();
+        await Assert.That(actionStarted).IsTrue();
+        gate.SetResult();
+    }
+
+    [Test]
+    public async Task Synchronous_Execution_Runs_A_Synchronously_Completing_Timeout_Hook()
+    {
+        var observed = TimeSpan.Zero;
+        var shield = Shield.Timeout(options =>
+        {
+            options.Timeout = TimeSpan.FromMilliseconds(10);
+            options.OnTimeout = timeout =>
+            {
+                observed = timeout.Timeout;
+                return default;
+            };
+        });
+
+        await Assert.That(() => shield.Execute(token =>
+        {
+            token.WaitHandle.WaitOne();
+            token.ThrowIfCancellationRequested();
+            return 1;
+        })).Throws<TimeoutExceededException>();
+        await Assert.That(observed).IsEqualTo(TimeSpan.FromMilliseconds(10));
     }
 
     [Test]
@@ -281,7 +308,7 @@ public class TimeoutDynamicOptionsTests
         var shield = Shield.Timeout(options =>
             {
                 options.Timeout = TimeSpan.FromSeconds(1);
-                options.OnTimeoutAsync = async _ =>
+                options.OnTimeout = async _ =>
                 {
                     hooksStarted.Signal();
                     await releaseHooks.Task;

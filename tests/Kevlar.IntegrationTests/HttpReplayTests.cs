@@ -653,7 +653,7 @@ public class HttpReplayTests
             {
                 options.MaxHedgedAttempts = 1;
                 options.Delay = TimeSpan.FromMilliseconds(250);
-                options.OnHedgeAsync = async _ =>
+                options.OnHedge = async _ =>
                 {
                     hedgeLaunched.TrySetResult();
                     await attemptTimedOut.Task;
@@ -662,7 +662,11 @@ public class HttpReplayTests
             .Timeout(options =>
             {
                 options.Timeout = TimeSpan.FromMilliseconds(500);
-                options.OnTimeout = _ => attemptTimedOut.TrySetResult();
+                options.OnTimeout = _ =>
+                {
+                    attemptTimedOut.TrySetResult();
+                    return default;
+                };
             });
         using var invoker = CreateInvoker(
             policy,

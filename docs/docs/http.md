@@ -145,7 +145,10 @@ services.AddHttpClient("api")
             .GetRequiredService<ILoggerFactory>()
             .CreateLogger("HttpResilience");
         options.Retry.OnRetry = retry =>
+        {
             logger.LogWarning("Retry {RetryNumber}", retry.RetryNumber);
+            return default;
+        };
     });
 ```
 
@@ -220,12 +223,11 @@ shape.
 
 ### `HttpShield.RetryAfter`
 
-A `DelayGenerator` for retry options: when the failed response carries a `Retry-After` header (delta or date form), the retry waits what the server asked for. The server's suggestion is used only when it's *longer* than the computed backoff; no header → normal backoff applies.
+A `DelayGenerator` for retry options: when the failed response carries a `Retry-After` header (delta or date form), the retry waits what the server asked for. The server's suggestion is used only when it's *longer* than the computed backoff; no header → normal backoff applies. It returns a completed `ValueTask<TimeSpan?>`, so it binds directly as a method group (`options.DelayGenerator = HttpShield.RetryAfter`) and works with synchronous `Execute`.
 
-The standard shield composes this with a custom synchronous `Retry.DelayGenerator` and uses the
-longer result. Set `UseRetryAfterHeader` to `false` when the custom generator must have exclusive
-control. An asynchronous delay generator still runs afterward, following the normal retry callback
-ordering.
+The standard shield composes this with a custom `Retry.DelayGenerator` and uses the longer result,
+awaiting the custom generator when it yields. Set `UseRetryAfterHeader` to `false` when the custom
+generator must have exclusive control.
 
 The standard shield caps every retry delay at 10 seconds, so one excessive server suggestion cannot
 impose an unbounded wait. Custom shields can cap server-suggested delays directly:
@@ -362,16 +364,16 @@ services.AddHttpClient("routed")
         options.SelectionMode = HttpEndpointSelectionMode.Weighted;
         options.MaxHedgedAttempts = 1;
         options.HedgeDelay = TimeSpan.FromMilliseconds(500);
-        options.HedgeDelayGenerator = hedge => hedge.Elapsed < TimeSpan.FromSeconds(1)
+        options.HedgeDelayGenerator = hedge => new(hedge.Elapsed < TimeSpan.FromSeconds(1)
             ? TimeSpan.FromMilliseconds(100)
-            : TimeSpan.Zero;
+            : TimeSpan.Zero);
     });
 ```
 
 `AddStandardHedgeShield` installs a 30s total timeout and one additional hedged attempt (two total). Each endpoint
 gets its own 10-concurrent/zero-queue limiter, 50%-over-30s circuit breaker (minimum 10 attempts,
 15s break), and 10s attempt timeout. Configure those defaults through `TotalTimeout`, `MaxHedgedAttempts`,
-`HedgeDelay`, `HedgeDelayGenerator`, `HedgeDelayGeneratorAsync`, `MaxConcurrency`, `QueueLimit`,
+`HedgeDelay`, `HedgeDelayGenerator`, `MaxConcurrency`, `QueueLimit`,
 `FailureRatio` or `ConsecutiveFailures`,
 `MinimumThroughput`, `SamplingWindow`, `BreakDuration`, and `AttemptTimeout`.
 

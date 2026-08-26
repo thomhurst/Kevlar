@@ -192,25 +192,28 @@ See [Analyzer rules](analyzers.md) for the complete current rule set, rationale,
 
 ## Callbacks
 
-Strategy callbacks expose request-level events. Every async callback is awaited before execution continues.
+Strategy callbacks expose request-level events. Every hook returns `ValueTask` and is awaited before
+execution continues. A hook that completes synchronously (`return default;`) costs nothing extra and
+works with synchronous `Execute`; one that yields requires `ExecuteAsync` (see
+[synchronous execution compatibility](executing.md#synchronous-execution-compatibility)).
 
-| Strategy | Synchronous | Asynchronous |
-|---|---|---|
-| Retry | `OnRetry` | `OnRetryAsync` |
-| Circuit breaker | `OnStateChanged` | `OnStateChangedAsync` |
-| Timeout | `OnTimeout` | `OnTimeoutAsync` |
-| Hedging | `OnHedge` | `OnHedgeAsync` |
-| Fallback | `OnFallback` | `OnFallbackAsync` |
-| Concurrency limit | `OnRejected` | `OnRejectedAsync` |
-| Rate limit | `OnRejected` | `OnRejectedAsync` |
-| Chaos | `OnInjected` | — |
+| Strategy | Hook |
+|---|---|
+| Retry | `OnRetry` |
+| Circuit breaker | `OnStateChanged` |
+| Timeout | `OnTimeout` |
+| Hedging | `OnHedge` |
+| Fallback | `OnFallback` |
+| Concurrency limit | `OnRejected` |
+| Rate limit | `OnRejected` |
+| Chaos | `OnInjected` |
 
 The event payloads and timing are documented on each [strategy page](/docs/category/strategies). Metrics answer aggregate questions; callbacks add request-specific details.
 
 ### Callback failures
 
 Notification and observer exceptions never replace the protected operation's result, failure,
-timeout, rejection, or fallback. Kevlar awaits asynchronous callbacks, reports each exception
+timeout, rejection, or fallback. Kevlar awaits every callback, reports each exception
 through `KevlarDiagnostics.OnCallbackError`, increments `kevlar.callback_errors`, and continues.
 Each diagnostics subscriber is isolated too: one throwing subscriber cannot prevent later
 subscribers from receiving the error.

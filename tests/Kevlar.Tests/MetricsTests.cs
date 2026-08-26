@@ -947,32 +947,29 @@ public class MetricsTests
     }
 
     [Test]
-    public async Task Fallback_Metric_Is_Recorded_Before_Sync_And_Async_Notifications()
+    public async Task Fallback_Metric_Is_Recorded_Before_Notification()
     {
         using var listener = new KevlarMeterListener();
         const string name = "metrics-fallback-notifications";
-        var syncObservedMetric = false;
-        var asyncObservedMetric = false;
+        var observedMetricBeforeAwait = false;
+        var observedMetricAfterAwait = false;
         var shield = Shield.For<int>()
             .When<InvalidOperationException>()
             .FallbackTo(
                 42,
-                options =>
+                options => options.OnFallback = async _ =>
                 {
-                    options.OnFallback = _ => syncObservedMetric = listener.Total("kevlar.fallbacks", name) == 1;
-                    options.OnFallbackAsync = _ =>
-                    {
-                        asyncObservedMetric = listener.Total("kevlar.fallbacks", name) == 1;
-                        return ValueTask.CompletedTask;
-                    };
+                    observedMetricBeforeAwait = listener.Total("kevlar.fallbacks", name) == 1;
+                    await Task.Yield();
+                    observedMetricAfterAwait = listener.Total("kevlar.fallbacks", name) == 1;
                 })
             .WithName(name);
 
         var result = await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException());
 
         await Assert.That(result).IsEqualTo(42);
-        await Assert.That(syncObservedMetric).IsTrue();
-        await Assert.That(asyncObservedMetric).IsTrue();
+        await Assert.That(observedMetricBeforeAwait).IsTrue();
+        await Assert.That(observedMetricAfterAwait).IsTrue();
     }
 
     [Test]
@@ -1127,7 +1124,11 @@ public class MetricsTests
         {
             options.MaxHedgedAttempts = 1;
             options.Delay = TimeSpan.Zero;
-            options.OnHedge = _ => cancellation.Cancel();
+            options.OnHedge = _ =>
+            {
+                cancellation.Cancel();
+                return default;
+            };
         }).WithName("metrics-suppressed-hedge");
 
         await shield.ExecuteOutcomeAsync<int>(async token =>

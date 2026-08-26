@@ -103,7 +103,6 @@ function Get-ExpectedSymbolAssets([string]$PackageId)
     if ($PackageId -eq 'Kevlar')
     {
         $assets += @(
-            'analyzers/dotnet/cs/Kevlar.Analyzers.CodeFixes.pdb',
             'analyzers/dotnet/cs/Kevlar.Analyzers.pdb'
         )
     }
@@ -515,8 +514,6 @@ foreach ($packageId in $expectedDependencies.Keys)
             Assert-Set "$packageId analyzer assets" `
                 ($entries | Where-Object { $_ -like 'analyzers/dotnet/cs/*' }) `
                 @(
-                    'analyzers/dotnet/cs/Kevlar.Analyzers.CodeFixes.dll',
-                    'analyzers/dotnet/cs/Kevlar.Analyzers.CodeFixes.pdb',
                     'analyzers/dotnet/cs/Kevlar.Analyzers.dll',
                     'analyzers/dotnet/cs/Kevlar.Analyzers.pdb'
                 )

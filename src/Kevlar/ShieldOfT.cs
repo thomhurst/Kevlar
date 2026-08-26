@@ -148,9 +148,8 @@ public sealed class Shield<TResult> : IShieldLifecycle
 
     /// <summary>
     /// Adds a retry strategy configured via <paramref name="configure"/>. The options expose
-    /// result-typed events: <c>OnRetry</c>, <c>OnRetryAsync</c>, <c>DelayGenerator</c>, and
-    /// <c>DelayGeneratorAsync</c> receive a <see cref="RetryEvent{TResult}"/> carrying the handled
-    /// <see cref="Outcome{TResult}"/>.
+    /// result-typed events: <c>OnRetry</c> and <c>DelayGenerator</c> receive a
+    /// <see cref="RetryEvent{TResult}"/> carrying the handled <see cref="Outcome{TResult}"/>.
     /// </summary>
     /// <remarks>
     /// <see cref="RetryOptions{TResult}.MaxRetries"/> counts <em>retries</em>, not attempts:
@@ -311,11 +310,10 @@ public sealed class Shield<TResult> : IShieldLifecycle
             (_, _) => new ValueTask<TResult>(fallbackValue),
             JudgeOrDefault,
             null,
-            null,
             fallbackIsAsync: false));
 
     /// <summary>Replaces handled outcomes with <paramref name="fallbackValue"/> and configures notifications.</summary>
-    /// <remarks>Runs <see cref="FallbackOptions{TResult}.OnFallback"/>, then <see cref="FallbackOptions{TResult}.OnFallbackAsync"/>, before recovery. Notification failures are reported and recovery continues.</remarks>
+    /// <remarks>Runs and awaits <see cref="FallbackOptions{TResult}.OnFallback"/> before recovery. Notification failures are reported and recovery continues.</remarks>
     public Shield<TResult> FallbackTo(TResult fallbackValue, Action<FallbackOptions<TResult>> configure)
     {
         Throw.IfNull(configure, nameof(configure));
@@ -331,7 +329,6 @@ public sealed class Shield<TResult> : IShieldLifecycle
             (_, _) => new ValueTask<TResult>(fallbackValue),
             judge,
             options.OnFallback,
-            options.OnFallbackAsync,
             fallbackIsAsync: false,
             hasHandlingOverride: options.HasHandlingOverride,
             telemetryName: options.Name));
@@ -345,12 +342,11 @@ public sealed class Shield<TResult> : IShieldLifecycle
             (_, context) => fallback(context.CancellationToken),
             JudgeOrDefault,
             null,
-            null,
             fallbackIsAsync: true));
     }
 
     /// <summary>Replaces handled outcomes with the result of <paramref name="fallback"/> and configures notifications.</summary>
-    /// <remarks>Runs <see cref="FallbackOptions{TResult}.OnFallback"/>, then <see cref="FallbackOptions{TResult}.OnFallbackAsync"/>, before recovery. Notification failures are reported and recovery continues.</remarks>
+    /// <remarks>Runs and awaits <see cref="FallbackOptions{TResult}.OnFallback"/> before recovery. Notification failures are reported and recovery continues.</remarks>
     public Shield<TResult> Fallback(
         Func<CancellationToken, ValueTask<TResult>> fallback,
         Action<FallbackOptions<TResult>> configure)
@@ -369,7 +365,6 @@ public sealed class Shield<TResult> : IShieldLifecycle
             (_, context) => fallback(context.CancellationToken),
             judge,
             options.OnFallback,
-            options.OnFallbackAsync,
             fallbackIsAsync: true,
             hasHandlingOverride: options.HasHandlingOverride,
             telemetryName: options.Name));
@@ -383,7 +378,6 @@ public sealed class Shield<TResult> : IShieldLifecycle
             (outcome, context) => fallback(outcome, context.CancellationToken),
             JudgeOrDefault,
             null,
-            null,
             fallbackIsAsync: true));
     }
 
@@ -391,7 +385,7 @@ public sealed class Shield<TResult> : IShieldLifecycle
     /// Replaces handled outcomes with the result of <paramref name="fallback"/>, which receives
     /// the handled outcome, and configures notifications.
     /// </summary>
-    /// <remarks>Runs <see cref="FallbackOptions{TResult}.OnFallback"/>, then <see cref="FallbackOptions{TResult}.OnFallbackAsync"/>, before recovery. Notification failures are reported and recovery continues.</remarks>
+    /// <remarks>Runs and awaits <see cref="FallbackOptions{TResult}.OnFallback"/> before recovery. Notification failures are reported and recovery continues.</remarks>
     public Shield<TResult> Fallback(
         Func<Outcome<TResult>, CancellationToken, ValueTask<TResult>> fallback,
         Action<FallbackOptions<TResult>> configure)
@@ -410,7 +404,6 @@ public sealed class Shield<TResult> : IShieldLifecycle
             (outcome, context) => fallback(outcome, context.CancellationToken),
             judge,
             options.OnFallback,
-            options.OnFallbackAsync,
             fallbackIsAsync: true,
             hasHandlingOverride: options.HasHandlingOverride,
             telemetryName: options.Name));

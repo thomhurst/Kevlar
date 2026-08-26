@@ -96,24 +96,20 @@ Kevlar.RetryEvent<TResult>.RetryEvent() -> void
 Kevlar.RetryOptions
 Kevlar.RetryOptions.Backoff.get -> Kevlar.Backoff!
 Kevlar.RetryOptions.Backoff.set -> void
-Kevlar.RetryOptions.DelayGenerator.get -> System.Func<Kevlar.RetryEvent, System.TimeSpan?>?
+Kevlar.RetryOptions.DelayGenerator.get -> System.Func<Kevlar.RetryEvent, System.Threading.Tasks.ValueTask<System.TimeSpan?>>?
 Kevlar.RetryOptions.DelayGenerator.set -> void
 Kevlar.RetryOptions.MaxDelay.get -> System.TimeSpan?
 Kevlar.RetryOptions.MaxDelay.set -> void
 Kevlar.RetryOptions.MaxRetries.get -> int
 Kevlar.RetryOptions.MaxRetries.set -> void
-Kevlar.RetryOptions.OnRetry.get -> System.Action<Kevlar.RetryEvent>?
+Kevlar.RetryOptions.OnRetry.get -> System.Func<Kevlar.RetryEvent, System.Threading.Tasks.ValueTask>?
 Kevlar.RetryOptions.OnRetry.set -> void
-Kevlar.RetryOptions.OnRetryAsync.get -> System.Func<Kevlar.RetryEvent, System.Threading.Tasks.ValueTask>?
-Kevlar.RetryOptions.OnRetryAsync.set -> void
 Kevlar.RetryOptions.RetryOptions() -> void
 Kevlar.RetryOptions<TResult>
-Kevlar.RetryOptions<TResult>.DelayGenerator.get -> System.Func<Kevlar.RetryEvent<TResult>, System.TimeSpan?>?
+Kevlar.RetryOptions<TResult>.DelayGenerator.get -> System.Func<Kevlar.RetryEvent<TResult>, System.Threading.Tasks.ValueTask<System.TimeSpan?>>?
 Kevlar.RetryOptions<TResult>.DelayGenerator.set -> void
-Kevlar.RetryOptions<TResult>.OnRetry.get -> System.Action<Kevlar.RetryEvent<TResult>>?
+Kevlar.RetryOptions<TResult>.OnRetry.get -> System.Func<Kevlar.RetryEvent<TResult>, System.Threading.Tasks.ValueTask>?
 Kevlar.RetryOptions<TResult>.OnRetry.set -> void
-Kevlar.RetryOptions<TResult>.OnRetryAsync.get -> System.Func<Kevlar.RetryEvent<TResult>, System.Threading.Tasks.ValueTask>?
-Kevlar.RetryOptions<TResult>.OnRetryAsync.set -> void
 Kevlar.RetryOptions<TResult>.RetryOptions() -> void
 Kevlar.Shield
 Kevlar.Shield.Execute(System.Action<System.Threading.CancellationToken>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> void
@@ -186,7 +182,7 @@ Kevlar.TimeoutExceededException
 Kevlar.TimeoutExceededException.Timeout.get -> System.TimeSpan
 Kevlar.TimeoutExceededException.TimeoutExceededException(System.TimeSpan timeout) -> void
 Kevlar.TimeoutOptions
-Kevlar.TimeoutOptions.OnTimeout.get -> System.Action<Kevlar.TimeoutEvent>?
+Kevlar.TimeoutOptions.OnTimeout.get -> System.Func<Kevlar.TimeoutEvent, System.Threading.Tasks.ValueTask>?
 Kevlar.TimeoutOptions.OnTimeout.set -> void
 Kevlar.TimeoutOptions.Timeout.get -> System.TimeSpan
 Kevlar.TimeoutOptions.Timeout.set -> void
@@ -348,11 +344,7 @@ Kevlar.CircuitBreakerMonitor.IsolateAsync() -> System.Threading.Tasks.ValueTask
 Kevlar.CircuitBreakerMonitor.ResetAsync() -> System.Threading.Tasks.ValueTask
 Kevlar.CircuitBreakerOptions.BreakDurationGenerator.get -> System.Func<Kevlar.CircuitBreakerBreakDurationEvent, System.Threading.Tasks.ValueTask<System.TimeSpan>>?
 Kevlar.CircuitBreakerOptions.BreakDurationGenerator.set -> void
-Kevlar.CircuitBreakerOptions.BreakDurationGeneratorSync.get -> System.Func<Kevlar.CircuitBreakerBreakDurationEvent, System.TimeSpan>?
-Kevlar.CircuitBreakerOptions.BreakDurationGeneratorSync.set -> void
-Kevlar.CircuitBreakerOptions.OnStateChanged.get -> System.Action<Kevlar.CircuitBreakerStateChangedEvent>?
-Kevlar.CircuitBreakerOptions.OnStateChangedAsync.get -> System.Func<Kevlar.CircuitBreakerStateChangedEvent, System.Threading.Tasks.ValueTask>?
-Kevlar.CircuitBreakerOptions.OnStateChangedAsync.set -> void
+Kevlar.CircuitBreakerOptions.OnStateChanged.get -> System.Func<Kevlar.CircuitBreakerStateChangedEvent, System.Threading.Tasks.ValueTask>?
 Kevlar.CircuitBreakerStateChangedEvent
 Kevlar.CircuitBreakerStateChangedEvent.CircuitBreakerStateChangedEvent() -> void
 Kevlar.CircuitBreakerStateChangedEvent.Context.get -> Kevlar.KevlarContext!
@@ -364,12 +356,8 @@ Kevlar.Outcome<T>.TryGetResult(out T result) -> bool
 Kevlar.Shield.ExecuteOutcomeAsync<T, TState>(TState state, System.Func<TState, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<T>>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Kevlar.Outcome<T>>
 Kevlar.Shield<TResult>.ExecuteOutcomeAsync<TState>(TState state, System.Func<TState, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Kevlar.Outcome<TResult>>
 Kevlar.Shield<TResult>.WhenAnyError() -> Kevlar.Shield<TResult>!
-Kevlar.TimeoutOptions.OnTimeoutAsync.get -> System.Func<Kevlar.TimeoutEvent, System.Threading.Tasks.ValueTask>?
-Kevlar.TimeoutOptions.OnTimeoutAsync.set -> void
 Kevlar.TimeoutOptions.TimeoutGenerator.get -> System.Func<Kevlar.KevlarContext!, System.Threading.Tasks.ValueTask<System.TimeSpan>>?
 Kevlar.TimeoutOptions.TimeoutGenerator.set -> void
-Kevlar.TimeoutOptions.TimeoutGeneratorSync.get -> System.Func<Kevlar.KevlarContext!, System.TimeSpan>?
-Kevlar.TimeoutOptions.TimeoutGeneratorSync.set -> void
 static Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync<T, TState>(this Kevlar.Shield! shield, TState state, System.Func<TState, System.Threading.CancellationToken, System.Threading.Tasks.Task<T>!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Kevlar.Outcome<T>>
 static Kevlar.ShieldTaskExtensions.ExecuteOutcomeAsync<TResult, TState>(this Kevlar.Shield<TResult>! shield, TState state, System.Func<TState, System.Threading.CancellationToken, System.Threading.Tasks.Task<TResult>!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask<Kevlar.Outcome<TResult>>
 static Kevlar.ShieldExtensions.WhenAnyError(this Kevlar.Shield! shield) -> Kevlar.Shield!
@@ -429,14 +417,10 @@ Kevlar.PartitionedShieldOptions.IdleExpiration.get -> System.TimeSpan?
 Kevlar.PartitionedShieldOptions.IdleExpiration.set -> void
 Kevlar.PartitionedShieldOptions.MaximumPartitions.get -> int
 Kevlar.PartitionedShieldOptions.MaximumPartitions.set -> void
-Kevlar.PartitionedShieldOptions.OnCreated.get -> System.Action<Kevlar.PartitionCreatedNotification>?
+Kevlar.PartitionedShieldOptions.OnCreated.get -> System.Func<Kevlar.PartitionCreatedNotification, System.Threading.Tasks.ValueTask>?
 Kevlar.PartitionedShieldOptions.OnCreated.set -> void
-Kevlar.PartitionedShieldOptions.OnCreatedAsync.get -> System.Func<Kevlar.PartitionCreatedNotification, System.Threading.Tasks.ValueTask>?
-Kevlar.PartitionedShieldOptions.OnCreatedAsync.set -> void
-Kevlar.PartitionedShieldOptions.OnEvicted.get -> System.Action<Kevlar.PartitionEvictionNotification>?
+Kevlar.PartitionedShieldOptions.OnEvicted.get -> System.Func<Kevlar.PartitionEvictionNotification, System.Threading.Tasks.ValueTask>?
 Kevlar.PartitionedShieldOptions.OnEvicted.set -> void
-Kevlar.PartitionedShieldOptions.OnEvictedAsync.get -> System.Func<Kevlar.PartitionEvictionNotification, System.Threading.Tasks.ValueTask>?
-Kevlar.PartitionedShieldOptions.OnEvictedAsync.set -> void
 Kevlar.PartitionedShieldOptions.PartitionedShieldOptions() -> void
 Kevlar.PartitionedShieldOptions.TimeProvider.get -> System.TimeProvider!
 Kevlar.PartitionedShieldOptions.TimeProvider.set -> void
@@ -451,12 +435,8 @@ static Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync<TResult, TState>(this
 static Kevlar.ShieldTaskExtensions.ExecuteWithContextAsync<TState>(this Kevlar.Shield! shield, TState state, System.Action<TState, Kevlar.KevlarProperties!>! initializeProperties, System.Func<TState, Kevlar.KevlarContext!, System.Threading.Tasks.Task!>! action, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.ValueTask
 Kevlar.Shield.InvokesContinuationAtMostOnce.get -> bool
 virtual Kevlar.Strategy.IsDuplicateReferenceUnsafe.get -> bool
-Kevlar.RetryOptions.DelayGeneratorAsync.get -> System.Func<Kevlar.RetryEvent, System.Threading.Tasks.ValueTask<System.TimeSpan?>>?
-Kevlar.RetryOptions.DelayGeneratorAsync.set -> void
 Kevlar.RetryOptions<TResult>.Backoff.get -> Kevlar.Backoff!
 Kevlar.RetryOptions<TResult>.Backoff.set -> void
-Kevlar.RetryOptions<TResult>.DelayGeneratorAsync.get -> System.Func<Kevlar.RetryEvent<TResult>, System.Threading.Tasks.ValueTask<System.TimeSpan?>>?
-Kevlar.RetryOptions<TResult>.DelayGeneratorAsync.set -> void
 Kevlar.RetryOptions<TResult>.MaxDelay.get -> System.TimeSpan?
 Kevlar.RetryOptions<TResult>.MaxDelay.set -> void
 Kevlar.RetryOptions<TResult>.MaxRetries.get -> int
@@ -467,16 +447,12 @@ Kevlar.FallbackEvent.Exception.get -> System.Exception!
 Kevlar.FallbackEvent.FallbackEvent() -> void
 Kevlar.FallbackOptions
 Kevlar.FallbackOptions.FallbackOptions() -> void
-Kevlar.FallbackOptions.OnFallback.get -> System.Action<Kevlar.FallbackEvent>?
+Kevlar.FallbackOptions.OnFallback.get -> System.Func<Kevlar.FallbackEvent, System.Threading.Tasks.ValueTask>?
 Kevlar.FallbackOptions.OnFallback.set -> void
-Kevlar.FallbackOptions.OnFallbackAsync.get -> System.Func<Kevlar.FallbackEvent, System.Threading.Tasks.ValueTask>?
-Kevlar.FallbackOptions.OnFallbackAsync.set -> void
 Kevlar.FallbackOptions<TResult>
 Kevlar.FallbackOptions<TResult>.FallbackOptions() -> void
-Kevlar.FallbackOptions<TResult>.OnFallback.get -> System.Action<Kevlar.FallbackEvent<TResult>>?
+Kevlar.FallbackOptions<TResult>.OnFallback.get -> System.Func<Kevlar.FallbackEvent<TResult>, System.Threading.Tasks.ValueTask>?
 Kevlar.FallbackOptions<TResult>.OnFallback.set -> void
-Kevlar.FallbackOptions<TResult>.OnFallbackAsync.get -> System.Func<Kevlar.FallbackEvent<TResult>, System.Threading.Tasks.ValueTask>?
-Kevlar.FallbackOptions<TResult>.OnFallbackAsync.set -> void
 Kevlar.Shield<TResult>.Fallback(System.Func<Kevlar.Outcome<TResult>, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! fallback) -> Kevlar.Shield<TResult>!
 Kevlar.Shield<TResult>.Fallback(System.Func<Kevlar.Outcome<TResult>, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! fallback, System.Action<Kevlar.FallbackOptions<TResult>!>! configure) -> Kevlar.Shield<TResult>!
 Kevlar.Shield<TResult>.Fallback(System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>! fallback) -> Kevlar.Shield<TResult>!
@@ -506,23 +482,17 @@ Kevlar.HedgeActionGeneratorEvent<TResult>.OriginalAction.get -> System.Func<Syst
 Kevlar.HedgeActionGeneratorEvent<TResult>.Outcome.get -> Kevlar.Outcome<TResult>?
 Kevlar.HedgeOptions.ActionGenerator.get -> Kevlar.HedgeActionGenerator?
 Kevlar.HedgeOptions.ActionGenerator.set -> void
-Kevlar.HedgeOptions.OnHedgeAsync.get -> System.Func<Kevlar.HedgeEvent, System.Threading.Tasks.ValueTask>?
-Kevlar.HedgeOptions.OnHedgeAsync.set -> void
 static Kevlar.HedgeActionGenerator.Create(System.Func<Kevlar.HedgeActionGeneratorEvent, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>?>! generator) -> Kevlar.HedgeActionGenerator!
 static Kevlar.HedgeActionGenerator.Create<TResult>(System.Func<Kevlar.HedgeActionGeneratorEvent<TResult>, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>?>! generator) -> Kevlar.HedgeActionGenerator!
-Kevlar.ConcurrencyLimitOptions.OnRejected.get -> System.Action<Kevlar.ConcurrencyLimitRejectedEvent>?
+Kevlar.ConcurrencyLimitOptions.OnRejected.get -> System.Func<Kevlar.ConcurrencyLimitRejectedEvent, System.Threading.Tasks.ValueTask>?
 Kevlar.ConcurrencyLimitOptions.OnRejected.set -> void
-Kevlar.ConcurrencyLimitOptions.OnRejectedAsync.get -> System.Func<Kevlar.ConcurrencyLimitRejectedEvent, System.Threading.Tasks.ValueTask>?
-Kevlar.ConcurrencyLimitOptions.OnRejectedAsync.set -> void
 Kevlar.ConcurrencyLimitRejectedEvent
 Kevlar.ConcurrencyLimitRejectedEvent.ConcurrencyLimitRejectedEvent() -> void
 Kevlar.ConcurrencyLimitRejectedEvent.Context.get -> Kevlar.KevlarContext!
 Kevlar.ConcurrencyLimitRejectedEvent.MaxConcurrency.get -> int
 Kevlar.ConcurrencyLimitRejectedEvent.QueueLimit.get -> int
-Kevlar.RateLimitOptions.OnRejected.get -> System.Action<Kevlar.RateLimitRejectedEvent>?
+Kevlar.RateLimitOptions.OnRejected.get -> System.Func<Kevlar.RateLimitRejectedEvent, System.Threading.Tasks.ValueTask>?
 Kevlar.RateLimitOptions.OnRejected.set -> void
-Kevlar.RateLimitOptions.OnRejectedAsync.get -> System.Func<Kevlar.RateLimitRejectedEvent, System.Threading.Tasks.ValueTask>?
-Kevlar.RateLimitOptions.OnRejectedAsync.set -> void
 Kevlar.RateLimitRejectedEvent
 Kevlar.RateLimitRejectedEvent.RateLimitRejectedEvent() -> void
 Kevlar.RateLimitRejectedEvent.Burst.get -> int
@@ -585,7 +555,7 @@ Kevlar.HedgeOptions.Delay.set -> void
 Kevlar.HedgeOptions.HedgeOptions() -> void
 Kevlar.HedgeOptions.MaxHedgedAttempts.get -> int
 Kevlar.HedgeOptions.MaxHedgedAttempts.set -> void
-Kevlar.HedgeOptions.OnHedge.get -> System.Action<Kevlar.HedgeEvent>?
+Kevlar.HedgeOptions.OnHedge.get -> System.Func<Kevlar.HedgeEvent, System.Threading.Tasks.ValueTask>?
 Kevlar.HedgeOptions.OnHedge.set -> void
 Kevlar.ShieldBuilder.Hedge(System.Action<Kevlar.HedgeOptions!>! configure) -> Kevlar.Shield!
 Kevlar.ShieldBuilder.Hedge(int maxHedgedAttempts, System.TimeSpan delay) -> Kevlar.Shield!
@@ -623,8 +593,6 @@ Kevlar.CircuitBreakerOptions<TResult>.BreakDuration.get -> System.TimeSpan
 Kevlar.CircuitBreakerOptions<TResult>.BreakDuration.set -> void
 Kevlar.CircuitBreakerOptions<TResult>.BreakDurationGenerator.get -> System.Func<Kevlar.CircuitBreakerBreakDurationEvent<TResult>, System.Threading.Tasks.ValueTask<System.TimeSpan>>?
 Kevlar.CircuitBreakerOptions<TResult>.BreakDurationGenerator.set -> void
-Kevlar.CircuitBreakerOptions<TResult>.BreakDurationGeneratorSync.get -> System.Func<Kevlar.CircuitBreakerBreakDurationEvent<TResult>, System.TimeSpan>?
-Kevlar.CircuitBreakerOptions<TResult>.BreakDurationGeneratorSync.set -> void
 Kevlar.CircuitBreakerOptions<TResult>.ConsecutiveFailures.get -> int?
 Kevlar.CircuitBreakerOptions<TResult>.ConsecutiveFailures.set -> void
 Kevlar.CircuitBreakerOptions<TResult>.FailureRatio.get -> double?
@@ -635,37 +603,29 @@ Kevlar.CircuitBreakerOptions<TResult>.MinimumThroughput.get -> int
 Kevlar.CircuitBreakerOptions<TResult>.MinimumThroughput.set -> void
 Kevlar.CircuitBreakerOptions<TResult>.Monitor.get -> Kevlar.CircuitBreakerMonitor?
 Kevlar.CircuitBreakerOptions<TResult>.Monitor.set -> void
-Kevlar.CircuitBreakerOptions<TResult>.OnStateChanged.get -> System.Action<Kevlar.CircuitBreakerStateChangedEvent>?
+Kevlar.CircuitBreakerOptions<TResult>.OnStateChanged.get -> System.Func<Kevlar.CircuitBreakerStateChangedEvent, System.Threading.Tasks.ValueTask>?
 Kevlar.CircuitBreakerOptions<TResult>.OnStateChanged.set -> void
-Kevlar.CircuitBreakerOptions<TResult>.OnStateChangedAsync.get -> System.Func<Kevlar.CircuitBreakerStateChangedEvent, System.Threading.Tasks.ValueTask>?
-Kevlar.CircuitBreakerOptions<TResult>.OnStateChangedAsync.set -> void
 Kevlar.CircuitBreakerOptions<TResult>.SamplingWindow.get -> System.TimeSpan
 Kevlar.CircuitBreakerOptions<TResult>.SamplingWindow.set -> void
 Kevlar.HedgeOptions<TResult>.ActionGenerator.get -> System.Func<Kevlar.HedgeActionGeneratorEvent<TResult>, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>?>?
 Kevlar.HedgeOptions<TResult>.ActionGenerator.set -> void
-Kevlar.HedgeOptions<TResult>.DelayGenerator.get -> System.Func<Kevlar.HedgeDelayEvent, System.TimeSpan>?
+Kevlar.HedgeOptions<TResult>.DelayGenerator.get -> System.Func<Kevlar.HedgeDelayEvent, System.Threading.Tasks.ValueTask<System.TimeSpan>>?
 Kevlar.HedgeOptions<TResult>.DelayGenerator.set -> void
-Kevlar.HedgeOptions<TResult>.DelayGeneratorAsync.get -> System.Func<Kevlar.HedgeDelayEvent, System.Threading.Tasks.ValueTask<System.TimeSpan>>?
-Kevlar.HedgeOptions<TResult>.DelayGeneratorAsync.set -> void
 Kevlar.HedgeOptions<TResult>.Delay.get -> System.TimeSpan
 Kevlar.HedgeOptions<TResult>.Delay.set -> void
 Kevlar.HedgeOptions<TResult>.HandlesException.get -> System.Func<System.Exception!, bool>?
 Kevlar.HedgeOptions<TResult>.HandlesException.set -> void
 Kevlar.HedgeOptions<TResult>.MaxHedgedAttempts.get -> int
 Kevlar.HedgeOptions<TResult>.MaxHedgedAttempts.set -> void
-Kevlar.HedgeOptions<TResult>.OnHedge.get -> System.Action<Kevlar.HedgeEvent>?
+Kevlar.HedgeOptions<TResult>.OnHedge.get -> System.Func<Kevlar.HedgeEvent, System.Threading.Tasks.ValueTask>?
 Kevlar.HedgeOptions<TResult>.OnHedge.set -> void
-Kevlar.HedgeOptions<TResult>.OnHedgeAsync.get -> System.Func<Kevlar.HedgeEvent, System.Threading.Tasks.ValueTask>?
-Kevlar.HedgeOptions<TResult>.OnHedgeAsync.set -> void
 Kevlar.HedgeDelayEvent
 Kevlar.HedgeDelayEvent.HedgeDelayEvent() -> void
 Kevlar.HedgeDelayEvent.AttemptNumber.get -> int
 Kevlar.HedgeDelayEvent.Context.get -> Kevlar.KevlarContext!
 Kevlar.HedgeDelayEvent.Elapsed.get -> System.TimeSpan
-Kevlar.HedgeOptions.DelayGenerator.get -> System.Func<Kevlar.HedgeDelayEvent, System.TimeSpan>?
+Kevlar.HedgeOptions.DelayGenerator.get -> System.Func<Kevlar.HedgeDelayEvent, System.Threading.Tasks.ValueTask<System.TimeSpan>>?
 Kevlar.HedgeOptions.DelayGenerator.set -> void
-Kevlar.HedgeOptions.DelayGeneratorAsync.get -> System.Func<Kevlar.HedgeDelayEvent, System.Threading.Tasks.ValueTask<System.TimeSpan>>?
-Kevlar.HedgeOptions.DelayGeneratorAsync.set -> void
 Kevlar.KevlarProxyException
 Kevlar.KevlarProxyException.KevlarProxyException(System.Exception! originalException) -> void
 Kevlar.KevlarProxyException.OriginalException.get -> System.Exception!

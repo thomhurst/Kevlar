@@ -36,7 +36,10 @@ public class CallerContextTests
             options.MaxRetries = 1;
             options.Backoff = Backoff.None;
             options.OnRetry = retry =>
+            {
                 callbackValue = retry.Context.Properties.GetOrDefault(AttemptValue);
+                return default;
+            };
         });
 
         var result = await shield.ExecuteWithContextAsync(

@@ -11,7 +11,11 @@ public class RetryCancellationTests
         {
             options.MaxRetries = 3;
             options.Backoff = Backoff.None;
-            options.OnRetry = _ => cancellation.Cancel();
+            options.OnRetry = _ =>
+            {
+                cancellation.Cancel();
+                return default;
+            };
         });
 
         var outcome = await shield.ExecuteOutcomeAsync<int>(_ =>
@@ -37,7 +41,11 @@ public class RetryCancellationTests
         {
             options.MaxRetries = 3;
             options.Backoff = Backoff.Constant(TimeSpan.FromDays(1));
-            options.OnRetry = _ => retryStarted.TrySetResult();
+            options.OnRetry = _ =>
+            {
+                retryStarted.TrySetResult();
+                return default;
+            };
         });
 
         var execution = shield.ExecuteOutcomeAsync<int>(_ =>

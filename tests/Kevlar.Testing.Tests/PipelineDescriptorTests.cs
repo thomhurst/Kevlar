@@ -14,14 +14,14 @@ public class PipelineDescriptorTests
             .Timeout(options =>
             {
                 options.Timeout = TimeSpan.FromSeconds(2);
-                options.OnTimeout = _ => { };
+                options.OnTimeout = _ => default;
             })
             .Retry(options =>
             {
                 options.MaxRetries = 4;
                 options.Backoff = Backoff.Constant(TimeSpan.FromMilliseconds(50));
                 options.MaxDelay = TimeSpan.FromSeconds(1);
-                options.OnRetryAsync = _ => default;
+                options.OnRetry = _ => default;
             })
             .CircuitBreaker(options =>
             {
@@ -29,7 +29,7 @@ public class PipelineDescriptorTests
                 options.MinimumThroughput = 8;
                 options.SamplingWindow = TimeSpan.FromSeconds(20);
                 options.BreakDuration = TimeSpan.FromSeconds(7);
-                options.OnStateChanged = _ => { };
+                options.OnStateChanged = _ => default;
             })
             .RateLimit(options =>
             {
@@ -37,20 +37,20 @@ public class PipelineDescriptorTests
                 options.Window = TimeSpan.FromSeconds(5);
                 options.Burst = 12;
                 options.QueueLimit = 3;
-                options.OnRejectedAsync = _ => default;
+                options.OnRejected = _ => default;
             })
             .ConcurrencyLimit(options =>
             {
                 options.MaxConcurrency = 6;
                 options.QueueLimit = 2;
-                options.OnRejected = _ => { };
+                options.OnRejected = _ => default;
             })
             .Hedge(options =>
             {
                 options.MaxHedgedAttempts = 2;
                 options.Delay = TimeSpan.FromMilliseconds(25);
-                options.DelayGenerator = static _ => TimeSpan.Zero;
-                options.OnHedge = _ => { };
+                options.DelayGenerator = static _ => new(TimeSpan.Zero);
+                options.OnHedge = _ => default;
                 options.ActionGenerator = HedgeActionGenerator.Create(static _ => null);
             })
             .WithName("orders")
@@ -145,7 +145,7 @@ public class PipelineDescriptorTests
         await Assert.That(fallback.HasNotification).IsFalse();
 
         var configuredFallback = Shield.For<int>()
-            .FallbackTo(42, static options => options.OnFallback = static _ => { })
+            .FallbackTo(42, static options => options.OnFallback = static _ => default)
             .GetDescriptor()
             .AssertContainsSingle<FallbackStrategyDescriptor>();
         await Assert.That(configuredFallback.HasNotification).IsTrue();

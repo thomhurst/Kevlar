@@ -24,8 +24,7 @@ Generated code is ignored.
 | `KEV009` | Info | strategy inherits a handling clause declared earlier in the chain |
 | `KEV010` | Info | default-result clause is written for a value type, whose default is usually valid |
 | `KEV011` | Info | reactive strategy relies on implicit default handling, which includes programming errors |
-| `KEV012` | Warning | asynchronous strategy configuration is passed to synchronous `Execute` |
-| `KEV013` | Warning | asynchronous work is assigned to a synchronous strategy callback |
+| `KEV012` | Warning | a delegate that completes asynchronously is assigned to a hook of a shield passed to synchronous `Execute` |
 | `KEV014` | Warning | a pooled event context is captured by deferred work |
 
 ## KEV001: ignored execution cancellation
@@ -78,9 +77,6 @@ var shield = Shield.For<int>()
     .When<TimeoutExceededException>()
     .FallbackTo(-1);
 ```
-
-No automatic code fix is supplied for `KEV002` or `KEV003`: changing sync control flow or strategy
-order can change application semantics.
 
 ## KEV004: per-execution stateful shields
 
@@ -346,70 +342,43 @@ Disable it project-wide with `dotnet_diagnostic.KEV011.severity = none`.
 
 ## KEV012: async configuration with synchronous Execute
 
-Synchronous `Execute` cannot safely run a user callback that may capture a single-threaded
-`SynchronizationContext`. Kevlar rejects known async callbacks and generators before the action or
-any strategy runs:
+Every strategy hook returns `ValueTask`, and Kevlar never blocks the calling thread on one: under
+synchronous `Execute`, a hook that does not complete synchronously throws `NotSupportedException`
+at that call. `KEV012` reports the statically visible form — an `async` lambda, an `async`
+anonymous method, or a method group naming an `async` method assigned to a hook of a shield that
+is then passed to `Execute`:
 
 ```csharp
+#pragma warning disable KEV012 // Deliberately demonstrates the unsafe form.
 var shield = Shield.Retry(options =>
-    options.OnRetryAsync = static _ => ValueTask.CompletedTask);
+    options.OnRetry = async _ => await Task.Yield());
 
 var value = shield.Execute(static _ => 42); // KEV012 and NotSupportedException at runtime
+#pragma warning restore KEV012
 ```
 
-Use `ExecuteAsync`, or choose the synchronous callback or generator when the work is synchronous:
+Use `ExecuteAsync`, or make the delegate complete synchronously. A non-`async` lambda that returns
+`default`, `ValueTask.CompletedTask`, or `new(...)` is not reported and runs through `Execute`:
 
 ```csharp
 var shield = Shield.Timeout(options =>
-    options.TimeoutGeneratorSync = static context =>
+    options.TimeoutGenerator = static context => new(
         context.ShieldName == "interactive"
             ? TimeSpan.FromSeconds(2)
-            : TimeSpan.FromSeconds(30));
+            : TimeSpan.FromSeconds(30)));
 
 var value = shield.Execute(static _ => 42);
 ```
 
-The rule recognizes async property assignments in a configuration lambda on the same fluent chain.
-It also recognizes `Fallback` recovery delegates and `UseRateLimiter` adapters, whose runtime
-contracts are async-only. Configuration lambdas are inspected only on known Kevlar strategy
-factories, so a custom extension that merely inspects genuine Kevlar options remains clean.
+The rule recognizes hook assignments in a configuration lambda on the same fluent chain or through
+a stable local alias. It also recognizes `Fallback` recovery delegates and `UseRateLimiter`
+adapters, whose runtime contracts are async-only. Configuration lambdas are inspected only on known
+Kevlar strategy factories, so a custom extension that merely inspects genuine Kevlar options remains
+clean.
 
 The analyzer does not guess through fields, parameters, local delegates, or opaque factories; the
-runtime check still protects those cases. `ExecuteAsync` and configurations containing only
-synchronous callbacks remain clean.
-
-## KEV013: asynchronous work in a synchronous callback
-
-Synchronous callback properties such as `OnRetry` accept `Action<TEvent>`. An `async` lambda
-assigned there becomes `async void`: the strategy cannot await it, callback failures escape the
-pipeline, and its pooled event context may expire while the lambda is suspended.
-
-```csharp
-static ValueTask WriteAuditAsync(int retryNumber) => ValueTask.CompletedTask;
-
-#pragma warning disable KEV013 // Deliberately demonstrates the unsafe form.
-var shield = Shield.Retry(options =>
-{
-    options.OnRetry = async item => await WriteAuditAsync(item.RetryNumber);
-    //                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ KEV013
-});
-#pragma warning restore KEV013
-```
-
-Use the matching asynchronous property so Kevlar awaits the work and keeps the event context valid:
-
-```csharp
-static ValueTask WriteAuditAsync(int retryNumber) => ValueTask.CompletedTask;
-
-var shield = Shield.Retry(options =>
-{
-    options.OnRetryAsync = async item => await WriteAuditAsync(item.RetryNumber);
-});
-```
-
-`KEV013` also reports expression lambdas that discard a `Task` or `ValueTask`. Synchronous lambdas
-and delegates assigned to `OnRetryAsync`, `OnTimeoutAsync`, and the other `…Async` hooks are valid.
-For async lambdas whose callback has an `…Async` twin, the code fix changes the assigned property.
+runtime guard still protects those cases. `ExecuteAsync` and configurations whose hooks complete
+synchronously remain clean.
 
 ## KEV014: deferred event-context capture
 
@@ -420,12 +389,27 @@ var shield = Shield.Retry(options => options.OnRetry = item =>
 {
     var shieldName = item.Context.ShieldName;
     _ = Task.Run(() => Console.WriteLine(shieldName));
+    return default;
 });
 ```
 
-`KEV014` reports `Task.Run` and `ThreadPool.QueueUserWorkItem` calls that capture an event's
-`Context` or `Properties`. Deferred access can race with context pooling and observe state from a
-later execution, so this diagnostic is a warning.
+Deferred or discarded work that captures the event itself is reported:
+
+```csharp
+#pragma warning disable KEV014 // Deliberately demonstrates the unsafe form.
+var shield = Shield.Retry(options => options.OnRetry = item =>
+{
+    _ = Task.Run(() => Console.WriteLine(item.Context.ShieldName)); // KEV014
+    return default;
+});
+#pragma warning restore KEV014
+```
+
+`KEV014` reports `Task.Run` and `ThreadPool.QueueUserWorkItem` calls, and discarded `Task` or
+`ValueTask` work, that capture an event's `Context` or `Properties`. Because Kevlar awaits every
+hook, using the event after an `await` inside an `async` hook is not deferred work and is not
+reported. Deferred access can race with context pooling and observe state from a later execution,
+so this diagnostic is a warning.
 
 ## Suppression
 

@@ -235,7 +235,7 @@ public class CircuitBreakerEdgeCaseTests
                 options.ConsecutiveFailures = 2;
                 options.BreakDuration = TimeSpan.FromMinutes(1);
                 options.Monitor = monitor;
-                options.OnStateChangedAsync = static _ => default;
+                options.OnStateChanged = static _ => default;
             });
 
         await shield.ExecuteOutcomeAsync<int>(_ => throw new InvalidOperationException());
@@ -451,7 +451,11 @@ public class CircuitBreakerEdgeCaseTests
         {
             options.ConsecutiveFailures = 1;
             options.BreakDuration = TimeSpan.FromMinutes(1);
-            options.OnStateChanged = change => opened ??= change;
+            options.OnStateChanged = change =>
+            {
+                opened ??= change;
+                return default;
+            };
         });
 
         await shield.ExecuteOutcomeAsync<int>(_ => throw cause);

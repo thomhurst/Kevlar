@@ -113,57 +113,115 @@ public class SyncExecutionTests
     }
 
     [Test]
-    public async Task Sync_Execute_Rejects_Async_Callbacks_Before_Invoking_The_Action()
+    public async Task Sync_Execute_Rejects_Hooks_That_Complete_Asynchronously()
     {
-        var actionInvoked = false;
+        var attempts = 0;
+        // Released only after the assertions so the hook is guaranteed to still be pending when
+        // the synchronous guard inspects it.
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var shield = Shield.Retry(options =>
-            options.OnRetryAsync = static _ => ValueTask.CompletedTask);
+        {
+            options.MaxRetries = 2;
+            options.Backoff = Backoff.None;
+            options.OnRetry = async _ => await gate.Task;
+        });
 
         var exception = await Assert.That(() => shield.Execute<int>(_ =>
             {
-                actionInvoked = true;
+                attempts++;
                 throw new InvalidOperationException();
             }))
             .Throws<NotSupportedException>();
 
-        await Assert.That(exception!.Message).Contains("RetryOptions.OnRetryAsync");
-        await Assert.That(actionInvoked).IsFalse();
+        await Assert.That(exception!.Message).Contains("RetryOptions.OnRetry");
+        await Assert.That(exception.Message).Contains("Use ExecuteAsync");
+        // The guard fires when the hook runs, so the first attempt happens and no retry follows.
+        await Assert.That(attempts).IsEqualTo(1);
+        gate.SetResult();
     }
 
     [Test]
-    public async Task Sync_ExecuteOutcome_Captures_Unsupported_Async_Configuration()
+    public async Task Sync_ExecuteOutcome_Captures_Hooks_That_Complete_Asynchronously()
     {
-        var actionInvoked = false;
+        var attempts = 0;
+        var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var shield = Shield.Retry(options =>
-            options.OnRetryAsync = static _ => ValueTask.CompletedTask);
+        {
+            options.MaxRetries = 2;
+            options.Backoff = Backoff.None;
+            options.OnRetry = async _ => await gate.Task;
+        });
 
         var outcome = shield.ExecuteOutcome<int>(_ =>
         {
-            actionInvoked = true;
-            return 42;
+            attempts++;
+            throw new InvalidOperationException();
         });
 
         await Assert.That(outcome.Exception).IsTypeOf<NotSupportedException>();
-        await Assert.That(outcome.Exception!.Message).Contains("RetryOptions.OnRetryAsync");
-        await Assert.That(actionInvoked).IsFalse();
+        await Assert.That(outcome.Exception!.Message).Contains("RetryOptions.OnRetry");
+        await Assert.That(attempts).IsEqualTo(1);
+        gate.SetResult();
     }
 
     [Test]
-    public async Task Sync_Zero_Retries_Ignores_Unreachable_Async_Callbacks()
+    public async Task Sync_Execute_Runs_Hooks_That_Complete_Synchronously()
+    {
+        var delaysGenerated = 0;
+        var retriesObserved = 0;
+        var shield = Shield.Retry(options =>
+        {
+            options.MaxRetries = 3;
+            options.Backoff = Backoff.None;
+            options.DelayGenerator = _ =>
+            {
+                delaysGenerated++;
+                return delaysGenerated switch
+                {
+                    1 => default,
+                    2 => new(TimeSpan.FromMilliseconds(1)),
+                    _ => new ValueTask<TimeSpan?>(Task.FromResult<TimeSpan?>(TimeSpan.Zero)),
+                };
+            };
+            options.OnRetry = retry =>
+            {
+                retriesObserved++;
+                return retry.RetryNumber switch
+                {
+                    1 => default,
+                    2 => ValueTask.CompletedTask,
+                    _ => new ValueTask(Task.CompletedTask),
+                };
+            };
+        });
+
+        var attempts = 0;
+        var result = shield.Execute(_ => ++attempts < 4
+            ? throw new InvalidOperationException()
+            : attempts);
+
+        await Assert.That(result).IsEqualTo(4);
+        await Assert.That(delaysGenerated).IsEqualTo(3);
+        await Assert.That(retriesObserved).IsEqualTo(3);
+    }
+
+    [Test]
+    public async Task Sync_Zero_Retries_Never_Invoke_Hooks()
     {
         var callbackInvoked = false;
         var shield = Shield.Retry(options =>
         {
             options.MaxRetries = 0;
-            options.DelayGeneratorAsync = _ =>
+            options.DelayGenerator = async _ =>
             {
                 callbackInvoked = true;
-                return new ValueTask<TimeSpan?>(TimeSpan.Zero);
+                await Task.Yield();
+                return TimeSpan.Zero;
             };
-            options.OnRetryAsync = _ =>
+            options.OnRetry = async _ =>
             {
                 callbackInvoked = true;
-                return ValueTask.CompletedTask;
+                await Task.Yield();
             };
         });
 
@@ -269,14 +327,14 @@ public class SyncExecutionTests
     }
 
     [Test]
-    public async Task Sync_Timeout_Generator_Remains_Synchronous()
+    public async Task Sync_Timeout_Generator_Completing_Synchronously_Runs_Inline()
     {
         var generatorInvoked = false;
         var shield = Shield.Timeout(options =>
-            options.TimeoutGeneratorSync = _ =>
+            options.TimeoutGenerator = _ =>
             {
                 generatorInvoked = true;
-                return TimeSpan.FromSeconds(1);
+                return new(TimeSpan.FromSeconds(1));
             });
 
         var result = shield.Execute(_ => 42);
@@ -286,16 +344,16 @@ public class SyncExecutionTests
     }
 
     [Test]
-    public async Task Sync_Break_Duration_Generator_Remains_Synchronous()
+    public async Task Sync_Break_Duration_Generator_Completing_Synchronously_Runs_Inline()
     {
         var generatorInvoked = false;
         var shield = Shield.CircuitBreaker(options =>
         {
             options.ConsecutiveFailures = 1;
-            options.BreakDurationGeneratorSync = _ =>
+            options.BreakDurationGenerator = _ =>
             {
                 generatorInvoked = true;
-                return TimeSpan.FromSeconds(1);
+                return new(TimeSpan.FromSeconds(1));
             };
         });
 
@@ -314,7 +372,7 @@ public class SyncExecutionTests
             options.ConsecutiveFailures = 1;
             options.BreakDuration = TimeSpan.FromSeconds(1);
             options.Monitor = monitor;
-            options.OnStateChangedAsync = async _ =>
+            options.OnStateChanged = async _ =>
             {
                 observedContexts.Add(SynchronizationContext.Current);
                 await Task.Yield();

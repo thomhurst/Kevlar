@@ -24,8 +24,7 @@ internal sealed class RateLimitStrategy : Strategy
     private readonly int _queueLimit;
     private readonly double _timestampUnitsPerPermit;
     private readonly double _burstTolerance;
-    private readonly Action<RateLimitRejectedEvent>? _onRejected;
-    private readonly Func<RateLimitRejectedEvent, ValueTask>? _onRejectedAsync;
+    private readonly Func<RateLimitRejectedEvent, ValueTask>? _onRejected;
     private readonly string _telemetryName;
     private readonly object _queueGate = new();
 
@@ -45,10 +44,7 @@ internal sealed class RateLimitStrategy : Strategy
 
     internal int QueueLimit => _queueLimit;
 
-    internal bool HasNotification => _onRejected is not null || _onRejectedAsync is not null;
-
-    protected internal override string? SynchronousExecutionUnsupportedReason =>
-        _onRejectedAsync is null ? null : "RateLimitOptions.OnRejectedAsync";
+    internal bool HasNotification => _onRejected is not null;
 
     public RateLimitStrategy(RateLimitOptions options)
     {
@@ -84,7 +80,6 @@ internal sealed class RateLimitStrategy : Strategy
         _timestampUnitsPerPermit = options.Window.TotalSeconds * Stopwatch.Frequency / options.Permits;
         _burstTolerance = (_burst - 1) * _timestampUnitsPerPermit;
         _onRejected = options.OnRejected;
-        _onRejectedAsync = options.OnRejectedAsync;
         _telemetryName = options.Name ?? "RateLimit";
         _metricsRegistration = KevlarMetrics.RegisterRateStateSource(this);
     }
@@ -115,7 +110,7 @@ internal sealed class RateLimitStrategy : Strategy
     {
         var rejection = new RateLimitExceededException(retryAfter);
         KevlarMetrics.Rejection(context, "rate_limit", rejection, _telemetryName);
-        if (_onRejected is null && _onRejectedAsync is null)
+        if (_onRejected is null)
         {
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(rejection));
         }
@@ -128,16 +123,12 @@ internal sealed class RateLimitStrategy : Strategy
             _queueLimit,
             context);
 
-        CallbackInvoker.Invoke(
+        var notification = CallbackInvoker.InvokeAsync(
             _onRejected,
             rejectedEvent,
             CallbackErrorKind.RateLimitRejected,
-            context);
-        var notification = CallbackInvoker.InvokeAsync(
-            _onRejectedAsync,
-            rejectedEvent,
-            CallbackErrorKind.RateLimitRejected,
-            context);
+            context,
+            "RateLimitOptions.OnRejected");
         if (notification.IsCompletedSuccessfully)
         {
             return new ValueTask<Outcome<T>>(Outcome<T>.FromException(rejection));

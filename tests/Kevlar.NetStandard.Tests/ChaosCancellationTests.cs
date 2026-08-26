@@ -15,7 +15,11 @@ public class ChaosCancellationTests
         {
             options.Enabled = true;
             options.Delay = TimeSpan.FromDays(1);
-            options.OnInjected = _ => injectionStarted.TrySetResult();
+            options.OnInjected = _ =>
+            {
+                injectionStarted.TrySetResult();
+                return default;
+            };
         });
 
         var execution = shield.ExecuteOutcomeAsync<int>(_ =>

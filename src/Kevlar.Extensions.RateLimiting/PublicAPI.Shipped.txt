@@ -4,10 +4,8 @@ Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.Name.set -> void
 Kevlar.Extensions.RateLimiting.RateLimitLeaseAcquirer
 virtual Kevlar.Extensions.RateLimiting.RateLimitLeaseAcquirer.Invoke(int permitCount, Kevlar.KevlarContext! context) -> System.Threading.Tasks.ValueTask<System.Threading.RateLimiting.RateLimitLease!>
 Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions
-Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejected.get -> System.Action<Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent>?
+Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejected.get -> System.Func<Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent, System.Threading.Tasks.ValueTask>?
 Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejected.set -> void
-Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejectedAsync.get -> System.Func<Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedEvent, System.Threading.Tasks.ValueTask>?
-Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.OnRejectedAsync.set -> void
 Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.PermitCount.get -> int
 Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.PermitCount.set -> void
 Kevlar.Extensions.RateLimiting.RateLimiterAdapterOptions.RateLimiterAdapterOptions() -> void

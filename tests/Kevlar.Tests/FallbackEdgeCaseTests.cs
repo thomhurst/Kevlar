@@ -96,6 +96,7 @@ public class FallbackEdgeCaseTests
             {
                 seenResult = fallback.Outcome.Result;
                 seenException = fallback.Outcome.Exception;
+                return default;
             });
 
         var result = await shield.ExecuteAsync(_ => new ValueTask<int>(-1));
@@ -112,7 +113,11 @@ public class FallbackEdgeCaseTests
         Exception? seenException = null;
         var shield = Shield.For<int>().FallbackTo(
             0,
-            options => options.OnFallback = fallback => seenException = fallback.Outcome.Exception);
+            options => options.OnFallback = fallback =>
+            {
+                seenException = fallback.Outcome.Exception;
+                return default;
+            });
 
         await shield.ExecuteAsync(_ => throw original);
 

@@ -15,8 +15,11 @@ Shield.Timeout(TimeSpan.FromSeconds(10));
 Shield.Timeout(o =>
 {
     o.Timeout = TimeSpan.FromSeconds(10);          // default 30s
-    o.OnTimeout = e => logger.LogWarning("Timed out after {Timeout}", e.Timeout);
-    o.OnTimeoutAsync = e => ValueTask.CompletedTask;
+    o.OnTimeout = e =>
+    {
+        logger.LogWarning("Timed out after {Timeout}", e.Timeout);
+        return default;
+    };
 });
 ```
 
@@ -51,23 +54,27 @@ When cancellation signals overlap, the outcome is decided after the delegate com
 
 This caller-first rule also applies to nested timeouts. A cancelled outer timeout is treated as the inner timeout's caller, so only the winning scope reports `OnTimeout`. The strategy restores the prior context token and completes timer cleanup before invoking `OnTimeout`; callback failures are reported through `KevlarDiagnostics.OnCallbackError` without replacing the timeout outcome.
 
-## Dynamic timeouts and asynchronous notifications
+## Dynamic timeouts and notifications
 
-Use `TimeoutGenerator` when computing the budget requires asynchronous work, or
-`TimeoutGeneratorSync` when it is synchronous. The generator runs before the timer is armed or the
-executed delegate starts. Its result overrides the fixed `Timeout` for that execution and must be
-positive and within the runtime timer limit. Configure only one generator:
+Use `TimeoutGenerator` to compute the budget per execution. It returns `ValueTask<TimeSpan>`, so
+the same property serves a synchronous computation (`context => new(duration)`) and an `async`
+one. The generator runs before the timer is armed or the executed delegate starts. Its result
+overrides the fixed `Timeout` for that execution and must be positive and within the runtime timer
+limit:
 
 ```csharp
 var shield = Shield.Timeout(o =>
 {
-    o.TimeoutGenerator = context => new ValueTask<TimeSpan>(
+    o.TimeoutGenerator = context => new(
         context.ShieldName == "interactive"
             ? TimeSpan.FromSeconds(2)
             : TimeSpan.FromSeconds(30));
 
-    o.OnTimeout = timeout => Console.WriteLine(timeout.Timeout);
-    o.OnTimeoutAsync = timeout => ValueTask.CompletedTask;
+    o.OnTimeout = timeout =>
+    {
+        Console.WriteLine(timeout.Timeout);
+        return default;
+    };
 });
 ```
 
@@ -81,12 +88,16 @@ Invalid `TimeoutOptions` values—and invalid durations returned by `TimeoutGene
 offending value.
 
 After a timeout wins, Kevlar records timeout metrics, restores the caller token, disposes timer state,
-then invokes `OnTimeout` followed by awaited `OnTimeoutAsync`. Callback exceptions and cancellations
-are reported through `KevlarDiagnostics.OnCallbackError`; `TimeoutExceededException` remains the
-outcome. Hooks may run concurrently when a shield is reused, so callbacks must be thread-safe and
-must not assume serialization. `TimeoutGenerator`,
-`OnTimeoutAsync`, and other async callbacks require `ExecuteAsync`; synchronous `Execute` rejects the
-pipeline before the action starts. Use `TimeoutGeneratorSync` for synchronous execution.
+then awaits `OnTimeout`. Callback exceptions and cancellations are reported through
+`KevlarDiagnostics.OnCallbackError`; `TimeoutExceededException` remains the outcome. Hooks may run
+concurrently when a shield is reused, so callbacks must be thread-safe and must not assume
+serialization.
+
+`TimeoutGenerator` and `OnTimeout` both return `ValueTask`. A hook that completes synchronously
+(`return default;`, `new(value)`, `ValueTask.CompletedTask`) costs nothing extra and works with
+synchronous `Execute`. A hook that yields is awaited by `ExecuteAsync`; reached through synchronous
+`Execute`, it throws `NotSupportedException` at that call — Kevlar never blocks the calling thread
+on a hook. See [synchronous execution compatibility](../executing.md#synchronous-execution-compatibility).
 
 ## Total vs per-attempt
 

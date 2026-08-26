@@ -203,13 +203,13 @@ items:
     <code>Retry-After</code> header when present and longer than the computed backoff.
   example: []
   syntax:
-    content: public static TimeSpan? RetryAfter(RetryEvent<HttpResponseMessage> retry)
+    content: public static ValueTask<TimeSpan?> RetryAfter(RetryEvent<HttpResponseMessage> retry)
     parameters:
     - id: retry
       type: Kevlar.RetryEvent{System.Net.Http.HttpResponseMessage}
     return:
-      type: System.Nullable{System.TimeSpan}
-    content.vb: Public Shared Function RetryAfter(retry As RetryEvent(Of HttpResponseMessage)) As TimeSpan?
+      type: System.Threading.Tasks.ValueTask{System.Nullable{System.TimeSpan}}
+    content.vb: Public Shared Function RetryAfter(retry As RetryEvent(Of HttpResponseMessage)) As ValueTask(Of TimeSpan?)
   overload: Kevlar.Extensions.Http.HttpShield.RetryAfter*
   nameWithType.vb: HttpShield.RetryAfter(RetryEvent(Of HttpResponseMessage))
   fullName.vb: Kevlar.Extensions.Http.HttpShield.RetryAfter(Kevlar.RetryEvent(Of System.Net.Http.HttpResponseMessage))
@@ -236,13 +236,13 @@ items:
     The computed backoff is never shortened.
   example: []
   syntax:
-    content: public static Func<RetryEvent<HttpResponseMessage>, TimeSpan?> RetryAfter(TimeSpan maxDelay)
+    content: public static Func<RetryEvent<HttpResponseMessage>, ValueTask<TimeSpan?>> RetryAfter(TimeSpan maxDelay)
     parameters:
     - id: maxDelay
       type: System.TimeSpan
     return:
-      type: System.Func{Kevlar.RetryEvent{System.Net.Http.HttpResponseMessage},System.Nullable{System.TimeSpan}}
-    content.vb: Public Shared Function RetryAfter(maxDelay As TimeSpan) As Func(Of RetryEvent(Of HttpResponseMessage), TimeSpan?)
+      type: System.Func{Kevlar.RetryEvent{System.Net.Http.HttpResponseMessage},System.Threading.Tasks.ValueTask{System.Nullable{System.TimeSpan}}}
+    content.vb: Public Shared Function RetryAfter(maxDelay As TimeSpan) As Func(Of RetryEvent(Of HttpResponseMessage), ValueTask(Of TimeSpan?))
   overload: Kevlar.Extensions.Http.HttpShield.RetryAfter*
   exceptions:
   - type: System.ArgumentOutOfRangeException
@@ -856,26 +856,43 @@ references:
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.net.http.httpresponsemessage
   - name: )
-- uid: System.Nullable{System.TimeSpan}
-  commentId: T:System.Nullable{System.TimeSpan}
-  parent: System
-  definition: System.Nullable`1
-  href: https://learn.microsoft.com/dotnet/api/system.timespan
-  name: TimeSpan?
-  nameWithType: TimeSpan?
-  fullName: System.TimeSpan?
+- uid: System.Threading.Tasks.ValueTask{System.Nullable{System.TimeSpan}}
+  commentId: T:System.Threading.Tasks.ValueTask{System.Nullable{System.TimeSpan}}
+  parent: System.Threading.Tasks
+  definition: System.Threading.Tasks.ValueTask`1
+  href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  name: ValueTask<TimeSpan?>
+  nameWithType: ValueTask<TimeSpan?>
+  fullName: System.Threading.Tasks.ValueTask<System.TimeSpan?>
+  nameWithType.vb: ValueTask(Of TimeSpan?)
+  fullName.vb: System.Threading.Tasks.ValueTask(Of System.TimeSpan?)
+  name.vb: ValueTask(Of TimeSpan?)
   spec.csharp:
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
   - uid: System.TimeSpan
     name: TimeSpan
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.timespan
   - name: '?'
+  - name: '>'
   spec.vb:
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
   - uid: System.TimeSpan
     name: TimeSpan
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.timespan
   - name: '?'
+  - name: )
 - uid: Kevlar.RetryEvent`1
   commentId: T:Kevlar.RetryEvent`1
   isExternal: true
@@ -904,34 +921,71 @@ references:
   - name: " "
   - name: TResult
   - name: )
-- uid: System.Nullable`1
-  commentId: T:System.Nullable`1
+- uid: System.Threading.Tasks.ValueTask`1
+  commentId: T:System.Threading.Tasks.ValueTask`1
   isExternal: true
-  href: https://learn.microsoft.com/dotnet/api/system.nullable-1
-  name: Nullable<T>
-  nameWithType: Nullable<T>
-  fullName: System.Nullable<T>
-  nameWithType.vb: Nullable(Of T)
-  fullName.vb: System.Nullable(Of T)
-  name.vb: Nullable(Of T)
+  href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  name: ValueTask<TResult>
+  nameWithType: ValueTask<TResult>
+  fullName: System.Threading.Tasks.ValueTask<TResult>
+  nameWithType.vb: ValueTask(Of TResult)
+  fullName.vb: System.Threading.Tasks.ValueTask(Of TResult)
+  name.vb: ValueTask(Of TResult)
   spec.csharp:
-  - uid: System.Nullable`1
-    name: Nullable
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
     isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
   - name: <
-  - name: T
+  - name: TResult
   - name: '>'
   spec.vb:
-  - uid: System.Nullable`1
-    name: Nullable
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
     isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/system.nullable-1
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
   - name: (
   - name: Of
   - name: " "
-  - name: T
+  - name: TResult
   - name: )
+- uid: System.Threading.Tasks
+  commentId: N:System.Threading.Tasks
+  isExternal: true
+  href: https://learn.microsoft.com/dotnet/api/system
+  name: System.Threading.Tasks
+  nameWithType: System.Threading.Tasks
+  fullName: System.Threading.Tasks
+  spec.csharp:
+  - uid: System
+    name: System
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system
+  - name: .
+  - uid: System.Threading
+    name: Threading
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading
+  - name: .
+  - uid: System.Threading.Tasks
+    name: Tasks
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks
+  spec.vb:
+  - uid: System
+    name: System
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system
+  - name: .
+  - uid: System.Threading
+    name: Threading
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading
+  - name: .
+  - uid: System.Threading.Tasks
+    name: Tasks
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks
 - uid: System.ArgumentOutOfRangeException
   commentId: T:System.ArgumentOutOfRangeException
   isExternal: true
@@ -947,17 +1001,17 @@ references:
   name: TimeSpan
   nameWithType: TimeSpan
   fullName: System.TimeSpan
-- uid: System.Func{Kevlar.RetryEvent{System.Net.Http.HttpResponseMessage},System.Nullable{System.TimeSpan}}
-  commentId: T:System.Func{Kevlar.RetryEvent{System.Net.Http.HttpResponseMessage},System.Nullable{System.TimeSpan}}
+- uid: System.Func{Kevlar.RetryEvent{System.Net.Http.HttpResponseMessage},System.Threading.Tasks.ValueTask{System.Nullable{System.TimeSpan}}}
+  commentId: T:System.Func{Kevlar.RetryEvent{System.Net.Http.HttpResponseMessage},System.Threading.Tasks.ValueTask{System.Nullable{System.TimeSpan}}}
   parent: System
   definition: System.Func`2
   href: https://learn.microsoft.com/dotnet/api/system.func-2
-  name: Func<RetryEvent<HttpResponseMessage>, TimeSpan?>
-  nameWithType: Func<RetryEvent<HttpResponseMessage>, TimeSpan?>
-  fullName: System.Func<Kevlar.RetryEvent<System.Net.Http.HttpResponseMessage>, System.TimeSpan?>
-  nameWithType.vb: Func(Of RetryEvent(Of HttpResponseMessage), TimeSpan?)
-  fullName.vb: System.Func(Of Kevlar.RetryEvent(Of System.Net.Http.HttpResponseMessage), System.TimeSpan?)
-  name.vb: Func(Of RetryEvent(Of HttpResponseMessage), TimeSpan?)
+  name: Func<RetryEvent<HttpResponseMessage>, ValueTask<TimeSpan?>>
+  nameWithType: Func<RetryEvent<HttpResponseMessage>, ValueTask<TimeSpan?>>
+  fullName: System.Func<Kevlar.RetryEvent<System.Net.Http.HttpResponseMessage>, System.Threading.Tasks.ValueTask<System.TimeSpan?>>
+  nameWithType.vb: Func(Of RetryEvent(Of HttpResponseMessage), ValueTask(Of TimeSpan?))
+  fullName.vb: System.Func(Of Kevlar.RetryEvent(Of System.Net.Http.HttpResponseMessage), System.Threading.Tasks.ValueTask(Of System.TimeSpan?))
+  name.vb: Func(Of RetryEvent(Of HttpResponseMessage), ValueTask(Of TimeSpan?))
   spec.csharp:
   - uid: System.Func`2
     name: Func
@@ -976,11 +1030,17 @@ references:
   - name: '>'
   - name: ','
   - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: <
   - uid: System.TimeSpan
     name: TimeSpan
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.timespan
   - name: '?'
+  - name: '>'
   - name: '>'
   spec.vb:
   - uid: System.Func`2
@@ -1004,11 +1064,19 @@ references:
   - name: )
   - name: ','
   - name: " "
+  - uid: System.Threading.Tasks.ValueTask`1
+    name: ValueTask
+    isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/system.threading.tasks.valuetask-1
+  - name: (
+  - name: Of
+  - name: " "
   - uid: System.TimeSpan
     name: TimeSpan
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/system.timespan
   - name: '?'
+  - name: )
   - name: )
 - uid: System.Func`2
   commentId: T:System.Func`2

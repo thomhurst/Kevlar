@@ -21,21 +21,17 @@ public class FallbackBenchmarks
         .When<InvalidOperationException>()
         .FallbackTo(7);
 
-    private static readonly Shield<int> KevlarSyncNotification = Shield.For<int>()
-        .When<InvalidOperationException>()
-        .FallbackTo(7, static options => options.OnFallback = static _ => { });
-
     private static readonly Shield<int> KevlarCompletedAsyncNotification = Shield.For<int>()
         .When<InvalidOperationException>()
         .FallbackTo(
             7,
-            static options => options.OnFallbackAsync = static _ => ValueTask.CompletedTask);
+            static options => options.OnFallback = static _ => ValueTask.CompletedTask);
 
     private static readonly Shield<int> KevlarYieldingAsyncNotification = Shield.For<int>()
         .When<InvalidOperationException>()
         .FallbackTo(
             7,
-            static options => options.OnFallbackAsync = static async _ => await Task.Yield());
+            static options => options.OnFallback = static async _ => await Task.Yield());
 
     private static readonly ResiliencePipeline<int> PollyFallback = new ResiliencePipelineBuilder<int>()
         .AddFallback(new FallbackStrategyOptions<int>
@@ -59,9 +55,6 @@ public class FallbackBenchmarks
 
     [BenchmarkCategory("Notifications"), Benchmark(Baseline = true)]
     public ValueTask<int> Kevlar_NoNotification() => KevlarFallback.ExecuteAsync(static _ => throw PrimaryError);
-
-    [BenchmarkCategory("Notifications"), Benchmark]
-    public ValueTask<int> Kevlar_SyncNotification() => KevlarSyncNotification.ExecuteAsync(static _ => throw PrimaryError);
 
     [BenchmarkCategory("Notifications"), Benchmark]
     public ValueTask<int> Kevlar_CompletedAsyncNotification() =>

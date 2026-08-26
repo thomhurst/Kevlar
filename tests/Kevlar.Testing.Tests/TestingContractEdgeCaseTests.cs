@@ -139,7 +139,11 @@ public class TestingContractEdgeCaseTests
         var wait = recorder.WaitForCallbackCountAsync(1, cancellation.Token);
         var shield = Shield.When<InvalidOperationException>().Fallback(
             static (_, _) => ValueTask.CompletedTask,
-            options => options.OnFallback = recorder.Record);
+            options => options.OnFallback = fallback =>
+            {
+                recorder.Record(fallback);
+                return default;
+            });
 
         await shield.ExecuteAsync(static _ =>
             ValueTask.FromException(new InvalidOperationException("handled")));

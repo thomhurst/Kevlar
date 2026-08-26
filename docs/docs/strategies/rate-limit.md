@@ -18,8 +18,10 @@ Shield.RateLimit(o =>
     o.Burst = 200;                         // default: same as Permits
     o.QueueLimit = 20;                     // default 0
     o.OnRejected = rejection =>
+    {
         logger.LogWarning("Rate limited; retry after {RetryAfter}", rejection.RetryAfter);
-    o.OnRejectedAsync = static _ => ValueTask.CompletedTask;
+        return default;
+    };
 });
 ```
 
@@ -48,7 +50,10 @@ var shield = Shield.Empty.UseRateLimiter(limiter, options =>
 {
     options.PermitCount = 1;
     options.OnRejected = rejection =>
+    {
         Console.WriteLine(rejection.RetryAfter);
+        return default;
+    };
 });
 
 await shield.ExecuteAsync(static _ => ValueTask.CompletedTask);
@@ -105,8 +110,8 @@ The same `ownsLimiter: true` opt-in transfers ownership when registry disposal g
 lifetime; Kevlar always owns each returned lease.
 
 The delegate must return a fresh acquired or rejected lease for each call. Rejection metrics and
-hooks follow the built-in contract: metric first, then `OnRejected`, then awaited
-`OnRejectedAsync`. Hook failures are reported through `KevlarDiagnostics.OnCallbackError`, and
+hooks follow the built-in contract: metric first, then awaited `OnRejected`. Hook failures are
+reported through `KevlarDiagnostics.OnCallbackError`, and
 `RateLimiterAdapterRejectedException` remains the outcome. Cancellation while queued is cancellation,
 not rejection, so hooks do not run.
 
@@ -120,8 +125,7 @@ API reference: [`RateLimitOptions`](pathname:///api/Kevlar.RateLimitOptions.html
 | `Window` | `1s` | The replenishment window |
 | `Burst` | = `Permits` | Bucket capacity: how far above the steady rate a burst may spike |
 | `QueueLimit` | `0` | How many executions may *wait* for a permit instead of being rejected immediately |
-| `OnRejected` | — | Synchronous notification for an actual rejection |
-| `OnRejectedAsync` | — | Awaited notification after `OnRejected` |
+| `OnRejected` | — | Awaited notification for an actual rejection; return `default` when the work is synchronous |
 
 Invalid option values throw [`KevlarConfigurationException`](../exceptions.md#configuration-failures)
 and identify the options type, property, and offending value.
@@ -132,16 +136,17 @@ With `QueueLimit = 0`, an execution that finds the bucket empty fails immediatel
 
 With `QueueLimit > 0`, up to that many executions reserve a future permit and **wait** for it instead of failing. Beyond the queue limit, rejections resume.
 
-For an actual rejection, Kevlar records rejection metrics, invokes `OnRejected`, awaits
-`OnRejectedAsync`, then surfaces `RateLimitExceededException`. The event includes `RetryAfter`,
-the configured permit/window/burst/queue values, the strategy index, and `KevlarContext`.
-Callback failures are reported through `KevlarDiagnostics.OnCallbackError`; both callbacks still
-run and `RateLimitExceededException` remains the rejection outcome. Queued cancellation is
-cancellation, not rejection, so it invokes neither hook.
+For an actual rejection, Kevlar records rejection metrics, awaits `OnRejected`, then surfaces
+`RateLimitExceededException`. The event includes `RetryAfter`, the configured
+permit/window/burst/queue values, the strategy index, and `KevlarContext`. Callback failures are
+reported through `KevlarDiagnostics.OnCallbackError`, and `RateLimitExceededException` remains the
+rejection outcome. Queued cancellation is cancellation, not rejection, so it does not invoke the
+hook. A hook that completes synchronously works with synchronous `Execute`; one that yields throws
+`NotSupportedException` there and must run through `ExecuteAsync`.
 
-Callback contexts are pooled. Do not retain `RateLimitRejectedEvent.Context` after the synchronous
-callback or returned `ValueTask` completes. Hooks run outside limiter locks and may run concurrently
-or re-enter the same shield; captured state must be thread-safe.
+Callback contexts are pooled. Do not retain `RateLimitRejectedEvent.Context` after the returned
+`ValueTask` completes. Hooks run outside limiter locks and may run concurrently or re-enter the
+same shield; captured state must be thread-safe.
 
 :::note Queueing is reservation-based, not FIFO
 Queued executions each sleep until their reserved permit replenishes; there's no fairness ordering among waiters.
@@ -160,7 +165,7 @@ var polite = Shield
     .Retry(o =>
     {
         o.MaxRetries = 3;
-        o.DelayGenerator = e => (e.Exception as RateLimitExceededException)?.RetryAfter;
+        o.DelayGenerator = e => new((e.Exception as RateLimitExceededException)?.RetryAfter);
     })
     .RateLimit(100, perWindow: TimeSpan.FromSeconds(1));
 ```

@@ -154,7 +154,7 @@ configuration-bound shields and `IKevlarRegistry`.
 
 | Package | What it adds |
 |---|---|
-| [`Kevlar`](https://www.nuget.org/packages/Kevlar) | Core strategies, Shield API, analyzers, and code fixes |
+| [`Kevlar`](https://www.nuget.org/packages/Kevlar) | Core strategies, Shield API, and analyzers |
 | [`Kevlar.Chaos`](https://www.nuget.org/packages/Kevlar.Chaos) | Controlled latency, faults, outcomes and custom behaviour |
 | [`Kevlar.Extensions.DependencyInjection`](https://www.nuget.org/packages/Kevlar.Extensions.DependencyInjection) | Named and configuration-bound shields for Microsoft DI |
 | [`Kevlar.Extensions.Http`](https://www.nuget.org/packages/Kevlar.Extensions.Http) | `HttpClientFactory` integration, request replay and transient-fault handling |

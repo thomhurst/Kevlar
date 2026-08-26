@@ -16,8 +16,10 @@ Shield.ConcurrencyLimit(o =>
     o.MaxConcurrency = 10;   // default 10
     o.QueueLimit = 20;         // default 0 — reject immediately when full
     o.OnRejected = rejection =>
+    {
         logger.LogWarning("Concurrency limit {Limit} rejected work", rejection.MaxConcurrency);
-    o.OnRejectedAsync = static _ => ValueTask.CompletedTask;
+        return default;
+    };
 });
 ```
 
@@ -29,24 +31,24 @@ API reference: [`ConcurrencyLimitOptions`](pathname:///api/Kevlar.ConcurrencyLim
 |---|---|---|
 | `MaxConcurrency` | `10` | Executions allowed to run simultaneously |
 | `QueueLimit` | `0` | Executions allowed to wait for a slot; `0` = reject immediately when all slots are busy |
-| `OnRejected` | — | Synchronous notification for an actual rejection |
-| `OnRejectedAsync` | — | Awaited notification after `OnRejected` |
+| `OnRejected` | — | Awaited notification for an actual rejection; return `default` when the work is synchronous |
 
 Invalid option values throw [`KevlarConfigurationException`](../exceptions.md#configuration-failures)
 and identify the options type, property, and offending value.
 
 Total capacity is `MaxConcurrency + QueueLimit`. Anything beyond that fails **immediately** with `ConcurrencyLimitExceededException` — the overflow check happens before any waiting, so rejection is instant and allocation-light.
 
-For an actual rejection, Kevlar records the rejection counter, invokes `OnRejected`, awaits
-`OnRejectedAsync`, then surfaces `ConcurrencyLimitExceededException`. Observable limiter gauges
-report the current state at the next metrics collection. The event includes the configured
-concurrency/queue limits, strategy index, and `KevlarContext`.
-Callback failures are reported through `KevlarDiagnostics.OnCallbackError`; both callbacks still
-run and `ConcurrencyLimitExceededException` remains the rejection outcome.
+For an actual rejection, Kevlar records the rejection counter, awaits `OnRejected`, then surfaces
+`ConcurrencyLimitExceededException`. Observable limiter gauges report the current state at the next
+metrics collection. The event includes the configured concurrency/queue limits, strategy index, and
+`KevlarContext`. Callback failures are reported through `KevlarDiagnostics.OnCallbackError`, and
+`ConcurrencyLimitExceededException` remains the rejection outcome. A hook that completes
+synchronously works with synchronous `Execute`; one that yields throws `NotSupportedException`
+there and must run through `ExecuteAsync`.
 
 Callback contexts are pooled. Do not retain `ConcurrencyLimitRejectedEvent.Context` after the
-synchronous callback or returned `ValueTask` completes. Hooks run outside limiter locks and may run
-concurrently or re-enter the same shield; captured state must be thread-safe.
+returned `ValueTask` completes. Hooks run outside limiter locks and may run concurrently or
+re-enter the same shield; captured state must be thread-safe.
 
 Cancelling a queued execution frees its queue place when the asynchronous wait observes cancellation. `CancellationTokenSource.Cancel()` can return before that continuation updates accounting, so await the cancelled execution before assuming the place is reusable. If cancellation races a slot grant, the wait either cancels or acquires the slot; both paths update queue and running accounting exactly once, so later executions see the full capacity after the admitted work drains.
 

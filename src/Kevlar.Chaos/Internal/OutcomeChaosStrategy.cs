@@ -32,7 +32,17 @@ internal sealed class OutcomeChaosStrategy<TResult> : ChaosStrategy
         var typedResult = _resultGenerator is null ? _result : _resultGenerator(context);
         var result = Unsafe.As<TResult?, T>(ref typedResult);
 
-        Notify(ChaosInjectionKind.Outcome, context, decision);
-        return new ValueTask<Outcome<T>>(Outcome<T>.FromResult(result));
+        var notification = Notify(ChaosInjectionKind.Outcome, context, decision);
+        return notification.IsCompletedSuccessfully
+            ? new ValueTask<Outcome<T>>(Outcome<T>.FromResult(result))
+            : InjectAfterNotificationAsync(notification, result);
+    }
+
+    private static async ValueTask<Outcome<T>> InjectAfterNotificationAsync<T>(
+        ValueTask notification,
+        T result)
+    {
+        await notification.ConfigureAwait(false);
+        return Outcome<T>.FromResult(result);
     }
 }

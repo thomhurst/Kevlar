@@ -178,11 +178,12 @@ public class NumericBoundaryTests
         {
             options.MaxRetries = 1;
             options.Backoff = Backoff.None;
-            options.DelayGenerator = _ => TimeSpan.MaxValue;
+            options.DelayGenerator = _ => new(TimeSpan.MaxValue);
             options.OnRetry = retry =>
             {
                 observedDelay = retry.Delay;
                 cancellation.Cancel();
+                return default;
             };
         });
 

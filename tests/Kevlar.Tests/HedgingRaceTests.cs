@@ -16,7 +16,7 @@ public class HedgingRaceTests
         {
             options.MaxHedgedAttempts = 2;
             options.Delay = TimeSpan.FromSeconds(1);
-            options.OnHedge = _ => hedgeEvents++;
+            options.OnHedge = _ => { hedgeEvents++; return default; };
         }).WithTimeProvider(timeProvider);
 
         var execution = shield.ExecuteOutcomeAsync<int>(async token =>
@@ -50,7 +50,7 @@ public class HedgingRaceTests
         {
             options.MaxHedgedAttempts = 2;
             options.Delay = System.Threading.Timeout.InfiniteTimeSpan;
-            options.OnHedge = _ => hedgeEvents++;
+            options.OnHedge = _ => { hedgeEvents++; return default; };
         });
 
         var execution = shield.ExecuteOutcomeAsync<int>(async token =>
@@ -82,7 +82,7 @@ public class HedgingRaceTests
         {
             options.MaxHedgedAttempts = 2;
             options.Delay = TimeSpan.FromSeconds(1);
-            options.OnHedge = _ => hedgeEvents++;
+            options.OnHedge = _ => { hedgeEvents++; return default; };
         }).WithTimeProvider(timeProvider);
 
         var execution = shield.ExecuteOutcomeAsync<int>(async token =>
@@ -200,6 +200,8 @@ public class HedgingRaceTests
                 {
                     throw callbackFailure;
                 }
+
+                return default;
             };
         });
 
@@ -236,6 +238,7 @@ public class HedgingRaceTests
             {
                 hedgeEvents++;
                 cancellation.Cancel();
+                return default;
             };
         });
 

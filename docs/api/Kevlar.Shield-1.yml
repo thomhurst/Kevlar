@@ -442,11 +442,9 @@ items:
   summary: >-
     Adds a retry strategy configured via <code class="paramref">configure</code>. The options expose
 
-    result-typed events: <code>OnRetry</code>, <code>OnRetryAsync</code>, <code>DelayGenerator</code>, and
+    result-typed events: <code>OnRetry</code> and <code>DelayGenerator</code> receive a
 
-    <code>DelayGeneratorAsync</code> receive a <xref href="Kevlar.RetryEvent%601" data-throw-if-not-resolved="false"></xref> carrying the handled
-
-    <xref href="Kevlar.Outcome%601" data-throw-if-not-resolved="false"></xref>.
+    <xref href="Kevlar.RetryEvent%601" data-throw-if-not-resolved="false"></xref> carrying the handled <xref href="Kevlar.Outcome%601" data-throw-if-not-resolved="false"></xref>.
   remarks: >-
     <xref href="Kevlar.RetryOptions%601.MaxRetries" data-throw-if-not-resolved="false"></xref> counts <em>retries</em>, not attempts:
 
@@ -845,7 +843,7 @@ items:
   - Kevlar
   namespace: Kevlar
   summary: Replaces handled outcomes with <code class="paramref">fallbackValue</code> and configures notifications.
-  remarks: Runs <xref href="Kevlar.FallbackOptions%601.OnFallback" data-throw-if-not-resolved="false"></xref>, then <xref href="Kevlar.FallbackOptions%601.OnFallbackAsync" data-throw-if-not-resolved="false"></xref>, before recovery. Notification failures are reported and recovery continues.
+  remarks: Runs and awaits <xref href="Kevlar.FallbackOptions%601.OnFallback" data-throw-if-not-resolved="false"></xref> before recovery. Notification failures are reported and recovery continues.
   example: []
   syntax:
     content: public Shield<TResult> FallbackTo(TResult fallbackValue, Action<FallbackOptions<TResult>> configure)
@@ -904,7 +902,7 @@ items:
   - Kevlar
   namespace: Kevlar
   summary: Replaces handled outcomes with the result of <code class="paramref">fallback</code> and configures notifications.
-  remarks: Runs <xref href="Kevlar.FallbackOptions%601.OnFallback" data-throw-if-not-resolved="false"></xref>, then <xref href="Kevlar.FallbackOptions%601.OnFallbackAsync" data-throw-if-not-resolved="false"></xref>, before recovery. Notification failures are reported and recovery continues.
+  remarks: Runs and awaits <xref href="Kevlar.FallbackOptions%601.OnFallback" data-throw-if-not-resolved="false"></xref> before recovery. Notification failures are reported and recovery continues.
   example: []
   syntax:
     content: public Shield<TResult> Fallback(Func<CancellationToken, ValueTask<TResult>> fallback, Action<FallbackOptions<TResult>> configure)
@@ -966,7 +964,7 @@ items:
     Replaces handled outcomes with the result of <code class="paramref">fallback</code>, which receives
 
     the handled outcome, and configures notifications.
-  remarks: Runs <xref href="Kevlar.FallbackOptions%601.OnFallback" data-throw-if-not-resolved="false"></xref>, then <xref href="Kevlar.FallbackOptions%601.OnFallbackAsync" data-throw-if-not-resolved="false"></xref>, before recovery. Notification failures are reported and recovery continues.
+  remarks: Runs and awaits <xref href="Kevlar.FallbackOptions%601.OnFallback" data-throw-if-not-resolved="false"></xref> before recovery. Notification failures are reported and recovery continues.
   example: []
   syntax:
     content: public Shield<TResult> Fallback(Func<Outcome<TResult>, CancellationToken, ValueTask<TResult>> fallback, Action<FallbackOptions<TResult>> configure)
@@ -4682,15 +4680,6 @@ references:
   fullName: Kevlar.FallbackOptions<TResult>.OnFallback
   nameWithType.vb: FallbackOptions(Of TResult).OnFallback
   fullName.vb: Kevlar.FallbackOptions(Of TResult).OnFallback
-- uid: Kevlar.FallbackOptions`1.OnFallbackAsync
-  commentId: P:Kevlar.FallbackOptions`1.OnFallbackAsync
-  isExternal: true
-  href: Kevlar.FallbackOptions-1.html#Kevlar_FallbackOptions_1_OnFallbackAsync
-  name: OnFallbackAsync
-  nameWithType: FallbackOptions<TResult>.OnFallbackAsync
-  fullName: Kevlar.FallbackOptions<TResult>.OnFallbackAsync
-  nameWithType.vb: FallbackOptions(Of TResult).OnFallbackAsync
-  fullName.vb: Kevlar.FallbackOptions(Of TResult).OnFallbackAsync
 - uid: System.Action{Kevlar.FallbackOptions{{TResult}}}
   commentId: T:System.Action{Kevlar.FallbackOptions{`0}}
   parent: System

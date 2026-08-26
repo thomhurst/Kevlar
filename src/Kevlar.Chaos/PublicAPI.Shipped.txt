@@ -48,7 +48,7 @@ Kevlar.Chaos.ChaosOptions.InjectionRate.get -> double
 Kevlar.Chaos.ChaosOptions.InjectionRate.set -> void
 Kevlar.Chaos.ChaosOptions.InjectionRateGenerator.get -> System.Func<Kevlar.KevlarContext!, double>?
 Kevlar.Chaos.ChaosOptions.InjectionRateGenerator.set -> void
-Kevlar.Chaos.ChaosOptions.OnInjected.get -> System.Action<Kevlar.Chaos.ChaosEvent>?
+Kevlar.Chaos.ChaosOptions.OnInjected.get -> System.Func<Kevlar.Chaos.ChaosEvent, System.Threading.Tasks.ValueTask>?
 Kevlar.Chaos.ChaosOptions.OnInjected.set -> void
 Kevlar.Chaos.ChaosOptions.Operation.get -> string?
 Kevlar.Chaos.ChaosOptions.Operation.set -> void

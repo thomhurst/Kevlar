@@ -12,11 +12,6 @@ internal sealed class BehaviorChaosStrategy : ChaosStrategy
 
     public override string Describe() => "ChaosBehavior";
 
-    protected override string? SynchronousExecutionUnsupportedReason =>
-        _behavior is not null && CanInject
-            ? "ChaosBehaviorOptions.Behavior"
-            : null;
-
     public override ValueTask<Outcome<T>> ExecuteAsync<T, TState>(
         Continuation<T, TState> next,
         KevlarContext context)
@@ -31,7 +26,12 @@ internal sealed class BehaviorChaosStrategy : ChaosStrategy
             return next.InvokeAsync(context);
         }
 
-        Notify(ChaosInjectionKind.Behavior, context, decision);
+        var notification = Notify(ChaosInjectionKind.Behavior, context, decision);
+        if (!notification.IsCompletedSuccessfully)
+        {
+            return AwaitNotificationThenBehaviorAsync(notification, _behavior, next, context);
+        }
+
         var behavior = _behavior(context);
         if (behavior.IsCompletedSuccessfully)
         {
@@ -39,7 +39,19 @@ internal sealed class BehaviorChaosStrategy : ChaosStrategy
             return next.InvokeAsync(context);
         }
 
+        ThrowIfSynchronousExecutionCannotAwait(behavior, context, "ChaosBehaviorOptions.Behavior");
         return AwaitBehaviorAsync(behavior, next, context);
+    }
+
+    private static async ValueTask<Outcome<T>> AwaitNotificationThenBehaviorAsync<T, TState>(
+        ValueTask notification,
+        Func<KevlarContext, ValueTask> behavior,
+        Continuation<T, TState> next,
+        KevlarContext context)
+    {
+        await notification.ConfigureAwait(false);
+        await behavior(context).ConfigureAwait(false);
+        return await next.InvokeAsync(context).ConfigureAwait(false);
     }
 
     private static async ValueTask<Outcome<T>> AwaitBehaviorAsync<T, TState>(
