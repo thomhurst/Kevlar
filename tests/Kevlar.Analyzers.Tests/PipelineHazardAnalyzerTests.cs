@@ -705,6 +705,25 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Tracks_Framework_Collections_In_PostAwait_Aliases()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = async item =>
+            {
+                var events = new System.Collections.Generic.List<RetryEvent>(new[] { item });
+                await Task.Yield();
+                Console.WriteLine(events[0].Context.ShieldName);
+            });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
     public async Task KEV014_Follows_Nested_PostAwait_Local_Function_Calls()
     {
         var diagnostics = await AnalyzeBodyAsync("""

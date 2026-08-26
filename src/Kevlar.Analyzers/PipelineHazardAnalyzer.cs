@@ -1427,11 +1427,14 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         foreach (var argument in objectCreation.Arguments)
         {
             if (argument.Parameter is { } parameter
-                && IsInstanceParameterStored(
-                    objectCreation.Constructor,
-                    parameter,
-                    semanticModel,
-                    cancellationToken))
+                && (IsInstanceParameterStored(
+                        objectCreation.Constructor,
+                        parameter,
+                        semanticModel,
+                        cancellationToken)
+                    || IsKnownRetainingFrameworkConstructorParameter(
+                        objectCreation.Constructor,
+                        parameter)))
             {
                 yield return argument.Value;
             }
