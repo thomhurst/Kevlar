@@ -1043,16 +1043,8 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     ContainingType: { } containingType,
                 },
             } => IsKnownCompletedAwaitableType(containingType),
-            IInvocationOperation
-            {
-                TargetMethod:
-                {
-                    IsStatic: true,
-                    Name: "FromResult",
-                    Parameters.Length: 1,
-                    ContainingType: { } containingType,
-                },
-            } => IsKnownCompletedAwaitableType(containingType),
+            IInvocationOperation invocation
+                when IsKnownCompletedAwaitableFactory(invocation) => true,
             IInvocationOperation invocation => IsKnownZeroDurationTaskDelay(invocation),
             IObjectCreationOperation { Constructor: { } constructor } =>
                 IsKnownCompletedValueTaskConstructor(constructor),
@@ -1061,6 +1053,16 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             _ => false,
         };
     }
+
+    private static bool IsKnownCompletedAwaitableFactory(IInvocationOperation invocation) =>
+        invocation.TargetMethod is
+        {
+            IsStatic: true,
+            Parameters.Length: 1,
+            ContainingType: { } containingType,
+        } method
+        && method.Name is "FromResult" or "FromException" or "FromCanceled"
+        && IsKnownCompletedAwaitableType(containingType);
 
     private static bool IsKnownZeroDurationTaskDelay(IInvocationOperation invocation)
     {
@@ -2287,13 +2289,16 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     if (objectCreation.Constructor is not { } constructor
                         || argument.Parameter is not { } parameter
                         || semanticModel is null
-                        || constructor.DeclaringSyntaxReferences.Length == 0
-                        || IsInstanceParameterStored(
-                            constructor,
-                            parameter,
-                            semanticModel,
-                            cancellationToken,
-                            visitedMethods))
+                        || (constructor.DeclaringSyntaxReferences.Length == 0
+                            ? IsKnownRetainingFrameworkConstructorParameter(
+                                constructor,
+                                parameter)
+                            : IsInstanceParameterStored(
+                                constructor,
+                                parameter,
+                                semanticModel,
+                                cancellationToken,
+                                visitedMethods)))
                     {
                         yield return argument.Value;
                     }
@@ -3563,6 +3568,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         {
             IFieldReferenceOperation { Field.IsStatic: false } field => field.Instance,
             IPropertyReferenceOperation { Property.IsStatic: false } property => property.Instance,
+            IArrayElementReferenceOperation arrayElement => arrayElement.ArrayReference,
             _ => null,
         };
 

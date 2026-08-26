@@ -61,6 +61,12 @@ public class PipelineHazardAnalyzerTests
             "Task.CompletedTask.ConfigureAwait(false)",
             "Task.FromResult(0)",
             "Task.FromResult(0).ConfigureAwait(false)",
+            "Task.FromException(new InvalidOperationException())",
+            "Task.FromException(new InvalidOperationException()).ConfigureAwait(false)",
+            "Task.FromException<int>(new InvalidOperationException())",
+            "Task.FromCanceled(new CancellationToken(canceled: true))",
+            "Task.FromCanceled(new CancellationToken(canceled: true)).ConfigureAwait(false)",
+            "Task.FromCanceled<int>(new CancellationToken(canceled: true))",
             "Task.Delay(0)",
             "Task.Delay(0).ConfigureAwait(false)",
             "Task.Delay(TimeSpan.Zero)",
@@ -714,6 +720,40 @@ public class PipelineHazardAnalyzerTests
                 await Task.Yield();
                 Console.WriteLine(events[0].Context.ShieldName);
             });
+            """);
+
+        await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
+        await AssertRuleAsync(
+            Without(diagnostics, "KEV013"),
+            "KEV014",
+            DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Tracks_Instance_Array_Stores_In_Constructors()
+    {
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = async item =>
+                    {
+                        var holder = new Holder(item);
+                        await Task.Yield();
+                        Console.WriteLine(holder.Events[0].Context.ShieldName);
+                    });
+
+                private sealed class Holder
+                {
+                    public Holder(RetryEvent item)
+                    {
+                        Events = new RetryEvent[1];
+                        Events[0] = item;
+                    }
+
+                    public RetryEvent[] Events { get; }
+                }
+            }
             """);
 
         await AssertRuleAsync(Without(diagnostics, "KEV014"), "KEV013");
@@ -1498,6 +1538,34 @@ public class PipelineHazardAnalyzerTests
                 }
             }
             """);
+
+        await AssertRuleAsync(diagnostics, "KEV013");
+    }
+
+    [Test]
+    public async Task KEV014_Ignores_Metadata_Scalar_Constructor_Snapshots()
+    {
+        var snapshotReference = CreateMetadataReference("""
+            public sealed class RetrySnapshot
+            {
+                public RetrySnapshot(RetryEvent item)
+                {
+                    RetryNumber = item.RetryNumber;
+                }
+
+                public int RetryNumber { get; }
+            }
+            """);
+        var diagnostics = await AnalyzeSourceAsync("""
+            public sealed class TestSubject
+            {
+                public void Configure() =>
+                    _ = Shield.Retry(options => options.OnRetry = item =>
+                        _ = AuditAsync(new RetrySnapshot(item)));
+
+                private static Task AuditAsync(RetrySnapshot snapshot) => Task.CompletedTask;
+            }
+            """, additionalReference: snapshotReference);
 
         await AssertRuleAsync(diagnostics, "KEV013");
     }
@@ -5647,10 +5715,11 @@ public class PipelineHazardAnalyzerTests
         bool isGenerated = false,
         bool allowCompilationErrors = false,
         string assemblyName = "PipelineHazardAnalyzerTestSubject",
-        bool enableImplicitDefaultHandlingRule = false)
+        bool enableImplicitDefaultHandlingRule = false,
+        MetadataReference? additionalReference = null)
     {
         var source = CreateSource(declarations, isGenerated, enableImplicitDefaultHandlingRule);
-        var compilation = CreateCompilation(source, assemblyName);
+        var compilation = CreateCompilation(source, assemblyName, additionalReference);
         var errors = compilation.GetDiagnostics().Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error).ToArray();
         if (!allowCompilationErrors && errors.Length > 0)
         {
@@ -5701,13 +5770,37 @@ public class PipelineHazardAnalyzerTests
 
     private static CSharpCompilation CreateCompilation(
         string source,
-        string assemblyName = "PipelineHazardAnalyzerTestSubject")
+        string assemblyName = "PipelineHazardAnalyzerTestSubject",
+        MetadataReference? additionalReference = null)
     {
+        var references = GetMetadataReferences();
+        if (additionalReference is not null)
+        {
+            references = references.Append(additionalReference);
+        }
+
         return CSharpCompilation.Create(
             assemblyName,
             [CSharpSyntaxTree.ParseText(source)],
-            GetMetadataReferences(),
+            references,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+    }
+
+    private static MetadataReference CreateMetadataReference(string declarations)
+    {
+        var compilation = CreateCompilation(
+            CreateSource(declarations),
+            "PipelineHazardAnalyzerExternalTestSubject");
+        using var stream = new MemoryStream();
+        var result = compilation.Emit(stream);
+        if (!result.Success)
+        {
+            throw new InvalidOperationException(
+                "Metadata test source does not compile: "
+                + string.Join("; ", result.Diagnostics.Select(static error => error.ToString())));
+        }
+
+        return MetadataReference.CreateFromImage(stream.ToArray());
     }
 
     private static IEnumerable<MetadataReference> GetMetadataReferences() =>
