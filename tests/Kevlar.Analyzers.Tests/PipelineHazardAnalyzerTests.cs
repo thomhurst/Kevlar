@@ -4143,8 +4143,26 @@ public class PipelineHazardAnalyzerTests
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
             });
             """);
+        var copiedSlices = new[]
+        {
+            "Array.Copy(new[] { item, default(RetryEvent) }, 1, events, 0, 1);",
+            "Array.ConstrainedCopy(new[] { item, default(RetryEvent) }, 1, events, 0, 1);",
+        };
 
         await Assert.That(overwriteDiagnostics).IsEmpty();
+        foreach (var copy in copiedSlices)
+        {
+            var diagnostics = await AnalyzeBodyAsync($$"""
+                _ = Shield.Retry(options => options.OnRetry = item =>
+                {
+                    var events = new RetryEvent[1];
+                    {{copy}}
+                    ThreadPool.QueueUserWorkItem(static state => { }, events);
+                });
+                """);
+
+            await Assert.That(diagnostics).IsEmpty();
+        }
     }
 
     [Test]
@@ -4182,6 +4200,17 @@ public class PipelineHazardAnalyzerTests
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
             });
             """);
+        var reassignedIndexDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var index = 0;
+                var events = new RetryEvent[2];
+                events[index] = item;
+                index = 1;
+                events[index] = default;
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
 
         await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
         await AssertRuleAsync(
@@ -4190,6 +4219,10 @@ public class PipelineHazardAnalyzerTests
             DiagnosticSeverity.Warning);
         await AssertRuleAsync(
             distinctDynamicIndicesDiagnostics,
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(
+            reassignedIndexDiagnostics,
             "KEV014",
             DiagnosticSeverity.Warning);
     }
@@ -4411,6 +4444,17 @@ public class PipelineHazardAnalyzerTests
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
             });
             """);
+        var nestedInvocationDiagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.List<RetryEvent>();
+                void Inner() => events.Add(item);
+                void Outer() => Inner();
+
+                Outer();
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
 
         await AssertRuleAsync(
             invocationDiagnostics,
@@ -4426,6 +4470,10 @@ public class PipelineHazardAnalyzerTests
             DiagnosticSeverity.Warning);
         await AssertRuleAsync(
             erasedValueDiagnostics,
+            "KEV014",
+            DiagnosticSeverity.Warning);
+        await AssertRuleAsync(
+            nestedInvocationDiagnostics,
             "KEV014",
             DiagnosticSeverity.Warning);
     }
