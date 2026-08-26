@@ -4333,6 +4333,23 @@ public class PipelineHazardAnalyzerTests
     }
 
     [Test]
+    public async Task KEV014_Follows_Invoked_Local_Function_Mutations()
+    {
+        var diagnostics = await AnalyzeBodyAsync("""
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.List<RetryEvent>();
+                void Add() => events.Add(item);
+
+                Add();
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
     public async Task KEV014_Ignores_Deferred_State_Cleared_Before_Scheduling()
     {
         var statements = new[]
@@ -4343,6 +4360,7 @@ public class PipelineHazardAnalyzerTests
             "var events = new System.Collections.Generic.List<RetryEvent>(); events.Add(item); events.Remove(item);",
             "var events = new System.Collections.Generic.Stack<RetryEvent>(); events.Push(item); events.Pop();",
             "var events = new System.Collections.Generic.Queue<RetryEvent>(); events.Enqueue(item); events.Dequeue();",
+            "var events = new System.Collections.Generic.Queue<RetryEvent>(new[] { item }); events.Dequeue();",
             "var events = new RetryEvent[1]; events[0] = item; events[0] = default;",
             "var events = new[] { item }; events[0] = default;",
         };
@@ -4680,6 +4698,34 @@ public class PipelineHazardAnalyzerTests
                 events["1"] = default;
                 ThreadPool.QueueUserWorkItem(static state => { }, events);
             });
+            """);
+
+        await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);
+    }
+
+    [Test]
+    public async Task KEV014_Distinguishes_Enum_Type_Dictionary_Keys()
+    {
+        var diagnostics = await AnalyzeBodyAsync(
+            """
+            _ = Shield.Retry(options => options.OnRetry = item =>
+            {
+                var events = new System.Collections.Generic.Dictionary<object, RetryEvent>();
+                events[First.Key] = item;
+                events[Second.Key] = default;
+                ThreadPool.QueueUserWorkItem(static state => { }, events);
+            });
+            """,
+            """
+            private enum First
+            {
+                Key,
+            }
+
+            private enum Second
+            {
+                Key,
+            }
             """);
 
         await AssertRuleAsync(diagnostics, "KEV014", DiagnosticSeverity.Warning);

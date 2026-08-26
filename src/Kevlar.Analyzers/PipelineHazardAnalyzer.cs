@@ -3768,12 +3768,37 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         }
 
         var startsEmpty = IsKnownEmptyDeferredContainer(initializer);
+        var startsWithSingleRetainedValue =
+            HasKnownSingleRetainedConstructorValue(initializer);
         foreach (var invocationSyntax in mutations.OfType<InvocationExpressionSyntax>())
         {
             if (semanticModel.GetOperation(
                     invocationSyntax,
                     context.CancellationToken) is not IInvocationOperation invocation)
             {
+                continue;
+            }
+
+            if (invocation.TargetMethod.MethodKind == MethodKind.LocalFunction
+                && !StartsAsynchronousWork(invocation.TargetMethod))
+            {
+                foreach (var localOrigin in EnumerateLocalFunctionRetainingOrigins(
+                    invocation,
+                    localReference.Local,
+                    context,
+                    knownTypes,
+                    visitedLocals))
+                {
+                    origins.Add((
+                        invocation.Syntax,
+                        localOrigin.Context,
+                        Slot: null,
+                        localOrigin.Value,
+                        localOrigin.Receiver,
+                        localOrigin.MayRetainMultiple,
+                        localOrigin.AllowsDuplicateValues));
+                }
+
                 continue;
             }
 
@@ -4135,6 +4160,10 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         foreach (var origin in origins)
         {
+            var hasSingleRetainedValue = origins.Count == 1
+                && (startsEmpty && retainingMutationCount == 1
+                    || startsWithSingleRetainedValue
+                        && retainingMutationCount == 0);
             var relevantKills = kills
                 .Where(kill => kill.ClearsAll
                     && IsWithinReceiver(origin.Receiver, kill.Receiver)
@@ -4176,9 +4205,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                                             candidateOrigin.Node,
                                             kill.Node,
                                             controlFlowGraph))))
-                    || startsEmpty
-                        && retainingMutationCount == 1
-                        && origins.Count == 1
+                    || hasSingleRetainedValue
                         && origin.Receiver == kill.Receiver
                         && (origin.Node is AssignmentExpressionSyntax
                             || !CanRepeatBefore(
@@ -4201,6 +4228,127 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
 
         capturedContext = null!;
         return false;
+    }
+
+    private static IEnumerable<(
+        SyntaxNode Context,
+        string? Value,
+        string Receiver,
+        bool MayRetainMultiple,
+        bool AllowsDuplicateValues)> EnumerateLocalFunctionRetainingOrigins(
+        IInvocationOperation localFunctionInvocation,
+        ILocalSymbol local,
+        OperationAnalysisContext context,
+        KnownTypes knownTypes,
+        HashSet<ISymbol> visitedLocals)
+    {
+        var semanticModel = context.Operation.SemanticModel;
+        if (semanticModel is null)
+        {
+            yield break;
+        }
+
+        foreach (var syntaxReference in
+            localFunctionInvocation.TargetMethod.DeclaringSyntaxReferences)
+        {
+            var declaration = syntaxReference.GetSyntax(context.CancellationToken);
+            if (GetFunctionBody(declaration) is not { } body)
+            {
+                continue;
+            }
+
+            foreach (var invocationSyntax in body.DescendantNodesAndSelf(
+                         descendIntoChildren: static node =>
+                             node is not AnonymousFunctionExpressionSyntax
+                                 and not LocalFunctionStatementSyntax)
+                     .OfType<InvocationExpressionSyntax>())
+            {
+                if (semanticModel.GetOperation(
+                        invocationSyntax,
+                        context.CancellationToken) is not IInvocationOperation invocation)
+                {
+                    continue;
+                }
+
+                if (IsKnownStaticArrayMutation(invocation.TargetMethod)
+                    && invocation.TargetMethod.Name == "Fill"
+                    && invocation.Arguments.Length > 1
+                    && IsRootedInLocal(
+                        invocation.Arguments[0].Value,
+                        local,
+                        context,
+                        visitedLocals: null)
+                    && TryFindDeferredStateContext(
+                        invocation.Arguments[1].Value,
+                        context,
+                        knownTypes,
+                        visitedLocals,
+                        out var arrayContext))
+                {
+                    yield return (
+                        arrayContext,
+                        GetDeferredValueKey(
+                            invocation.Arguments[1].Value,
+                            context,
+                            visitedLocals: null),
+                        Receiver: "root",
+                        MayRetainMultiple: true,
+                        AllowsDuplicateValues: true);
+                    continue;
+                }
+
+                var receiver = GetReceiver(invocation);
+                if (!IsKnownRetainingMutation(invocation.TargetMethod)
+                    || !IsRootedInLocal(
+                        receiver,
+                        local,
+                        context,
+                        visitedLocals: null))
+                {
+                    continue;
+                }
+
+                var receiverKey = GetDeferredReceiverKey(
+                    receiver,
+                    local,
+                    context,
+                    visitedLocals: null);
+                var keyArgument = IsDictionaryType(invocation.TargetMethod.ContainingType)
+                    ? invocation.Arguments.FirstOrDefault(static argument =>
+                        argument.Parameter?.Ordinal == 0)
+                    : null;
+                foreach (var argument in invocation.Arguments)
+                {
+                    if (!TryFindDeferredStateContext(
+                        argument.Value,
+                        context,
+                        knownTypes,
+                        visitedLocals,
+                        out var capturedContext))
+                    {
+                        continue;
+                    }
+
+                    yield return (
+                        capturedContext,
+                        GetDeferredValueKey(
+                            keyArgument?.Value ?? argument.Value,
+                            context,
+                            visitedLocals: null),
+                        receiverKey,
+                        MayRetainMultiple: IsBulkRetainingMutation(
+                            invocation.TargetMethod)
+                            && !IsSetType(receiver?.Type)
+                            && MayRetainMultipleValues(argument.Value),
+                        AllowsDuplicateValues: keyArgument is null
+                            && !IsSetType(receiver?.Type));
+                    if (keyArgument is not null)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     private static bool IsKnownClearingMutation(IMethodSymbol method) =>
@@ -4361,6 +4509,40 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
                     Elements.Count: 0,
                 },
         };
+    }
+
+    private static bool HasKnownSingleRetainedConstructorValue(IOperation initializer)
+    {
+        if (Unwrap(initializer) is not IObjectCreationOperation objectCreation
+            || objectCreation.Initializer is { Initializers.Length: > 0 })
+        {
+            return false;
+        }
+
+        var retainedArguments = objectCreation.Arguments
+            .Where(argument => argument.Parameter is { } parameter
+                && IsKnownRetainingFrameworkConstructorParameter(
+                    objectCreation.Constructor,
+                    parameter))
+            .ToArray();
+        return retainedArguments.Length == 1
+            && HasKnownSingleValue(retainedArguments[0].Value);
+    }
+
+    private static bool HasKnownSingleValue(IOperation operation)
+    {
+        operation = Unwrap(operation)!;
+        if (operation is IArrayCreationOperation
+            {
+                Initializer: { ElementValues.Length: 1 },
+            })
+        {
+            return true;
+        }
+
+        return operation.Syntax is CollectionExpressionSyntax collection
+            && collection.Elements.Count == 1
+            && collection.Elements[0] is not SpreadElementSyntax;
     }
 
     private static string? GetDeferredMutationSlot(
@@ -4582,7 +4764,7 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
         return operation switch
         {
             { ConstantValue: { HasValue: true } constant } =>
-                GetConstantIdentityKey(operation.Type?.SpecialType, constant.Value),
+                GetConstantIdentityKey(operation.Type, constant.Value),
             ILocalReferenceOperation local =>
                 GetLocalIdentityKey(local.Local),
             IParameterReferenceOperation parameter =>
@@ -4640,13 +4822,27 @@ public sealed class PipelineHazardAnalyzer : DiagnosticAnalyzer
             ILocalReferenceOperation local =>
                 GetLocalIdentityKey(local.Local),
             { ConstantValue: { HasValue: true } constant } =>
-                GetConstantIdentityKey(operation.Type?.SpecialType, constant.Value),
+                GetConstantIdentityKey(operation.Type, constant.Value),
             _ => operation?.Syntax.ToString(),
         };
     }
 
     private static string GetConstantIdentityKey(
         SpecialType? type,
+        object? value) =>
+        GetConstantIdentityKey(type?.ToString(), value);
+
+    private static string GetConstantIdentityKey(
+        ITypeSymbol? type,
+        object? value) =>
+        GetConstantIdentityKey(
+            type?.SpecialType is { } specialType and not SpecialType.None
+                ? specialType.ToString()
+                : type?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+            value);
+
+    private static string GetConstantIdentityKey(
+        string? type,
         object? value) =>
         $"constant:{type}:{value?.ToString() ?? "null"}";
 
