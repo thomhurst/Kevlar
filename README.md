@@ -143,17 +143,39 @@ state-sharing rules.
 `Kevlar.Extensions.Http` provides a ready-to-use `HttpClientFactory` pipeline:
 
 ```csharp
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
-services.AddHttpClient("api")
+var builder = WebApplication.CreateBuilder();
+
+builder.Services.AddHttpClient("api")
     .AddStandardShield();
 ```
 
 The standard shield has a 30-second total timeout, three jittered retries that honour
 `Retry-After`, a circuit breaker, and a 10-second timeout per attempt. You can configure every
 part or supply your own shield. POST, PATCH, and custom methods remain single-attempt unless you
-explicitly enable replay for operations that are safe to repeat. `Kevlar.Extensions.DependencyInjection` adds named,
-configuration-bound shields and `IKevlarRegistry`.
+explicitly enable replay for operations that are safe to repeat.
+
+`Kevlar.Extensions.DependencyInjection` adds named, configuration-bound shields and
+`IKevlarRegistry`:
+
+```csharp
+using System;
+using Kevlar;
+using Kevlar.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
+
+var services = new ServiceCollection();
+
+services.AddShield("database", Shield
+    .Timeout(TimeSpan.FromSeconds(10))
+    .Retry(3));
+
+using var serviceProvider = services.BuildServiceProvider();
+var registry = serviceProvider.GetRequiredService<IKevlarRegistry>();
+var databaseShield = registry.GetShield("database");
+```
 
 ## Packages
 
