@@ -761,7 +761,7 @@ public class HttpConfigurationReloadTests
         var options = new ShieldHttpHandlerOptions
         {
             ContentReplayPolicy = HttpContentReplayPolicy.Buffer,
-            MaximumBufferSize = 2048,
+            MaxBufferSize = 2048,
             AllowUnsafeMethodReplay = true,
             RequestFactory = requestFactory,
             Routing = routing,
@@ -771,7 +771,7 @@ public class HttpConfigurationReloadTests
             options);
 
         options.ContentReplayPolicy = HttpContentReplayPolicy.NoBuffer;
-        options.MaximumBufferSize = 4096;
+        options.MaxBufferSize = 4096;
         options.AllowUnsafeMethodReplay = false;
         options.RequestFactory = null;
         routing.SelectionMode = HttpEndpointSelectionMode.Ordered;
@@ -783,7 +783,7 @@ public class HttpConfigurationReloadTests
 
         await Assert.That(pipeline.Options.ContentReplayPolicy)
             .IsEqualTo(HttpContentReplayPolicy.Buffer);
-        await Assert.That(pipeline.Options.MaximumBufferSize).IsEqualTo(2048);
+        await Assert.That(pipeline.Options.MaxBufferSize).IsEqualTo(2048);
         await Assert.That(pipeline.Options.AllowUnsafeMethodReplay).IsTrue();
         await Assert.That(ReferenceEquals(pipeline.Options.RequestFactory, requestFactory)).IsTrue();
         await Assert.That(pipeline.Options.Routing!.SelectionMode)
