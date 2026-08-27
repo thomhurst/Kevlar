@@ -28,7 +28,6 @@ items:
   - Kevlar.HandlingClause
   - Kevlar.HandlingEvent
   - Kevlar.HandlingEvent`1
-  - Kevlar.HedgeActionGenerator
   - Kevlar.HedgeActionGeneratorEvent
   - Kevlar.HedgeActionGeneratorEvent`1
   - Kevlar.HedgeDelayEvent
@@ -910,14 +909,6 @@ references:
   - name: " "
   - name: TResult
   - name: )
-- uid: Kevlar.HedgeActionGenerator
-  commentId: T:Kevlar.HedgeActionGenerator
-  parent: Kevlar
-  isExternal: true
-  href: Kevlar.HedgeActionGenerator.html
-  name: HedgeActionGenerator
-  nameWithType: HedgeActionGenerator
-  fullName: Kevlar.HedgeActionGenerator
 - uid: Kevlar.HedgeActionGeneratorEvent
   commentId: T:Kevlar.HedgeActionGeneratorEvent
   isExternal: true

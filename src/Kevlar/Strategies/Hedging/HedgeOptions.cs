@@ -64,10 +64,10 @@ public sealed class HedgeOptions
 
     /// <summary>
     /// Selects a replacement operation for each additional attempt. A <see langword="null"/>
-    /// result runs the original operation. Create the generator with the result type used to
-    /// execute the shield; use the void factory for void executions.
+    /// result runs the original operation.
     /// </summary>
-    public HedgeActionGenerator? ActionGenerator { get; set; }
+    public Func<HedgeActionGeneratorEvent, Func<CancellationToken, ValueTask>?>?
+        ActionGenerator { get; set; }
 }
 
 /// <summary>Describes a hedged attempt being launched.</summary>

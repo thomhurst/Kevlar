@@ -12,7 +12,7 @@ internal sealed class HedgingStrategy : Strategy
     private readonly TimeSpan _delay;
     private readonly Func<HedgeDelayEvent, ValueTask<TimeSpan>>? _delayGenerator;
     private readonly Delegate? _onHedge;
-    private readonly HedgeActionGenerator? _actionGenerator;
+    private readonly HedgeActionGeneratorAdapter? _actionGenerator;
     private readonly Type? _callbackResultType;
     private readonly string _telemetryName;
     private readonly string _onHedgeHookName;
@@ -24,6 +24,9 @@ internal sealed class HedgingStrategy : Strategy
             options.HasHandlingOverride,
             options.GetType(),
             options.OnHedge,
+            options.ActionGenerator is null
+                ? null
+                : HedgeActionGeneratorAdapter.Create(options.ActionGenerator),
             callbackResultType: null)
     {
     }
@@ -34,6 +37,7 @@ internal sealed class HedgingStrategy : Strategy
         bool hasHandlingOverride,
         Type optionsType,
         Delegate? onHedge,
+        HedgeActionGeneratorAdapter? actionGenerator,
         Type? callbackResultType)
     {
         ConfigurationValidation.ThrowIf(
@@ -60,7 +64,7 @@ internal sealed class HedgingStrategy : Strategy
         _delay = options.Delay;
         _delayGenerator = options.DelayGenerator;
         _onHedge = onHedge;
-        _actionGenerator = options.ActionGenerator;
+        _actionGenerator = actionGenerator;
         _callbackResultType = callbackResultType;
         _telemetryName = options.Name ?? "Hedge";
         _onHedgeHookName = callbackResultType is null
@@ -71,16 +75,16 @@ internal sealed class HedgingStrategy : Strategy
 
     internal static HedgingStrategy Create<TResult>(HedgeOptions<TResult> options, OutcomeJudge judge)
     {
-        var untyped = options.ToUntyped(
-            options.ActionGenerator is null
-                ? null
-                : HedgeActionGenerator.Create(options.ActionGenerator));
+        var untyped = options.ToUntyped();
         return new(
             untyped,
             judge,
             options.HasHandlingOverride,
             options.GetType(),
             options.OnHedge,
+            options.ActionGenerator is null
+                ? null
+                : HedgeActionGeneratorAdapter.Create(options.ActionGenerator),
             typeof(TResult));
     }
 

@@ -445,7 +445,6 @@ Kevlar.ShieldBuilder<TResult>.FallbackTo(TResult fallbackValue) -> Kevlar.Shield
 Kevlar.ShieldBuilder<TResult>.FallbackTo(TResult fallbackValue, System.Action<Kevlar.FallbackOptions<TResult>!>! configure) -> Kevlar.Shield<TResult>!
 static Kevlar.ShieldExtensions.Fallback(this Kevlar.Shield! shield, System.Func<System.Exception!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback, System.Action<Kevlar.FallbackOptions!>! configure) -> Kevlar.Shield!
 static Kevlar.ShieldExtensions.Fallback(this Kevlar.Shield! shield, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! fallback, System.Action<Kevlar.FallbackOptions!>! configure) -> Kevlar.Shield!
-Kevlar.HedgeActionGenerator
 Kevlar.HedgeActionGeneratorEvent
 Kevlar.HedgeActionGeneratorEvent.HedgeActionGeneratorEvent() -> void
 Kevlar.HedgeActionGeneratorEvent.AttemptNumber.get -> int
@@ -457,10 +456,8 @@ Kevlar.HedgeActionGeneratorEvent<TResult>.AttemptNumber.get -> int
 Kevlar.HedgeActionGeneratorEvent<TResult>.Context.get -> Kevlar.KevlarContext!
 Kevlar.HedgeActionGeneratorEvent<TResult>.OriginalAction.get -> System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>!
 Kevlar.HedgeActionGeneratorEvent<TResult>.Outcome.get -> Kevlar.Outcome<TResult>?
-Kevlar.HedgeOptions.ActionGenerator.get -> Kevlar.HedgeActionGenerator?
+Kevlar.HedgeOptions.ActionGenerator.get -> System.Func<Kevlar.HedgeActionGeneratorEvent, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>?>?
 Kevlar.HedgeOptions.ActionGenerator.set -> void
-static Kevlar.HedgeActionGenerator.Create(System.Func<Kevlar.HedgeActionGeneratorEvent, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>?>! generator) -> Kevlar.HedgeActionGenerator!
-static Kevlar.HedgeActionGenerator.Create<TResult>(System.Func<Kevlar.HedgeActionGeneratorEvent<TResult>, System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask<TResult>>?>! generator) -> Kevlar.HedgeActionGenerator!
 Kevlar.ConcurrencyLimitOptions.OnRejected.get -> System.Func<Kevlar.ConcurrencyLimitRejectedEvent, System.Threading.Tasks.ValueTask>?
 Kevlar.ConcurrencyLimitOptions.OnRejected.set -> void
 Kevlar.ConcurrencyLimitRejectedEvent

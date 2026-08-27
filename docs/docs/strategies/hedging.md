@@ -49,11 +49,13 @@ hedge while earlier attempts remain pending. Untyped shields continue to receive
 
 ### Selecting another target
 
-Set the typed `ActionGenerator` to send a hedge to a different replica without boxing the result.
+Set `ActionGenerator` to send a hedge to a different replica without boxing the result.
 The generator runs after both hedge callbacks and receives the isolated attempt context plus the
 latest handled outcome, when one is available. `OriginalAction` includes strategies nested inside
 the hedge, so returning it preserves the inner pipeline. Returning another operation replaces that
-inner pipeline for that attempt.
+inner pipeline for that attempt. Typed and untyped hedge options both accept the generator delegate
+directly; typed options use `HedgeActionGeneratorEvent<TResult>` and `ValueTask<TResult>`, while
+untyped options use their non-generic, void-returning counterparts.
 
 ```csharp
 var replicas = new Func<CancellationToken, ValueTask<string>>[]
@@ -74,8 +76,9 @@ var shield = Shield.For<string>().Hedge(o =>
 var response = await shield.ExecuteAsync(ct => replicas[0](ct));
 ```
 
-For an untyped or void shield, use `HedgeActionGenerator.Create`. Lifting an untyped generator into
-a shield with a different result type fails while that typed shield is built.
+Configure result-returning generators after `Shield.For<TResult>()`. An action generator configured
+on an untyped shield is void-specific, so lifting that shield to a result type fails while the typed
+shield is built.
 
 ### Adaptive delays
 

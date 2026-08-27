@@ -329,7 +329,7 @@ public class ApiShapeTests
     }
 
     [Test]
-    public async Task Typed_Hedge_ActionGenerator_Requires_The_Matching_Result_Type()
+    public async Task Hedge_ActionGenerators_Require_The_Matching_Event_And_Result_Types()
     {
         var compilation = CreateCompilation(
             """
@@ -342,12 +342,16 @@ public class ApiShapeTests
             {
                 public static void Build()
                 {
-                    Func<HedgeActionGeneratorEvent<string>, Func<CancellationToken, ValueTask<string>>?> correct =
+                    Func<HedgeActionGeneratorEvent, Func<CancellationToken, ValueTask>?> untyped =
+                        static _ => null;
+                    Func<HedgeActionGeneratorEvent<string>, Func<CancellationToken, ValueTask<string>>?> typed =
                         static _ => null;
                     Func<HedgeActionGeneratorEvent<string>, Func<CancellationToken, ValueTask<int>>?> wrong =
                         static _ => null;
-                    var options = new HedgeOptions<string> { ActionGenerator = correct };
-                    options.ActionGenerator = wrong;
+                    var untypedOptions = new HedgeOptions { ActionGenerator = untyped };
+                    untypedOptions.ActionGenerator = typed;
+                    var typedOptions = new HedgeOptions<string> { ActionGenerator = typed };
+                    typedOptions.ActionGenerator = wrong;
                 }
             }
             """);
@@ -356,8 +360,9 @@ public class ApiShapeTests
             .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)
             .ToArray();
 
-        await Assert.That(errors).HasSingleItem();
-        await Assert.That(errors[0].Id).IsEqualTo("CS0029");
+        await Assert.That(errors).Count().IsEqualTo(2);
+        await Assert.That(errors.Select(static error => error.Id))
+            .IsEquivalentTo(["CS0029", "CS0029"]);
     }
 
     [Test]

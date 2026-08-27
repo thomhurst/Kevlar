@@ -51,7 +51,7 @@ public class PipelineDescriptorTests
                 options.Delay = TimeSpan.FromMilliseconds(25);
                 options.DelayGenerator = static _ => new(TimeSpan.Zero);
                 options.OnHedge = _ => default;
-                options.ActionGenerator = HedgeActionGenerator.Create(static _ => null);
+                options.ActionGenerator = static _ => null;
             })
             .WithName("orders")
             .WithTimeProvider(timeProvider);
