@@ -31,13 +31,22 @@ public class ExceptionContractTests
             typeof(CircuitOpenException),
             typeof(RateLimitExceededException),
             typeof(ConcurrencyLimitExceededException),
-            typeof(TimeoutExceededException),
         ];
 
         foreach (var rejectionType in rejectionTypes)
         {
             await Assert.That(rejectionType.IsSubclassOf(typeof(ExecutionRejectedException))).IsTrue();
         }
+    }
+
+    [Test]
+    public async Task Timeout_Is_Not_An_Execution_Rejection()
+    {
+        await Assert.That(
+            typeof(ExecutionRejectedException).IsAssignableFrom(typeof(TimeoutExceededException)))
+            .IsFalse();
+        await Assert.That(typeof(KevlarException).IsAssignableFrom(typeof(TimeoutExceededException)))
+            .IsTrue();
     }
 
     [Test]
@@ -49,7 +58,6 @@ public class ExceptionContractTests
             new CircuitOpenException(retryAfter, isIsolated: false, lastException: null),
             new RateLimitExceededException(retryAfter),
             new ConcurrencyLimitExceededException(),
-            new TimeoutExceededException(TimeSpan.FromSeconds(1)),
         ];
 
         foreach (var rejection in rejections)
@@ -61,7 +69,6 @@ public class ExceptionContractTests
         await Assert.That(rejections[0].RetryAfter).IsEqualTo(retryAfter);
         await Assert.That(rejections[1].RetryAfter).IsEqualTo(retryAfter);
         await Assert.That(rejections[2].RetryAfter).IsNull();
-        await Assert.That(rejections[3].RetryAfter).IsNull();
     }
 
     [Test]

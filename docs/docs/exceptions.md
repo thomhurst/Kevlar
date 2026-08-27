@@ -12,9 +12,10 @@ fault, or reports a testing assertion failure.
 
 The **default clause** column says whether a reactive strategy handles the exception when no custom
 [`When` clause](handling-failures.md) is present. The default handles ordinary errors but excludes
-`OperationCanceledException`, circuit-open, rate-limit, and concurrency-limit rejections, and fatal
-runtime exceptions. Use an explicit clause to include an excluded rejection or narrow the ordinary
-errors handled by a retry, breaker, hedge, or fallback.
+`OperationCanceledException`, fail-fast execution rejections, and fatal runtime exceptions. A
+timeout remains handled because the delegate ran and produced a recoverable attempt failure. Use an
+explicit clause to include an excluded rejection or narrow the ordinary errors handled by a retry,
+breaker, hedge, or fallback.
 
 | Exception | Thrown by | Properties | Base class | Catch pattern | Default clause |
 |---|---|---|---|---|---|
@@ -22,7 +23,7 @@ errors handled by a retry, breaker, hedge, or fallback.
 | `KevlarConfigurationException` | Invalid values supplied through a strategy options callback or returned by a dynamic duration generator | `Message` names the options type, property, requirement, and offending value. | `KevlarException` | Catch during startup while building shields. | N/A |
 | `ExecutionRejectedException` | Abstract base for execution rejections | `RetryAfter` estimates when execution may be attempted again; inherited `InnerException` carries a cause when known. | `KevlarException` | `catch (ExecutionRejectedException e)` | N/A |
 | `KevlarProxyException` | Internal bookkeeping for adapter-owned exception proxies | `OriginalException` is the failure exposed to handling clauses, public outcomes, and adapter callers; inherited `InnerException` preserves the same cause. | `Exception` | Catch `OriginalException`'s concrete type, such as `RpcException`. | N/A |
-| `TimeoutExceededException` | Timeout | `Timeout` is the winning budget; a strategy-produced timeout carries the delegate's cancellation exception in inherited `InnerException`. `RetryAfter` is `null`. | `ExecutionRejectedException` | `catch (TimeoutExceededException e) when (e.Timeout == budget)` | Yes |
+| `TimeoutExceededException` | Timeout | `Timeout` is the winning budget; a strategy-produced timeout carries the delegate's cancellation exception in inherited `InnerException`. | `KevlarException` | `catch (TimeoutExceededException e) when (e.Timeout == budget)` | Yes |
 | `CircuitOpenException` | Circuit breaker | Inherited `RetryAfter` is the remaining break duration; `IsIsolated` distinguishes manual isolation; inherited `InnerException` is the last failure when known. | `ExecutionRejectedException` | `catch (CircuitOpenException e) when (e.RetryAfter is { } delay)` | No |
 | `RateLimitExceededException` | Rate limit | Inherited `RetryAfter` estimates when a permit may become available. | `ExecutionRejectedException` | `catch (RateLimitExceededException e) when (e.RetryAfter is { } delay)` | No |
 | `RateLimiterAdapterRejectedException` | System.Threading.RateLimiting adapter | Inherited `RetryAfter` is copied from rejected lease metadata when supplied. | `ExecutionRejectedException` | `catch (RateLimiterAdapterRejectedException e) when (e.RetryAfter is { } delay)` | No |
@@ -39,28 +40,37 @@ isolated circuit has `IsIsolated == true` and no automatic retry time.
 `CircuitOpenException.InnerException` is diagnostic history, not a new failure from the rejected
 call.
 
+An execution rejection is fail-fast: the protected delegate did not run. A timeout is different:
+the delegate ran, exceeded its budget, and was abandoned after cancellation. For that reason,
+`TimeoutExceededException` derives directly from `KevlarException`, outside the rejection family.
+
 ## Catching core rejections
 
 Catch a concrete type when its metadata changes recovery behavior. Catch
-`ExecutionRejectedException` when every execution rejection shares one response; catch
-`KevlarException` only when other future core exception families should share it too.
+`ExecutionRejectedException` when every fail-fast rejection shares one response; this catch does
+not match timeouts. Catch `KevlarException` only when timeouts, rejections, configuration failures,
+and future core exception families should share handling.
 
-<!-- doc-test-run: catch-kevlar-exception -->
+<!-- doc-test-run: execution-rejection-does-not-catch-timeout -->
 ```csharp
-var caughtExecutionRejection = false;
+var caughtTimeoutOutsideRejectionFamily = false;
 try
 {
     await Shield.Empty.ExecuteAsync<int>(
         _ => throw new TimeoutExceededException(TimeSpan.FromSeconds(1)));
 }
-catch (ExecutionRejectedException exception) when (exception.RetryAfter is null)
+catch (ExecutionRejectedException)
 {
-    caughtExecutionRejection = true;
+    throw new InvalidOperationException("A timeout must not be caught as a fail-fast rejection.");
+}
+catch (TimeoutExceededException)
+{
+    caughtTimeoutOutsideRejectionFamily = true;
 }
 
-if (!caughtExecutionRejection)
+if (!caughtTimeoutOutsideRejectionFamily)
 {
-    throw new InvalidOperationException("The ExecutionRejectedException catch did not match.");
+    throw new InvalidOperationException("The timeout catch did not match.");
 }
 ```
 
@@ -210,11 +220,11 @@ if (!caughtAssertion)
 
 ## Timeout is not `System.TimeoutException`
 
-`TimeoutExceededException` deliberately derives from `ExecutionRejectedException` (and therefore
-`KevlarException`), not
-`System.TimeoutException`. A `catch (TimeoutException)` compiles but does not match a Kevlar timeout. <!-- doc-lint: allow-TimeoutException -->
-This mirrors Polly's `TimeoutRejectedException` behavior. Catch `TimeoutExceededException` and inspect
-its `Timeout` property.
+`TimeoutExceededException` derives directly from `KevlarException`, not
+`ExecutionRejectedException` or `System.TimeoutException`. <!-- doc-lint: allow-TimeoutException --> A `catch (ExecutionRejectedException)`
+therefore handles only fail-fast calls where the delegate did not run. A `catch (TimeoutException)` <!-- doc-lint: allow-TimeoutException -->
+compiles but does not match a Kevlar timeout. Catch
+`TimeoutExceededException` and inspect its `Timeout` property.
 
 ## Stack traces and inner exceptions
 
@@ -222,10 +232,10 @@ An application exception remains the same exception instance while it travels th
 At the execution boundary Kevlar rethrows it with `ExceptionDispatchInfo`, preserving the original
 throw site. `ExecuteOutcomeAsync` returns it instead through `Outcome<T>.Exception`.
 
-A rejection has its own stack trace because the strategy creates it. Only documented causal data is
-placed in `InnerException`: the delegate's cancellation when a timeout fires, the last breaker
-failure, a wrapped chaos cause, or an HTTP replay content failure. Do not assume every Kevlar-created
-exception has an inner exception.
+A strategy-created exception has its own stack trace. Only documented causal data is placed in
+`InnerException`: the delegate's cancellation when a timeout fires, the last breaker failure, a
+wrapped chaos cause, or an HTTP replay content failure. Do not assume every Kevlar-created exception
+has an inner exception.
 
 ## Configuration failures
 

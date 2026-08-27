@@ -34,7 +34,6 @@ items:
   - Kevlar.ConcurrencyLimitExceededException
   - Kevlar.Extensions.RateLimiting.RateLimiterAdapterRejectedException
   - Kevlar.RateLimitExceededException
-  - Kevlar.TimeoutExceededException
   implements:
   - System.Runtime.Serialization.ISerializable
   inheritedMembers:

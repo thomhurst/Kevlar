@@ -49,9 +49,7 @@ internal abstract class OutcomeJudge
             outcome.Exception is { } exception && IsOrdinaryError(exception);
 
         private static bool IsOrdinaryError(Exception exception) =>
-            // A timeout is a recoverable attempt outcome; other execution rejections are fail-fast.
-            exception is TimeoutExceededException
-            || exception is not (
+            exception is not (
                 OperationCanceledException
                 or ExecutionRejectedException
                 or OutOfMemoryException

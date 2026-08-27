@@ -29,6 +29,7 @@ items:
   derivedClasses:
   - Kevlar.ExecutionRejectedException
   - Kevlar.KevlarConfigurationException
+  - Kevlar.TimeoutExceededException
   implements:
   - System.Runtime.Serialization.ISerializable
   inheritedMembers:

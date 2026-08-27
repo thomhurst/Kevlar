@@ -26,7 +26,7 @@ Shield.Timeout(o =>
 Exceeding the budget surfaces `TimeoutExceededException` (with a `Timeout` property). It derives from
 `KevlarException`, **not** from `System.TimeoutException`, so a reflexive `catch (TimeoutException)` <!-- doc-lint: allow-TimeoutException -->
 compiles but never matches — catch `TimeoutExceededException` (or `KevlarException` for any Kevlar
-rejection) instead.
+strategy exception) instead.
 
 ## Timeouts are cooperative
 
@@ -158,7 +158,7 @@ catch (TimeoutExceededException) when (attempts == 2)
 }
 ```
 
-The similar-looking `System.TimeoutException` clause does not handle Kevlar's timeout rejection:
+The similar-looking `System.TimeoutException` clause does not handle Kevlar's timeout failure:
 
 <!-- doc-test-run: system-timeout-clause-trap -->
 ```csharp
