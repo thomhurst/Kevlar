@@ -292,7 +292,7 @@ $expectedDependencies = @{
     'Kevlar' = @{
         'net10.0' = @('Reservoir')
         'net8.0' = @('Reservoir')
-        '.NETStandard2.0' = @('Microsoft.Bcl.TimeProvider', 'Reservoir', 'System.Threading.Tasks.Extensions')
+        '.NETStandard2.0' = @('Microsoft.Bcl.AsyncInterfaces', 'Microsoft.Bcl.TimeProvider', 'Reservoir', 'System.Threading.Tasks.Extensions')
     }
     'Kevlar.Extensions.DependencyInjection' = @{
         'net10.0' = @('Kevlar', 'Microsoft.Extensions.Configuration.Abstractions', 'Microsoft.Extensions.DependencyInjection.Abstractions', 'Microsoft.Extensions.Options', 'Microsoft.Extensions.Primitives')
@@ -351,6 +351,7 @@ $exactPinnedPackageIds = @(
 
 $expectedDependencyVersions = @{}
 foreach ($dependencyId in @(
+    'Microsoft.Bcl.AsyncInterfaces',
     'Microsoft.Bcl.TimeProvider',
     'Microsoft.Extensions.Configuration.Abstractions',
     'Microsoft.Extensions.DependencyInjection.Abstractions',
