@@ -267,6 +267,7 @@ jobs:
           )
           if ($apiChanges.Count -gt 0) {
             $apiChanges | Write-Host
+            git diff --no-ext-diff --unified=3 HEAD -- docs/api | Write-Host
             throw 'Generated API metadata is stale.'
           }
 
