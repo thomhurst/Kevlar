@@ -1,1 +1,2 @@
 #nullable enable
+Kevlar.Extensions.Logging.KevlarLogEventKind.TimeoutIgnored = 10 -> Kevlar.Extensions.Logging.KevlarLogEventKind

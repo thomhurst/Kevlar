@@ -206,6 +206,38 @@ internal static class KevlarMetrics
             duration: timeout);
     }
 
+    public static void TimeoutIgnored(
+        KevlarContext context,
+        string strategyName,
+        TimeSpan elapsed,
+        bool isSuccess,
+        Exception? exception)
+    {
+#if NET8_0_OR_GREATER
+        if (Timeouts.Enabled)
+        {
+            var tags = NameTags(context.ShieldName);
+            tags.Add("outcome", "ignored");
+            Timeouts.Add(1, tags);
+        }
+#endif
+        if (!KevlarTelemetry.IsEventEnabled(context))
+        {
+            return;
+        }
+
+        KevlarTelemetry.Record(
+            context,
+            strategyName,
+            eventName: "timeout_ignored",
+            KevlarTelemetrySeverity.Warning,
+            context.StrategyIndex,
+            context.AttemptNumber,
+            isSuccess,
+            exception,
+            duration: elapsed);
+    }
+
     public static void Hedge(
         KevlarContext context,
         string strategyName,

@@ -403,6 +403,7 @@
   "Kevlar.Extensions.Logging.KevlarLogEventKind.RateLimitRejected": "Kevlar.Extensions.Logging.KevlarLogEventKind.yml",
   "Kevlar.Extensions.Logging.KevlarLogEventKind.Retry": "Kevlar.Extensions.Logging.KevlarLogEventKind.yml",
   "Kevlar.Extensions.Logging.KevlarLogEventKind.Timeout": "Kevlar.Extensions.Logging.KevlarLogEventKind.yml",
+  "Kevlar.Extensions.Logging.KevlarLogEventKind.TimeoutIgnored": "Kevlar.Extensions.Logging.KevlarLogEventKind.yml",
   "Kevlar.Extensions.Logging.KevlarLoggingOptions": "Kevlar.Extensions.Logging.KevlarLoggingOptions.yml",
   "Kevlar.Extensions.Logging.KevlarLoggingOptions.#ctor": "Kevlar.Extensions.Logging.KevlarLoggingOptions.yml",
   "Kevlar.Extensions.Logging.KevlarLoggingOptions.IncludeScopes": "Kevlar.Extensions.Logging.KevlarLoggingOptions.yml",

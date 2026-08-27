@@ -128,4 +128,15 @@ internal static partial class LoggerMessages
         string? suppressionReason,
         string? requestMethod,
         string? requestUri);
+
+    [LoggerMessage(EventId = 1010, EventName = "TimeoutIgnored", Level = LogLevel.Warning,
+        Message = "Shield {ShieldName} strategy {StrategyIndex} completed after ignoring timeout cancellation for {Elapsed}; outcome {Outcome}",
+        SkipEnabledCheck = true)]
+    public static partial void TimeoutIgnored(
+        ILogger logger,
+        string? shieldName,
+        int strategyIndex,
+        TimeSpan elapsed,
+        string outcome,
+        Exception? exception);
 }
