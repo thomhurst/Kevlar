@@ -15,7 +15,6 @@ items:
   - Kevlar.Extensions.Http.KevlarHttpRequestExtensions
   - Kevlar.Extensions.Http.KevlarRequestOptions
   - Kevlar.Extensions.Http.ShieldDelegatingHandler
-  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
   - Kevlar.Extensions.Http.ShieldHttpHandlerOptions
   - Kevlar.Extensions.Http.StandardHedgeShieldOptions
   - Kevlar.Extensions.Http.StandardHttpShieldOptions
@@ -110,13 +109,6 @@ references:
   name: ShieldDelegatingHandler
   nameWithType: ShieldDelegatingHandler
   fullName: Kevlar.Extensions.Http.ShieldDelegatingHandler
-- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
-  commentId: T:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
-  isExternal: true
-  href: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.html
-  name: ShieldHttpClientBuilderExtensions
-  nameWithType: ShieldHttpClientBuilderExtensions
-  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
 - uid: Kevlar.Extensions.Http.ShieldHttpHandlerOptions
   commentId: T:Kevlar.Extensions.Http.ShieldHttpHandlerOptions
   parent: Kevlar.Extensions.Http

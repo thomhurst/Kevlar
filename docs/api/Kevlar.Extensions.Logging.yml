@@ -7,7 +7,6 @@ items:
   - Kevlar.Extensions.Logging.KevlarLogEvent
   - Kevlar.Extensions.Logging.KevlarLogEventKind
   - Kevlar.Extensions.Logging.KevlarLoggingOptions
-  - Kevlar.Extensions.Logging.KevlarLoggingServiceCollectionExtensions
   - Kevlar.Extensions.Logging.ShieldLoggingExtensions
   langs:
   - csharp
@@ -41,13 +40,6 @@ references:
   name: KevlarLoggingOptions
   nameWithType: KevlarLoggingOptions
   fullName: Kevlar.Extensions.Logging.KevlarLoggingOptions
-- uid: Kevlar.Extensions.Logging.KevlarLoggingServiceCollectionExtensions
-  commentId: T:Kevlar.Extensions.Logging.KevlarLoggingServiceCollectionExtensions
-  isExternal: true
-  href: Kevlar.Extensions.Logging.KevlarLoggingServiceCollectionExtensions.html
-  name: KevlarLoggingServiceCollectionExtensions
-  nameWithType: KevlarLoggingServiceCollectionExtensions
-  fullName: Kevlar.Extensions.Logging.KevlarLoggingServiceCollectionExtensions
 - uid: Kevlar.Extensions.Logging.ShieldLoggingExtensions
   commentId: T:Kevlar.Extensions.Logging.ShieldLoggingExtensions
   isExternal: true

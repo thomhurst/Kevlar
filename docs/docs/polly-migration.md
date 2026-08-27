@@ -259,8 +259,6 @@ pollyHttpServices.AddHttpClient("catalog")
 ```
 
 ```csharp
-using Kevlar.Extensions.Http;
-
 var kevlarHttpServices = new ServiceCollection();
 kevlarHttpServices.AddHttpClient("catalog")
     .AddStandardShield(options => options.Retry.MaxRetries = 3);

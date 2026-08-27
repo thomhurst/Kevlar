@@ -1,35 +1,35 @@
 ### YamlMime:ManagedReference
 items:
-- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
-  commentId: T:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+- uid: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions
+  commentId: T:Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions
   id: ShieldHttpClientBuilderExtensions
-  parent: Kevlar.Extensions.Http
+  parent: Microsoft.Extensions.DependencyInjection
   children:
-  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield{System.Net.Http.HttpResponseMessage})
-  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield{System.Net.Http.HttpResponseMessage},Kevlar.Extensions.Http.ShieldHttpHandlerOptions)
-  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}})
-  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}},System.Func{System.IServiceProvider,Kevlar.Extensions.Http.ShieldHttpHandlerOptions})
-  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.Net.Http.HttpRequestMessage,System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}})
-  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield``1(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.PartitionedShield{``0,System.Net.Http.HttpResponseMessage},System.Func{System.Net.Http.HttpRequestMessage,``0})
-  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
-  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
-  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHedgeShieldOptions},System.Action{System.Exception})
-  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHedgeShieldOptions})
-  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
-  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
-  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHttpShieldOptions},System.Action{System.Exception})
-  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHttpShieldOptions})
-  - Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHttpShieldOptions})
+  - Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield{System.Net.Http.HttpResponseMessage})
+  - Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield{System.Net.Http.HttpResponseMessage},Kevlar.Extensions.Http.ShieldHttpHandlerOptions)
+  - Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}})
+  - Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}},System.Func{System.IServiceProvider,Kevlar.Extensions.Http.ShieldHttpHandlerOptions})
+  - Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.Net.Http.HttpRequestMessage,System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}})
+  - Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield``1(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.PartitionedShield{``0,System.Net.Http.HttpResponseMessage},System.Func{System.Net.Http.HttpRequestMessage,``0})
+  - Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
+  - Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
+  - Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHedgeShieldOptions},System.Action{System.Exception})
+  - Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHedgeShieldOptions})
+  - Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
+  - Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
+  - Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHttpShieldOptions},System.Action{System.Exception})
+  - Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHttpShieldOptions})
+  - Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHttpShieldOptions})
   langs:
   - csharp
   - vb
   name: ShieldHttpClientBuilderExtensions
   nameWithType: ShieldHttpClientBuilderExtensions
-  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  fullName: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions
   type: Class
   assemblies:
   - Kevlar.Extensions.Http
-  namespace: Kevlar.Extensions.Http
+  namespace: Microsoft.Extensions.DependencyInjection
   summary: Adds Kevlar resilience to <xref href="Microsoft.Extensions.DependencyInjection.IHttpClientBuilder" data-throw-if-not-resolved="false"></xref> pipelines.
   example: []
   syntax:
@@ -45,21 +45,21 @@ items:
   - System.Object.Equals(System.Object,System.Object)
   - System.Object.ReferenceEquals(System.Object,System.Object)
   - System.Object.GetHashCode
-- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield{System.Net.Http.HttpResponseMessage})
-  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield{System.Net.Http.HttpResponseMessage})
+- uid: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield{System.Net.Http.HttpResponseMessage})
+  commentId: M:Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield{System.Net.Http.HttpResponseMessage})
   id: AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield{System.Net.Http.HttpResponseMessage})
   isExtensionMethod: true
-  parent: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  parent: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions
   langs:
   - csharp
   - vb
   name: AddShield(IHttpClientBuilder, Shield<HttpResponseMessage>)
   nameWithType: ShieldHttpClientBuilderExtensions.AddShield(IHttpClientBuilder, Shield<HttpResponseMessage>)
-  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Kevlar.Shield<System.Net.Http.HttpResponseMessage>)
+  fullName: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Kevlar.Shield<System.Net.Http.HttpResponseMessage>)
   type: Method
   assemblies:
   - Kevlar.Extensions.Http
-  namespace: Kevlar.Extensions.Http
+  namespace: Microsoft.Extensions.DependencyInjection
   summary: Sends this client's requests through the given shield.
   example: []
   syntax:
@@ -72,25 +72,25 @@ items:
     return:
       type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
     content.vb: Public Shared Function AddShield(builder As IHttpClientBuilder, shield As Shield(Of HttpResponseMessage)) As IHttpClientBuilder
-  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield*
+  overload: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield*
   nameWithType.vb: ShieldHttpClientBuilderExtensions.AddShield(IHttpClientBuilder, Shield(Of HttpResponseMessage))
-  fullName.vb: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Kevlar.Shield(Of System.Net.Http.HttpResponseMessage))
+  fullName.vb: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Kevlar.Shield(Of System.Net.Http.HttpResponseMessage))
   name.vb: AddShield(IHttpClientBuilder, Shield(Of HttpResponseMessage))
-- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield{System.Net.Http.HttpResponseMessage},Kevlar.Extensions.Http.ShieldHttpHandlerOptions)
-  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield{System.Net.Http.HttpResponseMessage},Kevlar.Extensions.Http.ShieldHttpHandlerOptions)
+- uid: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield{System.Net.Http.HttpResponseMessage},Kevlar.Extensions.Http.ShieldHttpHandlerOptions)
+  commentId: M:Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield{System.Net.Http.HttpResponseMessage},Kevlar.Extensions.Http.ShieldHttpHandlerOptions)
   id: AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.Shield{System.Net.Http.HttpResponseMessage},Kevlar.Extensions.Http.ShieldHttpHandlerOptions)
   isExtensionMethod: true
-  parent: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  parent: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions
   langs:
   - csharp
   - vb
   name: AddShield(IHttpClientBuilder, Shield<HttpResponseMessage>, ShieldHttpHandlerOptions)
   nameWithType: ShieldHttpClientBuilderExtensions.AddShield(IHttpClientBuilder, Shield<HttpResponseMessage>, ShieldHttpHandlerOptions)
-  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Kevlar.Shield<System.Net.Http.HttpResponseMessage>, Kevlar.Extensions.Http.ShieldHttpHandlerOptions)
+  fullName: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Kevlar.Shield<System.Net.Http.HttpResponseMessage>, Kevlar.Extensions.Http.ShieldHttpHandlerOptions)
   type: Method
   assemblies:
   - Kevlar.Extensions.Http
-  namespace: Kevlar.Extensions.Http
+  namespace: Microsoft.Extensions.DependencyInjection
   summary: Sends this client's requests through the given shield with replay and routing options.
   example: []
   syntax:
@@ -105,25 +105,25 @@ items:
     return:
       type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
     content.vb: Public Shared Function AddShield(builder As IHttpClientBuilder, shield As Shield(Of HttpResponseMessage), options As ShieldHttpHandlerOptions) As IHttpClientBuilder
-  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield*
+  overload: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield*
   nameWithType.vb: ShieldHttpClientBuilderExtensions.AddShield(IHttpClientBuilder, Shield(Of HttpResponseMessage), ShieldHttpHandlerOptions)
-  fullName.vb: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Kevlar.Shield(Of System.Net.Http.HttpResponseMessage), Kevlar.Extensions.Http.ShieldHttpHandlerOptions)
+  fullName.vb: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Kevlar.Shield(Of System.Net.Http.HttpResponseMessage), Kevlar.Extensions.Http.ShieldHttpHandlerOptions)
   name.vb: AddShield(IHttpClientBuilder, Shield(Of HttpResponseMessage), ShieldHttpHandlerOptions)
-- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}})
-  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}})
+- uid: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}})
+  commentId: M:Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}})
   id: AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}})
   isExtensionMethod: true
-  parent: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  parent: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions
   langs:
   - csharp
   - vb
   name: AddShield(IHttpClientBuilder, Func<IServiceProvider, Shield<HttpResponseMessage>>)
   nameWithType: ShieldHttpClientBuilderExtensions.AddShield(IHttpClientBuilder, Func<IServiceProvider, Shield<HttpResponseMessage>>)
-  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Func<System.IServiceProvider, Kevlar.Shield<System.Net.Http.HttpResponseMessage>>)
+  fullName: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Func<System.IServiceProvider, Kevlar.Shield<System.Net.Http.HttpResponseMessage>>)
   type: Method
   assemblies:
   - Kevlar.Extensions.Http
-  namespace: Kevlar.Extensions.Http
+  namespace: Microsoft.Extensions.DependencyInjection
   summary: Sends this client's requests through a shield built from the service provider.
   example: []
   syntax:
@@ -136,25 +136,25 @@ items:
     return:
       type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
     content.vb: Public Shared Function AddShield(builder As IHttpClientBuilder, shieldFactory As Func(Of IServiceProvider, Shield(Of HttpResponseMessage))) As IHttpClientBuilder
-  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield*
+  overload: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield*
   nameWithType.vb: ShieldHttpClientBuilderExtensions.AddShield(IHttpClientBuilder, Func(Of IServiceProvider, Shield(Of HttpResponseMessage)))
-  fullName.vb: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Func(Of System.IServiceProvider, Kevlar.Shield(Of System.Net.Http.HttpResponseMessage)))
+  fullName.vb: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Func(Of System.IServiceProvider, Kevlar.Shield(Of System.Net.Http.HttpResponseMessage)))
   name.vb: AddShield(IHttpClientBuilder, Func(Of IServiceProvider, Shield(Of HttpResponseMessage)))
-- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.Net.Http.HttpRequestMessage,System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}})
-  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.Net.Http.HttpRequestMessage,System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}})
+- uid: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.Net.Http.HttpRequestMessage,System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}})
+  commentId: M:Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.Net.Http.HttpRequestMessage,System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}})
   id: AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.Net.Http.HttpRequestMessage,System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}})
   isExtensionMethod: true
-  parent: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  parent: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions
   langs:
   - csharp
   - vb
   name: AddShield(IHttpClientBuilder, Func<HttpRequestMessage, IServiceProvider, Shield<HttpResponseMessage>>)
   nameWithType: ShieldHttpClientBuilderExtensions.AddShield(IHttpClientBuilder, Func<HttpRequestMessage, IServiceProvider, Shield<HttpResponseMessage>>)
-  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Func<System.Net.Http.HttpRequestMessage, System.IServiceProvider, Kevlar.Shield<System.Net.Http.HttpResponseMessage>>)
+  fullName: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Func<System.Net.Http.HttpRequestMessage, System.IServiceProvider, Kevlar.Shield<System.Net.Http.HttpResponseMessage>>)
   type: Method
   assemblies:
   - Kevlar.Extensions.Http
-  namespace: Kevlar.Extensions.Http
+  namespace: Microsoft.Extensions.DependencyInjection
   summary: Selects one shield for each request using the request and service provider.
   example: []
   syntax:
@@ -167,25 +167,25 @@ items:
     return:
       type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
     content.vb: Public Shared Function AddShield(builder As IHttpClientBuilder, shieldSelector As Func(Of HttpRequestMessage, IServiceProvider, Shield(Of HttpResponseMessage))) As IHttpClientBuilder
-  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield*
+  overload: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield*
   nameWithType.vb: ShieldHttpClientBuilderExtensions.AddShield(IHttpClientBuilder, Func(Of HttpRequestMessage, IServiceProvider, Shield(Of HttpResponseMessage)))
-  fullName.vb: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Func(Of System.Net.Http.HttpRequestMessage, System.IServiceProvider, Kevlar.Shield(Of System.Net.Http.HttpResponseMessage)))
+  fullName.vb: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Func(Of System.Net.Http.HttpRequestMessage, System.IServiceProvider, Kevlar.Shield(Of System.Net.Http.HttpResponseMessage)))
   name.vb: AddShield(IHttpClientBuilder, Func(Of HttpRequestMessage, IServiceProvider, Shield(Of HttpResponseMessage)))
-- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield``1(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.PartitionedShield{``0,System.Net.Http.HttpResponseMessage},System.Func{System.Net.Http.HttpRequestMessage,``0})
-  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield``1(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.PartitionedShield{``0,System.Net.Http.HttpResponseMessage},System.Func{System.Net.Http.HttpRequestMessage,``0})
+- uid: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield``1(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.PartitionedShield{``0,System.Net.Http.HttpResponseMessage},System.Func{System.Net.Http.HttpRequestMessage,``0})
+  commentId: M:Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield``1(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.PartitionedShield{``0,System.Net.Http.HttpResponseMessage},System.Func{System.Net.Http.HttpRequestMessage,``0})
   id: AddShield``1(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Kevlar.PartitionedShield{``0,System.Net.Http.HttpResponseMessage},System.Func{System.Net.Http.HttpRequestMessage,``0})
   isExtensionMethod: true
-  parent: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  parent: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions
   langs:
   - csharp
   - vb
   name: AddShield<TKey>(IHttpClientBuilder, PartitionedShield<TKey, HttpResponseMessage>, Func<HttpRequestMessage, TKey>)
   nameWithType: ShieldHttpClientBuilderExtensions.AddShield<TKey>(IHttpClientBuilder, PartitionedShield<TKey, HttpResponseMessage>, Func<HttpRequestMessage, TKey>)
-  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield<TKey>(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Kevlar.PartitionedShield<TKey, System.Net.Http.HttpResponseMessage>, System.Func<System.Net.Http.HttpRequestMessage, TKey>)
+  fullName: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield<TKey>(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Kevlar.PartitionedShield<TKey, System.Net.Http.HttpResponseMessage>, System.Func<System.Net.Http.HttpRequestMessage, TKey>)
   type: Method
   assemblies:
   - Kevlar.Extensions.Http
-  namespace: Kevlar.Extensions.Http
+  namespace: Microsoft.Extensions.DependencyInjection
   summary: Selects a bounded partition shield from each request.
   example: []
   syntax:
@@ -202,25 +202,25 @@ items:
     return:
       type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
     content.vb: Public Shared Function AddShield(Of TKey)(builder As IHttpClientBuilder, partitions As PartitionedShield(Of TKey, HttpResponseMessage), keySelector As Func(Of HttpRequestMessage, TKey)) As IHttpClientBuilder
-  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield*
+  overload: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield*
   nameWithType.vb: ShieldHttpClientBuilderExtensions.AddShield(Of TKey)(IHttpClientBuilder, PartitionedShield(Of TKey, HttpResponseMessage), Func(Of HttpRequestMessage, TKey))
-  fullName.vb: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Of TKey)(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Kevlar.PartitionedShield(Of TKey, System.Net.Http.HttpResponseMessage), System.Func(Of System.Net.Http.HttpRequestMessage, TKey))
+  fullName.vb: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Of TKey)(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Kevlar.PartitionedShield(Of TKey, System.Net.Http.HttpResponseMessage), System.Func(Of System.Net.Http.HttpRequestMessage, TKey))
   name.vb: AddShield(Of TKey)(IHttpClientBuilder, PartitionedShield(Of TKey, HttpResponseMessage), Func(Of HttpRequestMessage, TKey))
-- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}},System.Func{System.IServiceProvider,Kevlar.Extensions.Http.ShieldHttpHandlerOptions})
-  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}},System.Func{System.IServiceProvider,Kevlar.Extensions.Http.ShieldHttpHandlerOptions})
+- uid: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}},System.Func{System.IServiceProvider,Kevlar.Extensions.Http.ShieldHttpHandlerOptions})
+  commentId: M:Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}},System.Func{System.IServiceProvider,Kevlar.Extensions.Http.ShieldHttpHandlerOptions})
   id: AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Func{System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}},System.Func{System.IServiceProvider,Kevlar.Extensions.Http.ShieldHttpHandlerOptions})
   isExtensionMethod: true
-  parent: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  parent: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions
   langs:
   - csharp
   - vb
   name: AddShield(IHttpClientBuilder, Func<IServiceProvider, Shield<HttpResponseMessage>>, Func<IServiceProvider, ShieldHttpHandlerOptions>)
   nameWithType: ShieldHttpClientBuilderExtensions.AddShield(IHttpClientBuilder, Func<IServiceProvider, Shield<HttpResponseMessage>>, Func<IServiceProvider, ShieldHttpHandlerOptions>)
-  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Func<System.IServiceProvider, Kevlar.Shield<System.Net.Http.HttpResponseMessage>>, System.Func<System.IServiceProvider, Kevlar.Extensions.Http.ShieldHttpHandlerOptions>)
+  fullName: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Func<System.IServiceProvider, Kevlar.Shield<System.Net.Http.HttpResponseMessage>>, System.Func<System.IServiceProvider, Kevlar.Extensions.Http.ShieldHttpHandlerOptions>)
   type: Method
   assemblies:
   - Kevlar.Extensions.Http
-  namespace: Kevlar.Extensions.Http
+  namespace: Microsoft.Extensions.DependencyInjection
   summary: Sends this client's requests through service-provider-created shield and handler options.
   example: []
   syntax:
@@ -235,25 +235,25 @@ items:
     return:
       type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
     content.vb: Public Shared Function AddShield(builder As IHttpClientBuilder, shieldFactory As Func(Of IServiceProvider, Shield(Of HttpResponseMessage)), optionsFactory As Func(Of IServiceProvider, ShieldHttpHandlerOptions)) As IHttpClientBuilder
-  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield*
+  overload: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield*
   nameWithType.vb: ShieldHttpClientBuilderExtensions.AddShield(IHttpClientBuilder, Func(Of IServiceProvider, Shield(Of HttpResponseMessage)), Func(Of IServiceProvider, ShieldHttpHandlerOptions))
-  fullName.vb: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Func(Of System.IServiceProvider, Kevlar.Shield(Of System.Net.Http.HttpResponseMessage)), System.Func(Of System.IServiceProvider, Kevlar.Extensions.Http.ShieldHttpHandlerOptions))
+  fullName.vb: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Func(Of System.IServiceProvider, Kevlar.Shield(Of System.Net.Http.HttpResponseMessage)), System.Func(Of System.IServiceProvider, Kevlar.Extensions.Http.ShieldHttpHandlerOptions))
   name.vb: AddShield(IHttpClientBuilder, Func(Of IServiceProvider, Shield(Of HttpResponseMessage)), Func(Of IServiceProvider, ShieldHttpHandlerOptions))
-- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
-  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
+- uid: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
+  commentId: M:Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
   id: AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
   isExtensionMethod: true
-  parent: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  parent: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions
   langs:
   - csharp
   - vb
   name: AddStandardShield(IHttpClientBuilder)
   nameWithType: ShieldHttpClientBuilderExtensions.AddStandardShield(IHttpClientBuilder)
-  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
+  fullName: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
   type: Method
   assemblies:
   - Kevlar.Extensions.Http
-  namespace: Kevlar.Extensions.Http
+  namespace: Microsoft.Extensions.DependencyInjection
   summary: >-
     Sends this client's requests through <xref href="Kevlar.Extensions.Http.HttpShield.Standard" data-throw-if-not-resolved="false"></xref> and uses its
 
@@ -267,22 +267,22 @@ items:
     return:
       type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
     content.vb: Public Shared Function AddStandardShield(builder As IHttpClientBuilder) As IHttpClientBuilder
-  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield*
-- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHttpShieldOptions})
-  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHttpShieldOptions})
+  overload: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield*
+- uid: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHttpShieldOptions})
+  commentId: M:Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHttpShieldOptions})
   id: AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHttpShieldOptions})
   isExtensionMethod: true
-  parent: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  parent: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions
   langs:
   - csharp
   - vb
   name: AddStandardShield(IHttpClientBuilder, Action<StandardHttpShieldOptions>)
   nameWithType: ShieldHttpClientBuilderExtensions.AddStandardShield(IHttpClientBuilder, Action<StandardHttpShieldOptions>)
-  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Action<Kevlar.Extensions.Http.StandardHttpShieldOptions>)
+  fullName: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Action<Kevlar.Extensions.Http.StandardHttpShieldOptions>)
   type: Method
   assemblies:
   - Kevlar.Extensions.Http
-  namespace: Kevlar.Extensions.Http
+  namespace: Microsoft.Extensions.DependencyInjection
   summary: >-
     Configures and adds one shared standard shield for this client registration. The standard
 
@@ -298,25 +298,25 @@ items:
     return:
       type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
     content.vb: Public Shared Function AddStandardShield(builder As IHttpClientBuilder, configure As Action(Of StandardHttpShieldOptions)) As IHttpClientBuilder
-  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield*
+  overload: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield*
   nameWithType.vb: ShieldHttpClientBuilderExtensions.AddStandardShield(IHttpClientBuilder, Action(Of StandardHttpShieldOptions))
-  fullName.vb: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Action(Of Kevlar.Extensions.Http.StandardHttpShieldOptions))
+  fullName.vb: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Action(Of Kevlar.Extensions.Http.StandardHttpShieldOptions))
   name.vb: AddStandardShield(IHttpClientBuilder, Action(Of StandardHttpShieldOptions))
-- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHttpShieldOptions})
-  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHttpShieldOptions})
+- uid: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHttpShieldOptions})
+  commentId: M:Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHttpShieldOptions})
   id: AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHttpShieldOptions})
   isExtensionMethod: true
-  parent: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  parent: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions
   langs:
   - csharp
   - vb
   name: AddStandardShield(IHttpClientBuilder, Action<IServiceProvider, StandardHttpShieldOptions>)
   nameWithType: ShieldHttpClientBuilderExtensions.AddStandardShield(IHttpClientBuilder, Action<IServiceProvider, StandardHttpShieldOptions>)
-  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Action<System.IServiceProvider, Kevlar.Extensions.Http.StandardHttpShieldOptions>)
+  fullName: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Action<System.IServiceProvider, Kevlar.Extensions.Http.StandardHttpShieldOptions>)
   type: Method
   assemblies:
   - Kevlar.Extensions.Http
-  namespace: Kevlar.Extensions.Http
+  namespace: Microsoft.Extensions.DependencyInjection
   summary: >-
     Configures and adds a standard shield using the handler pipeline's service provider.
 
@@ -332,25 +332,25 @@ items:
     return:
       type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
     content.vb: Public Shared Function AddStandardShield(builder As IHttpClientBuilder, configure As Action(Of IServiceProvider, StandardHttpShieldOptions)) As IHttpClientBuilder
-  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield*
+  overload: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield*
   nameWithType.vb: ShieldHttpClientBuilderExtensions.AddStandardShield(IHttpClientBuilder, Action(Of IServiceProvider, StandardHttpShieldOptions))
-  fullName.vb: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Action(Of System.IServiceProvider, Kevlar.Extensions.Http.StandardHttpShieldOptions))
+  fullName.vb: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Action(Of System.IServiceProvider, Kevlar.Extensions.Http.StandardHttpShieldOptions))
   name.vb: AddStandardShield(IHttpClientBuilder, Action(Of IServiceProvider, StandardHttpShieldOptions))
-- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
-  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
+- uid: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
+  commentId: M:Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
   id: AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
   isExtensionMethod: true
-  parent: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  parent: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions
   langs:
   - csharp
   - vb
   name: AddStandardShield(IHttpClientBuilder, IConfiguration, Action<Exception>?)
   nameWithType: ShieldHttpClientBuilderExtensions.AddStandardShield(IHttpClientBuilder, IConfiguration, Action<Exception>?)
-  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action<System.Exception>?)
+  fullName: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action<System.Exception>?)
   type: Method
   assemblies:
   - Kevlar.Extensions.Http
-  namespace: Kevlar.Extensions.Http
+  namespace: Microsoft.Extensions.DependencyInjection
   summary: >-
     Adds a reload-aware standard shield bound from a configuration section.
 
@@ -368,25 +368,25 @@ items:
     return:
       type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
     content.vb: Public Shared Function AddStandardShield(builder As IHttpClientBuilder, configuration As IConfiguration, onReloadFailure As Action(Of Exception) = Nothing) As IHttpClientBuilder
-  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield*
+  overload: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield*
   nameWithType.vb: ShieldHttpClientBuilderExtensions.AddStandardShield(IHttpClientBuilder, IConfiguration, Action(Of Exception))
-  fullName.vb: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action(Of System.Exception))
+  fullName.vb: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action(Of System.Exception))
   name.vb: AddStandardShield(IHttpClientBuilder, IConfiguration, Action(Of Exception))
-- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHttpShieldOptions},System.Action{System.Exception})
-  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHttpShieldOptions},System.Action{System.Exception})
+- uid: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHttpShieldOptions},System.Action{System.Exception})
+  commentId: M:Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHttpShieldOptions},System.Action{System.Exception})
   id: AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHttpShieldOptions},System.Action{System.Exception})
   isExtensionMethod: true
-  parent: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  parent: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions
   langs:
   - csharp
   - vb
   name: AddStandardShield(IHttpClientBuilder, IConfiguration, Action<IServiceProvider, StandardHttpShieldOptions>, Action<Exception>?)
   nameWithType: ShieldHttpClientBuilderExtensions.AddStandardShield(IHttpClientBuilder, IConfiguration, Action<IServiceProvider, StandardHttpShieldOptions>, Action<Exception>?)
-  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action<System.IServiceProvider, Kevlar.Extensions.Http.StandardHttpShieldOptions>, System.Action<System.Exception>?)
+  fullName: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action<System.IServiceProvider, Kevlar.Extensions.Http.StandardHttpShieldOptions>, System.Action<System.Exception>?)
   type: Method
   assemblies:
   - Kevlar.Extensions.Http
-  namespace: Kevlar.Extensions.Http
+  namespace: Microsoft.Extensions.DependencyInjection
   summary: >-
     Adds a reload-aware standard shield bound from configuration, then customized using the
 
@@ -408,25 +408,25 @@ items:
     return:
       type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
     content.vb: Public Shared Function AddStandardShield(builder As IHttpClientBuilder, configuration As IConfiguration, configure As Action(Of IServiceProvider, StandardHttpShieldOptions), onReloadFailure As Action(Of Exception) = Nothing) As IHttpClientBuilder
-  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield*
+  overload: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield*
   nameWithType.vb: ShieldHttpClientBuilderExtensions.AddStandardShield(IHttpClientBuilder, IConfiguration, Action(Of IServiceProvider, StandardHttpShieldOptions), Action(Of Exception))
-  fullName.vb: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action(Of System.IServiceProvider, Kevlar.Extensions.Http.StandardHttpShieldOptions), System.Action(Of System.Exception))
+  fullName.vb: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action(Of System.IServiceProvider, Kevlar.Extensions.Http.StandardHttpShieldOptions), System.Action(Of System.Exception))
   name.vb: AddStandardShield(IHttpClientBuilder, IConfiguration, Action(Of IServiceProvider, StandardHttpShieldOptions), Action(Of Exception))
-- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
-  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
+- uid: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
+  commentId: M:Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
   id: AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
   isExtensionMethod: true
-  parent: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  parent: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions
   langs:
   - csharp
   - vb
   name: AddStandardHedgeShield(IHttpClientBuilder)
   nameWithType: ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(IHttpClientBuilder)
-  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
+  fullName: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder)
   type: Method
   assemblies:
   - Kevlar.Extensions.Http
-  namespace: Kevlar.Extensions.Http
+  namespace: Microsoft.Extensions.DependencyInjection
   summary: >-
     Adds a standard pipeline that hedges against the request's authority: total timeout,
 
@@ -440,22 +440,22 @@ items:
     return:
       type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
     content.vb: Public Shared Function AddStandardHedgeShield(builder As IHttpClientBuilder) As IHttpClientBuilder
-  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield*
-- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHedgeShieldOptions})
-  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHedgeShieldOptions})
+  overload: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield*
+- uid: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHedgeShieldOptions})
+  commentId: M:Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHedgeShieldOptions})
   id: AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,System.Action{Kevlar.Extensions.Http.StandardHedgeShieldOptions})
   isExtensionMethod: true
-  parent: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  parent: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions
   langs:
   - csharp
   - vb
   name: AddStandardHedgeShield(IHttpClientBuilder, Action<StandardHedgeShieldOptions>)
   nameWithType: ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(IHttpClientBuilder, Action<StandardHedgeShieldOptions>)
-  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Action<Kevlar.Extensions.Http.StandardHedgeShieldOptions>)
+  fullName: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Action<Kevlar.Extensions.Http.StandardHedgeShieldOptions>)
   type: Method
   assemblies:
   - Kevlar.Extensions.Http
-  namespace: Kevlar.Extensions.Http
+  namespace: Microsoft.Extensions.DependencyInjection
   summary: >-
     Adds a standard pipeline with optional endpoint routing: total timeout, hedging,
 
@@ -471,25 +471,25 @@ items:
     return:
       type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
     content.vb: Public Shared Function AddStandardHedgeShield(builder As IHttpClientBuilder, configure As Action(Of StandardHedgeShieldOptions)) As IHttpClientBuilder
-  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield*
+  overload: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield*
   nameWithType.vb: ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(IHttpClientBuilder, Action(Of StandardHedgeShieldOptions))
-  fullName.vb: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Action(Of Kevlar.Extensions.Http.StandardHedgeShieldOptions))
+  fullName.vb: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, System.Action(Of Kevlar.Extensions.Http.StandardHedgeShieldOptions))
   name.vb: AddStandardHedgeShield(IHttpClientBuilder, Action(Of StandardHedgeShieldOptions))
-- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
-  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
+- uid: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
+  commentId: M:Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
   id: AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.Exception})
   isExtensionMethod: true
-  parent: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  parent: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions
   langs:
   - csharp
   - vb
   name: AddStandardHedgeShield(IHttpClientBuilder, IConfiguration, Action<Exception>?)
   nameWithType: ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(IHttpClientBuilder, IConfiguration, Action<Exception>?)
-  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action<System.Exception>?)
+  fullName: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action<System.Exception>?)
   type: Method
   assemblies:
   - Kevlar.Extensions.Http
-  namespace: Kevlar.Extensions.Http
+  namespace: Microsoft.Extensions.DependencyInjection
   summary: >-
     Adds a reload-aware standard hedging shield bound from a configuration section.
 
@@ -507,25 +507,25 @@ items:
     return:
       type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
     content.vb: Public Shared Function AddStandardHedgeShield(builder As IHttpClientBuilder, configuration As IConfiguration, onReloadFailure As Action(Of Exception) = Nothing) As IHttpClientBuilder
-  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield*
+  overload: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield*
   nameWithType.vb: ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(IHttpClientBuilder, IConfiguration, Action(Of Exception))
-  fullName.vb: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action(Of System.Exception))
+  fullName.vb: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action(Of System.Exception))
   name.vb: AddStandardHedgeShield(IHttpClientBuilder, IConfiguration, Action(Of Exception))
-- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHedgeShieldOptions},System.Action{System.Exception})
-  commentId: M:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHedgeShieldOptions},System.Action{System.Exception})
+- uid: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHedgeShieldOptions},System.Action{System.Exception})
+  commentId: M:Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHedgeShieldOptions},System.Action{System.Exception})
   id: AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder,Microsoft.Extensions.Configuration.IConfiguration,System.Action{System.IServiceProvider,Kevlar.Extensions.Http.StandardHedgeShieldOptions},System.Action{System.Exception})
   isExtensionMethod: true
-  parent: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions
+  parent: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions
   langs:
   - csharp
   - vb
   name: AddStandardHedgeShield(IHttpClientBuilder, IConfiguration, Action<IServiceProvider, StandardHedgeShieldOptions>, Action<Exception>?)
   nameWithType: ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(IHttpClientBuilder, IConfiguration, Action<IServiceProvider, StandardHedgeShieldOptions>, Action<Exception>?)
-  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action<System.IServiceProvider, Kevlar.Extensions.Http.StandardHedgeShieldOptions>, System.Action<System.Exception>?)
+  fullName: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action<System.IServiceProvider, Kevlar.Extensions.Http.StandardHedgeShieldOptions>, System.Action<System.Exception>?)
   type: Method
   assemblies:
   - Kevlar.Extensions.Http
-  namespace: Kevlar.Extensions.Http
+  namespace: Microsoft.Extensions.DependencyInjection
   summary: >-
     Adds a reload-aware standard hedging shield bound from configuration, then customized
 
@@ -547,9 +547,9 @@ items:
     return:
       type: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
     content.vb: Public Shared Function AddStandardHedgeShield(builder As IHttpClientBuilder, configuration As IConfiguration, configure As Action(Of IServiceProvider, StandardHedgeShieldOptions), onReloadFailure As Action(Of Exception) = Nothing) As IHttpClientBuilder
-  overload: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield*
+  overload: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield*
   nameWithType.vb: ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(IHttpClientBuilder, IConfiguration, Action(Of IServiceProvider, StandardHedgeShieldOptions), Action(Of Exception))
-  fullName.vb: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action(Of System.IServiceProvider, Kevlar.Extensions.Http.StandardHedgeShieldOptions), System.Action(Of System.Exception))
+  fullName.vb: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield(Microsoft.Extensions.DependencyInjection.IHttpClientBuilder, Microsoft.Extensions.Configuration.IConfiguration, System.Action(Of System.IServiceProvider, Kevlar.Extensions.Http.StandardHedgeShieldOptions), System.Action(Of System.Exception))
   name.vb: AddStandardHedgeShield(IHttpClientBuilder, IConfiguration, Action(Of IServiceProvider, StandardHedgeShieldOptions), Action(Of Exception))
 references:
 - uid: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
@@ -560,41 +560,43 @@ references:
   name: IHttpClientBuilder
   nameWithType: IHttpClientBuilder
   fullName: Microsoft.Extensions.DependencyInjection.IHttpClientBuilder
-- uid: Kevlar.Extensions.Http
-  commentId: N:Kevlar.Extensions.Http
+- uid: Microsoft.Extensions.DependencyInjection
+  commentId: N:Microsoft.Extensions.DependencyInjection
   isExternal: true
-  href: Kevlar.html
-  name: Kevlar.Extensions.Http
-  nameWithType: Kevlar.Extensions.Http
-  fullName: Kevlar.Extensions.Http
+  href: Microsoft.Extensions.DependencyInjection.html
+  name: Microsoft.Extensions.DependencyInjection
+  nameWithType: Microsoft.Extensions.DependencyInjection
+  fullName: Microsoft.Extensions.DependencyInjection
   spec.csharp:
-  - uid: Kevlar
-    name: Kevlar
+  - uid: Microsoft
+    name: Microsoft
     isExternal: true
-    href: Kevlar.html
+    href: https://learn.microsoft.com/dotnet/api/microsoft
   - name: .
-  - uid: Kevlar.Extensions
+  - uid: Microsoft.Extensions
     name: Extensions
     isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions
   - name: .
-  - uid: Kevlar.Extensions.Http
-    name: Http
+  - uid: Microsoft.Extensions.DependencyInjection
+    name: DependencyInjection
     isExternal: true
-    href: Kevlar.Extensions.Http.html
+    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions.dependencyinjection
   spec.vb:
-  - uid: Kevlar
-    name: Kevlar
+  - uid: Microsoft
+    name: Microsoft
     isExternal: true
-    href: Kevlar.html
+    href: https://learn.microsoft.com/dotnet/api/microsoft
   - name: .
-  - uid: Kevlar.Extensions
+  - uid: Microsoft.Extensions
     name: Extensions
     isExternal: true
+    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions
   - name: .
-  - uid: Kevlar.Extensions.Http
-    name: Http
+  - uid: Microsoft.Extensions.DependencyInjection
+    name: DependencyInjection
     isExternal: true
-    href: Kevlar.Extensions.Http.html
+    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions.dependencyinjection
 - uid: System.Object
   commentId: T:System.Object
   parent: System
@@ -825,43 +827,6 @@ references:
     href: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
   - name: (
   - name: )
-- uid: Microsoft.Extensions.DependencyInjection
-  commentId: N:Microsoft.Extensions.DependencyInjection
-  isExternal: true
-  href: https://learn.microsoft.com/dotnet/api/microsoft
-  name: Microsoft.Extensions.DependencyInjection
-  nameWithType: Microsoft.Extensions.DependencyInjection
-  fullName: Microsoft.Extensions.DependencyInjection
-  spec.csharp:
-  - uid: Microsoft
-    name: Microsoft
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/microsoft
-  - name: .
-  - uid: Microsoft.Extensions
-    name: Extensions
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions
-  - name: .
-  - uid: Microsoft.Extensions.DependencyInjection
-    name: DependencyInjection
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions.dependencyinjection
-  spec.vb:
-  - uid: Microsoft
-    name: Microsoft
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/microsoft
-  - name: .
-  - uid: Microsoft.Extensions
-    name: Extensions
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions
-  - name: .
-  - uid: Microsoft.Extensions.DependencyInjection
-    name: DependencyInjection
-    isExternal: true
-    href: https://learn.microsoft.com/dotnet/api/microsoft.extensions.dependencyinjection
 - uid: System
   commentId: N:System
   isExternal: true
@@ -869,13 +834,13 @@ references:
   name: System
   nameWithType: System
   fullName: System
-- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield*
-  commentId: Overload:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield
+- uid: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield*
+  commentId: Overload:Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield
   isExternal: true
-  href: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.html#Kevlar_Extensions_Http_ShieldHttpClientBuilderExtensions_AddShield_Microsoft_Extensions_DependencyInjection_IHttpClientBuilder_Kevlar_Shield_System_Net_Http_HttpResponseMessage__
+  href: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.html#Microsoft_Extensions_DependencyInjection_ShieldHttpClientBuilderExtensions_AddShield_Microsoft_Extensions_DependencyInjection_IHttpClientBuilder_Kevlar_Shield_System_Net_Http_HttpResponseMessage__
   name: AddShield
   nameWithType: ShieldHttpClientBuilderExtensions.AddShield
-  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddShield
+  fullName: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddShield
 - uid: Kevlar.Shield{System.Net.Http.HttpResponseMessage}
   commentId: T:Kevlar.Shield{System.Net.Http.HttpResponseMessage}
   parent: Kevlar
@@ -955,6 +920,41 @@ references:
   name: ShieldHttpHandlerOptions
   nameWithType: ShieldHttpHandlerOptions
   fullName: Kevlar.Extensions.Http.ShieldHttpHandlerOptions
+- uid: Kevlar.Extensions.Http
+  commentId: N:Kevlar.Extensions.Http
+  isExternal: true
+  href: Kevlar.html
+  name: Kevlar.Extensions.Http
+  nameWithType: Kevlar.Extensions.Http
+  fullName: Kevlar.Extensions.Http
+  spec.csharp:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+  - name: .
+  - uid: Kevlar.Extensions.Http
+    name: Http
+    isExternal: true
+    href: Kevlar.Extensions.Http.html
+  spec.vb:
+  - uid: Kevlar
+    name: Kevlar
+    isExternal: true
+    href: Kevlar.html
+  - name: .
+  - uid: Kevlar.Extensions
+    name: Extensions
+    isExternal: true
+  - name: .
+  - uid: Kevlar.Extensions.Http
+    name: Http
+    isExternal: true
+    href: Kevlar.Extensions.Http.html
 - uid: System.Func{System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}}
   commentId: T:System.Func{System.IServiceProvider,Kevlar.Shield{System.Net.Http.HttpResponseMessage}}
   parent: System
@@ -1355,13 +1355,13 @@ references:
   name: Timeout
   nameWithType: HttpClient.Timeout
   fullName: System.Net.Http.HttpClient.Timeout
-- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield*
-  commentId: Overload:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield
+- uid: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield*
+  commentId: Overload:Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield
   isExternal: true
-  href: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.html#Kevlar_Extensions_Http_ShieldHttpClientBuilderExtensions_AddStandardShield_Microsoft_Extensions_DependencyInjection_IHttpClientBuilder_
+  href: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.html#Microsoft_Extensions_DependencyInjection_ShieldHttpClientBuilderExtensions_AddStandardShield_Microsoft_Extensions_DependencyInjection_IHttpClientBuilder_
   name: AddStandardShield
   nameWithType: ShieldHttpClientBuilderExtensions.AddStandardShield
-  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardShield
+  fullName: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardShield
 - uid: System.Action{Kevlar.Extensions.Http.StandardHttpShieldOptions}
   commentId: T:System.Action{Kevlar.Extensions.Http.StandardHttpShieldOptions}
   parent: System
@@ -1586,13 +1586,13 @@ references:
     name: Configuration
     isExternal: true
     href: https://learn.microsoft.com/dotnet/api/microsoft.extensions.configuration
-- uid: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield*
-  commentId: Overload:Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield
+- uid: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield*
+  commentId: Overload:Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield
   isExternal: true
-  href: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.html#Kevlar_Extensions_Http_ShieldHttpClientBuilderExtensions_AddStandardHedgeShield_Microsoft_Extensions_DependencyInjection_IHttpClientBuilder_
+  href: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.html#Microsoft_Extensions_DependencyInjection_ShieldHttpClientBuilderExtensions_AddStandardHedgeShield_Microsoft_Extensions_DependencyInjection_IHttpClientBuilder_
   name: AddStandardHedgeShield
   nameWithType: ShieldHttpClientBuilderExtensions.AddStandardHedgeShield
-  fullName: Kevlar.Extensions.Http.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield
+  fullName: Microsoft.Extensions.DependencyInjection.ShieldHttpClientBuilderExtensions.AddStandardHedgeShield
 - uid: System.Action{Kevlar.Extensions.Http.StandardHedgeShieldOptions}
   commentId: T:System.Action{Kevlar.Extensions.Http.StandardHedgeShieldOptions}
   parent: System

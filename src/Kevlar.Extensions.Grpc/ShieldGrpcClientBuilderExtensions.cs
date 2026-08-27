@@ -1,7 +1,9 @@
+using Kevlar;
 using Kevlar.Extensions.DependencyInjection;
+using Kevlar.Extensions.Grpc;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Kevlar.Extensions.Grpc;
+namespace Microsoft.Extensions.DependencyInjection;
 
 /// <summary>Adds Kevlar call resilience to gRPC clients registered through DI.</summary>
 public static class ShieldGrpcClientBuilderExtensions
