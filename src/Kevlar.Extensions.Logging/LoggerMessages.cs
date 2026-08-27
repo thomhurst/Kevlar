@@ -11,13 +11,13 @@ internal static partial class LoggerMessages
         EventId = 1001,
         EventName = "Retry",
         Level = LogLevel.Warning,
-        Message = "Shield {ShieldName} strategy {StrategyIndex} retry attempt {Attempt} after {Delay}; outcome {Outcome}; request {RequestMethod} {RequestUri}",
+        Message = "Shield {ShieldName} strategy {StrategyIndex} retry attempt {AttemptNumber} after {Delay}; outcome {Outcome}; request {RequestMethod} {RequestUri}",
         SkipEnabledCheck = true)]
     public static partial void Retry(
         ILogger logger,
         string? shieldName,
         int strategyIndex,
-        int attempt,
+        int attemptNumber,
         TimeSpan delay,
         string outcome,
         string? requestMethod,
@@ -49,61 +49,61 @@ internal static partial class LoggerMessages
         Exception? exception);
 
     [LoggerMessage(EventId = 1003, EventName = "CircuitRejected", Level = LogLevel.Error,
-        Message = "Shield {ShieldName} strategy {StrategyIndex} rejected attempt {Attempt} because the circuit is {CircuitState}; retry after {RetryAfter}; outcome {Outcome}",
+        Message = "Shield {ShieldName} strategy {StrategyIndex} rejected attempt {AttemptNumber} because the circuit is {CircuitState}; retry after {RetryAfter}; outcome {Outcome}",
         SkipEnabledCheck = true)]
     public static partial void CircuitRejected(
         ILogger logger,
         string? shieldName,
         int strategyIndex,
-        int attempt,
+        int attemptNumber,
         CircuitState circuitState,
         TimeSpan? retryAfter,
         string outcome,
         Exception? exception);
 
     [LoggerMessage(EventId = 1004, EventName = "Hedge", Level = LogLevel.Information,
-        Message = "Shield {ShieldName} strategy {StrategyIndex} started hedge attempt {Attempt} after {Delay}; outcome {Outcome}",
+        Message = "Shield {ShieldName} strategy {StrategyIndex} started hedge attempt {AttemptNumber} after {Delay}; outcome {Outcome}",
         SkipEnabledCheck = true)]
     public static partial void Hedge(
         ILogger logger,
         string? shieldName,
         int strategyIndex,
-        int attempt,
+        int attemptNumber,
         TimeSpan delay,
         string outcome,
         Exception? exception);
 
     [LoggerMessage(EventId = 1005, EventName = "Fallback", Level = LogLevel.Warning,
-        Message = "Shield {ShieldName} strategy {StrategyIndex} used fallback on attempt {Attempt}; outcome {Outcome}",
+        Message = "Shield {ShieldName} strategy {StrategyIndex} used fallback on attempt {AttemptNumber}; outcome {Outcome}",
         SkipEnabledCheck = true)]
     public static partial void Fallback(
         ILogger logger,
         string? shieldName,
         int strategyIndex,
-        int attempt,
+        int attemptNumber,
         string outcome,
         Exception? exception);
 
     [LoggerMessage(EventId = 1006, EventName = "RateLimitRejected", Level = LogLevel.Warning,
-        Message = "Shield {ShieldName} strategy {StrategyIndex} rejected attempt {Attempt} by rate limit; retry after {RetryAfter}; outcome {Outcome}",
+        Message = "Shield {ShieldName} strategy {StrategyIndex} rejected attempt {AttemptNumber} by rate limit; retry after {RetryAfter}; outcome {Outcome}",
         SkipEnabledCheck = true)]
     public static partial void RateLimitRejected(
         ILogger logger,
         string? shieldName,
         int strategyIndex,
-        int attempt,
+        int attemptNumber,
         TimeSpan? retryAfter,
         string outcome,
         Exception? exception);
 
     [LoggerMessage(EventId = 1007, EventName = "ConcurrencyLimitRejected", Level = LogLevel.Warning,
-        Message = "Shield {ShieldName} strategy {StrategyIndex} rejected attempt {Attempt} by concurrency limit; outcome {Outcome}",
+        Message = "Shield {ShieldName} strategy {StrategyIndex} rejected attempt {AttemptNumber} by concurrency limit; outcome {Outcome}",
         SkipEnabledCheck = true)]
     public static partial void ConcurrencyLimitRejected(
         ILogger logger,
         string? shieldName,
         int strategyIndex,
-        int attempt,
+        int attemptNumber,
         string outcome,
         Exception? exception);
 

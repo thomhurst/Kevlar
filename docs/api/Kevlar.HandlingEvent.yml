@@ -5,7 +5,7 @@ items:
   id: HandlingEvent
   parent: Kevlar
   children:
-  - Kevlar.HandlingEvent.Attempt
+  - Kevlar.HandlingEvent.AttemptNumber
   - Kevlar.HandlingEvent.Context
   - Kevlar.HandlingEvent.Exception
   - Kevlar.HandlingEvent.StrategyIndex
@@ -77,16 +77,16 @@ items:
       type: Kevlar.KevlarContext
     content.vb: Public ReadOnly Property Context As KevlarContext
   overload: Kevlar.HandlingEvent.Context*
-- uid: Kevlar.HandlingEvent.Attempt
-  commentId: P:Kevlar.HandlingEvent.Attempt
-  id: Attempt
+- uid: Kevlar.HandlingEvent.AttemptNumber
+  commentId: P:Kevlar.HandlingEvent.AttemptNumber
+  id: AttemptNumber
   parent: Kevlar.HandlingEvent
   langs:
   - csharp
   - vb
-  name: Attempt
-  nameWithType: HandlingEvent.Attempt
-  fullName: Kevlar.HandlingEvent.Attempt
+  name: AttemptNumber
+  nameWithType: HandlingEvent.AttemptNumber
+  fullName: Kevlar.HandlingEvent.AttemptNumber
   type: Property
   assemblies:
   - Kevlar
@@ -94,12 +94,12 @@ items:
   summary: The zero-based attempt number for retry and hedging; zero for other strategies.
   example: []
   syntax:
-    content: public int Attempt { get; }
+    content: public int AttemptNumber { get; }
     parameters: []
     return:
       type: System.Int32
-    content.vb: Public ReadOnly Property Attempt As Integer
-  overload: Kevlar.HandlingEvent.Attempt*
+    content.vb: Public ReadOnly Property AttemptNumber As Integer
+  overload: Kevlar.HandlingEvent.AttemptNumber*
 - uid: Kevlar.HandlingEvent.StrategyIndex
   commentId: P:Kevlar.HandlingEvent.StrategyIndex
   id: StrategyIndex
@@ -378,13 +378,13 @@ references:
   name: KevlarContext
   nameWithType: KevlarContext
   fullName: Kevlar.KevlarContext
-- uid: Kevlar.HandlingEvent.Attempt*
-  commentId: Overload:Kevlar.HandlingEvent.Attempt
+- uid: Kevlar.HandlingEvent.AttemptNumber*
+  commentId: Overload:Kevlar.HandlingEvent.AttemptNumber
   isExternal: true
-  href: Kevlar.HandlingEvent.html#Kevlar_HandlingEvent_Attempt
-  name: Attempt
-  nameWithType: HandlingEvent.Attempt
-  fullName: Kevlar.HandlingEvent.Attempt
+  href: Kevlar.HandlingEvent.html#Kevlar_HandlingEvent_AttemptNumber
+  name: AttemptNumber
+  nameWithType: HandlingEvent.AttemptNumber
+  fullName: Kevlar.HandlingEvent.AttemptNumber
 - uid: System.Int32
   commentId: T:System.Int32
   parent: System

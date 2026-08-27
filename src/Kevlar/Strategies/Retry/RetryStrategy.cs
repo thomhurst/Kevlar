@@ -215,7 +215,7 @@ internal sealed class RetryStrategy : Strategy
                 {
                     var generated = await InvokeDelayGeneratorAsync(
                         _delayGenerator,
-                        attempt,
+                        retriesUsed,
                         delay,
                         outcome,
                         context)
@@ -240,7 +240,7 @@ internal sealed class RetryStrategy : Strategy
                 {
                     await InvokeOnRetryAsync(
                         _onRetry,
-                        attempt,
+                        retriesUsed,
                         delay,
                         outcome,
                         context).ConfigureAwait(false);
@@ -311,7 +311,7 @@ internal sealed class RetryStrategy : Strategy
 
     private ValueTask<TimeSpan?> InvokeDelayGeneratorAsync<T>(
         Delegate generator,
-        int retryNumber,
+        int attemptNumber,
         TimeSpan delay,
         Outcome<T> outcome,
         KevlarContext context)
@@ -320,7 +320,7 @@ internal sealed class RetryStrategy : Strategy
         {
             return CallbackInvoker.InvokeGenerator(
                 (Func<RetryEvent, ValueTask<TimeSpan?>>)generator,
-                CreateUntypedEvent(retryNumber, delay, in outcome, context),
+                CreateUntypedEvent(attemptNumber, delay, in outcome, context),
                 context,
                 _delayGeneratorHookName);
         }
@@ -328,14 +328,14 @@ internal sealed class RetryStrategy : Strategy
         ValidateCallbackResultType<T>();
         return CallbackInvoker.InvokeGenerator(
             (Func<RetryEvent<T>, ValueTask<TimeSpan?>>)generator,
-            new RetryEvent<T>(retryNumber, delay, outcome, context),
+            new RetryEvent<T>(attemptNumber, delay, outcome, context),
             context,
             _delayGeneratorHookName);
     }
 
     private ValueTask InvokeOnRetryAsync<T>(
         Delegate callback,
-        int retryNumber,
+        int attemptNumber,
         TimeSpan delay,
         Outcome<T> outcome,
         KevlarContext context)
@@ -344,7 +344,7 @@ internal sealed class RetryStrategy : Strategy
         {
             return CallbackInvoker.InvokeAsync(
                 (Func<RetryEvent, ValueTask>)callback,
-                CreateUntypedEvent(retryNumber, delay, in outcome, context),
+                CreateUntypedEvent(attemptNumber, delay, in outcome, context),
                 CallbackErrorKind.Retry,
                 context,
                 _onRetryHookName);
@@ -353,19 +353,19 @@ internal sealed class RetryStrategy : Strategy
         ValidateCallbackResultType<T>();
         return CallbackInvoker.InvokeAsync(
             (Func<RetryEvent<T>, ValueTask>)callback,
-            new RetryEvent<T>(retryNumber, delay, outcome, context),
+            new RetryEvent<T>(attemptNumber, delay, outcome, context),
             CallbackErrorKind.Retry,
             context,
             _onRetryHookName);
     }
 
     private static RetryEvent CreateUntypedEvent<T>(
-        int retryNumber,
+        int attemptNumber,
         TimeSpan delay,
         in Outcome<T> outcome,
         KevlarContext context) =>
         new(
-            retryNumber,
+            attemptNumber,
             delay,
             outcome.Exception,
             outcome.Exception is null ? outcome.Result : null,

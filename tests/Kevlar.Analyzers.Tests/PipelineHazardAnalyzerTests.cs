@@ -277,7 +277,7 @@ public class PipelineHazardAnalyzerTests
                         }
                     });
 
-                private static void Read(int retryNumber) => Console.WriteLine(retryNumber);
+                private static void Read(int attemptNumber) => Console.WriteLine(attemptNumber);
             }
             """);
 
@@ -413,7 +413,7 @@ public class PipelineHazardAnalyzerTests
                         {
                             var snapshot = new RetrySnapshot(item);
                             await Task.Yield();
-                            Console.WriteLine(snapshot.RetryNumber);
+                            Console.WriteLine(snapshot.AttemptNumber);
                         }
                     });
 
@@ -421,10 +421,10 @@ public class PipelineHazardAnalyzerTests
                 {
                     public RetrySnapshot(RetryEvent item)
                     {
-                        RetryNumber = item.RetryNumber;
+                        AttemptNumber = item.AttemptNumber;
                     }
 
-                    public int RetryNumber { get; }
+                    public int AttemptNumber { get; }
                 }
             }
             """);
@@ -823,7 +823,7 @@ public class PipelineHazardAnalyzerTests
                         {
                             var events = new System.Collections.Generic.List<RetryEvent> { default, item };
                             await Task.Yield();
-                            Console.WriteLine(events[1].RetryNumber);
+                            Console.WriteLine(events[1].AttemptNumber);
                         }
                     });
             }
@@ -1268,7 +1268,7 @@ public class PipelineHazardAnalyzerTests
                     }
 
                     await Task.Yield();
-                    Console.WriteLine(retained.RetryNumber);
+                    Console.WriteLine(retained.AttemptNumber);
                 }
             });
             """);
@@ -1299,7 +1299,7 @@ public class PipelineHazardAnalyzerTests
                     }
 
                     await Task.Yield();
-                    Console.WriteLine(retained.RetryNumber);
+                    Console.WriteLine(retained.AttemptNumber);
                 }
             });
             """);
@@ -1329,7 +1329,7 @@ public class PipelineHazardAnalyzerTests
                     }
 
                     await Task.Yield();
-                    Console.WriteLine(retained.RetryNumber);
+                    Console.WriteLine(retained.AttemptNumber);
                 }
             });
             """);
@@ -1360,7 +1360,7 @@ public class PipelineHazardAnalyzerTests
 
                     retained = item;
                     await Task.Yield();
-                    Console.WriteLine(retained.RetryNumber);
+                    Console.WriteLine(retained.AttemptNumber);
                 }
             });
             """);
@@ -1711,10 +1711,10 @@ public class PipelineHazardAnalyzerTests
                 {
                     public RetrySnapshot(RetryEvent item)
                     {
-                        RetryNumber = item.RetryNumber;
+                        AttemptNumber = item.AttemptNumber;
                     }
 
-                    public int RetryNumber { get; }
+                    public int AttemptNumber { get; }
                 }
             }
             """);
@@ -1730,10 +1730,10 @@ public class PipelineHazardAnalyzerTests
             {
                 public RetrySnapshot(RetryEvent item)
                 {
-                    RetryNumber = item.RetryNumber;
+                    AttemptNumber = item.AttemptNumber;
                 }
 
-                public int RetryNumber { get; }
+                public int AttemptNumber { get; }
             }
             """);
         var diagnostics = await AnalyzeSourceAsync("""
@@ -2374,7 +2374,7 @@ public class PipelineHazardAnalyzerTests
                 public void Schedule()
                 {
                     _event = default;
-                    _ = Task.Run(() => Console.WriteLine(_event.RetryNumber));
+                    _ = Task.Run(() => Console.WriteLine(_event.AttemptNumber));
                 }
             }
             """);
@@ -2391,7 +2391,7 @@ public class PipelineHazardAnalyzerTests
                 private RetryEvent Unrelated => default;
 
                 public void Schedule() =>
-                    _ = Task.Run(() => Console.WriteLine(Unrelated.RetryNumber));
+                    _ = Task.Run(() => Console.WriteLine(Unrelated.AttemptNumber));
             }
             """);
 
@@ -2632,7 +2632,7 @@ public class PipelineHazardAnalyzerTests
                 public void Configure() => Callback = item =>
                 {
                     _event = item;
-                    _ = Task.Run(() => Console.WriteLine(_event.RetryNumber));
+                    _ = Task.Run(() => Console.WriteLine(_event.AttemptNumber));
                 };
             }
             """);
@@ -2645,7 +2645,7 @@ public class PipelineHazardAnalyzerTests
                     _ = Shield.Retry(options => options.OnRetry = delegate
                     {
                         _event = initial;
-                        _ = Task.Run(() => Console.WriteLine(_event.RetryNumber));
+                        _ = Task.Run(() => Console.WriteLine(_event.AttemptNumber));
                         return default;
                     });
             }
@@ -2696,7 +2696,7 @@ public class PipelineHazardAnalyzerTests
                 public void Configure() =>
                     _ = Shield.Retry(options => options.OnRetry = item =>
                     {
-                        _event = item.RetryNumber > 0
+                        _event = item.AttemptNumber > 0
                             ? default(RetryEvent)
                             : default(RetryEvent);
                         _ = Task.Run(() => Consume(_event));
@@ -2793,7 +2793,7 @@ public class PipelineHazardAnalyzerTests
                 public void Schedule()
                 {
                     var unrelated = CreateDefault();
-                    _ = Task.Run(() => Console.WriteLine(unrelated.RetryNumber));
+                    _ = Task.Run(() => Console.WriteLine(unrelated.AttemptNumber));
                 }
 
                 private static RetryEvent CreateDefault() => default;
@@ -2837,7 +2837,7 @@ public class PipelineHazardAnalyzerTests
                     _ = Shield.Retry(options => options.OnRetry = item =>
                     {
                         var retained = Identity(item);
-                        _ = Task.Run(() => Console.WriteLine(retained.RetryNumber));
+                        _ = Task.Run(() => Console.WriteLine(retained.AttemptNumber));
                         return default;
                     });
 
@@ -2857,12 +2857,12 @@ public class PipelineHazardAnalyzerTests
                 public void Configure() =>
                     _ = Shield.Retry(options => options.OnRetry = item =>
                     {
-                        var retryNumber = GetRetryNumber(item);
-                        _ = Task.Run(() => Console.WriteLine(retryNumber));
+                        var attemptNumber = GetAttemptNumber(item);
+                        _ = Task.Run(() => Console.WriteLine(attemptNumber));
                         return default;
                     });
 
-                private static int GetRetryNumber(RetryEvent item) => item.RetryNumber;
+                private static int GetAttemptNumber(RetryEvent item) => item.AttemptNumber;
             }
             """);
 
@@ -2979,7 +2979,7 @@ public class PipelineHazardAnalyzerTests
                 private async Task AuditAsync()
                 {
                     await Task.Yield();
-                    Console.WriteLine(_unrelated.RetryNumber);
+                    Console.WriteLine(_unrelated.AttemptNumber);
                 }
             }
             """);
@@ -3007,7 +3007,7 @@ public class PipelineHazardAnalyzerTests
                 private async Task AuditStoredAsync()
                 {
                     await Task.Yield();
-                    Console.WriteLine(_event.RetryNumber);
+                    Console.WriteLine(_event.AttemptNumber);
                 }
             }
             """);
@@ -3041,7 +3041,7 @@ public class PipelineHazardAnalyzerTests
                     }
 
                     await Task.Yield();
-                    Console.WriteLine(retained.RetryNumber);
+                    Console.WriteLine(retained.AttemptNumber);
                 }
             }
             """);
@@ -3576,9 +3576,9 @@ public class PipelineHazardAnalyzerTests
     {
         var selectors = new[]
         {
-            "(RetryEvent other) => other.RetryNumber",
+            "(RetryEvent other) => other.AttemptNumber",
             "(RetryEvent other) => other.Context.ShieldName.Length",
-            "(RetryEvent other) => { var copy = other; return copy.RetryNumber; }",
+            "(RetryEvent other) => { var copy = other; return copy.AttemptNumber; }",
         };
         foreach (var selector in selectors)
         {
@@ -3601,8 +3601,8 @@ public class PipelineHazardAnalyzerTests
     {
         var selectors = new[]
         {
-            "(RetryEvent other) => other.RetryNumber",
-            "(RetryEvent other) => { var copy = other; return copy.RetryNumber; }",
+            "(RetryEvent other) => other.AttemptNumber",
+            "(RetryEvent other) => { var copy = other; return copy.AttemptNumber; }",
         };
         foreach (var selector in selectors)
         {
@@ -4628,8 +4628,8 @@ public class PipelineHazardAnalyzerTests
     {
         var mutations = new[]
         {
-            "events.GetOrAdd(0, static (_, state) => state.RetryNumber, item);",
-            "events.AddOrUpdate(0, static (_, state) => state.RetryNumber, static (_, current, state) => current + state.RetryNumber, item);",
+            "events.GetOrAdd(0, static (_, state) => state.AttemptNumber, item);",
+            "events.AddOrUpdate(0, static (_, state) => state.AttemptNumber, static (_, current, state) => current + state.AttemptNumber, item);",
         };
         foreach (var mutation in mutations)
         {
@@ -5318,10 +5318,10 @@ public class PipelineHazardAnalyzerTests
             {
                 public RetrySnapshot(RetryEvent item)
                 {
-                    RetryNumber = item.RetryNumber;
+                    AttemptNumber = item.AttemptNumber;
                 }
 
-                public int RetryNumber { get; }
+                public int AttemptNumber { get; }
             }
 
             public sealed class TestSubject
@@ -5331,7 +5331,7 @@ public class PipelineHazardAnalyzerTests
                     {
                         ThreadPool.QueueUserWorkItem(
                             static (RetrySnapshot snapshot) =>
-                                Console.WriteLine(snapshot.RetryNumber),
+                                Console.WriteLine(snapshot.AttemptNumber),
                             new RetrySnapshot(item),
                             preferLocal: false);
                         return default;
@@ -6069,7 +6069,7 @@ public class PipelineHazardAnalyzerTests
         {
             "Shield.When<InvalidOperationException>();",
             "Shield.When<InvalidOperationException>().Or<TimeoutException>();",
-            "Shield.WhenContext((HandlingEvent handling) => handling.Attempt == 0);",
+            "Shield.WhenContext((HandlingEvent handling) => handling.AttemptNumber == 0);",
             "Shield.When<InvalidOperationException>().Or<TimeoutException>().Or(static exception => exception is null);",
             "_ = Shield.When<InvalidOperationException>();",
             "_ = Shield.Empty.When<InvalidOperationException>();",
@@ -6465,7 +6465,7 @@ public class PipelineHazardAnalyzerTests
         var cases = new[]
         {
             "_ = Shield.When<InvalidOperationException>().Retry(1).CircuitBreaker(2, TimeSpan.FromSeconds(1));",
-            "_ = Shield.WhenContext((HandlingEvent handling) => handling.Attempt == 0).Retry(1).CircuitBreaker(2, TimeSpan.FromSeconds(1));",
+            "_ = Shield.WhenContext((HandlingEvent handling) => handling.AttemptNumber == 0).Retry(1).CircuitBreaker(2, TimeSpan.FromSeconds(1));",
             "_ = Shield.When<InvalidOperationException>().Or<TimeoutException>().Retry(1).CircuitBreaker(2, TimeSpan.FromSeconds(1));",
             "_ = Shield.When<InvalidOperationException>().Retry(1).RetryForever(Backoff.None);",
             "_ = Shield.For<int>().WhenResultEquals(0).Retry(1).Hedge(1, TimeSpan.Zero);",
@@ -6518,7 +6518,7 @@ public class PipelineHazardAnalyzerTests
             "_ = Shield.Compose(Shield.When<InvalidOperationException>().Retry(1), Shield.Empty).CircuitBreaker(2, TimeSpan.FromSeconds(1));",
             "_ = Shield.For<int>().When<InvalidOperationException>().Retry(1).CircuitBreaker(options => options.HandlesException = exception => exception is TimeoutException);",
             "_ = Shield.For<int>().When<InvalidOperationException>().CircuitBreaker(options => options.HandlesException = exception => exception is TimeoutException).Retry(1);",
-            "_ = Shield.For<int>().When<InvalidOperationException>().Retry(1).CircuitBreaker(options => options.HandlesExceptionWithContext = handling => handling.Attempt == 0);",
+            "_ = Shield.For<int>().When<InvalidOperationException>().Retry(1).CircuitBreaker(options => options.HandlesExceptionWithContext = handling => handling.AttemptNumber == 0);",
             "_ = CreateShield().CircuitBreaker(2, TimeSpan.FromSeconds(1));",
         };
 

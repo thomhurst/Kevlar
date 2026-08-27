@@ -201,7 +201,7 @@ var isRead = new KevlarKey<bool>("is-read");
 var contextual = Shield
     .WhenContext(handling =>
         handling.Exception is TimeoutExceededException
-        && handling.Attempt < 2
+        && handling.AttemptNumber < 2
         && handling.Context.Properties.GetOrDefault(isRead))
     .Retry(3, Backoff.None);
 

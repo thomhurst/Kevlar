@@ -3,11 +3,11 @@ namespace Kevlar;
 /// <summary>Context supplied to an exception handling predicate.</summary>
 public readonly struct HandlingEvent
 {
-    internal HandlingEvent(Exception exception, KevlarContext context, int attempt, int strategyIndex)
+    internal HandlingEvent(Exception exception, KevlarContext context, int attemptNumber, int strategyIndex)
     {
         Exception = exception;
         Context = context;
-        Attempt = attempt;
+        AttemptNumber = attemptNumber;
         StrategyIndex = strategyIndex;
     }
 
@@ -18,7 +18,7 @@ public readonly struct HandlingEvent
     public KevlarContext Context { get; }
 
     /// <summary>The zero-based attempt number for retry and hedging; zero for other strategies.</summary>
-    public int Attempt { get; }
+    public int AttemptNumber { get; }
 
     /// <summary>The zero-based index of the strategy evaluating the outcome.</summary>
     public int StrategyIndex { get; }

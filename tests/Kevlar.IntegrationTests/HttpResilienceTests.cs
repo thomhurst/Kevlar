@@ -335,7 +335,7 @@ public class HttpResilienceTests
         stopwatch.Stop();
 
         await Assert.That(await response.Content.ReadAsStringAsync()).IsEqualTo("adaptive hedge");
-        await Assert.That(observedAttempt).IsEqualTo(2);
+        await Assert.That(observedAttempt).IsEqualTo(1);
         await Assert.That(stopwatch.Elapsed).IsLessThan(TimeSpan.FromSeconds(2.5));
         await Assert.That(slow.CallCount).IsEqualTo(1);
         await Assert.That(healthy.CallCount).IsEqualTo(1);

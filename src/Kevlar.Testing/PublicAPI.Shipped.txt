@@ -137,7 +137,6 @@ Kevlar.Testing.CallbackRecord.ConsecutiveFailures.get -> int?
 Kevlar.Testing.CallbackRecord.FailureCount.get -> long?
 Kevlar.Testing.CallbackRecord.FailureRate.get -> double?
 Kevlar.Testing.CallbackRecord.StrategyIndex.get -> int?
-Kevlar.Testing.CallbackRecord.RetryNumber.get -> int?
 Kevlar.Testing.CallbackRecord.Result.get -> object?
 Kevlar.Testing.CallbackRecord.Sequence.get -> long
 Kevlar.Testing.CallbackRecord.ShieldName.get -> string?

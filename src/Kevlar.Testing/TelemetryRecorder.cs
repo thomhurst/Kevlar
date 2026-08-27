@@ -108,7 +108,7 @@ public sealed class TelemetryRecorder : IDisposable, IKevlarTelemetryListener
     {
         AddCallback(new CallbackRecord(
             0, CallbackKind.Retry, item.Context.ShieldName,
-            strategyIndex: item.Context.StrategyIndex, retryNumber: item.RetryNumber,
+            strategyIndex: item.Context.StrategyIndex, attemptNumber: item.AttemptNumber,
             delay: item.Delay, exception: item.Exception, result: item.Result));
         return default;
     }
@@ -118,7 +118,7 @@ public sealed class TelemetryRecorder : IDisposable, IKevlarTelemetryListener
     {
         AddCallback(new CallbackRecord(
             0, CallbackKind.Retry, item.Context.ShieldName,
-            strategyIndex: item.Context.StrategyIndex, retryNumber: item.RetryNumber,
+            strategyIndex: item.Context.StrategyIndex, attemptNumber: item.AttemptNumber,
             delay: item.Delay, exception: item.Outcome.Exception, result: item.Outcome.Result));
         return default;
     }

@@ -639,8 +639,8 @@ Kevlar.ShieldBuilder<TResult>.ConcurrencyLimit(int maxConcurrency, int queueLimi
 static Kevlar.Shield.ConcurrencyLimit(int maxConcurrency, int queueLimit = 0) -> Kevlar.Shield!
 static Kevlar.ShieldExtensions.ConcurrencyLimit(this Kevlar.Shield! shield, int maxConcurrency, int queueLimit = 0) -> Kevlar.Shield!
 Kevlar.HedgeEvent.AttemptNumber.get -> int
-Kevlar.RetryEvent.RetryNumber.get -> int
-Kevlar.RetryEvent<TResult>.RetryNumber.get -> int
+Kevlar.RetryEvent.AttemptNumber.get -> int
+Kevlar.RetryEvent<TResult>.AttemptNumber.get -> int
 Kevlar.CircuitOpenException.CircuitOpenException() -> void
 Kevlar.CircuitOpenException.CircuitOpenException(string! message) -> void
 Kevlar.CircuitOpenException.CircuitOpenException(string! message, System.Exception! innerException) -> void
@@ -662,13 +662,13 @@ Kevlar.TimeoutExceededException.TimeoutExceededException(string! message) -> voi
 Kevlar.TimeoutExceededException.TimeoutExceededException(string! message, System.Exception! innerException) -> void
 Kevlar.TimeoutExceededException.TimeoutExceededException(System.TimeSpan timeout, System.OperationCanceledException! innerException) -> void
 Kevlar.HandlingEvent
-Kevlar.HandlingEvent.Attempt.get -> int
+Kevlar.HandlingEvent.AttemptNumber.get -> int
 Kevlar.HandlingEvent.Context.get -> Kevlar.KevlarContext!
 Kevlar.HandlingEvent.Exception.get -> System.Exception!
 Kevlar.HandlingEvent.HandlingEvent() -> void
 Kevlar.HandlingEvent.StrategyIndex.get -> int
 Kevlar.HandlingEvent<TResult>
-Kevlar.HandlingEvent<TResult>.Attempt.get -> int
+Kevlar.HandlingEvent<TResult>.AttemptNumber.get -> int
 Kevlar.HandlingEvent<TResult>.Context.get -> Kevlar.KevlarContext!
 Kevlar.HandlingEvent<TResult>.HandlingEvent() -> void
 Kevlar.HandlingEvent<TResult>.Outcome.get -> Kevlar.Outcome<TResult>

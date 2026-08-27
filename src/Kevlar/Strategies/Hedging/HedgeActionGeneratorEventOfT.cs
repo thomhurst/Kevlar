@@ -17,7 +17,7 @@ public readonly struct HedgeActionGeneratorEvent<TResult>
         Outcome = outcome;
     }
 
-    /// <summary>The 1-based execution number (2 = first hedge).</summary>
+    /// <summary>The zero-based execution attempt number (1 = first hedge after the initial attempt).</summary>
     public int AttemptNumber { get; }
 
     /// <summary>The isolated context that belongs to this attempt.</summary>

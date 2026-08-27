@@ -93,16 +93,16 @@ context-aware clause:
 ```csharp
 var attemptAware = Shield
     .WhenContext(handling =>
-        handling.Exception is TimeoutExceededException && handling.Attempt < 2)
+        handling.Exception is TimeoutExceededException && handling.AttemptNumber < 2)
     .Retry(3, Backoff.None);
 ```
 
-`HandlingEvent.Attempt` is the direct zero-based counterpart to the attempt number supplied to a
-Polly handling predicate. Retry callback counters differ:
+`HandlingEvent.AttemptNumber` is the direct zero-based counterpart to the attempt number supplied to a
+Polly handling predicate. Retry callback counters map directly:
 
 | Polly v8 | Kevlar |
 |---|---|
-| `OnRetryArguments.AttemptNumber` is zero-based (`0` before the first retry) | `RetryEvent.RetryNumber` is one-based (`1` before the first retry) |
+| `OnRetryArguments.AttemptNumber` is zero-based (`0` before the first retry) | `RetryEvent.AttemptNumber` is zero-based (`0` before the first retry) |
 
 Polly's default predicate handles every exception except `OperationCanceledException`. Kevlar also
 lets execution-rejection exceptions and fatal runtime exceptions propagate by default. Use an
@@ -734,7 +734,7 @@ Jitter formulas are not interchangeable. Polly v8 `UseJitter` adds ±25% for con
 backoff, but uses `DecorrelatedJitterBackoffV2` for exponential backoff. Kevlar `Jitter.Equal`
 draws 50–150% of the calculated delay, while `Jitter.Decorrelated` uses the AWS-style
 `random(base, previous × 3)` formula. For an exact port, precompute the Polly delays and index them
-from Kevlar's one-based retry number:
+from the one-based attempt parameter passed to `Backoff.Custom`:
 
 ```csharp
 var pollyDelays = new[]
@@ -743,7 +743,7 @@ var pollyDelays = new[]
     TimeSpan.FromMilliseconds(310),
     TimeSpan.FromMilliseconds(480),
 };
-var exactPollyBackoff = Backoff.Custom(retryNumber => pollyDelays[retryNumber - 1]);
+var exactPollyBackoff = Backoff.Custom(attemptNumber => pollyDelays[attemptNumber - 1]);
 ```
 
 For example, this v7 shape:

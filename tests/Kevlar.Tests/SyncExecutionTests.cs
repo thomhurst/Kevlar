@@ -186,10 +186,10 @@ public class SyncExecutionTests
             options.OnRetry = retry =>
             {
                 retriesObserved++;
-                return retry.RetryNumber switch
+                return retry.AttemptNumber switch
                 {
-                    1 => default,
-                    2 => ValueTask.CompletedTask,
+                    0 => default,
+                    1 => ValueTask.CompletedTask,
                     _ => new ValueTask(Task.CompletedTask),
                 };
             };

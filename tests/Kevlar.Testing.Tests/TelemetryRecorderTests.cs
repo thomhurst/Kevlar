@@ -119,8 +119,7 @@ public class TelemetryRecorderTests
         var records = recorder.Callbacks;
         await Assert.That(records.Select(record => record.Kind)
             .SequenceEqual([CallbackKind.Retry, CallbackKind.Fallback])).IsTrue();
-        await Assert.That(records[0].RetryNumber).IsEqualTo(1);
-        await Assert.That(records[0].AttemptNumber).IsNull();
+        await Assert.That(records[0].AttemptNumber).IsEqualTo(0);
         await Assert.That(records[0].Result).IsEqualTo(-1);
         await Assert.That(records[0].ShieldName).IsEqualTo("typed");
         await Assert.That(records[1].Result).IsEqualTo(-2);
@@ -223,8 +222,7 @@ public class TelemetryRecorderTests
         await Assert.That(records[0].ShieldName).IsEqualTo("timeout");
         await Assert.That(records[0].Timeout).IsEqualTo(TimeSpan.FromMilliseconds(1));
         await Assert.That(records[1].ShieldName).IsEqualTo("hedge");
-        await Assert.That(records[1].AttemptNumber).IsEqualTo(2);
-        await Assert.That(records[1].RetryNumber).IsNull();
+        await Assert.That(records[1].AttemptNumber).IsEqualTo(1);
         await Assert.That(records[2].From).IsEqualTo(CircuitState.Closed);
         await Assert.That(records[2].To).IsEqualTo(CircuitState.Open);
         await Assert.That(records[2].Exception).IsTypeOf<ApplicationException>();

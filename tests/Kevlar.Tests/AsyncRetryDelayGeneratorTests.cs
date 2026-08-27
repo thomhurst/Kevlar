@@ -13,12 +13,12 @@ public class AsyncRetryDelayGeneratorTests
             options.Backoff = Backoff.Constant(TimeSpan.FromHours(1));
             options.DelayGenerator = retry =>
             {
-                order.Add($"generator:{retry.RetryNumber}:{retry.Delay.TotalHours}");
+                order.Add($"generator:{retry.AttemptNumber}:{retry.Delay.TotalHours}");
                 return new ValueTask<TimeSpan?>(TimeSpan.Zero);
             };
             options.OnRetry = retry =>
             {
-                order.Add($"hook:{retry.RetryNumber}:{retry.Delay.TotalSeconds}");
+                order.Add($"hook:{retry.AttemptNumber}:{retry.Delay.TotalSeconds}");
                 return default;
             };
         });
@@ -33,7 +33,7 @@ public class AsyncRetryDelayGeneratorTests
 
         await Assert.That(result).IsEqualTo(42);
         await Assert.That(order).IsEquivalentTo(
-            ["attempt:1", "generator:1:1", "hook:1:0", "attempt:2"],
+            ["attempt:1", "generator:0:1", "hook:0:0", "attempt:2"],
             TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
 
@@ -277,7 +277,7 @@ public class AsyncRetryDelayGeneratorTests
                 {
                     lock (events)
                     {
-                        events.Add((retry.RetryNumber, retry.Outcome.Result));
+                        events.Add((retry.AttemptNumber, retry.Outcome.Result));
                     }
 
                     return new ValueTask<TimeSpan?>(TimeSpan.Zero);
@@ -294,7 +294,7 @@ public class AsyncRetryDelayGeneratorTests
         await Task.WhenAll(executions);
 
         await Assert.That(events.Count).IsEqualTo(executionCount);
-        await Assert.That(events.All(retry => retry == (1, -1))).IsTrue();
+        await Assert.That(events.All(retry => retry == (0, -1))).IsTrue();
     }
 
     [Test]

@@ -5,7 +5,7 @@ items:
   id: HandlingEvent`1
   parent: Kevlar
   children:
-  - Kevlar.HandlingEvent`1.Attempt
+  - Kevlar.HandlingEvent`1.AttemptNumber
   - Kevlar.HandlingEvent`1.Context
   - Kevlar.HandlingEvent`1.Outcome
   - Kevlar.HandlingEvent`1.StrategyIndex
@@ -87,16 +87,16 @@ items:
   overload: Kevlar.HandlingEvent`1.Context*
   nameWithType.vb: HandlingEvent(Of TResult).Context
   fullName.vb: Kevlar.HandlingEvent(Of TResult).Context
-- uid: Kevlar.HandlingEvent`1.Attempt
-  commentId: P:Kevlar.HandlingEvent`1.Attempt
-  id: Attempt
+- uid: Kevlar.HandlingEvent`1.AttemptNumber
+  commentId: P:Kevlar.HandlingEvent`1.AttemptNumber
+  id: AttemptNumber
   parent: Kevlar.HandlingEvent`1
   langs:
   - csharp
   - vb
-  name: Attempt
-  nameWithType: HandlingEvent<TResult>.Attempt
-  fullName: Kevlar.HandlingEvent<TResult>.Attempt
+  name: AttemptNumber
+  nameWithType: HandlingEvent<TResult>.AttemptNumber
+  fullName: Kevlar.HandlingEvent<TResult>.AttemptNumber
   type: Property
   assemblies:
   - Kevlar
@@ -104,14 +104,14 @@ items:
   summary: The zero-based attempt number for retry and hedging; zero for other strategies.
   example: []
   syntax:
-    content: public int Attempt { get; }
+    content: public int AttemptNumber { get; }
     parameters: []
     return:
       type: System.Int32
-    content.vb: Public ReadOnly Property Attempt As Integer
-  overload: Kevlar.HandlingEvent`1.Attempt*
-  nameWithType.vb: HandlingEvent(Of TResult).Attempt
-  fullName.vb: Kevlar.HandlingEvent(Of TResult).Attempt
+    content.vb: Public ReadOnly Property AttemptNumber As Integer
+  overload: Kevlar.HandlingEvent`1.AttemptNumber*
+  nameWithType.vb: HandlingEvent(Of TResult).AttemptNumber
+  fullName.vb: Kevlar.HandlingEvent(Of TResult).AttemptNumber
 - uid: Kevlar.HandlingEvent`1.StrategyIndex
   commentId: P:Kevlar.HandlingEvent`1.StrategyIndex
   id: StrategyIndex
@@ -446,15 +446,15 @@ references:
   name: KevlarContext
   nameWithType: KevlarContext
   fullName: Kevlar.KevlarContext
-- uid: Kevlar.HandlingEvent`1.Attempt*
-  commentId: Overload:Kevlar.HandlingEvent`1.Attempt
+- uid: Kevlar.HandlingEvent`1.AttemptNumber*
+  commentId: Overload:Kevlar.HandlingEvent`1.AttemptNumber
   isExternal: true
-  href: Kevlar.HandlingEvent-1.html#Kevlar_HandlingEvent_1_Attempt
-  name: Attempt
-  nameWithType: HandlingEvent<TResult>.Attempt
-  fullName: Kevlar.HandlingEvent<TResult>.Attempt
-  nameWithType.vb: HandlingEvent(Of TResult).Attempt
-  fullName.vb: Kevlar.HandlingEvent(Of TResult).Attempt
+  href: Kevlar.HandlingEvent-1.html#Kevlar_HandlingEvent_1_AttemptNumber
+  name: AttemptNumber
+  nameWithType: HandlingEvent<TResult>.AttemptNumber
+  fullName: Kevlar.HandlingEvent<TResult>.AttemptNumber
+  nameWithType.vb: HandlingEvent(Of TResult).AttemptNumber
+  fullName.vb: Kevlar.HandlingEvent(Of TResult).AttemptNumber
 - uid: System.Int32
   commentId: T:System.Int32
   parent: System

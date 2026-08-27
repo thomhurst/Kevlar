@@ -4,11 +4,11 @@ namespace Kevlar;
 /// <typeparam name="TResult">The execution result type.</typeparam>
 public readonly struct HandlingEvent<TResult>
 {
-    internal HandlingEvent(Outcome<TResult> outcome, KevlarContext context, int attempt, int strategyIndex)
+    internal HandlingEvent(Outcome<TResult> outcome, KevlarContext context, int attemptNumber, int strategyIndex)
     {
         Outcome = outcome;
         Context = context;
-        Attempt = attempt;
+        AttemptNumber = attemptNumber;
         StrategyIndex = strategyIndex;
     }
 
@@ -19,7 +19,7 @@ public readonly struct HandlingEvent<TResult>
     public KevlarContext Context { get; }
 
     /// <summary>The zero-based attempt number for retry and hedging; zero for other strategies.</summary>
-    public int Attempt { get; }
+    public int AttemptNumber { get; }
 
     /// <summary>The zero-based index of the strategy evaluating the outcome.</summary>
     public int StrategyIndex { get; }
