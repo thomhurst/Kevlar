@@ -1,6 +1,7 @@
 namespace Kevlar.Extensions.Http;
 
 /// <summary>Configures alternate authorities for retry and hedge attempts.</summary>
+/// <remarks>The endpoint list and scalar values are snapshotted with the handler options.</remarks>
 public sealed class HttpEndpointRoutingOptions
 {
     /// <summary>The available endpoint authorities. At least one is required when routing is enabled.</summary>

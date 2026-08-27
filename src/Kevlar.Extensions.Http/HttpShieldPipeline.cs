@@ -11,13 +11,18 @@ internal sealed class HttpShieldPipeline
         ShieldHttpHandlerOptions options)
     {
         Policy = policy ?? throw new ArgumentNullException(nameof(policy));
-        Options = options ?? throw new ArgumentNullException(nameof(options));
-        ValidateOptions(options);
+        if (options is null)
+        {
+            throw new ArgumentNullException(nameof(options));
+        }
+
+        Options = new HttpShieldPipelineOptions(options);
+        ValidateOptions(Options);
     }
 
     public Shield<HttpResponseMessage> Policy { get; }
 
-    public ShieldHttpHandlerOptions Options { get; }
+    public HttpShieldPipelineOptions Options { get; }
 
     public Shield<HttpResponseMessage>? GetEndpointShield(
         Uri endpoint,
@@ -91,7 +96,7 @@ internal sealed class HttpShieldPipeline
             .ToArray();
     }
 
-    private static void ValidateOptions(ShieldHttpHandlerOptions options)
+    private static void ValidateOptions(HttpShieldPipelineOptions options)
     {
         if (!Enum.IsDefined(typeof(HttpContentReplayPolicy), options.ContentReplayPolicy))
         {
@@ -113,7 +118,7 @@ internal sealed class HttpShieldPipeline
             throw new ArgumentOutOfRangeException(nameof(options), "The endpoint selection mode is invalid.");
         }
 
-        if (routing.Endpoints.Count == 0)
+        if (routing.Endpoints.Length == 0)
         {
             throw new ArgumentException("Routing requires at least one endpoint.", nameof(options));
         }

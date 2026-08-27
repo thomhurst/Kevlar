@@ -44,6 +44,9 @@ Pipelines stay immutable, allocation-conscious, observable, and explicit about e
 
 ### Changed
 
+- HTTP handler replay and routing options are snapshotted when a pipeline is registered or created.
+  Later mutations no longer alter live handlers; configuration reload remains the explicit update
+  path and publishes a fresh complete snapshot.
 - `TimeoutExceededException` now derives directly from `KevlarException`. It no longer counts as
   an `ExecutionRejectedException`: fail-fast rejections mean the delegate did not run, while a
   timeout means it ran and exceeded its budget.

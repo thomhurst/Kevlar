@@ -1,6 +1,10 @@
 namespace Kevlar.Extensions.Http;
 
 /// <summary>Configures safe request replay and optional endpoint routing.</summary>
+/// <remarks>
+/// Values are snapshotted when the handler pipeline is registered or created. Later mutations do
+/// not reconfigure that pipeline; use a configuration-backed reloading registration for updates.
+/// </remarks>
 public sealed class ShieldHttpHandlerOptions
 {
     /// <summary>The request-content replay policy. The default never buffers caller content.</summary>

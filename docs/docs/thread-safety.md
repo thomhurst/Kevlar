@@ -24,10 +24,12 @@ Options and configuration definitions are mutable setup objects. Do not mutate o
 instance concurrently. Fluent factories read and validate them while building a strategy; later
 changes do not reconfigure an already-built shield.
 
-HTTP handler options are the exception: `ShieldDelegatingHandler(shield, options)` and the
-`IHttpClientBuilder.AddShield(...)` options overloads retain the exact `ShieldHttpHandlerOptions`
-instance supplied directly or by the options factory. Treat it as immutable after handoff;
-mutating it can change live replay or routing behavior, and racing mutations are unsafe.
+HTTP handler options follow the same snapshot rule. `ShieldDelegatingHandler(shield, options)`
+copies replay settings, routing settings, delegates, and the endpoint list when it is created. The
+direct `IHttpClientBuilder.AddShield(shield, options)` overload snapshots at registration; an
+options factory is read once for each handler pipeline it creates. Later mutations do not affect an
+existing pipeline. Configuration-backed standard registrations publish a fresh complete snapshot
+after a valid reload.
 
 The following public mutable types follow that rule:
 
