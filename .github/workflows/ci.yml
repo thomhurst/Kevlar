@@ -261,7 +261,10 @@ jobs:
         shell: pwsh
         run: |
           ./scripts/Verify-ApiDocs.ps1
-          $apiChanges = @(git status --porcelain -- docs/api)
+          $apiChanges = @(
+            git diff HEAD --name-status -- docs/api
+            git ls-files --others --exclude-standard -- docs/api
+          )
           if ($apiChanges.Count -gt 0) {
             $apiChanges | Write-Host
             throw 'Generated API metadata is stale.'
