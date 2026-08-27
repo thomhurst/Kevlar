@@ -613,18 +613,69 @@ public class HttpConfigurationReloadTests
     }
 
     [Test]
-    public async Task Handler_Rotation_Creates_Fresh_State_And_Service_Configuration()
+    [Arguments(SharedRegistrationKind.ShieldFactory)]
+    [Arguments(SharedRegistrationKind.ShieldAndOptionsFactories)]
+    [Arguments(SharedRegistrationKind.StandardServiceProvider)]
+    [Arguments(SharedRegistrationKind.StandardConfiguration)]
+    [Arguments(SharedRegistrationKind.HedgeConfiguration)]
+    [NotInParallel]
+    public async Task Handler_Rotation_Reuses_Service_Created_Pipeline(
+        SharedRegistrationKind registrationKind)
     {
-        var configuration = BuildConfiguration(("Retry:MaxRetries", "0"));
+        var configuration = BuildConfiguration(
+            ("Retry:MaxRetries", "0"),
+            ("Routing:Endpoints:0:Uri", "https://example.test"));
         var configurations = 0;
+        var handlerOptionFactories = 0;
+        var handlers = 0;
         var services = new ServiceCollection();
-        services.AddHttpClient("client")
+        var builder = services.AddHttpClient("client")
             .SetHandlerLifetime(TimeSpan.FromSeconds(1))
-            .ConfigurePrimaryHttpMessageHandler(() => new FuncHandler((_, _) =>
-                Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK))))
-            .AddStandardShield(
-                configuration,
-                (_, _) => Interlocked.Increment(ref configurations));
+            .ConfigurePrimaryHttpMessageHandler(() =>
+            {
+                Interlocked.Increment(ref handlers);
+                return new FuncHandler((_, _) =>
+                    Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)));
+            });
+        switch (registrationKind)
+        {
+            case SharedRegistrationKind.ShieldFactory:
+                builder.AddShield(_ =>
+                {
+                    Interlocked.Increment(ref configurations);
+                    return Shield<HttpResponseMessage>.Empty;
+                });
+                break;
+            case SharedRegistrationKind.ShieldAndOptionsFactories:
+                builder.AddShield(
+                    _ =>
+                    {
+                        Interlocked.Increment(ref configurations);
+                        return Shield<HttpResponseMessage>.Empty;
+                    },
+                    _ =>
+                    {
+                        Interlocked.Increment(ref handlerOptionFactories);
+                        return new ShieldHttpHandlerOptions();
+                    });
+                break;
+            case SharedRegistrationKind.StandardServiceProvider:
+                builder.AddStandardShield((_, _) => Interlocked.Increment(ref configurations));
+                break;
+            case SharedRegistrationKind.StandardConfiguration:
+                builder.AddStandardShield(
+                    configuration,
+                    (_, _) => Interlocked.Increment(ref configurations));
+                break;
+            case SharedRegistrationKind.HedgeConfiguration:
+                builder.AddStandardHedgeShield(
+                    configuration,
+                    (_, _) => Interlocked.Increment(ref configurations));
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(registrationKind));
+        }
+
         using var provider = services.BuildServiceProvider();
         var factory = provider.GetRequiredService<IHttpClientFactory>();
 
@@ -634,14 +685,262 @@ public class HttpConfigurationReloadTests
         }
 
         var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
-        while (Volatile.Read(ref configurations) < 2 && DateTime.UtcNow < deadline)
+        while (Volatile.Read(ref handlers) < 2 && DateTime.UtcNow < deadline)
         {
             await Task.Delay(TimeSpan.FromMilliseconds(100));
             using var rotated = factory.CreateClient("client");
             using var response = await rotated.GetAsync("https://example.test/");
         }
 
-        await Assert.That(Volatile.Read(ref configurations)).IsGreaterThanOrEqualTo(2);
+        await Assert.That(Volatile.Read(ref handlers)).IsGreaterThanOrEqualTo(2);
+        await Assert.That(Volatile.Read(ref configurations)).IsEqualTo(1);
+        await Assert.That(Volatile.Read(ref handlerOptionFactories)).IsEqualTo(
+            registrationKind is SharedRegistrationKind.ShieldAndOptionsFactories ? 1 : 0);
+
+        if (registrationKind is SharedRegistrationKind.StandardConfiguration
+            or SharedRegistrationKind.HedgeConfiguration)
+        {
+            configuration.Reload();
+            await Assert.That(Volatile.Read(ref configurations)).IsEqualTo(2);
+
+            provider.Dispose();
+            configuration.Reload();
+            await Assert.That(Volatile.Read(ref configurations)).IsEqualTo(2);
+        }
+    }
+
+    [Test]
+    [NotInParallel]
+    public async Task Handler_Rotation_Preserves_An_Open_Circuit_And_Monitor()
+    {
+        var monitor = new CircuitBreakerMonitor();
+        var configurations = 0;
+        var handlers = 0;
+        var transportCalls = 0;
+        var services = new ServiceCollection();
+        services.AddHttpClient("client")
+            .SetHandlerLifetime(TimeSpan.FromSeconds(1))
+            .ConfigurePrimaryHttpMessageHandler(() =>
+            {
+                Interlocked.Increment(ref handlers);
+                return new FuncHandler((_, _) =>
+                {
+                    Interlocked.Increment(ref transportCalls);
+                    return Task.FromResult(new HttpResponseMessage(HttpStatusCode.InternalServerError));
+                });
+            })
+            .AddStandardShield((_, options) =>
+            {
+                Interlocked.Increment(ref configurations);
+                options.Retry.MaxRetries = 0;
+                options.CircuitBreaker.ConsecutiveFailures = 1;
+                options.CircuitBreaker.FailureRatio = null;
+                options.CircuitBreaker.BreakDuration = TimeSpan.FromDays(1);
+                options.CircuitBreaker.Monitor = monitor;
+            });
+        using var provider = services.BuildServiceProvider();
+        var factory = provider.GetRequiredService<IHttpClientFactory>();
+
+        using (var first = factory.CreateClient("client"))
+        using (await first.GetAsync("https://example.test/"))
+        {
+        }
+
+        HttpClient? rotated = null;
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
+        while (Volatile.Read(ref handlers) < 2 && DateTime.UtcNow < deadline)
+        {
+            rotated?.Dispose();
+            await Task.Delay(TimeSpan.FromMilliseconds(100));
+            rotated = factory.CreateClient("client");
+        }
+
+        using (rotated)
+        {
+            await Assert.That(async () =>
+                    await rotated!.GetAsync("https://example.test/"))
+                .Throws<CircuitOpenException>();
+        }
+
+        await Assert.That(Volatile.Read(ref handlers)).IsGreaterThanOrEqualTo(2);
+        await Assert.That(Volatile.Read(ref configurations)).IsEqualTo(1);
+        await Assert.That(Volatile.Read(ref transportCalls)).IsEqualTo(1);
+        await Assert.That(monitor.State).IsEqualTo(CircuitState.Open);
+    }
+
+    [Test]
+    [NotInParallel]
+    public async Task Handler_Rotation_Preserves_Standard_Hedge_Authority_State()
+    {
+        var handlers = 0;
+        var transportCalls = 0;
+        var services = new ServiceCollection();
+        services.AddHttpClient("client")
+            .SetHandlerLifetime(TimeSpan.FromSeconds(1))
+            .ConfigurePrimaryHttpMessageHandler(() =>
+            {
+                Interlocked.Increment(ref handlers);
+                return new FuncHandler((_, _) =>
+                {
+                    Interlocked.Increment(ref transportCalls);
+                    return Task.FromResult(new HttpResponseMessage(HttpStatusCode.InternalServerError));
+                });
+            })
+            .AddStandardHedgeShield(options =>
+            {
+                options.Routing.Endpoints.Add(new HttpEndpoint(new Uri("https://example.test")));
+                options.CircuitBreaker.ConsecutiveFailures = 1;
+                options.CircuitBreaker.FailureRatio = null;
+                options.CircuitBreaker.BreakDuration = TimeSpan.FromDays(1);
+            });
+        using var provider = services.BuildServiceProvider();
+        var factory = provider.GetRequiredService<IHttpClientFactory>();
+
+        using (var first = factory.CreateClient("client"))
+        {
+            await Assert.That(async () =>
+                    await first.GetAsync("https://example.test/"))
+                .Throws<CircuitOpenException>();
+        }
+
+        HttpClient? rotated = null;
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
+        while (Volatile.Read(ref handlers) < 2 && DateTime.UtcNow < deadline)
+        {
+            rotated?.Dispose();
+            await Task.Delay(TimeSpan.FromMilliseconds(100));
+            rotated = factory.CreateClient("client");
+        }
+
+        using (rotated)
+        {
+            await Assert.That(async () =>
+                    await rotated!.GetAsync("https://example.test/"))
+                .Throws<CircuitOpenException>();
+        }
+
+        await Assert.That(Volatile.Read(ref handlers)).IsGreaterThanOrEqualTo(2);
+        await Assert.That(Volatile.Read(ref transportCalls)).IsEqualTo(1);
+    }
+
+    [Test]
+    [NotInParallel]
+    public async Task Handler_Rotation_Preserves_Standard_Options_Routing_State()
+    {
+        var handlers = 0;
+        var transportCalls = 0;
+        var services = new ServiceCollection();
+        services.AddHttpClient("client")
+            .SetHandlerLifetime(TimeSpan.FromSeconds(1))
+            .ConfigurePrimaryHttpMessageHandler(() =>
+            {
+                Interlocked.Increment(ref handlers);
+                return new FuncHandler((_, _) =>
+                {
+                    Interlocked.Increment(ref transportCalls);
+                    return Task.FromResult(new HttpResponseMessage(HttpStatusCode.InternalServerError));
+                });
+            })
+            .AddStandardShield(options =>
+            {
+                options.Retry.MaxRetries = 0;
+                options.Handler.Routing = new HttpEndpointRoutingOptions
+                {
+                    ShieldFactory = static _ => HttpShield.WhenTransient()
+                        .CircuitBreaker(
+                            consecutiveFailures: 1,
+                            breakDuration: TimeSpan.FromDays(1)),
+                };
+                options.Handler.Routing.Endpoints.Add(
+                    new HttpEndpoint(new Uri("https://example.test")));
+            });
+        using var provider = services.BuildServiceProvider();
+        var factory = provider.GetRequiredService<IHttpClientFactory>();
+
+        using (var first = factory.CreateClient("client"))
+        using (await first.GetAsync("https://example.test/"))
+        {
+        }
+
+        HttpClient? rotated = null;
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
+        while (Volatile.Read(ref handlers) < 2 && DateTime.UtcNow < deadline)
+        {
+            rotated?.Dispose();
+            await Task.Delay(TimeSpan.FromMilliseconds(100));
+            rotated = factory.CreateClient("client");
+        }
+
+        using (rotated)
+        {
+            await Assert.That(async () =>
+                    await rotated!.GetAsync("https://example.test/"))
+                .Throws<CircuitOpenException>();
+        }
+
+        await Assert.That(Volatile.Read(ref handlers)).IsGreaterThanOrEqualTo(2);
+        await Assert.That(Volatile.Read(ref transportCalls)).IsEqualTo(1);
+    }
+
+    [Test]
+    [NotInParallel]
+    public async Task Handler_Rotation_Preserves_Fixed_Shield_Routing_State()
+    {
+        var handlers = 0;
+        var transportCalls = 0;
+        var routing = new HttpEndpointRoutingOptions
+        {
+            ShieldFactory = static _ => HttpShield.WhenTransient()
+                .CircuitBreaker(
+                    consecutiveFailures: 1,
+                    breakDuration: TimeSpan.FromDays(1)),
+        };
+        routing.Endpoints.Add(new HttpEndpoint(new Uri("https://example.test")));
+        var options = new ShieldHttpHandlerOptions { Routing = routing };
+        var services = new ServiceCollection();
+        services.AddScoped<ApplicationProviderDecorator>();
+        services.AddScoped<IShieldDecorator>(serviceProvider =>
+            serviceProvider.GetRequiredService<ApplicationProviderDecorator>());
+        services.AddHttpClient("client")
+            .SetHandlerLifetime(TimeSpan.FromSeconds(1))
+            .ConfigurePrimaryHttpMessageHandler(() =>
+            {
+                Interlocked.Increment(ref handlers);
+                return new FuncHandler((_, _) =>
+                {
+                    Interlocked.Increment(ref transportCalls);
+                    return Task.FromResult(new HttpResponseMessage(HttpStatusCode.InternalServerError));
+                });
+            })
+            .AddShield(HttpShield.WhenTransient().Retry(0, Backoff.None), options);
+        using var provider = services.BuildServiceProvider();
+        var decorator = provider.GetRequiredService<ApplicationProviderDecorator>();
+        var factory = provider.GetRequiredService<IHttpClientFactory>();
+
+        using (var first = factory.CreateClient("client"))
+        using (await first.GetAsync("https://example.test/"))
+        {
+        }
+
+        HttpClient? rotated = null;
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
+        while (Volatile.Read(ref handlers) < 2 && DateTime.UtcNow < deadline)
+        {
+            rotated?.Dispose();
+            await Task.Delay(TimeSpan.FromMilliseconds(100));
+            rotated = factory.CreateClient("client");
+        }
+
+        using (rotated)
+        {
+            await Assert.That(async () =>
+                    await rotated!.GetAsync("https://example.test/"))
+                .Throws<CircuitOpenException>();
+        }
+
+        await Assert.That(Volatile.Read(ref handlers)).IsGreaterThanOrEqualTo(2);
+        await Assert.That(Volatile.Read(ref transportCalls)).IsEqualTo(1);
+        await Assert.That(decorator.Count).IsEqualTo(2);
     }
 
     [Test]
@@ -932,9 +1231,37 @@ public class HttpConfigurationReloadTests
 
     private sealed record RetryOverride(int MaxRetries);
 
+    public enum SharedRegistrationKind
+    {
+        ShieldFactory,
+        ShieldAndOptionsFactories,
+        StandardServiceProvider,
+        StandardConfiguration,
+        HedgeConfiguration,
+    }
+
     public sealed class TypedClient(HttpClient client)
     {
         public Task<HttpResponseMessage> GetAsync() => client.GetAsync("https://example.test/");
+    }
+
+    private sealed class ApplicationProviderDecorator : IShieldDecorator
+    {
+        private int _count;
+
+        public int Count => Volatile.Read(ref _count);
+
+        public Shield Decorate(Shield shield, string? name)
+        {
+            Interlocked.Increment(ref _count);
+            return shield;
+        }
+
+        public Shield<TResult> Decorate<TResult>(Shield<TResult> shield, string? name)
+        {
+            Interlocked.Increment(ref _count);
+            return shield;
+        }
     }
 
     private sealed class FuncHandler(

@@ -124,7 +124,7 @@ items:
   assemblies:
   - Kevlar.Extensions.Http
   namespace: Microsoft.Extensions.DependencyInjection
-  summary: Sends this client's requests through a shield built from the service provider.
+  summary: Sends this client's requests through one shared shield built from the application service provider.
   example: []
   syntax:
     content: public static IHttpClientBuilder AddShield(this IHttpClientBuilder builder, Func<IServiceProvider, Shield<HttpResponseMessage>> shieldFactory)
@@ -221,7 +221,7 @@ items:
   assemblies:
   - Kevlar.Extensions.Http
   namespace: Microsoft.Extensions.DependencyInjection
-  summary: Sends this client's requests through service-provider-created shield and handler options.
+  summary: Sends this client's requests through shared service-provider-created shield and handler options.
   example: []
   syntax:
     content: public static IHttpClientBuilder AddShield(this IHttpClientBuilder builder, Func<IServiceProvider, Shield<HttpResponseMessage>> shieldFactory, Func<IServiceProvider, ShieldHttpHandlerOptions> optionsFactory)
@@ -318,9 +318,9 @@ items:
   - Kevlar.Extensions.Http
   namespace: Microsoft.Extensions.DependencyInjection
   summary: >-
-    Configures and adds a standard shield using the handler pipeline's service provider.
+    Configures and adds one shared standard shield using the application service provider.
 
-    Configuration and shield creation run once per handler lifetime.
+    Configuration and shield creation run once for this client registration.
   example: []
   syntax:
     content: public static IHttpClientBuilder AddStandardShield(this IHttpClientBuilder builder, Action<IServiceProvider, StandardHttpShieldOptions> configure)
@@ -390,9 +390,9 @@ items:
   summary: >-
     Adds a reload-aware standard shield bound from configuration, then customized using the
 
-    handler pipeline's service provider. The callback runs for the initial snapshot and every
+    application service provider. The callback runs for the initial snapshot and every reload
 
-    reload after configuration values have been applied.
+    after configuration values have been applied.
   example: []
   syntax:
     content: public static IHttpClientBuilder AddStandardShield(this IHttpClientBuilder builder, IConfiguration configuration, Action<IServiceProvider, StandardHttpShieldOptions> configure, Action<Exception>? onReloadFailure = null)
@@ -428,7 +428,7 @@ items:
   - Kevlar.Extensions.Http
   namespace: Microsoft.Extensions.DependencyInjection
   summary: >-
-    Adds a standard pipeline that hedges against the request's authority: total timeout,
+    Adds one shared standard pipeline that hedges against the request's authority: total timeout,
 
     hedging, per-authority concurrency limit and circuit breaker, then per-attempt timeout.
   example: []
@@ -457,7 +457,7 @@ items:
   - Kevlar.Extensions.Http
   namespace: Microsoft.Extensions.DependencyInjection
   summary: >-
-    Adds a standard pipeline with optional endpoint routing: total timeout, hedging,
+    Adds one shared standard pipeline with optional endpoint routing: total timeout, hedging,
 
     per-authority concurrency limit and circuit breaker, then per-attempt timeout.
   example: []
@@ -529,7 +529,7 @@ items:
   summary: >-
     Adds a reload-aware standard hedging shield bound from configuration, then customized
 
-    using the handler pipeline's service provider. The callback runs for every snapshot after
+    using the application service provider. The callback runs for every snapshot after
 
     configuration values have been applied.
   example: []

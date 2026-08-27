@@ -11,6 +11,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
 {
     private readonly HttpShieldPipeline _pipeline;
     private readonly ReloadingHttpShieldPipeline? _reloadingPipeline;
+    private readonly bool _ownsReloadingPipeline;
     private readonly Func<HttpRequestMessage, ValueTask<Shield<HttpResponseMessage>>>? _shieldSelector;
     private readonly Func<Shield<HttpResponseMessage>, Shield<HttpResponseMessage>>? _requestShieldDecorator;
     private int _unsafeMethodSuppressionReported;
@@ -35,6 +36,15 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         Func<Shield<HttpResponseMessage>, Shield<HttpResponseMessage>> requestShieldDecorator)
         : this(shield, options)
     {
+        _requestShieldDecorator = requestShieldDecorator
+            ?? throw new ArgumentNullException(nameof(requestShieldDecorator));
+    }
+
+    internal ShieldDelegatingHandler(
+        HttpShieldPipeline pipeline,
+        Func<Shield<HttpResponseMessage>, Shield<HttpResponseMessage>> requestShieldDecorator)
+    {
+        _pipeline = pipeline ?? throw new ArgumentNullException(nameof(pipeline));
         _requestShieldDecorator = requestShieldDecorator
             ?? throw new ArgumentNullException(nameof(requestShieldDecorator));
     }
@@ -75,19 +85,22 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
 
     private ShieldDelegatingHandler(
         ReloadingHttpShieldPipeline reloadingPipeline,
-        Func<Shield<HttpResponseMessage>, Shield<HttpResponseMessage>> requestShieldDecorator)
+        Func<Shield<HttpResponseMessage>, Shield<HttpResponseMessage>> requestShieldDecorator,
+        bool ownsReloadingPipeline)
     {
         _reloadingPipeline = reloadingPipeline
             ?? throw new ArgumentNullException(nameof(reloadingPipeline));
         _requestShieldDecorator = requestShieldDecorator
             ?? throw new ArgumentNullException(nameof(requestShieldDecorator));
+        _ownsReloadingPipeline = ownsReloadingPipeline;
         _pipeline = null!;
     }
 
     internal static ShieldDelegatingHandler CreateReloading(
         ReloadingHttpShieldPipeline reloadingPipeline,
-        Func<Shield<HttpResponseMessage>, Shield<HttpResponseMessage>> requestShieldDecorator) =>
-        new(reloadingPipeline, requestShieldDecorator);
+        Func<Shield<HttpResponseMessage>, Shield<HttpResponseMessage>> requestShieldDecorator,
+        bool ownsReloadingPipeline = true) =>
+        new(reloadingPipeline, requestShieldDecorator, ownsReloadingPipeline);
 
     /// <inheritdoc />
     protected override async Task<HttpResponseMessage> SendAsync(
@@ -276,7 +289,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
     /// <inheritdoc />
     protected override void Dispose(bool disposing)
     {
-        if (disposing)
+        if (disposing && _ownsReloadingPipeline)
         {
             _reloadingPipeline?.Dispose();
         }

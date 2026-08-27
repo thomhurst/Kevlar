@@ -3,6 +3,7 @@ using Kevlar.Extensions.Http;
 using Kevlar.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -53,14 +54,24 @@ public static class ShieldHttpClientBuilderExtensions
         }
 
         var optionsSnapshot = Snapshot(options);
+        var registration = RegisterSharedPipeline(builder);
         return builder.AddHttpMessageHandler(services =>
-            new ShieldDelegatingHandler(
-                Decorate(services, shield, builder.Name),
-                optionsSnapshot,
-                CreateDecorator(services, builder.Name)));
+        {
+            var registry = services.GetRequiredService<HttpShieldPipelineRegistry>();
+            var pipeline = registry.GetOrAdd(
+                registration,
+                () => new HttpShieldPipeline(
+                    Decorate(registry.Services, shield, builder.Name),
+                    optionsSnapshot));
+            return new ShieldDelegatingHandler(
+                pipeline,
+                CreateDecorator(registry.Services, builder.Name));
+        });
     }
 
-    /// <summary>Sends this client's requests through a shield built from the service provider.</summary>
+    /// <summary>
+    /// Sends this client's requests through one shared shield built from the application service provider.
+    /// </summary>
     public static IHttpClientBuilder AddShield(this IHttpClientBuilder builder, Func<IServiceProvider, Shield<HttpResponseMessage>> shieldFactory)
     {
         if (builder is null)
@@ -73,10 +84,22 @@ public static class ShieldHttpClientBuilderExtensions
             throw new ArgumentNullException(nameof(shieldFactory));
         }
 
-        return builder.AddHttpMessageHandler(services => new ShieldDelegatingHandler(
-            Decorate(services, shieldFactory(services), builder.Name),
-            new ShieldHttpHandlerOptions(),
-            CreateDecorator(services, builder.Name)));
+        var registration = RegisterSharedPipeline(builder);
+        return builder.AddHttpMessageHandler(services =>
+        {
+            var registry = services.GetRequiredService<HttpShieldPipelineRegistry>();
+            var pipeline = registry.GetOrAdd(
+                registration,
+                () => new HttpShieldPipeline(
+                    Decorate(
+                        registry.Services,
+                        shieldFactory(registry.Services),
+                        builder.Name),
+                    new ShieldHttpHandlerOptions()));
+            return new ShieldDelegatingHandler(
+                pipeline,
+                CreateDecorator(registry.Services, builder.Name));
+        });
     }
 
     /// <summary>Selects one shield for each request using the request and service provider.</summary>
@@ -134,7 +157,9 @@ public static class ShieldHttpClientBuilderExtensions
                 CreateDecorator(services, builder.Name)));
     }
 
-    /// <summary>Sends this client's requests through service-provider-created shield and handler options.</summary>
+    /// <summary>
+    /// Sends this client's requests through shared service-provider-created shield and handler options.
+    /// </summary>
     public static IHttpClientBuilder AddShield(
         this IHttpClientBuilder builder,
         Func<IServiceProvider, Shield<HttpResponseMessage>> shieldFactory,
@@ -155,11 +180,22 @@ public static class ShieldHttpClientBuilderExtensions
             throw new ArgumentNullException(nameof(optionsFactory));
         }
 
+        var registration = RegisterSharedPipeline(builder);
         return builder.AddHttpMessageHandler(services =>
-            new ShieldDelegatingHandler(
-                Decorate(services, shieldFactory(services), builder.Name),
-                optionsFactory(services),
-                CreateDecorator(services, builder.Name)));
+        {
+            var registry = services.GetRequiredService<HttpShieldPipelineRegistry>();
+            var pipeline = registry.GetOrAdd(
+                registration,
+                () => new HttpShieldPipeline(
+                    Decorate(
+                        registry.Services,
+                        shieldFactory(registry.Services),
+                        builder.Name),
+                    optionsFactory(registry.Services)));
+            return new ShieldDelegatingHandler(
+                pipeline,
+                CreateDecorator(registry.Services, builder.Name));
+        });
     }
 
     /// <summary>
@@ -191,16 +227,24 @@ public static class ShieldHttpClientBuilderExtensions
         configure(options);
         var shield = HttpShield.Standard(options);
         var handlerOptions = Snapshot(options.Handler);
-        return UseStandardTimeout(builder)
-            .AddHttpMessageHandler(services => new ShieldDelegatingHandler(
-                Decorate(services, shield, builder.Name),
-                handlerOptions,
-                CreateDecorator(services, builder.Name)));
+        var registration = RegisterSharedPipeline(builder);
+        return UseStandardTimeout(builder).AddHttpMessageHandler(services =>
+        {
+            var registry = services.GetRequiredService<HttpShieldPipelineRegistry>();
+            var pipeline = registry.GetOrAdd(
+                registration,
+                () => new HttpShieldPipeline(
+                    Decorate(registry.Services, shield, builder.Name),
+                    handlerOptions));
+            return new ShieldDelegatingHandler(
+                pipeline,
+                CreateDecorator(registry.Services, builder.Name));
+        });
     }
 
     /// <summary>
-    /// Configures and adds a standard shield using the handler pipeline's service provider.
-    /// Configuration and shield creation run once per handler lifetime.
+    /// Configures and adds one shared standard shield using the application service provider.
+    /// Configuration and shield creation run once for this client registration.
     /// </summary>
     public static IHttpClientBuilder AddStandardShield(
         this IHttpClientBuilder builder,
@@ -216,14 +260,26 @@ public static class ShieldHttpClientBuilderExtensions
             throw new ArgumentNullException(nameof(configure));
         }
 
+        var registration = RegisterSharedPipeline(builder);
         return UseStandardTimeout(builder).AddHttpMessageHandler(services =>
         {
-            var options = new StandardHttpShieldOptions();
-            configure(services, options);
+            var registry = services.GetRequiredService<HttpShieldPipelineRegistry>();
+            var pipeline = registry.GetOrAdd(
+                registration,
+                () =>
+                {
+                    var options = new StandardHttpShieldOptions();
+                    configure(registry.Services, options);
+                    return new HttpShieldPipeline(
+                        Decorate(
+                            registry.Services,
+                            HttpShield.Standard(options),
+                            builder.Name),
+                        Snapshot(options.Handler));
+                });
             return new ShieldDelegatingHandler(
-                Decorate(services, HttpShield.Standard(options), builder.Name),
-                Snapshot(options.Handler),
-                CreateDecorator(services, builder.Name));
+                pipeline,
+                CreateDecorator(registry.Services, builder.Name));
         });
     }
 
@@ -243,8 +299,8 @@ public static class ShieldHttpClientBuilderExtensions
 
     /// <summary>
     /// Adds a reload-aware standard shield bound from configuration, then customized using the
-    /// handler pipeline's service provider. The callback runs for the initial snapshot and every
-    /// reload after configuration values have been applied.
+    /// application service provider. The callback runs for the initial snapshot and every reload
+    /// after configuration values have been applied.
     /// </summary>
     public static IHttpClientBuilder AddStandardShield(
         this IHttpClientBuilder builder,
@@ -268,22 +324,35 @@ public static class ShieldHttpClientBuilderExtensions
         }
 
         ValidateStandardConfiguration(configuration);
+        var registration = RegisterSharedPipeline(builder);
         return UseStandardTimeout(builder).AddHttpMessageHandler(services =>
         {
-            HttpShieldPipeline CreatePipeline()
-            {
-                var options = StandardHttpConfigurationBinder.BindStandard(configuration);
-                configure(services, options);
-                return new HttpShieldPipeline(
-                    Decorate(services, HttpShield.Standard(options), builder.Name),
-                    Snapshot(options.Handler));
-            }
+            var registry = services.GetRequiredService<HttpShieldPipelineRegistry>();
+            var reloadingPipeline = registry.GetOrAdd(
+                registration,
+                () =>
+                {
+                    HttpShieldPipeline CreatePipeline()
+                    {
+                        var options = StandardHttpConfigurationBinder.BindStandard(configuration);
+                        configure(registry.Services, options);
+                        return new HttpShieldPipeline(
+                            Decorate(
+                                registry.Services,
+                                HttpShield.Standard(options),
+                                builder.Name),
+                            Snapshot(options.Handler));
+                    }
 
-            return ShieldDelegatingHandler.CreateReloading(new ReloadingHttpShieldPipeline(
-                CreatePipeline,
-                configuration.GetReloadToken,
-                onReloadFailure),
-                CreateDecorator(services, builder.Name));
+                    return new ReloadingHttpShieldPipeline(
+                        CreatePipeline,
+                        configuration.GetReloadToken,
+                        onReloadFailure);
+                });
+            return ShieldDelegatingHandler.CreateReloading(
+                reloadingPipeline,
+                CreateDecorator(registry.Services, builder.Name),
+                ownsReloadingPipeline: false);
         });
     }
 
@@ -325,14 +394,14 @@ public static class ShieldHttpClientBuilderExtensions
     }
 
     /// <summary>
-    /// Adds a standard pipeline that hedges against the request's authority: total timeout,
+    /// Adds one shared standard pipeline that hedges against the request's authority: total timeout,
     /// hedging, per-authority concurrency limit and circuit breaker, then per-attempt timeout.
     /// </summary>
     public static IHttpClientBuilder AddStandardHedgeShield(this IHttpClientBuilder builder) =>
         AddStandardHedgeShield(builder, static _ => { });
 
     /// <summary>
-    /// Adds a standard pipeline with optional endpoint routing: total timeout, hedging,
+    /// Adds one shared standard pipeline with optional endpoint routing: total timeout, hedging,
     /// per-authority concurrency limit and circuit breaker, then per-attempt timeout.
     /// </summary>
     public static IHttpClientBuilder AddStandardHedgeShield(
@@ -353,12 +422,20 @@ public static class ShieldHttpClientBuilderExtensions
         configure(options);
         var shield = CreateHedgeShield(options);
         var handlerOptions = CreateHandlerOptions(options);
+        var registration = RegisterSharedPipeline(builder);
 
         return UseStandardTimeout(builder).AddHttpMessageHandler(services =>
-            new ShieldDelegatingHandler(
-                Decorate(services, shield, builder.Name),
-                handlerOptions,
-                CreateDecorator(services, builder.Name)));
+        {
+            var registry = services.GetRequiredService<HttpShieldPipelineRegistry>();
+            var pipeline = registry.GetOrAdd(
+                registration,
+                () => new HttpShieldPipeline(
+                    Decorate(registry.Services, shield, builder.Name),
+                    handlerOptions));
+            return new ShieldDelegatingHandler(
+                pipeline,
+                CreateDecorator(registry.Services, builder.Name));
+        });
     }
 
     /// <summary>
@@ -377,7 +454,7 @@ public static class ShieldHttpClientBuilderExtensions
 
     /// <summary>
     /// Adds a reload-aware standard hedging shield bound from configuration, then customized
-    /// using the handler pipeline's service provider. The callback runs for every snapshot after
+    /// using the application service provider. The callback runs for every snapshot after
     /// configuration values have been applied.
     /// </summary>
     public static IHttpClientBuilder AddStandardHedgeShield(
@@ -402,22 +479,35 @@ public static class ShieldHttpClientBuilderExtensions
         }
 
         ValidateHedgeConfiguration(configuration);
+        var registration = RegisterSharedPipeline(builder);
         return UseStandardTimeout(builder).AddHttpMessageHandler(services =>
         {
-            HttpShieldPipeline CreatePipeline()
-            {
-                var options = StandardHttpConfigurationBinder.BindHedge(configuration);
-                configure(services, options);
-                return new HttpShieldPipeline(
-                    Decorate(services, CreateHedgeShield(options), builder.Name),
-                    CreateHandlerOptions(options));
-            }
+            var registry = services.GetRequiredService<HttpShieldPipelineRegistry>();
+            var reloadingPipeline = registry.GetOrAdd(
+                registration,
+                () =>
+                {
+                    HttpShieldPipeline CreatePipeline()
+                    {
+                        var options = StandardHttpConfigurationBinder.BindHedge(configuration);
+                        configure(registry.Services, options);
+                        return new HttpShieldPipeline(
+                            Decorate(
+                                registry.Services,
+                                CreateHedgeShield(options),
+                                builder.Name),
+                            CreateHandlerOptions(options));
+                    }
 
-            return ShieldDelegatingHandler.CreateReloading(new ReloadingHttpShieldPipeline(
-                CreatePipeline,
-                configuration.GetReloadToken,
-                onReloadFailure),
-                CreateDecorator(services, builder.Name));
+                    return new ReloadingHttpShieldPipeline(
+                        CreatePipeline,
+                        configuration.GetReloadToken,
+                        onReloadFailure);
+                });
+            return ShieldDelegatingHandler.CreateReloading(
+                reloadingPipeline,
+                CreateDecorator(registry.Services, builder.Name),
+                ownsReloadingPipeline: false);
         });
     }
 
@@ -425,6 +515,12 @@ public static class ShieldHttpClientBuilderExtensions
     {
         var options = StandardHttpConfigurationBinder.BindStandard(configuration);
         _ = new HttpShieldPipeline(HttpShield.Standard(options), Snapshot(options.Handler));
+    }
+
+    private static HttpShieldPipelineRegistration RegisterSharedPipeline(IHttpClientBuilder builder)
+    {
+        builder.Services.TryAddSingleton(static services => new HttpShieldPipelineRegistry(services));
+        return new HttpShieldPipelineRegistration(builder.Name);
     }
 
     private static Shield<TResult> Decorate<TResult>(
