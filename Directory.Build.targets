@@ -5,7 +5,7 @@
           Condition="'$(PinKevlarDependencyVersion)' == 'true'">
     <ItemGroup>
       <_ProjectReferencesWithVersions Update="@(_ProjectReferencesWithVersions)"
-                                      Condition="'%(Filename)' == 'Kevlar'">
+                                      Condition="$([System.String]::Copy('%(Filename)').StartsWith('Kevlar'))">
         <ProjectVersion>[%(_ProjectReferencesWithVersions.ProjectVersion)]</ProjectVersion>
       </_ProjectReferencesWithVersions>
     </ItemGroup>

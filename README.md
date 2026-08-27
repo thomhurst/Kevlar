@@ -24,6 +24,9 @@ Kevlar, you build an immutable `Shield`, reuse it, and use it with ordinary sync
 dotnet add package Kevlar
 ```
 
+Install all coupled `Kevlar.*` packages at the same version. Their exact NuGet dependencies reject
+partial upgrades early; see the [package lockstep policy](https://thomhurst.github.io/Kevlar/docs/support-policy#kevlar-package-lockstep).
+
 ```csharp
 using Kevlar;
 
