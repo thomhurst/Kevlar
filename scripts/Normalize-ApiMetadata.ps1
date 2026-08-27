@@ -91,6 +91,7 @@ function Test-IsLocalReferenceUid([string]$uid)
 {
     return $uid -eq 'Kevlar' -or
         $uid.StartsWith('Kevlar.', [StringComparison]::Ordinal) -or
+        $uid -eq 'Microsoft.Extensions.DependencyInjection' -or
         $uid.StartsWith('Microsoft.Extensions.DependencyInjection.Kevlar', [StringComparison]::Ordinal) -or
         $uid.StartsWith('Microsoft.Extensions.DependencyInjection.Shield', [StringComparison]::Ordinal)
 }
