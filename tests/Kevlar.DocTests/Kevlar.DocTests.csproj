@@ -15,6 +15,9 @@
     <PackageReference Include="Kevlar.Extensions.Logging" VersionOverride="$(KevlarPackageVersion)" />
     <PackageReference Include="Kevlar.Extensions.RateLimiting" VersionOverride="$(KevlarPackageVersion)" />
     <PackageReference Include="Kevlar.Testing" VersionOverride="$(KevlarPackageVersion)" />
+    <PackageReference Include="Google.Protobuf" />
+    <PackageReference Include="Grpc.Net.Client" />
+    <PackageReference Include="Grpc.Tools" PrivateAssets="All" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
@@ -28,6 +31,7 @@
 
   <ItemGroup>
     <Compile Include="$(GeneratedSnippetsPath)" Link="GeneratedSnippets.g.cs" />
+    <Protobuf Include="Protos\orders.proto" GrpcServices="Client" />
   </ItemGroup>
 
 </Project>

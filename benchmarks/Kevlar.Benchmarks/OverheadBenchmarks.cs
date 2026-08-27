@@ -47,7 +47,9 @@ public class OverheadBenchmarks
         PollyEmpty.ExecuteAsync(static (s, _) => new ValueTask<int>(s), _state);
 
     /// <summary>Executes a state-passing no-throw call through an empty Kevlar pipeline.</summary>
-    [BenchmarkCategory("EmptyOutcomeState"), Benchmark(Baseline = true)]
+    [BenchmarkCategory("EmptyOutcomeState"), Benchmark(
+        Baseline = true,
+        Description = "Kevlar empty shield outcome with caller state")]
     public ValueTask<Outcome<int>> Kevlar_EmptyOutcomeState() =>
         KevlarEmpty.ExecuteOutcomeAsync(_state, static (s, _) => new ValueTask<int>(s));
 

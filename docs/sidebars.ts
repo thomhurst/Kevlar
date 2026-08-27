@@ -5,6 +5,8 @@ const sidebars: SidebarsConfig = {
     'intro',
     'getting-started',
     'polly-migration',
+    'glossary',
+    'cookbook',
     'handling-failures',
     'exceptions',
     {

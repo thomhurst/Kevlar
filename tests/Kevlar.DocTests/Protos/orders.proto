@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+option csharp_namespace = "Kevlar.DocTests";
+
+package kevlar.docs;
+
+service Orders {
+  rpc GetOrder (OrderRequest) returns (OrderReply);
+  rpc WatchOrders (OrderRequest) returns (stream OrderReply);
+}
+
+message OrderRequest {
+  int32 id = 1;
+}
+
+message OrderReply {
+  int32 id = 1;
+}

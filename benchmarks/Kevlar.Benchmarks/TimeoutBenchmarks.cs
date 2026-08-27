@@ -39,7 +39,7 @@ public class TimeoutBenchmarks
     [BenchmarkCategory("HappyPath"), Benchmark]
     public ValueTask<int> Polly_HappyPath() => PollyTimeout.ExecuteAsync(static _ => new ValueTask<int>(42));
 
-    [BenchmarkCategory("HappyPath"), Benchmark]
+    [BenchmarkCategory("HappyPath"), Benchmark(Description = "Kevlar timeout with synchronous generator")]
     public ValueTask<int> Kevlar_SynchronousGenerator_HappyPath() =>
         KevlarGeneratedTimeout.ExecuteAsync(static _ => new ValueTask<int>(42));
 
