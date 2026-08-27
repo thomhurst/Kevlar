@@ -448,6 +448,15 @@ foreach ($packageId in $expectedDependencies.Keys)
             $readmeReader.Dispose()
         }
 
+        $packageReadmePath = Join-Path $repositoryRoot "src/$packageId/README.md"
+        if (-not (Test-Path -LiteralPath $packageReadmePath -PathType Leaf))
+        {
+            throw "$packageId has no package-specific README at '$packageReadmePath'."
+        }
+
+        $expectedReadme = Get-Content -LiteralPath $packageReadmePath -Raw
+        Assert-Equal "$packageId README contents" $embeddedReadme $expectedReadme
+
         if ($embeddedReadme -match '\]\((?!https?://|#|mailto:)[^)]+\)')
         {
             throw "$packageId README contains a relative Markdown link: '$($Matches[0])'."
