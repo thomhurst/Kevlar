@@ -150,6 +150,18 @@ public sealed class TelemetryRecorder : IDisposable, IKevlarTelemetryListener
         return default;
     }
 
+    /// <summary>Records a typed hedge callback.</summary>
+    public ValueTask Record<TResult>(HedgeEvent<TResult> item)
+    {
+        var outcome = item.Outcome;
+        object? result = outcome is { } handled ? handled.Result : null;
+        AddCallback(new CallbackRecord(
+            0, CallbackKind.Hedge, item.Context.ShieldName,
+            strategyIndex: item.Context.StrategyIndex, attemptNumber: item.AttemptNumber,
+            exception: outcome?.Exception, result: result));
+        return default;
+    }
+
     /// <summary>Records an untyped fallback callback.</summary>
     public ValueTask Record(FallbackEvent item)
     {

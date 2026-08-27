@@ -20,6 +20,7 @@ items:
   - Kevlar.Testing.TelemetryRecorder.Record(Kevlar.TimeoutEvent,System.TimeSpan)
   - Kevlar.Testing.TelemetryRecorder.Record``1(Kevlar.CircuitBreakerBreakDurationEvent{``0},System.TimeSpan)
   - Kevlar.Testing.TelemetryRecorder.Record``1(Kevlar.FallbackEvent{``0})
+  - Kevlar.Testing.TelemetryRecorder.Record``1(Kevlar.HedgeEvent{``0})
   - Kevlar.Testing.TelemetryRecorder.Record``1(Kevlar.RetryEvent{``0})
   - Kevlar.Testing.TelemetryRecorder.WaitForCallbackCountAsync(System.Int32,System.Threading.CancellationToken)
   - Kevlar.Testing.TelemetryRecorder.WaitForEventCountAsync(System.Int32,System.Threading.CancellationToken)
@@ -219,6 +220,36 @@ items:
       type: System.Threading.Tasks.ValueTask
     content.vb: Public Function Record(item As HedgeEvent) As ValueTask
   overload: Kevlar.Testing.TelemetryRecorder.Record*
+- uid: Kevlar.Testing.TelemetryRecorder.Record``1(Kevlar.HedgeEvent{``0})
+  commentId: M:Kevlar.Testing.TelemetryRecorder.Record``1(Kevlar.HedgeEvent{`0})
+  id: Record``1(Kevlar.HedgeEvent{``0})
+  parent: Kevlar.Testing.TelemetryRecorder
+  langs:
+  - csharp
+  - vb
+  name: Record<TResult>(HedgeEvent<TResult>)
+  nameWithType: TelemetryRecorder.Record<TResult>(HedgeEvent<TResult>)
+  fullName: Kevlar.Testing.TelemetryRecorder.Record<TResult>(Kevlar.HedgeEvent<TResult>)
+  type: Method
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Records a typed hedge callback.
+  example: []
+  syntax:
+    content: public ValueTask Record<TResult>(HedgeEvent<TResult> item)
+    parameters:
+    - id: item
+      type: Kevlar.HedgeEvent{{TResult}}
+    typeParameters:
+    - id: TResult
+    return:
+      type: System.Threading.Tasks.ValueTask
+    content.vb: Public Function Record(Of TResult)(item As HedgeEvent(Of TResult)) As ValueTask
+  overload: Kevlar.Testing.TelemetryRecorder.Record*
+  nameWithType.vb: TelemetryRecorder.Record(Of TResult)(HedgeEvent(Of TResult))
+  fullName.vb: Kevlar.Testing.TelemetryRecorder.Record(Of TResult)(Kevlar.HedgeEvent(Of TResult))
+  name.vb: Record(Of TResult)(HedgeEvent(Of TResult))
 - uid: Kevlar.Testing.TelemetryRecorder.Record(Kevlar.FallbackEvent)
   commentId: M:Kevlar.Testing.TelemetryRecorder.Record(Kevlar.FallbackEvent)
   id: Record(Kevlar.FallbackEvent)
@@ -1082,6 +1113,63 @@ references:
   name: HedgeEvent
   nameWithType: HedgeEvent
   fullName: Kevlar.HedgeEvent
+- uid: Kevlar.HedgeEvent{{TResult}}
+  commentId: T:Kevlar.HedgeEvent{`0}
+  parent: Kevlar
+  definition: Kevlar.HedgeEvent`1
+  href: Kevlar.HedgeEvent-1.html
+  name: HedgeEvent<TResult>
+  nameWithType: HedgeEvent<TResult>
+  fullName: Kevlar.HedgeEvent<TResult>
+  nameWithType.vb: HedgeEvent(Of TResult)
+  fullName.vb: Kevlar.HedgeEvent(Of TResult)
+  name.vb: HedgeEvent(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.HedgeEvent`1
+    name: HedgeEvent
+    isExternal: true
+    href: Kevlar.HedgeEvent-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.HedgeEvent`1
+    name: HedgeEvent
+    isExternal: true
+    href: Kevlar.HedgeEvent-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
+- uid: Kevlar.HedgeEvent`1
+  commentId: T:Kevlar.HedgeEvent`1
+  isExternal: true
+  href: Kevlar.HedgeEvent-1.html
+  name: HedgeEvent<TResult>
+  nameWithType: HedgeEvent<TResult>
+  fullName: Kevlar.HedgeEvent<TResult>
+  nameWithType.vb: HedgeEvent(Of TResult)
+  fullName.vb: Kevlar.HedgeEvent(Of TResult)
+  name.vb: HedgeEvent(Of TResult)
+  spec.csharp:
+  - uid: Kevlar.HedgeEvent`1
+    name: HedgeEvent
+    isExternal: true
+    href: Kevlar.HedgeEvent-1.html
+  - name: <
+  - name: TResult
+  - name: '>'
+  spec.vb:
+  - uid: Kevlar.HedgeEvent`1
+    name: HedgeEvent
+    isExternal: true
+    href: Kevlar.HedgeEvent-1.html
+  - name: (
+  - name: Of
+  - name: " "
+  - name: TResult
+  - name: )
 - uid: Kevlar.FallbackEvent
   commentId: T:Kevlar.FallbackEvent
   parent: Kevlar

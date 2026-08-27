@@ -49,8 +49,12 @@ public sealed class HedgeOptions<TResult>
     /// <inheritdoc cref="HedgeOptions.DelayGenerator"/>
     public Func<HedgeDelayEvent, ValueTask<TimeSpan>>? DelayGenerator { get; set; }
 
-    /// <inheritdoc cref="HedgeOptions.OnHedge"/>
-    public Func<HedgeEvent, ValueTask>? OnHedge { get; set; }
+    /// <summary>
+    /// Invoked and awaited before an additional hedged attempt starts, with the latest handled
+    /// outcome when one triggered the hedge. Return <see langword="default"/> from a synchronous
+    /// callback.
+    /// </summary>
+    public Func<HedgeEvent<TResult>, ValueTask>? OnHedge { get; set; }
 
     /// <summary>
     /// Selects a replacement operation for each additional attempt. A <see langword="null"/>
@@ -66,7 +70,6 @@ public sealed class HedgeOptions<TResult>
         MaxHedgedAttempts = MaxHedgedAttempts,
         Delay = Delay,
         DelayGenerator = DelayGenerator,
-        OnHedge = OnHedge,
         ActionGenerator = actionGenerator,
     };
 }

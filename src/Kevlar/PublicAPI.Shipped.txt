@@ -47,6 +47,11 @@ Kevlar.FallbackEvent<TResult>.Outcome.get -> Kevlar.Outcome<TResult>
 Kevlar.HedgeEvent
 Kevlar.HedgeEvent.Context.get -> Kevlar.KevlarContext!
 Kevlar.HedgeEvent.HedgeEvent() -> void
+Kevlar.HedgeEvent<TResult>
+Kevlar.HedgeEvent<TResult>.AttemptNumber.get -> int
+Kevlar.HedgeEvent<TResult>.Context.get -> Kevlar.KevlarContext!
+Kevlar.HedgeEvent<TResult>.HedgeEvent() -> void
+Kevlar.HedgeEvent<TResult>.Outcome.get -> Kevlar.Outcome<TResult>?
 Kevlar.KevlarContext
 Kevlar.KevlarContext.CancellationToken.get -> System.Threading.CancellationToken
 Kevlar.KevlarContext.IsSynchronous.get -> bool
@@ -589,7 +594,7 @@ Kevlar.HedgeOptions<TResult>.HandlesException.get -> System.Func<System.Exceptio
 Kevlar.HedgeOptions<TResult>.HandlesException.set -> void
 Kevlar.HedgeOptions<TResult>.MaxHedgedAttempts.get -> int
 Kevlar.HedgeOptions<TResult>.MaxHedgedAttempts.set -> void
-Kevlar.HedgeOptions<TResult>.OnHedge.get -> System.Func<Kevlar.HedgeEvent, System.Threading.Tasks.ValueTask>?
+Kevlar.HedgeOptions<TResult>.OnHedge.get -> System.Func<Kevlar.HedgeEvent<TResult>, System.Threading.Tasks.ValueTask>?
 Kevlar.HedgeOptions<TResult>.OnHedge.set -> void
 Kevlar.HedgeDelayEvent
 Kevlar.HedgeDelayEvent.HedgeDelayEvent() -> void
