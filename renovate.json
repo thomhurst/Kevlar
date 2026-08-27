@@ -10,6 +10,9 @@
         "Microsoft.Extensions.Configuration.Abstractions",
         "Microsoft.Extensions.DependencyInjection.Abstractions",
         "Microsoft.Extensions.Http",
+        "Microsoft.Extensions.Logging",
+        "Microsoft.Extensions.Logging.Abstractions",
+        "Microsoft.Extensions.Options",
         "Microsoft.Extensions.Primitives",
         "Microsoft.Extensions.TimeProvider.Testing",
         "System.Threading.RateLimiting"
