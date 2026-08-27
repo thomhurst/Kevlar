@@ -101,7 +101,9 @@ items:
   summary: >-
     Configures transient retries. Defaults to three jittered exponential retries that honour
 
-    <code>Retry-After</code> headers. Superseded responses are always disposed before notifications run.
+    <code>Retry-After</code> headers. Notifications observe the live handled response, which is
+
+    disposed before the next attempt starts.
   example: []
   syntax:
     content: public RetryOptions<HttpResponseMessage> Retry { get; set; }

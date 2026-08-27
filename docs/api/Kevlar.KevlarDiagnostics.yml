@@ -35,7 +35,9 @@ items:
 
     <ul><li><code>kevlar.executions</code> — completed public execution calls, including empty shields and
 
-    pre-cancelled calls; attributes <code>kevlar.shield.name</code>, <code>kevlar.execution.outcome</code> (<code>success</code>/<code>failure</code>)</li><li><code>kevlar.retries</code> — retry attempts; attribute <code>kevlar.shield.name</code></li><li><code>kevlar.timeouts</code> — executions cancelled by a timeout strategy; attribute <code>kevlar.shield.name</code></li><li><code>kevlar.hedges</code> — extra hedged attempts launched; attribute <code>kevlar.shield.name</code></li><li><code>kevlar.fallbacks</code> — outcomes replaced by a fallback; attribute <code>kevlar.shield.name</code></li><li><code>kevlar.rejections</code> — fail-fast rejections; attributes <code>kevlar.shield.name</code>, <code>kevlar.rejection.type</code> (<code>circuit_open</code>/<code>rate_limit</code>/<code>rate_limiter_adapter</code>/<code>concurrency_limit</code>)</li><li><code>kevlar.circuit_breaker.transitions</code> — circuit state changes; attributes <code>kevlar.circuit_breaker.state.from</code>, <code>kevlar.circuit_breaker.state.to</code></li><li><code>kevlar.callback_errors</code> — exceptions thrown by notifications or observers; attributes <code>kevlar.shield.name</code>, <code>kevlar.callback.kind</code></li><li><code>kevlar.execution.duration</code> — execution duration histogram in seconds; attributes <code>kevlar.shield.name</code>, <code>kevlar.execution.outcome</code></li><li><code>kevlar.strategy.events</code> — strategy and custom events; attributes include shield,
+    pre-cancelled calls; attributes <code>kevlar.shield.name</code>, <code>kevlar.execution.outcome</code> (<code>success</code>/<code>failure</code>)</li><li><code>kevlar.retries</code> — retry attempts; attribute <code>kevlar.shield.name</code></li><li><code>kevlar.timeouts</code> — executions cancelled by a timeout strategy; attribute <code>kevlar.shield.name</code></li><li><code>kevlar.hedges</code> — extra hedged attempts launched; attribute <code>kevlar.shield.name</code></li><li><code>kevlar.fallbacks</code> — outcomes replaced by a fallback; attribute <code>kevlar.shield.name</code></li><li><code>kevlar.rejections</code> — fail-fast rejections; attributes <code>kevlar.shield.name</code>, <code>kevlar.rejection.type</code> (<code>circuit_open</code>/<code>rate_limit</code>/<code>rate_limiter_adapter</code>/<code>concurrency_limit</code>)</li><li><code>kevlar.circuit_breaker.transitions</code> — circuit state changes; attributes <code>kevlar.circuit_breaker.state.from</code>, <code>kevlar.circuit_breaker.state.to</code></li><li><code>kevlar.callback_errors</code> — exceptions thrown by callbacks or cleanup operations;
+
+    attributes <code>kevlar.shield.name</code>, <code>kevlar.callback.kind</code></li><li><code>kevlar.execution.duration</code> — execution duration histogram in seconds; attributes <code>kevlar.shield.name</code>, <code>kevlar.execution.outcome</code></li><li><code>kevlar.strategy.events</code> — strategy and custom events; attributes include shield,
 
     strategy, event, severity, attempt, exception type, and an optional bounded operation key</li><li><code>kevlar.attempt.duration</code> — retry-attempt duration histogram in milliseconds with
 
@@ -97,9 +99,9 @@ items:
   - Kevlar
   namespace: Kevlar
   summary: >-
-    Reports a callback failure without allowing diagnostics subscribers to affect execution.
+    Reports a callback or cleanup failure without allowing diagnostics subscribers to affect
 
-    Custom strategies can use this method to follow Kevlar's callback-isolation contract.
+    execution. Custom strategies can use this method to follow Kevlar's isolation contract.
   example: []
   syntax:
     content: public static void ReportCallbackError(CallbackErrorKind kind, KevlarContext context, Exception exception)
@@ -153,9 +155,11 @@ items:
   - Kevlar
   namespace: Kevlar
   summary: >-
-    Raised when a strategy notification or observer throws. Each subscriber is isolated:
+    Raised when a strategy notification, observer, or superseded-result disposal throws. Each
 
-    subscriber failures are swallowed and do not prevent later subscribers from running.
+    subscriber is isolated: subscriber failures are swallowed and do not prevent later
+
+    subscribers from running.
   example: []
   syntax:
     content: public static event Action<CallbackErrorEvent>? OnCallbackError

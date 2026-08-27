@@ -14,6 +14,7 @@ items:
   - Kevlar.CallbackErrorKind.Logging
   - Kevlar.CallbackErrorKind.RateLimitRejected
   - Kevlar.CallbackErrorKind.RateLimiterAdapterRejected
+  - Kevlar.CallbackErrorKind.ResultDisposal
   - Kevlar.CallbackErrorKind.Retry
   - Kevlar.CallbackErrorKind.Timeout
   langs:
@@ -26,7 +27,7 @@ items:
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: Identifies a strategy notification whose failure was reported by Kevlar.
+  summary: Identifies an isolated callback or cleanup failure reported by Kevlar.
   example: []
   syntax:
     content: public enum CallbackErrorKind
@@ -249,6 +250,26 @@ items:
   example: []
   syntax:
     content: Logging = 10
+    return:
+      type: Kevlar.CallbackErrorKind
+- uid: Kevlar.CallbackErrorKind.ResultDisposal
+  commentId: F:Kevlar.CallbackErrorKind.ResultDisposal
+  id: ResultDisposal
+  parent: Kevlar.CallbackErrorKind
+  langs:
+  - csharp
+  - vb
+  name: ResultDisposal
+  nameWithType: CallbackErrorKind.ResultDisposal
+  fullName: Kevlar.CallbackErrorKind.ResultDisposal
+  type: Field
+  assemblies:
+  - Kevlar
+  namespace: Kevlar
+  summary: Disposal of a superseded result.
+  example: []
+  syntax:
+    content: ResultDisposal = 11
     return:
       type: Kevlar.CallbackErrorKind
 references:

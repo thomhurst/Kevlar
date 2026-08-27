@@ -252,6 +252,7 @@ Kevlar.CallbackErrorEvent.StrategyIndex.get -> int
 Kevlar.CallbackErrorKind
 Kevlar.CallbackErrorKind.ChaosInjected = 9 -> Kevlar.CallbackErrorKind
 Kevlar.CallbackErrorKind.Logging = 10 -> Kevlar.CallbackErrorKind
+Kevlar.CallbackErrorKind.ResultDisposal = 11 -> Kevlar.CallbackErrorKind
 Kevlar.CallbackErrorKind.CircuitMonitor = 3 -> Kevlar.CallbackErrorKind
 Kevlar.CallbackErrorKind.CircuitStateChanged = 2 -> Kevlar.CallbackErrorKind
 Kevlar.CallbackErrorKind.ConcurrencyLimitRejected = 6 -> Kevlar.CallbackErrorKind

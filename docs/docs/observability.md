@@ -77,7 +77,7 @@ services.AddOpenTelemetry().WithMetrics(metrics => metrics
 | `kevlar.rejections` | Counter | `{rejection}` | `net8.0` | fail-fast rejections | `kevlar.shield.name`, `kevlar.rejection.type` (`circuit_open`/`rate_limit`/`rate_limiter_adapter`/`concurrency_limit`) |
 | `kevlar.circuit_breaker.transitions` | Counter | `{transition}` | `net8.0` | circuit state changes | `kevlar.circuit_breaker.state.from`, `kevlar.circuit_breaker.state.to` (`closed`/`open`/`half_open`/`isolated`) |
 | `kevlar.partitions.evictions` | Counter | `{partition}` | `net8.0` | partitions removed from bounded providers | `kevlar.partition.reason` (`capacity`/`idle`/`cleared`) |
-| `kevlar.callback_errors` | Counter | `{error}` | `net8.0` | exceptions thrown by strategy notifications or observers | `kevlar.shield.name`, `kevlar.callback.kind` |
+| `kevlar.callback_errors` | Counter | `{error}` | `net8.0` | exceptions thrown by strategy notifications, observers, or superseded-result disposal | `kevlar.shield.name`, `kevlar.callback.kind` |
 | `kevlar.execution.duration` | Histogram | `s` | `net8.0` | completed public execution duration | `kevlar.shield.name`, `kevlar.execution.outcome` (`success`/`failure`) |
 | `kevlar.strategy.events` | Counter | `{event}` | `net8.0` | built-in strategy and caller-recorded events | `kevlar.shield.name`, `kevlar.strategy.index`, `kevlar.strategy.name`, `kevlar.event.name`, `kevlar.event.severity`, `kevlar.attempt.number`, optional `exception.type`, optional `kevlar.operation.key` |
 | `kevlar.attempt.duration` | Histogram | `ms` | `net8.0` | retry attempt duration, including the initial attempt | `kevlar.shield.name`, `kevlar.strategy.index`, `kevlar.strategy.name`, `kevlar.event.name`, `kevlar.event.severity`, `kevlar.attempt.number`, optional `exception.type`, optional `kevlar.operation.key` |
@@ -212,8 +212,8 @@ The event payloads and timing are documented on each [strategy page](/docs/categ
 
 ### Callback failures
 
-Notification and observer exceptions never replace the protected operation's result, failure,
-timeout, rejection, or fallback. Kevlar awaits every callback, reports each exception
+Notification, observer, and superseded-result disposal exceptions never replace the protected
+operation's result, failure, timeout, rejection, or fallback. Kevlar awaits every callback, reports each exception
 through `KevlarDiagnostics.OnCallbackError`, increments `kevlar.callback_errors`, and continues.
 Each diagnostics subscriber is isolated too: one throwing subscriber cannot prevent later
 subscribers from receiving the error.

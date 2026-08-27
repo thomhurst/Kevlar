@@ -197,6 +197,10 @@ _ = Shield.Empty.Wrap(Shield.Retry(1));
 - Coupled satellite packages exact-pin their `Kevlar` dependencies. Partial upgrades of
   dependency injection, logging, and gRPC packages fail restore with `NU1608` instead of risking
   runtime failures from incompatible internals.
+- Retry and hedging dispose superseded result values. `IAsyncDisposable` is preferred over
+  `IDisposable`; disposal failures are isolated through `CallbackErrorKind.ResultDisposal`, while
+  the selected terminal result remains caller-owned. The `netstandard2.0` package carries the
+  required async-disposal runtime dependency.
 - Circuit-breaker monitors and testing snapshots report `HalfOpen` as soon as break duration
   elapses. Stale outcomes cannot alter newer state generations, and exceptions that opened a
   circuit are released when it closes or resets.

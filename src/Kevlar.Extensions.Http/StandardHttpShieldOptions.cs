@@ -13,7 +13,8 @@ public sealed class StandardHttpShieldOptions
 
     /// <summary>
     /// Configures transient retries. Defaults to three jittered exponential retries that honour
-    /// <c>Retry-After</c> headers. Superseded responses are always disposed before notifications run.
+    /// <c>Retry-After</c> headers. Notifications observe the live handled response, which is
+    /// disposed before the next attempt starts.
     /// </summary>
     public RetryOptions<HttpResponseMessage> Retry { get; set; } = new()
     {

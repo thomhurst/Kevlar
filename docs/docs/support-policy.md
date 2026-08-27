@@ -12,6 +12,7 @@ application. Test-only and build-only dependencies are not part of this package 
 
 | Dependency | Minimum version | Shipped by |
 |---|---:|---|
+| `Microsoft.Bcl.AsyncInterfaces` | `8.0.0` | `Kevlar` |
 | `Microsoft.Bcl.TimeProvider` | `8.0.1` | `Kevlar`, `Kevlar.Chaos` |
 | `Microsoft.Extensions.Configuration.Abstractions` | `8.0.0` | `Kevlar.Extensions.DependencyInjection`, `Kevlar.Extensions.Http` |
 | `Microsoft.Extensions.DependencyInjection.Abstractions` | `8.0.2` | `Kevlar.Extensions.DependencyInjection` |

@@ -246,6 +246,8 @@ internal sealed class RetryStrategy : Strategy
                         context).ConfigureAwait(false);
                 }
 
+                await OutcomeDisposer.DisposeResultAsync(in outcome, context).ConfigureAwait(false);
+
                 if (delay > TimeSpan.Zero || context.CancellationToken.IsCancellationRequested)
                 {
                     try
