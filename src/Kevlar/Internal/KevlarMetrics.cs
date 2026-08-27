@@ -46,6 +46,10 @@ internal static class KevlarMetrics
         "kevlar.hedges",
         "{hedge}",
         "Additional hedged attempts started.");
+    private static readonly Counter<long> HedgeAttempts = Meter.CreateCounter<long>(
+        "kevlar.hedge_attempts",
+        "{attempt}",
+        "Completed attempts within a hedged execution.");
     private static readonly Counter<long> Fallbacks = Meter.CreateCounter<long>(
         "kevlar.fallbacks",
         "{fallback}",
@@ -141,6 +145,17 @@ internal static class KevlarMetrics
     public static bool StrategyEventsEnabled => false;
     public static bool AttemptDurationEnabled => false;
 #endif
+
+    public static bool HedgeAttemptEnabled(KevlarContext context)
+    {
+#if NET8_0_OR_GREATER
+        if (HedgeAttempts.Enabled)
+        {
+            return true;
+        }
+#endif
+        return KevlarTelemetry.IsEventEnabled(context);
+    }
 
 #if NET9_0_OR_GREATER
     public static bool CircuitStateEnabled => CircuitStateGauge.Enabled || CircuitInstances.Enabled;
@@ -269,6 +284,48 @@ internal static class KevlarMetrics
             isSuccess: exception is null,
             exception,
             delay: delay);
+    }
+
+    public static void HedgeAttempt<T>(
+        KevlarContext context,
+        string strategyName,
+        int attemptNumber,
+        in Outcome<T> outcome,
+        bool isWinner,
+        TimeSpan duration)
+    {
+        var exception = outcome.Exception;
+        var isCancelled = exception is OperationCanceledException;
+#if NET8_0_OR_GREATER
+        if (HedgeAttempts.Enabled)
+        {
+            var result = isCancelled
+                ? "cancelled"
+                : !outcome.IsSuccess
+                    ? "failed"
+                    : isWinner ? "won" : "lost";
+            var tags = NameTags(context.ShieldName);
+            tags.Add("result", result);
+            KevlarMetricEnrichment.Add(HedgeAttempts, 1, in tags, context);
+        }
+#endif
+        if (!KevlarTelemetry.IsEventEnabled(context))
+        {
+            return;
+        }
+
+        KevlarTelemetry.Record(
+            context,
+            strategyName,
+            eventName: "hedge_attempt",
+            KevlarTelemetrySeverity.Information,
+            context.StrategyIndex,
+            attemptNumber,
+            outcome.IsSuccess,
+            exception,
+            duration,
+            isWinner: isWinner,
+            isCancelled: isCancelled);
     }
 
     public static void Fallback<T>(

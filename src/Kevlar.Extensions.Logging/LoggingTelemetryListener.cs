@@ -295,6 +295,34 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
                 LoggerMessages.Hedge(logger, telemetryEvent.ShieldName, telemetryEvent.StrategyIndex,
                     telemetryEvent.AttemptNumber, telemetryEvent.Delay, outcome, telemetryEvent.Exception);
                 break;
+            case KevlarLogEventKind.HedgeAttempt:
+                if (IsFailedHedgeLoser(in telemetryEvent))
+                {
+                    InformationLoggerMessages.HedgeAttempt(
+                        logger,
+                        telemetryEvent.ShieldName,
+                        telemetryEvent.StrategyIndex,
+                        telemetryEvent.AttemptNumber,
+                        telemetryEvent.IsWinner,
+                        telemetryEvent.IsCancelled,
+                        telemetryEvent.Duration,
+                        outcome,
+                        telemetryEvent.Exception);
+                }
+                else
+                {
+                    DebugLoggerMessages.HedgeAttempt(
+                        logger,
+                        telemetryEvent.ShieldName,
+                        telemetryEvent.StrategyIndex,
+                        telemetryEvent.AttemptNumber,
+                        telemetryEvent.IsWinner,
+                        telemetryEvent.IsCancelled,
+                        telemetryEvent.Duration,
+                        outcome,
+                        telemetryEvent.Exception);
+                }
+                break;
             case KevlarLogEventKind.Fallback:
                 LoggerMessages.Fallback(logger, telemetryEvent.ShieldName, telemetryEvent.StrategyIndex,
                     telemetryEvent.AttemptNumber, outcome, telemetryEvent.Exception);
@@ -395,6 +423,13 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
                     telemetryEvent.ShieldName, telemetryEvent.StrategyIndex,
                     telemetryEvent.AttemptNumber, telemetryEvent.Delay, outcome);
                 break;
+            case KevlarLogEventKind.HedgeAttempt:
+                logger.Log(level, eventId, telemetryEvent.Exception,
+                    "Shield {ShieldName} strategy {StrategyIndex} hedge attempt {AttemptNumber} completed after {Duration}; winner {IsWinner}; cancelled {IsCancelled}; outcome {Outcome}",
+                    telemetryEvent.ShieldName, telemetryEvent.StrategyIndex,
+                    telemetryEvent.AttemptNumber, telemetryEvent.Duration,
+                    telemetryEvent.IsWinner, telemetryEvent.IsCancelled, outcome);
+                break;
             case KevlarLogEventKind.Fallback:
                 logger.Log(level, eventId, telemetryEvent.Exception,
                     "Shield {ShieldName} strategy {StrategyIndex} used fallback on attempt {AttemptNumber}; outcome {Outcome}",
@@ -480,6 +515,13 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
                 eventId = new EventId(1004, "Hedge");
                 level = LogLevel.Information;
                 return true;
+            case "hedge_attempt":
+                kind = KevlarLogEventKind.HedgeAttempt;
+                eventId = new EventId(1011, "HedgeAttempt");
+                level = IsFailedHedgeLoser(in telemetryEvent)
+                        ? LogLevel.Information
+                        : LogLevel.Debug;
+                return true;
             case "fallback":
                 kind = KevlarLogEventKind.Fallback;
                 eventId = new EventId(1005, "Fallback");
@@ -517,4 +559,9 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
                 return false;
         }
     }
+
+    private static bool IsFailedHedgeLoser(in KevlarTelemetryEvent telemetryEvent) =>
+        telemetryEvent.Exception is not null
+        && !telemetryEvent.IsCancelled
+        && !telemetryEvent.IsWinner;
 }

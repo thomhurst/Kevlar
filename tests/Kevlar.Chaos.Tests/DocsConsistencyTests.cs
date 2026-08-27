@@ -148,7 +148,7 @@ public class DocsConsistencyTests
             }
 
             var name = cells[1].Trim('`');
-            var tags = Regex.Matches(cells[6], "`((?:kevlar|exception)\\.[^`]+)`")
+            var tags = Regex.Matches(cells[6], "`((?:(?:kevlar|exception)\\.[^`]+|result))`")
                 .Select(static match => match.Groups[1].Value)
                 .ToHashSet(StringComparer.Ordinal);
             rows.Add(name, new InstrumentRow(

@@ -19,6 +19,8 @@ namespace Kevlar;
 /// that complete after ignoring cancellation; attributes <c>kevlar.shield.name</c> and optional
 /// <c>outcome</c> (<c>ignored</c>)</item>
 /// <item><c>kevlar.hedges</c> — extra hedged attempts launched; attribute <c>kevlar.shield.name</c></item>
+/// <item><c>kevlar.hedge_attempts</c> — completed attempts within hedged executions; attributes
+/// <c>kevlar.shield.name</c> and <c>result</c> (<c>won</c>/<c>lost</c>/<c>cancelled</c>/<c>failed</c>)</item>
 /// <item><c>kevlar.fallbacks</c> — outcomes replaced by a fallback; attribute <c>kevlar.shield.name</c></item>
 /// <item><c>kevlar.rejections</c> — fail-fast rejections; attributes <c>kevlar.shield.name</c>, <c>kevlar.rejection.type</c> (<c>circuit_open</c>/<c>rate_limit</c>/<c>rate_limiter_adapter</c>/<c>concurrency_limit</c>)</item>
 /// <item><c>kevlar.http.replay_suppressed</c> — HTTP requests whose configured additional attempts

@@ -12,6 +12,7 @@ items:
   - Kevlar.Extensions.Logging.KevlarLogEventKind.ConcurrencyLimitRejected
   - Kevlar.Extensions.Logging.KevlarLogEventKind.Fallback
   - Kevlar.Extensions.Logging.KevlarLogEventKind.Hedge
+  - Kevlar.Extensions.Logging.KevlarLogEventKind.HedgeAttempt
   - Kevlar.Extensions.Logging.KevlarLogEventKind.RateLimitRejected
   - Kevlar.Extensions.Logging.KevlarLogEventKind.Retry
   - Kevlar.Extensions.Logging.KevlarLogEventKind.Timeout
@@ -249,6 +250,26 @@ items:
   example: []
   syntax:
     content: TimeoutIgnored = 10
+    return:
+      type: Kevlar.Extensions.Logging.KevlarLogEventKind
+- uid: Kevlar.Extensions.Logging.KevlarLogEventKind.HedgeAttempt
+  commentId: F:Kevlar.Extensions.Logging.KevlarLogEventKind.HedgeAttempt
+  id: HedgeAttempt
+  parent: Kevlar.Extensions.Logging.KevlarLogEventKind
+  langs:
+  - csharp
+  - vb
+  name: HedgeAttempt
+  nameWithType: KevlarLogEventKind.HedgeAttempt
+  fullName: Kevlar.Extensions.Logging.KevlarLogEventKind.HedgeAttempt
+  type: Field
+  assemblies:
+  - Kevlar.Extensions.Logging
+  namespace: Kevlar.Extensions.Logging
+  summary: A hedged execution attempt completed.
+  example: []
+  syntax:
+    content: HedgeAttempt = 11
     return:
       type: Kevlar.Extensions.Logging.KevlarLogEventKind
 references:

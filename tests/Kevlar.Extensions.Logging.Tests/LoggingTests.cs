@@ -220,6 +220,44 @@ public class LoggingTests
 
     [Test]
     [NotInParallel]
+    public async Task Hedge_Attempt_Losers_Log_At_Outcome_Aware_Levels()
+    {
+        var logger = new FakeLogger();
+        var successfulAttempts = 0;
+        var successful = Shield.Hedge(1, TimeSpan.Zero)
+            .WithName("successful-hedges")
+            .WithLogging(logger);
+        var failedAttempts = 0;
+        var failed = Shield.Hedge(1, TimeSpan.Zero)
+            .WithName("failed-hedges")
+            .WithLogging(logger);
+
+        _ = await successful.ExecuteAsync(_ =>
+            new ValueTask<int>(Interlocked.Increment(ref successfulAttempts)));
+        _ = await failed.ExecuteAsync(_ => Interlocked.Increment(ref failedAttempts) == 1
+            ? ValueTask.FromException<int>(new TestException("primary"))
+            : new ValueTask<int>(42));
+
+        var attempts = logger.Collector.GetSnapshot()
+            .Where(record => record.Id == new EventId(1011, "HedgeAttempt"))
+            .ToArray();
+        var successfulLoser = attempts.Single(record =>
+            record.GetStructuredStateValue("ShieldName") == "successful-hedges"
+            && record.GetStructuredStateValue("AttemptNumber") == "1");
+        var failedLoser = attempts.Single(record =>
+            record.GetStructuredStateValue("ShieldName") == "failed-hedges"
+            && record.GetStructuredStateValue("AttemptNumber") == "0");
+
+        await Assert.That(successfulLoser.Level).IsEqualTo(LogLevel.Debug);
+        await Assert.That(successfulLoser.GetStructuredStateValue("IsWinner")).IsEqualTo("False");
+        await Assert.That(successfulLoser.GetStructuredStateValue("IsCancelled")).IsEqualTo("False");
+        await Assert.That(failedLoser.Level).IsEqualTo(LogLevel.Information);
+        await Assert.That(failedLoser.Exception).IsTypeOf<TestException>();
+        await Assert.That(failedLoser.GetStructuredStateValue("IsWinner")).IsEqualTo("False");
+    }
+
+    [Test]
+    [NotInParallel]
     public async Task Hedge_Logs_The_Effective_Delay()
     {
         var logger = new FakeLogger();

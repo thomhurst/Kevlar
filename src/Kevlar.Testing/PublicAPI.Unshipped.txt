@@ -1,1 +1,3 @@
 #nullable enable
+Kevlar.Testing.TelemetryEventRecord.IsCancelled.get -> bool
+Kevlar.Testing.TelemetryEventRecord.IsWinner.get -> bool

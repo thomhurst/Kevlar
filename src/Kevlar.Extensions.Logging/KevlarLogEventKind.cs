@@ -35,4 +35,7 @@ public enum KevlarLogEventKind
 
     /// <summary>An execution completed after ignoring timeout cancellation.</summary>
     TimeoutIgnored,
+
+    /// <summary>A hedged execution attempt completed.</summary>
+    HedgeAttempt,
 }

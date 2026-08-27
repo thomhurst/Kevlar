@@ -9,7 +9,9 @@ items:
   - Kevlar.Testing.TelemetryEventRecord.Duration
   - Kevlar.Testing.TelemetryEventRecord.EventName
   - Kevlar.Testing.TelemetryEventRecord.Exception
+  - Kevlar.Testing.TelemetryEventRecord.IsCancelled
   - Kevlar.Testing.TelemetryEventRecord.IsSuccess
+  - Kevlar.Testing.TelemetryEventRecord.IsWinner
   - Kevlar.Testing.TelemetryEventRecord.OperationKey
   - Kevlar.Testing.TelemetryEventRecord.Sequence
   - Kevlar.Testing.TelemetryEventRecord.Severity
@@ -224,6 +226,52 @@ items:
       type: System.Boolean
     content.vb: Public ReadOnly Property IsSuccess As Boolean
   overload: Kevlar.Testing.TelemetryEventRecord.IsSuccess*
+- uid: Kevlar.Testing.TelemetryEventRecord.IsWinner
+  commentId: P:Kevlar.Testing.TelemetryEventRecord.IsWinner
+  id: IsWinner
+  parent: Kevlar.Testing.TelemetryEventRecord
+  langs:
+  - csharp
+  - vb
+  name: IsWinner
+  nameWithType: TelemetryEventRecord.IsWinner
+  fullName: Kevlar.Testing.TelemetryEventRecord.IsWinner
+  type: Property
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Whether this hedge-attempt event describes the outcome selected by the pipeline.
+  example: []
+  syntax:
+    content: public bool IsWinner { get; }
+    parameters: []
+    return:
+      type: System.Boolean
+    content.vb: Public ReadOnly Property IsWinner As Boolean
+  overload: Kevlar.Testing.TelemetryEventRecord.IsWinner*
+- uid: Kevlar.Testing.TelemetryEventRecord.IsCancelled
+  commentId: P:Kevlar.Testing.TelemetryEventRecord.IsCancelled
+  id: IsCancelled
+  parent: Kevlar.Testing.TelemetryEventRecord
+  langs:
+  - csharp
+  - vb
+  name: IsCancelled
+  nameWithType: TelemetryEventRecord.IsCancelled
+  fullName: Kevlar.Testing.TelemetryEventRecord.IsCancelled
+  type: Property
+  assemblies:
+  - Kevlar.Testing
+  namespace: Kevlar.Testing
+  summary: Whether this hedge-attempt event completed through cancellation.
+  example: []
+  syntax:
+    content: public bool IsCancelled { get; }
+    parameters: []
+    return:
+      type: System.Boolean
+    content.vb: Public ReadOnly Property IsCancelled As Boolean
+  overload: Kevlar.Testing.TelemetryEventRecord.IsCancelled*
 - uid: Kevlar.Testing.TelemetryEventRecord.Exception
   commentId: P:Kevlar.Testing.TelemetryEventRecord.Exception
   id: Exception
@@ -649,6 +697,20 @@ references:
   nameWithType.vb: Boolean
   fullName.vb: Boolean
   name.vb: Boolean
+- uid: Kevlar.Testing.TelemetryEventRecord.IsWinner*
+  commentId: Overload:Kevlar.Testing.TelemetryEventRecord.IsWinner
+  isExternal: true
+  href: Kevlar.Testing.TelemetryEventRecord.html#Kevlar_Testing_TelemetryEventRecord_IsWinner
+  name: IsWinner
+  nameWithType: TelemetryEventRecord.IsWinner
+  fullName: Kevlar.Testing.TelemetryEventRecord.IsWinner
+- uid: Kevlar.Testing.TelemetryEventRecord.IsCancelled*
+  commentId: Overload:Kevlar.Testing.TelemetryEventRecord.IsCancelled
+  isExternal: true
+  href: Kevlar.Testing.TelemetryEventRecord.html#Kevlar_Testing_TelemetryEventRecord_IsCancelled
+  name: IsCancelled
+  nameWithType: TelemetryEventRecord.IsCancelled
+  fullName: Kevlar.Testing.TelemetryEventRecord.IsCancelled
 - uid: Kevlar.Testing.TelemetryEventRecord.Exception*
   commentId: Overload:Kevlar.Testing.TelemetryEventRecord.Exception
   isExternal: true

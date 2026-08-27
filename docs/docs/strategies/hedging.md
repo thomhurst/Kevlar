@@ -128,6 +128,11 @@ flags untyped `Hedge(...)` for exactly this reason.
 :::
 
 - Losing attempts are cancelled through their token (use the token you're handed!).
+- Once an execution races or launches an additional attempt, every completed primary or additional
+  attempt emits a `hedge_attempt` telemetry event with its zero-based attempt number,
+  success/exception/cancellation outcome, winner flag, and elapsed time.
+  The `kevlar.hedge_attempts` counter classifies completions as `won`, `lost`, `cancelled`, or
+  `failed`. Structured logging writes ordinary losers at Debug and failed losers at Information.
 - Caller cancellation prevents any later hedge delegate from running, even when it races a completed stagger delay or occurs inside `DelayGenerator` or `OnHedge`. A cancellation already observable at the launch boundary suppresses callbacks.
 - Launch ordering is the awaited `DelayGenerator` (while the previous attempt is pending), then awaited `OnHedge`, action generation, metrics, then the selected operation. Under the shared [callback-failure contract](../observability.md#callback-failures), hook failures are reported through `KevlarDiagnostics.OnCallbackError` and do not suppress the launch. Generator failures preserve their exception identity, cancel in-flight attempts, and are not counted as launched hedges.
 - Each attempt gets a forked context — `Properties` are copied at launch time, so attempts don't see each other's writes.
