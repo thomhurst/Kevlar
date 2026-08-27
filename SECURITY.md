@@ -2,14 +2,18 @@
 
 ## Supported versions
 
-Security fixes are provided for the latest stable minor release in the current major line.
-Pre-release builds and older major lines may receive a fix at the maintainers' discretion.
+Security fixes are provided for the latest stable minor release in the current major line. After a
+new major version reaches general availability, the previous major remains supported for six
+months. Older minors within a supported major must upgrade to that major's latest minor.
+Pre-release builds are not supported.
 
 | Version | Security support |
 |---|---|
 | Latest `1.x` | Supported |
 | Older `1.x` | Upgrade to the latest `1.x` |
 | `0.x` and previews | Not supported |
+
+When `2.0` is released, this table will include the exact date on which `1.x` security support ends.
 
 ## Reporting a vulnerability
 

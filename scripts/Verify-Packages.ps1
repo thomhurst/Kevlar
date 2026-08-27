@@ -352,6 +352,8 @@ $exactPinnedPackageIds = @(
 $expectedDependencyVersions = @{}
 foreach ($dependencyId in @(
     'Microsoft.Bcl.AsyncInterfaces',
+    'Grpc.Core.Api',
+    'Grpc.Net.ClientFactory',
     'Microsoft.Bcl.TimeProvider',
     'Microsoft.Extensions.Configuration.Abstractions',
     'Microsoft.Extensions.DependencyInjection.Abstractions',
@@ -362,7 +364,9 @@ foreach ($dependencyId in @(
     'Microsoft.Extensions.Primitives',
     'Microsoft.Extensions.TimeProvider.Testing',
     'Reservoir',
-    'System.Threading.RateLimiting'))
+    'System.Runtime.CompilerServices.Unsafe',
+    'System.Threading.RateLimiting',
+    'System.Threading.Tasks.Extensions'))
 {
     $expectedDependencyVersions[$dependencyId] =
         (Get-CentralPackageVersion $centralPackages $dependencyId) -replace ',\s*', ', '
@@ -372,6 +376,7 @@ $packageFiles = @(Get-ChildItem -LiteralPath $packageDirectory -Filter '*.nupkg'
 Assert-Set 'package IDs' ($packageFiles.BaseName | ForEach-Object { $_ -replace "\.$([regex]::Escape($Version))$", '' }) $expectedPackageIds
 $symbolPackageFiles = @(Get-ChildItem -LiteralPath $packageDirectory -Filter '*.snupkg' -File)
 Assert-Set 'symbol package IDs' ($symbolPackageFiles.BaseName | ForEach-Object { $_ -replace "\.$([regex]::Escape($Version))$", '' }) $expectedPackageIds
+$actualExternalDependencyPackages = @{}
 
 foreach ($packageId in $expectedDependencies.Keys)
 {
@@ -459,6 +464,18 @@ foreach ($packageId in $expectedDependencies.Keys)
             foreach ($dependency in $dependencies)
             {
                 $dependencyId = $dependency.GetAttribute('id')
+                if (-not $dependencyId.StartsWith('Kevlar', [StringComparison]::Ordinal))
+                {
+                    if (-not $actualExternalDependencyPackages.ContainsKey($dependencyId))
+                    {
+                        $actualExternalDependencyPackages[$dependencyId] =
+                            [System.Collections.Generic.HashSet[string]]::new(
+                                [StringComparer]::Ordinal)
+                    }
+
+                    $actualExternalDependencyPackages[$dependencyId].Add($packageId) | Out-Null
+                }
+
                 Assert-ShippedDependencyFloor `
                     -DependencyId $dependencyId `
                     -DependencyVersion $dependency.GetAttribute('version') `
@@ -602,6 +619,45 @@ foreach ($packageId in $expectedDependencies.Keys)
     {
         $symbolArchive.Dispose()
     }
+}
+
+$supportPolicyPath = Join-Path $repositoryRoot 'docs/docs/support-policy.md'
+$documentedDependencyFloors = @{}
+foreach ($line in Get-Content -LiteralPath $supportPolicyPath)
+{
+    if ($line -notmatch '^\|\s*`(?<id>[^`]+)`\s*\|\s*`(?<version>[^`]+)`\s*\|(?<packages>[^|]+)\|$')
+    {
+        continue
+    }
+
+    $dependencyId = $Matches.id
+    if ($documentedDependencyFloors.ContainsKey($dependencyId))
+    {
+        throw "Support policy contains duplicate dependency floor '$dependencyId'."
+    }
+
+    $documentedDependencyFloors[$dependencyId] = [pscustomobject]@{
+        Version = $Matches.version
+        Packages = @(
+            [regex]::Matches($Matches.packages, '`(?<package>Kevlar(?:\.[^`]+)?)`') |
+                ForEach-Object { $_.Groups['package'].Value })
+    }
+}
+
+Assert-Set `
+    'support-policy dependency floor IDs' `
+    @($documentedDependencyFloors.Keys) `
+    @($actualExternalDependencyPackages.Keys)
+foreach ($dependencyId in $actualExternalDependencyPackages.Keys)
+{
+    Assert-Equal `
+        "support-policy $dependencyId minimum version" `
+        $documentedDependencyFloors[$dependencyId].Version `
+        $expectedDependencyVersions[$dependencyId]
+    Assert-Set `
+        "support-policy $dependencyId shipped-by packages" `
+        $documentedDependencyFloors[$dependencyId].Packages `
+        @($actualExternalDependencyPackages[$dependencyId])
 }
 
 $temporaryRoot = Join-Path ([System.IO.Path]::GetTempPath()) "kevlar-package-consumers-$([guid]::NewGuid().ToString('N'))"
