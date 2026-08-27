@@ -104,8 +104,22 @@ function Get-ExpectedSymbolAssets([string]$PackageId)
     if ($PackageId -eq 'Kevlar')
     {
         $assets += @(
-            'analyzers/dotnet/roslyn4.8/cs/Kevlar.Analyzers.pdb'
+            'lib/netstandard2.0/Kevlar.Analyzers.pdb'
         )
+    }
+
+    return $assets
+}
+
+function Get-ExpectedAssemblyAssets([string]$PackageId)
+{
+    $assets = @(
+        Get-ExpectedSymbolAssets $PackageId |
+            Where-Object { $_ -ne 'lib/netstandard2.0/Kevlar.Analyzers.pdb' } |
+            ForEach-Object { $_ -replace '\.pdb$', '.dll' })
+    if ($PackageId -eq 'Kevlar')
+    {
+        $assets += 'analyzers/dotnet/roslyn4.8/cs/Kevlar.Analyzers.dll'
     }
 
     return $assets
@@ -396,6 +410,12 @@ foreach ($packageId in $expectedDependencies.Keys)
     try
     {
         $entries = @($archive.Entries | ForEach-Object { $_.FullName.Replace('\', '/') })
+        $packagePdbs = @($entries | Where-Object { $_ -like '*.pdb' })
+        if ($packagePdbs.Count -gt 0)
+        {
+            throw "$packageId package contains PDB assets: $($packagePdbs -join ', ')."
+        }
+
         $nuspecEntry = @($archive.Entries | Where-Object { $_.FullName -like '*.nuspec' })
         Assert-Equal "$packageId nuspec count" $nuspecEntry.Count 1
 
@@ -559,8 +579,7 @@ foreach ($packageId in $expectedDependencies.Keys)
             Assert-Set "$packageId analyzer assets" `
                 ($entries | Where-Object { $_ -match '^analyzers/' }) `
                 @(
-                    'analyzers/dotnet/roslyn4.8/cs/Kevlar.Analyzers.dll',
-                    'analyzers/dotnet/roslyn4.8/cs/Kevlar.Analyzers.pdb'
+                    'analyzers/dotnet/roslyn4.8/cs/Kevlar.Analyzers.dll'
                 )
         }
         elseif ($entries | Where-Object { $_ -match '^analyzers/' })
@@ -737,7 +756,7 @@ try
     {
         $packageFile = Join-Path $packageDirectory "$packageId.$Version.nupkg"
         $repeatPackageFile = Join-Path $repeatPackages "$packageId.$Version.nupkg"
-        foreach ($assemblyAsset in (Get-ExpectedSymbolAssets $packageId) -replace '\.pdb$', '.dll')
+        foreach ($assemblyAsset in Get-ExpectedAssemblyAssets $packageId)
         {
             Assert-Equal `
                 "$packageId deterministic assembly $assemblyAsset" `

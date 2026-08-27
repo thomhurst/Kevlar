@@ -31,11 +31,22 @@
           Pack="true"
           PackagePath="analyzers/dotnet/roslyn4.8/cs"
           Visible="false" />
-    <None Include="$(ArtifactsPath)\bin\Kevlar.Analyzers\$(Configuration.ToLowerInvariant())\Kevlar.Analyzers.pdb"
-          Pack="true"
-          PackagePath="analyzers/dotnet/roslyn4.8/cs"
-          Visible="false" />
   </ItemGroup>
+
+  <PropertyGroup>
+    <TargetsForTfmSpecificDebugSymbolsInPackage>
+      $(TargetsForTfmSpecificDebugSymbolsInPackage);IncludeAnalyzerDebugSymbols
+    </TargetsForTfmSpecificDebugSymbolsInPackage>
+  </PropertyGroup>
+
+  <Target Name="IncludeAnalyzerDebugSymbols" Condition="'$(TargetFramework)' == 'netstandard2.0'">
+    <ItemGroup>
+      <TfmSpecificDebugSymbolsFile Include="$(ArtifactsPath)\bin\Kevlar.Analyzers\$(Configuration.ToLowerInvariant())\Kevlar.Analyzers.pdb">
+        <TargetFramework>$(TargetFramework)</TargetFramework>
+        <TargetPath>Kevlar.Analyzers.pdb</TargetPath>
+      </TfmSpecificDebugSymbolsFile>
+    </ItemGroup>
+  </Target>
 
   <ItemGroup>
     <InternalsVisibleTo Include="Kevlar.Tests" />
