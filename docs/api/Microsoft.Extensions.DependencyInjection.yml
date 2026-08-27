@@ -17,6 +17,9 @@ items:
   type: Namespace
   assemblies:
   - Kevlar.Extensions.DependencyInjection
+  - Kevlar.Extensions.Grpc
+  - Kevlar.Extensions.Http
+  - Kevlar.Extensions.Logging
 references:
 - uid: Microsoft.Extensions.DependencyInjection.KevlarServiceCollectionExtensions
   commentId: T:Microsoft.Extensions.DependencyInjection.KevlarServiceCollectionExtensions

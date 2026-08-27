@@ -9,6 +9,7 @@ $resolvedMetadataPath = (Resolve-Path -LiteralPath $MetadataPath).Path
 $metadataFiles = @(Get-ChildItem -LiteralPath $resolvedMetadataPath -Filter '*.yml' -File)
 $localReferencePages = [Collections.Generic.Dictionary[string, string]]::new([StringComparer]::Ordinal)
 $localPages = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+$assembliesByUid = [Collections.Generic.Dictionary[string, string[]]]::new([StringComparer]::Ordinal)
 
 function ConvertTo-ApiAnchor([string]$uid)
 {
@@ -26,6 +27,9 @@ foreach ($metadataFile in $metadataFiles)
     $page = [IO.Path]::ChangeExtension($metadataFile.Name, '.html')
     [void]$localPages.Add($page)
     $isFirstItem = $true
+    $primaryUid = $null
+    $primaryAssemblies = [Collections.Generic.List[string]]::new()
+    $inPrimaryAssemblies = $false
 
     foreach ($line in [IO.File]::ReadLines($metadataFile.FullName))
     {
@@ -38,6 +42,10 @@ foreach ($metadataFile in $metadataFiles)
         {
             $uid = $Matches.uid
             $isPrimaryItem = $isFirstItem
+            if ($isPrimaryItem)
+            {
+                $primaryUid = $uid
+            }
             $target = if ($isPrimaryItem)
             {
                 $page
@@ -58,6 +66,24 @@ foreach ($metadataFile in $metadataFiles)
                 [void]$localReferencePages.TryAdd("$uid*", $target)
             }
         }
+
+        if ($primaryUid -and $line -eq '  assemblies:')
+        {
+            $inPrimaryAssemblies = $true
+        }
+        elseif ($inPrimaryAssemblies -and $line -match '^  -\s+(?<assembly>\S+)')
+        {
+            $primaryAssemblies.Add($Matches.assembly)
+        }
+        elseif ($inPrimaryAssemblies)
+        {
+            $inPrimaryAssemblies = $false
+        }
+    }
+
+    if ($primaryUid -and $primaryAssemblies.Count -gt 0)
+    {
+        $assembliesByUid[$primaryUid] = $primaryAssemblies.ToArray()
     }
 }
 
@@ -219,6 +245,46 @@ foreach ($metadataFile in $metadataFiles)
         }
 
         $finalLines.Add($normalizedLines[$i])
+    }
+
+    $namespaceTypeIndex = $finalLines.IndexOf('  type: Namespace')
+    $childrenIndex = $finalLines.IndexOf('  children:')
+    $assembliesIndex = $finalLines.IndexOf('  assemblies:')
+    if ($namespaceTypeIndex -ge 0 -and $childrenIndex -ge 0 -and $assembliesIndex -ge 0)
+    {
+        $namespaceAssemblies = [Collections.Generic.SortedSet[string]]::new([StringComparer]::Ordinal)
+        for ($i = $childrenIndex + 1; $i -lt $finalLines.Count; $i++)
+        {
+            if ($finalLines[$i] -notmatch '^  -\s+(?<uid>\S+)')
+            {
+                break
+            }
+
+            $childAssemblies = $null
+            if ($assembliesByUid.TryGetValue($Matches.uid, [ref]$childAssemblies))
+            {
+                foreach ($assembly in $childAssemblies)
+                {
+                    [void]$namespaceAssemblies.Add($assembly)
+                }
+            }
+        }
+
+        if ($namespaceAssemblies.Count -gt 0)
+        {
+            while ($assembliesIndex + 1 -lt $finalLines.Count -and
+                $finalLines[$assembliesIndex + 1] -match '^  -\s+\S+')
+            {
+                $finalLines.RemoveAt($assembliesIndex + 1)
+            }
+
+            $insertionIndex = $assembliesIndex + 1
+            foreach ($assembly in $namespaceAssemblies)
+            {
+                $finalLines.Insert($insertionIndex, "  - $assembly")
+                $insertionIndex++
+            }
+        }
     }
 
     $normalized = $finalLines -join "`n"
