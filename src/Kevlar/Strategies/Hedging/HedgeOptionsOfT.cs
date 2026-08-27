@@ -63,13 +63,12 @@ public sealed class HedgeOptions<TResult>
     public Func<HedgeActionGeneratorEvent<TResult>, Func<CancellationToken, ValueTask<TResult>>?>?
         ActionGenerator { get; set; }
 
-    internal HedgeOptions ToUntyped(HedgeActionGenerator? actionGenerator = null) => new()
+    internal HedgeOptions ToUntyped() => new()
     {
         Name = Name,
         HandlesException = HandlesException,
         MaxHedgedAttempts = MaxHedgedAttempts,
         Delay = Delay,
         DelayGenerator = DelayGenerator,
-        ActionGenerator = actionGenerator,
     };
 }

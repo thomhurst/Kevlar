@@ -651,7 +651,7 @@ if (pollyLimiterOptions.DefaultRateLimiterOptions.PermitLimit != 1000 ||
 |---|---|
 | retry `DelayGenerator` returning `ValueTask<TimeSpan?>` | `DelayGenerator` returning `ValueTask<TimeSpan?>` |
 | `TimeoutGenerator` returning `ValueTask<TimeSpan>` | `TimeoutGenerator` returning `ValueTask<TimeSpan>` |
-| hedging `ActionGenerator` | `HedgeActionGenerator.Create<T>` |
+| hedging `ActionGenerator` | `HedgeOptions.ActionGenerator` delegate |
 | circuit `BreakDurationGenerator` returning `ValueTask<TimeSpan>` | `BreakDurationGenerator` returning `ValueTask<TimeSpan>` |
 | hedging `DelayGenerator` returning `ValueTask<TimeSpan>` | `HedgeOptions.DelayGenerator` returning `ValueTask<TimeSpan>`; `HedgeDelayEvent` exposes `AttemptNumber`, `Context`, and `Elapsed` |
 | `OnRetry` / `OnTimeout` / `OnHedging` / `OnFallback` / `OnRejected` returning `ValueTask` | `OnRetry` / `OnTimeout` / `OnHedge` / `OnFallback` / `OnRejected` returning `ValueTask` |

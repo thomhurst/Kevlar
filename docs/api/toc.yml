@@ -76,9 +76,6 @@ items:
   - uid: Kevlar.HandlingEvent`1
     name: HandlingEvent<TResult>
     type: Struct
-  - uid: Kevlar.HedgeActionGenerator
-    name: HedgeActionGenerator
-    type: Class
   - uid: Kevlar.HedgeActionGeneratorEvent
     name: HedgeActionGeneratorEvent
     type: Struct
