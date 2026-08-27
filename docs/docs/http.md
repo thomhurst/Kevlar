@@ -39,6 +39,7 @@ Customize those stages without rebuilding the pipeline:
 
 ```csharp
 using Kevlar.Extensions.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 services.AddHttpClient("api")
     .AddStandardShield(options =>
@@ -74,6 +75,7 @@ For dependency-aware setup, use the service-provider overload:
 
 ```csharp
 using Kevlar.Extensions.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 services.AddSingleton(new ConcurrencyLimitOptions
 {
@@ -99,6 +101,7 @@ change token fires:
 
 ```csharp
 using Kevlar.Extensions.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 var configuration = new ConfigurationBuilder()
     .AddInMemoryCollection(new Dictionary<string, string?>
@@ -132,6 +135,7 @@ and delegates can deliberately override bound values:
 
 ```csharp
 using Kevlar.Extensions.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 var configuration = new ConfigurationBuilder()
     .AddInMemoryCollection(new Dictionary<string, string?>
@@ -167,6 +171,7 @@ Hedging uses the same reload contract. Its keys follow the nested
 
 ```csharp
 using Kevlar.Extensions.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 var configuration = new ConfigurationBuilder()
     .AddInMemoryCollection(new Dictionary<string, string?>
@@ -188,6 +193,7 @@ services.AddHttpClient("routed")
 
 ```csharp
 using Kevlar.Extensions.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 services.AddHttpClient("api")
     .AddShield(
@@ -255,6 +261,7 @@ var shield = HttpShield.WhenTransient()
 ```csharp
 using Kevlar.Extensions.DependencyInjection;
 using Kevlar.Extensions.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 services.AddHttpClient("api")
     .AddShield(sp => sp.GetRequiredService<IKevlarRegistry>()
@@ -295,6 +302,7 @@ selector; `ShieldName` is metadata for selectors and has no global lookup behavi
 
 ```csharp
 using Kevlar.Extensions.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 var readShield = HttpShield.WhenTransient().Retry(3);
 var writeShield = HttpShield.WhenTransient().Retry(0);
@@ -311,6 +319,7 @@ directly:
 
 ```csharp
 using Kevlar.Extensions.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 var tenantShields = new PartitionedShield<string, HttpResponseMessage>(
     _ => HttpShield.WhenTransient()
@@ -366,6 +375,7 @@ Hedge against the request's own authority without registration-time routing conf
 
 ```csharp
 using Kevlar.Extensions.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 services.AddHttpClient("hedged")
     .AddStandardHedgeShield();
@@ -376,6 +386,7 @@ attempt 2, and so on across alternate authorities instead, configure endpoints e
 
 ```csharp
 using Kevlar.Extensions.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 services.AddHttpClient("routed")
     .AddStandardHedgeShield(options =>
@@ -407,6 +418,7 @@ For a fully custom endpoint-aware pipeline, compose the outer and endpoint shiel
 
 ```csharp
 using Kevlar.Extensions.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 var routing = new HttpEndpointRoutingOptions
 {

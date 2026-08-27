@@ -123,6 +123,7 @@ dotnet add package Microsoft.Extensions.Configuration.Json
 
 ```csharp
 using Kevlar.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 
 var configuration = new ConfigurationBuilder()
     .SetBasePath(Directory.GetCurrentDirectory())
@@ -148,6 +149,7 @@ Configuration cannot reorder that chain — the order is what makes a definition
 
 ```csharp
 using Kevlar.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 
 var configuration = new ConfigurationBuilder()
     .SetBasePath(Directory.GetCurrentDirectory())
@@ -203,6 +205,7 @@ schema. The options name and shield name are the same; a change for another name
 ```csharp
 using Kevlar;
 using Kevlar.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 
 public sealed class CatalogResilienceOptions
 {
@@ -225,6 +228,8 @@ Named shields are also registered as keyed services, so you can skip the registr
 
 <!-- doc-test-declaration -->
 ```csharp
+using Microsoft.Extensions.DependencyInjection;
+
 public sealed class GitHubClient([FromKeyedServices("github")] Shield shield)
 {
     public Shield Resilience { get; } = shield;

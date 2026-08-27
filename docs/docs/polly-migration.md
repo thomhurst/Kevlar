@@ -211,6 +211,8 @@ Use the `onCompleted` overload of `ExecuteWithContextAsync` to copy final
 Polly registers builders and resolves them through `ResiliencePipelineProvider<TKey>`:
 
 ```csharp
+using Microsoft.Extensions.DependencyInjection;
+
 var pollyServices = new ServiceCollection();
 pollyServices.AddResiliencePipeline("catalog", static builder => builder.AddRetry(
     new RetryStrategyOptions { MaxRetryAttempts = 3 }));
@@ -224,6 +226,7 @@ Kevlar registers built shields and resolves them through `IKevlarRegistry` or ke
 
 ```csharp
 using Kevlar.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 
 var kevlarServices = new ServiceCollection();
 kevlarServices.AddShield("catalog", Shield.Retry(3));
@@ -253,12 +256,16 @@ before the service provider is built. Both providers expose non-throwing lookup 
 The standard handlers have corresponding `IHttpClientBuilder` extensions:
 
 ```csharp
+using Microsoft.Extensions.DependencyInjection;
+
 var pollyHttpServices = new ServiceCollection();
 pollyHttpServices.AddHttpClient("catalog")
     .AddStandardResilienceHandler(options => options.Retry.MaxRetryAttempts = 3);
 ```
 
 ```csharp
+using Microsoft.Extensions.DependencyInjection;
+
 var kevlarHttpServices = new ServiceCollection();
 kevlarHttpServices.AddHttpClient("catalog")
     .AddStandardShield(options => options.Retry.MaxRetries = 3);
@@ -278,6 +285,7 @@ Like Polly's standard handler, Kevlar hedges against the request's own authority
 
 ```csharp
 using Kevlar.Extensions.Http;
+using Microsoft.Extensions.DependencyInjection;
 
 var kevlarHedgeServices = new ServiceCollection();
 kevlarHedgeServices.AddHttpClient("hedged-catalog")
@@ -309,6 +317,8 @@ var telemetryPipeline = new ResiliencePipelineBuilder()
 Kevlar publishes `System.Diagnostics.Metrics` instruments from the `Kevlar` meter:
 
 ```csharp
+using Microsoft.Extensions.DependencyInjection;
+
 var telemetryServices = new ServiceCollection();
 telemetryServices.AddOpenTelemetry()
     .WithMetrics(metrics => metrics.AddMeter(KevlarDiagnostics.MeterName));
@@ -319,6 +329,7 @@ decorate a shield directly or register it once for every DI, reloading, and HTTP
 
 ```csharp
 using Kevlar.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 
 var loggedShield = Shield.Retry(3)
     .WithLogging(logger);

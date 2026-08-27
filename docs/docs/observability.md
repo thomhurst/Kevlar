@@ -54,6 +54,8 @@ Kevlar publishes core metrics through a `System.Diagnostics.Metrics.Meter` named
 Register the core meter with OpenTelemetry:
 
 ```csharp
+using Microsoft.Extensions.DependencyInjection;
+
 services.AddOpenTelemetry().WithMetrics(metrics => metrics
     .AddMeter(KevlarDiagnostics.MeterName));
 ```
@@ -62,6 +64,7 @@ Applications that reference the optional `Kevlar.Chaos` package can register its
 
 ```csharp
 using Kevlar.Chaos;
+using Microsoft.Extensions.DependencyInjection;
 
 services.AddOpenTelemetry().WithMetrics(metrics => metrics
     .AddMeter(ChaosDiagnostics.MeterName));

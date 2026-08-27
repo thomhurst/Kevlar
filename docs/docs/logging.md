@@ -45,6 +45,8 @@ configuration independently with a one-second monotonic window.
 through Kevlar's integration packages:
 
 ```csharp
+using Microsoft.Extensions.DependencyInjection;
+
 services.AddKevlarLogging(options =>
 {
     options.IncludeScopes = true;
