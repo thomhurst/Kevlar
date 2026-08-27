@@ -83,10 +83,10 @@ Shield.Retry(o =>
     o.MaxDelay = TimeSpan.FromSeconds(10);
     o.OnRetry = e =>
     {
-        logger.LogWarning(e.Exception, "Retry {RetryNumber} after {Delay}", e.RetryNumber, e.Delay);
+        logger.LogWarning(e.Exception, "Retry {AttemptNumber} after {Delay}", e.AttemptNumber, e.Delay);
         return default;
     };
-    o.DelayGenerator = e => new(e.RetryNumber == 1 ? TimeSpan.Zero : null);
+    o.DelayGenerator = e => new(e.AttemptNumber == 0 ? TimeSpan.Zero : null);
     //                       ^ return a TimeSpan to override the computed delay, or null to keep it
 });
 ```
@@ -129,18 +129,18 @@ next attempt is suppressed and caller cancellation surfaces. A generator excepti
 its original identity and skips later hooks. `RetryEvent.Context` is pooled execution state: use it
 only before the returned `ValueTask` completes; never retain it or its property bag.
 
-On an untyped `Shield`, the `RetryEvent` callbacks receive: `RetryNumber` (1-based, so `1` is the first retry after the initial execution), `Delay`, `Exception` (null when a handled *result* triggered the retry), `Result` (the handled result, boxed as `object?`) and `Context`. On a typed `Shield<T>`, the events are `RetryEvent<T>` instead: same `RetryNumber`/`Delay`/`Context`, plus the handled failure as a directly stored typed `Outcome<T>` — `e.Outcome.Result` is your `T`, with no boxing, reconstruction, or cast.
+On an untyped `Shield`, the `RetryEvent` callbacks receive: `AttemptNumber` (zero-based, so `0` is the first retry after the initial execution), `Delay`, `Exception` (null when a handled *result* triggered the retry), `Result` (the handled result, boxed as `object?`) and `Context`. On a typed `Shield<T>`, the events are `RetryEvent<T>` instead: same `AttemptNumber`/`Delay`/`Context`, plus the handled failure as a directly stored typed `Outcome<T>` — `e.Outcome.Result` is your `T`, with no boxing, reconstruction, or cast.
 
 <!-- doc-test-run: retry-numbers -->
 ```csharp
-var retryNumbers = new List<int>();
+var attemptNumbers = new List<int>();
 var numberedRetry = Shield.Retry(options =>
 {
     options.MaxRetries = 3;
     options.Backoff = Backoff.None;
     options.OnRetry = retry =>
     {
-        retryNumbers.Add(retry.RetryNumber);
+        attemptNumbers.Add(retry.AttemptNumber);
         return default; // completes synchronously, so synchronous Execute below is fine
     };
 });
@@ -153,7 +153,7 @@ catch (InvalidOperationException)
 {
 }
 
-Console.WriteLine(string.Join(",", retryNumbers)); // 1,2,3
+Console.WriteLine(string.Join(",", attemptNumbers)); // 0,1,2
 ```
 
 ## What gets retried

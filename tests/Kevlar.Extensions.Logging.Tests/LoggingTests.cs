@@ -26,7 +26,7 @@ public class LoggingTests
         await Assert.That(record.Level).IsEqualTo(LogLevel.Warning);
         await Assert.That(record.GetStructuredStateValue("ShieldName")).IsEqualTo("checkout");
         await Assert.That(record.GetStructuredStateValue("StrategyIndex")).IsEqualTo("0");
-        await Assert.That(record.GetStructuredStateValue("Attempt")).IsEqualTo("1");
+        await Assert.That(record.GetStructuredStateValue("AttemptNumber")).IsEqualTo("1");
         await Assert.That(record.GetStructuredStateValue("Delay")).IsEqualTo(TimeSpan.Zero.ToString());
         await Assert.That(record.GetStructuredStateValue("Outcome")).IsEqualTo(typeof(TestException).FullName);
         await Assert.That(ReferenceEquals(record.Exception, failure)).IsTrue();
@@ -181,7 +181,7 @@ public class LoggingTests
         var rejection = logger.Collector.GetSnapshot()
             .Single(record => record.Id.Name == "CircuitRejected");
         await Assert.That(rejection.Level).IsEqualTo(LogLevel.Error);
-        await Assert.That(rejection.GetStructuredStateValue("Attempt")).IsEqualTo("0");
+        await Assert.That(rejection.GetStructuredStateValue("AttemptNumber")).IsEqualTo("0");
         await Assert.That(rejection.GetStructuredStateValue("CircuitState")).IsEqualTo("Open");
         await Assert.That(rejection.GetStructuredStateValue("RetryAfter")).IsNotNull();
         await Assert.That(rejection.Message).Contains("circuit is Open");
@@ -210,11 +210,11 @@ public class LoggingTests
         await Assert.That(records.Any(record =>
             record.Id == new EventId(1004, "Hedge")
             && record.Level == LogLevel.Information
-            && record.GetStructuredStateValue("Attempt") == "1")).IsTrue();
+            && record.GetStructuredStateValue("AttemptNumber") == "1")).IsTrue();
         await Assert.That(records.Any(record =>
             record.Id == new EventId(1005, "Fallback")
             && record.Level == LogLevel.Warning
-            && record.GetStructuredStateValue("Attempt") == "0"
+            && record.GetStructuredStateValue("AttemptNumber") == "0"
             && record.GetStructuredStateValue("Outcome") == "result:-1")).IsTrue();
     }
 
@@ -304,7 +304,7 @@ public class LoggingTests
         await Assert.That(records.Any(record =>
             record.Id == new EventId(1007, "ConcurrencyLimitRejected")
             && record.Level == LogLevel.Warning
-            && record.GetStructuredStateValue("Attempt") == "0")).IsTrue();
+            && record.GetStructuredStateValue("AttemptNumber") == "0")).IsTrue();
     }
 
     [Test]
@@ -383,13 +383,31 @@ public class LoggingTests
         _ = await disabled.ExecuteAsync(static _ => new ValueTask<int>(-1));
 
         await Assert.That(logger.LatestRecord.Level).IsEqualTo(LogLevel.Information);
-        await Assert.That(logger.LatestRecord.GetStructuredStateValue("Attempt")).IsEqualTo("1");
+        await Assert.That(logger.LatestRecord.GetStructuredStateValue("AttemptNumber")).IsEqualTo("1");
         await Assert.That(logger.LatestRecord.GetStructuredStateValue("Delay"))
             .IsEqualTo(TimeSpan.Zero.ToString());
         await Assert.That(logger.LatestRecord.GetStructuredStateValue("Outcome"))
             .IsEqualTo("result:-1");
         await Assert.That(logger.Collector.Count).IsEqualTo(count);
         await Assert.That(formatterCalls).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task SeverityProvider_Receives_Zero_Based_AttemptNumber()
+    {
+        var logger = new FakeLogger();
+        var observedAttemptNumber = -1;
+        var shield = Shield.Retry(1, Backoff.None)
+            .WithLogging(logger, options => options.SeverityProvider = logEvent =>
+            {
+                observedAttemptNumber = logEvent.AttemptNumber;
+                return LogLevel.Information;
+            });
+
+        _ = await shield.ExecuteOutcomeAsync<int>(static _ => throw new InvalidOperationException());
+
+        await Assert.That(observedAttemptNumber).IsEqualTo(1);
+        await Assert.That(typeof(KevlarLogEvent).GetProperty("Attempt")).IsNull();
     }
 
     [Test]

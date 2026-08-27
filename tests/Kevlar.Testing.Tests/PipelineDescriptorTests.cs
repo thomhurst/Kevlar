@@ -185,7 +185,7 @@ public class PipelineDescriptorTests
     public async Task Handling_Descriptor_Reports_Context_Aware_Clauses()
     {
         var contextAware = Shield
-            .WhenContext(handling => handling.Attempt == 0)
+            .WhenContext(handling => handling.AttemptNumber == 0)
             .Retry(1, Backoff.None)
             .GetDescriptor()
             .AssertContainsSingle<RetryStrategyDescriptor>();

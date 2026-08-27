@@ -11,8 +11,8 @@ public class ContextAwarePredicateTests
     public async Task Predicate_Receives_Attempt_Number_In_Retry()
     {
         var shield = Shield
-            .WhenContext(handling => handling.Exception is TimeoutException && handling.Attempt < 1)
-            .OrContext(handling => handling.Exception is HttpRequestException && handling.Attempt < 3)
+            .WhenContext(handling => handling.Exception is TimeoutException && handling.AttemptNumber < 1)
+            .OrContext(handling => handling.Exception is HttpRequestException && handling.AttemptNumber < 3)
             .Retry(5, Backoff.None);
 
         await AssertAttemptsAsync<TimeoutException>(shield, expected: 2);
@@ -43,7 +43,7 @@ public class ContextAwarePredicateTests
             .Throws<InvalidOperationException>();
 
         await Assert.That(attempts).IsEqualTo(2);
-        await Assert.That(observed.Attempt).IsEqualTo(0);
+        await Assert.That(observed.AttemptNumber).IsEqualTo(0);
         await Assert.That(observed.StrategyIndex).IsEqualTo(1);
     }
 
@@ -54,7 +54,7 @@ public class ContextAwarePredicateTests
         var breaker = Shield
             .WhenContext(handling =>
             {
-                attempts.Add(handling.Attempt);
+                attempts.Add(handling.AttemptNumber);
                 return true;
             })
             .CircuitBreaker(consecutiveFailures: 2, breakDuration: TimeSpan.FromMinutes(1));
@@ -66,7 +66,7 @@ public class ContextAwarePredicateTests
         var fallback = Shield.For<int>()
             .WhenContext(handling =>
             {
-                attempts.Add(handling.Attempt);
+                attempts.Add(handling.AttemptNumber);
                 return handling.Outcome.Exception is InvalidOperationException;
             })
             .FallbackTo(42);
@@ -120,7 +120,7 @@ public class ContextAwarePredicateTests
         var shield = Shield.For<int>()
             .WhenResultContext(handling =>
             {
-                observedAttempts.Add(handling.Attempt);
+                observedAttempts.Add(handling.AttemptNumber);
                 return handling.Outcome.TryGetResult(out var result) && result < 0;
             })
             .Hedge(maxHedgedAttempts: 1, delay: Timeout.InfiniteTimeSpan);
@@ -167,7 +167,7 @@ public class ContextAwarePredicateTests
         var shield = Shield.For<int>()
             .WhenResultContext(handling =>
             {
-                if (handling.Attempt == 1)
+                if (handling.AttemptNumber == 1)
                 {
                     observedValue = handling.Context.Properties.GetOrDefault(HedgeAttempt, -1);
                     observedToken = handling.Context.CancellationToken;
@@ -206,7 +206,7 @@ public class ContextAwarePredicateTests
         var shield = Shield.For<int>()
             .WhenResultContext(handling =>
             {
-                if (handling.Attempt == 1)
+                if (handling.AttemptNumber == 1)
                 {
                     releaseSlowOriginal.SetResult();
                     slowOriginal!.GetAwaiter().GetResult();
@@ -255,7 +255,7 @@ public class ContextAwarePredicateTests
         var shield = Shield.For<int>()
             .WhenResultContext(handling =>
             {
-                if (handling.Attempt == 1)
+                if (handling.AttemptNumber == 1)
                 {
                     observedValue = handling.Context.Properties.GetOrDefault(HedgeAttempt, -1);
                 }
@@ -307,7 +307,7 @@ public class ContextAwarePredicateTests
             options.MaxRetries = 1;
             options.Backoff = Backoff.None;
             options.HandlesExceptionWithContext = handling =>
-                handling.Exception is ArgumentException && handling.Attempt == 0;
+                handling.Exception is ArgumentException && handling.AttemptNumber == 0;
         });
 
         await Assert.That(async () => await shield.ExecuteAsync<int>(_ =>
@@ -425,7 +425,7 @@ public class ContextAwarePredicateTests
     {
         var attempts = 0;
         var shield = Shield
-            .WhenContext(handling => handling.Attempt == 0)
+            .WhenContext(handling => handling.AttemptNumber == 0)
             .Retry(3, Backoff.None);
 
         await Assert.That(() => shield.Execute<int>(_ =>

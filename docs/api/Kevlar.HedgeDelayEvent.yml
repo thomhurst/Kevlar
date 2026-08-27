@@ -44,7 +44,7 @@ items:
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: The 1-based number of the attempt that would be launched (2 = first hedge).
+  summary: The zero-based execution attempt number (1 = first hedge after the initial attempt).
   example: []
   syntax:
     content: public int AttemptNumber { get; }

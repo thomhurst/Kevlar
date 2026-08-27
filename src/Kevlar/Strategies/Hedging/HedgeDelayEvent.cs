@@ -12,7 +12,7 @@ public readonly struct HedgeDelayEvent
         Elapsed = elapsed;
     }
 
-    /// <summary>The 1-based number of the attempt that would be launched (2 = first hedge).</summary>
+    /// <summary>The zero-based execution attempt number (1 = first hedge after the initial attempt).</summary>
     public int AttemptNumber { get; }
 
     /// <summary>

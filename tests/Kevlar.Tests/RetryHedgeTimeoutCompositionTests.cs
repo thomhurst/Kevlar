@@ -30,9 +30,9 @@ public class RetryHedgeTimeoutCompositionTests
 
         await Assert.That(events).IsEquivalentTo(
             [
-                "action-1", "hedge-2", "action-2", "hedge-3", "action-3",
+                "action-1", "hedge-1", "action-2", "hedge-2", "action-3",
                 "retry-group",
-                "action-4", "hedge-2", "action-5", "hedge-3", "action-6",
+                "action-4", "hedge-1", "action-5", "hedge-2", "action-6",
             ],
             TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }
@@ -66,8 +66,8 @@ public class RetryHedgeTimeoutCompositionTests
         await Assert.That(events).IsEquivalentTo(
             [
                 "action-1", "attempt-retry", "action-2",
-                "hedge-2", "action-3", "attempt-retry", "action-4",
-                "hedge-3", "action-5", "attempt-retry", "action-6",
+                "hedge-1", "action-3", "attempt-retry", "action-4",
+                "hedge-2", "action-5", "attempt-retry", "action-6",
             ],
             TUnit.Assertions.Enums.CollectionOrdering.Matching);
     }

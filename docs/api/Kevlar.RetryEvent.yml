@@ -5,11 +5,11 @@ items:
   id: RetryEvent
   parent: Kevlar
   children:
+  - Kevlar.RetryEvent.AttemptNumber
   - Kevlar.RetryEvent.Context
   - Kevlar.RetryEvent.Delay
   - Kevlar.RetryEvent.Exception
   - Kevlar.RetryEvent.Result
-  - Kevlar.RetryEvent.RetryNumber
   langs:
   - csharp
   - vb
@@ -32,29 +32,29 @@ items:
   - System.Object.GetType
   - System.Object.Equals(System.Object,System.Object)
   - System.Object.ReferenceEquals(System.Object,System.Object)
-- uid: Kevlar.RetryEvent.RetryNumber
-  commentId: P:Kevlar.RetryEvent.RetryNumber
-  id: RetryNumber
+- uid: Kevlar.RetryEvent.AttemptNumber
+  commentId: P:Kevlar.RetryEvent.AttemptNumber
+  id: AttemptNumber
   parent: Kevlar.RetryEvent
   langs:
   - csharp
   - vb
-  name: RetryNumber
-  nameWithType: RetryEvent.RetryNumber
-  fullName: Kevlar.RetryEvent.RetryNumber
+  name: AttemptNumber
+  nameWithType: RetryEvent.AttemptNumber
+  fullName: Kevlar.RetryEvent.AttemptNumber
   type: Property
   assemblies:
   - Kevlar
   namespace: Kevlar
-  summary: The 1-based number of the retry about to be made (1 = first retry, i.e. second execution).
+  summary: The zero-based retry attempt number (0 = first retry after the initial execution).
   example: []
   syntax:
-    content: public int RetryNumber { get; }
+    content: public int AttemptNumber { get; }
     parameters: []
     return:
       type: System.Int32
-    content.vb: Public ReadOnly Property RetryNumber As Integer
-  overload: Kevlar.RetryEvent.RetryNumber*
+    content.vb: Public ReadOnly Property AttemptNumber As Integer
+  overload: Kevlar.RetryEvent.AttemptNumber*
 - uid: Kevlar.RetryEvent.Delay
   commentId: P:Kevlar.RetryEvent.Delay
   id: Delay
@@ -390,13 +390,13 @@ references:
   name: System
   nameWithType: System
   fullName: System
-- uid: Kevlar.RetryEvent.RetryNumber*
-  commentId: Overload:Kevlar.RetryEvent.RetryNumber
+- uid: Kevlar.RetryEvent.AttemptNumber*
+  commentId: Overload:Kevlar.RetryEvent.AttemptNumber
   isExternal: true
-  href: Kevlar.RetryEvent.html#Kevlar_RetryEvent_RetryNumber
-  name: RetryNumber
-  nameWithType: RetryEvent.RetryNumber
-  fullName: Kevlar.RetryEvent.RetryNumber
+  href: Kevlar.RetryEvent.html#Kevlar_RetryEvent_AttemptNumber
+  name: AttemptNumber
+  nameWithType: RetryEvent.AttemptNumber
+  fullName: Kevlar.RetryEvent.AttemptNumber
 - uid: System.Int32
   commentId: T:System.Int32
   parent: System

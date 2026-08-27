@@ -174,7 +174,7 @@ internal sealed class HedgingStrategy : Strategy
                 pending.Add(await StartHedgeAttemptAsync(
                     next,
                     context,
-                    2,
+                    1,
                     lastOutcome,
                     TimeSpan.Zero).ConfigureAwait(false));
                 hedgesLaunched++;
@@ -192,13 +192,13 @@ internal sealed class HedgingStrategy : Strategy
 
                 if (completed is null && hedgesLaunched < _maxHedgedAttempts)
                 {
-                    delay = await GetDelayAsync(hedgesLaunched + 2, context, startedAt).ConfigureAwait(false);
+                    delay = await GetDelayAsync(hedgesLaunched + 1, context, startedAt).ConfigureAwait(false);
                     if (delay == TimeSpan.Zero)
                     {
                         pending.Add(await StartHedgeAttemptAsync(
                             next,
                             context,
-                            hedgesLaunched + 2,
+                            hedgesLaunched + 1,
                             lastOutcome,
                             TimeSpan.Zero).ConfigureAwait(false));
                         hedgesLaunched++;
@@ -219,7 +219,7 @@ internal sealed class HedgingStrategy : Strategy
                         pending.Add(await StartHedgeAttemptAsync(
                             next,
                             context,
-                            hedgesLaunched + 2,
+                            hedgesLaunched + 1,
                             lastOutcome,
                             delay).ConfigureAwait(false));
                         hedgesLaunched++;
@@ -297,7 +297,7 @@ internal sealed class HedgingStrategy : Strategy
                     pending.Add(await StartHedgeAttemptAsync(
                         next,
                         context,
-                        hedgesLaunched + 2,
+                        hedgesLaunched + 1,
                         lastOutcome,
                         TimeSpan.Zero).ConfigureAwait(false));
                     hedgesLaunched++;
@@ -450,7 +450,7 @@ internal sealed class HedgingStrategy : Strategy
     {
         var cancellation = CancellationTokenSourcePool.Shared.RentLinked(context.CancellationToken);
         var fork = context.Fork(cancellation.Token);
-        fork.AttemptNumber = attemptNumber - 1;
+        fork.AttemptNumber = attemptNumber;
         OriginalActionContextCapture<T>? contextCapture = null;
         try
         {
@@ -472,14 +472,14 @@ internal sealed class HedgingStrategy : Strategy
                     KevlarMetrics.Hedge(
                         context,
                         _telemetryName,
-                        attemptNumber - 1,
+                        attemptNumber,
                         exception,
                         delay);
                     return new StartedAttempt<T>(
                         new ValueTask<Outcome<T>>(Outcome<T>.FromException(exception)),
                         cancellation,
                         fork,
-                        attemptNumber - 1,
+                        attemptNumber,
                         contextCapture);
                 }
 
@@ -489,12 +489,12 @@ internal sealed class HedgingStrategy : Strategy
             KevlarMetrics.Hedge(
                 context,
                 _telemetryName,
-                attemptNumber - 1,
+                attemptNumber,
                 delay: delay);
             var execution = generatedAction is null
                 ? next.InvokeAsync(fork)
                 : InvokeGeneratedAction(generatedAction, fork.CancellationToken);
-            return new StartedAttempt<T>(execution, cancellation, fork, attemptNumber - 1, contextCapture);
+            return new StartedAttempt<T>(execution, cancellation, fork, attemptNumber, contextCapture);
         }
         catch
         {

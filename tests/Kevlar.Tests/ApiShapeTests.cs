@@ -40,6 +40,35 @@ public class ApiShapeTests
     }
 
     [Test]
+    public async Task Public_Events_And_Records_Use_AttemptNumber()
+    {
+        var violations = new[]
+        {
+            typeof(Shield).Assembly,
+            typeof(CallbackRecord).Assembly,
+        }
+            .Distinct()
+            .SelectMany(static assembly => assembly.ExportedTypes)
+            .Where(static type =>
+                type.Name.EndsWith("Event", StringComparison.Ordinal)
+                || type.Name.Contains("Event`", StringComparison.Ordinal)
+                || type.Name.EndsWith("Record", StringComparison.Ordinal))
+            .SelectMany(static type => type.GetProperties(
+                BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly))
+            .Where(static property =>
+                property.PropertyType == typeof(int)
+                || property.PropertyType == typeof(int?))
+            .Where(static property =>
+                property.Name.Contains("Attempt", StringComparison.OrdinalIgnoreCase)
+                || property.Name.Contains("Retry", StringComparison.OrdinalIgnoreCase))
+            .Where(static property => property.Name != "AttemptNumber")
+            .Select(static property => $"{property.DeclaringType!.FullName}.{property.Name}")
+            .ToArray();
+
+        await Assert.That(violations).IsEmpty();
+    }
+
+    [Test]
     public async Task Testing_Wait_Helper_Does_Not_Extend_Every_Task()
     {
         var testingAssembly = typeof(ShieldDescriptor).Assembly;
@@ -500,8 +529,8 @@ public class ApiShapeTests
                     _ = Shield.When<System.Exception>().Or(_ => true);
                     _ = Shield.For<int>().When<System.Exception>().Or(_ => true).OrResult(_ => true);
 
-                    _ = Shield.WhenContext(handling => handling.Attempt == 0);
-                    _ = Shield.For<int>().WhenResultContext(handling => handling.Attempt == 0);
+                    _ = Shield.WhenContext(handling => handling.AttemptNumber == 0);
+                    _ = Shield.For<int>().WhenResultContext(handling => handling.AttemptNumber == 0);
                 }
             }
             """,

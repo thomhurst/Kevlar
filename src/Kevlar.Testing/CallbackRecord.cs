@@ -8,7 +8,6 @@ public sealed class CallbackRecord
         CallbackKind kind,
         string? shieldName = null,
         int? strategyIndex = null,
-        int? retryNumber = null,
         int? attemptNumber = null,
         TimeSpan? delay = null,
         TimeSpan? timeout = null,
@@ -25,7 +24,6 @@ public sealed class CallbackRecord
         Kind = kind;
         ShieldName = shieldName;
         StrategyIndex = strategyIndex;
-        RetryNumber = retryNumber;
         AttemptNumber = attemptNumber;
         Delay = delay;
         Timeout = timeout;
@@ -51,10 +49,7 @@ public sealed class CallbackRecord
     /// <summary>The zero-based strategy position copied from the callback context.</summary>
     public int? StrategyIndex { get; }
 
-    /// <summary>The 1-based retry number, when this is a retry callback.</summary>
-    public int? RetryNumber { get; }
-
-    /// <summary>The 1-based execution number, when this is a hedge callback.</summary>
+    /// <summary>The zero-based attempt number, when this is a retry or hedge callback.</summary>
     public int? AttemptNumber { get; }
 
     /// <summary>The retry delay, when applicable.</summary>
@@ -92,7 +87,6 @@ public sealed class CallbackRecord
         Kind,
         ShieldName,
         strategyIndex: StrategyIndex,
-        retryNumber: RetryNumber,
         attemptNumber: AttemptNumber,
         delay: Delay,
         timeout: Timeout,

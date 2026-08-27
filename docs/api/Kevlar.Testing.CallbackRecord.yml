@@ -15,7 +15,6 @@ items:
   - Kevlar.Testing.CallbackRecord.From
   - Kevlar.Testing.CallbackRecord.Kind
   - Kevlar.Testing.CallbackRecord.Result
-  - Kevlar.Testing.CallbackRecord.RetryNumber
   - Kevlar.Testing.CallbackRecord.Sequence
   - Kevlar.Testing.CallbackRecord.ShieldName
   - Kevlar.Testing.CallbackRecord.StrategyIndex
@@ -137,29 +136,6 @@ items:
       type: System.Nullable{System.Int32}
     content.vb: Public ReadOnly Property StrategyIndex As Integer?
   overload: Kevlar.Testing.CallbackRecord.StrategyIndex*
-- uid: Kevlar.Testing.CallbackRecord.RetryNumber
-  commentId: P:Kevlar.Testing.CallbackRecord.RetryNumber
-  id: RetryNumber
-  parent: Kevlar.Testing.CallbackRecord
-  langs:
-  - csharp
-  - vb
-  name: RetryNumber
-  nameWithType: CallbackRecord.RetryNumber
-  fullName: Kevlar.Testing.CallbackRecord.RetryNumber
-  type: Property
-  assemblies:
-  - Kevlar.Testing
-  namespace: Kevlar.Testing
-  summary: The 1-based retry number, when this is a retry callback.
-  example: []
-  syntax:
-    content: public int? RetryNumber { get; }
-    parameters: []
-    return:
-      type: System.Nullable{System.Int32}
-    content.vb: Public ReadOnly Property RetryNumber As Integer?
-  overload: Kevlar.Testing.CallbackRecord.RetryNumber*
 - uid: Kevlar.Testing.CallbackRecord.AttemptNumber
   commentId: P:Kevlar.Testing.CallbackRecord.AttemptNumber
   id: AttemptNumber
@@ -174,7 +150,7 @@ items:
   assemblies:
   - Kevlar.Testing
   namespace: Kevlar.Testing
-  summary: The 1-based execution number, when this is a hedge callback.
+  summary: The zero-based attempt number, when this is a retry or hedge callback.
   example: []
   syntax:
     content: public int? AttemptNumber { get; }
@@ -763,13 +739,6 @@ references:
   - name: " "
   - name: T
   - name: )
-- uid: Kevlar.Testing.CallbackRecord.RetryNumber*
-  commentId: Overload:Kevlar.Testing.CallbackRecord.RetryNumber
-  isExternal: true
-  href: Kevlar.Testing.CallbackRecord.html#Kevlar_Testing_CallbackRecord_RetryNumber
-  name: RetryNumber
-  nameWithType: CallbackRecord.RetryNumber
-  fullName: Kevlar.Testing.CallbackRecord.RetryNumber
 - uid: Kevlar.Testing.CallbackRecord.AttemptNumber*
   commentId: Overload:Kevlar.Testing.CallbackRecord.AttemptNumber
   isExternal: true

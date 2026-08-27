@@ -5,7 +5,7 @@ items:
   id: KevlarLogEvent
   parent: Kevlar.Extensions.Logging
   children:
-  - Kevlar.Extensions.Logging.KevlarLogEvent.Attempt
+  - Kevlar.Extensions.Logging.KevlarLogEvent.AttemptNumber
   - Kevlar.Extensions.Logging.KevlarLogEvent.CallbackKind
   - Kevlar.Extensions.Logging.KevlarLogEvent.CallbackSource
   - Kevlar.Extensions.Logging.KevlarLogEvent.Delay
@@ -158,16 +158,16 @@ items:
       type: System.Int32
     content.vb: Public ReadOnly Property StrategyIndex As Integer
   overload: Kevlar.Extensions.Logging.KevlarLogEvent.StrategyIndex*
-- uid: Kevlar.Extensions.Logging.KevlarLogEvent.Attempt
-  commentId: P:Kevlar.Extensions.Logging.KevlarLogEvent.Attempt
-  id: Attempt
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.AttemptNumber
+  commentId: P:Kevlar.Extensions.Logging.KevlarLogEvent.AttemptNumber
+  id: AttemptNumber
   parent: Kevlar.Extensions.Logging.KevlarLogEvent
   langs:
   - csharp
   - vb
-  name: Attempt
-  nameWithType: KevlarLogEvent.Attempt
-  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.Attempt
+  name: AttemptNumber
+  nameWithType: KevlarLogEvent.AttemptNumber
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.AttemptNumber
   type: Property
   assemblies:
   - Kevlar.Extensions.Logging
@@ -175,12 +175,12 @@ items:
   summary: The zero-based attempt number.
   example: []
   syntax:
-    content: public int Attempt { get; }
+    content: public int AttemptNumber { get; }
     parameters: []
     return:
       type: System.Int32
-    content.vb: Public ReadOnly Property Attempt As Integer
-  overload: Kevlar.Extensions.Logging.KevlarLogEvent.Attempt*
+    content.vb: Public ReadOnly Property AttemptNumber As Integer
+  overload: Kevlar.Extensions.Logging.KevlarLogEvent.AttemptNumber*
 - uid: Kevlar.Extensions.Logging.KevlarLogEvent.Exception
   commentId: P:Kevlar.Extensions.Logging.KevlarLogEvent.Exception
   id: Exception
@@ -729,13 +729,13 @@ references:
   nameWithType.vb: Integer
   fullName.vb: Integer
   name.vb: Integer
-- uid: Kevlar.Extensions.Logging.KevlarLogEvent.Attempt*
-  commentId: Overload:Kevlar.Extensions.Logging.KevlarLogEvent.Attempt
+- uid: Kevlar.Extensions.Logging.KevlarLogEvent.AttemptNumber*
+  commentId: Overload:Kevlar.Extensions.Logging.KevlarLogEvent.AttemptNumber
   isExternal: true
-  href: Kevlar.Extensions.Logging.KevlarLogEvent.html#Kevlar_Extensions_Logging_KevlarLogEvent_Attempt
-  name: Attempt
-  nameWithType: KevlarLogEvent.Attempt
-  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.Attempt
+  href: Kevlar.Extensions.Logging.KevlarLogEvent.html#Kevlar_Extensions_Logging_KevlarLogEvent_AttemptNumber
+  name: AttemptNumber
+  nameWithType: KevlarLogEvent.AttemptNumber
+  fullName: Kevlar.Extensions.Logging.KevlarLogEvent.AttemptNumber
 - uid: Kevlar.Extensions.Logging.KevlarLogEvent.Exception*
   commentId: Overload:Kevlar.Extensions.Logging.KevlarLogEvent.Exception
   isExternal: true

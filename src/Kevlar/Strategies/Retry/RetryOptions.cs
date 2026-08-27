@@ -157,17 +157,17 @@ public readonly struct RetryEvent
 {
     private readonly KevlarContext? _context;
 
-    internal RetryEvent(int retryNumber, TimeSpan delay, Exception? exception, object? result, KevlarContext context)
+    internal RetryEvent(int attemptNumber, TimeSpan delay, Exception? exception, object? result, KevlarContext context)
     {
-        RetryNumber = retryNumber;
+        AttemptNumber = attemptNumber;
         Delay = delay;
         Exception = exception;
         Result = result;
         _context = context;
     }
 
-    /// <summary>The 1-based number of the retry about to be made (1 = first retry, i.e. second execution).</summary>
-    public int RetryNumber { get; }
+    /// <summary>The zero-based retry attempt number (0 = first retry after the initial execution).</summary>
+    public int AttemptNumber { get; }
 
     /// <summary>The delay that will be waited before the retry.</summary>
     public TimeSpan Delay { get; }
@@ -202,19 +202,19 @@ public readonly struct RetryEvent<TResult>
     private readonly KevlarContext? _context;
 
     internal RetryEvent(
-        int retryNumber,
+        int attemptNumber,
         TimeSpan delay,
         Outcome<TResult> outcome,
         KevlarContext context)
     {
-        RetryNumber = retryNumber;
+        AttemptNumber = attemptNumber;
         Delay = delay;
         Outcome = outcome;
         _context = context;
     }
 
-    /// <summary>The 1-based number of the retry about to be made (1 = first retry, i.e. second execution).</summary>
-    public int RetryNumber { get; }
+    /// <summary>The zero-based retry attempt number (0 = first retry after the initial execution).</summary>
+    public int AttemptNumber { get; }
 
     /// <summary>The delay that will be waited before the retry.</summary>
     public TimeSpan Delay { get; }

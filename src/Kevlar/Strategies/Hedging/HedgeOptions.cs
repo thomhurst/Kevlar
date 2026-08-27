@@ -81,7 +81,7 @@ public readonly struct HedgeEvent
         _context = context;
     }
 
-    /// <summary>The 1-based number of the attempt being launched (2 = first hedge).</summary>
+    /// <summary>The zero-based execution attempt number (1 = first hedge after the initial attempt).</summary>
     public int AttemptNumber { get; }
 
     /// <summary>

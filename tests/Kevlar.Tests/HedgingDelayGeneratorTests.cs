@@ -17,7 +17,7 @@ public class HedgingDelayGeneratorTests
         var shield = Shield.Hedge(options =>
         {
             options.MaxHedgedAttempts = 2;
-            options.DelayGenerator = hedge => new(hedge.AttemptNumber == 2
+            options.DelayGenerator = hedge => new(hedge.AttemptNumber == 1
                 ? TimeSpan.FromMilliseconds(100)
                 : TimeSpan.FromMilliseconds(300));
         }).WithTimeProvider(time);
@@ -148,8 +148,8 @@ public class HedgingDelayGeneratorTests
 
         await Assert.That(await execution).IsEqualTo(3);
         await Assert.That(observed).IsEquivalentTo([
-            (2, TimeSpan.FromMilliseconds(50), TimeSpan.Zero),
-            (3, TimeSpan.FromMilliseconds(50), TimeSpan.FromMilliseconds(50)),
+            (1, TimeSpan.FromMilliseconds(50), TimeSpan.Zero),
+            (2, TimeSpan.FromMilliseconds(50), TimeSpan.FromMilliseconds(50)),
         ]);
     }
 

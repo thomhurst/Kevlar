@@ -32,9 +32,9 @@ public class HedgingActionGeneratorTests
             throw new InvalidOperationException("primary");
         });
 
-        await Assert.That(result).IsEqualTo(20);
+        await Assert.That(result).IsEqualTo(10);
         await Assert.That(primaryCalls).IsEqualTo(1);
-        await Assert.That(generatedAttempts).IsEquivalentTo([2]);
+        await Assert.That(generatedAttempts).IsEquivalentTo([1]);
     }
 
     [Test]
@@ -48,7 +48,7 @@ public class HedgingActionGeneratorTests
             options.ActionGenerator = hedge =>
             {
                 generatedAttempts.Add(hedge.AttemptNumber);
-                return hedge.AttemptNumber == 4
+                return hedge.AttemptNumber == 3
                     ? static _ => new ValueTask<int>(42)
                     : static _ => ValueTask.FromException<int>(new InvalidOperationException());
             };
@@ -58,7 +58,7 @@ public class HedgingActionGeneratorTests
             ValueTask.FromException<int>(new InvalidOperationException()));
 
         await Assert.That(result).IsEqualTo(42);
-        await Assert.That(generatedAttempts).IsEquivalentTo([2, 3, 4]);
+        await Assert.That(generatedAttempts).IsEquivalentTo([1, 2, 3]);
     }
 
     [Test]
@@ -91,7 +91,7 @@ public class HedgingActionGeneratorTests
         await Assert.That(result).IsEqualTo(42);
         await Assert.That(observedOutcome.HasValue).IsTrue();
         await Assert.That(ReferenceEquals(observedOutcome!.Value.Exception, expected)).IsTrue();
-        await Assert.That(observedAttempt).IsEqualTo(2);
+        await Assert.That(observedAttempt).IsEqualTo(1);
         await Assert.That(observedProperty).IsEqualTo("abc-123");
     }
 
@@ -150,7 +150,7 @@ public class HedgingActionGeneratorTests
         });
 
         await Assert.That(result).IsEqualTo(42);
-        await Assert.That(observer.Values).IsEquivalentTo([-1, 2]);
+        await Assert.That(observer.Values).IsEquivalentTo([-1, 1]);
     }
 
     [Test]
@@ -179,7 +179,7 @@ public class HedgingActionGeneratorTests
         });
 
         await Assert.That(originalCalls).IsEqualTo(1);
-        await Assert.That(generatedCalls).IsEqualTo(2);
+        await Assert.That(generatedCalls).IsEqualTo(1);
     }
 
     [Test]
@@ -317,7 +317,7 @@ public class HedgingActionGeneratorTests
             options.MaxHedgedAttempts = 2;
             options.Delay = Timeout.InfiniteTimeSpan;
             options.ActionGenerator = HedgeActionGenerator.Create<int>(hedge =>
-                hedge.AttemptNumber == 2
+                hedge.AttemptNumber == 1
                     ? _ => ValueTask.FromException<int>(expected)
                     : _ => new ValueTask<int>(42));
         });
@@ -395,7 +395,7 @@ public class HedgingActionGeneratorTests
                 contexts[hedge.AttemptNumber] = hedge.Context;
                 return async token =>
                 {
-                    if (hedge.AttemptNumber == 2)
+                    if (hedge.AttemptNumber == 1)
                     {
                         attemptTwoStarted.TrySetResult();
                         try
@@ -425,7 +425,7 @@ public class HedgingActionGeneratorTests
 
         await Task.WhenAll(attemptTwoStarted.Task, attemptThreeStarted.Task)
             .WaitAsync(TimeSpan.FromSeconds(5));
-        await Assert.That(ReferenceEquals(contexts[2], contexts[3])).IsFalse();
+        await Assert.That(ReferenceEquals(contexts[1], contexts[2])).IsFalse();
 
         releaseWinner.SetResult();
         await Assert.That(await execution).IsEqualTo(42);
@@ -523,7 +523,7 @@ public class HedgingActionGeneratorTests
         });
 
         await Assert.That(attempts).IsEqualTo(2);
-        await Assert.That(generatedAttempts).IsEquivalentTo([2]);
+        await Assert.That(generatedAttempts).IsEquivalentTo([1]);
     }
 
     [Test]

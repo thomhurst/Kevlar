@@ -203,7 +203,7 @@ public class HedgingTests
 
         var result = await task;
         await Assert.That(result).IsEqualTo(2);
-        await Assert.That(hedges).IsEquivalentTo([2]);
+        await Assert.That(hedges).IsEquivalentTo([1]);
     }
 
     [Test]

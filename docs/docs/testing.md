@@ -235,7 +235,7 @@ await shield.ExecuteOutcomeAsync<int>(static _ =>
 await telemetry.WaitForCallbackCountAsync(1);
 
 var retry = telemetry.Callbacks.Single();
-if (retry.Kind != CallbackKind.Retry || retry.RetryNumber != 1 || retry.ShieldName != "catalog")
+if (retry.Kind != CallbackKind.Retry || retry.AttemptNumber != 0 || retry.ShieldName != "catalog")
 {
     throw new InvalidOperationException("The expected retry callback was not recorded.");
 }

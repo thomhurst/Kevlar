@@ -35,7 +35,7 @@ API reference: [`HedgeOptions`](pathname:///api/Kevlar.HedgeOptions.html) and [`
 | `MaxHedgedAttempts` | `1` | Maximum additional attempts after the original |
 | `Delay` | `1s` | Wait before launching the next attempt (see special values below) |
 | `DelayGenerator` | — | Awaited selector returning `ValueTask<TimeSpan>`: a delay for each pending hedge from its attempt number, context, and elapsed execution time |
-| `OnHedge` | — | Awaited callback when a hedge launches, before the attempt starts — `e.AttemptNumber` is a 1-based execution number, so `2` = first hedge |
+| `OnHedge` | — | Awaited callback when a hedge launches, before the attempt starts — `e.AttemptNumber` is zero-based, so `1` = first hedge after the initial attempt |
 | `ActionGenerator` | — | Select a different operation for each additional attempt; `null` uses the original |
 | `HandlesException` | — | Local exception predicate; replaces the ambient clause for this hedge |
 | `HandlesResult` (`HedgeOptions<T>`) | — | Local result predicate on `Shield<T>`; replaces the ambient clause together with `HandlesException` |
@@ -63,10 +63,10 @@ var shield = Shield.For<string>().Hedge(o =>
     o.MaxHedgedAttempts = replicas.Length - 1;
     o.Delay = TimeSpan.FromMilliseconds(100);
     o.ActionGenerator = hedge =>
-        ct => replicas[hedge.AttemptNumber - 1](ct);
+        ct => replicas[hedge.AttemptNumber](ct);
 });
 
-// The original callback is attempt 1; generated callbacks are attempts 2 and 3.
+// The original callback is attempt 0; generated callbacks are attempts 1 and 2.
 var response = await shield.ExecuteAsync(ct => replicas[0](ct));
 ```
 
@@ -94,7 +94,7 @@ var adaptiveResult = await adaptiveHedge.ExecuteWithContextAsync(
     static (_, _) => new ValueTask<int>(42));
 ```
 
-`HedgeDelayEvent.AttemptNumber` is the 1-based execution number (`2` = first hedge), and `Elapsed`
+`HedgeDelayEvent.AttemptNumber` is the zero-based execution number (`1` = first hedge), and `Elapsed`
 is measured from the primary attempt's start through the shield's `TimeProvider`. Generated
 negative delays become zero, values above the runtime timer limit are clamped, and the same special
 zero/infinite meanings apply. Generator exceptions fail the execution and cancel in-flight attempts.

@@ -3,7 +3,7 @@ namespace Kevlar.Tests;
 public class HedgingEdgeCaseTests
 {
     [Test]
-    public async Task Hedge_Event_Numbers_Are_One_Based_Execution_Counts()
+    public async Task Hedge_Event_AttemptNumbers_Are_Zero_Based()
     {
         var hedges = new List<int>();
         var shield = Shield.Hedge(options =>
@@ -16,7 +16,7 @@ public class HedgingEdgeCaseTests
         await Assert.That(async () => await shield.ExecuteAsync<int>(_ => throw new InvalidOperationException()))
             .Throws<InvalidOperationException>();
 
-        await Assert.That(hedges).IsEquivalentTo([2, 3]);
+        await Assert.That(hedges).IsEquivalentTo([1, 2]);
     }
 
     [Test]

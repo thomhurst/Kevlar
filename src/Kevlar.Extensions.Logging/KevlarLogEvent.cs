@@ -10,7 +10,7 @@ public readonly struct KevlarLogEvent
         ShieldName = telemetryEvent.ShieldName;
         StrategyName = telemetryEvent.StrategyName;
         StrategyIndex = telemetryEvent.StrategyIndex;
-        Attempt = telemetryEvent.AttemptNumber;
+        AttemptNumber = telemetryEvent.AttemptNumber;
         Exception = telemetryEvent.Exception;
         Result = telemetryEvent.Result;
         Delay = telemetryEvent.Delay;
@@ -39,7 +39,7 @@ public readonly struct KevlarLogEvent
     public int StrategyIndex { get; }
 
     /// <summary>The zero-based attempt number.</summary>
-    public int Attempt { get; }
+    public int AttemptNumber { get; }
 
     /// <summary>The associated exception, when present.</summary>
     public Exception? Exception { get; }

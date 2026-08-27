@@ -349,7 +349,7 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
                     HttpRequestUriKey,
                     out string? requestUri);
                 logger.Log(level, eventId, telemetryEvent.Exception,
-                    "Shield {ShieldName} strategy {StrategyIndex} retry attempt {Attempt} after {Delay}; outcome {Outcome}; request {RequestMethod} {RequestUri}",
+                    "Shield {ShieldName} strategy {StrategyIndex} retry attempt {AttemptNumber} after {Delay}; outcome {Outcome}; request {RequestMethod} {RequestUri}",
                     telemetryEvent.ShieldName, telemetryEvent.StrategyIndex,
                     telemetryEvent.AttemptNumber, telemetryEvent.Delay, outcome,
                     requestMethod, requestUri);
@@ -384,32 +384,32 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
                 break;
             case KevlarLogEventKind.CircuitRejected:
                 logger.Log(level, eventId, telemetryEvent.Exception,
-                    "Shield {ShieldName} strategy {StrategyIndex} rejected attempt {Attempt} because the circuit is {CircuitState}; retry after {RetryAfter}; outcome {Outcome}",
+                    "Shield {ShieldName} strategy {StrategyIndex} rejected attempt {AttemptNumber} because the circuit is {CircuitState}; retry after {RetryAfter}; outcome {Outcome}",
                     telemetryEvent.ShieldName, telemetryEvent.StrategyIndex,
                     telemetryEvent.AttemptNumber, CircuitStateFromRejection(in telemetryEvent),
                     telemetryEvent.RetryAfter, outcome);
                 break;
             case KevlarLogEventKind.Hedge:
                 logger.Log(level, eventId, telemetryEvent.Exception,
-                    "Shield {ShieldName} strategy {StrategyIndex} started hedge attempt {Attempt} after {Delay}; outcome {Outcome}",
+                    "Shield {ShieldName} strategy {StrategyIndex} started hedge attempt {AttemptNumber} after {Delay}; outcome {Outcome}",
                     telemetryEvent.ShieldName, telemetryEvent.StrategyIndex,
                     telemetryEvent.AttemptNumber, telemetryEvent.Delay, outcome);
                 break;
             case KevlarLogEventKind.Fallback:
                 logger.Log(level, eventId, telemetryEvent.Exception,
-                    "Shield {ShieldName} strategy {StrategyIndex} used fallback on attempt {Attempt}; outcome {Outcome}",
+                    "Shield {ShieldName} strategy {StrategyIndex} used fallback on attempt {AttemptNumber}; outcome {Outcome}",
                     telemetryEvent.ShieldName, telemetryEvent.StrategyIndex,
                     telemetryEvent.AttemptNumber, outcome);
                 break;
             case KevlarLogEventKind.RateLimitRejected:
                 logger.Log(level, eventId, telemetryEvent.Exception,
-                    "Shield {ShieldName} strategy {StrategyIndex} rejected attempt {Attempt} by rate limit; retry after {RetryAfter}; outcome {Outcome}",
+                    "Shield {ShieldName} strategy {StrategyIndex} rejected attempt {AttemptNumber} by rate limit; retry after {RetryAfter}; outcome {Outcome}",
                     telemetryEvent.ShieldName, telemetryEvent.StrategyIndex,
                     telemetryEvent.AttemptNumber, telemetryEvent.RetryAfter, outcome);
                 break;
             case KevlarLogEventKind.ConcurrencyLimitRejected:
                 logger.Log(level, eventId, telemetryEvent.Exception,
-                    "Shield {ShieldName} strategy {StrategyIndex} rejected attempt {Attempt} by concurrency limit; outcome {Outcome}",
+                    "Shield {ShieldName} strategy {StrategyIndex} rejected attempt {AttemptNumber} by concurrency limit; outcome {Outcome}",
                     telemetryEvent.ShieldName, telemetryEvent.StrategyIndex,
                     telemetryEvent.AttemptNumber, outcome);
                 break;
