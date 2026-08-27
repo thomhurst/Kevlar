@@ -35,7 +35,7 @@ try
                     $assemblyId = $packageId
                     $targetFramework = $Matches[1].ToLowerInvariant()
                 }
-                elseif ($entry.FullName -match '^analyzers/dotnet/cs/(Kevlar\.Analyzers)\.dll$')
+                elseif ($entry.FullName -match '^analyzers/dotnet/(?:roslyn[\d.]+/)?cs/(Kevlar\.Analyzers)\.dll$')
                 {
                     $assemblyId = $Matches[1]
                     $targetFramework = 'netstandard2.0'
@@ -62,9 +62,16 @@ try
         }
     }
 
-    if ($assemblies.Count -eq 0)
+    $expectedAssemblyIds = @(
+        Get-ChildItem -LiteralPath $BaselineRoot -Directory |
+            Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName 'PublicAPI.Shipped.txt') -PathType Leaf } |
+            ForEach-Object Name |
+            Sort-Object -Unique)
+    $actualAssemblyIds = @($assemblies | ForEach-Object AssemblyId | Sort-Object -Unique)
+    $missingAssemblyIds = @($expectedAssemblyIds | Where-Object { $_ -notin $actualAssemblyIds })
+    if ($missingAssemblyIds.Count -gt 0)
     {
-        throw "No package assemblies were found in '$packageDirectory'."
+        throw "Expected package assemblies were not found in '$packageDirectory': $($missingAssemblyIds -join ', ')."
     }
 
     $toolProject = Join-Path $RepositoryRoot 'tools/Kevlar.ApiVerifier/Kevlar.ApiVerifier.csproj'
