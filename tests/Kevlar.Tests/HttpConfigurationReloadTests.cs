@@ -366,6 +366,34 @@ public class HttpConfigurationReloadTests
     }
 
     [Test]
+    public async Task Reload_Replaces_The_Handler_Endpoint_Snapshot()
+    {
+        var configuration = BuildConfiguration(
+            ("Retry:MaxRetries", "0"),
+            ("Handler:Routing:Endpoints:0:Uri", "https://first.example"));
+        var hosts = new List<string>();
+        var transport = new FuncHandler((request, _) =>
+        {
+            hosts.Add(request.RequestUri!.Host);
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
+        });
+        using var services = CreateStandardServices(configuration, transport);
+        var client = services.GetRequiredService<IHttpClientFactory>().CreateClient("client");
+
+        using (await client.GetAsync("https://origin.example/"))
+        {
+        }
+
+        configuration["Handler:Routing:Endpoints:0:Uri"] = "https://second.example";
+        configuration.Reload();
+        using (await client.GetAsync("https://origin.example/"))
+        {
+        }
+
+        await Assert.That(hosts).IsEquivalentTo(["first.example", "second.example"]);
+    }
+
+    [Test]
     public async Task Configuration_Bound_RetryAfter_Survives_Reload()
     {
         var configuration = BuildConfiguration(
@@ -662,6 +690,82 @@ public class HttpConfigurationReloadTests
             .Throws<InvalidOperationException>();
 
         await Assert.That(creations).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task Direct_Registration_Snapshots_Handler_Options()
+    {
+        var hosts = new List<string>();
+        var transport = new FuncHandler((request, _) =>
+        {
+            hosts.Add(request.RequestUri!.Host);
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
+        });
+        var routing = new HttpEndpointRoutingOptions();
+        routing.Endpoints.Add(new HttpEndpoint(new Uri("https://original.example")));
+        var options = new ShieldHttpHandlerOptions { Routing = routing };
+        var services = new ServiceCollection();
+        services.AddHttpClient("client")
+            .ConfigurePrimaryHttpMessageHandler(() => transport)
+            .AddShield(HttpShield.WhenTransient().Retry(0, Backoff.None), options);
+
+        routing.Endpoints.Clear();
+        routing.Endpoints.Add(new HttpEndpoint(new Uri("https://mutated.example")));
+        using var provider = services.BuildServiceProvider();
+        var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("client");
+        using var response = await client.GetAsync("https://origin.example/");
+
+        await Assert.That(hosts).IsEquivalentTo(["original.example"]);
+    }
+
+    [Test]
+    public async Task Handler_Options_Are_Snapshotted_At_Construction()
+    {
+        Func<HttpRequestMessage, int, CancellationToken, ValueTask<HttpRequestMessage>> requestFactory =
+            static (request, _, _) => new(new HttpRequestMessage(request.Method, request.RequestUri));
+        Func<Uri, Shield<HttpResponseMessage>> shieldFactory =
+            static _ => HttpShield.WhenTransient().Retry(0, Backoff.None);
+        var endpoint = new HttpEndpoint(new Uri("https://original.example"), weight: 2);
+        var routing = new HttpEndpointRoutingOptions
+        {
+            SelectionMode = HttpEndpointSelectionMode.Weighted,
+            Seed = 17,
+            ShieldFactory = shieldFactory,
+        };
+        routing.Endpoints.Add(endpoint);
+        var options = new ShieldHttpHandlerOptions
+        {
+            ContentReplayPolicy = HttpContentReplayPolicy.Buffer,
+            MaximumBufferSize = 2048,
+            AllowUnsafeMethodReplay = true,
+            RequestFactory = requestFactory,
+            Routing = routing,
+        };
+        var pipeline = new HttpShieldPipeline(
+            HttpShield.WhenTransient().Retry(0, Backoff.None),
+            options);
+
+        options.ContentReplayPolicy = HttpContentReplayPolicy.NoBuffer;
+        options.MaximumBufferSize = 4096;
+        options.AllowUnsafeMethodReplay = false;
+        options.RequestFactory = null;
+        routing.SelectionMode = HttpEndpointSelectionMode.Ordered;
+        routing.Seed = 23;
+        routing.ShieldFactory = null;
+        routing.Endpoints.Clear();
+        routing.Endpoints.Add(new HttpEndpoint(new Uri("https://mutated.example")));
+        options.Routing = new HttpEndpointRoutingOptions();
+
+        await Assert.That(pipeline.Options.ContentReplayPolicy)
+            .IsEqualTo(HttpContentReplayPolicy.Buffer);
+        await Assert.That(pipeline.Options.MaximumBufferSize).IsEqualTo(2048);
+        await Assert.That(pipeline.Options.AllowUnsafeMethodReplay).IsTrue();
+        await Assert.That(ReferenceEquals(pipeline.Options.RequestFactory, requestFactory)).IsTrue();
+        await Assert.That(pipeline.Options.Routing!.SelectionMode)
+            .IsEqualTo(HttpEndpointSelectionMode.Weighted);
+        await Assert.That(pipeline.Options.Routing.Seed).IsEqualTo(17);
+        await Assert.That(ReferenceEquals(pipeline.Options.Routing.ShieldFactory, shieldFactory)).IsTrue();
+        await Assert.That(pipeline.Options.Routing.Endpoints).IsEquivalentTo([endpoint]);
     }
 
     [Test]

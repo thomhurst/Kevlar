@@ -158,7 +158,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
 
     private static async ValueTask<bool> CanReplayAsync(
         HttpRequestMessage request,
-        ShieldHttpHandlerOptions options,
+        HttpShieldPipelineOptions options,
         KevlarRequestOptions? requestOptions)
     {
         if (requestOptions?.AllowReplay == false)
@@ -296,7 +296,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             _endpointOrder = pipeline.CreateEndpointOrder();
         }
 
-        private ShieldHttpHandlerOptions Options => _pipeline.Options;
+        private HttpShieldPipelineOptions Options => _pipeline.Options;
 
         public void InitializeProperties(KevlarProperties properties)
         {

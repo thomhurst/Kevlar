@@ -21,6 +21,7 @@ items:
   - Kevlar.Extensions.Http
   namespace: Kevlar.Extensions.Http
   summary: Configures alternate authorities for retry and hedge attempts.
+  remarks: The endpoint list and scalar values are snapshotted with the handler options.
   example: []
   syntax:
     content: public sealed class HttpEndpointRoutingOptions

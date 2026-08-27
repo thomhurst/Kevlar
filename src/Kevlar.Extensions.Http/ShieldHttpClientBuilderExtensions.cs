@@ -50,10 +50,11 @@ public static class ShieldHttpClientBuilderExtensions
             throw new ArgumentNullException(nameof(options));
         }
 
+        var optionsSnapshot = Snapshot(options);
         return builder.AddHttpMessageHandler(services =>
             new ShieldDelegatingHandler(
                 Decorate(services, shield, builder.Name),
-                options,
+                optionsSnapshot,
                 CreateDecorator(services, builder.Name)));
     }
 

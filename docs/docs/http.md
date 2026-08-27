@@ -413,6 +413,12 @@ is cached by authority, so circuit-breaker and limiter state stays isolated per 
 endpoint-local shield single-attempt (breaker, limiter, timeout); put retry or hedging in the outer
 shield so every additional send goes through safe replay and routing.
 
+Handler options are setup objects. `ShieldDelegatingHandler` snapshots their scalar values,
+delegates, routing values, and endpoint list when the handler pipeline is created; the direct
+`AddShield(shield, options)` overload snapshots at registration. Mutating those source objects later
+does not reconfigure existing handlers. Use a configuration-backed standard registration when
+runtime changes are required; each valid reload publishes a fresh complete pipeline snapshot.
+
 ## Behaviour notes
 
 - **Superseded responses are handler-owned.** The handler disposes failed retry responses and losing hedge responses, including a loser that completes after the winner. A custom `OnRetry` response-disposal hook is unnecessary with `ShieldDelegatingHandler`; the hook that `HttpShield.Standard()` installs stays safe because `HttpResponseMessage.Dispose` is idempotent. The selected response remains caller-owned.
