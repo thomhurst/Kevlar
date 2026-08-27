@@ -415,6 +415,7 @@ required.
 | Hedging | 1 additional attempt (2 total); delay 2 s | 1 additional attempt (2 total); delay 1 s |
 | Concurrency | permit limit 1,000; queue limit 0 | maximum concurrency 10; queue limit 0 |
 | Standard HTTP retry | 3 retries; exponential from 2 s; decorrelated jitter; no delay cap | 3 retries; exponential from 250 ms; equal jitter; 10 s cap; honours `Retry-After` |
+| Standard HTTP unsafe methods | POST, PATCH, DELETE, and custom methods are retried by default | POST, PATCH, and custom methods remain single-attempt unless `AllowUnsafeMethodReplay`, per-request `AllowReplay`, or a `RequestFactory` opts in |
 | Standard HTTP circuit breaker | failure ratio 0.1; minimum throughput 100; sampling 30 s; break 5 s | failure ratio 0.5; minimum throughput 10; sampling 30 s; break 15 s |
 | Standard HTTP concurrency | permit limit 1,000; queue limit 0 | no limiter unless `ConcurrencyLimit` is configured |
 | Chaos | enabled; injection rate 0.001 | disabled; injection rate 1 |

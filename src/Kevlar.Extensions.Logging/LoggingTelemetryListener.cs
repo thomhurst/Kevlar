@@ -321,12 +321,24 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
                 _ = telemetryEvent.Context.Properties.TryGet(
                     HttpRequestUriKey,
                     out string? suppressedRequestUri);
-                LoggerMessages.AttemptsSuppressed(
-                    logger,
-                    telemetryEvent.ShieldName,
-                    telemetryEvent.SuppressionReason,
-                    suppressedRequestMethod,
-                    suppressedRequestUri);
+                if (telemetryEvent.Severity == KevlarTelemetrySeverity.Warning
+                    && telemetryEvent.SuppressionReason == "unsafe_method")
+                {
+                    WarningLoggerMessages.UnsafeMethodAttemptsSuppressed(
+                        logger,
+                        telemetryEvent.ShieldName,
+                        suppressedRequestMethod,
+                        suppressedRequestUri);
+                }
+                else
+                {
+                    LoggerMessages.AttemptsSuppressed(
+                        logger,
+                        telemetryEvent.ShieldName,
+                        telemetryEvent.SuppressionReason,
+                        suppressedRequestMethod,
+                        suppressedRequestUri);
+                }
                 break;
         }
     }
@@ -493,7 +505,9 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
             case "attempts_suppressed":
                 kind = KevlarLogEventKind.AttemptsSuppressed;
                 eventId = new EventId(1009, "AttemptsSuppressed");
-                level = LogLevel.Information;
+                level = telemetryEvent.Severity == KevlarTelemetrySeverity.Warning
+                    ? LogLevel.Warning
+                    : LogLevel.Information;
                 return true;
             case "rejection" when telemetryEvent.RejectionKind is "rate_limit" or "rate_limiter_adapter":
                 kind = KevlarLogEventKind.RateLimitRejected;

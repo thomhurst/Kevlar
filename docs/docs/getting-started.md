@@ -83,7 +83,9 @@ using var serviceProvider = services.BuildServiceProvider();
 ```
 
 `AddShield` registers a reusable named shield. `AddStandardShield` installs a production HTTP
-pipeline with total and per-attempt timeouts, retry, and circuit breaker. Continue with
+pipeline with total and per-attempt timeouts, retry, and circuit breaker. POST, PATCH, and custom
+methods remain single-attempt unless replay is explicitly enabled for an operation that is safe to
+repeat. Continue with
 [Dependency injection](dependency-injection.md) or [HTTP resilience](http.md) to resolve and
 customize them. Registration extensions live in `Microsoft.Extensions.DependencyInjection`, so
 ASP.NET Core projects get them through implicit usings without importing a Kevlar package namespace.

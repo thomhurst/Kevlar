@@ -13,6 +13,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
     private readonly ReloadingHttpShieldPipeline? _reloadingPipeline;
     private readonly Func<HttpRequestMessage, ValueTask<Shield<HttpResponseMessage>>>? _shieldSelector;
     private readonly Func<Shield<HttpResponseMessage>, Shield<HttpResponseMessage>>? _requestShieldDecorator;
+    private int _unsafeMethodSuppressionReported;
 
     /// <summary>Creates the handler with safe no-buffer replay defaults.</summary>
     public ShieldDelegatingHandler(Shield<HttpResponseMessage> shield)
@@ -134,6 +135,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             request,
             pipeline.Options,
             requestOptions).ConfigureAwait(false);
+        var reportSuppression = !replay.CanReplay && !selectedShield.InvokesContinuationAtMostOnce;
         var execution = new RequestExecution(
             this,
             request,
@@ -141,7 +143,7 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             requestOptions,
             replay.CanReplay,
             replay.SuppressionReason,
-            reportSuppression: !replay.CanReplay && !selectedShield.InvokesContinuationAtMostOnce,
+            reportSuppression,
             executionCancellationToken: executionCancellationToken);
         try
         {
@@ -262,6 +264,10 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
         return request => new ValueTask<Shield<HttpResponseMessage>>(shieldSelector(request));
     }
 
+    private bool ShouldWarnOnSuppression(string reason) =>
+        reason == "unsafe_method"
+        && Interlocked.CompareExchange(ref _unsafeMethodSuppressionReported, 1, 0) == 0;
+
     private Task<HttpResponseMessage> BaseSendAsync(
         HttpRequestMessage request,
         CancellationToken cancellationToken) =>
@@ -380,7 +386,12 @@ public sealed class ShieldDelegatingHandler : DelegatingHandler
             if (_reportSuppression
                 && Interlocked.Exchange(ref _suppressionReported, 1) == 0)
             {
-                KevlarMetrics.HttpReplaySuppressed(context, _suppressionReason!);
+                KevlarMetrics.HttpReplaySuppressed(
+                    context,
+                    _suppressionReason!,
+                    _handler.ShouldWarnOnSuppression(_suppressionReason!)
+                        ? KevlarTelemetrySeverity.Warning
+                        : KevlarTelemetrySeverity.Information);
             }
 
             var cancellationToken = context.CancellationToken;

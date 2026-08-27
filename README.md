@@ -151,7 +151,8 @@ services.AddHttpClient("api")
 
 The standard shield has a 30-second total timeout, three jittered retries that honour
 `Retry-After`, a circuit breaker, and a 10-second timeout per attempt. You can configure every
-part or supply your own shield. `Kevlar.Extensions.DependencyInjection` adds named,
+part or supply your own shield. POST, PATCH, and custom methods remain single-attempt unless you
+explicitly enable replay for operations that are safe to repeat. `Kevlar.Extensions.DependencyInjection` adds named,
 configuration-bound shields and `IKevlarRegistry`.
 
 ## Packages
