@@ -120,6 +120,55 @@ public class AsyncRetryDelayGeneratorTests
     }
 
     [Test]
+    public async Task Generator_Result_Uses_Backoff_Cap_When_MaxDelay_Is_Unset()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var seenByHook = TimeSpan.Zero;
+        var shield = Shield.Retry(options =>
+        {
+            options.MaxRetries = 1;
+            options.DelayGenerator = static _ => new(TimeSpan.FromDays(1));
+            options.OnRetry = retry =>
+            {
+                seenByHook = retry.Delay;
+                cancellation.Cancel();
+                return default;
+            };
+        });
+
+        await shield.ExecuteOutcomeAsync<int>(
+            static _ => throw new InvalidOperationException(),
+            cancellation.Token);
+
+        await Assert.That(seenByHook).IsEqualTo(TimeSpan.FromSeconds(30));
+    }
+
+    [Test]
+    public async Task Explicit_MaxDelay_Overrides_Backoff_Cap_For_Generator_Result()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var seenByHook = TimeSpan.Zero;
+        var shield = Shield.Retry(options =>
+        {
+            options.MaxRetries = 1;
+            options.MaxDelay = TimeSpan.FromDays(1);
+            options.DelayGenerator = static _ => new(TimeSpan.FromDays(1));
+            options.OnRetry = retry =>
+            {
+                seenByHook = retry.Delay;
+                cancellation.Cancel();
+                return default;
+            };
+        });
+
+        await shield.ExecuteOutcomeAsync<int>(
+            static _ => throw new InvalidOperationException(),
+            cancellation.Token);
+
+        await Assert.That(seenByHook).IsEqualTo(TimeSpan.FromDays(1));
+    }
+
+    [Test]
     public async Task Invalid_Generator_Result_Keeps_The_Previous_Delay()
     {
         var generated = new Queue<TimeSpan?>([null, TimeSpan.FromSeconds(-1)]);

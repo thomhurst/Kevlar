@@ -95,7 +95,7 @@ Shield.Retry(o =>
 |---|---|---|
 | `MaxRetries` | `3` | Retries after the initial attempt — `3` means up to 4 total attempts; `int.MaxValue` = forever |
 | `Backoff` | `Backoff.Default` | The delay sequence (see above) |
-| `MaxDelay` | — | Absolute cap applied to every delay — including `DelayGenerator` output, so a hostile `Retry-After` can't stall the pipeline |
+| `MaxDelay` | backoff cap | Absolute cap applied to every delay, including `DelayGenerator` output. When unset, the backoff's cap applies (30s for `Backoff.Default`); a backoff without a cap falls back to the runtime timer limit |
 | `OnRetry` | — | Awaited before each retry sleeps — attempt number, final delay, failure. Return `default` when the work is synchronous |
 | `DelayGenerator` | — | Per-retry override returning `ValueTask<TimeSpan?>`: a `TimeSpan` replaces the computed delay, `null` keeps it. This is how [`Retry-After` support](../http.md) works |
 | `HandlesException` | — | Local exception predicate; replaces the ambient clause for this retry |
@@ -104,7 +104,7 @@ Shield.Retry(o =>
 Invalid option values throw [`KevlarConfigurationException`](../exceptions.md#configuration-failures)
 and identify the options type, property, and offending value.
 
-Order per retry: retry metrics are recorded → backoff computes the delay → `MaxDelay` clamps it → the awaited `DelayGenerator` may override it → the awaited `OnRetry` sees the final delay → sleep. The generator's `null` and negative results are ignored, and `MaxDelay` clamps its override.
+Order per retry: retry metrics are recorded → backoff computes the delay → effective cap (`MaxDelay ?? Backoff.MaxDelay`) clamps it → the awaited `DelayGenerator` may override it → the awaited `OnRetry` sees the final delay → sleep. The generator's `null` and negative results are ignored, and the effective cap clamps its override.
 
 Both hooks return `ValueTask`. A hook that completes synchronously (`return default;`, `new(value)`)
 costs nothing extra and works with synchronous `Execute`. A hook that yields is awaited by

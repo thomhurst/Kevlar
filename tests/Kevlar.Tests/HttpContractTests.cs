@@ -311,6 +311,18 @@ public class HttpContractTests
     }
 
     [Test]
+    public async Task RetryAfter_Default_Caps_Server_Delay_To_Thirty_Seconds()
+    {
+        var timeProvider = new FakeTimeProvider();
+        using var response = new HttpResponseMessage(HttpStatusCode.TooManyRequests);
+        response.Headers.RetryAfter = new RetryConditionHeaderValue(TimeSpan.FromHours(1));
+
+        var delay = await ObserveRetryDelay(timeProvider, () => response);
+
+        await Assert.That(delay).IsEqualTo(TimeSpan.FromSeconds(30));
+    }
+
+    [Test]
     public async Task RetryAfter_Max_Overload_Does_Not_Shorten_Backoff()
     {
         var timeProvider = new FakeTimeProvider();
