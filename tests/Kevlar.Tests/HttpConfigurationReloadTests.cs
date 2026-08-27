@@ -12,7 +12,7 @@ public class HttpConfigurationReloadTests
     [Test]
     public async Task Registration_Null_Guards_Report_Exact_Parameters()
     {
-        var configuration = BuildConfiguration(("Endpoints:0:Uri", "https://one.example"));
+        var configuration = BuildConfiguration(("Routing:Endpoints:0:Uri", "https://one.example"));
         IHttpClientBuilder? missingBuilder = null;
         var builder = new ServiceCollection().AddHttpClient("client");
 
@@ -176,23 +176,23 @@ public class HttpConfigurationReloadTests
     public async Task Hedge_Section_Binds_All_Supported_Values()
     {
         var configuration = BuildConfiguration(
-            ("TotalTimeout", "00:00:20"),
-            ("MaxHedgedAttempts", "3"),
-            ("HedgeDelay", "00:00:00.250"),
-            ("AttemptTimeout", "00:00:02"),
-            ("MaxConcurrency", "4"),
-            ("QueueLimit", "5"),
-            ("ConsecutiveFailures", "2"),
-            ("FailureRatio", ""),
-            ("MinimumThroughput", "6"),
-            ("SamplingWindow", "00:00:08"),
-            ("BreakDuration", "00:00:04"),
-            ("SelectionMode", "Weighted"),
-            ("Seed", "9"),
-            ("ContentReplayPolicy", "Buffer"),
-            ("MaximumBufferSize", "8192"),
-            ("AllowUnsafeMethodReplay", "true"),
-            ("Endpoints:0", "https://one.example"));
+            ("TotalTimeout:Timeout", "00:00:20"),
+            ("Hedge:MaxHedgedAttempts", "3"),
+            ("Hedge:Delay", "00:00:00.250"),
+            ("AttemptTimeout:Timeout", "00:00:02"),
+            ("ConcurrencyLimit:MaxConcurrency", "4"),
+            ("ConcurrencyLimit:QueueLimit", "5"),
+            ("CircuitBreaker:ConsecutiveFailures", "2"),
+            ("CircuitBreaker:FailureRatio", ""),
+            ("CircuitBreaker:MinimumThroughput", "6"),
+            ("CircuitBreaker:SamplingWindow", "00:00:08"),
+            ("CircuitBreaker:BreakDuration", "00:00:04"),
+            ("Routing:SelectionMode", "Weighted"),
+            ("Routing:Seed", "9"),
+            ("Handler:ContentReplayPolicy", "Buffer"),
+            ("Handler:MaximumBufferSize", "8192"),
+            ("Handler:AllowUnsafeMethodReplay", "true"),
+            ("Routing:Endpoints:0", "https://one.example"));
         StandardHedgeShieldOptions? bound = null;
         var services = new ServiceCollection();
         services.AddHttpClient("client")
@@ -202,23 +202,48 @@ public class HttpConfigurationReloadTests
         _ = provider.GetRequiredService<IHttpClientFactory>().CreateClient("client");
 
         await Assert.That(bound).IsNotNull();
-        await Assert.That(bound!.TotalTimeout).IsEqualTo(TimeSpan.FromSeconds(20));
-        await Assert.That(bound.MaxHedgedAttempts).IsEqualTo(3);
-        await Assert.That(bound.HedgeDelay).IsEqualTo(TimeSpan.FromMilliseconds(250));
-        await Assert.That(bound.AttemptTimeout).IsEqualTo(TimeSpan.FromSeconds(2));
-        await Assert.That(bound.MaxConcurrency).IsEqualTo(4);
-        await Assert.That(bound.QueueLimit).IsEqualTo(5);
-        await Assert.That(bound.ConsecutiveFailures).IsEqualTo(2);
-        await Assert.That(bound.FailureRatio).IsNull();
-        await Assert.That(bound.MinimumThroughput).IsEqualTo(6);
-        await Assert.That(bound.SamplingWindow).IsEqualTo(TimeSpan.FromSeconds(8));
-        await Assert.That(bound.BreakDuration).IsEqualTo(TimeSpan.FromSeconds(4));
-        await Assert.That(bound.SelectionMode).IsEqualTo(HttpEndpointSelectionMode.Weighted);
-        await Assert.That(bound.Seed).IsEqualTo(9);
-        await Assert.That(bound.ContentReplayPolicy).IsEqualTo(HttpContentReplayPolicy.Buffer);
-        await Assert.That(bound.MaximumBufferSize).IsEqualTo(8192);
-        await Assert.That(bound.AllowUnsafeMethodReplay).IsTrue();
-        await Assert.That(bound.Endpoints.Single().Uri.Host).IsEqualTo("one.example");
+        await Assert.That(bound!.TotalTimeout.Timeout).IsEqualTo(TimeSpan.FromSeconds(20));
+        await Assert.That(bound.Hedge.MaxHedgedAttempts).IsEqualTo(3);
+        await Assert.That(bound.Hedge.Delay).IsEqualTo(TimeSpan.FromMilliseconds(250));
+        await Assert.That(bound.AttemptTimeout.Timeout).IsEqualTo(TimeSpan.FromSeconds(2));
+        await Assert.That(bound.ConcurrencyLimit.MaxConcurrency).IsEqualTo(4);
+        await Assert.That(bound.ConcurrencyLimit.QueueLimit).IsEqualTo(5);
+        await Assert.That(bound.CircuitBreaker.ConsecutiveFailures).IsEqualTo(2);
+        await Assert.That(bound.CircuitBreaker.FailureRatio).IsNull();
+        await Assert.That(bound.CircuitBreaker.MinimumThroughput).IsEqualTo(6);
+        await Assert.That(bound.CircuitBreaker.SamplingWindow).IsEqualTo(TimeSpan.FromSeconds(8));
+        await Assert.That(bound.CircuitBreaker.BreakDuration).IsEqualTo(TimeSpan.FromSeconds(4));
+        await Assert.That(bound.Routing.SelectionMode).IsEqualTo(HttpEndpointSelectionMode.Weighted);
+        await Assert.That(bound.Routing.Seed).IsEqualTo(9);
+        await Assert.That(bound.Handler.ContentReplayPolicy).IsEqualTo(HttpContentReplayPolicy.Buffer);
+        await Assert.That(bound.Handler.MaximumBufferSize).IsEqualTo(8192);
+        await Assert.That(bound.Handler.AllowUnsafeMethodReplay).IsTrue();
+        await Assert.That(bound.Routing.Endpoints.Single().Uri.Host).IsEqualTo("one.example");
+    }
+
+    [Test]
+    [Arguments("Hedge:MaxHedgedAttempts", "many", "an integer")]
+    [Arguments("Hedge:Delay", "soon", "a TimeSpan")]
+    [Arguments("ConcurrencyLimit:MaxConcurrency", "many", "an integer")]
+    [Arguments("CircuitBreaker:FailureRatio", "often", "a number")]
+    [Arguments("AttemptTimeout:Timeout", "soon", "a TimeSpan")]
+    [Arguments("Handler:ContentReplayPolicy", "Sometimes", "a HttpContentReplayPolicy")]
+    [Arguments("Routing:SelectionMode", "Nearest", "a HttpEndpointSelectionMode")]
+    [Arguments("Routing:Endpoints:0:Uri", "relative", "an absolute URI")]
+    public async Task Invalid_Hedge_Values_Report_Nested_Paths(
+        string key,
+        string value,
+        string expected)
+    {
+        var values = key.Contains("Endpoints", StringComparison.Ordinal)
+            ? new[] { (key, value) }
+            : [(key, value), ("Routing:Endpoints:0:Uri", "https://one.example")];
+        var configuration = BuildConfiguration(values);
+        var builder = new ServiceCollection().AddHttpClient("client");
+
+        await Assert.That(() => builder.AddStandardHedgeShield(configuration))
+            .Throws<InvalidOperationException>()
+            .WithMessage($"Configuration value '{value}' for '{key}' is not {expected}.");
     }
 
     [Test]
@@ -324,7 +349,7 @@ public class HttpConfigurationReloadTests
         await Assert.That(() => builder.AddStandardHedgeShield(hedging))
             .Throws<InvalidOperationException>()
             .WithMessage(
-                "Configuration key 'Clients:GitHub:MaxQueue' is not supported; use 'QueueLimit'.");
+                "Configuration key 'Clients:GitHub:MaxQueue' is not supported; use 'ConcurrencyLimit:QueueLimit'.");
     }
 
     [Test]
@@ -337,7 +362,7 @@ public class HttpConfigurationReloadTests
         await Assert.That(() => builder.AddStandardHedgeShield(configuration))
             .Throws<InvalidOperationException>()
             .WithMessage(
-                "Configuration key 'Clients:GitHub:MaxAttempts' is not supported; use 'MaxHedgedAttempts'.");
+                "Configuration key 'Clients:GitHub:MaxAttempts' is not supported; use 'Hedge:MaxHedgedAttempts'.");
     }
 
     [Test]
@@ -824,11 +849,11 @@ public class HttpConfigurationReloadTests
     public async Task Hedge_Section_Binds_Endpoints_And_Routes_Attempts()
     {
         var configuration = BuildConfiguration(
-            ("MaxHedgedAttempts", "2"),
-            ("HedgeDelay", "00:00:00"),
-            ("Endpoints:0:Uri", "https://one.example"),
-            ("Endpoints:1:Uri", "https://two.example"),
-            ("Endpoints:2:Uri", "https://three.example"));
+            ("Hedge:MaxHedgedAttempts", "2"),
+            ("Hedge:Delay", "00:00:00"),
+            ("Routing:Endpoints:0:Uri", "https://one.example"),
+            ("Routing:Endpoints:1:Uri", "https://two.example"),
+            ("Routing:Endpoints:2:Uri", "https://three.example"));
         var hosts = new ConcurrentBag<string>();
         var transport = new FuncHandler((request, _) =>
         {

@@ -3,72 +3,39 @@ namespace Kevlar.Extensions.Http;
 /// <summary>Configures the standard endpoint-aware HTTP hedging pipeline.</summary>
 public sealed class StandardHedgeShieldOptions
 {
-    /// <summary>The maximum duration of the complete request. Default 30 seconds.</summary>
-    public TimeSpan TotalTimeout { get; set; } = TimeSpan.FromSeconds(30);
+    /// <summary>
+    /// Configures the outer total timeout. Defaults to 30 seconds. Set
+    /// <see cref="System.Threading.Timeout.InfiniteTimeSpan"/> to omit this stage.
+    /// </summary>
+    public TimeoutOptions TotalTimeout { get; set; } = new();
 
-    /// <summary>Maximum additional attempts after the original. Default 1.</summary>
-    public int MaxHedgedAttempts { get; set; } = 1;
+    /// <summary>Configures hedged attempts. Defaults to one additional attempt after one second.</summary>
+    public HedgeOptions<HttpResponseMessage> Hedge { get; set; } = new();
 
-    /// <summary>The delay before another hedged attempt starts. Default 1 second.</summary>
-    public TimeSpan HedgeDelay { get; set; } = TimeSpan.FromSeconds(1);
+    /// <summary>Configures the concurrency limiter applied independently to each endpoint.</summary>
+    public ConcurrencyLimitOptions ConcurrencyLimit { get; set; } = new();
 
     /// <summary>
-    /// Selects the delay before each additional endpoint attempt and is awaited before the attempt
-    /// is scheduled. Return <c>new(delay)</c> from a synchronous generator.
+    /// Configures the circuit breaker applied independently to each endpoint. Defaults to a 50%
+    /// failure ratio over 30 seconds, with a minimum throughput of 10 and a 15-second break.
     /// </summary>
-    public Func<HedgeDelayEvent, ValueTask<TimeSpan>>? HedgeDelayGenerator { get; set; }
-
-    /// <summary>The maximum duration of each endpoint attempt. Default 10 seconds.</summary>
-    public TimeSpan AttemptTimeout { get; set; } = TimeSpan.FromSeconds(10);
-
-    /// <summary>Maximum concurrent attempts per endpoint. Default 10.</summary>
-    public int MaxConcurrency { get; set; } = 10;
-
-    /// <summary>Maximum attempts queued per endpoint. Default 0.</summary>
-    public int QueueLimit { get; set; }
-
-    /// <summary>Trips each endpoint circuit after this many consecutive transient failures.</summary>
-    public int? ConsecutiveFailures { get; set; }
+    public CircuitBreakerOptions<HttpResponseMessage> CircuitBreaker { get; set; } = new()
+    {
+        FailureRatio = 0.5,
+    };
 
     /// <summary>
-    /// Trips each endpoint circuit when its transient-failure ratio reaches this value.
-    /// Default 0.5. Set to <see langword="null"/> when using <see cref="ConsecutiveFailures"/>.
+    /// Configures the timeout applied independently to each endpoint attempt. Defaults to 10
+    /// seconds. Set <see cref="System.Threading.Timeout.InfiniteTimeSpan"/> to omit this stage.
     /// </summary>
-    public double? FailureRatio { get; set; } = 0.5;
+    public TimeoutOptions AttemptTimeout { get; set; } = new()
+    {
+        Timeout = TimeSpan.FromSeconds(10),
+    };
 
-    /// <summary>Minimum endpoint attempts sampled before failure-ratio breaking. Default 10.</summary>
-    public int MinimumThroughput { get; set; } = 10;
+    /// <summary>Configures request replay.</summary>
+    public ShieldHttpHandlerOptions Handler { get; set; } = new();
 
-    /// <summary>The endpoint circuit sampling window. Default 30 seconds.</summary>
-    public TimeSpan SamplingWindow { get; set; } = TimeSpan.FromSeconds(30);
-
-    /// <summary>How long an endpoint circuit remains open. Default 15 seconds.</summary>
-    public TimeSpan BreakDuration { get; set; } = TimeSpan.FromSeconds(15);
-
-    /// <summary>The endpoint ordering algorithm.</summary>
-    public HttpEndpointSelectionMode SelectionMode { get; set; }
-
-    /// <summary>The deterministic seed used by weighted endpoint ordering.</summary>
-    public int Seed { get; set; }
-
-    /// <summary>The endpoint authorities available to attempts. At least one is required.</summary>
-    public IList<HttpEndpoint> Endpoints { get; } = new List<HttpEndpoint>();
-
-    /// <summary>The request-content replay policy. The default never buffers caller content.</summary>
-    public HttpContentReplayPolicy ContentReplayPolicy { get; set; }
-
-    /// <summary>The maximum buffered request-content size. Defaults to 1 MiB.</summary>
-    public long MaximumBufferSize { get; set; } = 1024 * 1024;
-
-    /// <summary>
-    /// Explicitly permits another attempt for methods other than GET, HEAD, OPTIONS, TRACE, PUT,
-    /// and DELETE. A request factory also counts as explicit opt-in.
-    /// </summary>
-    public bool AllowUnsafeMethodReplay { get; set; }
-
-    /// <summary>
-    /// Optionally creates a fresh complete request for each zero-based attempt. Returned requests
-    /// are owned and disposed by the handler; returning the original request preserves caller ownership.
-    /// </summary>
-    public Func<HttpRequestMessage, int, CancellationToken, ValueTask<HttpRequestMessage>>? RequestFactory { get; set; }
+    /// <summary>Configures the endpoint authorities and their ordering.</summary>
+    public HttpEndpointRoutingOptions Routing { get; set; } = new();
 }

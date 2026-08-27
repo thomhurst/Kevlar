@@ -159,8 +159,8 @@ full configuration path. A successful reload starts fresh breaker, limiter, and 
 state. `HttpClientFactory` handler rotation also creates fresh state and reruns the
 service-provider callback; disposed handlers unsubscribe from configuration changes.
 
-Hedging uses the same reload contract. Its scalar keys match `StandardHedgeShieldOptions`, and
-`Endpoints` is required:
+Hedging uses the same reload contract. Its keys follow the nested
+`StandardHedgeShieldOptions` shape, and `Routing:Endpoints` is required:
 
 ```csharp
 using Kevlar.Extensions.Http;
@@ -168,12 +168,12 @@ using Kevlar.Extensions.Http;
 var configuration = new ConfigurationBuilder()
     .AddInMemoryCollection(new Dictionary<string, string?>
     {
-        ["MaxHedgedAttempts"] = "1",
-        ["HedgeDelay"] = "00:00:00.500",
-        ["SelectionMode"] = "Weighted",
-        ["Endpoints:0:Uri"] = "https://api-a.example",
-        ["Endpoints:0:Weight"] = "3",
-        ["Endpoints:1:Uri"] = "https://api-b.example",
+        ["Hedge:MaxHedgedAttempts"] = "1",
+        ["Hedge:Delay"] = "00:00:00.500",
+        ["Routing:SelectionMode"] = "Weighted",
+        ["Routing:Endpoints:0:Uri"] = "https://api-a.example",
+        ["Routing:Endpoints:0:Weight"] = "3",
+        ["Routing:Endpoints:1:Uri"] = "https://api-b.example",
     })
     .Build();
 
@@ -364,12 +364,12 @@ using Kevlar.Extensions.Http;
 services.AddHttpClient("routed")
     .AddStandardHedgeShield(options =>
     {
-        options.Endpoints.Add(new HttpEndpoint(new Uri("https://api-a.example"), weight: 3));
-        options.Endpoints.Add(new HttpEndpoint(new Uri("https://api-b.example"), weight: 1));
-        options.SelectionMode = HttpEndpointSelectionMode.Weighted;
-        options.MaxHedgedAttempts = 1;
-        options.HedgeDelay = TimeSpan.FromMilliseconds(500);
-        options.HedgeDelayGenerator = hedge => new(hedge.Elapsed < TimeSpan.FromSeconds(1)
+        options.Routing.Endpoints.Add(new HttpEndpoint(new Uri("https://api-a.example"), weight: 3));
+        options.Routing.Endpoints.Add(new HttpEndpoint(new Uri("https://api-b.example"), weight: 1));
+        options.Routing.SelectionMode = HttpEndpointSelectionMode.Weighted;
+        options.Hedge.MaxHedgedAttempts = 1;
+        options.Hedge.Delay = TimeSpan.FromMilliseconds(500);
+        options.Hedge.DelayGenerator = hedge => new(hedge.Elapsed < TimeSpan.FromSeconds(1)
             ? TimeSpan.FromMilliseconds(100)
             : TimeSpan.Zero);
     });
@@ -377,15 +377,13 @@ services.AddHttpClient("routed")
 
 `AddStandardHedgeShield` installs a 30s total timeout and one additional hedged attempt (two total). Each endpoint
 gets its own 10-concurrent/zero-queue limiter, 50%-over-30s circuit breaker (minimum 10 attempts,
-15s break), and 10s attempt timeout. Configure those defaults through `TotalTimeout`, `MaxHedgedAttempts`,
-`HedgeDelay`, `HedgeDelayGenerator`, `MaxConcurrency`, `QueueLimit`,
-`FailureRatio` or `ConsecutiveFailures`,
-`MinimumThroughput`, `SamplingWindow`, `BreakDuration`, and `AttemptTimeout`.
+15s break), and 10s attempt timeout. Configure those defaults through `TotalTimeout.Timeout`,
+`Hedge`, `ConcurrencyLimit`, `CircuitBreaker`, and `AttemptTimeout.Timeout`.
 
-The registration also exposes `ContentReplayPolicy`, `MaximumBufferSize`,
-`AllowUnsafeMethodReplay`, and `RequestFactory`. POST, PATCH, and custom methods still require the
-same explicit idempotency opt-in described above; registering the standard hedging pipeline does not
-make an unsafe operation safe to repeat.
+Request replay is configured through `Handler`; endpoint authorities and ordering are configured
+through `Routing`. POST, PATCH, and custom methods still require the same explicit idempotency
+opt-in described above; registering the standard hedging pipeline does not make an unsafe operation
+safe to repeat.
 
 For a fully custom endpoint-aware pipeline, compose the outer and endpoint shields directly:
 

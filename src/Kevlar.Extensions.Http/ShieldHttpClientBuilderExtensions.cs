@@ -449,63 +449,63 @@ public static class ShieldHttpClientBuilderExtensions
         _ = new HttpShieldPipeline(CreateHedgeShield(options), CreateHandlerOptions(options));
     }
 
-    private static Shield<HttpResponseMessage> CreateHedgeShield(StandardHedgeShieldOptions options) =>
-        HttpShield.WhenTransient(
-                Shield.Timeout(options.TotalTimeout)
-                    .For<HttpResponseMessage>())
+    private static Shield<HttpResponseMessage> CreateHedgeShield(StandardHedgeShieldOptions options)
+    {
+        ValidateHedgeOptions(options);
+        var pipelineStart = IsDisabled(options.TotalTimeout)
+            ? Shield.For<HttpResponseMessage>()
+            : Shield.Timeout(target => Copy(options.TotalTimeout, target))
+                .For<HttpResponseMessage>();
+        return HttpShield.WhenTransient(pipelineStart)
             .Or<ConcurrencyLimitExceededException>()
             .Or<CircuitOpenException>()
-            .Hedge(hedge =>
-            {
-                hedge.MaxHedgedAttempts = options.MaxHedgedAttempts;
-                hedge.Delay = options.HedgeDelay;
-                hedge.DelayGenerator = options.HedgeDelayGenerator;
-            });
+            .Hedge(target => Copy(options.Hedge, target));
+    }
 
     private static ShieldHttpHandlerOptions CreateHandlerOptions(StandardHedgeShieldOptions options)
     {
-        if (!Enum.IsDefined(typeof(HttpEndpointSelectionMode), options.SelectionMode))
+        if (!Enum.IsDefined(typeof(HttpEndpointSelectionMode), options.Routing.SelectionMode))
         {
             throw new ArgumentOutOfRangeException(nameof(options), "The endpoint selection mode is invalid.");
         }
 
-        if (!Enum.IsDefined(typeof(HttpContentReplayPolicy), options.ContentReplayPolicy))
+        if (!Enum.IsDefined(typeof(HttpContentReplayPolicy), options.Handler.ContentReplayPolicy))
         {
             throw new ArgumentOutOfRangeException(nameof(options), "ContentReplayPolicy is invalid.");
         }
 
-        if (options.MaximumBufferSize <= 0)
+        if (options.Handler.MaximumBufferSize <= 0)
         {
             throw new ArgumentOutOfRangeException(nameof(options), "MaximumBufferSize must be positive.");
         }
 
-        if (options.Endpoints.Count == 0)
+        if (options.Routing.Endpoints.Count == 0)
         {
             throw new ArgumentException("Standard hedging requires at least one endpoint.", nameof(options));
         }
 
-        if (options.Endpoints.Any(static endpoint => endpoint is null))
+        if (options.Routing.Endpoints.Any(static endpoint => endpoint is null))
         {
             throw new ArgumentException("Endpoints cannot contain null.", nameof(options));
         }
 
         var routing = new HttpEndpointRoutingOptions
         {
-            SelectionMode = options.SelectionMode,
-            Seed = options.Seed,
+            SelectionMode = options.Routing.SelectionMode,
+            Seed = options.Routing.Seed,
             ShieldFactory = CreateEndpointShieldFactory(options),
         };
-        foreach (var endpoint in options.Endpoints)
+        foreach (var endpoint in options.Routing.Endpoints)
         {
             routing.Endpoints.Add(endpoint);
         }
 
         return new ShieldHttpHandlerOptions
         {
-            ContentReplayPolicy = options.ContentReplayPolicy,
-            MaximumBufferSize = options.MaximumBufferSize,
-            AllowUnsafeMethodReplay = options.AllowUnsafeMethodReplay,
-            RequestFactory = options.RequestFactory,
+            ContentReplayPolicy = options.Handler.ContentReplayPolicy,
+            MaximumBufferSize = options.Handler.MaximumBufferSize,
+            AllowUnsafeMethodReplay = options.Handler.AllowUnsafeMethodReplay,
+            RequestFactory = options.Handler.RequestFactory,
             Routing = routing,
         };
     }
@@ -513,30 +513,114 @@ public static class ShieldHttpClientBuilderExtensions
     private static Func<Uri, Shield<HttpResponseMessage>> CreateEndpointShieldFactory(
         StandardHedgeShieldOptions options)
     {
-        var maxConcurrency = options.MaxConcurrency;
-        var queueLimit = options.QueueLimit;
-        var consecutiveFailures = options.ConsecutiveFailures;
-        var failureRatio = options.FailureRatio;
-        var minimumThroughput = options.MinimumThroughput;
-        var samplingWindow = options.SamplingWindow;
-        var breakDuration = options.BreakDuration;
-        var attemptTimeout = options.AttemptTimeout;
+        var concurrencyLimit = Clone(options.ConcurrencyLimit);
+        var circuitBreaker = Clone(options.CircuitBreaker);
+        var attemptTimeout = Clone(options.AttemptTimeout);
 
-        Shield<HttpResponseMessage> CreateEndpointShield(Uri _) =>
-            HttpShield.WhenTransient()
-                .ConcurrencyLimit(maxConcurrency, queueLimit)
-                .CircuitBreaker(circuitBreaker =>
-                {
-                    circuitBreaker.ConsecutiveFailures = consecutiveFailures;
-                    circuitBreaker.FailureRatio = failureRatio;
-                    circuitBreaker.MinimumThroughput = minimumThroughput;
-                    circuitBreaker.SamplingWindow = samplingWindow;
-                    circuitBreaker.BreakDuration = breakDuration;
-                })
-                .Timeout(attemptTimeout);
+        Shield<HttpResponseMessage> CreateEndpointShield(Uri _)
+        {
+            var shield = HttpShield.WhenTransient()
+                .ConcurrencyLimit(target => Copy(concurrencyLimit, target))
+                .CircuitBreaker(target => Copy(circuitBreaker, target));
+            return IsDisabled(attemptTimeout)
+                ? shield
+                : shield.Timeout(target => Copy(attemptTimeout, target));
+        }
 
         _ = CreateEndpointShield(null!);
         return CreateEndpointShield;
+    }
+
+    private static void ValidateHedgeOptions(StandardHedgeShieldOptions options)
+    {
+        if (options.TotalTimeout is null
+            || options.Hedge is null
+            || options.ConcurrencyLimit is null
+            || options.CircuitBreaker is null
+            || options.AttemptTimeout is null
+            || options.Handler is null
+            || options.Routing is null)
+        {
+            throw new ArgumentException(
+                "StandardHedgeShieldOptions nested options cannot be null.",
+                nameof(options));
+        }
+    }
+
+    private static bool IsDisabled(TimeoutOptions options) =>
+        options.Timeout == Timeout.InfiniteTimeSpan;
+
+    private static TimeoutOptions Clone(TimeoutOptions source)
+    {
+        var target = new TimeoutOptions();
+        Copy(source, target);
+        return target;
+    }
+
+    private static ConcurrencyLimitOptions Clone(ConcurrencyLimitOptions source)
+    {
+        var target = new ConcurrencyLimitOptions();
+        Copy(source, target);
+        return target;
+    }
+
+    private static CircuitBreakerOptions<HttpResponseMessage> Clone(
+        CircuitBreakerOptions<HttpResponseMessage> source)
+    {
+        var target = new CircuitBreakerOptions<HttpResponseMessage>();
+        Copy(source, target);
+        return target;
+    }
+
+    private static void Copy(TimeoutOptions source, TimeoutOptions target)
+    {
+        target.Name = source.Name;
+        target.Timeout = source.Timeout;
+        target.TimeoutGenerator = source.TimeoutGenerator;
+        target.OnTimeout = source.OnTimeout;
+    }
+
+    private static void Copy(
+        HedgeOptions<HttpResponseMessage> source,
+        HedgeOptions<HttpResponseMessage> target)
+    {
+        target.Name = source.Name;
+        target.HandlesException = source.HandlesException;
+        target.HandlesExceptionWithContext = source.HandlesExceptionWithContext;
+        target.HandlesResult = source.HandlesResult;
+        target.HandlesResultWithContext = source.HandlesResultWithContext;
+        target.MaxHedgedAttempts = source.MaxHedgedAttempts;
+        target.Delay = source.Delay;
+        target.DelayGenerator = source.DelayGenerator;
+        target.OnHedge = source.OnHedge;
+        target.ActionGenerator = source.ActionGenerator;
+    }
+
+    private static void Copy(ConcurrencyLimitOptions source, ConcurrencyLimitOptions target)
+    {
+        target.Name = source.Name;
+        target.MaxConcurrency = source.MaxConcurrency;
+        target.QueueLimit = source.QueueLimit;
+        target.OnRejected = source.OnRejected;
+    }
+
+    private static void Copy(
+        CircuitBreakerOptions<HttpResponseMessage> source,
+        CircuitBreakerOptions<HttpResponseMessage> target)
+    {
+        target.Name = source.Name;
+        target.HandlesException = source.HandlesException;
+        target.HandlesExceptionWithContext = source.HandlesExceptionWithContext;
+        target.HandlesResult = source.HandlesResult;
+        target.HandlesResultWithContext = source.HandlesResultWithContext;
+        target.ConsecutiveFailures = source.ConsecutiveFailures;
+        target.FailureRatio = source.FailureRatio;
+        target.MinimumThroughput = source.MinimumThroughput;
+        target.SamplingWindow = source.SamplingWindow;
+        target.BreakDuration = source.BreakDuration;
+        target.BreakDurationGenerator = source.BreakDurationGenerator;
+        target.Monitor = source.Monitor;
+        target.OnStateChanged = source.OnStateChanged;
     }
 }
 

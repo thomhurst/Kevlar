@@ -27,8 +27,8 @@ public class HttpStandardHedgeBenchmarks
             .ConfigurePrimaryHttpMessageHandler(static () => new SuccessHandler())
             .AddStandardHedgeShield(static options =>
             {
-                options.Endpoints.Add(new HttpEndpoint(new Uri("https://first.invalid")));
-                options.Endpoints.Add(new HttpEndpoint(new Uri("https://second.invalid")));
+                options.Routing.Endpoints.Add(new HttpEndpoint(new Uri("https://first.invalid")));
+                options.Routing.Endpoints.Add(new HttpEndpoint(new Uri("https://second.invalid")));
             });
         _services = services.BuildServiceProvider();
         var factory = _services.GetRequiredService<IHttpClientFactory>();

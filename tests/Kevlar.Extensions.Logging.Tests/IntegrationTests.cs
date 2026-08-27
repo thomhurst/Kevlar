@@ -238,12 +238,12 @@ public class IntegrationTests
                 HttpStatusCode.InternalServerError))
             .AddStandardHedgeShield(options =>
             {
-                options.TotalTimeout = TimeSpan.FromMinutes(1);
-                options.MaxHedgedAttempts = 0;
-                options.AttemptTimeout = TimeSpan.FromMinutes(1);
-                options.ConsecutiveFailures = 1;
-                options.FailureRatio = null;
-                options.Endpoints.Add(new HttpEndpoint(new Uri("https://endpoint.test")));
+                options.TotalTimeout.Timeout = TimeSpan.FromMinutes(1);
+                options.Hedge.MaxHedgedAttempts = 0;
+                options.AttemptTimeout.Timeout = TimeSpan.FromMinutes(1);
+                options.CircuitBreaker.ConsecutiveFailures = 1;
+                options.CircuitBreaker.FailureRatio = null;
+                options.Routing.Endpoints.Add(new HttpEndpoint(new Uri("https://endpoint.test")));
             });
         using var provider = services.BuildServiceProvider();
         var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("hedged");
