@@ -31,3 +31,16 @@ application. Test-only and build-only dependencies are not part of this package 
 Package verification rejects accidental dependency floors above major version 8, except for the
 documented gRPC and Reservoir version lines. Raising a floor is a compatibility decision and must
 be called out in release notes.
+
+## Kevlar package lockstep
+
+Packages that consume Kevlar internals must use the same version as `Kevlar`. NuGet exact-version
+dependencies enforce this for `Kevlar.Testing`, `Kevlar.Extensions.Http`,
+`Kevlar.Extensions.RateLimiting`, `Kevlar.Extensions.DependencyInjection`, and
+`Kevlar.Extensions.Logging`. `Kevlar.Extensions.Grpc` is also coupled through dependency injection,
+so it exact-pins both `Kevlar` and `Kevlar.Extensions.DependencyInjection`.
+
+Upgrade these packages together. If package versions are managed centrally, assign one version to
+the coupled package set. A partial upgrade fails restore with `NU1608` instead of allowing a mixed
+version deployment that could fail at runtime. `Kevlar.Chaos` uses only public APIs and is not part
+of this lockstep set.

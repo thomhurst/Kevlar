@@ -7,6 +7,7 @@
     <IsPackable>true</IsPackable>
     <Description>gRPC client integration for Kevlar: unary and streaming interceptors, transient status helpers, cancellation safety, and named-shield DI registration.</Description>
     <PackageTags>resilience;grpc;client;interceptor;kevlar</PackageTags>
+    <PinKevlarDependencyVersion>true</PinKevlarDependencyVersion>
     <CopyLocalLockFileAssemblies Condition="'$(TargetFramework)' == 'net10.0'">true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 

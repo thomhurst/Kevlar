@@ -7,6 +7,7 @@
     <IsPackable>true</IsPackable>
     <Description>Microsoft.Extensions.DependencyInjection integration for Kevlar: named shield registration and the IKevlarRegistry.</Description>
     <PackageTags>resilience;dependency-injection;kevlar</PackageTags>
+    <PinKevlarDependencyVersion>true</PinKevlarDependencyVersion>
   </PropertyGroup>
 
   <ItemGroup>

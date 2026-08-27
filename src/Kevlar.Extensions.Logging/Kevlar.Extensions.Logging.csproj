@@ -7,6 +7,7 @@
     <IsPackable>true</IsPackable>
     <Description>Microsoft.Extensions.Logging integration for Kevlar strategy events.</Description>
     <PackageTags>resilience;logging;kevlar</PackageTags>
+    <PinKevlarDependencyVersion>true</PinKevlarDependencyVersion>
   </PropertyGroup>
 
   <ItemGroup>

@@ -191,6 +191,9 @@ _ = Shield.Empty.Wrap(Shield.Retry(1));
 
 ### Fixed
 
+- Coupled satellite packages exact-pin their `Kevlar` dependencies. Partial upgrades of
+  dependency injection, logging, and gRPC packages fail restore with `NU1608` instead of risking
+  runtime failures from incompatible internals.
 - Circuit-breaker monitors and testing snapshots report `HalfOpen` as soon as break duration
   elapses. Stale outcomes cannot alter newer state generations, and exceptions that opened a
   circuit are released when it closes or resets.

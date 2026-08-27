@@ -338,6 +338,17 @@ $expectedDependencies = @{
 $expectedPackageIds = @(& (Join-Path $PSScriptRoot 'Get-PackablePackageIds.ps1') -RepositoryRoot $repositoryRoot)
 Assert-Set 'package dependency table IDs' @($expectedDependencies.Keys) $expectedPackageIds
 
+[xml]$kevlarProject = Get-Content -LiteralPath (Join-Path $repositoryRoot 'src/Kevlar/Kevlar.csproj') -Raw
+$internalsVisibleToPackages = @($kevlarProject.SelectNodes(
+        "/Project/ItemGroup/InternalsVisibleTo") |
+    ForEach-Object { $_.GetAttribute('Include') } |
+    Where-Object { $expectedPackageIds -contains $_ })
+$exactPinnedPackageIds = @(
+    $internalsVisibleToPackages
+    # gRPC ships against DI, which is coupled to Kevlar internals and must move in lockstep.
+    'Kevlar.Extensions.Grpc'
+) | Sort-Object -Unique
+
 $expectedDependencyVersions = @{}
 foreach ($dependencyId in @(
     'Microsoft.Bcl.TimeProvider',
@@ -467,8 +478,8 @@ foreach ($packageId in $expectedDependencies.Keys)
                         ($dependency.GetAttribute('include') -split ',') `
                         @('Runtime', 'Compile', 'Native', 'ContentFiles', 'Analyzers', 'BuildTransitive')
                 }
-                if ($dependencyId -eq 'Kevlar' -and
-                    $packageId -in @('Kevlar.Testing', 'Kevlar.Extensions.RateLimiting'))
+                if ($dependencyId -like 'Kevlar*' -and
+                    $packageId -in $exactPinnedPackageIds)
                 {
                     Assert-Equal `
                         "$packageId $framework Kevlar dependency version" `
@@ -709,8 +720,10 @@ try
     $skewNugetConfig = $nugetConfig.Replace($escapedPackageDirectory, $escapedSkewFeed)
     $skewNugetConfigPath = Join-Path $temporaryRoot 'NuGet.Skew.Config'
     Write-TextFile $skewNugetConfigPath $skewNugetConfig
-    $skewConsumerDirectory = Join-Path $temporaryRoot 'version-skew'
-    $skewConsumerProject = @"
+    foreach ($satellitePackageId in $exactPinnedPackageIds)
+    {
+        $skewConsumerDirectory = Join-Path $temporaryRoot "version-skew-$satellitePackageId"
+        $skewConsumerProject = @"
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -718,26 +731,27 @@ try
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Kevlar" Version="$skewVersion" />
-    <PackageReference Include="Kevlar.Testing" Version="$Version" />
+    <PackageReference Include="$satellitePackageId" Version="$Version" />
   </ItemGroup>
 </Project>
 "@
-    $skewConsumerProjectPath = Join-Path $skewConsumerDirectory 'VersionSkew.csproj'
-    Write-TextFile $skewConsumerProjectPath $skewConsumerProject
-    $skewRestoreOutput = (& dotnet restore `
-        $skewConsumerProjectPath `
-        --configfile $skewNugetConfigPath `
-        --no-cache `
-        --force-evaluate 2>&1 | Out-String)
-    if ($LASTEXITCODE -eq 0)
-    {
-        throw "NuGet accepted Kevlar.Testing $Version with incompatible Kevlar $skewVersion.`n$skewRestoreOutput"
-    }
+        $skewConsumerProjectPath = Join-Path $skewConsumerDirectory 'VersionSkew.csproj'
+        Write-TextFile $skewConsumerProjectPath $skewConsumerProject
+        $skewRestoreOutput = (& dotnet restore `
+            $skewConsumerProjectPath `
+            --configfile $skewNugetConfigPath `
+            --no-cache `
+            --force-evaluate 2>&1 | Out-String)
+        if ($LASTEXITCODE -eq 0)
+        {
+            throw "NuGet accepted $satellitePackageId $Version with incompatible Kevlar $skewVersion.`n$skewRestoreOutput"
+        }
 
-    if ($skewRestoreOutput -notmatch '\bNU1608\b' -or
-        $skewRestoreOutput -notmatch [regex]::Escape("Kevlar.Testing $Version"))
-    {
-        throw "Version-skew restore did not report the expected exact-dependency conflict.`n$skewRestoreOutput"
+        if ($skewRestoreOutput -notmatch '\bNU1608\b' -or
+            $skewRestoreOutput -notmatch [regex]::Escape("$satellitePackageId $Version"))
+        {
+            throw "$satellitePackageId version-skew restore did not report the expected exact-dependency conflict.`n$skewRestoreOutput"
+        }
     }
 
     $runtimeProgram = @'
