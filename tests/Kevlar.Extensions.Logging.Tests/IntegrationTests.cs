@@ -63,6 +63,83 @@ public class IntegrationTests
 
     [Test]
     [NotInParallel]
+    public async Task Unsafe_Method_First_Suppression_Warns_Then_Uses_Information()
+    {
+        var logs = new FakeLoggerProvider();
+        var telemetry = new List<KevlarTelemetrySeverity>();
+        using var subscription = KevlarDiagnostics.Listen(new CallbackTelemetryListener(telemetryEvent =>
+        {
+            if (telemetryEvent.EventName == "attempts_suppressed"
+                && telemetryEvent.SuppressionReason == "unsafe_method")
+            {
+                telemetry.Add(telemetryEvent.Severity);
+            }
+        }));
+        var transport = new SequenceHandler(
+            HttpStatusCode.ServiceUnavailable,
+            HttpStatusCode.ServiceUnavailable);
+        var services = new ServiceCollection();
+        services.AddLogging(builder => builder.AddProvider(logs));
+        services.AddKevlarLogging();
+        services.AddHttpClient("unsafe-method")
+            .ConfigurePrimaryHttpMessageHandler(() => transport)
+            .AddShield(HttpShield.WhenTransient().Retry(1, Backoff.None));
+        using var provider = services.BuildServiceProvider();
+        var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("unsafe-method");
+        using var firstRequest = new HttpRequestMessage(HttpMethod.Post, "https://example.test/first");
+        using var secondRequest = new HttpRequestMessage(HttpMethod.Post, "https://example.test/second");
+
+        using var firstResponse = await client.SendAsync(firstRequest);
+        using var secondResponse = await client.SendAsync(secondRequest);
+
+        var suppressions = logs.Collector.GetSnapshot()
+            .Where(record => record.Id == new EventId(1009, "AttemptsSuppressed"))
+            .ToArray();
+        await Assert.That(transport.Attempts).IsEqualTo(2);
+        await Assert.That(suppressions.Length).IsEqualTo(2);
+        await Assert.That(suppressions[0].Level).IsEqualTo(LogLevel.Warning);
+        await Assert.That(suppressions[0].GetStructuredStateValue("SuppressionReason"))
+            .IsEqualTo("unsafe_method");
+        await Assert.That(suppressions[0].Message).Contains("AllowUnsafeMethodReplay");
+        await Assert.That(suppressions[0].Message).Contains("KevlarHttp.GetRequestOptions");
+        await Assert.That(suppressions[1].Level).IsEqualTo(LogLevel.Information);
+        await Assert.That(telemetry).IsEquivalentTo([
+            KevlarTelemetrySeverity.Warning,
+            KevlarTelemetrySeverity.Information,
+        ]);
+    }
+
+    [Test]
+    [NotInParallel]
+    public async Task Unsafe_Method_Guidance_Survives_Severity_Override()
+    {
+        var logs = new FakeLoggerProvider();
+        var transport = new SequenceHandler(HttpStatusCode.ServiceUnavailable);
+        var services = new ServiceCollection();
+        services.AddLogging(builder => builder.AddProvider(logs));
+        services.AddKevlarLogging(options =>
+            options.SeverityProvider = _ => LogLevel.Information);
+        services.AddHttpClient("unsafe-method-override")
+            .ConfigurePrimaryHttpMessageHandler(() => transport)
+            .AddShield(HttpShield.WhenTransient().Retry(1, Backoff.None));
+        using var provider = services.BuildServiceProvider();
+        var client = provider.GetRequiredService<IHttpClientFactory>()
+            .CreateClient("unsafe-method-override");
+        using var request = new HttpRequestMessage(HttpMethod.Post, "https://example.test/unsafe");
+
+        using var response = await client.SendAsync(request);
+
+        var suppression = logs.Collector.GetSnapshot()
+            .Single(record => record.Id == new EventId(1009, "AttemptsSuppressed"));
+        await Assert.That(suppression.Level).IsEqualTo(LogLevel.Information);
+        await Assert.That(suppression.GetStructuredStateValue("SuppressionReason"))
+            .IsEqualTo("unsafe_method");
+        await Assert.That(suppression.Message).Contains("AllowUnsafeMethodReplay");
+        await Assert.That(suppression.Message).Contains("KevlarHttp.GetRequestOptions");
+    }
+
+    [Test]
+    [NotInParallel]
     public async Task AddKevlarLogging_Applies_To_Named_And_Reloading_Shields()
     {
         var logs = new FakeLoggerProvider();

@@ -363,8 +363,11 @@ actually idempotent. If method or content cannot be replayed safely, retry and h
 single-attempt: the original response is returned or the original exception is rethrown without a
 retry delay or callback. Other stages, including timeout, circuit breaker, and concurrency limiting,
 still observe that attempt. A multi-attempt shield reports this decision once as the
-`attempts_suppressed` telemetry event and Information log 1009, with reason `replay_disabled`,
-`unsafe_method`, or `non_replayable_content`. The `kevlar.http.replay_suppressed` counter carries the
+`attempts_suppressed` telemetry event and log 1009, with reason `replay_disabled`, `unsafe_method`,
+or `non_replayable_content`. The first `unsafe_method` suppression for a client is a Warning that
+names the handler-wide and per-request opt-ins; later unsafe-method suppressions and other reasons
+are Information. Telemetry uses the matching Warning or Information severity. The
+`kevlar.http.replay_suppressed` counter carries the
 same bounded reason in `kevlar.suppression.reason`. `HttpRequestReplayException` is reserved for
 configuration failures such as a null factory result or content exceeding the requested buffer
 limit. Timeouts and caller cancellation flow to every attempt and request factory.

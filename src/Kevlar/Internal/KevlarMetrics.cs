@@ -387,7 +387,10 @@ internal static class KevlarMetrics
             rejectionKind: kind);
     }
 
-    public static void HttpReplaySuppressed(KevlarContext context, string reason)
+    public static void HttpReplaySuppressed(
+        KevlarContext context,
+        string reason,
+        KevlarTelemetrySeverity severity = KevlarTelemetrySeverity.Information)
     {
 #if NET8_0_OR_GREATER
         if (HttpReplaySuppressions.Enabled)
@@ -406,7 +409,7 @@ internal static class KevlarMetrics
             context,
             strategyName: "HTTP",
             eventName: "attempts_suppressed",
-            KevlarTelemetrySeverity.Information,
+            severity,
             context.StrategyIndex,
             context.AttemptNumber,
             isSuccess: true,

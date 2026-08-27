@@ -70,7 +70,7 @@ registered `ILoggerFactory`. Explicit `WithLogging` calls remain local to that s
 | 1006 | rate-limit rejection | Warning |
 | 1007 | concurrency-limit rejection | Warning |
 | 1008 | callback error | Error |
-| 1009 | HTTP attempts suppressed | Information |
+| 1009 | HTTP attempts suppressed | Warning for the first unsafe-method suppression per client; Information otherwise |
 | 1010 | timeout cancellation ignored | Warning |
 | 1011 | hedge attempt completion | Debug; Information for failed losers |
 

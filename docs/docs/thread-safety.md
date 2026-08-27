@@ -15,6 +15,7 @@ execution-scoped objects that must remain owned by one operation.
 | `CircuitBreakerMonitor` | Thread-safe and bindable to multiple circuit breakers. `StateChanged` notifications are serialized per breaker; different breakers may publish concurrently. |
 | `KevlarContext`, `KevlarProperties` | Execution-scoped and not safe for caller-created concurrent access. Do not retain them after the delegate or callback returns. Hedge attempts receive detached property containers, but mutable values stored inside them remain the caller's responsibility. |
 | `IKevlarRegistry`, `IShieldProvider` | Thread-safe singleton services. Registry lookups return immutable snapshots. Reloading names expose only a keyed provider; query it or the registry once per operation. |
+| `ShieldDelegatingHandler` | Thread-safe for concurrent requests. Replay state is request-scoped; the first unsafe-method suppression warning is coordinated atomically per handler. |
 | `ExecutionProbe`, `TelemetryRecorder` | Thread-safe test observers. Their snapshot collections are immutable copies; dispose `TelemetryRecorder` to detach its listener. |
 | Custom `Strategy` implementations | One instance may be used by every concurrent execution and composed shield. Implementations must synchronize mutable state and must not retain a pooled `KevlarContext`. |
 

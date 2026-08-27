@@ -349,12 +349,24 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
                 _ = telemetryEvent.Context.Properties.TryGet(
                     HttpRequestUriKey,
                     out string? suppressedRequestUri);
-                LoggerMessages.AttemptsSuppressed(
-                    logger,
-                    telemetryEvent.ShieldName,
-                    telemetryEvent.SuppressionReason,
-                    suppressedRequestMethod,
-                    suppressedRequestUri);
+                if (IsFirstUnsafeMethodSuppression(in telemetryEvent))
+                {
+                    WarningLoggerMessages.UnsafeMethodAttemptsSuppressed(
+                        logger,
+                        telemetryEvent.ShieldName,
+                        telemetryEvent.SuppressionReason,
+                        suppressedRequestMethod,
+                        suppressedRequestUri);
+                }
+                else
+                {
+                    LoggerMessages.AttemptsSuppressed(
+                        logger,
+                        telemetryEvent.ShieldName,
+                        telemetryEvent.SuppressionReason,
+                        suppressedRequestMethod,
+                        suppressedRequestUri);
+                }
                 break;
         }
     }
@@ -461,13 +473,31 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
                 _ = telemetryEvent.Context.Properties.TryGet(
                     HttpRequestUriKey,
                     out string? suppressedRequestUri);
-                logger.Log(level, eventId,
-                    "Shield {ShieldName} suppressed additional HTTP attempts because {SuppressionReason}; request {RequestMethod} {RequestUri}",
-                    telemetryEvent.ShieldName, telemetryEvent.SuppressionReason,
-                    suppressedRequestMethod, suppressedRequestUri);
+                if (IsFirstUnsafeMethodSuppression(in telemetryEvent))
+                {
+                    logger.Log(level, eventId,
+                        WarningLoggerMessages.UnsafeMethodAttemptsSuppressedFormat,
+                        telemetryEvent.ShieldName, telemetryEvent.SuppressionReason,
+                        suppressedRequestMethod, suppressedRequestUri);
+                }
+                else
+                {
+                    logger.Log(level, eventId,
+                        "Shield {ShieldName} suppressed additional HTTP attempts because {SuppressionReason}; request {RequestMethod} {RequestUri}",
+                        telemetryEvent.ShieldName, telemetryEvent.SuppressionReason,
+                        suppressedRequestMethod, suppressedRequestUri);
+                }
                 break;
         }
     }
+
+    private static bool IsFirstUnsafeMethodSuppression(
+        in KevlarTelemetryEvent telemetryEvent) =>
+        telemetryEvent.Severity == KevlarTelemetrySeverity.Warning
+        && string.Equals(
+            telemetryEvent.SuppressionReason,
+            "unsafe_method",
+            StringComparison.Ordinal);
 
     private static CircuitState CircuitStateFromRejection(
         in KevlarTelemetryEvent telemetryEvent) =>
@@ -535,7 +565,9 @@ internal sealed class LoggingTelemetryListener(LoggingRegistration registration)
             case "attempts_suppressed":
                 kind = KevlarLogEventKind.AttemptsSuppressed;
                 eventId = new EventId(1009, "AttemptsSuppressed");
-                level = LogLevel.Information;
+                level = telemetryEvent.Severity == KevlarTelemetrySeverity.Warning
+                    ? LogLevel.Warning
+                    : LogLevel.Information;
                 return true;
             case "rejection" when telemetryEvent.RejectionKind is "rate_limit" or "rate_limiter_adapter":
                 kind = KevlarLogEventKind.RateLimitRejected;
